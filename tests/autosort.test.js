@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // autosort.js: the sure rule per field, the 1-in-20 Check sampling, the log codes, agreement and auto-off, retests,
-// metric flags (Pierre, 2026-11-03; docs/ARCHITECTURE.md "Auto-sort").
+// metric flags (docs/ARCHITECTURE.md "Auto-sort").
 const test = require('node:test'),
   assert = require('node:assert'),
   path = require('path');
@@ -53,8 +53,7 @@ test('sure rule: what the pass is sure of, field by field', () => {
 
 // Not measured on the real cand.json: what is left there is not a random sample of names. The auto-sort's adds leave
 // cand.json at the next candidate refill (approved-photos workflow), while its Checks stay there until Pierre answers
-// them, so the share of Checks among the candidates left grows with every run (5.0% of 1746 before the first refill,
-// 7.8% of 1229 after it, 2026-11-03). The hash itself is checked on fixed names and on a large generated set.
+// them, so the share of Checks among the candidates left grows with every run. The hash itself is checked on fixed names and on a large generated set.
 test('1 in 20 Checks: deterministic per photo, 5% of candidate names', () => {
   // Fixed names, fixed answers: a change to the hash or the rule would make other photos Checks on Pierre's data.
   ['montipora-cand-260314187', 'pocillopora-cand-263351328', 'montipora-cand-265341179', 'fungia-cand-266074282'].forEach(f =>
@@ -170,7 +169,7 @@ test('auto off under the threshold once there are enough comparisons, on again w
 });
 
 test('an auto add Pierre removed (Remove on its genus page: add gone, reject mark) is a Keep disagreement', () => {
-  // admin.js ACT.hide on an auto-added photo deletes its add and writes the reject mark (Codex review #400).
+  // admin.js ACT.hide on an auto-added photo deletes its add and writes the reject mark.
   const cur = {auto: {'2026-11-03': {a1: 'aw2B', a2: 'aw2B'}}, genera: {G: {add: {a2: 'wide'}}}, seen: {'cand:a1': 1}};
   assert.strictEqual(pierreOf(cur, curIdx(cur), 'a1').keep, 'reject');
   const C = autoCompare(cur);
@@ -182,7 +181,7 @@ test('an auto add Pierre removed (Remove on its genus page: add gone, reject mar
 });
 
 test('a photo two devices logged on different days counts once (the latest entry, as autoIdx)', () => {
-  // merge3 keeps both daily maps when two drafts logged the same photo on different days (Codex review #400).
+  // merge3 keeps both daily maps when two drafts logged the same photo on different days.
   const cur = {
     auto: {'2026-11-03': {c: '?aw2B', a: 'r'}, '2026-11-04': {c: '?aw2B', a: '-r'}},
     genera: {G: {add: {c: 'wide', a: 'medium'}}},
@@ -202,8 +201,8 @@ test('a photo two devices logged on different days counts once (the latest entry
 });
 
 test('an auto add sent to another genus ("Not this") and added there is a Keep disagreement', () => {
-  // ACT.out drops the add in its own genus and writes out; Pierre then adds it in the genus it went to (Codex review
-  // #400): the auto added it to the wrong genus, so the add elsewhere is no agreement.
+  // ACT.out drops the add in its own genus and writes out; Pierre then adds it in the genus it went to: the auto
+  // added it to the wrong genus, so the add elsewhere is no agreement.
   const cur = {
     auto: {'2026-11-03': {a1: 'aw2B', c1: '?aw2B'}},
     genera: {A: {out: {a1: 'B', c1: 'B'}}, B: {add: {a1: 'wide', c1: 'wide'}}},

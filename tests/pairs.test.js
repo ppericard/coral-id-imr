@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // Memory (proto/pairs.js memoryGenera): the genera of a game come from those the player has met first, genera not met
-// only to fill the grid (beginner review 2026-11-03). The function runs in Node on stubs, as tests/memory.test.js does.
+// only to fill the grid. The function runs in Node on stubs, as tests/memory.test.js does.
 const test = require('node:test');
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const assert = require('node:assert');
@@ -27,8 +27,8 @@ function memoryGenera() {
 }
 const names = Object.keys(LOOK);
 
-// One progression path for every game (Pierre, 2026-11-04): only genera unlocked, fewer than the grid holds when fewer
-// are; until then genera not met filled the grid.
+// One progression path for every game (rule L4): only genera unlocked, fewer than the grid holds when fewer
+// are; genera not met never fill the grid.
 test('only the genera unlocked; fewer than the grid when fewer are unlocked', () => {
   const f = memoryGenera();
   for (let k = 0; k < 50; k++) {

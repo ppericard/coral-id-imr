@@ -181,7 +181,7 @@ test('quiz|s modes: rated like the photo quiz by the sheet (Code.gs guess_) and 
   assert.ok(!/\|w(\||$)/.test('quiz|s|c|k3'));
 });
 
-// "My mix-ups" (quiz.js viewCustom, model.js mixEdges, lookEdges, mixClusters; Pierre, 2026-11-03): the genera a player
+// "My mix-ups" (quiz.js viewCustom, model.js mixEdges, lookEdges, mixClusters): the genera a player
 // confuses, in clusters, most confused first.
 test('mixEdges: the pairs the player mixed up, both ways, among the genera in play only', () => {
   const M = model({P: {A: {conf: {B: 3, Z: 9}}, B: {conf: {A: 2}}, E: {conf: {F: 1}}, G: {conf: {}}}});
@@ -208,7 +208,7 @@ test('mixClusters: heaviest pairs first, a genus joins its partner up to CUSTOM.
     {g: ['E', 'F'], w: 4},
     {g: ['G', 'H'], w: 1}
   ]);
-  // The weight counts every edge inside the final cluster, also one met before its genus could join (Codex review #417):
+  // The weight counts every edge inside the final cluster, also one met before its genus could join:
   // AD is skipped while D pairs with only A, D joins later through E, and AD counts: 45, not 37.
   const W = M.mixClusters([
     ['A', 'B', 10],
@@ -271,7 +271,7 @@ test('lookEdges: the declared look-alikes (both ways) for a player with no mix-u
 });
 
 // The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftStep, leftDue, leftCount, leftWords,
-// leftNote; Pierre, 2026-11-12): quiz.js's own code on stubs (the store, the units in play, the cards met, the gates).
+// leftNote): quiz.js's own code on stubs (the store, the units in play, the cards met, the gates).
 function left({met = [], shut = [], told = false, synced = true, S = core.subjectOf('coral')} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
     saved = {};
@@ -325,13 +325,13 @@ test('the custom quiz reminder: due once at LEFTN.AT answers, never before, neve
   assert.strictEqual(leftDue({n: AT, shown: 1}, 13, false), false, 'shown on this device: never again');
   assert.strictEqual(leftDue({n: AT}, 13, true), false, 'told on another device of the account: never again');
   assert.strictEqual(leftDue({n: AT}, 0, false), false, 'nothing left to open');
-  // The opening hold on (model.js introHold): the Quiz opens nothing new for a while, so it waits for the hold to end
-  // (Pierre, 2026-11-12, on #850), and comes then, once.
+  // The opening hold on (model.js introHold): the Quiz opens nothing new for a while, so it waits for the hold to end,
+  // and comes then, once.
   assert.strictEqual(leftDue({n: AT + 40}, 13, false, true), false, 'during the opening hold');
   assert.strictEqual(leftDue({n: AT + 40}, 13, false, false), true, 'once the hold is off');
   assert.strictEqual(leftTold(), false);
   assert.strictEqual(left({told: true}).L.leftTold(), true);
-  // Signed in, before the visit's first sync has merged the account's notices: it waits (Codex review #850).
+  // Signed in, before the visit's first sync has merged the account's notices: it waits.
   assert.strictEqual(left({synced: false}).L.leftTold(), true);
   // The units that may open: in play, not met, allowed by the gates (model.js mayOpen); none once every one is met.
   assert.strictEqual(leftCount(), PLAY.length);
@@ -353,7 +353,7 @@ test('the custom quiz reminder: its words follow the subject and the count', () 
   assert.ok(fish(7, F).body.includes('families') && !fish(7, F).body.includes('genera'));
 });
 
-// Codex review #850 (P1, rule D7): the reminder's device record is the player's: signing out (and deleting one's own
+// Rule D7: the reminder's device record is the player's: signing out (and deleting one's own
 // account, which clears the device the same way) removes it for every subject, so the next player of a shared device
 // starts their own count and may get their own card.
 test('the custom quiz reminder: sign-out and account deletion clear its record, for every subject', () => {

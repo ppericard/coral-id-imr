@@ -1,4 +1,4 @@
-// Q351 batch refit (docs/reviews/2026-11-14-q351-refit.md): today's estimators against a batch refit of the engine's
+// The batch refit study (docs/reviews/2026-11-14-q351-refit.md): today's estimators against a batch refit of the engine's
 // values, and a learning drift on today's Elo, replayed on an answer log through today's scorer (core.js scoreAnswer).
 // Read-only: it reads files and writes only its output file; it sends nothing anywhere. Light (a minute or two), so
 // no machine slot. Three modes:
@@ -162,7 +162,7 @@ Object.keys(BY).forEach(id => {
       h[1] += a.ok ? 1 : 0;
     });
     // A corallites hint revealed after the answer (scoring record h) was shown, never recognised: shown once more,
-    // never right, as core.js scoreAnswer counts it (Codex review #904).
+    // never right, as core.js scoreAnswer counts it.
     if (sc && sc.h) (H[sc.h] = H[sc.h] || [0, 0])[0]++;
     a.replayable = ph.length > 0 && k > 1 && (!!sc || (isFinite(e) && isFinite(th)));
     if (sc)

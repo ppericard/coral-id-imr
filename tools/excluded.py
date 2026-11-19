@@ -1,4 +1,4 @@
-# Photos Pierre excluded in admin.html (curation.json "exclude" = {f: reason}). Import scripts skip them so an
+# Photos the admin excluded in admin.html (curation.json "exclude" = {f: reason}). Import scripts skip them so an
 # excluded photo never comes back, as a new candidate or under a new name: match on f and on the iNat photo id in f.
 import json, os, re
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -9,11 +9,11 @@ def pid(f):
     m = re.fullmatch(r'(\d+)[cd]?', str(f).rsplit('-', 1)[-1])
     return m and m.group(1)
 IDS = {pid(f) for f in EX} - {None}
-# Set aside by the pre-sort (admin.js aside, keep both identical; Pierre 2026-11-03): candidates the judging agent found
+# Set aside by the pre-sort (admin.js aside, keep both identical): candidates the judging agent found
 # unusable, comparison images, near-duplicates (of another candidate or of a live photo of the observation), photos of
-# several corals and Poor photos, with no doubt (judging/BRIEF.md, rules learnt from 85 photos Pierre rejected). They
-# are not shown to Pierre, so they do not count as waiting either (Codex review #388: they would fill the caps and stop
-# new candidates from being fetched).
+# several corals and Poor photos, with no doubt (judging/BRIEF.md, rules learnt from 85 photos the admin rejected).
+# They are not shown to the admin, so they do not count as waiting either: they would fill the caps and stop new
+# candidates from being fetched.
 try: SUG = json.load(open(f'{R}/suggest.json')).get('cand') or {}
 except (OSError, ValueError): SUG = {}
 def set_aside(f):
@@ -21,11 +21,11 @@ def set_aside(f):
     return (j.get('g') in ('exclude', 'cmp') or j.get('k') == 'dup' or bool(j.get('m')) or j.get('q') == 1) and not j.get('u')
 def excluded(f=None, photo_id=None):
     return f in EX or (photo_id is not None and str(photo_id) in IDS) or (f is not None and pid(f) in IDS)
-# What a Pierre exclusion removed (drop_excluded), kept so that his Restore (admin Genera › Excluded) brings it back
-# (restore_unexcluded; Pierre, 2026-11-06: an un-excluded photo must return by itself). excluded.json = {"photos": {f:
+# What an exclusion removed (drop_excluded), kept so that the admin's Restore (admin Genera › Excluded) brings it back
+# by itself (restore_unexcluded). excluded.json = {"photos": {f:
 # {"in": "gen" | "x" | "course" | "cand" | "cmp", "g": genus, "k": "views" | "more", "v": view, "i": index, "p": record}}},
 # written by tools/fetch_local.py tidy() (the Candidate photos workflow). Seeded from git history by
-# tools/apply_excluded_archive.py for the photos removed before it existed.
+# tools/apply_excluded_archive.py for the photos removed before excluded.json.
 GONE_PATH = f'{R}/excluded.json'
 
 

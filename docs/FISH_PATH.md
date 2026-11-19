@@ -69,7 +69,7 @@ is the design's shorthand, and internal identifiers may keep it.
   circle 1 was on the path, the genera of the families of circles 2 and 3 (107 more, 237 in all; a surprise card's genus
   none) are units as circle 1's: the same opening (the family's Advanced, the offer or the switch), sibling genera as
   look-alikes, the family's line and circle, the genus credit in the score, the replay, the board and the achievements that
-  count genera (`core.js` `fishGenSets`, read by `app.js` `fishGenera`, `fishReplayGen`, `fishVarTable`; fish rules
+  count genera (`core.js` `treeGenSets`, read by `app.js` `treeGenera`, `treeReplayGen`, `treeVarTable`; fish rules
   version 4; opened from the sheet that replays them, `sync.js` `GENERA_SHEET`). No IMR genus outside circle 1 (the IMR
   sub-entries are circle 1's); each has its sourced presentation and most their ID marks since #1074 (Pierre's option C:
   the content before the merge; ROADMAP "Fish genera need a presentation and ID cues"). The species step 2 rule follows simply: a species' scientific
@@ -146,7 +146,7 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Where the player's first name shows** (`app.js` `cnFirst`, `imrNow`): the species level's questions, their choices
   and its cards (the species unit's label), the species tiles and the one-species genus rows of the family and genus sheets, the species sheet's title (its
   other listed names under More details, the IMR one marked), the "This photo: …" line under every fish verdict
-  (`fishTaxon`), and a scientific genus's species line ("Most met here: …", read when shown). The admin keeps the IMR
+  (`treeTaxon`), and a scientific genus's species line ("Most met here: …", read when shown). The admin keeps the IMR
   name (`common`).
 - **In the game** (`app.js`): `cnShow`, the name a multiple-choice question shows, the player's first; `cnTypeNames`, the typed
   names: the listed names, the regional names and their recorded spellings (the usual spelling tolerance applies, `core.js`
@@ -162,11 +162,11 @@ is the design's shorthand, and internal identifiers may keep it.
   species sheet names the other species of a shared name under the name shown ("Also used for *Oxycheilinus
   bimaculatus*", linked to its sheet; "“Clown anemonefish” is also used for …" for another listed name: `app.js` `cnAlso`,
   `learn.js` `spAlso`); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`
-  `fishNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
+  `treeNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
   regional name typed gets the "common name" nudge (Q237, `typeOther`). On a species question (the species level, step 1)
   every listed and regional name, with its spellings, is the species unit's (`UNITS` fish `names`, from `cnTypeNames`),
   so any of them typed credits the one unit (Q376 (b)). The species' one common-name unit is in the score tree once the
-  species level is on (`core.js` `fishScoreTree` on: `['s:s091']`, `null` for a species with no listed name; off, as before:
+  species level is on (`core.js` `treeScoreTree` on: `['s:s091']`, `null` for a species with no listed name; off, as before:
   `[]` for a species with a PDF name, `null` without one).
 - **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
 - **Later languages**: names as a per-language layer over the taxon-keyed progress (Q362; the study §7.2); not built.
@@ -178,7 +178,7 @@ is the design's shorthand, and internal identifiers may keep it.
 
 ## Typed family names (fish beta QA, 2026-11-06)
 
-- A family (IMR entry) typed is matched against its names (`core.js` `fishNames`) and, as a general rule (Pierre,
+- A family (IMR entry) typed is matched against its names (`core.js` `treeNames`) and, as a general rule (Pierre,
   2026-11-06: "trigger", "clown", "damsel"), each of them without "fish": as a suffix, a separate word or a plural
   ("Trigger", "Trigger fish", "Triggerfishes", "Triggers"), unless that short form is within the spelling tolerance of
   another entry's name or short form (then typing it is no answer, as before). Filefishes and Pipefishes are that close,
@@ -207,7 +207,7 @@ is the design's shorthand, and internal identifiers may keep it.
   `often`), and a name of part of it only on a photo of that part: its genus or species, scientific or common (Iniistius,
   Iniistius pavo, Peacock razorfish on a peacock razorfish), a word its own species carries (`fish.json` `vn`:
   razorfish on an *Iniistius* or a shrimpfish, toby on a *Canthigaster*), an IMR genus or sub-entry (Chromis on a
-  *Chromis*, Unicornfish on a *Naso*, Clownfish on an anemonefish; `core.js` `fishGen` `scopes`). A name of part of the
+  *Chromis*, Unicornfish on a *Naso*, Clownfish on an anemonefish; `core.js` `treeGen` `scopes`). A name of part of the
   family that does not designate the photo is a mistake, counted against the photo's family only, no mix-up (no unit
   given, Q319): razorfish on a cleaner wrasse, Chromis on a *Dascyllus*, Unicornfish on an *Acanthurus* (`core.js`
   `typeFits`). A name of another family stays that family's: a wrong answer against both (rule L2). After the answer,
@@ -271,7 +271,7 @@ The first fish questions must be easy and readable. Two decisions, each built in
   Wrasse species questions sooner.
 - Species of circles 2 and 3 follow the same rule once their family is open (every circle is on the path since Pierre, 2026-11-06, Q175).
 - **Built, step 1 by common name** (2026-11-15; docs/LEARNING.md "Fish: the species level, step 1"):
-  - **Units**: one per species with a listed name (`core.js` `fishSpUnits`, `s:s091`; `app.js` `fishGenera` builds the
+  - **Units**: one per species with a listed name (`core.js` `treeSpUnits`, `s:s091`; `app.js` `treeGenera` builds the
     records, rank `species`). The label is the player's first name (`cnFirst`), with the scientific name in small type
     under each choice (schedule step 1).
   - **Opening**: the set `sp` (`UNITS` fish `sets`, no offer, no switch). `app.js` `spPlay` gives a family at Advanced its
@@ -371,7 +371,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 - **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
-  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice, Fish basics.
+  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice. Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
   answers, a forced choice:
   1. *I'm new to reef fish*;
@@ -405,11 +405,36 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 ## Fish basics (Pierre, 2026-11-04)
 
-The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps on real photos, one plain sentence
-each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card.
+The fish twin of Coral basics (`proto/basics.js`, Learn's first tab for corals): a few short steps, one plain sentence
+each, an optional one-question check, offered first to "I'm new to reef fish" and by the 40 / 60 "lower" card. **Built**
+(`proto/fishbasics.js` on the same engine; docs/ARCHITECTURE.md "Lab prototypes", "Fish basics"): six steps, **Body shape**
+(seven silhouettes), **The identification groups**, **Fins** (the places of the six parts, then the dorsal fin: one or
+two), **Tail shapes** (six), **Markings** (six) and **One feature to look for** (five); `#fish/learn/basics`, the first
+Learn tab on the fish, the "0 · Fish basics" block of the families page, the Home line and the first-launch offer for "new".
+Its own record and done feat (`SUBJECTS` `basics`), never the corals'. The "lower" card's offer is written (`UNITS` `basics`
+`lo`, `all`) but not shown: the fish's level-change cards are off (`startFb: false`, above) until the level is better calibrated.
 
-- **Content**: the **IMR fish presentation** first (its slides on anatomy, tail shapes, markings and the identification groups), so rule C2
-  holds and the IMR wording is kept (rule C1).
+- **Content**: the **IMR fish presentation** first (Lecture 10, Fish Identification: its slides on anatomy, tail shapes,
+  markings and the identification groups), so rule C2 holds and the IMR wording is kept (rule C1). Its lines are quoted
+  verbatim where the slides define a word (the Words list, `OFFICIAL`), cited as "IMR fish presentation (Lecture 10)", no
+  slide number (the full deck and the light variant number their slides differently). **Read from the text of the light
+  variant only**: the slides of tail shapes ("Caudal Fin Shapes") and markings ("Features & Markings") are pictures with no
+  text, which the connector does not return, so the six tail shapes and six markings are the words the slides' text uses
+  (forked, deeply forked, notch, square, pointed, rounded, heart-shaped; bars, black band over the eye, saddle, false eye)
+  drawn by us. What the text does not define comes from public references, named on screen as "other sources" (rule C1):
+  the fishIDER glossary (CSIRO, fishider.org/en/glossary) for bar, stripe, spot, saddle, ocellus, barbel, operculum and
+  caudal peduncle; Wikipedia ("Fish fin", "Glossary of ichthyology") for the fins' places and for "truncate" and
+  "emarginate". The seven body shapes are drawn from the names of the presentation's groups by shape (Disc-shaped, Small and
+  Large ovals, Sloping heads / tapered bodies, Heavy bodies / large lips, Slender schoolers, Bottom dwellers, Odd-shaped
+  swimmers), the three groups that are not a shape (the swimmers with pectoral fins, the reddish big-eyed fish) left to the
+  identification groups; the last step, **One feature to look for** (scalpels, gill-cover spine, barbels, locking spines),
+  is deck content beyond the list Pierre gave. A trainer or Pierre checks all of it against the pictures (ROADMAP "Fish
+  basics, the rest").
+- **Left out, on purpose**: the "Dive sign" and "Quick quiz" slides and the practice photo slides (no photo of the deck is
+  used: Pierre, 2026-11-04, never the slide photos, none has a credit we can show); the full deck's and the biology lecture's (Lecture 9) taxonomy,
+  anatomy comparison and feeding guilds (the six trophic guilds): not about what to look at first; the survey methods
+  lecture (Lecture 11); the family-level cues of every family (they stay on the families page and sheets); the fish
+  glossary underlining in cues and feedback (ROADMAP "Fish basics, the rest").
 - **The groups are the regional identification key's** (Pierre, 2026-11-04; rule S3): for the Indo-Pacific, the index of
   the 20 identification groups of *Reef Fish Identification – Tropical Pacific* (2nd edition), which the IMR course follows. The app
   shows the key's group numbers and titles (e.g. "7. Heavy Bodies/Large Lips"; no longer the 10 IMR shape groups), only the groups that
@@ -420,14 +445,18 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
   identification groups (the book above groups fish by body shape). The module starts with body shape and the identification
   groups, then the vocabulary.
 - **The dorsal fin is not a step of its own**: it is the second screen of the "Fins" step (Pierre, 2026-11-04).
-- **IMR terms kept**: "Band", with a discreet "sources differ" note; the "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
+- **IMR terms kept**: "Band", with a discreet "sources differ" note (the Words list: bar, band and stripe overlap); the
+  "heart-shaped" tail, a good *Dascyllus* indicator (IMR's term).
 - **Photos and figures** (Pierre, 2026-11-04): never the IMR slide photos (most are not IMR's own, likely from ID books); photos with
-  known rights (Pierre's, iNaturalist), diagrams and figures our own drawings.
+  known rights (Pierre's, iNaturalist), diagrams and figures our own drawings. Built so: every figure is a drawing of ours
+  (a generic reef fish, its parts, the part taught in `--hl`; docs/DESIGN.md), and the only photos are the families' covers of the
+  families page, one per family in its group, each enlarging with its credit (rule P5), picked by the app's own cover
+  (rule P1: the easiest, most reference-like, whoever took it) at the moment they are shown.
 - **Inspiration, never citation**: a local fish ID course Pierre has may inspire the order and the explanations; it is never quoted,
   cited or named, in the app or in the repo.
 - **Public online sources** (FishBase and other references) fill gaps, **always cited**, in the "Other sources" way (rule C1).
-- Its words become the fish glossary (underlined in cues and feedback), as Coral basics' words are for corals. Same component and
-  format as Coral basics; its photos the easiest, most reference-like ones, whoever took them (rule P1, fish).
+- Its words are the fish glossary to be (underlined in cues and feedback, as Coral basics' words are for corals): **not built
+  yet**, the Words list of the module only (ROADMAP "Fish basics, the rest"). Same component and format as Coral basics.
 
 ## What `fish.json` supports, and the gaps
 
@@ -449,7 +478,7 @@ Gaps before species questions ship:
 - **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319); since Q381 (2026-11-15) any name two species carry stays on both, 11 in all ("Common names").
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; a shared name right for the species asked, never two choices of one label (Q381).
-- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design. The admin reads them already (Q123 m, 2026-11-16): Analyses › Difficulty › Heatmap on the Fish side is view 1 below (family to family, every family of the game in its key group's block) and the genus questions' matrix (genera in their family's block), live from the log (ARCHITECTURE.md "Heatmap").
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), and since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked). From v189 the app uses the pooled photo difficulty, unit offsets and pair counts for fish in play (`SUBJECTS` `fish` `stats`); the photo memory offsets and the format offsets stay the prior and none (`SUBJECTS` `replay: false`), and the confusion views below wait for their own design. The admin reads them already (Q123 m, 2026-11-16): Analyses › Difficulty › Heatmap on the Fish side is view 1 below (family to family, every family of the game in its key group's block) and the genus questions' matrix (genera in their family's block), live from the log (ARCHITECTURE.md "Heatmap").
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
 
@@ -508,6 +537,14 @@ Decided from the admin pooling study:
   - **Class C** (broadly like the adults) and **no source found** (Fusilier, Triggerfish, Soldierfish, Cardinalfish,
     Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): the cap stays, provisionally.
   - Mimicry is a hypothesis in every case: written as "resembles" or "has been suggested", never as a fact (Pierre).
+- **The mimicry class** (Pierre, 2026-11-18; docs/LEARNING.md "The mimicry class"): a juvenile or an adult that a source
+  says resembles another species (the pairs M1-M7 of `tools/fish_lookalikes.json`, `fish.json` `lookalikes`) comes into
+  its unit's draw from Open Water once a unit of the species it resembles is met, at Advanced while none is; this
+  replaces the class B timing for *Acanthurus pyroferus* and *Scolopsis bilineata*. Its first meeting brings its pair's
+  card: both species side by side, the sourced marks that tell them apart, the sources of the resemblance. A species
+  whose look varies by region (`fish.json` species `region`: *A. pyroferus*) never shows a photo taken elsewhere on the
+  card. The pair is then drilled (2026-11-19, the per-photo traps below): such a photo makes the unit of the species
+  it resembles a trap, and the pair duels and comes back as an Again on its two species (docs/LEARNING.md).
 - The B and look-alike juveniles get their explanation card when they come in (below); the provisional caps go with the bootstrap.
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
@@ -521,7 +558,7 @@ Decided from the admin pooling study:
   player meets, at the break at Next, the photo beside one of its species in another phase, with the unit's IMR phase
   lines; one per species stays a ROADMAP row.
 
-## Look-alikes at any rank (design, Pierre, 2026-11-04; not built)
+## Look-alikes at any rank (design, Pierre, 2026-11-04; view 2 built for the mimicry class only)
 
 - Fish look-alikes exist sometimes at the family level but mostly at the **species** level, including across two families: not all
   damselfish against all angelfish, but certain dwarf angelfish against certain dark damselfish. So a look-alike pair can link units
@@ -645,7 +682,7 @@ on families only to an IMR RA with every species open:
       every genus" anchor, 74%); credit = S for a species with no common name (Q258).
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the families of every
     circle (since the units migration, the book's families: 28 of circle 1, 1 of circle 2, 19 of circle 3) and their species; unopened
-    units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families (Q177: circle 2 by itself once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `fishGate`); the two opt-in settings are gone. **Circle 3 is an option** (Pierre, 2026-11-07 08:50): at that threshold a card asks "More fish families, beyond the IMR course?" (Open them / Not now, "Not now" on top); "Open them" lets its families open one at a time as usual, "Not now" keeps them closed, the card comes back once 200 answers later, then never, and My progress offers "Open the families beyond IMR (N families)" while it is off (`UNITS.fish` `opens`, `core.js` `openState`; the choice `beyond` in the quiz settings, synced). Circle-3 families **still count** in the fish % (Pierre, Q204: 100% is everything unlocked and known, circle 3 included; a player who declines has room left, and the global score with genera and species will add more). Circle-3 families already open stay open, and a player whose circle 3 already opened by itself is not asked. **Every family met, for now** (Pierre, 2026-11-12: "On lui dit qu'il a tout vu et ce qui vient ensuite", after a study found a player 121 answers with every family in play met before circle 3, then 143 with all 48 met, and the app silent): once every unit in play (`pool`, the scientific genera included when on) is met and asked and none may open now (`model.js` `mayOpen`), a calm card at the break at Next ("You’ve seen them all, for now") says so and what comes next, once per reason: circle 3 not reached (its N families come at about Open Water on average on the course's families: the Entries component's 55%, which no screen shows), circle 3 declined, once its offer will not come back (My progress opens it any time; Pierre, 2026-11-12, #851: no card right after a first "Not now", whose offer comes again 200 answers later), or nothing held back (the families still without a game photo, then Scientific names: turn them on, or their genera come at Advanced, else the mastery exams). Never while another card says what is next (the circle-3 and Scientific names offers, the back cards), in a visit's first answers, or near another prompt; the photo quiz only; seen on the device and on the account (`quiz.js` `allMetDue`, `app.js` `fishNextOf`, `UNITS.fish` `done`; ARCHITECTURE "Subjects"). The corals have none.
+    units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families (Q177: circle 2 by itself once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `treeGate`); the two opt-in settings are gone. **Circle 3 is an option** (Pierre, 2026-11-07 08:50): at that threshold a card asks "More fish families, beyond the IMR course?" (Open them / Not now, "Not now" on top); "Open them" lets its families open one at a time as usual, "Not now" keeps them closed, the card comes back once 200 answers later, then never, and My progress offers "Open the families beyond IMR (N families)" while it is off (`UNITS.fish` `opens`, `core.js` `openState`; the choice `beyond` in the quiz settings, synced). Circle-3 families **still count** in the fish % (Pierre, Q204: 100% is everything unlocked and known, circle 3 included; a player who declines has room left, and the global score with genera and species will add more). Circle-3 families already open stay open, and a player whose circle 3 already opened by itself is not asked. **Every family met, for now** (Pierre, 2026-11-12: "On lui dit qu'il a tout vu et ce qui vient ensuite", after a study found a player 121 answers with every family in play met before circle 3, then 143 with all 48 met, and the app silent): once every unit in play (`pool`, the scientific genera included when on) is met and asked and none may open now (`model.js` `mayOpen`), a calm card at the break at Next ("You’ve seen them all, for now") says so and what comes next, once per reason: circle 3 not reached (its N families come at about Open Water on average on the course's families: the Entries component's 55%, which no screen shows), circle 3 declined, once its offer will not come back (My progress opens it any time; Pierre, 2026-11-12, #851: no card right after a first "Not now", whose offer comes again 200 answers later), or nothing held back (the families still without a game photo, then Scientific names: turn them on, or their genera come at Advanced, else the mastery exams). Never while another card says what is next (the circle-3 and Scientific names offers, the back cards), in a visit's first answers, or near another prompt; the photo quiz only; seen on the device and on the account (`quiz.js` `allMetDue`, `app.js` `fishNextOf`, `UNITS.fish` `done`; ARCHITECTURE "Subjects"). The corals have none.
   - **A species is "named in Latin" once its scientific name's bar reaches Advanced** (Pierre, 2026-11-08, Q262), the same
     definition for the counter below and for the achievements.
   - **The Elo level stays alongside** as the player's overall level.
@@ -669,8 +706,8 @@ on families only to an IMR RA with every species open:
 
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 
-- **Subject switch: two places, one state.** A Corals | Fish switch on Home **and** a subject chip in the header next to the logo on
-  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown **only to Pierre (the admin) until fish opens** to players.
+- **Subject switch: two places, one state.** A subject switch (a button per subject) on Home **and** a subject chip in the header next to the logo on
+  every page (on every page but Home since 2026-11-08: docs/DESIGN.md "Subject switch"); both read and set the same subject (`SUBJECT_KEY`). Shown when a player can open two or more subjects (it was Pierre's alone until fish opened to players).
   This relaxes rule U12 ("Home = two doors") by one row; docs/DESIGN.md "Subject switch".
 - **Identify shows the current subject's tool only**: the Coral ID Key in coral mode, "Fish ID Key, coming soon" in fish mode; the
   other subject's tool is reached through the subject switch. (The study had proposed both keys side by side; Pierre found it odd.)
@@ -704,7 +741,9 @@ on families only to an IMR RA with every species open:
 
 ## Open questions for Pierre
 
-1. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
+Questions 1, 2, 4 and 6 are answered; 3 and 5 are still open as designs (the fish exams, the typed common name).
+
+1. **"Twospot wrasse"**: **settled** (Pierre, 2026-11-09, Q319, Q381): the name is right for both species (see "Duplicate common names" above); nothing is asked of IMR.
 2. The display-schedule thresholds and the IMR shift. **Answered (Pierre, 2026-11-04)**: the starting values from learnsim; later,
    with many answers, computed automatically per species from the measured difficulty of answering it with the common name against the
    Latin name ("Name-display schedule").
@@ -733,6 +772,8 @@ on families only to an IMR RA with every species open:
    easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").
 
 ## Checks before release
+
+The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
 - **learnsim fish profiles** (rules L11, L12, 5 seeds each): a beginner diver, an IMR RA ("I'm at IMR", then the open-all card), an expert;
   they also set the fish welcome answers' starting values and the answer from which each may get the open-all card.

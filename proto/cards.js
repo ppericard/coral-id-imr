@@ -1,6 +1,5 @@
-// Cards and pop-ups: every kind, live. Pierre chose direction B, Medallion, of the three mock-up directions (2026-11-03;
-// the mock-up with A Postcard and C Sheet is in the history, commit f46f11c), the first meeting with a genus keeping its
-// photo band: the live cards now come from app.js cardShow (docs/DESIGN.md "Cards"). This page opens each kind through
+// Cards and pop-ups: every kind, live, in the Medallion design (docs/DESIGN.md "Cards"; the first meeting with a genus
+// keeps its photo band), as app.js cardShow draws them. This page opens each kind through
 // that builder, nothing recorded: the cards the app shows (sign-in, achievement, note) are the real ones; the others
 // carry sample copy and numbers (an offer here never opens a genus). #tools/cards/<kind> opens one. Admin only in the hub.
 (function () {
@@ -48,7 +47,7 @@
         tap: 'tap',
         bind: d => d.querySelector('[data-all]') && (d.querySelector('[data-all]').onclick = () => d.close('all'))
       }),
-    // The back card (quiz.js backShow); the open-all offer it once shared this kind with went (Pierre, 2026-11-12, Q337).
+    // The back card (quiz.js backShow).
     tip: () =>
       cardShow({
         kind: 'tip',

@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// The night report (Pierre, 2026-11-18: "un bilan chiffré le matin"; his day starts about 05:00 Manila): tools/night.py on
+// The night report (Pierre, 2026-11-18: "un bilan chiffré le matin"; Rule 0: the night ends with his first message after 04:00): tools/night.py on
 // saved snapshots (no network), and tools/brief.py --night-due, the once-a-day line of the UserPromptSubmit hook.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -15,7 +15,7 @@ const py = body =>
     .toString()
     .trim();
 
-test('the night: yesterday 17:30 to today 05:00 Manila, or to now before 05:00', () => {
+test('the night: yesterday 17:30 to today 04:00 Manila, or to now before 04:00', () => {
   const w = utc =>
     JSON.parse(
       py(
@@ -23,11 +23,13 @@ test('the night: yesterday 17:30 to today 05:00 Manila, or to now before 05:00',
       )
     );
   // 2026-11-18 08:00 Manila
-  assert.deepStrictEqual(w('2026-11-18T00:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T05:00:00+08:00']);
+  assert.deepStrictEqual(w('2026-11-18T00:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T04:00:00+08:00']);
   // 2026-11-18 03:00 Manila: the night so far
   assert.deepStrictEqual(w('2026-11-17T19:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T03:00:00+08:00']);
+  // 2026-11-18 04:00 Manila: the night is over
+  assert.deepStrictEqual(w('2026-11-17T20:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T04:00:00+08:00']);
   // 2026-11-18 19:00 Manila: still last night, the coming one is not over
-  assert.deepStrictEqual(w('2026-11-18T11:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T05:00:00+08:00']);
+  assert.deepStrictEqual(w('2026-11-18T11:00:00+00:00'), ['2026-11-17T17:30:00+08:00', '2026-11-18T04:00:00+08:00']);
 });
 
 const report = snap => {
@@ -37,7 +39,7 @@ const report = snap => {
   assert.strictEqual(r.status, 0, r.stderr);
   return r.stdout;
 };
-const NIGHT = {start: '2026-11-17T17:30:00+08:00', end: '2026-11-18T05:00:00+08:00'};
+const NIGHT = {start: '2026-11-17T17:30:00+08:00', end: '2026-11-18T04:00:00+08:00'};
 
 test('a night with work: merged PRs and their agent time, red trains, what is still open and why, the queue', () => {
   const out = report({
@@ -55,7 +57,7 @@ test('a night with work: merged PRs and their agent time, red trains, what is st
     queue: ['Fish basics (#1108)', 'Sea slug achievements 60-100%'],
     prs: {1108: 'open, checks running'}
   });
-  assert.match(out, /^Night Tue 17 Nov 17:30 → Wed 18 Nov 05:00 \(Manila\)/);
+  assert.match(out, /^Night Tue 17 Nov 17:30 → Wed 18 Nov 04:00 \(Manila\)/);
   assert.match(out, /Merged: 3 PRs, 2\.5 h of agent time/);
   assert.match(out, /#1053 Staff and cohort boards \(50 min\)/);
   assert.match(out, /#1060 Docs \(agent time not measured\)/);
@@ -101,7 +103,7 @@ test('the queue is read from STATUS "## Night queue", "None" meaning empty', () 
   assert.strictEqual(q('## Now\n\nx\n'), null);
 });
 
-test('brief.py --time --night-due: the night report line once a Manila day, from 05:00 only, offline', () => {
+test('brief.py --time --night-due: the night report line once a Manila day, in the 04:00-17:30 day window only, offline', () => {
   const mark = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mark-')), 'day');
   const env = {...process.env, BRIEF_NIGHT_MARK: mark, HTTPS_PROXY: 'http://127.0.0.1:9', https_proxy: 'http://127.0.0.1:9', GH_TOKEN: ''};
   const run = (...a) =>
@@ -109,13 +111,14 @@ test('brief.py --time --night-due: the night report line once a Manila day, from
       .toString()
       .trim()
       .split('\n');
-  assert.strictEqual(run('--night-due', '--at', '04:59').length, 1, 'before 05:00: the night is not over');
-  const first = run('--night-due', '--at', '05:01');
+  assert.strictEqual(run('--night-due', '--at', '03:59').length, 1, 'before 04:00: the night is not over');
+  const first = run('--night-due', '--at', '04:01');
   assert.strictEqual(first.length, 2);
   assert.match(first[1], /^Night report due .*python3 tools\/night\.py/);
   assert.strictEqual(run('--night-due', '--at', '09:00').length, 1, 'once a day');
   fs.rmSync(mark);
+  assert.strictEqual(run('--night-due', '--at', '17:30').length, 1, 'Rule 0 is quiet from 17:30: no morning line then');
   assert.strictEqual(run('--night-due', '--at', '19:26').length, 1, 'not in the evening, even in a fresh checkout');
-  assert.strictEqual(run('--night-due', '--at', '11:00').length, 1, 'the morning window ends at 11:00');
-  assert.strictEqual(run('--at', '05:01').length, 1, 'without --night-due: the one time line');
+  assert.strictEqual(run('--night-due', '--at', '17:29').length, 2, 'a first message at the end of the day window still gets it');
+  assert.strictEqual(run('--at', '04:01').length, 1, 'without --night-due: the one time line');
 });

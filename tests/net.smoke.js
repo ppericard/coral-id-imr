@@ -63,7 +63,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-// Poor connections (Pierre, 2026-11-01: fluid on the connections common in the Philippines). Checks:
+// Poor connections (the app stays fluid on the connections common in the Philippines). Checks:
 // 1. Start-up with a kept curation never waits for curation.json (here it never answers).
 // 2. The next quiz question is chosen and its photos fetched during the feedback; Next shows that very question.
 // 3. A game photo whose full size keeps failing falls back to its 480 px version; when both fail, the question offers
@@ -111,7 +111,7 @@ const server = http.createServer((req, res) => {
   };
   const b = introsOn(await chromium.launch());
   // iNaturalist and R2 answering from the local files (tests/photostub.js; every outside host is cut off, no test reaches
-  // them). Once R2 fails, a photo with an online original is read from it (core.js photoAway; Pierre, 2026-11-05), as a
+  // them). Once R2 fails, a photo with an online original is read from it (core.js photoAway), as a
   // photo still remote (r: 1) always is: each address asked is counted in INAT. A photo that lives on R2 only (Photos
   // out of the repo, step 2: no file in the checkout) is answered with a stand-in at the same size.
   const INAT = [],
@@ -139,9 +139,8 @@ const server = http.createServer((req, res) => {
     if (opts.hangCuration) await ctx.route(base + 'curation-play.json', () => {}); // never answers (the app's copy: tools/curplay.py)
     if (opts.failFull) {
       await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
-      // An iNaturalist photo (r: 1, app.js img(); Millepora's until 2026-11-03): its bigger file ('large') fails too and its 480 px one
-      // ('medium') answers, here with a local 480 px file (every other host is cut off, so that check failed whenever
-      // the first question was on Millepora).
+      // An iNaturalist photo (r: 1, app.js img()): its bigger file ('large') fails too and its 480 px one
+      // ('medium') answers, here with a local 480 px file (every other host is cut off).
       const small = fs.readFileSync(
         path.join(
           ROOT,
@@ -182,13 +181,12 @@ const server = http.createServer((req, res) => {
         .waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 5000})
         .catch(() => fails.push('No next question planned during the feedback'));
       // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
-      // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) is its 'medium' file for
-      // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
-      // Millepora came up (#376). The host is chosen when it shows too: R2 is cut off here, and about a second after the
-      // first R2 failure (core.js photoRetry: one more try PHOTO_RETRY ms later) the page reads its photos from their
-      // online original or the site (app.js AWAY). Planned while R2 was still on and shown after, the same file came
-      // from elsewhere than the R2 address read with the plan: this check failed about 1 run in 3 on a busy machine
-      // (2026-11-03). Each file is taken under both: without the R2 base (core.js photoLocal) and where it goes once R2
+      // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1) is its 'medium' file for 480 px and
+      // 'large' otherwise, names resized() leaves alone, so resized(…, '') cannot be compared. The host is chosen when it
+      // shows too: R2 is cut off here, and about a second after the first R2 failure (core.js photoRetry: one more try
+      // PHOTO_RETRY ms later) the page reads its photos from their online original or the site (app.js AWAY). Planned
+      // while R2 was still on and shown after, the same file comes from elsewhere than the R2 address read with the plan.
+      // Each file is taken under both: without the R2 base (core.js photoLocal) and where it goes once R2
       // failed (core.js photoAway); check 12 is about which host.
       const want = await p2.evaluate(() =>
         NEXTQ && NEXTQ.args
@@ -232,7 +230,7 @@ const server = http.createServer((req, res) => {
     await ctx.close();
   }
   // 3b. Everything failing (R2, the online originals, the site): another question is offered, nothing counted, no answer
-  // taken, and each photo frame shows the "photo missing" tile (app.js noPhoto; Pierre, 2026-11-05).
+  // taken, and each photo frame shows the "photo missing" tile (app.js noPhoto).
   {
     const {ctx, p, errs} = await ctxOf({failAll: true, inat: false});
     await p.goto(base + '#practice/quiz');
@@ -240,10 +238,10 @@ const server = http.createServer((req, res) => {
     const n0 = await p.evaluate(() => answersSoFar());
     await p.waitForSelector('#qfail button', {timeout: 15000}).catch(() => fails.push('No "Another question" when the photos cannot load'));
     if (await p.$('#qfail button')) {
-      // With none of its photos shown, the question takes no answer (new-player walkthrough 2026-11-04: one given to the
-      // blank frame counted); its note is on the question's one screen, its frame a plain tile (no broken-image icon).
+      // With none of its photos shown, the question takes no answer (one given to the blank
+      // frame would count); its note is on the question's one screen, its frame a plain tile (no broken-image icon).
       // Every photo of the question settled first (each one gives up after its retries and its 480 px file): a second
-      // photo can still be trying when the note comes (Codex review #490).
+      // photo can still be trying when the note comes.
       await p
         .waitForFunction(() => [...document.querySelectorAll('#view .qstage img')].every(i => i.classList.contains('fail')), null, {
           timeout: 20000
@@ -279,7 +277,7 @@ const server = http.createServer((req, res) => {
       await p.keyboard.press('1');
       if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('An answer to a question with no photo shown counted');
       // A photo of the question that comes later opens the answers again: the hint if the question has one, else one
-      // added as the hint is (Codex review #490: the hint, added after the answers closed, left them closed).
+      // added as the hint is (the hint, added after the answers closed, must not leave them closed).
       await ctx.unroute(/\/img\/.*\.webp/);
       await inatLocal(ctx);
       if (await p.$('#hintb')) await p.click('#hintb');
@@ -331,9 +329,8 @@ const server = http.createServer((req, res) => {
   // 7. Photo sizes: the file fits the box at the screen's density (up to 2x); Saver (asked, or Auto on a slow connection)
   // one size down, the enlarged view at 960 px then 1600 on a click; Full always 1600 px.
   {
-    // An iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) has two files (app.js img()): 'medium' (500 px) for the
-    // 480 px size, 'large' (1024 px) for both 960 and 1600 px ('m+': passes for either). Read as 1600 px, a Millepora
-    // question failed the Saver checks (#375).
+    // An iNaturalist photo (not downloaded: r: 1) has two files (app.js img()): 'medium' (500 px) for the 480 px size,
+    // 'large' (1024 px) for both 960 and 1600 px ('m+': passes for either), never read as 1600 px.
     const tier = u =>
         /-s\.webp|\/photos\/\d+\/medium\./.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : /\/photos\/\d+\/large\./.test(u) ? 'm+' : 'full',
       big = x => x === 'full' || x === 'm+',
@@ -417,9 +414,8 @@ const server = http.createServer((req, res) => {
       await cdp.send('Network.enable');
       await cdp.send('Network.emulateNetworkConditions', {offline: false, downloadThroughput: 4e4, uploadThroughput: 4e4, latency: 50});
       // Not the load event (Playwright's 30 s default): on this line the page loads its first two tiers (the scripts, the
-      // stylesheets and fonts, data.json, forms.json...: about 830 KB, 2026-11-03) before it fires, 29 s on main and 30 s
-      // with the full replay's code (+45 KB), so the check failed on bytes, not on what it checks. What it needs is the
-      // quiz and its photo, timed here on their own.
+      // stylesheets and fonts, data.json, forms.json...: about 830 KB) before it fires, about 30 s, so the check would
+      // fail on bytes, not on what it checks. What it needs is the quiz and its photo, timed here on their own.
       const t0 = Date.now();
       await p.goto(base + '#practice/quiz', {waitUntil: 'commit'});
       const shown = await p
@@ -472,7 +468,7 @@ const server = http.createServer((req, res) => {
       fails.push('app.css not applied after failing once');
     await ctx.close();
   }
-  // 8c. A Lab prototype that never answers does not hold the start-up (Codex review, PR #336).
+  // 8c. A Lab prototype that never answers does not hold the start-up.
   {
     const {ctx, p} = await ctxOf();
     await ctx.route(/\/proto\/zoom\.js/, () => {}); // never answers
@@ -497,17 +493,16 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('Start-up failed on a line where every 5th request fails'));
     await ctx.close();
   }
-  // 9. A new version (Pierre, 2026-11-02: players never reload by hand): once it has taken over in the background, the
+  // 9. A new version (players never reload by hand): once it has taken over in the background, the
   // page reloads itself at the next page change.
   // Each new version is published only while the page is quiet (no request for 500 ms). Chromium swaps a busy old
   // worker for a waiting one that called skipWaiting() by stopping the old one the moment it is idle; a request that
   // comes while it stops starts the old version again, and that copy is not asked to stop early: the swap then waits
   // until it has been idle 30 s, and with DevTools attached (Playwright) until the 5 min "lame duck" timer
   // (content/browser/service_worker: TriggerIdleTerminationAsap, OnStoppedInternal, kMaxLameDuckTime). Published while
-  // the tab below still loaded its last tier, with photos held ~1 s by the worker's R2 retry, the old worker was busy
-  // when the new one installed and the next file asked for restarted it: no takeover within 30 s in 7 of 55 runs of this
-  // check (2026-11-03, timestamps of both workers: the old version started twice in each failing run, in no passing one).
-  // A player meets the same delay, not a lost version (docs/ARCHITECTURE.md).
+  // the tab below still loads its last tier (photos held ~1 s by the worker's R2 retry), the old worker is busy when
+  // the new one installs and the next file asked for restarts it: no takeover within 30 s. A player meets the same
+  // delay, not a lost version (docs/ARCHITECTURE.md).
   const track = pg => {
     const s = {n: 0, at: Date.now()},
       end = () => ((s.n = Math.max(0, s.n - 1)), (s.at = Date.now()));
@@ -519,12 +514,10 @@ const server = http.createServer((req, res) => {
     };
   };
   {
-    // No Playwright route in this test (2026-11-04): the admin page of the last check now and then never reached
-    // DOMContentLoaded on CI (about 1 run in 13), waiting on the worker's own fetch of admin.html, which never reached
-    // this server (its log: "admin.html requests the server got since q2 opened: none"). Every request of a context with a
-    // route, the worker's included, passes through Playwright's interception. Here nothing is intercepted: other hosts
-    // do not resolve in this browser (nothing reaches the real sheet), and cand.json is held by the server (HOLD).
-    // The hang itself came from a leftover deploy (2026-11-05, see SWV = 1 below).
+    // No Playwright route in this test: every request of a context with a route, the worker's included, passes through
+    // Playwright's interception, which can hold the worker's own fetch of admin.html. Here nothing is intercepted: other
+    // hosts do not resolve in this browser (nothing reaches the real sheet), and cand.json is held by the server (HOLD).
+    // A leftover deploy can hang the page too: see SWV = 1 below.
     const b9 = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
     const ctx = await b9.newContext({viewport: {width: 390, height: 800}});
     await ctx.addInitScript(
@@ -546,7 +539,7 @@ const server = http.createServer((req, res) => {
       const f = window.fetch,
         hits = [];
       // Only writes count (POST), as in check 11: the sheet's reads (leaderboard, achievements) may come at any time.
-      // A sign-in (GET with a name) counts too: it opens an account (Pierre, 2026-11-03: signed-in traffic is guarded).
+      // A sign-in (GET with a name) counts too: it opens an account (signed-in traffic is guarded).
       window.fetch = (u, o) =>
         /script\.google/.test(String((u && u.url) || u)) &&
         (String((o && o.method) || 'GET').toUpperCase() === 'POST' || /[?&]name=/.test(String(u)))
@@ -573,7 +566,7 @@ const server = http.createServer((req, res) => {
     await p
       .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#learn/genera', null, {timeout: 20000})
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
-    // A tab opened before any version was installed, then left open, still gets the next version (Codex review #336).
+    // A tab opened before any version was installed, then left open, still gets the next version.
     const r = await b9.newContext({viewport: {width: 390, height: 800}});
     await r.addInitScript(
       () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
@@ -605,18 +598,17 @@ const server = http.createServer((req, res) => {
     await r.close();
     // The admin page does the same (its demo mode: no token, nothing sent).
     // Deploy 9 was for the second context, whose storage is its own: this one still runs deploy 1, which the server serves
-    // again before the admin opens here. Left at 9 (until 2026-11-05), opening the admin installed deploy 9 in this
-    // context, the takeover checked below was met by it, and deploy 2 was still waiting for that worker when the last
-    // admin page opened: its navigation then went to the old worker in the instant Chromium stopped it for the swap,
-    // and never reached DOMContentLoaded (about 1 run in 30 on CI; docs/ARCHITECTURE.md "Service worker").
+    // again before the admin opens here. Left at 9, opening the admin would install deploy 9 in this context, and deploy
+    // 2 would still wait for that worker when the last admin page opened: its navigation could then go to the old worker
+    // in the instant Chromium stops it for the swap, and never reach DOMContentLoaded (docs/ARCHITECTURE.md "Service
+    // worker").
     SWV = 1;
     const q = await ctx.newPage(),
       qQuiet = track(q);
     await q.goto(base + 'admin.html?demo');
     // Loaded first (DRAFT is set after the last of its files), its first page's photos in, and quiet (see above; Playwright's
-    // 'networkidle' is reached once per load, then never waited for again). Published while start() still fetched cand.json, the
-    // new worker now and then stayed waiting past the 30 s below (about 1 run in 8, 2026-11-03), likely the same restart
-    // of the old worker; a version that takes over while the admin loads is checked next.
+    // 'networkidle' is reached once per load, then never waited for again). Published while start() still fetches cand.json, the
+    // new worker can stay waiting past the 30 s below (likely the same restart of the old worker); a version that takes over while the admin loads is checked next.
     await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
       timeout: 20000
     });
@@ -633,18 +625,16 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
     // fetches still in flight, then takes over once the old one is idle (or later, see above), maybe before start() goes
-    // on. admin.js listened only from the end of start() and missed it; whether it did depended on which came first, so
-    // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
+    // on, so what is checked is that admin.js listens while start() still waits for its files (here cand.json never
+    // answers), not only from the end of start().
     // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
     await qQuiet();
-    // The last page may open while a version still waits (2026-11-14, train 20261114-165225: the check here that there
-    // was none passed a Promise to waitForFunction, which takes it as truthy, and so never waited; the page then opened in
-    // the middle of a swap and never loaded). sw.js now leaves such a page to the network, and has a swap held by Chromium
+    // The last page may open while a version still waits (waitForFunction takes a returned Promise as truthy, so a check
+    // that there is none cannot wait for it). sw.js leaves such a page to the network, and has a swap held by Chromium
     // asked again to end (tests/swcache.test.js).
     HOLD = /cand\.json$/;
     // Printed if the new page never reaches DOMContentLoaded: every request of the context still pending (the worker's
-    // included), and each worker version's state as Chromium reports it (running/stopping/stopped, installed/activated),
-    // which showed the swap above (2026-11-05).
+    // included), and each worker version's state as Chromium reports it (running/stopping/stopped, installed/activated).
     const pend = new Map();
     ctx.on('request', r => pend.set(r, `${r.url().replace(base, '')}${r.serviceWorker && r.serviceWorker() ? ' (worker)' : ''}`));
     ctx.on('requestfinished', r => pend.delete(r));
@@ -728,8 +718,8 @@ const server = http.createServer((req, res) => {
     BUILD = 0;
     await ctx.close();
   }
-  // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
-  // then My progress, then the Tools, one tier after the other.
+  // 10. Load order. Home first: nothing of My progress, the Learn pages or the Tools asked for before it shows; then the
+  // quiz's files with My progress, then the Learn pages, then the Tools with the Lab's stylesheet, one tier after the other.
   {
     const {ctx, p, errs} = await ctxOf();
     // When Home was drawn and when each file was asked for, on the page's own clock.
@@ -748,7 +738,9 @@ const server = http.createServer((req, res) => {
       .waitForFunction(
         () => {
           const got = performance.getEntriesByType('resource').map(e => new URL(e.name).pathname);
-          return ['/progress.js', '/flag.js', '/proto/lab.js', '/proto/idkey.js'].every(f => got.includes(f));
+          return ['/progress.js', '/learn.js', '/flag.js', '/proto/lab.js', '/proto/lab.css', '/proto/idkey.js'].every(f =>
+            got.includes(f)
+          );
         },
         null,
         {timeout: 20000}
@@ -758,11 +750,13 @@ const server = http.createServer((req, res) => {
       window.__home,
       Object.fromEntries(performance.getEntriesByType('resource').map(e => [new URL(e.name).pathname.slice(1), e.startTime]))
     ]);
-    const early = ['progress.js', 'flag.js', 'proto/lab.js', 'proto/idkey.js'].filter(f => !(at[f] > home));
+    const early = ['progress.js', 'learn.js', 'flag.js', 'proto/lab.js', 'proto/lab.css', 'proto/idkey.js'].filter(f => !(at[f] > home));
     if (!(home > 0) || early.length) fails.push(`Asked for before Home showed (${home} ms): ${early.join(', ')}`);
-    const order = ['quiz.js', 'progress.js', 'proto/lab.js'].map(f => at[f]);
+    const order = ['quiz.js', 'progress.js', 'learn.js', 'proto/lab.js'].map(f => at[f]);
     if (!order.every((x, i) => x >= 0 && (!i || x >= order[i - 1])))
-      fails.push(`Tiers out of order (quiz, My progress, Tools): ${order.join(', ')} ms`);
+      fails.push(`Tiers out of order (quiz, My progress, Learn, Tools): ${order.join(', ')} ms`);
+    if (!(at['proto/lab.css'] >= at['learn.js']))
+      fails.push(`The Lab's stylesheet asked for before the Learn pages' tier: ${at['proto/lab.css']} ms`);
     if (errs.length) fails.push('Load order: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
@@ -770,6 +764,8 @@ const server = http.createServer((req, res) => {
   for (const [h, sel] of [
     ['quiz', qa.SEL],
     ['progress', '#view .pring'],
+    ['genera', '#view .card'],
+    ['cmp', '#view .lkmain'],
     ['lab', '#view .lab a']
   ]) {
     const {ctx, p, errs} = await ctxOf();
@@ -777,7 +773,51 @@ const server = http.createServer((req, res) => {
     await p
       .waitForFunction(s => document.querySelector(s) && !/Loading/.test(document.getElementById('view').innerText), sel, {timeout: 20000})
       .catch(() => fails.push(`A first visit straight to #${h} did not open it`));
+    // The Tools are drawn once the Lab's stylesheet is in (app.js tierCss): their hub is already its grid.
+    if (h === 'lab') {
+      const hub = await p.evaluate(() => {
+        const e = document.querySelector('#view .labhub');
+        return e && getComputedStyle(e).display;
+      });
+      if (hub !== 'grid') fails.push(`#lab first: drawn before the Lab's stylesheet (hub display ${hub})`);
+    }
     if (errs.length) fails.push(`#${h} first: ` + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  // The quiz's tier without learn.js (index.html: it comes with tier 3, after the quiz's next photos): with learn.js held,
+  // a wrong answer shows its mix-up montage (model.js photoPair), a duel and My progress work, nothing throws; the
+  // Genera page shows the loading bar until learn.js comes, then opens.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    let free;
+    const held = new Promise(ok => (free = ok));
+    await ctx.route(/\/learn\.js\?v=/, async r => (await held, r.fallback()));
+    const go = h => p.evaluate(x => (location.hash = routeOut(x)), h);
+    // 'commit': the load event waits for a script the tier loader has already inserted, so while learn.js is held it
+    // does not come (CI, 2026-11-18: goto timed out at 30 s); the quiz is waited for below, not the load event.
+    await p.goto(base + '#' + require('../core.js').routeOut('quiz'), {waitUntil: 'commit'});
+    if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no quiz question');
+    else {
+      const r = await p.evaluate(() => smokeAnswer(false));
+      const vs = await p.evaluate(() => !!document.querySelector('#view .qstage.qvs .qko img'));
+      if (r.fmt === 'choices' && !vs) fails.push(`learn.js held: no mix-up montage after a wrong answer (${JSON.stringify(r)})`);
+    }
+    await go('quiz-duel');
+    if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no duel question');
+    else await p.evaluate(() => smokeAnswer());
+    await go('progress');
+    await p.waitForSelector('#view .pring', {timeout: 20000}).catch(() => fails.push('learn.js held: My progress did not open'));
+    const late = await p.evaluate(() => typeof viewGenera);
+    if (late !== 'undefined') fails.push(`learn.js held: it ran all the same (${late})`);
+    await go('genera');
+    await p
+      .waitForSelector('#view .boot', {timeout: 5000})
+      .catch(() => fails.push('learn.js held: the Genera page did not show the loading bar while it waits'));
+    free();
+    await p
+      .waitForFunction(() => document.querySelector('#view .card') && !document.querySelector('#view .boot'), null, {timeout: 20000})
+      .catch(() => fails.push('learn.js held: the Genera page did not open once it came'));
+    if (errs.length) fails.push('learn.js held: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
   // Home's doors before the data (ROADMAP "Load order, further steps" (a); app.js beforeData): with data.json held, the
@@ -863,8 +903,8 @@ const server = http.createServer((req, res) => {
   // 12. Photos from R2 (core.js PHOTO_BASE; ROADMAP "Photos out of the repo"). The app asks R2 for its photos; R2 out of
   // reach (cut off here, like every outside host: no test needs R2), a photo with an online original comes from it at a
   // light size (iNaturalist's medium or large, never the original; answered here from the local files), one with none
-  // (IMR lecture photos) from the site's img/, at once, and so do the next ones (Pierre, 2026-11-05: the photos with an
-  // online original leave img/). Under the service worker, the worker asks R2 in CORS mode, keeps the photo offline under
+  // (IMR lecture photos) from the site's img/, at once, and so do the next ones (the photos with an online original
+  // are not in img/). Under the service worker, the worker asks R2 in CORS mode, keeps the photo offline under
   // either address and leaves the fallback to the page (it no longer serves the site's copy by itself).
   {
     const shown = p =>
@@ -947,7 +987,7 @@ const server = http.createServer((req, res) => {
         fails.push(`R2 cut off: a cropped photo from its online original lacks its crop (${JSON.stringify([cr.want, c1, c2])})`);
       if (![i1, i2].every(x => x.ok && x.src.startsWith('img/') && !x.vb))
         fails.push(`R2 cut off: an IMR lecture photo did not come from the site's img/ (${JSON.stringify([i1, i2])})`);
-      // A turned photo (Pierre's rotation baked into its file, ro: 90; Codex review #793) shown from its online original:
+      // A turned photo (Pierre's rotation baked into its file, ro: 90) shown from its online original:
       // cut and turned in a canvas (app.js turnSet), on an element that fell back and on one made afterwards, its
       // figure's backdrop and its 480 px step too; never the original the wrong way up.
       const tu = await p.evaluate(async () => {
@@ -988,8 +1028,8 @@ const server = http.createServer((req, res) => {
       )
         fails.push(`R2 cut off: a turned photo from its online original is not cut and turned (${JSON.stringify(tu)})`);
       const n = asked;
-      // A question none of whose photos showed takes no answer (#490: its answers are closed): said as a failure of this
-      // check, never a click that waits 30 s and stops every check after it (2026-11-04, a local run).
+      // A question none of whose photos showed takes no answer (its answers are closed): said as a failure of this
+      // check, never a click that waits 30 s and stops every check after it.
       await qa.install(p);
       if (!(await p.$(qa.SEL)))
         fails.push('R2 cut off: the question took no answer (none of its photos showed, so its answers were closed)');
@@ -1003,7 +1043,7 @@ const server = http.createServer((req, res) => {
           fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${off2.length ? off2 : s2})`);
       }
       // The first R2 failure coming from a quiz preload, no element having failed yet: the crops are drawn from then on
-      // too (Codex review #569: only an element's fallback started the crop watch).
+      // too, not only after an element's fallback.
       const pre = await p.evaluate(async () => {
         ((R2 = true), (AWAY = false));
         if (CROPW) CROPW.disconnect();
@@ -1021,7 +1061,7 @@ const server = http.createServer((req, res) => {
       await ctx.close();
     }
     // e. The admin, R2 cut off: a downloaded, cropped photo shown from its online original keeps its published crop
-    // (Codex review #569), on its genus page.
+    // on its genus page.
     {
       const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
         C = JSON.parse(fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8')),
@@ -1062,7 +1102,7 @@ const server = http.createServer((req, res) => {
       await ctx.close();
     }
     // f. The admin under the service worker, R2 cut off: each photo falls back on its own and the tab keeps asking R2,
-    // where the worker keeps its offline copies (Codex review #569: one failure sent every later photo online, past them).
+    // where the worker keeps its offline copies (one failure never sends every later photo online, past them).
     {
       const ctx = await b.newContext({viewport: {width: 1280, height: 900}});
       await ctx.route(
@@ -1103,7 +1143,7 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('Admin, R2 cut off, service worker: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
-    // b2. R2 failing once per file (a passing error, Pierre 2026-11-03): each photo is asked from R2 a second time and
+    // b2. R2 failing once per file (a passing error): each photo is asked from R2 a second time and
     // shows from R2; the page keeps reading R2 (core.js photoRetry, quiz.js preloads).
     {
       const {ctx, p, errs} = await ctxOf();
@@ -1298,8 +1338,8 @@ const server = http.createServer((req, res) => {
         );
       // The type of the reply kept for u in the photo cache, once it is there. The worker keeps a photo after handing it
       // to the page (sw.js photo, keep: the cache write is not awaited, the page does not wait for it), so read at once
-      // after the load it was often not there yet: missing at the image's load event in 73 of 90 loads (2026-11-03), and
-      // "not kept as a CORS reply (undefined)" now and then on a busy machine. Up to 5 s. (Polled in the page:
+      // after the load it is often not there yet (missing at the image's load event in most loads, or "not kept as a
+      // CORS reply (undefined)" on a busy machine). Up to 5 s. (Polled in the page:
       // Playwright's waitForFunction takes a returned Promise as a truthy value at once.)
       const kept = u =>
         p.evaluate(async u => {
@@ -1346,7 +1386,7 @@ const server = http.createServer((req, res) => {
     }
   }
   // 11. A browser driven by a program never sends to the sheet, whatever host it opens the app on (app.js LOCAL:
-  // navigator.webdriver; Pierre, 2026-11-03: an agent's test on a made-up host name reached the sheet). The sync
+  // navigator.webdriver; rule D1: a test on a made-up host name must not reach the sheet). The sync
   // script's hosts are mapped to this computer too, so a request that escaped the check could not reach Google.
   {
     const bw = await chromium.launch({

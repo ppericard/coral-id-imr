@@ -68,9 +68,9 @@ def stamp(root, build=None):
     shell = sw[sw.index('const SHELL'):sw.index('];', sw.index('const SHELL'))]
     kept = sorted({'index.html' if x == './' else x.split('?')[0] for x in re.findall(r"'([^']+)'", shell) if not re.fullmatch(r'\w+', x)})
     kept += [f'proto/{f}.js' for f in files]
-    # The admin's files too, and every page (Codex review #499): the admin page reloads onto a new version only when a
-    # new worker takes over (admin.js UPDATED), so a change to admin.js alone must still change sw.js (it did when its
-    # ?v= was bumped by hand). Its pages and scripts are not cached; the shell is re-fetched once, as before.
+    # The admin's files too, and every page: the admin page reloads onto a new version only when a new worker takes
+    # over (admin.js UPDATED), so a change to admin.js alone must still change sw.js. Its pages and scripts are not
+    # cached; the shell is re-fetched once.
     kept = sorted(set(kept) | set(PAGES) | {p for t in texts for p in REF.findall(read(t))})
     nobuild = lambda p: BUILD.sub('', read(p)).encode() if p in PAGES else open(path(p), 'rb').read()
     for p in kept:

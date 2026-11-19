@@ -1,18 +1,18 @@
-// The fish admin pages (admin plan, docs/ROADMAP.md "Admin for every subject"; Pierre, 2026-11-04). Loaded after
-// admin.js, whose state and helpers it uses (DRAFT, saveDraft, render, toast, esc, img, srcTag, fishLoad, FISHC...), as
-// admin-journey.js does. Admin only: players never download it.
+// The fish admin pages (docs/ARCHITECTURE.md "Admin for every subject"). Loaded after admin.js, whose state and helpers
+// it uses (DRAFT, saveDraft, render, toast, esc, img, srcTag, fishLoad, FISHC...), as admin-journey.js does. Admin only:
+// players never download it.
 //
-// PR 5a, the fish Candidates swiper (#fish/photos/candidates): the candidates of fish-cand.json one at a time, as the coral swiper,
-// with what the fish curation needs: the thinnest species first, stopping at each species' target, the pass's judgment
-// (suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species' photos in
-// play beside the card (most of them the auto-sort's proposals, which Pierre can take out of play), the fish auto-sort's
-// agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd, fishReject,
-// fishExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
+// The fish Candidates swiper (#fish/photos/candidates): the candidates of fish-cand.json one at a time, as the coral
+// swiper, with what the fish curation needs: the thinnest species first, stopping at each species' target, the pass's
+// judgment (suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species'
+// photos in play beside the card (most of them the auto-sort's proposals, which the admin can take out of play), the
+// auto-sort's agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd,
+// fishReject, fishExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
 //
-// PR 5b, on the same card: the rubric's tags as rows (ease always, the phase for an entry whose phases differ, the seven
-// tags and the juvenile and camouflage flags behind Tags), the crop, and Not this → another species or none (Pierre's
-// click only, curation.json fish out: autosort.js fishNotThis), the missing phases first (fishQueue nph). His values are
-// pressed; the pass's show dashed until he confirms or changes them (never on a Check: blind).
+// On the same card: the rubric's tags as rows (ease always, the phase for an entry whose phases differ, the seven tags
+// and the juvenile and camouflage flags behind Tags), the crop, and Not this → another species or none (the admin's
+// click only, curation.json fish out: autosort.js fishNotThis), the missing phases first (fishQueue nph). His values
+// are pressed; the pass's show dashed until he confirms or changes them (never on a Check: blind).
 
 let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the queue shown: every candidate, or the Checks only
   FTAGS_OPEN = store.get('reefid-admin-ftags', false) === true, // the tag rows unfolded (this browser)
@@ -20,9 +20,9 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
   FASIDE = false; // this tab: also show the ones the pass is sure go, not applied (the fish auto-sort's keep off)
 const FSKIP = new Set();
 // The species records the default covers read their presence around the instance's centre from (autosort.js
-// fishCoverOf, fishSeenFrom; Pierre, 2026-11-13, Q339 (b)): fish.json's, once admin.js fishLoad has them (FISHC).
+// fishCoverOf, fishSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
 fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
-// The card Pierre is setting rows or a crop on stays on screen (his values move it in the order: a phase he clears is no
+// The card the admin is setting rows or a crop on stays on screen (his values move it in the order: a phase he clears is no
 // longer a missing one) until he decides it, skips it or sends it elsewhere (Not this); every other render, an Undo
 // included, shows the queue's first.
 let FPIN = null;
@@ -47,7 +47,7 @@ const FTAGS = [
 const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', w: 'watermark', p: 'phase entry', r: 'reference photo'};
 // Every value said, in the words of the tree subject in force (admin.js tagWords: the sea slugs' views and flags).
 const fishTagText = (jt, S = FISHS) => tagText(jt, tagWords(S, FTAGS, FFLAGS, true));
-// The rows Pierre sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
+// The rows the admin sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
 // type (the tool adds p and r itself); the IMR phase words (judging/FISH.md "phase"), '' = none (an adult, or a
 // juvenile, which is the j flag).
 const FROWS = [
@@ -111,9 +111,8 @@ const FROWS = [
     6,
     'Count',
     [
-      // Pierre, 2026-11-09: "Others" did not say the problem is several species on one photo; the codes stay (judging/FISH.md).
-      // Other species split in two (Pierre, 2026-11-09, Q323): o in play, k out of play (rule P3); the legacy m (before the
-      // split, not sorted yet: as k) is read, never offered.
+      // The labels say the problem is several species on one photo; the codes are judging/FISH.md's. Other species in
+      // two: o in play, k out of play (rule P3); the legacy m (not sorted yet: as k) is read, never offered.
       ['1', 'One fish', 'One fish (others, if any, tiny and far)'],
       ['s', 'Same species', 'Several fish of the same species, the subject obvious (a pair, a school)'],
       ['o', 'Other species, no risk', "Other species in view, none could be taken for the subject at the game's level (stays in play)"],
@@ -126,7 +125,7 @@ const FROWS = [
     ]
   ]
 ];
-// Watermark (w: a visible watermark or text on the photo; Pierre, 2026-11-15, Q373): Home skips the photo, the games
+// Watermark (w: a visible watermark or text on the photo): Home skips the photo, the games
 // keep it; his tap sets it or takes it off like any tag.
 const FFLAGS_MINE = [
   ['j', 'Juvenile'],
@@ -142,8 +141,8 @@ const FPHASE_ROW = [
   ['male', 'Male']
 ];
 // The rows and flags of subject S's rubric (the tree subject in force, FISHS, by default): the fish's (FROWS, FFLAGS_MINE)
-// with those its SUBJECTS admin tags replace (the sea slugs': their six views, no night livery, the f flag; Pierre,
-// 2026-11-17: the sea slugs' admin at parity); the count row in its words ("One sea slug").
+// with those its SUBJECTS admin tags replace (the sea slugs': their six views, no night livery, the f flag); the count
+// row in its words ("One sea slug").
 const tagRows = (S = FISHS) => {
   const T = (S && S.admin && S.admin.tags) || {},
     w = x => (S ? x.replace(/\bSeveral fish\b/g, 'Several ' + S.name.toLowerCase()).replace(/\bfish\b/g, S.what.toLowerCase()) : x);
@@ -151,7 +150,7 @@ const tagRows = (S = FISHS) => {
 };
 const tagFlags = (S = FISHS) =>
   S && S.admin && S.admin.tags && S.admin.tags.flags ? S.admin.tags.flags.map(([k, l]) => [k, l]) : FFLAGS_MINE;
-// One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's. An option may carry
+// One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
 // its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
   `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
@@ -161,13 +160,13 @@ const fRow = (name, at, opts, v, auto) =>
     )
     .join('')}</span>`;
 // Pierre's values on a photo (the draft's fish part) and the pass's (j), for the rows: {mine, pass} per field.
-// His tags with the pass's watermark flag where they are the auto-sort's copy (autosort.js fishTagsMine; Q373).
+// His tags with the pass's watermark flag where they are the auto-sort's copy (autosort.js fishTagsMine).
 const fVals = (F, f, j) => ({
   tags: {mine: fishTagsMine(F, f, j && j.jt), pass: j && j.jt},
   ease: {mine: (F.ease || {})[f], pass: j && j.e},
   phase: {mine: f in (F.phase || {}) ? F.phase[f] : undefined, pass: (j && j.ph) || ''}
 });
-// The rows of a card. blind (a Check): only Pierre's own values pressed, nothing of the pass shown. open: the seven tag
+// The rows of a card. blind (a Check): only the admin's own values pressed, nothing of the pass shown. open: the seven tag
 // rows and the flags shown too (the card's Tags; a photo tile's own, admin.js fishTile).
 function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
   const V = fVals(F, p.f, blind ? null : j),
@@ -197,7 +196,7 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
         .join('')}</span></div>`;
   return h;
 }
-// Not this (5b; Pierre's only): the photo goes to another species of its entry first, then any game species, or none.
+// Not this (the admin's only): the photo goes to another species of its entry first, then any game species, or none.
 // A photo moved before can go back to its first species.
 function fishNotThisSel(sid, from) {
   const E = FISHC.entry[sid],
@@ -206,7 +205,7 @@ function fishNotThisSel(sid, from) {
     rest = [...FISHC.game].filter(id => id !== sid && !same.includes(id)).sort((a, b) => (nm(a) < nm(b) ? -1 : 1));
   return `<select data-fnot aria-label="Not this species"><option value="">Not this</option>${from ? `<option value="${esc(from)}">Back to ${esc(nm(from))}</option>` : ''}<option value="x">No game species</option>${same.length ? `<optgroup label="${esc(E.name)}">${same.map(id => `<option value="${esc(id)}">${esc(nm(id))}</option>`).join('')}</optgroup>` : ''}<optgroup label="Another species">${rest.map(id => `<option value="${esc(id)}">${esc(nm(id))}</option>`).join('')}</optgroup></select>`;
 }
-// The rows' clicks in scope S on photo f (the card's, a photo tile's): each one Pierre's value through edit(fn, what), one
+// The rows' clicks in scope S on photo f (the card's, a photo tile's): each one the admin's value through edit(fn, what), one
 // Undo step (autosort.js fishSet, fishTag: through fishOwn); base(): the code a tag changes (his, else the pass's). what:
 // {pos, v} of a tag row (pos 0-6), so a tile can act on the count it sets (admin.js bindFishTiles).
 function bindFishRows(S, f, base, edit) {
@@ -219,7 +218,7 @@ function bindFishRows(S, f, base, edit) {
   );
   S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'tags', fishTag(base(), b.dataset.ff2)))));
 }
-// The crop editor of the corals (admin.js cropEditor) on a fish photo: Pierre's crop, else start (the pass's suggestion, or
+// The crop editor of the corals (admin.js cropEditor) on a fish photo: the admin's crop, else start (the pass's suggestion, or
 // a photo's published crop); Full photo over a suggested crop (sug) is kept as an explicit no-crop. His rotation (fish
 // rot) with it, one Undo step for both, through edit(fn).
 const fishCrop = (p, start, sug, edit) =>
@@ -235,16 +234,16 @@ const fishJudged = j =>
   !j
     ? '<p class="adm-judge">Not judged yet</p>'
     : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', fishTagText(j.jt), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
-// A fish photo with its crop: Pierre's (draft), else, outside a Check, the pass's, or for a record with no judgment (a
+// A fish photo with its crop: the admin's (draft), else, outside a Check, the pass's, or for a record with no judgment (a
 // photo fishGameIn put in play from fish-game.json: a sure candidate, a reference photo) its published crop (cr, the one
-// tools/fish_game.py baked in: review #793, it showed uncropped); and his rotation (fish rot). Through admin.js crSrc, as
-// the family pages (fuP): a candidate (remote) gets both drawn on its original; a photo in play from fish-game.json, whose
-// R2 file has its published crop and rotation baked in (cr, ro), is shown as it is while the draft keeps them, else from
-// its original with the draft's (Codex review #793: drawn over the baked file, a published 90° showed as 180°).
+// tools/fish_game.py baked in); and his rotation (fish rot). Through admin.js crSrc, as the family pages (fuP): a
+// candidate (remote) gets both drawn on its original; a photo in play from fish-game.json, whose R2 file has its
+// published crop and rotation baked in (cr, ro), is shown as it is while the draft keeps them, else from its original
+// with the draft's (drawn over the baked file, a published 90° would show as 180°).
 const fishRot = f => rotNorm(((DRAFT[TK] || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) =>
   crSrc({...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
-// Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
+// Where a fish photo comes from: the admin's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag) and, when
 // its name is a former combination or an iNaturalist spelling WoRMS writes otherwise, the WoRMS name (admin.js nameTag).
 const fishSrcTag = p => {
@@ -265,18 +264,18 @@ const candSpecies = () =>
   FISHS && FISHS.admin.target > 0
     ? {...Object.fromEntries(Object.keys(FISHC.genera || {}).map(g => [g, {tgt: FISHS.admin.target}])), ...FISHC.species}
     : FISHC.species;
-// The photos of a species in play (Pierre's keep holds the add, never other species one could take for the subject: core.js
-// fishOther, Q323), its own candidates first, then any other photo added to it.
+// The photos of a species in play (the admin's keep holds the add, never other species one could take for the subject:
+// core.js treeOther), its own candidates first, then any other photo added to it.
 const fishInPlay = (F, sid) => {
   const L = Object.entries(F.add || {})
-      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG[TK] || {})[f] || {}).jt))
+      .filter(([f, s]) => s === sid && treePhotoOn(F, f, sid) && !treeOther((F.tags || {})[f], ((SUG[TK] || {})[f] || {}).jt))
       .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG[TK] || {})[f]}) || {f}),
-    seen = new Set(L.map(p => fishPid(p.f)));
+    seen = new Set(L.map(p => treePid(p.f)));
   // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
-  fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(fishPid(p.f)) && seen.add(fishPid(p.f)) && L.push(p));
+  fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(treePid(p.f)) && seen.add(treePid(p.f)) && L.push(p));
   return L;
 };
-// One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (Pierre's ✕
+// One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (the admin's ✕
 // Reject on it: off the species, a correction when the auto-sort had proposed it). A photo leaving play here or on the card
 // (Reject, ×, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
 function fishZoom(p, sid, inPlay, blind) {
@@ -315,7 +314,7 @@ function fishEdit(fn) {
 }
 // The fish auto-sort's line (above the card, folded behind the Auto chip as the corals': admin.js autoChip; chip: the
 // chip alone) and its details (below it): its decisions in and set aside, the Checks waiting, its keep agreement with
-// Pierre (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
+// the admin (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
 // every decision still standing, each with Undo (fishAutoUndo; rule A1).
 function fishAutoBlock(det, chip) {
   const F = DRAFT[TK] || {},
@@ -396,7 +395,7 @@ function renderFishCand() {
     Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
     // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
-    // (Codex review #1061: Checks chosen on the fish showed the sea slugs an empty queue with no switch)
+    // (Checks chosen on one subject must not leave another an empty queue with no switch)
     aqOn = !!FISHS.admin.autosort || chks.length > 0,
     Q1 = aqOn && FQ === 'chk' ? chks : Q0,
     shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),
@@ -502,7 +501,7 @@ function renderFishCand() {
       render();
     };
     S.querySelector('[data-zoom]').onclick = () => fishZoom(pb, sid, false, chk);
-    // The rows (5b): each click Pierre's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
+    // The rows: each click the admin's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
     const fishPin = fn => {
       FPIN = f;
       fishEdit(fn);
@@ -513,7 +512,7 @@ function renderFishCand() {
       store.set('reefid-admin-ftags', FTAGS_OPEN);
       render();
     };
-    // The crop (fishCrop): Pierre's, else the pass's (never on a Check).
+    // The crop (fishCrop): the admin's, else the pass's (never on a Check).
     S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG[TK] || {})[f] || {}).c, fishPin);
     S.querySelector('[data-fnot]').onchange = e => {
       const to = e.target.value;

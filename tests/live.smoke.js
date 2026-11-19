@@ -1,4 +1,4 @@
-// Live mode test (Pierre, 2026-11-17, Q393; docs/reviews/2026-11-18-live-mode-design.md): the real app in Chromium, one
+// Live mode test (docs/reviews/2026-11-18-live-mode-design.md): the real app in Chromium, one
 // trainer page (1280 px) and three students (390 px), against the sync script on an in-memory sheet in this process
 // (tests/gas.js; each page's app.js sheetFetch answered through SHEET_STUB: rule D1, and any request that leaves the local
 // server is refused and counted). Checks:
@@ -161,6 +161,7 @@ async function shot(p, name) {
   await tp.waitForSelector('.lvbigcode', {timeout: 15000});
   const code = (await tp.textContent('.lvbigcode')).replace(/\D/g, '');
   check(/^\d{6}$/.test(code), `1: no code: ${code}`);
+  check(!!(await tp.$('.lvlobby svg.qr path')), '1: the lobby shows no QR code');
   const unitsOfSet = await tp.evaluate(() => LH.plan);
 
   // 2. Three students: one signed in with every unit of the set unlocked, two by a nickname.

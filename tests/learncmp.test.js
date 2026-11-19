@@ -177,7 +177,7 @@ test('a declared cost replaces the margin; looks tighten the bound and the prima
   close(R2.alpha, 0.025);
 });
 
-// Codex review #782: a measure that is null in every run (corals: no judged ease; a file without preOW) is not measured,
+// A measure that is null in every run (corals: no judged ease; a file without preOW) is not measured,
 // never held; a profile with no valid pair at a measured checkpoint is named as not measured.
 test('a guardrail with no valid pair is not measured, and says so', () => {
   const strip = F => ({...F, runs: F.runs.map(r => ({...r, preOW: []}))}),
@@ -273,15 +273,15 @@ test('the levels, the score, the plateau and the photo exposure read from a run'
   assert.strictEqual(L.hardAnswers({preOW: [[1, 0]]}, 1), null);
   close(L.perPhoto(run, 4), 5 / 4);
   close(L.perPhoto(run, 2), 1);
-  // The share on the scientific genera (Q208): answers 1..cp on kind genus, a fish run only (its slate is families).
+  // The share on the scientific genera: answers 1..cp on kind genus, a fish run only (its slate is families).
   close(L.genShare(run, 4), 2 / 4);
   close(L.MEASURES.genShare.get(run, 2), 0);
   assert.strictEqual(L.genShare({kinds: {A: 'genus', X: 'bonus'}, expo: [['A', 'o', 'p']]}, 1), null, 'the corals: not measured');
-  // Every guardrail of LEARNING.md's table has a measure now.
+  // Every guardrail of LEARNING.md's table has a measure.
   L.GUARDRAILS.forEach(g => assert.ok(L.MEASURES[g.m].get, g.m));
 });
 
-// The population measures (the rated world's sheet mode, Q315): one value per seed, an exact sign-flip over the seeds.
+// The population measures (the rated world's sheet mode): one value per seed, an exact sign-flip over the seeds.
 test('population measures: the primary over the seeds, the rating error', () => {
   const pop = (s, err) => ({
       seed: s,
@@ -302,7 +302,7 @@ test('population measures: the primary over the seeds, the rating error', () => 
   assert.match(L.report(R), /one value per seed/);
 });
 
-// After a break (learnsim --breaks; 2026-11-15, the comeback's tolerance, Q367): the break measures read per break name,
+// After a break (learnsim --breaks; the comeback's tolerance): the break measures read per break name,
 // a primary on one of them, and the report's table of every break both files took.
 test('break measures: the comeback and the questions after it, per break, a primary on them', () => {
   const brk = (b, len, ok) => ({
@@ -346,7 +346,7 @@ test('break measures: the comeback and the questions after it, per break, a prim
   close(L.MEASURES.afterRight.get(run, '1d'), 80);
   assert.strictEqual(L.MEASURES.cbLen.get(run, '3d'), null, 'a break the run did not take');
   assert.strictEqual(L.MEASURES.cbRight.get({breaks: [brk('1d', 0, 0)]}, '1d'), null, 'no comeback: no right %');
-  // Codex review #951: a break that reached learnsim's cap of 200 questions has a cut window after the comeback; its
+  // A break that reached learnsim's cap of 200 questions has a cut window after the comeback; its
   // counts over that window are no pair.
   const capped = {breaks: [{brk: '1mo', cbLen: 200, cbOk: 150, held: 200, after: 0, afterOk: 0, holdAfter: 0, opens: []}]},
     short = {breaks: [{brk: '1mo', cbLen: 190, cbOk: 150, held: 190, after: 10, afterOk: 8, holdAfter: 1, opens: [2]}]};
@@ -371,6 +371,6 @@ test('break measures: the comeback and the questions after it, per break, a prim
   const out = L.report(R);
   assert.match(out, /\*\*After a break\*\*/);
   assert.match(out, /\| Comeback questions after the break \| 5\.0 -> 3\.0, -2\.0 \[/);
-  // The first session's guardrails are read as before.
+  // The first session's guardrails are read too.
   assert.strictEqual(R.guardrails.find(g => g.m === 'know').at[0].per[0].verdict, 'held');
 });

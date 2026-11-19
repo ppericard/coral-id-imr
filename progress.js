@@ -1,19 +1,10 @@
-// IMR Reef ID: My progress, the progress pill, the leaderboard and achievements, split out of app.js (2026-11-02, code
-// review L1: one file per part, one piece at a time). A classic script like app.js and sync.js: it shares their
-// top-level names and is loaded right after sync.js (index.html, in order); app.js waits for every script
-// (window.BOOT) before its first page. Required like app.js: the loader tries it 3 times, the service worker keeps it.
-// Progress board, one screen: a wall of the slate genera's cover photos in slate order (name band in the level colour, grey photo =
-// not seen, amber dot = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
-// and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
-// The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
-// with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
-// Elo (the rank filled once the leaderboard loads; nothing before the Elo is due and while not on the board: it comes by
-// itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
-// leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
-// device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
-// A subject with a global score (core.js SUBJECTS score: the fish) shows its components under the name, from the same
-// computation as the ring's % (model.js headScore, core.js treeScore; FISH_PATH "My progress (fish)": three bars under the
-// headline): the families, the species by common name and the species by scientific name (the genus credit included).
+// IMR Reef ID: My progress, the progress pill, the leaderboard and achievements. A classic script like app.js and
+// sync.js: it shares their top-level names and loads right after sync.js (index.html order); app.js waits for every
+// script (window.BOOT) before its first page. Required like app.js: the loader tries it 3 times, the service worker keeps it.
+// The progress board fits one screen: the slate's covers in slate order beside a side column (overall ring, what to
+// review first, mix-ups). Signing in, backup and reset live in the header and ⚙, never around the board.
+// A subject with a global score (core.js SUBJECTS score) shows its parts under the name, from the ring's own computation
+// (model.js headScore, core.js treeScore): families, species by common name, species by scientific name.
 const scoreBars = H =>
   H
     ? `<div class="pbars" role="list" aria-label="Your progress in parts">${[
@@ -27,6 +18,10 @@ const scoreBars = H =>
         })
         .join('')}</div>`
     : '';
+// The player's card at the top of My progress: the overall ring and %, the name, rank and Elo (the rank once the
+// leaderboard loads), units learned or met, achievements with the last three. The Elo is always this device's own level
+// (P[LEVEL], eloLine), never the board's copy, so it does not jump when the board arrives (docs/LEARNING.md "One player
+// level shown"; the card itself: docs/decisions/2026-11-18-decisions-from-comments-3.md).
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -48,7 +43,7 @@ function badge(ring, pct, sub) {
     }</span>${scoreBars(headScore())}</div></div>`;
 }
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
-// tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
+// tile breaks it there with a hyphen instead of anywhere, at the normal size.
 const shyName = n => {
   if (n.length < 13) return n;
   const V = /[aeiouy]/i;
@@ -62,11 +57,9 @@ function quizBoard() {
     // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison likewise.
     href = n => esc(hr(SUBJ.pages.includes('sheet') ? `g-${n}` : 'genera')),
     hrefPair = (a, b) => esc(hr(SUBJ.pages.includes('cmp') ? `cmp-${a}|${b}` : 'genera'));
-  // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
-  // They stay out of the ring and the counts.
-  // The units of the opt-in sets in play (bonusList) are split by rank (boardParts): the ones at the slate's own rank (the
-  // coral bonus genera) come after it in its grid (BO); the others (the fish scientific genera, the species) never do:
-  // each set has its own section below (SECT).
+  // The units of the opt-in sets in play (bonusList), kept out of the ring and the counts, split by rank (boardParts):
+  // the ones at the slate's own rank (the coral bonus genera) follow it in its grid (BO); every other set has its own
+  // section below (SECT).
   const BA = bonusList(),
     {grid: BO, sections: SECT} = boardParts(BA);
   const shown = boardTiles(list, BA, SECT),
@@ -93,7 +86,7 @@ function quizBoard() {
   const myst = mysteryOf(),
     mystA = (cls, inner, n) => `<a class="${cls} s0 myst" title="${mystT(n)}" aria-label="${mystT(n)}">${inner}</a>`;
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
-  // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
+  // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css).
   const tile = (n, tagged = true) => {
     if (myst(n)) return mystA('pw', '<span class="pwq" aria-hidden="true">?</span>', n);
     const g = GX(n),
@@ -120,7 +113,7 @@ function quizBoard() {
       .map(([a, b]) => [a, b, pairConf(P, a, b)[1], confOf(a, b)])
       .sort((x, y) => y[3] - x[3])
       .slice(0, 3);
-  // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
+  // The tile's tooltip: name, level, % and the right answers, photos seen, what is still needed.
   const tip = n => {
     const s = P[n] || {ok: 0, ko: 0},
       m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : [];
@@ -133,8 +126,8 @@ function quizBoard() {
     st[n] > 0 && st[n] < 5
       ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>`
       : '';
-  // The sets that are not at the slate's rank, each its own section under the view (Pierre, 2026-11-18): the tiles of the
-  // photo wall, smaller, with no tag (the heading names the set); any view shows them the same way.
+  // The sets that are not at the slate's rank, each its own section under the view: the photo wall's tiles, smaller, with
+  // no tag (the heading names the set); every view shows them the same way.
   const sects = () =>
     SECT.map(
       ({S, L}) =>
@@ -162,8 +155,8 @@ function quizBoard() {
           ? mystA('ps bonus', '<b>+</b><i>?</i>', n)
           : `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
-      // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
-      // Millepora the right column outgrew the left and 21 slipped to the bottom of the left one).
+      // The left column padded to the row count, so 21 always starts the right column, even when the right one (with
+      // Millepora) is the longer.
       return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${'<span class="psgap"></span>'.repeat(Math.max(0, rows - L.length))}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}${bx ? `<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div>` : ''}</div>`;
     },
     groups: () => `<div class="pgroups">${groups
@@ -187,8 +180,8 @@ function quizBoard() {
           : ''
       }</div>`
   };
-  // Slate by default (Pierre, 2026-11-02: compact, and the order of the IMR slate the RAs know); the view switch is at the
-  // bottom of the side column.
+  // The subject's first view by default (the corals: Slate, compact and in the IMR slate's order the RAs know); the view
+  // switch is at the bottom of the side column.
   const PV = SUBJ.progress;
   let pv = store.get('reefid-sync-pview', PV[0]);
   if (!PV.includes(pv) || !VIEWS[pv]) pv = PV[0];
@@ -248,12 +241,11 @@ function quizBoard() {
       NEXTQ = null;
       save();
       quizBoard();
-      // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
+      // The box goes and little else changes on this page: say it worked.
       appToast(`All ${slateCore().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
-  // A part of the slate opened by choice, off (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50: "the player
-  // must be able to unlock them later, notably from My progress"): as "Open them" on its card, the units then open one at
-  // a time as the player plays.
+  // A part of the slate opened by choice (app.js UNITS opens), still off: opens it as "Open them" on its card does; the
+  // units then open one at a time as the player plays.
   document.querySelectorAll('[data-opens]').forEach(
     b =>
       (b.onclick = () => {
@@ -263,9 +255,8 @@ function quizBoard() {
         appToast('They open one at a time as you play.', 6000);
       })
   );
-  // An opt-in set off (app.js UNITS sets row: the fish scientific genera; Pierre, 2026-11-08: "si les gens veulent aller
-  // dans leur page progrès ou même dans les settings, d'activer les genres s'ils le veulent"): on, as ⚙ On; its units then
-  // come by the set's own rule (units).
+  // An opt-in set that is off (app.js UNITS sets) turns on here as with ⚙ On; its units then come by the set's own rule
+  // (units). Both buttons: docs/decisions/2026-11-18-decisions-from-comments-3.md.
   document.querySelectorAll('[data-seton]').forEach(
     b =>
       (b.onclick = () => {
@@ -277,10 +268,8 @@ function quizBoard() {
       })
   );
   bindSync();
-  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
-  // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
-  // v171: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one);
-  // GROUPS_SHEET: their own groups' boards, then the general one.
+  // The player's rank, on the first board of the Leaderboard page that lists them (boardScopes: their groups', then the
+  // general one). The board brings the rank only: the Elo stays the device's own, so nothing jumps when the reply comes.
   const rank = B => {
     const a = document.getElementById('pbrank'),
       L = B && B.rows ? boardScopes(B).top.find(x => boardMe(x.rows) >= 0) : null,
@@ -319,8 +308,8 @@ function quizBoard() {
   show();
 }
 
-// The two highest levels reached, with their counts, for the card (Pierre, 2026-11-03: "0/39
-// learned" for weeks was discouraging): "3 Divemaster · 12 Open Water". From Open Water up; '' before any genus reaches Open Water.
+// The two highest levels reached, with their counts, for the card ("3 Divemaster · 12 Open Water"), so early progress
+// shows before anything is learned. From Open Water up; '' before any unit reaches Open Water.
 function lvSummary(list = slateGenera(), icons = true) {
   const st = list.map(lvStep);
   return [5, 4, 3, 2]
@@ -330,21 +319,20 @@ function lvSummary(list = slateGenera(), icons = true) {
     .map(([k, c]) => `${icons ? lvIcon(k) : ''}${c} ${MASTERY[k][0]}`)
     .join(' · ');
 }
-// The units unlocked (Pierre, 2026-11-05: "30/40 genera unlocked"): the subject's units opened on the path (a card, an
-// answer, Open all: model.js introduced), out of every unit the progress counts (slateGenera, whatever the subject puts in
-// it); the units "not open yet" on this page (introLeft) are the rest. A unit counts from its card, a couple of answers
-// before the draw asks it (model.js INTRO.GAP). [unlocked, all].
+// The units unlocked (Pierre, 2026-11-05, "30/40 genera unlocked"; tests/unlockcount.test.js cuts from this line): the
+// units opened on the path (a card, an answer, Open all: model.js introduced) out of every unit the progress counts
+// (slateGenera); introLeft is the rest. A unit counts from its card, a couple of answers before the draw asks it (model.js
+// INTRO.GAP). [unlocked, all].
 const unlockN = (list = slateGenera()) => [list.filter(introduced).length, list.length];
 const unlockText = (list = slateGenera(), html = false) => {
   const [k, n] = unlockN(list);
   return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
 };
-// "Mystery" tiles (Pierre, 2026-11-04; ROADMAP row built 2026-11-15): on My progress a unit the player has never met (no
-// card, no answer, not opened by Open all: never answered and never in the intro map, model.js asked, introMap) is a
-// masked tile, a "?" with no name, photo, link or tooltip that names it, so the discoveries still to come show without
-// being given away. Who sees them is the subject's (app.js UNITS mystery, from the player's first-launch answer, c of
-// model.js startOf, null before any): display only, the draw, the opening and the progress are untouched. A unit met
-// once stays shown, even closed again by "One at a time" (model.js closed), and a unit with answers is never masked.
+// "Mystery" tiles (Pierre, 2026-11-04; tests/mystery.test.js cuts from this line; docs/FISH_PATH.md): a unit never met
+// (never answered, not in model.js introMap) shows on My progress as a "?" with no name, photo, link or tooltip naming it.
+// Who sees them is the subject's (app.js UNITS mystery, from the first-launch answer, model.js startOf c; null before
+// any). Display only: the draw, the opening and the progress are untouched. A unit met once stays shown, even closed
+// again by "One at a time" (model.js closed).
 const mysteryOn = () => {
   const f = UNITS[SUBJ.id].mystery,
     o = typeof startOf === 'function' ? startOf() : null;
@@ -354,16 +342,14 @@ const mysteryOf =
   (on = mysteryOn()) =>
   n =>
     on && !asked(n) && !(n in introMap());
-// The tooltip of a masked tile names its own unit's rank (Pierre, 2026-11-18: a scientific genus is not "a family"): the
-// rank its record carries (fish scientific genus, species), else the subject's unit word.
+// The tooltip of a masked tile names its own unit's rank: the rank its record carries (fish scientific genus, species),
+// else the subject's unit word.
 const mystT = n => `A ${(GX(n) || {}).rank || SUBJ.one} you have not met yet`;
-// Where the units of the opt-in sets show on My progress (Pierre, 2026-11-18, Q404 A: the common and scientific trees are two
-// independent teaching trees; Q402 A: a level that is off keeps its progress and does not come into play). BA: the units in
-// play (bonusList: the coral bonus genera, the fish scientific genera and species). The ones at the slate's own rank (rankOf:
-// '') come after it in its grid; the others never do: each set has its own section {S, L, on}. While the set is on (Q[S.k])
-// it lists its units in play, met or not (the "?" tiles); while it is off (or has no switch: the species), only its units
-// met, from the whole set, and no section when none is. Pure on its inputs: tests call it. The badge counts the slate
-// (unlockN), so the grid and its count agree.
+// Where the units of the opt-in sets show on My progress (docs/FISH_PATH.md: the two name trees are independent, and a
+// level turned off keeps its progress). BA: the units in play (bonusList). The ones at the slate's own rank (rankOf '')
+// follow it in its grid; every other set has its own section {S, L, on}: its units in play, met or not, while the set is
+// on (Q[S.k]); its units met, from the whole set, while it is off or has no switch; no section when none. Pure on its
+// inputs (tests call it). The badge counts the slate (unlockN), so the grid and its count agree.
 const boardParts = (BA, sets = SETS(), on = S => !!Q[S.k], rk = rankOf, seen = n => asked(n) || n in introMap(), own = setOf) => ({
   grid: BA.filter(n => !rk(n)),
   sections: sets
@@ -375,8 +361,8 @@ const boardParts = (BA, sets = SETS(), on = S => !!Q[S.k], rk = rankOf, seen = n
     .filter(x => x.L.length)
 });
 // Every unit the board draws, once: the slate, the units in play and the sections' units (a section keeps the units met while
-// its set is off, and those are not in play). quizBoard builds each tile's level and step from this list (Codex review #1092:
-// a retained unit with no level threw when its tile rendered and blanked every grid).
+// its set is off, and those are not in play). quizBoard builds each tile's level and step from this list, so every tile
+// drawn has one.
 const boardTiles = (list, BA, SECT) => [...list, ...BA, ...SECT.flatMap(x => x.L)].filter((n, i, all) => all.indexOf(n) === i);
 // Header progress pill: always in view; the page itself is #progress.
 function showProg() {
@@ -391,8 +377,7 @@ function showProg() {
     out = !!SYNC_URL && !SYNC;
   pill.querySelector('.pl').textContent = 'Progress';
   pill.style.setProperty('--pp', headPct(n));
-  // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
-  // "Not saved" pill beside it already says so in words (design re-review p9).
+  // Status only: the pill shows progress and nothing else; saving trouble is the "Not saved" button's to say.
   pill.title = `${
     SYNC
       ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
@@ -400,9 +385,8 @@ function showProg() {
         ? 'Your progress (not saved online yet: Sign in, top right)'
         : `Your progress per ${SUBJ.one}`
   }. ${pt}, ${unlockText(n)}.`; // the count in words: the header has no room for it (one line at 1024 px, rule U3)
-  // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
-  // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
-  // back as "Not saved", which opens ⚙ where the problem is explained.
+  // A filled "Sign in" button in the header on every page while signed out; once signed in it goes and the account is a
+  // quiet line at the top of ⚙. Trouble saving brings it back as "Not saved", which opens ⚙ where the problem is explained.
   const sb = document.getElementById('signb'),
     bad = syncTrouble();
   sb.hidden = !SYNC_URL || (!!SYNC && !bad);
@@ -421,7 +405,7 @@ const progData = () => {
 };
 // A file or a saved account may carry the names from before the rename to IMR Reef ID (core.js keysIn).
 const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && localStorage.setItem(k, v));
-// A progress file says which app wrote it: 'reefid', or before the rename (2026-11-03) the old id, still read.
+// A progress file says which app wrote it: 'reefid', or the app's old id, still read.
 const PROG_APP = ['reefid', 'imr-coral-id']; // rename-app: keep
 function bindProgFile() {
   const msg = t => (document.getElementById('pmsg').textContent = t);
@@ -466,12 +450,11 @@ function bindProgFile() {
   };
 }
 
-// Public leaderboard (Pierre, 2026-11-01), one per subject (2026-11-04): every signed-in player by progress %, then Elo (their ability from every
-// answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
-// (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
-// sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
-// rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
-// sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
+// Public leaderboard, one per subject: every signed-in player by progress %, then Elo (so players at 100% keep
+// competing). The Elo is the app's own level, P[LEVEL].th, read by the sheet from each saved progress (Code.gs board_);
+// the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it. Players
+// appear by default; ⚙ Leaderboard Off takes them off (the sheet's Board column, sent with the next sync). The sheet
+// serves it (GET ?board=1), cached 5 minutes there and 1 minute here.
 const BOARD = 'reefid-sync-board'; // a reefid-sync key: it travels with the progress, so the choice holds on every device
 // {v: 1 | 0, t: when chosen}: the latest choice wins when two devices meet (mergeSaved); a bare 0/1 is an older form.
 const boardOn = () => {
@@ -482,23 +465,21 @@ const boardT = b => (b && typeof b === 'object' ? b.t || 0 : 0);
 // Elo score shown to players: the ability (0 = able to name an average photo, same scale as photo difficulty) as a
 // familiar number around 1000; +1 ability = +200.
 const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–');
-// The Elo shows only from ELO_MIN answers (Pierre, 2026-11-01: "even 50 is not enough to settle the score"); before, the
-// badge says how many answers are left. Same threshold as the sheet's leaderboard (Code.gs ELO_MIN).
+// The Elo shows only from ELO_MIN answers (fewer do not settle it: docs/LEARNING.md); before, the badge says how many
+// answers are left. Same threshold as the sheet's leaderboard (Code.gs ELO_MIN).
 const ELO_MIN = 200;
 const eloLine = G => {
   const n = G ? (G.ok || 0) + (G.ko || 0) : 0;
   return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : '';
 };
 // The sync script answers in 1-3 s (a Google Apps Script starting up), whatever its own cache: so the last board is kept
-// on this device (BOARD_C, not a reefid-sync key: it never travels with the progress) and shown at once, then replaced
-// when the fresh one arrives (Pierre, 2026-11-01: "the leaderboard takes long to load"). It is also fetched a few seconds
-// after start-up, so the first visit to the page is usually instant too.
-// One leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; core.js SUBJECTS board): the
-// page shows the subject on screen's (boardSubj), the first subject's on one without a leaderboard. The first one's is
-// GET ?board=1 as before; another's adds &s=<id> (sheet v95). A subject whose board came with a later script (SUBJECTS
-// boardSheet) waits for it: an older script answers with the first one's, which is never shown as another subject's
-// (rule D4: "not available yet" until the script has it).
-// Each subject's board is kept apart (BOARD_C, the subject's device key: reefid-board-cache for the corals).
+// on this device (BOARD_C, a device key that never travels) and shown at once, then replaced when the fresh one arrives.
+// It is also fetched a few seconds after start-up, so the first visit to the page is usually instant
+// (docs/decisions/2026-11-18-decisions-from-comments-3.md).
+// One leaderboard per subject, never a merged ranking (core.js SUBJECTS board): the page shows the subject on screen's
+// (boardSubj), the first subject's for one without a leaderboard. The first one's is GET ?board=1; another's adds
+// &s=<id>. A subject whose board needs a later script (SUBJECTS boardSheet) waits for it, since an older script answers
+// with the first one's (rule D4). Each subject's board is cached apart (subjDev).
 const BOARD_C = 'board-cache';
 const board0 = () => SUBJECTS.find(x => x.board);
 // The script version that serves subject S's board: its own when it names one (core.js SUBJECTS boardSheet: the sea slugs',
@@ -506,9 +487,9 @@ const board0 = () => SUBJECTS.find(x => x.board);
 const boardV = S => Number(S && S.boardSheet) || 0;
 // A board reply to show: the first subject's from any script, another's only from its version (boardV; tests/gates.test.js).
 const boardOk = (j, first, S) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= boardV(S));
-// A subject's board is live once the sheet serves it (rule D4; Codex review #694): the first one's always, another's from
-// its version (boardV; sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one:
-// the page shows the first subject's board, no rank on My progress, no announcement.
+// A subject's board is live once the sheet serves it (rule D4): the first one's always, another's from its version
+// (boardV; sync.js sheetV, the version of the last reply). Until then the subject has none: the page shows the first
+// subject's board, no rank on My progress, no announcement.
 const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= boardV(S)));
 const boardSubj = () => (boardLive(SUBJ) ? SUBJ : board0());
 const boardAt = {},
@@ -540,23 +521,20 @@ const loadBoard = (S = boardSubj()) => {
   return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
-// Staff and cohort boards (sheet v171; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle
-// cohorte aurait un leaderboard indépendant"; "ça serait rigolo que les étudiants voient le leaderboard du staff et
-// inversement"): a reply from SCOPES_SHEET splits the one ranking (Code.gs board_): rows, the general board without the
-// staff; staff, the trainers'; cohorts, [{n, rows}] each cohort's, its members but the staff. The page shows the
-// player's own cohort's first, then the staff's, then the general one; the other cohorts behind a discreet "Other
-// cohorts" (Pierre: "éventuellement mais pas forcément en priorité ou mis en avant"). An older reply: one board, as before.
+// Staff and cohort boards (docs/ARCHITECTURE.md): a reply from SCOPES_SHEET splits the one ranking (Code.gs board_):
+// rows, the general board without the staff; staff, the trainers'; cohorts, [{n, rows}], each cohort's members but the
+// staff. The page shows the player's own cohort first, then the staff, then the general board; the other cohorts behind a
+// discreet "Other cohorts" fold (docs/decisions/2026-11-18-decisions-from-comments-3.md). An older reply: one board.
 const SCOPES_SHEET = 171;
 // The player's cohort: its display name, '' for none, null when this account was never told (sync.js groupsSeen).
 const myCohort = () => {
   const o = store.get(COHORT_KEY, null);
   return SYNC && o && typeof o.c === 'string' && String(o.n).toLowerCase() === SYNC.name.trim().toLowerCase() ? o.c : null;
 };
-// Player groups (sheet GROUPS_SHEET; Pierre, 2026-11-18: "Un même joueur devrait pouvoir appartenir à un nombre
-// arbitraire de groupes"): a reply from GROUPS_SHEET carries groups, [{id, n, rows}] every group with a board, the newest
-// first (Code.gs board_), and rows, the general board without the members of an apart group. The page shows the boards of
-// the player's own groups first, each under its name, then All players; every other group's behind a closed "Other
-// groups", as for the cohorts before (an empty one left out there).
+// Player groups, any number per player (docs/ARCHITECTURE.md): a reply from GROUPS_SHEET carries groups, [{id, n, rows}]
+// every group with a board, newest first (Code.gs board_), and rows, the general board without the members of an apart
+// group. The page shows the player's own groups' boards first, each under its name, then All players; every other group's
+// behind a closed "Other groups" (an empty one left out).
 const GROUPS_SHEET = 179;
 // The ids of the player's groups, null when this account was never told (sync.js groupsSeen).
 const myGroups = () => {
@@ -619,8 +597,8 @@ function paintBoard(B, S = boardSubj()) {
   const sc = boardScopes(B),
     me = [...sc.top, ...sc.others].some(x => boardMe(x.rows) >= 0) ? 0 : -1,
     // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
-    // device has none to show (Q134), or when the subject on screen is not the board's (P is another subject's
-    // progress). Other rows: the level the sheet read from their saved progress.
+    // device has none to show, or when the subject on screen is not the board's (P is another subject's progress).
+    // Other rows: the level the sheet read from their saved progress.
     mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '';
   // One board's list, the player's row marked; a titled board (staff and cohorts) under its heading.
   const list = rows => {
@@ -637,7 +615,7 @@ function paintBoard(B, S = boardSubj()) {
   };
   const part = x =>
     x.t ? `<section class="bscope" data-scope="${x.k}"><h3 class="bhead">${esc(x.t)}</h3>${list(x.rows)}</section>` : list(x.rows);
-  // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
+  // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
     : !boardOn()
@@ -658,20 +636,18 @@ function paintBoard(B, S = boardSubj()) {
   const m = box.querySelector('.me');
   if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
 }
-// Achievements (core.js ACH, Pierre 2026-11-01): checked after every answer on a snapshot of the progress (achSnap);
-// each new one pops up (achPop, one after the other). Kept in reefid-sync-ach ({id: time}, plus _run / _best for the run
-// of right answers and _cor / _hard for one-off feats), a reefid-sync key, so it travels with the progress. The first
-// check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
+// Achievements (core.js ACH): checked after every answer on a snapshot of the progress (achSnap); each new one pops up
+// (achPop, one after the other). Kept in reefid-sync-ach ({id: time}, plus _run / _best for the run of right answers and
+// _cor / _hard for one-off feats), a reefid-sync key, so it travels with the progress. The first check on a device with
+// progress but no record yet grants what is already met in one recap.
 const ACHK = 'reefid-sync-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
 // earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
 // never comes back from a copy earned before (core.js mergeAch).
-// Version of the record (ACH_V): a record from before the last full recount brings its feats (best run, corallites, hard
-// photo) but not its achievements, which were counted on older rules (core.js mergeAch), so a device not updated yet
-// never brings back one the recount took away. 2: the mastery exam (2026-11-01). 3: the fish achievements around the
-// global score (Pierre, 2026-11-08, Q259-Q264: fpct25 retired, every fish % one on the score, new ones; "il faut
-// recalculer ... leur succès actuel"), every subject recounted (achMigrate), silently (Q264: "le retrait il est fait en
-// silence").
+// Version of the record (ACH_V): a record older than the last full recount brings its feats (best run, corallites, hard
+// photo) but not its achievements, counted on older rules (core.js mergeAch), so a device not updated yet never brings
+// back one the recount took away. Raising it recounts every subject, silently (achMigrate; docs/FISH_PATH.md for the
+// fish achievements on the global score).
 const ACH_V = 3;
 function achMerge(json) {
   try {
@@ -683,22 +659,21 @@ function achMerge(json) {
 // A learned mark taken away by a recalculation (model.js mxRecalc, MXL): the achievements resting on genera learned
 // (core.js ACH_LEARN: Instructor, Coral master, Group complete) that the progress no longer meets are taken back, dated
 // in the record's _gone so no merge brings them back (core.js achRevoke, mergeAch); earned again, they come back as
-// usual. Only then: everywhere else achievements are only added. The removals are kept and synced even when this record
-// held none of them (achMigrate dropped them at start-up, or they were earned on another device): without them the next
-// merge would bring back the sheet's copy (Codex review #399). The ids taken back go to the card (mxLostNotice) and
-// leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
+// usual. Only here: everywhere else achievements are only added. The removals are kept and synced even when this record
+// held none of them (dropped by achMigrate, or earned on another device), or the next merge would bring back the sheet's
+// copy. The ids taken back go to the card (mxLostNotice) and leave the "new" dots; one sync, so the sheet's copy follows.
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
-  // Silent for now (model.js MXL.QUIET, Q332): the learned-based achievements are kept, as for a mark lost in play; a
-  // recheck still pending from before is dropped (Codex review of #840).
+  // Silent while model.js MXL.QUIET: the learned-based achievements are kept, as for a mark lost in play, and a pending
+  // recheck is dropped.
   if (MXL.QUIET) {
     delete M.ach;
     store.set(MXL.KEY, M);
     return [];
   }
   // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy; as the
-  // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved; Codex review #736).
+  // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved).
   if (!noticesReady()) {
     const id = SUBJ.id;
     noticeLater('achRecheck:' + id, () => inSubject(id, achRecheck));
@@ -728,8 +703,8 @@ const achList = () => slateGenera();
 // circles 1, 2 and 3) and its opt-in sets (UNITS sets: the scientific genera), for the achievements that read them
 // (core.js FISH_ACH): met, at Advanced or above and learned in the core; at Advanced or above in each circle; units at
 // Open Water or above (sets) and at Advanced or above (setsAdv) in each set. pct: the subject's global score when it has
-// one (core.js SUBJECTS score, treeScore over UNITS tree: Q259, the fish % achievements on it), read from the device's
-// progress whatever the sheet's version (the achievements need nothing from the sheet), else the headline %.
+// one (core.js SUBJECTS score, treeScore over UNITS tree), from the device's progress whatever the sheet's version, else
+// the headline %.
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
     st = L.map(lvStep),
@@ -777,25 +752,18 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
 }
-// Full recount, once per device and record version (Pierre, 2026-11-01: "redo the calculation cleanly for everyone,
-// achievements too, locking again those unlocked when they should not have been"; 2026-11-08: "recalculer tous les
-// progrès ... et ensuite recalculer leurs succès aussi"): every achievement of every subject is tested again on that
-// subject's current progress with the current rules (core.js achRecount); those still met keep their date, the others
-// go, and so do the ids no list holds any more (fish fpct25, Q259). Feats (runs, corallites, hard photo, removals) stay.
-// Silent (Q264). Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows. Each subject with
-// achievements (core.js SUBJECTS ach) checks its own list (SUBJECTS achs) on its own progress (inSubject); the
-// Contributions once, with the first. All live in the one record (ACHK) under ids of their own.
-// A subject whose data is not in yet (the fish, lazy-loaded: app.js fishLoad; its slate empty) cannot be tested: its
-// achievements wait on this device (ACHOLD, {subject: {id: time}}, outside the synced record, so nothing unchecked
-// travels) and are recounted once its data comes (achPending); until then they are out of the record, never shown (its
-// pages need its data). Every such subject waits, even with nothing held, so what its progress already meets comes in
-// silently too (Codex review #734). Before a subject is tested, its records still under the former moving average are
-// rebuilt (model.js domRecalcAll: a short visit, inSubject, skips it; Codex review #734), so nothing is granted from
-// obsolete bars.
+// Full recount, once per device and record version (progress and achievements recalculated for everyone: docs/LEARNING.md,
+// docs/decisions/2026-11-18-decisions-from-comments-3.md): every achievement of every subject is tested again on that subject's progress with the current rules
+// (core.js achRecount); those still met keep their date, the others go, as do ids no list holds. Feats (runs,
+// corallites, hard photo, removals) stay. Silent; then one sync, so the sheet's copy follows. Each subject with
+// achievements (SUBJECTS ach) checks its own list (achs) on its own progress (inSubject); the Contributions once, with
+// the first. A subject whose data is not loaded yet (app.js fishLoad) cannot be tested: its achievements wait on this
+// device (ACHOLD, {subject: {id: time}}, never synced) and are recounted when its data comes (achPending). Its records
+// under the former moving average are rebuilt first (model.js domRecalcAll), so nothing is granted from obsolete bars.
 const ACHS = () => SUBJECTS.find(x => x.ach).id,
   ACHOLD = 'reefid-ach-old',
-  // The shared data first (app.js DATA, set by build: the levels read it through GX; Codex review #734: a direct Fish link
-  // can bring the fish files before data.json), then the subject's own (its slate).
+  // The shared data first (app.js DATA: the levels read it through GX; a direct Fish link can bring the fish files before
+  // data.json), then the subject's own (its slate).
   achReady = () =>
     !!(typeof DATA === 'object' && DATA && DATA.gen) &&
     achList().length > 0 &&
@@ -866,9 +834,9 @@ function achCheck(silent) {
     if (!had) store.set(ACHK, A);
     return achDot();
   }
-  // Only the first achievement of each family and the top tier pop up (Pierre, 2026-11-02, after a walkthrough counted
-  // 7-9 toasts in 60 answers): a new kind stays a surprise, an intermediate step lands quietly on the achievements page
-  // with a "new" dot on 🏅 / 🏆. Several at once make one toast. Every Contributions tier pops up (Pierre, 2026-11-05, Q65).
+  // Only the first achievement of each family, the top tier and every Contributions tier pop up (docs/ARCHITECTURE.md):
+  // a new kind stays a surprise, an intermediate step lands quietly on the achievements page with a "new" dot on 🏅 / 🏆.
+  // Several at once make one toast.
   const fams = new Set(
       achTests()
         .filter(a => A[a.id])
@@ -886,8 +854,8 @@ function achCheck(silent) {
   store.set(ACHK, A);
   if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
   achDot();
-  // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (Pierre, 2026-11-05: a toast
-  // at the top may go unread); the first stays a toast, like the learning achievements.
+  // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (a toast may go unread); the
+  // first stays a toast, like the learning achievements.
   const card = id => !silent && had && (achFind(id) || {}).kind === 'contrib' && achFind(id).tier >= 2;
   (silent || !had ? ids : loud).filter(card).forEach(id => achCard(achFind(id)));
   achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
@@ -932,9 +900,9 @@ function achCard(a) {
   );
 }
 // The learning achievements of the subject on screen (core.js SUBJECTS achs, kind 'learn'; a subject without any: the
-// first one's): the count on the badge and on #ach, so a fish achievement never counts in the corals' and back. The
-// Contributions (kind 'contrib', Pierre 2026-11-05, Q65) are one family for every subject (core.js ACH_CONTRIB), never in
-// that count, listed in their own section. achTests: what a check tests, the subject's learning ones and the Contributions.
+// first one's): the count on the badge and on #ach, so one subject's achievements never count in another's. The
+// Contributions (kind 'contrib') are one family for every subject (core.js ACH_CONTRIB), never in that count, listed in
+// their own section. achTests: what a check tests, the subject's learning ones and the Contributions.
 const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
   ACH_L = () =>
     achSubj()
@@ -946,11 +914,9 @@ const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
 const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '🐌': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
 // Achievements earned quietly and not seen yet: a dot on 🏆 in the header, on the Achievements tab and on 🏅 in the
-// player's card. Kept on this
-// device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
-// Codex review #360); sign-out clears it with the progress.
-// Each subject's page shows and clears only its own (achShown: its list and the Contributions; Codex review #694): another
-// subject's unseen ones keep their mark until that subject's page shows them.
+// player's card. Kept on this device only (its own key, outside the synced record: a sign-in or another device's sync
+// never brings or drops them); sign-out clears it with the progress. Each subject's page shows and clears only its own
+// (achShown: its list and the Contributions).
 const ACHNEW = 'reefid-ach-new',
   achUnseen = () => store.get(ACHNEW, []) || [],
   achShown = () => {
@@ -965,14 +931,9 @@ function achDot() {
   if (tab) tab.classList.toggle('hasnew', achNew() > 0);
 }
 // After each answer (quiz.js answer; cur, the game it was given in): the run of right answers and the one-off feats,
-// then the check.
-// The run (On a roll, Unstoppable: _run, _best) and Sharp eye (_hard) are earned only in the normal photo quiz (Pierre,
-// 2026-11-05, Q82: "only in the normal Quiz"; in the custom quiz the player picks the genera and the choices come from
-// them, and the Duel tab asks between 2 genera, so runs and "a photo most players miss" come easier; the Met achievements
-// stay as they are, real discoveries). An answer in the custom quiz or the Duel tab neither extends nor breaks the run,
-// so switching tabs never costs a run earned in the Quiz. The photo quiz counts with all its formats (Again, typed
-// questions, the duels slipped into it, the comeback, the exam); the other feats (corallites, duels) count everywhere,
-// as before. Nothing already earned is taken back.
+// then the check. The run (On a roll, Unstoppable: _run, _best) and Sharp eye (_hard) count only in the normal photo
+// quiz, all its formats included (docs/ARCHITECTURE.md): the custom quiz and the Duel tab make them easier, so an answer
+// there neither extends nor breaks the run. The other feats (corallites, duels) count everywhere.
 const achRunIn = cur => cur === 'quiz';
 function achAfter(good, ph, cur) {
   if (!SUBJ.ach) return; // an answer on a subject without achievements earns nothing
@@ -994,13 +955,14 @@ function achAfter(good, ph, cur) {
   store.set(ACHK, A);
   achCheck();
 }
-// Coral basics done (proto/basics.js seenStep): a one-off feat of the record, synced with it, so the Home line and the
-// first-launch offers know on every device (app.js basicsDone).
-function achBasics() {
+// A subject's basics module done (Coral basics, Fish basics: proto/basics.js seenStep): a one-off feat of the record, synced
+// with it, so the Home line and the first-launch offers know on every device (app.js basicsDone). Each subject has its own
+// (SUBJECTS basics.feat). The corals' feat also grants the achievement "Coral basics"; the fish's has none yet.
+function achBasics(feat = (SUBJ.basics || {}).feat || '_basics') {
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
-  if (A._basics) return;
-  A._basics = 1;
+  if (A[feat]) return;
+  A[feat] = 1;
   store.set(ACHK, A);
   achCheck();
   if (SYNC) syncSoon();
@@ -1010,7 +972,7 @@ function achBasics() {
 // record goes to the sheet with the next sync like the other feats.
 // Its id is kept too, counted or not (core.js repsAdd), for "Your feedback helped" (achHelped).
 function achReport(r) {
-  // An account the admin deleted (the sheet answered 'gone': sync.js) counts nothing (Pierre, 2026-11-05).
+  // An account the admin deleted (the sheet answered 'gone': sync.js) counts nothing.
   if (SYNC && SYNC.err === 'gone') return;
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
@@ -1020,18 +982,14 @@ function achReport(r) {
   if (counted) achCheck();
   if (SYNC) syncSoon();
 }
-// "Your feedback helped" (Pierre, 2026-11-05, Q66): a report the admin marked done (To do › Reports ✓ Done, published in
-// curation.json seen 'rep:<id>') is told to the player who sent it, at their next visit: checked at start-up (signed in:
-// once the sheet's load reply is merged, sync.js repsSeen) and when a new curation.json arrives (app.js route). A warm
-// card that stays until closed (Pierre: a toast at the top may go unread), at a calm moment: never over a question
-// (a game on screen: at the break at Next, helpedArm from quiz.js answer), another card, the tour, a toast or the report
-// dialog; it waits for them to go. At the first report handled, then every report handled since the last thanks in one,
-// at most once per 7 days (core.js helpedDue, helpedMark: Pierre, never again and again). Marked thanked when the player
-// closes it (left unseen by leaving the page, it comes back). Only that it was handled: nothing the admin wrote.
-// Whatever the subject on screen, signed in or not (an anonymous device's reports by the ids it kept itself); never for
-// an account the admin deleted (the sheet answered 'gone', sync.js).
-// Handled means Pierre's Done or a PR's (reports-handled.json, the integrator's: core.js handledSeen), read only by a device
-// that sent reports, again at most every 30 minutes (HANDLED).
+// "Your feedback helped" (docs/ARCHITECTURE.md "Players' reports"): a report marked handled (the admin's ✓ Done in
+// curation.json seen 'rep:<id>', or a PR's in reports-handled.json: core.js handledSeen) is told to its sender at their
+// next visit, checked at start-up (signed in: once the load reply is merged, sync.js repsSeen) and when a new
+// curation.json arrives. A card that stays until closed, at a calm moment only (never over a question: at the break at
+// Next, helpedArm; never over another card, the tour, a toast or the report dialog). The first report handled, then
+// every one since the last thanks in one card, at most once per 7 days (core.js helpedDue, helpedMark); marked thanked
+// when closed. Says only that it was handled. Any subject, signed in or not; never for a deleted account.
+// reports-handled.json is read only by a device that sent reports, at most every 30 minutes (HANDLED).
 let helpedUp = false,
   helpedMo = null,
   helpedT = 0;
@@ -1054,7 +1012,7 @@ const helpedIds = () => {
   const A = store.get(ACHK, null);
   return A ? helpedDue(A, handledSeen((typeof CUR === 'object' && CUR && CUR.seen) || null, HANDLED.file), Date.now()) : [];
 };
-// Never over an enlarged photo either (#lightbox, Codex review #581): its close (hidden set again) wakes the wait below.
+// Never over an enlarged photo either (#lightbox): its close (hidden set again) wakes the wait below.
 const helpedCalm = () =>
   !document.querySelector('#tour, .unlock, #repdlg, .achpop, #lightbox:not([hidden])') &&
   !achBusy &&
@@ -1099,6 +1057,9 @@ function helpedShow(brk) {
     onClose: how => {
       helpedUp = false;
       if (how === 'route') return void setTimeout(achHelped, 300); // left unseen: back on the next page
+      // Closed by the safety net (cardShow: never drawn): not read, so not thanked; due again at the next visit (no retry
+      // now: a card that cannot be drawn would loop).
+      if (how === 'empty') return void (brk && route());
       const A = store.get(ACHK, {}) || {};
       helpedMark(A, ids, Date.now());
       store.set(ACHK, A);
@@ -1108,8 +1069,8 @@ function helpedShow(brk) {
   });
   return true;
 }
-// The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen, Code.gs v57): those sent signed in
-// on any device, before this version too. Then the check above.
+// The ids of the player's own reports, from the sheet's load reply (sync.js repsSeen): those sent signed in on any
+// device. Then the check above.
 function achReps(ids) {
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};
@@ -1125,9 +1086,9 @@ function achPop(a) {
   achQ.push(a);
   if (!achBusy) achNext();
 }
-// One overlay at a time (new-player walkthrough 2026-11-02: a toast sat on a "New genus" card, and tapping it left the
-// question): while a card (.unlock, the sign-in card included) or the tour is open, the toast waits and shows once they
-// have closed; a card that opens over a toast sends it back to the front of the queue, to show whole afterwards.
+// One overlay at a time (a tap on a toast over a card would leave the question): while a card (.unlock, the sign-in
+// card included) or the tour is open, the toast waits and shows once they have closed; a card that opens over a toast
+// sends it back to the front of the queue, to show whole afterwards.
 const achBlocked = () => document.querySelector('.unlock, #tour');
 function achHold(a) {
   achQ.unshift(a);
@@ -1183,20 +1144,20 @@ function achRecap(ids) {
   });
 }
 // #leaderboard/achievements: every achievement, earned ones first with their date, the others greyed with what earns them.
-// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#leaderboard) and Achievements (#leaderboard/achievements).
+// The 🏆 page has two tabs, as on Steam: Leaderboard (#leaderboard) and Achievements (#leaderboard/achievements).
 const boardTabs = cur =>
   `<nav class="btabs" aria-label="Leaderboard and achievements">${[
     ['board', '🏆 Leaderboard'],
     ['ach', `🏅 Achievements`]
   ]
-    // Achievements not seen yet: the dot on 🏆 leads to the Leaderboard tab, so the Achievements tab carries it too
-    // (Pierre, 2026-11-02: on the leaderboard, nothing said where the new ones were).
+    // Achievements not seen yet: the dot on 🏆 leads to the Leaderboard tab, so the Achievements tab carries it too, to
+    // say where the new ones are.
     .map(
       ([h, t]) =>
         `<a href="${esc(hr(h))}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
     )
     .join('')}</nav>`;
-// How many signed-in players hold each achievement (sheet v15, GET ?achs=1: {n, counts}), 5 minutes in memory.
+// How many signed-in players hold each achievement (GET ?achs=1: {n, counts}), 5 minutes in memory.
 let achsAt = 0,
   achsP = null;
 const loadAchs = () => {
@@ -1261,8 +1222,8 @@ function viewAch() {
 }
 // Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
 function boardNotice() {
-  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
-  // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
+  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet), once
+  // the sheet serves the leaderboard (an older script ignores the %).
   if (SYNC && !store.get('reefid-board-sent14', 0))
     loadBoard(board0()).then(B => {
       if (B && !B.err && SYNC && !store.get('reefid-board-sent14', 0)) {
@@ -1270,10 +1231,9 @@ function boardNotice() {
         syncSoon();
       }
     });
-  // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
-  // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
-  // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
-  // Told on another device of the account (core.js TOLD 'board'): after the visit's first sync (sync.js noticeLater).
+  // Said only on a subject with a live leaderboard; elsewhere it waits for a later load. A switch of subject while it
+  // shows takes it away and it is due again (app.js setSubject, toastsOff). Told on another device of the account
+  // (core.js TOLD 'board'): checked after the visit's first sync (sync.js noticeLater).
   if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board')) return;
   store.set('reefid-board-told', 1);
   const ms = 15000,
@@ -1288,16 +1248,12 @@ function boardNotice() {
   t.querySelector('button').addEventListener('click', told);
   setTimeout(told, ms);
 }
-// Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
-// real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
-// player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
-// Escape, so a card closed by leaving the page comes back on the next one. A later recalculation adds a note at the end
-// of RECALC.L (a new id, a title and a text), and so does a new game mode worth announcing (typed questions,
-// 2026-11-03, with its own kicker and button): a player shown every note but the last sees the last; one who missed
-// several sees them all on one card, latest first. KEY holds the id of the last note seen. Exception: the photo memory
-// recalculation (2026-11-03, core.js memRecalc) is silent, Pierre's choice (the bars only move down 1-3 points).
-// Each note has a kind (app.js CARD_KINDS: 'update' for a recalculation, 'feature' for a new game mode): the latest due
-// gives the card its medallion, for a recalculation the player's progress ring as it is now.
+// The announcement card of the notes in RECALC.L: the past progress recalculations and a new game mode (a new
+// recalculation is not announced: docs/rules/sheet.md). Once per device, to a player who already has answers, at the
+// first moment no tour or card is open; marked seen only by its button or Escape, so a card closed by leaving the page
+// comes back on the next one. A player who missed several notes sees them all on one card, latest first; KEY holds the
+// id of the last note seen. Each note's kind (app.js CARD_KINDS: 'update', 'feature') gives the card its medallion: for
+// an update, the player's progress ring as it is now.
 const RECALC = {
   KEY: 'reefid-recalc',
   L: [
@@ -1313,8 +1269,8 @@ const RECALC = {
       t: '<i>Millepora</i> now counts in your progress',
       p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
     },
-    // A new game mode announced the same way (Pierre, 2026-11-03: a card for typed questions, a little tongue-in-cheek;
-    // text validated by Pierre). k, b: the card's kicker and button when this note is the latest due.
+    // A new game mode announced the same way (its text is Pierre's validated wording). k, b: the card's kicker and button
+    // when this note is the latest due.
     {
       id: 'typed-questions-2026-11',
       kind: 'feature',
@@ -1355,7 +1311,7 @@ function recalcNotice() {
     seen = Math.max(at(store.get(RECALC.KEY, '')), ...L.filter(x => toldHas('recalc:' + x.id)).map(x => at(x.id))),
     due = L.slice(seen + 1).reverse();
   if (!due.length) return void said('none');
-  // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
+  // Answers: the global count, or the units' own for progress saved before it existed.
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
   if (!played) return void (store.set(RECALC.KEY, last), said('none'));
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
@@ -1373,18 +1329,16 @@ function recalcNotice() {
     primary: {text: due[0].b || 'Got it', on: () => (store.set(RECALC.KEY, last), toldAdd('recalc:' + last))},
     esc: 1,
     enter: 1,
-    // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
-    // player opening straight at #practice/quiz had it closed by the first route, before ever seeing it).
+    // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (a player opening straight at
+    // a game would otherwise lose it to the first route).
     onClose: how => how === 'route' && noticeAgain(recalcNotice, 300)
   });
 }
-// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): silent for now (Pierre, 2026-11-09 ~15:40
-// Manila, Q332: mxRecalc no longer calls mxLost); when it told it: once on this device by an announcement card, like recalcNotice (rule D6: never held, no
-// visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
-// answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
-// (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or
-// Enter / Escape): those marks go to told and are never told again here; leaving the page closes it unseen and it comes
-// back once the new page is drawn.
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): silent while MXL.QUIET (docs/rules/sheet.md).
+// When told: once on this device by an announcement card, like recalcNotice (rule D6), at start-up once the progress is
+// in and right after a pull or an answer that drops a mark (mxLost), on whatever page is open, waiting for another card
+// or the tour to go (tried every 2 s). Names the genera and the achievements taken back with them (achRecheck). Seen
+// only by OK, Enter or Escape; leaving the page closes it unseen and it comes back on the next one.
 const andList = L => (L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]);
 // why: the reason per genus (model.js mxRecalc): 'bkt' an exam passed under the former model, 'rules' a recalculation of
 // the whole log under newer rules (the sheet's full replay, sync.js replayAdopt).
@@ -1416,7 +1370,7 @@ const mxTok = (n, mx) => `mx:${n}@${mx}`;
 function mxLostNotice() {
   noticeStop(mxLostT);
   let M = store.get(MXL.KEY, {}) || {};
-  // Silent for now (model.js MXL.QUIET, Q332): a card still due from before goes to told unseen (Codex review of #840).
+  // Silent while model.js MXL.QUIET: a card still due goes to told unseen.
   if (MXL.QUIET) {
     if (Object.keys(M.due || {}).length) store.set(MXL.KEY, {...M, told: {...(M.told || {}), ...M.due}, due: {}, gone: []});
     return;
@@ -1461,20 +1415,16 @@ function mxLostNotice() {
     onClose: how => how === 'route' && (mxLostT = noticeAgain(mxLostNotice, 300))
   });
 }
-// The announcement card of a rules version (core.js RVS msg; Pierre, 2026-11-03: announcement cards show as soon as the
-// player opens or reconnects to the app, on whatever page they land on, one after another if several, never held by
-// the visit floor or the prompt spacing; rule D6). When this device adopts the sheet's full
-// replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
-// on this device (RVN.KEY, device only: due, the versions still to show; told, those shown; pct, the progress % before
-// and after the adoption, per version, for a msg with only: 'changed', due only when the two differ by msg.min points or
-// more, either way: core.js RV_CARD, 5). One card per version,
-// oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
-// or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
-// At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
+// The announcement card of a rules version (core.js RVS msg; rule D6: shown on whatever page the player lands on, never
+// held). When this device adopts the sheet's full replay of a newer version (sync.js replayAdopt), every version it
+// skipped that has a msg is due once (RVN.KEY, device only: due, the versions to show; told, those shown; pct, the
+// progress % before and after, per version: a msg with only 'changed' is due only when they differ by msg.min points or
+// more, core.js RV_CARD). One card per version, oldest first; like recalcNotice it waits only for another card or the
+// tour (tried every 2 s), and a page change closes it unseen to show it again. At start-up and right after an adoption.
 const RVN = {KEY: 'reefid-rv-msg'};
 const rvTold = v => toldHas('rv:' + v); // its card seen on another device of the account (core.js TOLD)
-// A rules version's card id: the corals' version number as before, another subject's (core.js SUBJECTS replayed: fish,
-// its own rules versions FISH_RVS) '<subject>:<version>' (fish:1), so two subjects' versions of one number never meet.
+// A rules version's card id: the first replayed subject's version number, another subject's (core.js SUBJECTS replayed,
+// its own rules versions) '<subject>:<version>', so two subjects' versions of one number never meet.
 const rvId = (sid, v) => (!sid || sid === replaySubject() ? v : sid + ':' + v);
 // Every rules version that may have a card, each with its id (k).
 const rvAll = () => [
@@ -1504,9 +1454,8 @@ function rvNoticeAdd(from, to, pct, sid) {
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {},
     k = x => rvId(sid, x.v);
-  // A version without a card (from rules version 10, Pierre 2026-11-09 ~14:45 Manila, Q330: a recalculation is not
-  // told): the cards of this subject still due here go too (Codex review of #840: a card queued before the upgrade
-  // showed after it).
+  // A version without a card (a recalculation is not told: docs/rules/sheet.md): this subject's cards still due here go
+  // too, so a card queued before the upgrade never shows after it.
   const VS = sid ? rvsOf(sid) : RVS,
     V = VS.find(x => x.v === to);
   if (V && !V.msg) {
@@ -1528,7 +1477,7 @@ function rvNoticeAdd(from, to, pct, sid) {
   if (sorry && !(pct && pct[0] - pct[1] >= (sorry.msg.min || 0))) {
     L = rvMsgs(from, to, true, sid);
     // No earlier version in the jump with the standard card (an upgrade from the version just before): the standard card
-    // under the apology's version (M.std; rvNotice shows RV_CARD for it; Codex review #646).
+    // under the apology's version (M.std; rvNotice shows RV_CARD for it).
     if (!L.some(x => x.msg === RV_CARD)) (L.push({v: sorry.v, msg: RV_CARD}), std.push(k(sorry)));
   }
   L.forEach(x => {
@@ -1591,15 +1540,12 @@ function rvNotice() {
     onClose: how => how === 'route' && (rvT = noticeAgain(rvNotice, 300))
   });
 }
-// An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
-// opening of #408 run unchecked (too many new genera at once, no easier questions after misses), at app open, in plain
-// words, greeted by the first word of their sign-in name (else "Hi!"). Whether they felt it is read once, the first time
-// this version runs on the device (FIRST: the time, and what core.js sorryOf reads then: the answers in the window, the
-// opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
-// cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
-// up), never held, its button, Enter or Escape close it for good on this device (reefid-sorry, like reefid-recalc, kept on the
-// device) and, signed in, on the account's other devices (core.js TOLD 'sorry'); leaving the page closes it unseen and it
-// comes back.
+// An apology, once (docs/ARCHITECTURE.md; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
+// too-fast opening of the corals (too many new genera at once, no easier questions after misses), at app open, greeted by
+// the first word of their sign-in name (else "Hi!"). Whether they felt it is read once, the first time this runs on the
+// device (FIRST: the time and what sorryOf reads then), so playing on changes nothing. A card like recalcNotice's (kind
+// apology): it waits while the tour or another card is up; its button, Enter or Escape close it for good on this device
+// (reefid-sorry) and, signed in, on the account's others (core.js TOLD 'sorry'); leaving the page closes it unseen.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
   if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
@@ -1630,22 +1576,11 @@ function sorryNotice() {
     onClose: how => how === 'route' && noticeAgain(sorryNotice, 300)
   });
 }
-// The cards that tell a player about a subject (app.js UNITS hello), one per way the subject opens (core.js SUBJECTS open,
-// subjGroup): hello.group while it opens to a group, hello.all once it opens to everyone (fish since Q158: the same
-// invitation to every player, while the subject keeps its beta label). Pierre, 2026-11-05: "a proper card the player
-// closes, shown once, at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group
-// he picks, the card is an invitation to test the fish beta, for the players of that group only.
-// Each card is seen once, under its own key (subjDev: reefid-fish-hello-group, and the account's core.js TOLD
-// 'hello:fish-group' for its other devices), so a later card is not hidden by an earlier one. hello.group goes only to
-// a player in the subject's group (subjGroups: never the admin's own access, IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
-// the admin's browser (as the tour), and only to a player settled in the subject on screen (the corals): at least
-// HELLO.MIN answers (a new player meets the switch with the tour and the first questions). A player who has played the
-// subject already (it is on screen, its welcome question is answered, or it has progress) is never told: marked seen at
-// once. The calm moment: Home, HELLO.WAIT after it is drawn and still on it, nothing else on screen (the tour, a card, a
-// toast, the help, ⚙, an enlarged photo) and the prompt spacing met (quiz.js promptOk, which it then pushes back as the
-// other prompts do). Not calm: tried again at the next Home. Seen by either button or Escape; leaving the page closes it
-// unseen and it comes back at the next calm Home. "Try fish" switches to the subject and opens its quiz (its welcome
-// question first, quiz.js startGate).
+// The card that tells a player about a subject (app.js UNITS hello; docs/ARCHITECTURE.md "Subjects"), once, at a calm
+// moment: hello.group while the subject opens to a group (its players only, subjGroups), hello.all once it opens to
+// everyone while in beta. Each is seen once under its own key (subjDev, core.js TOLD), never in the admin's browser,
+// only to a player with HELLO.MIN answers on the subject on screen; one who has played it is marked seen at once. Calm:
+// Home, HELLO.WAIT after it is drawn, nothing else on screen, quiz.js promptOk; else the next Home tries again.
 const HELLO = {KEY: 'hello-', MIN: 10, WAIT: 1500};
 // The way S opens ('group' or 'all'): the name of its card in UNITS hello and of the card's seen mark.
 const helloMode = S => (subjGroup(S) ? 'group' : 'all');
@@ -1664,7 +1599,7 @@ function subjHello() {
   const card = S => (helloMode(S) === 'all' && !S.beta ? null : (UNITS[S.id].hello || {})[helloMode(S)]),
     member = S => (helloMode(S) === 'group' ? subjGroups().includes(S.id) : subjOpen(S));
   // The first subject with a card due for the player, never by its place: one whose card is settled (seen, or the subject
-  // already met) gives way to the next (Codex review #987: the fish's invitation, seen, hid the sea slugs' for good).
+  // already met) gives way to the next.
   let S = null,
     H = null,
     key = '',
@@ -1705,11 +1640,10 @@ function subjHello() {
     });
   }, HELLO.WAIT);
 }
-// The notices this device marked seen before they travelled with the account (core.js TOLD, 2026-11-08), told to the
-// account once, at start-up (app.js SETUP 2), so the account's other devices stop showing them too; a save sends them
-// when any is new. Once per device (SEEDK), the first time this version runs, and only to the account signed in then:
-// a later account on a shared device never takes the marks a previous player left (Codex review #736). Not signed in
-// then: never (an anonymous device keeps them here, as before).
+// The notices this device marked seen before they travelled with the account (core.js TOLD), told to the account once at
+// start-up, so its other devices stop showing them too; a save sends them when any is new. Once per device (SEEDK), and
+// only to the account signed in then: a later account on a shared device never takes the marks a previous player left.
+// Not signed in then: never (an anonymous device keeps them here).
 const SEEDK = 'reefid-told-seeded';
 function toldSeed() {
   if (store.get(SEEDK, 0)) return;
@@ -1761,7 +1695,7 @@ document.querySelectorAll('#boardset button').forEach(
     (b.onclick = () => {
       store.set(BOARD, {v: b.dataset.board === '1' ? 1 : 0, t: Date.now()});
       showBoardSet();
-      Object.keys(boardP).forEach(k => delete boardP[k]); // every subject's board fetched again (Codex review #693)
+      Object.keys(boardP).forEach(k => delete boardP[k]); // every subject's board fetched again
       syncSoon();
     })
 );

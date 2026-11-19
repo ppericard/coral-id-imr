@@ -8,11 +8,45 @@ merge, from the PR's `tools/sync/changes/<branch>.md` (rule D3, docs/rules/sheet
 The self-update reads only `const VERSION = N;`, so nothing here changes what the script does.
 
 Entries up to v176 were moved here from the old line 1 word for word (code marks were dropped there, so they are
-missing from those; `docs/ARCHITECTURE.md`'s version history keeps them for most). Their dates: the day
-ARCHITECTURE.md's version history gives, else the day the old line 1 gave for its group of entries, never later than
-the next newer entry; for v7 to v34, which no record dates, that is 2026-11-04, "at the latest" (v35 was that day). Some
+missing from those; `docs/archive/sheet-history-detail.md` keeps the whole version history `docs/ARCHITECTURE.md` held until
+then, its code marks and its own dates and wording, v2 to v5 included). Their dates: the day ARCHITECTURE.md's version
+history gave, else the day the old line 1 gave for its group of entries, never later than
+the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was that day), though
+`docs/archive/sheet-history-detail.md` dates v11 to v31 more exactly (2026-11-01 to 2026-11-03). Some
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
+
+## v189 (2026-11-19)
+
+The fish's own pooled statistics are read by the app from this version (`core.js` `SUBJECTS` `fish` `stats`, `FISHST_SHEET`): `?stats=1&s=fish` has served their photo ratings, unit offsets and pair counts from the `Stats Fish` snapshot since v137, rated at the rank each question asked, and the app now asks for them (`sync.js` `loadOwnStats`) and keeps a reply that names the fish and comes from this version or later, as it does for the sea slugs' (admin plan PR 11). Each photo of a `?stats=1` reply now carries a 5th element, the unit whose offset is in its served difficulty (`statsOut_`, `core.js` `eloOf`): a fish photo is shown at several ranks, so the app swaps that unit's offset for the one of the unit it asks (`model.js` `photoDiff`; Codex review #1148); a coral photo has one genus, so nothing changes for the corals but a photo rated last under a genus it has since left (moved or renamed), which takes its current genus's offset. The replay of the fish's progress still reads no pooled number, a row carrying the scoring record it was scored with
+
+## v188 (2026-11-19)
+
+The embedded `core.js`'s photo fallback tells an R2 address by parsing it as a URL: `photoOnR2` compares its origin with `PHOTO_BASE`'s whole (and its path under the base's), `photoHasR2` tests each address of a `src`, `srcset` or inline style so, and `photoFallback` and `photoRetry` use them instead of looking for `PHOTO_BASE` anywhere in the text, so an address that only names R2 in its path, query or user part, or a look-alike host, is no R2 photo (the CodeQL alert "Incomplete URL substring sanitization" that held #1121; the integrator's call, 2026-11-19, as agreed in `docs/STATUS.md`: fix the check, no dismissal). The script itself never runs these page functions: nothing it reads, writes, replays or serves changes; no gate and no rules version
+
+## v187 (2026-11-19)
+
+The tree engine's names in the embedded `core.js` and in the script's own calls: the code every tree subject runs through is named `tree*` instead of `fish*` (`CORE_.treeGen`, `treePhotos`, `treeGameRead`, `treeReplayGen`, `treeBoardTree`, `treeVarTable`, `treeStructure`, `treePid`, `treeSheets`…), and the corals' `SUBJECTS` entry says it is the flat subject (`flat`), which the app asks instead of comparing a pool file's name (architecture review of 2026-11-18, step 3; the integrator's call, a name inside the code). Nothing the script reads, writes, replays or serves changes; no gate and no rules version
+
+## v186 (2026-11-18)
+
+The Divemaster achievement texts of the learning milestones (the genus, family and sea slug guide entries, and the comment above them) now say 85%, the mastery exam's entry the code uses (`DOM.EX`), instead of 95%, the top of the progress bar. Texts only: no behaviour change
+
+## v185 (2026-11-18)
+
+No "apart" groups any more (Pierre, 2026-11-18: "Il peut très bien y avoir un classement général où tout le monde apparait. Il fallait surtout que le staff ne rentre pas en compétition avec les cohortes mensuelles, donc qu'on puisse exclure le staff d'un groupe. Ce que permet déjà les groupes"): the general board shows everyone and a group's board all its members (`groupBoards_`); `groupDo_` ignores `apart`, the Group settings tab's Apart column is written 0 and read no more, `groupDefs` no longer carry it. To keep one player off every board, the admin's Hide (`userBoard`, v20) stays
+
+## v184 (2026-11-18)
+
+The embedded core.js gives the sea slugs the % achievements beyond 50% (`SEASLUG_ACH`: sspct60, sspct70, sspct80, sspct90 and sspct100, every 10 points up to 100%, as the corals' and the fish's climb; Pierre, 2026-11-17, "une première version des succès pour les limaces de mer", the first version stopping at 50%). The script counts a player's achievement ids by their shape (`achs_`, `[a-z0-9]{1,20}`), which the new ids fit, so nothing else in it changes
+
+## v183 (2026-11-18)
+
+The answer's feedback sheet tally (Pierre, 2026-11-18, the feedback sheet study, question (f): "ok pour les 6 recommandations"; how often players open More on the short sheet): a `pages` event may carry `fb`, four numbers, the answers whose feedback was shown, those where More was opened, the seconds the feedback stayed on screen (each answer's capped at 120) and the taps on a link inside it; the embedded `pagesClean` keeps it in the Pages tab's Detail JSON as four integers, each clamped (10000 for a count, 86400 for the seconds), and drops it when it is not four numbers or all are zero (no new column, no new event kind, no new identifier). The app counts and sends it with the summary it already sends, with no gate (rule D4: a script before this one drops the field, as it drops any field it does not know)
+
+## v182 (2026-11-18)
+
+The embedded core.js gains the basics modules' done feat and the fish's page (Pierre, 2026-11-04: Fish basics, the twin of Coral basics; docs/FISH_PATH.md "Fish basics"): `SUBJECTS` carries `basics: {feat}` (the corals' `_basics`, the fish's `_fbasics`), the fish's `pages` hold `'basics'`, and the fish's first-launch "new" line says the basics come first. The script's behaviour does not change: it replays and serves exactly what it did, and a `_fbasics` feat in a player's synced achievements record is kept like the other feats. Nothing is gated on the script's version
 
 ## v181 (2026-11-18)
 

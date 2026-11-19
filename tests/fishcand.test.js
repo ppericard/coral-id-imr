@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish Candidates swiper (admin plan PR 5a; autosort.js "Fish Candidates", admin-fish.js renderFishCand): the queue
+// The fish Candidates swiper (autosort.js "Fish Candidates", admin-fish.js renderFishCand): the queue
 // lists what Pierre has not decided, the thinnest species first, stops at each species' target, keeps the fish
 // auto-sort's Checks his to answer; his clicks write the fish part of the draft as the auto-sort does (tags and ease
 // beside the add), never "out" (Not this) and never a coral key; his answers to Checks are timed for the agreement.
@@ -20,7 +20,7 @@ const {
   fishMine,
   fishNotThis,
   fishState,
-  fishOn,
+  treePhotoOn,
   fishPhase,
   fishSet,
   fishTag,
@@ -61,7 +61,7 @@ test('fishQueue: the thinnest species first, its photos together; best, alt, not
     [
       ['s2', ids[5]], // the best photos first, the easiest first
       ['s2', ids[4]], // at equal ease, the reference photo
-      ['s2', ids[3]], // Pierre's own: no priority (Pierre, 2026-11-06)
+      ['s2', ids[3]], // Pierre's own: no priority
       ['s2', ids[6]], // another angle
       ['s2', ids[2]], // a near-duplicate last (the pass is sure it goes: set aside)
       ['s3', ids[7]],
@@ -202,7 +202,7 @@ test("Not this (5b): the photo waits as the other species' candidate, marked fro
   assert.strictEqual(m.sid, 's2');
   assert.strictEqual(m.from, 's1');
   F = fishAdd(F, ids[0], 's2', sug[ids[0]]);
-  assert.ok(fishOn(F, ids[0], 's2'));
+  assert.ok(treePhotoOn(F, ids[0], 's2'));
   assert.strictEqual(fishPlay(cands, F).s2.size, 1);
   assert.ok(!fishPlay(cands, F).s1, 'nothing in play on its first species');
   assert.ok(!fishQueue(cands, sug, {s1: {}, s2: {}}, F).some(x => x.p.f === ids[0]));
@@ -219,7 +219,7 @@ test("Not this (5b): the photo waits as the other species' candidate, marked fro
   assert.strictEqual(fishState(X, ids[1], 's1').st, 'gone');
   assert.ok(!fishQueue(cands, {}, {}, X).some(x => x.p.f === ids[1]));
   // An add that names another species than the out (a stale add) is not in play.
-  assert.ok(!fishOn({add: {[ids[1]]: 's1'}, out: {[ids[1]]: 's2'}}, ids[1], 's1'));
+  assert.ok(!treePhotoOn({add: {[ids[1]]: 's1'}, out: {[ids[1]]: 's2'}}, ids[1], 's1'));
 });
 
 test("missing phases first (5b): a phase none of the species' photos in play shows comes first in its species", () => {
@@ -246,7 +246,7 @@ test("missing phases first (5b): a phase none of the species' photos in play sho
   assert.strictEqual(fishPhase(cands.s1[2], sug[ids[2]], {phase: {[ids[2]]: ''}}), '');
   // Add copies the pass's tags beside the add with the source's phase (fishCopy): a juvenile by its source stays one once
   // added, so another juvenile of the species is no longer a missing phase; Pierre's toggle of the flag then wins, even
-  // back to the pass's very code (Codex review #602, twice).
+  // back to the pass's very code.
   const j1 = {jt: 'p1g0sm1', e: 4, k: 'best'},
     sug2 = {...sug, [ids[1]]: j1},
     cands2 = {s1: [...cands.s1, ph(ids[4], ids[4], {st: 'juvenile'})]},
@@ -261,8 +261,7 @@ test("missing phases first (5b): a phase none of the species' photos in play sho
   // A source phase other than juvenile goes in as the phase word; the pass's own phase is kept as it is.
   assert.strictEqual(fishAdd({}, ids[5], 's1', j1, {f: ids[5], st: 'female'}).phase[ids[5]], 'female');
   assert.strictEqual(fishAdd({}, ids[2], 's1', sug[ids[2]], {f: ids[2], st: 'juvenile'}).tags[ids[2]], 'p1g0sm1');
-  // Juvenile set by Pierre before Add on a photo whose source says male: his flag stands, no male phase copied over it
-  // (Codex review #602).
+  // Juvenile set by Pierre before Add on a photo whose source says male: his flag stands, no male phase copied over it.
   const Fj = {tags: {[ids[5]]: 'p1g0sm1j'}},
     Fa = fishAdd(Fj, ids[5], 's1', {jt: 'p1g0sm1', e: 4, k: 'best'}, {f: ids[5], st: 'male'});
   assert.strictEqual((Fa.phase || {})[ids[5]], undefined);

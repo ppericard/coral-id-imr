@@ -14,11 +14,15 @@ layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance
   {circle, cues, look, phase}} (a sub-entry: cues, look, phase). fish_source() lays them on tools/fish_source.json, and
   tools/build_fish.py reads the result, the same source it read before step 5. The base never carries them: a node of
   the base with one of them, or a layer node the base does not hold, stops the build.
-- coral: imrg (the IMR lecture's groups) and gen {genus: {ig, imr, mn}} (its lecture group, its lecture notes verbatim,
-  its mnemonic). data.json is both the corals' source and their built file: it carries them too, written there by
+- coral: imrg (the IMR lecture's groups), gen {genus: {ig, imr, mn}} (its lecture group, its lecture notes verbatim,
+  its mnemonic) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
+  side's place in its genus's look, a side whose look does not list the other left out; the Coral Finder's pairs stay in
+  data.json alone). data.json is both the corals' source and their built file: it carries them too, written there by
   tools/datajson.py (dump() and its rewrite), the one writer of data.json (rule W16). An edit goes to the layer file,
-  then python3 tools/datajson.py; dump() refuses a data.json whose fields differ from the layer, so an edit made in
-  data.json is never lost silently.
+  then python3 tools/datajson.py; dump() refuses a data.json whose fields, or a pair's line or direction, differ from the
+  layer, so an edit made in data.json is never lost silently. A pair taken out of the layer stays in data.json until it
+  is taken out there too (data.json alone cannot tell it from a Coral Finder pair; tests/instance.test.js fails on a
+  lecture line left in the sources).
 
 Another instance gets its own instance.json and layer files; a subject with no layer file builds with no layer (fish:
 every node in circle 1 by the build's default, no declared pair, no starter core).
@@ -43,7 +47,8 @@ FISH_SUB = ("cues", "look", "phase")  # a sub-entry's (a sub-entry takes its ent
 FISH_TOP = ("start", "look")
 CORAL_AFTER = {"ig": "n", "imr": "ig", "mn": "imr"}  # a genus's fields that are the instance's, and where they sit
 CORAL_TOP_AFTER = {"imrg": "key"}
-SPLIT = ("nodes", "gen")  # a layer file's maps written one entry per line
+CORAL_PAIR_AFTER = {"look": "crit", "lsrc": "levels"}  # where a genus's look and lsrc sit, should a record lack them
+SPLIT = ("nodes", "gen", "pairs")  # a layer file's maps written one entry per line
 
 
 def instance(path=INSTANCE_PATH):
@@ -150,14 +155,28 @@ def _put(rec, k, v, after):
     rec.update(items)
 
 
+def coral_sides(lay):
+    """The layer's look-alike pairs (lay pairs {"A|B": {src, look}}), one row per side: (genus, other genus, the line,
+    the other genus's place in the genus's look, or None when that look does not list it)."""
+    out = []
+    for key, x in (lay.get("pairs") or {}).items():
+        a, b = key.split("|")
+        at = x.get("look") or {}
+        out += [(a, b, x.get("src"), at.get(a)), (b, a, x.get("src"), at.get(b))]
+    return out
+
+
 def coral_compose(d, lay):
     """data.json (d) with the instance's coral layer laid on, its fields where data.json has always had them (a genus's
-    ig, imr and mn after n; imrg after key). The fields the layer owns are taken off first, so one the layer no longer
-    gives (or no layer at all) leaves data.json too (Codex review #984). A new copy; a layer genus data.json does not
+    ig, imr and mn after n; imrg after key; a pair's two sides in look at their stored places and in lsrc in gen order,
+    the order data.json's lines follow). The fields and pairs the layer owns are taken off first, so a field the layer
+    no longer gives (or no layer at all) leaves data.json too (Codex review #984); a pair, which data.json alone cannot
+    tell apart from a source's, only when the layer given still names it. A new copy; a layer genus data.json does not
     hold stops."""
-    d = coral_strip(d)
+    d = coral_strip(d, lay)
     gen = d.get("gen") or {}
     lost = [g for g in (lay.get("gen") or {}) if g not in gen]
+    lost += sorted({g for g, *_ in coral_sides(lay) if g not in gen})
     if lost:
         sys.exit(f"the instance's coral layer: not genera of data.json gen: {', '.join(lost)}")
     for k, after in CORAL_TOP_AFTER.items():
@@ -167,30 +186,63 @@ def coral_compose(d, lay):
         for k, after in CORAL_AFTER.items():
             if k in x:
                 _put(gen[g], k, copy.deepcopy(x[k]), after)
+    order, look, lines = {g: i for i, g in enumerate(gen)}, {}, {}
+    for g, o, src, at in coral_sides(lay):
+        lines.setdefault(g, []).append((o, src))
+        if at is not None:
+            look.setdefault(g, []).append((at, o))
+    for g, L in look.items():
+        out = list(gen[g].get("look") or [])
+        for at, o in sorted(L):
+            out.insert(at, o)
+        _put(gen[g], "look", out, CORAL_PAIR_AFTER["look"])
+    for g, L in lines.items():
+        out = list((gen[g].get("lsrc") or {}).items())
+        for o, src in L:
+            out.insert(next((i for i, (k, _) in enumerate(out) if order.get(k, len(order)) > order[o]), len(out)), (o, src))
+        _put(gen[g], "lsrc", dict(out), CORAL_PAIR_AFTER["lsrc"])
     return d
 
 
-def coral_strip(d):
-    """data.json without the instance's fields (the corals' sources alone): a copy."""
+def coral_strip(d, lay=None):
+    """data.json without the instance's fields and pairs (the corals' sources alone): a copy. The pairs taken off are
+    those of lay (None: the instance's coral layer file)."""
+    lay = load_layer("coral") if lay is None else lay
     d = copy.deepcopy(d)
     for k in CORAL_TOP_AFTER:
         d.pop(k, None)
-    for rec in (d.get("gen") or {}).values():
+    gen = d.get("gen") or {}
+    for rec in gen.values():
         for k in CORAL_AFTER:
             rec.pop(k, None)
+    for g, o, _, _ in coral_sides(lay):
+        rec = gen.get(g) or {}
+        if isinstance(rec.get("look"), list):
+            rec["look"] = [x for x in rec["look"] if x != o]
+        if isinstance(rec.get("lsrc"), dict):
+            rec["lsrc"].pop(o, None)
     return d
 
 
 def coral_conflicts(d, lay):
-    """The instance's fields that data.json (d) holds with another value than the layer's: an edit made in data.json."""
+    """The instance's fields that data.json (d) holds with another value than the layer's: an edit made in data.json. A
+    pair's side conflicts when its line differs or its look lists the other genus where the layer does not (or the
+    reverse); its place in look is the layer's (laid on again by coral_compose)."""
     out, lg = [], lay.get("gen") or {}
     for k in CORAL_TOP_AFTER:
         if k in d and d[k] != lay.get(k):
             out.append(k)
-    for g, rec in (d.get("gen") or {}).items():
+    gen = d.get("gen") or {}
+    for g, rec in gen.items():
         for k in CORAL_AFTER:
             if k in rec and rec[k] != (lg.get(g) or {}).get(k):
                 out.append(f"gen {g} {k}")
+    for g, o, src, at in coral_sides(lay):
+        rec = gen.get(g) or {}
+        if (rec.get("lsrc") or {}).get(o) != src:
+            out.append(f"gen {g} lsrc {o}")
+        if (o in (rec.get("look") or [])) != (at is not None):
+            out.append(f"gen {g} look {o}")
     return out
 
 

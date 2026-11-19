@@ -1,12 +1,10 @@
-# The admin's Analyses report (Pierre, 2026-11-04: multifactor analyses of the answer log "every 1000 new answers",
-# computed once and stored in the sync sheet, the admin's primary source; its "Recompute here" runs the same code in that
-# tab on any device, phones included, and its result stays in that tab: Pierre, 2026-11-05; docs/ARCHITECTURE.md
-# "Analyses"). Every hour it asks the
-# sheet how many answers the analysed subject has (the corals'; a cheap call, each subject counted apart from sheet v105:
-# Pierre, 2026-11-08) and computes only when they reach a round thousand (1000, 2000,
-# 3000, …: the milestones, never shifted by the first report's count; Pierre, 2026-11-05) the stored report does not hold
-# yet, or when the analysis code changed, or by hand (Run workflow, "force"). Needs the repository secret
-# ANALYSES_ADMIN_TOKEN (Pierre's one-time setup: docs/HANDOVER.md "Analyses report"); without it every run is skipped.
+# The admin's Analyses report: multifactor analyses of the answer log, computed once and stored in the sync sheet, the
+# admin's primary source; its "Recompute here" runs the same code in that tab on any device, phones included, and its
+# result stays in that tab (docs/ARCHITECTURE.md "Analyses"). Every hour it asks the sheet how many answers the analysed
+# subject has (the corals'; a cheap call, each subject counted apart) and computes only when they reach a round
+# thousand (1000, 2000, 3000, …: the milestones, never shifted by the first report's count) the stored report does not
+# hold yet, or when the analysis code changed, or by hand (Run workflow, "force"). Needs the repository secret
+# ANALYSES_ADMIN_TOKEN (the admin's one-time setup: docs/HANDOVER.md "Analyses report"); without it every run is skipped.
 # Privacy: the report holds per-player results; it goes to the sheet only. The script prints counts only, never an id
 # or a name (the log of a public repository's Actions is public). No artifact, no cache, no upload.
 name: Analyses report
@@ -46,7 +44,7 @@ jobs:
         if: steps.secret.outputs.ok == 'true'
         with:
           node-version: '26'
-          # No cache (privacy note above). setup-node v5+ caches by itself only for a package.json naming npm, which this
+          # No cache (privacy note above). setup-node caches by itself only for a package.json naming npm, which this
           # repo never has; said explicitly so it stays off.
           package-manager-cache: false
       - name: Compute and store the report (counts only in this log)

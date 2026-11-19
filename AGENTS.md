@@ -2,12 +2,13 @@
 
 Read first, every agent (Claude, Codex…), developer, and Pierre. Each rule has a stable ID and one home under
 [`docs/rules/`](docs/rules/), read when your task touches it. Where things stand: [`docs/STATUS.md`](docs/STATUS.md);
-where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
+where things are: the documentation map of [`README.md`](README.md); what lives outside GitHub:
+[`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## The project in five lines
 
-- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>. Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
-- It teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
+- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no framework, no build step in development; the GitHub Pages deploy minifies and stamps versions: [docs/PAGES.md](docs/PAGES.md)) live at <https://ppericard.github.io/coral-id-imr/>. It teaches three subjects (`core.js` `SUBJECTS`: corals, reef fish, sea slugs; benthos next); it was named IMR Coral ID until 2026-11-03, and the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
+- The corals are the first subject: it teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
 - Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones. A separate project from ReefRecall, Pierre's monetised mobile game for another audience and approach: code, data or features move between the two only when he asks.
 - RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.
 - Path in the app = **Learn → Practice → Identify** (the order RAs work in), plus **My progress** and a Pierre-only **admin** back-office (`admin.html`).
@@ -105,6 +106,10 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   two lines of context (he does not remember everything as an agent does; he may ask for more), the question,
   screenshots **sent as files in the chat** when it is visual, and the integrator's recommendation, so he can answer in
   a word ("Q1 oui, Q2 B"). When and whether to ask: Rule 0.
+- **Every answer reaches its doc, and the answers ledger** (Pierre, 2026-11-19): each answer of Pierre's is applied to
+  the document it changes (a ROADMAP row, a rule, a study, a decision record) in the PR that records it, and added to the
+  append-only ledger [docs/ANSWERS.md](docs/ANSWERS.md); STATUS only cites it. Before any question,
+  the integrator searches the ledger, the rules and docs/decisions/; an answer found there is applied, never asked again.
 - **Data access**: any agent, subagents included, may **read** the sync sheet ("IMR Coral ID – RA progress", its id in
   HANDOVER "Code.gs") through the Google Sheets / Drive connector, read-only, real names included: no anonymisation
   between agents. **Writing** to the sheet is the integrator's only (never a subagent), and only with Pierre's explicit
@@ -188,11 +193,11 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **A1** Never change `curation.json` automatically or in a PR; an agent may propose a change.
 - **A2** The admin is minimal: no text on the page, one click with Undo, confirm only bulk.
 - **A3** The top level stays short: a new page goes into an existing tab or group first.
-- **A4** One Corals | Fish switch covers every admin page.
+- **A4** One subject switch covers every admin page.
 - **A5** Every analysis says what it can conclude.
 
 **Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
-- **S1** One engine, never naming a subject.
+- **S1** One shared engine; a difference between subjects is declared and named in one place, never a hidden test on the subject.
 - **S2** Fish names: the IMR PDF's, WoRMS beside; Pierre's Needs ID confirms nothing.
 - **S3** Fish groups come from the regional identification key.
 
@@ -228,14 +233,15 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 
 | Touching… | Read (ARCHITECTURE = docs/ARCHITECTURE.md) |
 |---|---|
-| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" |
-| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" |
-| The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md) |
-| Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" |
-| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
-| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
-| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
+| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" and [spec/tools.md](docs/spec/tools.md) |
+| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" and [spec/photos.md](docs/spec/photos.md); [spec/fish-photos.md](docs/spec/fish-photos.md) |
+| The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md); [spec/model.md](docs/spec/model.md) |
+| Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" and [spec/front-end.md](docs/spec/front-end.md) |
+| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office" and [spec/admin.md](docs/spec/admin.md); "Analyses" and [spec/analyses.md](docs/spec/analyses.md) |
+| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects" and [spec/subjects.md](docs/spec/subjects.md), "Fish content" and [spec/fish.md](docs/spec/fish.md); [FISH_PATH.md](docs/FISH_PATH.md) |
+| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync" and [spec/sync.md](docs/spec/sync.md); [SECURITY.md](docs/SECURITY.md) |
 | Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
+| Why something was decided (a decision, Pierre's words) | [docs/decisions/](docs/decisions/README.md): the index; a PR that carries out a decision adds a record (rule W19) |
 
 ## Ship checklist
 
@@ -243,7 +249,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
    before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: a push would bring the old photos
    back; docs/HANDOVER.md "Photos out of the repo, step 3"): clone again.
 2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
+3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests but those tagged `slow`, in the machine slot: rule W24),
    the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
@@ -258,7 +264,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
-- The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
+- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects is declared and named in one place (rule S1).
 - No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).

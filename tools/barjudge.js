@@ -1,5 +1,4 @@
-// The judge of a progress bar (2026-11-06, Pierre Q127-Q130; docs/reviews/2026-11-06-progress-metric-research.md;
-// docs/LEARNING.md "The judge"). Offline: reads tools/learnsim.js --out files, sends nothing.
+// The judge of a progress bar (docs/reviews/2026-11-06-progress-metric-research.md; docs/LEARNING.md "The judge"). Offline: reads tools/learnsim.js --out files, sends nothing.
 //
 //   node tools/barjudge.js run.json [run2.json ...] [--bar live|<name>] [--core path/to/core.js] [--stats stats.json]
 //   node tools/barjudge.js --log answers.json
@@ -14,7 +13,7 @@
 // --bar live (default): the bar the run showed (rows f.gs, credit). --bar <name> with --core: another rule's bar, computed
 // on the same answers by replaying each run's answer log (alog) with that core.js: 'scoreOf' (core.scoreOf, a check:
 // it must give back the live bar) or 'field' (core.barOf with core.fieldOf over the slate and the --stats pooled
-// confusions: PR #611's rule). Approximation, said in the output: the replay plays the run's own answers, so a rule that
+// confusions). Approximation, said in the output: the replay plays the run's own answers, so a rule that
 // changes what the game asks (the exam's entry, a typed answer's guess rate) is judged on answers it would not all have
 // given; the learned marks are the run's (learnedAt).
 //
@@ -36,7 +35,7 @@ const args = process.argv.slice(2),
   },
   files = args.filter((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
 const mean = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : NaN),
-  // the mean once, not at each value (it was quadratic; the same value)
+  // the mean once, not at each value (else quadratic)
   sd = v => {
     const m = mean(v);
     return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, v.length - 1));
@@ -73,7 +72,7 @@ function simJudge() {
     const slate = C.slateOf(D),
       F = BAR === 'field' ? C.fieldOf(gen, st.conf || {}, slate) : null;
     if (BAR === 'field' && !C.barOf) throw new Error('--bar field needs a core.js with barOf (PR #611)');
-    // The record and the genus too: the domain-score bar takes off the genus's false-alarm rate (core.js faOf, #646).
+    // The record and the genus too: the domain-score bar takes off the genus's false-alarm rate (core.js faOf).
     const barOf = (P, g) => (BAR === 'field' ? C.barOf(P, g, F) : C.scoreOf(P[g], P, g));
     // The replayed state at question q, the run's learned marks put back (the replay does not replay the exam).
     alt = {C, gen, st, barOf, slate};
@@ -95,7 +94,7 @@ function simJudge() {
       let rep = null;
       if (alt) {
         // The replay applies no first-launch prior (o.starts): exact for a run answered "new" (prior 0, learnsim's
-        // default --choice), not for another answer (Codex review #624): such runs are refused.
+        // default --choice), not for another answer: such runs are refused.
         const ch = typeof r.choice === 'object' && r.choice ? r.choice.c || r.choice.choice : r.choice;
         if (ch && ch !== 'new') throw new Error(`${file}: a run answered the first-launch question "${ch}"; --bar replays only "new" runs`);
         const rows = r.alog.map(x => alt.C.logRow(x[0], 'p'));
@@ -106,7 +105,7 @@ function simJudge() {
           rep.at = at;
           const P = JSON.parse(JSON.stringify(rep.st.P));
           // A mark passed by question `at`, unless a miss logged after it took it away as the game does (the replay's lm:
-          // the last miss that left the progress below the keep rule; Codex review #624).
+          // the last miss that left the progress below the keep rule).
           Object.entries(r.learnedAt || {}).forEach(([g, x]) => {
             const tq = Date.parse((r.alog[x.q - 1] || [{}])[0].t) || 0;
             if (x.q <= at && P[g] && !(P[g].lm > tq)) P[g].mx = 1;
@@ -137,7 +136,7 @@ function simJudge() {
           }
         });
       // Time to credit (live bar only: the run's own record).
-      // Censored, not dropped (Codex review #624): a known genus that never reached the level, or was never answered,
+      // Censored, not dropped: a known genus that never reached the level, or was never answered,
       // counts as not reached (Infinity), so a median over the known genera is a real one or "not reached".
       if (!alt && r.credit) {
         const c = r.credit,
@@ -203,7 +202,7 @@ function logCheck(file) {
       per = players.map(p => S.filter(a => a.p === p)).filter(L => L.length >= 5),
       d = per.map(L => mean(L.map(a => a.ok - a.e)));
     // Leave one player out: logit p = a + b logit e fitted (Newton) on the others' answers of this tercile.
-    // Newton with step halving on the log-likelihood (Codex review #624: a bare Newton step diverged on flat data).
+    // Newton with step halving on the log-likelihood (a bare Newton step diverges on flat data).
     const loglik = (L, a, b) => L.reduce((t, r) => t + (r.ok ? Math.log(cl(sig(a + b * logit(r.e)))) : Math.log(1 - cl(sig(a + b * logit(r.e))))), 0);
     const fit = L => {
       let a = 0,

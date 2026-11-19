@@ -1,5 +1,5 @@
-// Demo mode of the admin page (Pierre, 2026-11-01: "agents who develop the app must be able to see and test the admin
-// section"): admin.html?demo opens every page without a token, on made-up players, answers and reports. Nothing leaves
+// Demo mode of the admin page, so agents can see and test the admin (docs/decisions/2026-11-18-decisions-from-comments-3.md):
+// admin.html?demo opens every page without a token, on made-up players, answers and reports. Nothing leaves
 // the browser: this file answers, in memory, the calls admin.js makes to the sync sheet script (script.google.com) and
 // to the GitHub API, the way tools/sync/Code.gs and GitHub answer them. The photos, genera and curation are the real
 // public files (data.json, curation.json...); Publish "succeeds" in memory only. admin.js keeps the demo's browser
@@ -65,7 +65,7 @@
     const rows = [],
       users = {},
       // The made-up sessions end 2 hours ago at the latest; then a few recent ones, relative to now, for Players' Last
-      // column and Activity's Recent sessions (Pierre, 2026-11-03): Carla playing now (her last answer 1 minute ago,
+      // column and Activity's Recent sessions: Carla playing now (her last answer 1 minute ago,
       // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago, mara demo2 2 hours ago.
       END = NOW - 2 * 3600e3;
     let k = 0;
@@ -121,7 +121,7 @@
           st.th,
           0,
           ANALYSIS.shuffle(ch, rnd).join(' '), // never sort(() => rnd() - 0.5): see analysis.js shuffle
-          // Seconds to answer and a photo enlarged (sheet v23), from the answer's number (the random draws stay the same).
+          // Seconds to answer and a photo enlarged, from the answer's number (the random draws stay the same).
           Math.round((3 + ((k * 37) % 120) / 10 + (right ? 0 : 5)) * 10) / 10,
           k % 7 ? 0 : 1
         ]);
@@ -232,7 +232,7 @@
         }
       };
     });
-    // A few answers of players who never signed in (v12 "~anon <id>").
+    // A few answers of players who never signed in ("~anon <id>").
     for (let i = 0; i < 60; i++) {
       const g = pick(G),
         p = pick(pics[g]),
@@ -295,7 +295,7 @@
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'page', '', 'home'),
       // A report from the fish beta: a teaching id and a reference photo in play (fish-game.json and fish-photos.json's first
-      // photos, on R2; the stopgap's remote fi<id> photos it named until 2026-11-15 are retired).
+      // photos, on R2).
       rp(
         5,
         'Eli Demo',
@@ -360,7 +360,7 @@
         'fish-s084-cand-527402743',
         'fish/practice/quiz'
       ),
-      // A fish game report "Several fish species" on a photo in play (Pierre, 2026-11-09: a wrasse beside a goatfish): the
+      // A fish game report "Several fish species" on a photo in play (a wrasse beside a goatfish): the
       // photo carries every tool of its family's page, its count tag among them.
       rp(
         11,
@@ -374,7 +374,7 @@
         'fish-s245-cand-660037998',
         'fish/practice/quiz'
       ),
-      // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.
+      // An account deleted with its answers kept: its reports stay without the name, never verified.
       Object.assign(
         rp(
           6,
@@ -392,7 +392,7 @@
       )
     ];
     // A game report from every other subject with sheets at several ranks and files of its own (core.js SUBJECTS admin
-    // files; Codex review #987): its first game photo as its game file has it (a remote original stays remote), reported as
+    // files): its first game photo as its game file has it (a remote original stays remote), reported as
     // a wrong answer on the unit showing it, from its quiz: its family, or its species' genus for a subject played at the
     // genus (core.js unitRankOf: the sea slugs), read from its tree.
     {
@@ -425,7 +425,7 @@
           );
       });
     }
-    // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
+    // Events: [id, time, device, kind, message, where, page, detail, app, browser], newest first.
     // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
     // as the sheet does. Each prompt logs its showing, then an answer, "Not now" (skip), moving on (none) or nothing (the
     // app closed); the first prompt is an answer from before the bank (no item id, no showing logged).
@@ -496,8 +496,8 @@
         '159',
         'Chrome 140 mobile'
       ],
-      // A save that failed once and came through on its retry (app from 2026-11-05), and a device left on a replaced
-      // version (sheet v50 'old', with its device id and version).
+      // A save that failed once and came through on its retry, and a device left on a replaced version ('old', with its
+      // device id and version).
       [
         'demoeve',
         NOW - 7 * 3600e3,
@@ -523,7 +523,7 @@
         ''
       ]
     );
-    // Load times (sheet v21): made-up visits, a slow phone line and a fast desktop one.
+    // Load times: made-up visits, a slow phone line and a fast desktop one.
     [
       [86, 21.4, 30.2, 40.5, 512, 0, 1, 'light', 390, 'cache-mnl9725-MNL', 'Chrome 140 mobile'],
       [2400, 1.8, 4.1, 4.9, 2300, 0, 0, 'dark', 1440, 'cache-sin1820-SIN', 'Firefox 144'],
@@ -543,7 +543,7 @@
       ])
     );
     events.sort((a, b) => b[1] - a[1]);
-    // The Analyses group (Pierre, 2026-11-04) needs a few thousand answers with times, enlargements, formats and breaks:
+    // The Analyses group needs a few thousand answers with times, enlargements, formats and breaks:
     // seven more made-up players from analysis.js demoLog (its known effects, on the real photos), their last answer
     // three days ago.
     const [cur, qual, met] = await Promise.all(
@@ -624,7 +624,7 @@
         data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-settings': '{}'}
       };
     });
-    // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
+    // Pages opened ('pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
     // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
     // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
     // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code); Ana
@@ -681,7 +681,7 @@
       }),
       pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], 'learn.genera': [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
-    // Players › Visits (Pierre, 2026-11-08, Q301-Q304): visits without a game and visitors who never answered, over the
+    // Players › Visits (docs/ARCHITECTURE.md): visits without a game and visitors who never answered, over the
     // last 5 weeks, each on a device of its own with its browser and a load row (Events) giving its window width, whether
     // it is installed and its first page. Its own random numbers, so the rest of the demo stays the same. Ben and Carla
     // (signed in) come back to read the sheets and their progress; two devices not signed in that answered open the Key
@@ -729,9 +729,9 @@
           o[1] += sec;
         };
       let vk = 0;
-      // The screen each device sends (core.js viewportOf, sheet v177): its window width, a usable height and a pixel
-      // ratio set by that width, no random numbers (the rest of the demo stays the same). The players' visits above have
-      // none (sent before the sheet kept it).
+      // The screen each device sends (core.js viewportOf): its window width, a usable height and a pixel ratio set by that
+      // width, no random numbers (the rest of the demo stays the same). The players' visits above have none (as from an
+      // older app).
       const VH = {360: 660, 384: 740, 390: 660, 393: 660, 412: 780, 430: 750, 800: 1180, 820: 1100, 1440: 780, 1680: 920, 1920: 950},
         VD = {360: 3, 384: 2.8, 390: 3, 393: 3, 412: 2.625, 430: 3, 800: 2, 820: 2, 1440: 2, 1680: 1, 1920: 1.25};
       WHO.forEach(([who, prof, ua, w, st, nv, na], di) => {
@@ -830,7 +830,7 @@
       events.sort((a, b) => b[1] - a[1]);
     }
     pages.sort((a, b) => b[1] - a[1]);
-    // Another subject's answers (sheet v60 logs every subject's, column Subject): a few players on the second subject's
+    // Another subject's answers (the sheet logs every subject's, column Subject): a few players on the second subject's
     // first circle, with its own random numbers so the rest of the demo stays the same. Kept apart (frows): the sheet's
     // own numbers (levels, the replay, the player list's counts) are the replayed subject's only; readAnswers serves both.
     // Ben played it last (his Journey opens on it from Players), Ana a little, Mara once.
@@ -842,8 +842,8 @@
       const [fj, fp] = await Promise.all(['fish.json', 'fish-photos.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json())));
       let fs = 11;
       const frnd = () => (fs = (fs * 1103515245 + 12345) % 2147483648) / 2147483648,
-        // The game's units as the app builds them (core.js fishGen: the book's families), those with photos.
-        FG = fishGen(fj, fp.photos).gen,
+        // The game's units as the app builds them (core.js treeGen: the book's families), those with photos.
+        FG = treeGen(fj, fp.photos).gen,
         E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
       FANA_META[FS.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fp), rk: ANALYSIS.rankRef(FS)};
@@ -903,21 +903,32 @@
         const t0 = mine[0][1] - 1;
         Object.assign(users['ben demo'].data, {
           [subjKey(FS.id, 'intro')]: JSON.stringify(fi),
-          [startKey(FS.id)]: JSON.stringify({c: 'imr', t: t0, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: [['imr', 0, t0, 'tour']]})
+          [startKey(FS.id)]: JSON.stringify({c: 'imr', t: t0, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: [['imr', 0, t0, 'tour']]}),
+          // the opt-in choices (quiz settings): circle 3's offer declined once, Scientific names on just before the first
+          // genus card
+          [subjKey(FS.id, 'quiz')]: JSON.stringify({
+            beyond: false,
+            beyondT: mine[Math.max(0, mine.length - 20)][1] + 1,
+            beyondN: 1,
+            beyondA: Math.max(1, mine.length - 20),
+            sci: true,
+            sciT: mine[mine.length - 5][1],
+            sciH: false
+          })
         });
       }
-      // The fish side's Analyses report (one report per subject, sheet v113): the seven made-up analysis players
+      // The fish side's Analyses report (one report per subject): the seven made-up analysis players
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
-      // made from them (anaReport): the answer log keeps the few fish answers above, so the fish pages stay as they were.
-      // A few genus and species units too (one of fish.json's scientific genera or core.js fishSpUnits for each of 12 of
+      // made from them (anaReport): the answer log keeps the few fish answers above, so the other fish pages are unchanged.
+      // A few genus and species units too (one of fish.json's scientific genera or core.js treeSpUnits for each of 12 of
       // those families, in turn), on their family's photos (as the game shows a species' photo at every rank), so the
       // report tells the ranks asked apart as the real one does (analysis.js rankOfUnit): its rank effects, and the views
       // that list units drawn one rank at a time.
       const FU = Object.keys(FG)
           .filter(id => FG[id].views.wide.length >= 3)
           .slice(0, 24),
-        SPU = fishSpUnits(fj),
+        SPU = treeSpUnits(fj),
         FR = FU.slice(0, 12)
           .map((f, i) => (i % 2 ? SPU.find(u => u.family === f) : (fj.genera || []).find(g => g.family === f)))
           .map((x, i) => x && [x.id, FU[i]])
@@ -962,7 +973,7 @@
         let s = 23 + i;
         const xr = () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648,
           xp = a => a[Math.floor(xr() * a.length)],
-          XG = fishGen(tree, (fishGameRead(gm) || {}).photos, undefined, unitRankOf(x)).gen,
+          XG = treeGen(tree, (treeGameRead(gm) || {}).photos, undefined, unitRankOf(x)).gen,
           E = Object.keys(XG).filter(
             id => XG[id].circle === 1 && !XG[id].wink && XG[id].views.wide.length && id.startsWith(x.sheets[unitRankOf(x)] || '')
           );
@@ -975,7 +986,7 @@
               .filter(id => id.startsWith(x.sheets[unitRankOf(x)] || '') && !XG[id].wink && XG[id].views.wide.length >= 3)
               .slice(0, 24),
             xk = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, y) => t + y[2], 0);
-          FANA_META[x.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fishGameRead(gm)), rk: ANALYSIS.rankRef(x)};
+          FANA_META[x.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(treeGameRead(gm)), rk: ANALYSIS.rankRef(x)};
           fana[x.id] = ANALYSIS.synth({
             players: ANALYSIS.DEMO_PLAYERS.map(y => [y[0], y[1], Math.ceil(y[2] * xk), y[3]]),
             photos: Object.fromEntries(XU.map(id => [id, XG[id].views.wide.slice(0, 8).map(y => ({f: y.f, v: 'wide'}))])),
@@ -1035,10 +1046,10 @@
       [NOW - 9 * DAY, 'left out of the statistics: device Dm1Wc8Rt signed in as Dm0Ab3Xy, left out too'],
       [NOW - 40 * DAY, 'limit reached: anon (6000 per 6 h)']
     ];
-    // Sheet GROUPADM_SHEET (Code.gs groupDo_): two made-up groups, a staff board apart and a cohort, each player's gids.
+    // Sheet GROUPADM_SHEET (Code.gs groupDo_): two made-up groups, a staff board and a cohort, each player's gids.
     const gdefs = [
-      {id: 'g:demo0001', n: 'Staff', board: 1, apart: 1, beta: '', at: NOW - 5 * DAY},
-      {id: 'g:demo0002', n: 'RA November 2026', board: 1, apart: 0, beta: '', at: NOW - DAY}
+      {id: 'g:demo0001', n: 'Staff', board: 1, beta: '', at: NOW - 5 * DAY},
+      {id: 'g:demo0002', n: 'RA November 2026', board: 1, beta: '', at: NOW - DAY}
     ];
     [
       ['Ana Demo', 'g:demo0001'],
@@ -1063,7 +1074,7 @@
       gdefs
     };
     S.alerts = alerts;
-    // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
+    // Code.gs pools_: each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     await Promise.all(
       SUBJECTS.filter(X => X.pool).map(X =>
         Promise.all(X.pool.files.map(f => real(f, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
@@ -1082,8 +1093,8 @@
     const st = stats(),
       A = answers().rows,
       opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd};
-    // Each player's first-launch answer, as the admin's replay takes it (admin.js progOf starts; PR #808: without it one of
-    // Ana's genera read stale by a rounding).
+    // Each player's first-launch answer, as the admin's replay takes it (admin.js progOf starts; without it a rounding
+    // can read a genus as stale).
     const starts = Object.fromEntries(
         Object.values(users)
           .map(u => [aid(u.name), JSON.parse(u.data['reefid-sync-coral-start'] || 'null')])
@@ -1115,7 +1126,7 @@
                 ...(o.mx ? {mx: o.mx} : {})
               };
       });
-      // Dio's best genus was learned under the former model (an exam passed before 2026-11-02: mx 1, no time).
+      // Dio's best genus was learned under the former model (an exam passed then: mx 1, no time).
       if (u.name === 'Dio Demo') {
         const best = Object.keys(P).sort((a, b) => P[b].ok - P[a].ok)[0];
         if (best) P[best].mx = 1;
@@ -1163,10 +1174,10 @@
         Object.values(S.users)
           .filter(u => u.board === -2)
           .map(u => lc(u.name))
-      ); // v58: archives, flag 2
-    // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
-    // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged. 14 (sheet v44): the device's UTC offset,
-    // minutes east: Manila's, Carla's Paris (winter time), so her Journey's Cards show her own local time.
+      ); // archives, flag 2
+    // Index 11: answered without signing in, so trustOf leaves it out of the photo ratings as the sheet does. 12, 13:
+    // seconds to answer and enlarged, null when not logged. 14: the device's UTC offset, minutes east: Manila's, Carla's
+    // Paris (winter time), so her Journey's Cards show her own local time.
     const tz = r => (r[0] === 'Carla Demo' ? 60 : 480);
     out.rows = [...S.rows, ...S.after].map(r => [
       aid(r[0]),
@@ -1180,12 +1191,12 @@
       r[9],
       r[10],
       r[11],
-      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // v55/v58: a deleted account's or an archive's
+      /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // 2: a deleted account's or an archive's
       r[12] ?? null,
       r[13] ?? null,
       tz(r)
     ]);
-    // v60: the other subject's answers, the subject at index 17 (core.js LOG_SUBJ). The answers given while the page is
+    // The other subject's answers, the subject at index 17 (core.js LOG_SUBJ). The answers given while the page is
     // open (DEMO_ANSWER, S.after) are the tab's last rows: moved after them.
     const after = out.rows.splice(S.rows.length);
     S.frows.forEach(r =>
@@ -1193,7 +1204,7 @@
     );
     out.rows.push(...after);
     Object.values(S.users).forEach(u => {
-      if (arch.has(lc(u.name))) return; // v58: an archive is no player
+      if (arch.has(lc(u.name))) return; // an archive is no player
       const P = JSON.parse(u.data['reefid-sync-coral-progress'] || '{}'),
         th = {};
       Object.keys(P).forEach(g => (th[g] = P[g].th));
@@ -1202,7 +1213,7 @@
     out.excluded = S.excluded.slice(); // Code.gs sxSet_: the ids left out of the statistics
     return out;
   }
-  // The admin's light read (Code.gs live_, sheet v110; Pierre, 2026-11-08): the log's last 50 rows as
+  // The admin's light read (Code.gs live_): the log's last 50 rows as
   // answers() serves them, each player's last answer time (an archive's and a deleted account's left out), the rows.
   function liveReply() {
     const R = answers().rows,
@@ -1236,7 +1247,7 @@
         p = (right + 1) / (n + 2);
       ras[k] = [Math.round(Math.log(p / (1 - p)) * 100) / 100, n];
     });
-    // v68: the per-format offsets (core.js fmtOffsetsOf).
+    // The per-format offsets (core.js fmtOffsetsOf).
     return {
       ok: true,
       photos: eloOf(A),
@@ -1249,7 +1260,7 @@
   }
   function userList() {
     const by = {},
-      // v58 (Code.gs users_ archived): the archives apart, read-only
+      // Code.gs users_ archived: the archives apart, read-only
       archived = Object.values(S.users)
         .filter(u => u.board === -2)
         .map(u => ({
@@ -1281,7 +1292,7 @@
         reports: 0,
         size: JSON.stringify(u.data).length,
         groups: (u.groups || []).slice(),
-        // sheet v171 (Code.gs users_): the player's cohort; GROUPADM_SHEET: the ids of their groups instead
+        // COHORT_SHEET (Code.gs users_): the player's cohort; GROUPADM_SHEET: the ids of their groups instead
         ...(V >= GROUPADM_SHEET ? {gids: (u.gids || []).slice()} : V >= COHORT_SHEET ? {cohort: u.cohort || ''} : {})
       };
     });
@@ -1324,7 +1335,7 @@
       const u = by[lc(r[2])];
       if (u) u.reports++;
     });
-    // v42 (Code.gs replayedAll_): each player's full replay, [progress %, learned, the saved copy's %] over the slate.
+    // Code.gs replayedAll_: each player's full replay, [progress %, learned, the saved copy's %] over the slate.
     {
       const st = stats(),
         A = answers().rows;
@@ -1342,7 +1353,7 @@
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
       });
     }
-    // v81 (Code.gs exposure_): each player's photo exposure per subject, ex {subject id: [seen, of, hit, asked, units]}.
+    // Code.gs exposure_: each player's photo exposure per subject, ex {subject id: [seen, of, hit, asked, units]}.
     SUBJECTS.forEach(X => {
       if (!S.pools[X.id]) return;
       const E = exposureOf(
@@ -1402,13 +1413,12 @@
       Object.assign(d, {
         n,
         board: flag('board', cur ? cur.board : 0),
-        apart: flag('apart', cur ? cur.apart : 0),
         beta: o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '')
       });
       if (!cur) S.gdefs.push(d);
       return {ok: true, group: {...d}};
     }
-    // Sheet v171: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
+    // COHORT_SHEET: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
     if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {
       const c = String(p.cohort).replace(/\s+/g, ' ').trim(),
         L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
@@ -1423,7 +1433,7 @@
       });
       return {ok: true, cohort: c, n, members: Object.values(S.users).filter(u => u.cohort === c).length};
     }
-    // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
+    // A beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
     if (p.userGroup) {
       const g = String(p.group || ''),
         L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
@@ -1438,7 +1448,7 @@
       });
       return {ok: true, group: g, n, members: Object.values(S.users).filter(u => (u.groups || []).includes(g)).length};
     }
-    // Sheet v58 (was rename, v20): archive (the record moves apart, Board -2, out of every beta group).
+    // Archive (the record moves apart, Board -2, out of every beta group).
     if (p.userArchive) {
       const m = p.userArchive,
         u = S.users[lc(m.from || '')],
@@ -1454,21 +1464,21 @@
       S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
       return {ok: true, answers, reports: 0};
     }
-    // Sheet v115 (Code.gs statsExclude, sxPut_): an id left out of the statistics, or counted again.
+    // Code.gs statsExclude, sxPut_: an id left out of the statistics, or counted again.
     if (p.statsExclude) {
       const id = String(p.statsExclude);
       if (!/^[A-Za-z0-9+/]{8}$/.test(id)) return {ok: false, error: 'input'};
       S.excluded = p.on ? [...new Set([...S.excluded, id])] : S.excluded.filter(x => x !== id);
       return {ok: true, excluded: S.excluded.slice()};
     }
-    // Sheet v20: hidden from the leaderboard by an admin (-1) or shown (1).
+    // Hidden from the leaderboard by an admin (-1) or shown (1).
     if (p.userBoard) {
       const u = S.users[lc(p.userBoard)];
       if (!u) return {ok: false, error: 'user'};
       u.board = p.hide ? -1 : 1;
       return {ok: true, board: u.board};
     }
-    // Sheet v99: Change the starting answer (Code.gs users_ userStart, the same core.js startAdminSet), with ?demo&v=99.
+    // Change the starting answer (Code.gs users_ userStart, the same core.js startAdminSet), with ?demo&v=99.
     if (p.userStart) {
       const u = S.users[lc(p.userStart)];
       if (!u) return {ok: false, error: 'user'};
@@ -1491,7 +1501,7 @@
     if (p.userDelete) {
       const u = S.users[lc(p.userDelete)];
       if (!u) return {ok: false, error: 'user'};
-      // Sheet v55 (Code.gs deleteAccount_): everything goes, or the answers and reports stay as "~deleted <id>", never
+      // Code.gs deleteAccount_: everything goes, or the answers and reports stay as "~deleted <id>", never
       // verified; the page summaries go either way.
       const k = lc(u.name),
         del = '~deleted ' + aid(u.name),
@@ -1513,7 +1523,7 @@
       if (typeof m.at === 'number' && m.at !== b.rev) return {ok: false, error: 'stale', rev: b.rev};
       b.data = m.data;
       b.rev++;
-      if (a.groups) b.groups = [...new Set([...(b.groups || []), ...a.groups])]; // v48: the merged name's beta groups join
+      if (a.groups) b.groups = [...new Set([...(b.groups || []), ...a.groups])]; // the merged name's beta groups join
       if (a.gids) b.gids = [...new Set([...(b.gids || []), ...a.gids])]; // GROUPADM_SHEET: every group of the merged name joins
       b.updated = Date.now();
       let answers = 0,
@@ -1574,7 +1584,7 @@
     // the game's own records; the sea slugs' game file)
     FANA_META = {};
   const ANA = {};
-  // subject: the one asked (v113: one report per subject).
+  // subject: the one asked (one report per subject).
   const anaReport = (head, subject) => {
     const sj = subject && SUBJECTS.some(x => x.id === subject) ? subject : replaySubject(),
       own = sj === replaySubject();
@@ -1593,8 +1603,8 @@
         w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META[sj] || {ph: {}}, B: 0, seed: 1});
       });
     return ANA[sj].then(text => {
-      // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
-      // answers was every row of every subject, the fish ones included (?demo&v=104: the admin counts from the log).
+      // Code.gs analyses_: each subject's answers counted apart (counts) and answers the corals'; an older script's
+      // answers is every row of every subject (?demo&v=104: the admin counts from the log).
       // Each other subject's report's made-up answers count as its answers too.
       const rows = answers().rows,
         c0 = subjCounts(rows),
@@ -1623,7 +1633,7 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
-      // pages: 1 (v30) reads the Pages tab.
+      // pages: 1 reads the Pages tab.
       if (p.readEvents) return ok({ok: true, rows: (p.pages ? S.pages : S.events).map(r => r.slice())});
       // The Alerts tab (admin.js ALERTS_SHEET): an older script takes it for a progress write without a name ('input').
       if (p.readAlerts) return ok(V >= ALERTS_SHEET ? {ok: true, rows: S.alerts.map(r => r.slice())} : {ok: false, error: 'input'});
@@ -1648,9 +1658,9 @@
         );
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      // The light read (sheet v110).
+      // The light read (liveReply).
       if (p.readLive) return ok(liveReply());
-      // v35: the stored Analyses report.
+      // The stored Analyses report.
       if (p.analysesGet) return ok(await anaReport(p.head, p.subject));
       if (
         p.users ||

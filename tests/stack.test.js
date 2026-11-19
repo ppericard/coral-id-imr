@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// tools/stack_check.py (the stack's pins in tools/stack.json, Pierre 2026-11-05: the whole stack on the latest stable) and
+// tools/stack_check.py (the stack's pins in tools/stack.json: the whole stack on the latest stable) and
 // the brief's once-a-day stack line (tools/brief.py). --check runs on fixtures in a throwaway folder; --latest offline.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -233,7 +233,7 @@ print(json.dumps({'fresh': fresh, 'lines': lines, 'got': got, 'fast': spent < br
   }
 });
 
-// Codex review #587 (rule C7): the iNaturalist probes are paced (about one request a second, never parallel), a
+// Rule C7: the iNaturalist probes are paced (about one request a second, never parallel), a
 // 429 or a 5xx is retried after a pause, and only a 404 means "no such version" (a transient error never makes an older
 // version look like the latest).
 test('the iNaturalist version probe is paced, retries 429/5xx after a pause, and trusts only a 404', () => {

@@ -2,7 +2,8 @@
 
 Date: 2026-11-18 (Manila, evening). PR: #1117. Rules or docs touched: AGENTS.md
 "Working mode" (a new bullet, and "No permission prompts for Pierre"), `.github/pull_request_template.md`,
-`.claude/settings.json`, `tools/train.py`, `tools/brief.py`, `tools/night.py`, ARCHITECTURE "Tools".
+`.claude/settings.json`, `tools/train.py`, `tools/brief.py`, `tools/night.py`, `tools/guard_bash.py`, `tools/README.md`,
+`docs/spec/tools.md`.
 
 ## Context
 
@@ -23,10 +24,15 @@ généralement à 5h du mat".
    gets one question before the change is built. `tools/train.py` checks this on every PR from `BODY_FROM` on.
 2. **Guards, not text, against code in the shell.** A PreToolUse hook (`tools/guard_bash.py`) refuses those commands at
    once and gives the way out. A read-only allowlist covers the commands that recur.
-3. **An audit of the rules.** It sorts each rule into keep, replace by a guard, merge or delete, and its decisions go
-   to Pierre: `docs/reviews/2026-11-18-rules-audit.md`, a study in this PR; none of its proposals is applied here.
-4. **A night report** (`tools/night.py`). It covers 17:30 to 05:00 Manila, and the UserPromptSubmit hook says it is
-   due at his first message between 05:00 and 11:00 (once a day per checkout).
+3. **An audit of the rules.** It sorts each rule into keep, replace by a guard, merge or delete, and its decisions went
+   to Pierre: `docs/reviews/2026-11-18-rules-audit.md`, a study in this PR; none of its proposals is applied here. His
+   answers, the same evening: points 1 to 5 and 8 ok; 6 and 7 dropped ("the docs describe a coherent model in our
+   words; no new manual step for Pierre"); 9 parked. The study records them.
+4. **A night report** (`tools/night.py`). The night is Rule 0's: 17:30 Manila to Pierre's first message after 04:00
+   (he said on 2026-11-18: "Ma journée elle démarre généralement à 5h du mat"; on 2026-11-19 he set the end of
+   Rule 0 as "La journée démarre à partir de mon premier message après 4h du mat", AGENTS.md Rule 0, #1191, which this
+   record follows without changing Rule 0's text). The report covers 17:30 to 04:00, and the UserPromptSubmit hook says
+   it is due at the first prompt of a Manila day between 04:00 and 17:30 (once a day per checkout).
 
 ## Consequences
 

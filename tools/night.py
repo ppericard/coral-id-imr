@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""The night report (Pierre, 2026-11-18): what the agents did between 17:30 and 05:00 Manila, so a quiet night shows.
+"""The night report (Pierre, 2026-11-18): what the agents did between 17:30 and 04:00 Manila, so a quiet night shows.
 
-  python3 tools/night.py                 the last night (17:30 to 05:00 Manila; before 05:00: the night so far)
+  python3 tools/night.py                 the last night (17:30 to 04:00 Manila; before 04:00: the night so far)
   python3 tools/night.py --json FILE     the report of a saved snapshot (tests; no network)
 
-Pierre's day starts about 05:00 Manila. At his first message between 05:00 and 11:00 the UserPromptSubmit hook says the
-report is due (`tools/brief.py --night-due`, once a day per checkout), and the integrator gives him this report before
-anything else. It lists:
+The night is Rule 0's: it runs from 17:30 to Pierre's first message after 04:00 (AGENTS.md Rule 0; Pierre, 2026-11-19).
+At the first message of a Manila day between 04:00 and 17:30 the UserPromptSubmit hook says the report is due
+(`tools/brief.py --night-due`, once a day per checkout), and the integrator gives him this report before anything else.
+It lists:
 - the PRs merged during the night and their agent time (tools/effort.py's measure: the branch's first commit to its
   head's checks going green), with the total;
 - the merge trains run and the red ones (tools/train.py; never re-run, rule W23);
@@ -28,11 +29,11 @@ REPO = 'ppericard/coral-id-imr'
 MANILA = timezone(timedelta(hours=8))
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-EVENING, MORNING = (17, 30), (5, 0)  # Rule 0's 17:30; Pierre's day starts about 05:00 (2026-11-18)
+EVENING, MORNING = (17, 30), (4, 0)  # Rule 0's 17:30 and 04:00: his day starts with his first message after 04:00 (2026-11-19)
 
 
 def window(now):
-    """(start, end) of the last night in Manila time: yesterday 17:30 to today 05:00, or to now before 05:00."""
+    """(start, end) of the last night in Manila time: yesterday 17:30 to today 04:00, or to now before 04:00."""
     now = now.astimezone(MANILA)
     today_morning = now.replace(hour=MORNING[0], minute=MORNING[1], second=0, microsecond=0)
     if now < today_morning:

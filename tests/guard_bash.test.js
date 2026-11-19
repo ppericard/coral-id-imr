@@ -47,7 +47,11 @@ const REFUSED = [
   // Codex review #1117: the shell runs a command substitution even inside double quotes.
   'printf "%s\\n" "$(python3 -c \'print(1)\')"',
   'echo "`node -e 1`"',
-  'git commit -m "$(sed -i s/a/b/ app.js)"'
+  'git commit -m "$(sed -i s/a/b/ app.js)"',
+  // Codex review #1117, round 2: a bare heredoc delimiter lets the shell expand the body, so it is not literal text.
+  'printf "%s\\n" "$(cat <<EOF\n$(python3 -c \'print(1)\')\nEOF\n)"',
+  'echo "$(cat <<EOF\nit\'s `node -e 1`\nEOF\n)"',
+  'echo "$(cat <<EOF\nline\n$(echo $(sed -i s/a/b/ f))\nEOF\n)"'
 ];
 const ALLOWED = [
   'git status',
@@ -68,7 +72,9 @@ const ALLOWED = [
   'echo "head $(git rev-parse HEAD)"',
   'git commit -m "$(cat <<\'EOF\'\nTitle\n\nWhy python -c and sed -i are refused.\nEOF\n)"',
   'bash x.sh -c 5',
-  'ls -la tools | wc -l'
+  'ls -la tools | wc -l',
+  'git commit -m "$(cat <<EOF\nTitle\n\nOn $(git rev-parse HEAD), all fine.\nEOF\n)"',
+  'git commit -m "$(cat <<"EOF"\nWhy $(python3 -c 1) stays text.\nEOF\n)"'
 ];
 
 test('refuses heredocs, inline code, in-place edits and code piped into an interpreter, with the way out', () => {
