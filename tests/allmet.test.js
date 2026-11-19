@@ -16,7 +16,7 @@ const ROOT = path.join(__dirname, '..'),
   ctx = {};
 vm.createContext(ctx);
 vm.runInContext(
-  block(app, 'const fishNextOf = ', 'const UNITS = {', {file: 'app.js'}) +
+  block(app, 'const fishNextOf = ', "// The tree subjects' shared units", {file: 'app.js'}) +
     block(quiz, 'const allMetNone = ', 'const allMetTok', {file: 'quiz.js'}) +
     '\nthis.next = fishNextOf; this.none = allMetNone;',
   ctx

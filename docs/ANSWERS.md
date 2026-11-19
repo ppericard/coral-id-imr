@@ -1139,18 +1139,58 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
+- **09:04, priority.** On the rules overhaul (Q425 B: the AGENTS.md loading, the rest of the approved audit, the search
+  before any question and the ledger check, a short core with topic files and guards, fewer index conflicts): «ça c'est
+  une priorité. Parce qu'en attendant on continue de développer avec les anciennes règles». Applied: the integrator's
+  order of work (#1198, #1117, #1199, the core proposal).
+- **Applied in #1188:** 07:05, OK to this ledger: AGENTS.md "Every answer reaches its doc, and the answers ledger" and
+  this file.
+- **Applied in #1190:** 06:50, rule S1's wording: rule S1 in `docs/rules/subjects.md` and AGENTS.md.
+- **Applied in #1198:** Q425, its first step: CLAUDE.md loads AGENTS.md (decision record `2026-11-19-rules-step1`).
+- **Applied in #1199:** 08:53, the answers ledger as checked data (tools/answers_check.py, in the docs test).
+- **10:05, Q427 (#1195, rule P1 on the corals: no source boost; level 2 left one breach, the strong RA's shown score
+  at 1,000 answers).** A, merge: «ok». Applied: #1195.
+- **10:56-10:58, the privacy page.** "Arrête d'être plus catholique que le pape... C'est des trucs internes ça...";
+  what stays after a deletion: "ok"; "ok, fais la version courte" (a half-page notice on the points the law asks for).
+  Applied: #1095 (docs/decisions/2026-11-19-privacy-short.md).
+- **09:46, a review of the rules' substance.** "Est-ce que les règles ne méritent pas d'être revues globalement? Ya
+  aucune optimisation/amélioration possible?". Applied: the substance review (#1206); its answers go in with the
+  rules core.
+- **10:32-10:34, one code for every subject (the admin's Genera beside Tree).** 10:32: "A nouveau, le but est d'avoir
+  un code commun entre les matières, pas des codes pour chaque matière..."; 10:33: "Il faut juste identifier les
+  spécificités de chaque matières et voir comment les implémenter, soit avec des paramètres, soit avec des bouts de
+  codes spécialisés"; 10:34, on a brief that quoted 10:32 as a new order: "Ne prend pas mon message comme parole
+  d'évangile et seule règle. C'est déjà ce qu'on a écrit plein de fois et ya pleins de décisions qui vont dans ce
+  sens" (briefs cite rule S1 and the decisions, not his latest message). Applied: the admin and Learn study
+  (docs/reviews/2026-11-19-admin-one-engine.md), Genera folded into Tree.
+- **10:36, a gold set of fish photos for Pierre.** "Oui, tu peux me préparer un petit set de photos représentatives
+  que tu me demandes d'évaluer pour voir si je suis d'accord avec les pré-selection. Essaye de maximiser l'info que tu
+  peux en tirer". Applied: a review page in preparation; his answers score the judges (#1211).
+- **10:49, the order of merges.** "Il faut arrêter de lancer de nouvelles PR tant que t'as pas résolu celles qui sont
+  bloqués depuis des plombes...". Applied: no new PR until the open ones merge; this one only records answers.
+- **11:14, the old Genera addresses.** "Pourquoi? C'est quoi le use case que t'imagines?" (on keeping redirects): none,
+  rule W3 holds. Applied: #1214 keeps no redirect.
+- **11:28-11:43, the gold set of 30 fish photos, reviewed.** His verdicts per photo, dictated (kept in the
+  integrator's scratchpad with the scores). On the observer's life stage, 11:43: "Il peut émettre un avis, mais son
+  avis pèse beaucoup moins qu'un observateur humain, sauf s'il a des preuves solides". Applied: the judging rubric's
+  wording, in the next judging PR; Q429-Q431 (contrast field, crops, the juvenile ease) wait for him.
+- **10:08, the models measured.** "Du coup il faut peut-être monter dans les efforts ou les modèles et faire de
+  nouveaux tests au lieu de default sur Opus high...". **10:09**, a question, not a decision: "Mais du coup qu'est-ce
+  qui t'as fait changé d'avis? Que se serait-il passé si je n'avais pas posé la question?". Applied: the measurement
+  (#1211); the integrator's answer, its call: a hook refuses an Agent launch without `model` and `effort`, every
+  launch is logged, and the brief prints the day's distribution, `tools/agent_guard.py` (#1209).
 - **10:12, Q428 (#1206, writing a rule down).** ok: only a change of substance goes to Pierre; editing is the
-  integrator's call, listed in the PR; never generalise nor harden. Applied: #NNNN.
+  integrator's call, listed in the PR; never generalise nor harden. Applied: #1217.
 - **10:12, W20 out of the rules (#1206).** «ok»: its text moves word for word to the photos spec, with its source; the
-  ID retires. Applied: `docs/spec/photos.md` "No more candidates is no more candidates" (#NNNN).
+  ID retires. Applied: `docs/spec/photos.md` "No more candidates is no more candidates" (#1217).
 - **10:12, U7's new line (#1206).** «ok»: the levels each subject teaches are set on its What I learn card, never as
   more ⚙ rows (his words of 2026-11-18: «On ne peut pas continuer à empiler des settings dans le menu déroulant»).
-  Applied: rules/ui.md U7 (#NNNN).
+  Applied: rules/ui.md U7 (#1217).
 - **10:12, the rules core (#1200 adjusted by #1206).** «ok»: about 153 lines; the order of work is the integrator's,
   integrators run in auto mode, no GitHub chores for Pierre, security alerts count like Codex findings; no product rule
-  deleted or hardened; a trial before the core replaces AGENTS.md. Applied: AGENTS.md (#NNNN).
+  deleted or hardened; a trial before the core replaces AGENTS.md. Applied: AGENTS.md (#1217).
 - **10:13, rule S1 and L6 merged.** «ok» to: «Partagé et modulaire par défaut : un seul moteur, pas de cas particulier
   pour une unité ou une matière. Une exception est permise quand elle est déclarée et nommée à un seul endroit, avec sa
   raison. Un test liste toutes les exceptions, et une exception non déclarée le fait échouer. L'intégrateur décide une
   exception comme un choix facile à corriger, et l'écrit dans la PR avec sa raison. Une exception qui touche la
-  progression des joueurs ou le format des données passe par Pierre.» Applied: #NNNN.
+  progression des joueurs ou le format des données passe par Pierre.» Applied: #1217.

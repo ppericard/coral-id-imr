@@ -40,8 +40,11 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   does on every head), and say so.
 - **The Candidate photos run moves `main`** after any judging merge, and a train started meanwhile stops ("main moved"):
   wait for that workflow's run to end, then train.
+- **Before any question to Pierre**: `python3 tools/asked.py <terms>`; a hit is applied, never asked again; its last
+  line ("searched: … — N hits") goes under the question.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
-  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), `fish-holdout.json`.
+  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), `fish-holdout.json`, the decisions index
+  (`python3 tools/decisions_index.py --fix`).
 - **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`. A
   fish judging batch runs `python3 tools/judging_fish.py one` before committing (`one --check` fails CI).
 - **Wait on trains with `pgrep -f "python3 tools/train.py"`**, never `ps aux | grep` on a word: the waiter's own command
@@ -73,6 +76,12 @@ Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté da
 | Mechanical, repetitive work (framing, sorting photos, conversions) | Haiku 5.5, after the sample test against a strong model (Model choice by measurement) | low |
 
 In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through.
+`tools/agent_guard.py` (a PreToolUse hook) refuses a launch without both; `brief.py` prints the day's count by model
+and effort, `python3 tools/agent_guard.py --report` lists the launches.
+
+**The rules core trial** (#1200 §3): `tools/instr_log.py` logs which instruction file reached which agent and why;
+`--report --since HH:MM` after a run, `--expect origin/main` (or the branch under test) for the texts to quote. A
+child session keeps its log in its own `.git`: it prints the report itself.
 
 Anthropic's guidance (checked 2026-11-18): Opus 5.5 is the recommended starting point and the integrator's model; effort
 is often a better lever than the model; an Opus orchestrator with Sonnet subagents measured about a third cheaper at
@@ -193,6 +202,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   D3): exit 3 = main is merged but `release` was not moved (a refused push); `release` then stays behind and the next
   train moves it. `git pull` before a train so you run the current `train.py`. Only the train pushes `release`; a Code.gs
   merged any other way does not reach the sheet until the next train.
+- **The shared index files**: the decisions index is generated (above). `docs/ANSWERS.md` is append-only: on a conflict
+  keep `main`'s lines first, then the PR's, and run `python3 tools/answers_check.py`. No `merge=union`: a local merge
+  (the train's build) honours it, GitHub's merge is not known to, so a train could build clean and be refused halfway
+  ([record](decisions/2026-11-19-rules-tooling.md)).
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
   assign are new heads, so `@codex review` and wait. The train adds no head.
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex

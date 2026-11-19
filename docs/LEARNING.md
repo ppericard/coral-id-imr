@@ -158,7 +158,7 @@ A wrong answer counts against both units (rule L2), but differently:
 
 ### One scorer
 
-Every answer is scored by one function, `core.js` `scoreAnswer`, in the live game (`quiz.js` `answer`) and in every
+Every answer is scored by one function, `core.js` `scoreAnswer`, in the game (`quiz.js` `recordAnswer`) and in every
 full replay of the answer log (the sheet's, the admin's, a device's: `core.js` `replayProgress`), so a rule is written
 once and both give the same state. Its inputs, as the game had them:
 
@@ -173,8 +173,9 @@ e = 1/k + (1 − 1/k) · R · σ(th − dm) leaves the format offset out, so the
 the photos seen and recognised (`s.ps`: [shown, right]), and the last 10 results of the unit (`s.h`) and of the
 subject (`P['~level'].h`). Each answer is logged with its **scoring record** (`core.js` `scoreRec`, `scoreLog`; the
 Answers column Scoring, index `LOG_SC`): the inputs a replay cannot rebuild from the log, to 3 decimals, so "replayed"
-means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the hold) stays in
-`quiz.js` `answer`.
+means what the game scored, wherever it is replayed. What only the game knows (the exam, the cards, the
+hold) is kept by one recorder, `quiz.js` `recordAnswer`, which every game's answer takes (`quiz.js` `answer`, `live.js`
+`liveLog`).
 
 ### Response time
 
@@ -249,10 +250,9 @@ The photos of a question on unit n come from `model.js` `photoSet`:
   ability + shift − `aimOff(k, df)` − `PICKD.SINGLE` (one view alone) − the start's lean. The spread is
   √(`PICKD.SIGMA`² + u / (1 + answers / `CAL.N`)), wider for a photo few players have answered (`model.js` `calSd`).
 - **Photos never seen** get a bonus, bigger when the player is doing well on the unit (× (1 + 1.5 × the share right in
-  its last 5 answers)), the corals' IMR and Pierre's photos × 1.3 (`SUBJECTS` `tiers`), and a reference-level photo ×
-  the subject's `calib.ref`. **Photos already shown** weigh e^offset of their photo-memory bucket (`core.js` `MEM`,
-  `memBucket`), so the least remembered come first; a colony counts as seen whatever view of it was shown
-  (`model.js` `colonyMem`).
+  its last 5 answers)) and a reference-level photo × the subject's `calib.ref`; never for who took the photo (rule
+  P1). **Photos already shown** weigh e^offset of their photo-memory bucket (`core.js` `MEM`, `memBucket`), so the
+  least remembered come first; a colony counts as seen whatever view of it was shown (`model.js` `colonyMem`).
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
@@ -419,7 +419,8 @@ it shows.
 
 Only the photo quiz opens units (its cards, the ★ rule). Every other game (the Duel tab, the custom quiz, Learn's
 drills and lab games) draws from the units the player has unlocked, met on the path and ready (`model.js` `unlocked`),
-and opens none (rule L4); wrong choices may name any unit, as the quiz's do.
+and opens none (rule L4); wrong choices may name any unit, as the quiz's do. A live game asks the trainer's set; its
+answers on units not unlocked are skipped (rule L4 lets them count, opening nothing: not built yet).
 
 ### The first-launch question
 
@@ -547,10 +548,9 @@ it.
 
 ### Logged for the admin's player journey
 
-The mode of each answer says what the question was: `quiz` the photo quiz, `|s` its custom form, `|d` a duel slipped
-in, `|f` a Find the X, `|c` a comeback question, `|h` a held-out photo, `|kN` fewer plausible choices than buttons,
-`|t` typed, `|x` a mastery-exam question (`quiz.js` `answer`); the cards keep their kind and time; Open all and the
-back card keep their choice. The admin's player journey reads them.
+The mode of each answer says what the question was ([spec/sync.md](spec/sync.md) "Mode"; what each counts:
+[spec/quiz.md](spec/quiz.md#what-each-mode-counts)); the cards keep their kind and time; Open all and the back card
+keep their choice. The admin's player journey reads them.
 
 ### Millepora and the bonus genera
 
@@ -665,10 +665,10 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 ### Fish: easy, reference-like photos first, whoever took them
 
 The order a unit's photos are met in, where an order matters (the card's photo, the lists, the sheets: `core.js`
-`easyRank`): reference-level photos first (`core.js` `refLevel`: a reference source's own photo judged easy, or any
-photo judged 5 with the reference look: profile, whole, good light, true colours, sharp, one kind of fish), then by
-ease, then the most reference-like (`core.js` `refScore`), then a fixed hash of the file name, never by who took it
-(rule P1). In the draw a reference-level photo never seen weighs `calib.ref` (3) times more.
+`easyRank`): reference-level photos first (`core.js` `refLevel`: judged 4-5 with the reference look: profile, whole,
+good light, true colours, sharp, one kind of fish; never its route in), then by ease, then the most reference-like
+(`core.js` `refScore`), then a fixed hash of the file name, never by who took it (rule P1). In the draw a
+reference-level photo never seen weighs `calib.ref` (3) times more.
 
 ### The fish draw in big pools
 

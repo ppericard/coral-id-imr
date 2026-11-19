@@ -108,8 +108,9 @@ fill it, at fit and at actual size; `ANN` keeps each photo's marks).
   then. The arrangements in its check follow the IMR lecture lines of each genus.
 - **Growth forms** (step 7, `forms`) picks a form on drawn icons (`FORM_ICON`, ours, from the IMR definitions in
   `forms.json`) and shows 2-3 large example photos of it (`FORMS7`, picked by eye among the game photos of that form,
-  of different genera, in rule P1's order: IMR, then Pierre's, then other observers', `provOrder`; Tabulate has two,
-  both *Acropora*; a photo no longer in `data.json` drops out), each enlarged with its genus and credit.
+  of different genera, shown in the list's order, the first one largest, never reordered by who took them (rule P1);
+  Tabulate has two, both *Acropora*; a photo no longer in `data.json` drops out), each enlarged with its genus and
+  credit.
 
 Every label was placed by looking at the photo (rule W11).
 

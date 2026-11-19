@@ -1,6 +1,6 @@
 # The rules core: AGENTS.md cut to what every task holds, the index to docs/rules/, S1 and L6 merged
 
-Date: 2026-11-19 (Manila). PR: #NNNN. Rules or docs touched: AGENTS.md, `docs/rules/` (README, every header, S1, L6,
+Date: 2026-11-19 (Manila). PR: #1217. Rules or docs touched: AGENTS.md, `docs/rules/` (README, every header, S1, L6,
 U7, D2, W1, W6, W7, W19, W22, W25, W27; W2, W5 and W20 retired), `docs/spec/photos.md`, `tests/docs.test.js`.
 
 ## Context

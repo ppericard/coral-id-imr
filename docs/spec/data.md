@@ -254,7 +254,7 @@ The admin loads it (`side('presence.json', 'sp')`), and `presence.js` `outOfRule
 automatically: Pierre keeps the rule strict and sorts them himself from that part of To do:
 
 - **Remove** per photo: the × of every photo, `ACT.exclude` (excluded for good, from every genus, game and candidate
-  list, and the imports skip it; no confirmation, Undo works, Genera › Excluded restores it).
+  list, and the imports skip it; no confirmation, Undo works, the genus's Excluded list in the Tree restores it).
 - **Keep** per photo: an exception (curation `seen` `rule:f`, `admin.js` `ruleKept`). The photo stays on the site and
   moves down to a **Kept** subsection at the bottom of the part, folded with its count (`ruleKeptList`; `presence.js`
   `ruleQueue`'s `kept` leaves it out of the photos to handle), out of the part's count and of Remove all. There Remove
@@ -300,8 +300,9 @@ version could use grows; the CC BY-NC photos stay fully usable.
   open one (rule P1).
 - It is the **last key before the fixed order** (hash, file name, votes rank) wherever otherwise equal photos are
   ordered: `easyCover` (`easyRank` with the rights: the fish card photo of a family, genus or species, and the admin's
-  `fishOrder` and `fishCoverOf` when Pierre has not picked), `applySlots` `byQr` (the corals' featured, sheet and Coral
-  ID Key photos at equal quality, inside the IMR / own / others source order), `autosort.js` `fishRun` (which sure
+  `fishOrder` and `fishCoverOf` when Pierre has not picked), `applySlots` `byQr` (`easyRank` with the rights: the corals'
+  featured, sheet and Coral ID Key photos at equal quality, whoever took them; the admin's `autoOrder` the same),
+  `autosort.js` `fishRun` (which sure
   candidates fill a species' room) and `fishQueue` (the swiper's order within a species), `tools/fetch_local.py`
   `tie_key` (between coral observations of the same grade and as many iNaturalist votes), and `tools/fetch_fish.py`
   `select`, after the distance and the observer and life-stage variety (the licence class, `lic_class`, is in

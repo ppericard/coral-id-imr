@@ -10,6 +10,7 @@ const test = require('node:test'),
   path = require('path'),
   vm = require('vm');
 const {loadCodeGs} = require('./gas.js');
+const block = require('./block.js');
 
 const ROOT = path.join(__dirname, '..');
 const TOK = 'ghp_write000000000000000000';
@@ -649,76 +650,147 @@ test('live.js: a page redrawn while an answer is being logged never logs it twic
   assert.deepStrictEqual(logged, [0]);
 });
 
-test('live.js: a live miss restarts the mastery exam of the unit shown and of the one named (rule L9; Codex review #1049)', () => {
-  const log = [],
-    P = {
-      Acropora: {ok: 3, ko: 1, ex: {k: 2, v: []}},
-      Montipora: {ok: 4, ko: 0, ex: {k: 3, v: []}},
-      Porites: {ok: 2, ko: 0, ex: {k: 1, v: []}}
-    },
-    id = x => x,
+// The game's own recorder (quiz.js recordAnswer), run from its source in the live page's context with model.js stubbed
+// and core.js's scorer for real: live.js liveLog records through it, as quiz.js answer does. calls: what it did, in order
+// (the log rows as objects).
+const RECSRC = block(fs.readFileSync(path.join(ROOT, 'quiz.js'), 'utf8'), 'function recordAnswer({', '\n}\n', {
+  through: true,
+  file: 'quiz.js'
+});
+function recApp(P, calls, extra = {}) {
+  const C = require('../core.js'),
     zero = () => 0;
-  // The game's scorer and log stubbed (tests/live.smoke.js runs them for real): here, what a miss does to the exams.
   const A = liveApp(() => ({}), {
     SYNC: {name: 'Ann'},
     P,
     SUBJ: {id: 'coral'},
-    PICKD: {SINGLE: 0},
+    PICKD: {SINGLE: 0.5},
     inSubject: (sid, f) => f(),
     GX: n => (P[n] ? {} : null),
     introReady: () => true,
     st: n => P[n],
-    photoLook: () => null,
+    // A file ending in -c is a corallites photo (view macro).
+    photoLook: f => ({f, view: /-c$/.test(f) ? 'macro' : 'wide'}),
+    dropPlans: () => calls.push('dropPlans'),
     mxRecalc: f => f(),
     memRecalc: () => {},
     pmem: zero,
-    scoreIn: id,
+    scoreIn: C.scoreIn,
     photoDiff: zero,
     famOf: zero,
     confTerm: zero,
-    pgLook: zero,
+    pgLook: () => false,
     startP: zero,
-    fmtOff: zero,
-    pfmt: zero,
-    fmtOf: zero,
+    fmtOff: C.fmtOff,
+    pfmt: () => ({}),
+    fmtOf: C.fmtOf,
     genusDiff: zero,
-    scoreAnswer: () => ({e: 0.5, th0: 0, dm: 0}),
-    speciesShown: () => '',
+    scoreAnswer: C.scoreAnswer,
+    scoreLog: C.scoreLog,
+    photoQuiz: cur => cur === 'quiz',
+    AUTOD: false,
+    varRight: (n, L) => calls.push('varRight ' + n + ' ' + L.map(p => p.f).join(' ')),
+    EXAM: {n: 5},
+    TYPED: {exam: 2},
+    answersSoFar: zero,
+    examPassed: () => false,
     mxKept: () => true,
-    scoreLog: () => '',
+    speciesShown: () => '',
+    // core.js answerId (an answer kept without its player id); quiz.js cvField (app.js contentVer: the units in force)
+    answerId: C.answerId,
+    cvField: () => ({cv: 'clive1'}),
+    TYPEDQ_RJ: 10,
     rankOf: () => 'genus',
     unitRankOf: () => 'genus',
     unitName: () => '',
-    holdStep: () => {},
-    startStep: () => {},
-    answeredAt: () => {},
-    logAnswer: a => log.push(a),
-    save: () => {},
-    // core.js answerId (an answer kept without its player id); quiz.js cvField (app.js contentVer: the units in force)
-    answerId: require('../core.js').answerId,
-    cvField: () => ({cv: 'clive1'})
+    HOLDS: 0,
+    holdStep: () => calls.push('holdStep'),
+    startStep: () => calls.push('startStep'),
+    comebackStep: () => calls.push('comebackStep'),
+    answeredAt: () => calls.push('answeredAt'),
+    logAnswer: a => calls.push(a),
+    save: () => calls.push('save'),
+    achAfter: (good, ph, cur) => calls.push(`achAfter ${good} ${cur}`),
+    ...extra
   });
-  const o = c => ({
-    qi: 0,
-    pid: '0a1b2c3d4e',
-    s: 'coral',
-    t: 'Acropora',
-    c,
-    ok: c === 'Acropora',
-    ph: ['acropora-1'],
-    chs: ['Acropora', 'Montipora', 'Porites', 'Pocillopora']
-  });
+  A.run(RECSRC);
+  return A;
+}
+const CHS = ['Acropora', 'Montipora', 'Porites', 'Pocillopora'];
+
+test('live.js: a live miss restarts the mastery exam of the unit shown and of the one named (rule L9; Codex review #1049)', () => {
+  const calls = [],
+    P = {
+      Acropora: {ok: 3, ko: 1, ex: {k: 2, v: []}},
+      Montipora: {ok: 4, ko: 0, ex: {k: 3, v: []}},
+      Porites: {ok: 2, ko: 0, ex: {k: 1, v: []}},
+      Pocillopora: {ok: 1, ko: 0}
+    };
+  const A = recApp(P, calls),
+    log = () => calls.filter(x => typeof x === 'object');
+  const o = c => ({qi: 0, pid: '0a1b2c3d4e', s: 'coral', t: 'Acropora', c, ok: c === 'Acropora', ph: ['acropora-1'], chs: CHS});
   assert.strictEqual(A.ctx.liveLog({id: 'coral'}, o('Montipora')), 'ok');
   assert.ok(!('ex' in P.Acropora) && !('ex' in P.Montipora), JSON.stringify(P));
   assert.deepStrictEqual(P.Porites.ex, {k: 1, v: []});
-  assert.strictEqual(log[0].m, 'live');
+  assert.strictEqual(log()[0].m, 'live');
   // Its attempt id is the player's and the question's (live.js liveAid), its content version the units' in force.
-  assert.strictEqual(log[0].id, 'l0a1b2c3d4eq0');
-  assert.strictEqual(log[0].cv, 'clive1');
+  assert.strictEqual(log()[0].id, 'l0a1b2c3d4eq0');
+  assert.strictEqual(log()[0].cv, 'clive1');
   // An answer kept from before this field (no pid): a random attempt id.
   const {pid, ...old} = o('Porites');
   A.ctx.liveLog({id: 'coral'}, old);
-  assert.match(log[1].id, /^[a-z][a-z0-9]{15}$/);
+  assert.match(log()[1].id, /^[a-z][a-z0-9]{15}$/);
+});
+
+test('live.js: a live answer is recorded as the photo quiz records the same answer, its mode and attempt id apart', () => {
+  const state = () => ({
+    Acropora: {ok: 3, ko: 1, streak: 1, vl: ['juv']},
+    Montipora: {ok: 2, ko: 0, streak: 2},
+    Porites: {ok: 1, ko: 1, streak: 0},
+    Pocillopora: {ok: 0, ko: 1, streak: 0}
+  });
+  const at = '2026-11-19T02:00:00.000Z',
+    ph = ['acropora-1', 'acropora-2-c'];
+  for (const c of ['Acropora', 'Montipora']) {
+    const P1 = state(),
+      P2 = state(),
+      live = [],
+      quiz = [];
+    const L = recApp(P1, live),
+      Q = recApp(P2, quiz);
+    assert.strictEqual(
+      L.ctx.liveLog({id: 'coral'}, {qi: 3, pid: '0a1b2c3d4e', s: 'coral', t: 'Acropora', c, ph, chs: CHS, rt: 4.2, at}),
+      'ok'
+    );
+    // The same question as quiz.js answer hands it over: 4 choices in the photo quiz, the corallites in view, no hint
+    // left closed, no comeback, no photo of the mimicry class.
+    Q.ctx.recordAnswer({
+      cur: 'quiz',
+      mq: 'quiz',
+      target: 'Acropora',
+      c,
+      k: 4,
+      chs: CHS,
+      ph: ph.map(f => Q.ctx.photoLook(f)),
+      cor: true,
+      tm: {rt: 4.2},
+      id: 'x',
+      at
+    });
+    // The same record (the scorer's steps, the photos recently shown, the corallites milestone on a right answer).
+    assert.deepStrictEqual(copy(P1), copy(P2), c);
+    if (c === 'Acropora') assert.strictEqual(P1.Acropora.cor, 1);
+    assert.deepStrictEqual(copy(P1.Acropora.ro), ['acropora-1']);
+    // The same steps in the same order, and the same log row but its mode and attempt id.
+    const rows = calls => calls.map(x => (typeof x === 'object' ? {...x, m: '-', id: '-'} : x.replace(/ (quiz|live)$/, ' -')));
+    assert.deepStrictEqual(rows(live), rows(quiz), c);
+    assert.ok(live.some(x => x.m === 'live' && x.id === 'l0a1b2c3d4eq3'));
+    // What the live copy left out before: a right answer clears its variant groups and checks the achievements (with
+    // cur live: never a run), a miss drops the quiz's planned questions.
+    if (c === 'Acropora') assert.ok(live.includes('varRight Acropora acropora-1 acropora-2-c') && live.includes('achAfter true live'));
+    else assert.ok(live.includes('dropPlans') && live.includes('achAfter false live') && !live.some(x => /^varRight/.test(x)));
+    assert.ok(!live.includes('comebackStep'));
+  }
 });
 
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {

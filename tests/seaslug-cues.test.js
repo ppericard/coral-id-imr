@@ -117,7 +117,8 @@ test("the sea slugs' sheets in their own words: no fish word in UNITS seaslug wo
   const app = src('app.js'),
     learn = src('learn.js');
   const at = app.indexOf('seaslug: {'),
-    w = app.slice(app.indexOf('    words: {', at), app.indexOf('\n    sheet: id => viewFishSheet(id)', at));
+    from = app.indexOf('    words: {', at),
+    w = app.slice(from, app.indexOf('\n    },\n', from));
   assert.ok(w.length > 100, 'UNITS seaslug words');
   // its ? texts, its rank line and its drawing: no fish, FishBase, IMR or Dauin word
   assert.doesNotMatch(w.replace(/^\s*\/\/.*$/gm, ''), /\bfish|FishBase|IMR\b|Dauin/i);
