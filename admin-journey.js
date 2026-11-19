@@ -429,18 +429,20 @@ function renderJourney(name, anonId = '') {
     // a progress reset while the sheet keeps every answer; the count only for events without a time.
     before = (tm, n) => (tm ? R.filter(r => r[1] < tm).length : n),
     openN = offer && offer.open ? before(offer.t, offer.at) : null,
-    // The kind kept with the card; an older card's is guessed from readiness and the answer count. 'live': no card, a
-    // unit answered in a live game before the path opened it (model.js introLive), never counted as a card.
+    // The kind kept with the card; an older card's is guessed from readiness and the answer count. 'live': a closed mark
+    // with no time, a unit answered in a live game before the path opened it (model.js introLive), never a card.
     kindOf = e =>
       !e
         ? ''
-        : e[3]
-          ? {s: 'start', c: 'card', a: 'all', b: 'back', l: 'live'}[e[3]] || 'card'
-          : !e[1]
-            ? 'card'
-            : openAt != null && e[0] === openAt
-              ? 'all'
-              : 'start',
+        : e[3] === 'b' && !e[2]
+          ? 'live'
+          : e[3]
+            ? {s: 'start', c: 'card', a: 'all', b: 'back'}[e[3]] || 'card'
+            : !e[1]
+              ? 'card'
+              : openAt != null && e[0] === openAt
+                ? 'all'
+                : 'start',
     CM = (C && C.map) || {},
     byKind = k => Object.keys(CM).filter(g => kindOf(CM[g]) === k && J.slate.has(g));
   const first = byKind('start').sort((a, b) => CM[a][0] - CM[b][0]),
@@ -919,7 +921,7 @@ function sessionFacts(L, B, o = {}) {
     opened: !S
       ? S
       : Object.entries(S.intro || {})
-          .filter(([g, e]) => Array.isArray(e) && e[3] !== 'l' && inS(e[2]) && !asked.has(g) && !met.some(x => x[1] === g)) // 'l': no card (model.js introLive)
+          .filter(([g, e]) => Array.isArray(e) && inS(e[2]) && !asked.has(g) && !met.some(x => x[1] === g))
           .map(([g]) => g),
     missed: Object.entries(M)
       .filter(([, m]) => m[0] >= SESS.MISS)

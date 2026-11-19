@@ -869,17 +869,19 @@ const introAdd = (L, start, kind = start ? 's' : 'c') => {
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
 const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
-// Not open on the path though it may have answers: closed again by "One at a time" (introBack, below: kind 'b'), or
-// answered only in another mode before the path opened it (introLive, below: kind 'l'). The mark wins over the answers
-// already given until a card (or Open all) opens the unit and replaces it; the unit keeps its answers (rule L4).
-const closed = n => /^[bl]$/.test((introMap()[n] || [])[3] || '');
+// Closed again by "One at a time" (introBack, below), or answered in another mode before the path opened it (introLive,
+// below): kind 'b' wins over the answers already given until a card (or Open all) opens the genus again and replaces
+// the mark; the unit keeps its answers.
+const closed = n => (introMap()[n] || [])[3] === 'b';
 // A live game's answer on a unit the path has not opened (live.js liveLog; rule L4: another mode's answers count as
-// evidence on a locked unit, never opening it): the mark 'l' keeps it closed while its answers count. Nothing for a unit
-// already met (a card, an answer, Open all) or closed. Synced with the cards (introMerge: any opening wins over it).
+// evidence on a locked unit, never opening it): the unit gets the closed mark 'b' with no time (0), so its answers
+// count and it waits for its card. With no time, the mark never replaces an entry another device holds and any timed
+// opening replaces it (introMerge); One at a time's own marks carry their time. Nothing for a unit already met (a card,
+// an answer, Open all) or closed.
 const introLive = n => {
   if (introduced(n) || closed(n)) return;
   const m = introMap();
-  m[n] = [answersSoFar(), 0, Date.now(), 'l'];
+  m[n] = [answersSoFar(), 0, 0, 'b'];
   store.set(INTRO.KEY, m);
 };
 const introduced = n => !closed(n) && (asked(n) || n in introMap());
@@ -964,17 +966,15 @@ function introMerge(m, o) {
     // A genus closed by "One at a time" ('b') on one device is closed here too, and one opened again since by its card
     // on one device is open here too: between a mark and an opening, the later one (its time) wins. A card ('c') later
     // than an Open all ('a') can only be a reopening after a 'b' mark, so it is kept too: a delayed 'b' older than that
-    // reopening must not close the genus again (a@100, then c@300, then b@200). A live game's mark ('l', introLive) never
-    // replaces what is here, and anything else replaces it, whatever the times: an opening wins over it.
-    const shut = x => /^[bl]$/.test(x[3] || ''),
-      later = (h, e) =>
-        e[3] !== 'l' && (h[3] === 'l' || ((e[3] === 'b' || h[3] === 'b' || (h[3] === 'a' && e[3] === 'c')) && (e[2] || 0) > (h[2] || 0)));
+    // reopening must not close the genus again (a@100, then c@300, then b@200). A live game's mark (introLive: 'b' with
+    // no time) is older than any timed entry: it never replaces one, and any timed opening replaces it.
+    const later = (h, e) => (e[3] === 'b' || h[3] === 'b' || (h[3] === 'a' && e[3] === 'c')) && (e[2] || 0) > (h[2] || 0);
     let open = false; // a genus closed or reopened here: the questions planned ahead may be about it (or offer it)
     Object.entries(m).forEach(([n, e]) => {
       if (!Array.isArray(e)) return;
       const h = L[n];
-      if (h && later(h, e) && shut(e) !== shut(h)) open = true;
-      if (!h || later(h, e)) ch = L[n] = [e[0] || 0, shut(e) ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
+      if (h && later(h, e) && (e[3] === 'b') !== (h[3] === 'b')) open = true;
+      if (!h || later(h, e)) ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
     });
     if (ch) store.set(INTRO.KEY, L);
     // The planned questions (quiz.js takePlan) only check the answer count and the pool, so they are dropped and drawn
