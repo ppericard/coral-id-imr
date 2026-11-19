@@ -798,9 +798,21 @@ const server = http.createServer((req, res) => {
     await p.goto(base + '#' + require('../core.js').routeOut('quiz'), {waitUntil: 'commit'});
     if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no quiz question');
     else {
-      const r = await p.evaluate(() => smokeAnswer(false));
+      // The montage puts the photo shown beside one of the genus answered in the same view (quiz.js answer: V[tp.view]),
+      // so a wrong genus with no photo in that view (Lobactis has no 'medium' photo) shows none: 5 runs in 60 on any
+      // head had it (2026-11-19, the first question's one photo at a random view). The wrong answer given is one that has
+      // a photo in a view shown; none among the choices (rare): any wrong one, with no montage expected.
+      const wrong = await p.evaluate(() => {
+        const t = (typeof qNow === 'function' && qNow() && qNow().g) || SHOWNQ[1],
+          views = ((SHOWNQ && SHOWNQ[4] && SHOWNQ[4].shown) || []).map(x => x.view),
+          has = n => views.some(v => ((GX(n).views || {})[v] || []).some(x => gamePhotoOk(n, x)));
+        // answer.js: the choices read, to pick the wrong one; smokeAnswer gives it
+        const cs = [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(b => b.dataset.c);
+        return cs.find(n => n !== t && GX(n) && has(n)) || null;
+      });
+      const r = await p.evaluate(w => smokeAnswer(w === null ? false : w), wrong);
       const vs = await p.evaluate(() => !!document.querySelector('#view .qstage.qvs .qko img'));
-      if (r.fmt === 'choices' && !vs) fails.push(`learn.js held: no mix-up montage after a wrong answer (${JSON.stringify(r)})`);
+      if (wrong && !vs) fails.push(`learn.js held: no mix-up montage after a wrong answer (${JSON.stringify(r)})`);
     }
     await go('quiz-duel');
     if (!(await qa.ready(p, {timeout: 20000, optional: true}))) fails.push('learn.js held: no duel question');
@@ -1077,7 +1089,7 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         errs = [];
       p.on('pageerror', e => errs.push(e.message));
-      await p.goto(base + 'admin.html?demo#photos/genera/live/' + encodeURIComponent(g));
+      await p.goto(base + 'admin.html?demo#photos/tree/key/' + encodeURIComponent(g));
       const sel = `figure[data-f="${ph.f}"] img`;
       await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
       await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);
@@ -1123,7 +1135,7 @@ const server = http.createServer((req, res) => {
       if (!(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
         fails.push('Admin, R2 cut off, service worker: it never took the page over');
       else {
-        await p.goto(base + 'admin.html?demo#photos/genera/live/Acropora');
+        await p.goto(base + 'admin.html?demo#photos/tree/key/Acropora');
         await p.reload(); // a hash change alone keeps the page from before the worker
         // A photo of the genus page shown from its online original: R2 failed for it.
         const ok = await p
@@ -1252,7 +1264,7 @@ const server = http.createServer((req, res) => {
           if (!st.ok || !st.src.startsWith(R2 + 'img/' + ph.f + '-s.webp'))
             fails.push(`${at}, R2 answering: a photo that lives on R2 only did not show from R2 (${JSON.stringify(st)})`);
         } else {
-          await p.goto(base + 'admin.html?demo#photos/genera/live/' + encodeURIComponent(g));
+          await p.goto(base + 'admin.html?demo#photos/tree/key/' + encodeURIComponent(g));
           const sel = `figure[data-f="${ph.f}"] img`;
           await p.waitForSelector(sel, {timeout: 20000}).catch(() => {});
           await p.evaluate(s => document.querySelector(s) && document.querySelector(s).scrollIntoView(), sel);

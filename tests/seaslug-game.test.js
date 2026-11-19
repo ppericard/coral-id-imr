@@ -539,13 +539,17 @@ test('the committed files read through the fish engine: three circles, scientifi
   assert.strictEqual(X.gen[all.reduce((m, n) => (X.gen[n].cm > X.gen[m].cm ? n : m))].parent, 'f:Chromodorididae');
 });
 
-// The app plays the three circles at the fish's thresholds (app.js UNITS seaslug: slate, circles, gate treeGate).
+// The app plays the three circles at the fish's thresholds (app.js UNITS seaslug, from the tree subjects' shared
+// members TREE_UNITS: slate, circles, gate treeGate).
 test('UNITS seaslug: the three circles on the path, opened by the fish gate', () => {
   const A = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    T = A.slice(A.indexOf('\nconst TREE_UNITS = {'), A.indexOf('\nconst UNITS = {')),
     U = A.slice(A.indexOf('\n  seaslug: {'), A.indexOf('\ntreeAt(SUBJ.id);'));
-  assert.ok(U.includes('slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : [])'));
-  assert.ok(U.includes('circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : [])'));
-  assert.ok(U.includes('gate: treeGate,'));
+  assert.ok(T.length > 100 && U.startsWith('\n  seaslug: {\n    ...TREE_UNITS,\n'), 'the sea slugs start from TREE_UNITS');
+  assert.ok(T.includes('slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : [])'));
+  assert.ok(T.includes('circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : [])'));
+  assert.ok(T.includes('gate: treeGate,'));
+  for (const k of ['slate', 'circles', 'gate']) assert.ok(!new RegExp(`\\n {4}${k}: `).test(U), `${k}: not overridden`);
 });
 
 // The fish tools' sure rule (autosort.js fishSure, FISH_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py

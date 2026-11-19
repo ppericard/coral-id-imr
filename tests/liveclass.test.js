@@ -688,6 +688,8 @@ function recApp(P, calls, extra = {}) {
     scoreAnswer: C.scoreAnswer,
     scoreLog: C.scoreLog,
     contrastQ: C.contrastQ, // the duel achievement's contrast questions (a live answer is none)
+    photoQuiz: cur => cur === 'quiz',
+    AUTOD: false,
     varRight: (n, L) => calls.push('varRight ' + n + ' ' + L.map(p => p.f).join(' ')),
     EXAM: {n: 5},
     TYPED: {exam: 2},

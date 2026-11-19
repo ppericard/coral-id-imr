@@ -6,10 +6,10 @@
 // loaded right after progress.js (index.html order); app.js waits for every script (window.BOOT) before its first page.
 // The draw: every question draws from all the unit's game photos, weighted by how close each photo's difficulty
 // (photoDiff) is to the player's target for this unit and format (the difficulty controller, below). Photos never seen
-// get a bonus (bigger when the player is doing well; for the corals IMR and Pierre's photos first, SUBJECTS tiers; never
-// for fish), photos already shown weigh less the better they are remembered (PMEM), the colony of the last 2 questions
-// is held back, a colony shown or planned in the session's last RECENT questions waits while the unit has another
-// (SEENQ), and at least VARIETY colonies stay in rotation. All photos of a question come from one observation.
+// get a bonus (bigger when the player is doing well; never for who took the photo, rule P1), photos already shown weigh
+// less the better they are remembered (PMEM), the colony of the last 2 questions is held back, a colony shown or
+// planned in the session's last RECENT questions waits while the unit has another (SEENQ), and at least VARIETY
+// colonies stay in rotation. All photos of a question come from one observation.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
 // Until a unit reaches Open Water (LV_AT[0]), its photos under ease RARE.E (or its RARE.FEW easiest when it has fewer)
@@ -217,9 +217,10 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
-    // come first. A reference-level photo never seen (core.js refLevel) weighs the subject's calibration ref times more
-    // (SUBJECTS calib: 3 for fish, 1 for the corals), whoever took it.
-    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
+    // come first. A reference-level photo never seen (core.js refLevel: judged ease 4 or 5 with the reference look,
+    // whatever its source) weighs the subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1 for the
+    // corals), whoever took it: no photo weighs more for its source (rule P1).
+    if (!k) r *= (1 + 1.5 * hot) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     if (V.on) r *= V.f(p);
     return hardF < 1 && hard(p) ? r * hardF : r;
