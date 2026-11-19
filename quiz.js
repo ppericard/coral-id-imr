@@ -1099,17 +1099,22 @@ function pairText(a, b) {
 // that tell them apart (the pair's marks, each on its side with its sources, rule C2), split for the sheet (rule C3).
 // line: the first mark of each side, the photo's species first (t, the unit shown, on the class's side when it is one of
 // its units), "Name: mark · Name: mark", their sources small after it; rest: the pair's other marks, for the More panel,
-// as the pair's card lists them. Each species by the name the player sees first, as on the card (mimShow). null for a
-// pair with no marks.
+// as the pair's card lists them. Each species by the name the player sees first, as on the card (mimShow), followed by
+// "(juvenile)" when the pair names that side's juveniles as the ones that resemble (its st), so a mark of the young is
+// never read as the adult's. null for a pair with no marks.
 function mimMarks(m, t) {
   const L = (m && m.pair && m.pair.marks) || [];
   if (!L.length) return null;
   const imr = imrSaid(),
-    nm = x => (cnFirst(x, imr) ? esc(cnFirst(x, imr)) : `<i>${esc(x.sci)}</i>`),
+    st = m.pair.st || {},
+    nm = s => {
+      const x = s === 'a' ? m.na : m.nb;
+      return (cnFirst(x, imr) ? esc(cnFirst(x, imr)) : `<i>${esc(x.sci)}</i>`) + (st[s] === 'juvenile' ? ' (juvenile)' : '');
+    },
     sides = m.u.includes(t) ? ['a', 'b'] : ['b', 'a'],
     first = sides.map(s => L.find(k => k.side === s)).filter(Boolean),
     rest = sides.flatMap(s => L.filter(k => k.side === s && !first.includes(k))),
-    one = (k, b) => (b ? `<b>${nm(k.side === 'a' ? m.na : m.nb)}</b>` : nm(k.side === 'a' ? m.na : m.nb)) + `: ${esc(k.t)}`,
+    one = (k, b) => (b ? `<b>${nm(k.side)}</b>` : nm(k.side)) + `: ${esc(k.t)}`,
     src = [...new Map(first.flatMap(k => k.src || []).map(s => [s.t, s])).values()];
   return {
     line: `<p class="vs fbline">${first.map(k => one(k)).join(' · ')}${src.length ? ` <small class="esrc">(${mimSrc(src)})</small>` : ''}</p>`,

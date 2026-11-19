@@ -21,8 +21,10 @@ The integrator's calls made in the build, each easy to correct:
   taken for the class's unit. In Find the X, the photo tapped taken for the name asked. A juvenile cleaner wrasse taken
   for the blennies takes the pair that names its juveniles (M4) rather than the one about every photo (M3).
 - **The line** (rule C3, one decisive line): the first mark of each side, the photo's species first, "Name: mark ·
-  Name: mark", each species by the name the player sees first (as on the pair's card), the marks' sources small after it
-  in the card's short form; a side with no mark is left out (M2, M4); a pair with no marks keeps the usual line.
+  Name: mark", each species by the name the player sees first (as on the pair's card), followed by "(juvenile)" when the
+  pair names that side's juveniles as the look-alike (its stage `st`, never the mark's wording; the integrator, on this
+  PR's review, so a mark of the young is never read as the adult's), the marks' sources small after it in the card's
+  short form; a side with no mark is left out (M2, M4); a pair with no marks keeps the usual line.
 - **Behind More**, first: the pair's other marks, listed as on the card, then the two units' own pair line (IMR's or
   ours), which the marks replace on the sheet.
 - **The feedback only**: nothing logged, scored or drawn reads it; the Again keeps its own test (`mimUnit`), so the

@@ -359,6 +359,31 @@ test('mimMarks: the marks the line leaves go behind More, as the pair’s card l
   assert.strictEqual(mimMarks(ENTRY([]), 'f:Butterflyfishes'), null);
 });
 
+test('a side the pair names by its juveniles says so after its name, from the pair’s stages, both ways and in More', () => {
+  const juv = (a, b) => ({...ENTRY(), pair: {...ENTRY().pair, st: {a, b}}});
+  // the reverse mix-up (a photo of the species resembled): the juvenile side's mark is labelled, the other side's not
+  assert.strictEqual(
+    text(fbLine('f:Angelfishes', 'f:Butterflyfishes', false, [], juv('juvenile', 'all'))),
+    'Bus duo: A spine at the cheek · Bluespot butterflyfish (juvenile): A scalpel on the tail base (Australian Museum; IMR fish presentation; FishBase)'
+  );
+  // the photo of the class too, and the marks behind More
+  const M = mimMarks(juv('juvenile', 'all'), 'f:Butterflyfishes');
+  assert.match(text(M.line), /^Bluespot butterflyfish \(juvenile\): A scalpel/);
+  assert.match(M.rest, /<b>Bluespot butterflyfish \(juvenile\)<\/b>: A dark blotch/);
+  // both sides' juveniles (M4, M7), one side's only on b, or none named: from st, never from a mark's words
+  assert.match(
+    text(mimMarks(juv('juvenile', 'juvenile'), 'f:Butterflyfishes').line),
+    /\(juvenile\): A scalpel.*Bus duo \(juvenile\): A spine/
+  );
+  assert.match(
+    text(mimMarks(juv('all', 'juvenile'), 'f:Butterflyfishes').line),
+    /^Bluespot butterflyfish: A scalpel.*Bus duo \(juvenile\)/
+  );
+  assert.ok(!/juvenile/.test(mimMarks(juv('all', 'all'), 'f:Butterflyfishes').line));
+  const young = ENTRY([{side: 'a', t: 'Its young: black', src: []}]);
+  assert.ok(!/\(juvenile\)/.test(mimMarks(young, 'f:Butterflyfishes').line), 'a mark that speaks of the young is not read');
+});
+
 test('fbBody: a mimicry mix-up keeps one line; its other marks and the families’ line open the More panel', () => {
   const C = bodyCtx(),
     args = ['f:Butterflyfishes', 'f:Angelfishes', false, false, false, [{}], '', null, null, ['f:Angelfishes'], ''],
