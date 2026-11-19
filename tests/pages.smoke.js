@@ -3880,9 +3880,19 @@ async function credits(b, base) {
     if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
-    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only.
+    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
+    // first whose sheet shows a traced lecture photo besides its cover: the sheet's order is by quality, whoever took
+    // the photo (rule P1), so no given genus is sure to show one.
     {
-      await p.evaluate(() => (location.hash = 'learn/genus/Stylophora'));
+      const gn = await p.evaluate(() =>
+        Object.keys(DATA.gen).find(n => {
+          const g = DATA.gen[n],
+            cv = cover(g);
+          return Object.values(g.sl || {}).some(s => [...s.feat, ...s.more].some(x => x.imr && x.a && x.pg && (!cv || x.f !== cv.f)));
+        })
+      );
+      if (!gn) fails.push('no genus sheet shows a lecture photo traced to Corals of the World');
+      await p.evaluate(n => (location.hash = 'learn/genus/' + n), gn || 'Acropora');
       await drawn(p);
       const lc = await p.evaluate(() => {
         const F = [...document.querySelectorAll('#view figure figcaption')].filter(x => /IMR lecture/.test(x.textContent));
@@ -3892,7 +3902,7 @@ async function credits(b, base) {
         });
       });
       if (!lc.some(x => / \/ Corals of the World$/.test(x.link) && /slide \d+ · /.test(x.t)))
-        fails.push(`Stylophora sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
+        fails.push(`${gn} sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
     }
     await p.evaluate(() => (location.hash = 'learn/genus/Acropora'));
     await drawn(p);
@@ -4567,21 +4577,20 @@ async function basicsTeach(b, base) {
     await go('forms');
     const nf = await p.evaluate(() => document.querySelectorAll('.bx-forms [data-f] svg.bx-fi').length);
     if (nf !== 7) fails.push(`${W} forms: ${nf} drawn form icons, not 7`);
+    // The examples' genera in the order proto/basics.js FORMS7 lists them, by form name: shown in that order, never
+    // reordered by who took the photo (rule P1).
+    const F7 = {},
+      f7src = fs.readFileSync(path.join(ROOT, 'proto', 'basics.js'), 'utf8'),
+      f7 = f7src.slice(f7src.indexOf('const FORMS7 = ['), f7src.indexOf('];', f7src.indexOf('const FORMS7 = [')));
+    for (const m of f7.matchAll(/\[\s*'\w',\s*'([^']+)',\s*\[([\s\S]*?)\]\s*\]/g))
+      F7[m[1]] = [...m[2].matchAll(/\['([^']+)',\s*'[^']+'/g)].map(x => x[1]);
+    if (Object.keys(F7).length !== 7) fails.push(`${W} forms: ${Object.keys(F7).length} forms read from FORMS7, not 7`);
     for (let j = 0; j < 7; j++) {
       await p.click(`.bx-forms [data-f="${j}"]`);
       const ex = await p.evaluate(() =>
         [...document.querySelectorAll('.bx-fex figure')].map(f => ({
           w: Math.round(f.querySelector('img').getBoundingClientRect().width),
-          g: (f.querySelector('figcaption i') || {}).textContent || '',
-          // rule P1: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
-          r: (n => {
-            const fi = (f
-                .querySelector('img')
-                .getAttribute('src')
-                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
-              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
-            return q.imr ? 0 : q.own ? 1 : 2;
-          })((f.querySelector('figcaption i') || {}).textContent)
+          g: (f.querySelector('figcaption i') || {}).textContent || ''
         }))
       );
       const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
@@ -4590,9 +4599,10 @@ async function basicsTeach(b, base) {
       if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
         fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
       if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
-      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+      const want = (F7[name.trim()] || []).filter(g => ex.some(e => e.g === g));
+      if (ex.map(e => e.g).join() !== want.join())
         fails.push(
-          `${W} forms ${name}: examples not in rule P1's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+          `${W} forms ${name}: examples not in their listed order (rule P1): ${ex.map(e => e.g).join(', ')} for ${want.join(', ')}`
         );
     }
     await p.click('.bx-fex .bx-fx');

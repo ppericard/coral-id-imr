@@ -170,7 +170,7 @@ test('treeGen: a family cover between equal photos is an open one; an easier NC 
   assert.strictEqual(C.rightsClass(W.views.wide.find(p => p.f === W.cover)), 'open');
 });
 
-test('applySlots: equal quality, an open photo is featured before an NC one; quality and the source order still first', () => {
+test('applySlots: equal quality, an open photo or his own is featured before an NC one; quality still first, no source order', () => {
   const p = (f, lic, x = {}) => ({f, lic, o: 'https://www.inaturalist.org/observations/' + f, ...x});
   const d = {
     gen: {
@@ -192,18 +192,20 @@ test('applySlots: equal quality, an open photo is featured before an NC one; qua
   };
   C.applySlots(d, {quality: {ncgood: 3}}, {autoq: {}});
   const feat = d.gen.G.sl.wide.feat.map(x => x.f);
-  // Pierre's own first (the corals' source order, P1), then the better NC photo (quality), then the open one before
-  // the NC ones of the same quality.
-  assert.deepStrictEqual(feat, ['own', 'ncgood', 'open']);
+  // The better NC photo first (quality, whoever took it: rule P1), then the open one and Pierre's own (CC BY-NC, but his:
+  // own and open rank alike) before the NC ones of the same quality; between equals, core.js easyRank's fixed hash.
+  assert.strictEqual(feat[0], 'ncgood');
+  assert.deepStrictEqual(feat.slice(1).sort(), ['open', 'own']);
+  assert.deepStrictEqual(d.gen.G.sl.wide.more.map(x => x.f).sort(), ['nc1', 'nc2']);
+  // Every photo stays in the games, in the order without the rights (the draw's ties follow it): the better photo
+  // first, then the four of equal quality in easyRank's fixed order, whatever their licence or source.
+  const game = d.gen.G.sl.wide.game.map(x => x.f);
+  assert.strictEqual(game[0], 'ncgood');
+  assert.deepStrictEqual(game.slice().sort(), ['nc1', 'nc2', 'ncgood', 'open', 'own']);
+  const L = d.gen.G.sl.wide.game.slice(1);
   assert.deepStrictEqual(
-    d.gen.G.sl.wide.more.map(x => x.f),
-    ['nc1', 'nc2']
-  );
-  // Every photo stays in the games, in the order without the rights (the draw's ties follow it): the
-  // featured of the quality order (own, ncgood, nc1) lead, then the rest by source and quality.
-  assert.deepStrictEqual(
-    d.gen.G.sl.wide.game.map(x => x.f),
-    ['own', 'ncgood', 'nc1', 'nc2', 'open']
+    C.easyRank(L, () => 0, false).map(x => x.f),
+    game.slice(1)
   );
 });
 
