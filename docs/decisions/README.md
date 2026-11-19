@@ -117,6 +117,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
+| 2026-11-19 | [Sea slug ID marks for every circle-2 genus](2026-11-19-seaslug-marks-circle2.md) | #1238 |
 | 2026-11-19 | [Sea slug ID marks for circle 3: 30 of 32 genera, a line from one game species written "as X. y"](2026-11-19-seaslug-marks-circle3.md) | #1236 |
 | 2026-11-19 | [The slow test tag: eight statistical tests out of the pre-push fast tier](2026-11-19-slow-test-tag.md) | #1239 |
 | 2026-11-19 | [Merulina, Cyphastrea and Halomitra get ID tips from the Coral Finder, under their own heading](2026-11-19-starred-genera-tips.md) | #1242 |
