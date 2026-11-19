@@ -10,10 +10,13 @@
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--set calibration-set.json|none]
-//                          [--beyond yes|no]
+//                          [--beyond yes|no] [--live 20 [--liveoff]]
 //   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]: the sheet's photo Elo
 // --ach: the answer at which each achievement first came, median per profile (rule L8).
+// --live N: N live-game answers on units the path has not opened, before the first question (rule L4: they count and
+// open nothing); --liveoff records them nowhere (the live mode's version 1), the learner taught the same: the two arms of
+// a paired comparison (tools/learncmp.js).
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
 // --subject fish: plays the fish subject; the coral-only measures (Millepora, bonus genera) stay empty. --photos FILE
@@ -154,6 +157,10 @@ const SEEDS = Number(arg('seeds', 5)),
       return [b, Number(m[1]) * UNIT[m[2]]];
     }),
   OPENALL = arg('openall', ''),
+  // --live N (rule L4): N live-game answers before the first quiz question, each on a unit the path has not opened (play,
+  // below); --liveoff: the same answers, the learner taught by them the same, recorded nowhere (the live mode's version 1).
+  LIVEN = Number(arg('live', 0)),
+  LIVEOFF = process.argv.includes('--liveoff'),
   ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
   BEYOND = arg('beyond', ''),
   CHOICE = arg('choice', 'new'),
@@ -847,6 +854,43 @@ function play(cfg) {
       });
     return h ? {...comp(h), by: Object.fromEntries(Object.entries(h.by || {}).map(([c, o]) => [c, comp(o)]))} : {pct: shownPct()};
   };
+  // --live N (rule L4): N live-game answers before the first quiz question, each on a unit the path has not opened (one
+  // of the units in play not met, at random), its question built as the trainer's page builds it (live.js liveBuild:
+  // the look-alike traps, 4 choices) and recorded as a signed-in student's page records it (live.js liveLog, which
+  // marks the unit closed: model.js introLive), unless --liveoff (version 1: recorded nowhere). The item learner answers
+  // with its own chance and is taught by the reveal as by the quiz's feedback, in both arms. Per run: the answers, the
+  // right ones, and each unit answered with its state at the end (met on the path, the bar shown, the truth pOpen).
+  const live = {n: 0, ok: 0, rec: 0, units: []};
+  if (cfg.live && (field || exem)) throw new Error('--live: the item learner only');
+  for (let i = 0; i < (cfg.live || 0); i++) {
+    const left = pool().filter(n => !introduced(n));
+    if (!left.length) break;
+    const t = left[Math.floor(rnd() * left.length)],
+      b = liveBuild(t);
+    if (!b) continue;
+    const ch = b.ch.map(x => x[0]),
+      shown = b.ph.map(p => photoLook(p.f) || {f: p.f}),
+      d = mean(shown.map(p => trueD(t, p))) || 0,
+      pRec = sig(logit(kn(t)) - d - (shown.length === 1 ? L.SINGLE : 0));
+    let pick = t;
+    if (!(rnd() < pRec)) {
+      const ws = ch.map(c => wOf(t, c));
+      let r = rnd() * ws.reduce((a, x) => a + x, 0);
+      pick = ch[ch.length - 1];
+      for (let k = 0; k < ch.length; k++)
+        if ((r -= ws[k]) <= 0) {
+          pick = ch[k];
+          break;
+        }
+    }
+    // A fixed player id: the attempt id needs no random draw (live.js liveAid), so both arms draw the same numbers.
+    if (!cfg.liveOff && liveLog(SUBJ, {qi: i, pid: 'sim0000000', s: SUBJ.id, t, c: pick, ph: b.ph.map(p => p.f), chs: ch}) === 'ok') live.rec++;
+    teach(t, prof.rate * (pick === t ? 1 : L.MISS));
+    if (pick !== t) teach(pick, prof.rate * L.PICKED);
+    live.n++;
+    live.ok += pick === t ? 1 : 0;
+    if (!live.units.includes(t)) live.units.push(t);
+  }
   let cur = 'quiz';
   for (let i = 0; i < N; i++) {
     // --custom: once N genera are unlocked, they are the custom quiz's selection for --drill questions, then the Quiz again.
@@ -1127,6 +1171,13 @@ function play(cfg) {
     bonusShare: bon.q ? bon.n / bon.q : null,
     bonusMet: BON.filter(introduced).length,
     openAll: openall ? oa : null,
+    // --live: the live answers and each unit they were on, at the end of the run.
+    live: cfg.live
+      ? {
+          ...live,
+          units: live.units.map(u => ({u, met: introduced(u), bar: Math.round(genScore(u) * 1000) / 1000, po: Math.round(pOpen(u) * 1000) / 1000}))
+        }
+      : null,
     choice,
     early,
     // The first session's openings on their own cards (questions, 1-based), those right after a miss, and the questions
@@ -1203,7 +1254,9 @@ async function run(browser, base, name, seed) {
     drill: DRILL,
     calib: CALIBX,
     ach: ACHT,
-    beyond: BEYOND
+    beyond: BEYOND,
+    live: LIVEN,
+    liveOff: LIVEOFF
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
@@ -1697,6 +1750,7 @@ function openTable(runs) {
           learnerKind: LEARN,
           tau: LEARN === 'field' ? TAU : null,
           custom: CUSTOMN ? {n: CUSTOMN, drill: DRILL} : null,
+          live: LIVEN ? {n: LIVEN, off: LIVEOFF} : null,
           stats: STATS || null,
           truth: TRUTH || null,
           seconds: secs,
