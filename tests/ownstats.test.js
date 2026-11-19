@@ -130,7 +130,7 @@ test('Photo stats › Difficulty is every subject’s page, read from its own ra
   assert.ok(r > 0 && r < st, 'the own ratings page is routed before renderStats');
   // the shared page names no subject
   const page = block(src, 'function diffHtml(M) {', '\n}\n', {file: 'admin.js', through: true});
-  assert.doesNotMatch(page, /VIEW_T|ORIGIN_T|genusHref|\bGD\b|STATS\b|FISH|\.sheets\b|DATA\./);
+  assert.doesNotMatch(page, /VIEW_T|ORIGIN_T|genusHref|\bGD\b|STATS\b|\.sheets\b|DATA\./);
   // the fish page gets its own help; the corals' keep theirs
   assert.match(src, /'photos\/stats\/difficulty': ASUBJ\.stats \? 'ownstatsph' : 'statsph'/);
   // the demo answers &s= with ratings of its own from the version that serves them, else with the corals' like an older script

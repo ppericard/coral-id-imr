@@ -6401,13 +6401,38 @@ async function sealPart(b, base, fails) {
         ['fish', 'Families'],
         ['seaslug', 'Genera']
       ]) {
+        // The demo's script answers as the gate floor: before the version that serves the ratings (SUBJECTS stats) the reply is
+        // the corals' and names no subject: a line, never the corals' numbers under another subject's name (rule D4).
+        const X = require('../core.js').SUBJECTS.find(s => s.id === sj).stats;
         await go(`${sj}/photos/stats/difficulty`);
-        const fd = await p.evaluate(sj => {
+        const old = (await text()).trim();
+        if (!new RegExp(`^Sheet script v\\d+: .+ ratings need v${X}\\.$`).test(old))
+          fails.push(`${w}px #${sj}/photos/stats/difficulty before v${X}: "${old.slice(0, 120)}"`);
+        // ...and from it the page, on a demo that answers as that version.
+        const dq = await ctx.newPage(),
+          dqe = [];
+        dq.on('pageerror', e => dqe.push(e.message));
+        await dq.goto(base + `admin.html?demo&v=${X}#${sj}/photos/stats/difficulty`);
+        await dq
+          .waitForFunction(
+            () =>
+              document.querySelector('#view .adm-kpis') || /need v|not available|offline/.test(document.getElementById('view').innerText),
+            null,
+            {
+              timeout: 60000
+            }
+          )
+          .catch(() => {});
+        const fd = await dq.evaluate(sj => {
           const v = document.getElementById('view'),
             O = OWNST[sj],
             R = unitRegOf(SUBJECTS.find(s => s.id === sj)),
+            // a KPI's label is the span after its value (a value may hold a badge, itself a span)
             kp = Object.fromEntries(
-              [...v.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
+              [...v.querySelectorAll('.adm-kpis > div')].map(d => [
+                [...d.children].find(e => e.tagName === 'SPAN').textContent,
+                d.querySelector('b').textContent
+              ])
             );
           return {
             // the sheet's photos once each (a photo logged under its game id and its candidate id is one: treePid), the registry's
@@ -6445,8 +6470,10 @@ async function sealPart(b, base, fails) {
           fd.wide > 0
         )
           fails.push(`${w}px #${sj}/photos/stats/difficulty: ${JSON.stringify(fd)}`);
-        const dkD = await darkCards(p, '#view .adm-kpis > div, #view .adm-scard');
+        const dkD = await darkCards(dq, '#view .adm-kpis > div, #view .adm-scard');
         if (dkD) fails.push(`${w}px #${sj}/photos/stats/difficulty, dark theme: still light ${dkD}`);
+        if (dqe.length) fails.push(`${w}px #${sj}/photos/stats/difficulty: ${dqe.slice(0, 3).join(' | ')}`);
+        await dq.close();
       }
     }
     // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
