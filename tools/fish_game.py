@@ -190,6 +190,12 @@ def box_ok(b):
             and 0 <= b[0] < b[2] <= 1 and 0 <= b[1] < b[3] <= 1)
 
 
+def box_in(b, c, tol=0.01):
+    """Whether fish box b lies whole inside crop c (both [l, t, r, b] fractions of the original), give or take tol: a
+    box judged to the grid may overrun a crop drawn on the same grid by a hair (as tile_crop's "cut")."""
+    return b[0] >= c[0] - tol and b[1] >= c[1] - tol and b[2] <= c[2] + tol and b[3] <= c[3] + tol
+
+
 def tile_crop(bb, W, H, frame=None):
     """(square, why): the tile's square [l, t, r, b] as fractions of the W x H original, cut around the fish's box bb (the
     same fractions), or None and the reason it is refused: "cut" (the box is not whole inside Pierre's crop frame), "res"
@@ -672,7 +678,7 @@ def inputs(root=ROOT):
     """(fish, curation, candidates, their judgements, reference photos, reference codes, reference crops, reference keeps):
     what plan reads. One judgement per photo (Pierre, 2026-11-15; tools/fish_judge.py one_judgement): a reference photo
     that is also a candidate is read with its candidate judgement (judging/fish/<species>.json: code and keep; none while
-    it is unsure), never its copy in tools/fish_judge.json."""
+    it is unsure; its crop when it gives one, fish_judge.py one_crops), never its copy in tools/fish_judge.json."""
     import fish_judge as FJ
     fish, cur = load(root, 'fish.json'), load(root, 'curation.json', {})
     cand, sug = load(root, 'fish-cand.json', {'cand': {}}), (load(root, 'suggest.json', {}) or {}).get('fish') or {}
@@ -683,8 +689,9 @@ def inputs(root=ROOT):
     for r in (r for L in refs.values() for r in L):  # a reference photo judged only as a candidate is judged
         if r.get('f') and r['f'] not in codes and pid(r['f']) in cj:
             codes[r['f']] = cj[pid(r['f'])]['code']
+    crops = FJ.one_crops(codes, J.get('crops'), cj)  # the candidate judgement's crop goes with its code
     codes, keep = FJ.one_judgement(codes, J.get('keep'), cj)
-    return fish, cur, cand, sug, refs, codes, J.get('crops') or {}, keep
+    return fish, cur, cand, sug, refs, codes, crops, keep
 
 
 def boxes_in(root=ROOT):
