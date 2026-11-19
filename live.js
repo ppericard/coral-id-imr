@@ -688,7 +688,8 @@ function liveLog(S, o) {
         // Its attempt id: the same at every try for this player's answer to this question (liveAid), so the sheet logs it
         // once even if a reload logged it again before it left the queue (liveDone).
         id: liveAid(o.pid, o.qi),
-        at: o.at
+        at: o.at,
+        pace: LIVE_PACE
       });
       return 'ok';
     });

@@ -925,6 +925,9 @@ const closed = n => (introMap()[n] || [])[3] === 'b';
 // count and it waits for its card. With no time, the mark never replaces an entry another device holds and any timed
 // opening replaces it (introMerge); One at a time's own marks carry their time. Nothing for a unit already met (a card,
 // an answer, Open all) or closed.
+// Measurement variant (rule L11 level 2, never merged): a live answer stays out of the opening hold and the first-launch
+// window (quiz.js recordAnswer pace; tools/ratedworld.js reads it).
+const LIVE_PACE = false;
 const introLive = n => {
   if (introduced(n) || closed(n)) return;
   const m = introMap();

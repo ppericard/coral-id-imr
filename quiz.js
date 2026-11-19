@@ -652,7 +652,8 @@ function recordAnswer({
   tm = {},
   id,
   at,
-  tap = null
+  tap = null,
+  pace = true
 }) {
   const good = c === target,
     s = st(target),
@@ -805,8 +806,9 @@ function recordAnswer({
   // questions too (e allows for the plausible choices k, as for any question, and for the rust, so a miss the rust
   // explains adds less).
   const h0 = HOLDS;
-  holdStep(ans.e, good);
-  startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
+  // pace false (a question the path did not choose: model.js LIVE_PACE): outside the opening hold and the first-launch window.
+  if (pace) holdStep(ans.e, good);
+  if (pace) startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
   if (warm) comebackStep(q.R, th0, dm, k, good);
   answeredAt(s, good);
   // Every subject's answers go to the sheet. A subject the
