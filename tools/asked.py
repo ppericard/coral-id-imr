@@ -24,7 +24,7 @@ import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES = ['docs/ANSWERS.md', 'AGENTS.md', 'docs/rules/*.md', 'docs/decisions/*.md']
-SKIP = {'docs/decisions/README.md', 'docs/decisions/OLDER.md'}
+SKIP = {'docs/decisions/README.md'}
 
 
 def fold(s):

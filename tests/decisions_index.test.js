@@ -71,22 +71,20 @@ test("--fix rewrites a merge's conflicted index whole, markers included", () => 
   assert.strictEqual(readme(root), HEAD + WANT + '\n' + TAIL);
 });
 
-test('only the newest rows stay in README.md; the rest go to OLDER.md, and --check sees either file out of date', () => {
-  const root = tree('');
-  const older = path.join(root, 'docs', 'decisions', 'OLDER.md');
-  assert.strictEqual(run(root, '--fix', '--keep', '1').status, 0);
-  assert.strictEqual(readme(root), HEAD + WANT.split('\n')[0] + '\n' + TAIL);
-  const text = fs.readFileSync(older, 'utf8');
-  assert.ok(text.endsWith('|---|---|---|\n' + WANT.split('\n').slice(1).join('\n') + '\n'), text);
-  assert.strictEqual(run(root, '--check', '--keep', '1').status, 0);
-  fs.writeFileSync(older, text.replace('| #30 |', '| #99 |'));
-  const bad = run(root, '--check', '--keep', '1');
+// The index is whole in README.md: the split index's OLDER.md (a branch from before it was retired may bring it back
+// in a merge) is never read as a record; --check fails while it exists and --fix deletes it.
+test('the whole index is in README.md; a retired OLDER.md fails --check and --fix deletes it', () => {
+  const older = '# Older decision records\n\n| Date | Record | PR |\n|---|---|---|\n| 2026-11-18 | [Zeta](2026-11-18-zeta.md) | #12 |\n';
+  const root = tree('', {'OLDER.md': older});
+  const file = path.join(root, 'docs', 'decisions', 'OLDER.md');
+  assert.strictEqual(run(root).stdout.trim(), WANT, 'OLDER.md is not a record');
+  const bad = run(root, '--check');
   assert.strictEqual(bad.status, 1);
-  assert.match(bad.stdout, /index: {3}\| 2026-11-19 \| \[Beta: a \\\| in the title\].*#99/);
-  run(root, '--fix', '--keep', '1');
-  assert.strictEqual(run(root, '--check', '--keep', '1').status, 0);
-  fs.rmSync(older);
-  assert.strictEqual(run(root, '--check', '--keep', '1').status, 1);
+  assert.match(bad.stdout, /OLDER\.md is retired.*--fix/);
+  assert.strictEqual(run(root, '--fix').status, 0);
+  assert.ok(!fs.existsSync(file), 'OLDER.md deleted');
+  assert.strictEqual(readme(root), HEAD + WANT + '\n' + TAIL);
+  assert.strictEqual(run(root, '--check').status, 0);
 });
 
 test('a record without its "Date: … PR: #N." line is named, and nothing is written', () => {
