@@ -4263,6 +4263,19 @@
        "u": "https://reefguide.org/indopac/thecacerapicta.html"
       }
      ]
+    },
+    {
+     "n": "Pikachu",
+     "src": [
+      "web"
+     ],
+     "nick": 1,
+     "note": "often called so by divers here; not necessarily appropriate",
+     "web": [
+      {
+       "t": "Pierre, content editor (what divers around Dauin call it)"
+      }
+     ]
     }
    ],
    "ensrc": {
