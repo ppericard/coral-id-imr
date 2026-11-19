@@ -1395,3 +1395,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   differences in one place; the fish parity goal becomes the one-engine plan. Applied: ROADMAP "One engine for every
   subject, what is left" (the row "Fish admin at parity with the corals, Analyses first" folded into it, the backlog's
   item 4), the study's §5 (step 3 built), decision record `2026-11-20-one-admin-every-subject`, #1288.
+- **06:42-06:44, Q441 (a box pass on the sea slug photos so Find the X opens to them; the cost).** «Il faut faire des
+  tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; then «Je ne devrais pas
+  devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un
+  problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
+  judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
+  judging or boxing pass is measured first), #1287.
