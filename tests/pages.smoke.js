@@ -37,6 +37,7 @@ const ROUTES = [
   'leaderboard/achievements',
   'tools',
   'tools/samediff',
+  'tools/oddone',
   'learn/basics/walls',
   'learn/basics/words',
   'about',
@@ -4946,6 +4947,118 @@ async function sameDiffCheck(p, w, fails) {
   if ((await rec()) !== before) fails.push(`${at}: playing it changed the player's record, log or answer count`);
 }
 
+// Odd one out (proto/oddone.js, the Lab): six rounds, one by the keyboard, the photos stubbed (a tile that cannot load closes the
+// answers, as Find the X's: quiz.js, app.js). Four tiles; one screen before the answer, after it and with More open (rule U2:
+// the tiles above the verdict sheet, the sheet and Next above the tab bar, the page never scrolling); nothing named before the
+// answer; once answered every tile named, the odd one ticked, the three others naming one unit and it another, the verdict true to
+// the tile tapped; and the player's progress, answer log and answer count untouched (untimed, no effect on progress). Pushes its
+// failures into `fails`.
+async function oddOneCheck(p, w, fails) {
+  const at = `${w}px Odd one out`,
+    // answer.js: the Tools game's tiles, not a quiz question's choices
+    TILE = '#view .ooq .fxt [data-c]',
+    rec = () =>
+      p.evaluate(() =>
+        JSON.stringify([P, SYNC ? SYNC.log || null : null, store.get(LOG0, []), store.get(ANONQ, []), introMap(), answersSoFar()])
+      ),
+    // What sticks out of one screen: the tiles above the fixed verdict sheet (when there is one), the sheet and Next above the tab bar.
+    fit = () =>
+      p.evaluate(() => {
+        const tab = document.querySelector('.sections'),
+          tabTop = tab && getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight,
+          aft = document.getElementById('after'),
+          sheet = aft && getComputedStyle(aft).position === 'fixed' ? aft.getBoundingClientRect().top : tabTop,
+          tiles = [...document.querySelectorAll('#view .ooq .fxt')].map(e => e.getBoundingClientRect()),
+          out = [...document.querySelectorAll('#view .ooq .fxt, #view #after, #view #next')]
+            .map(e => [e.id || e.className || e.tagName, e.getBoundingClientRect()])
+            .filter(([, r]) => r.top < -1 || r.bottom > tabTop + 1)
+            .map(([n, r]) => `${n} ${Math.round(r.top)}..${Math.round(r.bottom)} of ${Math.round(tabTop)}`)
+            .concat(
+              tiles
+                .filter(r => r.bottom > sheet + 1 && document.querySelector('#view .ooq.done'))
+                .map(r => `tile under the sheet ${Math.round(r.bottom)} > ${Math.round(sheet)}`)
+            );
+        return {
+          out,
+          scroll: document.documentElement.scrollHeight - innerHeight,
+          tiles: tiles.map(r => [Math.round(r.width), Math.round(r.height)])
+        };
+      });
+  await p.evaluate(() => (location.hash = 'tools/oddone'));
+  await p.waitForSelector(`${TILE}:not([disabled])`, {timeout: 20000}).catch(() => {});
+  if (!(await p.$(TILE))) return fails.push(`${at}: no question drawn`);
+  const before = await rec();
+  for (let k = 0; k < 6; k++) {
+    await p.waitForSelector(`${TILE}:not([disabled])`, {timeout: 10000}).catch(() => {});
+    const pre = await p.evaluate(sel => {
+      const tiles = [...document.querySelectorAll('#view .ooq .fxt')];
+      return {
+        tiles: document.querySelectorAll(sel).length,
+        enabled: [...document.querySelectorAll(sel)].every(b => !b.disabled),
+        prompt: document.querySelector('#view .ooq .prompt')?.textContent,
+        named: !!document.querySelector('#view .ooq figcaption, #view .ooq .psrc, #view .ooq .fb, #view .ooq .fok, #view .ooq .fko'),
+        // no unit name in anything a tile says before the answer: its text is its key, its alt and label are numbered
+        words: tiles.map(f => f.textContent.trim()).join(''),
+        labelled: tiles.every(
+          (f, i) =>
+            f.querySelector('img').alt === `${SUBJ.what} ${i + 1}` &&
+            f.querySelector('button').getAttribute('aria-label') === `Photo ${i + 1}`
+        )
+      };
+    }, TILE);
+    if (pre.tiles !== 4 || !pre.enabled || !/^Three show the same .+\. Tap the odd one out\.$/.test(pre.prompt || '') || pre.named)
+      fails.push(`${at}, round ${k + 1} before the answer: ${JSON.stringify(pre)}`);
+    if (pre.words !== '1234' || !pre.labelled)
+      fails.push(`${at}, round ${k + 1} before the answer a tile says something: ${JSON.stringify(pre)}`);
+    const f0 = await fit();
+    if (f0.out.length || f0.scroll > 1 || f0.tiles.some(([x, y]) => x < 100 || y < 100))
+      fails.push(`${at}, round ${k + 1} before the answer is not one screen: ${JSON.stringify(f0)}`);
+    // answer.js: a tile, not a quiz choice (the Tools game's own keys, 1 to 4); a tap by turns
+    if (k === 2) await p.keyboard.press('3');
+    else await p.click(`${TILE}[data-c="${[0, 1, 0, 3, 2, 1][k]}"]`);
+    await p.waitForSelector('#view .ooq.done #next', {timeout: 5000}).catch(() => {});
+    const post = await p.evaluate(() => {
+      const caps = [...document.querySelectorAll('#view .ooq .fxt figcaption')].map(e => e.textContent.replace(/[✓✗]/g, '').trim()),
+        h3 = document.querySelector('#view #after h3'),
+        tiles = [...document.querySelectorAll('#view .ooq .fxt')],
+        oddI = tiles.findIndex(f => f.classList.contains('fok')),
+        koI = tiles.findIndex(f => f.classList.contains('fko'));
+      return {
+        caps,
+        oddI,
+        koI,
+        oks: document.querySelectorAll('#view .ooq .fok').length,
+        kos: document.querySelectorAll('#view .ooq .fko').length,
+        verdict: !!h3 && h3.classList.contains('ok'),
+        said: h3 ? h3.textContent : '',
+        enlarge: document.querySelectorAll('#view .ooq .fxt [data-fz]').length
+      };
+    });
+    // The tile tapped (by turns, or by key 3): the odd one is the one ticked, the tile tapped is it or crossed.
+    const tapped = k === 2 ? 2 : [0, 1, 0, 3, 2, 1][k],
+      odd = post.caps[post.oddI],
+      same = post.caps.filter((_, i) => i !== post.oddI);
+    if (post.caps.length !== 4 || post.oks !== 1 || post.oddI < 0 || same.some(c => c !== same[0]) || odd === same[0])
+      fails.push(`${at}, round ${k + 1} answered: the tiles do not say three of one unit and one of another ${JSON.stringify(post)}`);
+    if (post.verdict !== (tapped === post.oddI) || (tapped === post.oddI ? post.kos !== 0 : post.koI !== tapped))
+      fails.push(`${at}, round ${k + 1}: the verdict or the marks are wrong for tile ${tapped} ${JSON.stringify(post)}`);
+    if (!post.said.includes(odd) || !post.said.includes(same[0]) || post.enlarge !== 4)
+      fails.push(
+        `${at}, round ${k + 1} answered: the verdict does not say both names, or the tiles do not enlarge ${JSON.stringify(post)}`
+      );
+    const f1 = await fit();
+    if (f1.out.length || f1.scroll > 1) fails.push(`${at}, round ${k + 1} answered is not one screen: ${JSON.stringify(f1)}`);
+    await p.click('#view #fbmbtn');
+    const f2 = await fit();
+    // (on a desktop the side column scrolls under a long More, Next pinned in view: only the page may never scroll)
+    f2.out = f2.out.filter(x => !/^after /.test(x));
+    if (f2.scroll > 1 || f2.out.length) fails.push(`${at}, round ${k + 1} with More open is not one screen: ${JSON.stringify(f2)}`);
+    await p.click('#view #next');
+    await p.waitForSelector('#view .ooq:not(.done) [data-c]', {timeout: 8000}).catch(() => fails.push(`${at}: Next drew no new question`)); // answer.js: the Tools game
+  }
+  if ((await rec()) !== before) fails.push(`${at}: playing it changed the player's record, log or answer count`);
+}
+
 // One progression path for every game (rule L4): a beginner who met 4 genera on the path (Pocillopora,
 // Stylophora, Favites, Dipsastraea; Open all declined) plays 15 duels of the Duel tab: they come only from those 4, no
 // genus card opens, no ★ genus (whose reference is not met) ever shows; "Drill this pair" on a pair not unlocked falls back
@@ -5055,6 +5168,7 @@ async function onePath(b, base) {
     ['lab-spot', null, '.spotph img', null],
     ['lab-type', null, '.tystage img', null],
     ['lab-samediff', null, '.sdq .qph img', null],
+    ['lab-oddone', null, '.ooq .fxt img', null],
     ['lab-zoom', '#zmgame', '.zlayout img', '#zmgame'],
     ['lab-elim', '#elimm', '#elimmyst img', '#elimm'],
     ['lab-anatomy|drill', null, '#a2q img', '#a2next'],
@@ -5900,6 +6014,29 @@ const PARTS = [
       await sameDiffCheck(ps, w, fails);
       if (es.length) fails.push(`${w}px Same or different?: ${es.slice(0, 3).join(' | ')}`);
       await cs.close();
+    }
+    // Odd one out (Tools), the same way, with the photos' host answered by a one-pixel picture: its tiles are its choices, so
+    // a tile that cannot load closes the answers (the quiz's own handling, as Find the X's).
+    {
+      const co = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'}),
+        es = [],
+        PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+      await co.route(
+        u => !u.href.startsWith(base),
+        r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+      );
+      await co.addInitScript(() => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      });
+      const po = await co.newPage();
+      po.on('pageerror', e => es.push(e.message));
+      await po.goto(base);
+      await po.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await oddOneCheck(po, w, fails);
+      if (es.length) fails.push(`${w}px Odd one out: ${es.slice(0, 3).join(' | ')}`);
+      await co.close();
     }
     // Old and unknown addresses (old links are not translated): the section's page when the first segment is a section,
     // else Home, the address replaced; a fish address opens Fish (open to every player; a subject a player may not open
