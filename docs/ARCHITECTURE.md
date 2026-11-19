@@ -321,9 +321,10 @@ stored report).
 **How it connects.** It reads the answer log of the sheet with the admin token (`ANALYSES_ADMIN_TOKEN`, "Progress sync")
 and the photo features of the data files ("Data files"); the admin shows it on each subject's side of the switch ("Admin
 back-office"). Rules A2, A4 and A5 ([rules/admin.md](rules/admin.md)) govern its views; the methods are
-[LEARNING.md](LEARNING.md) "Multifactor analyses".
+[spec/analyses-method.md](spec/analyses-method.md).
 
-**Where the details live.** [spec/analyses.md](spec/analyses.md); the views read live from the answer log in
+**Where the details live.** [spec/analyses.md](spec/analyses.md); the methods and their validation:
+[spec/analyses-method.md](spec/analyses-method.md); the views read live from the answer log in
 [spec/admin-players.md](spec/admin-players.md#live-analyses-from-the-answer-log).
 
 - **One report per subject**: [analyses.md](spec/analyses.md#one-report-per-subject).
