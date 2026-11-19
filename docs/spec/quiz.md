@@ -1,11 +1,30 @@
 # The quiz: formats, feedback and games (`quiz.js`)
 
-What a question asks and how the app answers back: typed questions, the feedback sheet after an answer and its tally,
-the similar-names line, the glossary words, the custom quiz and the coral bonus genera. This is the specification of
-what the code does now; why each part was decided is in the PRs and [docs/decisions/](../decisions/README.md). Which
-unit and photo come next, the progress and the mastery exam are in [model.md](model.md); the research behind them in
-[LEARNING.md](../LEARNING.md); the cards and prompts around a game in [cards.md](cards.md); rule C3 (a short feedback)
-in [rules/content.md](../rules/content.md).
+What a question asks and how the app answers back: what each mode counts, typed questions, the feedback sheet after an
+answer and its tally, the similar-names line, the glossary words, the custom quiz and the coral bonus genera. This is
+the specification of what the code does now; why each part was decided is in the PRs and
+[docs/decisions/](../decisions/README.md). Which unit and photo come next, the progress and the mastery exam are in
+[model.md](model.md); the research behind them in [LEARNING.md](../LEARNING.md); the cards and prompts around a game in
+[cards.md](cards.md); rule C3 (a short feedback) in [rules/content.md](../rules/content.md).
+
+## What each mode counts
+
+Every counted answer, whatever its game, goes through one recorder (`quiz.js` `recordAnswer`: the photo quiz's
+`answer` and `live.js` `liveLog` call it), one scorer (`core.js` `scoreAnswer`), one log row, the sheet's
+pass and the full replay (`core.js` `replayProgress`); the modes and suffixes logged: [sync.md](sync.md) "Mode". The
+differences and their reasons (sources, and those left to fix: [the modes audit](../reviews/2026-11-19-modes-audit.md)):
+
+- **Exam** (`|x`): silent, never in the custom quiz (rule L9).
+- **Custom quiz** (`quiz|s`): no exam, opening, run or Sharp eye (below).
+- **Duel tab** (`quiz-duel`): no run or Sharp eye; out of the admin's quiz success rate (`core.js` `playSplit`).
+- **Typed** (`|t`): no guess rate, no time weight, never a comeback, an Again or a duel (below).
+- **Find the X** (`|f`): scored as 4 choices, the photo tapped the unit given (rule L2).
+- **Every format**: its own fitted offset (`core.js` `fmtOf`); no known-mix-ups term on 2 choices (`model.js`
+  `confTerm`).
+- **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked is
+  skipped (`live.js` `liveLog`); rule L4 lets it count without opening the unit: not built yet.
+- **Surprise card** (`wink`): counts nowhere.
+- **Not logged or scored**: the Tools (Lab prototypes, rule U13) and Memory.
 
 ## Typed questions
 
