@@ -1924,6 +1924,16 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const ar = await nameRoot();
     if (!rootOk(ar, /^Name roots: Amphi·prion: “around” \(amphi-\) \+ “saw” \(prion\)\./))
       ui.push(`${width}px Amphiprion name roots: ${JSON.stringify(ar)}`);
+    // The roots reach circle 3 (Gymnothorax, a Morays genus page).
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Gymnothorax'));
+    await q
+      .waitForFunction(() => /Gymnothorax/.test((document.querySelector('#view .fsheet .fn-t') || {}).textContent || ''), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const mr = await nameRoot();
+    if (!rootOk(mr, /^Name roots: Gymno·thorax: “bare or naked” \(gymnós\) \+ “breast or chest” \(thṓrax\)\./))
+      ui.push(`${width}px Gymnothorax name roots: ${JSON.stringify(mr)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
     await q
       .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})
