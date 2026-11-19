@@ -1,6 +1,6 @@
 # Matrix: a Lab prototype, four photos and five names, two taps, a free retry, untimed, no effect on progress
 
-Date: 2026-11-19. PR: #PR. Rules or docs touched: L4, S1, U2, U13, C3, P4, P5; docs/spec/basics.md "The Lab", docs/spec/quiz.md
+Date: 2026-11-19. PR: #1262. Rules or docs touched: L4, S1, U2, U13, C3, P4, P5; docs/spec/basics.md "The Lab", docs/spec/quiz.md
 "What each mode counts", ROADMAP "Matrix", FORMATS.md row 6, FISH_PATH.md.
 
 ## Context
