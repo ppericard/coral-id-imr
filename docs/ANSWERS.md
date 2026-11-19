@@ -77,3 +77,6 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
   message après 4h du mat"; then "ok pour cette phrase" to: "After 17:30 (Manila time, read from the hook's line), the
   integrator asks Pierre nothing until his first message after 04:00; everything else goes on as normal, agents
   included." Applied: AGENTS.md Rule 0, `tools/brief.py` (#1191).
+- **08:18.** On README's credit line for the Coral Finder 2022 ("no photo of the book is used. It stays a cited
+  source…"): "Je suis pas sur que c'est une bonne chose de mettre ça en avant. Maintenant c'est juste une source comme les
+  autres". Applied: the line is gone from README's credits; the book is cited where it is used, like any source.
