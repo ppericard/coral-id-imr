@@ -24,7 +24,7 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked is
   skipped (`live.js` `liveLog`); rule L4 lets it count without opening the unit: not built yet.
 - **Surprise card** (`wink`): counts nowhere.
-- **Not logged or scored**: the Tools (Lab prototypes, rule U13; [Same or different?](basics.md#the-lab-protolabjs)
+- **Not logged or scored**: the Tools (Lab prototypes, rule U13; [Same or different?, Odd one out](basics.md#the-lab-protolabjs)
   too) and Memory.
 
 ## Typed questions

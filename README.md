@@ -54,7 +54,8 @@ CI ([checks.yml](.github/workflows/checks.yml), [smokes.yml](.github/workflows/s
 Playwright 1.65.1; no `package.json`) runs what you can run by hand:
 
 ```sh
-node tests/run.js                 # all unit tests (tests/*.test.js), through the machine slot
+node tests/run.js                 # the fast tier: the unit tests without the `// @slow` ones, through the machine slot
+node tests/run.js --all           # every unit test (what CI and the merge train run)
 node tests/pages.smoke.js         # Playwright smokes, one file each: pages, draw, fish, seaslug, admin, live, net, profiles, staged
 python3 tools/check_versions.py   # also: tools/datajson.py --check, tools/sync_core.py --check
 npx --yes prettier@3.10.1 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
