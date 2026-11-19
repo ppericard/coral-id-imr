@@ -55,14 +55,19 @@ juvenile; `suggest.json` re-applied (`tools/judging_fish.py rep`, and `codes` fo
   flagged 147 eases (a 5 whose tags are not all the rubric's 5, or two or more from the usual ease of the adult photos
   with the same seven tags); all 147 were judged again blind, one by one at about 780 x 585 px, and set from the photo.
   Only the ease digit changed; tags, flags and caps stay.
-- **Consistency**: a blind second look at 60 photos (30 flagged, 30 not) agreed with the pass within one level on 59
-  (exactly on 76% of the unflagged), mean shift −0.1. Re-rated juveniles now average the adults' ease on the same tags
-  (3.23 against 3.22, over 1,560 photos of the common tag sets).
-- **Result** (typed ease, old → new, fish): 1→1 65, 1→2 294, 1→3 108, 1→4 2, 2→1 4, 2→2 282, 2→3 884, 2→4 520,
-  2→5 130: 1,938 up, 4 down, 347 unchanged; the 2,289 now read 1: 69, 2: 576, 3: 992, 4: 522, 5: 130. The early class
-  moved least (121: 1→1 4, 1→2 15, 1→3 7, 2→1 1, 2→2 50, 2→3 40, 2→4 4). Sea slugs: 1→3 1, 2→3 2, 2→4 3, 2→5 1.
+- **Full size for every 4 and 5** (Pierre, 20:57: «quand on a le doute, il ne faut pas hésiter à les voir en plus
+  haute résolution»): all 656 photos the pass put at 4 or 5 were seen again blind, each alone at 960 px. 375 were
+  lowered (4→3 247, 4→2 41, 5→4 71, 5→3 16), mostly for softness, dim light or an oblique body the tiles had hidden;
+  none raised. 351 of them show a tag the kept code lacks (softness 197, dim light 68, view 65, a watermark 50, a cut
+  or hidden fish 46): listed for a tag pass, the tags unchanged here.
+- **Consistency**: a blind second look at 60 tiles (30 flagged, 30 not) agreed with the pass within one level on 59
+  (exactly on 76% of the unflagged). After the full-size look, re-rated juveniles average 0.23 below the adults on the
+  same seven tags (2.99 against 3.22, 1,560 photos), the adults having been judged on contact sheets only.
+- **Result** (typed ease, old → new, fish): 1→1 65, 1→2 294, 1→3 110, 2→1 4, 2→2 322, 2→3 1,144, 2→4 306, 2→5 44:
+  1,898 up, 4 down, 387 unchanged; the 2,289 now read 1: 69, 2: 616, 3: 1,254, 4: 306, 5: 44. The early class moved
+  least (121: 1→1 4, 1→2 15, 1→3 7, 2→1 1, 2→2 52, 2→3 41, 2→4 1). Sea slugs: 1→3 1, 2→2 1, 2→3 3, 2→4 2.
 - **Applied**: `judging_fish.py one`, `rep`, `codes`, `--subject seaslug codes`; `one --check` 0; `seaslug-game.json`
-  rebuilt. In play after the caps (the build's plan): 1,856 `fish-game.json` juveniles move (1→2 289, 1→3 107,
-  2→1 4, 2→3 870, 2→4 464, 2→5 122), rebuilt by the photos workflow. Log: `judging/fish-juvenile-rerate.json`.
-- 198 in-play juveniles have their ease in `curation.json` (the auto-sort's copies); 101 differ from the new
+  rebuilt. In play after the caps (the build's plan): 1,817 `fish-game.json` juveniles move (1→2 289, 1→3 107,
+  2→1 4, 2→3 1,098, 2→4 278, 2→5 41), rebuilt by the photos workflow. Log: `judging/fish-juvenile-rerate.json`.
+- 198 in-play juveniles have their ease in `curation.json` (the auto-sort's copies); 100 differ from the new
   judgement and keep the stored value (rule A1).
