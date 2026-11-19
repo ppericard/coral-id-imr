@@ -436,6 +436,9 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   ([quiz.md › The feedback sheet](quiz.md#the-feedback-sheet)). The sheets speak the sea slugs' words through `app.js`
   `UNITS` `words` (`learn.js` `sheetWord`); the fish keep their own words by default. Sources consulted:
   [2026-11-18-seaslug-cues-sources](../reviews/2026-11-18-seaslug-cues-sources.md). `tests/seaslug-cues.test.js`.
+  `species_apply` does the same for `tools/seaslug_species_marks.json`, the species' own marks (agent drafts, `draft`:
+  each ref [src key, the page's words], `none` with why), onto `seaslug.json` species (`marks`, `msrc` {t, u} without
+  the quote, `mby`, `mdraft`), every species in marks or none. `tests/seaslug-species-marks.test.js`.
 - **`seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`** → `seaslug_lookalikes_cand.json`: the look-alike
   candidates ([survey](../reviews/2026-11-17-seaslug-lookalikes-survey.md)); the app does not read the file:
   `seaslug_game.py` `genus_looks` takes its genus pairs into `seaslug.json`, the species pairs wait for the species
