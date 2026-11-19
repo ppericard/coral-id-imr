@@ -60,14 +60,26 @@ const ctx = {
   uname: n => `<u>${n}</u>`,
   glossAll: L => L.map(x => `~${x}`),
   tipsLabel: g => g.tl || 'ID tips (IMR)',
-  esc: s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  esc: s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
+  // a player not at IMR (the main common name first: app.js cnFirst, below), the links of the sources (mimSrc)
+  imrSaid: () => false,
+  safeUrl: u => u
 };
+// The card's short source form (quiz.js mimSrc), which the mimicry pair's marks use on the sheet too, and the name a
+// player sees first (app.js cnList, cnFirst).
+const MIMSRC =
+  block(quiz, 'const mimSrc = L =>', "\n    .join('; ');", {through: 1, file: 'quiz.js'}) +
+  '\n' +
+  block(app, 'const cnList = s =>', '\n// The name a multiple-choice', {file: 'app.js'});
 vm.createContext(ctx);
 vm.runInContext(
-  block(quiz, 'function pairLine(', "// The feedback sheet's own tally", {file: 'quiz.js'}) + '\nthis.M = {pairLine, pairText, fbLine};',
+  MIMSRC +
+    '\n' +
+    block(quiz, 'function pairLine(', "// The feedback sheet's own tally", {file: 'quiz.js'}) +
+    '\nthis.M = {pairLine, pairText, fbLine, mimMarks};',
   ctx
 );
-const {pairLine, pairText, fbLine} = ctx.M;
+const {pairLine, pairText, fbLine, mimMarks} = ctx.M;
 const plain = o => JSON.parse(JSON.stringify(o));
 // The text of a line of the sheet's markup (tests only): what follows each tag's closing bracket, the words kept, the spaces joined.
 const text = h =>
@@ -176,7 +188,7 @@ test('the line is read from the record, never from a subject (rule S1)', () => {
 });
 
 // The sheet itself, built as the app builds it (fbBody), from the real app.js and quiz.js helpers it uses.
-test('fbBody: the verdict, the species line and one line outside More; the rest inside; More and Next on one row', () => {
+function bodyCtx() {
   const C = {
     ...ctx,
     GX: n => GEN[n],
@@ -201,11 +213,17 @@ test('fbBody: the verdict, the species line and one line outside More; the rest 
   };
   vm.createContext(C);
   vm.runInContext(
-    block(quiz, 'function pairLine(', "// The feedback sheet's own tally", {file: 'quiz.js'}) +
+    MIMSRC +
+      '\n' +
+      block(quiz, 'function pairLine(', "// The feedback sheet's own tally", {file: 'quiz.js'}) +
       block(quiz, 'function fbBody(', '\n}\n', {through: 1, file: 'quiz.js'}) +
       '\nthis.fbBody = fbBody;',
     C
   );
+  return C;
+}
+test('fbBody: the verdict, the species line and one line outside More; the rest inside; More and Next on one row', () => {
+  const C = bodyCtx();
   const html = C.fbBody(
     'f:Butterflyfishes',
     'f:Angelfishes',
@@ -263,4 +281,98 @@ test('the quiz montage keeps its ✓ / ✗ name chips and drops its two notes', 
   assert.ok(!/<small>/.test(code), 'no note under the names');
   assert.ok(!/The photo shown|Your answer, same view/.test(quiz), 'the notes are gone');
   assert.ok(!/\.qph small/.test(read('app.css')), 'and their style');
+});
+
+// A mimicry pair's entry (app.js mimLay) between two families of GEN that have IMR's line for each other: species s1 of
+// the butterflyfishes (a, the side that resembles; a common name) and s2 of the angelfishes (b; no common name), with
+// made-up marks and sources (fish.json lookalikes writes each mark's sources as {t, u}).
+const ENTRY = (marks = MARKS) => ({
+  sp: 's1',
+  st: 'juvenile',
+  u: ['s:s1', 'f:Butterflyfishes'],
+  m: ['s:s2', 'f:Angelfishes'],
+  na: {sci: 'Aus unus', cn: [['Bluespot butterflyfish', 'Blue-spot butterflyfish'], ['Spotty']]},
+  nb: {sci: 'Bus duo', cn: []},
+  pair: {id: 'X1', b: 's2', marks}
+});
+const MARKS = [
+  {side: 'b', t: 'A spine at the cheek', src: [{t: 'Australian Museum, Bus duo', u: 'https://example.org/b'}]},
+  {
+    side: 'a',
+    t: 'A scalpel on the tail base',
+    src: [{t: 'IMR fish presentation, Surgeonfish'}, {t: 'FishBase, Aus unus', u: 'https://example.org/a'}]
+  },
+  {
+    side: 'a',
+    t: 'A dark blotch above the anal fin',
+    src: [{t: 'Randall 2005, A review of resemblance, p. 317', u: 'https://example.org/r'}]
+  }
+];
+
+test('a mix-up of a mimicry pair: the pair’s marks make the line, one per side, the photo’s species first, sourced', () => {
+  const ch = ['f:Butterflyfishes', 'f:Angelfishes'],
+    h = fbLine('f:Butterflyfishes', 'f:Angelfishes', false, ch, ENTRY());
+  assert.strictEqual(
+    text(h),
+    'Bluespot butterflyfish: A scalpel on the tail base · Bus duo: A spine at the cheek (IMR fish presentation; FishBase; Australian Museum)'
+  );
+  assert.match(h, /^<p class="vs fbline">Bluespot butterflyfish: A scalpel/, 'one decisive line, in its place');
+  assert.match(h, /<i>Bus duo<\/i>/, 'a species with no common name: its scientific name');
+  assert.match(
+    h,
+    /<small class="esrc">\(IMR fish presentation; <a href="https:\/\/example.org\/a" target="_blank" rel="noopener">FishBase<\/a>;/
+  );
+  assert.ok(!/opercular|blotch/.test(h), 'neither the families’ line nor a second mark of a side');
+  // The photo of the species resembled, taken for the class's unit: its side first
+  assert.match(text(fbLine('f:Angelfishes', 'f:Butterflyfishes', false, ch, ENTRY())), /^Bus duo: A spine at the cheek · Bluespot/);
+  // Marks on one side only: that side's first mark; none at all: the families' line as for any miss
+  const one = ENTRY(MARKS.filter(k => k.side === 'a'));
+  assert.strictEqual(
+    text(fbLine('f:Angelfishes', 'f:Butterflyfishes', false, ch, one)),
+    'Bluespot butterflyfish: A scalpel on the tail base (IMR fish presentation; FishBase)'
+  );
+  assert.strictEqual(
+    fbLine('f:Butterflyfishes', 'f:Angelfishes', false, ch, ENTRY([])),
+    fbLine('f:Butterflyfishes', 'f:Angelfishes', false, ch),
+    'no marks: the pair line'
+  );
+  // A right answer, or an ordinary miss (no entry), keeps its line
+  assert.strictEqual(
+    fbLine('f:Butterflyfishes', 'f:Butterflyfishes', true, ch, ENTRY()),
+    fbLine('f:Butterflyfishes', 'f:Butterflyfishes', true, ch)
+  );
+  assert.match(fbLine('f:Butterflyfishes', 'f:Angelfishes', false, ch, null), /^<p class="vs fbline">Butterflyfish: no opercular spine/);
+  // The marks are escaped
+  assert.match(
+    fbLine('f:Butterflyfishes', 'f:Angelfishes', false, ch, ENTRY([{side: 'a', t: '<b>x</b>', src: []}])),
+    /: &lt;b&gt;x&lt;\/b&gt;<\/p>$/
+  );
+});
+
+test('mimMarks: the marks the line leaves go behind More, as the pair’s card lists them', () => {
+  const M = mimMarks(ENTRY(), 'f:Butterflyfishes');
+  assert.strictEqual(
+    M.rest,
+    '<ul class="mimmarks"><li><b>Bluespot butterflyfish</b>: A dark blotch above the anal fin <small>(<a href="https://example.org/r" target="_blank" rel="noopener">Randall 2005, p. 317</a>)</small></li></ul>'
+  );
+  assert.strictEqual(mimMarks(ENTRY(MARKS.slice(0, 2)), 'f:Butterflyfishes').rest, '', 'every mark on the line: nothing more');
+  assert.strictEqual(mimMarks(ENTRY([]), 'f:Butterflyfishes'), null);
+});
+
+test('fbBody: a mimicry mix-up keeps one line; its other marks and the families’ line open the More panel', () => {
+  const C = bodyCtx(),
+    args = ['f:Butterflyfishes', 'f:Angelfishes', false, false, false, [{}], '', null, null, ['f:Angelfishes'], ''],
+    html = C.fbBody(...args, ENTRY()),
+    [top, more] = html.split('<div class="fbmore" id="fbmore" hidden>');
+  assert.strictEqual(top.split('<p class="vs').length - 1, 1, 'one decisive line');
+  assert.match(top, /<p class="vs fbline">Bluespot butterflyfish: A scalpel on the tail base · <i>Bus duo<\/i>: A spine/);
+  assert.match(more, /^<ul class="mimmarks"><li><b>Bluespot butterflyfish<\/b>: A dark blotch/, 'the other marks first in More');
+  assert.match(
+    more,
+    /<\/ul><p class="vs">Butterflyfish: no opercular spine, no iridescent blue · Angelfish: spine on the gill cover, iridescent blue <small class="esrc">\(IMR; a made-up source\)<\/small><\/p>/,
+    'the families’ own line, which the marks replace on the sheet'
+  );
+  // An ordinary miss and a right answer: no marks anywhere
+  assert.ok(!/mimmarks|scalpel/.test(C.fbBody(...args)));
+  assert.ok(!/mimmarks|scalpel/.test(C.fbBody('f:Butterflyfishes', 'f:Butterflyfishes', true, ...args.slice(3), ENTRY())));
 });

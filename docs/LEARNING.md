@@ -757,8 +757,17 @@ so the trap arrives with its explanation. Why and who decided: the
     other the species resembled at its stage (`model.js` `mimSide`, `mimKeep`), never, as on the card, a photo taken
     outside the region of a species flagged regional; only while that side's draw holds one now (`drawHas`), else any
     photo of the unit.
-- **Not built yet** (ROADMAP "Look-alike pairs between species"): family pairs, the Look-alikes deck for every subject,
-  the admin's ⚠ badge and its lift, the feature frames' default.
+- **Its marks after a mix-up** ([decision](decisions/2026-11-19-mimicry-marks-feedback.md)): a miss that takes a photo
+  of one species of the pair, at the stage that resembles, for the other species' unit at the rank asked, either way
+  (`model.js` `mimMix`; in Find the X, the photo tapped taken for the name asked), makes the feedback sheet's one line
+  ([spec/quiz.md](spec/quiz.md) "The feedback sheet") from the pair's marks (`quiz.js` `mimMarks`, `fbLine`): the first
+  mark of each side, the photo's species first, each species by the name the player sees first, as on the card ("Pacific
+  mimic surgeon: A scalpel on the tail base, as every surgeonfish · Pearl-scaled angelfish: A large spine at the lower
+  edge of the cheek"), their sources small after it (`mimSrc`); a side with no mark left out, a pair with no marks keeps
+  the usual line. More opens on the pair's other marks, then the units' own pair line. The feedback only: the draw, the
+  scoring, the Again and the log stay as above (no rules version). Any tree subject's pairs take this path (`mimLay`).
+- **Not built yet** (ROADMAP "Look-alike pairs between species"): the reverse trap, Find the X on the pair, family
+  pairs, the Look-alikes deck for every subject, the admin's ⚠ badge and its lift, the feature frames' default.
 
 Its level-1 checks are in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check", "The
 mimicry pairs drilled: the level-1 check").
