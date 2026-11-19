@@ -79,6 +79,7 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [The admin's registry reads the structure and text in force, from the published curation](2026-11-19-fish-registry-content.md) | #1161 |
 | 2026-11-19 | [Fish judging rubric: the gold set's corrections](2026-11-19-fish-rubric-gold-set.md) | #1218 |
 | 2026-11-19 | [A fish photo with a look-alike near its edge plays once a crop takes it out](2026-11-19-fish-saving-crop.md) | #1223 |
+| 2026-11-19 | [Fish species sheets: sourced adult ID marks, shown as drafts until Pierre validates them](2026-11-19-fish-species-marks.md) | #1232 |
 | 2026-11-19 | [The fish species units are named on the admin's pages, in their genus's block on the Heatmap](2026-11-19-fish-units-named-admin.md) | #1159 |
 | 2026-11-19 | [The corals' Photos › Genera tab is folded into the Tree, its photo curation one shared section for every subject](2026-11-19-genera-into-tree.md) | #1214 |
 | 2026-11-19 | [Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups](2026-11-19-groups-carry-rights.md) | #1190 |
@@ -98,7 +99,6 @@ Both are written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |
 | 2026-11-19 | [Rules tooling: a search before any question, the answers ledger checked, the decisions index generated](2026-11-19-rules-tooling.md) | #1199 |
 | 2026-11-19 | [The rules core trial's harness, and a guard on agent launches: model and effort set, every launch logged](2026-11-19-rules-trial-harness.md) | #1209 |
-| 2026-11-19 | [The 2026-11-19 rule wordings: one shared engine, code comments, the slow tier, L11 over LEARNING](2026-11-19-rules-wordings.md) | #1190 |
 
 Older decisions are still in the notebook's "Decision log"
 ([docs/archive/learning-notebook.md](../archive/learning-notebook.md); LEARNING.md "Decision log" points there), the
