@@ -12,8 +12,9 @@ in [seaslugs.md](seaslugs.md). This is the specification of what the code does n
 
 ## The registry (`core.js` `SUBJECTS`)
 
-Three subjects, tested in `tests/subjects.test.js` (and `tests/subject-neutral.test.js`, which keeps subject names out of
-the engine). Each record:
+Three subjects, tested in `tests/subjects.test.js` (and `tests/subject-neutral.test.js`, which keeps subject names and
+tests on the subject out of the engine and the sync script's own code, but its listed exceptions, and lists each field
+true for one subject only, with what it switches on and its ROADMAP row). Each record:
 
 - `id` (`coral`, `fish`, `seaslug`) and `dev`, the prefix of its device keys (`''` for the corals, `fish-`,
   `seaslug-`);
@@ -79,7 +80,10 @@ one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their un
 
 ## What reads the subject's data (`app.js` `UNITS`)
 
-`UNITS[id]` holds what the engine and the pages read for each subject:
+`UNITS[id]` holds what the engine and the pages read for each subject. The tree subjects' entries start from
+`TREE_UNITS`, the members that read the tree in force the same way for each (`load`, `slate`, `core`, `circles`,
+`gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `bar`); each entry adds only
+its words, its files and its own settings and differences.
 
 - **Loading.** `load()`, its data before its pages open (the corals' is in from start-up; a tree subject's is `treeLoad`:
   its tree, its first photos and its game photos), and `home()`, what start-up waits for when it differs: the fish's is
