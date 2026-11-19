@@ -1139,3 +1139,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
+- **10:08, the models measured.** "Du coup il faut peut-être monter dans les efforts ou les modèles et faire de
+  nouveaux tests au lieu de default sur Opus high...". **10:09**, a question, not a decision: "Mais du coup qu'est-ce
+  qui t'as fait changé d'avis? Que se serait-il passé si je n'avais pas posé la question?". Applied: the measurement
+  (#1211); the integrator's answer, its call: a hook refuses an Agent launch without `model` and `effort`, every
+  launch is logged, and the brief prints the day's distribution, `tools/agent_guard.py` (#1209).
