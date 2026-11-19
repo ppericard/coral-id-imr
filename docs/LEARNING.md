@@ -421,7 +421,8 @@ it shows.
 Only the photo quiz opens units (its cards, the ★ rule). Every other game (the Duel tab, the custom quiz, Learn's
 drills and lab games) draws from the units the player has unlocked, met on the path and ready (`model.js` `unlocked`),
 and opens none (rule L4); wrong choices may name any unit, as the quiz's do. A live game asks the trainer's set; its
-answers on units not unlocked are skipped (rule L4 lets them count, opening nothing: not built yet).
+answers on units not unlocked count and open nothing (rule L4): the unit is marked closed (`model.js` `introLive`: the
+mark of One at a time with no time) until the path opens it on its card, with its answers.
 
 ### The first-launch question
 
