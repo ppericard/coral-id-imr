@@ -41,7 +41,6 @@ Everything else is written by a tool that a pull request runs and commits. A too
 | `fish-cand.json` | Fish candidate photos | `tools/fetch_fish.py`, `tools/fetch_fishbase.py` | The admin |
 | `fish-game.json` | The fish photos in play, hosted on R2 | `tools/fish_game.py` | The app, the admin, the sheet script, the service worker |
 | `fish-photos.json` | A few photos per fish entry, and the photos used on a sheet only | `tools/fish_game.py`, `tools/fish_photos.py` | The app, the admin, the sheet script, the service worker |
-| `fish-holdout.json` | The fish observations held out of practice, per species | `tools/holdout.py` | The app, the service worker |
 | `seaslug.json` | The sea-slug content: tree, genera, species, names | `tools/seaslug_game.py`, from `tools/seaslugs.json` | The app, the admin, the sheet script |
 | `seaslug-game.json` | The sea-slug photos in play | `tools/seaslug_game.py` | The app, the admin, the sheet script |
 | `seaslug-cand.json` | Sea-slug candidate photos | `tools/fetch_seaslugs.py` | The admin |

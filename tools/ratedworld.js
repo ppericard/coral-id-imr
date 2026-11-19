@@ -80,7 +80,10 @@ const idHash = id => {
 const sig = x => 1 / (1 + Math.exp(-x)),
   logit = q => Math.log(Math.min(0.995, Math.max(0.005, q)) / (1 - Math.min(0.995, Math.max(0.005, q))));
 
-// The fish units as the app builds them (app.js treeBuild without the curation's covers, which change no game photo).
+// The fish units as the app builds them (app.js treeBuild without the curation's covers, which change no game photo),
+// every photo in its unit's views: each simulated player's reserve is split out in engine (core.js reserveOf). Pierre's
+// ★ covers and featured photos (curation.json fish genera, by treePid, as app.js treeCurate reads them) stay practice in
+// the app (the cards'): X.picks, given to reserveOf as covers so it leaves them out too.
 let XCACHE = null;
 function fishUnits() {
   if (XCACHE) return XCACHE;
@@ -89,13 +92,22 @@ function fishUnits() {
     ph = J('fish-photos.json'),
     gm = C.treeGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
-    // the held-out set, out of the views (core.js treeHeld; model.js examSet), when the file exists (else none)
-    HO = fs.existsSync(path.join(ROOT, 'fish-holdout.json')) ? J('fish-holdout.json') : {},
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
     treeGenera = vm.runInContext('(' + cut(src, 'function treeGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
-  const held = C.treeHeld ? C.treeHeld(HO, gm.photos, CUR) : undefined,
-    X = treeGenera(C.treeGen(F, C.treePhotos(ph.photos, gm.photos, CUR, held), ph.sheet), F);
+  const X = treeGenera(C.treeGen(F, C.treePhotos(ph.photos, gm.photos, CUR), ph.sheet), F),
+    pick = new Set(
+      Object.values((CUR.fish && CUR.fish.genera) || {})
+        .flatMap(k => (k && typeof k === 'object' ? [k.cover, ...Object.values(k.feat || {}).flat()] : []))
+        .filter(Boolean)
+        .map(C.treePid)
+    );
+  X.picks = Object.fromEntries(
+    [...new Set(Object.values(X.gen).flatMap(g => (g.views.wide || []).filter(p => pick.has(C.treePid(p.f))).map(p => p.f)))].map((f, i) => [
+      'pick' + i,
+      {f}
+    ])
+  );
   return (XCACHE = X);
 }
 
@@ -152,9 +164,7 @@ function unitsOf(subject) {
       sp: X.spl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
-      // its held-out photos (model.js examSet), drawn into the world with the others so a world is the same with or without
-      // the set withheld
-      held: n => X.gen[n].held || [],
+      covers: X.picks || {},
       core: X.c1,
       c3: X.c3,
       tree: X.treeSp || X.tree,
@@ -197,7 +207,7 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
   if (U.subject === 'fish') U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
   else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
   const files = [
-    ...new Set([...U.slate, ...U.extra].flatMap(n => [...Object.values(U.views(n)).flat(), ...(U.held ? U.held(n) : [])].map(p => p.f)))
+    ...new Set([...U.slate, ...U.extra].flatMap(n => Object.values(U.views(n)).flat().map(p => p.f)))
   ].sort();
   files.forEach(f => {
     let e = RATED.EPS * normal(r);
@@ -223,18 +233,21 @@ const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 // The model.js bindings the planner reads.
 const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed', 'seenAdd'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
-function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
+// id: the simulated player's id, whose reserve (core.js reserveOf, on the units' own photos as the app has them) is split
+// out of the views (reserveSplit: the exam's photos, model.js examSet); '' none.
+function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = ''} = {}) {
   if (!U.slate) U = unitsOfX(U);
   const subject = U.subject,
     all = [...U.slate, ...U.extra, ...(U.sp || [])],
     // Every unit's record with its game photos per view, each with the world's judged ease (p.e) where the subject has
     // one (the fish; no coral photo is judged).
-    G = {};
+    G = {},
+    R = C.reserveOf({gen: Object.fromEntries(all.map(n => [n, {...U.rec(n), views: U.views(n)}])), covers: U.covers}, id);
   all.forEach(n => {
     const v = U.views(n);
     G[n] = {...U.rec(n), views: Object.fromEntries(Object.entries(v).map(([k, L]) => [k, subject === 'fish' ? L.map(p => ({...p, e: W.ease[p.f]})) : L]))};
-    if (G[n].held) G[n].held = G[n].held.map(p => ({...p, e: W.ease[p.f]}));
   });
+  C.reserveSplit({gen: G}, R);
   const mem = new Map(),
     store = {get: (k, d) => (mem.has(k) ? JSON.parse(mem.get(k)) : d), set: (k, v) => mem.set(k, JSON.stringify(v))},
     S0 = C.subjectOf(subject),
@@ -312,13 +325,14 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {})
   Object.assign(ctx, {introduced: M.introduced, asked: M.asked, introMap: M.introMap, imrSaid: M.imrSaid, genScore: M.genScore, LV_AT: M.LV_AT});
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
   // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
-  // judged-ease prior of its photos, its held-out ones included as model.js genusDiff counts them) gives the unit's mu.
+  // judged-ease prior of its photos, the player's reserved ones included as model.js genusDiff counts them: core.js
+  // heldOf) gives the unit's mu.
   if (app === 'truth') {
     ctx.photoDiff = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0);
     const ez = C.calibOf(SUBJ).ease || 0,
       pgd = {};
     Object.keys(G).forEach(n => {
-      const L = [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...(G[n].held || [])])].filter(p => p.e),
+      const L = [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...C.heldOf(G[n])])].filter(p => p.e),
         pr = L.length ? L.reduce((t, p) => t + (M.PDIFF.MID - p.e) * ez, 0) / L.length : 0;
       pgd[n] = [(W.mu[n] || 0) - pr];
     });
@@ -356,8 +370,8 @@ const noteRecent = (s, ph) => {
 
 // The judge's photo population of unit n: every game photo the game may ask (app.js gamePhotoOk, as photoSet reads it:
 // an extra genus's only Pierre's own or Research Grade).
-// Its held-out photos too (model.js examSet): the population is the unit's whole set, withheld or not.
-const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...(G[n].held || [])])].filter(p => ctx.gamePhotoOk(n, p));
+// Its reserved photos too (core.js heldOf; model.js examSet): the population is the unit's whole set, withheld or not.
+const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...C.heldOf(G[n])])].filter(p => ctx.gamePhotoOk(n, p));
 // The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
 // a slate genus alike), not of its reporting kind.
 const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || ''));
@@ -378,7 +392,8 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
 // generators (the world's seed by default), pi the player's ability offset (the world's by default); ctx the app's vm
 // (runPop serves it the sheet's statistics).
 function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi, calib = null}) {
-  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond, calib}),
+  // the simulated player's reserve (core.js reserveOf): one id per profile and seed (its own form; the app world's is learnsim.js simId)
+  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond, calib, id: `~anon sim ${profile} ${rseed}`}),
     prof = LP.profOf(profile, U.subject),
     r = gen((rseed * 2654435761) ^ 0x9e3779b9),
     slate = U.slate,
@@ -418,7 +433,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     lv = [];
   let rights = 0,
     blk = {n: 0, ok: 0};
-  // the questions of the exam, and those that showed a held-out photo (model.js examSet: an exam question on one)
+  // the questions of the exam, and those that showed a reserved photo (model.js examSet: an exam question on one)
   const qs = {exam: 0, held: 0, heldOk: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {

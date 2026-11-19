@@ -15,9 +15,10 @@ Hook mode (the hook's JSON on stdin, no argument), for three events in .claude/s
   python3 tools/instr_log.py --expect [REF]   the canary texts the trial's agents quote, from REF (origin/main)
 
 The log is <git common dir>/claude-instructions.jsonl: one file for the checkout and every worktree, never committed,
-append-only. INSTR_LOG names another file (tests). The hooks run main's reviewed copy (`python3 -I -c "$(git show
-origin/main:tools/instr_log.py)"`, the JSON on stdin), so this file uses the standard library only. A hook never fails
-the session: any error writes nothing and exits 0.
+append-only. INSTR_LOG names another file (tests). The hooks run main's reviewed copy (`git show
+origin/main:tools/instr_log.py` given with `python3 -I -c`, the JSON on stdin; a checkout with no origin/main ref fetches
+it first, tests/hooks.test.js), so this file uses the standard library only. A hook never fails the session: any error
+writes nothing and exits 0. A subagent's startup files are not logged (LAZY_ONLY).
 """
 
 import hashlib
@@ -32,6 +33,10 @@ MANILA = timezone(timedelta(hours=8))  # Asia/Manila, UTC+8 all year
 LOG_NAME = 'claude-instructions.jsonl'
 CORE = re.compile(r'Core v\d+\b[^.\n]*')  # the core's version line, the trial's canary (proposal §3)
 RULE0 = re.compile(r'^> \*\*(After 17:30.*?)\*\*$', re.S | re.M)
+# Claude Code (2.1.327, probed 2026-11-19) gives a general-purpose subagent the CLAUDE.md files and imports the session
+# loaded without firing InstructionsLoaded for them; a file the subagent loads later (a nested CLAUDE.md, a path rule)
+# fires it with the subagent's agent_id. So a subagent's count is its lazy loads; its quotes show what it started with.
+LAZY_ONLY = ' (lazy loads only: its startup CLAUDE.md and imports are not logged)'
 
 
 def git(cwd, *args, timeout=3):
@@ -144,8 +149,8 @@ def short(p, cwd):
 def report(rows, since=None, session=None):
     rows = [r for r in rows if (not since or datetime.fromisoformat(r['t']) >= since) and (not session or r.get('sid') == session)]
     if not rows:
-        return ['No record%s: the hooks did not run here (A not on origin/main, no origin/main ref, or settings.json '
-                'without them), or nothing started.' % (' since then' if since else '')]
+        return ['No record%s: the hooks did not run here (instr_log.py not on origin/main, no origin/main ref and the '
+                "hooks' fetch of it failed, or settings.json without them), or nothing started." % (' since then' if since else '')]
     out, sessions = [], {}
     for r in rows:
         sessions.setdefault(r.get('sid') or '?', []).append(r)
@@ -162,8 +167,9 @@ def report(rows, since=None, session=None):
             who = 'main agent' if not aid else '%s %s' % (atype or 'subagent', aid[:12])
             started = any(r['ev'] == 'SubagentStart' for r in ars)
             loads = [r for r in ars if r['ev'] == 'InstructionsLoaded']
-            out.append('  %s%s: %d file%s loaded' % (who, ' (SubagentStart given)' if started else '', len(loads),
-                                                    '' if len(loads) == 1 else 's'))
+            # A subagent's startup files (CLAUDE.md and its imports) fire no InstructionsLoaded: only its lazy loads do.
+            out.append('  %s%s: %d file%s loaded%s' % (who, ' (SubagentStart given)' if started else '', len(loads),
+                                                      '' if len(loads) == 1 else 's', LAZY_ONLY if aid else ''))
             for r in loads:
                 bits = [r.get('load_reason', '?')]
                 if r.get('trigger_file_path'):
