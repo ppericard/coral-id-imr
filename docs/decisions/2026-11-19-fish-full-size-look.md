@@ -1,6 +1,6 @@
 # Fish photos: a full-size look when the judge doubts; the juvenile re-rate's tag doubts settled
 
-Date: 2026-11-19. PR: #PRNUM. Rules or docs touched: judging/FISH.md "How to look" and the `a` flag;
+Date: 2026-11-19. PR: #1269. Rules or docs touched: judging/FISH.md "How to look" and the `a` flag;
 docs/spec/fish-photos.md (the `a` flag); `judging/fish-watermark.json`; `judging/fish-tag-doubts.json` (the log).
 
 ## Context
