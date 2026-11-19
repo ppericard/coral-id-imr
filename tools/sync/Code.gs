@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 188 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 189 (2026-11-19). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -90,7 +90,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 188;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 189;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // v117: an empty tab holds no name (a range of no row throws)
@@ -1225,14 +1225,18 @@ function statsStep_(S, m, tr, ex, idx){
   // [shown, right] as its bucket: new 0, shown never right 1, right once 2, right twice or more 3 (each photo shown, in turn).
   fs.forEach(f => { const k = Hw[f] || 0; Hw[f] = ok ? (k >= 2 ? 3 : 2) : k || 1; });
 }
-// What a fold serves: {ok, photos: {file: [difficulty, weighed answers, weighed right, answers]}, conf, mem, memn, gd,
+// What a fold serves: {ok, photos: {file: [difficulty, weighed answers, weighed right, answers, unit]}, conf, mem, memn, gd,
 // fmt}, the public ?stats=1 reply (stats_ adds ras and skip for the admin).
 // [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
 // photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
 // v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
+// v189: a 5th element, the unit whose offset is in that total (PG): a photo shared by units of different ranks (a fish
+// family and its scientific genus, core.js fishSciGen) is rated under the last unit that rated it, so the app swaps that
+// unit's offset for the one of the unit it asks (model.js photoDiff). A coral photo has one genus: no change, unless it
+// was rated last under a genus it has since left (moved or renamed).
 function statsOut_(S){
   const out = {ok: true, photos: nul_(), conf: S.conf, mem: S.mem.map(x => Math.round(x * 100) / 100), memn: S.N.map(x => Math.round(x * 10) / 10), gd: nul_(), fmt: CORE_.fmtFit(S.L)};
-  Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3]]; });
+  Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3], S.PG[f]]; });
   Object.keys(S.G).forEach(n => out.gd[n] = [Math.round(S.G[n][0] * 100) / 100, Math.round(S.G[n][1] * 10) / 10]);
   return out;
 }
@@ -4273,7 +4277,7 @@ const CORE_ = (function () { const module = {exports: {}};
   //           photo ratings, genus offsets, confusions, its own tab and ?stats=1&s=<id>)
   //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
   //           serves them (?stats=1&s=<id>, the reply naming its subject; rule D4). The corals' are read as ever (replay);
-  //           a subject with a pool and no stats (the fish) draws on its priors in the app, its statistics on the sheet only
+  //           a subject with a pool and no stats draws on its priors in the app, its statistics on the sheet only
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -4406,6 +4410,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // subjRpl_, as the fish's). The app lays the pairs over its units, says its stamp and adopts a replay under a new one only
   // from it (structSheet, sync.js stOn); before, the text slots alone, as before.
   const SEASLUGPAIRS_SHEET = 174;
+  // The sync script version from which the app reads the fish's own pooled statistics (rule D4; SUBJECTS fish stats): the
+  // script already serves them (?stats=1&s=fish: photo ratings, unit offsets and pairs, rated at the rank each question
+  // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
+  // version or later, so one it has not seen answer, or an older one, changes nothing.
+  const FISHST_SHEET = 189;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -4572,6 +4581,11 @@ const CORE_ = (function () { const module = {exports: {}};
         vars: (F, Fs, S) => treeVarTable(F, Fs, S)
       },
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries', as: ['f', 'ph', 'gm', 'cur']},
+      // The app reads its pooled statistics from the script that serves them (FISHST_SHEET; rule D4): photo ratings, unit
+      // offsets and pair counts at the rank asked, so its draw, traps and look-alikes follow its players' answers. Its
+      // photo memory and format offsets stay the prior and none (model.js pmem, pfmt), and its replay reads no pooled
+      // number: a row carries the scoring record it was scored with.
+      stats: FISHST_SHEET,
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
       ach: true,
@@ -7350,13 +7364,19 @@ const CORE_ = (function () { const module = {exports: {}};
     return true;
   }
   // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
-  // answers].
+  // answers, the unit whose offset is in the difficulty (model.js photoDiff swaps it for the unit asked)].
   function eloOf(rows) {
     const {P, PG, G} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
       f =>
-        (out[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+        (out[f] = [
+          Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100,
+          Math.round(P[f][2] * 10) / 10,
+          Math.round(P[f][1] * 10) / 10,
+          P[f][3],
+          PG[f]
+        ])
     );
     return out;
   }
@@ -11241,6 +11261,7 @@ const CORE_ = (function () { const module = {exports: {}};
     SEASLUGRP_SHEET,
     SEASLUGST_SHEET,
     SEASLUGPAIRS_SHEET,
+    FISHST_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,

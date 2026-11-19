@@ -879,8 +879,10 @@ A photo's difficulty is its unit's offset G, shared by every photo of the unit, 
 n being the weighed answers so far (a right answer beyond expectation makes the photo and its unit easier). Both start
 at 0, so a photo nobody has answered sits at its unit's offset. A photo's unit is the unit shown (every photo of a
 question is of one colony, rule P4), so no data file or per-unit code is needed. `?stats=1` serves each photo's total G + P in `photos` (`{file: [difficulty, weighed answers, weighed right,
-answers]}`) and the offsets in `gd` (`{unit: [offset, weighed answers]}`); 0 is an average photo met for the first
-time.
+answers, unit]}`, the unit whose offset G is in that total, from v189) and the offsets in `gd` (`{unit: [offset,
+weighed answers]}`); 0 is an average photo met for the first time. When the unit asked is not the one that last rated
+the photo (a fish photo shown at several ranks; a coral genus moved or renamed), the app swaps in the asked unit's
+offset and keeps the photo's own P (`model.js` `photoDiff`).
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
@@ -965,8 +967,11 @@ without `s`). The app reads:
   follow their players' answers: a pair seeded from iNaturalist's identifications (`model.js` `dataSeed`) that is offered
   together often and seldom mixed up falls under `CONF.TRAP` and stops being a look-alike. Their memory and format
   offsets stay the prior and none (`pmem`, `pfmt`), as the sheet's replay of them reads none.
-- **Not the fish's**: the sheet rates them (each question at the rank it asked), but the app does not read them (no
-  `SUBJECTS` `stats`), so a fish photo's difficulty is its judged-ease prior and every fish pair keeps its prior.
+- **The fish's** (`SUBJECTS` `fish` `stats`, from sheet v189: `core.js` `FISHST_SHEET`), the same way. Rows are rated
+  at the rank each question asked, so `PGD` holds one offset per unit id (`f:`, `g:`, `s:`). Their memory and format
+  offsets stay the prior and none (`pmem`, `pfmt`): using them would move the replayed progress (rule D5). The sheet
+  replays a fish answer from its logged scoring record (`core.js` `scoreRec`), whatever the statistics
+  (`tests/fishstats.test.js`). Measures: the notebook, "The fish's own pooled statistics".
 
 ### Photo exposure
 
@@ -978,11 +983,9 @@ games, per view; the fish have no cap. The study and its simulations are in the 
 
 ### The calibration set (corals, 2026-11-18)
 
-Pierre's answer to the placement test study (docs/reviews/2026-11-18-placement-test-check.md, #1080), the first step
-before an explicit placement test: a fixed set of about 50 coral photos, each drawn a little more often in normal play
-until it has 20 or more answers, never as a hidden probe. Today no coral photo has 20 answers (the study: 39 have 10 or
-more), and a test of 20-25 adaptive questions needs about 40-60 photos whose difficulty is measured. Decision record:
-docs/decisions/2026-11-18-coral-calibration-set.md.
+The first step before an explicit placement test: a fixed set of about 50 coral photos, each drawn a little more often
+in normal play until it has 20 or more answers, never as a hidden probe; a test of 20-25 adaptive questions needs about
+40-60 photos of measured difficulty. Decision record: docs/decisions/2026-11-18-coral-calibration-set.md.
 
 - **Which photos** (`tools/calibset.js`, `calibration-set.json`): game photos of the slate genera (the bonus genera are
   opt-in: few players meet them), in the views every question shows (colony and close-up; a two-level genus's colony
@@ -996,15 +999,13 @@ docs/decisions/2026-11-18-coral-calibration-set.md.
 - **Sticky**: a member stays while it is in play, even when its genus's share of the 50 falls (the set may then hold a
   few more); a genus whose member left play (Pierre removed it, rated it Poor,
   excluded it) takes the next photo of the same order when the tool runs again (`node tools/calibset.js`; `--check`
-  says when it would). Until then the member out of play is simply never drawn. A redraw would waste the answers the
-  members have gathered.
+  says when it would); until then it is never drawn. No redraw: it would waste the members' answers.
 - **The draw** (`model.js` `CSET`, `setBonus`): a member weighs `CSET.B` = 2 times as much in `photoSet` while the
   sheet's plain count of its answers (`nAnswers`, every player, repeats included) is under `CSET.N` = 20, on top of the
   online calibration's bonus (`calBonus`); then 1. Only on a unit the player holds (met, not shaky: the calibration
   questions' condition) and for a photo within one width of the question's target (|x| ≤ 1 in the targeting's
   Gaussian): the set never pulls a photo that does not suit the player. It multiplies the photo's weight and nothing
-  else: the difficulty targeting, the photo memory (a colony the player has seen weighs less, Q190), the variety, the
-  format and the scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
+  else: targeting, photo memory, variety, format and scoring are any photo's, so the question is a normal one. A subject with no set, or a device where the
   file did not come, draws as before.
 - **Progress**: `node tools/calibset.js --progress STATS`, on a saved `?stats=1` reply (`curl "<SYNC_URL>?stats=1&av=tool"`),
   lists each member's answers, the members at 20, the least answered, and the difficulty spread of the rated ones.
