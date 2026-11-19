@@ -83,6 +83,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [The fish species units are named on the admin's pages, in their genus's block on the Heatmap](2026-11-19-fish-units-named-admin.md) | #1159 |
 | 2026-11-19 | [The corals' Photos › Genera tab is folded into the Tree, its photo curation one shared section for every subject](2026-11-19-genera-into-tree.md) | #1214 |
 | 2026-11-19 | [Fish genera with IMR cues: our sourced ID marks under them, as the families](2026-11-19-genus-marks-beside-imr-cues.md) | #1231 |
+| 2026-11-19 | [Fish genus marks from more sources: Reef Life Survey, FishBase, Fishes of Australia, an FAO catalogue](2026-11-19-genus-marks-more-sources.md) | #1260 |
 | 2026-11-19 | [Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups](2026-11-19-groups-carry-rights.md) | #1190 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
 | 2026-11-19 | [learnsim fish profiles: species known by the IMR cheatsheet and commonness, values assumed until fitted](2026-11-19-learnsim-fish-species.md) | #1251 |
@@ -108,6 +109,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Same or different?: a Lab prototype, declared pairs only, untimed, no effect on progress](2026-11-19-same-or-different-lab.md) | #1241 |
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
+| 2026-11-19 | [Sea slug ID marks for circle 3: 30 of 32 genera, a line from one game species written "as X. y"](2026-11-19-seaslug-marks-circle3.md) | #1236 |
 | 2026-11-19 | [The slow test tag: eight statistical tests out of the pre-push fast tier](2026-11-19-slow-test-tag.md) | #1239 |
 | 2026-11-19 | [Merulina, Cyphastrea and Halomitra get ID tips from the Coral Finder, under their own heading](2026-11-19-starred-genera-tips.md) | #1242 |
 | 2026-11-19 | [The tell-apart pairs left without a line: four more written, five kept with their reason](2026-11-19-tellapart-none-pairs.md) | #1245 |
@@ -132,6 +134,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-18 | [The sheet script installs from a release branch only the merge train moves](2026-11-18-release-branch.md) | #1102 |
 | 2026-11-18 | [The 2026-11-18 rule wordings](2026-11-18-rules-wordings.md) | #1086 |
 | 2026-11-18 | [Sea slug achievements: the % ladder beyond 50%](2026-11-18-seaslug-achievements-high.md) | #1112 |
+| 2026-11-18 | [Species by scientific name on the sheet: the sci: key, smaller faults by kind](2026-11-18-species-sci-sheet.md) | #1249 |
 | 2026-11-18 | [The coral and sea-slug pairs' tell-apart lines: ours, in `ap` / `apsrc`, never in IMR's `lk`](2026-11-18-tellapart-lines.md) | #1119 |
 | 2026-11-18 | [Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs](2026-11-18-typed-answers-rest.md) | #1116 |
 | 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
