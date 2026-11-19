@@ -512,8 +512,9 @@ Decided from the admin pooling study:
 - Early, never a late stage (Pierre's ReefRecall rule). The easy photos come first: until 2026-11-06 an entry's questions showed only its very easy photos
   before Open Water (`model.js` `easyFirst`); since then (Pierre: "NO WALL", #660) the judged ease is only the photo's prior and the
   draw strongly favours the easy, reference-like photos at the start (docs/LEARNING.md "Fish: the starter core and judged
-  photos"). A juvenile is one only where its entry or genus shows its juveniles early (the juvenile classes, below); elsewhere its judged
-  ease is capped. No level gates them any more: a juvenile is in the pool from the start, its capped ease keeping it rare early in the draw.
+  photos"). A juvenile is judged on its photo like any other, its ease never capped (Pierre, 2026-11-19, Q435: the judged
+  ease is the starting point, the players' answers decide; [the decision](decisions/2026-11-19-fish-juvenile-no-cap.md)).
+  No level gates them: when a juvenile comes is its draw ramp's, below.
 - **On the unit's own mastery** (Pierre, 2026-11-07: "we must put back a progressive path that presents juveniles and
   sexual dimorphism"; 2026-11-17, Q391 a: one rule for every level): each juvenile, sex or colour phase photo comes into
   its unit's draw on a ramp of that unit's bar, by the juvenile classes below (`core.js` `varKindOf`, `VAR_AT`;
@@ -537,7 +538,7 @@ Decided from the admin pooling study:
     *Scolopsis bilineata* (resembles a fangblenny), *Plectropomus laevis* (resembles a toby), *Halichoeres* and *Thalassoma*
     (alike across species).
   - **Class C** (broadly like the adults) and **no source found** (Fusilier, Triggerfish, Soldierfish, Cardinalfish,
-    Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): the cap stays, provisionally.
+    Squirrelfish, Lizardfish, Sandperch: to ask an IMR trainer): from Open Water, as every juvenile of no class.
   - Mimicry is a hypothesis in every case: written as "resembles" or "has been suggested", never as a fact (Pierre).
 - **The mimicry class** (Pierre, 2026-11-18; docs/LEARNING.md "The mimicry class"): a juvenile or an adult that a source
   says resembles another species (the pairs M1-M7 of `tools/fish_lookalikes.json`, `fish.json` `lookalikes`) comes into
@@ -547,7 +548,8 @@ Decided from the admin pooling study:
   whose look varies by region (`fish.json` species `region`: *A. pyroferus*) never shows a photo taken elsewhere on the
   card. The pair is then drilled (2026-11-19, the per-photo traps below): such a photo makes the unit of the species
   it resembles a trap, and the pair duels and comes back as an Again on its two species (docs/LEARNING.md).
-- The B and look-alike juveniles get their explanation card when they come in (below); the provisional caps go with the bootstrap.
+- The B and look-alike juveniles get their explanation card when they come in (below). The classes set when a juvenile
+  comes, never its ease (Q435).
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
   (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.
