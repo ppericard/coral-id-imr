@@ -1353,3 +1353,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Applied in #1274:** Q405, Q415: the check tools aligned with rule L11: a 40-minute budget that plans, refuses over it
   and stops with the runs done marked cut, level 3 refused without his go on a GitHub runner, level 2's figures kept as
   the minimum (`tools/checkbudget.js`; decision record `2026-11-19-check-cap`).
+- **Applied in the learncheck-cap PR:** Q405, Q415: the Learning check workflow keeps the 40-minute cap as one deadline
+  for the whole check and the level-3 go before either arm, and `learncmp` reads an empty cut arm for every primary
+  (`.github/workflows/learncheck.yml`; decision record `2026-11-19-check-cap`).
