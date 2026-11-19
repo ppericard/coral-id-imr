@@ -36,7 +36,9 @@ git-ignored; scratch queries in the session's scratch space, not committed; no o
 2. **Watch: the "Pikachu" is *Thecacera pikachu* (2026), not *T. pacifica*.** *T. pacifica* sits in circle 1 partly on
    the "pikachu" mentions that Wikipedia's redirect gives it; the 2026 paper and seaslug.world give the nickname to *T.
    pikachu* (31 observers, circle 3; "*Thecacera* sp. 8" of the 2018 guide). A point for `points.json` and a question for
-   Pierre (§4.1, §6).
+   Pierre (§4.1, §6). **Answered (Q417, 2026-11-19)**: the nickname is shared; it counts for *T. pikachu* and *T.
+   pacifica*, and *T. picta*, the one local divers tend to call Pikachu, is mentioned with a note that the name is not
+   necessarily appropriate for it (§6).
 3. **Watch: *Phyllidia ovata* (2025), "*Phyllidia* sp. 10" of the 2018 guide**, found among iNaturalist's *P. picta* and
    *P. coelestis* photos (both in circle 1); the paper cites a Dauin photo, but iNaturalist has no Philippine observation of
    it at species level (9 worldwide) **[measured]** (§4.2).
@@ -203,7 +205,7 @@ matter for the species sheets, the genus units' photos and the later species lev
   **circle 1**). *T. pacifica* is a star partly because the build counts the "pikachu" mentions for it, through the
   Wikipedia redirect (`tools/seaslug_source.json` nicknames; `tools/seaslugs.json` `nicknames`). The 2026 paper and
   seaslug.world give the nickname to *T. pikachu*: a discrepancy between sources (rule C5, §5.3) and a question for
-  Pierre (§6), since moving the nickname moves a star.
+  Pierre (§6), since moving the nickname moves a star. Answered in §6: the nickname is shared.
 - **Look-alikes.** *T. pacifica* / *T. pikachu* is a sourced pair (the cue above), both confirmed in the Philippines.
 - **Photos.** A *T. pacifica* photo older than 2026 of a spotted animal may be *T. pikachu*: the judging can check the
   spots and the tips **[guess]**.
@@ -444,7 +446,7 @@ each pair are confirmed in the Philippines (rule C8), so each can serve as a cue
 - The complexes of §5.3: a species-level photo of them is a photo of the complex; at the genus level (today's units) it
   is sure.
 
-## 6. Question for Pierre (French-ready, not urgent)
+## 6. Question for Pierre (answered, Q417)
 
 **Le surnom « Pikachu ».** Depuis avril 2026, le « Pikachu » des plongeurs a son propre nom, *Thecacera pikachu* (Pola
 et al. 2026 ; 31 observateurs aux Philippines, déjà dans notre liste). Wikipedia renvoie encore « Pikachu nudibranch »
@@ -453,8 +455,16 @@ vers *T. pacifica*, et c'est ce renvoi qui donne les mentions « pikachu » à *
 le genre *Thecacera* reste au cercle 1 grâce à *T. picta*) et de noter le désaccord dans les Points de l'admin.
 D'accord ?
 
+**Answer** (Pierre, already given on 2026-11-17: shared, several species; again on 2026-11-19, Q417, ANSWERS.md): at
+06:50, "En pratique les plongeurs utilisent Pikachu pour plus qu'une seule espèce."; at 06:58, on *T. picta*: "ici c'est
+celle que les plongeurs ont tendance à appeler Pikachu. Donc il faut au moins le mentionner, même si on indique que ce
+n'est pas forcément approprié." So the proposal above is not taken as written: the nickname counts for *T. pikachu*
+and *T. pacifica*, and *T. picta* is mentioned as the one local divers tend to call Pikachu, with a note that the name
+is not necessarily appropriate for it.
+
 Context for the integrator: the nicknames are counted by a rule decided with Pierre (Q377: a nickname counts for the
-species its English Wikipedia redirect lands on); this would be an exception to it, so it waits for him. Nothing in the
+species its English Wikipedia redirect lands on); this would be an exception to it, so it waited for him (answered
+above). Nothing in the
 game changes now: the units are genera (Pierre, 2026-11-16).
 
 ## Appendix A. The tool's files and commands
