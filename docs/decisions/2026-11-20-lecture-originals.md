@@ -1,6 +1,6 @@
 # The 86 Corals of the World screenshots are replaced by their originals, on R2
 
-Date: 2026-11-20. PR: #1290. Rules or docs touched: `docs/spec/photos.md`, `docs/PAGES.md`, `docs/ROADMAP.md`,
+Date: 2026-11-20. PR: #1292. Rules or docs touched: `docs/spec/photos.md`, `docs/PAGES.md`, `docs/ROADMAP.md`,
 `tools/imr_frames.json`, `tools/fetch_imr_originals.py`, `tools/apply_imr_originals.py`,
 `.github/workflows/imr-originals.yml`, `index.html` and `admin.html` (CSP), `tests/imrsources.test.js`.
 
