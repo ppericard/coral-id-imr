@@ -1378,3 +1378,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   Ça devrait jamais être à moi. C'est à toi de le faire.»; «Comment ça se fait en fait que tu en es arrivé à devoir me
   demander manuellement de lancer une commande ?» The integrator does such steps itself; only a step it may not take
   goes to him, as a yes/no question. Applied: INTEGRATOR "Working with Pierre" (Never give him a command to run).
+- **05:46, P2, what "B for now" meant (the 34 untraced lecture photos).** «quand je disais pas pour l'instant, c'est
+  que probablement, pour l'instant, on les laisse en jeu, mais qu'à un moment donné, si on n'arrive vraiment pas à
+  sourcer, ben, il faudra peut-être arriver à les supprimer. […] l'autre agent m'avait demandé de demander aux
+  formateurs de IMR de les sourcer. Donc ça, non, ça, je vais pas les emmerder pour ça. Donc, pour l'instant, ça reste
+  source IMR sans plus d'infos.» They stay in play, credited to IMR with no more information; nobody asks the IMR
+  trainers; if they are never sourced, removing them may come later. Applied: ROADMAP "Trace IMR lecture photos to
+  their original source", #1282.
