@@ -16,7 +16,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
 
 - **Exam** (`|x`): silent, never in the custom quiz (rule L9).
 - **Custom quiz** (`quiz|s`): no exam, opening, run or Sharp eye (below).
-- **Duel tab** (`quiz-duel`): no run or Sharp eye; out of the admin's quiz success rate (`core.js` `playSplit`).
+- **Duel tab** (`quiz-duel`): no run or Sharp eye; out of the admin's quiz success rate (`core.js` `playSplit`). Every
+  subject has it (`UNITS` `pairs`, `duelLede`).
 - **Typed** (`|t`): no guess rate, no time weight, never a comeback, an Again or a duel (below).
 - **Find the X** (`|f`): scored as 4 choices, the photo tapped the unit given (rule L2).
 - **Every format**: its own fitted offset (`core.js` `fmtOf`); no known-mix-ups term on 2 choices (`model.js`

@@ -1237,3 +1237,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
+- **20:34, Q437 (open the coral-only modes to fish and sea slugs: Compare, the pairs, the custom quiz, the duel).**
+  «évidemment oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est
+  du code commun.» Every game mode opens to every subject, in shared code. Applied: ROADMAP "Every game mode for every
+  subject", `SUBJECTS` `closed`, docs/decisions/2026-11-19-modes-every-subject.md (the Duel tab first); the plan,
+  docs/reviews/2026-11-19-modes-every-subject.md.

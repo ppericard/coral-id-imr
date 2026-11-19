@@ -4322,6 +4322,15 @@ const CORE_ = (function () { const module = {exports: {}};
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
+  // The Learn and Practice pages the tree subjects do not have yet, each with its reason (SUBJECTS closed): the plan that
+  // opens them is docs/reviews/2026-11-19-modes-every-subject.md. Memory pairs a colony with its corallites, two views of
+  // one unit, and these subjects have one view (SUBJECTS views).
+  const CLOSED_TREE = {
+    cmp: 'Not opened yet: the Look-alikes deck and Compare read the coral views and sources (ROADMAP "Every game mode for every subject")',
+    'quiz-custom':
+      'Not opened yet: the selection is saved under the coral key and grouped by the IMR lecture (ROADMAP "Every game mode for every subject")',
+    pairs: 'Memory matches two views of one unit (colony and corallites); this subject has one view (views)'
+  };
   const SUBJECTS = [
     {
       id: 'coral',
@@ -4364,7 +4373,10 @@ const CORE_ = (function () { const module = {exports: {}};
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path. Its record stays on the device (subjDev 'basics':
       // reefid-basics, cleared with the progress at sign-out) and its done feat is in the synced achievements record
       // (basics.feat), read by app.js basicsDone; a subject whose pages hold no 'basics' has none.
+      // Every game mode opens to every subject (Pierre, 2026-11-19, Q437): a Learn or Practice page a subject lacks is
+      // named in its `closed` with the reason, the one place that says why (tests/subjects.test.js).
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      closed: {},
       basics: {feat: '_basics'},
       // The text slots its content editor may edit on a genus sheet (docs/ARCHITECTURE.md "The content editor's edits"),
       // laid over data.json by contentApply: one rank, the genus, its records in data.json gen and x.gen, by name.
@@ -4500,8 +4512,9 @@ const CORE_ = (function () { const module = {exports: {}};
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
-      // and done feat.
-      pages: ['basics', 'genera', 'sheet', 'quiz'],
+      // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
+      pages: ['basics', 'genera', 'sheet', 'quiz', 'quiz-duel'],
+      closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
@@ -4689,7 +4702,8 @@ const CORE_ = (function () { const module = {exports: {}};
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'quiz'],
+      pages: ['genera', 'sheet', 'quiz', 'quiz-duel'],
+      closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
       // contentApply (app.js treeBuild and the sheet's replay alike): a family's and a genus's ID marks

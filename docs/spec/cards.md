@@ -318,8 +318,10 @@ LEARNING.md "The Duel tab when the hold sets in"; `quiz.js` `DUELRUN`, `reliefNo
 opened, `app.js` `route` passing `quizDuel` whether it was just opened, until it is left; Next and Keep drilling stay in
 it) that an answer takes the opening hold's sum (`HOLDS`, `holdStep`) from below `INTRO.HOLD` to it or more, the next
 break at Next (`breakArm`) shows a card (`cardShow` kind `tip`, `.reliefcard`): "Tough pair today", "Take a step back?",
-one line, **Mix in other genera** (the main button, `#practice/quiz`), **Compare them** (`#learn/compare/A/B`, the
-duel's two genera), a quiet **Keep drilling** (`.linkish.reliefx`, the next duel; Escape too).
+one line, **Mix in other genera** (the main button, `#practice/quiz`; the subject's word for its units, "families" for
+the fish), **Compare them** (`#learn/compare/A/B`, the duel's two genera; only for a subject with the Compare page,
+`SUBJECTS` `pages` `cmp`, and the line then leaves out "seeing these two side by side"), a quiet **Keep drilling**
+(`.linkish.reliefx`, the next duel; Escape too).
 
 **The way back.** Compare them keeps `DUELBACK` {h: the duel's hash, cmp: the comparison's, run, d: the duel page's
 history depth}. The comparison (`learn.js` `viewCompare`, `duelBackFor`) then shows **Back to the duel**, in view however

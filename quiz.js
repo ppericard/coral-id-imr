@@ -21,6 +21,10 @@ function trail() {
 function bindQuizNav() {
   bindGo();
 }
+// The Duel tab's first ? paragraph for a subject with a help of its own (app.js UNITS help: the fish, the sea slugs), in
+// the subject's words; src: where its look-alike pairs come from.
+const duelLede = src =>
+  `<p class="lede">Two ${SUBJ.many} that are often confused (${src}, and your own mix-ups): say which one is in the photo. Pick an answer (or press 1-2); <b>Next</b> (or Enter) goes on. The duels pair only the ${SUBJ.many} you have met in the quiz, and every answer counts in your progress as in the quiz.</p>`;
 // The game rules (behind the ? button).
 const gameHelp = cur =>
   UNITS[SUBJ.id].help
@@ -2641,21 +2645,23 @@ function reliefArm(nb, cur, pair) {
     return true;
   });
 }
-// The card: Mix in other genera (the photo quiz), Compare them (with DUELBACK), Keep drilling (also Escape); anti-reflex
-// as the tips. Logged as the tips (ev 'pulse', src "tip:duelhold": shown, mix / cmp / keep / none, back): 3 at most.
+// The card: Mix in other genera (the photo quiz), Compare them (with DUELBACK; only for a subject with the Compare page,
+// SUBJECTS pages 'cmp'), Keep drilling (also Escape); anti-reflex as the tips. Logged as the tips (ev 'pulse', src
+// "tip:duelhold": shown, mix / cmp / keep / none, back): 3 at most.
 function reliefShow(cur, pair) {
   DUELRUN = {...DUELRUN, shown: 1};
   const at = {m: cur.split('|')[0], n: session.n},
-    log = r => ev('pulse', {r, src: 'tip:duelhold', ...at});
+    log = r => ev('pulse', {r, src: 'tip:duelhold', ...at}),
+    cmp = SUBJ.pages.includes('cmp');
   log('shown');
   const d = cardShow({
     kind: 'tip',
     cls: 'reliefcard',
     kick: 'Tough pair today',
     title: 'Take a step back?',
-    body: '<p>These two are hard right now. Mixing in other genera for a while, or seeing these two side by side, often helps more than more of the same.</p>',
-    primary: {text: 'Mix in other genera', attr: 'disabled'},
-    secondary: {text: 'Compare them', attr: 'disabled'},
+    body: `<p>These two are hard right now. Mixing in other ${SUBJ.many} for a while${cmp ? ', or seeing these two side by side,' : ''} often helps more than more of the same.</p>`,
+    primary: {text: `Mix in other ${SUBJ.many}`, attr: 'disabled'},
+    secondary: cmp ? {text: 'Compare them', attr: 'disabled'} : null,
     after: '<button type="button" class="linkish reliefx" data-keep disabled>Keep drilling</button>',
     focus: 'h3',
     enter: () => {},
