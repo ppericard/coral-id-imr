@@ -53,7 +53,7 @@ const REFUSED = [
   'echo "$(cat <<EOF\nit\'s `node -e 1`\nEOF\n)"',
   'echo "$(cat <<EOF\nline\n$(echo $(sed -i s/a/b/ f))\nEOF\n)"',
   // Inside $(…) of that body the shell quotes normally again: a quoted ")" does not end the substitution.
-  'echo "$(cat <<EOF\n$(echo \')\'; python3 -c \'print(1)\')\nEOF\n)"'
+  "echo \"$(cat <<EOF\n$(echo ')'; python3 -c 'print(1)')\nEOF\n)\""
 ];
 const ALLOWED = [
   'git status',
@@ -76,7 +76,7 @@ const ALLOWED = [
   'bash x.sh -c 5',
   'ls -la tools | wc -l',
   'git commit -m "$(cat <<EOF\nTitle\n\nOn $(git rev-parse HEAD), it\'s fine :)\nEOF\n)"',
-  'git commit -m "$(cat <<\'EOF\'\nPierre\'s title (and a smile :)\n\nBody\nEOF\n)"',
+  "git commit -m \"$(cat <<'EOF'\nPierre's title (and a smile :)\n\nBody\nEOF\n)\"",
   'git commit -m "$(cat <<"EOF"\nWhy $(python3 -c 1) stays text.\nEOF\n)"'
 ];
 
