@@ -99,6 +99,7 @@ function page(subj = 'fish', typeElse = C.typeElse) {
     rankOf,
     // app.js kindRank: the class a typed answer is read in (no species here: the rank)
     kindRank: rankOf,
+    kindOf: g => (X.gen[g] || {}).kind || '', // app.js kindOf: none here
     unitRankOf: C.unitRankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,

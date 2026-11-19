@@ -241,15 +241,13 @@ const GUARDRAILS = [
   {m: 'met', cps: [100, 300], harm: -1, abs: 2, rel: 0.05, coralRel: 0},
   // The fish families' pace at Advanced (not slowed by the species level), with the margin of the units at Open Water;
   // not measured for the corals.
-  {m: 'famAdv', cps: [300, 600, 1000, 3000, 10000], harm: -1, abs: 2, rel: 0.05},
-  // The fish scientific genera's pace at Advanced (not slowed by the species by their scientific names, which take their
-  // questions from that level), with the families' margin; not measured for the corals.
-  {m: 'genAdv', cps: [1000, 3000], harm: -1, abs: 2, rel: 0.05}
+  {m: 'famAdv', cps: [300, 600, 1000, 3000, 10000], harm: -1, abs: 2, rel: 0.05}
 ];
 // Also measured, no margin (exploratory unless a PR declares bounds for them before running): the right rate, the shares
-// of answers on the fish scientific genera and on the species, at each checkpoint both files reach, with the one-sided
-// bounds either side.
-const WATCH = {ms: ['right', 'genShare', 'spShare', 'sciShare'], cps: [300, 600, 1000, 3000, 10000]};
+// of answers on the fish scientific genera and on the species, the scientific genera at Advanced (the species step 2
+// plan's primary, read with the families' margin in its PR, #1273: too spread out over seeds to stand as a guardrail),
+// at each checkpoint both files reach, with the one-sided bounds either side.
+const WATCH = {ms: ['right', 'genShare', 'spShare', 'genAdv', 'sciShare'], cps: [300, 600, 1000, 3000, 10000]};
 // The margin's size for a guardrail on the before mean b (the larger of abs and rel x |b|).
 function marginOf(g, b, subject) {
   const rel = subject === 'coral' && 'coralRel' in g ? g.coralRel : g.rel || 0;

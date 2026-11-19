@@ -218,6 +218,12 @@ test('Q394: its common name half a fault, its genus alone a quarter; another spe
   const other = F.species.find(x => x.family === s.family && x.id !== s.id && (x.cn || []).length);
   assert.strictEqual(A.sciPart(other.cn[0][0], n), '', "another species' common name");
   assert.strictEqual(A.sciPart('', n), '');
+  // what the nudge says of the rest (app.js sciSay): another species' common name, a genus, a family
+  const say = vm.runInContext('sciSay', A.ctx);
+  assert.strictEqual(say(other.cn[0][0]), 'common');
+  assert.strictEqual(say('Dascyllus'), 'genus');
+  assert.strictEqual(say('Damselfishes'), 'family');
+  assert.strictEqual(say('zzzz'), '');
   // the sea slugs: their English names are information (Q369), their genus alone a quarter
   const S = appOf(SEA, seaX0(), SF),
     an = SF.species.find(x => x.name === 'Chromodoris annae');
@@ -370,6 +376,21 @@ test('a locked scientific species takes a live answer as evidence without openin
   assert.deepStrictEqual(play(0.85), [first], 'the next one, through its card (the usual opening)');
   M.introAdd([first]);
   assert.ok(M.introduced(first) && P[first].ok === 1);
+});
+
+test('a species by its scientific name opens its species sheet: its address and back, both subjects', () => {
+  [
+    [FISH, F, sci('Chromis ternatensis'), 'Chromis ternatensis'],
+    [SEA, SF, 'sci:xgoniobranchussp5', 'Goniobranchus sp. 5']
+  ].forEach(([S, Fx, n, name]) => {
+    const out = C.routeOut('g-' + n, S);
+    assert.match(out, /learn\/species\//, out);
+    const back = C.routeIn('#' + out).key; // g-<the sheet id>, learn.js treeGo reads it after g-
+    assert.ok(back.startsWith('g-'), back);
+    assert.strictEqual(C.treeSheets(Fx).go(C.sheetIdOf(S, back.slice(2))), 's:' + name, back);
+  });
+  // a common-name unit's address is as before
+  assert.match(C.routeOut('g-' + C.spUnitId('cn', byName('Chromis ternatensis').id), FISH), /learn\/species\/s091$/);
 });
 
 test('the achievements: fspsci1, fboth25, fdauin20 on the scientific bars at Advanced, fpct70 on the score', () => {

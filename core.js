@@ -2851,20 +2851,25 @@
     const fam = {},
       gen = {},
       sp = {},
-      byName = {};
+      byName = {},
+      bySci = {};
     ((F && F.families) || []).forEach(f => (fam[f.id] = f));
     ((F && F.genera) || []).forEach(g => (gen[g.id] = g));
     ((F && F.species) || []).forEach(s => {
       if (!s.family || !fam[s.family]) return;
       sp[s.id] = s;
       byName[s.name] = s;
+      bySci[spUnitId('sci', s.id)] = s;
     });
     const order = Object.values(fam)
       .map((f, i) => [f, i])
       .sort((a, b) => (a[0].group || 99) - (b[0].group || 99) || a[1] - b[1])
       .map(x => x[0].id);
-    // a species by its id (s091), its sheet id (s:<name>) or its unit (s:s091, treeSpUnits)
-    const spOf = id => sp[id] || (String(id).startsWith('s:') ? sp[String(id).slice(2)] || byName[String(id).slice(2)] || null : null);
+    // a species by its id (s091), its sheet id (s:<name>) or its unit (s:s091, sci:s091: treeSpUnits)
+    const spOf = id => {
+      const x = String(id).startsWith('s:') ? String(id).slice(2) : null;
+      return sp[id] || bySci[id] || (x !== null ? sp[x] || byName[x] || bySci[x] || null : null);
+    };
     const go = id => {
       if (fam[id]) return id;
       const s = spOf(id);
@@ -6911,9 +6916,13 @@
     else if (b.startsWith('g-') && b.length > 2 && !a.length) {
       // A subject with sheets at several ranks (SUBJECTS sheets: fish families, genera, species) names the rank of the
       // sheet from its id's prefix (g-f:Damselfishes: #fish/learn/family/Damselfishes); any other sheet is its unit's.
+      // A species by its scientific name (sci:s091: LEVELS sci) opens its species' sheet, its unit id kept after the
+      // prefix (#fish/learn/species/sci:s091; treeSheets spOf reads it back).
       const id = b.slice(2),
-        w = Object.keys(S.sheets || {}).find(x => id.startsWith(S.sheets[x]) && id.length > S.sheets[x].length);
-      p = 'learn/' + (w || S.one) + '/' + routeEnc(w ? id.slice(S.sheets[w].length) : id);
+        w =
+          Object.keys(S.sheets || {}).find(x => id.startsWith(S.sheets[x]) && id.length > S.sheets[x].length) ||
+          (levelOf(id) === 'sci' && (S.sheets || {}).species ? 'species' : undefined);
+      p = 'learn/' + (w || S.one) + '/' + routeEnc(w && id.startsWith(S.sheets[w]) ? id.slice(S.sheets[w].length) : id);
     } else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
     else if (b.startsWith('lab-') && b.length > 4) p = 'tools/' + [b.slice(4), ...a].map(routeEnc).join('/');
     else if ((b === 'idkey' || b === 'fishkey') && a.length <= 1) {

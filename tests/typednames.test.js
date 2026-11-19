@@ -44,6 +44,7 @@ function page(names = NAMES) {
     rankOf,
     // app.js kindRank: the class a typed answer is read in (no species here: the rank)
     kindRank: rankOf,
+    kindOf: g => (X.gen[g] || {}).kind || '', // app.js kindOf: none here
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
     typeElse: C.typeElse,

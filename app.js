@@ -1182,6 +1182,22 @@ const sciPart = (text, t) => {
   );
   return w.length > 1 && gn.includes(nm(w[0])) && !ep.has(nm(w.slice(1).join(' '))) ? 'g' : '';
 };
+// What a text typed for a species' scientific name, read as no scientific name and no smaller fault (sciPart), is, for
+// the nudge (quiz.js typeBind say, typeKindMsg): 'common', a common or English name of a species of the game (cn, cnr,
+// en); 'genus' or 'family', a unit's name of that rank; '' else (the spelling message).
+const sciSay = text => {
+  const nm = UNITS[SUBJ.id].norm || typeNormAll,
+    k = nm(text),
+    S = Object.values((TREEU && TREEU.sps) || {});
+  if (!k) return '';
+  if (S.some(s => [...(s.cn || []), ...(s.cnr || [])].some(L => L.some(x => nm(x) === k)) || (s.en || []).some(e => e && nm(e.n) === k)))
+    return 'common';
+  // a genus first (a fish family also lists the IMR names inside it, Chromis among them), then a family
+  const G = Object.values((TREEU && TREEU.gen) || {}),
+    is = g => [g.name, ...(g.names || [])].some(x => x && nm(x) === k),
+    u = G.find(g => g.rank === 'genus' && is(g)) || G.find(g => (!g.rank || g.rank === 'family') && is(g));
+  return u ? u.rank || 'family' : '';
+};
 // The top n species of circle 1 by their scientific names (UNITS fish top: Dauin's top 20, fdauin20, Q261: circle 1
 // only for now), the most seen near Dauin first (present.dauinU, the observers near Dauin, as the score's weights; ties
 // by the commonness order, cmi), from L (sciSpAll: none while the level is off).
@@ -2631,7 +2647,7 @@ const UNITS = {
     tiles: n => ((GX(n) || {views: {}}).views.wide || []).filter(p => p && p.xc),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,

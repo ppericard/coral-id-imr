@@ -142,6 +142,9 @@ subjects, one code path (rule S1): `core.js` `SUBJECTS` `names` says which kinds
   `quiz.js` `typeBind` (`o.part`) before the nudges and the spelling step: the species' own common name (`cn`, `cnr`)
   is `cn`, its genus alone or with a second word no game species has is `g`; the answer is a miss with that kind
   (`TYPEDQ.z`, the scoring record's `z`, `core.js` `PART`); the feedback says what was typed (`quiz.js` `partRead`).
+  Another species' common name, a genus or a family is no answer: the nudge says which (`app.js` `sciSay`, `typeBind`
+  `say`). On the other questions their scientific names stay out of `quiz.js` `typeKind` (the name index says them).
+- **Sheet**: a unit opens its species' sheet (`core.js` `routeOut` `learn/species/sci:s091`, `treeSheets` `spOf`).
 - **Score and gate**: `TREEU.treeSci` (`treeScoreTree(X, F, true, true)`, equal to `core.js` `treeBoardTree`) and the
   set's units only once `app.js` `sciSpOn` (`sync.js` `sciOn`: `SCI_SHEET`, rule D4), for both subjects.
 - **Rest**: the first species' card (`SCI_SP` `card`, `UNITS` `sciCard`, in each subject's words). My progress shows the

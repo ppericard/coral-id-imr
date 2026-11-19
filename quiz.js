@@ -78,9 +78,11 @@ const typeKind = (text, rk) => {
     at = String(rk || '').split(':')[0] || unitRankOf(SUBJ), // the rank of the class asked (kindRank)
     x = at !== SUBJ.rank && U.typeOther ? U.typeOther(at) : null;
   if (!x) return '';
+  // The species by their scientific names stay out: the name index already says what a species' name is (identical
+  // nudges whether their level is on or off).
   return typeElse(
     text,
-    typeNames().filter(o => kindRank(o.g) !== rk),
+    typeNames().filter(o => kindRank(o.g) !== rk && kindOf(o.g) !== 'sci'),
     {...x, rank: g => rankOf(g) || unitRankOf(SUBJ), own: g => (GX(g) || {}).imrName},
     U.norm
   );
@@ -133,7 +135,8 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     const z = o.part && (!m || m.near || m.known) ? o.part(text) : '';
     if (z) return end(null, text, undefined, z);
     if (!m || m.near || m.known) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
-    const kind = !m && S === SUBJ ? typeKind(text, rk) : '';
+    // o.say: what else a text is on a question with no typeKind of its own (a species by its scientific name: app.js sciSay)
+    const kind = !m && S === SUBJ ? typeKind(text, rk) || (o.say ? o.say(text) : '') : '';
     if (kind) msg.textContent = typeKindMsg(text, kind, one);
     else if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     // A name the game knows that is no unit's (core.js typeMatchIn known: a species' name, or a word of one): said so,
@@ -468,7 +471,8 @@ function question(cur, target, choices, prompt, set, kq) {
         sp: typeSp,
         // A smaller fault (Q394 A): on a species asked by its scientific name, its common name or its genus alone typed
         // (app.js sciPart) is the answer, a miss weighed down (core.js PART), never a gain.
-        ...(kindOf(target) === 'sci' ? {part: text => sciPart(text, target)} : {}),
+        // Another species' common name or another genus: the nudge says what it is (app.js sciSay), never an answer.
+        ...(kindOf(target) === 'sci' ? {part: text => sciPart(text, target), say: text => sciSay(text)} : {}),
         // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was. The nudge
         // makes the answer column taller: the stage gives up that room so it stays on one screen.
         close: () => {
