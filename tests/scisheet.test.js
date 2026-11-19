@@ -326,6 +326,53 @@ test('the sheet logs a scientific species answer with its mark, and replays it a
   assert.ok(g.replays.seaslug.rec[SA.id]);
 });
 
+test('the fish board ranks by the tree with the scientific species: a species learned by its scientific name counts', () => {
+  const s = loadCodeGs({fetch, cacheMax: 100 * 1024}),
+    K = FISH.score,
+    T = C.treeBoardTree(F),
+    // a few families and genera, and scientific species learned
+    P = {'f:Damselfishes': {ok: 9, ko: 0, mx: 1}, 'g:Chromis': {ok: 6, ko: 0, mx: 1}, '~level': {ok: 120, ko: 20, th: 1}};
+  SCF.filter(u => u.family === 'f:Damselfishes').forEach(u => (P[u.id] = {ok: 6, ko: 0, mx: 1}));
+  const data = {
+      'reefid-sync-coral-progress': '{}',
+      'reefid-sync-coral-rv': JSON.stringify(C.RV),
+      'reefid-sync-fish-progress': JSON.stringify(P),
+      'reefid-sync-fish-rv': JSON.stringify(C.rvOf('fish'))
+    },
+    r = s.post({name: 'Ana', pin: '1234', data, summary: {board: 1, boards: {fish: T}}, answers: [], rv: C.RV});
+  assert.ok(r.ok, JSON.stringify(r).slice(0, 200));
+  s.ctx.subjStRefresh_(); // the sheet's own tree under the structure in force (stree4), as the 15-minute trigger makes it
+  const row = s.get({board: '1', s: 'fish'}).rows.find(x => x[0] === 'Ana'),
+    want = C.treeScore(P, T, K).pct;
+  assert.strictEqual(row[1], want);
+  assert.ok(want > C.treeScore(P, C.treeScoreTree({...XF, gen: {...C.treeReplayGen(F), ...XF.gen}}, F, true), K).pct);
+});
+
+test('the pooled statistics: a trusted answer on a scientific species rates its photo, one of another family is flagged', () => {
+  const files = FISH.pool.files.map(f => JSON.parse(src(f))),
+    FP = C.unitPool(FISH, files),
+    dam = FP['f:Damselfishes'][0][0],
+    bfly = FP['f:Butterflyfishes'][0][0],
+    site = url => {
+      const m = /\/main\/(.+)$/.exec(url);
+      return m && fs.existsSync(path.join(ROOT, m[1])) ? resp(src(m[1])) : null;
+    },
+    s = loadCodeGs({fetch: site, cacheMax: 100 * 1024}),
+    u = SCF.find(x => x.family === 'f:Damselfishes').id,
+    // twelve right answers: above chance, so the sender rates the photos
+    run = (k, ph) => Array.from({length: 12}, (_, i) => ans(100 + i, {id: k + i, t: T(i), g: u, a: u, ok: 1, ph, ch: u}));
+  s.ctx.photoIdx_('fish'); // the pools cached, as the public stats warm them (a write fetches nothing: photoAlert_)
+  s.post({name: 'Fin', pin: '1111', data: {}, summary: {}, answers: run('f', dam)});
+  s.post({name: 'Ivy', pin: '2222', data: {}, summary: {}, answers: run('i', bfly)});
+  const st = s.post({readStats: 1, token: 'ghp_write000000000000000000', s: 'fish'}),
+    rated = f => (st.photos[f] || [0, 0, 0, 0])[3];
+  assert.strictEqual(rated(dam), 12, 'its family’s photo is rated');
+  assert.strictEqual(rated(bfly), 0, 'a butterflyfish photo under a damselfish species rates nothing');
+  assert.strictEqual(st.skip.photos, 12);
+  const alerts = (s.sheets.Alerts ? s.sheets.Alerts.rows.slice(1) : []).map(x => String(x[1]));
+  assert.deepStrictEqual(alerts, ['photos not of the unit shown: ' + s.ctx.aid_('Ivy') + ' (12 of 12 answers)']);
+});
+
 test('the photo check: a sea slug species by its scientific name is its genus’s', () => {
   const S = SLUG,
     files = S.pool.files.map(f => JSON.parse(src(f))),
