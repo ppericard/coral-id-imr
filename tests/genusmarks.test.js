@@ -20,9 +20,10 @@ const F = json('fish.json'),
   LEARN = src('learn.js');
 const FG = Object.fromEntries(F.genera.map(g => [g.name, g])),
   SP = Object.fromEntries(F.species.map(s => [s.id, s]));
-// The public sources the task allows (FishBase, Fishes of Australia, WoRMS, FAO's species identification guides, a
-// peer-reviewed revision by its DOI), each by https.
-const HOSTS = /^https:\/\/(www\.fishbase\.se|fishbase\.se|fishesofaustralia\.net\.au|www\.marinespecies\.org|www\.fao\.org|doi\.org)\//;
+// The public sources the task allows (FishBase, Fishes of Australia, Reef Life Survey, WoRMS, FAO's species
+// identification guides and catalogues, a peer-reviewed revision by its DOI), each by https.
+const HOSTS =
+  /^https:\/\/(www\.fishbase\.se|fishbase\.se|fishesofaustralia\.net\.au|reeflifesurvey\.com|www\.marinespecies\.org|www\.fao\.org|doi\.org)\//;
 
 test('every line of tools/fish_genus_marks.json has a source: plain and each mark, each ref a src key and where in it', () => {
   for (const [k, s] of Object.entries(M.src)) {
