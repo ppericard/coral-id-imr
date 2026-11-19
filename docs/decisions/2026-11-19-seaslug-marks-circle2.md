@@ -1,6 +1,6 @@
 # Sea slug ID marks for the circle-2 genera: genus revisions and Sea Slug Forum sheets, two genera left in `none`
 
-Date: 2026-11-19. PR: see the index. Rules or docs touched: tools/seaslug_cues.json, seaslug.json,
+Date: 2026-11-19. PR: #1238. Rules or docs touched: tools/seaslug_cues.json, seaslug.json,
 docs/reviews/2026-11-18-seaslug-cues-sources.md, docs/spec/tools.md, docs/ROADMAP.md.
 
 ## Context
