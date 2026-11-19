@@ -130,6 +130,14 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
 - `origins` and `csrc`, its photo origins (the filter bar's chips) and its candidate sources; `obs`, its word for
   observations; `target` and `tags` for the sea slugs ([admin-tree.md › The sea slugs](admin-tree.md#the-sea-slugs)).
 
+A field of `admin` set for one subject only (`autosort`, `csrc`, `target`, `tags`) is listed in `tests/subject-neutral.test.js`
+`FLAGS` with what it switches on, like the top-level ones. **The admin and the Learn pages still hold code of each
+subject's own** (the fish and sea slugs' pages next to the corals', `ASUBJ.rank === 'family'`, `S.sheets ? FISHA : DATA`,
+`FISHS`, `DATA.gen`...): `tests/subject-neutral-admin.test.js` counts every such test per file and lists every such
+duplicate by name, each with its row of
+[reviews/2026-11-19-admin-one-engine.md](../reviews/2026-11-19-admin-one-engine.md) §3. A new one fails the test, and a
+number never goes up: the step of §5 that removes a duplicate lowers its numbers in the same PR.
+
 ### Which pages a subject has
 
 `hasPage` decides: every Players page (`players/…`), the pages about no subject or read from what every subject holds (`EVERY`: Coverage › Rights, To do ›

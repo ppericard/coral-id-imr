@@ -180,6 +180,12 @@ green checks; refactors of this size probably run longer.
    counts and its ROADMAP row); `.sheets` has legitimate reads, so it gets a count, not a ban. #1202's FLAGS check
    sees only top-level `=== true` fields, so it should also see nested one-subject fields (`admin.autosort`,
    `admin.tags`, `admin.target`). Without the ratchet the duplication comes back.
+   **Done** (`tests/subject-neutral-admin.test.js`, spec/admin.md "Each subject's admin part"): nine proxies counted per
+   file (46 file-proxy pairs, 278 occurrences), 144 subject-named or twin top-level names listed by name with their Dup
+   row (plus the count of such names in `autosort.js` and the two basics modules), two one-off lines, and four nested
+   flags (`admin.autosort`, `csrc`, `target`, `tags`) in `tests/subject-neutral.test.js` FLAGS. No ROADMAP row names
+   this study yet, so the entries cite the "One engine for every subject, what is left" row and the study's Dup rows.
+   Each step below lowers its numbers in its own PR.
 2. **The rubric declared for every subject** (Dup-9; admin M). Small and independent, so it can run in parallel with
    1. PR 5 needs it.
 3. **One registry `reg(S)` with a coral adapter** (Dup-2, Dup-10, Dup-11, Dup-21; admin L). The prerequisite for 4-8.
