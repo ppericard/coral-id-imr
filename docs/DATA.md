@@ -31,6 +31,7 @@ Everything else is written by a tool that a pull request runs and commits. A too
 | `picks.json` | Suggested featured photos per genus and view | `tools/judging_import.py` | The app, the admin |
 | `dups.json` | Near-duplicate photos | `tools/find_dups.py` | The admin |
 | `metrics.json` | Objective photo metrics (sharpness, size, colour cast) | `tools/photo_metrics.py` | The admin |
+| `measured.json` | The measured block of each game photo, every subject: contrast, brightness, saturation, warm share, sharpness, on the whole frame and the fish's box | `tools/photo_measure.py` | `tools/photo_measure.py --judges`; the analyses join it by hand for now |
 | `suggest.json` | The outside judging agent's results, per subject, imported as suggestions | `tools/judging_import.py`, `tools/judging_cand.py`, `tools/judging_fish.py` | The admin; `tools/fish_game.py` |
 | `presence.json` | Per coral photo species, whether the presence rule (C8) holds | `tools/coral_presence.py` | The admin |
 | `names.json` | Former names and spellings, one section per subject: an extract of `tools/taxonomy.json` | `tools/taxonomy.py` | The admin |
