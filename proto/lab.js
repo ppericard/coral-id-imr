@@ -178,7 +178,7 @@ const labObs = p => p.o || p.f;
 // shows, the closest view: a close-up for a coral, the one photo of a fish) or null. want narrows it: {view, not, tile}: in
 // that view of the draw's, not of the observation or observations `not` (a key or a list), and, tile, only with (true) or
 // only without (false) the fish's square cut (xc), so the photos of one question are framed alike, whichever of them is
-// the odd one. A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
+// the odd one; fit(q): a test the photo must pass (Memory's pair: a species or a phase beside the first photo's). A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
 // others can be drawn (the last `max`).
 function labShots(max = 8) {
   const recent = [];
@@ -190,7 +190,8 @@ function labShots(max = 8) {
         !want ||
         ((!want.view || view(n, q) === want.view) &&
           !not.includes(labObs(q)) &&
-          (want.tile === undefined || !!(q.xc && !q.r) === want.tile));
+          (want.tile === undefined || !!(q.xc && !q.r) === want.tile) &&
+          (!want.fit || want.fit(q)));
     for (const keep of [q => fits(q) && !recent.includes(labObs(q)), fits]) {
       const s = photoSet(n, null, 0, 2, 'compare', keep).shown,
         p = s[s.length - 1];

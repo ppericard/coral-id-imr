@@ -84,6 +84,16 @@ test('pages and closed: every Learn and Practice mode is open to each subject or
   });
   // The Duel tab for every subject (its pairs: app.js UNITS pairs).
   C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('quiz-duel'), s.id));
+  // Memory for every subject (Pierre, 2026-11-19, Q437): the page is open to each, and each subject declares how a pair is
+  // made (app.js UNITS memory, a kind proto/pairs.js MEMORY holds) in its own entry or in the tree subjects' shared units.
+  C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('pairs') && !('pairs' in (s.closed || {})), s.id));
+  assert.ok(/memory: 'views'/.test(app) && (app.match(/memory: 'photos'/g) || []).length === 1, 'UNITS memory declared once per kind');
+  ['fish', 'seaslug', 'coral'].forEach(id => {
+    const S = C.subjectOf(id),
+      r = C.routeIn(C.routeOut('pairs', S));
+    assert.strictEqual(r.key, 'pairs', id);
+    assert.strictEqual(r.S, S, id);
+  });
   // A pair's address round-trips with tree unit ids (a fish family, a sea slug genus).
   [
     ['fish', 'quiz-duel|t01|t13'],
