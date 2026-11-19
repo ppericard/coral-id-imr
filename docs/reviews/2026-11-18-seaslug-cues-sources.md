@@ -25,7 +25,7 @@ Labels (rule W11): **[read]** = taken from the page or the PDF itself; **[not re
 |---|---|---|
 | Circle 1 (24) | 22: *Chromodoris*, *Goniobranchus*, *Hypselodoris*, *Doriprismatica*, *Phyllidia*, *Reticulidia*, *Jorunna*, *Nembrotha*, *Tambja*, *Thecacera*, *Pteraeolidia*, *Phyllodesmium*, *Chelidonura*, *Pleurobranchus*, *Hexabranchus*, *Costasiella*, *Phestilla*, *Melibe*; *Halgerda*, *Elysia*, *Thuridilla*, *Coryphellina* (2026-11-19) | 2: *Ardeadoris*, *Caloria* |
 | Circle 2 (22) | 2: *Phyllidiella* (Brunckhorst's key), *Phyllidiopsis* (Brunckhorst's genus account and table, 2026-11-19) | |
-| Circle 3 (32) | 29 (2026-11-19, §6): *Asteronotus*, *Atagema*, *Bornella*, *Bulbaeolidia*, *Cabangus*, *Colpodaspis*, *Cratena*, *Cyerce*, *Dendrodoris*, *Dermatobranchus*, *Doto*, *Euselenops*, *Gymnodoris*, *Janolus*, *Mariaglaja*, *Marioniopsis*, *Murphydoris*, *Notobryon*, *Notodoris*, *Odontoglaja*, *Pelagella*, *Philinopsis*, *Platydoris*, *Sclerodoris*, *Stylocheilus*, *Tenellia*, *Tomoberthella*, *Trapania*, *Tyrannodoris* | 3: *Baeolidia*, *Taringa*, *Verconia* |
+| Circle 3 (32) | 30 (2026-11-19, §6): *Asteronotus*, *Atagema*, *Baeolidia*, *Bornella*, *Bulbaeolidia*, *Cabangus*, *Colpodaspis*, *Cratena*, *Cyerce*, *Dendrodoris*, *Dermatobranchus*, *Doto*, *Euselenops*, *Gymnodoris*, *Janolus*, *Mariaglaja*, *Marioniopsis*, *Murphydoris*, *Notobryon*, *Notodoris*, *Odontoglaja*, *Pelagella*, *Philinopsis*, *Platydoris*, *Sclerodoris*, *Stylocheilus*, *Tenellia*, *Tomoberthella*, *Trapania*, *Tyrannodoris* | 2: *Taringa*, *Verconia* |
 
 Families with marks: Phyllidiidae, Plakobranchidae (the parapodia, which *Elysia* and *Thuridilla* share; Gosliner 1995
 tells the two genera apart by where they live and their rhinophores), and Pleurobranchidae.
@@ -87,7 +87,7 @@ the genus, and its type species is Mediterranean (rule C6).
 
 ## 5. What is left
 
-- **The two circle-1 genera in `none`** (*Ardeadoris*, *Caloria*) and the circles 2 and 3: the 2018 field guide would
+- **The two circle-1 genera in `none`** (*Ardeadoris*, *Caloria*), circle 2 and circle 3's two: the 2018 field guide would
   settle many; Rudman 1984 (the chromodorid genera, *Ardeadoris* among them), Pola et al. 2008 (*Nembrotha*, *Tambja*,
   *Roboastra*) and Gosliner & Willan 1991 (Flabellinidae) are the papers to read next, each where it opens.
 - ***Caloria indica*'s genus**: the Sea Slug Forum says it cannot be settled (also placed in *Learchis*, *Hervia*,
@@ -110,15 +110,16 @@ Each line was sorted before it was written (rule W11, each source **[read]** unl
 - **Not a mark**: one species' colour pattern alone, a feature under the animal (*Dendrodoris tuberculosa*'s spotted mantle
   underside), a count or a size in numbers, an internal organ. A genus with nothing else goes to `none`.
 
-Every species named is a game species in `tools/seaslugs.json`, confirmed in the Philippines by rule C8 (its build
-applies it; Research Grade observations in the Philippines from 23, *Verconia norba*, to 83, *Doto ussi*).
+Every species named is a game species in `tools/seaslugs.json`, so confirmed in the Philippines by rule C8 (its build
+applies it).
 
 | Genus | Marks (tier) | Sources |
 |---|---|---|
-| *Asteronotus* | midline ridge flanked by knobs (B); grows very large, some plain (B) | SEASLUG.WORLD *A. cespitosus*; Sea Slug Forum `astecesp` |
-| *Atagema* | rough spiculate tubercles (B); warty midline crest (B) | Sea Slug Forum `tripinte`; SEASLUG.WORLD *A. intecta* |
+| *Asteronotus* | midline ridge flanked by knobs (B); can grow very large (B) | SEASLUG.WORLD *A. cespitosus*; Sea Slug Forum `astecesp` |
+| *Atagema* | warty midline crest (B); rough spiculate tubercles (B) | Sea Slug Forum `tripinte`; SEASLUG.WORLD *A. intecta* |
+| *Baeolidia* | leaf-like cerata (B) | Carmona et al. 2013, *B. moebii* with its synonym *B. major*; Carmona et al. 2014 (Zootaxa 3802, its abstract) find the genus's species very variable, set apart only by the oral glands, an internal organ |
 | *Bornella* | tall rhinophore sheaths with a sail (B); paired processes with gills inside (B); most swim side to side (A), *B. anguilla* like an eel (B) | SEASLUG.WORLD and Sea Slug Forum `bornangu` |
-| *Bulbaeolidia* | bulb-like rhinophore swellings (A); club-shaped cerata in single rows (A); red line at the rhinophore base (B) | Carmona et al. 2013, the genus's description; Sea Slug Forum `aeolalba` |
+| *Bulbaeolidia* | bulb-like rhinophore swellings (A); club-shaped cerata in single rows (A) | Carmona et al. 2013, the genus's description |
 | *Cabangus* | paired tree-like dorsolateral appendages (A); branched oral veil appendages (A) | Korshunova et al. 2020, the genus diagnosis (read in its Plazi treatment on Zenodo); SEASLUG.WORLD *C. regius* |
 | *Colpodaspis* | shell hidden in the mantle (B); right-side siphon (B) | Sea Slug Forum `colpthom` |
 | *Cratena* | smooth rhinophores and tentacles (B); cerata in an arch, then sloping rows (B) | Sea Slug Forum `cratsimb` |
@@ -127,7 +128,7 @@ applies it; Research Grade observations in the Philippines from 23, *Verconia no
 | *Dermatobranchus* | lengthwise ridges, oral veil with a coloured rim, wide-set rhinophores with lengthwise plates (B, both game species) | SEASLUG.WORLD *D. funiculus*, *D. caeruleomaculatus* (after Gosliner & Fahey 2011) |
 | *Doto* | warty cerata (B); smooth rhinophores in cup-like sheaths (B) | SEASLUG.WORLD *D. ussi* |
 | *Euselenops* | half-moon papillate oral veil (B); siphon (B); buried by day (B) | SEASLUG.WORLD *E. luniceps* |
-| *Gymnodoris* | eats other sea slugs (A); most white with orange spots or lines (A) | Sea Slug Forum, Rudman's comments `/find/1867`, `/find/655` |
+| *Gymnodoris* | eats other sea slugs (A) | Sea Slug Forum, Rudman's comment `/find/1867` |
 | *Janolus* | frilled crest between the rhinophores (B, both game species); swollen pointed cerata (B) | SEASLUG.WORLD *J. savinkini*, *J. flavoanulatus* |
 | *Mariaglaja* | back shield in two unequal lobes (B) | SEASLUG.WORLD *M. tsurugensis* |
 | *Marioniopsis* | tree-like gills along the sides (B); papillate front veil (B) | SEASLUG.WORLD *M. arborescens* (after Bergh) |
@@ -136,20 +137,23 @@ applies it; Research Grade observations in the Philippines from 23, *Verconia no
 | *Notodoris* | spiculate tough skin, small smooth rhinophores (A, "as with other species of *Notodoris*"); gills half hidden by lobes (B) | Sea Slug Forum `notomino`, `notosere` |
 | *Odontoglaja* | low pustules (B); tail from the left of the back shield (B) | SEASLUG.WORLD *O. guamensis* |
 | *Pelagella* | very long rhinophores and oral tentacles (B); raised mantle rim, no papillae (B) | SEASLUG.WORLD *P. longicornis* (after Paz-Sedano et al. 2023) |
-| *Philinopsis* | smooth body, long head shield (B); coloured parapodial edges (B) | SEASLUG.WORLD and Sea Slug Forum *P. speciosa* |
+| *Philinopsis* | smooth body, long head shield (B) | SEASLUG.WORLD *P. speciosa* |
 | *Platydoris* | flat body, broad stiff mantle (A, "like all species of *Platydoris*"); raised lobed gill rim (B) | Sea Slug Forum `platsang`; SEASLUG.WORLD *P. sanguinea* |
 | *Sclerodoris* | the midline pit like a sponge pore (B) | Sea Slug Forum `scletube`; SEASLUG.WORLD *S. tuberculata* |
-| *Stylocheilus* | small slim sea hare with dark lines (B); ringed eye spots (B); gathers in numbers (B) | Sea Slug Forum `stylstri`; SEASLUG.WORLD *S. striatus* |
+| *Stylocheilus* | small slim sea hare (B); branched papillae on the back (B); gathers in numbers (B) | Sea Slug Forum `stylstri`; SEASLUG.WORLD *S. striatus* |
 | *Tenellia* | on rubble in soft sand or silt (B: the game's species are the article's soft-sediment ones) | Kim, Donohoo & Gosliner 2024 (read on PubMed Central, PMC11648685) |
 | *Tomoberthella* | sheds parts of the mantle, lines mark the breaks, rolled rhinophores joined at the base (B) | Sea Slug Forum `bertmart` (as *Berthella martensi*); SEASLUG.WORLD *T. martensi* |
 | *Trapania* | processes beside the rhinophores and the gills (B, three game species); foot corners as tentacles (B) | Sea Slug Forum `trappalm`, `trapscur`; SEASLUG.WORLD *T. vitta* |
 | *Tyrannodoris* | large down-pointing oral tentacles (A for *Roboastra*, said of *T. luteolineata*); smooth tapering body (B) | Sea Slug Forum `robolute`; SEASLUG.WORLD *T. luteolineata* |
 
-**In `none`** (the reasons in `tools/seaslug_cues.json`): *Baeolidia* (Carmona et al. 2014, Zootaxa 3802, its
-abstract **[read]**: only the oral glands may set the genus apart; Carmona et al. 2013: its rhinophore and cerata shapes
-evolved several times in the family); *Taringa* (its one game species looks like a *Halgerda*; only its anatomy places
+**In `none`** (the reasons in `tools/seaslug_cues.json`): *Taringa* (its one game species looks like a *Halgerda*; only its anatomy places
 it); *Verconia* (placed by DNA, Johnson & Gosliner 2012; its game species share the Sea Slug Forum's Noumea purpurea
 colour group, `noumpur2`, which spans several genera).
+
+**Colour alone, left out**: *Bulbaeolidia alba*'s red line at the rhinophore base (`aeolalba`), *Philinopsis speciosa*'s
+parapodial edges (`philspec`, a colour the sheet calls "extremely variable"), *Stylocheilus striatus*'s eye spots and
+lines, Rudman's "white with orange spots or lines" of most *Gymnodoris* (`/find/655`: not checked against the game's
+*G. crocea*, whose SEASLUG.WORLD page answered 404).
 
 **Read, not used**: the Sea Slug Forum's `bergjapo`, `borndoto`, `bornherm` (not game species, rule C6), `crataffi`,
 `cyernigr` (*C. nigricans*, not *C. nigra*), `dendnigr`, `dendfuma`, `dermorna`, `dermnigr`, `dotoussi`, `gymnrubr`,

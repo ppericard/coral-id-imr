@@ -2657,26 +2657,18 @@
    ],
    "ref": 206395,
    "marks": [
-    "A hunter that eats other sea slugs",
-    "Most species are white with orange spots or lines"
+    "A hunter that eats other sea slugs"
    ],
    "msrc": [
     {
-     "t": "Sea Slug Forum, Rudman 2000, comment on Gymnodoris citrina from Samoa, the family's food",
+     "t": "Sea Slug Forum, Rudman 2000, comment on Gymnodoris citrina from Samoa, the gymnodorids' food",
      "u": "https://www.seaslugforum.net/find/1867"
-    },
-    {
-     "t": "Sea Slug Forum, Rudman 1999, comment on a Gymnodoris from Port Stephens, the colour of the genus",
-     "u": "https://www.seaslugforum.net/find/655"
     }
    ],
    "mby": {
     "marks": [
      [
       0
-     ],
-     [
-      1
      ]
     ]
    }
@@ -2784,7 +2776,7 @@
    ],
    "msrc": [
     {
-     "t": "Kim, Donohoo and Gosliner 2024, The soft-sediment Fionidae of the tropical Indo-Pacific (PeerJ 12), the soft-sediment species; T. puti, its habitat",
+     "t": "Kim, Donohoo and Gosliner 2024, The soft-sediment Fionidae of the tropical Indo-Pacific (PeerJ 12), Natural history of Tenellia puti and T. bughaw",
      "u": "https://doi.org/10.7717/peerj.18517"
     }
    ],
@@ -2934,7 +2926,7 @@
    },
    "marks": [
     "A ridge down the middle of the back, flanked by large knobs, as A. cespitosus",
-    "Grows very large; some are plain yellow-brown, with no pattern"
+    "Can grow very large"
    ],
    "msrc": [
     {
@@ -2942,7 +2934,7 @@
      "u": "https://en.seaslug.world/species/asteronotus_cespitosus"
     },
     {
-     "t": "Sea Slug Forum, Rudman 2001, Asteronotus cespitosus fact sheet, its size and colour",
+     "t": "Sea Slug Forum, Rudman 2001, Asteronotus cespitosus fact sheet, its size",
      "u": "https://www.seaslugforum.net/find/astecesp"
     }
    ],
@@ -3056,15 +3048,11 @@
    ],
    "ref": 531074,
    "marks": [
+    "Gills midway along the back, partly hidden behind large lobes",
     "Tough skin, stiffened by tiny spicules",
-    "Small, smooth, simple rhinophores",
-    "Gills midway along the back, partly hidden behind large lobes"
+    "Small, smooth, simple rhinophores"
    ],
    "msrc": [
-    {
-     "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet, as in other species of Notodoris",
-     "u": "https://www.seaslugforum.net/find/notomino"
-    },
     {
      "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet, the gills",
      "u": "https://www.seaslugforum.net/find/notomino"
@@ -3072,18 +3060,22 @@
     {
      "t": "Sea Slug Forum, Rudman 2000, Notodoris serenae fact sheet, the extrabranchial appendages",
      "u": "https://www.seaslugforum.net/find/notosere"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2003, Notodoris minor fact sheet, as in other species of Notodoris",
+     "u": "https://www.seaslugforum.net/find/notomino"
     }
    ],
    "mby": {
     "marks": [
      [
-      0
+      0,
+      1
      ],
      [
-      0
+      2
      ],
      [
-      1,
       2
      ]
     ]
@@ -3108,7 +3100,23 @@
    "species": [
     "s349048"
    ],
-   "ref": 137632
+   "ref": 137632,
+   "marks": [
+    "Leaf-like cerata, as B. moebii"
+   ],
+   "msrc": [
+    {
+     "t": "Carmona et al. 2013, A molecular phylogeny of Aeolidiidae (PLoS ONE 8), Discussion, Baeolidia moebii (with B. major, its synonym)",
+     "u": "https://doi.org/10.1371/journal.pone.0063000"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Philinopsis",
@@ -3120,26 +3128,18 @@
    ],
    "ref": 137640,
    "marks": [
-    "A smooth body, the head shield about half its length, as P. speciosa",
-    "Side flaps (parapodia) edged in black, blue or yellow, as P. speciosa"
+    "A smooth body, the head shield about half its length, as P. speciosa"
    ],
    "msrc": [
     {
      "t": "SEASLUG.WORLD, Kimoto, Philinopsis speciosa species page, Description",
      "u": "https://en.seaslug.world/species/philinopsis_speciosa"
-    },
-    {
-     "t": "Sea Slug Forum, Rudman 2006, Philinopsis speciosa fact sheet, the colour of the parapodia",
-     "u": "https://www.seaslugforum.net/find/philspec"
     }
    ],
    "mby": {
     "marks": [
      [
       0
-     ],
-     [
-      1
      ]
     ]
    }
@@ -3211,22 +3211,18 @@
    ],
    "ref": 203969,
    "marks": [
-    "A small, slim sea hare with dark lines along the body, as S. striatus",
-    "Often small eye spots with pink or blue centres",
+    "A small, slim sea hare, as S. striatus",
+    "Branched papillae along the back, varied in size and shape",
     "Can gather in large numbers"
    ],
    "msrc": [
     {
-     "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet, its shape and lines",
+     "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet, its shape",
      "u": "https://www.seaslugforum.net/find/stylstri"
     },
     {
      "t": "SEASLUG.WORLD, Kimoto, Stylocheilus striatus species page, Description",
      "u": "https://en.seaslug.world/species/stylocheilus_striatus"
-    },
-    {
-     "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet, the eye spots",
-     "u": "https://www.seaslugforum.net/find/stylstri"
     },
     {
      "t": "Sea Slug Forum, Rudman 1999, Stylocheilus striatus fact sheet, its aggregations",
@@ -3236,14 +3232,13 @@
    "mby": {
     "marks": [
      [
-      0,
+      0
+     ],
+     [
       1
      ],
      [
       2
-     ],
-     [
-      3
      ]
     ]
    }
@@ -3443,7 +3438,7 @@
    ],
    "ref": 1055127,
    "marks": [
-    "The back shield ends in two lobes, the left long, the right short"
+    "Back shield in two lobes, the left long, the right short, as M. tsurugensis"
    ],
    "msrc": [
     {
@@ -3631,14 +3626,10 @@
    ],
    "ref": 137659,
    "marks": [
-    "Rough skin, its tubercles tipped with spicules, as A. intecta",
-    "A raised, warty crest down the middle of the back, often paler"
+    "A raised, warty crest down the middle of the back, as A. intecta",
+    "Rough skin, its tubercles tipped with spicules"
    ],
    "msrc": [
-    {
-     "t": "Sea Slug Forum, Rudman 1999, Atagema intecta fact sheet, the spiculate tubercles, now Atagema intecta",
-     "u": "https://www.seaslugforum.net/find/tripinte"
-    },
     {
      "t": "Sea Slug Forum, Rudman 1999, Atagema intecta fact sheet, the dorsal crest",
      "u": "https://www.seaslugforum.net/find/tripinte"
@@ -3646,15 +3637,19 @@
     {
      "t": "SEASLUG.WORLD, Kimoto, Atagema intecta species page, Description",
      "u": "https://en.seaslug.world/species/atagema_intecta"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Atagema intecta fact sheet, the spiculate tubercles of A. intecta",
+     "u": "https://www.seaslugforum.net/find/tripinte"
     }
    ],
    "mby": {
     "marks": [
      [
-      0
+      0,
+      1
      ],
      [
-      1,
       2
      ]
     ]
@@ -3671,17 +3666,12 @@
    "ref": 730445,
    "marks": [
     "Rhinophores with bulb-like swellings",
-    "Club-shaped cerata in single rows, curving in towards the middle",
-    "As B. alba, a red line or ring at the base of the rhinophores"
+    "Club-shaped cerata in single rows, curving in towards the middle"
    ],
    "msrc": [
     {
      "t": "Carmona et al. 2013, A molecular phylogeny of Aeolidiidae (PLoS ONE 8), Bulbaeolidia gen. nov., its features",
      "u": "https://doi.org/10.1371/journal.pone.0063000"
-    },
-    {
-     "t": "Sea Slug Forum, Rudman 2000, Aeolidiella alba fact sheet, now Bulbaeolidia alba",
-     "u": "https://www.seaslugforum.net/find/aeolalba"
     }
    ],
    "mby": {
@@ -3691,9 +3681,6 @@
      ],
      [
       0
-     ],
-     [
-      1
      ]
     ]
    }
