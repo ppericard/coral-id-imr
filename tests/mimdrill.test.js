@@ -253,6 +253,7 @@ function plan({traps = 1, typed = false, ex = null, metB = true, photo = {f: 'j'
       openChance: () => 0,
       openPick: L => L[0],
       openRecent: () => [],
+      openDue: () => [],
       asked: () => true,
       nextTarget: () => 'f:A',
       customDraw: null,
