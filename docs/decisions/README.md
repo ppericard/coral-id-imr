@@ -54,8 +54,7 @@ decision its own heading with its context, decision and consequences in a short 
 
 ## Index
 
-Newest first, the newest 40 rows only (the size stays bounded); [OLDER.md](OLDER.md) lists the rest in the same format.
-Both are written by `python3 tools/decisions_index.py --fix`.
+Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
