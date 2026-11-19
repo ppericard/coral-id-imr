@@ -161,7 +161,8 @@ learning change" (rule L11).
 | `learnsim.js` | Simulates players in the real app; the base of every learning check. `memstorage.js` is its in-memory storage |
 | `learnprof.js` | The simulated players' profiles |
 | `ratedworld.js` | The rated synthetic world the app's engine also runs on |
-| `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow runs it |
+| `checkbudget.js` | The checks' 40-minute budget (plan, refuse over it, stop and mark a cut run; `--budget`, `--per-job`) and level 3's gate (`--pierre-go`, GitHub runner only), shared by `learnsim.js` in both worlds (rule L11) |
+| `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow runs it; it says so when a file was cut by the budget |
 | `abilityeval.js`, `fieldeval.js`, `fallbackeval.js`, `barjudge.js` | Score a rule against simulated runs or the answer log |
 | `realcheck.js`, `memreplay.js` | Check the model's estimates against the real answer log (rule L12) |
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |

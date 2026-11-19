@@ -1350,3 +1350,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   100 photos en curation manuelle.» A1 protects the choices he made by hand, one by one; accepted agent proposals can
   be replaced by a better proposal that goes into the game, which he corrects afterwards. Applied: the counts of hand
   and accepted curation (the Q438 PR); rule A1's new wording, for his OK.
+- **Applied in #1274:** Q405, Q415: the check tools aligned with rule L11: a 40-minute budget that plans, refuses over it
+  and stops with the runs done marked cut, level 3 refused without his go on a GitHub runner, level 2's figures kept as
+  the minimum (`tools/checkbudget.js`; decision record `2026-11-19-check-cap`).

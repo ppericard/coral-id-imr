@@ -430,7 +430,9 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
       }))
       .filter(x => x.per.some(p => p.n > 0))
   );
-  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks, watch};
+  // A file stopped by the 40-minute budget (tools/checkbudget.js, rule L11): its `cut`, kept to say so in the report.
+  const cut = [['before', B.cut], ['after', A.cut]].filter(([, c]) => c).map(([side, c]) => ({side, ...c}));
+  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks, watch, cut};
 }
 
 // The report, Markdown ready for a PR.
@@ -441,6 +443,11 @@ function report(R, nameB = 'before', nameA = 'after') {
     L = [];
   L.push(`Paired comparison: ${nameB} -> ${nameA}, ${R.subject}, ${R.pairs} pairs (${R.profiles.join(', ')})`);
   L.push(`Looks declared: ${R.looks} (one-sided bounds at ${(100 * R.conf).toFixed(1)}%, the primary at ${R.alpha.toFixed(4)})`);
+  (R.cut || []).forEach(c =>
+    L.push(
+      `**CUT (${c.side}): the run stopped at its ${c.budgetMin}-minute budget with ${c.done} of ${c.planned} runs.** Only the ${R.pairs} complete pairs are compared: a clear result stands, but a result short of the level's seeds is "the measure cannot tell", never read as no effect (rule L11).`
+    )
+  );
   if (R.differ.length) L.push(`Settings that differ: ${R.differ.join('; ')}`);
   if (R.only.length) L.push(`Runs in one file only, left out: ${R.only.join(', ')}`);
   if (R.primary && R.primary.pop) {
