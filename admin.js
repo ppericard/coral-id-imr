@@ -9706,7 +9706,8 @@ function unitsOf(S) {
 // vars, its variant table over its pool files [f, ph, gm, cur] when it has one (replayed vars: the learned marks the log
 // takes away); slate, its units as the app's UNITS slate under that structure (the % and Learned of a subject with
 // no tree, the units met); tree, for a subject with a global score (SUBJECTS score), the tree its leaderboard ranks by
-// (replayed tree: treeBoardTree, the app's own UNITS tree, tests/structure.test.js). null for any other subject.
+// (replayed tree: treeBoardTree, the app's own UNITS tree with the scientific species on, tests/structure.test.js). null
+// for any other subject.
 function unitRpl(S, f, ph, gm, cur) {
   const Y = S && !S.replay && S.replayed;
   if (!f || !Y || typeof Y.gen !== 'function') return null;

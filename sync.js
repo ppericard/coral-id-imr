@@ -118,6 +118,12 @@ const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
 // predicate (app.js sciNow).
 const GENERA_SHEET = 176;
 const generaOn = () => sheetV() >= GENERA_SHEET;
+// The species by their scientific names, the fish's and the sea slugs' (docs/reviews/2026-11-18-species-step2-plan.md
+// §2.2): they may open, and count in the global score, only once the sheet replays them as the game scores them, a
+// smaller fault included (SCI_SHEET: core.js treeReplayGen, treeSpUnits 'sci', PART; its leaderboard tree with them,
+// treeBoardTree); before, they stay closed (rule D4). The one predicate the app's species rules will read (its app PR).
+const SCI_SHEET = 198;
+const sciOn = () => sheetV() >= SCI_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();
 const treeSum = T => {

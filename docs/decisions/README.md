@@ -86,6 +86,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups](2026-11-19-groups-carry-rights.md) | #1190 |
 | 2026-11-19 | [The Journey lists the opt-in choices of every subject beside its steps](2026-11-19-journey-optin-steps.md) | #1166 |
 | 2026-11-19 | [learnsim fish profiles: species known by the IMR cheatsheet and commonness, values assumed until fitted](2026-11-19-learnsim-fish-species.md) | #1251 |
+| 2026-11-19 | [Live answers on units not opened count, opening nothing; answers before a card are never its question](2026-11-19-live-locked-units.md) | #1234 |
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
 | 2026-11-19 | [Mimicry pairs: their marks after a mix-up, as the feedback's line](2026-11-19-mimicry-marks-feedback.md) | #1247 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
@@ -131,6 +132,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-18 | [The sheet script installs from a release branch only the merge train moves](2026-11-18-release-branch.md) | #1102 |
 | 2026-11-18 | [The 2026-11-18 rule wordings](2026-11-18-rules-wordings.md) | #1086 |
 | 2026-11-18 | [Sea slug achievements: the % ladder beyond 50%](2026-11-18-seaslug-achievements-high.md) | #1112 |
+| 2026-11-18 | [Species by scientific name on the sheet: the sci: key, smaller faults by kind](2026-11-18-species-sci-sheet.md) | #1249 |
 | 2026-11-18 | [The coral and sea-slug pairs' tell-apart lines: ours, in `ap` / `apsrc`, never in IMR's `lk`](2026-11-18-tellapart-lines.md) | #1119 |
 | 2026-11-18 | [Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs](2026-11-18-typed-answers-rest.md) | #1116 |
 | 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
