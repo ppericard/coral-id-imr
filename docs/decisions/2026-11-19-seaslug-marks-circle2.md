@@ -19,9 +19,9 @@ Integrator's call (a choice made while building, easy to correct):
   *Armina*, Korshunova et al. 2025 for *Longibranchus*, Korshunova et al. 2017 for *Samla*), or a Sea Slug Forum page
   that says the feature of the genus (*Dolabella*, *Aplysia*, *Roboastra*, the horn of *Ceratosoma*).
 - **A feature a source gives of one or two game species only** is a mark that names them ("as in *C. tenue* and
-  *C. trilobatum*", "*D. boholiensis*: …"): a structural feature (a shape, a fold, a ridge, the tubercles), a behaviour
-  (the gill waving of *Thorunna*, as the mantle waving of *Goniobranchus* before) or the animal on its food or in its
-  place. So *Miamira*, *Thorunna*, *Discodoris*, *Cadlinella*, *Plakobranchus*, *Bermudella*, *Diversidoris* and
+  *C. trilobatum*", "*D. boholiensis*: …"): a structural feature (a shape, a fold, a ridge, the tubercles) or the animal
+  on its food or in its place. A movement a still photo cannot show is not a mark (Codex on this PR: the gill waving of
+  *Thorunna* gave way to the body shape of *T. daniellae*). So *Miamira*, *Thorunna*, *Discodoris*, *Cadlinella*, *Plakobranchus*, *Bermudella*, *Diversidoris* and
   *Mexichromis* have marks that name their species. A species' colour pattern alone is never a mark.
 - **No sheet of a species outside the game is used** (rule C6): the *Diversidoris aurantionodulosa* and *Armina
   semperi* sheets were read and left out.

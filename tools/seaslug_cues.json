@@ -157,10 +157,6 @@
    "t": "Sea Slug Forum, Rudman 1999, Sagaminopteron nigropunctatum fact sheet",
    "u": "https://www.seaslugforum.net/find/saganigr"
   },
-  "ssf-thorfurt": {
-   "t": "Sea Slug Forum, Rudman 1998, Thorunna furtiva fact sheet",
-   "u": "https://www.seaslugforum.net/find/thorfurt"
-  },
   "ssf-thordani": {
    "t": "Sea Slug Forum, Rudman 2003, Thorunna daniellae fact sheet",
    "u": "https://www.seaslugforum.net/find/thordani"
@@ -571,8 +567,8 @@
   "Thorunna": {
    "marks": [
     [
-     "Waves its gills in a steady rhythm, as T. furtiva and T. daniellae",
-     [["ssf-thorfurt", "the rhythmic waving of the gills"], ["ssf-thordani", "the gills wave rhythmically"]]
+     "T. daniellae: a narrow mantle skirt; the foot tapers to a point behind",
+     [["ssf-thordani", "the mantle overlap and the foot"]]
     ]
    ]
   },
