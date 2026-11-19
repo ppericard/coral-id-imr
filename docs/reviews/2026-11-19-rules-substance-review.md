@@ -29,14 +29,16 @@ numbers what it asks.
   history to a record): the integrator's call. **Answered** (applies an answer Pierre already gave, quoted with its
   date; a paraphrase in the ledger is said to be one): done without asking, listed "pour info". **Substance** (changes
   what a rule requires, or adds a rule from his words): his OK, in the batch.
-- **Verdicts on the 87 rule IDs:** keep 52, simplify 15, guard 14, merge 4, retire 2. **Classes:** editing 70,
-  answered 13, substance 4 (W20, and the new lines in U7, L4 and S1). **AGENTS.md's 30 items** (#1200's list): keep
+- **Verdicts on the 87 rule IDs:** keep 51, simplify 15, guard 15, merge 5, retire 1. **Classes:** editing 70,
+  answered 14, substance 3 (W20 retired; U7's new line; L6 against S1). **AGENTS.md's 30 items** (#1200's list): keep
   16, simplify 6, merge 6, retire 2; editing 24, answered 5, substance 1 ("Writing a rule down"). A script counts the
-  rows of §1 and §2 and checks that each of the 87 IDs appears once.
-- **Missing rules:** five decisions of his act as rules and live nowhere in the rules (§3): the order of work is the
-  integrator's; integrators run in auto mode; security alerts count like Codex findings; no GitHub chores for him; one
-  judgement per photo. Three more are new rules and need his OK: the levels of each subject on its What I learn card,
-  never more ⚙ rows; a common name never advances a scientific name, «partout»; S1's one engine across the game modes.
+  rows of §1 and §2 and checks that each of the 87 IDs appears once (the cross-table is in §6).
+- **Missing rules:** five decisions of his act as rules and live nowhere in the rules, or only in INTEGRATOR, which a
+  subagent does not read (§3): the order of work is the integrator's; integrators run in auto mode; security alerts
+  count like Codex findings; no GitHub chores for him; one judgement per photo. One more is new and needs his OK: the
+  levels of each subject on its What I learn card, never more ⚙ rows. Two candidates were dropped after reading their
+  source (§3, considered): "one engine across the game modes" rests on a question, and the «partout» of Q237 was about
+  logging refused typed texts.
 - **The most useful single change** (§4.1): "Writing a rule down" says that only a change of substance goes to Pierre;
   editing is the integrator's, listed in the PR. Today it says "the wording of a new or changed rule goes to him for his
   OK", which puts every shortened sentence of this whole edit in front of him.
@@ -48,8 +50,9 @@ numbers what it asks.
 
 1. **"Writing a rule down": only substance goes to Pierre** (substance, §4.1). It decides how much of the rest needs
    him at all.
-2. **W27 cut into its homes** (answered): the agent cap as the audit's decision 1, the ask-back as its decision 2, the
-   rest where it belongs. The most relapsed rule (#798's six Codex rounds, the compute runs, the cap over-applied).
+2. **W27 cut into its homes** (answered): the ask-back as the audit's decision 2, the rest where it belongs; the agent
+   cap waits on #1200 §5 point 2 (decision 1 against his daytime "ok"). The most relapsed rule (#798's six Codex
+   rounds, the compute runs, the cap over-applied).
 3. **"The order of work is the integrator's"** as a Working-mode line of its own (answered): asked three times
    (2026-11-12, 2026-11-19 08:54 and 08:57); today it is a parenthesis inside the questions bullet.
 4. **W2 into W7, and W7's "where to look" becomes the ledger** (answered, 07:05): W7 still says "check ROADMAP and PR
@@ -59,21 +62,23 @@ numbers what it asks.
    leave the rules for the tools' `--help`, CONTRIBUTING and the specs (an estimate).
 6. **P1 cut to its principle and its licences** (editing), with "one judgement per photo, «référence» read from the
    photo" added (answered, Q358, #1045). The largest rule, the most amended (14 ledger entries), and the one re-asked.
-7. **L6's "no special case for one subject" gives way to S1** (answered: S1, 06:58). A live contradiction: L6 (Q169,
-   2026-11-06) forbids what S1 now allows when it is declared in one place.
-8. **D6's "announcement cards are never held" aligned with Q330 and Q332** (answered): no rule change or lost learned
-   mark is announced any more, so the bullet now holds only for older cards and new-feature notes.
+7. **L6's "no special case for one subject" gives way to S1** (substance, asked in one line): a live contradiction. L6
+   (his words of Q169, 2026-11-06) forbids what S1 (06:58 today) allows when it is declared in one place.
+8. **D6's "announcement cards are never held" aligned with Q330 and Q332** (answered; read in the code): no rule
+   change or lost learned mark is announced any more, so the bullet holds only for older cards and new-feature notes.
 9. **U7: the levels of each subject on its What I learn card, never more ⚙ rows** (substance, from his 2026-11-18
    words). The settings rule says what was removed, not where new choices go.
-10. **W20 out of the rules, into the photos spec** (substance), and **S1 across the game modes** (substance, a scope
-    question): a pipeline decision stops counting as a working rule; one engine reaches the modes he asked about.
+10. **W20 out of the rules, into the photos spec** (substance): a decision on where candidate photos come from stops
+    sitting among the rules on how a change ships, with its words and source kept whole.
 
 ## 1. Every rule ID
 
 Row: **ID** · verdict · class. Then: what it says today (its index line), the evidence, the proposal. "Cited" counts PR
 descriptions since 2026-11-12 (352 PRs, read through the REST API) that name the rule after the word "rule(s)"; the
 second figure counts those since 2026-11-18. "Ledger" counts its mentions in `docs/ANSWERS.md`. A guard named as
-existing was checked by a script that the file is on `main`; "per the audit" means not re-checked here.
+existing was checked by a script that the file is on `main`; "per the audit" means not re-checked here. A simplify or
+guard row that quotes no proposed text keeps today's index line (AGENTS.md "The rules") as its rule, plus "Enforced:
+<the guard>" where one exists; what it loses is named on the row.
 
 ### Content (C1-C8)
 
@@ -132,18 +137,18 @@ existing was checked by a script that the file is on `main`; "per the audit" mea
   LEARNING with their sources. The rule keeps: adaptive and continuous, no Easy/Medium/Hard selector, every account
   counts (Pierre's included), starred genera always in Practice (#1200 keeps it too: L5 does not say it), the normal
   quiz never split by a group.
-- **L4** · keep · substance. One progression path; only the quiz opens units. Cited 7 (4). Worded 2026-11-18. Gains,
-  for Pierre's OK, "a common name never advances a scientific name, in every subject" (§3, N7: Q237, «c'est vrai pour
-  tout le jeu, partout»).
+- **L4** · keep · editing. One progression path; only the quiz opens units. Cited 7 (4). Worded 2026-11-18.
 - **L5** · keep · editing. Corals: starred genera follow their look-alikes. Cited 2.
-- **L6** · simplify · answered. No unit-specific code; corals: Millepora counts, bonus genera opt-in. Cited 3. **A live
-  contradiction:** its first line, in Pierre's words of Q169 (2026-11-06), says «no special cases for one unit or one
-  subject; the data says it, the engine stays generic»; S1 (06:58 today) allows a difference between subjects
+- **L6** · simplify · substance. No unit-specific code; corals: Millepora counts, bonus genera opt-in. Cited 3. **A
+  live contradiction:** its first line, in Pierre's words of Q169 (2026-11-06), says «no special cases for one unit or
+  one subject; the data says it, the engine stays generic»; S1 (06:58 today) allows a difference between subjects
   «whatever its form (data, a parameter, a feature switched on for some subjects, or a patch)», declared in one place,
-  after he refused a stricter wording as «trop conservatrice». The later answer wins (ANSWERS.md: a later answer that
-  changes an earlier one). Proposal: "**No unit-specific code**: no special case for one unit; the data says it, the
-  engine stays generic; a difference between subjects follows rule S1." The corals' part stays; the bonus mechanics
-  are already in ARCHITECTURE "Bonus genera".
+  after he refused a stricter wording as «trop conservatrice». The later answer is about subjects; reading it as
+  replacing his own words of Q169 is the integrator's reading, not his answer (INTEGRATOR: a decision is never
+  stretched to a new point), so it is asked, in one line (§5, point 4). Proposal: "**No unit-specific code**: no
+  special case for one unit; the data says it, the engine stays generic; a difference between subjects follows rule
+  S1." The corals' part stays; the bonus mechanics are already in ARCHITECTURE "Bonus genera". Without his yes, L6
+  stays as it is and the contradiction is listed in STATUS.
 - **L7** · simplify · editing. Answer choices get harder gradually. Cited 1. The list of fish look-alike groups is data
   (`fish.json`); the rule names the source ("Pierre's declared look-alike groups") and drops the list.
 - **L8** · keep · editing. Achievements reward learning, never time. Cited 1.
@@ -205,9 +210,8 @@ existing was checked by a script that the file is on `main`; "per the audit" mea
 
 ### Subjects (S1-S3)
 
-- **S1** · keep · substance. One shared engine; a difference declared in one place. Cited 37 (7). Worded at 06:58
-  today. Guard exists in part: `tests/subject-neutral.test.js`. Its extension to the game modes is a scope question for
-  Pierre (§3, N8); without his yes, S1 stays as it is.
+- **S1** · keep · editing. One shared engine; a difference declared in one place. Cited 37 (7). Worded at 06:58
+  today. Guard exists in part: `tests/subject-neutral.test.js`. Game modes: not proposed (§3, considered).
 - **S2** · simplify · editing. Fish names: the IMR PDF's, WoRMS beside. Cited 3. Its second half (Pierre's own
   observations: usable as photos, not as presence) repeats C8, which already says it; S2 keeps the names and a pointer
   ("his species-level photos stay usable; presence: rule C8").
@@ -228,10 +232,11 @@ existing was checked by a script that the file is on `main`; "per the audit" mea
   repeats D6's first paragraph: one home for "silent" (D6), a pointer here.
 - **D6** · simplify · answered. A recalculation is silent. Cited 8 (3). Its third bullet, "announcement cards are never
   held: a card that announces a rule change, a learned mark taken away or a big new app version", predates Q330
-  (2026-11-09 ~14:45: no card for a recalculation) and Q332 (~15:40: the lost learned mark silent too). Since then no
-  rule change or lost mark is announced; the bullet holds only for cards still pending from before rules version 10 and
-  for `RECALC`'s new-feature notes (`progress.js` `recalcNotice`, `rvNotice`, `mxLostNotice` still exist). Proposal: the
-  bullet says so; "until then … announced with a real pop-up" goes to the record.
+  (2026-11-09 ~14:45: no card for a recalculation) and Q332 (~15:40: the lost learned mark silent too). Read in the
+  code: `model.js` `MXL.QUIET` is true, so `mxRecalc` raises no lost-mark card; only the rules versions before 10 carry
+  a `msg` (`core.js` `RV_CARD`, `RV_SORRY`), so `rvNotice` shows only the cards of those old versions; `recalcNotice`
+  shows `RECALC`'s notes. The bullet now holds for those old cards and for new-feature notes only. Proposal: the bullet
+  says so; "until then … announced with a real pop-up" goes to the record.
 - **D7** · keep · editing. A deleted account leaves nothing in normal operation. Cited 13 (3).
 - **D8** · keep · editing. Every leaderboard follows a progress recalculation. Cited 14 (6). `tests/board.test.js`.
 - **D9** · keep · editing. The answer log is the reference for progress. Cited 8 (2).
@@ -240,8 +245,8 @@ existing was checked by a script that the file is on `main`; "per the audit" mea
 
 - **W1** · merge · editing. Everything in English; only the chat with Pierre in French. Cited 1. Absorbs AGENTS.md's
   "In French, Pierre is «tu»" and INTEGRATOR's "Language" (the dictation slips stay in INTEGRATOR), as #1200.
-- **W2** · retire · editing (merged into W7). Work autonomously; ask before anything destructive. Cited 0, no file
-  cites it. Its first half ("branch, build, test, open PRs and fix review findings without asking") is W7's "fix by
+- **W2** · merge · editing (into W7; the ID retires). Work autonomously; ask before anything destructive. Cited 0, no
+  file cites it. Its first half ("branch, build, test, open PRs and fix review findings without asking") is W7's "fix by
   default" said more widely; its second half is AGENTS.md "Always ask first". **Departure from #1200**, which kept W2
   because its first half "is said nowhere else": W7 takes those words, so they are still said, once.
 - **W3** · keep · editing. Alpha: no backward compatibility. Cited 10 (5). Q159 (old ids keep mapping while old apps
@@ -280,10 +285,11 @@ existing was checked by a script that the file is on `main`; "per the audit" mea
 - **W14** · guard · answered (audit decision 3). The fast tier before each push; the full tier on CI. Cited 3 (2); 497
   words. The file-to-smoke map belongs in a tool (#1200's `tools/precheck.py`, not built); until it exists the map
   stays, and the rule is two lines above it.
-- **W15** · keep · editing. Never edit `?v=`, `LAB_V` or `sw.js` `V`. Cited 1. In Codex's review guidelines; #1200's G7
-  would check it. The stamping mechanics go to `docs/PAGES.md`.
-- **W16** · guard · editing. Corals: `data.json` only through `tools/datajson.py`. Cited 5 (2); 8 files cite it, so it
-  keeps its ID. Guard exists: `tools/datajson.py --check` in CI. One line.
+- **W15** · guard · answered (audit decision 3). Never edit `?v=`, `LAB_V` or `sw.js` `V`. Cited 1. In Codex's review
+  guidelines (kept whole there). The deploy stamps them (`tools/stamp_versions.py`); #1200's G7 would check a PR; the
+  stamping mechanics go to `docs/PAGES.md`.
+- **W16** · guard · answered (audit decision 3). Corals: `data.json` only through `tools/datajson.py`. Cited 5 (2); 8
+  files cite it, so it keeps its ID. Guard exists: `tools/datajson.py --check` in CI. One line.
 - **W17** · keep · editing. Check visually, light and dark; replay as a new player. Cited 2 (2). #1200's G8 would
   catch `colorScheme: 'dark'`; the widths point to U4.
 - **W18** · simplify · editing. PR from the template; squash; merge, never rebase or force-push. Cited 1. Worded this
@@ -383,24 +389,25 @@ its spec (listed at the end, so nothing is lost by omission).
   («ok, lance les quatre»); the two do not need a question, only no new read-only entries.
 - **N3. Security alerts count like Codex findings** · answered (a paraphrase in the ledger, 2026-11-08) · the merge
   contract's item 2. Today in INTEGRATOR "The merge mechanics" only, which a subagent does not read.
-- **N4. No GitHub chores for Pierre** · answered · the "easy to correct" bullet. «c'est quoi ce micromanagement forcé
-  ?» (2026-11-12): resolving threads, labels, ready-for-review, branch updates, workflow dispatches are the
+- **N4. No GitHub chores for Pierre** · answered · the "easy to correct" bullet. «c'est quoi ce micromanagement
+  forcé ?» (2026-11-12): resolving threads, labels, ready-for-review, branch updates, workflow dispatches are the
   integrator's. Today in INTEGRATOR only.
 - **N5. One judgement per photo; «référence» read from the photo** · answered · P1, once #1045 merges (§1, P1).
 - **N6. The levels of each subject on its What I learn card, never more ⚙ rows** · substance · U7 (§1, U7).
-- **N7. A common name never advances a scientific name, everywhere** · substance · `docs/rules/learning.md`, a line of
-  L4 (one progression path). Q237, on typed answers: «c'est essentiel. Et c'est vrai pour tout le jeu, partout.»
-  (2026-11-08); Q394 "A" (a common name or the genus alone typed for a scientific name are smaller faults, never a
-  gain, a paraphrase); «Ce sont 2 arbres pédagogiques indépendants» (2026-11-18). Today in FISH_PATH only, a spec that
-  a sea-slug or coral agent does not read. Scope: his «partout», every subject; no wider.
-- **N8. One engine across the game modes too** · substance, a scope question · S1. Q356: «j'aurais préféré qu'on fasse
-  la même chose pour les poissons et les coraux ... quelque chose qui soit cohérent entre tous les modes de jeu»
-  (2026-11-15); Q411, 06:58: «Je ne comprends pas pourquoi le moteur n'est pas homogène… Pourquoi on a des exceptions
-  en fonction des modes de jeux????». The second is a question, and the integrator has proposed an audit of the
-  differences between modes: no rule is worded from a question. Asked as a scope question, with S1's own form: "a
-  difference between game modes is declared and named in one place, never hidden".
 
 Considered, and not proposed as rules (where each lives):
+
+- **One engine across the game modes.** Q411, 06:58: «Je ne comprends pas pourquoi le moteur n'est pas homogène…
+  Pourquoi on a des exceptions en fonction des modes de jeux????»; Q356: «quelque chose qui soit cohérent entre tous
+  les modes de jeu» (2026-11-15). Not proposed: the first is a question, asked about typed mix-ups left out of the
+  pooled pairs (#1116), and the integrator answered it with a level-2 check and an audit of the differences between
+  game modes; and his word "mode" also names the subjects («les niveaux de jeux par mode (coraux, poissons, limaces,
+  ...)», 2026-11-18), which S1 already covers. The audit's findings, not this study, would show whether a rule is
+  missing.
+- **"A common name never advances a scientific name"** (FISH_PATH; Q394 "A", a paraphrase). The ledger's Q237 entry
+  quotes «c'est essentiel. Et c'est vrai pour tout le jeu, partout.» beside it, but #728, the PR that asked Q237, puts
+  those words on logging every refused typed text («Log every refused typed text, everywhere: Pierre, 2026-11-08,
+  Q237»). His «partout» gives no scope for a new rule; the fish spec keeps the rule.
 
 - **Rule 0's first message after 04:00** and **one shared engine**: in Rule 0 (#1191) and S1 (#1190) already.
 - **Every answer reaches its doc**: in AGENTS.md (#1188); its check is #1199.
@@ -426,9 +433,13 @@ shortened sentence, every merged duplicate and every how-to moved to a tool goes
 step-by-step edit would then cost him. His later answers point the other way: «Fais les choix tout seul si ils sont
 facile à revenir dessus» (2026-11-17), «Il faut que tu pushes tout ce qui est facile à corriger à posteriori»
 (2026-11-14), and the audit's decision 6 dropped because «the docs describe a coherent model in our words» (a
-paraphrase). Proposal, his OK needed: "A change of substance (what a rule requires, a new rule) goes to Pierre for his
-OK; editing (shortening, moving, merging duplicates, applying an answer he gave) is the integrator's call, listed in the
-PR." Nothing about generalising or hardening changes: those stay forbidden.
+paraphrase). Against it: he still reads wordings when they reach him and corrects them (at 06:50 today he refused
+S1's first wording as «trop conservatrice»), and Q305 (2026-11-08) said the rule wording goes to him before it lands.
+Both concern changes of substance, which the proposal keeps with him. Proposal, his OK needed: "A change of substance
+(what a rule requires, a new rule) goes to Pierre for his OK; editing (shortening, moving, merging duplicates, applying
+an answer he gave) is the integrator's call, listed in the PR." Nothing about generalising or hardening changes: those
+stay forbidden. **If he says no**, the editing verdicts of this study are not applied silently: each PR of #1200's
+sequence (D1-D3) shows him its changed wordings in one batch, as the rule says today.
 
 ### 4.2 One rule, one concern, one home
 
@@ -480,53 +491,53 @@ sentence kept, L15 and W4 kept, W25 kept, D1's how-to kept, the review guideline
 
 Already answered, not asked: the audit's decisions 1-5 and 8 (2026-11-18 evening); Q425 B; merge, never rebase, one PR
 per agent (08:53); S1's wording (06:58); the ledger rule (07:05); the order of work (08:57). The agent cap is #1200's
-§5 point 2, not repeated here. Numbered, by AGENTS.md's two tests: "Écrire une règle" (a rule's substance, cited later)
-and the game modes (the engine's model); the integrator assigns the numbers. The rest is asked plainly.
+§5 point 2, not repeated here. Numbered, by AGENTS.md's two tests: point 1 (a rule's substance, and it will be cited);
+the integrator assigns the number. Points 2-4 are asked plainly. The batch then separates his answers, applied, from
+the integrator's editing calls, which are information only and go to him as wordings only if he says no to point 1.
 
 ```text
-Pierre, la revue de fond des règles (étude #N). Réponds « ok » ou « ok sauf X ».
+Pierre, la revue de fond des règles que tu as demandée ce matin. Réponds « ok » ou « ok sauf X ».
 
-Écrire une règle
-1. Seul un changement de fond (ce qu'une règle exige, une nouvelle règle) passe par toi ; le travail d'édition
-   (raccourcir, déplacer, fusionner des doublons, appliquer une réponse que tu as déjà donnée) est le choix de
-   l'intégrateur, listé dans la PR. Rien ne change pour « jamais généraliser ni durcir ». Reco : ok.
+1. Écrire une règle : seul un changement de fond (ce qu'une règle exige, une nouvelle règle) passe par toi ; le
+   travail d'édition (raccourcir, déplacer, fusionner des doublons, appliquer une réponse que tu as déjà donnée) est le
+   choix de l'intégrateur, listé dans la PR. « Jamais généraliser ni durcir » reste. Si tu dis non, chaque PR de
+   réécriture te montrera ses formulations en un lot. Reco : ok.
+2. Retirer W20 (« plus de candidats, c'est plus de candidats ») des règles : il part dans la spec des photos, mot pour
+   mot, avec ta source. C'est une décision sur l'approvisionnement des photos, pas une règle de travail. Reco : ok.
+3. Nouvelle ligne dans U7 (réglages) : les niveaux de chaque matière se règlent sur sa carte What I learn, jamais en
+   ajoutant des lignes dans ⚙ ; ⚙ garde les réglages généraux. Tes mots du 18 : « On ne peut pas continuer à empiler
+   des settings dans le menu déroulant ». Reco : ok.
+4. L6 dit encore, avec tes mots du 6 : « pas de cas particulier pour une unité ou une matière ». S1 (ok de 06:58)
+   permet une différence entre matières si elle est déclarée à un seul endroit. Je propose que L6 garde « pas de cas
+   particulier pour une unité » et renvoie à S1 pour les matières. Reco : ok.
 
-Retirer
-2. W20 (« plus de candidats, c'est plus de candidats ») quitte les règles pour la spec des photos, mot pour mot,
-   avec ta source : c'est une décision sur l'approvisionnement des photos, pas une règle de travail. Reco : ok.
+Tes réponses déjà données, que j'applique (pour info) :
+- l'ordre du travail est à l'intégrateur (08:57) ; les intégrateurs tournent en mode auto (06:37) ; aucune corvée
+  GitHub pour toi (12/11) ; les alertes de sécurité comptent comme celles de Codex (08/11) : écrits dans le noyau ;
+- l'audit des règles : W27 ne fait plus redemander une demande courte, on construit la lecture facile à corriger et on
+  dit laquelle (décision 2) ; une règle tenue par un outil devient une ligne qui le nomme (décision 3) ; la méthode de
+  L11 va dans LEARNING (décision 8) ;
+- W7 : avant toute question, chercher dans le registre de tes réponses (07:05) ;
+- D6 suit Q330 et Q332 : plus aucune carte pour un recalcul ou une marque « appris » retirée ;
+- P1 : une seule évaluation par photo, « référence » déduite de la photo (Q358, #1045), une fois #1045 mergée.
 
-Nouvelles règles (tes mots, à l'endroit qui les fera lire)
-3. U7 : les niveaux de chaque matière se règlent sur sa carte What I learn, jamais en ajoutant des lignes dans ⚙ ;
-   ⚙ garde les réglages généraux (tes mots du 18 : « On ne peut pas continuer à empiler des settings dans le menu
-   déroulant »). Reco : ok.
-4. Un nom commun ne fait jamais avancer un nom scientifique, dans toutes les matières (Q237 : « c'est vrai pour tout
-   le jeu, partout »). Aujourd'hui ce n'est écrit que dans la spec des poissons. Reco : ok.
-5. Les modes de jeu : S1 dirait aussi « une différence entre modes de jeu est déclarée et nommée à un seul endroit,
-   jamais cachée » (ta question de 06:58 : « Pourquoi on a des exceptions en fonction des modes de jeux???? »).
-   Reco : ok, écrit après l'audit des différences entre modes.
-
-Pour info, déjà décidé par toi, j'applique sans te redemander :
-- l'ordre du travail est à l'intégrateur (08:57) ; mode auto (06:37) ; les alertes de sécurité comptent comme
-  celles de Codex ; aucune corvée GitHub pour toi : écrits dans les règles hautes ;
-- W27 découpée selon l'audit (décisions 1 et 2) ; les règles tenues par un outil réduites à une ligne qui le nomme
-  (décision 3) ; la méthode de L11 dans LEARNING (décision 8) ;
-- W7 : avant toute question, chercher dans le registre de tes réponses (07:05) ; W2 fusionne dans W7 ;
-- L6 : « pas de cas particulier pour une matière » cède à S1 de 06:58 ; D6 suit Q330 et Q332 (aucune carte) ;
-- P1 : une seule évaluation par photo, « référence » déduite de la photo (Q358, #1045), quand #1045 sera mergée.
-Aucune règle produit n'est supprimée ni durcie.
+Mes choix d'édition (pour info) : W2 fusionne dans W7, W5 dans W19 ; les détails techniques sortent des règles
+vers les specs et les outils (P1, C4, L3, L7, U3, D3) ; les Why et Source raccourcis, l'historique dans les
+records. Aucune règle produit n'est supprimée ni durcie.
 ```
 
 ## 6. Counts
 
-- **Rule IDs:** 87 today; 84 after (W2 into W7, W5 into W19, W20 to the spec; no new ID: the new lines go into U7,
-  L4, P1 and, if he says yes, S1). `tests/docs.test.js` asks for at least 70. Citations to update: W5 in 2 files, W20
-  in 3, W2 none.
+- **Rule IDs:** 87 today; 84 after (W2 into W7, W5 into W19, W20 to the spec; no new ID: the new lines go into U7 and
+  P1). `tests/docs.test.js` asks for at least 70. Citations to update: W5 in 2 files, W20 in 3, W2 none.
 - **AGENTS.md's items:** 30 today (#1200's list); 26 after: five leave AGENTS.md (Rule 0's intro to its record,
   Projects mode deleted, "tu" to W1, Dependabot to W9, `needs-pierre` to W6), the others stay as one item each (the
   Ship checklist as the "Every task" lines), and N1 comes in (N2, N3 and N4 join existing bullets).
-- **Verdicts on the 87 IDs:** keep 52, simplify 15, guard 14, merge 4, retire 2 (W5 is counted as a merge); by class
-  editing 70, answered 13, substance 4. On AGENTS.md's 30 items: keep 16, simplify 6, merge 6, retire 2; editing 24,
-  answered 5, substance 1.
+- **Verdicts on the 87 IDs:** keep 51, simplify 15, guard 15, merge 5, retire 1 (W2 and W5 are merges whose IDs
+  retire); by class editing 70, answered 14, substance 3. Cross-table (verdict: editing / answered / substance): keep
+  50 / 0 / 1; simplify 12 / 2 / 1; guard 4 / 11 / 0; merge 4 / 1 / 0; retire 0 / 0 / 1.
+- **AGENTS.md's 30 items:** keep 16, simplify 6, merge 6, retire 2; editing 24, answered 5, substance 1. Cross-table:
+  keep 14 / 1 / 1; simplify 3 / 3 / 0; merge 6 / 0 / 0; retire 1 / 1 / 0.
 - **Words:** the rule files hold 15,985 words in their 87 rules (16,620 with the files' headers and the README);
   AGENTS.md 4,009; INTEGRATOR 3,362. The audit estimated about 13,500 for the three after its proposals (approved
   decision 4 sets a budget of 14,000); this study's verdicts are close to the audit's on the rule files and add no
@@ -540,7 +551,8 @@ Aucune règle produit n'est supprimée ni durcie.
 - **Read in full:** AGENTS.md, CLAUDE.md, INTEGRATOR, the nine rule files, `docs/ANSWERS.md`, the decisions README and
   the records of the 11-18 and 11-19 rule wordings, rules step 1 and guards rather than prose, the rules audit, the
   agentic-practices study, #1200's proposal (its branch), STATUS "Questions for Pierre", the PR template,
-  `.claude/settings.json`, the docs test's rule checks.
+  `.claude/settings.json`, the docs test's rule checks; the descriptions of #728 (Q237's context) and #1116 (Q411's);
+  in the code, the call sites of `recalcNotice`, `mxLostNotice` and `rvNotice` and `model.js` `MXL` (for D6).
 - **Measured with scratch scripts** (not committed): the citations of each rule ID in the 352 PR descriptions since
   2026-11-12, by the regular expression "rule(s)" followed by IDs, ranges expanded (it misses a rule named without the
   word and counts one named in passing; P and D IDs are also player pseudonyms, so only this form is counted for them);
