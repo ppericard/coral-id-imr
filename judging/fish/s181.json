@@ -137,8 +137,15 @@
    "keep": "best"
   },
   "fish-s181-cand-655332221": {
-   "code": "p1g0ssk2",
-   "keep": "best"
+   "code": "o1g0ml13",
+   "keep": "best",
+   "crop": [
+    0.27,
+    0.295,
+    0.8,
+    0.75
+   ],
+   "note": "crop: the two yellow fish (top left, bottom) leave the frame (Q430)"
   }
  }
 }

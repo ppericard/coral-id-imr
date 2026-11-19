@@ -356,13 +356,16 @@
    "keep": "best"
   },
   "fish-s187-cand-434052823": {
-   "code": "o1g0mmk2",
+   "code": "o1g0mm12",
    "keep": "best",
    "phase": "terminal",
-   "unsure": [
-    "code"
+   "crop": [
+    0.08,
+    0.0,
+    0.5,
+    0.55
    ],
-   "note": "a pale slender fish at right, about the parrotfish's size, kind unclear (a wrasse?): confusion possible, not certain"
+   "note": "crop: the pale slender fish at right leaves the frame (Q430)"
   }
  }
 }

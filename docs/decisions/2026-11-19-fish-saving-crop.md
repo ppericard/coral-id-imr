@@ -32,9 +32,19 @@ Pierre, 2026-11-19 14:42 Manila (Q430): B. «J'ai toujours dit de mettre en jeu 
 
 ## Consequences
 
-- No photo changes today: `tools/fish_game.py --plan` lists nothing to download. Of the 846 candidates coded `k`, 87
-  are undecided and a later judging pass may save them; 694 were set aside by the auto-sort (`seen`) and 65 are his
-  adds held out (rule P3), so a crop reaches those only through his curation (rule A1). No bulk re-judge here.
+- No photo changed with #1223. Of the 846 candidates coded `k`, 87 were undecided, 694 set aside by the auto-sort
+  (`seen`) and 65 are his adds held out (rule P3).
+- **The re-judge of 2026-11-19** (the `k` pass): the 87 undecided were seen at 1,024 px on a 10 x 10 grid, and every
+  crop drawn was looked at as players would see it, its edges at 3x on the original. 19 got a crop: 17 sure, which
+  enter play cropped (`tools/fish_game.py --plan`: 17 to download), and 2 `unsure: ["crop"]` (a sliver at the edge).
+  The 14 `dup` and the one out of the water stay out whatever the code: left as judged. The other 53 kept `k`: the
+  look-alike overlaps or touches the subject, or the crop would be under 480 px wide in the original (the game's
+  small size).
+- **The 694 set aside are not re-judged**: no route takes them back. `autosort.js` `fishRun` never touches a photo already
+  decided or logged (`seen`, log `r`), and `tools/fish_game.py` `in_play` keeps a `seen` photo out (`decided`,
+  `gone_ids`). A crop reaches them, and his 65 adds, only through his curation (rule A1). His adds were counted, not
+  changed: on 500 px sheets, a crop would clearly save about 14, and about 16 more with a tight crop (an estimate).
+- 6 of the 19 carry an unanswered Check of the old reject (`?r`). Their answer compares with that stale proposal.
 - When Pierre picks Full photo on such a photo, the other fish comes back while the code still reads one fish: its count
   is then his to set (Tags), as any tag.
 - The gold-set scorer compares codes: a judge's code read on a crop differs from one read on the whole photo.

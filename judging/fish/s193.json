@@ -209,12 +209,15 @@
    "keep": "dup"
   },
   "fish-s193-cand-551805479": {
-   "code": "o1g2bmk1",
+   "code": "o1g2bl11",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.21,
+    0.32,
+    0.75,
+    0.75
    ],
-   "note": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
+   "note": "crop: the dark fish at left, the small fish above and the green parrotfish below leave the frame (Q430)"
   },
   "fish-s193-cand-710255947": {
    "code": "o1g1smo2",

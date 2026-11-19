@@ -117,12 +117,21 @@
    "keep": "best"
   },
   "fish-s289-cand-258279800": {
-   "code": "p1g0slk3",
+   "code": "p1g0sl13",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.0,
+    0.08,
+    0.92,
+    0.655
    ],
-   "note": "a silver cardinalfish with a yellow eye line, about two thirds its size and sharp, below it: maybe another genus"
+   "bb": [
+    0.05,
+    0.15,
+    0.85,
+    0.65
+   ],
+   "note": "crop: the silver cardinalfish below leaves the frame (Q430); urchin spines across the rear"
   },
   "fish-s289-cand-238428222": {
    "code": "p1g0sl1a2",

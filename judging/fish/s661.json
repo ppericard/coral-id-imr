@@ -169,12 +169,21 @@
    "keep": "best"
   },
   "fish-s661-cand-725061651": {
-   "code": "p1g0smk3",
+   "code": "o1g0sl14",
    "keep": "best",
-   "unsure": [
-    "code"
+   "crop": [
+    0.4,
+    0.28,
+    0.95,
+    0.75
    ],
-   "note": "a yellow-and-black fish of another family about half the goby's size, sharp, beside it: confusion possible, not certain"
+   "bb": [
+    0.5,
+    0.35,
+    0.9,
+    0.75
+   ],
+   "note": "crop: the yellow-and-black fish at left leaves the frame (Q430)"
   },
   "fish-s661-cand-441659153": {
    "code": "p1g0sl14",

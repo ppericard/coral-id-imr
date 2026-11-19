@@ -109,8 +109,18 @@
    "keep": "best"
   },
   "fish-s319-cand-565734064": {
-   "code": "p1g1smk3",
-   "keep": "best"
+   "code": "p1g1mlo3",
+   "keep": "best",
+   "crop": [
+    0.29,
+    0.335,
+    0.73,
+    0.64
+   ],
+   "unsure": [
+    "crop"
+   ],
+   "note": "crop takes the blue fish above out; the tail is close to the bottom edge and a blurred yellow fish stays at lower left"
   },
   "fish-s319-cand-523287721": {
    "code": "p1g0sm14",
