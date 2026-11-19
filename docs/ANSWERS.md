@@ -1231,6 +1231,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the measured-photo PR (the format; a ROADMAP row for a correction on the Learn sheets only). **15:07**, on "plus
   tard": "Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont
   bloqués de manière permanente" (a ROADMAP row says what to build, never "later").
+- **15:40, fish genus marks beside IMR cues.** On the rule keeping our sourced marks away from a genus with IMR cues:
+  «Mouais bof». Decides (integrator's call): the genera IMR describes take our sourced marks under its cues, as the
+  families. Applied: spec/fish-sheets.md "Genus presentation and ID marks", decisions/2026-11-19-genus-marks-beside-imr-cues.md (#1231).
 - **15:35, Q435 (the juvenile classes, after the juvenile difficulty study #1228).** «ok» (the question, paraphrased: no
   juvenile ease cap a priori; the four classes Off, Finer rank, Bold, Like become a per-species label for the analyses,
   with no effect on the game; the players' answers decide which classes are hard). **15:35**, on sourcing: «Il faut
@@ -1260,6 +1263,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   C1): the corals' code, #1195. No morning report (inventory D7): INTEGRATOR.md, #1192. Inventory L14, game modes, the
   domain waits, role names: ROADMAP, #1192. Two teaching trees: FISH_PATH.md, #1192. Handovers: INTEGRATOR.md, #1192.
   Applied: #1192, #1195.
+- **20:40, model and effort combinations.** «C'est pas forcément un écart à la règle de mettre Opus Medium sur des
+  tâches. C'est toi en fait qui s'est mis toute seule hein, la règle. Moi j'ai jamais dit que Opus c'était forcément en
+  high. [...] Il y a clairement d'autres combinaisons possibles. Il faut voir ce que Anthropic recommande». Applied:
+  docs/reviews/2026-11-19-model-effort-combinations.md (a study: a replacement for INTEGRATOR's table, for the
+  integrator; the AGENTS.md bullet's new wording, for Pierre's OK).
 - **20:34, Q437 (open Compare, pairs, the custom quiz and the duel to fish and sea slugs, in shared code).** «évidemment
   oui, il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est du code
   commun». Every game mode opens to every subject, in shared code. Applied: the modes PR(s).
