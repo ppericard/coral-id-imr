@@ -77,9 +77,11 @@ date, the best run kept, the current run this device's).
 **Recount.** Records carry `_v` = `ACH_V`, and `achMerge` takes no achievement from a record of another version (its
 feats yes). Raising `ACH_V` makes every device recount every subject's list once on its own progress, silently
 (`achMigrate()`, `inSubject`, `core.js` `achRecount`): each achievement tested again on the current rules, those still
-met keeping their date, the others locked again, the feats kept. A subject whose data is not in yet (a lazy-loaded
-one) keeps its achievements aside on the device (`reefid-ach-old`, cleared at sign-out) until its data comes
-(`achPending`: from `app.js` `treeLoad` and before each check), so nothing untested travels.
+met keeping their date, the others locked again, the feats kept. An achievement taken out of a list goes from every
+player at that recount (the new record holds only the list's ids): none is kept for those who had it. A subject whose
+data is not in yet (a lazy-loaded one) keeps its achievements aside on the device (`reefid-ach-old`, cleared at
+sign-out) until its data comes (`achPending`: from `app.js` `treeLoad` and before each check), so nothing untested
+travels.
 
 **A learned mark taken away** by a recalculation (`model.js` `mxRecalc`, LEARNING.md "Learned under the former model")
 keeps the achievements and tells nothing (`model.js` `MXL.QUIET`). The code for the other way is kept: with `QUIET` off,
