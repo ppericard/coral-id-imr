@@ -65,6 +65,41 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
 
 // The admin's one filter bar (admin.js FB) is filled from each subject's admin part: its photo origins
 // ([key, name, short name], keys among those admin.js origin(p) gives) and its Candidates sources (among its origins).
+// Every game mode opens to every subject (Pierre, 2026-11-19, Q437): each Learn and Practice page of app.js MODES is in a
+// subject's pages or named in its closed with the reason, never both, and a closed page names a reason. A new mode
+// written for one subject fails here until the others have it or say why not.
+test('pages and closed: every Learn and Practice mode is open to each subject or closed with its reason', () => {
+  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+    M = require('./block.js')(app, 'const MODES = {', '\n  identify:', {file: 'app.js'}),
+    modes = [...M.matchAll(/^\s+\['([a-z-]+)', /gm)].map(m => m[1]);
+  assert.ok(modes.includes('quiz') && modes.includes('cmp') && modes.includes('pairs'), modes.join(' '));
+  C.SUBJECTS.forEach(s => {
+    const closed = s.closed || {};
+    assert.ok(closed && typeof closed === 'object', s.id);
+    modes.forEach(k => assert.ok(s.pages.includes(k) !== k in closed, `${s.id}: ${k} open or closed, one of the two`));
+    Object.entries(closed).forEach(([k, why]) => {
+      assert.ok(modes.includes(k), `${s.id}: closed ${k} is no Learn or Practice mode`);
+      assert.ok(typeof why === 'string' && why.length > 20, `${s.id}: ${k} names its reason`);
+    });
+  });
+  // The Duel tab for every subject (its pairs: app.js UNITS pairs).
+  C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('quiz-duel'), s.id));
+  // A pair's address round-trips with tree unit ids (a fish family, a sea slug genus).
+  [
+    ['fish', 'quiz-duel|t01|t13'],
+    ['seaslug', 'quiz-duel|g:Chromodoris|g:Hypselodoris'],
+    ['coral', 'quiz-duel|Acropora|Montipora']
+  ].forEach(([id, h]) => {
+    const S = C.subjectOf(id),
+      r = C.routeIn(C.routeOut(h, S));
+    assert.strictEqual(r.key, h, `${id}: ${C.routeOut(h, S)}`);
+    assert.strictEqual(r.S, S, id);
+  });
+  // A Duel-tab answer counts as a two-choice contrast question whatever the subject: the same scorer and replay.
+  assert.strictEqual(C.kOf('quiz-duel|t01|t13', 't01 t13'), 2);
+  assert.strictEqual(C.contrastQ('quiz-duel|t01|t13', 2), true);
+});
+
 test('admin descriptor: origins and Candidates sources for the one filter bar', () => {
   const KEYS = ['imr', 'own', 'dauin', 'ph', 'world'];
   C.SUBJECTS.forEach(s => {
