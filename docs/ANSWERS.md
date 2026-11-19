@@ -77,6 +77,9 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
   message après 4h du mat"; then "ok pour cette phrase" to: "After 17:30 (Manila time, read from the hook's line), the
   integrator asks Pierre nothing until his first message after 04:00; everything else goes on as normal, agents
   included." Applied: AGENTS.md Rule 0, `tools/brief.py` (#1191).
+- **08:18.** On README's credit line for the Coral Finder 2022 ("no photo of the book is used. It stays a cited
+  source…"): "Je suis pas sur que c'est une bonne chose de mettre ça en avant. Maintenant c'est juste une source comme les
+  autres". Applied: the line is gone from README's credits; the book is cited where it is used, like any source.
 - **08:53, Q420 (#1099, the per-player exam reserve on the corals).** A, keep it as built: "ok. Il n'y a aucune raison
   que ça influence les résultats...". Applied: #1099.
 - **08:53, Q421 (#1045, the fish reference photos' level-1 margin).** A, merge with no further simulation: "ok".
