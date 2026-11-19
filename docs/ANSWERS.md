@@ -1353,3 +1353,28 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Applied in #1274:** Q405, Q415: the check tools aligned with rule L11: a 40-minute budget that plans, refuses over it
   and stops with the runs done marked cut, level 3 refused without his go on a GitHub runner, level 2's figures kept as
   the minimum (`tools/checkbudget.js`; decision record `2026-11-19-check-cap`).
+
+## 2026-11-20
+
+- **05:31-05:33, Rule 0 and the night's work.** «J'ai pas dit que je me levais à 4 h du matin. J'ai dit que ça
+  pouvait arriver que je me lève à partir de 4 h du matin. Ça veut dire qu'il faut pas que tu t'arrêtes à 4 h du
+  matin.»; «la règle, ça n'a jamais été que tu t'arrêtes de travailler avant le début de la journée.»; «c'est mon
+  temps qu'on essaye de protéger, pas le temps des agents, et c'est déjà écrit comme ça.» Rule 0 unchanged; the work
+  goes on at every hour, and a check-in at most an hour apart re-starts the queue after a session restart. Applied:
+  INTEGRATOR "Working with Pierre" (Rule 0).
+- **05:39, Q440 (#1273, the species by their scientific names: about 1.3 fewer scientific genera at Advanced after
+  3,000 answers).** «C'est pas un coup à partir du moment où c'est un mode de jeu qu'on ajoute […] Bien sûr qu'il faut
+  accepter ce coup-là. Ne pas l'accepter, c'est ne pas faire le jeu, en fait.» Accepted; adding a game mode is not a
+  cost. Applied: #1273's merge (its PR body).
+- **05:39, rule A1's wording.** «Pour la nouvelle formulation de A1, je valide.» A1 protects the choices he made by
+  hand, one by one; an accepted proposal is replaced by a better one. Applied: docs/rules/admin.md A1 and the rules
+  index (this PR).
+- **05:39, the model and effort bullet.** «Pour la ligne sur les modèles et l'effort, OK pour cette stratégie.»
+  Applied: AGENTS.md "The right model and effort for each task" and INTEGRATOR's table (#1257's), this PR.
+- **05:39, P2 (the 34 untraced lecture photos, "B for now" of 2026-11-18).** «Pour P2, non, j'en ai aucune idée, donc
+  si vous n'avez pas réussi, si vous n'avez pas correctement noté les choses, ben, je ne sais pas.» Kept as they are;
+  asking the IMR trainer stays his. Applied: ROADMAP "Trace IMR lecture photos to their original source", this PR.
+- **05:39-05:40, no command for him to run.** «c'est jamais à moi de lancer une commande à la main dans un terminal.
+  Ça devrait jamais être à moi. C'est à toi de le faire.»; «Comment ça se fait en fait que tu en es arrivé à devoir me
+  demander manuellement de lancer une commande ?» The integrator does such steps itself; only a step it may not take
+  goes to him, as a yes/no question. Applied: INTEGRATOR "Working with Pierre" (Never give him a command to run).

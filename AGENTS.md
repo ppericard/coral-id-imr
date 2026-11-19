@@ -73,12 +73,12 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 - **Research uses every useful source without asking** (web search engines, guides, forums, publishers, databases and
   their APIs; paced, rule C7); a query holds only public terms, never the project's data; every source is cited (C2).
 - **Estimates are in agent time** (reviews and checks included), never human days or weeks; convert any quoted one.
-- **The right model and effort for each task**, at every agent launch (`model`, `effort`; table in INTEGRATOR):
-  design, architecture, the learning engine, security and rule wording with consequences: Opus 5.5, high (Fable 5.2
-  only where Opus at high effort measurably falls short); ordinary code (game formats, admin pages, fixes, docs):
-  Sonnet 5.5, medium to high; mechanical, repetitive work: Haiku 5.5, low, after the sample test. In doubt, the
-  stronger one; a task that turns out harder is relaunched one step up. Opus 5.5 is the integrator's model.
-  `tools/agent_guard.py` refuses a launch without both.
+- **The right model and effort for each task**, at every agent launch (`model`, `effort`; the table in INTEGRATOR, one
+  row per kind of task): the model is how capable, the effort how thorough, and any combination may fit. Where no row
+  fits, Opus 5.5 at medium. A task that failed for want of thoroughness is relaunched one effort level up; one that had
+  its context and was still wrong, one model up. A row changes on a measurement or on Anthropic's current guidance,
+  cited. Opus 5.5 is the integrator's model. `tools/agent_guard.py` refuses a launch without both. *Source:* Pierre,
+  2026-11-20 05:39 («OK pour cette stratégie»), on the study of #1257.
 - **Model choice by measurement**: a task for a lighter model is first run on 50-100 items by the strongest model and
   the candidates; the cheapest that meets a threshold set beforehand does the bulk; a small random sample of the bulk
   is redone by the strong model to catch drift; the PR reports the figures.
