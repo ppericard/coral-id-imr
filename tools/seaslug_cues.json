@@ -108,6 +108,26 @@
   "gosl1995": {
    "t": "Gosliner 1995, The genus Thuridilla, with a revision of the Elysiidae (Proc. Calif. Acad. Sci. 49)",
    "u": "https://archive.org/details/biostor-3282"
+  },
+  "zsm2018": {
+   "t": "Zamora-Silva and Malaquias 2018, Molecular phylogeny of the Aglajidae (Zool. J. Linn. Soc. 183)",
+   "u": "https://doi.org/10.1093/zoolinnean/zlx064"
+  },
+  "wcv1995": {
+   "t": "Willan and Cattaneo-Vietti 1995, New data on Chelidonura amoena (The Beagle 12)",
+   "u": "https://archive.org/details/biostor-242510"
+  },
+  "ssf-philgard": {
+   "t": "Sea Slug Forum, Rudman 1998, Philinopsis gardineri fact sheet",
+   "u": "https://www.seaslugforum.net/find/philgard"
+  },
+  "ssf-robolute": {
+   "t": "Sea Slug Forum, Rudman 1999, Roboastra luteolineata fact sheet",
+   "u": "https://www.seaslugforum.net/find/robolute"
+  },
+  "wc2017": {
+   "t": "Willan and Chang 2017, Three new species of Tambja (Basteria 81)",
+   "u": "https://natuurtijdschriften.nl/pub/1000556"
   }
  },
  "families": {
@@ -413,12 +433,36 @@
      ["brunck", "Table 6, the external features of the genera, p. 89"]
     ]
    ]
+  },
+  "Chelidonura|Tubulophilinopsis": {
+   "Chelidonura": [
+    "long, pointed tail lobes, the left far longer than the right, as C. amoena",
+    [
+     ["ssf-philgard", "Chelidonura's tails, against Philinopsis gardineri, now Tubulophilinopsis"],
+     ["wcv1995", "the external features of Chelidonura amoena, p. 11"]
+    ]
+   ],
+   "Tubulophilinopsis": [
+    "short, rounded tail lobes of equal size; a crest on the head shield",
+    [["zsm2018", "diagnosis of the genus Tubulophilinopsis, p. 40"]]
+   ]
+  },
+  "Tambja|Tyrannodoris": {
+   "Tambja": [
+    "flattened, lobe-like oral tentacles; a sense slit before the rhinophores",
+    [["wc2017", "the definition of the genus Tambja, p. 17"]]
+   ],
+   "Tyrannodoris": [
+    "large, downward-pointing oral tentacles; no sense slit before the rhinophores",
+    [
+     ["wc2017", "the diagnosis of the genus Tyrannodoris, p. 18"],
+     ["ssf-robolute", "the oral tentacles of Roboastra, now Tyrannodoris luteolineata"]
+    ]
+   ]
   }
  },
  "apartNone": {
-  "Tambja|Tyrannodoris": "the one comparison read (Nudi Pixel, Willan: the Tambja affinis group) sets Tyrannodoris luteolineata (very large oral tentacles, two plain head stripes) apart from Tambja affinis and T. victoriae, not from the game's Tambja (T. morosa, T. olivaria)",
-  "Chelidonura|Tubulophilinopsis": "the one comparison read (Nudi Pixel, Kodiat: Chelidonura varians against Tubulophilinopsis gardineri) sets the two species apart by their tail lobes; no source read says it of either genus",
-  "Hypselodoris|Thorunna": "the sources read compare Hypselodoris maculosa with Thorunna australis, which is not a game species; no feature of the genus Thorunna was found"
+  "Hypselodoris|Thorunna": "the sources read compare Hypselodoris maculosa with Thorunna australis, which is not a game species; the genus Thorunna's features read are not photo features: gills that wiggle as it crawls, in most species (Sea Slug Forum, Thorunna africana fact sheet), a movement, and a small size, a number"
  },
  "none": {
   "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",
