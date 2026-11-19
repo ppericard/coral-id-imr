@@ -27,6 +27,12 @@ function build(cur = CUR) {
   return d;
 }
 const D = build();
+// A photo's quality as applySlots reads it: Pierre's rating, else the automatic one (quality.json, 2 when none), never
+// Poor for an IMR lecture photo (core.js autoQ).
+const q = f => {
+  const a = AUTOQ[f] || 2;
+  return (CUR.quality || {})[f] || (a === 1 && /^imrl?-/.test(f) ? 2 : a);
+};
 const genera = d => [...Object.entries(d.gen), ...Object.entries((d.x || {}).gen || {})];
 const each = (d, fn) =>
   genera(d).forEach(([n, g]) =>
@@ -117,46 +123,82 @@ test("featured = Pierre's pins first, in his order; at most 3", () => {
   });
 });
 
-test("sheet order: IMR and Pierre's own photos come before other observers (rule P1), Poor last", () => {
-  const q = f => (CUR.quality || {})[f] || (AUTOQ[f] === 1 && !/^imrl?-/.test(f) ? 1 : 2);
+test('sheet order: by quality whoever took the photo (rule P1), Poor last', () => {
   each(D, (n, g, v, s) => {
-    const L = s.more.filter(p => q(p.f) !== 1);
-    const firstOther = L.findIndex(p => !(p.imr || p.own)),
-      lastCore = L.map(p => !!(p.imr || p.own)).lastIndexOf(true);
-    assert.ok(firstOther < 0 || lastCore < firstOther, `${n} ${v}: ${L.map(p => p.f).join(' ')}`);
+    const Q = s.more.map(p => q(p.f));
+    assert.ok(
+      Q.every((x, i) => !i || Q[i - 1] >= x),
+      `${n} ${v}: ${s.more.map(p => p.f + ':' + q(p.f)).join(' ')}`
+    );
   });
 });
 
-// The Coral ID Key cards need variety (the book's crops are gone; field photos fill the variety): after the featured
-// photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
-test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
-  const {CAP} = require('../core.js');
-  assert.strictEqual(CAP.inat, 5);
-  const P = [...Array(9)].map((_, i) => ({f: 'p' + i, o: 'https://www.inaturalist.org/observations/' + i, a: 'X'}));
-  const d = {gen: {G: {views: {wide: P.map(p => ({...p}))}}}, course: {}};
-  applySlots(d, {}, {});
-  const s = d.gen.G.sl.wide;
-  assert.strictEqual(s.feat.length, 3);
-  assert.deepStrictEqual(
-    s.idkey.map(p => p.f),
-    ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
+// Rule P1 (Pierre, 2026-11-18: no source priority): the same photos, marked IMR lecture photo or Pierre's own or neither,
+// get the same places in every list (featured, sheet, games, Coral ID Key, the view's order). The licence stays the last
+// tie-break (rightsRank), so each mark keeps its licence class: his own (rank 0) swaps with a CC BY photo (rank 0), an
+// untraced IMR lecture photo (rank 1) with a CC BY-NC one (rank 1). The game list reads no licence: changing the licences
+// alone leaves it as it was.
+test('the same photos get the same places whoever took them (rule P1): featured, sheet, games, Coral ID Key', () => {
+  const N = 12,
+    Q = [3, 2, 3, 1, 2, 3, 2, 2, 3, 1, 2, 3];
+  const make = (kind, lic = i => (i % 2 ? 'cc-by-nc' : 'cc-by')) => {
+    const wide = [],
+      course = [];
+    for (let i = 0; i < N; i++) {
+      const p = {f: 'g-' + i, o: 'obs-' + i, a: 'X'},
+        k = kind(i);
+      if (k === 'imr') course.push({...p, imr: 1, v: 'wide', slide: i});
+      else wide.push(k === 'own' ? {...p, own: true} : {...p, lic: lic(i)});
+    }
+    const d = {gen: {G: {views: {wide}}}, course: {G: course}},
+      cur = {quality: Object.fromEntries(Q.map((x, i) => ['g-' + i, x]))};
+    applySlots(d, cur, {});
+    const s = d.gen.G.sl.wide,
+      f = L => L.map(p => p.f).join();
+    return {feat: f(s.feat), more: f(s.more), game: f(s.game), idkey: f(s.idkey), view: f(d.gen.G.views.wide)};
+  };
+  // Even photos are CC BY (rights rank 0), odd ones CC BY-NC (rank 1): his own among the even ones, IMR among the odd.
+  const none = make(() => ''),
+    marked = make(i => (i % 4 === 0 ? 'own' : i % 4 === 1 ? 'imr' : '')),
+    other = make(i => (i % 4 === 2 ? 'own' : i % 4 === 3 ? 'imr' : ''));
+  ['feat', 'more', 'game', 'idkey'].forEach(k => {
+    assert.strictEqual(marked[k], none[k], `${k}: IMR / own marks move nothing`);
+    assert.strictEqual(other[k], none[k], `${k}: IMR / own marks move nothing (other photos marked)`);
+  });
+  // The view's order (its first photos: Look-alikes, Compare, the Coral ID Key's form photos) holds field photos only.
+  assert.strictEqual(make(i => (i % 4 === 0 ? 'own' : '')).view, none.view, "the view's order: his own photos move nothing");
+  assert.ok(none.idkey.split(',').length === 8, 'the Coral ID Key: the 3 featured + 5 more');
+  // The game list never reads a licence (Codex review #742), so swapping every licence leaves it as it was.
+  assert.strictEqual(
+    make(
+      () => '',
+      i => (i % 2 ? 'cc-by' : 'cc-by-nc')
+    ).game,
+    none.game,
+    'the game list reads no licence'
   );
 });
 
 // The Coral ID Key cards need variety (the book's crops are gone; field photos fill the variety): after the featured
-// photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
-test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
+// photos, up to CAP.inat (5) more photos in the sheet's order, whoever took them (rule P1), a different observation each
+// first.
+test('Coral ID Key: the featured photos, then up to 5 more, a different observation each', () => {
   const {CAP} = require('../core.js');
   assert.strictEqual(CAP.inat, 5);
+  // 9 observations, the first with a second photo: the key takes 8 photos, the 8 photos of different observations first.
   const P = [...Array(9)].map((_, i) => ({f: 'p' + i, o: 'https://www.inaturalist.org/observations/' + i, a: 'X'}));
+  P.push({f: 'p0b', o: P[0].o, a: 'X'});
   const d = {gen: {G: {views: {wide: P.map(p => ({...p}))}}}, course: {}};
   applySlots(d, {}, {});
-  const s = d.gen.G.sl.wide;
+  const s = d.gen.G.sl.wide,
+    K = s.idkey.map(p => p.f);
   assert.strictEqual(s.feat.length, 3);
+  assert.strictEqual(K.length, 8);
   assert.deepStrictEqual(
-    s.idkey.map(p => p.f),
-    ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
+    K.slice(0, 3),
+    s.feat.map(p => p.f)
   );
+  assert.strictEqual(new Set(s.idkey.map(p => p.o)).size, 8, 'a different observation each');
 });
 
 test('every slate genus has game photos in at least one view', () => {
@@ -199,14 +241,13 @@ test("games take every kept field photo, other observers' too, with no cap (Pier
 });
 
 test('one game list per view: each photo once, the featured game photos first, Poor photos last', () => {
-  const q = f => (CUR.quality || {})[f] || (AUTOQ[f] === 1 && !/^imrl?-/.test(f) ? 1 : 2);
   each(D, (n, g, v, s) => {
     const F = s.game.map(p => p.f);
     assert.strictEqual(new Set(F).size, F.length, `${n} ${v}: a photo twice`);
     // The featured photos of the quality order lead (the game list keeps no licence: core.js byQ0);
-    // the featured shown may hold, at the same quality and source, an open photo in place of an NC one.
+    // the featured shown may hold, at the same quality, an open photo in place of an NC one.
     const lead = s.feat.filter(p => s.game.includes(p)),
-      sig = p => [q(p.f), !!p.imr, !!p.own].join(),
+      sig = p => String(q(p.f)),
       byF = new Map(s.game.map(p => [p.f, p]));
     assert.deepStrictEqual(
       F.slice(0, lead.length)

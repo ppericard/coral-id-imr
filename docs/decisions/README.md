@@ -78,6 +78,7 @@ Newest first.
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [No photo twice in a few questions: the draw reads the questions planned and shown, the strong RA's shown score lags a little at 1,000 answers](2026-11-19-no-photo-twice.md) | #1093 |
+| 2026-11-19 | [Rule P1 for the corals: no photo placed, ordered or weighted for who took it](2026-11-19-p1-corals-no-source-boost.md) | #1195 |
 | 2026-11-19 | [Pikachu: a nickname shared by Thecacera pikachu and T. pacifica, T. picta mentioned as locally so called](2026-11-19-pikachu-nickname.md) | #1190 |
 | 2026-11-19 | [Rule 0: Pierre's day starts with his first message after 04:00](2026-11-19-rule0-first-message.md) | #1191 |
 | 2026-11-19 | [Rules, step 1: AGENTS.md loaded with CLAUDE.md; merge, never rebase or force-push; one PR per agent](2026-11-19-rules-step1.md) | #1198 |
@@ -86,6 +87,7 @@ Newest first.
 | 2026-11-19 | [Sea slug literature scan follow-up: two sourced species pairs recorded, judging hints in the rubric](2026-11-19-seaslug-literature-followup.md) | #1164 |
 | 2026-11-19 | [Sea slug ID marks for the genera in `none`: two revisions the sources study did not list, Ardeadoris and Caloria left](2026-11-19-seaslug-marks-circle1.md) | #1176 |
 | 2026-11-19 | [The fish build reports the genera a circle edit brings into circle 1 with no name root](2026-11-19-tree-tab-step.md) | #1181 |
+| 2026-11-19 | [Your tricky pairs on My progress: the player's own mix-ups, shown, with no weight change](2026-11-19-tricky-pairs.md) | #1210 |
 | 2026-11-18 | [ARCHITECTURE as a map: each part's spec in docs/spec/, its cited names kept as stubs](2026-11-18-architecture-as-a-map.md) | #1134 |
 | 2026-11-18 | [Architecture steps 3 and 4: the tree engine named tree*, the flat subject a capability; the core.js split waits](2026-11-18-architecture-steps-3-4.md) | #1146 |
 | 2026-11-18 | [The coral calibration set: 50 photos drawn a little more often until each has 20 answers](2026-11-18-coral-calibration-set.md) | #1130 |

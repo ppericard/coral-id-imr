@@ -887,12 +887,13 @@ const viewOf = (n, p) => {
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
 // Photos kept out of the featured / genus-sheet slots: the extra photos.
 const offSlot = p => !!p.extra;
-// Same order as applySlots in core.js: IMR photos, then Pierre's, then other observers, each by quality,
-// Poor photos and multi-coral photos last, then the extra photos.
+// Same order as applySlots in core.js: by quality whoever took the photo (rule P1), then core.js easyRank's ties (an open
+// licence or Pierre's own first, then a fixed hash of the file name); Poor photos and multi-coral photos last, then the
+// extra photos.
 function autoOrder(L) {
-  const byQ = x => x.slice().sort((a, b) => qOf(b.f) - qOf(a.f));
+  const byQ = x => easyRank(x, p => -qOf(p.f), true);
   const main = L.filter(p => !offSlot(p)),
-    out = [...byQ(main.filter(p => p.imr)), ...byQ(main.filter(p => !p.imr && p.own)), ...byQ(main.filter(p => !p.imr && !p.own))];
+    out = byQ(main);
   const ok = out.filter(p => !p.multi);
   return [...ok.filter(p => qOf(p.f) > 1), ...ok.filter(p => qOf(p.f) === 1), ...out.filter(p => p.multi), ...byQ(L.filter(offSlot))];
 }
@@ -917,7 +918,7 @@ function rowOf(n, v) {
   // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !offSlot(p))).filter(Boolean);
   // Featured = always the first FEAT photos: the admin's pinned ones in that order, the rest filled automatically,
-  // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
+  // never with a Poor photo while better ones exist, whoever took it (as on the site).
   const pinned = (pin || [])
     .map(f => live.find(p => p.f === f))
     .filter(Boolean)
@@ -925,7 +926,7 @@ function rowOf(n, v) {
   const cand = [...sug, ...order.filter(p => !p.multi && !offSlot(p))].filter(p => !pinned.includes(p)),
     k = FEAT - pinned.length;
   const good = takeObs(
-      cand.filter(p => p.imr || qOf(p.f) !== 1),
+      cand.filter(p => qOf(p.f) !== 1),
       k
     ),
     field = [
@@ -948,14 +949,14 @@ function coverOf(n) {
   const g = DATA.gen[n],
     all = photos(n).filter(p => !hidden(n, p)),
     k = entry(n);
-  // Same fallbacks as cover() in app.js: your pick, the first IMR featured Closer photo, data.json's pick, the first closer field photo (featured first).
+  // Same fallbacks as cover() in app.js: your pick, data.json's pick, the first featured Closer photo (a lecture photo
+  // included), the first closer field photo (featured first); never chosen for who took it (rule P1).
   const F = (k.feat || {}).medium || [],
     med = all.filter(x => viewOf(n, x) === 'medium' && !x.imr && !offSlot(x));
-  const ri = rowOf(n, 'medium').feat.find(x => x.imr);
   const p =
     (k.cover && all.find(x => x.f === k.cover)) ||
-    ri ||
     all.find(x => x.f === g.cover && !offSlot(x)) ||
+    rowOf(n, 'medium').feat[0] ||
     med.find(x => F.includes(x.f)) ||
     med[0] ||
     all.find(x => !x.imr && !offSlot(x));
@@ -963,10 +964,10 @@ function coverOf(n) {
 }
 // Status: ✓ only when the genus has everything the site needs AND the admin validated it (curation ok: true).
 // Needs: 3 featured photos per view, a cover that is not a close-up (3 levels), no broken choice.
-// A non-IMR Poor photo among the featured is only a warning (there may be no better example).
+// A Poor photo among the featured is only a warning (there may be no better example).
 const poorIn = n =>
   rows(n)
-    .filter(([v]) => rowOf(n, v).feat.some(p => !p.imr && qOf(p.f) === 1))
+    .filter(([v]) => rowOf(n, v).feat.some(p => qOf(p.f) === 1))
     .map(([v]) => `${label(n, v)}: Poor`);
 function needs(n) {
   const out = [],
@@ -1318,7 +1319,7 @@ const ACT = {
       // Dragged out of the first places: the next photo moves up, and the set is pinned so it can't come straight back.
       else if (inFeat) {
         const nx =
-          r.rest.find(x => x.f !== f && !x.multi && !offSlot(x) && (x.imr || qOf(x.f) !== 1)) ||
+          r.rest.find(x => x.f !== f && !x.multi && !offSlot(x) && qOf(x.f) !== 1) ||
           r.rest.find(x => x.f !== f && !x.multi && !offSlot(x));
         if (nx) L.push(nx.f);
         k.feat = k.feat || {};
@@ -4197,7 +4198,7 @@ const HELP = {
   fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the sheet rates the corals' photos only, so there is no photo difficulty here yet). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
-  kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
+  kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} more, whoever took them): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   // A getter: GROUPADM_SHEET is declared further down this file.
@@ -6394,17 +6395,20 @@ function autoRun() {
     });
   });
   if (!plan.length) return null;
-  // Each cell fills up to its cap (capOf, colonies): source priority first (rule P1, oIdx: IMR, Pierre's own, then
-  // other observers, so another observer's Good photo never takes the last slot ahead of Pierre's Fair one), then Good
-  // before Fair, then the sharper one (metrics.json, a tie-breaker only), then a fixed order. The adds
+  // Each cell fills up to its cap (capOf, colonies): the nearest first (Dauin, the Philippines, abroad: the photo's loc),
+  // whoever took it (rule P1: no source priority, Pierre's own included, so his Fair photo never takes the last slot
+  // ahead of another observer's Good one), then Good before Fair, then the sharper one (metrics.json, a tie-breaker
+  // only), then an open licence before CC BY-NC (core.js rightsRank, the last tie-break), then a fixed order. The adds
   // that do not fit wait in their full cell, as candidates.
-  const sh = p => (METRICS[p.f] || [0])[0];
+  const sh = p => (METRICS[p.f] || [0])[0],
+    near = p => ({dauin: 0, ph: 1})[p.loc] ?? 2;
   plan.sort(
     (a, b) =>
       (b.s.keep === 'add') - (a.s.keep === 'add') ||
-      oIdx(a.p) - oIdx(b.p) ||
+      near(a.p) - near(b.p) ||
       (b.s.quality || 0) - (a.s.quality || 0) ||
       sh(b.p) - sh(a.p) ||
+      rightsRank(a.p) - rightsRank(b.p) ||
       (a.p.f < b.p.f ? -1 : 1)
   );
   const room = {},

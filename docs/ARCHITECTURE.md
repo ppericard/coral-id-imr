@@ -220,7 +220,7 @@ to game.
 
 Which coral photos the sheets, the games and the Coral ID Key show, per genus and view (`core.js` `applySlots`, `CAP`;
 rules P1-P6, [rules/photos.md](rules/photos.md)): [spec/photos.md › Photos per context](spec/photos.md#photos-per-context-applyslots-cap).
-**Order**, **Sheet**, **Games**, **Coral ID Key**: there. The fish choose theirs in [spec/fish-photos.md](spec/fish-photos.md).
+**Order**, **Sheet**, **Games**, **The card's photo**, **Coral ID Key**: there. The fish choose theirs in [spec/fish-photos.md](spec/fish-photos.md).
 
 ## Photos
 

@@ -79,9 +79,10 @@ way to the first one, in that order, that still has candidates). The fish's and 
   suggested crop; `dup`, several corals or Poor → rejected; `exclude` → excluded; `alt`, another genus, `cmp` → left to
   Pierre. A sure judgment the metrics contradict (`metFlag`: Good under 1000 px or among the 5% softest candidates, Poor
   among the 5% sharpest) is left to him with the reason in the judgment line, and is never set aside.
-- **Caps**: adds fill each genus × view up to `capOf` colonies, by source priority first (rule P1, `oIdx`: Pierre's own
-  before other observers, so his Fair photo takes the last slot ahead of another observer's Good one), then Good first,
-  then the sharper (`metrics.json`); the rest waits in the full cell as candidates. Decided again at each load.
+- **Caps**: adds fill each genus × view up to `capOf` colonies, the nearest first (Dauin, the Philippines, abroad: the
+  photo's `loc`), whoever took it (rule P1: no source priority, so Pierre's own Fair photo never takes the last slot
+  ahead of another observer's Good one), then Good first, then the sharper (`metrics.json`), then an open licence
+  (`rightsRank`); the rest waits in the full cell as candidates. Decided again at each load.
 - **Checks** (`autoCheck`: FNV-1a of the name, 1 in `AUTO.every` = 20, the same on every device): a sure candidate drawn
   is logged `?…` and not applied; it comes up in the swiper with a **Check** tag, blind (no judgment line, dashed
   guesses, suggested view or crop; its Crop editor starts from Pierre's own crop or the full photo, and saving the full

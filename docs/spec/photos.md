@@ -12,22 +12,28 @@ the coral records, the curation and the photo rights in [data.md](data.md); the 
 Per genus and view, from the field photos and the IMR lecture photos (`data.json` `course`), never a photo with several
 corals, never a coral skeleton (`skel`, rule P6: `applyCuration` has dropped it from every list before):
 
-- **Order**: Pierre's pins (`feat`), then Claude's suggestions (`picks.json`), then the IMR photos, Pierre's own, the other
-  observers', each by quality; at equal quality an open licence before CC BY-NC for the featured, sheet and Key photos
-  (`rightsRank`, [data.md › Photo rights](data.md#photo-rights); the game list keeps the quality order alone); Poor last
-  (an IMR photo is never rated Poor automatically).
+- **Order**: Pierre's pins (`feat`), then Claude's suggestions (`picks.json`), then every photo by quality, whoever took
+  it (rule P1: no source priority, IMR lecture photos and Pierre's own included); at equal quality `core.js` `easyRank`'s
+  ties: an open licence before CC BY-NC for the featured, sheet and Key photos (`rightsRank`,
+  [data.md › Photo rights](data.md#photo-rights); the game list reads no licence), then a fixed hash of the file name
+  (`data.json`'s lists put Pierre's own photos first, so their order never decides); Poor last (an IMR photo is never
+  rated Poor automatically: it is always evaluated). The view's own list (`views`) follows: the featured photos, then
+  the rest in that order.
 - **Sheet**: the 3 featured and the next ones, 6 in all (`CAP.feat`, `CAP.sheet`).
 - **Games** (`game`, one list per view): every field and IMR lecture photo kept, never `use: 'ref'`; the featured game
-  photos first, then the IMR and Pierre's own before the other observers', each by quality, Poor last. No cap: newly
-  validated candidates come into the games. The players' answers rate every photo (`photoDiff`, the online calibration
-  `CAL`); a new photo starts with no prior difficulty. `gamePics()` reads the list.
-- **Coral ID Key** (`idkey`): the featured photos and up to 5 other observers' photos (`core.js` `CAP.inat`), variety on
-  purpose. The book path's box tiles show a drawing of each box's criterion, never photos (`proto/idkey.js` `BOXART`;
-  [DESIGN.md](../DESIGN.md) "Lab drawings"); a box with no drawing whose genera are in no other box (the non-hard-coral
-  group, the elongate free-living discs) shows those genera's covers. Once a growth form is picked (a Coral Finder box or
-  an IMR form), each genus card in Mix leads with a photo tagged with that form (`formCover()` in `proto/idkey.js`:
-  `formPhotos` / `imrFormPhotos`, IMR lecture first, then Pierre's own); the cover stays when it already shows the form,
-  and a genus with no photo of that form keeps its cover.
+  photos first, then the others by quality, Poor last. No cap: newly validated candidates come into the games. The
+  players' answers rate every photo (`photoDiff`, the online calibration `CAL`); a new photo starts with no prior
+  difficulty, and none weighs more in the draw for who took it (`model.js` `photoSet`). `gamePics()` reads the list.
+- **The card's photo** (`app.js` `cover`, the admin's `coverOf`): Pierre's pick (`coverP`), else `data.json`'s
+  (`tools/covers.txt`), else the first featured Closer photo (a lecture photo included), else the view's first photo.
+- **Coral ID Key** (`idkey`): the featured photos and up to 5 more in the same order (`core.js` `CAP.inat`), a different
+  observation each first, variety on purpose. The book path's box tiles show a drawing of each box's criterion, never
+  photos (`proto/idkey.js` `BOXART`; [DESIGN.md](../DESIGN.md) "Lab drawings"); a box with no drawing whose genera
+  are in no other box (the non-hard-coral group, the elongate free-living discs) shows those genera's covers. Once a
+  growth form is picked (a Coral Finder box or an IMR form), each genus card in Mix leads with a photo tagged with that
+  form (`formCover()` in `proto/idkey.js`: `formPhotos` / `imrFormPhotos`, in the game lists' order, colony view first,
+  whoever took them); the cover stays when it already shows the form, and a genus with no photo of that form keeps its
+  cover.
 
 ## Served from Cloudflare R2
 
