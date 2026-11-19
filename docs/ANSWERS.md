@@ -1213,4 +1213,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   à estimer. Ne serais-ce que pour nos analyses muti-variées des données réelles" and "c'est aussi une variable qui se
   calcule plutôt que s'estime par un agent. Tout comme les questions des couleurs j'imagine?"; **Q434**, a measured
   block per photo (contrast, brightness, saturation, colour loss, sharpness), computed once by a script: «oui». Applied:
-  the measured-photo PR (the format, a ROADMAP row for a correction in Learn only, later).
+  the measured-photo PR (the format; a ROADMAP row for a correction on the Learn sheets only). **15:07**, on "plus
+  tard": "Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont
+  bloqués de manière permanente" (a ROADMAP row says what to build, never "later").
