@@ -477,3 +477,13 @@ test('resId: the account’s name, else the device’s anonymous id as the sheet
   assert.strictEqual(run({SYNC: null, anonId: () => 'abc123xyz0'}), '~anon abc123xyz0');
   assert.strictEqual(run({}), '', 'neither (a harness): no reserve');
 });
+
+// The profiles smoke's players are the test's own, but the app's anonymous id (sync.js anonId, crypto) seeds the reserve:
+// unpinned, each run is another player with other photos, and the window of the expert's last questions (model.js SEENQ)
+// sometimes holds the colony the calibration check measures, which then is never drawn.
+test('the profiles smoke pins the player id and checks calibration on an empty window of recent questions', () => {
+  const src = read('tests/profiles.smoke.js');
+  assert.match(src, /localStorage\.setItem\('reefid-anon-id', JSON\.stringify\('[a-z0-9]{10}'\)\)/);
+  const cal = src.slice(src.indexOf('Online calibration (CAL)'));
+  assert.match(cal.slice(0, cal.indexOf('out.cal =')), /SEENQ = \[\];\s*NEXTQ = null;/);
+});
