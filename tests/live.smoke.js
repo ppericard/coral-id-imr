@@ -266,8 +266,9 @@ async function shot(p, name) {
   check(/^1st/.test(await S[0].p.textContent('.lvend .lvbig')), '4: Sam is not told 1st');
   check(/count in your progress/.test(await S[0].p.textContent('#lvkeep')), '4: Sam is not told the answers count');
   check(
-    /Sign in to keep your 3 right answers/.test(await S[2].p.textContent('#lvkeep')),
-    '4: Lia is not invited to sign in with her 3 right answers'
+    /Sign in to keep your \d+ answers, right or wrong, in your progress/.test(await S[2].p.textContent('#lvkeep')) &&
+      !/right answers/.test(await S[2].p.textContent('#lvkeep')),
+    '4: Lia is not invited to sign in with all her answers, right or wrong'
   );
   await shot(S[2].p, 'student-end');
   await S[0].p.waitForTimeout(800);
