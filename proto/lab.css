@@ -3377,7 +3377,13 @@ body:has(.ikstart:not([hidden])) main {
 @media (max-width: 599px) {
   .rvdone .rvstage {
     aspect-ratio: auto;
-    height: 11vh;
+    height: 7vh;
+  }
+  .rvdone.rvlayout {
+    gap: 8px;
+  }
+  .rvdone .gside {
+    gap: 6px;
   }
 }
 
