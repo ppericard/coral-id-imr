@@ -772,11 +772,17 @@
   // game's order across all its species (fishOrder, core.js easyRank, as the game's card cover), else null.
   // A juvenile is never a cover, at any rank (docs/ARCHITECTURE.md): a pick on one is ignored unless confirmed
   // (fishCoverJ), the order's first non-juvenile is taken, and a unit whose photos are all juveniles keeps its first.
-  // Juvenile: its phase word (fishPhase), or a game record's ph, which tools/fish_game.py writes the same way.
+  // Juvenile: its phase word (fishPhase), or a game record's ph, which tools/fish_game.py writes the same way. A phase or
+  // tags the auto-sort copied (its log code lists them) are no choice of the admin's: the game record's phase, which the
+  // build reads from the newer judgement (tools/fish_game.py read_cur; Pierre, 2026-11-19 20:57), is the one in force.
   const FJUV = FPHASES[0];
   function fishJuv(p, j, F) {
     if (!p) return false;
-    const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
+    const w = ((idxOf(F || {})[p.f] || {}).d || {}).w || [],
+      own = k => p.f in ((F || {})[k] || {}) && !w.includes(k),
+      mine = own('phase') || own('tags');
+    // a game record (its species sp) carries the build's phase: ph, or none for an adult
+    if (!mine && w.length && p.sp != null) return p.ph === FJUV;
     return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
   // A photo with a visible watermark or text (its flag w), its tags as the game reads them: the admin's, with the pass's
