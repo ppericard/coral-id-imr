@@ -157,8 +157,15 @@
    "keep": "dup"
   },
   "fish-s507-cand-618374840": {
-   "code": "p1g2ssk1",
-   "keep": "best"
+   "code": "o1g2ml12",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.33,
+    0.75,
+    0.75
+   ],
+   "note": "crop: the dark fish above leaves the frame (Q430)"
   },
   "fish-s507-cand-605408740": {
    "code": "p0g1sl12",

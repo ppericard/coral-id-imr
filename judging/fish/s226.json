@@ -181,8 +181,15 @@
    "keep": "best"
   },
   "fish-s226-cand-133770085": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1d0sl14",
+   "keep": "best",
+   "crop": [
+    0.3,
+    0.34,
+    0.85,
+    0.76
+   ],
+   "note": "crop: the surgeonfish above, the butterflyfish and the dark fish at right leave the frame (Q430)"
   },
   "fish-s226-cand-661094341": {
    "code": "o1g1sm12",
@@ -209,8 +216,21 @@
    "keep": "best"
   },
   "fish-s226-cand-753075930": {
-   "code": "o1g1ssk2",
-   "keep": "best"
+   "code": "p1g0sl14",
+   "keep": "best",
+   "crop": [
+    0.35,
+    0.43,
+    0.68,
+    0.76
+   ],
+   "bb": [
+    0.35,
+    0.5,
+    0.6,
+    0.7
+   ],
+   "note": "crop: the damselfishes and the small fish above leave the frame (Q430)"
   },
   "fish-s226-cand-176252019": {
    "code": "o1g2mm12",
@@ -241,8 +261,15 @@
    "keep": "best"
   },
   "fish-s226-cand-668819886": {
-   "code": "o1g1ssk1",
-   "keep": "best"
+   "code": "p1g0ml14",
+   "keep": "best",
+   "crop": [
+    0.3,
+    0.25,
+    0.8,
+    0.65
+   ],
+   "note": "crop: the damselfish below leaves the frame (Q430)"
   },
   "fish-s226-cand-597648205": {
    "code": "o1g1bm11",
@@ -297,8 +324,15 @@
    "keep": "best"
   },
   "fish-s226-cand-335400592": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p0d1ml13",
+   "keep": "best",
+   "crop": [
+    0.36,
+    0.3,
+    1.0,
+    0.8
+   ],
+   "note": "crop: the blue damselfish at left leaves the frame; the rock hides its tail fin (Q430)"
   },
   "fish-s226-cand-335068172": {
    "code": "o1g2bm11",

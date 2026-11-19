@@ -125,8 +125,15 @@
    ]
   },
   "fish-s088-cand-333448555": {
-   "code": "p1g1smk2",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.36,
+    0.8,
+    0.8
+   ],
+   "note": "crop: the dark wrasse above leaves the frame (Q430)"
   },
   "fish-s088-cand-207904193": {
    "code": "o1g2mlk1",

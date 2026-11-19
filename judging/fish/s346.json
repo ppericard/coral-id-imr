@@ -29,8 +29,15 @@
    "keep": "best"
   },
   "fish-s346-cand-613871625": {
-   "code": "p1g2ssk1",
-   "keep": "best"
+   "code": "p1d2ml12",
+   "keep": "best",
+   "crop": [
+    0.3,
+    0.0,
+    0.85,
+    0.5
+   ],
+   "note": "crop: the surgeonfishes below leave the frame (Q430)"
   },
   "fish-s346-cand-754127324": {
    "code": "p1g2bs11",
