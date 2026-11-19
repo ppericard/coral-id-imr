@@ -310,6 +310,10 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {})
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'model.js'), 'utf8'), ctx, {filename: 'model.js'});
   // model.js's own bindings (its const and let live in the vm's global scope, not on ctx).
   const M = vm.runInContext('({' + MODEL.join(', ') + '})', ctx);
+  // --live (playerOf liveRun): the app's mark of a unit answered live before the path opened it, absent from an app that
+  // never records such an answer (the live mode's version 1); LIVE_PACE, a variant's switch (absent: true).
+  M.introLive = vm.runInContext("typeof introLive === 'function' ? introLive : null", ctx);
+  M.LIVE_PACE = vm.runInContext("typeof LIVE_PACE === 'undefined' ? true : LIVE_PACE", ctx);
   Object.assign(ctx, {introduced: M.introduced, asked: M.asked, introMap: M.introMap, imrSaid: M.imrSaid, genScore: M.genScore, LV_AT: M.LV_AT});
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
   // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
@@ -366,11 +370,12 @@ const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
 const ITEM = {MISS: 1.5, PICKED: 0.5};
-function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null}) {
+function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null, live = 0}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep, calib});
+  if (live) pl.liveRun(live); // --live: before the first question
   for (let i = 0; i < N; i++) pl.step(i);
   return pl.result();
 }
@@ -598,10 +603,79 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     }
     return {t, c, ok, k, typed, chs, ph: ph.map(p => p.f), gap};
   };
+  // --live N (rule L4): N live-game answers before the first question, each on a unit the path has not opened (one of the
+  // units in play not met, drawn by the learner's generator), its question as the trainer's page builds it (live.js
+  // liveBuild: the look-alike traps, 4 choices, photoSet's 'k4' photos, two at most). The learner answers as in the quiz
+  // and is taught by the reveal as by the quiz's feedback. Recorded as live.js liveLog records it (model.js introLive
+  // marks the unit closed, the scorer, the opening hold unless LIVE_PACE is false) only by an app with introLive; the
+  // version-1 app records nothing. live: {n, ok, rec, hold: the opening hold's sum after them}.
+  const live = {n: 0, ok: 0, rec: 0, hold: null};
+  const liveRun = n => {
+    for (let j = 0; j < n; j++) {
+      const list = ctx.pool(),
+        left = list.filter(u => !M.introduced(u));
+      if (!left.length) break;
+      const t = left[Math.floor(r() * left.length)],
+        wrong = M.distractors(t, list, 2, () => true);
+      if (wrong.length < 3) continue;
+      const chs = ctx.shuffle([t, ...wrong.slice(0, 3)]),
+        set = M.photoSet(t, null, 0, 4, 'k4'),
+        ph = ((set && set.shown) || []).slice(0, 2);
+      if (!ph.length) continue;
+      const d = mean(ph.map(p => trueD(t, p))),
+        c = r() < pRec(t, d, ph.length === 1) ? t : chs[Math.floor(r() * chs.length)],
+        ok = c === t;
+      if (M.introLive) {
+        M.introLive(t);
+        const q = C.scoreIn({
+          t,
+          c,
+          ok,
+          k: 4,
+          chs,
+          cv: !!G[c],
+          ph: ph.map(p => p.f),
+          d0: (ph.length === 1 ? M.PICKD.SINGLE : 0) + mean(ph.map(p => ctx.photoDiff(t, p))),
+          fam: M.famOf(t, ph),
+          cf: M.confTerm(t, chs, 4),
+          look: () => M.pgLook(t, chs),
+          R: 1,
+          Rc: 1,
+          p: M.startP(),
+          timed: false,
+          df: 0,
+          dt: 0,
+          dom: true,
+          mu: M.genusDiff(t),
+          ...(!ok && G[c] ? {muc: M.genusDiff(c)} : {}),
+          ...(G[t].from ? {from: G[t].from} : {}),
+          ...(!ok && G[c] && G[c].from ? {cfrom: G[c].from} : {})
+        });
+        C.faArm(P());
+        try {
+          const res = C.scoreAnswer(P(), q);
+          if (M.LIVE_PACE && typeof res.e === 'number') M.holdStep(res.e, ok);
+        } finally {
+          C.faDisarm(P());
+        }
+        noteRecent(P()[t], ph);
+        if (!ok) delete P()[t].ex;
+        live.rec++;
+      }
+      if (learner === 'item') {
+        teach(t, ok ? 1 : ITEM.MISS);
+        if (!ok && G[c]) teach(c, ITEM.PICKED);
+      } else teach(t);
+      live.n++;
+      live.ok += ok ? 1 : 0;
+    }
+    live.hold = Math.round(vm.runInContext('HOLDS', ctx) * 1000) / 1000;
+  };
   const result = () => ({
     profile,
     seed,
     pi,
+    live,
     rows,
     owAt,
     advAt,
@@ -615,7 +689,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     qs,
     ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
   });
-  return {step, result, ctx, M, G, trueD};
+  return {step, result, ctx, M, G, trueD, liveRun};
 }
 
 // The sheet's photo Elo in the rated world (--app sheet; rule L11): a population of players, one per
@@ -762,7 +836,9 @@ async function main(o) {
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
     if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0, calib: o.calib || null});
-    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null});
+    else
+      for (const profile of o.profiles)
+        jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null, live: o.live || 0});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -838,6 +914,7 @@ async function main(o) {
           app: o.app,
           beyond: o.beyond || null,
           calib: o.calib || {},
+          live: o.live ? {n: o.live} : null,
           ...(pop ? {times: o.times, every: o.every, gap: o.gap || 0, rt: RT, pop: POP} : {}),
           seconds: secs,
           runs
