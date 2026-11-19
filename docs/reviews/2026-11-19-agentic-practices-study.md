@@ -274,8 +274,9 @@ only. Options in one area can be combined.
   decisions already taken, but removing W18's rebase and `--force-with-lease` allowance, or choosing between W22's two
   PRs and W27's one, changes what a rule requires (§7, question 3); delete the obsolete items the audit lists (Projects
   mode, pre-rewrite clones, Prettier 3.8.1, stacked-PR notes). **Cost:** two or three docs PRs of size M-L: docs M
-  median 9 min (#1190), docs L median 27 min, up to 50 min (#1140). **Risk:** low; a wording Pierre approved could be shortened past his meaning (each cut keeps his
-  words in the record). **Buys:** about −45 % words (the audit's estimate), no contradiction left.
+  median 9 min (#1190), docs L median 27 min, up to 50 min (#1140). **Risk:** low; a wording Pierre approved could be
+  shortened past his meaning (each cut keeps his words in the record). **Buys:** about −45 % words (the audit's
+  estimate), no contradiction left.
 - **a2. A tiered set: a short core always loaded, topic files on demand [editing; the choice of what is core is
   Pierre's].** A core of at most about 150 lines that loads by itself (an `@` import from CLAUDE.md, or the core moved
   into CLAUDE.md): Rule 0, the merge contract in a few lines, "ask first", the never-list that has no guard yet, how to
