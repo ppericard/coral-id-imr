@@ -25,8 +25,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked
   counts and keeps the unit closed until its card (rule L4; `model.js` `introLive`).
 - **Surprise card** (`wink`): counts nowhere.
-- **Not logged or scored**: the Tools (Lab prototypes, rule U13; [Same or different?, Odd one out](basics.md#the-lab-protolabjs)
-  too) and Memory.
+- **Not logged or scored**: the Tools (Lab prototypes, rule U13;
+  [Same or different?, Odd one out, Matrix](basics.md#the-lab-protolabjs) too) and Memory.
 
 ## Typed questions
 
