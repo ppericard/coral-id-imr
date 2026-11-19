@@ -568,7 +568,14 @@ test('the decisions index is what tools/decisions_index.py writes from the recor
 test('every answer in the ledger names its doc, and nothing answered is cited as waiting (tools/answers_check.py)', () => {
   const {spawnSync} = require('child_process');
   const r = spawnSync('python3', ['-B', path.join(ROOT, 'tools', 'answers_check.py'), '--check'], {encoding: 'utf8', timeout: 10000});
-  assert.strictEqual(r.status, 0, r.stdout.split('\n').filter(l => /^FAIL/.test(l)).join('\n') + r.stderr);
+  assert.strictEqual(
+    r.status,
+    0,
+    r.stdout
+      .split('\n')
+      .filter(l => /^FAIL/.test(l))
+      .join('\n') + r.stderr
+  );
 });
 
 // Size and line-length budgets: every living doc is bounded in bytes and in its longest line, so a doc cannot grow back
