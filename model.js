@@ -1867,7 +1867,8 @@ const choiceApart = (L, taken = []) => {
   const seen = new Set(taken.map(choiceKey));
   return L.filter(n => !seen.has(choiceKey(n)) && seen.add(choiceKey(n)));
 };
-function distractors(t, list, traps = trapsFor(t), known = introduced) {
+// wide: false keeps a ranked target's choices to list (the custom quiz's selection: it names no unit of its rank outside).
+function distractors(t, list, traps = trapsFor(t), known = introduced, wide = true) {
   // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (a family with one genus in play still gets three choices).
@@ -1876,7 +1877,7 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
   const rk = rankOf(t),
     tk = choiceKeys(t);
   list = list.filter(n => rankOf(n) === rk);
-  if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
+  if (rk && wide) list = [...new Set([...list, ...rankUnits(rk)])];
   list = list.filter(n => n === t || !tk.has(choiceKey(n)));
   const ranked = list
     .filter(n => n !== t)
@@ -1978,7 +1979,8 @@ const customOf = (saved, play) => {
 };
 const customDraw = sel => wpick(sel, weight);
 function customChoices(t, sel, play, traps, known) {
-  const own = distractors(t, sel, traps, known);
+  // Inside the selection alone (not wide: a ranked unit's rank-wide fallback is the photo quiz's), then topped up.
+  const own = distractors(t, sel, traps, known, false);
   if (own.length >= 3) return own;
   const got = own.filter(n => known(n) && confusable(t, n)).length;
   // Never a label twice across the two (choiceApart).

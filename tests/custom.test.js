@@ -38,6 +38,7 @@ function model({P = {}, ab = {}} = {}) {
     pairConf: core.pairConf,
     GX: n => GEN[n],
     rankOf: n => (GEN[n] || {}).rank || '', // app.js rankOf
+    rankUnits: rk => Object.keys(GEN).filter(n => GEN[n].rank === rk), // app.js rankUnits: every unit of a rank
     imrFormsOf: n => GEN[n].forms,
     ability: n => ab[n] ?? 0,
     formatAt: a => [Math.min(3, Math.max(0, a / 0.18))], // model.js FORMAT schedule, stubbed (trapsFor's default)
@@ -114,6 +115,32 @@ test('customChoices: a selection of 4 or more gives 3 choices from it alone, at 
         `traps ${traps}: ${c.join()}`
       );
     }
+});
+
+test('customChoices: a ranked unit (a fish species or genus) never gets a choice outside a selection of 4 or more (Codex review)', () => {
+  // Five units of one rank; four are picked, the fifth is a met look-alike of the target outside the selection.
+  // (Names of letters only: a label is compared by its letters, model.js labelKey.)
+  const R = ['Ra', 'Rb', 'Rc', 'Rd', 'Re'];
+  R.forEach(n => (GEN[n] = {look: R.filter(o => o !== n), fam: 'fr', ig: 20, forms: ['R'], rank: 'species'}));
+  try {
+    const M = model(),
+      sel = R.slice(0, 4);
+    for (const traps of [0, 1, 2, 3])
+      for (let i = 0; i < 50; i++) {
+        const c = M.customChoices('Ra', sel, [...PLAY, ...R], traps, known);
+        assert.strictEqual(c.length, 3, c.join());
+        assert.ok(
+          c.every(n => sel.includes(n) && n !== 'Ra'),
+          `traps ${traps}: ${c.join()}`
+        );
+      }
+    // Under 4 picked the other units of the rank top it up, as the photo quiz's choices do.
+    const two = M.customChoices('Ra', ['Ra', 'Rb'], [...PLAY, ...R], 1, known);
+    assert.strictEqual(two[0], 'Rb');
+    assert.strictEqual(new Set(two).size, 3);
+  } finally {
+    R.forEach(n => delete GEN[n]);
+  }
 });
 
 test('customChoices: the trap rules work inside the selection (a look-alike group drills itself)', () => {
