@@ -1276,13 +1276,19 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   remplir le temps. [...] Moi, j'ai mon quota à surveiller quand même. Donc, tu fais les tâches qu'on a déterminées
   ensemble.» A few agents at a time on decided work; then the next decided ROADMAP rows; no filler study. Applied:
   INTEGRATOR "Working with Pierre" (A night's work).
-- **20:45-20:50, his answers that unblocked inventory tasks.** «je suis quasiment sûr que j'avais justement fait tout
-  un travail de questions-réponses pour pouvoir débloquer un maximum de ces tâches»; «c'était pas que des réponses à
-  des questions, hein, c'était aussi des commentaires, c'était aussi des messages directs»; «je comprends pas
-  qu'est-ce qui fait que notre système de travail n'a pas permis le fait que tout le travail qu'on a fait ensemble avec
-  l'autre agent ait été correctement enregistré [...] à chaque fois que je dis quelque chose, ben en fait, c'est pas
-  enregistré correctement.» His words in every past STATUS version count, comments and direct messages included; the
-  tasks they unblocked are applied. Applied: the ROADMAP-decisions PR (the recount, written into ROADMAP's rows).
+- **15:54, Q436 (the one-tap difficulty question for fish and sea slugs).** «Je ne comprends même pas pourquoi ça
+  n'est pas juste une fonctionnalité du moteur et qui marche donc déjà pour toutes les matières... Donc oui bien sur,
+  et il faut mutualiser le code tant que possible». The one-tap question runs for every subject, from the shared
+  engine, its answers kept per subject. Applied: the one-tap question PR.
+- **15:55, the coral-only cards.** «ça veut pas dire qu'il ne faut pas garder les templates. On ne sait jamais quand on
+  en aura besoin». The apology card and the recalculation notes are not extended to fish and sea slugs, but the cards
+  stay in the code as templates with no subject by default, tagged only when their text concerns one subject. Applied:
+  the one-tap question PR.
+- **20:50, why his words were not recorded.** «je comprends pas qu'est-ce qui fait que notre système de travail n'a
+  pas permis le fait que tout le travail qu'on a fait ensemble avec l'autre agent ait été correctement enregistré
+  [...] à chaque fois que je dis quelque chose, ben en fait, c'est pas enregistré correctement.» Every answer reaches
+  ROADMAP or a PR, checked by a tool. Applied: #1264 (the recount written into ROADMAP's rows; `tools/answers_check.py`
+  fails an entry that names a ROADMAP item without applying it).
 - **20:55, the admin is slow to open on his phone.** «c'est pas ultra prioritaire, mais [...] la page admin sur mon
   téléphone met de plus en plus de temps à s'ouvrir. [...] je crois que par défaut ça cherche à s'ouvrir sur activité,
   mais globalement les pages dans admin, notamment la première fois que je me connecte depuis un moment [...] c'est
