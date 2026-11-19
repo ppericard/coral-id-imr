@@ -4000,8 +4000,10 @@ only, rule P1: the `rep` and `imr` exclusions gone).
     (+6, bound +12, margin +5); the fish lectureRA, answers to the first unit at Open Water 36.4 → 49.0 (+12.6, bound
     +31.9, margin +10). Unclear: corals firstOW and plateau (beginner), unitsOW@300 (lectureRA, strongRA, expert); fish
     firstOW, plateau and met@100 (beginner), unitsOW@300 (expert). Every other cell held.
-  - Exploratory, no margin: the right % over questions 201-300 fell for every coral profile (−1.8 to −4.4 points) and
-    for the fish beginner (−3.4).
+  - Beside them, no margin set: the right % over questions 201-300 fell for every coral profile (−1.8 to −4.4 points,
+    three of the four bounds excluding zero) and for the fish beginner (−3.4), the tightest signal of the run.
+  - How to read it: the fish "before" arm still withheld #1057's one set, so the fish compare one set with another; the
+    fish lectureRA was not run on 2026-11-18; and the run cannot tell the P1 eligibility fix from the reserve itself.
   - Not run further (rule L11: a breach goes to Pierre); the real log cannot judge it (rule L12).
 
 ### The held-out photos in the game (fish; 2026-11-17, Q385; exam only, 2026-11-18; the set #1023)
