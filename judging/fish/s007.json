@@ -129,8 +129,21 @@
    "keep": "best"
   },
   "fish-s007-cand-454682378": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g0sl15",
+   "keep": "best",
+   "crop": [
+    0.345,
+    0.27,
+    0.68,
+    0.6
+   ],
+   "bb": [
+    0.35,
+    0.27,
+    0.65,
+    0.55
+   ],
+   "note": "crop: the surgeonfish at left, the soldierfish and the second butterflyfish leave the frame (Q430)"
   },
   "fish-s007-cand-697853410": {
    "code": "o1g0sl14",

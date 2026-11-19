@@ -105,8 +105,21 @@
    "keep": "best"
   },
   "fish-s115-cand-596072876": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g1sl14",
+   "keep": "best",
+   "crop": [
+    0.45,
+    0.02,
+    0.98,
+    0.38
+   ],
+   "bb": [
+    0.45,
+    0.1,
+    0.9,
+    0.38
+   ],
+   "note": "crop: the second damselfish below leaves the frame (Q430)"
   },
   "fish-s115-cand-759693428": {
    "code": "o1g1ssx1",

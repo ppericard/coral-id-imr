@@ -52,7 +52,9 @@ const server = http.createServer((req, res) => {
 // The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
-// 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart); main, everything else.
+// 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart) and, in the same part, the admin opened
+// with suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
+// first, as before); main, everything else.
 // SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
 // runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
 // (timed below; on CI at 1280, in seconds: main 140, photos 120, players 80, actions 35, seal 12).
@@ -363,6 +365,103 @@ async function sealPart(b, base, fails) {
   await vc.close();
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
+}
+// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): suggest.json, the largest file a Players
+// page would wait for, is held back by the test. Opened on Players › Activity (the default), the page draws without it and
+// the suggestions follow (admin.js sugLater: laid over the candidates, the auto-sort run), and a page that needs them, asked
+// for before they are in, shows Loading… and then draws; opened on a page that needs them, it waits for them as it always did.
+// Once, at 1280.
+async function loadPart(b, base, fails) {
+  const F = 'load: ',
+    lc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await lc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  // One made-up judgment, for a candidate of cand.json (the real suggest.json may name none of them: 2026-11-03).
+  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand || {}).flat()[0].f;
+  let held = null,
+    asked = 0;
+  await lc.route(
+    u => u.href.startsWith(base) && u.pathname === '/suggest.json',
+    async r => {
+      asked++;
+      if (held) await held.p;
+      r.fulfill({contentType: 'application/json', body: JSON.stringify({v: 1, cand: {[CF]: {v: 'wide', q: 3, k: 'best', fm: 'M'}}})});
+    }
+  );
+  // waits for the page to ask for suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
+  const askedOnce = async () => {
+    for (let i = 0; i < 200 && !asked; i++) await new Promise(ok => setTimeout(ok, 100));
+    return asked > 0;
+  };
+  const hold = () => {
+    const h = {};
+    h.p = new Promise(ok => (h.go = ok));
+    held = h;
+    asked = 0;
+    return h;
+  };
+  const errs = [],
+    open = async hash => {
+      const p = await lc.newPage();
+      p.on('pageerror', e => errs.push(e.stack || e.message));
+      await p.goto(base + 'admin.html?demo&late' + hash);
+      return p;
+    },
+    shown = (p, re) =>
+      p
+        .waitForFunction(re => re.test(document.getElementById('view').innerText), re, {timeout: 60000})
+        .then(
+          () => true,
+          () => false
+        ),
+    late = p => p.evaluate(() => typeof SUG_LATE === 'function'),
+    laid = p =>
+      p.evaluate(
+        f =>
+          Object.values(DATA.cand)
+            .flat()
+            .some(x => x.f === f && x.j && x.j.q === 3) && ((SUG || {}).cand || {})[f],
+        CF
+      );
+  // 1. Activity (the default) draws while the suggestions are held; they are laid when they come
+  let h = hold(),
+    p = await open('');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while suggest.json was held back');
+  if (!(await late(p)) || (await p.evaluate(() => Object.keys(SUG).length)))
+    fails.push(F + 'Activity waited for the suggestions (nothing left to lay)');
+  if (!(await askedOnce())) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
+  h.go();
+  await p.waitForFunction(() => SUG_LATE === null, null, {timeout: 30000}).catch(() => fails.push(F + 'the suggestions never came in'));
+  if (!(await laid(p))) fails.push(F + 'the suggestions were not laid over the candidates when they came late');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity was lost when the suggestions came in');
+  await p.close();
+  // 2. a page that needs them, asked for at once: Loading…, then it draws
+  h = hold();
+  p = await open('');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw (gate check)');
+  await p.evaluate(() => (location.hash = '#photos/candidates'));
+  if (!(await shown(p, /^\s*Loading/))) fails.push(F + 'a page that needs the suggestions drew without them');
+  if (!(await late(p))) fails.push(F + 'the suggestions were already in (gate check is void)');
+  h.go();
+  await p
+    .waitForFunction(() => SUG_LATE === null && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {timeout: 60000})
+    .catch(() => fails.push(F + 'the page that waited for the suggestions never drew'));
+  if (!(await laid(p))) fails.push(F + 'the page drew before the suggestions were laid');
+  await p.close();
+  // 3. opened on a page that needs them: nothing is drawn, nothing started, until they are in (as before)
+  h = hold();
+  p = await open('#photos/candidates');
+  if (!(await askedOnce())) fails.push(F + 'a page that needs the suggestions did not ask for them');
+  if (await p.evaluate(() => typeof DRAFT !== 'undefined' && !!DRAFT && !!DRAFT.genera))
+    fails.push(F + 'a page that needs the suggestions started without them');
+  h.go();
+  await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
+  if ((await late(p)) || !(await laid(p))) fails.push(F + 'opened on Candidates, the suggestions were not laid at the start');
+  await p.close();
+  if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
+  await lc.close();
 }
 (async () => {
   const run = slot.parts(PARTS, {main: ['main'], photos: ['photos'], rest: ['actions', 'players', 'seal']}),
@@ -6405,9 +6504,92 @@ async function sealPart(b, base, fails) {
         fails.push(`${w}px Fish Photo stats › Overview: ${JSON.stringify(fo)}`);
       const dkF = await darkCards(p, '#view .adm-kpis > div, #view .adm-scard');
       if (dkF) fails.push(`${w}px Fish Photo stats › Overview, dark theme: still light ${dkF}`);
-      await go('fish/photos/stats/difficulty');
-      const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
-      if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
+      // Photo stats › Difficulty on the side of a subject with ratings of its own (admin.js statsPhotos, diffOwn): the same page
+      // from the sheet's ?stats=1&s=<id> (the demo rates the made-up answers it holds), each rated photo with answers once, in
+      // its unit's lane, the one view's legend and Views card left out, a reading in words, never a coral word.
+      for (const [sj, unit] of [
+        ['fish', 'Families'],
+        ['seaslug', 'Genera']
+      ]) {
+        // The demo's script answers as the gate floor: before the version that serves the ratings (SUBJECTS stats) the reply is
+        // the corals' and names no subject: a line, never the corals' numbers under another subject's name (rule D4).
+        const X = require('../core.js').SUBJECTS.find(s => s.id === sj).stats;
+        await go(`${sj}/photos/stats/difficulty`);
+        const old = (await text()).trim();
+        if (!new RegExp(`^Sheet script v\\d+: .+ ratings need v${X}\\.$`).test(old))
+          fails.push(`${w}px #${sj}/photos/stats/difficulty before v${X}: "${old.slice(0, 120)}"`);
+        // ...and from it the page, on a demo that answers as that version.
+        const dq = await ctx.newPage(),
+          dqe = [];
+        dq.on('pageerror', e => dqe.push(e.message));
+        await dq.goto(base + `admin.html?demo&v=${X}#${sj}/photos/stats/difficulty`);
+        await dq
+          .waitForFunction(
+            () =>
+              document.querySelector('#view .adm-kpis') || /need v|not available|offline/.test(document.getElementById('view').innerText),
+            null,
+            {
+              timeout: 60000
+            }
+          )
+          .catch(() => {});
+        const fd = await dq.evaluate(sj => {
+          const v = document.getElementById('view'),
+            O = OWNST[sj],
+            R = unitRegOf(SUBJECTS.find(s => s.id === sj)),
+            // a KPI's label is the span after its value (a value may hold a badge, itself a span)
+            kp = Object.fromEntries(
+              [...v.querySelectorAll('.adm-kpis > div')].map(d => [
+                [...d.children].find(e => e.tagName === 'SPAN').textContent,
+                d.querySelector('b').textContent
+              ])
+            );
+          return {
+            // the sheet's photos once each (a photo logged under its game id and its candidate id is one: treePid), the registry's
+            rated: (() => {
+              if (!O || O.old || !R) return -1;
+              const reg = new Set(Object.values(R.ph).map(x => treePid(x.f))),
+                by = {};
+              Object.entries(O.photos).forEach(([f, s]) => (by[treePid(f)] = (by[treePid(f)] || 0) + nAns(s)));
+              return Object.entries(by).filter(([k, a]) => reg.has(k) && a >= SF.min).length;
+            })(),
+            kpi: Number((kp['Photos rated'] || '').replace(/\D/g, '')),
+            dots: v.querySelectorAll('.adm-gstrips button').length,
+            rows: v.querySelectorAll('.adm-gstrips > div').length,
+            h3: [...v.querySelectorAll('h3')].map(h => h.textContent.replace(/\d+$/, '').trim()),
+            legend: !!v.querySelector('.adm-legend'),
+            hardest: Object.keys(kp).filter(k => /^Hardest/.test(k)),
+            far: !!v.querySelector('[data-pst="far"]'),
+            coral: /Corallites|Colony|Close-up/i.test(v.innerText),
+            help: (HELP.ownstatsph || '').length > 100,
+            wide: document.documentElement.scrollWidth - innerWidth,
+            // what sticks out, when the page does (outside a table's own scroll box)
+            over: [...v.querySelectorAll('*')]
+              .filter(e => e.getBoundingClientRect().right > innerWidth + 0.5 && !e.closest('.adm-tscroll'))
+              .slice(0, 4)
+              .map(e => `${e.tagName}.${String(e.className).slice(0, 30)} ${Math.round(e.getBoundingClientRect().right - innerWidth)}`)
+          };
+        }, sj);
+        if (
+          !(fd.rated > 0) ||
+          fd.kpi !== fd.rated ||
+          fd.dots !== fd.rated ||
+          !fd.rows ||
+          fd.h3.includes('Views') ||
+          !fd.h3.includes(unit) ||
+          fd.legend ||
+          fd.hardest.length !== 1 ||
+          !fd.far ||
+          fd.coral ||
+          !fd.help ||
+          fd.wide > 0
+        )
+          fails.push(`${w}px #${sj}/photos/stats/difficulty: ${JSON.stringify(fd)}`);
+        const dkD = await darkCards(dq, '#view .adm-kpis > div, #view .adm-scard');
+        if (dkD) fails.push(`${w}px #${sj}/photos/stats/difficulty, dark theme: still light ${dkD}`);
+        if (dqe.length) fails.push(`${w}px #${sj}/photos/stats/difficulty: ${dqe.slice(0, 3).join(' | ')}`);
+        await dq.close();
+      }
     }
     // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
     // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
@@ -7072,8 +7254,8 @@ async function sealPart(b, base, fails) {
       // genus in italics, an IMR sub-entry with its IMR name), titles and the chart's tooltips included; its Cards and
       // steps say the subject's words (Open all families), the genus cards (admin-demo.js: Ben's fish saved copy) and the
       // steps of the path (admin-journey.js jSteps: circles 2 and 3, the first genus question), also as marks on the
-      // chart; Games counts the fish formats and the questions on each rank, without the Custom quiz or the Duel tab the
-      // fish do not have; its sheets opened in the fish words. Ben's log gets, after his demo answers, a family of each
+      // chart; Games counts the fish formats and the questions on each rank, without the Custom quiz the fish do not have
+      // yet, with the Duel tab's row; its sheets opened in the fish words. Ben's log gets, after his demo answers, a family of each
       // later circle, genus questions and typed answers. Then a fish session of the Journey unfolds, its names too. No raw
       // unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px; SHOTS: the page in light and dark (2x).
       for (const vw of [1280, 390]) {
@@ -7177,7 +7359,9 @@ async function sealPart(b, base, fails) {
           !/Family questions/.test(jo.games) ||
           !/Genus questions/.test(jo.games) ||
           !/Typed/.test(jo.games) ||
-          /Custom quiz|Duels|duels \(tab\)/.test(jo.games) ||
+          // the fish have the Duel tab (SUBJECTS pages, Q437): its row, at 0; not the custom quiz yet
+          /Custom quiz/.test(jo.games) ||
+          !/duels \(tab\)/.test(jo.games) ||
           !jo.h3.some(h => /^Families and genera \d+/.test(h)) ||
           jo.th !== 'Family or genus' ||
           !jo.imr ||
@@ -9685,6 +9869,7 @@ async function sealPart(b, base, fails) {
     await finish();
   }
   if (ws.includes(1280) && run.has('seal')) await timed('seal', () => sealPart(b, base, fails));
+  if (ws.includes(1280) && run.has('seal')) await timed('load', () => loadPart(b, base, fails));
   // The difficulty bands' colours (tokens --rec-* in app.css): five distinct fills, text readable on each (≥ 4.5:1), in
   // light and dark, colour-blind off and on (the admin follows the app's ⚙ Colour-blind, reefid-sync-cvd): green to red,
   // or dark blue to dark orange. Once, at 1280.

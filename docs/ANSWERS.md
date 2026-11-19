@@ -1307,6 +1307,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1255 (the marks in `tests/docs.test.js` and
   `tools/brief.py`, ROADMAP's rows and header, the whole decisions index;
   docs/decisions/2026-11-19-doc-size-marks.md).
+- **Applied in #1265:** Q437: ROADMAP "Every game mode for every subject", `SUBJECTS` `closed`,
+  docs/decisions/2026-11-19-modes-every-subject.md (the Duel tab first); the plan,
+  docs/reviews/2026-11-19-modes-every-subject.md.
 - **Applied in #1264:** Q437: applied in the ROADMAP Game modes row (its lead quotes him).
 - **20:42-20:43, the night's work.** «t'es pas forcément obligé de tout lancer en parallèle [...] si dans la nuit t'as
   plus assez de travail, il faut que tu ailles taper dans la roadmap et dans les trucs que tu peux avancer tout seul.

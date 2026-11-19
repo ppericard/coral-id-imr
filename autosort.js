@@ -772,11 +772,17 @@
   // game's order across all its species (fishOrder, core.js easyRank, as the game's card cover), else null.
   // A juvenile is never a cover, at any rank (docs/ARCHITECTURE.md): a pick on one is ignored unless confirmed
   // (fishCoverJ), the order's first non-juvenile is taken, and a unit whose photos are all juveniles keeps its first.
-  // Juvenile: its phase word (fishPhase), or a game record's ph, which tools/fish_game.py writes the same way.
+  // Juvenile: its phase word (fishPhase), or a game record's ph, which tools/fish_game.py writes the same way. A phase or
+  // tags the auto-sort copied (its log code lists them) are no choice of the admin's: the game record's phase, which the
+  // build reads from the newer judgement (tools/fish_game.py read_cur; Pierre, 2026-11-19 20:57), is the one in force.
   const FJUV = FPHASES[0];
   function fishJuv(p, j, F) {
     if (!p) return false;
-    const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
+    const w = ((idxOf(F || {})[p.f] || {}).d || {}).w || [],
+      own = k => p.f in ((F || {})[k] || {}) && !w.includes(k),
+      mine = own('phase') || own('tags');
+    // a game record (its species sp) carries the build's phase: ph, or none for an adult
+    if (!mine && w.length && p.sp != null) return p.ph === FJUV;
     return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
   // A photo with a visible watermark or text (its flag w), its tags as the game reads them: the admin's, with the pass's
@@ -965,7 +971,7 @@
   }
 
   // Fish Coverage (fishCov): per family, genus and species, the photos in play, the observations against the target, the
-  // easy photos (ease 4-5), the reference photos, the phases shown and what is missing; and the candidates still
+  // easy photos (ease 4-5), the reference-level photos (core.js refLevel), the phases shown and what is missing; and the candidates still
   // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: fish-cand.json
   // cand; F: the draft's fish part; j(f): the pass's judgment. Returns {fam, gen, sp}: rows {id, name, fam, n (photos),
   // obs, tgt (a species' target; a genus or family: ok of its species at target), easy, ref, ph, wait (a species also
@@ -991,8 +997,10 @@
   function fishCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
     const waiting = fishWaiting(cand, F, play);
-    const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
-      isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
+    const ease = p => fishEase(p, F, j),
+      // The reference level as the game reads it (core.js refLevel, rule P1): the photo's ease (4-5) and look, read from the
+      // admin's ease and tags else the pass's, never from the route it came in by (rep, the flag r).
+      isRef = p => refLevel(fishRec(p, F, j)),
       spRow = (sid, fam) => {
         const L = play[sid] || [],
           s = species[sid] || {},

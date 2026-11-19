@@ -253,8 +253,15 @@
    "keep": "best"
   },
   "fish-s186-cand-672224308": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "o1g0sl14",
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.2,
+    0.85,
+    0.705
+   ],
+   "note": "crop: the squirrelfishes below leave the frame (Q430)"
   },
   "fish-s186-cand-510723437": {
    "code": "p1d2ms11",
