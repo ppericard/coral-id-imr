@@ -1393,4 +1393,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un
   problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
   judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
-  judging or boxing pass is measured first), #1285.
+  judging or boxing pass is measured first), #1287.
