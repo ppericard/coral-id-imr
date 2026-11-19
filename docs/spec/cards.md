@@ -190,17 +190,19 @@ page closes it unseen. A note about one subject says so in its data (`subj`, a s
 `subjIn`): the two progress notes are the corals'; one without (the typed questions) is the engine's and shows in
 whatever subject is on screen. A card holds the run one subject shows (`core.js` `noteRun`); a note about another
 subject waits for the next card. A player with no answers in a note's subject has its notes marked seen unshown, and
-the engine's notes after them still come in the subject on screen. A later recalculation that needs telling adds a note at the end of `RECALC.L` (a
-`subj` if it speaks of one subject), no code; a recalculation of progress is otherwise silent (rule D6).
+the engine's notes after them still come in the subject on screen. A later recalculation that needs telling adds a
+note at the end of `RECALC.L` (a `subj` if it speaks of one subject), no code; a recalculation of progress is
+otherwise silent (rule D6).
 
 **The apology card** (`progress.js` `sorryNotice`, `core.js` `SORRY`, `sorryOf`, `sorryFelt`, `sorryText`): one card,
 at app open, to the players who played through a run of the draw that was not right, shown only until `SORRY.UNTIL`
 (2026-11-17): it no longer shows, in any subject (an engine card, kept as a template). What the device held when this
 code first ran on it is read once and kept (`reefid-sorry-first` {t, n, h, c}): n, the answers between `SORRY.FROM`
-and then (the answers still in `LOG0` / `SYNC.log`, else those since the last card shown before the window); h, the opening hold's sum (`reefid-hold`); c, the
-most units carded within 15 answers in the window. Due with n ≥ `SORRY.N` (20) and h ≥ `SORRY.H` (3), or h ≥ 1.5 with c
-≥ `SORRY.CARDS` (4). It greets the player by first name ("Hi Ana! Sorry about your last run.", `core.js` `firstName`:
-the first word of the sign-in name, capitalised, else "Hi!"; rule U10), then "Yesterday evening we adjusted how the app
+and then (the answers still in `LOG0` / `SYNC.log`, else those since the last card shown before the window); h, the
+opening hold's sum (`reefid-hold`); c, the most units carded within 15 answers in the window. Due with n ≥
+`SORRY.N` (20) and h ≥ `SORRY.H` (3), or h ≥ 1.5 with c ≥ `SORRY.CARDS` (4). It greets the player by first
+name ("Hi Ana! Sorry about your last run.", `core.js` `firstName`: the first word of the sign-in name, capitalised,
+else "Hi!"; rule U10), then "Yesterday evening we adjusted how the app
 picks your questions, and some of it wasn't right yet: too many new genera came at once, and the questions didn't get
 easier after misses. It's fixed now. Sorry for the rough ride!" (the day said in the player's clock: This or Yesterday
 evening, else the date). Button "Thanks" or Escape: `reefid-sorry` (this device only, like
