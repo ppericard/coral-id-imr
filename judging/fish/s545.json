@@ -5,8 +5,15 @@
    "keep": "best"
   },
   "fish-s545-cand-220379003": {
-   "code": "p1g0smkj2",
-   "keep": "best"
+   "code": "p1g0ml1j4",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.25,
+    0.85,
+    0.66
+   ],
+   "note": "crop: the other cardinalfishes above right and below left leave the frame (Q430)"
   },
   "fish-s545-cand-518685631": {
    "code": "p1g1sls3",

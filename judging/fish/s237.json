@@ -1,8 +1,15 @@
 {
  "photos": {
   "fish-s237-cand-454682589": {
-   "code": "p1g1smk3",
-   "keep": "best"
+   "code": "p1g0ml14",
+   "keep": "best",
+   "crop": [
+    0.22,
+    0.25,
+    0.95,
+    0.75
+   ],
+   "note": "crop: the butterflyfish at left leaves the frame (Q430)"
   },
   "fish-s237-cand-619885944": {
    "code": "p1g1ss12",

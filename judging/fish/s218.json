@@ -97,8 +97,15 @@
    "keep": "best"
   },
   "fish-s218-cand-484034151": {
-   "code": "p1g1smk3",
-   "keep": "best"
+   "code": "p1g0ml14",
+   "keep": "best",
+   "crop": [
+    0.395,
+    0.32,
+    0.9,
+    0.645
+   ],
+   "note": "crop: the yellow tangs and the damselfishes around leave the frame (Q430)"
   },
   "fish-s218-cand-329924203": {
    "code": "p1g2bm11",

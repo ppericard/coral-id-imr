@@ -161,8 +161,15 @@
    "keep": "dup"
   },
   "fish-s270-cand-626136903": {
-   "code": "o1g1ssk1",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.235,
+    0.05,
+    0.52,
+    0.48
+   ],
+   "note": "crop: the parrotfish at left and the wrasse below leave the frame (Q430)"
   },
   "fish-s270-cand-626136920": {
    "code": "o1g1ssx1",
@@ -250,8 +257,15 @@
    "keep": "best"
   },
   "fish-s270-cand-330076956": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "o1g1ml12",
+   "keep": "best",
+   "crop": [
+    0.45,
+    0.08,
+    0.95,
+    0.6
+   ],
+   "note": "crop: the dark fishes and the other cleaner wrasse leave the frame (Q430)"
   },
   "fish-s270-cand-729414607": {
    "code": "p1g1smk2",

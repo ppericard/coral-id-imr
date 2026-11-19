@@ -205,8 +205,15 @@
    "keep": "alt"
   },
   "fish-s603-cand-36583539": {
-   "code": "p1g2smk1",
-   "keep": "alt"
+   "code": "p1g2ml12",
+   "keep": "alt",
+   "crop": [
+    0.25,
+    0.32,
+    1.0,
+    0.88
+   ],
+   "note": "crop: the grouper above and the watermark below leave the frame (Q430)"
   },
   "fish-s603-cand-36586411": {
    "code": "p1g2ss12",

@@ -55,14 +55,15 @@
    ]
   },
   "fish-s029-cand-757136353": {
-   "code": "p1g1ssk2",
+   "code": "p1g1ml13",
    "keep": "best",
    "crop": [
     0.2,
     0.3,
-    0.6,
+    0.62,
     0.75
-   ]
+   ],
+   "note": "crop: the rabbitfishes and the triggerfish leave the frame (Q430)"
   },
   "fish-s029-cand-623293168": {
    "code": "p1g0sl15",

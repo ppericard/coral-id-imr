@@ -157,8 +157,15 @@
    "keep": "best"
   },
   "fish-s028-cand-756041336": {
-   "code": "o0g1slk2",
-   "keep": "best"
+   "code": "p1g1mlo3",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.55,
+    0.5
+   ],
+   "note": "crop: the wrasse below leaves the frame; a dim fish half hidden behind stays (o) (Q430)"
   },
   "fish-s028-cand-726145426": {
    "code": "o1g2smo2",

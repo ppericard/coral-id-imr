@@ -225,8 +225,15 @@
    "keep": "best"
   },
   "fish-s051-cand-605459689": {
-   "code": "p1g1smk2",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.33,
+    0.41,
+    1.0,
+    1.0
+   ],
+   "note": "crop: the rabbitfish above leaves the frame (Q430)"
   },
   "fish-s051-cand-761940789": {
    "code": "p1g1mss2",

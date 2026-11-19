@@ -21,8 +21,15 @@
    "keep": "best"
   },
   "fish-s078-cand-501056454": {
-   "code": "p1g1ssk1",
-   "keep": "best"
+   "code": "p1g1mm13",
+   "keep": "best",
+   "crop": [
+    0.42,
+    0.1,
+    0.85,
+    0.55
+   ],
+   "note": "crop: the other fish around leave the frame (Q430)"
   },
   "fish-s078-cand-408401675": {
    "code": "p1g1sm13",

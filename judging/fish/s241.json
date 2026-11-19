@@ -69,8 +69,15 @@
    "keep": "dup"
   },
   "fish-s241-cand-625989041": {
-   "code": "p1g1smk3",
-   "keep": "best"
+   "code": "p1d1ml12",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.25,
+    0.55,
+    0.75
+   ],
+   "note": "crop: the other wrasse at right and the small blue fish below leave the frame (Q430)"
   },
   "fish-s241-cand-625989044": {
    "code": "p1g1smk3",

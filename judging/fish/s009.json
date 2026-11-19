@@ -157,8 +157,15 @@
    "keep": "best"
   },
   "fish-s009-cand-335258742": {
-   "code": "p1g0smk2",
-   "keep": "alt"
+   "code": "p0g1ml1j3",
+   "keep": "alt",
+   "crop": [
+    0.27,
+    0.42,
+    0.92,
+    0.92
+   ],
+   "note": "crop: the goatfish above leaves the frame; the snout against the reef (Q430)"
   },
   "fish-s009-cand-334922539": {
    "code": "o0g1mm12",

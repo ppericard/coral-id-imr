@@ -129,8 +129,21 @@
    "keep": "dup"
   },
   "fish-s062-cand-755348962": {
-   "code": "p1g1smk2",
-   "keep": "best"
+   "code": "p1g0sl15",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.2,
+    0.8,
+    0.62
+   ],
+   "bb": [
+    0.3,
+    0.35,
+    0.8,
+    0.55
+   ],
+   "note": "crop: the fish at the top edge and the second rabbitfish at right leave the frame (Q430)"
   },
   "fish-s062-cand-760871236": {
    "code": "p1g2sm12",

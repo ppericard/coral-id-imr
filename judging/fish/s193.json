@@ -185,8 +185,15 @@
    "keep": "best"
   },
   "fish-s193-cand-601700521": {
-   "code": "o1g1smk2",
-   "keep": "best"
+   "code": "p1g1ml13",
+   "keep": "best",
+   "crop": [
+    0.22,
+    0.3,
+    0.8,
+    0.67
+   ],
+   "note": "crop: the butterflyfish and the dark fish below leave the frame (Q430)"
   },
   "fish-s193-cand-536925783": {
    "code": "p1d2sl12",

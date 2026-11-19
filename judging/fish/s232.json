@@ -73,8 +73,15 @@
    "keep": "best"
   },
   "fish-s232-cand-396085703": {
-   "code": "p1g1smkj2",
-   "keep": "best"
+   "code": "d1g1ml1j2",
+   "keep": "best",
+   "crop": [
+    0.17,
+    0.15,
+    0.49,
+    0.9
+   ],
+   "note": "crop: the striped wrasse at right leaves the frame (Q430)"
   },
   "fish-s232-cand-391860451": {
    "code": "p1g2sm13",
@@ -161,8 +168,15 @@
    "keep": "best"
   },
   "fish-s232-cand-396367287": {
-   "code": "p1g1smk2",
-   "keep": "best"
+   "code": "p1g0ml14",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.5,
+    0.8,
+    1.0
+   ],
+   "note": "crop: the goatfish above leaves the frame (Q430)"
   },
   "fish-s232-cand-396367294": {
    "code": "p1g1smk1",
