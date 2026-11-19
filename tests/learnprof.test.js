@@ -18,8 +18,52 @@ test('the default lists: the casual diver plays the fish only; the special profi
   assert.deepStrictEqual(P.defaults('coral'), ['beginner', 'lectureRA', 'strongRA', 'expert']);
   assert.deepStrictEqual(P.defaults('fish'), ['beginner', 'casualDiver', 'lectureRA', 'strongRA', 'expert']);
   assert.strictEqual(P.profOf('casualDiver', 'coral'), null);
-  assert.deepStrictEqual(P.profOf('casualDiver', 'fish'), {rate: 0.12, names: 'common', gen: 'lo', by: 'common', hi: 0.3, lo: 0.02});
+  assert.deepStrictEqual(P.profOf('casualDiver', 'fish'), {
+    rate: 0.12,
+    names: 'common',
+    gen: 'lo',
+    by: 'common',
+    hi: 0.3,
+    lo: 0.02,
+    sp: {top: 1, hi: 0.3}
+  });
   assert.strictEqual(P.profOf('lectureRA', 'fish').gen, 'imr');
+});
+
+test('the first-launch answer is the profile’s: new, imr, know; none for the profiles run by name', () => {
+  assert.deepStrictEqual(P.defaults('fish').map(P.choiceOf), ['new', 'new', 'imr', 'know', 'know']);
+  assert.strictEqual(P.choiceOf('strongBack'), undefined);
+  assert.strictEqual(P.choiceOf('nobody'), undefined);
+});
+
+test('fish species: the cheatsheet’s for the RAs, the first of each family known, every one for the expert', () => {
+  // Two families in their species order; f:A known (circle 1), f:B not; s2 and s5 on the cheatsheet.
+  const L = [
+      {id: 's1', family: 'f:A', cs: 0},
+      {id: 's2', family: 'f:A', cs: 3},
+      {id: 's3', family: 'f:A', cs: 0},
+      {id: 's4', family: 'f:A', cs: 0},
+      {id: 's5', family: 'f:B', cs: 1},
+      {id: 's6', family: 'f:B', cs: 0}
+    ],
+    knows = new Set(['f:A']),
+    sp = n => [...P.knownSpecies(P.profOf(n, 'fish'), knows, L)].sort();
+  assert.deepStrictEqual(sp('beginner'), []);
+  assert.deepStrictEqual(sp('lectureRA'), ['s2', 's5']);
+  // The cheatsheet's anywhere, then the first 3 of a family it knows: f:A's fourth stays unknown (contrast in a family).
+  assert.deepStrictEqual(sp('strongRA'), ['s1', 's2', 's3', 's5']);
+  assert.deepStrictEqual(sp('casualDiver'), ['s1']);
+  assert.deepStrictEqual(sp('expert'), ['s1', 's2', 's3', 's4', 's5', 's6']);
+  // The know at the start: sp.hi when known, else lo; a species name below its family for the RAs.
+  const lec = P.profOf('lectureRA', 'fish'),
+    k = P.knownSpecies(lec, knows, L);
+  assert.strictEqual(P.spKnow(lec, k, 's2'), lec.sp.hi);
+  assert.strictEqual(P.spKnow(lec, k, 's1'), lec.lo);
+  assert.strictEqual(P.spKnow(P.profOf('beginner', 'fish'), new Set(['s1']), 's1'), 0.02);
+  ['lectureRA', 'strongRA'].forEach(n => assert.ok(P.profOf(n, 'fish').sp.hi < P.profOf(n, 'fish').hi, n));
+  // Without sp (learnsim --spknow off), every species at lo: as before the profiles' species.
+  assert.strictEqual(P.knownSpecies({...lec, sp: null}, knows, L).size, 0);
+  assert.strictEqual(P.spKnow({...lec, sp: null}, k, 's2'), lec.lo);
 });
 
 test('corals: the lecture RA knows the numbered genera, the strong RA the first lecture groups, never by data order', () => {
@@ -73,4 +117,5 @@ test('learnsim loads the rules in the page before the app', () => {
   const src = require('fs').readFileSync(path.join(__dirname, '..', 'tools', 'learnsim.js'), 'utf8');
   assert.match(src, /addInitScript\(\{path: path\.join\(__dirname, 'learnprof\.js'\)\}\)/);
   assert.match(src, /LEARNPROF\.knownUnits\(prof,/);
+  assert.match(src, /LEARNPROF\.knownSpecies\(prof, knows, spL\)/);
 });
