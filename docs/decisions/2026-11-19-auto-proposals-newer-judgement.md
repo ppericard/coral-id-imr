@@ -32,10 +32,11 @@ What was built:
   proposal he let through is a value the log marks as the auto-sort's; (c) cannot be told apart is a value with no log
   that equals the proposal the admin showed him (his click on it, or his own same choice). (c) is treated as (a).
 - **The build reads (b) anew** (`tools/fish_game.py` `read_cur`, and the players' copy, `tools/curplay.py`; `curation.json`
-  itself never written, rule A1): the fields the log lists read the pass's newer values when its judgement is sure (an
-  unsure one waits for him), unless he answered its re-judge proposal Keep mine; while he never corrected it, a photo it
-  set aside plays again when a sure judgement made since puts it in, and a photo it put in, its tags still its copy (his
-  Keep in play gives them up), leaves play when a sure judgement made since sets it aside. Tags read anew bring the
+  itself never written, rule A1): the fields the log lists read the pass's newer values when its judgement is a sure
+  add (an unsure one waits for him), unless he answered its re-judge proposal Keep mine; while he never corrected it, a
+  photo it set aside plays again when a sure judgement made since puts it in. A newer sure rejection of a photo it put
+  in stays a proposal (in play, its copy as it was), honouring Keep mine (cut from #1259 at Codex's third round, rule
+  W27; ROADMAP "Fish photo judging, next"). Tags read anew bring the
   judge's crop when the photo has none; his phase choice stops the source's juvenile flag; a photo he moved with Not
   this is skipped whole. (a) and (c) stand.
 - **The admin's route back** (`autosort.js` `sortBack`): the same photos come back into his draft, logged `b`, one Undo
@@ -81,8 +82,7 @@ The counts of `curation.json` (main of 2026-11-19 21:10 Manila; `node` on `autos
   to the pass, though they are proposals too. The sea slugs' part holds nothing yet.
 - In play, on main's data with this PR (the build's reading against the curation as written): 9 photos the auto-sort had
   set aside come back, uncropped: each was re-judged since (the subject unclear `x` then clear, or a near-duplicate then
-  another angle, on 2026-11-14 and 15; suggest.json's history), now a sure best or alt; 1 it had put in leaves (judged
-  since other species one could take for the subject); and 351 records change (tags 242, ease 208, phase 39), each
+  another angle, on 2026-11-14 and 15; suggest.json's history), now a sure best or alt; none leaves play; and 351 records change (tags 242, ease 208, phase 39), each
   from a sure judgement; 100 of the ease changes are juveniles, re-rated by #1254 (the integrator counted 101 copies
   that differ).
 - The 694 `k` set aside now have a route: a crop that saves one brings it back by itself.

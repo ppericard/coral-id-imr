@@ -348,15 +348,6 @@ def cand_sure(j):
     return judged_sure(j.get('jt'), j.get('e'))
 
 
-def cand_out(j):
-    """autosort.js fishSure's reject on a sure judgement: a near-duplicate, the subject not obvious (x), other species one
-    could take for it (k) or out of the water (flag a)."""
-    if not j or unsure(j):
-        return False
-    jt = j.get('jt') or ''
-    return j.get('k') == 'dup' or (bool(TAGS.match(jt)) and (jt[6] in 'xk' or 'a' in jt[7:]))
-
-
 def copy_of(p, j, mine=False):
     """autosort.js fishCopy with no tags of Pierre's (the auto-sort's copy of judgement j for candidate p): (tags, phase),
     the pass's, with the source's life stage (p st) when the pass gives no phase: the j flag for a juvenile, else its
@@ -380,12 +371,12 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
     curation.json itself is never written). What his log marks as the auto-sort's (autosort.js fishIdx: a photo's latest
     code, neither a Check, '?', nor undone, '-') reads the pass's newer judgement (suggest.json "fish", sug):
     - the fields it wrote (the code's letters: t tags, e ease, p phase, c crop; his own edit takes its letter off,
-      autosort.js fishOwn) read the pass's values when its judgement is sure (tags and phase as the auto-sort copies them:
-      copy_of; a crop the pass no longer gives leaves), unless he answered its re-judge proposal Keep mine (kept);
-    - its keep, while he never corrected it (no @t), on a sure judgement made on or after the day it decided (by: suggest.json
-      "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js sortBack) is in play again when the pass
-      now puts it in (cand_sure), unless he gave it tags or a crop; a photo it put in (a, b) with its tags still its copy
-      (t: his Keep in play gives them up) is set aside when the pass now sets it aside (cand_out).
+      autosort.js fishOwn) read the pass's values when its judgement is a sure add (cand_sure: tags and phase as the
+      auto-sort copies them, copy_of; a crop the pass no longer gives leaves), unless he answered its re-judge proposal
+      Keep mine (kept); a newer sure rejection stays a proposal;
+    - its reject, while he never corrected it (no @t), on a sure judgement made on or after the day it decided (by:
+      suggest.json "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js sortBack) is in play again
+      when the pass now puts it in (cand_sure), unless he gave it tags or a crop.
     Tags read anew bring the judge's crop when the photo has none; his phase choice stops the source's juvenile flag; a
     photo he moved with Not this is his, skipped whole. Everything else is his, or cannot be told from his (a value with
     no log: docs/decisions/2026-11-19-auto-proposals-newer-judgement.md), and stands. Returns cur itself when nothing
@@ -414,7 +405,9 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
         if m.group(1) or not j or f not in rec or (F.get('out') or {}).get(f):
             continue
         p, sid = rec[f]
-        sure = cand_sure(j) or cand_out(j)
+        # A newer sure rejection of the auto-sort's add stays a proposal (honouring Keep mine): its fields are read anew
+        # only from a judgement that keeps it in play.
+        sure = cand_sure(j)
         w = m.group(3)
         tags, ph = copy_of(p, j, f in (F.get('phase') or {}) and 'p' not in w)
         new = {'tags': tags, 'ease': j.get('e'), 'phase': ph, 'crop': j.get('c')}
@@ -436,8 +429,6 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
         if m.group(2) == 'r' and seen == 1 and not add and not his and f not in (F.get('tags') or {}) \
                 and f not in (F.get('crop') or {}) and cand_sure(j):
             put('seen', f, None)
-        elif m.group(2) in 'ab' and 't' in m.group(3) and add == sid and not seen and not his and cand_out(j):
-            put('seen', f, 1)
     if N == F:
         return cur
     return {**cur, key: N}
