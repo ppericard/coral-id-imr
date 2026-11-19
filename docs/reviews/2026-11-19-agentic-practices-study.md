@@ -123,7 +123,7 @@ All *measured* on `fe0dbb1bb` unless marked. Tokens are bytes / 4, an **estimate
 
 - **Loaded by itself:** `CLAUDE.md`, 786 bytes, 9 lines (about 200 tokens), plus the hook's 5-line brief.
 - **A subagent, as briefed** (CLAUDE.md, AGENTS.md, one rule file): 25-60 KB, about 6,000-15,000 tokens (ship.md is
-  35 KB alone).
+  34 KB alone).
 - **The integrator** (CLAUDE.md, AGENTS.md, INTEGRATOR, STATUS, ANSWERS, ship.md): 94 KB, about 23,000 tokens; with
   the ledger's history of #1193 (97 KB on its branch), about 47,000 tokens.
 - **The governing set** (CLAUDE, AGENTS, INTEGRATOR, STATUS, ANSWERS, the nine rule files): 166 KB, about 41,000 tokens.
@@ -160,10 +160,9 @@ Files under AGENTS, CLAUDE, README, INTEGRATOR, STATUS, ANSWERS, HANDOVER, ROADM
 and the specs that state each topic (a search, so it counts mentions, not only restatements):
 
 - the merge train: 11 files; how questions are numbered: AGENTS.md and INTEGRATOR (*read*: INTEGRATOR restates
-  AGENTS.md's paragraph nearly whole);
-  Rule 0 / 17:30: 6; the machine slot: 5; force-push: 5; the model and effort table: 2 in full (AGENTS.md and
-  INTEGRATOR), plus W25 and STATUS by reference; `curation.json` written only by Publish: 30 files (mostly specs that
-  describe it, which is fine).
+  AGENTS.md's paragraph nearly whole); Rule 0 / 17:30: 6; the machine slot: 5; force-push: 5; the model and effort
+  table: 2 in full (AGENTS.md and INTEGRATOR), plus W25 and STATUS by reference; `curation.json` written only by
+  Publish: 30 files (mostly specs that describe it, which is fine).
 - **The cost of a change:** Rule 0's end time (#1191) touches AGENTS.md, INTEGRATOR, `tools/brief.py`, the docs test,
   the ledger, a record and its index row.
 
@@ -223,7 +222,8 @@ are useless because P1, D1… are also player pseudonyms and hex strings):
   same failure as the re-asks, one level up: a decision taken, waiting on the integrator's attention.
 - **Shell rules broken** despite AGENTS.md (heredocs, `python -c`, `sed -i`): a prose rule about behaviour, with no
   guard until #1117's `tools/guard_bash.py` lands.
-- **Index conflicts:** `docs/decisions/README.md`, ROADMAP and now ANSWERS.md are appended to by most PRs; 25 PR
+- **Index conflicts:** every decision PR adds a row to `docs/decisions/README.md`, every answer an entry to ANSWERS.md,
+  and 37 % of the commits since 2026-11-12 touch ROADMAP; 25 PR
   descriptions since 2026-11-12 mention an "index row", and STATUS's merge instructions say "keep both decision index
   rows".
 - **A container restart killed every running agent;** the integrator's helper scripts live in the scratchpad and were
@@ -251,7 +251,7 @@ are useless because P1, D1… are also player pseudonyms and hex strings):
 6. **The integrator is the bottleneck and a single point of failure.** It holds the queue, the trains, Codex, the
    threads, Pierre's questions and the handover; its tools are not committed; a restart or a full context stops
    everything.
-7. **Shared append files serialise parallel PRs.** Every decision PR edits one index; most PRs touch ROADMAP.
+7. **Shared append files serialise parallel PRs.** Every decision PR edits one index; 37 % of commits touch ROADMAP.
 8. **Volume invites slices, slices disagree.** 4.9 MB of docs, 2.2 MB of studies whose answers are recorded elsewhere.
 
 ## 5. Options per area
@@ -264,7 +264,7 @@ only. Options in one area can be combined.
 ### (a) A big edit of the rules
 
 - **a0. Load the constitution as it is [editing].** Replace CLAUDE.md's "Read AGENTS.md" with an `@AGENTS.md` import
-  (practice 3), and add an InstructionsLoaded hook that logs which instruction files load, to measure finding 1 rather
+  (practice 3), and add an InstructionsLoaded hook that logs which instruction files load, to measure diagnosis 1 rather
   than infer it. **Cost:** docs S, 4 min median (#1111). **Risk:** every session and every subagent pays about 6,000
   tokens (24 KB) whether it needs them or not, and the 263 lines stay at one level (diagnosis 2). **Buys:** the
   smallest step that makes Rule 0 and the merge contract certain to be in context.
@@ -297,7 +297,7 @@ only. Options in one area can be combined.
   open threads and "Choices I made"; a CI step fails a PR diff that touches `curation.json` (A1) or holds conflict
   markers; a PreToolUse hook on the Agent tool refuses a launch without `model` and `effort`; a hook on web tools
   refuses a query holding the R2 host or the sheet's id; the 40-minute cap in `tests/slot.js` (audit decision 8).
-  **Cost:** tooling S-M per guard: median 26 min (#916) to 12 min for M (#960), up to 1.6 h for a large tool (#1087).
+  **Cost:** per guard, tooling S median 26 min (#916), tooling M median 12 min (#960), a large tool 1.6 h (#1087).
   **Risk:** a guard that fires wrongly blocks real work; each one needs maintenance (practice 4 warns at forty); a
   guard can encode a reading Pierre never gave. **Buys:** the relapses stop for good; the text shrinks.
 - **a4. Rewrite from zero [substance].** A new constitution of at most 200 lines written from the ledger, the records
