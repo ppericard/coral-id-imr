@@ -147,8 +147,9 @@ blind, scored against the committed reference. No configuration passed, the Opus
 reference did not reproduce itself (Opus high 77% in-play agreement with it).
 
 **Gold set 1** (Pierre, 2026-11-19 11:28-11:43; scores in the integrator's scratchpad). It is not a second experiment:
-30 of the same 76 photos, picked by hand where the judges disagreed, with the same judge outputs re-scored against
-Pierre's dictated verdicts. He dictated against Opus 5.5 high's tags, so every field figure leans toward Opus high
+of its 30 photos, 28 are photos of the 76 (24 picked by hand where the judges disagreed, 4 controls), with the same
+judge outputs re-scored against Pierre's dictated verdicts; the other 2 had no judge output. In play is scored on 26
+(the two photos Pierre would play only cropped apart). He dictated against Opus 5.5 high's tags, so every field figure leans toward Opus high
 (anchoring). The rubric was then corrected on these 30 photos (#1218).
 
 | Configuration | In play against Pierre (n=26) | 95% interval | Serious errors against Pierre | Field agreement, explicit (anchored to Opus high) | Unsure on 28 blind photos | Against the reference (#1211): in play, serious |
@@ -163,10 +164,10 @@ Pierre's dictated verdicts. He dictated against Opus 5.5 high's tags, so every f
 **What these data can conclude (rule A5):**
 
 - Haiku 5.5, at low or medium, does not fit blind photo judging under a rubric that asks for `unsure` "at the least
-  doubt": it keeps photos out by doubting (30-37 extra unsure of 76; 15-17 of 28), and its agreement with Pierre on
-  whether a photo plays is the lowest.
-- The rubric, not the model, was the bottleneck (#1211 "What it implies"): two fresh judges agreed with each other more
-  (83-90%) than any judge with the reference.
+  doubt": it keeps photos out by doubting (30 and 32 unsure beyond the reference's, of 76; 15 and 17 unsure of the 28
+  gold-set photos, against 8-11 for Sonnet and Opus).
+- The rubric, not the model, was the bottleneck (#1211 "What it implies"): Opus 5.5 high agreed with the reference on
+  77% of the in-play calls, while two fresh judges agreed with each other at 83-90%.
 
 **What they cannot conclude:**
 
@@ -249,6 +250,12 @@ nor we measured the task.
     measurement (Haiku kept judged photos out by doubt). `low` only for short, simple items where the sample test
     passes at `low` too.
 
+12. **Ordinary code** (game formats, admin pages; not in the list above, but a row of today's table): **Sonnet 5.5
+    high**, **medium** for a small, fully specified change. Rests on: Anthropic (Sonnet 5.5 at `medium` scored 7 points
+    under `high` on SWE-bench Pro and 15 under on the internal agentic coding benchmark; "start with `medium` for
+    well-specified tasks and move to `high` for harder or longer ones" ([ef][ef])). Today's "medium to high" becomes one
+    level per launch. No measurement planned: tests, the train and Codex are the check.
+
 No row uses `xhigh` or `max` by default: Anthropic reserves them for measured gains (Opus 5.5 `xhigh`: 96.7% against
 95.3% at `high`, for 2.6 times the cost per task, one run).
 
@@ -274,8 +281,8 @@ For docs/INTEGRATOR.md "Working with Pierre" (the integrator applies it; not cha
 Under the table, replacing "In doubt, the stronger one; a task that turns out harder is relaunched one step up, never
 pushed through":
 
-> Each launch names one level, never a range (in Claude Code a launch without one runs at the model's own default,
-> `medium` for all four). Where no row fits: Opus 5.5 at medium, Anthropic's starting point. A task that failed for
+> Each launch names one level, never a range (in Claude Code a launch without one runs at the session's level on the
+> session's model, and at the model's own default, `medium` for all four, on another). Where no row fits: Opus 5.5 at medium, Anthropic's starting point. A task that failed for
 > want of thoroughness (stopped early, skipped a check, missed a file) is relaunched one effort level up; one that had
 > its context, tried, and was still wrong, one model up. `xhigh` and `max` only where a gain is measured.
 
@@ -296,7 +303,9 @@ table does. Current text (AGENTS.md "Working mode"):
 > stronger one; a task that turns out harder is relaunched one step up. Opus 5.5 is the integrator's model.
 > `tools/agent_guard.py` refuses a launch without both.
 
-Proposed (for Pierre's OK in the morning; same scope, no new obligation):
+Proposed (for Pierre's OK in the morning). It changes three things, each to be read by him: where no row fits, Opus
+5.5 at medium replaces "in doubt, the stronger one"; the relaunch "one step up" splits into one effort level up or one
+model up, by why the task failed; and a row changes only on a measurement or on Anthropic's guidance, cited.
 
 > **The right model and effort for each task**, at every agent launch (`model`, `effort`; the table in INTEGRATOR, one
 > row per kind of task): the model is how capable, the effort how thorough, and any combination may fit. Where no row

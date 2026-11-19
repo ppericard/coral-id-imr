@@ -1237,3 +1237,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
+- **20:40, model and effort combinations.** «C'est pas forcément un écart à la règle de mettre Opus Medium sur des
+  tâches. C'est toi en fait qui s'est mis toute seule hein, la règle. Moi j'ai jamais dit que Opus c'était forcément en
+  high. [...] Il y a clairement d'autres combinaisons possibles. Il faut voir ce que Anthropic recommande». Applied:
+  docs/reviews/2026-11-19-model-effort-combinations.md (a study: a replacement for INTEGRATOR's table, for the
+  integrator; the AGENTS.md bullet's new wording, for Pierre's OK).
