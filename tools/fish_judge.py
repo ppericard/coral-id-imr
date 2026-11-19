@@ -36,7 +36,8 @@ REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/f
 # The count (7th letter): 1, s, o (other species, no risk of confusion), k (other species one could take for the subject),
 # x; m, the older code for other species before the split into o and k, reads as "not sorted yet" (core.js TREE_COUNT),
 # never typed in a new judgement (NEW_COUNT, tools/judging_fish.py --check).
-# The typed flags: j juvenile, c camouflage, a out of the water, w a visible watermark or text (Home skips it; it caps
+# The typed flags: j juvenile, c camouflage, a not a live fish seen in the water (out of the water, a photo of a screen,
+# a capture from a video player: judging/FISH.md, 2026-11-19), w a visible watermark or text (Home skips it; it caps
 # nothing), in that order.
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$")
 FLAGS = "jcaw"
@@ -45,11 +46,12 @@ NEW_COUNT = "1sokx"
 # a code reads the same way wherever the fish's is read (core.js refScore, autosort.js), with these differences: a dorsal
 # view (d) is a good view, never capped, and a ventral one (v, the foot) is theirs, capped like head-on and rear; light g
 # or d only (no night livery); the count never m; the typed flag f (the rhinophores or the gills shown withdrawn or
-# hidden), which caps nothing.
+# hidden), which caps nothing; strong blur (clarity b) caps nothing there (blur2: the clarity letters capped at 2, the
+# fish's b since Pierre's review of the gold set, 2026-11-19, judging/FISH.md "Strong blur"; his review was of fish only).
 RUBRICS = {
-    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd"},
+    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd", "blur2": "b"},
     "seaslug": {"code": re.compile(r"^([pohtdv])([01])([gd])([0-3])([smb])([lms])([1sokx])([jcawf]*)([1-5])$"),
-                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv"},
+                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv", "blur2": ""},
 }
 
 
@@ -75,15 +77,17 @@ def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
     the juvenile flag caps nothing. rep: the photo's `rep` (a reference source shows it for the species: FishBase's main
     picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement per photo,
     whatever its route in).
-    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": the same caps, but a dorsal view caps nothing."""
+    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": the same caps, but a dorsal view caps nothing
+    and strong blur neither (blur2)."""
     R = RUBRICS[subject]
     m = R["code"].match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
-    v, w, light, loss, _c, _z, n, fl, e = m.groups()
+    v, w, light, loss, clarity, _z, n, fl, e = m.groups()
     fl = fl + ("p" if phase and "p" not in fl else "") + ("r" if rep else "")
     e = int(e)
-    if ("j" in fl and not juv_ok) or n == "x" or loss == "3":
+    # Strong blur (b: the outline or pattern smeared) is a hard photo, kept in play (judging/FISH.md "Strong blur").
+    if ("j" in fl and not juv_ok) or n == "x" or loss == "3" or clarity in R["blur2"]:
         e = min(e, 2)
     # The phase flag p caps nothing (a sex or colour phase is a species-level difficulty; an Anthias or a parrotfish is
     # easy to call one at the family level), kept for the species questions and explanation cards.

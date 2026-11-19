@@ -57,7 +57,7 @@
       }
     ]
   ];
-  const LIGHT_FLAGS = {j: 'Juvenile', c: 'Camouflage', a: 'Out of water', w: 'Watermark', p: 'Phase', r: 'Reference photo'};
+  const LIGHT_FLAGS = {j: 'Juvenile', c: 'Camouflage', a: 'Out of water or a screen', w: 'Watermark', p: 'Phase', r: 'Reference photo'};
   // The retired codes of the rubric, by position (judging/FISH.md "Tags"): count m ("other species, not sorted", split since
   // into o and k), read but never typed again. A proposal that would move a tag to one is never offered (lightLoad);
   // his own code may still carry it (kept as his).
