@@ -120,9 +120,7 @@ log records the mode as `quiz|kN`, so the sheet's `stats_` and `core.js` `eloOf(
 rate (a script without it treats it as 4 choices). The met units come first as the easy wrong choices.
 
 **Confusion scores**: the look-alike traps are the units with the highest `confOf(t, n)` = `confScore()` (`core.js`):
-mixed up / offered together for the pair, pooled over every player (`?stats=1` `conf`; a typed mix-up, another unit's
-name written for the one shown, counts as offered once and mixed up, `core.js` `confAdd`, as the player's own record
-counts it; [record](../decisions/2026-11-18-typed-answers-rest.md)), from a prior worth `CONF.W` = 8
+mixed up / offered together for the pair, pooled over every player (`?stats=1` `conf`), from a prior worth `CONF.W` = 8
 offers (declared look-alike 0.3, same family 0.12, a shared IMR growth form 0.08, other 0.03). A pair is a trap
 (`confusable`) from `CONF.TRAP` = 0.2, so a declared pair nobody confuses fades and an undeclared one players do confuse
 becomes a trap; scores are shuffled ±20% so close pairs all get tried; `plausibleK()` counts the confusable choices.

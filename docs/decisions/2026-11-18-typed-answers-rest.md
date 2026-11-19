@@ -1,8 +1,8 @@
 # Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs
 
-Date: 2026-11-18 (Manila). PR: #1116. Docs touched: LEARNING.md "Confusions" and "Typed questions", the notebook
-("Typed mix-ups in the pooled pairs"), docs/spec/model.md (Confusion scores), docs/spec/admin-players.md (Pairs), ROADMAP
-"Typed answers, what is left"; sheet vNEXT; coral rules version 11.
+Date: 2026-11-18 (Manila). PR: #1116. Docs touched: LEARNING.md "Confusions", the notebook ("Typed mix-ups in the
+pooled pairs"), docs/spec/admin-players.md (Pairs), ROADMAP "Typed answers, what is left"; sheet vNEXT; coral rules
+version 11.
 
 ## Context
 
@@ -43,5 +43,4 @@ meet; he decided on 2026-11-03 to adjust them on the players' own typed answers.
   with *Anacropora* (its classic look-alike) instead of *Astreopora* and *Cyphastrea*, which changes the opening order
   and the exam's wait for group partners around those four genera.
 - Every coral player's progress is replayed once under rules version 11, silently; the leaderboards follow (rule D8).
-- Specified now in LEARNING.md "Confusions" and "Typed questions", docs/spec/model.md (Confusion scores) and
-  docs/spec/admin-players.md (Pairs); the measures in the notebook.
+- Specified now in LEARNING.md "Confusions" and docs/spec/admin-players.md (Pairs); the measures in the notebook.
