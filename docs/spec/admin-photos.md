@@ -172,13 +172,14 @@ reverse).
 
 ### The fish's Coverage › Games
 
-`#fish/inbox/coverage/games` (`renderFishCov`): per family, genus or species (a switch), the species at their target,
-the photos in play, easy (ease 4-5) and reference photos, the phases shown (an IMR phase still missing marked ?), the
-candidates waiting (the "+" column: `autosort.js` `fishWaiting`, the candidates nobody decided and not in play under any
-of their names, `treePid`, so a sure candidate the game plays by itself is in play, not waiting) and what is missing
-(`autosort.js` `fishCov`); All \| IMR and Thinnest \| Book. **To do**: species under target with candidates waiting,
-species with no photo in play, families validated but incomplete, families not ready. **Where to look** (`fishLook`):
-species under target whose waiting candidates cannot fill the gap, the IMR course's first; `?look=all` lists every one.
+`#fish/inbox/coverage/games` (`renderFishCov`): per family, genus or species (switch), the species at target,
+the photos in play, easy (ease 4-5) and reference-level photos (`refLevel`, as the tile's badge: rule P1), the phases
+shown (an IMR phase still missing marked ?), the candidates waiting (the "+" column: `autosort.js` `fishWaiting`, the
+candidates nobody decided and not in play under any of their names, `treePid`: a sure candidate the game plays itself
+is in play) and what is missing (`autosort.js` `fishCov`); All \| IMR and Thinnest \| Book. **To do**: species under target
+with candidates waiting, species with no photo in play, families validated but incomplete, families not ready.
+**Where to look** (`fishLook`): species under target whose waiting candidates cannot fill the gap, IMR's first;
+`?look=all` lists all.
 
 ## Photo review
 

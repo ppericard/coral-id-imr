@@ -271,7 +271,8 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
         {f: 'b1', o: 'p0'}
       ]
     },
-    F = {ease: {a0: 5, a1: 4, b0: 4}, tags: {a2: 'p1g0sm1r', b1: 'p1g0sm1j'}, add: {c0: 's3'}},
+    // a0: ease 5 with the reference look (reference level); a2: only the flag r (the route), no ease: not reference level
+    F = {ease: {a0: 5, a1: 4, b0: 4}, tags: {a0: 'p1g0sm1', a2: 'p1g0sm1r', b1: 'p1g0sm1j'}, add: {c0: 's3'}},
     cand = {s2: [{f: 'b0'}, {f: 'w1'}, {f: 'w2'}], s3: [{f: 'c0'}, {f: 'w3'}]};
   // play is what the page passes in: b0 is in play though not in F.add (the game plays it by itself, a sure candidate), so
   // it does not wait.
@@ -320,6 +321,44 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
     [[3, 1, 6]],
     'w4 is another photo of an observation already in play'
   );
+});
+
+test('fishCov: the reference count is the reference level read from the photo (rule P1), never the route in (rep, the flag r)', () => {
+  const U = [{id: 'f:A', name: 'As', species: ['s1'], phase: [], genera: [{id: 'g:X', name: 'X', species: ['s1']}]}],
+    species = {s1: {name: 'X one', circle: 1}},
+    look = 'p1g0sm1',
+    // the pass's judgments (j): e = ease, jt = tags
+    J = {
+      pass: {e: 5, jt: look}, // reference level by the pass alone
+      lowease: {e: 3, jt: look}, // the look, not easy enough
+      nolook: {e: 5, jt: 'p0g0sm1'}, // easy, not a profile
+      flagged: {e: 3, jt: look + 'r'}, // the flag r alone (a reference source showed it): ease too low
+      juv: {e: 5, jt: look + 'j'}, // easy, with the look, but a juvenile
+      mine: {e: 2, jt: look}, // the admin's ease 5 below lifts it
+      demoted: {e: 5, jt: look} // the admin's ease 2 below drops it
+    },
+    play = {s1: [...Object.keys(J).map(f => ({f, o: 'o' + f})), {f: 'rep', rep: true, o: 'orep'}]},
+    j = f => J[f] || null,
+    F = {ease: {mine: 5, demoted: 2}},
+    sp = A.fishCov(U, play, species, {}, F, j).sp[0];
+  // rep: a reference-route photo with no judgment at all; every other photo as named
+  assert.strictEqual(sp.n, 8);
+  assert.strictEqual(sp.ref, 2, 'pass and mine only: not rep, the flag r, a low ease, no look, a juvenile, or one the admin made harder');
+  const C = A.fishCov(U, play, species, {}, F, j);
+  assert.strictEqual(C.gen[0].ref, 2, 'the genus sums its species');
+  assert.strictEqual(C.fam[0].ref, 2, 'the family sums its genera');
+  // his tags replace the pass's: a look he takes off the photo drops it
+  assert.strictEqual(A.fishCov(U, play, species, {}, {...F, tags: {pass: 'p0g0sm1'}}, j).sp[0].ref, 1);
+  // the same reading as core.js refLevel on the photo as the game reads it
+  assert.strictEqual(C.sp[0].ref, play.s1.filter(p => require('../core.js').refLevel(A.fishRec(p, F, j))).length);
+});
+
+test('the fish tile badge reads core.js refLevel on the photo’s ease and tags, never rep nor the flag r (rule P1)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8'),
+    tile = src.slice(src.indexOf('function fishTile(p, o)'), src.indexOf('// A node page', src.indexOf('function fishTile(p, o)')));
+  assert.ok(tile.length > 1000, 'fishTile found');
+  assert.match(tile, /refLevel\(\{e: ease, jt\}\)[^]*>reference</);
+  assert.doesNotMatch(tile, /p\.rep|includes\('r'\)/);
 });
 
 test('fishCovTodo and fishCandTodo: the counts of Coverage’s To do and of the candidates, To do › All’s fish lines', () => {
