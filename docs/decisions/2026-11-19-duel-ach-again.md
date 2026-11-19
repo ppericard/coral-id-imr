@@ -1,6 +1,6 @@
 # The duel achievement counts a right Again like a right duel
 
-Date: 2026-11-19. PR: #1221. Rules or docs touched: L8 (unchanged); docs/LEARNING.md "Look-alike duels slipped into the
+Date: 2026-11-19. PR: #1226. Rules or docs touched: L8 (unchanged); docs/LEARNING.md "Look-alike duels slipped into the
 photo quiz"; docs/spec/achievements.md (the first duel won).
 
 ## Context
