@@ -472,13 +472,16 @@ function mergeSavedIn(j) {
       showBoardSet();
     }
   } catch (e) {}
-  // The custom quiz's selection made on another device, if more recent than this one's (model.js CUSTOM.KEY, quiz.js
-  // viewCustom: {g, t}).
-  try {
-    const rc = JSON.parse(d['reefid-sync-coral-custom'] || 'null'),
-      lc = store.get('reefid-sync-coral-custom', null);
-    if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('reefid-sync-coral-custom', rc);
-  } catch (e) {}
+  // Each subject's custom quiz selection made on another device, if more recent than this one's (model.js CUSTOM.KEY,
+  // quiz.js viewCustom: {g, t}); a subject the saved copy lacks one for is left alone.
+  SUBJECTS.forEach(S => {
+    const k = subjKey(S.id, 'custom');
+    try {
+      const rc = JSON.parse(d[k] || 'null'),
+        lc = store.get(k, null);
+      if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set(k, rc);
+    } catch (e) {}
+  });
   achMerge(d[ACHK]); // achievements earned on another device join this one's
   toldMerge(d[TOLD.KEY]); // the notices told on another device: never told again here (noticesGo decides after the merge)
   // Each subject's first-launch question answered on another device (model.js startMerge; the latest answer wins).
@@ -1705,7 +1708,8 @@ function signOutClear(all) {
       // the first-launch question's answer is the player's too (model.js startSet)
       // and the surprise cards it has met (quiz.js WINKK)
       // rv: the rules version its progress was replayed with (replayAdoptS; the corals' is RVK); st, its structure stamp
-      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'st', 'start', 'wink'].map(k => subjKey(S.id, k)),
+      // and the custom quiz's selection (quiz.js viewCustom)
+      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'st', 'start', 'wink', 'custom'].map(k => subjKey(S.id, k)),
       // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; rule D7)
       // and its basics module's record (Coral basics, Fish basics: app.js basicsKey), else the next beginner gets no offer
       ...['hold', 'comeback', 'custom-left', 'basics'].map(k => subjDev(S.id, k)),
@@ -1719,7 +1723,6 @@ function signOutClear(all) {
     ACHK,
     'reefid-ach-new',
     'reefid-ach-old', // progress.js ACHOLD: this player's achievements waiting for a subject's data to be recounted
-    CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
     'reefid-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
     RVK, // the rules version this player's progress was replayed with (replayAdopt)
     'reefid-rv-msg', // progress.js RVN.KEY: the announcement cards of the rules versions, this player's
