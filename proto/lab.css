@@ -4296,3 +4296,27 @@ body:has(.ikstart:not([hidden])) main {
     display: flex;
   }
 }
+
+/* Odd one out (proto/oddone.js): Find the X's four square tiles (app.css .fxt, quiz.js fitStage). Most photos here are shown
+   whole, not as the fish's square cut, so each tile has a blurred copy of its photo behind it, as the quiz's photos do (no
+   black bars): the same for the four, so no tile looks different from the others. */
+.q.ooq .fxt::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  background: var(--qbg, var(--photo-bg)) center/cover;
+  filter: blur(22px) brightness(0.55);
+}
+.q.ooq .fxt > button[data-c] {
+  position: relative;
+}
+/* Answered, on a phone or tablet: the verdict sheet is at the bottom and the stage takes the space above it, so the prompt
+   would only peek out above the sheet. */
+.q.ooq.done .qtop {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .q.ooq.done .qtop {
+    display: flex;
+  }
+}
