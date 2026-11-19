@@ -1237,9 +1237,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sourcer tous les juvéniles qu'on peut et qui ont des sources externes qui les décrit ou parlent d'eux. Surtout si ça
   peut aider notre app». Applied: tools/fish_juveniles.json and the species sheets' juvenile line
   (docs/decisions/2026-11-19-fish-juveniles-sourced.md); the cap's removal in the judging, another PR.
-- **20:34, Q437 (game modes for every subject).** «Question 437, évidemment oui, il faut ouvrir tous les modes de jeu
-  aux différentes matières, à toutes les matières. Et oui, c'est du code commun.» Applied: ROADMAP "Game modes" (its
-  lead). The rest of that message (the ROADMAP's size limit, Q438) is not recorded here.
 - **20:45-20:48, the backlog recount.** «Et t'es sûr que sur les 151, notamment où il y en avait en attente de ma
   réponse, ou en attente de données ou d'un tiers, ou des simples idées, j'ai pas donné moi des réponses justement pour
   les débloquer»; «c'était pas que des réponses à des questions, hein, c'était aussi des commentaires, c'était aussi des
@@ -1291,3 +1288,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   the doc is clean; ROADMAP's information stays in ROADMAP. Applied: #1255 (the marks in `tests/docs.test.js` and
   `tools/brief.py`, ROADMAP's rows and header, the whole decisions index;
   docs/decisions/2026-11-19-doc-size-marks.md).
+- **Applied in #1264:** Q437: applied in the ROADMAP Game modes row (its lead quotes him).
