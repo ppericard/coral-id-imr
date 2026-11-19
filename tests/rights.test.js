@@ -155,7 +155,7 @@ test("a membership holds for the account's code hash: a code changed turns its r
   assert.ok(can(s, 'Tia', 'live'));
   // Tia's code changed (as the admin's code reset would): the membership stays, its rights off.
   run(s, "(ra => ra.getRange(find_(ra, 'Tia'), 7).setValue(hash_('Tia', '9999')))(sheet_('RAs', HEAD))");
-  assert.ok(!can(s, 'Tia', 'live', '9999'));
+  assert.ok(!can(s, 'Tia', 'live', '9999') && !can(s, 'Tia', 'live'), 'neither code: the old one is no longer the account');
   assert.deepStrictEqual(copy(user(s, 'Tia').roff), [tr]);
   assert.deepStrictEqual(copy(user(s, 'Tia').gids), [tr], 'still a member');
   assert.ok(!JSON.stringify(list(s)).includes(run(s, "hash_('Tia', '9999')")), 'no code hash in any reply');
@@ -384,6 +384,13 @@ test('the migration: made by the first change before it, once; once_ then finds 
   const s = before();
   const st = make(s, 'Staff', {board: 1}).group.id;
   assert.ok(s.props.ONCE_rights, 'made by the change');
+  assert.deepStrictEqual(
+    rows(s, 'Deploy log').map(r => r[1]),
+    [
+      `one-shot rights (v${run(s, 'VERSION')}): 3 groups made from the roles (Managers, Curators, Trainers (rights)), 6 memberships added, 1 with an old code hash (no right), 1 grant of accounts no longer live left in the Roles tab`
+    ],
+    'its Deploy log line, as once_ writes it'
+  );
   assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 5);
   join(s, 'Ana', st);
   run(s, 'once_(() => {})');

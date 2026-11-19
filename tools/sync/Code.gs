@@ -1623,13 +1623,15 @@ const rightsOf_ = x => { const s = new Set(String(x == null ? '' : x).split(/[\s
 // The rights a request sends (an array of "right@scope" strings): the same list, or null when any entry is not one.
 const rightsIn_ = a => (Array.isArray(a) && a.length <= 20 && a.every(e => typeof e === 'string' && rightsOf_(e)[0] === e) ? rightsOf_(a.join(',')) : null);
 // can_(who, right, scope): may this caller use this right in this scope? who: {token: true, id} (the admin token), or
-// {name, h, id} (an account whose code was checked by the caller), or null (nobody: refused). An account: the admin
-// list's rights, and the union of the rights of the groups it is in under its code hash.
+// {name, h, id} (an account whose code was checked by the caller), or null (nobody: refused). An account: a live one
+// whose code hash is h, then the admin list's rights and the union of the rights of the groups it is in under that hash.
 function can_(who, right, scope){
   if (!who) return false;
   if (who.token) return true;
   const k = lc_(who.name), h = String(who.h || '');
   if (!k || !h) return false;
+  const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, who.name) : 0, row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
+  if (!row || archived_(row) || String(row[6]) !== h) return false;
   if ((right === 'grant' || right === 'platform' && scope === 'platform') && admins_().some(a => a.name === k && a.h === h)) return true;
   if (RIGHTS.indexOf(right) < 0 || scope !== INST_SCOPE_) return false;
   const gs = groupState_(), want = right + '@' + scope, mine = Object.create(null);
@@ -3102,8 +3104,13 @@ function rightsMigrate_(){
   return made.length + ' group' + (made.length === 1 ? '' : 's') + ' made from the roles (' + made.map(d => d.n).join(', ') + '), ' + add.length + ' membership' + (add.length === 1 ? '' : 's') + ' added' +
     (off ? ', ' + off + ' with an old code hash (no right)' : '') + (st.skip ? ', ' + st.skip + ' grant' + (st.skip === 1 ? '' : 's') + ' of accounts no longer live left in the Roles tab' : '');
 }
-// The first change before the migration ran makes it first (the caller holds the script lock).
-const rightsNow_ = () => { if (!rightsMigrated_()) rightsMigrate_(); };
+// The first change before the migration ran makes it first (the caller holds the script lock), its Deploy log line
+// written as once_ writes it (once_ then finds it done).
+function rightsNow_(){
+  if (rightsMigrated_()) return;
+  const m = rightsMigrate_();
+  try { sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), safe_(('one-shot rights (v' + VERSION + '): ' + m).slice(0, 500))]); } catch (e) {}
+}
 // rights-migration: end
 // The memberships of a removed account (deleteAccount_, a merge's from, an archive) in the groups that carry rights:
 // dropped, never moved, one Audit row each ('leave <group id> (account removed)', by: the caller's id). Returns the ids
@@ -3471,12 +3478,12 @@ function usersDo_(p, who){
   // id: the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
   // Archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
   // Every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
-  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null);
+  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null), hh = Object.create(null);
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {
     const u = {name: String(r[0]), id: aid_(String(r[0]), salt), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
       review: String(r[5] || ''), board: r[9] === '' ? 1 : Number(r[9]), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
-    out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
+    out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || ''); hh[lc_(u.name)] = String(r[6]);
   });
   // The replayed subject's answers (the corals'): its mix-ups name its genera.
   const an = ss.getSheetByName('Answers'), days = Object.create(null), mixes = Object.create(null), last50 = Object.create(null), all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
@@ -3502,8 +3509,7 @@ function usersDo_(p, who){
   // The subjects in beta each player's groups open; gids, the ids of their groups, and every group's settings
   // (groupDefs: [{id, n, board, beta, at, rights}], in the order they were made); roff, the ids of their groups with
   // rights whose membership's code hash is not the account's (rights off until they are added again; never the hash).
-  const gs = groupState_(), gm = groupMap_(gs), R = rightsIds_(gs), hh = Object.create(null), off = Object.create(null);
-  liveRows_().forEach(r => (hh[lc_(r[0])] = String(r[6])));
+  const gs = groupState_(), gm = groupMap_(gs), R = rightsIds_(gs), off = Object.create(null);
   gs.rows.forEach(r => { const k = lc_(r[1]); if (R[r[0]] && r[2] !== hh[k]) (off[k] = off[k] || []).push(r[0]); });
   out.users.forEach(u => { const k = lc_(u.name), g = gm[k]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; u.roff = off[k] || []; });
   out.groupDefs = gs.defs;
