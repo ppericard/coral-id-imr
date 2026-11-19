@@ -170,7 +170,7 @@ declares the change's level with one line of why; the integrator checks it and m
 
 **Every check has a hard cap of 40 minutes of compute, at every level; when the agent reaches it, it stops and returns
 what it has.** Level 2 runs only the worlds the change touches (the rated world for the levels it touches; the app world
-only if it changes what the player sees); LEARNING.md's level-2 figures are its minimum.
+only if it changes what the player sees); the rated world runs at least LEARNING.md's level-2 length.
 **Level 3 never runs on this machine**: only with Pierre's explicit go, on
 GitHub runners, with its duration announced first. An unclear result is reported as "the measure cannot tell", never
 escalated automatically.
@@ -206,8 +206,8 @@ the model and its assumptions in the PR and check them. They are rare: taking th
 *Why:* every added part or variable makes the model harder to calibrate.
 *Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06;
 levels by possible effect, the rated world beside the app world, 2026-11-08; the 40-minute cap, level 2's worlds, level 3 off this machine, 2026-11-18, Q405
-("6h de calcul ne devrait JAMAIS arriver", 11-17); this rule over LEARNING.md and the tools where they differ, LEARNING.md's
-level-2 figures the minimum, 2026-11-19 (Q415).
+("6h de calcul ne devrait JAMAIS arriver", 11-17); this rule over LEARNING.md and the tools on level 2's worlds, the cap
+and level 3's go, and level 3's tests, LEARNING.md's level-2 length the minimum, 2026-11-19 (Q415).
 
 ### L12
 

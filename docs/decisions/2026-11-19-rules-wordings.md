@@ -36,8 +36,8 @@ Context: LEARNING.md's method and the tools differed from L11 on five points (#1
 cap and level 3's go against `learncheck.yml`, level 3's tests against `learncmp.js`, and L12's "four profiles" (the fish
 default has five). Decision: Pierre, 06:50, OK to the recommendation: L11 prevails on points 1, 3 and 4; LEARNING's
 figures are the minimum for point 2 (level 2's length); L12 says "the subject's default profiles". Consequences: L11
-already said points 1, 3 and 4 (its *Source* now records that it prevails); it adds that LEARNING.md's level-2 figures
-are the minimum; L12 names the subject's default profiles. LEARNING.md and the tools are to align in later PRs.
+already said points 1, 3 and 4 (its *Source* now records that it prevails on them); it adds that the rated world runs
+at least LEARNING.md's level-2 length; L12 names the subject's default profiles. LEARNING.md and the tools are to align in later PRs.
 
 ## Sourced ID marks published without his prior check (merge contract)
 
