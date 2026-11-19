@@ -241,8 +241,12 @@
    "keep": "best"
   },
   "fish-s113-cand-467931977": {
-   "code": "p1g1smo3",
-   "keep": "best"
+   "code": "p1g1smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a sharp yellow damselfish at left, half the subject's length, genus not settled on the photo: leaning no confusion, doubtful"
   }
  }
 }
