@@ -162,7 +162,7 @@ learning change" (rule L11).
 | `learnprof.js` | The simulated players' profiles |
 | `ratedworld.js` | The rated synthetic world the app's engine also runs on |
 | `checkbudget.js` | The checks' 40-minute budget (plan, refuse over it, stop and mark a cut run; `--budget`, `--per-job`) and level 3's gate (`--pierre-go`, GitHub runner only), shared by `learnsim.js` in both worlds (rule L11) |
-| `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow runs it; it says so when a file was cut by the budget |
+| `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow (`.github/workflows/learncheck.yml`: one 40-minute deadline for the whole check, the level-3 go checked first) runs it; it says so when a file was cut by the budget, and reads no primary from an arm cut before any run finished |
 | `abilityeval.js`, `fieldeval.js`, `fallbackeval.js`, `barjudge.js` | Score a rule against simulated runs or the answer log |
 | `realcheck.js`, `memreplay.js` | Check the model's estimates against the real answer log (rule L12) |
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
