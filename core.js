@@ -5718,6 +5718,13 @@
       why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
       // No card (rule D6): the progress is updated everywhere without telling the player.
       msg: null
+    },
+    {
+      v: 11,
+      at: '2026-11-19',
+      why: "Typed mix-ups in the pooled pairs (PR #1116; docs/decisions/2026-11-18-typed-answers-rest.md): a trusted player's typed answer that names another genus counts in ?stats=1 conf as offered once and mixed up (confAdd), so a row logged before its scoring record, whose mix-ups term and look-alike test the replay rebuilds from the pooled pairs, can replay differently; a row with its scoring record replays as before",
+      // No card (rule D6).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;

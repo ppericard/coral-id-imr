@@ -303,7 +303,8 @@ mastery exam needs `TYPED.exam` (2) typed right answers among its `EXAM.n`: an e
 answers it still needs fill the questions left, else with the unit's usual share, so the format gives nothing away
 (`model.js` `examTyped`). A typed answer has no guess rate (`TYPED.k` Infinity; logged `|t`), so a right one moves the
 ability more and a miss less. Never a comeback question, an Again or a duel. A name typed within the tolerance but not
-exactly is right; the player retypes it once (the spelling step, `quiz.js`), which changes no grading.
+exactly is right; the player retypes it once (the spelling step, `quiz.js`), which changes no grading. A typed answer
+that names another unit counts in the pooled pairs as offered once and mixed up ("Confusions").
 
 ### One draw weight
 
@@ -946,10 +947,13 @@ below (the corals and the fish) are in the notebook.
 ### Confusions
 
 `conf` holds per pair of units (A before B alphabetically) [offered together, mixed up], counted on the trusted answers
-that logged their choices: each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the
-answer given (`core.js` `confusionOf` counts the same, and also by direction for the admin). The app turns them into
-confusion scores for the traps, the look-alikes from the data and the known mix-ups term (`model.js` `pooledConf`,
-`core.js` `confScore`: "What a question shows", "Known mix-ups").
+(`core.js` `confAdd`): each wrong choice offered beside the unit shown is one offer, and a mix-up when it was the
+answer given; a typed answer that names another unit (no choices) counts as one offer of that pair and one mix-up, as
+the player's own record counts a mix-up with no offer (`core.js` `pairConf`); "I don't know" and a right typed answer
+add nothing ([record](decisions/2026-11-18-typed-answers-rest.md); measures: the notebook, "Typed mix-ups in the pooled
+pairs"). `core.js` `confusionOf` counts the same, and also by direction, from the choices only, for the admin. The app
+turns them into confusion scores for the traps, the look-alikes from the data and the known mix-ups term (`model.js`
+`pooledConf`, `core.js` `confScore`: "What a question shows", "Known mix-ups").
 
 **Format offsets**: `fmt` is fitted in the same pass on the trusted answers (`core.js` `fmtPoint`, `fmtFit`;
 "Per-format offsets").
