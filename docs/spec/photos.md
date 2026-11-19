@@ -50,7 +50,7 @@ passing error; under the service worker the worker does that retry), then moves 
 it has one (`src` in `data.json` / `cand.json` / `fish-photos.json` / `fish-game.json`: iNaturalist, Pierre's own
 iNaturalist photos, FishBase), at a light size, never the original file: iNaturalist `small` (240 px) for our 240 px
 file, `medium` (500 px) for 480 px, `large` (1024 px) for 960 and 1600 px, FishBase's one file as it is (`core.js`
-`photoOnline`). A photo with none (the IMR lecture photos, the page art) moves to the same file on the site's `img/`.
+`photoOnline`). A photo with none (the 34 untraced IMR lecture photos, the page art) moves to the same file on the site's `img/`; the 86 lecture photos traced to Corals of the World have one (`src`: the picture on coralsoftheworld.org, one file, shown as it is, its crop and turn from `cr` and `ro`).
 `photoFallback` rewrites `src`, `srcset`, `data-lo` and the game backdrop's inline style through `photoAway`, which finds
 the photo's record by the file name in the address (`photoFileOf`) in an index of every photo record (`photoIndex`).
 Both act only on an R2 address, told by parsing it as a URL (`photoOnR2`: its origin is `PHOTO_BASE`'s, compared
@@ -90,7 +90,15 @@ The CSP of `index.html` allows the originals' hosts (`tests/csp.test.js` checks 
 
 - **On R2 only**: every downloaded photo with an online original (`src` and no `r`: `tools/photos.py` `online()`), its
   fallback being that original.
-- **In git** (`img/`): only the photos with no other backup: the IMR lecture photos, the page art and the old candidate
+- **The Corals of the World originals of the IMR lecture photos** (86; Pierre, 2026-11-18, "C12 A+D", [record](../decisions/2026-11-20-lecture-originals.md)):
+  on R2 only, under the screenshot's own file name (curation and the players' records keep their key), cut and turned as
+  the lecture framed the picture (`tools/imr_frames.json`, found by matching the screenshot to the original: `cr`, `ro`,
+  and the cut's pixel size, which `tools/fetch_imr_originals.py` checks). `tools/apply_imr_originals.py` writes `src`,
+  `cr`, `ro`, `ar` and `iv` on their `course` records (credit `a`, `pg` unchanged); `imr-originals.yml` runs the fetch tool
+  (one request every 2 s, `www.coralsoftheworld.org` only) and uploads. The credit stays "<photographer> / Corals of the
+  World" with the species page (rule P5); `imr: true` and their `nc` rights class are unchanged. The 34 lecture photos with no
+  source found stay in play as "IMR", untouched (Pierre, 2026-11-20).
+- **In git** (`img/`): only the photos with no other backup: the IMR lecture photos with no online original (34), the page art and the old candidate
   files that only `curation.json` names. No Coral Finder book crop (copyrighted).
 - **What keeps it so**: `tools/fetch_approved.py` writes the photos it downloads to `r2-upload/` (gitignored, never
   `img/`) and sets their `ar`, and `approved-photos.yml` uploads that folder (`tools/r2_sync.sh r2-upload`) before it
