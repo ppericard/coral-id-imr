@@ -59,6 +59,7 @@ single-species genus row:
 - its photos, in `easyRank` order (`treeSpPhotos`, the sheet-only photos included): the first large (its ★ cover, else
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
+- "Juvenile:" and its sourced line under the photos ([below](#juveniles-per-species));
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
@@ -117,3 +118,10 @@ of any circle without a presentation, or with neither marks nor a reason (`--mar
 another file for `tests/genusmarks.test.js`). `app.js` `treeGenera` makes the marks a genus unit's tips (`qt`) under "ID
 marks (FAO species guide, FishBase)" (`tl`) and the presentation its card's plain sentence (`plain`, `plainLine`);
 `learn.js` `genMarks` shows both, each line with its sources' numbers, on the one sheet the genus opens (as `treeRoot`).
+
+## Juveniles per species
+
+`tools/fish_juveniles.json`, each species' juvenile from external sources with their quotes, is built into `fish.json`
+species `jv` {c: off, finer, bold or like, line, src, look} by `tools/build_fish.py` `juveniles`, which checks it; the
+sheet shows `line` (`learn.js` `juvNote`). The class is a label for the analyses: nothing in the draw, the ease or the
+judging reads `jv` (`tests/fishjuv.test.js`). Why: the [decision](../decisions/2026-11-19-fish-juveniles-sourced.md).
