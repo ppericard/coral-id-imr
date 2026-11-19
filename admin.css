@@ -2517,11 +2517,13 @@ td.cov-c .cov-off {
   padding: 8px 12px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .adm-kpis b {
   font-family: var(--display);
   font-size: 1.6rem;
   line-height: 1.1;
+  overflow-wrap: anywhere; /* a long unit's name (Hardest genus) breaks in the tile instead of widening the page */
 }
 .adm-kpis span {
   font-size: 0.75rem;
