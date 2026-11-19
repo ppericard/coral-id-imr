@@ -27,129 +27,6 @@ fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // included, shows the queue's first.
 let FPIN = null;
 
-// The rubric's code in words (judging/FISH.md "Tags"): the seven tags, then the flags. The values a beginner's photo
-// should have (whole, good light, no colour loss, sharp, one fish) are left out: only what makes a photo harder shows.
-const FTAGS = [
-  {p: 'profile', o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
-  {0: 'partial'},
-  {d: 'dim light', n: 'night livery'},
-  {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
-  {m: 'soft', b: 'blurred'},
-  {l: 'large', m: 'medium', s: 'small'},
-  {
-    s: 'several of its kind',
-    o: 'other species in view, no confusion',
-    k: 'other species in view, confusable',
-    m: 'other species in view, not sorted',
-    x: 'subject not obvious'
-  }
-];
-const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water or a screen', w: 'watermark', p: 'phase entry', r: 'reference photo'};
-// Every value said, in the words of the tree subject in force (admin.js tagWords: the sea slugs' views and flags).
-const fishTagText = (jt, S = FISHS) => tagText(jt, tagWords(S, FTAGS, FFLAGS, true));
-// The rows the admin sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
-// type (the tool adds p and r itself); the IMR phase words (judging/FISH.md "phase"), '' = none (an adult, or a
-// juvenile, which is the j flag).
-const FROWS = [
-  [
-    0,
-    'View',
-    [
-      ['p', 'Profile'],
-      ['o', 'Oblique'],
-      ['h', 'Head-on'],
-      ['t', 'Tail'],
-      ['d', 'Above']
-    ]
-  ],
-  [
-    1,
-    'Whole',
-    [
-      ['1', 'Whole'],
-      ['0', 'Partial']
-    ]
-  ],
-  [
-    2,
-    'Light',
-    [
-      ['g', 'Good light'],
-      ['d', 'Dim'],
-      ['n', 'Night']
-    ]
-  ],
-  [
-    3,
-    'Colour loss',
-    [
-      ['0', 'No loss'],
-      ['1', 'Slight'],
-      ['2', 'Strong'],
-      ['3', 'Mono']
-    ]
-  ],
-  [
-    4,
-    'Clarity',
-    [
-      ['s', 'Sharp'],
-      ['m', 'Soft'],
-      ['b', 'Blurred']
-    ]
-  ],
-  [
-    5,
-    'Size',
-    [
-      ['l', 'Large'],
-      ['m', 'Medium'],
-      ['s', 'Small']
-    ]
-  ],
-  [
-    6,
-    'Count',
-    [
-      // The labels say the problem is several species on one photo; the codes are judging/FISH.md's. Other species in
-      // two: o in play, k out of play (rule P3); the legacy m (not sorted yet: as k) is read, never offered.
-      ['1', 'One fish', 'One fish (others, if any, tiny and far)'],
-      ['s', 'Same species', 'Several fish of the same species, the subject obvious (a pair, a school)'],
-      ['o', 'Other species, no risk', "Other species in view, none could be taken for the subject at the game's level (stays in play)"],
-      [
-        'k',
-        'Other species, confusable',
-        'Other species in view, one could be taken for the subject (on a photo in play: out of play, rule P3)'
-      ],
-      ['x', 'Unclear', 'Unclear: which fish is asked about is not obvious (on a photo in play: out of play)']
-    ]
-  ]
-];
-// Watermark (w: a visible watermark or text on the photo): Home skips the photo, the games
-// keep it; his tap sets it or takes it off like any tag.
-const FFLAGS_MINE = [
-  ['j', 'Juvenile'],
-  ['c', 'Camouflage'],
-  ['w', 'Watermark']
-];
-const FPHASE_ROW = [
-  ['', 'No phase'],
-  ['subadult', 'Subadult'],
-  ['intermediate', 'Intermediate'],
-  ['terminal', 'Terminal'],
-  ['female', 'Female'],
-  ['male', 'Male']
-];
-// The rows and flags of subject S's rubric (the tree subject in force, FISHS, by default): the fish's (FROWS, FFLAGS_MINE)
-// with those its SUBJECTS admin tags replace (the sea slugs': their six views, no night livery, the f flag); the count
-// row in its words ("One sea slug").
-const tagRows = (S = FISHS) => {
-  const T = (S && S.admin && S.admin.tags) || {},
-    w = x => (S ? x.replace(/\bSeveral fish\b/g, 'Several ' + S.name.toLowerCase()).replace(/\bfish\b/g, S.what.toLowerCase()) : x);
-  return FROWS.map(([i, n, o]) => [i, n, T[i] ? T[i].map(([v, l]) => [v, l]) : o.map(([v, l, t]) => [v, w(l), ...(t ? [w(t)] : [])])]);
-};
-const tagFlags = (S = FISHS) =>
-  S && S.admin && S.admin.tags && S.admin.tags.flags ? S.admin.tags.flags.map(([k, l]) => [k, l]) : FFLAGS_MINE;
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
 // its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
@@ -169,7 +46,8 @@ const fVals = (F, f, j) => ({
 // The rows of a card. blind (a Check): only the admin's own values pressed, nothing of the pass shown. open: the seven tag
 // rows and the flags shown too (the card's Tags; a photo tile's own, admin.js fishTile).
 function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
-  const V = fVals(F, p.f, blind ? null : j),
+  const S = FISHS, // the subject whose rubric the rows are (SUBJECTS admin.tags)
+    V = fVals(F, p.f, blind ? null : j),
     code = V.tags.mine || V.tags.pass || '',
     tAuto = !V.tags.mine,
     ease = V.ease.mine != null ? V.ease.mine : V.ease.pass,
@@ -184,14 +62,14 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
   // The phase row only for an entry whose phases differ (fish.json teach phase lines: Angelfish, Spadefish, Parrotfish,
   // Sweetlips, Anthias): elsewhere a phase tag has nothing to say.
   if (entry && ((entry.phase || []).length || entry.dimorph))
-    h += fRow('Phase', 'data-fph', FPHASE_ROW, ph === undefined ? null : ph, V.phase.mine === undefined);
+    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined);
   if (open)
     h +=
       `<div class="adm-ftags">` +
-      tagRows()
+      tagRows(S)
         .map(([i, name, opts]) => fRow(name, `data-ft="${i}" data-fv`, opts, code ? code[i] : null, tAuto))
         .join('') +
-      `<span class="adm-qseg adm-ftag adm-fflags${tAuto ? ' auto' : ''}" role="group" aria-label="Flags">${tagFlags()
+      `<span class="adm-qseg adm-ftag adm-fflags${tAuto ? ' auto' : ''}" role="group" aria-label="Flags">${tagFlags(S)
         .map(([k, t]) => `<button type="button" data-ff2="${k}" aria-pressed="${code.slice(7).includes(k)}">${t}</button>`)
         .join('')}</span></div>`;
   return h;
@@ -233,7 +111,7 @@ const FKEEP = {best: 'best photo of its observation', alt: 'another angle of its
 const fishJudged = j =>
   !j
     ? '<p class="adm-judge">Not judged yet</p>'
-    : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', fishTagText(j.jt), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
+    : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', tagText(j.jt, FISHS, true), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
 // A fish photo with its crop: the admin's (draft), else, outside a Check, the pass's, or for a record with no judgment (a
 // photo fishGameIn put in play from fish-game.json: a sure candidate, a reference photo) its published crop (cr, the one
 // tools/fish_game.py baked in); and his rotation (fish rot). Through admin.js crSrc, as the family pages (fuP): a
