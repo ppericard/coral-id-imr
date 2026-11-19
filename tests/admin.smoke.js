@@ -6504,9 +6504,92 @@ async function loadPart(b, base, fails) {
         fails.push(`${w}px Fish Photo stats › Overview: ${JSON.stringify(fo)}`);
       const dkF = await darkCards(p, '#view .adm-kpis > div, #view .adm-scard');
       if (dkF) fails.push(`${w}px Fish Photo stats › Overview, dark theme: still light ${dkF}`);
-      await go('fish/photos/stats/difficulty');
-      const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
-      if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
+      // Photo stats › Difficulty on the side of a subject with ratings of its own (admin.js statsPhotos, diffOwn): the same page
+      // from the sheet's ?stats=1&s=<id> (the demo rates the made-up answers it holds), each rated photo with answers once, in
+      // its unit's lane, the one view's legend and Views card left out, a reading in words, never a coral word.
+      for (const [sj, unit] of [
+        ['fish', 'Families'],
+        ['seaslug', 'Genera']
+      ]) {
+        // The demo's script answers as the gate floor: before the version that serves the ratings (SUBJECTS stats) the reply is
+        // the corals' and names no subject: a line, never the corals' numbers under another subject's name (rule D4).
+        const X = require('../core.js').SUBJECTS.find(s => s.id === sj).stats;
+        await go(`${sj}/photos/stats/difficulty`);
+        const old = (await text()).trim();
+        if (!new RegExp(`^Sheet script v\\d+: .+ ratings need v${X}\\.$`).test(old))
+          fails.push(`${w}px #${sj}/photos/stats/difficulty before v${X}: "${old.slice(0, 120)}"`);
+        // ...and from it the page, on a demo that answers as that version.
+        const dq = await ctx.newPage(),
+          dqe = [];
+        dq.on('pageerror', e => dqe.push(e.message));
+        await dq.goto(base + `admin.html?demo&v=${X}#${sj}/photos/stats/difficulty`);
+        await dq
+          .waitForFunction(
+            () =>
+              document.querySelector('#view .adm-kpis') || /need v|not available|offline/.test(document.getElementById('view').innerText),
+            null,
+            {
+              timeout: 60000
+            }
+          )
+          .catch(() => {});
+        const fd = await dq.evaluate(sj => {
+          const v = document.getElementById('view'),
+            O = OWNST[sj],
+            R = unitRegOf(SUBJECTS.find(s => s.id === sj)),
+            // a KPI's label is the span after its value (a value may hold a badge, itself a span)
+            kp = Object.fromEntries(
+              [...v.querySelectorAll('.adm-kpis > div')].map(d => [
+                [...d.children].find(e => e.tagName === 'SPAN').textContent,
+                d.querySelector('b').textContent
+              ])
+            );
+          return {
+            // the sheet's photos once each (a photo logged under its game id and its candidate id is one: treePid), the registry's
+            rated: (() => {
+              if (!O || O.old || !R) return -1;
+              const reg = new Set(Object.values(R.ph).map(x => treePid(x.f))),
+                by = {};
+              Object.entries(O.photos).forEach(([f, s]) => (by[treePid(f)] = (by[treePid(f)] || 0) + nAns(s)));
+              return Object.entries(by).filter(([k, a]) => reg.has(k) && a >= SF.min).length;
+            })(),
+            kpi: Number((kp['Photos rated'] || '').replace(/\D/g, '')),
+            dots: v.querySelectorAll('.adm-gstrips button').length,
+            rows: v.querySelectorAll('.adm-gstrips > div').length,
+            h3: [...v.querySelectorAll('h3')].map(h => h.textContent.replace(/\d+$/, '').trim()),
+            legend: !!v.querySelector('.adm-legend'),
+            hardest: Object.keys(kp).filter(k => /^Hardest/.test(k)),
+            far: !!v.querySelector('[data-pst="far"]'),
+            coral: /Corallites|Colony|Close-up/i.test(v.innerText),
+            help: (HELP.ownstatsph || '').length > 100,
+            wide: document.documentElement.scrollWidth - innerWidth,
+            // what sticks out, when the page does (outside a table's own scroll box)
+            over: [...v.querySelectorAll('*')]
+              .filter(e => e.getBoundingClientRect().right > innerWidth + 0.5 && !e.closest('.adm-tscroll'))
+              .slice(0, 4)
+              .map(e => `${e.tagName}.${String(e.className).slice(0, 30)} ${Math.round(e.getBoundingClientRect().right - innerWidth)}`)
+          };
+        }, sj);
+        if (
+          !(fd.rated > 0) ||
+          fd.kpi !== fd.rated ||
+          fd.dots !== fd.rated ||
+          !fd.rows ||
+          fd.h3.includes('Views') ||
+          !fd.h3.includes(unit) ||
+          fd.legend ||
+          fd.hardest.length !== 1 ||
+          !fd.far ||
+          fd.coral ||
+          !fd.help ||
+          fd.wide > 0
+        )
+          fails.push(`${w}px #${sj}/photos/stats/difficulty: ${JSON.stringify(fd)}`);
+        const dkD = await darkCards(dq, '#view .adm-kpis > div, #view .adm-scard');
+        if (dkD) fails.push(`${w}px #${sj}/photos/stats/difficulty, dark theme: still light ${dkD}`);
+        if (dqe.length) fails.push(`${w}px #${sj}/photos/stats/difficulty: ${dqe.slice(0, 3).join(' | ')}`);
+        await dq.close();
+      }
     }
     // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
     // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
