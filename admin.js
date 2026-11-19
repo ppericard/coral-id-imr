@@ -3682,6 +3682,7 @@ function render() {
   if (!treeOf(cur)) TT_SEL = null;
   // The suggestions are still on their way (the admin opened on a Players page): any other page waits for them, then draws.
   if (SUG_LATE && !sugOwn(cur)) {
+    status(); // the header (tabs, count) follows the address while the page waits
     $v.innerHTML = '<p class="note">Loading…</p>';
     sugLoad();
     return;
