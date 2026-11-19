@@ -24,7 +24,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked is
   skipped (`live.js` `liveLog`); rule L4 lets it count without opening the unit: not built yet.
 - **Surprise card** (`wink`): counts nowhere.
-- **Not logged or scored**: the Tools (Lab prototypes, rule U13) and Memory.
+- **Not logged or scored**: the Tools (Lab prototypes, rule U13; [Same or different?](basics.md#the-lab-protolabjs)
+  too) and Memory.
 
 ## Typed questions
 
@@ -103,7 +104,8 @@ know"; `quiz.js` `fbBody`, `fbLine`, `pairText`, `pairLine`; styles `.fb.fbs`, `
   **first ID tip or mark**, said "X: …", its source small after it (`tipsLabel`, `qsrc`); with none (a fish species, a
   starred coral genus with no tips, a sea slug with no marks), nothing: the sheet is the verdict and the species line.
   Never a line made by comparing trait tags, and no line is made from a coral pair's source label (`lsrc` is a
-  citation).
+  citation). A mix-up within a mimicry pair (`model.js` `mimMix`) gives the pair's marks instead, the rest of them first
+  in More (`mimMarks`; LEARNING.md "The mimicry class").
 - **Our tell-apart lines** ([decision](../decisions/2026-11-18-tellapart-lines.md)) sit in `ap` / `apsrc`, never in
   `lk` (which the line labels "IMR"): the coral slate pairs' in `data.json` `ap` and `apsrc` on each slate record
   (Millepora's in `x.gen`), written by `tools/apply_coral_apart.py` from the hand-kept `tools/coral_apart.json` (its

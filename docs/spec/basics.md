@@ -17,12 +17,19 @@ section each remaining prototype is meant for is in ROADMAP, the module registry
 
 The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
 (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `type` (Type the genus), `gallery`,
-`pairs` (Memory) and `idkey` (the Coral ID Key). `cards` is not a tool but the live gallery of the app's cards and pop-ups
-(`#tools/cards/<kind>`: apology, update, feature, genus, tip, bonus, account, ach, toast), each opened through `app.js`
-`cardShow` with sample copy and nothing recorded (the sign-in card, the achievement toast and the note are the real
-ones). A prototype marked `admin: true` (the cards gallery) is listed in the hub in the admin's browser only
-(`IS_ADMIN`); its link works for anyone. The Tools section is hidden on phones but for the header's hammer icon. Its
-files are tier 5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried again, `labLoad`).
+`pairs` (Memory), `samediff` (Same or different?, below) and `idkey` (the Coral ID Key). `cards` is not a tool but the
+live gallery of the app's cards and pop-ups (`#tools/cards/<kind>`: apology, update, feature, genus, tip, bonus, account,
+ach, toast), each opened through `app.js` `cardShow` with sample copy and nothing recorded (the sign-in card, the
+achievement toast and the note are the real ones). A prototype marked `admin: true` (the cards gallery) is listed in the
+hub in the admin's browser only (`IS_ADMIN`); its link works for anyone. The Tools section is hidden on phones but for the
+header's hammer icon. Its files are tier 5 of the load order (`proto/lab.js` with the prototypes; a failed one is tried
+again, `labLoad`).
+
+`samediff` ([decision](../decisions/2026-11-19-same-or-different-lab.md); the one Lab tool that follows the subject on
+screen) shows two photos, one unit's or a declared look-alike pair's: Same or Different, untimed, counted nowhere.
+`sdPlan` draws a pair of `UNITS` `pairs` with both units `unlocked()`, then a coin (Different: its two units; Same: two
+observations of one); `sdPhotos` takes each photo from `photoSet`, in one view on both sides. It reuses the quiz's stage
+(`.q.sdq`, `fitStage`), `fbLine` and `repBtn`.
 
 A static mock-up for one of Pierre's decisions may also sit in `proto/` as a standalone `.html` page: not a Lab tool (not
 in `LAB.files`, not cached by the service worker, nothing links to it), borrowing the app's `app.css` (a relative link
