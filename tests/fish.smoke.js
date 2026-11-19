@@ -2,8 +2,8 @@
 // - the draw: the fish slate is every family of every circle; every choice a fish family; one photo, from one
 //   observation; winks never asked as questions; no circle setting row or offer card;
 // - the circles on the path: circle 2 may open once every circle-1 family has been asked, circle 3 once the progress on
-//   circle 1 reaches FISH_C3, never before (the opening draws circle 1 first), and only once the player says yes (its
-//   card at FISH_C3, Not now keeps it closed, My progress opens it); every circle in the progress;
+//   circle 1 reaches its gate (core.js SUBJECTS gate c3), never before (the opening draws circle 1 first), and only once
+//   the player says yes (its card at the gate, Not now keeps it closed, My progress opens it); every circle in the progress;
 //   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too, its absurd choices and feedback lines from fish.json, never
 //   counted (progress, answers, log unchanged); late: none in the first answers
@@ -870,7 +870,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       `wink: his cover on the card (${wc})`
     );
     // The circles on the path: no offer card; circle 2 may open once every circle-1
-    // family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3; until then the opening never draws
+    // family has been asked, circle 3 once the progress on circle 1 reaches its gate (treeC3); until then the opening never draws
     // them (mayOpen, openPick); every circle counts in the progress.
     const canOpen = () => slateGenera().filter(n => !introduced(n) && mayOpen(n)),
       picks = () => [...Array(40)].map(() => canOpen().length && openPick(canOpen())).filter(Boolean);
@@ -896,10 +896,10 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ok(TREEU.c2.every(mayOpen) && !TREEU.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
     // The global score, which the sheet ranks by (below the gate floor core.js SHEET_FLOOR), also before any reply.
     ok(headScore() && headPct() === headScore().pct, 'the global score');
-    ok(!fishC3(), 'circle 1 under FISH_C3');
+    ok(!treeC3(), 'circle 1 under its circle-3 gate');
     const p2 = picks();
     ok(p2.length && p2.every(n => TREEU.c2.includes(n)), 'the opening draws circle 2 next');
-    ok(!openOfferDue(), 'no circle-3 card under FISH_C3');
+    ok(!openOfferDue(), 'no circle-3 card under its gate');
     // Every family in play met and none may open now (quiz.js allMetDue, app.js fishNextOf): a card at the break at Next says so and what comes next, once per
     // reason; never while a family may still open or another card says what is next. Outside a visit's floor and the
     // prompt spacing (restored below).
@@ -996,14 +996,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
       closeCards();
     }
     TREEU.c1.forEach(n => pgAt(n, 0.7));
-    // Circle 3 an option: at FISH_C3 a card asks instead of opening; "Not now" keeps it closed
+    // Circle 3 an option: at its gate (treeC3) a card asks instead of opening; "Not now" keeps it closed
     // and the card comes back once, OPEN_AGAIN answers later, then never; My progress opens it any time; open, its
     // families open one at a time. It counts in the % either way (below).
     // The threshold reads the global score's circle-1 Entries component (core.js treeScore by[1].entries: the path
     // follows the scores), from the one computation the headline comes from.
-    ok(headScore().by[1].entries >= FISH_C3.entries && fishC3(), 'FISH_C3: the circle-1 Entries component');
-    ok(fishC3() && !TREEU.c3.some(mayOpen), 'circle 3 waits for the choice at FISH_C3');
-    ok(openOfferDue() && openOfferDue().k === 'beyond' && !Q.beyond, 'the circle-3 card is due at FISH_C3');
+    ok(headScore().by[1].entries >= SUBJ.gate.c3.entries && treeC3(), 'the gate: the circle-1 Entries component');
+    ok(treeC3() && !TREEU.c3.some(mayOpen), 'circle 3 waits for the choice at its gate');
+    ok(openOfferDue() && openOfferDue().k === 'beyond' && !Q.beyond, 'the circle-3 card is due at its gate');
     ok(!allMetDue(), 'all met: never while the circle-3 card is due');
     // A player whose circle 3 already opened by itself (before the choice existed) keeps it, and gets no card.
     const im = introMap(),
