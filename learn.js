@@ -507,10 +507,12 @@ const pairKey = (a, b) => [a, b].sort().join('|');
 // The source the content editor gave with his edit of that line ('; <its words>', esrcT), from the side model.js lsrcOf
 // reads it from; '' when none (rule C2).
 const lsrcEsrc = (a, b) => ((GX(a).lsrc || {})[b] ? esrcT(GX(a), 'lsrc/' + b) : (GX(b).lsrc || {})[a] ? esrcT(GX(b), 'lsrc/' + a) : '');
+// Each subject says which of its pairs make the deck (UNITS deck: the corals' classic pairs, the tree subjects' declared
+// ones, every one of which a source names).
 function classics() {
   const tier = ([a, b]) => (/^IMR/.test(lsrcOf(a, b)) ? 0 : 1);
-  return pairs()
-    .filter(([a, b]) => isClassic(a, b))
+  return UNITS[SUBJ.id]
+    .deck()
     .map(p => p.slice().sort())
     .sort((x, y) => tier(x) - tier(y) || Math.min(slateIdx(x[0]), slateIdx(x[1])) - Math.min(slateIdx(y[0]), slateIdx(y[1])));
 }
@@ -530,31 +532,56 @@ const MONT_V = {
 };
 // The admin can hide a comparison until good examples exist (curation.json "mont" {"A|B": {hide: true}}, admin
 // Montages), and pick "all" as the view to pair photos of nearby zoom levels.
+// A subject with one view (SUBJECTS views: the fish, the sea slugs) has no view to pick: its entry's v is a phase, as the
+// admin's Photos › Look-alikes writes it (autosort.js fishMontPick): adult (every photo not of a juvenile; the default),
+// juvenile or all; and it shows one photo a side, the admin's pick (a, b: photo files) or the first of the phase.
+// Where the picks live: curation.json "mont" for the corals, the subject's own part for the others (core.js montOf).
+const montPhase = (L, v) => (v === 'all' ? L : L.filter(p => juvP(p) === (v === 'juvenile')));
 function montage(a, b) {
   const k = pairKey(a, b),
     [A, B] = k.split('|'),
-    m = ((CUR || {}).mont || {})[k] || {},
-    V = n => DATA.gen[n].views;
+    m = montOf(CUR, SUBJ)[k] || {},
+    multi = SUBJ.views.length > 1,
+    one = SUBJ.views[0][0],
+    V = n => GX(n).views;
   if (m.hide) return null;
-  const list = (n, v) => (v === 'all' ? Object.keys(ZOOM) : [v]).flatMap(w => (V(n)[w] || []).map(p => ({...p, view: w})));
+  const list = multi
+    ? (n, v) => (v === 'all' ? Object.keys(ZOOM) : [v]).flatMap(w => (V(n)[w] || []).map(p => ({...p, view: w})))
+    : (n, v) => montPhase(V(n)[one] || [], v).map(p => ({...p, view: one}));
   const ok = v => v && list(A, v).length && list(B, v).length;
-  const v = ok(m.v) ? m.v : [MONT_V[k] || 'macro', 'macro', 'medium', 'wide'].find(ok);
+  const v = ok(m.v) ? m.v : (multi ? [MONT_V[k] || 'macro', 'macro', 'medium', 'wide'] : ['adult', 'all']).find(ok);
   if (!v) return null;
   const LA = list(A, v),
     LB = list(B, v),
     mine = m.v === v,
-    fa = mine && LA.find(p => p.f === m.a),
-    fb = mine && LB.find(p => p.f === m.b);
+    // The admin writes a and b in its own order of the pair (the book's, for the fish), not the key's alphabetical one: each
+    // saved photo is resolved against the unit that owns it.
+    own = f => (mine && f ? [LA.find(p => p.f === f), LB.find(p => p.f === f)] : [null, null]),
+    fa = own(m.a)[0] || own(m.b)[0] || undefined,
+    fb = own(m.b)[1] || own(m.a)[1] || undefined;
   const [pa, pb] = photoPair(LA, LB, fa, fb);
   return {k, A, B, v, pa, pb, src: lsrcOf(A, B), es: lsrcEsrc(A, B)};
 }
+// A pair's source by its own name: the IMR lecture, the IMR fish presentation, the Coral Finder, else the source's words as
+// the data gives them (the sea slugs': the Sea Slug Forum, Nudi Pixel, a paper), never another source's name (rule C2).
 const srcTag = src =>
-  /^IMR/.test(src)
+  /^IMR Lecture/.test(src)
     ? `<b class="lect">IMR lecture</b> ${esc(src.replace(/^IMR Lecture 6:?\s*/, ''))}`
-    : `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`;
+    : /^IMR fish presentation/.test(src)
+      ? `<b class="lect">IMR fish presentation</b>${esc(src.replace(/^IMR fish presentation/, ''))}`
+      : /^Coral Finder p/.test(src)
+        ? `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`
+        : esc(src);
+// A view's word in the subject's own labels (SUBJECTS views), the corals' for a photo of any of their views.
+const viewWord = v => {
+  const w = SUBJ.views.find(x => x[0] === v);
+  return w ? w[1] : VIEW_LABEL[v] || 'Photo';
+};
+// The source a unit's tips carry (quiz.js tipsBy: the IMR presentation, the Sea Slug Forum, the editor's), small after them.
+const tipSrc = g => (tipsBy(g) ? ` <small class="esrc">(${esc(tipsBy(g))})</small>` : '');
 // Learn > Look-alikes: a deck of the classic pairs, one montage per screen, the reader's mix-ups first.
 // #learn/look-alikes opens the first one, #learn/look-alikes/A/B a given pair; arrows, keys and swipes go through the deck.
-// "Drill this pair" only for two genera the player has unlocked (model.js unlocked: the Duel tab opens none; one
+// "Drill this pair" only for two units the player has unlocked (model.js unlocked: the Duel tab opens none; one
 // progression path for every game).
 const drillOk = (a, b) => typeof unlocked !== 'function' || unlocked([a, b]).length === 2;
 function viewLookalikes(a, b) {
@@ -573,26 +600,29 @@ function viewLookalikes(a, b) {
   let hint = matchMedia('(pointer: coarse)').matches && !store.get('reefid-sync-lkswiped', 0);
   const draw = () => {
     const m = L[i],
-      gA = DATA.gen[m.A],
-      gB = DATA.gen[m.B],
+      gA = GX(m.A),
+      gB = GX(m.B),
       x = mix(m);
     const half = (n, p, k) =>
-      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
-    const tip = (n, g) => `<div class="lktip"><a href="${esc(hr('g-' + n))}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
+      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(unameT(n))}${SUBJ.views.length > 1 ? ', ' + viewWord(p.view).toLowerCase() + ' view' : ''}"></button><figcaption>${uname(n)}</figcaption></figure>`;
+    // A unit's tips under its name, with the source its label names where it has one (a tree subject's marks and cues
+    // carry theirs: tipsLabel; the corals' lecture tips are the pair's source, said above).
+    const tip = (n, g) =>
+      `<div class="lktip"><a href="${esc(hr('g-' + n))}">${uname(n)}</a>${UNITS[SUBJ.id].cmp.clues(g) ? ` ${esc(tipsText(g))}${tipSrc(g)}` : ' <small>No ID marks written for it yet.</small>'}</div>`;
     const deck = L.map(
       (d, k) =>
-        `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="${esc(hr('cmp|' + d.A + '|' + d.B))}" title="${esc(d.A)} or ${esc(d.B)}"><span><img ${thumb(d.pa, '64px')} alt="" loading="lazy"><img ${thumb(d.pb, '64px')} alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`
+        `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="${esc(hr('cmp|' + d.A + '|' + d.B))}" title="${esc(unameT(d.A))} or ${esc(unameT(d.B))}"><span><img ${thumb(d.pa, '64px')} alt="" loading="lazy"><img ${thumb(d.pb, '64px')} alt="" loading="lazy"></span><small>${esc(unameT(d.A))} / ${esc(unameT(d.B))}</small></a>`
     ).join('');
     // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step would push the deck down while
     // the montage is being sized, and squash it once the intro left.
-    $v.innerHTML = `${drawn ? '' : `<p class="lede">The look-alikes the IMR lecture or the Coral Finder book compare directly, one pair per screen: one photo of each genus in the same view, with the ID tips that tell them apart. Pairs you mixed up in the quiz come first, in red. The other look-alikes of a genus are at the bottom of its sheet.</p>`}
+    $v.innerHTML = `${drawn ? '' : `<p class="lede">The look-alikes ${UNITS[SUBJ.id].cmp.src} compare directly, one pair per screen: one photo of each ${SUBJ.one}${SUBJ.views.length > 1 ? ' in the same view' : ''}, with the ID tips that tell them apart. Pairs you mixed up in the quiz come first, in red. The other look-alikes of a ${SUBJ.one} are at the bottom of its sheet.</p>`}
     <div class="lk">
       <div class="lkmain">
-        <div class="lkhead"><h3><i>${esc(m.A)}</i> or <i>${esc(m.B)}</i>?</h3><small class="lksrc">${srcTag(m.src)}${esc(m.es)}</small>${x ? `<span class="pmix">you mixed them up ×${x}</span>` : ''}</div>
+        <div class="lkhead"><h3>${uname(m.A)} or ${uname(m.B)}?</h3><small class="lksrc">${srcTag(m.src)}${esc(m.es)}</small>${x ? `<span class="pmix">you mixed them up ×${x}</span>` : ''}</div>
         <div class="lkm${dir ? ' in' + (dir > 0 ? 'r' : 'l') : ''}">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}<button type="button" class="lkarr prev" data-lstep="-1" aria-label="Previous pair">‹</button><button type="button" class="lkarr nxt" data-lstep="1" aria-label="Next pair">›</button>${hint ? '<span class="lkhint" aria-hidden="true">Swipe for the next pair</span>' : ''}</div>
         <div class="lktips">${tip(m.A, gA)}${tip(m.B, gB)}</div>
         <div class="lknav"><span class="lkn">Pair ${i + 1} / ${L.length}</span>
-          <a class="linkish lkall" href="${esc(hr('cmp-' + m.A + '|' + m.B))}">All views</a>${drillOk(m.A, m.B) ? `<a class="next" href="${esc(hr('quiz-duel|' + m.A + '|' + m.B))}">Drill this pair</a>` : ''}</div>
+          <a class="linkish lkall" href="${esc(hr('cmp-' + m.A + '|' + m.B))}">${SUBJ.views.length > 1 ? 'All views' : 'Compare'}</a>${drillOk(m.A, m.B) ? `<a class="next" href="${esc(hr('quiz-duel|' + m.A + '|' + m.B))}">Drill this pair</a>` : ''}</div>
       </div>
       <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
     </div>`;
@@ -673,30 +703,43 @@ function fitLk() {
 addEventListener('resize', fitLk);
 function viewCompare(a, b) {
   // Millepora and the bonus genera can be compared with a slate genus or with each other (quiz mix-ups).
-  const A = gameGenus(a) && GX(a),
-    B = gameGenus(b) && GX(b);
+  const U = UNITS[SUBJ.id],
+    A = U.inGame(a) && GX(a),
+    B = U.inGame(b) && GX(b);
   if (!A || !B) return viewLookalikes();
+  // What the subject says of a unit besides its tips is in UNITS cmp (the corals' tag, group line and Coral ID Key criteria;
+  // the tree subjects' own line, no criteria).
   const col = (n, g) =>
-    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="${esc(hr('g-' + n))}">Sheet ›</a></h3><p class="note">${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">${critRef(g)}</p></details></div>`;
+    `<div class="cmpcol"><h3>${uname(n)}${U.cmp.tag(n, g)} <a class="linkish cmpsheet" href="${esc(hr('g-' + n))}">Sheet ›</a></h3>${U.cmp.line(g) ? `<p class="note">${U.cmp.line(g)}</p>` : ''}${U.cmp.clues(g) ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div>` : '<p class="note">No ID marks written for it yet.</p>'}${U.cmp.more(g)}</div>`;
+  // A subject with one view shows one photo a side, the pair's own pick (montage: the admin's, else the first adult photo of
+  // each), the same one as its Look-alikes deck.
+  const multi = SUBJ.views.length > 1,
+    M = multi ? null : montage(a, b),
+    pick = (n, g, v) =>
+      multi ? (g.views[v] || [])[0] : (M && (n === M.A ? M.pa : n === M.B ? M.pb : null)) || adultFirst(g.views[v] || []);
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => {
-      const p = (g.views[v] || [])[0];
+      const p = pick(n, g, v);
       if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`;
       flat.push({...p, genus: n, view: v});
-      return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:599.98px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`;
+      return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:599.98px) 46vw, 460px" alt="${esc(unameT(n))}${multi ? ', ' + label.toLowerCase() : ''}" loading="lazy"></button>`;
     };
-    return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
+    return `${multi ? `<h3 class="cmplab">${label}</h3>` : ''}<div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
+  // What the two records say of the pair, each line with its source (quiz.js pairText: IMR's lines for a fish pair, the
+  // sea slugs' tell-apart lines from their sources); nothing when no record gives one (rule C2: never written here).
+  const said = pairText(a, b);
   // Opened from the Duel tab's relief card (quiz.js DUELBACK): Back to the duel, to the same duel and run, in view
   // however far the page scrolls (docs/DESIGN.md); it replaces Drill this pair. Phones and tablets: a floating button at
   // the bottom centre (.cmpfab). Desktop (from 1024 px): a light sticky band under the page bar, "Duel paused: A or B"
   // and the button (.duelband). CSS shows one or the other.
   const back = typeof duelBackFor === 'function' && !!duelBackFor(hashNow());
   // The cues sit above the photos, each under its genus, so they can be read while comparing.
-  $v.innerHTML = `<p class="lede">Two genera that are often confused, side by side: their ID tips, then the same view of each. <b>Drill this pair</b> at the bottom turns it into a quick duel.</p>
-  ${back ? `<div class="duelband" role="region" aria-label="Duel paused"><span>Duel paused: <i>${esc(a)}</i> or <i>${esc(b)}</i></span><button type="button" class="next" data-duelback>Back to the duel</button></div>` : ''}<div class="cmprow text">${col(a, A)}${col(b, B)}</div>
-  ${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length)
+  $v.innerHTML = `<p class="lede">Two ${SUBJ.many} that are often confused, side by side: their ID tips, then ${multi ? 'the same view of each' : 'a photo of each'}. <b>Drill this pair</b> at the bottom turns it into a quick duel.</p>
+  ${back ? `<div class="duelband" role="region" aria-label="Duel paused"><span>Duel paused: ${uname(a)} or ${uname(b)}</span><button type="button" class="next" data-duelback>Back to the duel</button></div>` : ''}${said ? `<p class="vs cmpsaid">${esc(said.t)}${said.s ? ` <small class="esrc">(${esc(said.s)})</small>` : ''}</p>` : ''}<div class="cmprow text">${col(a, A)}${col(b, B)}</div>
+  ${SUBJ.views
+    .filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length)
     .map(row)
     .join('')}
   ${(DATA.cmp || []).some(c => c.imr && c.g.includes(a) && c.g.includes(b)) ? `<h3 class="cmplab">IMR lecture</h3>${cmpShots([a, b])}` : ''}

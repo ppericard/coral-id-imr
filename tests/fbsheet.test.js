@@ -206,6 +206,9 @@ function bodyCtx() {
     tipsList: g => `<ul class="crit idtips imrfb">${(g.qt || []).map(x => `<li>${x}</li>`).join('')}</ul>`,
     esrcTag: () => '',
     critRef: () => 'Coral Finder p. 1',
+    // the answer's Compare link follows the subject's pages (quiz.js fbBody)
+    SUBJ: {id: 's', pages: ['cmp']},
+    UNITS: {s: {inGame: () => true}},
     credit: () => 'credit',
     taxonLine: t => (t ? '<p class="fbsp">This photo: a species</p>' : ''),
     againLeft: () => true,
@@ -249,6 +252,14 @@ test('fbBody: the verdict, the species line and one line outside More; the rest 
   assert.match(panel, /tipbox fbtips/);
   assert.match(panel, /Similar names/);
   assert.match(panel, /Your answer, <u>f:Angelfishes<\/u>, would show/);
+  // Compare them follows the subject's pages and its units, never the shape of the record (Q437)
+  assert.match(panel, /<a class="linkish" href="#cmp-f:Butterflyfishes\|f:Angelfishes">Compare them<\/a>/);
+  C.SUBJ.pages = ['quiz'];
+  assert.ok(!/Compare them/.test(C.fbBody('f:Butterflyfishes', 'f:Angelfishes', false, false, true, [{}], '', null, {sci: 'X'}, [], '')));
+  C.SUBJ.pages = ['cmp'];
+  C.UNITS.s.inGame = n => n !== 'f:Angelfishes';
+  assert.ok(!/Compare them/.test(C.fbBody('f:Butterflyfishes', 'f:Angelfishes', false, false, true, [{}], '', null, {sci: 'X'}, [], '')));
+  C.UNITS.s.inGame = () => true;
   assert.match(panel, /This pair comes back as a duel/);
   assert.match(panel, /<p class="credit">credit<\/p>/);
   assert.match(panel, /<button class="rep">/);

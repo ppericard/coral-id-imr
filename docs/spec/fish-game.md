@@ -22,7 +22,10 @@ the PRs.
 - **My progress**: the photo wall, levels, review, mix-ups, the headline % with its three bars
   ([the global score](#the-fish-global-score)), the fish's own leaderboard and achievements (`core.js` `FISH_ACH`).
 - **The Duel tab** (`#fish/practice/duels`), on the family look-alike pairs (`UNITS.fish.pairs`).
-- **Not for fish yet**: the Look-alikes page, the Custom quiz, the Memory tab (`SUBJECTS` `closed` says why; their
+- **Look-alikes** (`#fish/learn/look-alikes`) and **Compare** (`#fish/learn/compare/A/B`): the declared family pairs
+  (`UNITS.fish.deck`, each with its IMR presentation slide), one photo a side, the pair's tell-apart line from the
+  families' IMR lines ([front-end.md](front-end.md)).
+- **Not for fish yet**: the Custom quiz, the Memory tab (`SUBJECTS` `closed` says why; their
   addresses open the fish page of the section: `subjPage`); Identify is the Fish ID Key's "coming soon" page; timed
   mode and size estimation (video ID, EventMeasure) by design.
 
