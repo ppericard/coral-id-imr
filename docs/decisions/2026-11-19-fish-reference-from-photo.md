@@ -48,4 +48,5 @@ margin 0.03, the bar moving up toward true knowledge (Q421).
 - No progress rule moves (no rules version, rule D5): a replay reads each answer's logged scoring record, never the
   photo's current ease or level. The sheet script's copy of `core.js` changes, with no gate (rule D4).
 - Left on the route, as Next work (rule P1): the held-out set's `rep` exclusion (`tools/holdout.py`, which the per-player
-  reserve of #1099 replaces) and the admin's Coverage "reference" count and tile badge (`autosort.js` `fishCov`).
+  reserve of #1099 replaces). The admin's Coverage "reference" count (`autosort.js` `fishCov`) and tile badge
+  (`admin.js` `fishTile`) now read `core.js` `refLevel` on the photo's ease and tags (the admin's, else the pass's).

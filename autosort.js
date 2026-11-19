@@ -925,7 +925,7 @@
   }
 
   // Fish Coverage (fishCov): per family, genus and species, the photos in play, the observations against the target, the
-  // easy photos (ease 4-5), the reference photos, the phases shown and what is missing; and the candidates still
+  // easy photos (ease 4-5), the reference-level photos (core.js refLevel), the phases shown and what is missing; and the candidates still
   // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: fish-cand.json
   // cand; F: the draft's fish part; j(f): the pass's judgment. Returns {fam, gen, sp}: rows {id, name, fam, n (photos),
   // obs, tgt (a species' target; a genus or family: ok of its species at target), easy, ref, ph, wait (a species also
@@ -951,8 +951,10 @@
   function fishCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
     const waiting = fishWaiting(cand, F, play);
-    const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
-      isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
+    const ease = p => fishEase(p, F, j),
+      // The reference level as the game reads it (core.js refLevel, rule P1): the photo's ease (4-5) and look, read from the
+      // admin's ease and tags else the pass's, never from the route it came in by (rep, the flag r).
+      isRef = p => refLevel(fishRec(p, F, j)),
       spRow = (sid, fam) => {
         const L = play[sid] || [],
           s = species[sid] || {},
