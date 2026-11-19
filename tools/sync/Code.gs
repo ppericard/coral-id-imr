@@ -4146,6 +4146,9 @@ const CORE_ = (function () { const module = {exports: {}};
   //           reads as its tree's
   //   unitRank  the rank of a tree subject's game units from level 1, when not its rank (unitRankOf): the sea slugs'
   //           'genus', its genera the units of its circles, its families structure only. Unset: rank
+  //   names   a tree subject's kinds of name its species are asked by (LEVELS kind: cn its common names, sci its
+  //           scientific name; app.js treeGenera): a kind not listed has no units (the sea slugs: no common-name branch).
+  //           Unset: none
   //   flat    its units are a flat list in data.json, not a tree (the corals): its content slots and structure apply to
   //           data.json (app.js build, structSeen); a tree subject reads its files through UNITS get instead. The engine
   //           asks this field, never a pool file's name
@@ -4464,6 +4467,9 @@ const CORE_ = (function () { const module = {exports: {}};
       optin: ['sci', 'beyond'],
       // family: a family of the book (f:Damselfishes); the IMR course is a tag.
       rank: 'family',
+      // Its species by their common names (step 1) and by their scientific names (step 2; docs/reviews/2026-11-18-species-
+      // step2-plan.md §2.2): two independent trees, each its own units (LEVELS cn, sci).
+      names: ['cn', 'sci'],
       renamed: FISH_RENAMED,
       replay: false,
       // Its progress replayed by the sheet from its own answers (docs/LEARNING.md "Fish: the progress replayed from the
@@ -4664,6 +4670,8 @@ const CORE_ = (function () { const module = {exports: {}};
       optin: [],
       rank: 'family',
       unitRank: 'genus',
+      // Its species by their scientific names only (Q369, 2026-11-15: the English names are information, never a choice).
+      names: ['sci'],
       // Its progress replayed by the sheet from its own answers, as the fish's (Code.gs replays_; rules D5, D8, D9): its
       // units from seaslug.json, the genera played from the start (treeReplayGen at its unitRank), its own rules versions
       // (SEASLUG_RVS), its records in the "Replayed Sea slugs" tab. sheet: the script version that replays it (rule D4).
@@ -8467,7 +8475,7 @@ const CORE_ = (function () { const module = {exports: {}};
     const c = (counts || []).map(x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0)),
       ord = c.map((x, i) => i).sort((i, j) => c[j] - c[i]),
       w = new Array(c.length);
-    for (let a = 0; a < ord.length;) {
+    for (let a = 0; a < ord.length; ) {
       let b = a;
       while (b + 1 < ord.length && c[ord[b + 1]] === c[ord[a]]) b++;
       const r = (a + 1 + b + 1) / 2; // the mean of ranks a+1 .. b+1

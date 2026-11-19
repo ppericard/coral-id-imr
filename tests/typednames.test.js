@@ -42,6 +42,8 @@ function page(names = NAMES) {
     DATA: {},
     UNITS: {fish: {names: () => names, norm: C.typeNormAll, typeOther: rk => (rk === 'genus' ? OTHER : null)}},
     rankOf,
+    // app.js kindRank: the class a typed answer is read in (no species here: the rank)
+    kindRank: rankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
     typeElse: C.typeElse,

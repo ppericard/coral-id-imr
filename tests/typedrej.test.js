@@ -97,6 +97,8 @@ function page(subj = 'fish', typeElse = C.typeElse) {
       coral: {names: () => [], norm: C.typeNorm}
     },
     rankOf,
+    // app.js kindRank: the class a typed answer is read in (no species here: the rank)
+    kindRank: rankOf,
     unitRankOf: C.unitRankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
@@ -251,7 +253,7 @@ test('answer logs the refused texts (rj) with a typed answer, nothing when there
   const a = cut(quiz, 'function recordAnswer(', '\nfunction ', {file: 'quiz.js'});
   assert.match(cut(quiz, 'function answer(', '\nfunction ', {file: 'quiz.js'}), /recordAnswer\(\{[^}]*\n\s+tq,\n/);
   assert.match(a, /\.\.\.\(tq && tq\.rj && tq\.rj\.length \? \{rj: tq\.rj\.slice\(0, TYPEDQ_RJ\)\} : \{\}\),/);
-  assert.match(quiz, /\(m, text, sp, rj\) => \{\n\s+Object\.assign\(TYPEDQ \|\| \{\}, \{m, text, sp, rj(, [^}]*)?\}\);/);
+  assert.match(quiz, /\(m, text, sp, rj(, z)?\) => \{\n\s+Object\.assign\(TYPEDQ \|\| \{\}, \{m, text, sp, rj(, [^}]*)?\}\);/);
 });
 
 // The sheet: the same answers with and without refused texts give every reader the same numbers.

@@ -199,6 +199,7 @@ test('logged with its own mode: quiz|f (custom quiz quiz|s|f), never |kN, |d or 
         k: 4,
         nc: 4,
         tq: null,
+        sci: null, // no species by its scientific name (quiz.js answer SCIQ)
         exq: false,
         ph: [],
         ...o
@@ -239,6 +240,7 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       mode = 'quiz' + (find ? '|f' : '');
     const env = {
       scoreIn: C.scoreIn,
+      tq: null, // no typed question (recordAnswer tq)
       target,
       c,
       good,

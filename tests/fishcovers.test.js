@@ -35,6 +35,7 @@ function app(photoDiff) {
     treePid: C.treePid,
     treeScoreTree: C.treeScoreTree,
     treeSpUnits: C.treeSpUnits,
+    spUnitId: C.spUnitId,
     treeGenSets: C.treeGenSets,
     refLevel: C.refLevel,
     contentApply: C.contentApply,
