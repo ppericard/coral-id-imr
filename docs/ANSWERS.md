@@ -1200,3 +1200,17 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **14:44, the next gold set.** "C'est pas un double aveugle. C'est pas moi qui doit pas voir les réponses. Sinon tu
   me demandes un travail de robot et je dois garder en tête la grille en entier". Applied: the judges stay blind to his
   verdicts, he sees a judge's view (a model drawn at random per photo), on new photos.
+- **14:50, the next gold set, its model.** A model drawn at random per photo: «ok». Applied: the next gold set (no doc
+  change yet).
+- **14:50, why #1099 was evident.** "C'est pas pour ça que j'ai raison, je ne regardais pas les stats. Je regardais ce
+  qu'on était en train de faire. Il n'y avait aucune raison que ça ne soit pas une amélioration". No doc change (it
+  explains Q432).
+- **14:50, Thecacera picta.** "Ou alors il faut le citer comme un cousin de l'espèce appelée Pikachu?". Applied: #1222.
+- **14:50-15:05, contrast (Q429, Q434).** 14:50: "Tu vas d'abord faire une série de test où tu vas me montrer les
+  avant-après"; 15:01, after the series: "je ne suis pas convaincu qu'il faille les corriger, ou alors dans un deuxième
+  temps. Parce que c'est justement ce qui fait la difficulté des photos [...] on ne peut plus s'entrainer sur des
+  photos réalistes avec peu de contraste" (no correction in the games); 15:02: "C'est une variable intéressante et utile
+  à estimer. Ne serais-ce que pour nos analyses muti-variées des données réelles" and "c'est aussi une variable qui se
+  calcule plutôt que s'estime par un agent. Tout comme les questions des couleurs j'imagine?"; **Q434**, a measured
+  block per photo (contrast, brightness, saturation, colour loss, sharpness), computed once by a script: «oui». Applied:
+  the measured-photo PR (the format, a ROADMAP row for a correction in Learn only, later).
