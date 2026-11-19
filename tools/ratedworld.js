@@ -396,12 +396,12 @@ const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
 const ITEM = {MISS: 1.5, PICKED: 0.5};
-function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null, live = 0}) {
+function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null, live = 0, liveOff = false}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep, calib});
-  if (live) pl.liveRun(live); // --live: before the first question
+  if (live) pl.liveRun(live, liveOff); // --live: before the first question (--liveoff: recorded nowhere)
   for (let i = 0; i < N; i++) pl.step(i);
   return pl.result();
 }
@@ -638,9 +638,10 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   // liveBuild: the look-alike traps, 4 choices, photoSet's 'k4' photos, two at most). The learner answers as in the quiz
   // and is taught by the reveal as by the quiz's feedback. Recorded as live.js liveLog records it (model.js introLive
   // marks the unit closed, the scorer, the opening hold unless LIVE_PACE is false) only by an app with introLive; the
-  // version-1 app records nothing. live: {n, ok, rec, hold: the opening hold's sum after them}.
+  // version-1 app records nothing, nor does off (learnsim --liveoff). live: {n, ok, rec, hold: the opening hold's sum
+  // after them}.
   const live = {n: 0, ok: 0, rec: 0, hold: null};
-  const liveRun = n => {
+  const liveRun = (n, off = false) => {
     for (let j = 0; j < n; j++) {
       tick();
       const list = ctx.pool(),
@@ -656,7 +657,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       const d = mean(ph.map(p => trueD(t, p))),
         c = r() < pRec(t, d, ph.length === 1) ? t : chs[Math.floor(r() * chs.length)],
         ok = c === t;
-      if (M.introLive) {
+      if (M.introLive && !off) {
         M.introLive(t);
         const q = C.scoreIn({
           t,
@@ -870,7 +871,7 @@ async function main(o) {
     if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0, calib: o.calib || null});
     else
       for (const profile of o.profiles)
-        jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null, live: o.live || 0});
+        jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null, live: o.live || 0, liveOff: !!o.liveOff});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -946,7 +947,7 @@ async function main(o) {
           app: o.app,
           beyond: o.beyond || null,
           calib: o.calib || {},
-          live: o.live ? {n: o.live} : null,
+          live: o.live ? {n: o.live, off: !!o.liveOff} : null,
           ...(pop ? {times: o.times, every: o.every, gap: o.gap || 0, rt: RT, pop: POP} : {}),
           seconds: secs,
           runs

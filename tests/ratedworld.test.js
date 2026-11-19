@@ -331,6 +331,12 @@ test("live answers before a unit's card: its card's question comes as any card's
   for (let j = 0; j < g; j++) assert.notStrictEqual(pl.step(i++).t, u, 'not asked before INTRO.GAP answers');
   assert.strictEqual(pl.step(i++).t, u, "then its card's question first");
   assert.ok(M.askedOpen(u));
+  // --liveoff: the same answers, recorded nowhere (Codex review #1234).
+  const off = RW.playerOf(U, RW.world(U, 1), {profile: 'beginner', seed: 1, N: 60, cps: [60]});
+  off.liveRun(8, true);
+  assert.ok(
+    off.result().live.n === 8 && off.result().live.rec === 0 && !Object.keys(off.ctx.P).some(n => n !== '~level' && off.M.asked(n))
+  );
 });
 
 // The judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
