@@ -45,9 +45,14 @@ WAY_OUT = (
 )
 
 
+HEREDOC_MARK = re.compile(r'<<-?[ \t]*([\'"]?)([A-Za-z_]\w*)\1')
+
+
 def substitutions(command, singles=True):
     """The commands inside $(…) and `…` outside single quotes: the shell runs them even inside double quotes.
-    `singles=False` for the body of an unquoted heredoc, where a single quote is only a character."""
+    `singles=False` for the body of an unquoted heredoc, where a single quote is only a character (inside a `$(…)` of
+    that body the shell quotes normally again). The body of a heredoc inside `$(…)` is skipped when finding where the
+    substitution ends, so an apostrophe or a bracket in a commit message does not derail it."""
     out, i, n = [], 0, len(command)
     while i < n:
         c = command[i]
@@ -56,12 +61,21 @@ def substitutions(command, singles=True):
             i = n if j < 0 else j + 1  # a single-quoted span: no substitution inside
             continue
         if command.startswith('$(', i) and not command.startswith('$((', i):
-            depth, j = 1, i + 2
+            depth, j, skip = 1, i + 2, None  # skip: (newline, end) of the body of a heredoc opened on this line
             while j < n and depth:
-                if singles and command[j] == "'":
+                if skip and j == skip[0]:
+                    j, skip = skip[1], None  # the body is text for the shell's reader: its quotes and brackets do not count
+                    continue
+                if command[j] == "'":  # inside $(…) the shell quotes normally, even in the body of a bare heredoc
                     k = command.find("'", j + 1)
                     j = n if k < 0 else k + 1
                     continue
+                mark = HEREDOC_MARK.match(command, j) if command[j] == '<' and command[j - 1] != '<' else None
+                if mark and not skip:
+                    nl = command.find('\n', mark.end())
+                    end = re.compile(r'\n[ \t]*' + re.escape(mark.group(2)) + r'[ \t]*(?=\n|\Z)').search(command, mark.end())
+                    if nl >= 0 and end:
+                        skip = (nl, end.end())
                 depth += {'(': 1, ')': -1}.get(command[j], 0)
                 j += 1
             out.append(command[i + 2:j - 1])

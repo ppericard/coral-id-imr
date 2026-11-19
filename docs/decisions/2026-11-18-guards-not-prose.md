@@ -26,8 +26,9 @@ généralement à 5h du mat".
    once and gives the way out. A read-only allowlist covers the commands that recur.
 3. **An audit of the rules.** It sorts each rule into keep, replace by a guard, merge or delete, and its decisions went
    to Pierre: `docs/reviews/2026-11-18-rules-audit.md`, a study in this PR; none of its proposals is applied here. His
-   answers, the same evening: points 1 to 5 and 8 ok; 6 and 7 dropped ("the docs describe a coherent model in our
-   words; no new manual step for Pierre"); 9 parked. The study records them.
+   answers, the same evening, as STATUS and the answers ledger record them (a paraphrase, not his verbatim words):
+   points 1 to 5 and 8 ok; 6 and 7 dropped (the docs describe a coherent model in our words; no new manual step for
+   him); 9 parked. The study records them.
 4. **A night report** (`tools/night.py`). The night is Rule 0's: 17:30 Manila to Pierre's first message after 04:00
    (he said on 2026-11-18: "Ma journée elle démarre généralement à 5h du mat"; on 2026-11-19 he set the end of
    Rule 0 as "La journée démarre à partir de mon premier message après 4h du mat", AGENTS.md Rule 0, #1191, which this

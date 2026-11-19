@@ -47,12 +47,12 @@ Classes: K = KEEP, G = GUARD, M = MERGE, D = DELETE. "Guards PR" = covered by th
 | WM: one writer for STATUS | Integrator only | K | No relapse found | — |
 | WM: "tu", "Pierre" | Address in French | M | Repeated in INTEGRATOR "Language" | One line inside W1 |
 | WM: questions to Pierre | Numbering, batches, recommendation | M | About 250 words here plus about 200 in INTEGRATOR "Questions", W7 and the "Don't ask the obvious" habit; docs.test.js already checks numbering | One home here, cut to about 90 words |
-| WM: data access | Read the sheet freely; writes only with Pierre's one-off OK | G | Used once (`card.rv8.ps`); nothing stops a write but attention | `.claude/settings.json` `ask` rule on the Sheets/Drive write tools: see decision 7 (dropped by Pierre, 2026-11-18: no new manual step for him; the row stays as it is) |
+| WM: data access | Read the sheet freely; writes only with Pierre's one-off OK | G | Used once (`card.rv8.ps`); nothing stops a write but attention | `.claude/settings.json` `ask` rule on the Sheets/Drive write tools: see decision 7 (dropped by Pierre, 2026-11-18, as STATUS records it: no new manual step for him; the row stays as it is) |
 | WM: reports and events | Read them at start and each morning | K | `brief.py` reminds | `tools/night.py` (guards PR) covers the morning |
 | WM: Dependabot | The integrator merges once green | M | Repeats W9 | Delete here; W9 holds it |
 | WM: `needs-pierre` label | Reminder label; PR opened ready | M | Exists: `train.py` refuses the label and drafts | One line in W6 |
 | WM: claude.ai Projects mode | Each thread its own integrator | D | Hypothetical since 11-05; never used | Delete (with W22's last sentence) |
-| Writing a rule down | Keep Pierre's scope; his words in the PR | G | #558 (11-05) wrote "never merged on silence" as his words; he never said it (11-14); Pierre's diagnosis 11-18: summaries paraphrase his intent | `train.py` lints the PR's Decisions section: every line naming Pierre carries quoted words or says "integrator's reading/call". docs.test.js: a new *Source:* naming Pierre cites a PR. See decision 6 (dropped by Pierre, 2026-11-18: the docs describe a coherent model in our words; only the "Players see" check of #1117 stands) |
+| Writing a rule down | Keep Pierre's scope; his words in the PR | G | #558 (11-05) wrote "never merged on silence" as his words; he never said it (11-14); Pierre's diagnosis 11-18: summaries paraphrase his intent | `train.py` lints the PR's Decisions section: every line naming Pierre carries quoted words or says "integrator's reading/call". docs.test.js: a new *Source:* naming Pierre cites a PR. See decision 6 (dropped by Pierre, 2026-11-18, as STATUS records it: the docs describe a coherent model in our words; only the "Players see" check of #1117 stands) |
 | Ship checklist (9 items) | Worktree, test, fast tier, versions, UI, sheet, docs, PR, Codex | M | Repeats W12-W24; item 1 (pre-rewrite clones) is obsolete since 11-08 | Replace with "run `tools/precheck.py`; fill the PR template" (see W14) |
 | Review guidelines | The rules Codex should watch | K | Codex caught W15 (#701) and D2 (#845) | Keep for Codex; drop the items CI already fails (D3, S1) and A1 once its guard lands |
 
@@ -215,10 +215,12 @@ Classes: K = KEEP, G = GUARD, M = MERGE, D = DELETE. "Guards PR" = covered by th
 
 ## Decisions for Pierre
 
-**Answered (Pierre, 2026-11-18, evening, in the integrator's chat):** points 1 to 5 and 8 are ok, as recommended; 6 and 7
-are dropped ("the docs describe a coherent model in our words; no new manual step for Pierre"); 9 is parked. Nothing of
-this study is applied by #1117: the approved points are built in later PRs. The list below is the question as asked;
-the answer is marked on each line.
+**Answered (Pierre, 2026-11-18, evening, in the integrator's chat).** What is recorded is STATUS's summary (#1122) and
+the answers ledger's entry, both marked as a paraphrase: his verbatim words are not kept. Points 1 to 5 and 8 are ok; 6
+and 7 are dropped, for this reason as STATUS recorded it: the docs describe a coherent model in our words, and he wants
+no new manual step; 9 is parked. For point 1, which offered two options, only "ok" is recorded: read it as the
+recommendation (a), and say so in the PR that builds it. Nothing of this study is applied by #1117: the approved points
+are built in later PRs. The list below is the question as asked; the answer is marked on each line.
 
 1. **The agent cap (W27).** *(Ok.)* The number "four" is the rule that keeps relapsing: studies were still held back after "Qui t'as demandé de te limiter ?". Machine load is already guarded by `tests/slot.js`, and conflicts would be guarded by a `brief.py` line listing open PRs that share a sensitive file. Options: (a) delete the cap; (b) keep "four that write code or run tests, studies on top". Recommendation: (a).
 2. **Ambiguous requests.** *(Ok.)* W27 says "ask back a short request before any work" (11-09). That clashes with "push what is easy to correct" and "don't ask the obvious" (11-14). Recommendation: take the reading that is easy to correct, build it, and say in one line which reading was taken. Ask back only when both readings are costly to undo.
