@@ -7072,8 +7072,8 @@ async function sealPart(b, base, fails) {
       // genus in italics, an IMR sub-entry with its IMR name), titles and the chart's tooltips included; its Cards and
       // steps say the subject's words (Open all families), the genus cards (admin-demo.js: Ben's fish saved copy) and the
       // steps of the path (admin-journey.js jSteps: circles 2 and 3, the first genus question), also as marks on the
-      // chart; Games counts the fish formats and the questions on each rank, without the Custom quiz or the Duel tab the
-      // fish do not have; its sheets opened in the fish words. Ben's log gets, after his demo answers, a family of each
+      // chart; Games counts the fish formats and the questions on each rank, without the Custom quiz the fish do not have
+      // yet, with the Duel tab's row; its sheets opened in the fish words. Ben's log gets, after his demo answers, a family of each
       // later circle, genus questions and typed answers. Then a fish session of the Journey unfolds, its names too. No raw
       // unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px; SHOTS: the page in light and dark (2x).
       for (const vw of [1280, 390]) {
@@ -7177,7 +7177,9 @@ async function sealPart(b, base, fails) {
           !/Family questions/.test(jo.games) ||
           !/Genus questions/.test(jo.games) ||
           !/Typed/.test(jo.games) ||
-          /Custom quiz|Duels|duels \(tab\)/.test(jo.games) ||
+          // the fish have the Duel tab (SUBJECTS pages, Q437): its row, at 0; not the custom quiz yet
+          /Custom quiz/.test(jo.games) ||
+          !/duels \(tab\)/.test(jo.games) ||
           !jo.h3.some(h => /^Families and genera \d+/.test(h)) ||
           jo.th !== 'Family or genus' ||
           !jo.imr ||
