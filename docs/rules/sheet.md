@@ -2,8 +2,8 @@
 
 Pierre's standing rules on the sync sheet (`tools/sync/Code.gs`), players' data and changes to the progress engine.
 Specs: [ARCHITECTURE.md](../ARCHITECTURE.md) "Progress sync", [SECURITY.md](../SECURITY.md) (security model and abuse
-handling), [LEARNING.md](../LEARNING.md) "Full replay". Who may read or write the sheet: AGENTS.md "Working mode", "Data
-access". The index of every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
+handling), [LEARNING.md](../LEARNING.md) "Full replay", [spec/sync.md](../spec/sync.md). Who may read or write the
+sheet: AGENTS.md "Data access" and rule D2. The index of every rule is in [README.md](README.md#the-index).
 
 ### D1
 
@@ -31,6 +31,15 @@ goes there with each real name replaced by a stable pseudonym. The pseudonym is 
 admin's Players page shows it beside the name, so Pierre and the integrator can always map it back from the admin;
 when that id is not at hand, use P1, P2… and keep the mapping outside the repo (STATUS records where), never in a
 committed file. Raw data holding names (sheet exports) stays out of the repo and is deleted when no longer needed.
+- **Data access, the details** (AGENTS.md "Data access" has the rule): the sync sheet is "IMR Coral ID – RA progress" <!-- rename-app: keep -->
+  (its id in HANDOVER "Code.gs"), read through the Google Sheets / Drive connector, read-only, real names included: no
+  anonymisation between agents. A subagent without the connector gets what it needs downloaded by the integrator,
+  analyses it, and the integrator puts the real names back against the results for Pierre (he knows the players and
+  matches results to people). Real-data checks (rule L12) may be run by any agent; their data and named results are
+  never committed.
+- **Reports and events, the details** (AGENTS.md "Reports and events"): the tabs are "Reports" (the players' reports)
+  and "Events" (`err`, sync "save failed", old app versions); the last check's time is in STATUS; `tools/brief.py`
+  cannot read the sheet, it only reminds. Rule 0 decides when the summary reaches Pierre.
 *Why:* he knows the players, and real names help him understand and find problems; work kept only on one machine is
 lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-04; pseudonyms 2026-11-05; tables and the sheet's spelling, 2026-11-08.
 

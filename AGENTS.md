@@ -1,275 +1,159 @@
 # AGENTS.md: the constitution
 
-Read first, every agent (Claude, Codex…), developer, and Pierre. Each rule has a stable ID and one home under
-[`docs/rules/`](docs/rules/), read when your task touches it. Where things stand: [`docs/STATUS.md`](docs/STATUS.md);
-where things are: the documentation map of [`README.md`](README.md); what lives outside GitHub:
-[`docs/HANDOVER.md`](docs/HANDOVER.md).
+Core v1: what every agent holds in every task. Each rule's home is under `docs/rules/`, indexed in
+[docs/rules/README.md](docs/rules/README.md); state: [docs/STATUS.md](docs/STATUS.md); the documentation map:
+[README.md](README.md); off GitHub: [docs/HANDOVER.md](docs/HANDOVER.md).
 
 ## The project in five lines
 
-- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no framework, no build step in development; the GitHub Pages deploy minifies and stamps versions: [docs/PAGES.md](docs/PAGES.md)) live at <https://ppericard.github.io/coral-id-imr/>. It teaches three subjects (`core.js` `SUBJECTS`: corals, reef fish, sea slugs; benthos next); it was named IMR Coral ID until 2026-11-03, and the address and the repository name change later (ROADMAP). <!-- rename-app: keep -->
-- The corals are the first subject: it teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and **Millepora** (fire coral: not a hard coral, but on the IMR benthic slate and very common at Dauin), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
-- Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones. A separate project from ReefRecall, Pierre's monetised mobile game for another audience and approach: code, data or features move between the two only when he asks.
-- RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.
-- Path in the app = **Learn → Practice → Identify** (the order RAs work in), plus **My progress** and a Pierre-only **admin** back-office (`admin.html`).
+- **IMR Reef ID**: a static web app (plain HTML/CSS/JS, no framework, no build step in development; the deploy stamps
+  versions: [docs/PAGES.md](docs/PAGES.md)), <https://ppericard.github.io/coral-id-imr/>; subjects in `core.js`
+  `SUBJECTS` (corals, reef fish, sea slugs). Corals: the 39 IMR slate genera and Millepora, 40 (`slateGenera()`).
+- Owner: **Pierre Pericard** (`ppericard`), IMR, Dauin. Users: Pierre and the Research Assistants (RAs) he trains, on
+  phones mostly, who label photos to genus in **ReefCloud**: the app teaches genus recognition (**Learn → Practice →
+  Identify**, **My progress**, Pierre's **admin**). ReefRecall is separate: nothing moves between the two unasked.
 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
-
-Pierre set this rule himself (2026-11-04) to protect his evenings, his sleep and his health. He reduced it to one
-sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied, and set its end on
-2026-11-19 ("La journée démarre à partir de mon premier message après 4h du mat"; "ok pour cette phrase"):
 
 > **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing until his first message
 > after 04:00; everything else goes on as normal, agents included.**
 
 - The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
-  never a guess. His day starts with his first message after 04:00, not at a fixed hour (Pierre, 2026-11-19); until
-  17:30 nothing else is different.
-- "Asks nothing": no question, review or file that calls for his answer. A question waits in STATUS "Questions for
-  Pierre" (number, context, question, recommendation, PR) for the morning.
+  never a guess. "Asks nothing": no question, review or file that calls for his answer; a question waits in STATUS.
 
 ## Working mode: the integrator and the merge contract (Pierre, 2026-11-05)
 
-**The only place that says who merges and when.** Every other mention points here; change it here only.
+**The only place that says who merges and when.** The integrator also reads [docs/INTEGRATOR.md](docs/INTEGRATOR.md).
 
-**The integrator also reads [docs/INTEGRATOR.md](docs/INTEGRATOR.md)** at the start of a session: how the work is run day
-to day with Pierre, what bites in the merge mechanics, and the open work (working knowledge, not rules).
-
-- **One integrator.** The main agent of a Claude Code session is the integrator: it starts as many subagents as useful,
-  each on its own branch, worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the
-  review loop (rule W23) and report to the integrator; **subagents never merge**.
+- **One integrator.** The main agent of a session is the integrator: it starts as many subagents as useful, each on
+  its own branch, worktree and PR (rule W22), checks and merges their work. Subagents build, test, run the review loop
+  (rule W23) and report; **subagents never merge**.
 - **Launch decided work at once**, never hold it in a queue; only a real dependency waits (two PRs on the same files).
-  The machine is protected by `tests/slot.js` (one Playwright run at a time per 2 cores, rule W14), not by holding
-  subagents back.
-- **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold:
-  1. every check is green on the current head, no failed job was re-run to get green (rule W23), and the merge train
-     that holds it is green (rule W26);
-  2. every Codex finding is fixed or answered, every review thread resolved;
-  3. **every choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
-     words (quoted with their date in the PR's "Decisions" section), or a decided process (once he agreed how a thing
-     is done and checked the first results, its outputs ship without asking him item by item: fish photo judging on the
-     agreed rubric, per-species photo pre-proposals; only a change to the process itself waits for him); the PR's
-     "Choices I made" section is empty;
-  4. it rides a green merge train, alone or with other ready PRs, whose tree `main` then equals (rule W26: the train
-     tests it on the current `main`, where Publish commits land without PRs), and goes in as a squash merge titled
-     `… (#N)` (rule W18); a PR that changes `Code.gs` gets its `VERSION` from the integrator before its train (rule D3).
-- **The integrator decides the small choices; Pierre decides the ones that are costly to undo.** Pierre, 2026-11-14:
-  "Tu pushe la mise en page. Au pire je corrigerais après. Il faut que tu pushes tout ce qui est facile à corriger à
-  posteriori." **Easy to correct afterwards**: shipped under the contract, listed in Decisions as "integrator's call"
-  (with "easy to correct" when players see it): a layout, a wording players read, a visible setting or default, a
-  design option, a name inside the code, a test, the fix of something plainly broken, an implementation detail ("ça
-  c'est du micro management… je ne devrais pas à choisir", Pierre, 2026-11-14). After a merge that changes what players
-  meet or how the game behaves, tell Pierre in one line what went live (information, not a question); he corrects
-  afterwards if he wants.
-- **What players will see comes from Pierre; how it is built is the agents'.** Before building anything players see,
-  the PR says it in one sentence with Pierre's words quoted verbatim and dated (a paraphrase is not a source), or marks
-  it "integrator's call" when it is easy to correct. If none of his decisions says it, ask him one question instead of
-  guessing. Everything else (names, keys, formats, implementation, tests, process) is decided without showing him.
-  Enforced: the PR template's "Players see" section, checked by `tools/train.py`. *Source:* Pierre, 2026-11-18 ("ok,
-  lance les quatre"), after summaries had built what he had not asked (the exam probes, "Apart") while he was asked
-  implementation details.
-- **Costly to undo: the PR waits for Pierre.** A choice whose effects cannot simply be taken back (a data format or a
-  structure other code will follow, a migration, a change whose effect on players' records or progress cannot be
-  reverted, content the IMR owns) goes to him as a question (below); the integrator merges once he has answered, his
-  answer pasted into the PR. A PR that holds only decided things merges under the contract, whatever it touches.
+  The machine is protected by `tests/slot.js` (rule W24), not by holding subagents back.
+- **The order of work is the integrator's**: it sets the order of development and never asks Pierre "now or later";
+  he steps in only to raise a priority.
+- **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold: (1) every
+  check is green on the current head, no failed job was re-run to get green (rule W23), its merge train is green (rule
+  W26); (2) every Codex finding and security alert is fixed or answered, every review thread resolved; (3) every
+  choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre: a standing rule,
+  a ROADMAP row he agreed with its spec, his words (quoted with their date in "Decisions"), or a decided process (once
+  he agreed how a thing is done and checked the first results, its outputs ship without asking him item by item, e.g.
+  fish photo judging on the agreed rubric; only a change to the process waits for him); "Choices I made" is empty; (4)
+  it rides a green merge train as a squash merge `… (#N)`; a `Code.gs` PR gets its `VERSION` from the integrator
+  first (rule D3).
+- **The integrator decides the small choices; Pierre the ones costly to undo.** **Easy to correct afterwards** ships
+  under the contract, listed in Decisions as "integrator's call" ("easy to correct" when players see it): a layout, a
+  wording players read, a visible setting or default, a design option, a name inside the code, a test, the fix of
+  something plainly broken, an implementation detail. After a merge that changes what players meet or how the game
+  behaves, tell Pierre in one line what went live (information, not a question). GitHub chores (threads, labels,
+  branch updates, workflow runs) are the integrator's, never his.
+- **What players will see comes from Pierre; how it is built is the agents'.** Each change players will see is said in
+  the PR with his words quoted and dated, or marked "integrator's call" when easy to correct; if none of his decisions
+  says it, ask him one question first. Checked by `tools/train.py` (the template's "Players see").
+- **Costly to undo: the PR waits for Pierre** (a data format or a structure other code will follow, a migration, an
+  effect on players' records or progress that cannot be reverted, content the IMR owns): a question; the integrator
+  merges once he has answered, his answer in the PR. A PR that holds only decided things merges under the contract,
+  whatever it touches.
 - **Always ask first**, even when it looks decided: anything destructive or irreversible (history rewrite, deleting
   data, bulk changes to his curation, the sheet's column layout), anything about money, accounts or access, any of the
   project's data sent outside it (photo addresses, names, the sheet's data).
-- **Research uses every useful source without asking** (Pierre, 2026-11-17): web search engines, guides, forums,
-  publishers, databases and their APIs (paced, rule C7); a query holds only public terms (scientific names, general
-  words), never the project's data, and every source used is cited (rule C2).
-- **Estimates are in agent time**: the hours of agent work a task takes, reviews and checks included, never human days
-  or weeks. A study or a PR that quotes an estimate from elsewhere converts it first (Pierre, 2026-11-18).
-- **The right model and effort for each task**: the integrator applies the table in docs/INTEGRATOR.md at every agent launch (the Agent tool's `model` and `effort`): design, architecture, the learning engine, security and rule wording with consequences get Opus 5.5 at high effort (Fable 5.2 only where Opus at high effort measurably falls short); ordinary code (game formats, admin pages, fixes, docs) Sonnet 5.5 at medium to high; mechanical, repetitive work Haiku 5.5 at low, after the sample test (next rule). In doubt, the stronger one; a task that turns out harder is relaunched one step up, never pushed through. Opus 5.5 is the integrator's model (Anthropic's guidance, checked 2026-11-18; sources in docs/INTEGRATOR.md). Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents (et notamment à l'intégrateur)"; the named models: "ok, applique ce tableau".
-- **Model choice by measurement**: a task handed to a lighter model (framing, sorting photos, conversions) is first run
-  on a sample of 50-100 items by the strongest model and by the candidates; the cheapest candidate that meets a
-  threshold set beforehand (agreement and serious errors) does the bulk, a small random sample of the bulk is redone by
-  the strong model to catch drift, and the PR reports the figures (Pierre, 2026-11-18: "A valider en comparant avec un
-  modèle fort sur un échantillon").
-- **No permission prompts for Pierre**: agents create and change files only with the file tools (Write, Edit), never
-  through shell commands that embed code (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code): such
-  commands can trip the session's safety checks and ask Pierre to approve something he cannot judge. A script an agent
-  needs is written to a file with Write, then run by name (Pierre, 2026-11-18: "Pourquoi je me retrouve avec ces
-  demandes alors que tu es en mode 'Accept edits'? Comment je suis sensé évaluer la pertinence de ça???"). Enforced:
-  `tools/guard_bash.py`, a PreToolUse hook, refuses these commands at once with the way out, for every agent of a
-  session; `.claude/settings.json` allows a few read-only commands that recur (git status, ls, wc, the project's report tools).
-- **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
-  it and put their questions and state in their report.
-- **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
-- **Questions to Pierre**: in batches rather than one by one (unless one blocks work), in French in the chat. **A
-  question gets a number** (Q1, Q2…, for good, never reset; the last number used is in STATUS, so it carries across
-  sessions and Claude accounts) only when it passes both tests: its answer commits the future (the players' learning or
-  game, the engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost) **and** it
-  will be cited later. Asked plainly, without a number (and only when costly to undo: the rest ships,
-  above; never the order, run independent work in parallel): a confirmation or a fact, the wording of a rule already decided (his OK goes in the rule's *Source* line). Agents that
-  prepare questions (a subagent in its report) apply the same tests. Every answer, numbered or not, is quoted in the
-  PR's Decisions; small questions go in batches; past numbers stay as they are (Pierre, 2026-11-08). Open numbered ones
-  wait in STATUS "Questions for Pierre" until he answers (the answer then goes into the PR). Each gives one or
-  two lines of context (he does not remember everything as an agent does; he may ask for more), the question,
-  screenshots **sent as files in the chat** when it is visual, and the integrator's recommendation, so he can answer in
-  a word ("Q1 oui, Q2 B"). When and whether to ask: Rule 0.
-- **Every answer reaches its doc, and the answers ledger** (Pierre, 2026-11-19): each answer of Pierre's is applied to
-  the document it changes (a ROADMAP row, a rule, a study, a decision record) in the PR that records it, and added to the
-  append-only ledger [docs/ANSWERS.md](docs/ANSWERS.md); STATUS only cites it. Before any question,
-  the integrator searches the ledger, the rules and docs/decisions/; an answer found there is applied, never asked again.
-- **Data access**: any agent, subagents included, may **read** the sync sheet ("IMR Coral ID – RA progress", its id in
-  HANDOVER "Code.gs") through the Google Sheets / Drive connector, read-only, real names included: no anonymisation
-  between agents. **Writing** to the sheet is the integrator's only (never a subagent), and only with Pierre's explicit
-  one-off permission for that one correction. A subagent without the connector gets what it needs downloaded by the
-  integrator, analyses it, and the integrator puts the real names back against the results for Pierre (he knows the
-  players and matches results to people). Names never go into anything committed or published (rule D2). Real-data
-  checks (rule L12) may be run by any agent; their data and named results are never committed. <!-- rename-app: keep -->
-- **Reports and events, at every session start and every morning**: the integrator reads the players' reports (sheet tab
-  "Reports") and the app's events and errors (tab "Events": `err`, sync "save failed", old app versions) since the last
-  check (its time in STATUS; `tools/brief.py` cannot read the sheet, it only reminds), and gives Pierre a short summary
-  with real names, leaving out what he already handled or excluded. Rule 0 decides when it reaches him.
-- **Dependabot PRs** (the GitHub Actions versions) are the integrator's to merge once green, as rule W9 says.
-- **The `needs-pierre` label** marks a PR that waits for Pierre: the integrator's own reminder (Pierre does not browse
-  GitHub), not the source of truth. Such a PR is opened ready, never as a draft (rule W6). Before merging, read the PR's open questions themselves; remove the label in the
-  same step that records his answer.
-- **If Pierre switches back to claude.ai Projects** (a coordinator chat without the repository, each thread its own
-  Claude Code session): each thread is its own integrator and merges its own PRs under this same contract.
+
+## Working with Pierre
+
+- **In French, Pierre is "tu"**, never "vous"; only the chat with him is in French, all else in English (rule W1).
+- **Questions to Pierre**: in batches (unless one blocks work), in French, each with one or two lines of context, the
+  question, screenshots as files when visual, a recommendation; only what is costly to undo (the rest ships). **A
+  number** (Q1, Q2…, never reset, the last in STATUS) only when the answer commits the future (players' learning or
+  game, the engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost) **and**
+  will be cited; else asked plainly. Subagents apply the same tests. Every answer is quoted in the PR's Decisions. When
+  to ask: Rule 0.
+- **Every answer reaches its doc, and the answers ledger**: each answer is applied to the document it changes in the PR
+  that records it and added to [docs/ANSWERS.md](docs/ANSWERS.md). Before any question, the integrator searches the
+  ledger, the rules and `docs/decisions/`; an answer found there is applied, never asked again.
+- **Research uses every useful source without asking** (web search engines, guides, forums, publishers, databases and
+  their APIs; paced, rule C7); a query holds only public terms, never the project's data; every source is cited (C2).
+- **Estimates are in agent time** (reviews and checks included), never human days or weeks; convert any quoted one.
+- **The right model and effort for each task**, at every agent launch (`model`, `effort`; table in INTEGRATOR):
+  design, architecture, the learning engine, security and rule wording with consequences: Opus 5.5, high (Fable 5.2
+  only where Opus at high effort measurably falls short); ordinary code (game formats, admin pages, fixes, docs):
+  Sonnet 5.5, medium to high; mechanical, repetitive work: Haiku 5.5, low, after the sample test. In doubt, the
+  stronger one; a task that turns out harder is relaunched one step up. Opus 5.5 is the integrator's model.
+  `tools/agent_guard.py` refuses a launch without both.
+- **Model choice by measurement**: a task for a lighter model is first run on 50-100 items by the strongest model and
+  the candidates; the cheapest that meets a threshold set beforehand does the bulk; a small random sample of the bulk
+  is redone by the strong model to catch drift; the PR reports the figures.
+- **No permission prompts for Pierre**: files only with Write and Edit, never shell commands that embed code
+  (heredocs, `python -c`, `sed -i` on large blocks, `node -e` with code); a script is written with Write, run by name
+  (`tools/guard_bash.py` refuses the others). Integrators run in auto mode; a narrow allow rule only for a routine
+  command the classifier refuses.
+- **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop); subagents report instead.
+- **Data access**: any agent may read the sync sheet (read-only, real names included); writing to it is the
+  integrator's only, with Pierre's explicit one-off permission for that one correction. Names: rule D2.
+- **Reports and events**: at every session start and every morning, the integrator reads the sheet's Reports and
+  Events since the last check and gives Pierre a short summary with real names, leaving out what he already handled.
+
+## Every task
+
+- **Say what you checked and how**; a guess is labelled as a guess (rule W11).
+- **Never contradict or "correct" the IMR course** (rule C1). **Never invent categories or information**; every clue
+  carries its source (rule C2). Discrepancies between sources go to `points.json`; never settle them (rule C5).
+- **Shared and modular by default: one engine, no special case for one unit or one subject**; an exception is declared
+  and named in one place with its reason, and a test lists them all (rule S1).
+- **Player names: real in chat, anonymous in the repo** (rule D2). **Tests never reach the real sheet** (rule D1).
+- **Never change `curation.json` automatically or in a PR**; an agent may propose a change (rule A1).
+- **A `Code.gs` or `core.js` change carries one changes file; the integrator assigns `VERSION` at merge** (rule D3);
+  **the app never gets ahead of the sheet script** (D4); **every progress-rule change appends a rules version** (D5).
+- **The simplest algorithm that works**; checks proportionate to the change, valid statistics, a hard cap of 40
+  minutes of compute, level 3 never on this machine (rule L11). **Check algorithm changes on the real log too** (L12).
+- **Never edit `?v=`, `LAB_V` or `sw.js` `V`** (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
+- **A test with the logic you change** (rule W12); the fast tier before each push, the one smoke part you touch (rule
+  W14); UI: look at it, light and dark, phone and desktop (rule W17).
+- **A worktree of your own from a fresh `origin/main`**, files staged by name, one open PR per agent (rule W22); to
+  bring a PR up to date, merge `origin/main` into it, never rebase or force-push (rule W18). **Heavy runs take the
+  machine slot** (`tests/slot.js`, rule W24).
+- **PR from the template**, Decisions filled; `@codex review` after each push; fix or answer every finding; never
+  re-run a failed job (rule W23). **Every PR merges through a green merge train** (rule W26).
+- **Docs in the same PR** (rule W19): a decision carried out gets a short record in `docs/decisions/`; every idea
+  discussed but not built goes into ROADMAP; history stays in git and the PRs, never in the docs.
+- **No work sleeps on a branch**; a PR waiting for Pierre is opened ready with `needs-pierre` (rule W6). **Work
+  autonomously; fix by default; never re-ask what was answered** (rule W7). **Never list Pierre's curation choices
+  item by item; remind once, never nag** (rule W10).
+- **No two open PRs on the same sensitive file; two Codex rounds, then cut the scope** (rule W27).
 
 ## The rules
 
 Pierre's standing rules: follow them over your own taste; when in doubt, ask him. The full rule, its *Why* and
-*Source* are in its topic file. **Writing a rule down** (Pierre, 2026-11-05): keep his scope and meaning; never generalise beyond the case he
-spoke about nor harden it; unsure of the scope, ask; the wording of a new or changed rule goes to him for his OK. A rule
-is its imperative line, *Why:* one short line in our words, *Source:* Pierre, date (+ #PR); his sentence and its
-context go in the PR description, never in the rule. A rule holds for every subject unless marked **Corals:**; the
-words it uses (*unit*: what a question asks, a coral genus or a fish family, genus or species; *taxon*) are defined in
-[docs/rules/README.md](docs/rules/README.md).
-
-**Content** ([docs/rules/content.md](docs/rules/content.md))
-- **C1** Never contradict or "correct" the IMR course.
-- **C2** Never invent categories or information; every clue carries its source.
-- **C3** An ID tip is short and simple for anyone; detail goes on the sheet; the answer's feedback shows one decisive line, the rest behind "More".
-- **C4** Corals: growth form is an entry point only: rank, never filter or group genera by it.
-- **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
-- **C6** ID cues cite only species present at Dauin or in the Philippines.
-- **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
-- **C8** Presence: one rule for every species, a species with no name yet by its label (`tools/presence.py`).
-
-**Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** A reference photo is chosen on its objective qualities (reference look, judged ease), never by source, for every subject; reference-route photos enter first.
-- **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No photo of several corals or fish species in games; no book photo anywhere.
-- **P4** A one-photo question shows one observation; a multi-photo format shows different observations.
-- **P5** Credits in the lightbox and after the answer, never giving the answer away.
-- **P6** Corals: no photo of a coral skeleton anywhere.
-
-**Learning** ([docs/rules/learning.md](docs/rules/learning.md))
-- **L1** Time between sessions never decays progress, mastery or ability.
-- **L2** A wrong answer counts against both units.
-- **L3** Adaptive difficulty, no level selector; every account counts, Pierre's included.
-- **L4** One progression path: every game draws from `unlocked()`; only the quiz opens units.
-- **L5** Corals: starred genera follow their look-alikes.
-- **L6** No unit-specific code; corals: Millepora counts, bonus genera opt-in.
-- **L7** Answer choices get harder gradually.
-- **L8** Achievements reward learning, never time.
-- **L9** Learned = the silent mastery exam.
-- **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; checks proportionate to the change, valid statistics, a hard cap of 40 minutes of compute, level 3 never on this machine.
-- **L12** Check algorithm changes on the real log too.
-- **L13** Compute once, not on phones.
-- **L14** Visual recognition and side-by-side comparison beat theory.
-- **L15** First goal: ID on ideal photos.
-
-**UI** ([docs/rules/ui.md](docs/rules/ui.md))
-- **U1** Declutter: no page titles or intros; explanations behind the shared "?".
-- **U2** Every game fits one screen in every state.
-- **U3** 1280 px, fixed header, one palette, DESIGN.md tokens only.
-- **U4** Exactly 3 size classes, mobile-first; touch by media, never width.
-- **U5** No third-party scripts; a new host goes into the CSP.
-- **U6** No range sliders (swipeable photo strips are fine); visual beats text.
-- **U7** Settings removed on purpose stay removed.
-- **U8** Never hardcode the number of units.
-- **U9** Sign-in never on My progress.
-- **U10** Greet by first name only (`firstName()`).
-- **U11** Questions to the player come at a natural break.
-- **U12** Home = two doors.
-- **U13** Lab prototypes graduate only with Pierre's OK.
-- **U14** Players can report a problem anywhere.
-
-**Admin** ([docs/rules/admin.md](docs/rules/admin.md))
-- **A1** Never change `curation.json` automatically or in a PR; an agent may propose a change.
-- **A2** The admin is minimal: no text on the page, one click with Undo, confirm only bulk.
-- **A3** The top level stays short: a new page goes into an existing tab or group first.
-- **A4** One subject switch covers every admin page.
-- **A5** Every analysis says what it can conclude.
-
-**Subjects** ([docs/rules/subjects.md](docs/rules/subjects.md))
-- **S1** One shared engine; a difference between subjects is declared and named in one place, never a hidden test on the subject.
-- **S2** Fish names: the IMR PDF's, WoRMS beside; Pierre's Needs ID confirms nothing.
-- **S3** Fish groups come from the regional identification key.
-
-**Sheet and data** ([docs/rules/sheet.md](docs/rules/sheet.md))
-- **D1** Tests never reach the real sheet.
-- **D2** Player names: real in chat, anonymous in the repo.
-- **D3** A `Code.gs` or `core.js` change carries one changes file; the integrator assigns `VERSION` at merge.
-- **D4** The app never gets ahead of the sheet script.
-- **D5** Every progress-rule change appends a rules version.
-- **D6** A recalculation of progress is silent, a learned mark taken away included.
-- **D7** A deleted account leaves nothing in normal operation.
-- **D8** Every leaderboard follows a progress recalculation, for every player, at once.
-- **D9** The answer log is the reference for progress: trust it rather than the device.
-
-**Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
-- **W1** Everything produced is in English; only the chat with Pierre is in French.
-- **W2** Work autonomously; ask before anything destructive.
-- **W3** Alpha: no backward compatibility.
-- **W4** Many prototypes first; Pierre judges by taps.
-- **W5** Every idea discussed but not built goes into ROADMAP.
-- **W6** No work sleeps on a branch.
-- **W7** Fix by default; never re-ask what was answered.
-- **W8** Independent reviews get an open mission that questions our choices.
-- **W9** Latest stable version of tools.
-- **W10** Never list Pierre's curation choices item by item; remind once, never nag.
-- **W11** Say what you checked; a guess is labelled.
-- **W19** A PR updates the docs that describe what it changes and, when it carries out a decision, adds a short decision record in `docs/decisions/`; history stays in git and the PRs, never in the docs.
-- **W25** Use the quota with care, never at the cost of the result.
-- **W26** Every PR merges through a green merge train (`tools/train.py`), alone or with other ready PRs.
-- **W27** Bounded cost: at most four agents that write code or run tests (read-only studies on top), PRs from `main` only, two Codex rounds then cut the scope.
+*Source* are in its topic file. **Writing a rule down** (Pierre, 2026-11-05): keep his scope and meaning; never
+generalise beyond the case he spoke about nor harden it; unsure of the scope, ask; a change of substance (what a rule
+requires, a new rule) goes to him for his OK; editing (shortening, moving, merging duplicates, applying an answer he
+gave) is the integrator's call, listed in the PR. A rule is its imperative line, *Why:* one short line in our words,
+*Source:* Pierre, date (+ #PR); his sentence and its context go in the PR description, never in the rule. A friction
+first gets a guard (hook, test, tool check); prose only when no guard is possible. A rule holds for every subject
+unless marked **Corals:**; *unit* and *taxon* are defined in [docs/rules/README.md](docs/rules/README.md).
 
 ## Read on demand
 
-| Touching… | Read (ARCHITECTURE = docs/ARCHITECTURE.md) |
-|---|---|
-| IMR content, sources, presence, iNaturalist tools | [content](docs/rules/content.md); ARCHITECTURE "Tools" and [spec/tools.md](docs/spec/tools.md) |
-| Photos, candidates | [photos](docs/rules/photos.md); ARCHITECTURE "Photos", "Photos per context" and [spec/photos.md](docs/spec/photos.md); [spec/fish-photos.md](docs/spec/fish-photos.md) |
-| The draw, Elo, progress, any learning value | [learning](docs/rules/learning.md); [LEARNING.md](docs/LEARNING.md); [spec/model.md](docs/spec/model.md) |
-| Pages, layout, CSS | [ui](docs/rules/ui.md); [DESIGN.md](docs/DESIGN.md); ARCHITECTURE "Front end" and [spec/front-end.md](docs/spec/front-end.md) |
-| The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office" and [spec/admin.md](docs/spec/admin.md); "Analyses" and [spec/analyses.md](docs/spec/analyses.md) |
-| Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects" and [spec/subjects.md](docs/spec/subjects.md), "Fish content" and [spec/fish.md](docs/spec/fish.md); [FISH_PATH.md](docs/FISH_PATH.md) |
-| `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync" and [spec/sync.md](docs/spec/sync.md); [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
-| Why something was decided (a decision, Pierre's words) | [docs/decisions/](docs/decisions/README.md): the index; a PR that carries out a decision adds a record (rule W19) |
-
-## Ship checklist
-
-1. A worktree of your own from a fresh `origin/main`; stage files by name (rule W22). **A clone or worktree made
-   before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: a push would bring the old photos
-   back; docs/HANDOVER.md "Photos out of the repo, step 3"): clone again.
-2. A test with the logic you change (rule W12).
-3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests but those tagged `slow`, in the machine slot: rule W24),
-   the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
-4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
-5. UI: look at it, light and dark, phone and desktop (rule W17).
-6. `Code.gs` or `core.js` changed: rules D3-D5 (a `tools/sync/changes/` file, never `VERSION`). Tests never reach the
-   real sheet (rule D1).
-7. Docs in the same PR (rule W19); ideas not built into ROADMAP (rule W5).
-8. PR from the template, Decisions filled; to bring it up to date, merge `origin/main` into it, never rebase or
-   force-push (rule W18).
-9. `@codex review` after each push; fix or answer every finding; never re-run a failed job (rule W23).
+IMR content, sources, presence, iNaturalist tools: [content](docs/rules/content.md) (C1-C8). Photos, candidates:
+[photos](docs/rules/photos.md) (P1-P6). The draw, Elo, progress, any learning value: [learning](docs/rules/learning.md)
+(L1-L15). Pages, layout, CSS: [ui](docs/rules/ui.md) (U1-U14). The admin, `curation.json`, Analyses:
+[admin](docs/rules/admin.md) (A1-A5). Fish, sea slugs, `SUBJECTS`, `UNITS`: [subjects](docs/rules/subjects.md)
+(S1-S3). `Code.gs`, sync, the progress engine: [sheet](docs/rules/sheet.md) (D1-D9). Tests, versions, `data.json`,
+PRs, the merge train: [ship](docs/rules/ship.md) (W1-W27). Each file's header names its specs. Why something was
+decided: [docs/decisions/](docs/decisions/README.md).
 
 ## Review guidelines
 
 For Codex's PR review, the rules cheapest to miss:
 - A PR never edits `?v=N`, `LAB_V` or the `sw.js` cache name `V`: the deploy stamps them (rule W15).
 - Only the admin's draft and Publish write `curation.json`: never a PR, a script or a rebuild (rule A1).
-- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects is declared and named in one place (rule S1).
-- No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
-- A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
+- The shared code never tests which subject it runs (`'fish'`, `SUBJ === SUBJECTS[k]`): a difference between subjects
+  is declared and named in one place (rule S1).
+- No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up
+  names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
+- A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before
+  (rule D4).
 - Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).
-- A PR never edits `Code.gs` `const VERSION` nor its line 1 or `tools/sync/HISTORY.md` (the version history): a `Code.gs` (or `core.js`) change adds one `tools/sync/changes/<branch>.md` and the integrator assigns the version at merge (rule D3).
+- A PR never edits `Code.gs` `const VERSION` nor its line 1 or `tools/sync/HISTORY.md` (the version history): a
+  `Code.gs` (or `core.js`) change adds one `tools/sync/changes/<branch>.md` and the integrator assigns the version at
+  merge (rule D3).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).
