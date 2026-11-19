@@ -256,23 +256,16 @@ The photos of a question on unit n come from `model.js` `photoSet`:
 - **Variety.** The colonies of the last 2 questions on the unit weigh × 0.15 (`s.ro`); the best `PICKD.VARIETY`
   colonies are lifted to at least half the top weight, and every colony keeps a floor of `PICKD.FLOOR` of it, shared
   over the subject's `calib.pool` observations in a big pool (`model.js` `drawFloor`).
-- **No photo twice in a few questions.** The photo memory (`s.ps`) and the colonies held back (`s.ro`) are written at an
-  answer, but the photo quiz plans up to `AHEAD` (3) questions ahead (`quiz.js` `planNext`), so a question planned
-  behind another on the unit would be drawn blind to it and could show its colony again. The draw also reads the
-  session's window (`model.js` `SEENQ`, `seenAges`, `leastRecent`): the photos of the last `RECENT` (10, the game's own
-  "recent", wider than `AHEAD`) questions shown (`seenAdd`, from `quiz.js` `question`, which serves the quiz, the custom
-  quiz and the Duel tab, and from `live.js` `liveBuild`) and of those planned (the `NEXTQ` queue, read when drawing, so
-  a dropped plan leaves nothing behind). A photo counts by its file and by its observation, a Find the X by its four
-  tiles. In `photoSet`, a colony in the window is not drawn while the unit has another it can show; the filter comes
-  after the calibration question's and before the variety, the floor and the cap, which then work on the others. With
-  every colony in the window, the one shown longest ago is drawn. It never leaves only colonies the draw holds back:
-  before Open Water the hard ones (`RARE`: with every easy colony in the window, `rareCap` would have nothing easy to
-  cap against and a hard photo would come at full weight) and the variants not released yet (`varOf`); with every
-  colony at full weight in the window, the one of them shown longest ago stays, as the exploration share keeps the seen
-  easy ones. The corals have neither, so their draw takes the window alone. `examSet` takes the same filter on its
-  photos. The window is in memory only (a session): nothing is synced, and `s.ps`, `s.ro`, the expectation and the
-  progress are unchanged. The calibration set's factor (`setBonus`) is a photo's weight, so it works among the colonies
-  outside the window. Decision record: docs/decisions/2026-11-19-no-photo-twice.md.
+- **No photo twice in a few questions.** The photo memory (`s.ps`) and `s.ro` are written at an answer, but the quiz
+  plans up to `AHEAD` questions ahead (`planNext`), so a question planned behind another on the unit would be drawn
+  blind to it. The draw also reads the session's window (`model.js` `SEENQ`, `seenAges`, `leastRecent`): the photos, by
+  file and by observation, of the last `RECENT` (10) questions shown (`seenAdd`, from `quiz.js` `question` and `live.js`
+  `liveBuild`) and of those planned (the `NEXTQ` queue). In `photoSet` a colony in the window waits while the unit has
+  another to show, before the variety, the floor and the cap; with all in it, the one shown longest ago. It never
+  leaves only colonies the draw holds back (before Open Water the hard ones, `RARE`; the variants not released, `varOf`):
+  then the full-weight one shown longest ago stays. `examSet` takes the same filter. In memory only: nothing synced,
+  `s.ps`, `s.ro`, the expectation and the progress unchanged. The calibration set's factor (`setBonus`) works among the
+  colonies outside the window. Decision record: docs/decisions/2026-11-19-no-photo-twice.md.
 - **Online calibration.** A photo with few answers from all the players is drawn more often, × (1 + `CAL.B` /
   (1 + answers / `CAL.N`)) (`model.js` `calBonus`), multiplying the targeting, never replacing it. A share `CAL.RATE` of
   the questions on a unit the player holds (met, not shaky), never in a comeback, are calibration questions: one view
