@@ -23,6 +23,9 @@ Left out (none of them read by any script index.html loads, nor by the Lab):
   2026-11-15, Q359, Q366), every entry's was, t and by: the app applies v and shows src (core.js contentApply), the
   admin alone compares was with the base.
 
+Read as the fish game's build reads it (tools/fish_game.py read_cur, Pierre, 2026-11-19): what the fish auto-sort
+proposed reads the newer judgement, so a photo it set aside that a newer judgement puts in play is no longer in seen here.
+
   python3 tools/curplay.py [DIR]   reads DIR/curation.json, writes DIR/curation-play.json (DIR: the repository)
 """
 import json
@@ -87,11 +90,30 @@ def slim(cur):
     return out
 
 
+def read(root, cur):
+    """The curation as the fish game's build reads it (tools/fish_game.py read_cur: the auto-sort's proposals read the
+    newer judgement, a photo it set aside and the pass now puts in play included), so the players' copy plays the photos
+    fish-game.json holds. The files it needs missing (a test's made-up repository): cur as it is."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import fish_game
+
+    def get(name):
+        try:
+            with open(os.path.join(root, name), encoding='utf-8') as fh:
+                return json.load(fh)
+        except FileNotFoundError:
+            return None
+    S, cand = get('suggest.json'), get('fish-cand.json')
+    if not S or not cand:
+        return cur
+    return fish_game.read_cur(cur, cand, S.get('fish') or {}, S.get('by'))
+
+
 def main(argv):
     root = argv[1] if len(argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     with open(os.path.join(root, 'curation.json'), encoding='utf-8') as fh:
         cur = json.load(fh)
-    s = slim(cur)
+    s = slim(read(root, cur))
     text = json.dumps(s, ensure_ascii=False, separators=(',', ':'))
     tmp = os.path.join(root, 'curation-play.json.tmp')
     with open(tmp, 'w', encoding='utf-8') as fh:

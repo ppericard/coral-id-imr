@@ -661,9 +661,8 @@ test('curated photos: a valid code and ease for each, the caps where the ease is
   const {execFileSync} = require('child_process'),
     C = require('../core.js'),
     S = read('suggest.json').fish || {},
-    CUR = read('curation.json'),
-    FC = CUR.fish || {},
-    plan = JSON.parse(
+    // The curation as the build reads it (tools/fish_game.py read_cur: the auto-sort's proposals read the newer judgement).
+    {plan, fish: FC} = JSON.parse(
       execFileSync(
         'python3',
         [
@@ -673,7 +672,7 @@ import fish_game as G
 L = lambda f, d=None: G.load('.', f, d)
 fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs('.')
 todo, keep, _ = G.plan(fish, cur, cand, sug, L('fish-game.json', {'photos': {}}), refs, codes, crops, rkeep=rkeep)
-print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
+print(json.dumps({'plan': [r for r, _, _ in todo] + list(keep.values()), 'fish': cur.get('fish') or {}}))`
         ],
         {cwd: path.join(__dirname, '..'), encoding: 'utf8', maxBuffer: 64 << 20}
       )
@@ -706,7 +705,7 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
   // tools/fish_game.py lays it out; treeGen gives each photo to its species' family.
   const G = {};
   plan.forEach(p => (G[entry.get(p.sp)] = G[entry.get(p.sp)] || []).push(p));
-  const X = C.treeGen(F, C.treePhotos(PH, G, CUR));
+  const X = C.treeGen(F, C.treePhotos(PH, G, {...read('curation.json'), fish: FC}));
   X.c1.forEach(id => assert.ok(X.gen[id].views.wide.filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in the game`));
 });
 

@@ -102,6 +102,15 @@ print(json.dumps(out))`,
     py(`import fish_game as G\nprint(json.dumps(sorted(G.tags_auto(json.loads(sys.argv[1])))))`, JSON.stringify(F)),
     []
   );
+  // A photo the auto-sort brought back (log b, Q438) carries its copy as an add does; a Check is never a b.
+  const B = {tags: {x: 'p1g0sl1', y: 'p1g0sl1'}, auto: {'2026-11-12': {x: 'r', y: 'r'}, '2026-11-20': {x: 'btec', y: '?bt'}}};
+  assert.deepStrictEqual(
+    ['x', 'y'].map(f => A.fishTagsAuto(B, f)),
+    [true, false]
+  );
+  assert.deepStrictEqual(py(`import fish_game as G\nprint(json.dumps(sorted(G.tags_auto(json.loads(sys.argv[1])))))`, JSON.stringify(B)), [
+    'x'
+  ]);
 });
 
 test('fish_game.py record: a reference photo takes Pierre’s tags and ease; his Watermark off stands on every route', () => {
