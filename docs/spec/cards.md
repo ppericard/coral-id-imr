@@ -189,7 +189,8 @@ holds the id of the last note seen, so a player sees each note once. Marked seen
 page closes it unseen. A note about one subject says so in its data (`subj`, a subject id or a list; `core.js`
 `subjIn`): the two progress notes are the corals'; one without (the typed questions) is the engine's and shows in
 whatever subject is on screen. A card holds the run one subject shows (`core.js` `noteRun`); a note about another
-subject waits for the next card. A later recalculation that needs telling adds a note at the end of `RECALC.L` (a
+subject waits for the next card. A player with no answers in a note's subject has its notes marked seen unshown, and
+the engine's notes after them still come in the subject on screen. A later recalculation that needs telling adds a note at the end of `RECALC.L` (a
 `subj` if it speaks of one subject), no code; a recalculation of progress is otherwise silent (rule D6).
 
 **The apology card** (`progress.js` `sorryNotice`, `core.js` `SORRY`, `sorryOf`, `sorryFelt`, `sorryText`): one card,

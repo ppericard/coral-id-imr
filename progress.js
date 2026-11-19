@@ -1326,7 +1326,10 @@ Object.defineProperty(window, 'CARDS_SAID', {
   configurable: true,
   get: () => !!window.APP_READY && noticesReady() && !helloT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
 });
-function recalcNotice() {
+// visit: run inside another subject's visit (inSubject), for the notes about that subject; it returns RECALC_BACK when
+// the subject on screen is to look again (the visited subject's notes marked, the engine's after them left for it).
+const RECALC_BACK = 'back';
+function recalcNotice(visit = false) {
   if (noticeLater('recalc', recalcNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   // Whether this load has decided ("none" or "shown"; tests wait for it rather than for a fixed time).
   const said = d => (window.RECALC_SAID = d);
@@ -1338,13 +1341,19 @@ function recalcNotice() {
     seen = Math.max(at(store.get(RECALC.KEY, '')), ...L.filter(x => toldHas('recalc:' + x.id)).map(x => at(x.id))),
     run = noteRun(L.slice(seen + 1), SUBJ.id);
   if (!run.L.length) return void said('none');
-  if (run.sid !== SUBJ.id) return inSubject(run.sid, recalcNotice);
+  if (run.sid !== SUBJ.id) return inSubject(run.sid, () => recalcNotice(true)) === RECALC_BACK ? recalcNotice() : undefined;
   const due = run.L.slice().reverse(),
     last = due[0].id;
-  // Answers in that subject: the global count, or the units' own for progress saved before it existed. None: the run is
-  // marked seen unshown, and the next one, if any, is looked at.
+  // Answers in that subject: the global count, or the units' own for progress saved before it existed. None, on screen:
+  // the run is marked seen unshown, and the next one, if any, is looked at. None in a visited subject: only its own notes
+  // at the run's head are marked, and the subject on screen looks again (the engine's notes after them are for it).
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
-  if (!played) return void (store.set(RECALC.KEY, last), recalcNotice());
+  if (!played && !visit) return void (store.set(RECALC.KEY, last), recalcNotice());
+  if (!played) {
+    const k = run.L.findIndex(x => x.subj == null);
+    store.set(RECALC.KEY, run.L[(k < 0 ? run.L.length : k) - 1].id);
+    return RECALC_BACK;
+  }
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return void said('shown'); // already on screen
   if (document.querySelector('#tour, .unlock')) return void noticeAgain(recalcNotice, 2000);

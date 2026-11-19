@@ -59,6 +59,65 @@ test('the past notes keep their showing: the corals see every one of them, the o
   }
 });
 
+// progress.js recalcNotice on stubs: subjects with or without answers, the subject on screen, the cards shown.
+function notices(played, onScreen, key = '') {
+  const fn = block(SRC, '// visit: run inside another subject', '\n}\n', {through: true, file: 'progress.js'}),
+    saved = key ? {'reefid-recalc': key} : {},
+    shown = [],
+    c = {
+      RECALC,
+      noteRun: C.noteRun,
+      SUBJ: {id: onScreen},
+      window: {},
+      noticeLater: () => false,
+      noticeAgain: () => 0,
+      toldHas: () => false,
+      toldAdd: () => {},
+      cardRing: () => '',
+      headPct: () => 0,
+      store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},
+      document: {querySelector: () => null},
+      cardShow: o => shown.push([c.SUBJ.id, o.title]),
+      inSubject: (id, f) => {
+        const was = c.SUBJ;
+        c.SUBJ = {id};
+        try {
+          return f();
+        } finally {
+          c.SUBJ = was;
+        }
+      }
+    };
+  c.answersSoFar = () => (played.includes(c.SUBJ.id) ? 50 : 0);
+  Object.defineProperty(c, 'P', {get: () => ({})});
+  vm.createContext(c);
+  vm.runInContext(fn + '\nthis.recalcNotice = recalcNotice;', c);
+  c.recalcNotice();
+  return {shown, key: saved['reefid-recalc'], said: c.window.RECALC_SAID};
+}
+
+test('recalcNotice: the corals as before; a player of another subject alone still gets the engine note there', () => {
+  const L = RECALC.L,
+    coral = C.SUBJECTS.find(S => S.flat).id,
+    other = C.SUBJECTS.find(S => !S.flat).id,
+    typed = L.find(x => x.subj == null);
+  // a coral player, on either subject: every note due on one card in the corals, newest first (as before)
+  for (const on of [coral, other]) {
+    const r = notices([coral], on);
+    assert.deepStrictEqual(r.shown, [[coral, L[L.length - 1].t]], on);
+    assert.strictEqual(r.key, undefined, 'marked by its button only');
+  }
+  // a new player, nothing played: every note marked seen unshown (as before)
+  assert.deepStrictEqual(notices([], coral), {shown: [], key: L[L.length - 1].id, said: 'none'});
+  // a player of the other subject alone: the coral notes marked unshown, the engine's note shown in their subject (Codex
+  // review #1226)
+  const r = notices([other], other);
+  assert.deepStrictEqual(r.shown, [[other, typed.t]]);
+  assert.strictEqual(r.key, L[L.indexOf(typed) - 1].id);
+  // the coral notes seen already: the engine's note in the subject on screen
+  assert.deepStrictEqual(notices([coral, other], other, L[L.indexOf(typed) - 1].id).shown, [[other, typed.t]]);
+});
+
 test('the apology is an engine template, out of its window', () => {
   assert.ok(!('subj' in C.SORRY));
   assert.ok(Date.now() >= C.SORRY.UNTIL);
