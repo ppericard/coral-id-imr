@@ -313,8 +313,8 @@
   };
   // The 7 IMR forms (id, name) and 2-3 example photos of each, large and beautiful
   // (docs/decisions/2026-11-18-decisions-from-comments-3.md). Picked by eye among the game photos of that form (forms.json / curation.json "gf"), different
-  // genera when the form has several. Shown in rule P1's order whatever the order here: IMR lecture photos first, then the
-  // owner's own, then other observers' (provOrder), the first one largest. Tabulate has two: only Acropora is tabulate on
+  // genera when the form has several. Shown in the order here, the first one largest, never reordered by who took them
+  // (rule P1: no source priority). Tabulate has two: only Acropora is tabulate on
   // the slate. A photo hidden or excluded later drops out (only photos still in data.json are shown). Never one of the
   // check's photos (FORM_CHECK).
   const FORMS7 = [
@@ -381,15 +381,6 @@
       ]
     ]
   ];
-  // Rule P1: IMR lecture photos, then the owner's own, then other observers' (a stable sort keeps the order within each).
-  const provRank = ([g, f]) => {
-    const p = pobj({g, f});
-    return p.imr ? 0 : p.own ? 1 : 2;
-  };
-  const provOrder = L =>
-    L.map((x, i) => [x, i])
-      .sort((a, b) => provRank(a[0]) - provRank(b[0]) || a[1] - b[1])
-      .map(x => x[0]);
   const known = (g, f) => !!DATA.gen[g] && [...allPhotos(DATA.gen[g]), ...(DATA.course[g] || [])].some(p => p.f === f);
   const FORM_CHECK = [
     ['B', 'Stylophora', 'stylophora-wide-746236515'],
@@ -810,7 +801,7 @@
         // large photos of that form, each enlarged with a tap (genus, credit and report in the enlarged view, rule P5).
         const show = k => {
           const [fid, name, ex] = FORMS7[k],
-            shown = provOrder(ex.filter(([g, f]) => known(g, f)));
+            shown = ex.filter(([g, f]) => known(g, f));
           const L = shown.map(([g, f]) => pobj({g, f}));
           fig.innerHTML = `<div class="bx-forms" role="group" aria-label="The 7 IMR growth forms">${FORMS7.map(
             ([id, nm], j) => `<button type="button" data-f="${j}" aria-pressed="${j === k}">${formIcon(id)}<span>${esc(nm)}</span></button>`

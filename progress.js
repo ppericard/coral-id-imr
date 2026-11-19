@@ -52,11 +52,48 @@ const shyName = n => {
       if (V.test(n[i - 1]) && !V.test(n[i])) return n.slice(0, i) + '\u00ad' + n.slice(i);
   return n;
 };
+// Your tricky pairs (the name study's (f), Q124; docs/decisions/2026-11-19-tricky-pairs.md): the pairs of units the
+// player mixes up most, from their own answers only (core.js pairConf: [offered together, mixed up], both directions).
+// A pair counts once mixed up TRICKY.MIN times; ranked by its own mix-up rate shrunk toward 0 by CONF.W offers (core.js
+// confScore with no prior), so a pair the player now tells apart sinks as offers come with no new mix-up; ties: more
+// mix-ups first. TRICKY.N at most. Read only: the draw, the model and the score never see it. units: the units the board
+// draws; known: a unit of the subject (GX); hide: a unit not to name (a mystery tile). Pure on its inputs
+// (tests/tricky.test.js). [[a, b, mixed up, offered]], a before b by name.
+const TRICKY = {MIN: 2, N: 3};
+const trickyPairs = (P, units, known, hide = () => false) => {
+  const seen = new Set(),
+    L = [];
+  for (const n of units)
+    for (const o of Object.keys((P[n] || {}).conf || {})) {
+      const [a, b] = n < o ? [n, o] : [o, n],
+        k = a + '|' + b;
+      if (a === b || seen.has(k) || !known(o) || hide(a) || hide(b)) continue;
+      seen.add(k);
+      const [off, mix] = pairConf(P, a, b);
+      if (mix >= TRICKY.MIN) L.push([a, b, mix, off, confScore([off, mix], 0)]);
+    }
+  return L.sort((x, y) => y[4] - x[4] || y[2] - x[2])
+    .slice(0, TRICKY.N)
+    .map(x => x.slice(0, 4));
+};
+// The section in the side column: a chip per pair, a link to the pair's comparison when the subject has one (link(a, b),
+// else ''), a plain chip otherwise; nothing when there is no pair. name: the unit's name in the subject's words (uname).
+const trickyHTML = (L, name, link) =>
+  L.length
+    ? `<div class="ptricky"><h3 class="label">Your tricky pairs</h3><p class="chips">${L.map(([a, b, mix, off]) => {
+        const href = link(a, b),
+          t = `Mixed up ${mix} times in ${off} questions that offered both${href ? '. Compare them side by side' : ''}`,
+          // one inline box inside the flex chip, so the spaces around ↔ and before the count stay
+          inner = `<span>${name(a)} ↔ ${name(b)} <small>· ${mix} of ${off}</small></span>`;
+        return href ? `<a class="chip" href="${href}" title="${t}">${inner}</a>` : `<span class="chip" title="${t}">${inner}</span>`;
+      }).join('')}</p></div>`
+    : '';
 function quizBoard() {
   const list = slateGenera(),
-    // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison likewise.
+    // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison, when the
+    // subject has that page ('' otherwise).
     href = n => esc(hr(SUBJ.pages.includes('sheet') ? `g-${n}` : 'genera')),
-    hrefPair = (a, b) => esc(hr(SUBJ.pages.includes('cmp') ? `cmp-${a}|${b}` : 'genera'));
+    hrefPair = (a, b) => (SUBJ.pages.includes('cmp') ? esc(hr(`cmp-${a}|${b}`)) : '');
   // The units of the opt-in sets in play (bonusList), kept out of the ring and the counts, split by rank (boardParts):
   // the ones at the slate's own rank (the coral bonus genera) follow it in its grid (BO); every other set has its own
   // section below (SECT).
@@ -95,24 +132,9 @@ function quizBoard() {
     const b = isBonus(n);
     return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="${href(n)}" title="${b ? (g.name ? setOf(n).tag + '. ' : 'Bonus genus, not on the IMR list. ') : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b && tagged ? `<b class="pbtag">${g.name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwb">${g.name ? `<b>${uname(n)}</b>` : `<i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>`}${pct(n)}</span></a>`;
   };
-  // Your mix-ups to review: each pair you mixed up, ranked by your own confusion score (confOf), so a pair you now tell
-  // apart sinks and the ones you still confuse lead; the chip opens the side-by-side comparison (with "Drill this pair").
-  const seenPair = new Set(),
-    conf = list
-      .flatMap(n =>
-        Object.keys((P[n] || {}).conf || {})
-          .filter(o => GX(o))
-          .map(o => (n < o ? [n, o] : [o, n]))
-      )
-      .filter(([a, b]) => {
-        const k = a + '|' + b;
-        if (seenPair.has(k)) return false;
-        seenPair.add(k);
-        return true;
-      })
-      .map(([a, b]) => [a, b, pairConf(P, a, b)[1], confOf(a, b)])
-      .sort((x, y) => y[3] - x[3])
-      .slice(0, 3);
+  // Your tricky pairs (trickyPairs, above): from the units the board draws, never naming a mystery tile; the chip opens
+  // the side-by-side comparison (with "Drill this pair") where the subject has it.
+  const tricky = trickyPairs(P, shown, GX, myst);
   // The tile's tooltip: name, level, % and the right answers, photos seen, what is still needed.
   const tip = n => {
     const s = P[n] || {ok: 0, ko: 0},
@@ -194,6 +216,7 @@ function quizBoard() {
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen (for a player new to corals, a <b>?</b> in place of a genus not met yet: it shows once it opens); the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
+  <p class="lede"><b>Your tricky pairs</b>: the pairs of ${SUBJ.many} you mix up most, from your own answers alone, once you have mixed a pair up ${TRICKY.MIN} times ("3 of 5": mixed up 3 times in 5 questions that offered both). A pair you now tell apart sinks below the others. ${SUBJ.pages.includes('cmp') ? 'Tap one to see the two side by side. ' : ''}Ask yourself what tells the two apart for you.</p>
   <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
@@ -223,7 +246,7 @@ function quizBoard() {
             .join('')}</p></div>`
         : ''
     }
-    ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="${hrefPair(n, o)}" title="Compare side by side">${uname(n)} ↔ ${uname(o)} <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
+    ${trickyHTML(tricky, uname, hrefPair)}
     <div class="seg pvseg" role="group" aria-label="View">${[
       ['slate', 'Slate'],
       ['photos', 'Photos'],

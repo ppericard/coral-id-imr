@@ -74,6 +74,8 @@ function question(subject, F, {mode, chs, k}) {
     solo: 0.5,
     warm: false,
     SHOWNQ: null,
+    R: 1, // no comeback (quiz.js answer hands quiz.js recordAnswer its recalls)
+    Rc: 1,
     tm: {rt: 4},
     GX: () => ({}),
     photoDiff: () => 0.2,

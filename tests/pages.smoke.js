@@ -1873,11 +1873,10 @@ async function signin(base) {
       if (!/every answer you gave/.test(txt) || !/cannot be undone/.test(txt))
         fails.push('delete account: the page does not say what is deleted');
       if (
-        !/Four things stay/.test(txt) ||
+        !/Three things stay/.test(txt) ||
         !/removed accounts/.test(txt) ||
         !/audit log/.test(txt) ||
-        !/backups/.test(txt) ||
-        !/Notes tab/.test(txt) ||
+        !/backup copies/.test(txt) ||
         (await p.$$('.delacct a[href="privacy.html"]')).length < 1
       )
         fails.push('delete account: the page does not say everything that stays, with the privacy notice linked');
@@ -3893,9 +3892,19 @@ async function credits(b, base) {
     if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
-    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only.
+    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
+    // first whose sheet shows a traced lecture photo besides its cover: the sheet's order is by quality, whoever took
+    // the photo (rule P1), so no given genus is sure to show one.
     {
-      await p.evaluate(() => (location.hash = 'learn/genus/Stylophora'));
+      const gn = await p.evaluate(() =>
+        Object.keys(DATA.gen).find(n => {
+          const g = DATA.gen[n],
+            cv = cover(g);
+          return Object.values(g.sl || {}).some(s => [...s.feat, ...s.more].some(x => x.imr && x.a && x.pg && (!cv || x.f !== cv.f)));
+        })
+      );
+      if (!gn) fails.push('no genus sheet shows a lecture photo traced to Corals of the World');
+      await p.evaluate(n => (location.hash = 'learn/genus/' + n), gn || 'Acropora');
       await drawn(p);
       const lc = await p.evaluate(() => {
         const F = [...document.querySelectorAll('#view figure figcaption')].filter(x => /IMR lecture/.test(x.textContent));
@@ -3905,7 +3914,7 @@ async function credits(b, base) {
         });
       });
       if (!lc.some(x => / \/ Corals of the World$/.test(x.link) && /slide \d+ · /.test(x.t)))
-        fails.push(`Stylophora sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
+        fails.push(`${gn} sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
     }
     await p.evaluate(() => (location.hash = 'learn/genus/Acropora'));
     await drawn(p);
@@ -4580,21 +4589,20 @@ async function basicsTeach(b, base) {
     await go('forms');
     const nf = await p.evaluate(() => document.querySelectorAll('.bx-forms [data-f] svg.bx-fi').length);
     if (nf !== 7) fails.push(`${W} forms: ${nf} drawn form icons, not 7`);
+    // The examples' genera in the order proto/basics.js FORMS7 lists them, by form name: shown in that order, never
+    // reordered by who took the photo (rule P1).
+    const F7 = {},
+      f7src = fs.readFileSync(path.join(ROOT, 'proto', 'basics.js'), 'utf8'),
+      f7 = f7src.slice(f7src.indexOf('const FORMS7 = ['), f7src.indexOf('];', f7src.indexOf('const FORMS7 = [')));
+    for (const m of f7.matchAll(/\[\s*'\w',\s*'([^']+)',\s*\[([\s\S]*?)\]\s*\]/g))
+      F7[m[1]] = [...m[2].matchAll(/\['([^']+)',\s*'[^']+'/g)].map(x => x[1]);
+    if (Object.keys(F7).length !== 7) fails.push(`${W} forms: ${Object.keys(F7).length} forms read from FORMS7, not 7`);
     for (let j = 0; j < 7; j++) {
       await p.click(`.bx-forms [data-f="${j}"]`);
       const ex = await p.evaluate(() =>
         [...document.querySelectorAll('.bx-fex figure')].map(f => ({
           w: Math.round(f.querySelector('img').getBoundingClientRect().width),
-          g: (f.querySelector('figcaption i') || {}).textContent || '',
-          // rule P1: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
-          r: (n => {
-            const fi = (f
-                .querySelector('img')
-                .getAttribute('src')
-                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
-              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
-            return q.imr ? 0 : q.own ? 1 : 2;
-          })((f.querySelector('figcaption i') || {}).textContent)
+          g: (f.querySelector('figcaption i') || {}).textContent || ''
         }))
       );
       const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
@@ -4603,9 +4611,10 @@ async function basicsTeach(b, base) {
       if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
         fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
       if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
-      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+      const want = (F7[name.trim()] || []).filter(g => ex.some(e => e.g === g));
+      if (ex.map(e => e.g).join() !== want.join())
         fails.push(
-          `${W} forms ${name}: examples not in rule P1's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+          `${W} forms ${name}: examples not in their listed order (rule P1): ${ex.map(e => e.g).join(', ')} for ${want.join(', ')}`
         );
     }
     await p.click('.bx-fex .bx-fx');
@@ -5071,6 +5080,65 @@ async function namesCheck(b, base) {
   return fails;
 }
 
+// Your tricky pairs on My progress (progress.js trickyPairs, the name study's (f)): on a seeded record, the two pairs
+// mixed up twice or more show, the most mixed up first, each with its count and a link to its comparison; the pair mixed
+// up once does not. Opening the page writes nothing to the record (read only). Returns the failures.
+async function trickyCheck(b, base) {
+  const fails = [],
+    PROG = {
+      Pocillopora: {ok: 8, ko: 4, conf: {Stylophora: 3}, off: {Stylophora: 5}},
+      Stylophora: {ok: 5, ko: 2, conf: {Pocillopora: 1}, off: {Pocillopora: 3}},
+      Favites: {ok: 9, ko: 2, conf: {Dipsastraea: 2}, off: {Dipsastraea: 10}},
+      Acropora: {ok: 6, ko: 1, conf: {Montipora: 1}, off: {Montipora: 4}}
+    };
+  for (const w of [390, 1280]) {
+    const c = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(s => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"imr","t":1}');
+      localStorage.getItem('reefid-sync-coral-progress') || localStorage.setItem('reefid-sync-coral-progress', s);
+    }, JSON.stringify(PROG));
+    await c.addInitScript(TIPS_OFF);
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const before = await p.evaluate(() => localStorage.getItem('reefid-sync-coral-progress'));
+    await p.evaluate(() => go('progress'));
+    await p.waitForSelector('.pboard .gside', {timeout: 8000});
+    const s = await p.evaluate(() => {
+      const box = document.querySelector('.pboard .gside .ptricky');
+      return {
+        shown: !!(box && box.offsetParent),
+        head: box ? box.querySelector('h3').textContent : null,
+        chips: box ? [...box.querySelectorAll('.chip')].map(a => [a.tagName, a.textContent.trim(), a.getAttribute('href')]) : [],
+        after: localStorage.getItem('reefid-sync-coral-progress')
+      };
+    });
+    const want = [
+      ['A', 'Pocillopora ↔ Stylophora · 4 of 8', /compare\/Pocillopora\/Stylophora$/],
+      ['A', 'Dipsastraea ↔ Favites · 2 of 10', /compare\/Dipsastraea\/Favites$/]
+    ];
+    if (!s.shown || s.head !== 'Your tricky pairs') fails.push(`tricky pairs ${w}: the section is not on My progress ${JSON.stringify(s)}`);
+    else if (
+      s.chips.length !== want.length ||
+      want.some(([t, x, h], i) => s.chips[i][0] !== t || s.chips[i][1] !== x || !h.test(s.chips[i][2] || ''))
+    )
+      fails.push(`tricky pairs ${w}: the chips ${JSON.stringify(s.chips)}`);
+    if (s.after !== before) fails.push(`tricky pairs ${w}: My progress wrote the record ${before} → ${s.after}`);
+    if (errs.length) fails.push(`tricky pairs ${w}: page errors ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
+
 // The subject to start with (tour.js pick, plan): a player with one subject gets the six steps, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
 // subject's question, where to switch, and the rest in that subject's words; a group member who signs in during the tour
 // gets the choice right after the sign-in step; with fish open to all (core.js open: 'all'), a signed-out new player
@@ -5474,7 +5542,7 @@ async function installCheck(b, base) {
 // their own); tips: the "Did you know?" tips (tipsCheck) and the custom quiz's reminder (customLeftCheck); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question and its fallback cards
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
-// (namesCheck); subjtour: the subject to start with in
+// (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).
 const PARTS = [
     'main',
@@ -6340,7 +6408,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
-  if (run.has('names')) for (const f of await namesCheck(b, base)) fails.push(f);
+  if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);
   if (run.has('install')) for (const f of await installCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);

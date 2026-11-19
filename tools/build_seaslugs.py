@@ -41,7 +41,10 @@ with an open / nc photo), life-stage annotations (`juv`: area, world). Presence 
 Stars rule (`stars_scores`): W = log10(1 + views) / log10(1 + the best views), counted only for a species' own article
 or an article of its own under another name (not a genus or family article, not one shared by two species); M =
 log(1 + sites) / log(1 + the best sites), sites = distinct web sites among the readable ph and general pages that name
-it (scientific name, a WoRMS synonym, or a nickname whose Wikipedia redirect lands on its article); score = (W + M) / 2.
+it (scientific name, a WoRMS synonym, or a nickname whose Wikipedia redirect lands on its article, or one Pierre decided
+it shares: a source nickname's `also`, "Pikachu" for Thecacera pikachu and T. pacifica, Q417, 2026-11-19; T. picta is
+only mentioned in the names, tools/seaslug_names.py, never counted); score = (W + M) / 2. A bare "Pikachu" (no species of
+the genus written) would belong to the genus Thecacera: this file counts species only and no page is in that case.
 The stars = the `stars.size` best scores among the species Pierre did not remove (`stars.remove`: the next scores replace
 them), then the species he adds (`stars.add`). Circles (`circles`): circle 1 = the stars plus the most common species up
 to `circles.one`; then the rest by commonness in blocks of `circles.next`, the remainder last. All decided by Pierre,
@@ -51,6 +54,8 @@ the output for the subject's build; the tool does not use them.
 Usage: python3 tools/build_seaslugs.py [--offline | --refresh] [--seed DIR] [--dry]
        python3 tools/build_seaslugs.py --check     (derive again from tools/seaslugs.json, offline; exit 1 on a difference,
                                                     or when its copied look-alikes or photo target are not the source's)
+       python3 tools/build_seaslugs.py --nicknames (offline: apply the source nicknames' `also` to the recorded pages, then
+                                                    derive again; the pages are not read again)
        python3 tools/build_seaslugs.py --target    (offline: copy the source's look-alikes and photo target in again,
                                                     nothing else changed; the cache is not needed)
   --seed DIR: a cache of earlier replies, one DIR/<sha1 of the URL>.json each (the study's pulls of 2026-11-15), read
@@ -405,7 +410,8 @@ def norm_text(t):
 
 def mentions(text, forms, nicks):
     """{species: sorted kinds} named in text. forms: {scientific name: species} (accepted, iNaturalist's, WoRMS
-    synonyms; a name claimed by two species is left out by the caller); nicks: {phrase: species}. A binomial counts
+    synonyms; a name claimed by two species is left out by the caller); nicks: {phrase: species, or a list of the species
+    that share it}. A binomial counts
     written in full or abbreviated ("C. annae") when that genus is written in full on the page and no other species
     whose genus is on the page abbreviates the same."""
     t = norm_text(text)
@@ -421,9 +427,10 @@ def mentions(text, forms, nicks):
     for (i, e), sps in abbr.items():
         if len(sps) == 1 and re.search(r"(?<![\w.])" + re.escape(i) + r"\. ?" + re.escape(e) + r"(?![\w])", t):
             found[next(iter(sps))].add("abbr")
-    for ph, sp in nicks.items():
+    for ph, sps in nicks.items():
         if re.search(r"(?<![\w])" + re.escape(ph.lower()) + r"(?![\w])", t):
-            found[sp].add("nickname")
+            for sp in [sps] if isinstance(sps, str) else sps:  # a nickname shared by several species counts for each
+                found[sp].add("nickname")
     return {sp: sorted(k) for sp, k in found.items()}
 
 
@@ -436,6 +443,12 @@ def site_of(url):
 
 
 # ---------------------------------------------------------------- derive (pure)
+
+
+def nick_extra(x):
+    """What a source nickname adds to its record in the output: ask (not counted, a question), also (the other species
+    that share the nickname, counted with the first: decided by Pierre, not the redirect's) and why."""
+    return {k: x[k] for k in ("ask", "also", "why") if x.get(k)}
 
 
 def common_key(s):
@@ -576,12 +589,12 @@ def build(net, src, log=print):
         target = (sp.get(next((k for k, v in sp.items() if v["name"] == x["species"]), None)) or {}).get("wiki") or {}
         ok = not x.get("ask") and lands is not None and lands == target.get("title")
         nick_out.append({"phrases": x["phrases"], "species": x["species"], "wikiTitle": x["title"], "landsOn": lands,
-                         "counted": ok, **({"ask": x["ask"]} if x.get("ask") else {})})
+                         "counted": ok, **nick_extra(x)})
         for ph in x["phrases"]:
             if ok:
-                nicks[ph] = x["species"]
+                nicks[ph] = [x["species"], *(x.get("also") or [])]
         for s in sp.values():
-            if s["name"] == x["species"]:
+            if s["name"] == x["species"] or s["name"] in (x.get("also") or []):
                 s.setdefault("nick", []).extend(x["phrases"][:1])
     pages, unconf, confirmed = [], Counter(), {s["name"] for s in sp.values()}
     for p in src["pages"]:
@@ -660,9 +673,48 @@ def recopy(src, text):
     return dump(d["species"], d["pages"], meta, d["proposal"])
 
 
+def renick(src, d):
+    """Applies the source's shared nicknames (`also`) to the committed output d (parsed), offline and in place: on every
+    page that recorded the nickname for its species (`how` has "nickname"), each species it is shared with is named too
+    (the nickname's kind; "name" kept where the page also writes the species in full), and the `nicknames` record and
+    each species' `nick` follow the source. A page's text is not read again (CI and a fresh clone have no cache; the
+    nickname's phrases are the same, only the species they count for grew). Idempotent. A species taken out of an
+    `also` is not taken out of the pages: that needs the full fetch."""
+    known = {s["name"] for s in d["species"]}
+    recs = {r["wikiTitle"]: r for r in d["nicknames"]}
+    for x in src["nicknames"]:
+        r = recs.get(x["title"])
+        if r is None:
+            continue
+        for k in ("ask", "also", "why"):
+            r.pop(k, None)
+        r.update(nick_extra(x))
+        also = [a for a in x.get("also") or [] if a in known]
+        for s in d["species"]:
+            if s["name"] in also and x["phrases"][0] not in (s.get("nick") or []):
+                s["nick"] = [*(s.get("nick") or []), x["phrases"][0]]
+        if not r["counted"]:
+            continue
+        for p in d["pages"]:
+            how = p.get("how") or {}
+            if "nickname" not in how.get(x["species"], []):
+                continue
+            for a in also:
+                prev = how.get(a) or (["name"] if a in p["species"] else [])
+                p["species"] = sorted({*p["species"], a})
+                how[a] = sorted({*prev, "nickname"})
+            p["how"] = dict(sorted(how.items()))
+
+
 def check(src):
     text = OUT.read_text(encoding="utf-8")
     d = json.loads(text)
+    again = json.loads(text)
+    renick(src, again)
+    if again != d:
+        print("tools/seaslugs.json's shared nicknames differ from tools/seaslug_source.json's (`also`); "
+              "run python3 tools/build_seaslugs.py --nicknames")
+        return 1
     species = [dict(s) for s in d["species"]]
     proposal = derive(species, d["pages"], src)
     bad = [s["name"] for s, o in zip(species, d["species"]) if any(s.get(k) != o.get(k) for k in ("rank", "stars", "star", "circle"))]
@@ -687,10 +739,21 @@ def main():
     a.add_argument("--dry", action="store_true")
     a.add_argument("--check", action="store_true")
     a.add_argument("--target", action="store_true", help="copy the source's photo target and look-alikes in, offline")
+    a.add_argument("--nicknames", action="store_true", help="apply the source's shared nicknames to the pages, offline")
     o = a.parse_args()
     src = json.loads(SRC.read_text(encoding="utf-8"))
     if o.check:
         sys.exit(check(src))
+    if o.nicknames:
+        d = json.loads(OUT.read_text(encoding="utf-8"))
+        renick(src, d)
+        species = d["species"]
+        proposal = derive(species, d["pages"], src)
+        meta = {k: v for k, v in d.items() if k not in ("_doc", "v", "proposal", "pages", "species")}
+        OUT.write_text(dump(species, d["pages"], meta, proposal), encoding="utf-8")
+        print(f"wrote {OUT.relative_to(ROOT)}: the shared nicknames applied to the pages, then derived again")
+        print(f"stars: {', '.join(proposal['stars'])}; circles: {proposal['sizes']}")
+        return
     if o.target:
         OUT.write_text(recopy(src, OUT.read_text(encoding="utf-8")), encoding="utf-8")
         print(f"wrote {OUT.relative_to(ROOT)}: the source's photo target and look-alikes")

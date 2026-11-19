@@ -72,10 +72,15 @@ test('a crop pinned, added or made the cover in a curation is dropped, the genus
   const c = {genera: {G: {cover: 'g-cf-2-00', feat: {wide: ['g-cf-2-00', 'g-wide-3']}, add: {'g-cf-2-01': 'wide'}}}};
   applyCuration(d, c);
   applySlots(d, c, {});
-  const s = d.gen.G.sl.wide;
-  assert.deepStrictEqual(
-    s.feat.map(p => p.f),
-    ['g-wide-3', 'g-wide-0', 'g-wide-1']
+  const s = d.gen.G.sl.wide,
+    F = s.feat.map(p => p.f);
+  // The pin that names a photo leads; the two other places go to the genus's own photos (equal quality: the fixed order of
+  // core.js easyRank, rule P1).
+  assert.strictEqual(F.length, 3);
+  assert.strictEqual(F[0], 'g-wide-3');
+  assert.ok(
+    F.slice(1).every(f => /^g-wide-[012]$/.test(f)),
+    F.join()
   );
   assert.ok(![...s.feat, ...s.more, ...s.game, ...s.idkey, ...d.gen.G.views.wide].some(p => cfCrop(p.f)));
 });
