@@ -36,10 +36,14 @@ test('the levels table: each level its prefix, rank, name kind and parent; a spe
   assert.strictEqual(C.spUnitId('cn', 's091'), 's:s091');
   assert.strictEqual(C.spUnitId('sci', 's091'), 'sci:s091');
   assert.strictEqual(C.spUnitId('sci', 'x:goniobranchus-sp5'), 'sci:xgoniobranchussp5');
-  assert.deepStrictEqual(
-    ['f:Damselfishes', 'g:Chromis', 's:s091', 'sci:s091', 'Acropora', ''].map(C.levelOf),
-    ['family', 'genus', 'cn', 'sci', '', '']
-  );
+  assert.deepStrictEqual(['f:Damselfishes', 'g:Chromis', 's:s091', 'sci:s091', 'Acropora', ''].map(C.levelOf), [
+    'family',
+    'genus',
+    'cn',
+    'sci',
+    '',
+    ''
+  ]);
 });
 
 test('the fish: one scientific unit per species in play, under its genus unit, the traps its family’s', () => {
@@ -146,7 +150,8 @@ const states = () => {
   [0, 3, 12].forEach(n => {
     const P = base();
     if (!n) delete P['sci:x'];
-    for (let i = 0; i < n; i++) C.scoreAnswer(P, {t: 'sci:x', ok: true, k: 4, chs: ['sci:x', 'sci:y'], d0: 0.2 * (i % 5), ph: ['f' + i], from: 'g:G'});
+    for (let i = 0; i < n; i++)
+      C.scoreAnswer(P, {t: 'sci:x', ok: true, k: 4, chs: ['sci:x', 'sci:y'], d0: 0.2 * (i % 5), ph: ['f' + i], from: 'g:G'});
     out.push(P);
   });
   return out;
@@ -227,11 +232,7 @@ test('the board tree: each species in its own entry with its scientific unit; th
     before = C.treeScoreTree(X, F, true),
     K = FISH.score;
   assert.deepStrictEqual(on.f, before.f);
-  assert.deepStrictEqual(
-    on.s.map(e => e[2]).sort(),
-    SCF.map(u => u.id).sort(),
-    'every entry its scientific unit, every unit once'
-  );
+  assert.deepStrictEqual(on.s.map(e => e[2]).sort(), SCF.map(u => u.id).sort(), 'every entry its scientific unit, every unit once');
   on.s.forEach(e => {
     const u = SCF.find(x => x.id === e[2]);
     assert.strictEqual(e[1], u.genus);
@@ -311,7 +312,11 @@ test('the sheet logs a scientific species answer with its mark, and replays it a
   assert.deepStrictEqual(SG[sp5.id].from, 'g:Goniobranchus');
   // the replays served at the next load: as core.js replays the same answers with those units
   const g = s.get({name: 'Ana', pin: '1234', rv: '0', rv_fish: '0', rv_seaslug: '0'}),
-    want = (L, gen, vars) => C.replayProgress(L.map(a => C.logRow(a, 'p')), {gen, vars}).p.P;
+    want = (L, gen, vars) =>
+      C.replayProgress(
+        L.map(a => C.logRow(a, 'p')),
+        {gen, vars}
+      ).p.P;
   assert.deepStrictEqual(g.replays.fish.rec, JSON.parse(JSON.stringify(want(fish, G, s.ctx.subjVar_('fish')))));
   assert.deepStrictEqual(g.replays.seaslug.rec, JSON.parse(JSON.stringify(want(slug, SG, s.ctx.subjVar_('seaslug')))));
   assert.strictEqual(g.replays.fish.rv, C.rvOf('fish'));

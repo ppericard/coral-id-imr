@@ -1,6 +1,8 @@
 # Species by their scientific names, fish and sea slugs: the plan of step 2
 
-**Status: plan, docs only, every question answered (Q394-Q398), ready to build.** Written on 2026-11-17 in the
+**Status: every question answered (Q394-Q398); the sheet PR of section 5 built (`claude/sci-sheet`, sheet script
+vNEXT: the `sci:` units of both subjects in the replay and the board's tree, Q394's smaller faults, the gate `SCI_SHEET`);
+the app PR, the names rows, the exams and the ultimate exam next.** Written on 2026-11-17 in the
 evening, Manila time, on `origin/main` at 444d4e61, the day #975 (step 1, sheet script v161) was merged. Pierre answered
 on 2026-11-17 in the evening and on 2026-11-18 in the morning; the answers are recorded where each question stood
 (section 3) and folded into the design (section 2), the check (section 4) and the order of PRs (section 5). No
@@ -193,8 +195,8 @@ stays out, as in step 1 (#892), for both kinds.
 - **The sea slugs** have no score tree or achievements, but they do have a sheet replay (`replayed`: `gen` is
   `fishReplayGen(F, 'genus')`, `rvs` is `SEASLUG_RVS`) and a board ranked by the genera's mean (Codex review #1041).
   Their species units are therefore new units for that replay too: `fishReplayGen`'s `'genus'` branch returns before it
-  adds any species today, so the sheet PR extends it to the sea slugs' `sci:` species (look-alikes from the genus's
-  other species, family line, `from` the genus), under a new `SEASLUG_RVS` version for the answers it now counts, and
+  adds any species today, so the sheet PR extends it to the sea slugs' `sci:` species (look-alikes from the family's
+  other species, as the table of §2.1 and §2.7 (4) say, family line, `from` the genus), under a new `SEASLUG_RVS` version for the answers it now counts, and
   the replay's cache keys move with it. The sea slugs' species level is gated behind that script version.
 
 ### 2.7 Where the sea slugs differ
