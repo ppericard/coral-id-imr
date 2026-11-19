@@ -1316,7 +1316,9 @@ const recallAt = (n, t = Date.now(), last = lastAt()) => {
 };
 const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(aimOff(4) - Math.log(R));
 // The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
-const cbPlay = () => [...slateGenera(), ...bonusList()];
+// A unit closed (a live game's answers before its card, model.js introLive; One at a time) is neither: its answers do not
+// start a comeback, whose floor would hold back the first cards while no unit is open (rule L4).
+const cbPlay = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
 const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
 // Brings the comeback up to now (when a question is planned or answered): a new visit sets the floor, and the rust of
 // its gap starts a comeback; a gap during a comeback adds to it.
@@ -1378,13 +1380,15 @@ function comebackStep(R, th, d, k, good) {
   cbSave();
 }
 // The times an answer leaves in the progress: the genus's last answer and days answered right, the player's last answer.
+// now: when it was given (a live answer recorded later, quiz.js recordAnswer at); a later answer's time is kept, so an
+// answer recorded late never reads as given after a card shown since (askedOpen).
 function answeredAt(s, good, now = Date.now()) {
-  s.at = now;
+  s.at = Math.max(Number(s.at) || 0, now);
   if (good && s.dl !== dayNo(now)) {
     s.dd = (s.dd || 0) + 1;
     s.dl = dayNo(now);
   }
-  if (P[LEVEL]) P[LEVEL].at = now;
+  if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
 }
 function weighted(list) {
   const w = shareW(list, list.map(weight)); // the rank share (SHARE)

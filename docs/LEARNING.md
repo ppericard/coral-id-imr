@@ -463,8 +463,8 @@ some recall, and the first answers after it measure how much.
   `recallOf`). **Stability** S, in days: from `FSRS.S0` to `FSRS.S1`, log-linear in x = σ(ability − genus offset) (1
   once learned), times `FSRS.G` for each further day the unit was answered right (`s.dd`: spaced days count, not answers
   in one sitting; `model.js` `stability`). `model.js` `FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5}`.
-- **Rust**: the right answers the break is expected to have cost, summed over the units answered (`model.js`
-  `rustOf`, `rustNow`). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
+- **Rust**: the right answers the break is expected to have cost, summed over the units answered and not closed
+  (`model.js` `rustOf`, `rustNow`, `cbPlay`: a live game's units before their card start no comeback). A comeback starts at a new visit (an answer `SESSION.GAP`, 30 minutes, after the last) whose gap
   left rust.
 - **Its questions** (`model.js` `comebackOf`): units answered right, the surest half until one is right in this
   comeback, then the most rusted half; the player's usual choices; photos aimed at ability + ln R; no card, duel, exam

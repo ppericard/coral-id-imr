@@ -810,7 +810,8 @@ function recordAnswer({
   holdStep(ans.e, good);
   startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
   if (warm) comebackStep(q.R, th0, dm, k, good);
-  answeredAt(s, good);
+  // When it was given: a live answer recorded later (live.js liveFlush) keeps its own time, never one after now.
+  answeredAt(s, good, Math.min(Date.now(), Date.parse(at) || Infinity));
   // Every subject's answers go to the sheet. A subject the
   // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
   // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).

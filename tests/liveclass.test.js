@@ -810,6 +810,12 @@ test('live.js: an answer on a unit not opened is marked, then recorded and logge
   const row = calls.find(x => typeof x === 'object');
   assert.ok(row && row.m === 'live' && row.g === 'Acropora' && row.ok === 1 && row.sc, 'logged with its scoring record');
   assert.strictEqual(P.Acropora.ok, 1, 'counted in its record');
+  // Recorded late (liveFlush after a sign-in): the unit's last answer keeps the time it was given (model.js askedOpen
+  // reads it against a card shown since; Codex review #1234).
+  let when = null;
+  A.ctx.answeredAt = (s, good, t) => (when = t);
+  A.ctx.liveLog({id: 'coral'}, {...o, qi: 2, at: '2026-11-19T01:00:00.000Z'});
+  assert.strictEqual(when, Date.parse('2026-11-19T01:00:00.000Z'));
   // A unit the subject does not have: still left out.
   calls.length = 0;
   assert.strictEqual(A.ctx.liveLog({id: 'coral'}, {...o, t: 'Nowhere'}), 'skip');
