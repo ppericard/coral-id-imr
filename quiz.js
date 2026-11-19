@@ -709,7 +709,9 @@ function recordAnswer({
     {th0, dm} = res;
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
-  if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
+  // A look-alike contrast won (the duel achievement): the Duel tab, a duel slipped into the quiz or an Again (core.js
+  // contrastQ, as the replay reads it from the log).
+  if (good && contrastQ(mq, chs.length)) s.du = 1;
   // A right answer clears its photos' variant groups from those the answer log left (model.js varRight, varLeft).
   if (good) varRight(target, seenPh);
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
@@ -870,9 +872,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
     (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
-    // |h: a held-out photo shown (core.js treeHeld: only the mastery exam asks them, so …|h|x),
-    // so the transfer can be measured at the exam from the log; before |kN, which the sheet reads at the end. Counted like
-    // any answer.
+    // |h: a photo of this player's reserve shown (core.js reserveOf: only the mastery exam asks them, so …|h|x), so the
+    // transfer can be measured at the exam from the log, which keeps which answers were on reserved photos whatever the
+    // photos in play later; before |kN, which the sheet reads at the end. Counted like any answer.
     (ph.some(p => p && p.ho) ? '|h' : '') +
     (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
     // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_). Its

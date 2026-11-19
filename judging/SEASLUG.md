@@ -119,7 +119,7 @@ The fish's scale, the same five levels:
 **Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): a juvenile (`j`), an
 unclear subject (`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong
 colour loss (`2`), a head-on, rear or ventral view (`h`, `t`, `v`) or a partial animal (`0`) is at most 3. The fish's caps,
-with two differences: a dorsal view caps nothing, and `v` is the sea slugs' own. `w` and `f` cap nothing.
+but a dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `w` and `f` cap nothing.
 
 ## Juveniles
 
@@ -184,7 +184,7 @@ later species level to check; the cues are the sources', never shown to players 
 - `code`: the code of "Tags" above, ease included (`d1g0sl15`). The tool applies the caps.
 - `keep` (optional): `best`, `alt` or `dup`, as the fish's. A sea-slug candidate is one observation (one photo each,
   `tools/fetch_seaslugs.py`), so a judgement without `keep` reads `best`; exactly one `best` per observation still holds.
-- `crop` (optional): `[left, top, right, bottom]` fractions of the photo, as FISH.md "A proposed crop": a proposal only.
+- `crop` (optional): `[left, top, right, bottom]` fractions of the photo, as FISH.md "A proposed crop", Q430 aside.
 - `unsure` (the fields you doubt: `code`, `keep`, `crop`) and `note` (140 characters at most; required with `unsure`).
 - An egg-mass photo: `{"egg": true}` and nothing else but a `note`.
 

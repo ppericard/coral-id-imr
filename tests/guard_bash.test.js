@@ -122,8 +122,9 @@ test(".claude/settings.json runs main's copy of the guard before every Bash comm
   const pre = (s.hooks.PreToolUse || []).find(h => h.matcher === 'Bash');
   assert.ok(pre, 'a PreToolUse hook on Bash');
   const cmd = pre.hooks[0].command;
-  assert.match(cmd, /git show origin\/main:tools\/guard_bash\.py/);
-  assert.match(cmd, /python3 -I -c "\$\(/, 'the code goes in with -c so the JSON stays on stdin');
+  // Without origin/main the hook fetches it, or refuses: tests/hooks.test.js.
+  assert.match(cmd, /F=tools\/guard_bash\.py; .*git show "origin\/main:\$F"/);
+  assert.match(cmd, /python3 -I -c "\$S"/, 'the code goes in with -c so the JSON stays on stdin');
   assert.ok(!/\|\s*python3/.test(cmd), 'never piped: the pipe would take the place of the event on stdin');
 });
 

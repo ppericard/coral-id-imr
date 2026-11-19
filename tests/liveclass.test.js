@@ -687,6 +687,7 @@ function recApp(P, calls, extra = {}) {
     genusDiff: zero,
     scoreAnswer: C.scoreAnswer,
     scoreLog: C.scoreLog,
+    contrastQ: C.contrastQ, // the duel achievement's contrast questions (a live answer is none)
     photoQuiz: cur => cur === 'quiz',
     AUTOD: false,
     varRight: (n, L) => calls.push('varRight ' + n + ' ' + L.map(p => p.f).join(' ')),
@@ -813,6 +814,25 @@ test('live.js: an answer on a unit not opened is marked, then recorded and logge
   calls.length = 0;
   assert.strictEqual(A.ctx.liveLog({id: 'coral'}, {...o, t: 'Nowhere'}), 'skip');
   assert.deepStrictEqual(calls, []);
+});
+
+// The duel achievement (s.du) in the game's recorder: a right 2-choice contrast, the Again included (core.js contrastQ;
+// docs/LEARNING.md "One contrast queue"); never a live answer on two choices.
+test('quiz.js recordAnswer: a right Again counts for the duel achievement as a right duel does', () => {
+  const two = ['Acropora', 'Montipora'];
+  for (const [cur, mq, c, chs, du] of [
+    ['quiz', 'quiz|k2', 'Acropora', two, 1],
+    ['quiz', 'quiz|d|k2', 'Acropora', two, 1],
+    ['quiz-duel|Acropora|Montipora', 'quiz-duel|Acropora|Montipora', 'Acropora', two, 1],
+    ['quiz', 'quiz|k2', 'Montipora', two, undefined],
+    ['quiz', 'quiz', 'Acropora', CHS, undefined],
+    ['live', 'live', 'Acropora', two, undefined]
+  ]) {
+    const P = {Acropora: {ok: 1, ko: 1}, Montipora: {ok: 1, ko: 0}, Porites: {ok: 0, ko: 0}, Pocillopora: {ok: 0, ko: 0}},
+      A = recApp(P, []);
+    A.ctx.recordAnswer({cur, mq, target: 'Acropora', c, k: chs.length, chs, ph: [{f: 'acropora-1', view: 'wide'}]});
+    assert.strictEqual(P.Acropora.du, du, `${mq} ${c}`);
+  }
 });
 
 test('live.js: a trainer whose header shows another subject resumes the saved game with its subject loaded (Codex review #1049)', async () => {

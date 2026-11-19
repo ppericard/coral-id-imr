@@ -125,7 +125,7 @@ first 20 characters).
 surprise card's (below); then the suffixes, in this order (`quiz.js` `answer`): `|s` the custom quiz (right after
 `quiz`, rated as the photo quiz); `|d` a duel slipped into the photo quiz; `|f` a Find the X (the photo tapped in
 `pa`); `|c` a comeback question after a break (its `e` recall-adjusted, counted in the hold); `|w` a question of the
-gentle restart (logged on one day only, left out of the hold); `|h` a held-out photo (asked by the exam only); `|kN` the
+gentle restart (logged on one day only, left out of the hold); `|h` a photo of the player's reserve (asked by the exam only); `|kN` the
 number of plausible choices (always last but `|t` and `|x`); `|t` a typed question (the player typed the unit: rated
 with no guess rate, `guess_` 0; Answered is the unit read, empty for "I don't know", the raw text in Typed; Choices
 empty); `|x` a mastery exam question. What each mode counts: [quiz.md](quiz.md#what-each-mode-counts).

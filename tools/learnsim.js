@@ -324,14 +324,16 @@ function play(cfg) {
       return ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
     };
   const muOf = g => (typeof PGD === 'object' && PGD[g] ? PGD[g][0] || 0 : 0);
+  // A unit's reserved photos, every view (core.js heldOf; an app before the per-player reserve: its held list, if any).
+  const heldAll = g => (typeof heldOf === 'function' ? heldOf(GX(g)) : (GX(g) || {}).held || []);
   const GEN_D = {};
   if (tg) {
     // Every game photo of every genus the game can ask: its true difficulty, and the app's estimate of it.
     const ps = {};
-    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the exam's photos keep their own difficulty
-    // whether withheld or not
+    // its reserved photos too (GX(g).held: core.js heldOf, model.js examSet), so the exam's photos keep their own
+    // difficulty whether withheld or not
     [...slateGenera(), ...BON].forEach(g =>
-      [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].forEach(p => {
+      [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...heldAll(g)].forEach(p => {
         const d = muOf(g) + TSD * probit(hashU(p.f, 1));
         GEN_D[p.f] = d;
         ps[p.f] = [Math.round((d + TNOISE * probit(hashU(p.f, 2))) * 100) / 100, 20, 20, 20];
@@ -346,8 +348,9 @@ function play(cfg) {
   const distOf = g => {
     if (tg) return [muOf(g), TSD];
     if (truth) return [(truth.gd || {})[g] || 0, TSD];
-    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the population is the unit's whole set
-    const ds = [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => photoDiff(g, p));
+    // its reserved photos too (GX(g).held: core.js heldOf, model.js examSet), so the population is the unit's whole set,
+    // as before any was withheld
+    const ds = [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...heldAll(g)].map(p => photoDiff(g, p));
     if (!ds.length) return [0, J.SD];
     const m = ds.reduce((a, x) => a + x, 0) / ds.length;
     return [m, Math.sqrt(ds.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, ds.length - 1)) || J.SD];
@@ -502,7 +505,7 @@ function play(cfg) {
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
   const NPH = Object.fromEntries(
-      SL.map(g => [g, new Set([...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => p.f)).size])
+      SL.map(g => [g, new Set([...VIEWS.flatMap(([v]) => gamePics(g, v)), ...heldAll(g)].map(p => p.f)).size])
     ),
     // Photo exposure: each question's unit, colony (observation) and photos shown, and the game photos of each unit with
     // their colony, for the repeat rate, the photos never shown and the answers per photo.
@@ -1196,6 +1199,9 @@ function play(cfg) {
   };
 }
 
+// A simulated player's anonymous id (sync.js anonId's form: 10 of a-z0-9) from its profile and seed.
+const simId = (name, seed) =>
+  Array.from(require('crypto').createHash('sha256').update(`sim ${name} ${seed}`).digest().subarray(0, 10), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
 async function run(browser, base, name, seed) {
   const ctx = await browser.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
   await ctx.route(
@@ -1206,8 +1212,12 @@ async function run(browser, base, name, seed) {
   // evaluate, and the browser's storage would queue about 1.5 MB an answer in the renderer until it crashed).
   await ctx.addInitScript(memStorage);
   await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
-  await ctx.addInitScript(([st, sv, subj]) => {
+  await ctx.addInitScript(([st, sv, subj, aid]) => {
     localStorage.setItem('reefid-tour', '"done"');
+    // The simulated player's anonymous id, one per profile and seed (simId): their reserve (core.js reserveOf), the same
+    // at every run of that pair, another for another pair, as for real players. JSON, as the app's store reads it (a bare
+    // string fails JSON.parse and anonId would make a random one).
+    localStorage.setItem('reefid-anon-id', JSON.stringify(aid));
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
     // The sync script version the app last saw (sync.js sheetV), for the gates above the floor (core.js SHEET_FLOOR).
     localStorage.setItem('reefid-sheet-v', String(sv));
@@ -1227,7 +1237,7 @@ async function run(browser, base, name, seed) {
           ...(st.fmt ? {fmt: st.fmt} : {})
         })
       );
-  }, [STATS_JSON, SHEETV, SUBJECT]);
+  }, [STATS_JSON, SHEETV, SUBJECT, simId(name, seed)]);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));

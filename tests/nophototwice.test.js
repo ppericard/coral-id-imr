@@ -61,6 +61,7 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
     varGroup: C.varGroup,
     varUnit: C.varUnit,
     varLeftOf: C.varLeftOf,
+    heldOf: C.heldOf,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
     DOM: C.DOM,
