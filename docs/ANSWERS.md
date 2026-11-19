@@ -1282,11 +1282,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **15:54, Q436 (the one-tap difficulty question for fish and sea slugs).** «Je ne comprends même pas pourquoi ça
   n'est pas juste une fonctionnalité du moteur et qui marche donc déjà pour toutes les matières... Donc oui bien sur,
   et il faut mutualiser le code tant que possible». The one-tap question runs for every subject, from the shared
-  engine, its answers kept per subject. Applied in #1226 (`quiz.js` `PULSE` for every subject, paced per subject; the
+  engine, its answers kept per subject. Applied: #1226 (`quiz.js` `PULSE` for every subject, paced per subject; the
   admin's tables read the subject on screen; LEARNING.md "What the players say about the difficulty").
 - **15:55, the coral-only cards.** «ça veut pas dire qu'il ne faut pas garder les templates. On ne sait jamais quand on
   en aura besoin». The apology card and the recalculation notes are not extended to fish and sea slugs, but the cards
-  stay in the code as templates with no subject by default, tagged only when their text concerns one subject. Applied in
+  stay in the code as templates with no subject by default, tagged only when their text concerns one subject. Applied:
   #1226 (`progress.js` `RECALC.L`, `sorryNotice` kept as an engine card).
 - **20:50, why his words were not recorded.** «je comprends pas qu'est-ce qui fait que notre système de travail n'a
   pas permis le fait que tout le travail qu'on a fait ensemble avec l'autre agent ait été correctement enregistré
