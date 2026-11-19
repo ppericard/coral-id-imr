@@ -658,7 +658,7 @@ async function freshPlayers(b, base, errs) {
   let next = 0;
   await Promise.all(
     Array.from({length: width}, async () => {
-      for (let i; (i = next++) < seeds.length; ) await freshSeed(b, base, errs, seeds[i], out[i]);
+      for (let i; (i = next++) < seeds.length;) await freshSeed(b, base, errs, seeds[i], out[i]);
     })
   );
   return out.flat();
