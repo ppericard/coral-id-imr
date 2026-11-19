@@ -41,8 +41,11 @@ Each rule rests on his words on the photos named (verbatim dictation):
   trouble et je pense pas que ça soit flou".
 - **What a 5 needs.** Photo 30, a wire coral goby judged 4 with every condition of 5: "qu'est-ce qu'il te faut pour avoir
   un 5/5 [...] parce qu'il n'y a pas beaucoup de photos qui seront mieux que ça en fait".
-- **The view.** Photo 21: "De 3/4 entiers, non, ils sont carrément de profil là"; photo 22: "non, là il est de profil
-  entier"; photo 25: "on est légèrement au dessus, on est aux 3/4 au dessus en fait".
+- **The view: `p` while the flank faces the camera, `o` only when it is foreshortened.** Photo 21: "De 3/4 entiers,
+  non, ils sont carrément de profil là"; photo 22: "non, là il est de profil entier"; he confirmed `p` on photos 17
+  ("Profil entier, bah à nouveau oui"), 23 ("de profil entier"), 27 ("de profil partiel, oui") and 29 ("de profil
+  partiel, ouais, coupé ou caché"), which a first wording of this rule pushed blind judges to `o`; `o` for photo 25,
+  "on est légèrement au dessus, on est aux 3/4 au dessus en fait" (three-quarters from above, the back showing).
 - **Other fish dark and poorly seen, `o`.** Photo 21: "parce qu'ils sont sombres et qu'on les voit pas bien [...] il n'y
   a pas vraiment de confusion possible".
 - **The integrator's calls**, each easy to correct: `a` widened rather than a new flag (a new field in the code is the
