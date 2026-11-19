@@ -92,8 +92,8 @@ test('a wink answer takes the normal answer path: the account queue, or LOG0 and
   inn.logAnswer(b);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(inn.ctx.SYNC.log)), [JSON.parse(JSON.stringify(b))]);
   assert.strictEqual(inn.saved['reefid-log0'], undefined);
-  // The game's answers go the same way (quiz.js answer), and winkShow logs its answer once, at the choice.
-  assert.match(cut(quiz, 'function answer(', '\nfunction ', {file: 'quiz.js'}), /\n {2}logAnswer\(ans\);\n/);
+  // The game's answers go the same way (quiz.js recordAnswer, every game's), and winkShow logs its answer once, at the choice.
+  assert.match(cut(quiz, 'function recordAnswer(', '\nfunction ', {file: 'quiz.js'}), /\n {2}logAnswer\(ans\);\n/);
   const show = cut(quiz, 'function winkShow(', '\n}\n', {file: 'quiz.js', through: 1});
   assert.strictEqual(show.match(/logAnswer\(/g).length, 1);
   assert.match(

@@ -4,9 +4,9 @@
 // pages (#live, #live?code=123456) show it and send their answer; the sync script relays and scores (Code.gs lv_).
 // Three parts: the pure helpers (tested: tests/liveclass.test.js), the channel (LIVE_CH: the one module that talks to the
 // script, polled; a WebSocket service could take its place without touching the screens) and the screens.
-// Signed-in students' answers count in their progress: logged like any game answer (quiz.js logAnswer), mode
-// 'live', scored by the game's scorer (core.js scoreAnswer through scoreIn, as quiz.js answer does), on the units they have
-// unlocked only (rule L4: no game opens a unit). A nickname keeps nothing: its answers wait in this page's memory
+// Signed-in students' answers count in their progress: recorded as any game answer (quiz.js recordAnswer, as quiz.js
+// answer does: the scorer, the marks, the log, the achievements), mode 'live', on the units they have unlocked only
+// (rule L4: no game opens a unit). A nickname keeps nothing: its answers wait in this page's memory
 // and are logged only if the player signs in on the end screen.
 
 // pure: begin
@@ -400,8 +400,8 @@ function liveJoin(code, msg = '') {
     </form>
     <div class="lvsign">${
       SYNC
-        ? `<p>✓ Signed in: your right answers count in your progress.</p>`
-        : `<p><b>Not signed in:</b> this game keeps nothing. Sign in to keep your right answers in your progress.</p><button class="next sec" type="button" id="lvsign">Sign in</button>`
+        ? `<p>✓ Signed in: your answers count in your progress.</p>`
+        : `<p><b>Not signed in:</b> this game keeps nothing. Sign in to keep your answers in your progress.</p><button class="next sec" type="button" id="lvsign">Sign in</button>`
     }</div>
     <p class="note lvhosting"><a class="linkish" href="${esc(hr('live-host'))}">Host a game</a> (trainers)</p>
   </div>`;
@@ -497,15 +497,15 @@ function liveDraw(j, key) {
     // Signed in by now with answers still waiting (a sign-in reloads the page: the waiting answers were kept per tab):
     // logged now.
     const flush = SYNC && LV.pend.length,
-      pend = LV.pend.filter(a => a.ok).length;
+      pend = LV.pend.length;
     $v.innerHTML = `<div class="live lvend">${head}<p class="lvbig">${liveNth(j.rank)} of ${j.of}</p>
       <p class="lvrank">${j.me.s} pts · ${j.me.r} right of ${j.n}</p>${liveTop(j.top, LV.name)}
       <div class="lvsign" id="lvkeep">${
         SYNC
           ? `<p>✓ Your answers count in your progress.</p>`
           : pend
-            ? `<p><b>Sign in to keep your ${pend} right answer${pend === 1 ? '' : 's'} in your progress.</b> Without it, this game keeps nothing.</p><button class="next" type="button" id="lvsign">Sign in</button>`
-            : `<p>Sign in next time to keep your right answers in your progress.</p>`
+            ? `<p><b>Sign in to keep your ${pend} answer${pend === 1 ? '' : 's'}, right or wrong, in your progress.</b> Without it, this game keeps nothing.</p><button class="next" type="button" id="lvsign">Sign in</button>`
+            : `<p>Sign in next time to keep your answers in your progress.</p>`
       }</div>
       <p><a class="next sec" href="${esc(hr('live'))}" id="lvagain">Join another game</a></p></div>`;
     const sb = document.getElementById('lvsign');
@@ -643,9 +643,9 @@ function liveKeep(n0 = 0) {
     liveKept(n0 + n);
   });
 }
-// One live answer into the signed-in player's progress and answer log, as quiz.js answer scores and logs a photo-quiz
-// question (the same scorer: core.js scoreAnswer through scoreIn; the log's fields), in the question's subject (inSubject),
-// mode 'live'. Only on a unit the player has unlocked (rule L4: no game opens a unit) in a subject they may open. Resolves
+// One live answer into the signed-in player's progress and answer log through the recorder every counted answer takes
+// (quiz.js recordAnswer: the scorer, the marks, the log, the achievements), in the question's subject (inSubject), mode
+// 'live'. Only on a unit the player has unlocked (rule L4: no game opens a unit) in a subject they may open. Resolves
 // 'ok' once logged, 'skip' when left out on purpose (that rule, a subject the player may not open), 'fail' when it could
 // not be done now (signed out, the subject's data did not come: liveFlush tries again). An error while scoring counts as
 // a 'skip', never tried again: part of it may already be in the progress.
@@ -668,79 +668,25 @@ function liveLog(S, o) {
       const t = o.t,
         c = o.c;
       if (!GX(t) || !introReady(t)) return 'skip';
-      const good = c === t,
-        s = st(t),
-        first = !((s.ok || 0) + (s.ko || 0)),
-        ph = o.ph.map(f => photoLook(f) || {f}),
-        chs = o.chs,
-        k = chs.length,
-        mq = 'live';
-      mxRecalc(() => {
-        memRecalc(s, pmem());
-        if (!good && GX(c)) memRecalc(st(c), pmem());
-      });
-      const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
-      const q = scoreIn({
-        t,
+      const ph = o.ph.map(f => photoLook(f) || {f});
+      // The game's own recorder (quiz.js recordAnswer): the scorer, the exam and learned marks, the variant groups, the
+      // opening hold, the first-launch check, the log, the achievements. Not a comeback question (R 1: the live game
+      // chose the question, not the comeback) and no mimicry trap from the photo (the trainer's page chose the choices).
+      recordAnswer({
+        cur: 'live',
+        mq: 'live',
+        target: t,
         c,
-        ok: good,
-        k,
-        chs,
-        cv: !!GX(c),
-        ph: ph.map(p => p.f),
-        d0: (ph.length === 1 ? PICKD.SINGLE : 0) + ph.reduce((x, p) => x + photoDiff(t, p), 0) / Math.max(1, ph.length),
-        fam: famOf(t, ph),
-        cf: confTerm(t, chs, k),
-        look: () => pgLook(t, chs),
-        R: 1,
-        Rc: 1,
-        p: startP(),
-        sec: o.rt,
-        timed: true, // the answer time weighs the steps, as the sheet's replay (quiz.js answer)
-        df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
-        dt: fmtOff(pfmt(), 'typed'),
-        mu: genusDiff(t),
-        ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
-        ...(GX(t).from ? {from: GX(t).from} : {}),
-        ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
-      });
-      const res = scoreAnswer(P, q),
-        sp = speciesShown(ph);
-      if (!good) [t, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
-      // A miss restarts the mastery exam of the unit shown and of the one named (rule L9), as quiz.js answer does.
-      if (!good) delete s.ex;
-      if (!good && GX(c) && P[c]) delete P[c].ex;
-      const ans = {
+        k: o.chs.length,
+        chs: o.chs,
+        ph,
+        cor: ph.some(p => p.view === 'macro' || p.view === 'close'),
+        tm: typeof o.rt === 'number' ? {rt: o.rt} : {},
         // Its attempt id: the same at every try for this player's answer to this question (liveAid), so the sheet logs it
         // once even if a reload logged it again before it left the queue (liveDone).
         id: liveAid(o.pid, o.qi),
-        t: o.at || new Date().toISOString(),
-        g: t,
-        a: c,
-        ok: good ? 1 : 0,
-        m: mq,
-        ph: ph.map(p => p.f).join(' '),
-        ch: chs.join(' '),
-        e: Math.round(100 * res.e) / 100,
-        th: res.th0,
-        sc: scoreLog(q, res),
-        nw,
-        ...(typeof o.rt === 'number' ? {rt: o.rt} : {}),
-        zm: 0,
-        tz: -new Date().getTimezoneOffset(),
-        s: SUBJ.id,
-        rk: rankOf(t) || unitRankOf(SUBJ),
-        ...(unitName(t) ? {tn: unitName(t)} : {}),
-        ...(unitName(c) ? {ta: unitName(c)} : {}),
-        ...(sp ? {sp} : {}),
-        // the content version of the units it was scored on (quiz.js cvField, app.js contentVer: its subject's, in force here)
-        ...cvField()
-      };
-      holdStep(ans.e, good);
-      startStep(res.dm, k, good, first);
-      answeredAt(s, good);
-      logAnswer(ans);
-      save();
+        at: o.at
+      });
       return 'ok';
     });
   } catch (e) {}

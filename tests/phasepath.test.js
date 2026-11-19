@@ -653,7 +653,7 @@ test('the variant table waits for the whole game pool: a partial one would clear
   assert.ok(!('vl' in onTop(part)['f:Morays']), 'a partial table would clear them');
   // The hook: null until fish-game.json is in (TREERAW game, app.js treeLoad).
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
-    hook = require('./block.js')(app, '    vars: S =>\n', '\n    // The structure stamp', {file: 'app.js'}).trim().replace(/,$/, ''),
+    hook = require('./block.js')(app, '    vars: S =>\n', '        : null,\n', {through: 1, file: 'app.js'}).trim().replace(/,$/, ''),
     vars = TREERAW => new Function('TREERAW', 'TREEF', 'CUR', `return {${hook}};`)(TREERAW, null, Fs[3]).vars(S);
   assert.match(app, /full: true, game: !!\(gm && gm\.photos\)/);
   assert.strictEqual(vars({f: Fs[0], ph: Fs[1], gm: {photos: {}}, full: true, game: false}), null);

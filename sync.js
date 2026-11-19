@@ -1912,7 +1912,8 @@ function viewDeleteAccount(h) {
       <li>every answer you gave in the games;</li>
       <li>your problem reports and feedback;</li>
       <li>the summaries of the pages you opened.</li></ul>
-      <p>Your name also leaves the app's technical logs and the statistics reports. Only your name and your scrambled code stay, in a list of removed accounts, so that another device still signed in is told the account was deleted. This device is then signed out and cleared. This cannot be undone.</p>
+      <p>Your name also leaves the app's technical logs and the statistics reports. This device is then signed out and cleared. This cannot be undone.</p>
+      <p>Three things stay: your name and your scrambled code, in a list of removed accounts, so that another device still signed in is told the account was deleted; the audit log's notes about your account, under an anonymous id; and the backup copies made before the deletion. <a href="privacy.html">The privacy notice</a> says more.</p>
       <p class="note">To keep your answers anonymously for the photo ratings instead, ask Pierre Pericard (<a href="privacy.html">privacy notice</a>).</p></section>`;
   if (h === 'delete-account|done') {
     $v.innerHTML = box(

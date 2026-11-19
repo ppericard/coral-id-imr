@@ -1,26 +1,21 @@
 # Tools: what each script does
 
 The details behind the one-line rows of [tools/README.md](../../tools/README.md): what each script in `tools/` reads,
-writes and checks, its options and its tests. Read the README first (its groups, the conventions every tool follows:
-`datajson.py` writes `data.json`, `inat.py` asks iNaturalist and WoRMS, `--check` changes nothing, caches in
-`tools/.cache/`); each file's header gives its usage. This is the specification of what the code does now; why each
-tool was made is in [docs/decisions/](../decisions/README.md) and the PRs. Which tool writes which data file:
-[DATA.md](../DATA.md).
+writes and checks, its options and its tests. Read the README first (its groups, the conventions every tool follows);
+each file's header gives its usage. This is the specification of what the code does now; why each
+tool was made is in [docs/decisions/](../decisions/README.md) and the PRs.
 
-Python 3 scripts, run from the repository root. The first build's scripts (`make_site.py`, `build_photos.py`,
-`apply_levels.py`, `build_lecture_more.py`, with their inputs) read a scratchpad that no longer exists: they are in
-`tools/archive/`, kept for reference, and cannot run again. `data.json` is edited directly and written with
-`tools/datajson.py`.
+Python 3 scripts; `tools/archive/` holds scripts that cannot run again. `data.json` is
+written with `tools/datajson.py`.
 
 ## Checks and the build
 
 - **`datajson.py`**: the one writer of `data.json` (`load()`, `dump(d, path)`, one genus per line:
-  [data.md › Layout](data.md#layout)). Every script that writes `data.json` uses it. Run alone it rewrites the file in
+  [data.md › Layout](data.md#layout)). Run alone it rewrites the file in
   that layout with the instance's coral layer laid on; `--check` is the PR check (the layout and the layers).
 - **`sync_core.py`**: copies `core.js` into `tools/sync/Code.gs` between its BEGIN / END markers (`--fix`), or checks
   that the copy is current (`--check`, CI): the sheet script replays progress with the app's own engine
-  ([sync.md › Full replay](sync.md#full-replay)). After a `--fix`, add the sheet changes file
-  (`tools/sheet_version.py`), never a `VERSION` bump.
+  ([sync.md › Full replay](sync.md#full-replay)); after a `--fix`, rule D3.
 - **`photos.py`**: the four photo sizes (`SIZES`, `save()`, `remove()`) and where a photo lives (`online()`: on R2 only;
   `gitonly()`: in git; `every()`; `path()`: a local file, copied from R2 when need be; `url()`); run alone it fills the
   missing smaller files of `img/`; `--check` (CI), `--r2-list` (for `r2_sync.sh`).
@@ -40,18 +35,18 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
   `tests/unminify.test.js`, `tests/staged.smoke.js`).
 - **`stamp_versions.py`**: the version numbers stamped at deploy (`pages.yml`, on the staged copy): every `?v=` a content
   hash, `LAB_V` and the `sw.js` Lab list one hash of the Lab files, `sw.js` `V` a hash of its `SHELL`, the build number in
-  the pages. Pull requests never edit them (rule W15).
+  the pages. PRs never edit them (rule W15).
 - **`check_versions.py`**: cache-busting consistency, in the source and in a stamped copy (`--dir`): one `?v=` per file
-  everywhere, `sw.js` `SHELL` lists what `index.html` and `app.js` load, the Lab list matches `LAB.files` and `LAB_V`. No
-  bumps: the deploy stamps the numbers. In the source it also runs `sheet_version.py`'s check (`--sheet-base REF` on a
+  everywhere, `sw.js` `SHELL` lists what `index.html` and `app.js` load, the Lab list matches `LAB.files` and `LAB_V`. In
+  the source it also runs `sheet_version.py`'s check (`--sheet-base REF` on a
   pull request, CI passing the merge ref's `HEAD^1`; `--main` on `main` or a merge train).
-- **`sheet_version.py`**: the sheet script's `VERSION`, given at merge (rule D3). `--check`: a pull request waiting for
+- **`sheet_version.py`**: the sheet script's `VERSION`, given at merge (rule D3). `--check`: a PR waiting for
   its version carries one `tools/sync/changes/<branch>.md` and leaves `VERSION`, line 1 and `tools/sync/HISTORY.md` as on
   its base; an assigned one is the base plus one entry on top of HISTORY.md, line 1 short; HISTORY.md has one entry per
   version, no duplicate, no gap; with `--main`, no changes file left, no gate above `VERSION`, no bare `vNEXT`; a pull
   request never changes a gate `main` has. `--assign` (the integrator, at merge, on a branch that holds `origin/main`,
   the merge committed or stopped on a resolved conflict): `VERSION` + 1, the entry at the top of HISTORY.md under the
-  Manila date, line 1 short, every gate the pull request adds against `origin/main` and every bare `vNEXT` set to it,
+  Manila date, line 1 short, every gate the PR adds against `origin/main` and every bare `vNEXT` set to it,
   `main`'s gates left alone, the changes file removed; `--dry-run`. `tests/sheetversion.test.js`.
 - **`stack.json`, `stack_check.py`**: the pins of the technology stack (rule W9): one item per runtime, tool, runner
   image, data snapshot or external API whose version the repository chooses and no package manager tracks (Node,
@@ -64,37 +59,49 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
 
 ## Working with the repository
 
-- **`train.py`**: the merge train (rule W26). `python3 tools/train.py [--dry-run] N…` checks each pull request (open, on
-  `main`, no draft, no `needs-pierre`, green on its head, no sheet changes file; from `BODY_FROM` on, its description:
-  "Choices I made" None, and each item of "Players see" quoting Pierre with a date or marked "integrator's call",
-  AGENTS.md "What players will see comes from Pierre"), builds `main` plus their heads in a
-  temporary worktree (the sheet rules checked by `main`'s copy of `sheet_version.py`: no pull request's code runs),
-  pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each pull request at its tested head in
+- **`train.py`**: the merge train (rule W26). `python3 tools/train.py [--dry-run] N…` checks each PR (open, on `main`,
+  no draft, no `needs-pierre`, green on its head, no sheet changes file; from `BODY_FROM` on, its description: "Choices
+  I made" None, and each item of "Players see" quoting Pierre with a date or marked "integrator's call"), builds `main`
+  plus their heads in a temporary worktree (the sheet rules checked by `main`'s copy of `sheet_version.py`: no PR's
+  code runs), pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each PR at its tested head in
   order (stopping if `main` moved) and compares `main`'s tree with the train's. `gh api` GET and PUT only, no
   force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
 - **`guard_bash.py`**: the Bash guard, a PreToolUse hook (`.claude/settings.json`, main's copy given with `python3 -I -c`
   so the hook's JSON stays on stdin): refuses at once, with the way out, a shell command carrying code or editing in
-  place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`, `bash -c`, code piped into an interpreter), for the
-  integrator and every subagent (AGENTS.md "No permission prompts for Pierre"). Quoted text is not read as a command; a
+  place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`, `bash -c`, code piped into an interpreter), for every
+  agent of the session. Quoted text is not read as a command; a
   command substitution is (the shell runs it inside double quotes), and so is the body of a `cat <<EOF` heredoc with a
   bare delimiter, which the shell expands; `git show origin/main:tools/X.py | python3 -I -` stays allowed; any error lets
   the command through. `--check 'CMD'` for a try by hand; `tests/guard_bash.test.js`.
-- **`night.py`**: the night report (Pierre, 2026-11-18; the night is Rule 0's, 17:30 to his first message after 04:00,
-  Manila): PRs merged in it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and
-  still open with what holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
+- **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
+  keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
+  git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
+- **`instr_log.py`**: the core trial's log (#1200 §3), `claude-instructions.jsonl` in the git common dir: InstructionsLoaded,
+  SessionStart and SubagentStart hooks note which file loaded for which agent and why (with its hash and core line);
+  SubagentStart gives the Manila time and main's core line. `--report [--since HH:MM]`, `--expect [REF]`;
+  `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main.
+- **`night.py`**: the night report (Rule 0's night, 17:30 to Pierre's first message after 04:00, Manila): PRs merged in
+  it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
+  holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
   merged" when the night was empty. `brief.py --time --night-due` (the UserPromptSubmit hook) says once a Manila day, at
   the first prompt between 04:00 and 17:30, that it is due (marker `tools/.cache/night-report-day`: once per checkout).
   `--json FILE` reports a saved snapshot; `tests/night.test.js`.
-- **`effort.py`**: the measured agent effort of the last ~300 merged pull requests: agent time is the branch's first
+- **`effort.py`**: the measured agent effort of the last ~300 merged PRs: agent time is the branch's first
   commit to the head's checks going green, open-to-merge apart; commits, Codex rounds (the "@codex review" asks), files
   and lines; a type (fix, feature, study, content, engine, sheet, admin, docs, tooling; `a+b` for one touching both) and
   a size band (XS up to 20 lines, S up to 100, M up to 400, L up to 1500, XL above). `--table` (medians and the 25-75%
-  range per type and band), `--like 1084,1082` (the pull requests cited), `--estimate TYPE SIZE` (the median, the range
-  and the 5 closest pull requests to cite: "comparable to #A, #B, #C: median X (range Y-Z)"), `--check FILE.md` (fails on
+  range per type and band), `--like 1084,1082` (the PRs cited), `--estimate TYPE SIZE` (the median, the range
+  and the 5 closest PRs to cite: "comparable to #A, #B, #C: median X (range Y-Z)"), `--check FILE.md` (fails on
   an effort figure with no `#NNN` on its line or bullet; `<!-- effort-ok: why -->` marks a figure that is no estimate; run
   by `tests/docs.test.js` on the studies of 2026-11-19 on). It reads GitHub through `gh api` (REST), cached under
-  `$XDG_CACHE_HOME/coral-id-imr/effort` (never in the repository). Long sheet pull requests include the waits for the
+  `$XDG_CACHE_HOME/coral-id-imr/effort` (never in the repository). Long sheet PRs include the waits for the
   `VERSION` and for Pierre's answers: read the median and the range, not the mean.
+- **`asked.py TERM…`** (`--any`): before any question, prints the entries of `docs/ANSWERS.md`, AGENTS.md, the rules
+  and the decision records holding the terms (accents ignored), file:line; its last line goes under the question.
+- **`answers_check.py`** (`--check` in the docs test): each ledger entry from 2026-11-19 says "Applied: <doc or #PR>"
+  or "no doc change", or a later "Applied in #N:" entry names its Q or its time and first words (`KNOWN`: older); a
+  ROADMAP or reviews index status waiting on an answered Q fails; studies and STATUS are only reported.
+- **`decisions_index.py`** (`--fix`, `--check`): the decisions index from the records, by date then file name.
 - **`health.py`, `infra.json`**: the hourly Health workflow's script (`.github/workflows/health.yml`;
   [PAGES.md › Infrastructure health](../PAGES.md#infrastructure-health)): the live site (`index.html` and `data.json` with
   their stamps), the sheet script's public read-only request and its `v`, the weekly backup's age (only with the admin

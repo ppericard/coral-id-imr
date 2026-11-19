@@ -4,6 +4,9 @@ What is exposed, what could go wrong if bots or a malicious person find the site
 2026-11-01 when Pierre asked "what happens if an army of bots discovers my site?". Keep it current when an endpoint
 or a protection changes.
 
+**Reporting a vulnerability**: privately, through the repository's "Report a vulnerability" (GitHub private
+vulnerability reporting, enabled), never in a public issue.
+
 ## What is exposed
 
 | Part | Who can reach it | Worst case | Protection |

@@ -294,7 +294,6 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
     gamePics: (n, v) => (G[n] && G[n].views[v]) || [],
     gamePhotoOk: (n, p) => !G[n].x || p.own || !p.gid, // app.js gamePhotoOk
     imrFormsOf: n => U.imrFormsOf(n),
-    isCore: p => !!(SUBJ.tiers && (p.imr || p.own)),
     rankOf: n => (G[n] || {}).rank || '',
     rankUnits: rk => [...U.extra, ...(U.sp || [])].filter(n => (G[n].rank || '') === rk),
     slateGenera: () => slate,

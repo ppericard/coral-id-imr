@@ -1,5 +1,7 @@
 # Line endings: every text file is stored with LF (git detects binary files: photos, fonts, icons).
 * text=auto eol=lf
+# The answers ledger is append-only: two PRs that each add lines at its end keep both, without a conflict.
+docs/ANSWERS.md merge=union
 # Machine-written JSON (the candidate lists and the judging results): collapsed in GitHub diffs and left out of the
 # language statistics. data.json stays reviewable: it is the hand-edited source of truth (tools/datajson.py).
 cand.json linguist-generated=true

@@ -181,15 +181,16 @@ FishBase photo enters as a candidate, judged on `judging/FISH.md`, and reaches a
 
 ## Reference photos
 
-A photo a reference source uses to represent the species is easy to identify, so it comes early in the quiz for a
-beginner, and suits the sheets.
+A photo a reference source uses to represent the species (the reference route) enters the base first; once in, it is
+judged and placed like any other photo, on what it shows (rule P1;
+[the decision](../decisions/2026-11-19-fish-reference-from-photo.md)).
 
 - **The flag** (`rep`): `rep: "fishbase"` on FishBase's main picture of the species, `rep: "inaturalist"` on a candidate
   that is its taxon's iNaturalist cover (default photo; `fetch_fish.py --rep`, 30 taxa a request), on candidates and
-  sheet-only photos. The judging adds the flag `r` to the photo's tags and one ease point (`tools/fish_judge.py` `cap`,
-  `REP_BONUS`; the caps applied after it; `judging/FISH.md` "Reference photos"), so once in play it reaches the beginner
-  path through its ease (`model.js` `photoDiff`, the card cover); `python3 tools/judging_fish.py rep` applies the flag
-  again to the judged candidates of `suggest.json` after a new tag.
+  sheet-only photos. The judging adds the flag `r` to the photo's tags and nothing to its ease (`tools/fish_judge.py`
+  `cap`; one judgement per photo, whatever its route in; `judging/FISH.md` "Reference photos"); the flag weighs nothing
+  in the order either (`core.js` `refScore`) and records the route only. `python3 tools/judging_fish.py rep` applies
+  the flag again to the judged candidates of `suggest.json` after a new tag.
 - **The units' reference photos**: covers and first photos must be reference photos, whoever took them.
   `tools/fish_refs.py` (iNaturalist v1 taxa, 30 a request; v2 observation searches with only the fields used: the 200
   most faved Research Grade observations in the `IWP` box, then the 200 most faved anywhere while a taxon photo is
@@ -203,10 +204,10 @@ beginner, and suits the sheets.
   `"fishbase"` on a source's reference photos, `from` `cover` / `taxon` / `fishbase`, `via: "fishbase"`); a FishBase
   photo shows a "FishBase ↗" source pill after the answer (`app.js` `photoSrc`). They stay in play even on an entry that
   plays on Pierre's curated photos alone (`core.js` `treePhotos`).
-- **Reference level** (`core.js` `refLevel`: a `rep` photo judged 4-5, or any photo judged 5 with the reference look)
-  comes first in `easyRank` (covers, each list's first photos) and, when never seen, weighs the subject's `calib.ref`
-  (3 for the fish, `core.js` `SUBJECTS`) in the draw (`model.js` `photoSet`). Tested in `tests/fish.test.js` and
-  `tests/subjects.test.js`.
+- **Reference level** (`core.js` `refLevel`, `tools/fish_game.py` `ref_level`: any photo judged 4-5 with the reference
+  look, whatever its route in; the route only orders the downloads, `tools/fish_game.py` `tier`) comes first in
+  `easyRank` (covers, each list's first photos) and, when never seen, weighs the subject's `calib.ref` (3 for the fish,
+  `core.js` `SUBJECTS`) in the draw (`model.js` `photoSet`). Tested in `tests/fish.test.js` and `tests/subjects.test.js`.
 
 ## `fish-cand.json`
 

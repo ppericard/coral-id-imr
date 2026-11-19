@@ -353,7 +353,7 @@ test('Home band: a landscape tile rotates among his cover and the reference phot
     r1 = ref('r1'),
     r2 = ref('r2'),
     r3 = ref('r3'),
-    easy = ref('easy', {e: 4}), // fits, not a reference photo (e 4 without rep)
+    easy = ref('easy', {e: 3}), // fits, not a reference photo (ease 3: under the very easy)
     sq = ref('sq', {ar: 1}),
     cut = ref('cut', {jt: 'p0g0sl1'}),
     juv = ref('juv', {jt: 'p1g0sl1j'}),

@@ -1270,7 +1270,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       }),
       "sci: a genus card's photo is its most seen species' (with a reference photo) his ★ pick or easiest"
     );
-    ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
+    ok(typeof isCore === 'undefined' && !SUBJECTS.some(s => 'tiers' in s), "no subject's photo gets a draw bonus for its source (rule P1)");
     // The back card: once, to a player who turned them on before the change (no sciV); "Close them
     // for now" turns them off, and either answer is never asked again.
     ok(!bonusBackDue(), 'sci: no back card for a choice made now');
