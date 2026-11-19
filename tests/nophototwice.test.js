@@ -87,6 +87,7 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
     genScore: () => 0,
     LV_AT: [0.5, 0.8, 0.95],
     pick: a => a[Math.floor(rnd() * a.length)],
+    mimTrap: (t, ch) => ch, // no look-alike drill
     // The planner's world: the photo quiz with every unit met, no card, no comeback, no duel, no exam, no typed question.
     n: 6,
     answersSoFar: () => ctx.n,

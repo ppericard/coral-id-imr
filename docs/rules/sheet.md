@@ -37,16 +37,30 @@ lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-
 ### D3
 
 **Changing `tools/sync/Code.gs`: one changes file in the PR, `VERSION` assigned by the integrator at merge; the script
-updates itself.** A PR never edits `const VERSION` nor the header's history line (line 1): it adds one file,
-`tools/sync/changes/<branch>.md` (its branch name, `/` as `-`), holding its history entry as the header reads (what the
+updates itself.** A PR never edits `const VERSION`, line 1 (the header: the version and its date only) nor
+`tools/sync/HISTORY.md` (the history of the versions, newest first, one `## v<N> (<date>)` entry each): it adds one file,
+`tools/sync/changes/<branch>.md` (its branch name, `/` as `-`), holding its history entry as HISTORY.md reads (what the
 script now does and why, Pierre and the date; no version number). Where its comments or docs name the new version it
 writes `vNEXT`; a new gate on the script's version (rule D4) takes `main`'s `VERSION` + 1. Right before the merge the
 integrator brings the branch up to date with `main` and runs `python3 tools/sheet_version.py --assign`: `VERSION` + 1,
-the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds and
-every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any other, then merged (docs/INTEGRATOR.md).
+line 1 set to the short form for it, the entry written at the top of HISTORY.md (there only),
+every gate the PR adds and every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any
+other, then merged (docs/INTEGRATOR.md). The self-update reads only `const VERSION = N;`, so line 1 and HISTORY.md are for people.
 `python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates
-itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md
-"Code.gs"); check the live `v` about 15 minutes after merging, and the sheet's "Deploy log" tab says what happened.
+itself within about 15 minutes of the train that merged it (`autoUpdate`, below; Pierre's setup of 2026-11-01: HANDOVER.md "Code.gs"); check
+the live `v` about 15 minutes after the train that merged it, and the sheet's "Deploy log" tab says what happened.
+- **The script installs from the `release` branch, not from `main`** (Pierre, 2026-11-18, review R5 question h).
+  `release` is a branch of the same repository that only the merge train moves (`tools/train.py`, rule W26): after
+  its tree went green and its PRs are squash-merged, the train pushes the commit `main` ended on to `release`
+  (creating it when missing, a fast-forward otherwise, never a force-push). Nobody else pushes it, by hand or from a
+  workflow: a commit that reaches `main` without a train (the admin's Publish, the Candidate photos workflow, a fix
+  pushed by hand) never reaches the live script, so the script only runs code a green train tested; the data files
+  those two write (`curation.json`, `data.json`, the photo lists) stay read from `main`, as does the site. Until
+  `release` exists GitHub answers 404 for it and the script reads `main` as before (only 404 does that: any other
+  answer is a failed read, so a GitHub outage never makes it take `main`'s code), so the first update can never lose
+  its way. `release` is always an ancestor of `main`. A `Code.gs` change merged without a train (rare, by hand) waits
+  on `main` for the next train to carry it. No workflow edits `tools/sync/Code.gs` (checked 2026-11-18: the Candidate
+  photos workflow stages data files only, the admin's Publish writes `curation.json` only).
 - Never remove `autoUpdate` (the updater refuses such a version, so the script would stay behind) and keep
   `tools/sync/appsscript.json` in step (a new Google service = a new scope there = Pierre must accept it once: tell him).
 - The app keeps working with an older script, so a change stays backward compatible (rule D4).
@@ -59,7 +73,9 @@ itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's 
 - The sheet's `VERSION` is not stamped by the deploy (rule W15): `--assign` sets it at merge, never a PR.
 
 *Why:* no more copy and paste by Pierre; two open PRs never collide on the number. *Source:* Pierre, 2026-11-01;
-subject-neutral wording, 2026-11-06; assigned at merge, 2026-11-08 (Q305).
+subject-neutral wording, 2026-11-06; assigned at merge, 2026-11-08 (Q305); the history out of line 1 into
+`tools/sync/HISTORY.md`, 2026-11-18 (Pierre, shown the line: "Pourquoi? Juste pourquoi?"); the `release` branch,
+2026-11-18 (review R5 question h).
 
 ### D4
 
@@ -85,6 +101,8 @@ replay"). Run `python3 tools/sync_core.py --fix` and add the sheet changes file 
   sheet, the leaderboards: rule D8). A rules version carries `msg: null`, and a jump to it shows no card, not even one of
   a version it skips (`core.js` `rvMsgs`). The standard card (`RV_CARD`) and the apology (`RV_SORRY`) stay only in the
   versions before rules version 10, for the record. *Source:* Pierre, 2026-11-09 ~14:45 Manila (Q330).
+- **A change to an instance's circles or look-alike pairs replays every player's progress as a rules version does, keyed
+  by the structure stamp instead of an RVS entry; rules D6 and D8 apply** (Pierre, 2026-11-18, "ok").
 - **The leaderboards follow on their own** (rule D8): nothing to add for them, whatever the subject; `tests/board.test.js`
   checks it for every subject with a board and rules versions.
 

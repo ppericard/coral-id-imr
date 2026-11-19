@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// Typed answers (Pierre, 2026-11-08, Q237): every text the form refuses before the answer is logged with it ("c'est
-// essentiel. Et c'est vrai pour tout le jeu, partout": quiz.js typeBind rj, answer rj, Code.gs v100 Rejected tries), and
-// on a genus question a common name or a family name is told so, with a nudge that gives nothing away (core.js
-// typeElse, quiz.js typeKind, typeKindMsg): never a scientific name, the same whatever the photo's genus.
+// Typed answers: every text the form refuses before the answer is logged with it, everywhere in the game (quiz.js
+// typeBind rj, answer rj, Code.gs Rejected tries), and on a genus question a common name or a family name is told so,
+// with a nudge that gives nothing away (core.js typeElse, quiz.js typeKind, typeKindMsg): never a scientific name, the
+// same whatever the photo's genus.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs'),
@@ -18,9 +18,9 @@ const quiz = read('quiz.js');
 const F = JSON.parse(read('fish.json'));
 const TOK = 'ghp_write000000000000000000';
 
-// The fish names as the game reads them: the families (core.js fishGen) and a genus unit per fish.json genus whose
-// species are in circle 1 (as app.js fishGenera: its PDF name and its species' accepted genera, never a common name).
-const X = C.fishGen(F, {}, {});
+// The fish names as the game reads them: the families (core.js treeGen) and a genus unit per fish.json genus whose
+// species are in circle 1 (as app.js treeGenera: its PDF name and its species' accepted genera, never a common name).
+const X = C.treeGen(F, {}, {});
 const sp = new Map(F.species.map(s => [s.id, s]));
 F.genera.forEach(G => {
   const L = (G.species || []).map(id => sp.get(id)).filter(s => s && s.circle === 1);
@@ -33,7 +33,7 @@ F.genera.forEach(G => {
     };
 });
 const FISH = C.subjectOf('fish');
-const NAMES = C.fishTypeNames(X.gen, FISH.typeDrop);
+const NAMES = C.treeTypeNames(X.gen, FISH.typeDrop);
 const rankOf = g => (X.gen[g] || {}).rank || '';
 const first = x => String(x || '').split(/\s+/)[0];
 // The fish UNITS' lists (app.js typeOther) on fish.json.
@@ -130,7 +130,7 @@ test('typeElse: a family name, a common name, or nothing (the spelling message a
   assert.strictEqual(kindOf('Reticulated damselfish'), 'common', "a species' listed common name, not the PDF's (fish.json cn)");
   assert.strictEqual(kindOf('xyzfish'), '');
   assert.strictEqual(kindOf(''), '');
-  // A scientific genus name, in the game or not, is never a common name: the spelling message as before.
+  // A scientific genus name, in the game or not, is never a common name: the plain spelling message.
   for (const g of SCI) assert.strictEqual(kindOf(g), '', g);
   // Every name of every family reads as something (never the spelling message), and as no genus.
   for (const o of NAMES.filter(o => rankOf(o.g) !== 'genus' && !SCI.some(s => C.typeNormAll(s) === o.k))) {

@@ -73,6 +73,10 @@ class World:
         for t in self.taxa.values():
             kids[t["ancestor_ids"][-2] if len(t["ancestor_ids"]) > 1 else None].append(t["id"])
         self.obs, oid, pid = [], r.randrange(10**6, 2 * 10**6), r.randrange(10**8, 2 * 10**8)
+        # One user id per login, numbered in order of first appearance: the same on every run, and never shared by two
+        # logins (a string hash is randomised per process and can give two logins one id, which merges their observers
+        # when a tool counts them by id).
+        uids = {}
         for t in self.taxa.values():
             if t["rank"] not in ("species", "subspecies", "genus"):
                 continue
@@ -112,7 +116,7 @@ class World:
                       "min_species_taxon_id": t["id"] if t["rank"] == "species" else t["ancestor_ids"][-2] if t["rank"] == "subspecies" else t["id"]}
                 self.obs.append({
                     "id": oid, "quality_grade": grade, "location": f"{ll[0]:.5f},{ll[1]:.5f}", "ll": ll,
-                    "place_ids": [6873] if inph else [], "taxon": tx, "user": {"id": hash(user) % 10**6, "login": user},
+                    "place_ids": [6873] if inph else [], "taxon": tx, "user": {"id": uids.setdefault(user, len(uids) + 1), "login": user},
                     "photos": photos, "annotations": ann, "captive": r.random() < 0.02,
                     "cached_votes_total": r.choice([0, 0, 0, 1, 2, 3]), "faves_count": r.choice([0, 0, 1, 5]),
                     "community_taxon_id": t["id"] if r.random() < 0.6 else None, "identifications_most_agree": r.random() < 0.8,

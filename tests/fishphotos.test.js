@@ -1,9 +1,9 @@
 require('./slot.js').testGuard();
-// Fish candidate photos (tools/fetch_fish.py, fish-cand.json, tools/judging_fish.py, autosort.js fishSure; Pierre,
-// 2026-11-03, settled 2026-11-04): sources nearest first and abroad only when the Philippines are exhausted, free licences
-// first, Pierre's own species-level observations confirmed (rule S2), the pre-sort's sure decisions, the
-// stricter "confirmed near Dauin" rule (tools/build_fish.py near_dauin). Offline fixtures only: nothing here
-// asks iNaturalist (the whole script runs on a fixture cache with --offline and --plan). Needs python3.
+// Fish candidate photos (tools/fetch_fish.py, fish-cand.json, tools/judging_fish.py, autosort.js fishSure): sources
+// nearest first and abroad only when the Philippines are exhausted, free licences first, Pierre's own species-level
+// observations confirmed (rule S2), the pre-sort's sure decisions, the stricter "confirmed near Dauin" rule
+// (tools/build_fish.py near_dauin). Offline fixtures only: nothing here asks iNaturalist (the whole script runs on a
+// fixture cache with --offline and --plan). Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -117,7 +117,7 @@ pools = {'dauin': [it(1, 'cc-by-nc'), it(2, 'cc-by'), it(3, 'cc-by-nc', u='pperi
          'world': [it(8, 'cc-by-nc', u='ppericard', ll=(-8.5, 115.2), inph=False)]}
 W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
 print(json.dumps([[o['id'] for o in select(pools, r, {}, None, W)] for r in (1, 2, 5, 7, 9)]))`);
-  // The licence is the last key (Pierre, 2026-11-08, Q284: variety before licences): distance first, so the NC photo
+  // The licence is the last key (variety before licences): distance first, so the NC photo
   // of Dauin comes before the CC0 one of the region; within a tier, an open photo before an NC one of equal variety.
   assert.deepStrictEqual(out, [
     [3], // Pierre's own first, whatever its licence
@@ -319,8 +319,8 @@ test('confirmed near Dauin (build_fish near_dauin): 2+ Research Grade observers 
   const out = J(
     `from build_fish import near_dauin\nprint(json.dumps([near_dauin(1), near_dauin(0), near_dauin(2), near_dauin(2, True), near_dauin(1, True)]))`
   );
-  // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03); since
-  // 2026-11-04 Pierre is one observer like anyone (rule C8): his own observation there is no reason by itself.
+  // A single Research Grade observation (one observer) does not open the whole region; Pierre is one observer like
+  // anyone (rule C8): his own observation there is no reason by itself.
   // The reasons are recorded (present.nearBy).
   assert.deepStrictEqual(out, [[], [], ['observers'], ['observers', 'imr'], ['imr']]);
   // fish.json: every species has near, nearBy and dauinU (their agreement with the rule: tests/fish.test.js).
@@ -349,10 +349,9 @@ print(json.dumps([[o['id'] for o in T], [[p[0] for p in o['P']] for o in T], sor
   assert.deepStrictEqual(out[2], ['10', '11', '30', '999']);
 });
 
-// Every photo of an observation is a candidate (Pierre, 2026-11-08: "the limit of 4 photos per observation must be lifted
-// for every observation [...] weight the choice so as not to bring too many photos of one observation, but never
-// blocking"); Q226, option b: "better for learning on the species already full": its first photo counts 1 against the
-// cap, each further photo half (obs_cost, EXTRA_W).
+// Every photo of an observation is a candidate (no limit per observation; the choice is weighted so as not to bring too
+// many photos of one observation, never blocked): its first photo counts 1 against the cap, each further photo half
+// (obs_cost, EXTRA_W).
 test('every photo of an observation (Pierre, 2026-11-08): the first counts 1, each further one half (Q226); cut only to the room left', () => {
   const out = J(`${OBS}
 from collections import Counter
@@ -550,8 +549,8 @@ print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
       r: 1
     });
   // s1 is full (cap 4): 5 holds the 4 photos of the old limit; 6 too, one of them rejected (it still gets its others);
-  // 7 five (fetched whole already); 8 four, one of which Pierre sent out of the fish (nothing more of it); 9 four, since
-  // re-identified on iNaturalist as another species (nothing more of it: Codex review #715).
+  // 7 five (fetched whole already); 8 four, one of which Pierre sent out of the fish (nothing more of it); 9 four,
+  // re-identified on iNaturalist as another species after the fetch (nothing more of it).
   const L0 = [0, 1, 2, 3]
     .map(k => rec(5, k))
     .concat(
@@ -617,7 +616,8 @@ test('fish-cand.json: every candidate photo once (one photo can belong to severa
 });
 
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
-  // The cap counts photos (Pierre, 2026-11-05, Q36); --cap 3 here: one fixed cap for every species. Every photo of an observation, the first counting 1, the others half.
+  // The cap counts photos; --cap 3 here: one fixed cap for every species. Every photo of an observation, the first
+  // counting 1, the others half.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphotos-'));
   const fish = {
     species: [
@@ -690,7 +690,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.strictEqual(C.v, 1);
   assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2', 's4']);
   // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines nearest
-  // first (NC Dauin, then CC BY Luzon: the licence only breaks ties, Q284); the CC0 one abroad would come only once they
+  // first (NC Dauin, then CC BY Luzon: the licence only breaks ties); the CC0 one abroad would come only once they
   // are exhausted and room is left.
   assert.deepStrictEqual(
     C.cand.s4.map(p => p.o.split('/').pop()),
@@ -732,8 +732,8 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// A species whose photos come from another iNaturalist taxon (fish.json photoTaxon; Pierre, 2026-11-14, Q354 b: the Pacific
-// form iNaturalist splits off, the IMR name kept): every search, the covers (--rep) and the top-up ask that taxon, never
+// A species whose photos come from another iNaturalist taxon (fish.json photoTaxon: the Pacific form iNaturalist splits
+// off, the IMR name kept): every search, the covers (--rep) and the top-up ask that taxon, never
 // the species' own; the candidates stay the species' (its id in f).
 test('photo taxon (Q354 b): searches, covers and top-up use photoTaxon; the candidates stay the species', () => {
   assert.deepStrictEqual(
@@ -816,7 +816,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// The fish candidate cap (Pierre, 2026-11-05, Q36): 30 photos for a stable species, +10 per extra phase (juvenile,
+// The fish candidate cap: 30 photos for a stable species, +10 per extra phase (juvenile,
 // intermediate phase, male or terminal phase, female) as the judging tags and the sources record them, at most 60; the
 // search fills each phase. tools/fetch_fish.py cap_of, species_phases, phase_room, species_room, phase_obs, fill.
 test('cap per species (Q36): stable 30, +10 per extra phase, at most 60', () => {
@@ -827,8 +827,8 @@ test('cap per species (Q36): stable 30, +10 per extra phase, at most 60', () => 
     30,
     10,
     60,
-    0.5, // EXTRA_W: each photo of an observation past its first counts half (Q226)
-    4, // OLD_LIMIT: photos per observation at most until 2026-11-08 (--topup completes those)
+    0.5, // EXTRA_W: each photo of an observation past its first counts half
+    4, // OLD_LIMIT: the former cap of photos per observation (--topup completes those)
     ['juvenile', 'intermediate', 'male', 'female'],
     30, // stable
     40, // one extra phase
@@ -857,7 +857,7 @@ print(json.dumps([
     {room: 5, rooms: {juvenile: 3, male: 2}, free: 0}, // shared out one photo at a time
     {room: 0, rooms: {juvenile: 0}, free: 0}, // over the cap (an older run): nothing removed, nothing added
     {room: 16, rooms: {juvenile: 0}, free: 16}, // the phase already has its 10
-    {room: 0.5, rooms: {juvenile: 0}, free: 0.5} // half a photo of room (Q226): free, never a phase's whole photo
+    {room: 0.5, rooms: {juvenile: 0}, free: 0.5} // half a photo of room: free, never a phase's whole photo
   ]);
 });
 
@@ -1013,7 +1013,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// The automatic refill (Pierre, 2026-11-06, Q171: "no more candidates is no more candidates"): tools/fetch_fish.py
+// The automatic refill (a species searched to the end has no more candidates): tools/fetch_fish.py
 // --refill, shortness, easy_obs, pick_short, exhausted, pages; the exhaustion memory (tools/fish_refill.json).
 test('refill (Q171): short = room under the cap or too few easy observations; only room is refilled; searched-to-the-end species skipped until the re-check', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill-'));
@@ -1182,10 +1182,10 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-// Sheet-only photos (tools/fish_photos.py sheet_ok, sheet_pick, sheet_photo; Pierre, 2026-11-05: "if they don't pass
-// the game rules, we don't keep them"): a sheet photo passes every game photo rule (licence CC0 / CC BY / CC BY-NC or
-// Pierre's own; Research Grade or Pierre's own identified to the species; the Indo-West Pacific box; never captive or
-// Dead), checked on the observation that holds it; the cover first, then the taxon's photos, then the observations.
+// Sheet-only photos (tools/fish_photos.py sheet_ok, sheet_pick, sheet_photo): a sheet photo passes every game photo
+// rule (licence CC0 / CC BY / CC BY-NC or Pierre's own; Research Grade or Pierre's own identified to the species; the
+// Indo-West Pacific box; never captive or Dead), checked on the observation that holds it; the cover first, then the
+// taxon's photos, then the observations.
 test('sheet-only photos: the game photo rules on the observation; the cover first, then the taxon photos, then observations', () => {
   const out = execFileSync(
     'python3',
@@ -1265,9 +1265,9 @@ print(json.dumps(fp.keep_done(new, {'s1': [done]})))`
   assert.strictEqual(got.s2[0].r, 1);
 });
 
-// The refill counts the photos in play (fish-game.json) once the stopgap is retired (2026-11-15): its very easy photos and
-// the phases their judged tags record; fish-photos.json's first photos are the same records (counted once) and its sheet
-// photos count as before; a record's ph (maybe its source's label) is left to the source's own thresholds.
+// The refill counts the photos in play (fish-game.json): its very easy photos and the phases their judged tags record;
+// fish-photos.json's first photos are the same records (counted once) and its sheet photos count too; a record's ph
+// (maybe its source's label) is left to the source's own thresholds.
 test('fetch_fish.py game_photos: the photos in play and the sheet photos, each once, without ph', () => {
   const g = {f: 'fish-s1-cand-1', sp: 's1', e: 5, jt: 'p1g0sl1j', ph: 'male', o: 'o1'},
     fp = {photos: {t1: [g]}, sheet: {s2: [{f: 'fi9', sp: 's2'}]}},

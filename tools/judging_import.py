@@ -1,5 +1,5 @@
 # Checks and imports the judging agent's results (judging/out/<Genus>.json, format: judging/schema.json, rules:
-# judging/BRIEF.md) as SUGGESTIONS. Pierre's choices (curation.json) are never read for writing, never changed.
+# judging/BRIEF.md) as SUGGESTIONS. The admin's choices (curation.json) are never read for writing, never changed.
 #   python3 tools/judging_import.py --check [Genus ...]   check only, write nothing (exit 1 on any error)
 #   python3 tools/judging_import.py [--by astra] [Genus ...]   check, then import every genus that passes
 # Import writes:
@@ -8,7 +8,7 @@
 #   forms.json     "gf" {f: IMR growth form letter, + 'p' when polyps are extended} (dashed first guess in the admin);
 #                  unsure ones also go to "gunsure". The legacy keys "form" and "unsure" are left untouched.
 #   quality.json   "q" {f: 1-3} (dashed first guess in the admin)
-#   picks.json     "feat" {genus: {view: [f]}} (used only where Pierre has not picked Featured photos)
+#   picks.json     "feat" {genus: {view: [f]}} (used only where the admin has not picked Featured photos)
 # Re-importing a genus replaces that genus's previous suggestions; other genera are kept.
 import json, os, sys, datetime
 
@@ -154,7 +154,7 @@ def imp(ok, by):
         for f, x in j['photos'].items():
             p, me, u = PH[f], PH[f].get('pierre', {}), set(x.get('unsure', []))
             if 'form' in x:
-                # Pierre's own form or polyps choice (curation.json gf) wins in the admin and the app, part by part.
+                # The admin's own form or polyps choice (curation.json gf) wins in the admin and the app, part by part.
                 F['gf'][f] = x['form'] + ('p' if x.get('polyps') else '')
                 (unsure.add if u & {'form', 'polyps'} else unsure.discard)(f)
             if 'quality' in x and 'quality' not in me: Q['q'][f] = S['quality'][f] = x['quality']

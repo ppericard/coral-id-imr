@@ -128,7 +128,7 @@ test('anonymous ids use a secret salt; the caller learns its own id with its cod
   assert.strictEqual(s.post({readAnswers: 1, token: T, aname: 'Ana', apin: '9999'}).me, undefined);
   assert.ok(a.players[id]);
   assert.ok(s.post({readStats: 1, token: T}).ras[id]);
-  // v14: per-player numbers are admin-only (the public leaderboard names players); the public stats keep the photos.
+  // Per-player numbers are admin-only (the public leaderboard names players); the public stats keep the photos.
   assert.strictEqual(s.get({answers: '1'}).error, 'token');
   assert.strictEqual(s.post({readAnswers: 1}).error, 'token');
   assert.strictEqual(s.post({readStats: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
@@ -210,11 +210,11 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
   assert.strictEqual(a.rows[0][11], '', 'where (v8)');
-  // v34: a fish report keeps its units and its photo (Codex review #442: the ids lost their digits); v69: an old entry id as its family.
+  // A fish report keeps its units (ids with their digits) and its photo; an old entry id is stored as its family.
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r3', {g: 't01', a: 't05', fix: '', ph: 'fi464458713'})]});
   const f = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r3');
   assert.deepStrictEqual([f[5], f[6], f[10]], ['f:Damselfishes', 'f:MoorishIdol', 'fi464458713']);
-  // v46: a scientific-genus question's units (g:Platax) are kept too (Codex review #526: they were stored empty).
+  // A scientific-genus question's units (g:Platax) are kept too, never stored empty.
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r4', {g: 'g:Platax', a: 'g:Chromis', fix: '', ph: 'fi1'})]});
   const gq = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r4');
   assert.deepStrictEqual([gq[5], gq[6]], ['g:Platax', 'g:Chromis']);
@@ -225,7 +225,7 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(s.get({reports: '1', name: 'Ana', pin: '1234'}).found, true, 'no GET for reports');
 });
 
-// Admin user management (v11).
+// Admin user management.
 const TOK = 'ghp_write000000000000000000';
 const seed = () => {
   const s = loadCodeGs();
@@ -250,7 +250,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.v, SV);
   const ana = r.users.find(u => u.name === 'Ana');
-  // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
+  // The anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.post({readAnswers: 1, token: TOK});
   assert.ok(ana.id && a.rows.some(x => x[0] === ana.id));
   assert.notStrictEqual(ana.id, r.users.find(u => u.name === 'Ana B').id);
@@ -298,7 +298,7 @@ test("v57: a name taken again after its account was deleted never gets the old a
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('old1')]});
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).reps, ['old1']);
   assert.strictEqual(s.post({userDelete: 'Ana', token: TOK}).ok, true);
-  // The deleted account's own device: 'gone', and never its reports (Pierre, 2026-11-05).
+  // The deleted account's own device: 'gone', and never its reports.
   const g = s.get({name: 'Ana', pin: '1234'});
   assert.deepStrictEqual([g.error, g.reps], ['gone', undefined]);
   s.post({name: 'Ana', pin: '9999', data: prog(1), summary: {}});
@@ -330,7 +330,7 @@ test('a duel on a chosen pair keeps its mode (rated as 2 choices)', () => {
   assert.strictEqual(s.sheets.Answers.getRange(2, 6).getValue(), 'quiz-duel|Acropora|Montipora');
 });
 
-// Self-update (v11): a higher VERSION on GitHub main replaces the code, makes a version and repoints the web app.
+// Self-update: a higher VERSION on GitHub main replaces the code, makes a version and repoints the web app.
 const CODE = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
 const resp = (code, body) => ({
   getResponseCode: () => code,
@@ -396,6 +396,115 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
   assert.deepStrictEqual(g.calls, []);
 });
 
+// The release branch (rule D3): the script installs from `release`, which only the
+// merge train moves; main is read only while GitHub says `release` does not exist (404).
+// `branches`: what each branch answers for tools/sync/*: a status number, or the text of its Code.gs (its manifest then
+// says which branch it came from). `seen` lists what was read, `installed` the files the script put.
+function fakeBranches(branches) {
+  const g = fakeGoogle(''),
+    seen = [],
+    installed = [];
+  return {
+    calls: g.calls,
+    seen,
+    installed,
+    fetch: (url, o) => {
+      const m = /raw\.githubusercontent\.com\/[^/]+\/[^/]+\/([^/]+)\/tools\/sync\/([\w.]+)\?/.exec(url);
+      if (!m) {
+        if ((o || {}).method === 'put' && /\/content$/.test(url)) installed.push(JSON.parse(o.payload));
+        return g.fetch(url, o);
+      }
+      seen.push(m[1] + '/' + m[2]);
+      const a = branches[m[1]];
+      if (typeof a === 'number') return resp(a, 'status ' + a);
+      if (m[2] === 'Code.gs') return resp(200, a);
+      return (branches.noManifest || []).includes(m[1])
+        ? resp(404, 'no manifest')
+        : resp(200, JSON.stringify({timeZone: 'Asia/Manila', from: m[1]}));
+    }
+  };
+}
+const bump = (code, n) => code.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + n};`);
+
+test('autoUpdate reads release, never main, once release exists: main is ahead of it and that is not installed', () => {
+  const g = fakeBranches({release: CODE, main: bump(CODE, 1)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs']);
+  assert.deepStrictEqual(g.calls, []);
+});
+
+test('autoUpdate installs the release branch: its code and its manifest, the version says where from', () => {
+  const g = fakeBranches({release: bump(CODE, 1), main: bump(CODE, 5)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'release/appsscript.json']);
+  const files = g.installed[0].files;
+  assert.strictEqual(files.find(f => f.name === 'Code').source, bump(CODE, 1), 'the release code, not the main one');
+  assert.strictEqual(JSON.parse(files.find(f => f.name === 'appsscript').source).from, 'release');
+  assert.ok(
+    g.calls.some(c => /^post \/versions .*from GitHub release/.test(c)),
+    g.calls.join('\n')
+  );
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /^deployed v\d+ as version 7 \(1 web app deployment\), from release$/);
+});
+
+test('autoUpdate falls back to main only while release does not exist (404), one branch for the whole run', () => {
+  const g = fakeBranches({release: 404, main: bump(CODE, 1)}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs', 'main/appsscript.json']);
+  assert.strictEqual(JSON.parse(g.installed[0].files.find(f => f.name === 'appsscript').source).from, 'main');
+  assert.ok(
+    g.calls.some(c => /^post \/versions .*from GitHub main/.test(c)),
+    g.calls.join('\n')
+  );
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /, from main$/);
+});
+
+test('autoUpdate with no release branch and main up to date: up to date, nothing logged, the trigger work still runs', () => {
+  const g = fakeBranches({release: 404, main: CODE}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs']);
+  assert.deepStrictEqual(g.calls, []);
+  assert.ok(
+    Object.keys(s.props).some(k => /^ONCE_/.test(k)),
+    'the one-shot migrations ran: the up-to-date path was reached through the fallback'
+  );
+  assert.strictEqual(s.sheets['Deploy log'].rows.slice(1).filter(r => /from main/.test(r[1])).length, 0, 'no log row for the fallback');
+});
+
+test('autoUpdate: any answer for release but 404 (a 5xx, a rate limit) is a failed read: main is never consulted', () => {
+  for (const code of [500, 502, 429, 403, 301]) {
+    const g = fakeBranches({release: code, main: bump(CODE, 1)}),
+      s = loadCodeGs({fetch: g.fetch});
+    assert.strictEqual(s.ctx.autoUpdate(), 'github ' + code);
+    assert.deepStrictEqual(g.seen, ['release/Code.gs']);
+    assert.deepStrictEqual(g.calls, []);
+    assert.deepStrictEqual(g.installed, []);
+  }
+});
+
+test('autoUpdate: a main with no release and no autoUpdate is skipped as before, and main answering 404 too is a failed read', () => {
+  const g = fakeBranches({release: 404, main: bump(CODE, 1).replace(/function autoUpdate\(/g, 'function gone(')}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.ctx.autoUpdate(), 'skipped');
+  const h = fakeBranches({release: 404, main: 404}),
+    t = loadCodeGs({fetch: h.fetch});
+  assert.strictEqual(t.ctx.autoUpdate(), 'github 404');
+  assert.deepStrictEqual(h.seen, ['release/Code.gs', 'main/Code.gs']);
+});
+
+test('autoUpdate: the manifest is never taken from another branch than the code (release has the code, no manifest)', () => {
+  const g = fakeBranches({release: bump(CODE, 1), main: bump(CODE, 1), noManifest: ['release']}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.seen, ['release/Code.gs', 'release/appsscript.json']);
+  assert.ok(!g.seen.some(x => x.startsWith('main/')), g.seen.join(','));
+  assert.strictEqual(g.installed[0].files.find(f => f.name === 'appsscript').source, '{}', 'the stored manifest is kept');
+});
+
 test('autoUpdate: an interrupted update (code in place, deploy failed) is finished on the next run', () => {
   const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
   // First run: the code goes in, then /versions fails.
@@ -416,7 +525,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
   assert.strictEqual(s2.props.AUTO_PENDING, undefined);
 });
 
-// Anonymous answers (v12).
+// Anonymous answers.
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
   assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: SV});
@@ -443,7 +552,7 @@ test('v18: a device that never signed in rates the photos once its answers are c
     at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString(),
     L = Array.from({length: 12}, (_, i) => ans('w' + i, {ph: 'pic-' + i, t: at(i)}));
   s.post({anon: 'device0001', anonAnswers: L.slice(0, 9)});
-  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0], 'fewer than TRUST.N answers: no photo moved');
+  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0, 'Acropora'], 'fewer than TRUST.N answers: no photo moved');
   s.post({anon: 'device0001', anonAnswers: L.slice(9)});
   for (const k of Object.keys(s.cache)) delete s.cache[k]; // stats are cached 10 minutes
   const p = s.get({stats: '1'}).photos['pic-11'];
@@ -453,9 +562,9 @@ test('v18: a device that never signed in rates the photos once its answers are c
   const B = Array.from({length: 12}, (_, i) => ans('b' + i, {ph: 'bot-' + i, ok: 0, a: 'Porites', t: at(20 + i)}));
   s.post({anon: 'clicker001', anonAnswers: B});
   for (const k of Object.keys(s.cache)) delete s.cache[k];
-  // v31: a photo nobody rated sits at its genus offset (moved by the real player's answers on the genus above).
+  // A photo nobody rated sits at its genus offset (moved by the real player's answers on the genus above).
   const st = s.get({stats: '1'});
-  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0], 'answers at chance move nothing');
+  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0, 'Acropora'], 'answers at chance move nothing');
 });
 
 test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {
@@ -545,13 +654,12 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
   assert.strictEqual(s.post({dev: 'flood00001', events: many(1)}).error, 'busy');
 });
 
-// The one-tap question's bank (2026-11-03, core.js PULSEQ) needs no new sheet version: the item id rides in src (Where
-// column) and the answer's code in r (Message column), both kept as text since v19; Detail keeps r only for easy / ok /
-// hard, as before. What the admin reads back (readEvents) is what the app sent, for every item and code of the bank.
+// The one-tap question's bank (core.js PULSEQ) needs no sheet change: the item id rides in src (Where column) and the
+// answer's code in r (Message column), both kept as text; Detail keeps r only for easy / ok / hard. What the admin reads back (readEvents) is what the app sent, for every item and code of the bank.
 test('v19 events carry the one-tap bank: item id in Where, answer code in Message, as they came', () => {
   const {PULSEQ, PULSE_SHOWN, PULSE_SKIP, PULSE_NONE, pulseScore} = require('../core.js'),
     s = loadCodeGs(),
-    // Every answer of every item, and each item's prompt events (shown, Not now, moved on without a tap: 2026-11-03).
+    // Every answer of every item, and each item's prompt events (shown, Not now, moved on without a tap).
     sent = PULSEQ.flatMap(it => [...it.a.map(([r]) => r), PULSE_SHOWN, PULSE_SKIP, PULSE_NONE].map(r => ({q: it.id, r}))),
     events = sent.map((x, i) => ({
       id: 'p' + i,
@@ -750,6 +858,40 @@ test("v30 pages events: cleaned, in their own tab, under the admin's id of the p
   assert.deepStrictEqual(P[P.length - 1].slice(0, 5), ['p1', Date.parse('2026-11-03T10:00:00Z'), 'dev0000009', 'pages', anonAid]);
 });
 
+// The screen of a summary: kept rounded in the Pages tab's Detail, no new column.
+test('pages events keep the screen, rounded and clamped again, in the Detail JSON; no column added', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000',
+    pg = (id, vp) => ({
+      id,
+      t: '2026-11-18T02:00:00Z',
+      k: 'pages',
+      av: '190',
+      ua: 'Chrome 140 mobile',
+      vi: 'visit' + id,
+      r: {quiz: [1, 9]},
+      g: {},
+      vp
+    });
+  s.post({
+    dev: 'dev0000013',
+    events: [
+      pg('v1', {w: 390, h: 660, d: 2.6, o: 'p', b: 2}),
+      pg('v2', {w: 393.4, h: 851, d: 2.625, o: 'p', b: 2, ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)', name: 'Ana'}),
+      pg('v3', {w: '=HYPERLINK("x")', h: 800, d: 3}),
+      pg('v4')
+    ]
+  });
+  const rows = s.sheets.Pages.rows;
+  assert.strictEqual(rows[0].length, 10, 'the Pages tab keeps its ten columns');
+  const det = rows.slice(1).map(r => JSON.parse(r[6]).vp);
+  assert.deepStrictEqual(det, [{w: 390, h: 660, d: 2.6, o: 'p', b: 2}, {w: 390, h: 850, d: 2.6, o: 'p', b: 2}, undefined, undefined]);
+  assert.ok(!rows.flat().some(v => /Mozilla|Pixel|Ana|HYPERLINK/.test(String(v))), 'nothing but the rounded screen is kept');
+  // The admin reads it back as it is.
+  const P = s.post({readEvents: 1, pages: 1, token: T}).rows;
+  assert.deepStrictEqual(JSON.parse(P.find(r => r[0] === 'v1')[7]).vp, {w: 390, h: 660, d: 2.6, o: 'p', b: 2});
+});
+
 test("v30 pages events follow the player's answers: sign-in claim, rename, merge, delete, anonDelete (Codex review #423)", () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000',
@@ -783,14 +925,14 @@ test("v30 pages events follow the player's answers: sign-in claim, rename, merge
     ['p1', ben],
     ['p2', ben]
   ]);
-  // Archived (v58): the archive keeps them.
+  // Archived: the archive keeps them.
   assert.strictEqual(s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: T}).ok, true);
   const arch = s.post({users: 1, token: T}).archived.find(u => u.name === 'Ben-old').id;
   assert.deepStrictEqual(ids().slice(0, 2), [
     ['p1', arch],
     ['p2', arch]
   ]);
-  // Deleted with the answers kept (v55, Pierre Q88): the answers stay under the "~deleted" id, the sheets opened go.
+  // Deleted with the answers kept: the answers stay under the "~deleted" id, the sheets opened go.
   assert.strictEqual(s.post({userDelete: 'Ben-old', answers: false, token: T}).ok, true);
   const del = aidOf('~deleted ' + arch);
   assert.deepStrictEqual(ids(), [['p3', aidOf('~anon devanon003')]]);
@@ -811,7 +953,7 @@ test("v30 pages events follow the player's answers: sign-in claim, rename, merge
 
 test('v30 pages events: an app before v30 sends none, and its other events are logged as before', () => {
   const s = loadCodeGs();
-  // An app before 2026-11-03's events (no av, no player id) and an unknown kind.
+  // An old app's events (no av, no player id) and an unknown kind.
   const r = s.post({
     dev: 'dev0000010',
     events: [
@@ -839,7 +981,7 @@ test('floods are capped: per anonymous id, and the first refusal goes to the Ale
   assert.strictEqual(s.post({anon: 'someoneelse', anonAnswers: many(5)}).ok, true, 'other players are not blocked');
 });
 
-// readAlerts (v152; ROADMAP "Security follow-ups", Pierre 2026-11-01): the admin's To do › Alerts reads the Alerts tab,
+// readAlerts: the admin's To do › Alerts reads the Alerts tab,
 // admin token only, newest first, the last 3000 lines, as readEvents; a capped name is served as its admin id, never the
 // name, and the tab itself is never changed by the read.
 test('readAlerts: admin only, newest first, the last 3000, a capped name served as its admin id', () => {
@@ -885,7 +1027,7 @@ test('readAlerts: admin only, newest first, the last 3000, a capped name served 
   assert.strictEqual(w[2999][0], t0 + 3000, 'the oldest lines fall out of the window');
 });
 
-// Rule D7 (the integrator, 2026-11-16; Codex review #996): a line that names an account or a device by its admin id is
+// Rule D7: a line that names an account or a device by its admin id is
 // served only while that id is a current writer's (a live account, a device not signed in with answers): a deleted,
 // merged-away or archived account's line is left out, as is a device's once it signed in or was deleted; the lines that
 // name nobody stay. The tab keeps every line.
@@ -951,7 +1093,7 @@ test('anonymous answers also move to a brand-new account at its first sync', () 
   );
 });
 
-// Public leaderboard (v14).
+// Public leaderboard.
 test('board: signed-in players by progress then level; opted-out players and their codes never shown', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {learned: 2, seen: 3, total: 39, pct: 41.6, board: 1}, answers: [ans('a3')]});
@@ -978,13 +1120,13 @@ test('board: signed-in players by progress then level; opted-out players and the
   );
 });
 
-// One leaderboard per subject (v95; Pierre, 2026-11-04: separate per subject, no merged ranking): fixtures only.
+// One leaderboard per subject (no merged ranking): fixtures only.
 test('board (v95): each subject its own board, by its % over the units its apps sent, then its level; the corals as before', () => {
   const s = seed();
   const fish = (P, coral = 3) => ({...prog(coral), 'reefid-sync-fish-progress': JSON.stringify(P)});
   const units = ['f:Chaetodontidae', 'f:Pomacanthidae', 'f:Labridae', 'f:Acanthuridae'];
   const lvl = th => ({ok: 220, ko: 30, th});
-  // No units sent yet (apps before v95): fish players listed with no % (–), never the corals' Progress column.
+  // No units sent yet (an older app): fish players listed with no % (–), never the corals' Progress column.
   s.post({name: 'Ana', pin: '1234', data: fish({'f:Labridae': {ok: 3, ko: 1, pg: 0.4}}), summary: {pct: 41.6, board: 1}, answers: []});
   assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [['Ana', null, null]], 'no units kept yet');
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
@@ -1081,7 +1223,7 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
     summary: {board: 1},
     answers: []
   });
-  // The tree as the board reads it back (Code.gs boardUnits_; kept in chunks from v143, tests/boardtree.test.js).
+  // The tree as the board reads it back (Code.gs boardUnits_; kept in chunks, tests/boardtree.test.js).
   const kept = () => JSON.stringify(s.ctx.boardUnits_({id: 'fish'}));
   assert.strictEqual(kept(), JSON.stringify(tree), 'the tree kept as sent');
   // Ana: the rare family only, √(0.25 × 1/4) = 25%. Ben: the common family and its genus, √(0.25 × 3/4 + 0.75 × 0.8 ×
@@ -1090,8 +1232,8 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
     ['Ben', 64, 0.5],
     ['Ana', 25, 1]
   ]);
-  // A tree that fails the checks keeps the one stored; a list from an older app never replaces a tree (Codex review #730:
-  // the board would go back to the families' mean while the apps show the global score).
+  // A tree that fails the checks keeps the one stored; a list from an older app never replaces a tree (the
+  // board would go back to the families' mean while the apps show the global score).
   s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: {f: [['=SUM(A1)', 1, 1]], s: []}}}, answers: []});
   s.post({
     name: 'Ana',
@@ -1103,7 +1245,7 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
   assert.strictEqual(kept(), JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
   s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae', 'f:Gobiidae']}}, answers: []});
   assert.strictEqual(kept(), JSON.stringify(tree), 'an older app list: the tree kept');
-  // Before any tree, a list is kept and read as before (an app from before the score, sheet v95).
+  // Before any tree, a list is kept and read (an app from before the score).
   const t = seed();
   t.post({name: 'Cy', pin: '2222', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae']}}, answers: []});
   assert.strictEqual(t.props.BOARD_UNITS_fish, JSON.stringify(['f:Pomacentridae']));
@@ -1132,31 +1274,33 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben(), 'shown again');
 });
 
-// v48: beta groups (Pierre, 2026-11-04: fish opens to a group he picks in the admin, not one site-wide switch).
+// Beta groups (a subject opens to a group Pierre picks in the admin, not one site-wide switch): a group whose beta
+// setting names the subject (Code.gs groupDo_; tests/playergroups.test.js has the rest of the model).
 test("groups (v48): the admin adds and removes players of a beta subject's group; the replies carry each player's", () => {
   const s = seed();
-  // Fish opens to all since 2026-11-06 (Q158): the group mechanics, kept for a subject that opens to a group, on fish set
+  // Fish opens to all: the group mechanics, kept for a subject that opens to a group, on fish set
   // back to 'group' here.
   require('vm').runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
   const groups = (n, pin) => s.get({name: n, pin}).groups;
   assert.deepStrictEqual(groups('Ana', '1234'), [], 'in no group: [] (the app closes the beta subject)');
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true}).error, 'token', 'admin only');
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'coral', on: true, token: TOK}).error, 'group', 'a subject in beta only');
-  assert.strictEqual(s.post({userGroup: 'Nobody', group: 'fish', on: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userGroup: 'ana', group: 'fish', on: true, token: TOK}), {
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).error, 'group', 'a group that exists only');
+  assert.strictEqual(s.post({userGroup: 'Nobody', group: g, on: true, token: TOK}).error, 'user');
+  assert.deepStrictEqual(s.post({userGroup: 'ana', group: g, on: true, token: TOK}), {
     ok: true,
-    group: 'fish',
+    group: g,
     n: 1,
     members: 1,
     v: SV
   });
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 0, 'once');
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).n, 0, 'once');
   assert.deepStrictEqual(groups('Ana', '1234'), ['fish'], 'the load reply');
   assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(4), summary: {}, answers: []}).groups, ['fish'], 'the save reply');
   assert.deepStrictEqual(groups('Ben', '1111'), [], 'the others not');
   assert.strictEqual(s.get({name: 'Ana', pin: '9999'}).groups, undefined, 'never with a wrong code');
   // Everyone at once (a list): unknown names skipped, members counted once.
-  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: 'fish', on: true, token: TOK});
+  const all = s.post({userGroup: ['Ana', 'Ana B', 'Ben', 'Nobody', 'ben'], group: g, on: true, token: TOK});
   assert.deepStrictEqual([all.n, all.members], [2, 3]);
   const list = s.post({users: 1, token: TOK}).users;
   assert.deepStrictEqual(
@@ -1166,9 +1310,9 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   );
   assert.deepStrictEqual([...s.sheets.Groups.rows[0]], ['Group', 'Name', 'Added']);
   // Out again.
-  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: false, token: TOK}).n, 1);
+  assert.strictEqual(s.post({userGroup: 'Ben', group: g, on: false, token: TOK}).n, 1);
   assert.deepStrictEqual(groups('Ben', '1111'), []);
-  // A merge carries the memberships; an archive (v58) and a delete remove them.
+  // A merge carries the memberships; an archive and a delete remove them.
   assert.strictEqual(s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
   assert.ok(!s.sheets.Groups.rows.some(r => /^Ana(-test)?$/.test(r[1])), 'archived: in no group');
   const m = s.post({userMerge: {from: 'Ana B', into: 'Ben', data: prog(2)}, token: TOK});
@@ -1177,22 +1321,23 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
   assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ana B'), 'the merged name leaves the tab');
   assert.strictEqual(s.post({userDelete: 'Ben', token: TOK}).ok, true);
   assert.ok(!s.sheets.Groups.rows.some(r => r[1] === 'Ben'), 'deleted: out of the group');
-  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: 'fish', on: true, token: TOK}).members, 0, 'an archive is never added');
+  assert.strictEqual(s.post({userGroup: ['Ana-test'], group: g, on: true, token: TOK}).members, 0, 'an archive is never added');
 });
 
-// v53: the groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all has no
-// group (its rows kept in the tab, read again once it is back to 'group').
-test("groups (v53): a subject that opens to all has no group, whatever its beta label; back to 'group', its rows count again", () => {
+// The groups follow SUBJECTS open: 'group' (core.js subjGroup), not the beta label: a subject that opens to all opens to
+// everyone, its group's members kept (the group stays, its beta setting opens nothing until it is back to 'group').
+test("groups (v53): a subject that opens to all opens nothing through a group, whatever its beta label; back to 'group', its members count again", () => {
   const s = seed();
   const open = v => require('vm').runInContext(`CORE_.SUBJECTS.find(S => S.id === 'fish').open = ${JSON.stringify(v)}`, s.ctx);
-  open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
-  assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
+  open('group'); // a group first, then open to all as fish is
+  const g = s.post({groupMake: {n: 'Fish beta', beta: 'fish'}, token: TOK}).group.id;
+  assert.strictEqual(s.post({userGroup: 'Ana', group: g, on: true, token: TOK}).n, 1);
   open('all');
-  // a beta label does not make a group: the sea slugs, in beta and open to all (Pierre, 2026-11-17)
+  // a beta label does not make a group: the sea slugs, in beta and open to all
   assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'seaslug').beta", s.ctx), 'a beta label');
   assert.strictEqual(require('vm').runInContext('groupIds_().length', s.ctx), 0, 'no subject opens to a group');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
-  assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
+  assert.strictEqual(s.post({groupMake: {n: 'Sea slug beta', beta: 'seaslug'}, token: TOK}).error, 'beta', 'no beta setting for it');
   assert.ok(
     s.sheets.Groups.rows.some(r => r[1] === 'Ana'),
     'the rows stay in the tab'
@@ -1252,7 +1397,7 @@ test('board: a player saved before v14 ranks by learned / total until their next
   const s = seed();
   const ra = s.sheets.RAs;
   assert.ok(ra, 'RAs tab');
-  // Simulate a v13 row: no Progress, no Board.
+  // Simulate an old row: no Progress, no Board.
   const rows = ra.rows;
   const r = rows.find(x => x[0] === 'Ana');
   r[8] = '';
@@ -1264,7 +1409,7 @@ test('board: a player saved before v14 ranks by learned / total until their next
 
 test("board (v63): the level is the app's own (saved ~level th), from 200 answers of that record; equal progress ranks by level", () => {
   const s = seed();
-  // Pierre, 2026-11-06, Q134: one player level shown everywhere. The answers below would give the sheet's own chain
+  // One player level shown everywhere. The answers below would give the sheet's own chain
   // (stats_ R, from -1) other values: the board ignores it and reads the level the app saved.
   const many = (p, n) => Array.from({length: n}, (_, i) => ans(p + i, {ok: i % 4 ? 1 : 0}));
   const lv = (n, L) => ({'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}, '~level': L})});
@@ -1464,7 +1609,7 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   old.sync(undefined, all);
   assert.strictEqual(old.now(), 0.5);
   // A send whose reply was lost: its answers are on the sheet and still in the log; the reply's ids keep them from
-  // counting twice (Codex review #370).
+  // counting twice.
   const lost = loadCodeGs();
   lost.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.map(a => ans(a.id, a))});
   const r = lost.get({name: 'Ana', pin: '1234'}),
@@ -1546,7 +1691,7 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
       ['', 0, null, null]
     ]
   );
-  // A tab made before v23 gets the two headers; its old rows read as not logged.
+  // An older tab without them gets the two headers; its old rows read as not logged.
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1')]});
   s2.sheets.Answers.rows.forEach(x => (x.length = 12));
@@ -1565,7 +1710,7 @@ test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns befor
 });
 
 test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it at index 14', () => {
-  // Pierre, 2026-11-04: the time of day at home, for players outside the sheet's time zone (minutes east of UTC).
+  // The time of day at home, for players outside the sheet's time zone (minutes east of UTC).
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000';
   s.post({
@@ -1588,8 +1733,8 @@ test('v44 Answers: the UTC offset at the end, sanitised; readAnswers carries it 
 });
 
 test("v59 Answers: a typed answer's raw text and its spelling step at the end, sanitised, logged only", () => {
-  // A player's idea, Pierre 2026-11-05: a close typo of the right name is retyped once (quiz.js typeBind); the name
-  // study's question g: the raw text of typed answers, so near-misses can be studied.
+  // A close typo of the right name is retyped once (quiz.js typeBind); the raw text of typed answers is kept, so
+  // near-misses can be studied.
   const s = loadCodeGs();
   s.post({
     name: 'Ana',
@@ -1621,14 +1766,14 @@ test("v59 Answers: a typed answer's raw text and its spelling step at the end, s
 });
 
 test('v44 one-shot tz: the rows logged before get +480 in their empty UTC offset cells, once, never over a value', () => {
-  // Pierre, 2026-11-04: every answer logged before v44 came from players on Philippine time.
+  // Every answer logged before the UTC offset column came from players on Philippine time.
   const CODE = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
   const s = loadCodeGs({
     fetch: url => (url.includes('raw.githubusercontent.com') ? {getResponseCode: () => 200, getContentText: () => CODE} : null)
   });
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1'), ans('o2'), ans('o3')]});
   const A = s.sheets.Answers;
-  A.rows.forEach(x => (x.length = 14)); // a tab from before v44: no header, no cells
+  A.rows.forEach(x => (x.length = 14)); // a tab from before the column: no header, no cells
   A.rows[2][14] = -300; // a value already there stays
   A.rows.splice(3, 0, []); // an empty row between answers stays empty
   // The function itself: fills the empty cells of answer rows only, and a second call finds nothing to fill.
@@ -1685,7 +1830,7 @@ test('v25: a request without av (an app before 2026-11-03) is logged as old, onc
   s.post({anon: 'abcd1234ef', anonAnswers: [ans('o2')], av: '180'});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], av: '180'});
-  // A load with a made-up name, or a wrong code, logs nothing (Codex review #373); a global cap holds the rest.
+  // A load with a made-up name, or a wrong code, logs nothing; a global cap holds the rest.
   for (let i = 0; i < 20; i++) s.get({name: 'Nobody' + i, pin: '1234'});
   s.get({name: 'Ana', pin: '9999'});
   const m = old().map(r => String(r[3]));
@@ -1693,9 +1838,9 @@ test('v25: a request without av (an app before 2026-11-03) is logged as old, onc
   assert.ok(m.some(x => /photo stats/.test(x)) && m.some(x => /~anon abcd1234ef/.test(x)) && m.some(x => /save \(Ana\)/.test(x)));
 });
 
-// v50 (Pierre, 2026-11-05: "save failed" too often): an exception thrown out of doGet / doPost made Apps Script answer
-// with its HTML error page, which has no CORS header, so the browser reported "Failed to fetch" / "Load failed" although
-// the script had answered. Every reply is the script's own JSON now.
+// An exception thrown out of doGet / doPost would make Apps Script answer with its HTML error page, which has no CORS
+// header, so the browser would report "Failed to fetch" / "Load failed" although the script had answered: every reply
+// is the script's own JSON.
 test('v50: a script lock held by another request is answered as JSON (lock), never thrown', () => {
   const s = loadCodeGs();
   assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], av: '300'}).rev, 1);
@@ -1731,8 +1876,7 @@ test('v50: an exception (a Sheets service failure, a broken request) is answered
   assert.strictEqual(s.ctx.doPost({postData: {contents: '{"name": "Ana", '}}).error, 'server');
 });
 
-// v50 (Pierre, 2026-11-05: a device stayed on an old app version, and the 'old' event had no device): the photo stats
-// request carries the app version (av), the anonymous device id (dev) and the minutes the page has been open (up).
+// A device that stays on an old app version is logged with its device: the photo stats request carries the app version (av), the anonymous device id (dev) and the minutes the page has been open (up).
 test('v50: a device on a replaced app version is logged as old with its device id and version, once in 6 hours', () => {
   const s = loadCodeGs(),
     H = 36e5,
@@ -1768,9 +1912,9 @@ test('v50: a device on a replaced app version is logged as old with its device i
   assert.match(String(L[0][3]), /^app behind: build 300, newest 320 for 2 h, page open 300 min$/);
 });
 
-// Codex review #565: a hold computed from an older read of the Answers tab must not be kept in the cache past answers
-// logged since (two saves of one account at once: the first read the tab, the second logged and dropped the cache, the
-// first then wrote its older hold back, 1.8 instead of 2.7, until the next answer or six hours). The cached hold says
+// A hold computed from an older read of the Answers tab must not be kept in the cache past answers logged since (two
+// saves of one account at once: the first reads the tab, the second logs and drops the cache, the first must not write
+// its older hold back). The cached hold says
 // how many rows the tab had when it was read, and is used only while the tab still has as many.
 test('v50: a cached hold read before answers logged since is not reused', () => {
   const s = loadCodeGs(),
@@ -1792,7 +1936,7 @@ test('v25: the old-app log is capped for everyone (Codex review #373)', () => {
   assert.ok(s.sheets.Events.rows.filter(r => r[2] === 'old').length <= 300);
 });
 
-// Full replay by the sheet (v28, Pierre 2026-11-03: progress recalculated from the whole answer log, automatically): the
+// Full replay by the sheet (progress recalculated from the whole answer log, automatically): the
 // script embeds core.js (tools/sync_core.py) and replays a player's rows when their app applied an older rules version.
 const C = require('../core.js'),
   fs = require('fs'),
@@ -1807,7 +1951,7 @@ const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8'),
     return out;
   })(JSON.parse(DJSON));
 // data.json from GitHub, served here (counted), and curation.json, whose look-alike pairs the coral replay lays over it
-// (Code.gs subjRpl_; design note v2, step 8); anything else is the default stub.
+// (Code.gs subjRpl_); anything else is the default stub.
 const withData = (n = {c: 0}) => ({
   n,
   fetch: url =>
@@ -1843,7 +1987,7 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.strictEqual(vm.runInContext('CORE_.SHEET_FLOOR', s.ctx), C.SHEET_FLOOR);
 });
 
-// v61 (Pierre, 2026-11-06, Q132): each answer carries what the app scored it with (core.js scoreRec), kept in the Answers
+// Each answer carries what the app scored it with (core.js scoreRec), kept in the Answers
 // column Scoring (found by its name), served by readAnswers at index 22 (core.js LOG_SC, its column W) and replayed from it: the sheet's replay is the
 // app's own scoring of those rows, whatever pooled stats the sheet holds.
 test('v61 Answers: the scoring record kept, checked and replayed', () => {
@@ -1865,8 +2009,8 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
     col = A.rows[0].indexOf('Scoring');
   assert.deepStrictEqual(
     [col, A.rows[0].length],
-    [22, 26],
-    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312) and Photo answered (Q371) after it'
+    [22, 27],
+    'Scoring in column W (core.js LOG_SC), Rejected tries (v100), Device (Q312), Photo answered (Q371) and Content version after it'
   );
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(
@@ -1934,7 +2078,7 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   assert.deepStrictEqual(g.data, data);
   assert.deepStrictEqual(g.replay.rec, want);
   // Stored: a second request reuses it (a marker put in the tab comes back), data.json read once for the replay's genera
-  // (cached); the replay, under the script lock, fetches no photo pool (sheet v115: stats_ there reads the cached pools
+  // (cached); the replay, under the script lock, fetches no photo pool (stats_ there reads the cached pools
   // only), and the public stats above, which hold no lock, read it once for the corals' photo pool (cached).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv: '0'}).replay.rec, {mark: 1});
@@ -1962,7 +2106,7 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   assert.deepStrictEqual(raw, data);
 });
 
-// v42 (Pierre, 2026-11-04: admin pages slow): the player list carries each player's full replay as the admin computed it
+// The player list carries each player's full replay as the admin computed it
 // from the answer log and their saved copy (rp: [progress %, learned, the saved copy's %]), so Players makes no call per
 // player; the replay record is the Replayed tab's, reused while the player's rows are the same.
 test("v42: the player list carries each player's replayed progress, learned and saved %, from the Replayed tab", () => {
@@ -2003,10 +2147,10 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  // Three times in all: once for the replay's units under the content editor's pairs (subjRpl_, design note v2 step 8),
-  // once for the slate (dataJson_), once for the photo pool of the list (v81 pools_), each then cached.
+  // Three times in all: once for the replay's units under the content editor's pairs (subjRpl_),
+  // once for the slate (dataJson_), once for the photo pool of the list (pools_), each then cached.
   assert.strictEqual(f.n.c, 3, 'data.json read once for each, then cached');
-  // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
+  // Without data.json: no rp (the admin reads the saved copies itself).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});
   assert.ok(!('rp' in s2.post({users: 1, token: TOK}).users[0]));
@@ -2087,7 +2231,7 @@ test("v28: an anonymous device's replay counts only the answers after its progre
   assert.strictEqual(s.post({anon: 'abcd1234ef', anonAnswers: [], rv: 0}).replay.n, 6);
 });
 
-// v33 (rename of 2026-11-03, shipped with sheet v33): the app's keys were renamed with the app (IMR Reef ID, core.js LEGACY_KEYS). An app from before the
+// The app's keys were renamed with the app (IMR Reef ID, core.js LEGACY_KEYS). An app from before the
 // rename still saves the old names, the renamed app saves the new ones plus a copy under the old ones (core.js
 // withLegacy): the sheet reads the new name first, else the old one. rename-app: keep-begin
 test('v33: saved data is read under the new key names or the old ones (progress, reset, achievements)', () => {
@@ -2133,7 +2277,7 @@ test('v33: saved data is read under the new key names or the old ones (progress,
 });
 // rename-app: keep-end
 
-// Codex review #428 (P2): the Replayed tab's cache is keyed by the first-launch history too (core.js startFp, folded
+// The Replayed tab's cache is keyed by the first-launch history too (core.js startFp, folded
 // into its Since column): a replay made with one history (a stale save) is not reused once the saved history changes.
 test('v36: the stored replay is not reused when the first-launch history changes (Codex review #428)', () => {
   const f = withData(),
@@ -2162,7 +2306,7 @@ test('v36: the stored replay is not reused when the first-launch history changes
   assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: data('know'), summary: {}, answers: [], rv: 0}).replay.rec, {mark: 1});
 });
 
-// v55 (Pierre, 2026-11-05, Q84-Q91): a deleted account leaves nothing in normal operation.
+// Rule D7: a deleted account leaves nothing in normal operation.
 const v55 = () => {
   const s = seed();
   s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rb1', why: 'photo', t: '2026-11-01T00:00:00Z'}]});
@@ -2258,12 +2402,11 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
   assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
 });
 
-// The other subjects' replays (Pierre, 2026-11-08: "recalculate every player's progress from their answers"; ROADMAP "Fish progress replayed
-// from the answer log"): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
-// their own rows and units (core.js fishReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
+// The other subjects' replays (every player's progress recalculated from their answers): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
+// their own rows and units (core.js treeReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
 const FJSON = fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
-  FGEN = C.fishReplayGen(JSON.parse(FJSON));
+  FGEN = C.treeReplayGen(JSON.parse(FJSON));
 // curation.json too: the content editor's structure the fish replay applies (Code.gs subjCur_, sheet overlay step 3).
 const withFish = (n = {c: 0, f: 0, cur: 0}) => ({
   n,
@@ -2292,7 +2435,7 @@ const fa = (id, i, x = {}) =>
     sc: {d: 0, r: 1},
     ...x
   });
-// The variant table the fish replay reads (Code.gs subjVar_, core.js fishVarTable; Q391 b), from the repository's files
+// The variant table the fish replay reads (Code.gs subjVar_, core.js treeVarTable), from the repository's files
 // as the sheet reads them from main (tests/gas.js serves the photo files), made once.
 let FVARS = null;
 const fvars = () =>
@@ -2342,7 +2485,7 @@ test('sheet replays per subject: the fish progress replayed from its own answers
     "the corals' tab keeps the corals' record only"
   );
   // Reused while the rows are the same (a marker comes back); fish.json read once (cached), never for the photo pools
-  // under the script lock (sheet v115), the variant table made with the units (Code.gs subjRpl_).
+  // under the script lock, the variant table made with the units (Code.gs subjRpl_).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
   assert.strictEqual(f.n.f, 1);
@@ -2359,9 +2502,8 @@ test('sheet replays per subject: the fish progress replayed from its own answers
   assert.strictEqual(r2.replay.n, 4, "the corals' rows, whatever the fish reset");
 });
 
-// No floor any more (Pierre, 2026-11-09, Q330: the log is the only reference, a fish bar may go down; until then the
-// sheet floored the fish replay against the saved bars of its first replay, Q310): the replay is the log's, whatever the
-// saved copy, and a record kept as {P, F} by a script from before is read as its P.
+// No floor (rule D9: the log is the only reference, a fish bar may go down): the replay is the log's, whatever the saved
+// copy, and a record kept as {P, F} by an older script is read as its P.
 test('sheet replays per subject: the fish replay is the log alone, not floored against the saved copy', () => {
   const f = withFish(),
     s = loadCodeGs({fetch: f.fetch}),
@@ -2373,7 +2515,7 @@ test('sheet replays per subject: the fish replay is the log alone, not floored a
   assert.deepStrictEqual(r.replays.fish.rec, raw, "the log's replay, the saved bars not in it");
   const T = s.sheets['Replayed Fish'];
   assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')), raw, 'kept as the record alone');
-  // A record kept as {P, F} (a floored one, before v127) for today's rules, rows and reset: read as its P.
+  // A record kept as {P, F} (an older script's floored one) for today's rules, rows and reset: read as its P.
   T.rows[1].splice(5, T.rows[1].length - 5, JSON.stringify({P: raw, F: high}));
   const r2 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {fish: 0}});
   assert.deepStrictEqual(r2.replays.fish.rec, raw);
@@ -2406,9 +2548,8 @@ test('sheet replays per subject: a delete, a merge or an archive drops the fish 
   assert.deepStrictEqual(names(), ['Ana']);
 });
 
-// Production, 2026-11-09: the sheet's "Replayed Fish" tab stood empty, without its header (made by anything but the
-// script), and find_ on a tab of no row throws: every fish replay failed before it was stored or sent (replays_ leaves a
-// failed subject out), so no fish player was ever replayed while their apps asked at every sync.
+// A "Replayed Fish" tab that stands empty, without its header (made by anything but the script): find_ on a tab of no
+// row throws, so every fish replay would fail before it was stored or sent (replays_ leaves a failed subject out).
 test('v117 an empty Replayed tab made by hand: the replay gets its header and its record, and is sent', () => {
   const s = loadCodeGs({fetch: withFish().fetch}),
     F = Array.from({length: 9}, (_, i) => fa('f' + i, i));
@@ -2428,8 +2569,8 @@ test('v117 an empty Replayed tab made by hand: the replay gets its header and it
   assert.strictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.n, 9);
 });
 
-// Codex review #810: a player named after an Object property is a player like any other in the replay (core.js
-// replayProgress keyed by player id: a plain object read Object's constructor for "constructor", and replayed nothing).
+// A player named after an Object property is a player like any other in the replay (core.js replayProgress keyed by
+// player id: a plain object would read Object's constructor for "constructor", and replay nothing).
 test('replays of players named constructor, __proto__, toString: their own answers, each subject', () => {
   ['constructor', '__proto__', 'toString'].forEach(nm => {
     const s = loadCodeGs({fetch: withFish().fetch}),
@@ -2441,8 +2582,8 @@ test('replays of players named constructor, __proto__, toString: their own answe
   });
 });
 
-// Codex review #812: before v117 core.js replayProgress replayed none of the answers of a player keyed "constructor" or
-// "__proto__" (it read the member every plain object inherits as their record), so a record kept for them may be wrong:
+// An older core.js replayProgress replayed none of the answers of a player keyed "constructor" or "__proto__" (it read
+// the member every plain object inherits as their record), so a record kept for them may be wrong:
 // replay_ never reuses one for such a key and makes it again, each subject; another player's is reused as before.
 test('a kept replay record is never reused for a player keyed like an inherited member: made again', () => {
   ['Ana', 'constructor', '__proto__'].forEach(nm => {
@@ -2467,8 +2608,8 @@ test('a kept replay record is never reused for a player keyed like an inherited 
   });
 });
 
-// Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
-// subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
+// The corals' analyses are refitted every 1000 coral answers: the head counts each subject's rows apart, so the fish
+// answers never move the corals' count.
 test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
   const s = seed(),
     fish = (id, extra = {}) => ans(id, {s: 'fish', rk: 'family', g: 'f:Damselfishes', a: 'f:Damselfishes', ...extra});
@@ -2480,8 +2621,8 @@ test("v105 analyses head: each subject counted apart, the corals' answers never 
     answers: [fish('f1'), fish('f2'), fish('f3', {ok: 0, a: 'f:Gobies'}), ans('a3', {s: 'coral'})],
     at: 1
   });
-  // a row with no player (the readAnswers log leaves it out: so does the count), and a surprise card's answer (sheet v98,
-  // Mode wink: counted nowhere)
+  // a row with no player (the readAnswers log leaves it out: so does the count), and a surprise card's answer (Mode
+  // wink: counted nowhere)
   s.sheets.Answers.appendRow(['', new Date(), 'Acropora', 'Acropora', 1, 'quiz']);
   const wink = ['Ana', new Date(), 'f:WhaleSharks', 'f:Damselfishes', 0, 'wink'];
   wink[17] = 'fish';
@@ -2503,7 +2644,7 @@ test("v105 analyses head: each subject counted apart, the corals' answers never 
   assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stored.subject, 'coral');
 });
 
-// Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). One report per subject, each in its
+// Each subject's analyses: one report per subject, each in its
 // own tab: a fish report never replaces the corals', and each head names its own subject's stored report.
 test('v113 analyses: one stored report per subject, each in its own tab', () => {
   const s = seed(),
@@ -2558,7 +2699,7 @@ test('v55 one-shot removedcleanup: orphan Replayed rows and reports of accounts 
   s.post({anon: 'devanon201', anonAnswers: [ans('y1')], av: '190'});
   s.post({anon: 'devanon202', anonAnswers: [ans('y2')], av: '190'});
   rplAdd(s, '~anon devanon201', '~anon devanon202');
-  // Before v55: a device's answers claimed without its Replayed row, and an account deleted with its report kept.
+  // An older script's state: a device's answers claimed without its Replayed row, and an account deleted with its report kept.
   s.sheets.Answers.rows.forEach(r => r[0] === '~anon devanon201' && (r[0] = 'Ana'));
   vm.runInContext(
     "['RAs', DATA_TAB, 'By genus'].forEach(t => dropRows_(t, 'Ana B')); sheet_('Removed', REMOVED).appendRow(['Ana B', 'h', '', new Date()])",
@@ -2659,7 +2800,7 @@ test('v58 archive: Board -2, out of every normal reader; its answers flagged 2 a
   assert.strictEqual(s.post({userMerge: {from: 'Ben', into: 'Ana-old', data: prog(1)}, token: TOK}).error, 'archived');
   assert.strictEqual(s.post({userBoard: 'Ana-old', hide: false, token: TOK}).error, 'archived');
   assert.strictEqual(s.post({userArchive: {from: 'Ana-old', into: 'Ana-older'}, token: TOK}).error, 'archived');
-  // The Inbox learns an archive's reports from readReports itself (verified 2; Codex review #603).
+  // The Inbox learns an archive's reports from readReports itself (verified 2).
   s.post({rname: 'Ben', rpin: '1111', reports: [{id: 'rv1', why: 'photo'}]});
   s.sheets.Reports.rows.push([new Date(), 'Ana-old', 1, 'Bad photo', '', '', '', '', '', '', '', 'rv2']);
   const rr = s.post({readReports: 1, token: TOK}).rows;
@@ -2744,7 +2885,7 @@ test('v58 (Codex review #603): archiving moves the name mentions in the log tabs
   s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK});
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')) && /\(Ben-old\)/.test(tabText(s, 'Events')), 'Events names the archive');
   assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/);
-  // The admin's To do › Alerts (readAlerts, v152; rule D7, Codex review #996) leaves the archive's line out, as a normal
+  // The admin's To do › Alerts (readAlerts; rule D7) leaves the archive's line out, as a normal
   // view; a live account's line stays, under its admin id (every case: the readAlerts rule D7 test).
   require('vm').runInContext("sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ana (3000 per 6 h)'])", s.ctx);
   const al = s.post({readAlerts: 1, token: TOK}).rows.map(r => r[1]);
@@ -2847,8 +2988,7 @@ test('v58 (Codex review #603): a report of another generation has no reporter wh
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').reports, 0);
 });
 
-// v60 (Pierre, 2026-11-06: fish answers logged from the very first second; the sheet records an answer at any taxonomic
-// level): five columns at the end of Answers, and only the replayed subject's rows (the corals') feed what the script
+// Fish answers logged from the very first answer, at any taxonomic level: five columns at the end of Answers, and only the replayed subject's rows (the corals') feed what the script
 // computes, so a fish answer never moves a coral number.
 const fishAns = (id, extra = {}) =>
   ans(id, {
@@ -2873,7 +3013,7 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
     data: prog(1),
     summary: {},
     answers: [
-      ans('f1'), // an app from before v60: no subject, a coral genus answer
+      ans('f1'), // an older app: no subject, a coral genus answer
       ans('f2', {s: 'coral', rk: 'genus', ty: 'Acropra', tr: 1}),
       fishAns('f3'),
       fishAns('f4', {g: 'g:Chromis', a: 'g:Dascyllus', rk: 'genus', tn: 'Chromis', ta: 'Dascyllus', m: 'quiz-duel|g:Chromis|g:Dascyllus'}),
@@ -2888,7 +3028,7 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   const R = A.rows.slice(1);
   assert.deepStrictEqual(R[0].slice(17, 22), ['coral', 'genus', '', '', '']);
   assert.deepStrictEqual(R[1].slice(15, 22), ['Acropra', 1, 'coral', 'genus', '', '', '']);
-  // v69: the old entry ids an app from before the switch sends are logged as the book's families (core.js renameLogEntry).
+  // The old entry ids an older app sends are logged as the book's families (core.js renameLogEntry).
   assert.deepStrictEqual(R[2].slice(17, 22), ['fish', 'family', 'Damselfishes', 'Moorish Idol', 'Pomacentrus moluccensis']);
   assert.deepStrictEqual(
     [R[2][2], R[2][3], R[2][11]],
@@ -2925,9 +3065,8 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   assert.strictEqual(rows[2][21], 'Pomacentrus moluccensis');
 });
 
-// v170 (#1041, the species step 2 plan): Species shown blanked any name with a digit, so every answer on a photo of a
-// species with no name yet (tools/seaslug_informal.json: Goniobranchus sp. 5) was logged without its species. Its label
-// is kept now, a digit only as the number after "sp. "; everything else is refused as before.
+// Species shown keeps the label of a species with no name yet (tools/seaslug_informal.json: Goniobranchus sp. 5), a
+// digit only as the number after "sp. "; any other name with a digit is refused.
 test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchus sp. 5), a fish species unit (s:s091) still logs', () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000';
@@ -2960,7 +3099,7 @@ test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchu
       slug('n8', 'Goniobranchus sp.5'),
       slug('n9', 'Goniobranchus sp. 5x'),
       slug('n10', 'Goniobranchus sp. 5 =1+1'),
-      // a fish species unit (core.js fishSpUnits: s: and the species id) and its photo's species
+      // a fish species unit (core.js treeSpUnits: s: and the species id) and its photo's species
       fishAns('n11', {
         g: 's:s091',
         a: 's:s084',
@@ -3083,8 +3222,8 @@ test('v60: fish rows move no coral number: photo ratings, offsets, confusions, h
   assert.strictEqual(a.n, 30, 'the replay counts the coral rows only');
 });
 
-// v69 (Pierre, 2026-11-06 13:04: the fish units are the book's families, not the IMR entries; Q159: the rows logged
-// before are renamed once): an old app's entry ids are logged as families, one map per row (a Diploprion photo makes t13
+// The fish units are the book's families, not the IMR entries, and the rows logged with entries are renamed once: an
+// old app's entry ids are logged as families, one map per row (a Diploprion photo makes t13
 // the Soapfishes, so a right answer stays right); ONCE_ fishunits renames the rows and reports logged before.
 test('v69 fish units: old entry ids logged as families (one map per row), reports too, and the one-shot for the rows before', () => {
   const vm = require('vm'),
@@ -3135,7 +3274,7 @@ test('v69 fish units: old entry ids logged as families (one map per row), report
   assert.strictEqual(R[3][2], 'Acropora', 'a coral row untouched');
   const typed0 = R[3][15];
   assert.strictEqual(typed0, '=1+1', 'stored as text (the apostrophe of safe_ hidden, as Sheets does)');
-  // Rows logged before v69: put the old ids back, then the one-shot.
+  // Rows logged with entry ids: put the old ids back, then the one-shot.
   [R[0][2], R[0][3], R[0][11], R[0][19], R[0][20]] = ['t13', 't13', 't13 t01 t02 t03', 'Groupers', 'Groupers'];
   [R[1][2], R[1][3], R[1][5]] = ['t01', 't13', 'quiz-duel|t01|t13'];
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1', {g: 't13', a: 't01', fix: ''})]});

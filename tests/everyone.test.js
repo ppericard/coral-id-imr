@@ -1,8 +1,7 @@
 require('./slot.js').testGuard();
-// Every account counts in the admin's stats (Pierre, 2026-11-04: his account is a real player's, the "Without me",
-// "Others / Me" and "This is also me" exceptions are gone; the leaderboard's "hidden" filters nothing either). The admin's
-// answer rows are the whole log (playerRows; rowsOf, a subject's), the photo ratings the sheet's (photoStats), and no code path drops answers by
-// who sent them: a source check, since these are the pages' own lines.
+// Every account counts in the admin's stats, the admin's own included: no "me" exception, and the leaderboard's "hidden"
+// filters nothing. The admin's answer rows are the whole log (playerRows; rowsOf, a subject's), the photo ratings the
+// sheet's (photoStats), and no code path drops answers by who sent them (a source check of the pages' own lines).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -12,8 +11,8 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
-// The one exception (Pierre, 2026-11-05, Q86): the answers a deleted account left (sheet v55, anonymous flag 2) are no
-// player anywhere; they only rate the photos (photoStats, the sheet's).
+// The one exception: the answers a deleted account left (anonymous flag 2) are no player anywhere; they only rate the
+// photos (photoStats, the sheet's).
 test('playerRows is every answer and photoStats the sheet ratings, whoever answered (but a deleted account)', () => {
   const src = read('admin.js'),
     ctx = {
@@ -65,9 +64,8 @@ test('no admin page filters answers or players by who they are (isMe is a mark o
   }
 });
 
-// Codex review #600: the Inbox's Health line (healthLine0) reads the player rows, never the answers a deleted account
-// left (sheet v55 flag 2), as the Health page does; another subject's (the fish To do › All) its rows, which leave them
-// out too (rowsOf: goneRow).
+// The Inbox's Health line (healthLine0) reads the player rows, never the answers a deleted account left (flag 2), as
+// the Health page does; another subject's (the fish To do › All) its rows, which leave them out too (rowsOf: goneRow).
 test('the Health line reads the player rows, not a deleted account', () => {
   const src = read('admin.js'),
     b = block(src, 'function healthLine0(S) {', '\n}', {file: 'admin.js', through: true});
@@ -77,8 +75,8 @@ test('the Health line reads the player rows, not a deleted account', () => {
   assert.match(block(src, 'const rowsOf = (S = ASUBJ) =>', '\n', {file: 'admin.js', through: true}), /goneRow/);
 });
 
-// Codex review #600: an answer log dropped while the Analyses pages read it (a delete or merge: sheetAgain) is read
-// again by the redraw that follows: the guard is cleared before the redraw, not after it.
+// An answer log dropped while the Analyses pages read it (a delete or merge: sheetAgain) is read again by the redraw
+// that follows: the guard is cleared before the redraw, not after it.
 test('Analyses: an answer log dropped during its read is read again', async () => {
   const src = read('admin-analyses.js'),
     ctx = {TOKEN: 't', ANS: null, ANREP: {}, cur: 'analyses/overview', anPage: p => p.startsWith('analyses/'), calls: 0, Promise};
