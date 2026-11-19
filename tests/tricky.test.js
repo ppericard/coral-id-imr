@@ -24,8 +24,7 @@ const T = (() => {
 })();
 // The made-up units are plain letters; every one is a unit of the subject unless said otherwise.
 const ALL = n => /^[A-Z]$/.test(n);
-const pick = (P, units = Object.keys(P), known = ALL, hide) =>
-  JSON.parse(JSON.stringify(T.trickyPairs(P, units, known, hide)));
+const pick = (P, units = Object.keys(P), known = ALL, hide) => JSON.parse(JSON.stringify(T.trickyPairs(P, units, known, hide)));
 
 test('trickyPairs: from the player’s own record, both directions, a pair once', () => {
   // A and B: 2 mix-ups each way, offered 6 and 4 times; read from either unit, the pair comes once, a before b.
@@ -69,7 +68,11 @@ test('trickyPairs: ranked by the own rate shrunk by CONF.W offers; a pair now to
 
 test('trickyPairs: only units of the subject, never a mystery tile, never the unit with itself', () => {
   const P = {A: {conf: {B: 3, Old: 4, A: 5, M: 3}, off: {B: 3}}, M: {conf: {A: 1}}};
-  assert.deepStrictEqual(pick(P, ['A', 'M'], ALL, n => n === 'M'), [['A', 'B', 3, 3]], 'M is a mystery tile: its pair is not named');
+  assert.deepStrictEqual(
+    pick(P, ['A', 'M'], ALL, n => n === 'M'),
+    [['A', 'B', 3, 3]],
+    'M is a mystery tile: its pair is not named'
+  );
   assert.deepStrictEqual(
     pick(P, ['A', 'M']).map(x => x[0] + x[1]),
     ['AM', 'AB'],
@@ -91,12 +94,19 @@ test('trickyHTML: a link to the comparison where there is one, a plain chip else
     L = [['A', 'B', 4, 10]];
   const cmp = T.trickyHTML(L, name, (a, b) => `#learn/compare/${a}/${b}`);
   assert.match(cmp, /<h3 class="label">Your tricky pairs<\/h3>/);
-  assert.match(cmp, /<a class="chip" href="#learn\/compare\/A\/B" title="Mixed up 4 times in 10 questions that offered both\. Compare them side by side">/);
+  assert.match(
+    cmp,
+    /<a class="chip" href="#learn\/compare\/A\/B" title="Mixed up 4 times in 10 questions that offered both\. Compare them side by side">/
+  );
   assert.match(cmp, /<span><i>A<\/i> ↔ <i>B<\/i> <small>· 4 of 10<\/small><\/span>/, 'one inline box: the spaces stay in the flex chip');
   const plain = T.trickyHTML(L, name, () => '');
   assert.doesNotMatch(plain, /<a |href/, 'no comparison page (fish, sea slugs): no link');
   assert.match(plain, /<span class="chip" title="Mixed up 4 times in 10 questions that offered both">/);
-  assert.strictEqual(T.trickyHTML([], name, () => ''), '', 'no pair yet: no section');
+  assert.strictEqual(
+    T.trickyHTML([], name, () => ''),
+    '',
+    'no pair yet: no section'
+  );
 });
 
 test('the section names no subject: the subject’s words come from SUBJ and uname', () => {

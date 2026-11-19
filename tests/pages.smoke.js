@@ -5105,7 +5105,10 @@ async function trickyCheck(b, base) {
       ['A', 'Dipsastraea ↔ Favites · 2 of 10', /compare\/Dipsastraea\/Favites$/]
     ];
     if (!s.shown || s.head !== 'Your tricky pairs') fails.push(`tricky pairs ${w}: the section is not on My progress ${JSON.stringify(s)}`);
-    else if (s.chips.length !== want.length || want.some(([t, x, h], i) => s.chips[i][0] !== t || s.chips[i][1] !== x || !h.test(s.chips[i][2] || '')))
+    else if (
+      s.chips.length !== want.length ||
+      want.some(([t, x, h], i) => s.chips[i][0] !== t || s.chips[i][1] !== x || !h.test(s.chips[i][2] || ''))
+    )
       fails.push(`tricky pairs ${w}: the chips ${JSON.stringify(s.chips)}`);
     if (s.after !== before) fails.push(`tricky pairs ${w}: My progress wrote the record ${before} → ${s.after}`);
     if (errs.length) fails.push(`tricky pairs ${w}: page errors ${errs.slice(0, 3).join(' | ')}`);

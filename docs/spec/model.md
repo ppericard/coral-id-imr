@@ -135,10 +135,10 @@ more plausible choices).
 counted in `answer()`) and `P[g].conf` (the unit answered instead), again worth `CONF.W` offers, so the player's weight
 is offers / (offers + 8). A pair a player keeps mixing up becomes their trap even if others do not confuse it; one they
 now tell apart sinks back. Duels weigh a pair ×3 when the player mixed it up and still confuses it, ×2 when
-`confusable` or a classic, else ×1. My progress "Your tricky pairs" reads the player's own record alone, with no pooled
-prior, and changes nothing here ([front-end.md › My progress](front-end.md#the-pages)). `mergeProgress()` adds `off` up across devices like
-`conf`. The contrast queue for the Again and the duels slipped into the quiz is `quiz.js` `CONTRAST` (up to `CONTRAST.Q`
-3 pairs, `rematchAdd`, oldest first; an Again never asks a unit not met).
+`confusable` or a classic, else ×1. My progress "Your tricky pairs" reads the own record alone, no pooled prior
+([front-end.md](front-end.md#the-pages)). `mergeProgress()` adds `off` up across devices like `conf`. The contrast
+queue for the Again and the duels slipped into the quiz is `quiz.js` `CONTRAST` (up to `CONTRAST.Q` 3 pairs,
+`rematchAdd`, oldest first; an Again never asks a unit not met).
 
 **One colony per question** (rule P4): photos are grouped by observation (`p.o`); a question shows the views of one
 colony only, never topped up from another. Beginners favour colonies shot at several zooms; `singleP()` raises the

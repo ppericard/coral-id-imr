@@ -1,6 +1,6 @@
 # Your tricky pairs on My progress: the player's own mix-ups, shown, with no weight change
 
-Date: 2026-11-19. PR: #1183. Rules or docs touched: S1, U1; docs/spec/front-end.md "The pages" (My progress),
+Date: 2026-11-19. PR: #1205. Rules or docs touched: S1, U1; docs/spec/front-end.md "The pages" (My progress),
 docs/spec/model.md (the personal path), DESIGN.md (My progress), ROADMAP "Name-similarity confusion".
 
 ## Context
@@ -34,7 +34,7 @@ Choices made while building, not decided with Pierre, each easy to change (integ
 
 ## Consequences
 
-- `progress.js` `trickyPairs` (pure, tested in `tests/trickyПairs` style: `tests/tricky.test.js`) and `trickyHTML`;
+- `progress.js` `trickyPairs` (pure, tested in `tests/tricky.test.js`) and `trickyHTML`;
   the pages smoke's `names` part checks the section on a seeded record and that opening My progress writes nothing.
 - No change to the draw, the model, the score or any stored record: no rules version (rule D5), no learning check
   (rule L11: not a learning change).
