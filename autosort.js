@@ -699,9 +699,9 @@
     return N;
   };
   // The photos of one species in play, in the page's order (L: the photo objects, j(f): the pass's judgment): the featured
-  // ones first, in the admin's order; then the game's order (core.js easyRank): reference-level photos first (a
-  // reference source, rep or the flag r), the easiest, the most reference-like (refScore), an open licence before CC
-  // BY-NC (rightsRank), then a fixed hash. Never by who took them (docs/rules/photos.md).
+  // ones first, in the admin's order; then the game's order (core.js easyRank): reference-level photos first (read from
+  // the photo's ease and tags, never from its source), the easiest, the most reference-like (refScore), an open licence
+  // before CC BY-NC (rightsRank), then a fixed hash. Never by who took them (docs/rules/photos.md).
   // A photo as core.js easyRank and refLevel read it: the admin's ease and tags, else the pass's (j).
   const fishEase = (p, F, j) => ((F || {}).ease || {})[p.f] || (j(p.f) || {}).e || 0;
   function fishRec(p, F, j) {
@@ -710,7 +710,6 @@
       f: p.f,
       jt,
       e: fishEase(p, F, j) || undefined,
-      rep: p.rep || jt.slice(7).includes('r') || undefined,
       lic: p.lic,
       own: p.own,
       a: p.a,

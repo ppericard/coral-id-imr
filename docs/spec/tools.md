@@ -65,11 +65,26 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
 ## Working with the repository
 
 - **`train.py`**: the merge train (rule W26). `python3 tools/train.py [--dry-run] N…` checks each pull request (open, on
-  `main`, no draft, no `needs-pierre`, green on its head, no sheet changes file), builds `main` plus their heads in a
+  `main`, no draft, no `needs-pierre`, green on its head, no sheet changes file; from `BODY_FROM` on, its description:
+  "Choices I made" None, and each item of "Players see" quoting Pierre with a date or marked "integrator's call",
+  AGENTS.md "What players will see comes from Pierre"), builds `main` plus their heads in a
   temporary worktree (the sheet rules checked by `main`'s copy of `sheet_version.py`: no pull request's code runs),
   pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each pull request at its tested head in
   order (stopping if `main` moved) and compares `main`'s tree with the train's. `gh api` GET and PUT only, no
   force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
+- **`guard_bash.py`**: the Bash guard, a PreToolUse hook (`.claude/settings.json`, main's copy given with `python3 -I -c`
+  so the hook's JSON stays on stdin): refuses at once, with the way out, a shell command carrying code or editing in
+  place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`, `bash -c`, code piped into an interpreter), for the
+  integrator and every subagent (AGENTS.md "No permission prompts for Pierre"). Quoted text is not read as a command; a
+  command substitution is (the shell runs it inside double quotes), and so is the body of a `cat <<EOF` heredoc with a
+  bare delimiter, which the shell expands; `git show origin/main:tools/X.py | python3 -I -` stays allowed; any error lets
+  the command through. `--check 'CMD'` for a try by hand; `tests/guard_bash.test.js`.
+- **`night.py`**: the night report (Pierre, 2026-11-18; the night is Rule 0's, 17:30 to his first message after 04:00,
+  Manila): PRs merged in it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and
+  still open with what holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
+  merged" when the night was empty. `brief.py --time --night-due` (the UserPromptSubmit hook) says once a Manila day, at
+  the first prompt between 04:00 and 17:30, that it is due (marker `tools/.cache/night-report-day`: once per checkout).
+  `--json FILE` reports a saved snapshot; `tests/night.test.js`.
 - **`effort.py`**: the measured agent effort of the last ~300 merged pull requests: agent time is the branch's first
   commit to the head's checks going green, open-to-merge apart; commits, Codex rounds (the "@codex review" asks), files
   and lines; a type (fix, feature, study, content, engine, sheet, admin, docs, tooling; `a+b` for one touching both) and
@@ -80,6 +95,12 @@ Python 3 scripts, run from the repository root. The first build's scripts (`make
   by `tests/docs.test.js` on the studies of 2026-11-19 on). It reads GitHub through `gh api` (REST), cached under
   `$XDG_CACHE_HOME/coral-id-imr/effort` (never in the repository). Long sheet pull requests include the waits for the
   `VERSION` and for Pierre's answers: read the median and the range, not the mean.
+- **`asked.py TERM…`** (`--any`): before any question, prints the entries of `docs/ANSWERS.md`, AGENTS.md, the rules
+  and the decision records holding the terms (accents ignored), file:line; its last line goes under the question.
+- **`answers_check.py`** (`--check` in the docs test): each ledger entry from 2026-11-19 says "Applied: <doc or #PR>"
+  or "no doc change", or a later "Applied in #N:" entry names its Q or its time and first words (`KNOWN`: older); a
+  ROADMAP or reviews index status waiting on an answered Q fails; studies and STATUS are only reported.
+- **`decisions_index.py`** (`--fix`, `--check`): the decisions index from the records, by date then file name.
 - **`health.py`, `infra.json`**: the hourly Health workflow's script (`.github/workflows/health.yml`;
   [PAGES.md › Infrastructure health](../PAGES.md#infrastructure-health)): the live site (`index.html` and `data.json` with
   their stamps), the sheet script's public read-only request and its `v`, the weekly backup's age (only with the admin

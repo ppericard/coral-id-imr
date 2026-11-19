@@ -999,20 +999,17 @@
     return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
   }
   const rightsRank = p => (/^(own|open)$/.test(rightsClass(p)) ? 0 : 1);
-  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
-  // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
-  // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
-  // juvenile, camouflage or out of the water. 0 for a photo with no tags. Ties only: the ease ranks first (easyRank).
-  const REF = {rep: 8, good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
+  // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): a point for each field-guide
+  // trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a juvenile,
+  // camouflage or out of the water. Read from what the photo shows, never from its route in: the flag r (a reference
+  // source shows it for the species) weighs nothing (docs/decisions/2026-11-19-fish-reference-from-photo.md). 0 for a
+  // photo with no tags. Ties only: the ease ranks first (easyRank).
+  const REF = {good: ['p', '1', 'g', '0', 's', 'l', '1'], bad: 'jca'};
   function refScore(jt) {
     const c = String(jt || '');
     if (c.length < 7) return 0;
     const fl = c.slice(7).replace(/\d+$/, '');
-    return (
-      (fl.includes('r') ? REF.rep : 0) +
-      REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) -
-      [...REF.bad].filter(x => fl.includes(x)).length
-    );
+    return REF.good.reduce((t, v, i) => t + (c[i] === v ? 1 : 0), 0) - [...REF.bad].filter(x => fl.includes(x)).length;
   }
   // The order a unit's photos are met in when the order matters (the card's photo, the list's first photos, the sheets):
   // the first photos a player sees are easy, near-reference ones, and the source never ranks (docs/LEARNING.md "Fish:
@@ -1027,16 +1024,15 @@
     for (const c of String(f)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
     return h;
   };
-  // Reference level: every photo of reference quality, whoever took it. A reference source's own photo (rep) judged very
-  // easy, or any photo judged ease 5 with the reference look in its tags (profile, whole, good light, true colours,
-  // sharp, large or medium, one fish or a school of it; no juvenile, camouflage or out of water).
+  // Reference level: every photo of reference quality, whoever took it, read from the photo alone (rule P1;
+  // docs/decisions/2026-11-19-fish-reference-from-photo.md): a photo judged very easy (ease 4 or 5) whose tags read the
+  // reference look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school of it; no
+  // juvenile, camouflage or out of water). The route it came in by (rep, the flag r) only lets it into the base first
+  // (tools/fish_game.py tier), never places it.
   const REF_LOOK = /^p1g0s[lm][1s]$/;
-  // In both cases one kind of fish (count 1 or s): never a photo with other species in view (o, k, the legacy m) or an
-  // unclear subject (x), rule P3 (o is in play, never a reference).
-  const refLevel = p =>
-    !!p &&
-    /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
-    (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
+  // The look's last letter is the count: one kind of fish (1 or s), never a photo with other species in view (o, k, the
+  // legacy m) or an unclear subject (x), rule P3 (o is in play, never a reference).
+  const refLevel = p => !!p && (p.e || 0) >= 4 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7));
   const refFirst = p => (refLevel(p) ? 0 : 1);
   // A photo's judged phase (docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"): its record's phase
   // word ph (juvenile, male, female, intermediate: tools/fish_game.py, as autosort.js fishPhase reads it), else 'juvenile' when its
@@ -3272,22 +3268,39 @@
     return Object.fromEntries(Object.entries(G).map(([n, o]) => [n, [Math.round(o[0] * 100) / 100, Math.round(o[1] * 10) / 10]]));
   }
 
+  // One trusted answer added to the pooled pairs (conf: {"A|B": [offered together, mixed up]}, A before B alphabetically):
+  // the one rule of core.js confusionOf pair and Code.gs statsStep_ (?stats=1 conf). g the unit shown, a the unit
+  // answered, ok right, mode as logged, ch the units offered (space-separated). Each other unit offered beside g: one
+  // offer, and a mix-up when it was answered. A typed miss (TYPED_RE, no choices: the player wrote another unit's name
+  // from memory) is an unprompted mix-up: the pair counts as offered once and mixed up, as a player's own record counts a
+  // mix-up with no offer (pairConf); decision: docs/decisions/2026-11-18-typed-answers-rest.md. "I don't know" ('') and a
+  // right typed answer add nothing: no pair was in play.
+  function confAdd(conf, g, a, ok, mode, ch) {
+    if (!g) return;
+    const inc = (x, took) => {
+      const k = g < x ? g + '|' + x : x + '|' + g,
+        c = (conf[k] = conf[k] || [0, 0]);
+      c[0]++;
+      if (took) c[1]++;
+    };
+    const L = String(ch || '')
+      .split(/\s+/)
+      .filter(x => x && x !== g);
+    if (L.length) L.forEach(x => inc(x, !ok && a === x));
+    else if (!ok && a && a !== g && TYPED_RE.test(String(mode || ''))) inc(a, true);
+  }
   // Confusions between genera: from the answer log rows (as eloOf; row[10] = the genera offered, space-separated).
-  // pair["A|B"] (A before B alphabetically) = [offered together, mixed up]: one was shown with the other among the
-  // choices, and the other was answered. Same counts as Code.gs stats_ conf (tests check it). dir["shown|other"] =
-  // [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without their choices (the oldest
-  // rows): they can't be turned into a rate, only counted.
+  // pair["A|B"] (A before B alphabetically) = [offered together, mixed up], the pooled pairs the game plays with
+  // (confAdd): one was shown with the other among the choices and the other was answered, or the other was typed for it.
+  // Same counts as Code.gs stats_ conf (tests check it). dir["shown|other"] = [offered, answered] keeps the direction,
+  // from the choices only. old["shown|answered"] = mix-ups logged without their choices: the oldest rows (they can't be
+  // turned into a rate, only counted) and the typed ones (also in pair; admin.js noChoiceMixups tells the two apart).
   function confusionOf(rows) {
     const trust = trustOf(rows);
     rows = rows.filter(r => trust[r[0]]); // trusted players only, as Code.gs stats_
     const pair = {},
       dir = {},
-      old = {},
-      inc = (O, k, took) => {
-        const c = (O[k] = O[k] || [0, 0]);
-        c[0]++;
-        if (took) c[1]++;
-      };
+      old = {};
     rows.forEach(r => {
       const g = r[2],
         a = r[3],
@@ -3296,14 +3309,16 @@
           .split(/\s+/)
           .filter(x => x && x !== g);
       if (!g) return;
+      confAdd(pair, g, a, ok, r[5], r[10]);
       if (!ch.length) {
         if (!ok && a && a !== g) old[g + '|' + a] = (old[g + '|' + a] || 0) + 1;
         return;
       }
       ch.forEach(x => {
-        const took = !ok && a === x;
-        inc(pair, g < x ? g + '|' + x : x + '|' + g, took);
-        inc(dir, g + '|' + x, took);
+        const k = g + '|' + x,
+          c = (dir[k] = dir[k] || [0, 0]);
+        c[0]++;
+        if (!ok && a === x) c[1]++;
       });
     });
     return {pair, dir, old};
@@ -5699,6 +5714,13 @@
       why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
       // No card (rule D6): the progress is updated everywhere without telling the player.
       msg: null
+    },
+    {
+      v: 11,
+      at: '2026-11-19',
+      why: "Typed mix-ups in the pooled pairs (PR #1116; docs/decisions/2026-11-18-typed-answers-rest.md): a trusted player's typed answer that names another genus counts in the sheet's pooled pairs (conf) as offered once and mixed up (confAdd), so a row logged before its scoring record, whose mix-ups term and look-alike test the replay rebuilds from the pooled pairs, can replay differently; a row with its scoring record replays as before",
+      // No card (rule D6).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -7193,6 +7215,7 @@
     memOf,
     photoMemOf,
     memRecalc,
+    confAdd,
     confusionOf,
     CONF,
     confScore,
