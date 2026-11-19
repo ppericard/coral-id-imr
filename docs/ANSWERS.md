@@ -68,3 +68,8 @@ records and the rules' *Source* lines (the 2026-11-19 pass); until that lands, a
   fasses une passe globale sur la base de toutes mes décisions d'hier aujourd'hui ou avant, et met à jour la doc
   proprement en conséquence!"
 - **07:05.** OK to this ledger and its rule (AGENTS.md "Every answer reaches its doc, and the answers ledger").
+- **08:05.** On #773 («tu n'as pas besoin de ma validation avant de publier»): «Cette règle a été largement remplacée
+  par des règles plus récentes sur quand merger tout seul» (the merge contract's "easy to correct" rule, 2026-11-14).
+  Applied: #1190.
+- **Applied in #1190:** S1's wording, Q409 (rule W19), Q414 (rule W14), Q415 (rules L11, L12); the Pikachu and Q408
+  records.
