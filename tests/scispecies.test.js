@@ -123,6 +123,28 @@ test('the sea slugs: the scientific species of every genus, no common-name unit,
   ['Goniobranchus sp. 5', 'Goniobranchus sp 5', 'goniobranchus sp5'].forEach(t =>
     assert.strictEqual((C.typeMatchIn(N, t, C.typeNormAll) || {}).g, 'sci:xgoniobranchussp5', t)
   );
+  // quiz.js typeMatch: its number holds it apart (the norm keeps letters only): sp. 6 or sp. alone read as nothing
+  const q = {
+    SUBJ: SEA,
+    GX: n => Y.gen[n],
+    kindRank: S.kindRank,
+    typeMatchIn: C.typeMatchIn,
+    typeNames: () => S.sciTypeNames(Y.ssl),
+    UNITS: {seaslug: {norm: C.typeNormAll}}
+  };
+  vm.createContext(q);
+  vm.runInContext(
+    block(QUIZ, 'const typeMatch = (text, rk', '// What a typed text', {file: 'quiz.js'}) + '\nthis.typeMatch = typeMatch;',
+    q
+  );
+  ['Goniobranchus sp. 5', 'goniobranchus sp5'].forEach(t =>
+    assert.strictEqual((q.typeMatch(t, 'species:sci') || {}).g, 'sci:xgoniobranchussp5', t)
+  );
+  ['Goniobranchus sp. 6', 'Goniobranchus sp.'].forEach(t => assert.strictEqual(q.typeMatch(t, 'species:sci'), null, t));
+  assert.strictEqual(
+    (q.typeMatch('Chromodoris annae', 'species:sci') || {}).g,
+    'sci:' + SF.species.find(s => s.name === 'Chromodoris annae').id
+  );
 });
 
 test('sciPlay: nothing while off or with the genus out of play; from the genus at Advanced, one at a time in its order', () => {
@@ -388,6 +410,15 @@ test('a species by its scientific name opens its species sheet: its address and 
     const back = C.routeIn('#' + out).key; // g-<the sheet id>, learn.js treeGo reads it after g-
     assert.ok(back.startsWith('g-'), back);
     assert.strictEqual(C.treeSheets(Fx).go(C.sheetIdOf(S, back.slice(2))), 's:' + name, back);
+  });
+  // through app.js hr: sheetIdOf owns a sci unit for its subject (its species sheet's id), never the corals'
+  [
+    [FISH, sci('Chromis ternatensis')],
+    [SEA, 'sci:xgoniobranchussp5']
+  ].forEach(([S, n]) => {
+    const id = C.sheetIdOf(S, n);
+    assert.strictEqual(id, 's:' + n);
+    assert.match(C.routeOut('g-' + id, S), /learn\/species\/sci/);
   });
   // a common-name unit's address is as before
   assert.match(C.routeOut('g-' + C.spUnitId('cn', byName('Chromis ternatensis').id), FISH), /learn\/species\/s091$/);

@@ -73,12 +73,23 @@ const typeNames = () => {
 // rk: the class of the unit asked (app.js kindRank: its rank and its kind of name): a typed answer is read among the
 // names of that class only (a fish scientific genus, Chromis, against the genera; the IMR sub-entry Chromis names the
 // Damselfish entry on an entry question; a species' scientific name against the scientific names, never a common name).
-const typeMatch = (text, rk = '') =>
-  typeMatchIn(
+const typeMatch = (text, rk = '') => {
+  const m = typeMatchIn(
     typeNames().filter(o => kindRank(o.g) === rk),
     text,
     UNITS[SUBJ.id].norm
   );
+  return typeDigits(m, text) ? m : null;
+};
+// A name told apart by its number (a species with no name yet, Goniobranchus sp. 5): the norm keeps letters only, so a
+// reading of such a unit holds only when the text carries the same digits as its name (Goniobranchus sp. 6 or sp. reads as
+// nothing). True for any other reading.
+const typeDigits = (m, text) => {
+  if (!m || !m.g || m.shared || m.near) return true;
+  const d = s => String(s || '').replace(/\D/g, ''),
+    n = d(m.old || (GX(m.g) || {}).name);
+  return !n || d(text) === n;
+};
 // What a typed text that is no unit of rank rk names instead (core.js typeElse): the rank word of another unit it names
 // ('family'), 'common' for a common name, '' for nothing. Only on a question below the subject's rank (a fish scientific
 // genus, a sea slugs' genus: its tree's top rank is the family), from the subject's own lists (UNITS typeOther); none for

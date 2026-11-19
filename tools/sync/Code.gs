@@ -6329,7 +6329,9 @@ const CORE_ = (function () { const module = {exports: {}};
   function sheetIdOf(S, id) {
     const s = String(id == null ? '' : id);
     if (!S || !S.sheets) return s;
-    const r = renamedId(S, s);
+    // a species by its scientific name (sci:s091, LEVELS sci) is its species sheet's: s:sci:s091 (treeSheets spOf)
+    const r0 = renamedId(S, s),
+      r = levelOf(r0) === 'sci' && S.sheets.species && r0.length > LEVELS.sci.pre.length ? S.sheets.species + r0 : r0;
     return Object.values(S.sheets).some(p => r.startsWith(p) && r.length > p.length) ? r : null;
   }
 
