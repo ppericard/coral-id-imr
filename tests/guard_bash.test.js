@@ -25,6 +25,8 @@ const hook = input => {
 };
 
 const REFUSED = [
+  "python3 <<< 'print(1)'",
+  'bash <<< "echo hi"',
   "cat > /tmp/x.py <<'EOF'\nprint(1)\nEOF",
   'cat <<EOF > notes.md\nhello\nEOF',
   'python3 -c "import json; print(1)"',
@@ -62,6 +64,7 @@ const REFUSED = [
 ];
 const ALLOWED = [
   'git status',
+  "grep -c x <<< 'abc'",
   'git commit -q -m "$(cat <<\'EOF\'\nA title\n\nA body.\nEOF\n)"',
   'grep -n "sed -i" docs/rules/ship.md',
   "grep -rn 'python -c' AGENTS.md",

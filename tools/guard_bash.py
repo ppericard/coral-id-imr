@@ -32,6 +32,8 @@ PATTERNS = [
     (re.compile(r'(?<![\w.-])(?:ba|z|da|k)?sh\s+' + OPT + r'-[A-Za-z]*c\b'), '`bash -c`'),  # not `x.sh -c`
     # An interpreter at the end of a pipe with no script named reads its code from the pipe (`| python3 -`, `| bash`).
     (re.compile(r'\|\s*(?:python[\d.]*|node|perl|ruby|(?:ba|z|da|k)?sh)(?:[ \t]+-[\w-]*)*[ \t]*(?=$|\n|;|&|\||\))'), 'code piped into an interpreter'),
+    # A here-string feeds its text to the interpreter's stdin, as a heredoc does (`python3 <<< 'print(1)'`).
+    (re.compile(r'(?<![\w.-])(?:python[\d.]*|node|perl|ruby|(?:ba|z|da|k)?sh)\b[^|;&\n]*<<<'), 'a here-string into an interpreter'),
 ]
 # Main's reviewed copy of a project tool, run as the hooks run it: not inline code.
 REVIEWED = re.compile(r'\bgit\s+(?:-C\s+\S+\s+)?show\s+\S+:tools/[\w/.-]+\.py\s*\|\s*python[\d.]*\s+-I\s+-(?=\s|$)')
