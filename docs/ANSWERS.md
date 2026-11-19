@@ -1388,3 +1388,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   source IMR sans plus d'infos.» They stay in play, credited to IMR with no more information; nobody asks the IMR
   trainers; if they are never sourced, removing them may come later. Applied: ROADMAP "Trace IMR lecture photos to
   their original source", #1282.
+- **06:42-06:44, Q441 (a box pass on the sea slug photos so Find the X opens to them; the cost).** «Il faut faire des
+  tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; then «Je ne devrais pas
+  devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un
+  problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
+  judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
+  judging or boxing pass is measured first), #1287.
