@@ -66,13 +66,15 @@ written with `tools/datajson.py`.
   code runs), pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each PR at its tested head in
   order (stopping if `main` moved) and compares `main`'s tree with the train's. `gh api` GET and PUT only, no
   force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
-- **`guard_bash.py`**: the Bash guard, a PreToolUse hook (`.claude/settings.json`, main's copy given with `python3 -I -c`
-  so the hook's JSON stays on stdin): refuses at once, with the way out, a shell command carrying code or editing in
-  place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`, `bash -c`, code piped into an interpreter), for every
-  agent of the session. Quoted text is not read as a command; a
-  command substitution is (the shell runs it inside double quotes), and so is the body of a `cat <<EOF` heredoc with a
-  bare delimiter, which the shell expands; `git show origin/main:tools/X.py | python3 -I -` stays allowed; any error lets
-  the command through. `--check 'CMD'` for a try by hand; `tests/guard_bash.test.js`.
+- **The session hooks** (`.claude/settings.json`) run main's copy of their tool, never the checkout's; with no
+  `origin/main` ref they fetch it (`+refs/heads/main:refs/remotes/origin/main`, about 1 s once), else the guards refuse
+  with that fix and the brief says it (`tests/hooks.test.js`).
+- **`guard_bash.py`**: the Bash guard (PreToolUse, given with `-c`: the JSON stays on stdin): refuses at once, with the
+  way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`,
+  `bash -c`, code piped into an interpreter). Quoted text is not read as a command; a command
+  substitution is, and so is the body of a `cat <<EOF` heredoc with a bare delimiter, which the shell expands;
+  `git show origin/main:tools/X.py | python3 -I -` stays allowed; an error in it lets the command through.
+  `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
   keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.

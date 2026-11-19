@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && git show origin/main:tools/brief.py 2>/dev/null | python3 -I - --short 2>/dev/null || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/brief.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then printf '%s\\n' \"$S\" | python3 -I - --short; elif has; then exit 0; else echo \"⚠ Session hooks: this checkout has no origin/main ref and fetching it failed, so the brief, the instructions log and the Bash and Agent guards cannot run their copy on origin/main (the guards refuse until it is there). Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main · Manila $(TZ=Asia/Manila date '+%a %d %b %H:%M')\"; fi",
             "timeout": 15
           }
         ]
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/instr_log.py 2>/dev/null)\" >/dev/null 2>&1 || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/instr_log.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then python3 -I -c \"$S\" >/dev/null; elif has; then exit 0; else echo 'Session hook: no origin/main ref and fetching it failed, so tools/instr_log.py (run from origin/main only) logged nothing. Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main' >&2; exit 1; fi",
             "timeout": 5
           }
         ]
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/instr_log.py 2>/dev/null)\" 2>/dev/null || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/instr_log.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then python3 -I -c \"$S\"; elif has; then exit 0; else echo 'Session hook: no origin/main ref and fetching it failed, so tools/instr_log.py (run from origin/main only) logged nothing. Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main' >&2; exit 1; fi",
             "timeout": 5
           }
         ]
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/instr_log.py 2>/dev/null)\" 2>/dev/null || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/instr_log.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then python3 -I -c \"$S\"; elif has; then exit 0; else echo 'Session hook: no origin/main ref and fetching it failed, so tools/instr_log.py (run from origin/main only) logged nothing. Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main' >&2; exit 1; fi",
             "timeout": 5
           }
         ]
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && git show origin/main:tools/brief.py 2>/dev/null | python3 -I - --time --night-due 2>/dev/null || true",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 1; F=tools/brief.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then printf '%s\\n' \"$S\" | python3 -I - --time --night-due; elif has; then exit 0; else echo \"⚠ Session hooks: no origin/main ref (fetching it failed): the brief cannot run and the guards refuse. Fix: git fetch origin +refs/heads/main:refs/remotes/origin/main · Manila $(TZ=Asia/Manila date '+%a %d %b %H:%M')\"; fi",
             "timeout": 5
           }
         ]
@@ -76,8 +76,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/guard_bash.py 2>/dev/null)\" 2>/dev/null || true",
-            "timeout": 5
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 2; F=tools/guard_bash.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then python3 -I -c \"$S\"; elif has; then exit 0; else case \"$(cat)\" in *'\"git fetch origin +refs/heads/main:refs/remotes/origin/main\"'*) exit 0;; esac; echo 'Refused by the session hook (.claude/settings.json): this checkout has no origin/main ref and fetching it failed, and the Bash guard (tools/guard_bash.py) runs only its copy on origin/main, never a branch copy. Run exactly this command, which this hook lets through: git fetch origin +refs/heads/main:refs/remotes/origin/main' >&2; exit 2; fi",
+            "timeout": 5,
+            "onFailure": "block"
           }
         ]
       },
@@ -86,8 +87,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && python3 -I -c \"$(git show origin/main:tools/agent_guard.py 2>/dev/null)\" 2>/dev/null || true",
-            "timeout": 5
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 2; F=tools/agent_guard.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then python3 -I -c \"$S\"; elif has; then exit 0; else echo 'Refused by the session hook (.claude/settings.json): this checkout has no origin/main ref and fetching it failed, and the agent-launch guard (tools/agent_guard.py) runs only its copy on origin/main, never a branch copy. Run exactly this in Bash, then launch again: git fetch origin +refs/heads/main:refs/remotes/origin/main' >&2; exit 2; fi",
+            "timeout": 5,
+            "onFailure": "block"
           }
         ]
       }

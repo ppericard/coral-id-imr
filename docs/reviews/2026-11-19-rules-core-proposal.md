@@ -589,7 +589,10 @@ why. The canary is the core's first words ("Core v1"): no brief contains them.
 - **T1, run 1, the child's main agent.** At its start, without opening a file, it quotes Rule 0's sentence and the
   core's first line. Pass: both exact; the log shows CLAUDE.md with `session_start` and AGENTS.md with `include`.
 - **T2, run 1, a general-purpose subagent** working in a worktree made with `git worktree add` under
-  `.claude/worktrees/`. The same quotes, plus rule W27's core line. Pass: exact; log entries carry its `agent_id`.
+  `.claude/worktrees/`. The same quotes, plus rule W27's core line. Pass: exact, and the log holds its SubagentStart
+  record. (Amended after run 1: Claude Code 2.1.327 gives a general-purpose subagent the session's CLAUDE.md and imports
+  without firing InstructionsLoaded for them, and fires it with the subagent's `agent_id` only for a later load such as a
+  nested CLAUDE.md; a headless probe of 2026-11-19, #PRNUM. T5 shows that later load.)
 - **T3, run 1, an Explore subagent.** It quotes the SubagentStart line (the time and the core's version). Pass: exact
   (Explore skips CLAUDE.md, as documented, so only the hook reaches it).
 - **T4, run 1, the integrator.** `brief.py --short` in a checkout whose AGENTS.md differs from `origin/main`. Pass:
