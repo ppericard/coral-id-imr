@@ -1139,3 +1139,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   priority (AGENTS.md "Questions to Pierre": never the order).
 - **09:09, Q426 (#1093, no photo twice: the strong RA's shown score lags at 1,000 answers).** A, keep the fix and accept
   the transient lag: «ok». Applied: #1093.
+- **10:56-10:58, the privacy page.** "Arrête d'être plus catholique que le pape... C'est des trucs internes ça...";
+  what stays after a deletion: "ok"; "ok, fais la version courte" (a half-page notice on the points the law asks for).
+  Applied: #1095 (docs/decisions/2026-11-19-privacy-short.md).
