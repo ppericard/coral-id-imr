@@ -1,4 +1,5 @@
 require('./slot.js').testGuard();
+// @slow: the Analyses models fitted with random practice slopes on synthetic logs
 // The Analyses module (analysis.js): random practice slopes in Learning (each player's and genus's own), the per-genus
 // learning curves and the player profiles' learning slope (ROADMAP "Analyses: next views", per-genus learning
 // slopes). Planted slopes recovered (tests/analysis.test.js says why the

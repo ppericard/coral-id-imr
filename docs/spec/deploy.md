@@ -46,8 +46,8 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
 The sync's tests: [sync.md › Tests](sync.md#tests).
 
 - CI's Checks runs `checks` (everything but the unit tests) beside two shards, `unit tests (k/2)`
-  (`node --test --test-shard=k/2`: every file in one shard; `tests/smokeparts.test.js` checks the list). Locally the
-  suite stays one run: `node tests/run.js` (rule W24).
+  (`node --test --test-shard=k/2`: every file in one shard, the `// @slow` ones too; `tests/smokeparts.test.js` checks
+  the list). Locally `node tests/run.js` skips the slow ones, `--all` runs them (rule W24).
 - `tests/photos.test.js` checks the photo rules on the real data and curation.
 - The Playwright smokes run in CI's smoke jobs (`smokes.yml`):
   - `tests/pages.smoke.js` opens the main routes, two malformed links and `admin.html?readonly` at 390 and 1280 px,

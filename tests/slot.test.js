@@ -347,22 +347,50 @@ test('guard(): a heavy tool re-runs itself in a slot, once, with its arguments a
   }
 });
 
-test('tests/run.js: a full run is every tests/*.test.js under --test; options pass through; files given replace the default', () => {
+test('tests/run.js: the fast tier is every tests/*.test.js but the slow ones; --all runs them too; options pass through; files given replace the default', () => {
   const args = require('./run.js'),
-    all = fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js'));
+    all = fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js')),
+    slow = args.slowFiles(),
+    names = a =>
+      a
+        .slice(1)
+        .map(f => path.basename(f))
+        .sort();
+  assert.ok(slow.length > 0 && slow.every(f => all.includes(f)), 'some tests are tagged // @slow');
   const def = args([]);
   assert.strictEqual(def[0], '--test');
-  assert.deepStrictEqual(
-    def
-      .slice(1)
-      .map(f => path.basename(f))
-      .sort(),
-    all.sort()
-  );
+  assert.deepStrictEqual(names(def), all.filter(f => !slow.includes(f)).sort());
   assert.ok(def.slice(1).every(f => fs.existsSync(path.resolve(f))));
+  // --all is ours, not node's: every file, no flag passed on
+  const every = args(['--all']);
+  assert.deepStrictEqual(names(every), all.slice().sort());
+  assert.ok(!every.includes('--all'));
+  assert.deepStrictEqual(args(['--test-name-pattern=merge', '--all']).slice(0, 2), ['--test', '--test-name-pattern=merge']);
   assert.deepStrictEqual(args(['--test-name-pattern=merge']).slice(0, 2), ['--test', '--test-name-pattern=merge']);
-  assert.strictEqual(args(['--test-name-pattern=merge']).length, all.length + 2);
+  assert.strictEqual(args(['--test-name-pattern=merge']).length, def.length + 1);
   assert.deepStrictEqual(args(['tests/a.test.js', 'tests/b.test.js']), ['--test', 'tests/a.test.js', 'tests/b.test.js']);
+  // a slow file named is run, with or without --all
+  assert.deepStrictEqual(args(['tests/' + slow[0]]), ['--test', 'tests/' + slow[0]]);
+});
+
+test('a slow test carries `// @slow: <why>` right after the slot guard, and nothing else is tagged', () => {
+  const {slowFiles} = require('./run.js'),
+    tagged = slowFiles();
+  for (const f of fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js'))) {
+    const lines = fs.readFileSync(path.join(__dirname, f), 'utf8').split('\n'),
+      at = lines[0] === "'use strict';" ? 2 : 1, // the guard's line, then the tag
+      has = /^\/\/ @slow: \S/.test(lines[at] || '');
+    assert.strictEqual(has, tagged.includes(f), `${f}: the tag is \`// @slow: <what it runs>\` on the line after the slot guard`);
+    assert.ok(!lines.some((l, i) => i !== at && /^\/\/ @slow\b/.test(l)), `${f}: one @slow line, right after the guard`);
+  }
+});
+
+test('CI and the merge train run every test file, tagged slow or not (rule W14)', () => {
+  const root = path.join(__dirname, '..'),
+    // CI runs the glob itself, so no tag can leave a file out of it
+    wf = fs.readFileSync(path.join(root, '.github', 'workflows', 'checks.yml'), 'utf8');
+  assert.match(wf, /node --test --test-shard="\$SHARD\/2" tests\/\*\.test\.js/, 'the unit shards run every tests/*.test.js, tagged or not');
+  assert.doesNotMatch(wf, /tests\/run\.js/, 'CI never goes through the fast tier');
 });
 
 test('every Playwright launch in tests/ and tools/ takes the slot; the heavy tools are guarded (rule W24)', () => {
@@ -534,7 +562,7 @@ test('slot: a run that waited refuses if the disk filled up meanwhile', async ()
 // An option's value given as the next argument is not a test file (taken for one, it would keep the default list out).
 test('tests/run.js: a space-separated option value is not taken for a file', () => {
   const args = require('./run.js'),
-    n = fs.readdirSync(__dirname).filter(f => f.endsWith('.test.js')).length;
+    n = args([]).length - 1; // the fast tier's files
   assert.strictEqual(args(['--test-name-pattern', 'parts:']).length, n + 3);
   assert.strictEqual(args(['--test-reporter', 'spec']).length, n + 3);
   assert.deepStrictEqual(args(['--test-reporter', 'spec', 'tests/a.test.js']), ['--test', '--test-reporter', 'spec', 'tests/a.test.js']);
