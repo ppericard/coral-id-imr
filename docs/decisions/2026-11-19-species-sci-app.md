@@ -1,6 +1,6 @@
 # Species by scientific name in the app: one set for both subjects, one gate, the kind beside the rank
 
-Date: 2026-11-19. PR: #0000. Rules or docs touched: docs/spec/fish-game.md, docs/LEARNING.md, docs/FISH_PATH.md, docs/ARCHITECTURE.md, docs/ROADMAP.md, docs/reviews/2026-11-18-species-step2-plan.md.
+Date: 2026-11-19. PR: #1273. Rules or docs touched: docs/spec/fish-game.md, docs/LEARNING.md, docs/FISH_PATH.md, docs/ARCHITECTURE.md, docs/ROADMAP.md, docs/reviews/2026-11-18-species-step2-plan.md.
 
 ## Context
 
