@@ -4253,3 +4253,46 @@ body:has(.ikstart:not([hidden])) main {
 .lckinds .next {
   flex: none;
 }
+
+/* Same or different? (proto/samediff.js): the quiz's own stage, answers and feedback sheet (app.css .q, .qstage.qvs, .ans, .fb), so it fits one screen as they do. The enlarge mark stays on phones (the montage hides it: there the photos are only looked at). */
+.q.sdq .qstage.qvs .qph .zic {
+  display: grid;
+}
+/* Phones: the pair stacked, each photo the screen's width (the montage forces two portrait columns, which would crop a
+   landscape photo to a strip: the multi-photo study, "Same or different?": the pair stacked). From the tablet class
+   fitStage picks the layout that shows the most photo. */
+@media (max-width: 599.98px) {
+  .q.sdq .qstage.qvs {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+/* Tablet and desktop: side by side, each photo in a 4:3 box centred in the stage (the montage's tall cells would show a
+   landscape photo as a band between two blurred ones). */
+@media (min-width: 600px) {
+  .q.sdq .qstage.qvs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: auto !important;
+    align-content: center;
+  }
+  .q.sdq .qstage.qvs .qph {
+    height: auto;
+    aspect-ratio: 4 / 3;
+    width: min(100%, calc(var(--sdh, 9999px) * 4 / 3));
+    justify-self: center;
+  }
+}
+/* Answered, on a phone or tablet: the verdict sheet is at the bottom and the stage takes the space above it, so the prompt
+   and the two buttons under the stage would only peek out above the sheet. */
+.q.sdq.done .qtop,
+.q.sdq.done .sdans {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .q.sdq.done .qtop {
+    display: flex;
+  }
+  .q.sdq.done .sdans {
+    display: flex;
+  }
+}

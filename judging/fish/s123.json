@@ -149,12 +149,15 @@
    "keep": "best"
   },
   "fish-s123-cand-345174107": {
-   "code": "p1g0smk4",
+   "code": "p1g0sls5",
    "keep": "alt",
-   "unsure": [
-    "code"
+   "crop": [
+    0.2,
+    0.0,
+    0.85,
+    0.52
    ],
-   "note": "a dark fish with a white band, about the snappers' size and sharp, at lower left: confusion possible, not certain"
+   "note": "crop: the school only; the dark white-banded fish at lower left leaves the frame (Q430)"
   }
  }
 }
