@@ -33,8 +33,8 @@ for FishBase's main picture; FishBase's other photos have none), via ("fishbase"
 "fam:<family>"), keyed by species (fish.json species id), so the file outlives a renaming of the teaching entries.
 tools/fish_game.py ref_play puts each one in play (fish-game.json, on R2) for the entry that holds its species once it is
 judged sure on the candidates' rubric, whatever its reference level (Pierre, 2026-11-08, Q212; tools/fish_judge.json
-photos; the stopgap list of fish-photos.json, retired on 2026-11-15, took the reference-level ones), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
-point (judging/FISH.md). One already in the list is tagged in place.
+photos; the stopgap list of fish-photos.json, retired on 2026-11-15, took the reference-level ones), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r, never an ease
+point (one judgement per photo, whatever its route in; judging/FISH.md). One already in the list is tagged in place.
 
 Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the observations, read only, through tools/inat.py (about one request a second, the project's User-Agent, 429 / 5xx retried after a pause; rule C7), every reply cached
 (trimmed) in tools/.cache/fish_refs.json (git-ignored), and each photo's observation found by its id window too: a rerun

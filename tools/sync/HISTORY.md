@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v192 (2026-11-19)
+
+`core.js` `refScore` and `refLevel` (copied here) read a fish photo's reference look from its tags and its judged ease alone: the flag `r` (a reference source shows the photo for its species) no longer weighs 8 points in the tie-break after the ease (Pierre, 2026-11-17: "'référence' devrait être déduit des caractéristiques de la photo, pas un tag"), and a reference source's photo judged very easy is no longer reference level without the look (Pierre, 2026-11-18: "La source ne devrait pas être le critère principal de 'référence' même si ça peut être un fort indice. L'ensemble des photos de référence doit avoir des qualités intrinsèques, basées sur des critères objectifs"). Nothing the script computes changes: it reads no fish photo order
+
 ## v191 (2026-11-19)
 
 A typed miss counts in the pooled confusions: `stats_` and the fold (`statsStep_`) now add each trusted player's typed answer that names another unit (`|t`, no choices) to its pair as offered once and mixed up, through `core.js` `confAdd`, the one rule the admin's `confusionOf` follows too; before, `?stats=1` `conf` counted only the pairs offered among the choices, while the player's own record already counted a typed mix-up (`pairConf`). "I don't know" and right typed answers add nothing. The fold rebuilds at this version. A coral row logged before its scoring record rebuilds its mix-ups term and look-alike test from the pooled pairs, so the embedded core.js appends coral rules version 11 (`RVS`, no card: rules D5, D6): every coral player is replayed once, the leaderboards included (rule D8); a row with its scoring record replays as before. The fish and the sea slugs replay with no pooled pairs: no rules version for them (ROADMAP "Typed answers, what is left"; the integrator's calls, 2026-11-18 and 2026-11-19, docs/decisions/2026-11-18-typed-answers-rest.md)
