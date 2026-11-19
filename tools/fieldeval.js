@@ -1,4 +1,4 @@
-// Progress against the whole slate (2026-11-05, docs/LEARNING.md "Field learner"): reads tools/learnsim.js --out files
+// Progress against the whole slate (docs/LEARNING.md "Field learner"): reads tools/learnsim.js --out files
 // and reports, per profile and checkpoint, the pre-declared measures with 95% intervals over the seeds, and each file
 // against the first on the same seeds (paired). With --log, a read-only check on the real answer log instead: does the
 // number of genera a player has met predict right or wrong beyond the app's own expectation? Offline, reads files,
@@ -37,7 +37,7 @@ const args = process.argv.slice(2),
   },
   files = args.filter((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
 const mean = v => v.reduce((a, x) => a + x, 0) / v.length,
-  // the mean once, not at each value (it was quadratic; the same value)
+  // the mean once, not at each value (linear, not quadratic)
   sd = v => {
     const m = mean(v);
     return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1));
@@ -136,7 +136,7 @@ function sims() {
 }
 
 // Logistic fit with an offset: logit p = o + X . beta, by Newton-Raphson with step halving (each step must raise the
-// log-likelihood; Codex review #619: plain Newton steps diverged on answers far below the expectation).
+// log-likelihood: plain Newton steps diverge on answers far below the expectation).
 function fit(rows, cols) {
   const llOf = b =>
     rows.reduce((t, r) => {

@@ -58,7 +58,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_fish as ff  # noqa: E402  (the cached, paced Net; IWP, in_iwp, OK)
 import fetch_fishbase as fbase  # noqa: E402  (FishBase's rules and records)
-from fish_inforce import CIRCLES, in_force  # noqa: E402  (the circles in force: the content editor's, design note v2 step 3)
+from fish_inforce import CIRCLES, in_force  # noqa: E402  (the circles in force: the content editor's)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tools" / "fish_refs.json"
@@ -69,8 +69,7 @@ BOX = "&".join(f"{k}={v}" for k, v in ff.IWP.items())
 DAUIN = (9.19, 123.26)
 SPECIES_RANKS = ("species", "subspecies", "variety")
 DEAD = (17, 19)
-# No cap per species (Pierre, 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to complement
-# the weaker ones on iNaturalist"): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
+# No cap per species (a maximum of good photos, to complement the weaker ones on iNaturalist): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
 # rules is listed; the judging decides which play (tools/fish_game.py ref_play).
 INAT_MAX = FB_MAX = None
 # iNaturalist API v2 observation fields the rules read (a v1 reply of 200 observations weighs about 12 MB).
@@ -178,11 +177,12 @@ def passes(o, want):
     return verdict(o, want) == "ok"
 
 
-# The rough regions of an observation outside the box (the order matters: the first that holds), for Pierre's Q230.
+# The rough regions of an observation outside the box (the order matters: the first that holds), for the photos
+# listed under `away` (never taken) while the question of photos outside the box is open.
 # Longitudes east of 180 are negative (the dateline at -180): Fiji, Samoa and Tonga straddle it. The Maldives come before
 # the Arabian Sea, whose box reaches 78 E (a northern Maldives atoll read "Arabian Sea"), and India's east coast is the
 # Bay of Bengal; New Zealand, the Cook, Line and Marshall Islands have boxes of their own before what is left of the
-# central Pacific (they all read "Fiji, Samoa, central Pacific" until 2026-11-14). After a change: --relabel.
+# central Pacific. After a change: --relabel.
 def region(o):
     ll = ll_of(o)
     if not ll or len(ll) != 2:
@@ -228,14 +228,14 @@ def region(o):
     return "Atlantic, Mediterranean, elsewhere"
 
 
-# The observation that holds a taxon photo (Pierre, 2026-11-08, Q229: every photo of the taxon page, not only those whose
-# observation is among the faved 200 in the box). iNaturalist has no search by photo id, but photo ids and observation
+# The observation that holds a taxon photo (every photo of the taxon page, not only those whose observation is among the
+# faved 200 in the box). iNaturalist has no search by photo id, but photo ids and observation
 # ids both grow with time: the photo's observation id is estimated from the nearest (photo id, observation id) pairs the
 # faved searches returned (est), then the taxon's observations are read in a narrow id window around it, then a wider
-# one (a photo added long after its observation was made). Measured on the 1,140 pairs of tools/fish_refs.json before
-# this change: half within 2,000 ids of the estimate, about 90% within 300,000.
+# one (a photo added long after its observation was made). Measured on 1,140 known pairs: half within 2,000 ids of the
+# estimate, about 90% within 300,000.
 WIN = (30_000, 500_000)
-WIN_PAGES = 5  # pages of 200 read per window at most (id_above the last one read; Codex review #731)
+WIN_PAGES = 5  # pages of 200 read per window at most (id_above the last one read)
 NEAR = 4  # known pairs taken on each side of a photo id
 
 
@@ -267,7 +267,7 @@ def obs_of(net, taxon, pid, A):
     e, o = est(A, pid), None
     for m in WIN if e is not None else ():
         above = max(0, e - m)
-        for _ in range(WIN_PAGES):  # a window of more than 200 observations is read on (Codex review #731)
+        for _ in range(WIN_PAGES):  # a window of more than 200 observations is read on
             url = (ff.API + f"taxon_id={taxon}&photos=true&id_above={above}&id_below={e + m}"
                    f"&order_by=id&order=asc&per_page=200&fields={FIELDS}")
             r = net.fetch(url, keep_win) or {}
@@ -409,7 +409,7 @@ def build(net, F, only=(), live=None, done=None):
         if obj["f"] in sheet:
             return
         # One photo once (two species iNaturalist lumps can share a cover): kept under the first species that took it. Two
-        # photos of one observation are both listed: the game takes the second once judged no duplicate (Q218).
+        # photos of one observation are both listed: the game takes the second once judged no duplicate.
         old = next((x for L in out.values() for x in L if x["f"] == obj["f"]), None)
         if old:
             old["for"] = sorted(set(old["for"]) | {unit})
@@ -553,7 +553,7 @@ def main():
     prev = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() and only else {}
     old, old_away = prev.get("photos", {}), prev.get("away", {})
     # An --only run keeps the other species and replaces those of its entries, emptied first, so a species that lost
-    # every reference photo loses its old ones too (Codex review #660).
+    # every reference photo loses its old ones too.
     mine = {sid for t in F["teach"] if t.get("level") == 1 and t["id"] in only for sid in t.get("species", [])}
     photos = {**{k: v for k, v in old.items() if k not in mine}, **photos}
     away = {**{k: v for k, v in old_away.items() if k not in mine}, **away}

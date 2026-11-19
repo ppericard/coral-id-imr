@@ -1,5 +1,5 @@
-// Photo memory (sheet v26, docs/LEARNING.md "Photo memory"): replays the real answer log under the old rule (sheet v25,
-// app before 2026-11-03) and the new one, to see what the change does to the current players. Offline, reads a file:
+// Photo memory (docs/LEARNING.md "Photo memory"): replays the real answer log under the rule without photo memory (old,
+// copied below as eloOld) and with it (new), to see what the change does to the current players. Offline, reads a file:
 //
 //   node tools/memreplay.js answers.json [--player <anonymous id>] [--min 5] [--mem 0,-0.44,-1.1,-1.7]
 //
@@ -9,12 +9,12 @@
 //
 // Prints:
 // - the sheet side: the photo memory offsets the new rule estimates from these answers (core.js photoMemOf, as ?stats=1
-//   mem will serve them), and how far the photo ratings move from the old rule (v25, copied below) to the new one;
+//   mem serves them), and how far the photo ratings move from the old rule to the new one;
 // - per player (anonymous id), replayed in time order with the app's rules by core.js replayProgress (the full replay the
 //   admin shows, docs/LEARNING.md "Full replay"): the progress of each genus (s.pg, the bar %), the overall % over the
-//   genera answered, and the opening hold (the CUSUM of the expectations), old rule (before the photo memory) -> new.
+//   genera answered, and the opening hold (the CUSUM of the expectations), old rule -> new.
 //   Each question's difficulty d is recovered from what the app logged then (expected e, ability th, k choices):
-//   e = 1/k + (1 - 1/k) sig(th - d) (core.js MEM_LOGGED: since the photo memory the logged e includes it). The new rule
+//   e = 1/k + (1 - 1/k) sig(th - d) (core.js MEM_LOGGED: whether the logged e includes the photo memory). The new rule
 //   adds the player's memory of the photos (fam, from their own history in the log) to d: the right answer weighs
 //   x pgMemW, the miss pgMissW at d + fam, the expectation e at d + fam. Beside it, "silent recalculation": what the
 //   app's one-time recalculation of saved progress (core.js memRecalc, from the genus's photos [shown, right] alone, as a
@@ -24,7 +24,7 @@
 // are those the app logged, a comeback answer's recall is taken as 1, the look-alike prior without the growth forms, the
 // genus wrongly given weighed at the chance on the genus shown); the pooled confusions are those of this log
 // (core.js confusionOf); the mastery exam is not replayed, so a genus learned shows at most 95%. Answers logged without
-// expected/ability (before sheet v5) are not replayed.
+// expected/ability (the oldest) are not replayed.
 const fs = require('fs'),
   path = require('path');
 const C = require('../core.js');
@@ -42,14 +42,14 @@ if (!file) {
 }
 require('../tests/slot.js').guard('tools/memreplay.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
 const J = JSON.parse(fs.readFileSync(file, 'utf8')),
-  rows = C.subjRows((Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0])), // the corals' (sheet v60 Subject)
+  rows = C.subjRows((Array.isArray(J) ? J : J.rows || []).filter(r => r && r[0])), // the corals' (the rows' Subject)
   ONLY = opt('player', null),
   MIN = Number(opt('min', 5));
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
   GEN = {...(DATA.gen || {}), ...((DATA.x || {}).gen || {})}; // Millepora and the bonus genera too, as the app's GX
 const sig = x => 1 / (1 + Math.exp(-x));
 
-// The sheet before v26 (Code.gs stats_ v25, core.js eloReplay before 2026-11-03): fixed memory rule for the photo's
+// The old rule (the sheet's stats_ and core.js eloReplay before the photo memory): a fixed memory rule for the photo's
 // step only (new +0.5, right twice -1), the player's level without it.
 function eloOld(rows) {
   const P = {},
@@ -117,9 +117,8 @@ if (dif.length) {
 }
 
 // App side, per player: core.js replayProgress, the full replay the admin shows (docs/LEARNING.md "Full replay"), under
-// the rule before the photo memory (memory: false) and today's. The opening hold (model.js holdNext, INTRO.SLACK 0.1) on
-// each rule's expectation, from the difficulty the replay recovers. The bar of the moving average (dom: false, the rules
-// before version 7): this tool measures the photo memory's silent recalculation of s.pg (core.js memRecalc), which the
+// the old rule (memory: false) and the new one. The opening hold (model.js holdNext, INTRO.SLACK 0.1) on each rule's
+// expectation, from the difficulty the replay recovers. The bar of the moving average (dom: false): this tool measures the photo memory's silent recalculation of s.pg (core.js memRecalc), which the
 // domain-score bar does not need.
 const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair, dom: false},
   hold = {},

@@ -37,7 +37,8 @@ abstract; **[guess]** = my judgement, not checked.
 3. **"Most common" and "most sought-after" differ most at the very top.** Among nudibranchs, 30 of the 50 most-viewed
    species (Wikipedia) are in the 50 most common. But the most sought-after are rarely met:
    - the "sea bunny" (*Jorunna parva*, 262nd by observers);
-   - the "Pikachu" (*Thecacera pacifica*, 176th);
+   - the "Pikachu" (*Thecacera pacifica*, 176th; the nickname is shared with *T. pikachu*, and *T. picta* is the one
+     local divers tend to call so: Pierre, 2026-11-19, Q417, in the [literature scan](2026-11-17-seaslug-literature-scan.md) §6);
    - Coleman's ghost melibe (*Melibe colemani*, 83rd);
    - the "Shaun the Sheep" leaf slug (*Costasiella kuroshimae*), the most viewed of all, is not a nudibranch.
 

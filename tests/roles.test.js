@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// Roles step 1 (Pierre, 2026-11-13, Q342-Q349: scoped roles, enforced by the sync script through one can_() check and an
-// audit log, never by the page; Q364, 2026-11-15: rights are separate, the platform admin may grant himself a role and the
-// grant is logged): Code.gs can_, gate_, the Roles and Audit tabs, the grants of Pierre's account, and what a delete, a
+// Roles (scoped roles, enforced by the sync script through one can_() check and an audit log, never by the page; rights
+// are separate, the platform admin may grant himself a role and the grant is logged): Code.gs can_, gate_, the Roles and
+// Audit tabs, the grants of Pierre's account, and what a delete, a
 // merge or an archive does to an account's grants (rule D7). Against the in-memory sheet only (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -56,8 +56,11 @@ const ENDPOINTS = [
   ['users', () => ({users: 1})],
   ['userData', () => ({userData: 'Ana'})],
   ['userBoard', () => ({userBoard: 'Ana', hide: true})],
-  ['userGroup', () => ({userGroup: 'Ana', group: 'fish', on: true})],
-  ['userGroup', () => ({userGroup: 'Ana', cohort: 'RA Test', on: true})], // v171: a cohort (tests/scopes.test.js)
+  ['userGroup', () => ({userGroup: 'Ana', group: 'g:00000000', on: true})],
+  // the groups themselves (tests/playergroups.test.js)
+  ['groupMake', () => ({groupMake: {n: 'RA Test', board: 1}})],
+  ['groupEdit', () => ({groupEdit: 'g:00000000', n: 'RA Test 2'})],
+  ['groupDrop', () => ({groupDrop: 'g:00000000'})],
   ['userStart', () => ({userStart: 'Ana', s: 'coral', c: 'imr'})],
   ['statsExclude', () => ({statsExclude: 'AbCd1234', on: true})],
   ['anonDelete', () => ({anonDelete: ['AbCd1234']})],
@@ -73,6 +76,9 @@ const WRITES = new Set([
   'analysesPut',
   'userBoard',
   'userGroup',
+  'groupMake',
+  'groupEdit',
+  'groupDrop',
   'userStart',
   'statsExclude',
   'anonDelete',
@@ -180,7 +186,7 @@ test('can_: the token passes every right; an account only what its grants give, 
   for (const n of Object.keys(want))
     for (const sc of Object.keys(want[n]))
       RIGHTS.forEach(r => assert.strictEqual(can(s, acct(s, n), r, sc), want[n][sc].includes(r), `${n} ${r} ${sc}`));
-  // Q364: the platform admin alone is refused the instance's players and content until he holds its roles.
+  // The platform admin alone is refused the instance's players and content until he holds its roles.
   assert.ok(!can(s, acct(s, 'Pat'), 'players', IMR) && !can(s, acct(s, 'Pat'), 'content', IMR));
   assert.ok(grant(s, 'Pat', 'editor', IMR).ok);
   assert.ok(can(s, acct(s, 'Pat'), 'content', IMR) && !can(s, acct(s, 'Pat'), 'players', IMR));
@@ -331,8 +337,8 @@ test("Pierre's grants: once, to the admin's account, as self-grants by the token
   noName(s, 'Pat', 'Ana');
 });
 
-// The Audit tab's next n row writes fail, as a Sheets service error does (the seed of 2026-11-16 on the real sheet wrote
-// the admin grant, then failed before its Audit row, and the error was swallowed).
+// The Audit tab's next n row writes fail, as a Sheets service error does (a grant written, then its Audit row failing:
+// the error must never be swallowed).
 const failAudit = (s, n = 1) => {
   run(s, 'sheet_(AUDIT.TAB, AUDIT.HEAD)');
   const sh = s.sheets.Audit,
@@ -415,7 +421,7 @@ test('an Audit row that cannot be written is logged; a grant without its row ans
     ]
   );
   assert.strictEqual(rows(s, 'Roles').length, 1);
-  // A refusal whose row fails is logged too, never thrown: the request answers as before.
+  // A refusal whose row fails is logged too, never thrown: the request answers as it would with the row written.
   failAudit(s);
   assert.strictEqual(s.post({readReports: 1, token: READ}).error, 'token');
   assert.ok(deployLog(s).some(l => /^Roles: Audit row not written \(readReports, instance:imr, denied\)/.test(l)));

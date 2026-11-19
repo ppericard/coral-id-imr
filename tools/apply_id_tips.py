@@ -8,7 +8,7 @@ for l in open(os.path.join(H, 'id_tips.txt')):
     if not l.strip() or l.startswith('#'): continue
     g, t = l.rstrip('\n').split('\t')
     Q[g] = [x.strip() for x in t.split('|')]
-# In place: a genus keeps its key order, so a re-run changes only the lines of the tips that changed (2026-11-03).
+# In place: a genus keeps its key order, so a re-run changes only the lines of the tips that changed.
 for n, g in d['gen'].items():
     if n in Q: g['qt'] = Q[n]
     else: g.pop('qt', None)

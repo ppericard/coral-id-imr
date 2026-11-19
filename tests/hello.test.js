@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The cards that tell a player about a subject (progress.js subjHello, helloDue, helloMode; Pierre, 2026-11-05: "a proper
-// card the player closes, shown once, at a calm moment"; 2026-11-06: while fish opens to a group he picks, the card is an
-// invitation to test the fish beta, for the players of that group only). helloDue decides, on its inputs only: 'show',
-// 'met' (seen without a card) or '' (not now). The card itself, its calm moment and its buttons are in tests/fish.smoke.js.
+// The cards that tell a player about a subject (progress.js subjHello, helloDue, helloMode; docs/ARCHITECTURE.md): a
+// card the player closes, shown once, at a calm moment; while a subject opens to a group only, the card is an
+// invitation to test it, for the players of that group only. helloDue decides, on its inputs only: 'show', 'met' (seen
+// without a card) or '' (not now). The card itself, its calm moment and its buttons are in tests/fish.smoke.js.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -67,7 +67,7 @@ test('subjHello: the group card to the group (subjGroups); the all card while in
   assert.ok(/helloMode\(S\) === 'all' && !S\.beta \? null/.test(fn), "the 'all' card only while the subject keeps its beta label");
   assert.ok(/UNITS\[S\.id\]\.hello/.test(fn), 'the subject with a card is found by its data (UNITS hello)');
   assert.ok(!/SUBJECTS\[\d+\]/.test(fn), 'no subject tested by its place (Codex review #598)');
-  // a subject whose card is settled (seen, met) gives way to the next one with a card (the sea slugs' after the fish's;
-  // Codex review #987), never stops the search
+  // a subject whose card is settled (seen, met) gives way to the next one with a card (the sea slugs' after the
+  // fish's), never stops the search
   assert.ok(/for \(const X of SUBJECTS\.filter\(x => card\(x\) && member\(x\)\)\)/.test(fn) && /if \(due !== 'show'\) continue;/.test(fn));
 });

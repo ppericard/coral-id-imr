@@ -102,7 +102,7 @@ jobs:
         with:
           node-version: '26'
       # Playwright as the smokes install it (a temporary folder, the same pin): the package for every world (learnsim
-      # loads it before it reads --world; Codex review #791), Chromium for the app world only.
+      # loads it before it reads --world), Chromium for the app world only.
       - uses: actions/cache@v6
         if: inputs.world != 'rated'
         with:
@@ -128,7 +128,7 @@ jobs:
               echo "::endgroup::"
             done
           done
-      # The primary in its own world only (with one world, that one; Codex review #791): the other world reports its
+      # The primary in its own world only (with one world, that one): the other world reports its
       # guardrails, a checkpoint it does not reach never stopping the report.
       - name: The paired comparison (tools/learncmp.js of the version with the change)
         run: |

@@ -610,11 +610,10 @@
         const ask = () => {
           const box = root.querySelector('#a2q');
           if (type === 'con') {
-            // Its photos too only of genera unlocked (lab.js labPlay; Codex review #491: each one names its genus after
-            // the answer).
+            // Its photos too only of genera unlocked (lab.js labPlay: each one names its genus after the answer).
             const L = labPlay(),
               pool = shots.filter(x => L.includes(x.s[1]));
-            // Genera unlocked, but none with a ringed photo yet (Codex review #491): say so, and where to go.
+            // Genera unlocked, but none with a ringed photo yet: say so, and where to go.
             if (!pool.length) {
               if (labNone(box)) return;
               box.innerHTML = `<p class="note">None of the genera you have met has a ringed photo here yet. Try "Which arrangement?", or meet more genera in the quiz.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;

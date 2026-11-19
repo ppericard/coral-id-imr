@@ -64,7 +64,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import inat  # noqa: E402  the one paced, retried iNaturalist client (rule C7)
 import fish_short  # noqa: E402  fish-game.json's short form
-from fetch_fish import lic_ok, PIERRE  # noqa: E402  the fish licence rule; Pierre's iNaturalist login
+from fetch_fish import lic_ok, PIERRE  # noqa: E402  the fish licence rule; the admin's iNaturalist login
 
 BATCH = 200  # observations a request (iNaturalist's most per page)
 FIELDS = 'id,user.login,photos.id,photos.license_code,photos.attribution'
@@ -77,7 +77,7 @@ FILES = (('fish-cand.json', 'fish', 'cand'), (os.path.join('tools', 'fish_refs.j
          ('fish-game.json', 'fish', 'play'), ('data.json', 'coral', 'play'), ('cand.json', 'coral', 'cand'),
          ('excluded.json', 'coral', 'gone'), ('seaslug-cand.json', 'seaslug', 'cand'))
 PHOTOS_FILE = 'fish-photos.json'
-# http as well: a few old coral records name their observation so (Codex review #936).
+# http as well: a few old coral records name their observation so.
 OBS_RE = re.compile(r'^(?:https?://(?:www\.)?inaturalist\.org/observations/)?(\d+)$')
 SRC_RE = re.compile(r'^https?://(?:inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)/photos/(\d+)/')
 NAME_RE = re.compile(r'(?:^fi|-)(\d+)[cd]?$')  # fi<id> (a reference photo), <genus or species>-<view or cand>-<id>[c|d]

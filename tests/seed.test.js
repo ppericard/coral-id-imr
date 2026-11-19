@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
-// The seedling 🌱 after the admin's account name (sheet v125; Pierre, 2026-11-09, Q328 corrected: "an icon the others
-// are not allowed to have", added on its own, the name unchanged, no step for him): the account the admin page is signed
+// The seedling 🌱 after the admin's account name (an icon the others may not have, added on its own, the name unchanged,
+// no step for the admin): the account the admin page is signed
 // in to when it reads the answer log with a valid token becomes the admin's account (Code.gs answers_, adminAcct_: its
 // code hash, one at most); its leaderboard rows carry a 4th field 1 and its load reply admin: 1, which the app shows as
 // a 🌱 after the name, outside the name's text (core.js markRow, markHtml; progress.js paintBoard; sync.js markSeen).
@@ -64,7 +64,7 @@ test('the seedling and its look-alikes: refused for a new account or an archive 
     assert.strictEqual(play(s, name, '1234').error, 'reserved', name)
   );
   assert.deepStrictEqual(names(s), ['Old 🍀']);
-  // The existing account loads and saves as before.
+  // The existing account loads and saves.
   assert.strictEqual(s.get({name: 'Old 🍀', pin: '1111'}).found, true);
   assert.ok(play(s, 'Old 🍀', '1111').ok);
   // An archive under a look-alike: refused.
@@ -157,7 +157,8 @@ const paint = (rows, v, extra = {}) => {
     SUBJ: {},
     innerHeight: 800,
     store: {get: (k, d) => d},
-    COHORT_KEY: 'reefid-cohort'
+    COHORT_KEY: 'reefid-cohort',
+    GROUPS_KEY: 'reefid-groups'
   };
   vm.createContext(ctx);
   const src = read('progress.js');
@@ -209,6 +210,27 @@ test("the staff and cohort boards (sheet v171): the mark on every board, a cohor
   assert.ok(!html.includes('<i>'), 'no markup from a cohort name');
 });
 
+test("the player groups' boards (sheet GROUPS_SHEET): the mark on every board, a group's name escaped as a player's", () => {
+  const N = Number(/const GROUPS_SHEET = (\d+);/.exec(read('progress.js'))[1]),
+    html = paint([['Cy', 60, null]], N, {
+      groups: [
+        {id: 'g:1', n: 'Staff', rows: [['Ana B.', 80, 1.2, 1]]},
+        {id: 'g:2', n: '<i>RA</i> & co', rows: [['Cy', 60, null]]}
+      ]
+    }),
+    mark = C.markHtml();
+  assert.ok(html.includes('<h3 class="bhead">All players</h3>'), html);
+  assert.ok(
+    html.includes(
+      '<summary>Other groups</summary><section class="bscope" data-scope="other"><h3 class="bhead">Staff</h3><ol class="blist"><li><span class="brank">🥇</span><span class="bwho"><b class="bname">Ana B.</b>' +
+        mark
+    ),
+    html
+  );
+  assert.ok(html.includes('<h3 class="bhead">&lt;i&gt;RA&lt;/i&gt; &amp; co</h3>'), html);
+  assert.ok(!html.includes('<i>'), 'no markup from a group name');
+});
+
 test('the account line: the mark from a load reply that says the admin, for that account only', () => {
   const mem = {},
     ctx = {store: {get: (k, d) => (k in mem ? mem[k] : d), set: (k, v) => (mem[k] = v)}, SYNC: {name: 'Ana B.'}};
@@ -234,7 +256,7 @@ test('the account line: the mark from a load reply that says the admin, for that
   assert.strictEqual(markMine(), false);
 });
 
-// Codex review #841 (P1): the admin page's log read takes the admin's account under the script lock, re-reading its row
+// The admin page's log read takes the admin's account under the script lock, re-reading its row
 // there, so a delete, a merge or an archive (each under the lock) that comes while the read runs is never undone by it.
 test("a log read in progress never brings the admin's mark back after an archive, a delete or a merge", () => {
   const races = [
@@ -275,7 +297,7 @@ test("a log read in progress never brings the admin's mark back after an archive
   assert.deepStrictEqual(marked(s, BOARDS[0]), [['Ana B.', 1]]);
 });
 
-// Codex review #841 (P2): a light save that skips the load (sync.js skipPull) builds its own reply from the copy it holds,
+// A light save that skips the load (sync.js skipPull) builds its own reply from the copy it holds,
 // which says nothing of the admin: it must not take the mark away.
 test("the admin's own device keeps its mark through light saves that skip the load", async () => {
   const s = loadCodeGs(withData()),
@@ -297,7 +319,7 @@ test("the admin's own device keeps its mark through light saves that skip the lo
   assert.deepStrictEqual(JSON.parse(JSON.stringify(A.store.get('reefid-amark', null))), {n: 'ana b.', on: true}, 'the mark stays');
 });
 
-// Codex review #841 (P2): the mark is the account's, never the name's on this device: a sign-out takes it away, and a load
+// The mark is the account's, never the name's on this device: a sign-out takes it away, and a load
 // that finds no account under the name (deleted or archived, then taken again) too.
 test("a device's mark never passes to another account of the same name", async () => {
   const s = loadCodeGs(withData()),

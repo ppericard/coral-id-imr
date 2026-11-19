@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-// Game photos with no growth form, and the guesses that fill them (rule C4). learn.js photoPair matches photos
+// Game photos with no growth form, and the guesses that fill them (rule C4). model.js photoPair matches photos
 // by growth form (the quiz's mix-up montage "Your answer, same view", the Look-alikes montages): a photo with no form
-// matches nothing. A player's report (2026-11-04): a plate Turbinaria with no form recorded, answered Echinopora, was shown
+// matches nothing. A player's report: a plate Turbinaria with no form recorded, answered Echinopora, was shown
 // a branching Echinopora. Photos added after the first form pass (mostly approved candidates) had none.
 //
-//   node tools/game_forms.js               lists the game photos with no growth form: neither Pierre's (curation.json
+//   node tools/game_forms.js               lists the game photos with no growth form: neither the admin's (curation.json
 //                                          "gf") nor a guess (forms.json "gf"). tests/photos.test.js warns while one is left
-//                                          (a report, never a failure: Pierre's Publish must not turn PRs red).
+//                                          (a report, never a failure: the admin's Publish must not turn PRs red).
 //   node tools/game_forms.js --apply FILE  writes the guesses of FILE into forms.json "gf" (and "gunsure" for the unsure
-//                                          ones), for game photos with no form of Pierre's; FILE is in the format of the
+//                                          ones), for game photos with no form of the admin's; FILE is in the format of the
 //                                          judging brief's growth-form pass (judging/BRIEF.md, "scope": "forms"):
 //                                          {"photos": {f: {"form": letter, "polyps": true, "unsure": ["form"], "note": "…"}}}.
 //
 // To fill a new gap: list the photos, look at each one (rule W11), write FILE by the judging brief (one of the 7 IMR forms
 // or "x", the dominant visible one; polyps only for the genera of rule C4, never on a macro photo), then --apply it.
-// The guesses show dashed in the admin (Photo review › Growth form) until Pierre confirms or changes them; his
+// The guesses show dashed in the admin (Photo review › Growth form) until the admin confirms or changes them; his
 // curation.json "gf" always wins and is only read here (rule A1). forms.json keeps the layout tools/judging_import.py
 // writes (dumpForms; tests/gameforms.test.js checks the two agree on the file as it is).
 const fs = require('fs'),
@@ -28,7 +28,7 @@ const POLYPS = new Set(['Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia
 const VIEWS = ['wide', 'medium', 'macro'];
 const letter = v => (v || '').replace(/[pn]/g, '');
 
-// data.json with Pierre's curation and the photos per context applied, as the app and tests/photos.test.js do.
+// data.json with the admin's curation and the photos per context applied, as the app and tests/photos.test.js do.
 function built(raw = read('data.json'), cur = read('curation.json')) {
   const d = structuredClone(raw),
     o = {picks: read('picks.json'), autoq: read('quality.json').q || {}};
@@ -50,7 +50,7 @@ function gamePhotos(d, raw) {
   });
   return out;
 }
-// The game photos with no growth form letter: neither Pierre's nor a guess ("p" alone is the polyps flag, not a form).
+// The game photos with no growth form letter: neither the admin's nor a guess ("p" alone is the polyps flag, not a form).
 const formless = (games, cur, forms) =>
   Object.values(games).filter(p => !letter((cur.gf || {})[p.f]) && !letter((forms.gf || {})[p.f]));
 

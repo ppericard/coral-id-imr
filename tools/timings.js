@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// The sheet script's Timings tab, summed up for the integrator (the storage study of 2026-11-14, step 1; Pierre,
-// 2026-11-14, Q352: the answer log moves to Cloudflare D1 only when a measured threshold is crossed). The tab (Code.gs
+// The sheet script's Timings tab, summed up for the integrator: the answer log moves to Cloudflare D1 only when a
+// measured threshold is crossed (docs/ROADMAP.md). The tab (Code.gs
 // TIM: Time, Op, Ms, Rows, Cols, Version, Weight) holds no player data; read it read-only through the Google Sheets
 // connector (range "Timings!A1:G", saved as the JSON it returns) or as a CSV download, then:
 //

@@ -8,7 +8,7 @@ every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
 
 **Pierre's curation choices (`curation.json`) are never changed automatically**: no script, rebuild or import may
 overwrite them. An agent **may propose** to change one (its reason may be wrong, or may have changed); Pierre decides. Only step-by-step Undo of his own actions; **no bulk reset/wipe button of any kind** (he refused it
-twice). **Never write `curation.json` in a PR**: Pierre publishes it straight to `main` from the admin; rebase and keep
+twice). **Never write `curation.json` in a PR**: Pierre publishes it straight to `main` from the admin; merge `origin/main` and keep
 `main`'s copy. The admin's Publish never writes a whole copy: it re-reads the published file and merges the draft onto
 it key by key (`merge3()`, #240, after a whole-copy publish from a stale tab lost curation on 2026-11-01); keep it that
 way if you touch `save()` in `admin.js`.
@@ -46,7 +46,7 @@ action, Activity who plays and how much, Analyses what we learn. Today's groups,
 
 ### A4
 
-**One subject switch** (Corals | Fish) in the admin header covers every page; a subject's pages are named in `core.js`
+**One subject switch** (one segment per subject in `core.js` `SUBJECTS`: Corals | Fish | Sea slugs) in the admin header covers every page; a subject's pages are named in `core.js`
 `SUBJECTS` `admin`; a subject's pages sit under its prefix (`#fish/…`), the corals' have none. Addresses follow the
 header: `#<group>/<tab>/<view>` in the words on screen (ARCHITECTURE.md "Admin back-office"); an old address is not
 kept (rule W3, no alias).

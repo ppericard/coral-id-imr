@@ -1,7 +1,6 @@
 require('./slot.js').testGuard();
-// sw.js caches (admin speed, 2026-11-04): the admin's own files outlive a new app version. Before, they went into the
-// shell cache, which every deploy replaces, so the first admin visit after each deploy downloaded them all again (about
-// 240 kB gzipped). sw.js runs here in a sandbox with an in-memory Cache Storage, two versions one after the other.
+// sw.js caches: the admin's own files outlive a new app version, kept apart from the shell cache that every deploy
+// replaces, so the first admin visit after a deploy does not download them all again. sw.js runs here in a sandbox with an in-memory Cache Storage, two versions one after the other.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -130,10 +129,8 @@ test('the admin files outlive a new version; the app shell files do not; a new ?
   assert.deepStrictEqual(admin, [SITE + 'admin.js?v=161']);
 });
 
-// net.smoke step 9 (2026-11-04, #496's CI, job 126453879572): the admin page never reached DOMContentLoaded although the
-// server had answered its request in 1 ms: the page's reply waited for the worker's copy of it to be written to the shell
-// cache, and that write never ended (the old worker writing into the shell cache that the new version's activation was
-// replacing). A page's reply never waits for its cache copy; the copy is written in the event's lifetime.
+// A page's reply never waits for its cache copy; the copy is written in the event's lifetime. A write into the shell
+// cache that a new version's activation is replacing may never end, and the page would never load.
 test('a page is answered from the network without waiting for its cache copy to be written', async () => {
   const store = storage(),
     open = store.api.open;
@@ -162,8 +159,8 @@ test('a page answered from the network is still kept in the shell cache for the 
   assert.ok(store.all.get('reefid-shell-v1').has(SITE + 'index.html'));
 });
 
-// Offline, a photo is found in the photo cache under its other address too (Codex review #531: a site photo kept under its
-// R2 address was lost offline); one in neither fails, so the page picks its next source.
+// Offline, a photo is found in the photo cache under its other address too (a site photo kept under its R2 address);
+// one in neither fails, so the page picks its next source.
 test('offline: a photo is found under its twin address', async () => {
   const store = storage(),
     R2 = require('../core.js').PHOTO_BASE.replace(/\/$/, ''),
@@ -176,10 +173,9 @@ test('offline: a photo is found under its twin address', async () => {
   assert.strictEqual(none && none.type, 'error');
 });
 
-// A new version on the field line (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
-// station): its install took the files of the deploy before from the browser's HTTP cache (GitHub Pages keeps them 10
-// minutes), so a new version could hold the old page and run its old code once it took over; and it downloaded the whole
-// shell again (about 1 MB), unchanged files included.
+// A new version on a slow field line: its install takes the page and the unversioned files past the browser's HTTP cache
+// (GitHub Pages keeps them 10 minutes), so it never holds the old page and runs its old code once it takes over; and it
+// copies the unchanged files from the version it replaces instead of downloading the whole shell again.
 test('a new version installs the deployed page, not an HTTP-cached copy, and copies unchanged files from the version it replaces', async () => {
   const store = storage(),
     calls = [],
@@ -217,7 +213,7 @@ test('a new version installs the deployed page, not an HTTP-cached copy, and cop
   assert.ok(!store.all.has('reefid-shell-v1'));
 });
 
-// The Coral Finder book crops left the app (Pierre, 2026-11-08): the activation of the next version deletes the copies a
+// The Coral Finder book crops are out of the app: the activation of the next version deletes the copies a
 // phone kept in its photo cache (img/<genus>-cf-<page>-<tag>…, under their R2 or site address), and only those.
 test('activation deletes the Coral Finder book crops from the photo cache, and nothing else', async () => {
   const store = storage(),
@@ -231,9 +227,8 @@ test('activation deletes the Coral Finder book crops from the photo cache, and n
   assert.deepStrictEqual([...store.all.get('imr-photos-v1').keys()].sort(), keep.sort());
 });
 
-// A page opened while a newer version waits (2026-11-14, net.smoke check 9 on a merge train): in Chromium that navigation
-// takes the waiting version over and stops this worker with the navigation in it, and a page the worker was answering
-// never loaded. Such a navigation is left to the browser (no respondWith); the page's other requests are answered as
+// A page opened while a newer version waits: in Chromium that navigation takes the waiting version over and stops this
+// worker with the navigation in it, so a page the worker was answering would never load. Such a navigation is left to the browser (no respondWith); the page's other requests are answered as
 // always, and a navigation with no version waiting too.
 test('a navigation while a newer version waits is left to the browser; other requests and other times are answered', async () => {
   const net = [];
@@ -247,8 +242,8 @@ test('a navigation while a newer version waits is left to the browser; other req
   assert.ok(calm.dispatch(SITE + 'admin.html?demo').reply, 'no version waiting: the page is answered by the worker');
 });
 
-// A swap held by Chromium (2026-11-14: a request that came in the instant the old worker was stopped for the swap started
-// it again, and the new version then waited over 90 s): the old worker asks the waiting version, at each request, to take
+// A swap held by Chromium (a request that comes in the instant the old worker is stopped for the swap starts it again,
+// and the new version then waits): the old worker asks the waiting version, at each request, to take
 // over again, and the waiting version calls skipWaiting() again on that message, and on no other.
 test('a worker with a newer version waiting asks it to take over; the waiting version calls skipWaiting() again', async () => {
   const old = worker('reefid-shell-v1', storage(), [], {waiting: true});
