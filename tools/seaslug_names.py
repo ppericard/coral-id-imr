@@ -28,6 +28,9 @@ by hand, as Pierre asked on 2026-11-17 ~06:34: "toutes les sources possibles"):
   web    pages read by hand (tools/seaslug_names_src.json `web`: the taxon, the name, the page, the words that give it, the
          date read; `src` "wiki" for a Wikipedia page read so), for the names the APIs and guides miss (Pierre,
          2026-11-17 ~06:34: specialist sites, guides and articles that use the nicknames, besides the general sources).
+A `web` name may carry a `note`, a short caveat the app shows beside it (Pierre, 2026-11-19: "Pikachu" is mentioned on
+Thecacera picta, what divers around Dauin tend to call it, "même si on indique que ce n'est pas forcément approprié"),
+and, when it is Pierre's own word and no page (rule C2: the content editor's words carry a source), no `u`.
 A name is a nickname (nick) when its source says so: the intro calls it a nickname ("nicknamed", "nickname"), or a page
 of `web` does (its `nick`). Each taxon's names: one per spelling (case, hyphens and apostrophes aside), in this order: the
 number of sources giving it, then iNaturalist's preferred name, then by source (inat, worms, wiki, web) and as each
@@ -43,6 +46,7 @@ Two stages, as tools/build_seaslugs.py:
     reruns it on the committed file and fails when the file disagrees or misses a taxon of the game (CI has no cache).
 
 Usage: python3 tools/seaslug_names.py [--offline] [--no-wiki]
+       python3 tools/seaslug_names.py --derive    (offline, no cache: the merge again from the committed raw replies)
        python3 tools/seaslug_names.py --check
 Tests: node --test tests/seaslug-names.test.js.
 """
@@ -272,8 +276,9 @@ def guide_names(t, guides):
 
 def derive(taxa, web=(), guides=()):
     """(names by taxon index, shared) from the taxa's raw replies, the guides' indexes (guides: [{t, u, links}]) and the
-    hand-read pages (web: [{taxon, rank, name, nick, t, u, words, read}]). Each taxon's names: [{n, src [the sources],
-    nick: 1 when one says so, web: [{t, u}] the guide and web pages}], ordered as the module doc says. shared: [{n, taxa
+    hand-read pages (web: [{taxon, rank, name, nick, note, t, u, words, read}]; u is missing for a source that is no
+    page, Pierre's own word). Each taxon's names: [{n, src [the sources], nick: 1 when one says so, note: a caveat
+    shown with the name, web: [{t, u}] the guide and web pages}], ordered as the module doc says. shared: [{n, taxa
     [[rank, name, [sources]]]}], a name given to two taxa or more."""
     allnames = []
     for i, t in enumerate(taxa):
@@ -281,12 +286,14 @@ def derive(taxa, web=(), guides=()):
         S = {key(x) for x in sci}
         got = {}  # key -> {n, src set, nick, web, first (source rank, position)}
 
-        def put(n, src, pos, nick=0, w=None):
+        def put(n, src, pos, nick=0, w=None, note=""):
             n = clean(n)
             if not n or key(n) in S:
                 return
             k = key(n)
-            e = got.setdefault(k, {"n": n, "src": set(), "nick": 0, "web": [], "at": (ORDER.index(src), pos), "sp": {}})
+            e = got.setdefault(k, {"n": n, "src": set(), "nick": 0, "web": [], "at": (ORDER.index(src), pos), "sp": {},
+                                   "note": ""})
+            e["note"] = e["note"] or note
             # its spellings (case aside): the one most sources give is shown, as its first source wrote it
             e["sp"].setdefault(n.lower(), [n, set()])[1].add(src)
             e["src"].add(src)
@@ -312,13 +319,14 @@ def derive(taxa, web=(), guides=()):
         for j, (n, w) in enumerate(guide_names(t, guides)):
             put(n, "guide", j, 0, w)
         for j, x in enumerate(w for w in web if w["taxon"] == t["name"] and w["rank"] == t["rank"]):
-            put(x["name"], x.get("src") or "web", j, 1 if x.get("nick") else 0, {"t": x["t"], "u": x["u"]})
+            put(x["name"], x.get("src") or "web", j, 1 if x.get("nick") else 0,
+                {"t": x["t"], **({"u": x["u"]} if x.get("u") else {})}, x.get("note") or "")
         pref = key(I.get("pref"))
         L = sorted(got.items(), key=lambda kv: (-len(kv[1]["src"]), kv[0] != pref, kv[1]["at"]))
         for e in got.values():
             e["n"] = max(e["sp"].values(), key=lambda v: len(v[1]))[0]  # max keeps the first of equals: the first met
         names = [{"n": e["n"], "src": [s for s in ORDER if s in e["src"]], **({"nick": 1} if e["nick"] else {}),
-                  **({"web": e["web"]} if e["web"] else {})} for _, e in L]
+                  **({"note": e["note"]} if e["note"] else {}), **({"web": e["web"]} if e["web"] else {})} for _, e in L]
         allnames.append(names)
     by = {}
     for t, names in zip(taxa, allnames):
@@ -585,10 +593,19 @@ def main():
     a.add_argument("--offline", action="store_true")
     a.add_argument("--no-wiki", action="store_true", help="leave Wikipedia out (raw wiki null)")
     a.add_argument("--check", action="store_true")
+    a.add_argument("--derive", action="store_true", help="derive again from the committed file's raw replies and the "
+                   "source, no network, no cache (a hand-kept `web` change)")
     o = a.parse_args()
     L, src = load(LIST), load(SRC, {})
     if o.check:
         sys.exit(check(L, src))
+    if o.derive:
+        d = load(OUT)
+        head, rows = assemble([{k: v for k, v in t.items() if k != "names"} for t in d["taxa"]], src, d["pulled"],
+                              d.get("guides") or [])
+        OUT.write_text(dump(head, rows), encoding="utf-8")
+        print(f"wrote {OUT.relative_to(ROOT)}: derived again from its raw replies; names on two taxa: {len(head['shared'])}")
+        return
     net = Net(offline=o.offline, wiki=not o.no_wiki)
     try:
         taxa = fetch(net, L)

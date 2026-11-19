@@ -97,8 +97,15 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   ARCHITECTURE.md.
 - **My progress** (`#progress`): first the player's card (`badge()`, [achievements.md](achievements.md#the-badge)),
   above the board on phones and tablets, at the top of the side column on desktops; then the board (Slate by default,
-  `reefid-sync-pview`), the level counts, Review first, Often mixed up, and the Slate / Photos / Groups switch at the
-  very bottom. A unit never met (no card, no answer, not opened by Open all) is a **"mystery" tile** for the players
+  `reefid-sync-pview`), the level counts, Review first, Your tricky pairs, and the Slate / Photos / Groups switch at the
+  very bottom. **Your tricky pairs** (`progress.js` `trickyPairs`, `trickyHTML`; the name study's (f),
+  [decision](../decisions/2026-11-19-tricky-pairs.md)): the pairs of units the player mixes up most, from their own
+  record only (`core.js` `pairConf`, both directions): a pair counts once mixed up `TRICKY.MIN` (2) times, ranked by its
+  own mix-up rate shrunk toward 0 by `CONF.W` offers (mixed up / (offered + 8)), so a pair the player now tells apart
+  sinks; ties, more mix-ups first; `TRICKY.N` (3) at most; never a pair with a mystery tile. Each chip reads "A ↔ B · 3
+  of 5" (mixed up, offered together) and links to the pair's comparison where the subject has that page (`cmp`: the
+  corals), a plain chip elsewhere; no section without a pair. Read only: the draw, the model and the score never see
+  it. A unit never met (no card, no answer, not opened by Open all) is a **"mystery" tile** for the players
   its subject's `UNITS[id].mystery(c)` names from their first-launch answer `c` (every fish player; the corals' "I'm
   new to corals" only): `progress.js` `mysteryOf`, a "?" in place of its name, with no cover, no link and no tooltip
   naming it, on every view; the slate keeps its number, its tooltip naming the unit's own rank (`mystT`); display only.

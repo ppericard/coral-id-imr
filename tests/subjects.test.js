@@ -536,10 +536,10 @@ test("easyRank: a difficulty function (the players' ratings) ranks first; refSco
   assert.strictEqual(C.refScore('o1g2mm1j'), 2);
   assert.strictEqual(C.refScore(''), 0);
   assert.strictEqual(C.refScore(undefined), 0);
-  // The subjects whose photo sources rank (rule P1): the corals only.
+  // No subject's photo sources rank (rule P1, Pierre 2026-11-18: no source priority, the corals included).
   assert.deepStrictEqual(
-    C.SUBJECTS.filter(s => s.tiers).map(s => s.id),
-    ['coral']
+    C.SUBJECTS.filter(s => 'tiers' in s).map(s => s.id),
+    []
   );
 });
 
