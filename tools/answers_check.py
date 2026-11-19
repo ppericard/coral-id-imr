@@ -18,7 +18,8 @@
    number, and a question of docs/STATUS.md "Questions for Pierre" (the integrator's file).
 3. The ROADMAP holds every decision: an entry from 2026-11-19 21:00 on (ROADMAP_SINCE; the head's time) that names a
    ROADMAP item, a row's bold title of three words or more or an inventory ID ("inventory C12"), says after "Applied"
-   the ROADMAP or the PR that changed the row (#1234), and never "(to update)" or "(to do)" there. The entries before
+   the ROADMAP or the PR that changed the row (#1234), and never "(to update)" or "(to do)" there; a later "Applied in
+   #N:" entry that closes it (as in 1) does as well. The entries before
    were written before this check; the 2026-11-19 recount applied theirs (Pierre, 2026-11-19 20:45).
 Offline, standard library only.
 """
@@ -109,10 +110,27 @@ def answered(entries):
     return out
 
 
+def closers_of(entries):
+    """The "Applied in #N:" entries, with their line: a closer closes only what precedes it."""
+    return [(n, t) for d, n, h, t in entries if re.match(r'Applied in #\d+', h)]
+
+
+def closing(n, head, text, closers):
+    """The texts of the later "Applied in #N:" entries that close this one: naming its Q numbers, or its time and first
+    words."""
+    qs = QNUM.findall(head)
+    start = needle(text)
+    return [
+        c
+        for cn, c in closers
+        if cn > n and ((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c))
+    ]
+
+
 def check_ledger(entries):
     """(failures, known): the entries from SINCE with no place applied, and the bad PR numbers after "Applied"."""
     fails, known, used = [], [], set()
-    closers = [(n, t) for d, n, h, t in entries if re.match(r'Applied in #\d+', h)]  # with their line: a closer closes only what precedes it
+    closers = closers_of(entries)
     for date, n, head, text in entries:
         if date < SINCE:
             continue
@@ -126,12 +144,7 @@ def check_ledger(entries):
             if bad:
                 fails.append('docs/ANSWERS.md:%d %s…: after "Applied", %s is not a PR number (#1234)' % (n, lab, ', '.join(bad)))
             continue
-        qs = QNUM.findall(head)
-        start = needle(text)
-        if any(
-            cn > n and ((qs and all(re.search(r'\bQ%s\b' % q, c) for q in qs)) or ' %s ' % start in ' %s ' % words(c))
-            for cn, c in closers
-        ):
+        if closing(n, head, text, closers):
             continue
         key = next((k for k in KNOWN if lab.startswith(k)), None)
         if key:
@@ -169,6 +182,8 @@ def check_roadmap(entries, titles):
     """Failures: the entries from ROADMAP_SINCE that name a ROADMAP item and do not say the ROADMAP or a PR after
     "Applied"."""
     fails = []
+    closers = closers_of(entries)
+    ok = lambda tail: bool(tail) and re.search(r'\bROADMAP\b|#\d+', tail) and not TO_DO.search(tail)
     for date, n, head, text in entries:
         t = re.match(r'(\d\d:\d\d)\b', head)
         if (date, t.group(1) if t else '') < ROADMAP_SINCE:
@@ -180,7 +195,7 @@ def check_roadmap(entries, titles):
             continue
         m = APPLIED.search(text)
         tail = text[m.start():] if m else ''
-        if tail and re.search(r'\bROADMAP\b|#\d+', tail) and not TO_DO.search(tail):
+        if ok(tail) or any(ok(c) for c in closing(n, head, text, closers)):  # applied there, or by a later closer
             continue
         fails.append(
             'docs/ANSWERS.md:%d %s…: names the ROADMAP item %s; after "Applied" name the ROADMAP or the PR that changed '

@@ -150,4 +150,11 @@ test('from 2026-11-19 21:00, an entry naming a ROADMAP item says the ROADMAP or 
   });
   assert.strictEqual(later.status, 1, later.out);
   assert.match(later.out, /2026-11-20 Q909\. Inventory F3.*: names the ROADMAP item "inventory F3"/);
+  // An entry closed later, append-only, by an "Applied in #N" entry naming its question passes.
+  const closed = check({
+    'docs/ANSWERS.md':
+      ledger() + '\n## 2026-11-20\n\n- **09:00, Q999.** Inventory C12: yes.\n- **Applied in #1265:** Q999: ROADMAP updated.\n',
+    'docs/ROADMAP.md': roadmap
+  });
+  assert.strictEqual(closed.status, 0, closed.out);
 });
