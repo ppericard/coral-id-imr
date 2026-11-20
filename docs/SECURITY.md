@@ -57,6 +57,15 @@ Like any job, a read-only one also holds the runner's own token for artifacts an
 save a cache entry under `main` that a later run restores (the Smokes' Playwright Chromium cache, when `main` has none
 of that key yet); those runs hold read-only tokens too.
 
+## The integrator's merge queue (`tools/queue/`)
+
+The queue scripts hold the integrator's `gh` and Git credentials, which merge PRs and, through `tools/train.py`, move
+`release` (the sheet script's source). A PR's own code must never run with them (Codex security review of #1315):
+`uptodate.sh` and `assignver.sh` run the version, core.js, decisions-index and generated-data tools from `origin/main`'s
+reviewed copy over the PR's data (`trusted_root`), like the session hooks' `tools/brief.py`; a `Code.gs` conflict
+outside the version lines stops with "needs a hand"; a finding or security-bot comment on the head nobody answered
+keeps a PR out of the train.
+
 ## Protections in the sync script (v12)
 
 - **Strict input**: every field is filtered (genus names, modes, photo ids, choices by pattern and length); text that
@@ -204,7 +213,7 @@ rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q40
   What a student is sent never holds the right answer before the reveal, nor another student's key or answers; what
   the trainer sends is filtered (photo addresses by pattern, labels as plain text). Sessions live in the script cache
   only (6 hours at most), never in a sheet tab: nothing to clean when an account goes (rule D7).
-- **The staff are a group, not a role** (v179; Pierre, 2026-11-18: "Staff" is not a role, and the toggle that granted the trainer role is not fine enough for rights management). The staff board is a player group's (ARCHITECTURE.md "Player groups": a board; the general board shows everyone, an admin's Hide keeps one player off every board), filled by the admin with the `players` right (`userGroup`, audited); the Staff group carries no right, and the groups that carry rights have no board unless the admin gives one. The trainers' rights are the Trainers group's (below): starting a live game, its `cohorts` right waiting for roles step 2. The admin's Players no longer grants or revokes `trainer` (v171's Staff toggle is gone); the Groups page gives rights (the next PR).
+- **The staff are a group, not a role** (v179; Pierre, 2026-11-18: "Staff" is not a role, and the toggle that granted the trainer role is not fine enough for rights management). The staff board is a player group's (ARCHITECTURE.md "Player groups": a board; the general board shows everyone, an admin's Hide keeps one player off every board), filled by the admin with the `players` right (`userGroup`, audited); the Staff group carries no right, and the groups that carry rights have no board unless the admin gives one. The trainers' rights are the Trainers group's (below): starting a live game, its `cohorts` right waiting for roles step 2. The admin's Players no longer grants or revokes `trainer` (v171's Staff toggle is gone); the Groups page gives rights (Players › Groups, from v204; [admin-players.md › Groups](spec/admin-players.md#groups)).
 - **The rights migration** (one-shot, rule W3): the Roles tab's `owner`, `editor` and `trainer` grants at
   `instance:imr` became the groups Managers (`players`, `settings`, `grant`), Curators (`content`) and Trainers
   (`live`, `cohorts`), each grant a membership under its code hash (a grant whose hash was no longer its account's

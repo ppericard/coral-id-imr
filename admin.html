@@ -47,8 +47,13 @@
 <script src="points.js?v=1"></script>
 <script src="taxtree.js?v=1"></script>
 <script src="reports.js?v=1"></script>
-<script src="analysis.js?v=2"></script>
-<script src="admin-demo.js?v=28"></script>
+<!-- Inert tags (type text/plain: the browser neither fetches nor runs them), so the version stamping and the name checks
+     still see them: admin.js lazyLoad inserts the real script when a page of its group is asked for (data-lazy: the groups
+     the file belongs to), in the order listed. All of them stand before admin.js, whose start may ask for one while the
+     page is still being parsed: a tag below it might not be in the page yet (tests/adminlazy.test.js). -->
+<script type="text/plain" data-lazy="analyses demo" src="analysis.js?v=2"></script>
+<script type="text/plain" data-lazy="demo" src="admin-demo.js?v=28"></script>
+<script type="text/plain" data-lazy="analyses" src="admin-analyses.js?v=1"></script>
 <script src="admin-draft.js?v=1"></script>
 <script src="admin-coraltree.js?v=1"></script>
 <script src="admin-nodephotos.js?v=1"></script>
@@ -59,7 +64,6 @@
 <script src="admin-covers.js?v=1"></script>
 <script src="admin-journey.js?v=22"></script>
 <script src="admin-visits.js?v=1"></script>
-<script src="admin-analyses.js?v=1"></script>
 <script src="admin-heatmap.js?v=1"></script>
 <script src="admin-taxa.js?v=1"></script>
 </body>

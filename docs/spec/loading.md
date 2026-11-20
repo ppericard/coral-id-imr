@@ -36,7 +36,9 @@ The tiers are listed in `index.html`: tier 1 as `<link rel=preload as=script dat
 `<link data-css=N href>`, which `need(N)` makes a stylesheet where it stands, between `app.css` and `home.css`, so the
 cascade keeps its order, and waits for (`tierCss`: loaded or failed). `loadTier(N)` in the inline
 loader (its own CSP hash) starts tiers 2..N at once and resolves once their scripts have run, in order, each inserted
-once the one before has run, each failed one tried again up to 3 times (after 1, 2, 3 s); `window.BOOT` resolves once
+once the one before has run, each failed one tried again up to 3 times (after 1, 2, 3 s); a script that still fails is never skipped (its tier's
+set-up would run without it): the tier waits, the loader logs it (`ev` `err`, "script gave up") and a fixed
+"Part of the app did not load" line offers Try again, which runs that script again and goes on from it; `window.BOOT` resolves once
 tier 1 has run, and `app.js` waits for it before the first page (`domReady`). `need(N)` in `app.js` adds each tier's
 set-up (`SETUP`), and `HAVE` is the last tier in. A failed stylesheet is tried again the same way, and so are the Lab
 prototypes (`labLoad`). `data.json` is preloaded too (`as=fetch crossorigin`, the same address as the fetch, so it

@@ -49,8 +49,9 @@ const dateText = (t, k) => {
   return isNaN(d) ? 'Invalid Date' : (DTF[k] = DTF[k] || new Intl.DateTimeFormat([], DTF_O[k])).format(d);
 };
 // Demo mode (admin.html?demo, admin-demo.js): made-up sync data, and its own browser storage ("demo:" keys), so a
-// demo never reads or writes a real admin draft, token or Undo history.
-const DEMO = !!window.ADMIN_DEMO,
+// demo never reads or writes a real admin draft, token or Undo history. admin-demo.js is fetched only with ?demo, and
+// before the page boots (lazyLoad, below), so the address says it here, not window.ADMIN_DEMO.
+const DEMO = !!window.ADMIN_DEMO || /[?&]demo\b/.test((window.location || {}).search || ''),
   SK = k => (DEMO ? 'demo:' + k : k);
 const store = {
   get(k, d) {
@@ -1556,7 +1557,9 @@ const hasPage = (S, p) =>
   (p.startsWith('players/') ||
     EVERY.includes(p) ||
     (!TABS.some(
-      t => (t[4].rank && t[4].rank !== S.rank && under(p, t[0])) || t[2].some(([h, , o]) => o.rank && o.rank !== S.rank && under(p, h))
+      t =>
+        (t[4].rank && t[4].rank !== S.rank && under(p, t[0])) ||
+        t[2].some(([h, , o]) => ((o.rank && o.rank !== S.rank) || (o.axis && !reviewBuild(S).axes.includes(o.axis))) && under(p, h))
     ) &&
       (!S.admin.pages || S.admin.pages.some(x => under(p, x)))));
 // A subject's landing page: Players › Activity (every subject has it).
@@ -1651,13 +1654,14 @@ const GROUPS = [
         'review',
         'Photo review',
         [
-          ['quality', 'Quality'],
-          ['growth-form', 'Growth form'],
-          // The fish views (renderFishReview): a subject whose unit rank is the family (hasPage).
-          ['ease', 'Ease', {rank: 'family'}],
-          ['phase-framing', 'Phase & framing', {rank: 'family'}],
-          // Every subject's (fish admin at parity: the fish side's from its answers alone, renderFishDiff), after the fish
-          // views so that the fish Photo review still opens on Ease.
+          // The review axes (renderReview): a subject has the axes its builder lists (REVIEW_BUILD axes, by the data shape it
+          // declares: hasPage reads the option axis).
+          ['quality', 'Quality', {axis: 'quality'}],
+          ['growth-form', 'Growth form', {axis: 'growth-form'}],
+          ['ease', 'Ease', {axis: 'ease'}],
+          ['phase-framing', 'Phase & framing', {axis: 'phase-framing'}],
+          // Every subject's (renderDiff: the corals' from the sheet's photo ratings, the others' from their answers alone), after
+          // the axes so that the fish Photo review still opens on Ease.
           ['by-difficulty', 'By difficulty'],
           // Proposals of the light re-judge (admin-light.js): in the switch only while one is open.
           [
@@ -1759,7 +1763,8 @@ const GROUPS = [
   ]
 ];
 // Every tab as [address, name, [[view address, view name, options], ...], group slug, options]; every page's address.
-// options.rank: the tab or view is only for a subject whose unit rank it names (core.js SUBJECTS rank).
+// options.rank: the tab or view is only for a subject whose unit rank it names (core.js SUBJECTS rank); options.axis: a review
+// view, only for a subject whose builder has that axis (REVIEW_BUILD axes).
 const TABS = GROUPS.flatMap(([g, , L]) =>
   L.map(([t, n, V, o]) => [g + '/' + t, n, V.map(([v, w, vo]) => [[g, t, v].filter(Boolean).join('/'), w, vo || {}]), g, o || {}])
 );
@@ -3545,180 +3550,6 @@ function renderRights() {
       })
   );
 }
-// ---- Fish Photo review (docs/ROADMAP.md "Admin for every subject") ----
-// Photos › Photo review on the fish side: Ease (#fish/photos/review/ease) and Phase & framing
-// (#fish/photos/review/phase-framing), over one family's photos in play (the family select, remembered; the origin chips).
-// Each photo in a row by its value now (the admin's, else the pass's, dashed); one click sets the admin's value
-// (autosort.js fishSet, fishTag: through fishOwn, one Undo step), as the fish Candidates' rows do: ease 5-1; the phase
-// words (no phase, subadult, intermediate, terminal, female, male) and the juvenile flag; the view (the tags' first
-// letter). Guesses first: in each row, the photos with no value of the admin's in the draft first (a photo put in play
-// carries the pass's values, copied as its own: autosort.js fishAdd, fishRun). The agreement line: the draft's values
-// against the pass's over every photo in play (autosort.js fishAgree); what differs is the admin's correction.
-// The phase and view rows are the subject's rubric's (tagList: SUBJECTS admin.tags phase, its position 0).
-let FREV = Object.assign({fam: '', guess: true}, store.get('reefid-admin-fishrev', {}));
-const frevRow = (name, at, opts, v, auto) =>
-  `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
-    .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
-    .join('')}</span>`;
-function renderFishReview(kind) {
-  if (!FISHC || !FISHC.plays) {
-    status();
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad(true).then(() => cur.startsWith('photos/review/') && render());
-    return;
-  }
-  status();
-  const U = FISHC.units;
-  // fish.json not loaded (or without families): say so, as Tree does.
-  if (!U.length) {
-    $v.innerHTML = '<p class="note">No families in fish.json yet.</p>';
-    return;
-  }
-  const u = U.find(x => x.id === FREV.fam) || U[0],
-    D = fuData(),
-    F = D.F,
-    sp = FISHC.species,
-    L = u.species.flatMap(s => (D.play[s] || []).map(p => ({...p, sid: s}))),
-    V = readView(F), // the values as the game reads them: the pass's where it judged anew what the auto-sort copied (shown as its guess)
-    ease = p => ((V.ease || {})[p.f] != null ? [V.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
-    jt = p => ((V.tags || {})[p.f] ? [V.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
-    phOf = p => {
-      const mine = p.f in (V.phase || {}) || p.f in (V.tags || {});
-      return [fishPhase(p, fuJ(p.f), V), !mine];
-    };
-  // The rows: by ease 5-1 (then not judged), or by phase (juvenile, intermediate, male, female, none).
-  const rows =
-    kind === 'ease'
-      ? [5, 4, 3, 2, 1, null].map(e => [
-          e == null ? 'Not judged' : `Ease ${e}${e === 5 ? ' (very easy)' : e === 1 ? ' (very hard)' : ''}`,
-          p => ease(p)[0] === e
-        ])
-      : [
-          ['Juvenile', p => phOf(p)[0] === 'juvenile'],
-          ['Intermediate', p => phOf(p)[0] === 'intermediate'],
-          ['Male', p => phOf(p)[0] === 'male'],
-          ['Female', p => phOf(p)[0] === 'female'],
-          ['No phase', p => !phOf(p)[0]]
-        ];
-  const guess = p => (kind === 'ease' ? ease(p)[1] : phOf(p)[1] && jt(p)[1]);
-  const tile = p => {
-    const [e, eAuto] = ease(p),
-      [code, tAuto] = jt(p),
-      phMine = (V.phase || {})[p.f],
-      phPass = (fuJ(p.f) || {}).ph || '',
-      ph = phMine !== undefined ? phMine : phPass,
-      s = sp[p.sid] || {};
-    const ctl =
-      kind === 'ease'
-        ? frevRow(
-            'Ease',
-            'data-fre',
-            [5, 4, 3, 2, 1].map(x => [String(x), String(x)]),
-            e != null ? String(e) : null,
-            eAuto
-          )
-        : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', tagList(ASUBJ, 'phase'), ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', tagRows(ASUBJ)[0][2], code ? code[0] : null, tAuto)}`;
-    return `<figure class="adm-tile${guess(p) ? ' adm-guess' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-frz aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>
-      <figcaption><span class="adm-src o-${origin(p)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, ASUBJ)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span></figcaption>
-      <div class="adm-acts adm-frev">${ctl}</div></figure>`;
-  };
-  const shownL = L.filter(shown),
-    body = rows
-      .map(([t, fn]) => {
-        const R = shownL.filter(fn).sort((a, b) => (FREV.guess ? guess(b) - guess(a) : 0) || (a.f < b.f ? -1 : 1));
-        return R.length
-          ? `<section class="adm-row"><h3>${esc(t)} <small>${R.length} photo${R.length === 1 ? '' : 's'}</small></h3><div class="adm-grid">${R.map(tile).join('')}</div></section>`
-          : '';
-      })
-      .join('');
-  // The agreement line: over every photo in play of every family (the admin's values against the pass's).
-  // In play for the species add names now (a photo moved with Not this and added there counts).
-  const allF = Object.keys(F.add || {}).filter(f => FISHC.byF[f] && treePhotoOn(F, f, F.add[f])),
-    pct = (a, b) => (b ? `${Math.floor((100 * a) / b)}%` : '–'), // floored: 100% only when every one agrees
-    agree =
-      kind === 'ease'
-        ? (a =>
-            `Ease: same as the judging pass on ${a.same} of ${a.both} photos in play (${pct(a.same, a.both)}), within one point ${pct(a.near, a.both)}`)(
-            fishAgree(F, allF, 'ease', fuJ)
-          )
-        : [
-            ['phase', 'phase'],
-            ['view', 'view']
-          ]
-            .map(([k, t]) =>
-              (a => `${cap1(t)}: same as the judging pass on ${a.same} of ${a.both} (${pct(a.same, a.both)})`)(fishAgree(F, allF, k, fuJ))
-            )
-            .join(' · ');
-  const cnt = o => L.filter(p => origin(p) === o).length;
-  $v.innerHTML = `<div class="adm-filter adm-sticky adm-frevbar"><select id="frevfam" aria-label="${cap1(ASUBJ.one)}">${U.map(x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`).join('')}</select>${FB.check('frevguess', FREV.guess, 'Guesses first')}${FB.origins({cnt})}</div>
-    <p class="note adm-agree">${esc(agree)}</p>${body || '<p class="note">No photo in play in this family.</p>'}`;
-  bindBar($v, {redraw: render});
-  const keep = () => {
-    store.set('reefid-admin-fishrev', FREV);
-    render();
-  };
-  $('frevfam').onchange = e => ((FREV.fam = e.target.value), keep());
-  $('frevguess').onchange = e => ((FREV.guess = e.target.checked), keep());
-  const fx = fn => {
-    DRAFT[TK] = fn(DRAFT[TK] || {});
-    saveDraft();
-    render();
-  };
-  $v.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
-    const f = tl.dataset.f,
-      p = L.find(x => x.f === f),
-      base = () => viewTags(f, (fuJ(f) || {}).jt);
-    tl.querySelector('[data-frz]').onclick = () =>
-      zoomSet(
-        L.map(fuP),
-        L.findIndex(x => x.f === f),
-        q => lbCap(fuName(q.sid), q, (sp[q.sid] || {}).common || '')
-      );
-    tl.querySelectorAll('[data-fre]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'ease', +b.dataset.fre))));
-    // A phase word, No phase included, takes the juvenile flag off in the same step (the word wins over the flag otherwise,
-    // and No phase would leave the photo juvenile).
-    tl.querySelectorAll('[data-frp]').forEach(
-      b =>
-        (b.onclick = () =>
-          fx(G => {
-            const N = fishSet(G, f, 'phase', b.dataset.frp);
-            return base().slice(7).includes('j') ? fishSet(N, f, 'tags', fishTag(base(), 'j')) : N;
-          }))
-    );
-    // The view only: taking the tags as the admin's must not drop a phase the photo shows through its source's
-    // annotation (p.st) or the auto-sort's tags: it is written as the admin's too, in the same step.
-    tl.querySelectorAll('[data-frv]').forEach(
-      b =>
-        (b.onclick = () =>
-          fx(G => {
-            const ph0 = fishPhase(p, fuJ(f), readView(G));
-            let N = fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv));
-            if (fishPhase(p, fuJ(f), readView(N)) === ph0) return N;
-            if (ph0 === 'juvenile') return fishSet(N, f, 'tags', fishTag(N.tags[f], 'j'));
-            return fishSet(N, f, 'phase', ph0);
-          }))
-    );
-    // Juvenile: on and off as the photo shows now (fishPhase: the admin's values, the pass's, else the source's annotation
-    // p.st), so a juvenile by its source alone is taken off in one click. On: the j flag (as the fish Candidates set it),
-    // and a phase word that would win over it cleared. Off: the j flag taken off and No phase written as the admin's,
-    // which also stops the source's annotation from showing through.
-    tl.querySelectorAll('[data-frj]').forEach(
-      b =>
-        (b.onclick = () =>
-          fx(G => {
-            const W = readView(G), // as the review shows it; the writes below go against G
-              ph = f in (W.phase || {}) ? W.phase[f] : (fuJ(f) || {}).ph;
-            if (fishPhase(p, fuJ(f), W) !== 'juvenile') {
-              const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
-              return ph ? fishSet(N, f, 'phase', '') : N;
-            }
-            if (base().slice(7).includes('j')) G = fishSet(G, f, 'tags', fishTag(base(), 'j'));
-            return fishSet(G, f, 'phase', '');
-          }))
-    );
-    if (!p) tl.remove();
-  });
-}
 // ---- Fish Look-alikes (docs/ROADMAP.md "Admin for every subject") ----
 // Photos › Look-alikes on the fish side (#fish/photos/look-alikes): one row per look-alike pair of families in force
 // (admin-content.js montPairs: autosort.js fishPairs over fish.json with the draft's pairs laid over it, the content
@@ -3824,6 +3655,70 @@ function renderFishMont() {
       })
   );
 }
+// Scripts only some pages need are fetched when a page asks, not by every visit (the admin opens on Players › Activity,
+// which needs none of them): admin.html lists them as inert tags (type text/plain, data-lazy="group group"), kept there so
+// the version stamping and the name checks still see them. lazyLoad(group) inserts the real tag of each, in the order
+// listed, one after the other: a file is inserted only once the one before it has loaded (a file whose partner failed would
+// run and throw at its top level, and the browser would still call it loaded: async = false keeps the order, not that),
+// once per file; a file that failed to load is asked for again by the next call, and the file after it is never run. Groups: analyses
+// (analysis.js, admin-analyses.js: the Analyses pages), demo (analysis.js, admin-demo.js: the boot of ?demo waits for them,
+// as the demo patches fetch before the first read). admin-heatmap.js stays a plain tag: it puts its heatLab, heatUp… in the
+// global scope, which admin-journey.js names on the first Journey. The file's src is as admin.html has it, so the Analyses
+// worker finds analysis.js's stamped address (script[src^="analysis.js"]).
+const LAZY = {};
+function lazyLoad(group) {
+  const tags = [...document.querySelectorAll('script[type="text/plain"][data-lazy]')].filter(t =>
+    t.dataset.lazy.split(' ').includes(group)
+  );
+  return tags.reduce(
+    (prev, t) =>
+      prev.then(() => {
+        const src = t.getAttribute('src');
+        return (LAZY[src] =
+          LAZY[src] ||
+          new Promise((ok, no) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => ok();
+            s.onerror = () => {
+              delete LAZY[src];
+              s.remove();
+              no(new Error(`${src} not loaded`));
+            };
+            document.head.appendChild(s);
+          }));
+      }),
+    Promise.resolve()
+  );
+}
+// The page `page` (its address) waits for a group: "Loading…" meanwhile, one request however many times render() runs. The
+// Analyses script draws the page on screen the moment it loads (its last line); when nothing has drawn over the note by the
+// time the whole group is in (a file asked for again after a failure), the page is drawn from here. A group that could not
+// be fetched says so, if the page is still on screen; opening it again (its address, or ↻) asks again.
+const LAZY_WAIT = new Map(), // group -> the page (address) that asked last: the one that answers when the group is in or failed
+  LOADING = '<p class="note">Loading…</p>',
+  // The Analyses pages need both files: admin-analyses.js alone (analysis.js failed) draws nothing.
+  analysesIn = () => typeof renderAnalyses === 'function' && typeof ANALYSIS === 'object';
+function lazyPage(group, page) {
+  $v.innerHTML = LOADING;
+  // Another view of the group asked while the files are on their way: it is the page that waits now, and the one that
+  // answers (the address is read when the group is in or failed, not the first asker's).
+  if (LAZY_WAIT.has(group)) return void LAZY_WAIT.set(group, page);
+  LAZY_WAIT.set(group, page);
+  lazyLoad(group).then(
+    () => {
+      const now = LAZY_WAIT.get(group);
+      LAZY_WAIT.delete(group);
+      if (cur === now && $v.innerHTML === LOADING) render();
+    },
+    e => {
+      const now = LAZY_WAIT.get(group);
+      LAZY_WAIT.delete(group);
+      console.warn(e.message);
+      if (cur === now) $v.innerHTML = '<p class="note">This page could not be loaded: check the connection and open it again.</p>';
+    }
+  );
+}
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
@@ -3849,10 +3744,9 @@ function render() {
     $v.innerHTML = `<p class="note">Not for ${esc(ASUBJ.name.toLowerCase())} yet.</p>`;
     return;
   }
-  if (cur === 'photos/review/ease' || cur === 'photos/review/phase-framing')
-    return renderFishReview(cur === 'photos/review/ease' ? 'ease' : 'phase');
-  if (cur === 'photos/review/quality') return renderQuality();
-  if (cur === 'photos/review/growth-form') return renderForm();
+  // Photos › Photo review: one page for every subject, its axes (Quality, Growth form; Ease, Phase & framing) and By
+  // difficulty from the subject's builder (REVIEW_BUILD).
+  if (reviewAxis(cur)) return renderReview(ASUBJ, reviewAxis(cur));
   if (cur === 'inbox/todo/all' || cur === 'inbox/todo/reports') return renderTriage();
   if (cur === 'inbox/todo/errors') return renderEvents();
   if (cur === 'inbox/todo/alerts') return renderAlerts();
@@ -3873,10 +3767,16 @@ function render() {
   // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
   if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
   if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
-  if (anPage(cur)) return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
+  // The Analyses group (admin-analyses.js, with analysis.js): fetched when the first of its pages is asked for; the script
+  // draws the page it finds on screen once it is in (its last line).
+  if (anPage(cur)) {
+    if (analysesIn()) return renderAnalyses();
+    status();
+    return lazyPage('analyses', cur);
+  }
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
-  if (cur === 'photos/review/by-difficulty') return ASUBJ.sheets ? renderFishDiff() : renderDiff();
+  if (cur === 'photos/review/by-difficulty') return renderDiff(ASUBJ);
   if (cur === 'photos/stats/overview') return renderPstats();
   // Opened from its address, the page can be drawn before admin-taxa.js is in (as a journey, above).
   if (cur === 'photos/stats/taxa')
@@ -4178,73 +4078,6 @@ function allPhotos() {
   });
   return L;
 }
-const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('reefid-admin-qfilter', {}));
-function renderQuality() {
-  status();
-  const names = Object.keys(DATA.gen),
-    vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
-  const all = allPhotos().filter(
-    p => shown(p) && (QF.view === 'all' || p.view === QF.view) && (!QF.genus || p.genus === QF.genus) && (!QF.todo || !qSet(p.f))
-  );
-  const card =
-    p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
-    <div class="adm-acts">${qSeg(p)}</div></figure>`;
-  const sec = ([q, t]) => {
-    const L = all.filter(p => qOf(p.f) === q);
-    return `<section class="adm-row adm-qrow"><h3><span class="adm-q q${q}">${t}</span> <small>${L.length} photo${L.length === 1 ? '' : 's'}${q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : ''}</small></h3>
-      <div class="adm-grid adm-qgrid" data-qdrop="${q}">${L.map(card).join('')}</div></section>`;
-  };
-  $v.innerHTML = `<section class="adm-quality">
-    ${FB.origins()}
-    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'qv', cur: QF.view, items: FB.viewItems()})}
-      ${FB.unit({id: 'qgen', cur: QF.genus, names})}
-      ${FB.check('qtodo', QF.todo, 'Not checked yet')}</div>
-    ${QUAL.map(sec).join('')}</section>`;
-  bindBar($v, {redraw: renderQuality, f: QF, k: 'reefid-admin-qfilter', view: 'qv', unit: 'qgen', checks: {qtodo: 'todo'}});
-  $v.querySelectorAll('[data-act="zoom"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        zoom(t.dataset.g, t.dataset.f);
-      })
-  );
-  $v.querySelectorAll('[data-act="exclude"]').forEach(
-    b =>
-      (b.onclick = e => {
-        e.stopPropagation();
-        const t = b.closest('[data-f]');
-        ACT.exclude(t.dataset.g, t.dataset.f);
-      })
-  );
-  bindQ();
-  // Select a photo (click it or Tab to it) and press 1, 2 or 3.
-  tileKeys('photos/review/quality', (t, k) => {
-    const q = {'1': 1, '2': 2, '3': 3}[k];
-    if (q) rateTile(t, q);
-    return !!q;
-  });
-  // Drag a photo onto another level.
-  const clearQ = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
-  pointerDrag(
-    $v.querySelectorAll('.adm-qt'),
-    el => {
-      clearQ();
-      const g = el && el.closest('[data-qdrop]');
-      if (g) g.classList.add('drop-row');
-    },
-    (t, el) => {
-      clearQ();
-      const g = el && el.closest('[data-qdrop]');
-      if (g) {
-        rateTile(t, Number(g.dataset.qdrop));
-        g.prepend(t);
-      }
-    },
-    clearQ
-  );
-}
 
 // everyone: begin
 // Thresholds of Health and Stops (statsHealth), here because their help texts quote them.
@@ -4417,11 +4250,11 @@ const HELP = {
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   // A getter: GROUPADM_SHEET is declared further down this file.
   get groups() {
-    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app (the general leaderboard shows everyone; to keep someone off every leaderboard, Players › List, Hide); <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it. No group gives a right: roles are apart.</p>`;
+    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app (the general leaderboard shows everyone; to keep someone off every leaderboard, Players › List, Hide); <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it.</p><p><b>Rights</b> (sheet v${RIGHTSADM_SHEET}): a group can carry rights, which its members hold: Manage players, Settings, Give rights, Content, Host live games, Cohorts. Its <b>Rights</b> row shows them, <b>×</b> takes one away, <b>+ Add a right</b> gives one (changing rights needs Give rights). A group that carries rights has a key beside its name and comes first; it takes players one by one, each asked first ("Give X: Host live games?"), with no Add all or Remove all. A group that has members and no rights takes none: make a new group, give it its rights, then add players one by one. <b>rights off: the code changed</b> beside a member: their code changed since they were added, so they hold none of its rights until they are added again. <b>Saved in part</b>: the change is saved but its Audit record failed; <b>Try again</b> sends it again and finishes it. <b>Admins (outside the groups)</b>: the admin list, read-only here.</p>`;
   },
   // A getter: GROUPADM_SHEET is declared further down this file.
   get users() {
-    return `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet v115): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Groups</b> (sheet v${GROUPADM_SHEET}; a player is in any number of them): their groups as chips in their bar, <b>×</b> takes them out of one, <b>+ Add to a group</b> puts them in one (one click each, no confirmation); <b>Groups</b> lists them. Every group, its settings and its members are on <b>Players › Groups</b>. No group gives a right: roles are apart. A merge joins the merged name's groups to the kept one's; an archive or a delete takes the player out of every group. Before that sheet version: the subject's <b>Beta group</b> (Add / Remove, Add all, Remove all) and the <b>Cohort</b> select, as before.</p>`;
+    return `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them), and each subject's Progress and Learned as on their Journey (the fish's: the fish % their app shows, read from their saved copy when the row opens). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet v115): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Groups</b> (sheet v${GROUPADM_SHEET}; a player is in any number of them): their groups as chips in their bar, <b>×</b> takes them out of one, <b>+ Add to a group</b> puts them in one (one click each, no confirmation); <b>Groups</b> lists them. Every group, its settings and its members are on <b>Players › Groups</b>. From sheet v${RIGHTSADM_SHEET}, a group that carries rights has a key on its chip (asked first when you add them to it), and <b>Rights:</b> sums up the rights the player holds. A merge joins the merged name's groups to the kept one's; an archive or a delete takes the player out of every group. From sheet v${RIGHTSADM_SHEET} a merge drops the merged name's groups that carry rights and its place on the admin list, never moving them: <b>Merge into</b> lists first what changes to the groups and the rights. Before that sheet version: the subject's <b>Beta group</b> (Add / Remove, Add all, Remove all) and the <b>Cohort</b> select, as before.</p>`;
   },
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
@@ -4528,7 +4361,7 @@ function toggleHelp() {
             'analyses/difficulty/heatmap': ASUBJ.sheets ? 'fishheat' : 'statsheat',
             'analyses/learning/answer-log': 'statslog',
             'analyses/learning/stops': 'statsstop',
-            'photos/review/by-difficulty': ASUBJ.sheets ? 'fishdiff' : 'diff'
+            'photos/review/by-difficulty': reviewBuild(ASUBJ).diff.help
           }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
@@ -4539,7 +4372,7 @@ function toggleHelp() {
   let tab = store.get('reefid-admin-started', false) ? 'page' : 'start';
   const draw = () => {
     if (tab === 'start') store.set('reefid-admin-started', true);
-    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + HELP[m] + (m === 'ctree' ? HELP.genus : '') + (REC_PAGES.has(m) ? REC_HELP : '')}`;
+    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + (HELP[m] || '') + (m === 'ctree' ? HELP.genus : '') + (REC_PAGES.has(m) ? REC_HELP : '')}`;
     h.querySelector('.adm-link').onclick = () => h.remove();
     h.querySelectorAll('[data-ht]').forEach(
       b =>
@@ -4557,11 +4390,10 @@ function toggleHelp() {
 /* ---------- Growth form ---------- */
 // One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
-const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false, gfirst: false}, store.get('reefid-admin-ffilter', {}));
 // Agreement of the automatic growth form with the admin's own (forms checked by hand show whether the automatic
 // detection is good, and help improve it). Nothing new is recorded: the admin's form (the draft's curation gf)
 // against the dashed guess (forms.json gf, or the judging agent's candidate pass for a candidate), form letters only (✿
-// apart), over the photos the Show, View and genus filters leave (FSCOPE, set by renderForm). A click that keeps the
+// apart), over the photos the Show, View and genus filters leave (FSCOPE, set by the growth-form axis of REVIEW_BUILD). A click that keeps the
 // dashed form counts as agreement, one that picks another as disagreement. "Unsure" = guesses to double-check (gunsure)
 // still on the guess.
 let FSCOPE = [],
@@ -4676,126 +4508,560 @@ function bindF(scope) {
       })
   );
 }
-function renderForm() {
+// review build: begin
+// Photos › Photo review, one frame for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 6, Dup-4 and Dup-5;
+// docs/spec/admin-photos.md). renderReview(S, id) draws a page that rates photos in bands, an axis of the subject's builder
+// (Quality and Growth form, Ease and Phase & framing): the loading gate, the sticky bar, the bands with their tiles, the photo's
+// zoom and ×, the drag to another band and the keys. renderDiff(S) draws By difficulty: the Hardest | Easiest switch, the
+// minimum of answers, the tiles, "No answers yet". What differs between subjects is a builder in REVIEW_BUILD, picked by the
+// data shape the subject declares (SUBJECTS flat: treeShape, as TREE_BUILD, CAND_BUILD and reg(S) are): `flat` (the corals:
+// every photo of every genus rated Quality 1-3 and Growth form, the Coral Finder's old letters) and `tree` (the tree subjects:
+// the photos in play of a family, rated Ease 1-5 and Phase & framing from the judging rubric). A builder's members, the same
+// in both:
+//   axes        the review views it has, by the last segment of their address (GROUPS' option axis): hasPage gives a subject the
+//               views of its shape and no other
+//   ready()     its data are read; load(): a promise of them (the page draws again when it comes)
+//   page(S, id) one render's page P of the axis id: {msg} (a note instead of the page) or {cls: {band, grid} (the classes the
+//               bands and their grids take), top (before the bar), bar, note (after it), empty (when no band has a photo),
+//               bands: [{title, note, tool, drop, items}] (the h3's title, the words after the count, a button after it, the
+//               value a photo dropped on it takes, its photos), tile(row): {cls, attrs, photo, tools, cap, acts, actsCls},
+//               zoom(row), exclude(row) (when the tile has a ×), bind(scope) (the bar's and the tiles' controls), keys(tile, key)
+//               and drop(tile, value) (when the axis has them)}
+//   diff        By difficulty: {help (its help page), gate(S, again): null when its data are in, else {msg} or {} (it asked for
+//               them, and calls again when they come), page(S, again): {cls, grid, rows (in order), max, tile(row), bind(scope)}}
+// Never a test on which subject: a builder knows only its data shape. The growth-form axis is the corals' named hook (rule C4:
+// a growth form is tagged and taught, never a grouping of genera): its agreement block, pins, Validate and To classify rows
+// are the flat builder's; the quality scale (Good, Fair, Poor) and the ease scale (1-5) stay two scales (study §6 c).
+const REVIEW_BUILD = {
+    flat: (() => {
+      // The two pages' filters, one each (browser keys reefid-admin-qfilter and reefid-admin-ffilter, as before).
+      const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('reefid-admin-qfilter', {})),
+        FF = Object.assign({view: 'all', genus: '', todo: false, pol: false, gfirst: false}, store.get('reefid-admin-ffilter', {})),
+        vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]),
+        // The photos the View and genus filters leave, over every photo of every genus (approved, hidden, given to another genus
+        // and candidates).
+        within = f => allPhotos().filter(p => shown(p) && (f.view === 'all' || p.view === f.view) && (!f.genus || p.genus === f.genus)),
+        bar = (f, ks, extra = '') => `${FB.origins()}
+    <div class="adm-filter"><span class="label">View</span>${FB.views({key: ks.view, cur: f.view, items: FB.viewItems()})}
+      ${FB.unit({id: ks.unit, cur: f.genus, names: Object.keys(DATA.gen)})}
+      ${extra}</div>`,
+        photo = p => `<img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false">`,
+        // The genus, the view, the source and whether it is hidden: the caption's start on both pages.
+        capOf = p =>
+          `<a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}`,
+        tileOf = (p, attrs, cap, acts) => ({
+          cls: ` adm-qt${p.hid ? ' is-hidden' : ''}`,
+          attrs: ` data-f="${esc(p.f)}" data-g="${esc(p.genus)}"${attrs} data-drag tabindex="0"`,
+          photo: photo(p),
+          tools: GRIP + XBTN,
+          cap,
+          acts,
+          actsCls: ''
+        }),
+        common = {cls: {band: ' adm-qrow', grid: ' adm-qgrid'}, zoom: p => zoom(p.genus, p.f), exclude: p => ACT.exclude(p.genus, p.f)};
+      // Quality: Good, Fair, Poor (QUAL), one band each, keys 1 2 3.
+      const quality = () => {
+        const all = within(QF).filter(p => !QF.todo || !qSet(p.f));
+        return {
+          ...common,
+          bar: bar(QF, {view: 'qv', unit: 'qgen'}, FB.check('qtodo', QF.todo, 'Not checked yet')),
+          bands: QUAL.map(([q, t]) => ({
+            title: `<span class="adm-q q${q}">${t}</span>`,
+            note: q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : '',
+            drop: q,
+            items: all.filter(p => qOf(p.f) === q)
+          })),
+          tile: p =>
+            tileOf(
+              p,
+              ` data-q="${qOf(p.f)}"`,
+              `${capOf(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}`,
+              qSeg(p)
+            ),
+          bind() {
+            bindBar($v, {redraw: render, f: QF, k: 'reefid-admin-qfilter', view: 'qv', unit: 'qgen', checks: {qtodo: 'todo'}});
+            bindQ();
+          },
+          // Select a photo (click it or Tab to it) and press 1, 2 or 3.
+          keys(t, k) {
+            const q = {'1': 1, '2': 2, '3': 3}[k];
+            if (q) rateTile(t, q);
+            return !!q;
+          },
+          drop: (t, q) => rateTile(t, Number(q))
+        };
+      };
+      // Growth form: one row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder
+      // letter). A letter on a photo (one form per photo; ∅ = form not visible), dragged to another row, or hovered and typed
+      // (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
+      const form = () => {
+        FSCOPE = within(FF);
+        const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
+        // Still to classify: grouped by the old Coral Finder letter, as a hint.
+        const rows = [
+          ...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]),
+          ['x', 'Form not visible', p => fOf(p.f) === 'x'],
+          ...[...'BMSPFLC', ''].map(c => [
+            '',
+            `To classify${c ? ` · was Coral Finder book ${cfName(c)}` : ''}`,
+            p => !fOf(p.f) && (LEGACY[p.f] || '') === c
+          ])
+        ];
+        return {
+          ...common,
+          top: `<details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>`,
+          bar: bar(
+            FF,
+            {view: 'fv', unit: 'fgen'},
+            `${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}`
+          ),
+          bands: rows
+            .map(([id, t, test]) => {
+              const L = all.filter(test);
+              if (FF.gfirst) L.sort((a, b) => fRank(a.f) - fRank(b.f));
+              if (!L.length && id === '') return null;
+              const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
+              return {
+                title: `${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)}`,
+                note: id === 'x' ? ' · never used on the growth-form tiles' : '',
+                tool: todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : '',
+                drop: id || undefined,
+                items: L
+              };
+            })
+            .filter(Boolean),
+          tile: p => tileOf(p, '', capOf(p), `${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}`),
+          bind() {
+            const fag = $('fagree');
+            agreeFill(fag);
+            fag.ontoggle = () => (FAG_OPEN = fag.open);
+            bindBar($v, {
+              redraw: render,
+              f: FF,
+              k: 'reefid-admin-ffilter',
+              view: 'fv',
+              unit: 'fgen',
+              checks: {ftodo: 'todo', fpol: 'pol', fgfirst: 'gfirst'}
+            });
+            $v.querySelectorAll('.adm-pinw').forEach(
+              w =>
+                (w.onclick = e => {
+                  const b = e.target.closest('[data-pin]');
+                  if (!b) return;
+                  e.stopPropagation();
+                  togglePin(b.closest('[data-f]').dataset.f, b.dataset.pin);
+                  render();
+                })
+            );
+            // Validate a whole row: every first guess still shown in it (with the filters on) becomes the admin's own choice, in one undo step.
+            $v.querySelectorAll('[data-fok]').forEach(
+              b =>
+                (b.onclick = () => {
+                  const c = b.dataset.fok,
+                    todo = all.filter(p => fOf(p.f) === c && !fSet(p.f));
+                  if (!confirm(`Validate ${todo.length} growth form${todo.length === 1 ? '' : 's'} as ${FABBR[c] || c}?`)) return;
+                  DRAFT.gf = {...(DRAFT.gf || {})};
+                  todo.forEach(p => {
+                    const m = fP(mineF(p.f)),
+                      pol = m === null ? fP(AUTOF[p.f]) === true : m;
+                    DRAFT.gf[p.f] = c + (m === false ? 'n' : pol ? 'p' : '');
+                  });
+                  saveDraft();
+                  render();
+                })
+            );
+            bindF($v);
+          },
+          keys(t, key) {
+            const k = key.toUpperCase();
+            if (k === 'P') {
+              polTile(t);
+              return true;
+            }
+            const c = k === '0' || k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null;
+            if (c) formTile(t, toggleF(t.dataset.f, c));
+            return !!c;
+          },
+          // Onto another row: it gets that form (not onto the To classify rows: they carry no drop value).
+          drop: (t, c) => formTile(t, c)
+        };
+      };
+      return {
+        axes: ['quality', 'growth-form'],
+        ready: () => true,
+        load: () => Promise.resolve(),
+        page: (S, id) => (id === 'quality' ? quality() : form()),
+        diff: {
+          help: 'diff',
+          // The sheet's photo ratings (?stats=1, the replayed subject's: loadStats) and the answers behind them.
+          gate(S, again) {
+            if (STATS && ANS) return null;
+            loadStats().then(again);
+            return {};
+          },
+          page() {
+            const R = photoStats(),
+              rows = allPhotos()
+                .filter(p => R[p.f] && nAns(R[p.f]) >= SF.min)
+                .sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (R[a.f][0] - R[b.f][0]));
+            return {
+              cls: '',
+              grid: '',
+              rows,
+              max: Infinity,
+              tile: p => {
+                const [d, n, r] = R[p.f];
+                return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${photo(p)}</button>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <div class="adm-acts">${qSeg(p)}</div></figure>`;
+              },
+              bind(scope) {
+                scope.querySelectorAll('[data-act="zoom"]').forEach(
+                  b =>
+                    (b.onclick = () => {
+                      const t = b.closest('[data-f]');
+                      zoom(t.dataset.g, t.dataset.f);
+                    })
+                );
+                bindQ();
+              }
+            };
+          }
+        }
+      };
+    })(),
+    // The tree subjects (fish, sea slugs): one family's photos in play (the family select, remembered; the origin chips), each in
+    // a band by its value now (the admin's, else the pass's, dashed). One click sets the admin's value (autosort.js fishSet,
+    // fishTag: through fishOwn, one Undo step): ease 5-1; the phase words (no phase, subadult, intermediate, terminal, female,
+    // male) and the juvenile flag; the view (the tags' first letter). Guesses first: in each band, the photos with no value of the
+    // admin's in the draft first (a photo put in play carries the pass's values, copied as its own: autosort.js fishAdd, fishRun).
+    // The agreement line: the draft's values against the pass's over every photo in play (autosort.js fishAgree); what differs is
+    // the admin's correction. The phase and view rows are the subject's rubric's (tagList: SUBJECTS admin.tags phase, position 0).
+    tree: (() => {
+      const FREV = Object.assign({fam: '', guess: true}, store.get('reefid-admin-fishrev', {})),
+        // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's.
+        segRow = (name, at, opts, v, auto) =>
+          `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
+            .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
+            .join('')}</span>`;
+      return {
+        axes: ['ease', 'phase-framing'],
+        ready: () => !!(FISHC && FISHC.plays),
+        load: () => fishLoad(true),
+        page(S, id) {
+          const kind = id === 'ease' ? 'ease' : 'phase',
+            U = FISHC.units;
+          // fish.json not loaded (or without families): say so, as Tree does.
+          if (!U.length) return {msg: '<p class="note">No families in fish.json yet.</p>'};
+          const u = U.find(x => x.id === FREV.fam) || U[0],
+            D = fuData(),
+            F = D.F,
+            sp = FISHC.species,
+            L = u.species.flatMap(s => (D.play[s] || []).map(p => ({...p, sid: s}))),
+            V = readView(F), // the values as the game reads them: the pass's where it judged anew what the auto-sort copied (shown as its guess)
+            ease = p => ((V.ease || {})[p.f] != null ? [V.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
+            jt = p => ((V.tags || {})[p.f] ? [V.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
+            phOf = p => {
+              const mine = p.f in (V.phase || {}) || p.f in (V.tags || {});
+              return [fishPhase(p, fuJ(p.f), V), !mine];
+            };
+          // The bands: by ease 5-1 (then not judged), or by phase (juvenile, intermediate, male, female, none).
+          const rows =
+            kind === 'ease'
+              ? [5, 4, 3, 2, 1, null].map(e => [
+                  e == null ? 'Not judged' : `Ease ${e}${e === 5 ? ' (very easy)' : e === 1 ? ' (very hard)' : ''}`,
+                  p => ease(p)[0] === e
+                ])
+              : [
+                  ['Juvenile', p => phOf(p)[0] === 'juvenile'],
+                  ['Intermediate', p => phOf(p)[0] === 'intermediate'],
+                  ['Male', p => phOf(p)[0] === 'male'],
+                  ['Female', p => phOf(p)[0] === 'female'],
+                  ['No phase', p => !phOf(p)[0]]
+                ];
+          const guess = p => (kind === 'ease' ? ease(p)[1] : phOf(p)[1] && jt(p)[1]),
+            shownL = L.filter(shown),
+            bands = rows
+              .map(([t, fn]) => ({
+                title: esc(t),
+                items: shownL.filter(fn).sort((a, b) => (FREV.guess ? guess(b) - guess(a) : 0) || (a.f < b.f ? -1 : 1))
+              }))
+              .filter(b => b.items.length);
+          // The agreement line: over every photo in play of every family (the admin's values against the pass's).
+          // In play for the species add names now (a photo moved with Not this and added there counts).
+          const allF = Object.keys(F.add || {}).filter(f => FISHC.byF[f] && treePhotoOn(F, f, F.add[f])),
+            pc = (a, b) => (b ? `${Math.floor((100 * a) / b)}%` : '–'), // floored: 100% only when every one agrees
+            agree =
+              kind === 'ease'
+                ? (a =>
+                    `Ease: same as the judging pass on ${a.same} of ${a.both} photos in play (${pc(a.same, a.both)}), within one point ${pc(a.near, a.both)}`)(
+                    fishAgree(F, allF, 'ease', fuJ)
+                  )
+                : [
+                    ['phase', 'phase'],
+                    ['view', 'view']
+                  ]
+                    .map(([k, t]) =>
+                      (a => `${cap1(t)}: same as the judging pass on ${a.same} of ${a.both} (${pc(a.same, a.both)})`)(
+                        fishAgree(F, allF, k, fuJ)
+                      )
+                    )
+                    .join(' · ');
+          const cnt = o => L.filter(p => origin(p) === o).length,
+            keep = () => {
+              store.set('reefid-admin-fishrev', FREV);
+              render();
+            },
+            fx = fn => {
+              DRAFT[TK] = fn(DRAFT[TK] || {});
+              saveDraft();
+              render();
+            };
+          return {
+            cls: {band: '', grid: ''},
+            bar: `<div class="adm-filter adm-sticky adm-frevbar"><select id="frevfam" aria-label="${cap1(S.one)}">${U.map(x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`).join('')}</select>${FB.check('frevguess', FREV.guess, 'Guesses first')}${FB.origins({cnt})}</div>`,
+            note: `<p class="note adm-agree">${esc(agree)}</p>`,
+            empty: '<p class="note">No photo in play in this family.</p>',
+            bands,
+            tile: p => {
+              const [e, eAuto] = ease(p),
+                [code, tAuto] = jt(p),
+                phMine = (V.phase || {})[p.f],
+                phPass = (fuJ(p.f) || {}).ph || '',
+                ph = phMine !== undefined ? phMine : phPass,
+                s = sp[p.sid] || {};
+              const ctl =
+                kind === 'ease'
+                  ? segRow(
+                      'Ease',
+                      'data-fre',
+                      [5, 4, 3, 2, 1].map(x => [String(x), String(x)]),
+                      e != null ? String(e) : null,
+                      eAuto
+                    )
+                  : `${segRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? segRow('Phase', 'data-frp', tagList(S, 'phase'), ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${segRow('View', 'data-frv', tagRows(S)[0][2], code ? code[0] : null, tAuto)}`;
+              return {
+                cls: guess(p) ? ' adm-guess' : '',
+                attrs: ` data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"`,
+                photo: p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : '',
+                tools: '',
+                cap: `<span class="adm-src o-${origin(p)}">${esc((S.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, S)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span>`,
+                acts: ctl,
+                actsCls: ' adm-frev'
+              };
+            },
+            zoom: p =>
+              zoomSet(
+                L.map(fuP),
+                L.findIndex(x => x.f === p.f),
+                q => lbCap(fuName(q.sid), q, (sp[q.sid] || {}).common || '')
+              ),
+            bind(scope) {
+              bindBar(scope, {redraw: render});
+              $('frevfam').onchange = e => ((FREV.fam = e.target.value), keep());
+              $('frevguess').onchange = e => ((FREV.guess = e.target.checked), keep());
+              scope.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
+                const f = tl.dataset.f,
+                  p = L.find(x => x.f === f),
+                  base = () => viewTags(f, (fuJ(f) || {}).jt);
+                tl.querySelectorAll('[data-fre]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'ease', +b.dataset.fre))));
+                // A phase word, No phase included, takes the juvenile flag off in the same step (the word wins over the flag otherwise,
+                // and No phase would leave the photo juvenile).
+                tl.querySelectorAll('[data-frp]').forEach(
+                  b =>
+                    (b.onclick = () =>
+                      fx(G => {
+                        const N = fishSet(G, f, 'phase', b.dataset.frp);
+                        return base().slice(7).includes('j') ? fishSet(N, f, 'tags', fishTag(base(), 'j')) : N;
+                      }))
+                );
+                // The view only: taking the tags as the admin's must not drop a phase the photo shows through its source's
+                // annotation (p.st) or the auto-sort's tags: it is written as the admin's too, in the same step.
+                tl.querySelectorAll('[data-frv]').forEach(
+                  b =>
+                    (b.onclick = () =>
+                      fx(G => {
+                        const ph0 = fishPhase(p, fuJ(f), readView(G));
+                        let N = fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv));
+                        if (fishPhase(p, fuJ(f), readView(N)) === ph0) return N;
+                        if (ph0 === 'juvenile') return fishSet(N, f, 'tags', fishTag(N.tags[f], 'j'));
+                        return fishSet(N, f, 'phase', ph0);
+                      }))
+                );
+                // Juvenile: on and off as the photo shows now (fishPhase: the admin's values, the pass's, else the source's annotation
+                // p.st), so a juvenile by its source alone is taken off in one click. On: the j flag (as the fish Candidates set it),
+                // and a phase word that would win over it cleared. Off: the j flag taken off and No phase written as the admin's,
+                // which also stops the source's annotation from showing through.
+                tl.querySelectorAll('[data-frj]').forEach(
+                  b =>
+                    (b.onclick = () =>
+                      fx(G => {
+                        const W = readView(G), // as the review shows it; the writes below go against G
+                          ph = f in (W.phase || {}) ? W.phase[f] : (fuJ(f) || {}).ph;
+                        if (fishPhase(p, fuJ(f), W) !== 'juvenile') {
+                          const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
+                          return ph ? fishSet(N, f, 'phase', '') : N;
+                        }
+                        if (base().slice(7).includes('j')) G = fishSet(G, f, 'tags', fishTag(base(), 'j'));
+                        return fishSet(G, f, 'phase', '');
+                      }))
+                );
+              });
+            }
+          };
+        },
+        diff: {
+          help: 'fishdiff',
+          // The photos ranked by their answers alone, as its Health counts them (photoAnswers over rowsOf: every answer that
+          // showed the photo, family and genus questions alike), the lowest share right first (Hardest) or the highest
+          // (Easiest), more answers first on a tie; at least SF.min answers (diffByAnswers). The sheet's photo ratings (stats_)
+          // are the replayed subject's only. Each photo with every tool of its family's page (fishRepTile: Tags with its ease,
+          // Remove, Not this, ×...), its numbers in the caption as on Health; a photo already out (excluded, Not this, removed)
+          // left out, as Health does, so acting on one brings the next in. The fish data (fishAdmin) and the family pages' data
+          // for the tiles' tools (fishLoad) are read behind the page.
+          gate(S, again) {
+            if (!ANS) {
+              loadStats().then(again);
+              return {};
+            }
+            if (ANS.old)
+              return {
+                msg: `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`}</p>`
+              };
+            if (!FISHA) {
+              fishAdmin().then(() => FISHA && again());
+              return {};
+            }
+            return null;
+          },
+          page(S, again) {
+            const FD = DRAFT[TK] || {},
+              done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
+              PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
+              rows = diffByAnswers(PH, SF.min, DIFF_ORDER);
+            if (rows.length && !FISHC) fishLoad().then(again);
+            const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
+              num = o => {
+                const m = missedBy(PH[o.f]);
+                return `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>`;
+              };
+            return {
+              cls: ' adm-fdiff',
+              grid: ' adm-fdiffg',
+              rows,
+              max: 48, // shown, the rest counted
+              tile: o => fishRepTile({...FISHA.ph[o.f], genus: FISHA.ph[o.f].entry}, {cap: num(o)}),
+              bind(scope) {
+                const g = scope.querySelector('.adm-fdiffg');
+                if (g) bindFishTiles(g);
+              }
+            };
+          }
+        }
+      };
+    })()
+  },
+  // A subject's data shape (SUBJECTS flat), its builder; the review view an address names, if the subject has it.
+  reviewBuild = S => REVIEW_BUILD[treeShape(S)],
+  reviewAxis = p =>
+    (a => (p.startsWith('photos/review/') && reviewBuild(ASUBJ).axes.includes(a) ? a : ''))(p.slice('photos/review/'.length));
+function renderReview(S, id) {
+  const B = reviewBuild(S);
   status();
-  const names = Object.keys(DATA.gen),
-    vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
-  FSCOPE = allPhotos().filter(p => shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus));
-  const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
-  const card =
-    p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
-    <div class="adm-acts">${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}</div></figure>`;
-  // Still to classify: grouped by the old Coral Finder letter, as a hint.
-  const rows = [
-    ...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]),
-    ['x', 'Form not visible', p => fOf(p.f) === 'x'],
-    ...[...'BMSPFLC', ''].map(c => [
-      '',
-      `To classify${c ? ` · was Coral Finder book ${cfName(c)}` : ''}`,
-      p => !fOf(p.f) && (LEGACY[p.f] || '') === c
-    ])
-  ];
-  const sec = ([id, t, test]) => {
-    const L = all.filter(test);
-    if (FF.gfirst) L.sort((a, b) => fRank(a.f) - fRank(b.f));
-    if (!L.length && id === '') return '';
-    const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
-    return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
-      <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`;
-  };
-  $v.innerHTML = `<section class="adm-quality">
-    <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
-    ${FB.origins()}
-    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'fv', cur: FF.view, items: FB.viewItems()})}
-      ${FB.unit({id: 'fgen', cur: FF.genus, names})}
-      ${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}</div>
-    ${rows.map(sec).join('')}</section>`;
-  const fag = $('fagree');
-  agreeFill(fag);
-  fag.ontoggle = () => (FAG_OPEN = fag.open);
-  bindBar($v, {
-    redraw: renderForm,
-    f: FF,
-    k: 'reefid-admin-ffilter',
-    view: 'fv',
-    unit: 'fgen',
-    checks: {ftodo: 'todo', fpol: 'pol', fgfirst: 'gfirst'}
-  });
-  $v.querySelectorAll('[data-act="zoom"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        zoom(t.dataset.g, t.dataset.f);
-      })
-  );
+  if (!B.ready()) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    B.load().then(() => cur.startsWith('photos/review/') && render());
+    return;
+  }
+  const P = B.page(S, id);
+  if (P.msg) {
+    $v.innerHTML = P.msg;
+    return;
+  }
+  const by = new Map(),
+    tile = p => {
+      const t = P.tile(p);
+      return `<figure class="adm-tile${t.cls}"${t.attrs}><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${t.photo}</button>${t.tools}<figcaption>${t.cap}</figcaption><div class="adm-acts${t.actsCls}">${t.acts}</div></figure>`;
+    },
+    band = b => {
+      b.items.forEach(p => by.set(p.f, p));
+      return `<section class="adm-row${P.cls.band}"><h3>${b.title} <small>${b.items.length} photo${b.items.length === 1 ? '' : 's'}${b.note || ''}</small>${b.tool || ''}</h3>
+      <div class="adm-grid${P.cls.grid}"${b.drop === undefined ? '' : ` data-drop="${b.drop}"`}>${b.items.map(tile).join('')}</div></section>`;
+    },
+    body = P.bands.map(band).join('');
+  $v.innerHTML = `<section class="adm-quality">${P.top || ''}${P.bar}${P.note || ''}${body || P.empty || ''}</section>`;
+  P.bind($v);
+  const row = el => by.get(el.closest('[data-f]').dataset.f);
+  $v.querySelectorAll('[data-act="zoom"]').forEach(b => (b.onclick = () => P.zoom(row(b))));
   $v.querySelectorAll('[data-act="exclude"]').forEach(
     b =>
       (b.onclick = e => {
         e.stopPropagation();
-        const t = b.closest('[data-f]');
-        ACT.exclude(t.dataset.g, t.dataset.f);
+        P.exclude(row(b));
       })
   );
-  $v.querySelectorAll('.adm-pinw').forEach(
-    w =>
-      (w.onclick = e => {
-        const b = e.target.closest('[data-pin]');
-        if (!b) return;
-        e.stopPropagation();
-        togglePin(b.closest('[data-f]').dataset.f, b.dataset.pin);
-        renderForm();
-      })
-  );
-  // Validate a whole row: every first guess still shown in it (with the filters on) becomes the admin's own choice, in one undo step.
-  $v.querySelectorAll('[data-fok]').forEach(
+  // The keys act on the photo that has the keyboard focus, never on one the mouse passes over (tileKeys).
+  if (P.keys) tileKeys(cur, P.keys);
+  // Drag a photo onto another band: it gets that band's value (the bands that carry none take no drop).
+  if (P.drop) {
+    const clear = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row')),
+      at = el => el && el.closest('[data-drop]');
+    pointerDrag(
+      $v.querySelectorAll('.adm-qt'),
+      el => {
+        clear();
+        const g = at(el);
+        if (g) g.classList.add('drop-row');
+      },
+      (t, el) => {
+        clear();
+        const g = at(el);
+        if (g) {
+          P.drop(t, g.dataset.drop);
+          g.prepend(t);
+        }
+      },
+      clear
+    );
+  }
+}
+// Photo review › By difficulty, the same page for every subject: the photos ranked by their difficulty (the corals': the sheet's
+// photo ratings; the tree subjects': their answers alone), the Hardest | Easiest switch and the minimum of answers (SF.min).
+function renderDiff(S) {
+  const B = reviewBuild(S).diff,
+    again = () => cur === 'photos/review/by-difficulty' && ASUBJ === S && render();
+  status();
+  const g = B.gate(S, again);
+  if (g) {
+    $v.innerHTML = g.msg || '<p class="note">Loading…</p>';
+    return;
+  }
+  const D = B.page(S, again),
+    shownR = D.rows.slice(0, D.max);
+  $v.innerHTML = `<section class="adm-quality${D.cls}"><div class="adm-shead">${segBtns('min', [
+    [1, '≥1'],
+    [3, '≥3'],
+    [10, '≥10']
+  ])}<span class="note">answers</span>
+    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
+    ${
+      D.rows.length
+        ? `<div class="adm-grid adm-qgrid${D.grid}">${shownR.map(D.tile).join('')}</div>${D.rows.length > D.max ? `<p class="note">+${D.rows.length - D.max} more</p>` : ''}`
+        : '<p class="note">No answers yet.</p>'
+    }</section>`;
+  $v.querySelectorAll('[data-do]').forEach(
     b =>
       (b.onclick = () => {
-        const c = b.dataset.fok,
-          todo = all.filter(p => fOf(p.f) === c && !fSet(p.f));
-        if (!confirm(`Validate ${todo.length} growth form${todo.length === 1 ? '' : 's'} as ${FABBR[c] || c}?`)) return;
-        DRAFT.gf = {...(DRAFT.gf || {})};
-        todo.forEach(p => {
-          const m = fP(mineF(p.f)),
-            pol = m === null ? fP(AUTOF[p.f]) === true : m;
-          DRAFT.gf[p.f] = c + (m === false ? 'n' : pol ? 'p' : '');
-        });
-        saveDraft();
-        renderForm();
+        DIFF_ORDER = b.dataset.do;
+        store.set('reefid-admin-diff', DIFF_ORDER);
+        render();
       })
   );
-  bindF($v);
-  tileKeys('photos/review/growth-form', (t, key) => {
-    const k = key.toUpperCase();
-    if (k === 'P') {
-      polTile(t);
-      return true;
-    }
-    const c = k === '0' || k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null;
-    if (c) formTile(t, toggleF(t.dataset.f, c));
-    return !!c;
-  });
-  // Drag a photo onto another row: it gets that form (not onto the To classify rows).
-  const clearF = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
-  pointerDrag(
-    $v.querySelectorAll('.adm-qt'),
-    el => {
-      clearF();
-      const g = el && el.closest('[data-fdrop]');
-      if (g && g.dataset.fdrop) g.classList.add('drop-row');
-    },
-    (t, el) => {
-      clearF();
-      const g = el && el.closest('[data-fdrop]');
-      if (g && g.dataset.fdrop) {
-        formTile(t, g.dataset.fdrop);
-        g.prepend(t);
-      }
-    },
-    clearF
-  );
+  D.bind($v);
+  bindStats();
 }
+// review build: end
 
 // Players' reports (app.js reportDialog): wrong answer (+ the genus they suggest), several corals, bad photo, other,
 // with a note and WHO sent it (some players are trusted more than others). Every admin can read them:
@@ -7991,6 +8257,8 @@ function pubSummary() {
   ].join('\n');
 }
 async function save() {
+  // The auto-sorts of this load first (rule A1), when the idle time has not run them yet: their proposals are in what is sent.
+  if (TOKEN && (SUG_LATE || ASORT_GO)) await asortDone();
   const ch = changed(),
     q = qChanged(),
     x = xChanged(),
@@ -8084,7 +8352,17 @@ const sugOwn = h => /^players\//.test(h),
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}));
 let SUG_LATE = null,
-  SUG_P = null;
+  SUG_P = null,
+  // The fish auto-sort of this load: ASORT_GO starts it (once: ASORT_P is its run), set when the laying has run (sugRun); the
+  // idle time starts it, or a Publish that comes first (asortDone).
+  ASORT_GO = null,
+  ASORT_P = null;
+// The auto-sorts of this load run to their end (the suggestions laid, the fish auto-sort done): what a Publish waits for, so
+// its draft holds the proposals of the load whatever the page the admin stayed on (rule A1). Never rejects.
+async function asortDone() {
+  await sugLoad().catch(() => {});
+  if (ASORT_GO) await ASORT_GO();
+}
 function sugLoad() {
   if (!SUG_LATE) return Promise.resolve();
   return (SUG_P =
@@ -8322,12 +8600,24 @@ async function start() {
   const sugRun = () => {
     const ar = TOKEN && autoRun();
     if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-    // The fish auto-sort once the first page is drawn and the page is idle: it reads data/fish-cand.json, 9 million characters,
-    // which would share the line and the main thread with the first page. One Undo step.
+    // The fish auto-sort once the first page is drawn and the page is idle (an admin who opened on a Players page: once its
+    // suggestions are in, sugLater): it reads data/fish-cand.json, 9 million characters, which would share the line and the
+    // main thread with the first page. One Undo step. At every admin load (rule A1), whatever page the admin stays on; a
+    // Publish that comes before the idle time runs it first (asortDone), so its proposals are in what is sent.
     const fishLater = () =>
-      fishAutoRun().then(R => {
-        if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
-      });
+      (ASORT_P =
+        ASORT_P ||
+        fishAutoRun()
+          .then(
+            R => {
+              if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+            },
+            e => console.warn('fish auto-sort:', e.message)
+          )
+          .then(() => {
+            ASORT_GO = null; // done: a Publish has nothing left to wait for
+          }));
+    ASORT_GO = fishLater;
     'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
   };
   // Opened on a Players page: the suggestions, their laying and the auto-sorts follow (sugLater), or sooner (render's gate).
@@ -8673,8 +8963,21 @@ async function lockOther() {
 // names exist then). A token refused drops them all, so nothing read with it is kept.
 const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'alerts', 'reports'];
 const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRoute(p, S))(subjOfHash(hashNow()))));
+// An address that opens on an Analyses page asks for its scripts at once, beside the data files, as when every visit
+// fetched them: the page is not held up by a fetch that starts only when it is drawn.
+const lazyAhead = () => {
+  if (anPage(landing())) lazyLoad('analyses').catch(() => {}); // asked again, with a word on the page, when it is drawn (lazyPage)
+};
 (async () => {
+  lazyAhead();
   if (DEMO) {
+    // The demo answers the calls from the page (admin-demo.js patches fetch, analysis.js is what it builds its made-up
+    // log with): in before anything is asked.
+    try {
+      await lazyLoad('demo');
+    } catch (e) {
+      return lockScreen(e.message);
+    }
     TOKEN = 'demo';
     const pv = $('preview');
     if (pv) pv.hidden = true; // the site's ?draft preview reads the real draft, not the demo's
@@ -8732,52 +9035,6 @@ const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRou
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 let STATS = null,
   DIFF_ORDER = store.get('reefid-admin-diff', 'hard');
-function renderDiff() {
-  status();
-  if (!STATS || !ANS) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => {
-      if (cur === 'photos/review/by-difficulty') render();
-    });
-    return;
-  }
-  const vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]),
-    S = photoStats();
-  const L = allPhotos()
-    .filter(p => S[p.f] && nAns(S[p.f]) >= SF.min)
-    .sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (S[a.f][0] - S[b.f][0]));
-  const card = p => {
-    const [d, n, r] = S[p.f];
-    return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}</div></figure>`;
-  };
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead">${segBtns('min', [
-    [1, '≥1'],
-    [3, '≥3'],
-    [10, '≥10']
-  ])}<span class="note">answers</span>
-    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
-    ${L.length ? `<div class="adm-grid adm-qgrid">${L.map(card).join('')}</div>` : '<p class="note">No answers yet.</p>'}</section>`;
-  $v.querySelectorAll('[data-do]').forEach(
-    b =>
-      (b.onclick = () => {
-        DIFF_ORDER = b.dataset.do;
-        store.set('reefid-admin-diff', DIFF_ORDER);
-        render();
-      })
-  );
-  $v.querySelectorAll('[data-act="zoom"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        zoom(t.dataset.g, t.dataset.f);
-      })
-  );
-  bindQ();
-  bindStats();
-}
 
 // Photo review › By difficulty on the side of a subject the sheet does not rate (fish admin at parity; the sheet's photo
 // ratings, stats_, are the replayed subject's only): its photos ranked by their answers alone, as its Health counts them
@@ -8790,64 +9047,6 @@ function diffByAnswers(PH, min, order) {
     .filter(([, o]) => o && o.n >= min)
     .map(([f, o]) => ({f, n: o.n, ok: o.ok, r: o.ok / o.n}))
     .sort((a, b) => s * (a.r - b.r) || b.n - a.n || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0));
-}
-// The page: each photo with every tool of its family's page (fishRepTile: Tags with its ease, Remove, Not this, ×...), its
-// numbers in the caption as on Health; a photo already out (excluded, Not this, removed) left out, as Health does, so
-// acting on one brings the next in. FDIFF_MAX shown, the rest counted. The fish data (fishAdmin) and the family pages'
-// data for the tiles' tools (fishLoad) are read behind the page.
-const FDIFF_MAX = 48;
-function renderFishDiff() {
-  status();
-  const S = ASUBJ,
-    here = () => cur === 'photos/review/by-difficulty' && ASUBJ === S;
-  if (!ANS) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => here() && render());
-    return;
-  }
-  if (ANS.old) {
-    $v.innerHTML = `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`}</p>`;
-    return;
-  }
-  if (!FISHA) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    fishAdmin().then(() => here() && FISHA && render());
-    return;
-  }
-  const FD = DRAFT[TK] || {},
-    done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
-    PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
-    L = diffByAnswers(PH, SF.min, DIFF_ORDER);
-  if (L.length && !FISHC) fishLoad().then(() => here() && render());
-  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
-    num = o => {
-      const m = missedBy(PH[o.f]);
-      return `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>`;
-    };
-  $v.innerHTML = `<section class="adm-quality adm-fdiff"><div class="adm-shead">${segBtns('min', [
-    [1, '≥1'],
-    [3, '≥3'],
-    [10, '≥10']
-  ])}<span class="note">answers</span>
-    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
-    ${
-      L.length
-        ? `<div class="adm-grid adm-qgrid adm-fdiffg">${L.slice(0, FDIFF_MAX)
-            .map(o => fishRepTile({...FISHA.ph[o.f], genus: FISHA.ph[o.f].entry}, {cap: num(o)}))
-            .join('')}</div>${L.length > FDIFF_MAX ? `<p class="note">+${L.length - FDIFF_MAX} more</p>` : ''}`
-        : '<p class="note">No answers yet.</p>'
-    }</section>`;
-  $v.querySelectorAll('[data-do]').forEach(
-    b =>
-      (b.onclick = () => {
-        DIFF_ORDER = b.dataset.do;
-        store.set('reefid-admin-diff', DIFF_ORDER);
-        render();
-      })
-  );
-  const g = $v.querySelector('.adm-fdiffg');
-  if (g) bindFishTiles(g);
-  bindStats();
 }
 
 /* ---------- Photo stats › Overview ---------- */
@@ -10460,12 +10659,44 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // groups, the cohorts and the staff (Code.gs
 // groupDo_). A player's bar shows their groups as chips, × takes them out, "+ Add to a group" puts them in one; Players ›
 // Groups lists every group with its settings (Board, Beta) and members, makes, renames and deletes an empty one.
-// Roles stay apart: nothing here grants or revokes one. From an older script, the beta group and the cohort (no Staff
-// toggle at any version).
+// From RIGHTSADM_SHEET a group may carry rights (below); the admin list stays apart, read-only. From an older script,
+// the beta group and the cohort (no Staff toggle at any version).
 const GROUPADM_SHEET = 179;
 const groupsOn = () => (USERS.v || 0) >= GROUPADM_SHEET;
-const gdefs = () => (USERS && USERS.groupDefs) || [];
+// The one Groups write on its way (rule W27: one at a time on the whole page, of any kind: a group made, renamed, set or
+// deleted, a right given or taken away, a player in or out), kept outside the page and the players list: {gid: its
+// group, rights: the list sent when it changes the rights, else absent}, or null. From the request until the players are
+// read again with the answer applied, every Groups control stays off (gLock), however often the page is drawn again
+// meanwhile, and the group shows (gdefs) the rights list sent. gStart takes the slot, gReread gives it back.
+let rPend = null;
+const gdefs = () => {
+  const L = (USERS && USERS.groupDefs) || [];
+  return rPend && rPend.rights ? L.map(d => (d.id === rPend.gid ? {...d, rights: rPend.rights} : d)) : L;
+};
+const gStart = (gid, rights) => (rPend ? false : ((rPend = {gid, rights}), gLock(), true));
+const gDone = () => ((rPend = null), render());
+// The players read again with its answer applied (a read dropped by a newer one returns the same list: read again), then
+// the slot is given back, so no change is sent from a list the sheet no longer has.
+function gReread() {
+  const was = USERS;
+  return loadUsers(true).then(() => (USERS && USERS !== was ? gDone() : gReread()), gDone);
+}
+// A group's card greyed, its controls off.
+const gBusy = id => {
+  const c = [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
+  if (c) {
+    c.setAttribute('aria-busy', 'true');
+    c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
+  }
+};
 const gdefOf = id => gdefs().find(d => d.id === id);
+// While a Groups write is on its way: the group it is about greyed, and every Groups control off (the page's buttons and
+// selects, a player's bar: a group in or out).
+function gLock() {
+  if (!rPend) return;
+  gBusy(rPend.gid);
+  $v.querySelectorAll('.adm-groups button, .adm-groups select, [data-gnew], [data-ugout], [data-ugadd]').forEach(x => (x.disabled = true));
+}
 const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
 const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= (S.sheet || 0) && !groupsOn();
@@ -10479,41 +10710,129 @@ const groupNames = u =>
         .filter(Boolean)
         .map(d => d.n)
     : [...(u.groups || []).map(g => subjectOf(g).name), u.cohort].filter(Boolean);
-// A player's groups in their bar: a chip each (× takes them out) and the groups they are not in yet.
+// Groups that carry rights (sheet RIGHTSADM_SHEET: a group's rights, each player's roff, the merge plan, the admin
+// list and the server answer of a rights change; Code.gs groupDo_, joinPut_, mergePlan_, roles_). A rights group shows
+// its rights as chips in words, a key beside its name, and comes first; it takes one player at a time, after one
+// confirm naming its rights (no Add all, no Remove all); a member whose code changed since they were added holds none of
+// its rights ("rights off"). Below the version, the page as before. Decision: docs/decisions/2026-11-19-groups-carry-rights.md.
+const RIGHTSADM_SHEET = 204;
+const rightsOn = () => (USERS.v || 0) >= RIGHTSADM_SHEET;
+// Each right a group may carry (Code.gs RIGHTS, in its order) in words; every one at the instance's scope.
+const RIGHT_WORDS = {
+  players: 'Manage players',
+  settings: 'Settings',
+  grant: 'Give rights',
+  content: 'Content',
+  live: 'Host live games',
+  cohorts: 'Cohorts'
+};
+const RIGHT_AT = 'instance:imr';
+// A "right@scope" entry in words; an entry the page has no word for shows as it is.
+const rightWord = e => {
+  const [r, at] = String(e).split('@');
+  return Object.prototype.hasOwnProperty.call(RIGHT_WORDS, r) ? RIGHT_WORDS[r] + (at && at !== RIGHT_AT ? ` (${at})` : '') : String(e);
+};
+const grights = d => (rightsOn() && d && Array.isArray(d.rights) ? d.rights : []);
+const isRightsG = d => grights(d).length > 0;
+const rightsOff = (u, gid) => (u.roff || []).includes(gid);
+const KEY_SVG =
+  '<svg class="adm-gkey" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Carries rights"><title>Carries rights</title><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3M18.5 4.5l2 2"/></svg>';
+// Adding a player to a group that carries rights asks first, naming its rights, as it is about access: true to go on.
+// Never while a Groups write is on its way (rPend): a group's rights may be changing.
+const giveOk = (name, d) => !rPend && (!isRightsG(d) || confirm(`Give ${name}: ${grights(d).map(rightWord).join(', ')}?`));
+// The last change to a group's rights or to a rights group's members that the sheet answered with an error: its words,
+// and for server (saved in part, its Audit row not written) the same request to send again, which finishes it.
+// {text, body, ok: the message once done, name: the player when the request is about one}.
+let gNote = null;
+const gNoteHtml = () =>
+  gNote
+    ? `<p class="warn adm-gnote" role="status">${esc(gNote.text)}${gNote.body ? ' <button type="button" class="adm-fchip" data-gretry>Try again</button>' : ''} <button type="button" class="adm-fchip plain" data-gnote-no aria-label="Dismiss">×</button></p>`
+    : '';
+// A rights request's error in words (Code.gs: token, members, input, server, and the others as they are).
+const rightsErr = e =>
+  e === 'server'
+    ? 'Saved in part: its Audit record failed. Try again to finish it.'
+    : e === 'token'
+      ? 'Not done: it needs the Give rights right.'
+      : e === 'members'
+        ? 'Not done: this group has members. Make a new group, give it its rights, then add players one by one.'
+        : e === 'input'
+          ? 'Not done: the sheet refused the request (one player at a time, known rights only).'
+          : `Not done (${e || 'offline'}).`;
+// Sends a rights request (a group's rights, or one player in or out of a rights group), the only Groups write on its way
+// (rule W27): another is not sent. Whatever the answer, the players are read again, and the next change waits until that
+// read is in (gReread).
+function rightsPost(body, ok, name) {
+  const gid = body.groupEdit || body.group;
+  if (!gStart(gid, body.rights || grights(gdefOf(gid)))) return Promise.resolve();
+  toast('Saving…');
+  gNote = null;
+  const after = gReread;
+  return userPost(body)
+    .then(j => {
+      if (j && j.ok) return (toast(ok), after());
+      const e = (j && j.error) || 'offline';
+      gNote = {text: rightsErr(e), body: e === 'server' ? body : null, ok, name};
+      toast(gNote.text);
+      return after();
+    })
+    .catch(() => ((gNote = {text: rightsErr('offline'), body: null, ok, name}), toast(gNote.text), after()));
+}
+// The note's controls (Try again sends the same request again; × hides the note), on the Groups page and a player's bar.
+function bindGNote() {
+  const r = $v.querySelector('[data-gretry]');
+  if (r && gNote && gNote.body)
+    r.onclick = () => {
+      const {body, ok, name} = gNote;
+      r.disabled = true;
+      rightsPost(body, ok, name);
+    };
+  const x = $v.querySelector('[data-gnote-no]');
+  if (x) x.onclick = () => ((gNote = null), render());
+}
+// A player's groups in their bar: a chip each (× takes them out) and the groups they are not in yet. From
+// RIGHTSADM_SHEET a rights group's chip carries the key ("rights off" when the code changed), and a line sums up the
+// rights the player holds.
 function ugChips(u) {
   const mine = (u.gids || []).map(gdefOf).filter(Boolean),
-    rest = gdefs().filter(d => !(u.gids || []).includes(d.id));
+    rest = gdefs().filter(d => !(u.gids || []).includes(d.id)),
+    held = new Set(mine.filter(d => !rightsOff(u, d.id)).flatMap(grights)),
+    rank = e => (Object.keys(RIGHT_WORDS).indexOf(e.split('@')[0]) + 1 || 99) * 2 + (e.endsWith('@' + RIGHT_AT) ? 0 : 1),
+    words = [...held].sort((a, b) => rank(a) - rank(b)).map(e => rightWord(e).toLowerCase());
   return `<span class="adm-ugchips">${mine
     .map(
       d =>
-        `<span class="adm-gchip">${esc(d.n)}<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}">×</button></span>`
+        `<span class="adm-gchip${isRightsG(d) ? ' adm-grights' : ''}">${isRightsG(d) ? KEY_SVG : ''}${esc(d.n)}${
+          isRightsG(d) && rightsOff(u, d.id) ? ' <span class="adm-goff">rights off: the code changed</span>' : ''
+        }<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}"${rPend ? ' disabled' : ''}>×</button></span>`
     )
     .join(
       ''
-    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}">${esc(d.n)}</option>`).join('')}</select>` : ''}</span>`;
+    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"${rPend ? ' disabled' : ''}><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}">${esc(d.n)}</option>`).join('')}</select>` : ''}${
+    words.length ? `<span class="adm-urights">Rights: ${esc(words.join('; '))}</span>` : ''
+  }${gNote && gNote.name === u.name ? gNoteHtml() : ''}</span>`;
 }
-// Players in (on) or out of a group (Code.gs userGroup), one name or a list; the page follows at once.
+// Players in (on) or out of a group (Code.gs userGroup), one name or a list; the page follows at once. A group that
+// carries rights takes one name, sent as a rights request (rightsPost).
 function memberSet(names, gid, on) {
   const L = Array.isArray(names) ? names : [names],
     d = gdefOf(gid) || {n: gid};
+  if (rPend) return render(); // a Groups write is on its way: one at a time
+  if (isRightsG(d) && !Array.isArray(names))
+    return rightsPost({userGroup: names, group: gid, on}, `"${names}" ${on ? 'added to' : 'removed from'} ${d.n}.`, names);
+  gStart(gid);
   toast('Saving…'); // the sheet can take a minute or two (its script lock)
   return userPost({userGroup: names, group: gid, on})
     .then(j => {
-      if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
-      const k = new Set(L.map(x => x.toLowerCase()));
-      USERS.users.forEach(u => {
-        if (!k.has(u.name.toLowerCase())) return;
-        const g = (u.gids || []).filter(x => x !== gid);
-        u.gids = on ? [...g, gid] : g;
-      });
+      if (!j || !j.ok) return (toast(`Not done (${(j && j.error) || 'offline'}).`), gDone());
       toast(
         Array.isArray(names)
           ? `${j.n} player${j.n === 1 ? '' : 's'} ${on ? 'added to' : 'removed from'} ${d.n}.`
           : `"${L[0]}" ${on ? 'added to' : 'removed from'} ${d.n}.`
       );
-      render();
+      return gReread();
     })
-    .catch(() => (toast('Not done (offline).'), render()));
+    .catch(() => (toast('Not done (offline).'), gReread()));
 }
 // Players › Groups (sheet GROUPADM_SHEET): every group, the newest first, with its settings and members. New group asks
 // a name; Rename too; Board one click each way; Beta a list of the subjects that open to a group; Add all and
@@ -10546,21 +10865,43 @@ function renderGroups() {
             `<button type="button" data-gset="${esc(id)}" data-k="${k}" data-val="${v}" aria-pressed="${!!on === !!v}">${w}</button>`
         )
         .join('')}</span>`;
+  // From RIGHTSADM_SHEET, a group's Rights row: a chip per right (× takes it away) and "+ Add a right"; a group with
+  // members and no rights takes none (Code.gs 'members': their memberships hold no code hash).
+  const rightsRow = (d, M) => {
+    if (!rightsOn()) return '';
+    const R = grights(d),
+      rest = Object.keys(RIGHT_WORDS)
+        .map(r => r + '@' + RIGHT_AT)
+        .filter(e => !R.includes(e));
+    return `<div class="adm-gset adm-grow"><span class="adm-glabel">Rights</span>${R.map(
+      e =>
+        `<span class="adm-gchip">${esc(rightWord(e))}<button type="button" class="adm-gx" data-grx="${esc(d.id)}" data-e="${esc(e)}" title="Take away ${esc(rightWord(e))}" aria-label="Take away ${esc(rightWord(e))} from ${esc(d.n)}">×</button></span>`
+    ).join('')}${
+      !R.length && M.length
+        ? '<span class="adm-gnone">None. To give rights, make a new group, then add players one by one.</span>'
+        : rest.length
+          ? `<select class="adm-gadd" data-gradd="${esc(d.id)}" aria-label="Add a right to ${esc(d.n)}"><option value="">+ Add a right</option>${rest.map(e => `<option value="${esc(e)}">${esc(rightWord(e))}</option>`).join('')}</select>`
+          : ''
+    }</div>`;
+  };
   const card = d => {
     const M = U.filter(u => (u.gids || []).includes(d.id)).sort((a, b) => a.name.localeCompare(b.name)),
       out = U.length - M.length,
+      rg = isRightsG(d),
       B = [...betas.filter(S => S.id !== d.beta), ...(d.beta ? [subjectOf(d.beta) || {id: d.beta, name: d.beta}] : [])];
-    return `<section class="adm-scard adm-gcard" data-g="${esc(d.id)}"><div class="adm-ghead"><b class="adm-gname">${esc(d.n)}</b><button type="button" class="adm-fchip plain" data-gren="${esc(d.id)}">Rename</button><span class="adm-gcount" title="Players in it"><b>${M.length}</b> of ${U.length}</span>${
+    return `<section class="adm-scard adm-gcard${rg ? ' adm-grights' : ''}" data-g="${esc(d.id)}"><div class="adm-ghead"><b class="adm-gname">${rg ? KEY_SVG : ''}${esc(d.n)}</b><button type="button" class="adm-fchip plain" data-gren="${esc(d.id)}">Rename</button><span class="adm-gcount" title="Players in it"><b>${M.length}</b> of ${U.length}</span>${
       M.length ? '' : `<button type="button" class="adm-danger" data-gdrop="${esc(d.id)}">Delete</button>`
     }</div>
       <div class="adm-gset"><span title="Its own leaderboard">Board ${seg(d.id, 'board', d.board, 'Board')}</span>${
         B.length || d.beta
           ? `<label title="The subject in beta it opens">Beta <select data-gbeta="${esc(d.id)}"><option value="">None</option>${B.map(S => `<option value="${esc(S.id)}"${S.id === d.beta ? ' selected' : ''}>${esc(S.name)}</option>`).join('')}</select></label>`
           : ''
-      }</div>
+      }</div>${rightsRow(d, M)}
       <div class="adm-gmem">${M.map(
         u =>
-          `<span class="adm-gchip">${pname(u.name, u.board === -1)}<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove ${esc(u.name)} from ${esc(d.n)}">×</button></span>`
+          `<span class="adm-gchip">${pname(u.name, u.board === -1)}${
+            rg && rightsOff(u, d.id) ? ' <span class="adm-goff">rights off: the code changed</span>' : ''
+          }<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove ${esc(u.name)} from ${esc(d.n)}">×</button></span>`
       ).join('')}${
         out
           ? `<select class="adm-gadd" data-gjoin="${esc(d.id)}" aria-label="Add a player"><option value="">+ Add a player</option>${U.filter(
@@ -10571,16 +10912,43 @@ function renderGroups() {
               .join('')}</select>`
           : ''
       }</div>
-      <div class="adm-ugroup">${out ? `<button type="button" class="adm-fchip" data-gall="${esc(d.id)}">Add all ${out}</button>` : ''}${
-        M.length ? `<button type="button" class="adm-fchip" data-gnone="${esc(d.id)}">Remove all ${M.length}</button>` : ''
+      <div class="adm-ugroup">${!rg && out ? `<button type="button" class="adm-fchip" data-gall="${esc(d.id)}">Add all ${out}</button>` : ''}${
+        !rg && M.length ? `<button type="button" class="adm-fchip" data-gnone="${esc(d.id)}">Remove all ${M.length}</button>` : ''
       }</div></section>`;
   };
+  // The groups that carry rights first, then the others; the newest first within each.
   const D = gdefs()
     .map((d, i) => [d, i])
-    .sort((a, b) => (b[0].at || 0) - (a[0].at || 0) || b[1] - a[1])
+    .sort((a, b) => isRightsG(b[0]) - isRightsG(a[0]) || (b[0].at || 0) - (a[0].at || 0) || b[1] - a[1])
     .map(x => x[0]);
-  $v.innerHTML = head + (D.length ? `<div class="adm-groups">${D.map(card).join('')}</div>` : '<p class="note">No group yet.</p>');
+  $v.innerHTML =
+    head +
+    gNoteHtml() +
+    (D.length ? `<div class="adm-groups">${D.map(card).join('')}</div>` : '<p class="note">No group yet.</p>') +
+    adminsLine();
+  gLock();
   bindGroups();
+}
+// The admin list (Code.gs roles_ {roles: 1}), outside the groups and read-only here (never edited from this page): read once per players
+// load, kept on USERS so a reload reads it again.
+function adminsLine() {
+  if (!rightsOn()) return '';
+  const U = USERS;
+  if (!U.admins) {
+    U.admins = {wait: 1};
+    userPost({roles: 1})
+      .then(
+        j =>
+          (U.admins =
+            j && j.ok && Array.isArray(j.grants) ? {names: [...new Set(j.grants.map(g => g.name))]} : {err: (j && j.error) || 'offline'})
+      )
+      .catch(() => (U.admins = {err: 'offline'}))
+      .then(() => USERS === U && cur === 'players/groups' && render());
+  }
+  const A = U.admins;
+  return `<p class="note adm-gadmins">Admins (outside the groups): ${
+    A.wait ? 'reading…' : A.err ? `not read (${esc(A.err)})` : A.names.length ? A.names.map(n => esc(n)).join(', ') : 'none'
+  }</p>`;
 }
 function bindGroups() {
   const rl = $v.querySelector('[data-uload]');
@@ -10593,12 +10961,8 @@ function bindGroups() {
   // The sheet can take a minute or two (its script lock, then the players read again): "Saving…" at once, and the
   // group's card (id) greyed and its controls off until the answer.
   const gpost = (body, msg, id) => {
+    if (!gStart(id)) return render(); // one Groups write at a time
     toast('Saving…');
-    const c = id && [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
-    if (c) {
-      c.setAttribute('aria-busy', 'true');
-      c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
-    }
     return userPost(body)
       .then(j => {
         if (!j || !j.ok)
@@ -10610,12 +10974,12 @@ function bindGroups() {
                   ? 'A name of 1 to 40 characters.'
                   : `Not done (${(j && j.error) || 'offline'}).`
             ),
-            render()
+            gDone()
           );
         toast(msg(j));
-        return loadUsers(true).then(() => render());
+        return gReread();
       })
-      .catch(() => (toast('Not done (offline).'), render()));
+      .catch(() => (toast('Not done (offline).'), gReread()));
   };
   const ask = (q, was = '') => (prompt(q, was) || '').replace(/\s+/g, ' ').trim();
   const nw = $v.querySelector('[data-gnew]');
@@ -10672,9 +11036,41 @@ function bindGroups() {
   $v.querySelectorAll('[data-gjoin]').forEach(
     sel =>
       (sel.onchange = () => {
-        if (sel.value) memberSet(sel.value, sel.dataset.gjoin, true);
+        if (!sel.value) return;
+        if (!giveOk(sel.value, gdefOf(sel.dataset.gjoin))) return void (sel.value = '');
+        memberSet(sel.value, sel.dataset.gjoin, true);
       })
   );
+  // A group's rights (RIGHTSADM_SHEET): the whole list sent, built from the one the page read (Code.gs groupEdit rights),
+  // the card greyed until the sheet answers, then everything read again (rightsPost).
+  // One Groups write at a time on the whole page (rule W27): while one is on its way (rPend) no other is sent, so none
+  // goes out built from a list that lacks it.
+  const rightsSet = (d, R, msg) => {
+    if (rPend) return;
+    rightsPost({groupEdit: d.id, rights: R}, msg);
+  };
+  $v.querySelectorAll('[data-gradd]').forEach(
+    sel =>
+      (sel.onchange = () => {
+        const d = gdefOf(sel.dataset.gradd),
+          e = sel.value;
+        if (d && e) rightsSet(d, [...grights(d), e], `${d.n}: ${rightWord(e)} given.`);
+      })
+  );
+  $v.querySelectorAll('[data-grx]').forEach(
+    b =>
+      (b.onclick = () => {
+        const d = gdefOf(b.dataset.grx),
+          e = b.dataset.e;
+        if (d)
+          rightsSet(
+            d,
+            grights(d).filter(x => x !== e),
+            `${d.n}: ${rightWord(e)} taken away.`
+          );
+      })
+  );
+  bindGNote();
   // Add all and Remove all: bulk, so they ask first (rule A2).
   const bulk = (attr, on) =>
     $v.querySelectorAll(`[${attr}]`).forEach(
@@ -11002,7 +11398,8 @@ function bindUsers() {
       })
   );
   // A player's groups (sheet GROUPADM_SHEET): × takes them out of one, "+ Add to a group" puts them in one; one change
-  // each, no confirmation (rule A2: the chip and the list undo each other).
+  // each, no confirmation (rule A2: the chip and the list undo each other), but a group that carries rights, which asks
+  // first (giveOk).
   $v.querySelectorAll('[data-ugout]').forEach(
     b =>
       (b.onclick = e => {
@@ -11014,9 +11411,12 @@ function bindUsers() {
   $v.querySelectorAll('[data-ugadd]').forEach(
     sel =>
       (sel.onchange = () => {
-        if (sel.value) memberSet(sel.dataset.ugadd, sel.value, true);
+        if (!sel.value) return;
+        if (!giveOk(sel.dataset.ugadd, gdefOf(sel.value))) return void (sel.value = '');
+        memberSet(sel.dataset.ugadd, sel.value, true);
       })
   );
+  bindGNote();
   $v.querySelectorAll('[data-ugall]').forEach(
     ga =>
       (ga.onclick = () => {
@@ -11083,25 +11483,52 @@ function bindUsers() {
         const from = s.dataset.umerge,
           into = s.value;
         if (!into) return;
-        if (
-          !confirm(
-            `Merge "${from}" into "${into}"?\n\nTheir progress is combined under "${into}", every answer and report of "${from}" is moved to "${into}", and "${from}" is deleted. This cannot be undone.`
-          )
-        ) {
-          s.value = '';
-          return;
-        }
-        toast('Merging…');
-        Promise.all([userPost({userData: from}), userPost({userData: into})])
-          .then(([a, b]) => {
-            if (!(a && a.ok && b && b.ok)) return done('', a && !a.ok ? a : b);
-            return userPost({userMerge: {from, into, data: withLegacy(mergeUsers(a.data, b.data)), at: b.rev}}).then(j =>
-              done(`"${from}" merged into "${into}".`, j)
+        // From RIGHTSADM_SHEET the warning first reads what the merge changes to the groups and the rights (Code.gs
+        // mergePlan_): the groups the kept name joins, the rights groups dropped with their rights, the
+        // admin list left. Not read, no merge.
+        const plan = rightsOn()
+          ? userPost({mergePlan: {from, into}}).then(j => (j && j.ok ? j : Promise.reject(j)))
+          : Promise.resolve(null);
+        s.disabled = true;
+        plan
+          .then(P => {
+            s.disabled = false;
+            const gn = id => (gdefOf(id) || {n: id}).n,
+              lines = !P
+                ? []
+                : [
+                    P.join && P.join.length ? `"${into}" joins: ${P.join.map(gn).join(', ')}.` : '',
+                    P.drop && P.drop.length
+                      ? `"${from}" leaves, its rights not moved: ${P.drop.map(id => `${gn(id)} (${grights(gdefOf(id)).map(rightWord).join(', ') || 'rights'})`).join('; ')}.`
+                      : '',
+                    P.admin ? `"${from}" leaves the admin list.` : ''
+                  ].filter(Boolean);
+            return confirm(
+              `Merge "${from}" into "${into}"?\n\nTheir progress is combined under "${into}", every answer and report of "${from}" is moved to "${into}", and "${from}" is deleted. This cannot be undone.${
+                P ? `\n\nGroups and rights: ${lines.length ? '\n' + lines.join('\n') : 'nothing changes.'}` : ''
+              }`
             );
           })
-          .catch(() => done('', null));
+          .catch(j => {
+            s.disabled = false;
+            toast(`Not merged: what it changes could not be read (${(j && j.error) || 'offline'}).`);
+            return false;
+          })
+          .then(go => (go ? mergeGo(from, into) : (s.value = '')));
       })
   );
+  // The merge itself, once confirmed.
+  const mergeGo = (from, into) => {
+    toast('Merging…');
+    Promise.all([userPost({userData: from}), userPost({userData: into})])
+      .then(([a, b]) => {
+        if (!(a && a.ok && b && b.ok)) return done('', a && !a.ok ? a : b);
+        return userPost({userMerge: {from, into, data: withLegacy(mergeUsers(a.data, b.data)), at: b.rev}}).then(j =>
+          done(`"${from}" merged into "${into}".`, j)
+        );
+      })
+      .catch(() => done('', null));
+  };
   // Change the starting answer (startBlock): Change… shows the answers, one picked asks Change / Cancel, Change
   // sends it (users_ userStart: appended to the record's history, the revision bumped so the player's devices merge it at
   // their next sync), and the player's saved copy here takes the new record.
