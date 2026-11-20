@@ -1,6 +1,6 @@
 # Admin opening on a phone: the scripts a visit to Activity does not need, and the fish auto-sort, wait for their page
 
-Date: 2026-11-20. PR: #1313. Rules or docs touched: A1 and A2 (unchanged); docs/spec/admin.md "What the first page waits for";
+Date: 2026-11-20. PR: #1336. Rules or docs touched: A1 and A2 (unchanged); docs/spec/admin.md "What the first page waits for";
 docs/ARCHITECTURE.md "Admin back-office"; ROADMAP "Admin opening on a phone, what is left". Follows
 [2026-11-19-admin-opening.md](2026-11-19-admin-opening.md).
 
