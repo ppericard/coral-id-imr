@@ -489,7 +489,8 @@ function flagStale(C, S, key, fl) {
     const R = unitRegOf(S);
     return !!R && !R.ph[k] && !unitPhOf(k);
   }
-  return !PHOTOS[key] && !allPhotos().some(p => p.f === key);
+  // KNOWN holds every photo name of data.json (comparison images and lecture photos included), empty until it is read
+  return KNOWN.size > 0 && !KNOWN.has(key) && !PHOTOS[key] && !allPhotos().some(p => p.f === key);
 }
 // The flags of subject S that are tasks: [key, flag].
 const flagsOpen = (C, S = ASUBJ) => Object.entries(flagsOf(C, S)).filter(([k, fl]) => !flagStale(C, S, k, fl));

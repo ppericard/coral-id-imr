@@ -155,7 +155,9 @@
   function flagGone(C, P, key, fl) {
     C = C || {};
     const f = (fl && fl.file) || key;
-    if (P && P !== C) return [P.out, P.exclude, P.seen].some(m => !!m && (!!m[f] || !!m[key]));
+    if (P && P !== C)
+      // a Not this that names the species it was added under keeps the photo in play (core.js treePhotoOn)
+      return [f, key].some(n => !!(P.exclude || {})[n] || !!(P.seen || {})[n] || (!!(P.out || {})[n] && P.out[n] !== (P.add || {})[n]));
     if ((C.exclude || {})[key]) return true;
     return Object.values(C.genera || {}).some(k => (k.hide || []).includes(key) || !!(k.out || {})[key]);
   }

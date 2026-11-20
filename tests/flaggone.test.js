@@ -2,11 +2,8 @@ require('./slot.js').testGuard();
 // A flag clears itself when its photo leaves play (Pierre, 2026-11-20, docs/decisions/): autosort.js flagGone, the
 // predicate behind admin.js flagStale / sweepFlags. The admin's click paths are in tests/admin.smoke.js (To do › Reports).
 const test = require('node:test'),
-  assert = require('node:assert'),
-  fs = require('fs'),
-  path = require('path');
+  assert = require('node:assert');
 const A = require('../autosort.js');
-const CUR = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'));
 
 test('corals: Remove, ×, Not this take the flag with them; a photo in play keeps it', () => {
   const C = {
@@ -31,15 +28,21 @@ test('a subject with its own part: out, excluded or rejected (seen), by the phot
   assert.strictEqual(A.flagGone({}, {}, 'i1', {file: 'x'}), false, 'no part yet');
 });
 
-test('the published curation: every fish flag on an excluded photo (by file) is gone, the others stay', () => {
-  const F = CUR.fish.flag,
-    ex = Object.entries(F)
-      .filter(([, fl]) => (CUR.fish.exclude || {})[fl.file])
-      .map(x => x[0]),
-    gone = Object.entries(F)
-      .filter(([k, fl]) => A.flagGone(CUR, CUR.fish, k, fl))
-      .map(x => x[0]);
-  assert.ok(ex.length, 'the published curation holds flags on excluded photos (the gap this closes)');
-  ex.forEach(k => assert.ok(gone.includes(k), k));
-  assert.ok(gone.length < Object.keys(F).length, 'a flag on a photo still in play is kept');
+test('a Not this naming the species the photo was added under keeps it in play (core.js treePhotoOn)', () => {
+  const C = {fish: {add: {'fish-s1-cand-1': 's1', 'fish-s2-cand-2': 's2'}, out: {'fish-s1-cand-1': 's1', 'fish-s2-cand-2': 's9'}}};
+  assert.strictEqual(A.flagGone(C, C.fish, 'i1', {file: 'fish-s1-cand-1'}), false, 'corrected and re-added: in play');
+  assert.strictEqual(A.flagGone(C, C.fish, 'i2', {file: 'fish-s2-cand-2'}), true, 'sent to another species: gone');
+});
+
+test('fixture: a flag on an excluded photo is gone, one on a photo in play stays', () => {
+  const C = {
+    fish: {
+      exclude: {'fish-s1-cand-1': 'excluded'},
+      flag: {i1: {file: 'fish-s1-cand-1'}, i2: {file: 'fish-s2-cand-2'}}
+    }
+  };
+  const gone = Object.entries(C.fish.flag)
+    .filter(([k, fl]) => A.flagGone(C, C.fish, k, fl))
+    .map(x => x[0]);
+  assert.deepStrictEqual(gone, ['i1']);
 });
