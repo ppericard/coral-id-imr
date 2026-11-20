@@ -1466,3 +1466,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **Reports tab, "Report a problem" out of More (seen on a sea slug practice quiz answer).** «Report a problem doit pas
+  être caché derrière "more"». The report link is in view on every answer's feedback, whatever the subject or game.
+  Applied: docs/rules/ui.md U14, docs/decisions/2026-11-20-report-link-in-view.md, #0000.
+- **Reports tab, "Report a problem" more than once on a page (sea slug practice quiz).** «Report a problem doit pouvoir
+  être utilisé plusieurs fois sur la même page». A second report on the same answer or page must open; the cause is in
+  `sync.js` `reportDialog`, held by an open PR (rule W27). Applied: ROADMAP "Report a problem again on the same page",
+  docs/decisions/2026-11-20-report-link-in-view.md, #0000.
+- **Reports tab, a photo or screenshot on the feedback form (a later item).** «Ajouter la possibilité de joindre une
+  photo ou un screenshot au formulaire de feedback». A wish, not built; where the file would live is his to choose.
+  Applied: ROADMAP "Attach a photo or a screenshot to a report", #0000.

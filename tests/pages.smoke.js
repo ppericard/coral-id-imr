@@ -5403,7 +5403,12 @@ async function namesCheck(b, base) {
             line: (q('#after .fbline') || {}).textContent || '',
             visible: q('#after .fb').innerText,
             h: box(mb).height,
-            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1
+            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1,
+            // ⚑ Report a problem (rule U14): on the sheet itself, never inside the More panel, in view and enabled with More closed
+            rep: (e =>
+              !!e && !!e.offsetParent && !e.disabled && box(e).top >= 0 && box(e).bottom <= innerHeight && !q('#fbmore [data-rep]'))(
+              q('#after .fb > .fbrep [data-rep]')
+            )
           };
         mb.click();
         const open = st();
@@ -5418,6 +5423,7 @@ async function namesCheck(b, base) {
       if (!m.before.line || /ID tips|Your answer|Similar names/.test(m.before.visible))
         bad.push('the short sheet holds more than one line');
       if (m.before.h < 44 || !m.before.row) bad.push('More is not a 44 px target on the row of Next');
+      if (!m.before.rep) bad.push('Report a problem is not on the sheet in view, behind More or disabled');
       if (m.open.hidden || !m.open.tips || m.open.exp !== 'true' || m.open.label !== 'Less' || !m.open.next) bad.push('More does not open');
       if (!m.shut.hidden || m.shut.tips || m.shut.label !== 'More') bad.push('Less does not close');
       if (m.open.fb[1] - m.before.fb[1] !== 1 || m.again.fb[1] !== m.open.fb[1] || m.before.fb[0] < 1)

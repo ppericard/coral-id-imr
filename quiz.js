@@ -1085,8 +1085,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
-// The answer's feedback, up to the report button: the verdict (step: the typed spelling step, typeStep), the photo's
-// taxon line (tx: app.js photoTaxon, taxonLine), the decisive line (fbLine), and behind More the ID tips, why the answer
+// The answer's feedback: the verdict (step: the typed spelling step, typeStep), the photo's taxon line (tx: app.js
+// photoTaxon, taxonLine), the decisive line (fbLine), the report button (rep: always in view, under the decisive line;
+// docs/decisions/2026-11-20-report-link-in-view.md), and behind More the ID tips, why the answer
 // is another unit (namesLine first), a genus's Coral ID Key criteria, a fish entry's sub-entries and phases. mim: the
 // entry of the mimicry pair the answer mixed up (model.js mimMix), whose marks make the line (fbLine); its other marks
 // and the units' own pair line, which they replace there, open the More panel.
@@ -1133,9 +1134,9 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
   // The short sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md): the verdict, the species line, a typed
   // reading and the decisive line; the rest in the More panel, More and Next on one row.
   return `<div class="fb fbs">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}${rep ? `<p class="fbrep">${rep}</p>` : ''}
     <div class="fbmore" id="fbmore" hidden>${mims}${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
-    ${more}${rep}</div>
+    ${more}</div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
 }
