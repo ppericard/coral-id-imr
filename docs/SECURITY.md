@@ -57,6 +57,15 @@ Like any job, a read-only one also holds the runner's own token for artifacts an
 save a cache entry under `main` that a later run restores (the Smokes' Playwright Chromium cache, when `main` has none
 of that key yet); those runs hold read-only tokens too.
 
+## The integrator's merge queue (`tools/queue/`)
+
+The queue scripts hold the integrator's `gh` and Git credentials, which merge PRs and, through `tools/train.py`, move
+`release` (the sheet script's source). A PR's own code must never run with them (Codex security review of #1315):
+`uptodate.sh` and `assignver.sh` run the version, core.js, decisions-index and generated-data tools from `origin/main`'s
+reviewed copy over the PR's data (`trusted_root`), like the session hooks' `tools/brief.py`; a `Code.gs` conflict
+outside the version lines stops with "needs a hand"; a finding or security-bot comment on the head nobody answered
+keeps a PR out of the train.
+
 ## Protections in the sync script (v12)
 
 - **Strict input**: every field is filtered (genus names, modes, photo ids, choices by pattern and length); text that
