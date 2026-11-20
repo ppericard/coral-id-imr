@@ -115,7 +115,9 @@ is the design's shorthand, and internal identifiers may keep it.
   "Headband humbug"; iNaturalist's name under the Australia place) are **accepted when typed, never shown**.
 - **Selection**: the names that recur across public sources (the iNaturalist default English name, the FishBase main
   English name, other public references), at most 3. **Published without his prior check** (Pierre, 2026-11-08, Q313:
-  "Publie, je corrige à l'usage"): he corrects a list in use (the admin has no place for it yet: below).
+  "Publie, je corrige à l'usage"): he corrects in use. The admin's Names box (Photos › Tree, a family's page) sets the shared names' exceptions
+  (`curation.json` `fish` `names`: accepted, often, off); a species' own list is not editable there yet (it waits for a
+  stored format, ROADMAP "Fish common names").
 - **The lists** (`tools/fish_common.json`, written by `tools/fish_common.py`, every name with its sources; `tools/build_fish.py`
   writes them into `fish.json`, species `cn`: one list per name, the name shown first, then its other spellings; `cni`: the
   place of the IMR name in `cn`; `cnr`: the regional names, the same shape, accepted when typed; `cni` and `cnr` are
