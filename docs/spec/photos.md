@@ -53,7 +53,7 @@ photo (on R2 or the site) from an iNaturalist one, and `resized()` keeps the bas
 
 **Fallback**: an `<img>` whose R2 file fails is asked from R2 once more 800 ms later (`core.js` `photoRetry`, for a
 passing error; under the service worker the worker does that retry), then moves to the photo's **online original** when
-it has one (`src` in `data.json` / `cand.json` / `fish-photos.json` / `fish-game.json`: iNaturalist, Pierre's own
+it has one (`src` in `data.json` / `data/cand.json` / `fish-photos.json` / `fish-game.json`: iNaturalist, Pierre's own
 iNaturalist photos, FishBase), at a light size, never the original file: iNaturalist `small` (240 px) for our 240 px
 file, `medium` (500 px) for 480 px, `large` (1024 px) for 960 and 1600 px, FishBase's one file as it is (`core.js`
 `photoOnline`). A photo with none (the 34 untraced IMR lecture photos, the page art) moves to the same file on the site's `img/`; the 86 lecture photos traced to Corals of the World have one (`src`: the picture on coralsoftheworld.org, one file, shown as it is, its crop and turn from `cr` and `ro`).
@@ -177,7 +177,7 @@ commit, so no Publish is lost), then:
    - Each observation brings all its photos (up to 12, a guard only): Pierre takes at least the colony, a closer view and
      a macro, a game question shows the views of one colony, and the order of an observation's photos says nothing about
      their zoom, so sorting by view, quality and near-duplicates is the judging pass's job.
-3. `tools/fetch_local.py --tidy` runs last (below), then the workflow commits `data.json` and `cand.json` (and `img/`,
+3. `tools/fetch_local.py --tidy` runs last (below), then the workflow commits `data.json` and `data/cand.json` (and `img/`,
    only for a missing smaller size of a photo git keeps) (`tests/coralcand.test.js`).
 
 ### No more candidates is no more candidates
@@ -202,20 +202,20 @@ asking iNaturalist (rule C7).
 
 `tools/excluded.py` makes every import skip excluded photos (by file name and iNaturalist photo id); `drop_excluded`
 (run by `tools/fetch_local.py` after each publish) takes them out of every photo list, except a candidate the auto-sort
-excluded (`exclude[f] = 'auto'`), whose entry stays in `cand.json` so that its Undo can bring it back; excluded, it is
+excluded (`exclude[f] = 'auto'`), whose entry stays in `data/cand.json` so that its Undo can bring it back; excluded, it is
 neither shown nor counted as waiting.
 
-Each record Pierre's exclusion removes is kept in **`excluded.json`** (`{photos: {f: {in, g, k, v, i, p}}}`: which list,
+Each record Pierre's exclusion removes is kept in **`data/excluded.json`** (`{photos: {f: {in, g, k, v, i, p}}}`: which list,
 genus, views or more, view, position and the record; one photo per line, written through `datajson.py`; seeded from git
 history by `tools/apply_excluded_archive.py` for the photos removed before it existed), so that his **Restore** (admin
 Tree, genus page) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
 back marked `restored: 1`, which the share-alike drop spares (a share-alike one he restores stays a candidate he can
 add). A photo with no online original (an IMR lecture photo, whose file left `img/` with its exclusion) is held in
-`excluded.json` until its file is back: the workflow (whole history, `fetch-depth: 0`, `filter: blob:none`) runs
+`data/excluded.json` until its file is back: the workflow (whole history, `fetch-depth: 0`, `filter: blob:none`) runs
 `python tools/apply_excluded_archive.py --files` before `tools/photos.py`, which takes the file back from git history,
 so it returns with its files; one whose file is nowhere in the history stays held, said in the run's log.
 
 Both run in `fetch_local.py` `tidy()`, which ends every refill and runs alone, offline, as
-`python3 tools/fetch_local.py --tidy`: restored photos back, excluded ones out (into `excluded.json`), then the waiting
-share-alike candidates dropped, and `dump_all` splits `data.json` / `cand.json` again; `datajson.curated()` (the
+`python3 tools/fetch_local.py --tidy`: restored photos back, excluded ones out (into `data/excluded.json`), then the waiting
+share-alike candidates dropped, and `dump_all` splits `data.json` / `data/cand.json` again; `datajson.curated()` (the
 candidates `curation.json` uses) leaves out any excluded id.

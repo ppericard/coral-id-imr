@@ -148,11 +148,11 @@ test('read_cur: tags read anew bring the judge crop when the photo has none; his
 });
 
 test("curplay: the players' copy reads the curation as the build does", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'readcur-'));
+  const dir = mkTmp('readcur-');
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('curation.json', {fish: {seen: {f1: 1, f8: 1}, auto: {[old]: {f1: 'r'}}}});
-  w('suggest.json', {fish: {f1: {jt: 'p1g0sl1', e: 4, k: 'best'}}, by: by('2026-11-19')});
-  w('fish-cand.json', cand);
+  w('data/suggest.json', {fish: {f1: {jt: 'p1g0sl1', e: 4, k: 'best'}}, by: by('2026-11-19')});
+  w('data/fish-cand.json', cand);
   execFileSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), dir], {stdio: 'ignore'});
   const P = JSON.parse(fs.readFileSync(path.join(dir, 'curation-play.json'), 'utf8'));
   assert.deepStrictEqual(P.fish.seen, {f8: 1});
@@ -162,4 +162,125 @@ test("curplay: the players' copy reads the curation as the build does", () => {
     'curation.json unchanged'
   );
   fs.rmSync(dir, {recursive: true, force: true});
+});
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}
+
+// The admin's pages read the auto-sort's proposals as the build does (autosort.js sortReads, sortView; Pierre, 2026-11-19
+// 20:57): the same photos and the same fields as tools/fish_game.py read_cur, shown as the pass's value. Every pass value
+// below differs from its copy, so what the build changes is exactly what the pages read anew.
+const reads = (F, sug) => {
+  const built = readCur({fish: F}, cand, sug, by('2026-11-19')).fish,
+    asBuilt = {};
+  ['tags', 'ease', 'phase', 'crop'].forEach(k =>
+    Object.keys({...F[k], ...built[k]}).forEach(f => {
+      if (JSON.stringify((F[k] || {})[f]) !== JSON.stringify((built[k] || {})[f])) (asBuilt[f] = asBuilt[f] || []).push(k);
+    })
+  );
+  const pages = {};
+  Object.keys(sug).forEach(f => {
+    const w = A.sortReads(F, f, sug[f]);
+    if (w.length) pages[f] = w.sort();
+  });
+  Object.keys(asBuilt).forEach(f => asBuilt[f].sort());
+  return {asBuilt, pages};
+};
+
+test('the pages read the proposals anew as the build does: the same photos, the same fields', () => {
+  const c = [0.2, 0.1, 0.8, 0.9],
+    copy = 'p1d1sl1',
+    pass = {jt: 'p1g1sl1', e: 4, k: 'best', c, ph: 'female'},
+    fs9 = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9'],
+    F = {
+      add: Object.fromEntries(fs9.map(f => [f, 's1'])),
+      tags: Object.fromEntries(fs9.map(f => [f, copy])),
+      ease: Object.fromEntries(fs9.map(f => [f, 2])),
+      phase: {f1: 'male'},
+      crop: {f1: [0.1, 0.1, 0.9, 0.9]},
+      kept: {f5: 'q308'},
+      out: {f6: 's2'},
+      auto: {
+        [old]: {
+          f1: 'atepc', // every field the run wrote
+          f2: 'ate', // tags and ease (the judge's crop comes with the tags: no crop of his)
+          f3: 'a', // his own tags and ease (the run wrote none)
+          f4: '?a', // a Check
+          f5: 'ate', // Keep mine
+          f6: 'ate', // moved with Not this
+          f7: '-ate', // undone
+          f8: 'ate@t5a1kq', // corrected by him: the fields still read
+          f9: 'ate' // a newer sure rejection: a proposal, nothing read anew
+        }
+      }
+    },
+    sug = {f1: pass, f2: pass, f3: pass, f4: pass, f5: pass, f6: pass, f7: pass, f8: pass, f9: {...pass, jt: 'p1g1slk'}},
+    {asBuilt, pages} = reads(F, sug);
+  assert.deepStrictEqual(asBuilt, {
+    f1: ['crop', 'ease', 'phase', 'tags'],
+    f2: ['crop', 'ease', 'tags'],
+    f8: ['crop', 'ease', 'tags']
+  });
+  assert.deepStrictEqual(pages, asBuilt);
+  // His own crop stands beside the tags read anew.
+  const his = {...F, crop: {...F.crop, f2: [0, 0, 1, 1]}},
+    r = reads(his, sug);
+  assert.deepStrictEqual(r.pages.f2, ['ease', 'tags']);
+  assert.deepStrictEqual(r.asBuilt, r.pages);
+});
+
+test('sortView: the same part with the fields read anew left out; the draft itself never changes (rule A1)', () => {
+  const pass = {jt: 'p1g1sl1', e: 4, k: 'best'},
+    F = {
+      add: {f1: 's1', f2: 's1'},
+      tags: {f1: 'p1d1sl1', f2: 'p1d1sl1'},
+      ease: {f1: 2, f2: 2},
+      auto: {[old]: {f1: 'ate', f2: 'a'}}
+    },
+    snap = JSON.stringify(F),
+    sug = {f1: pass, f2: pass},
+    V = A.sortView(F, sug);
+  assert.deepStrictEqual([V.tags, V.ease, V.add], [{f2: 'p1d1sl1'}, {f2: 2}, F.add]);
+  assert.strictEqual(JSON.stringify(F), snap, 'the draft is untouched');
+  assert.strictEqual(A.sortView(F, sug), V, 'one view per draft and pass');
+  assert.strictEqual(A.sortView(F, undefined), F, 'no pass loaded: the draft');
+  assert.strictEqual(A.sortView({...F, kept: {f1: 'q308'}}, sug).tags.f1, 'p1d1sl1', 'Keep mine: his copy stands');
+  const none = {add: {f1: 's1'}, tags: {f1: 'p1d1sl1'}};
+  assert.strictEqual(A.sortView(none, sug), none, 'nothing of the auto-sort: the draft itself');
+});
+
+test('sortJudge: a phase the newer judgement no longer gives is gone, not the game record old one (review #1313)', () => {
+  const g = {e: 3, jt: 'p1d0sl1', ph: 'male'},
+    j = {jt: 'p1g0sl1', e: 4, k: 'best'},
+    F = {add: {f1: 's1'}, tags: {f1: 'p1d0sl1'}, phase: {f1: 'male'}, auto: {[old]: {f1: 'atep'}}};
+  assert.strictEqual('ph' in A.sortJudge(F, 'f1', g, j), false, 'read anew: no phase');
+  assert.strictEqual(A.sortJudge(F, 'f1', g, {...j, ph: 'female'}).ph, 'female');
+  assert.strictEqual(A.sortJudge({...F, auto: {[old]: {f1: 'ate'}}}, 'f1', g, j).ph, 'male', 'phase not written by the run: kept');
+  assert.strictEqual(A.sortJudge(F, 'f1', undefined, j), j);
+  assert.strictEqual(A.sortJudge(F, 'f1', g, undefined), g);
+});
+
+test('sortView with the candidates: the source juvenile flag stays, as the build copies it (review #1313)', () => {
+  const pass = {jt: 'p1g0sl1', e: 4, k: 'best'},
+    F = {
+      add: {f1: 's1', fj: 's1'},
+      tags: {f1: 'p1d0sl1', fj: 'p1d0sl1'},
+      ease: {f1: 2, fj: 2},
+      auto: {[old]: {f1: 'ate', fj: 'ate'}}
+    },
+    sug = {f1: pass, fj: pass},
+    recs = {f1: rec('f1'), fj: rec('fj', 'juvenile')},
+    built = readCur({fish: F}, cand, sug, by('2026-11-19')).fish,
+    V = A.sortView(F, sug, recs);
+  assert.strictEqual(built.tags.fj, 'p1g0sl1j', 'the build keeps the juvenile flag');
+  // What the pages show: the stored tags when left out fall back to the pass's, the juvenile one is the build's copy.
+  assert.strictEqual(V.tags.fj, built.tags.fj);
+  assert.strictEqual('f1' in V.tags, false, 'no source stage: the pass value shows');
+  assert.strictEqual(A.sortView(F, sug, recs), V, 'one view per draft, pass and candidates');
+  assert.notStrictEqual(A.sortView(F, sug, {}), V, 'other candidates, other view');
+  assert.strictEqual(F.tags.fj, 'p1d0sl1', 'the draft is untouched');
 });

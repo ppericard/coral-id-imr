@@ -131,7 +131,7 @@ test('spacing: first at PULSE.FIRST answers, then every PULSE.EVERY, longer afte
     // A session far enough along (Q.PULSE.SESS_N answers over Q.PULSE.SESS_MS), kept as it is in what is stored.
     long = () => {
       const st = c.store.get(Q.PULSEK, {});
-      c.store.set(Q.PULSEK, {...st, v: {t0: c.t - Q.PULSE.SESS_MS - 60000, t: c.t, n: Q.PULSE.SESS_N + 5}});
+      c.store.set(Q.PULSEK, {...st, v: {t0: c.t - Q.PULSE.SESS_MS - 60000, t: c.t, n: Q.PULSE.SESS_N + 5, s: 'coral'}});
     },
     at = n => ((c.a = n), long(), Q.pulseDue());
   assert.strictEqual(at(Q.PULSE.FIRST - 1), false, 'not before PULSE.FIRST answers');
@@ -196,7 +196,7 @@ test('session gate: a prompt due at the start of a new session waits for 15 answ
   assert.strictEqual(Q.PULSE.SESS_MS, 5 * 60000);
   // Yesterday: 100 answers, the last prompt at 60, so the counter is due (100 − 60 ≥ 40) when today's session starts.
   c.a = 100;
-  c.store.set(Q.PULSEK, {at: 60, q: 'fun', left: ['bored'], v: {t0: c.t - 3600e3, t: c.t, n: 50}});
+  c.store.set(Q.PULSEK, {at: 60, q: 'fun', left: ['bored'], v: {t0: c.t - 3600e3, t: c.t, n: 50, s: 'coral'}});
   c.t += 14 * 3600e3; // the next morning
   // Quick answers (8 s apart): 15 answers come in 2 min, so the 5 minutes decide.
   const quick = play(Q, Array(60).fill(8));
@@ -268,16 +268,17 @@ test('session gate: a reload is no new session; the stored session survives a br
   Q2.ctx.t = c.t + 10000;
   Q2.ctx.store.set(Q2.PULSEK, c.store.get(Q.PULSEK, {}));
   Q2.pulseNote();
-  assert.deepStrictEqual(Q2.ctx.store.get(Q2.PULSEK, {}).v, {t0: 1e12, t: 1e12 + 20000, n: 3});
-  // Broken values start a new session; a clock that went back too.
-  for (const v of [null, 'x', {t0: 'a', t: 1, n: 1}, {t0: 1, t: c.t + 1e6, n: 4}]) {
+  assert.deepStrictEqual(Q2.ctx.store.get(Q2.PULSEK, {}).v, {t0: 1e12, t: 1e12 + 20000, n: 3, s: 'coral'});
+  // Broken values start a new session; a clock that went back too, and a session from before each subject had its own
+  // (no s).
+  for (const v of [null, 'x', {t0: 'a', t: 1, n: 1}, {t0: 1, t: c.t + 1e6, n: 4}, {t0: c.t - 1000, t: c.t - 500, n: 30}]) {
     c.store.set(Q.PULSEK, {at: 3, v});
     Q.pulseNote();
-    assert.deepStrictEqual(c.store.get(Q.PULSEK, {}), {at: 3, v: {t0: c.t, t: c.t, n: 1}}, JSON.stringify(v));
+    assert.deepStrictEqual(c.store.get(Q.PULSEK, {}), {at: 3, v: {t0: c.t, t: c.t, n: 1, s: 'coral'}}, JSON.stringify(v));
   }
   c.store.set(Q.PULSEK, 'broken');
   Q.pulseNote();
-  assert.deepStrictEqual(c.store.get(Q.PULSEK, {}), {v: {t0: c.t, t: c.t, n: 1}});
+  assert.deepStrictEqual(c.store.get(Q.PULSEK, {}), {v: {t0: c.t, t: c.t, n: 1, s: 'coral'}});
   assert.strictEqual(Q.pulseSess(null), false);
 });
 
@@ -316,27 +317,51 @@ test('spacing: every out-of-game prompt PROMPT.GAP answers apart, never with the
 });
 
 // Every subject asks it (Pierre, 2026-11-19, Q436), each paced on its own answers (answersSoFar is the subject on
-// screen's), the session the device's: a prompt in one subject neither brings one at once nor holds one back in another
-// (Codex review #1226).
-test('every subject: its own pacing, one session for the device', () => {
+// screen's) and in its own session (Pierre, 2026-11-20: «Carte "this questions are" après une seule question dans les
+// coraux. Attention à avoir des compteurs par matière»): a prompt in one subject neither brings one at once nor holds one
+// back in another, and a long session in one subject never opens another's on the prompt.
+test("every subject: its own pacing and its own session (no card at another subject's first answer)", () => {
   const C = require('../core.js'),
     Q = quiz(),
     c = Q.ctx,
     [A, B] = C.SUBJECTS;
   c.sDev = name => C.subjDev(c.SUBJ.id, name);
-  const on = (S, a) => ((c.SUBJ = S), (c.a = a), Q.pulseDue());
+  const on = (S, a) => ((c.SUBJ = S), (c.a = a), Q.pulseDue()),
+    // n answers in subject S, gap seconds apart, each noted as answer() does
+    play = (S, n, gap) => {
+      c.SUBJ = S;
+      for (let i = 0; i < n; i++) ((c.t += gap * 1000), Q.pulseNote());
+    };
   // the first subject's record is where it always was
   assert.strictEqual(C.subjDev(A.id, 'pulse'), Q.PULSEK);
-  for (let i = 0; i < Q.PULSE.SESS_N; i++) Q.pulseNote(c.t - Q.PULSE.SESS_MS - 60000 + i);
-  // A prompt at 200 answers in A; B, at 50 answers, paces on its own (its first prompt is due: 50 >= PULSE.FIRST)
+  // Pierre's case: a long session in B (well past PULSE.SESS_N answers and PULSE.SESS_MS), then one answer in A, whose
+  // own count is due (200 answers, its last prompt at 100): no prompt after that one answer.
+  c.store.set(Q.PULSEK, {at: 100, q: 'are', left: []});
+  play(B, Q.PULSE.SESS_N + 10, 30);
+  assert.strictEqual(on(B, 100), true, 'B: its session is far enough along, its own first prompt due');
+  play(A, 1, 10);
+  assert.strictEqual(on(A, 200), false, "A: one answer in, B's session does not count");
+  play(A, Q.PULSE.SESS_N - 2, 10);
+  assert.strictEqual(on(A, 200), false, 'A: its session has not PULSE.SESS_N answers yet');
+  play(A, 1, 10);
+  assert.strictEqual(on(A, 200), false, 'A: PULSE.SESS_N answers, but under PULSE.SESS_MS');
+  play(A, 1, Q.PULSE.SESS_MS / 1000);
+  assert.strictEqual(on(A, 200), true, 'A: its own session far enough along');
+  // and back to B within SESSION.GAP: B's session starts over, so no prompt at its first answer either
+  play(B, 1, 30);
+  assert.strictEqual(on(B, 100), false, "B: a new session after A's answers");
+  // Each subject's pacing is its own: a prompt at 200 answers in A; B, at 50 answers, its first prompt due
+  play(A, Q.PULSE.SESS_N, 30);
+  play(A, 1, Q.PULSE.SESS_MS / 1000);
   c.store.set(C.subjDev(A.id, 'pulse'), {...c.store.get(Q.PULSEK, {}), at: 200, q: 'are', left: []});
   assert.strictEqual(on(A, 210), false, 'A: 10 answers after its prompt');
+  assert.strictEqual(on(A, 200 + Q.PULSE.EVERY), true);
+  play(B, Q.PULSE.SESS_N, 30);
+  play(B, 1, Q.PULSE.SESS_MS / 1000);
   assert.strictEqual(on(B, 50), true, "B: its own first, A's count not read");
   c.store.set(C.subjDev(B.id, 'pulse'), {at: 50, q: 'fun', left: []});
   assert.strictEqual(on(B, 60), false, 'B: 10 answers after its prompt');
-  assert.strictEqual(on(A, 200), false, "A: B's prompt does not bring one back at once");
-  assert.strictEqual(on(A, 200 + Q.PULSE.EVERY), true);
-  // the session is the device's, kept in the first subject's record with its pacing
-  assert.ok(c.store.get(Q.PULSEK, {}).v.n >= Q.PULSE.SESS_N && c.store.get(Q.PULSEK, {}).at === 200);
+  // the session is kept in the first subject's record with its pacing, never in another subject's
+  assert.ok(c.store.get(Q.PULSEK, {}).v.s === B.id && c.store.get(Q.PULSEK, {}).at === 200);
   assert.ok(!('v' in c.store.get(C.subjDev(B.id, 'pulse'), {})));
 });

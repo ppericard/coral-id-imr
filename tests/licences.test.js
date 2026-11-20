@@ -23,7 +23,7 @@ const py = code =>
 const OBS = 'https://www.inaturalist.org/observations/';
 const SRC = i => `https://inaturalist-open-data.s3.amazonaws.com/photos/${i}/original.jpg`;
 const BY = (n, l) => `(c) ${n}, some rights reserved (${l})`;
-// A candidate (fish-cand.json, cand.json shape) of photo i on observation o.
+// A candidate (data/fish-cand.json, data/cand.json shape) of photo i on observation o.
 const cand = (f, i, o, a, lic, extra = {}) => ({
   f,
   a,
@@ -53,13 +53,13 @@ const game = (f, i, o, a, lic, extra = {}) => ({
 });
 
 function fixture() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licences-'));
+  const dir = mkTmp('licences-');
   const w = (f, d) => {
     fs.mkdirSync(path.dirname(path.join(dir, f)), {recursive: true});
     fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   };
   const pierre = BY('Pierre Pericard', 'CC BY-NC');
-  w('fish-cand.json', {
+  w('data/fish-cand.json', {
     v: 1,
     cand: {
       s001: [
@@ -164,8 +164,8 @@ function fixture() {
       }
     }
   });
-  w('cand.json', {cand: {acropora: [cand('acropora-cand-23', 23, 203, BY('Ivy', 'CC BY'), 'cc-by')]}}); // all rights reserved: leaves
-  w('excluded.json', {
+  w('data/cand.json', {cand: {acropora: [cand('acropora-cand-23', 23, 203, BY('Ivy', 'CC BY'), 'cc-by')]}}); // all rights reserved: leaves
+  w('data/excluded.json', {
     photos: {
       'acropora-wide-24': {
         in: 'gen',
@@ -235,17 +235,22 @@ print(json.dumps(out))`);
 const read = (dir, f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 const files = dir =>
   Object.fromEntries(
-    ['fish-cand.json', 'tools/fish_refs.json', 'fish-game.json', 'fish-photos.json', 'data.json', 'cand.json', 'excluded.json'].map(f => [
-      f,
-      fs.readFileSync(path.join(dir, f), 'utf8')
-    ])
+    [
+      'data/fish-cand.json',
+      'tools/fish_refs.json',
+      'fish-game.json',
+      'fish-photos.json',
+      'data.json',
+      'data/cand.json',
+      'data/excluded.json'
+    ].map(f => [f, fs.readFileSync(path.join(dir, f), 'utf8')])
   );
 const ofs = L => (L || []).map(p => p.f);
 
 test('a photo made more open, or stricter but still accepted: its credit and licence follow, everywhere it is listed', () => {
   const dir = fixture(),
     r = run(dir);
-  const fc = read(dir, 'fish-cand.json').cand.s001,
+  const fc = read(dir, 'data/fish-cand.json').cand.s001,
     by = Object.fromEntries(fc.map(p => [p.f, p]));
   assert.strictEqual(by['fish-s001-cand-11'].lic, 'cc-by');
   assert.strictEqual(by['fish-s001-cand-11'].a, '(c) Pierre Pericard, some rights reserved (CC BY)');
@@ -262,10 +267,10 @@ test('a photo made more open, or stricter but still accepted: its credit and lic
   const fp = read(dir, 'fish-photos.json');
   assert.strictEqual(fp.photos.t01.find(p => p.f === 'fish-s001-cand-11').lic, 'cc-by');
   assert.strictEqual(fp.sheet.s002[0].a, BY('Fay', 'CC BY'), 'wording alone never rewrites a credit');
-  assert.deepStrictEqual(r.opener, {'fish-cand.json': 1, 'fish-game.json': 1});
+  assert.deepStrictEqual(r.opener, {'data/fish-cand.json': 1, 'fish-game.json': 1});
   // Stricter: CC BY to CC BY-NC (12), his own CC BY to no licence (16, which stays: lic own), a coral photo to share-alike
   // (21, which stays in play) and an excluded one to share-alike (25, which stays excluded, restorable by the admin).
-  assert.deepStrictEqual(r.stricter, {'fish-cand.json': 2, 'fish-game.json': 1, 'data.json': 1, 'excluded.json': 1});
+  assert.deepStrictEqual(r.stricter, {'data/fish-cand.json': 2, 'fish-game.json': 1, 'data.json': 1, 'data/excluded.json': 1});
   assert.deepStrictEqual(r.nc[0]['fish-game.json'], 1);
   assert.deepStrictEqual(r.nc[1]['fish-game.json'], 0);
   assert.deepStrictEqual(r.nc[1]['fish-photos.json'], 0);
@@ -274,7 +279,7 @@ test('a photo made more open, or stricter but still accepted: its credit and lic
 test("the weekly run (--others) leaves Pierre's own photos out: not asked, not changed; the others still follow", () => {
   const dir = fixture(),
     r = run(dir, {own: false});
-  const by = Object.fromEntries(read(dir, 'fish-cand.json').cand.s001.map(p => [p.f, p]));
+  const by = Object.fromEntries(read(dir, 'data/fish-cand.json').cand.s001.map(p => [p.f, p]));
   assert.strictEqual(by['fish-s001-cand-11'].lic, 'cc-by-nc', 'his own photo is left as it is');
   assert.strictEqual(by['fish-s001-cand-12'].lic, 'cc-by-nc', "another author's change still follows");
   assert.ok(!r.asked.flat().includes('101'), 'his observation is not asked');
@@ -283,21 +288,21 @@ test("the weekly run (--others) leaves Pierre's own photos out: not asked, not c
 test('a fish photo whose licence the rules refuse leaves every fish list and is reported; his own without a licence stays', () => {
   const dir = fixture(),
     r = run(dir);
-  const fc = ofs(read(dir, 'fish-cand.json').cand.s001);
+  const fc = ofs(read(dir, 'data/fish-cand.json').cand.s001);
   for (const f of ['fish-s001-cand-13', 'fish-s001-cand-14', 'fish-s001-cand-15']) assert.ok(!fc.includes(f), f);
   assert.ok(!ofs(read(dir, 'tools/fish_refs.json').photos.s001).includes('fi13'), 'its reference photo too');
   assert.ok(!ofs(read(dir, 'fish-game.json').photos.t01).includes('fish-s001-cand-13'), 'out of play');
-  const own = read(dir, 'fish-cand.json').cand.s001.find(p => p.f === 'fish-s001-cand-16');
+  const own = read(dir, 'data/fish-cand.json').cand.s001.find(p => p.f === 'fish-s001-cand-16');
   assert.strictEqual(own.lic, 'own', "Pierre's own without a licence (tools/fetch_fish.py lic_ok)");
   assert.deepStrictEqual(
     r.left.map(x => x.slice(0, 2)).sort(),
     [
       ['data.json', 'acropora-wide-22'],
-      ['cand.json', 'acropora-cand-23'],
-      ['excluded.json', 'acropora-wide-24'],
-      ['fish-cand.json', 'fish-s001-cand-13'],
-      ['fish-cand.json', 'fish-s001-cand-14'],
-      ['fish-cand.json', 'fish-s001-cand-15'],
+      ['data/cand.json', 'acropora-cand-23'],
+      ['data/excluded.json', 'acropora-wide-24'],
+      ['data/fish-cand.json', 'fish-s001-cand-13'],
+      ['data/fish-cand.json', 'fish-s001-cand-14'],
+      ['data/fish-cand.json', 'fish-s001-cand-15'],
       ['fish-game.json', 'fish-s001-cand-13'],
       ['tools/fish_refs.json', 'fi13']
     ].sort()
@@ -311,23 +316,23 @@ test('corals: share-alike stays in play for Pierre (reported), "no derivatives" 
   assert.deepStrictEqual(ofs(wide), ['acropora-wide-21', 'imrl-p1_i1'], 'the IMR lecture photo untouched');
   assert.strictEqual(wide[0].lic, 'cc-by-sa');
   assert.deepStrictEqual(r.sa, [['data.json', 'acropora-wide-21', 'cc-by-sa']]);
-  assert.deepStrictEqual(read(dir, 'cand.json').cand, {}, 'a genus left with no candidate is not listed');
-  // excluded.json: tools/excluded.py restore_unexcluded checks no licence, so a refused one leaves it;
+  assert.deepStrictEqual(read(dir, 'data/cand.json').cand, {}, 'a genus left with no candidate is not listed');
+  // data/excluded.json: tools/excluded.py restore_unexcluded checks no licence, so a refused one leaves it;
   // a share-alike one stays for his Restore, its licence brought up to date (rule P1: his to keep).
-  const ex = read(dir, 'excluded.json').photos;
+  const ex = read(dir, 'data/excluded.json').photos;
   assert.deepStrictEqual(Object.keys(ex), ['acropora-wide-25']);
   assert.strictEqual(ex['acropora-wide-25'].p.lic, 'cc-by-sa');
-  assert.ok(r.left.some(x => x[0] === 'excluded.json' && x[1] === 'acropora-wide-24'));
-  assert.ok(!r.sa.some(x => x[0] === 'excluded.json'), 'out of play: not reported as share-alike');
+  assert.ok(r.left.some(x => x[0] === 'data/excluded.json' && x[1] === 'acropora-wide-24'));
+  assert.ok(!r.sa.some(x => x[0] === 'data/excluded.json'), 'out of play: not reported as share-alike');
 });
 
 test('no answer is not a licence: a photo iNaturalist no longer returns stays as it is, reported; FishBase is never asked', () => {
   const dir = fixture(),
     r = run(dir);
-  const p = read(dir, 'fish-cand.json').cand.s001.find(x => x.f === 'fish-s001-cand-17');
+  const p = read(dir, 'data/fish-cand.json').cand.s001.find(x => x.f === 'fish-s001-cand-17');
   assert.strictEqual(p.lic, 'cc-by');
-  assert.deepStrictEqual(r.missing, [['fish-cand.json', 'fish-s001-cand-17', 'observation gone']]);
-  assert.ok(ofs(read(dir, 'fish-cand.json').cand.s001).includes('fish-s001-cand-fb-Abc_u0'));
+  assert.deepStrictEqual(r.missing, [['data/fish-cand.json', 'fish-s001-cand-17', 'observation gone']]);
+  assert.ok(ofs(read(dir, 'data/fish-cand.json').cand.s001).includes('fish-s001-cand-fb-Abc_u0'));
   assert.ok(!r.asked.flat().includes('0'));
   assert.strictEqual(r.asked.length, 1, 'one batch');
 });
@@ -375,7 +380,7 @@ test("every fish game record left carries its source's credit and licence (tools
   const dir = fixture();
   run(dir);
   const src = {};
-  for (const L of Object.values(read(dir, 'fish-cand.json').cand)) for (const p of L) src[p.f] = p;
+  for (const L of Object.values(read(dir, 'data/fish-cand.json').cand)) for (const p of L) src[p.f] = p;
   for (const L of Object.values(read(dir, 'tools/fish_refs.json').photos)) for (const p of L) src[p.f] ||= p;
   const game = Object.values(read(dir, 'fish-game.json').photos).flat();
   assert.strictEqual(game.length, 3);
@@ -396,14 +401,14 @@ test('the workflow report: the summary lists what left play, each one also a war
   assert.match(warn.join('\n'), /cand\.json: acropora-cand-23 is now all rights reserved \(was cc-by\)/);
 });
 
-// The sea slugs' candidates (seaslug-cand.json, tools/fetch_seaslugs.py: keyed by iNaturalist taxon id) follow the fish's
+// The sea slugs' candidates (data/seaslug-cand.json, tools/fetch_seaslugs.py: keyed by iNaturalist taxon id) follow the fish's
 // rule (CC0, CC BY, CC BY-NC; the admin's own without a licence): a candidate whose licence turns refused leaves the file,
 // share-alike included (unlike a coral photo in play), and is reported; a species left with none is not listed.
-test('sea slugs: seaslug-cand.json follows the fish licence rule; a refused candidate leaves the file and is reported', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licences-slug-'));
+test('sea slugs: data/seaslug-cand.json follows the fish licence rule; a refused candidate leaves the file and is reported', () => {
+  const dir = mkTmp('licences-slug-');
   const slug = (k, i, o, a, lic, extra = {}) => cand(`seaslug-${k}-cand-${i}`, i, o, a, lic, {t: 'Slugus slugii', ...extra});
   fs.writeFileSync(
-    path.join(dir, 'seaslug-cand.json'),
+    path.join(dir, 'data/seaslug-cand.json'),
     JSON.stringify({
       v: 1,
       cand: {
@@ -428,22 +433,29 @@ def get(url, missing=False, timeout=None):
 LOG = []
 r = L.run(root=${JSON.stringify(dir)}, get=get, summary=${JSON.stringify(sum)}, log=LOG.append)
 print(json.dumps({'left': r['left'], 'opener': dict(r['opener']), 'stricter': dict(r['stricter']), 'asked': r['asked'], 'log': LOG}))`);
-  const C = read(dir, 'seaslug-cand.json');
+  const C = read(dir, 'data/seaslug-cand.json');
   assert.deepStrictEqual(Object.keys(C.cand), ['900'], 'a species left with no candidate is not listed');
   const by = Object.fromEntries(C.cand['900'].map(p => [p.f, p]));
   assert.deepStrictEqual(Object.keys(by), ['seaslug-900-cand-31', 'seaslug-900-cand-33']);
   assert.deepStrictEqual([by['seaslug-900-cand-31'].lic, by['seaslug-900-cand-31'].a], ['cc-by', BY('Mo', 'CC BY')]);
   assert.strictEqual(by['seaslug-900-cand-33'].lic, 'own', "Pierre's own without a licence stays, as for the fish");
   assert.strictEqual(r.asked, 4);
-  assert.deepStrictEqual(r.opener, {'seaslug-cand.json': 1});
-  assert.deepStrictEqual(r.stricter, {'seaslug-cand.json': 1});
+  assert.deepStrictEqual(r.opener, {'data/seaslug-cand.json': 1});
+  assert.deepStrictEqual(r.stricter, {'data/seaslug-cand.json': 1});
   assert.deepStrictEqual(r.left.sort(), [
-    ['seaslug-cand.json', 'seaslug-900-cand-32', 'cc-by', 'cc-by-sa'],
-    ['seaslug-cand.json', 'seaslug-901-cand-34', 'cc-by', 'cc-by-nd']
+    ['data/seaslug-cand.json', 'seaslug-900-cand-32', 'cc-by', 'cc-by-sa'],
+    ['data/seaslug-cand.json', 'seaslug-901-cand-34', 'cc-by', 'cc-by-nd']
   ]);
   assert.match(fs.readFileSync(sum, 'utf8'), /Left play \(licence the rules refuse\): 2/);
-  assert.strictEqual(r.log.filter(l => l.startsWith('::warning ') && l.includes('seaslug-cand.json: seaslug-')).length, 2);
+  assert.strictEqual(r.log.filter(l => l.startsWith('::warning ') && l.includes('data/seaslug-cand.json: seaslug-')).length, 2);
   // One species per line, as tools/fetch_seaslugs.py writes it (tools/datajson.py dump).
-  assert.match(fs.readFileSync(path.join(dir, 'seaslug-cand.json'), 'utf8'), /^"900":\[/m);
+  assert.match(fs.readFileSync(path.join(dir, 'data/seaslug-cand.json'), 'utf8'), /^"900":\[/m);
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

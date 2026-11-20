@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // Sea slug photo judging (judging/SEASLUG.md, its egg rule included): the fish's
 // judging tools with a subject (tools/judging_fish.py --subject seaslug, tools/fish_judge.py RUBRICS "seaslug"), the fish
 // left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, juveniles (Q435), f and w
-// capping nothing), the judging files' check (keep optional, the egg rule, no phase, the animal's box), the import into suggest.json
+// capping nothing), the judging files' check (keep optional, the egg rule, no phase, the animal's box), the import into data/suggest.json
 // "seaslug" beside the fish's. Offline: made-up fixtures in a temporary folder; nothing is downloaded. Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -64,9 +64,9 @@ print(json.dumps({
 });
 
 // A made-up repository: two sea slug species (taxon ids 900 and 901), their candidates, a curation.json whose fish part
-// names a sea slug photo (never read for them), a suggest.json holding fish judgements.
+// names a sea slug photo (never read for them), a data/suggest.json holding fish judgements.
 function world(files) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slugjudge-'));
+  const dir = mkTmp('slugjudge-');
   const w = (f, d) => {
     fs.mkdirSync(path.dirname(path.join(dir, f)), {recursive: true});
     fs.writeFileSync(path.join(dir, f), JSON.stringify(d, null, 1) + '\n');
@@ -84,9 +84,9 @@ function world(files) {
       {name: 'Slugus secundus', inat: 901, circle: 1}
     ]
   });
-  w('seaslug-cand.json', {v: 1, cand: {900: [c(900, 1, 11), c(900, 2, 12), c(900, 3, 13)], 901: [c(901, 4, 14)]}});
+  w('data/seaslug-cand.json', {v: 1, cand: {900: [c(900, 1, 11), c(900, 2, 12), c(900, 3, 13)], 901: [c(901, 4, 14)]}});
   w('curation.json', {fish: {seen: {'seaslug-900-cand-1': 1}, add: {'seaslug-900-cand-2': 's001'}}});
-  w('suggest.json', {
+  w('data/suggest.json', {
     v: 1,
     by: {s001: {fish: {by: 'claude', at: '2026-11-01', n: 1}}},
     fish: {'fish-s001-cand-5': {jt: 'p1g0sl1', e: 5, k: 'best'}}
@@ -183,7 +183,7 @@ print(json.dumps({k: errs(v) for k, v in cases.items()}))`
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test('the import writes suggest.json "seaslug" beside the fish judgements, which stay as they were; codes re-applies a re-judge', () => {
+test('the import writes data/suggest.json "seaslug" beside the fish judgements, which stay as they were; codes re-applies a re-judge', () => {
   const dir = world({
     'judging/seaslug/900.json': {
       photos: {
@@ -193,7 +193,7 @@ test('the import writes suggest.json "seaslug" beside the fish judgements, which
       }
     }
   });
-  const before = JSON.parse(fs.readFileSync(path.join(dir, 'suggest.json'), 'utf8'));
+  const before = JSON.parse(fs.readFileSync(path.join(dir, 'data/suggest.json'), 'utf8'));
   const out = RUN(
     dir,
     `import contextlib, io
@@ -205,7 +205,7 @@ except SystemExit as e:
 print(json.dumps(code))`
   );
   assert.strictEqual(out, 0);
-  const S = JSON.parse(fs.readFileSync(path.join(dir, 'suggest.json'), 'utf8'));
+  const S = JSON.parse(fs.readFileSync(path.join(dir, 'data/suggest.json'), 'utf8'));
   assert.deepStrictEqual(S.fish, before.fish);
   assert.deepStrictEqual(S.by.s001, before.by.s001);
   assert.deepStrictEqual(S.seaslug, {
@@ -227,7 +227,7 @@ print(json.dumps(code))`
   );
   // The pass's date set back, so the re-judge's own date (the route back reads it: autosort.js sortBack) shows.
   S.by['900'].seaslug.at = '2026-01-01';
-  fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify(S));
+  fs.writeFileSync(path.join(dir, 'data/suggest.json'), JSON.stringify(S));
   const today = RUN(
     dir,
     `import contextlib, io, datetime
@@ -235,7 +235,7 @@ with contextlib.redirect_stdout(io.StringIO()):
     JF.cmd_rep(("jt", "e", "k", "ph", "c", "bb", "u", "n", "egg"), stamp=True)
 print(json.dumps(datetime.date.today().isoformat()))`
   );
-  const S2 = JSON.parse(fs.readFileSync(path.join(dir, 'suggest.json'), 'utf8'));
+  const S2 = JSON.parse(fs.readFileSync(path.join(dir, 'data/suggest.json'), 'utf8'));
   assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-1'], {egg: 1});
   assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-3'], {
     jt: 'o1g0sl1',
@@ -277,7 +277,14 @@ print(json.dumps([len(JF.SP), sum(1 for s in src['species'] if s.get('inat')) + 
   assert.ok(out[0] > 0 && out[0] === out[1]);
   assert.deepStrictEqual(out[2], ['119434']);
   assert.deepStrictEqual(out.slice(3, 5), ['seaslug', path.join('judging', 'seaslug')]);
-  assert.deepStrictEqual(out[5], [], 'seaslug-cand.json keys: taxon ids of tools/seaslugs.json, informal keys, genus names');
-  assert.ok(out[6] > 0, 'seaslug-cand.json read');
+  assert.deepStrictEqual(out[5], [], 'data/seaslug-cand.json keys: taxon ids of tools/seaslugs.json, informal keys, genus names');
+  assert.ok(out[6] > 0, 'data/seaslug-cand.json read');
   assert.deepStrictEqual(out.slice(7), [['Goniobranchus', 'goniobranchus-sp5'], 'Goniobranchus (genus level)']);
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

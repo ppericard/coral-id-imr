@@ -51,8 +51,8 @@ test('sure rule: what the pass is sure of, field by field', () => {
   assert.strictEqual(autoSure({g: 'cmp', q: 2, fm: 'M'}), null);
 });
 
-// Not measured on the real cand.json: what is left there is not a random sample of names. The auto-sort's adds leave
-// cand.json at the next candidate refill (approved-photos workflow), while its Checks stay there until Pierre answers
+// Not measured on the real data/cand.json: what is left there is not a random sample of names. The auto-sort's adds leave
+// data/cand.json at the next candidate refill (approved-photos workflow), while its Checks stay there until Pierre answers
 // them, so the share of Checks among the candidates left grows with every run. The hash itself is checked on fixed names and on a large generated set.
 test('1 in 20 Checks: deterministic per photo, 5% of candidate names', () => {
   // Fixed names, fixed answers: a change to the hash or the rule would make other photos Checks on Pierre's data.
