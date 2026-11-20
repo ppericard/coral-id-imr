@@ -989,21 +989,28 @@ async function freshSeed(b, base, errs, seed, fresh) {
       P[n] = s0;
     });
     ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
-    // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
-    const nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
-      pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
-    ok(!!pJ, 'a juvenile with an adult of its species in play');
+    // Their card (quiz.js phaseCardFor, phaseShow): a juvenile of a species whose young are sourced as different
+    // (fish.json species jd.d) beside an adult of its species, then marked shown for this kind only; a juvenile of a
+    // species with no such source brings none.
+    const cardOf = (n, p) => phaseCardFor([{n, p}], () => false),
+      nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => (cardOf(n, p) || {}).k === 'juvenile')),
+      pJ = nJ && GX(nJ).views.wide.find(p => (cardOf(nJ, p) || {}).k === 'juvenile'),
+      nN = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && !((TREEU.sps[p.sp] || {}).jd || {}).d)),
+      pN = nN && GX(nN).views.wide.find(p => phaseOf(p) === 'juvenile' && !((TREEU.sps[p.sp] || {}).jd || {}).d);
+    ok(!!pJ, 'a juvenile sourced as different, with an adult of its species in play');
+    ok(!!pN && cardOf(nN, pN) === null, `a juvenile not sourced as different brings no card (${pN && pN.f})`);
     if (pJ) {
       ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
-      const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+      const d = phaseShow(cardOf(nJ, pJ), nJ, false);
       ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
       ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
-      ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+      ok(!d.querySelector('.phlines'), 'no words of its own: no phase lines');
+      ok(/^Juvenile and /.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
       const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
       ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
       d.close(1);
       ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
-      ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+      ok(phaseCardFor([{n: nJ, p: pJ}], phaseSeen) === null, 'a second juvenile brings no card');
     }
     // The mimicry card (quiz.js mimShow): the surgeonfish's juvenile (M1) beside the angelfish it resembles, with the
     // pair's marks; never a juvenile photo of it taken outside the region (fish.json species region); then marked shown
@@ -2311,20 +2318,19 @@ async function freshSeed(b, base, errs, seed, fresh) {
     if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
       ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
     if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
-    // Its hero photo is the family's curated cover too, when it has one in play (app.js treeCurate).
+    // Its hero photo is the photo its list card showed (learn.js listPhoto: the curated cover while in play, app.js
+    // treeCurate, else the card's own photo), first in the viewer with its credits (Pierre, 2026-11-20).
     const hc = await q.evaluate(() => {
-      const g = TREEU.gen['f:' + decodeURIComponent(location.hash.split('/').pop())],
+      const p = listPhoto('f:' + decodeURIComponent(location.hash.split('/').pop())),
         h = document.querySelector('#view .hero-ph img');
       // By photo, not by address: a photo's address moves from R2 to its iNaturalist original when R2 fails mid-run
       // (core.js photoUrl fallback), so the same cover can show under either.
-      const id = String((g && g.coverP && g.coverP.f) || ''),
+      const id = String((p && p.f) || ''),
         got = h ? h.getAttribute('src') : '',
         alt = id.replace(/^fi(\d+)$/, 'photos/$1/');
-      return !g || !g.coverP
-        ? null
-        : {want: img(g.coverP, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
+      return !p ? null : {want: img(p, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
     });
-    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
+    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not its list photo ${JSON.stringify(hc)}`);
     // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
     const mk = await q.evaluate(() => {
       const m = document.querySelector('#view .fmarks');

@@ -95,6 +95,15 @@
       "why": "The measured block of the game photos (tools/photo_measure.py, tests/photomeasure.test.js) and tools/photo_metrics.py. Dependabot (pip) proposes the next one."
     },
     {
+      "id": "scipy",
+      "name": "SciPy (statistical tools)",
+      "version": "1.18.1",
+      "pins": [{"files": ["tools/requirements.txt"], "pattern": "scipy=={v}"}],
+      "latest": {"kind": "pypi", "package": "scipy", "compare": "exact"},
+      "lookup": "https://docs.scipy.org/doc/scipy/release.html",
+      "why": "Sparse factorisation and optimisation for the read-only studies (tools/studies/q316/fit.py and tests/q316.test.js, tools/rtdecomp.py, tools/studies/q351/). Dependabot (pip) proposes the next one."
+    },
+    {
       "id": "rclone",
       "name": "rclone (photos to R2)",
       "version": "1.76.0",
