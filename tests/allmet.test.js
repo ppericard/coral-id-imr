@@ -70,7 +70,7 @@ test('fishNextOf: every family met: the families on their way, then the scientif
     ]
   );
   assert.match(next({...base, wait: 1}).lines[1], /^1 more family joins the game as soon as its photos are in\.$/);
-  assert.match(next({...base, sci: false}).lines[1], /scientific genus names\. Turn them on in My progress or ⚙ Settings/);
+  assert.match(next({...base, sci: false}).lines[1], /scientific genus names\. Turn them on in What I learn, on My progress/);
   assert.match(next({...base, sci: false, sciDue: false}).lines[1], /once a family is at Advanced, its scientific genus names are offered/);
   assert.deepStrictEqual([...next(base).lines.slice(1)], ['What’s left: take each family to Instructor, through its mastery exam.']);
   // Circle 3 on but still due and left with photos (its families may open: allMetNone keeps the card away): read as all.
