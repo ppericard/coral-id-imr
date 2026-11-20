@@ -1,6 +1,6 @@
 # Report a problem: a line of its own on the answer's feedback, never behind More
 
-Date: 2026-11-20. PR: #0000. Rules or docs touched: rule U14 (docs/rules/ui.md), docs/spec/quiz.md "The feedback sheet", docs/spec/player-reports.md, docs/DESIGN.md "The short feedback sheet", ROADMAP.
+Date: 2026-11-20. PR: #1319. Rules or docs touched: rule U14 (docs/rules/ui.md), docs/spec/quiz.md "The feedback sheet", docs/spec/player-reports.md, docs/DESIGN.md "The short feedback sheet", ROADMAP.
 
 ## Context
 
