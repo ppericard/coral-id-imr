@@ -4294,6 +4294,7 @@ function toggleHelp() {
   };
   draw();
   $('tools').append(h);
+  h.style.setProperty('--help-top', Math.round(h.getBoundingClientRect().top) + 'px'); // the room left under it (admin.css)
 }
 
 /* ---------- Growth form ---------- */
