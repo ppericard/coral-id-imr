@@ -70,11 +70,11 @@ test('the fish admin has By difficulty; the fish Photo review still opens on Eas
   const fish = C.subjectOf('fish').admin.pages;
   assert.ok(fish.includes('photos/review/by-difficulty'));
   const src = read('admin.js'),
-    order = ["['quality', 'Quality']", "['growth-form', 'Growth form']", "['ease', 'Ease'", "['by-difficulty', 'By difficulty']"].map(x =>
+    order = ["['quality', 'Quality'", "['growth-form', 'Growth form'", "['ease', 'Ease'", "['by-difficulty', 'By difficulty']"].map(x =>
       src.indexOf(x)
     );
   assert.ok(order.every(i => i > 0) && order.every((i, k) => !k || i > order[k - 1]), JSON.stringify(order));
-  // the fish side's own page and help, the corals' left as they were
-  assert.match(src, /'photos\/review\/by-difficulty'\) return ASUBJ\.sheets \? renderFishDiff\(\) : renderDiff\(\)/);
-  assert.match(src, /'photos\/review\/by-difficulty': ASUBJ\.sheets \? 'fishdiff' : 'diff'/);
+  // one page for every subject, its ratings and its help from the subject's builder (tests/reviewbuild.test.js)
+  assert.match(src, /'photos\/review\/by-difficulty'\) return renderDiff\(ASUBJ\)/);
+  assert.match(src, /'photos\/review\/by-difficulty': reviewBuild\(ASUBJ\)\.diff\.help/);
 });
