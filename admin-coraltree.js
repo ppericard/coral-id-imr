@@ -9,7 +9,7 @@
 //   of its look-alikes, rule L5); the genera in no lecture group (Millepora, the bonus and Coral Finder key genera of
 //   data.json x) under k:none. Never the Coral Finder key of data.json key: its branches are growth forms, and rule C4
 //   forbids grouping genera by growth form (a genus also sits in several of its boxes: one parent per node here).
-// - WoRMS: the family WoRMS files each genus under (names.json worms: the admin's extract of the reference of names that
+// - WoRMS: the family WoRMS files each genus under (data/names.json worms: the admin's extract of the reference of names that
 //   tools/taxonomy.py writes; the admin never reads the reference itself), not the app's own family word (data.json fam, the IMR
 //   wording: Pachyseris is in Pachyseridae for WoRMS, Agariciidae in the lecture). The file holds each genus's AphiaID
 //   but no family's, so a family node's id is wf:<its name> (never w:, the namespace of an AphiaID).
@@ -75,7 +75,7 @@
     return N;
   }
   // The WoRMS view's nodes and problems: each genus (a leaf, its own id) under the family WoRMS gives it (wf:<family>,
-  // rank family), from W = names.json coral worms {genus: {id: AphiaID, fam}}, through taxtree.js ttFromRef: a genus the
+  // rank family), from W = data/names.json coral worms {genus: {id: AphiaID, fam}}, through taxtree.js ttFromRef: a genus the
   // extract lacks is reported (no reference), never placed. The families come in the order the Key's leaves meet them.
   function ctWormsOf(d, W) {
     const R = {};
@@ -136,8 +136,8 @@
 })(this);
 
 // ---- The admin view (browser only: admin.js state and helpers) ----
-// The two trees, built once per data.json and names.json: the Key (ctKeyOf) and WoRMS (ctWormsOf, its problems with the
-// tree's: a genus with no WoRMS record in names.json, reported in the bar).
+// The two trees, built once per data.json and data/names.json: the Key (ctKeyOf) and WoRMS (ctWormsOf, its problems with the
+// tree's: a genus with no WoRMS record in data/names.json, reported in the bar).
 let CTREES = null;
 function ctTrees() {
   if (CTREES && CTREES.d === DATA && CTREES.w === NAMES) return CTREES;

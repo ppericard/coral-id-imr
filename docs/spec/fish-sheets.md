@@ -73,7 +73,7 @@ from the sources each family lists (the FishBase family summaries for circle 1) 
 them, is built into `fish.json` families by `tools/build_fish.py` `add_families` (`marks`, `life`, `apart`, `msrc`;
 `--regroup` applies an edit offline). The sheet shows them under the IMR tips with their sources and a "Report or correct
 a line" link (`learn.js` `fishMarks`), and the `apart` lines on the look-alike cards for the pairs IMR gives no words
-for. Where a source differs from IMR, a point goes to `points.json` (rule C5).
+for. Where a source differs from IMR, a point goes to `data/points.json` (rule C5).
 
 **A family IMR gives no cue for** (circles 2 and 3, the Soapfishes) has 1 to 3 ID marks of its own, what to look at on a
 photo, each checked against two sources at least (its `src`: FishBase, Fishes of Australia, Reef Life Survey,
@@ -126,3 +126,14 @@ on the one sheet the genus opens (as `treeRoot`), under the IMR cues' box when t
 species `jv` {c: off, finer, bold or like, line, src, look} by `tools/build_fish.py` `juveniles`, which checks it; the
 sheet shows `line` (`learn.js` `juvNote`). The class is a label for the analyses: nothing in the draw, the ease or the
 judging reads `jv` (`tests/fishjuv.test.js`). Why: the [decision](../decisions/2026-11-19-fish-juveniles-sourced.md).
+
+## Juvenile card flags
+
+`tools/fish_juv_differs.json` (read 2026-11-20) says, per species, whether a source says its young look clearly
+different from the adult (`differs`) and whether a source names a sub-adult stage with its own look (`sub`), each with
+its sources and their quote; `unknown` lists the species read with no source either way. `tools/build_fish.py`
+`juv_differs` checks it (every value true or false with an https source and its quote) and writes `fish.json` species
+`jd` {d, sub, src, ssrc}. Only the juvenile card reads it, `d` alone (`quiz.js` `juvCard`, [model.md](model.md); `sub`
+is information only); the draw, the ease
+and the judging never do (`tests/fishjuvdiff.test.js`). Sources that disagree are points (`points.json`, rule C5). Why:
+the [decision](../decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md).

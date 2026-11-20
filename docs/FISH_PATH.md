@@ -382,7 +382,9 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 - **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
-  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim (the names choice is the What I learn card's, Q396, Q400, Q404). Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
+  now (docs/ARCHITECTURE.md "First-launch question"). The coral values checked on learnsim's fish profiles on 2026-11-20
+  (docs/reviews/2026-11-20-fish-welcome-values-check.md): "new" holds, "imr" and "know" under-predict the stronger
+  profiles as much as on the corals, and the level-change cards' bands do not fit the fish levels (the names choice is the What I learn card's, Q396, Q400, Q404). Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
   answers, a forced choice:
   1. *I'm new to reef fish*;
@@ -478,7 +480,7 @@ Supported now:
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
 - Presence near Dauin (`present.near`).
-- Candidate photos per species (`fish-cand.json`: up to 30 observations each, life stage `st`, pre-sort phase `ph`).
+- Candidate photos per species (`data/fish-cand.json`: up to 30 observations each, life stage `st`, pre-sort phase `ph`).
 
 Gaps before species questions ship:
 
@@ -569,7 +571,9 @@ Decided from the admin pooling study:
   of X, it looks very different", or "this species' males and females can look very different". Possibly one per species.
   Built 2026-11-15 (`quiz.js` `phaseShow`): two cards per subject, the first juvenile and the first sex or colour phase a
   player meets, at the break at Next, the photo beside one of its species in another phase, with the unit's IMR phase
-  lines; one per species stays a ROADMAP row.
+  lines; one per species stays a ROADMAP row. Since 2026-11-20 the juvenile card says nothing in words: the young photo
+  beside an adult of its species, only for species whose young a source says look clearly different
+  ([decision](decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md)).
 
 ## Look-alikes at any rank (design, Pierre, 2026-11-04; view 2 built for the mimicry class only)
 

@@ -52,7 +52,7 @@
   const autoCheck = f => fnv('check|' + f) % AUTO.every === 0;
   const fL = v => (v || '').replace(/[pn]/g, '');
 
-  // What the judging pass is sure of for one candidate (suggest.json "cand" entry j), or null when it is the admin's:
+  // What the judging pass is sure of for one candidate (data/suggest.json "cand" entry j), or null when it is the admin's:
   // - any field in `u` (unsure): his;
   // - `exclude` (unusable): excluded, as his ×;
   // - another genus or a comparison image: his call (a sure comparison image stays set aside, admin.js aside);
@@ -70,7 +70,7 @@
     return null;
   }
 
-  // The fish candidate pre-sort's sure decision (suggest.json "fish" entry j, tools/judging_fish.py), or null when it is
+  // The fish candidate pre-sort's sure decision (data/suggest.json "fish" entry j, tools/judging_fish.py), or null when it is
   // the admin's. Same shape as autoSure, so the fish candidates go the same path (autoRun, the "auto" log, Checks).
   // j.jt is the rubric's visual code (judging/FISH.md: view, whole, light, colour loss, clarity, size, count, flags; the
   // same tags as fish-photos.json jt), j.e the ease 1-5, j.k best / alt / dup within the observation, j.ph an IMR sex or
@@ -180,7 +180,7 @@
       });
     return out.sort((x, y) => (x.t == null ? -1 : x.t) - (y.t == null ? -1 : y.t));
   }
-  // The fish auto-sort's run (pure): from the candidates {species id: [photo]}, the pass's judgments (suggest.json
+  // The fish auto-sort's run (pure): from the candidates {species id: [photo]}, the pass's judgments (data/suggest.json
   // "fish"), the species records ({id: fish.json species}) and the curation's fish part, a new fish part with the sure
   // decisions written as the admin's clicks would write them, and the counts. A photo already decided (added, rejected,
   // excluded, Not this, logged) is never touched; a tag, ease, phase or crop he gave stays his. Adds fill each species up
@@ -197,7 +197,7 @@
   //   or corrected it) means he touched it, and his own Reject of a photo the run had set aside marks it '-r' (fishReject);
   // - it is still set aside only (seen 1), not added, excluded or moved with Not this, and he gave it no tags nor crop
   //   (the new code is read on the judge's crop: one of his would describe another photo);
-  // - its judgement was made on or after the day of the reject (at(f): its pass's date, suggest.json "by" {key: {fish:
+  // - its judgement was made on or after the day of the reject (at(f): its pass's date, data/suggest.json "by" {key: {fish:
   //   {at}}}; with none, never), and is a sure add now (fishSure). A reject is logged only from a sure reject, so a sure
   //   add judged since is a new judgement, never a rule read anew.
   function sortBack(F, x, f, j, at) {
@@ -208,9 +208,30 @@
     const s = fishSure(j);
     return s && s.keep === 'add' ? s : null;
   }
-  // at(f): the date (YYYY-MM-DD) photo f's judgement was made, for the route back (sortBack); without it, no photo comes
-  // back. A photo it brings back is no longer set aside: it is added like an add (code b and the fields written) while its
-  // species has room, else it waits as a candidate (code b alone), which the game plays as any sure candidate.
+  // The one route out (Pierre, 2026-11-19 20:57: «il faut que tu fasses une proposition qui intègre directement le jeu»;
+  // rule A1: a newer, better proposal replaces one he only let through): a photo the run put in leaves play when a newer
+  // judgement is a sure rejection. True when all of these hold (the mirror of sortBack):
+  // - its log code is the run's add or brought-back add (a, b), not a Check, not undone, with no time (@t: he answered or
+  //   corrected it), and lists the tags (t: still the run's copy; a photo he tagged himself is his);
+  // - it is still the run's add in this species (sid), not rejected, excluded or moved with Not this, and no re-judge
+  //   proposal of it was answered Keep mine (F.kept);
+  // - its judgement was made on or after the day of the add (at(f), as sortBack), and is a sure rejection now (fishSure).
+  // It goes into his draft as the run's plain reject (no new log letter): one Undo step like any of the run's; the photo
+  // then waits as a candidate, and a later sure add brings it back by sortBack.
+  function sortOut(F, x, f, sid, j, at) {
+    const d = x && x.d;
+    if (!d || d.check || d.undone || d.t || !'ab'.includes(d.kind) || !(d.w || []).includes('tags')) return false;
+    if ((F.add || {})[f] !== sid || (F.seen || {})[f] || (F.exclude || {})[f] || (F.out || {})[f] || (F.kept || {})[f]) return false;
+    const a = typeof at === 'function' ? at(f) : null;
+    if (!a || a < x.day) return false;
+    const s = fishSure(j);
+    return !!s && s.keep === 'reject';
+  }
+  // at(f): the date (YYYY-MM-DD) photo f's judgement was made, for the route back (sortBack) and the route out (sortOut);
+  // without it, none moves. A photo it brings back is no longer set aside: it is added like an add (code b and the fields
+  // written) while its species has room, else it waits as a candidate (code b alone), which the game plays as any sure
+  // candidate. A photo it takes out loses its add and the fields its code lists (as fishUndo does) and is set aside (seen,
+  // code r); the room it frees is filled at the next load.
   function fishRun(cands, sug, species, F, day, keepOn = true, at = null) {
     F = F || {};
     const I = fishIdx(F),
@@ -222,13 +243,14 @@
         if (busy(p.f)) {
           const s = sortBack(F, I[p.f], p.f, (sug || {})[p.f], at);
           if (s) plan.push({sid, p, s, check: false, back: true});
+          else if (sortOut(F, I[p.f], p.f, sid, (sug || {})[p.f], at)) plan.push({sid, p, s: {keep: 'reject'}, check: false, out: true});
           return;
         }
         const s = fishSure((sug || {})[p.f]);
         if (s) plan.push({sid, p, s, check: autoCheck(p.f)});
       })
     );
-    const R = {add: 0, back: 0, reject: 0, check: 0, full: 0, off: 0};
+    const R = {add: 0, back: 0, out: 0, reject: 0, check: 0, full: 0, off: 0};
     if (!plan.length) return {F, R};
     plan.sort(
       (a, b) =>
@@ -255,13 +277,26 @@
         N[k] = {...(N[k] || {}), [f]: v};
         return FISHW[k];
       };
-    plan.forEach(({sid, p, s, check, back}) => {
+    plan.forEach(({sid, p, s, check, back, out}) => {
       const f = p.f;
       if (check) {
         L[f] = s.keep === 'add' ? '?a' : '?r';
         return R.check++;
       }
       if (!keepOn) return R.off++;
+      if (out) {
+        // Taken out: the add and the fields its code lists leave (fishUndo's drop; a map left empty stays {}: merge3), the
+        // photo is set aside, its code the run's plain reject.
+        delete N.add[f];
+        (I[f].d.w || []).forEach(k => {
+          if (!N[k] || !(f in N[k])) return;
+          N[k] = {...N[k]};
+          delete N[k][f];
+        });
+        N.seen[f] = 1;
+        L[f] = 'r';
+        return R.out++;
+      }
       if (s.keep === 'add') {
         const r = (room[sid] = room[sid] || new Set()),
           o = p.o || f,
@@ -285,13 +320,13 @@
     // A map the run created and left empty goes; one that was there stays (as {}: merge3 reads a missing map as removed).
     if (!F.add && !Object.keys(N.add).length) delete N.add;
     if (!F.seen && !Object.keys(N.seen).length) delete N.seen;
-    const n = R.add + R.back + R.reject + R.check;
+    const n = R.add + R.back + R.out + R.reject + R.check;
     if (n) N.auto = {...(F.auto || {}), [day]: L};
     return {F: n ? N : F, R};
   }
 
   // One fish auto decision taken back (the admin's Undo in the Auto details, as the coral autoUndo; rule A1: every auto
-  // decision undoable one by one). sid: the candidate's species (its fish-cand.json list). What the run wrote leaves the
+  // decision undoable one by one). sid: the candidate's species (its data/fish-cand.json list). What the run wrote leaves the
   // fish part, and only that: the add while it still names that species, and the fields its code lists (fishOwn takes
   // off those he set since). Never compared with the pass's judgment, which a new pass may have replaced. The log marks
   // the decision undone ('-'): never applied again, the photo waits as a candidate, or, brought back (b), is set aside
@@ -325,6 +360,71 @@
     if (!x || !c || !(x.d.w || []).includes(field)) return F;
     return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[abr][tepc]*?)${c}`), '$1')}}};
   }
+  // What the admin's pages show of what the run proposed (Pierre, 2026-11-19 20:57 and 20:59; rule A1): the game reads a
+  // value the run wrote (its log code lists it) from the pass's newer judgement, so the pages that show a photo's tags,
+  // ease, phase or crop do too, for reading only. sortReads: the fields of photo f of curation F (a subject's part) that the
+  // build reads from the pass's judgement j (tools/fish_game.py read_cur, which this follows): the run's add or brought-back
+  // add, not a Check, not undone, not moved with Not this, no re-judge proposal answered Keep mine (F.kept), the judgement a
+  // sure add; the fields are the ones its code lists (a value he edited took its letter off: fishOwn), and the judge's crop
+  // with the tags when the photo has no crop. A value with no log, or his, is never in the list.
+  function sortReads(F, f, j) {
+    F = F || {};
+    const x = idxOf(F)[f];
+    if (!x || !j || x.d.check || x.d.undone || (F.out || {})[f] || (F.kept || {})[f]) return [];
+    const s = fishSure(j);
+    if (!s || s.keep !== 'add') return [];
+    const w = [...(x.d.w || [])];
+    if (w.includes('tags') && !w.includes('crop') && !(F.crop || {})[f] && j.c) w.push('crop');
+    return w.filter(k => k !== 'ease' || j.e != null);
+  }
+  // Curation F as the pages read it: the same part with each field sortReads lists left out, so a reader that falls back to
+  // the pass's value when the curation has none (every display reader does) shows the one the game plays. Never given to a
+  // writer (rule A1: Publish would send the pass's values as his and lose the log's letters); one object per (F, sug),
+  // F itself when nothing reads differently. recs: the candidates' records by photo (the source's life stage p.st): the
+  // build's copy of the judgement adds the source's juvenile flag, or its phase when the pass gives none (fishCopy, as
+  // read_cur's copy_of), so those two fields read that copy, not the bare pass value the readers fall back to.
+  const VIEWC = new WeakMap();
+  // A photo's judgment for the pages: the game record g (fish-game.json: its older e, jt, ph) under the pass's j. A phase the
+  // pass no longer gives, on a photo whose phase the build reads anew (sortReads), is gone, not the game record's old one
+  // (read_cur removes it).
+  function sortJudge(F, f, g, j) {
+    if (!g || !j) return j || g || null;
+    const r = {...g, ...j};
+    if (!('ph' in j) && sortReads(F, f, j).includes('phase')) delete r.ph;
+    return r;
+  }
+  function sortView(F, sug, recs) {
+    if (!F || !sug || typeof sug !== 'object') return F;
+    if (!VIEWC.has(F)) VIEWC.set(F, new WeakMap());
+    const m1 = VIEWC.get(F);
+    if (!m1.has(sug)) m1.set(sug, new WeakMap());
+    const m2 = m1.get(sug),
+      key = recs && typeof recs === 'object' ? recs : m2;
+    if (m2.has(key)) return m2.get(key);
+    let N = F;
+    const put = (k, f, v) => {
+      if (N === F) N = {...F};
+      if (N[k] === F[k]) N[k] = {...F[k]};
+      if (v === undefined) delete N[k][f];
+      else N[k][f] = v;
+    };
+    Object.keys(idxOf(F)).forEach(f => {
+      const j = sug[f],
+        w = sortReads(F, f, j);
+      if (!w.length) return;
+      // His own phase choice (one the run did not write) stops the source's juvenile flag, as the build.
+      const c = fishCopy({...((recs || {})[f] || {}), f}, j, f in (F.phase || {}) && !w.includes('phase') ? {phase: {[f]: 1}} : null);
+      w.forEach(k => {
+        if (!(f in (F[k] || {}))) return;
+        // The build leaves tags alone when the copy has none; a phase or crop the pass no longer gives goes.
+        if (k === 'tags' && c.tags == null) return;
+        const v = k === 'tags' ? c.tags : k === 'phase' ? c.phase : null;
+        put(k, f, v == null || v === (k === 'tags' ? j.jt : j.ph) ? undefined : v);
+      });
+    });
+    m2.set(key, N);
+    return N;
+  }
   // When the admin answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the
   // agreement window follows the order he answered in, as autoStamp does for the corals. fishSigs: his keep on each
   // compared photo; fishStamp: the new fish "auto" map with the time t (seconds) on every photo whose keep changed since
@@ -348,7 +448,7 @@
 
   // ---- Fish Candidates ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
-  // one observation). game: fishGameIn's records, counted beside the adds. sug: the pass's judgments (suggest.json
+  // one observation). game: fishGameIn's records, counted beside the adds. sug: the pass's judgments (data/suggest.json
   // "fish"): an add held out for other species one could take for its subject (core.js treeOther) counts nowhere.
   function fishPlay(cands, F, game, sug) {
     F = F || {};
@@ -553,7 +653,7 @@
   // now; out {f: 'x'} = no game species (or unknown): gone. Only the admin's click writes it (fishNotThis). A photo is in
   // play for a species when add names it, it is neither rejected nor excluded, and its out, if any, names that same
   // species (core.js treePhotoOn, as the game reads it). fishMine stays the keep on its first species, for the agreement.
-  // A photo's species now (orig: its fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
+  // A photo's species now (orig: its data/fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
   // (excluded, or Not this with no game species), or null (a candidate waiting).
   function fishState(F, f, orig) {
     F = F || {};
@@ -985,7 +1085,7 @@
 
   // Fish Coverage (fishCov): per family, genus and species, the photos in play, the observations against the target, the
   // easy photos (ease 4-5), the reference-level photos (core.js refLevel), the phases shown and what is missing; and the candidates still
-  // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: fish-cand.json
+  // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: data/fish-cand.json
   // cand; F: the draft's fish part; j(f): the pass's judgment. Returns {fam, gen, sp}: rows {id, name, fam, n (photos),
   // obs, tgt (a species' target; a genus or family: ok of its species at target), easy, ref, ph, wait (a species also
   // waitObs, the new observations they hold), need (fishNeeds words), imr}.
@@ -1412,7 +1512,7 @@
     return S;
   }
 
-  // Objective metrics as a sanity flag (tools/photo_metrics.py, metrics.json [sharp, peak, px, cast]): a sure judgment
+  // Objective metrics as a sanity flag (tools/photo_metrics.py, data/metrics.json [sharp, peak, px, cast]): a sure judgment
   // they contradict goes to the admin instead of being applied. Never a decision on their own: they only ever stop one.
   // Measured on 133 photos he rated: size tells Poor apart (AUC 0.90), sharpness at 960 px hardly does (AUC 0.4-0.6), so
   // only the extremes count. ref = {lo, hi}: 5th and 95th percentiles of sharp over the candidates measured.
@@ -1455,6 +1555,10 @@
     flagGone,
     fishCompare,
     sortBack,
+    sortOut,
+    sortReads,
+    sortView,
+    sortJudge,
     fishRun,
     fishUndo,
     fishOwn,

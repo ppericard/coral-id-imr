@@ -409,7 +409,7 @@
     "Goniobranchus sp. 5": "A species with no published name yet (tools/seaslug_informal.json): no species page or description of its own was read; its photos play for its genus.",
     "Gymnodoris crocea": "The only species of Gymnodoris in the game: no other species of its genus to tell it from (the genus is the unit asked).",
     "Hypselodoris decorata": "SEASLUG.WORLD: H. decorata and H. maculosa \"cannot be reliably told apart by appearance alone. Confident separation requires molecular data\": no mark telling it from H. maculosa.",
-    "Hypselodoris infucata": "SEASLUG.WORLD says western Pacific animals once called H. infucata are H. obscura, the H. infucata it describes being the Red Sea and Mediterranean one: no mark until the name is settled (points.json seaslug-infucata-obscura).",
+    "Hypselodoris infucata": "SEASLUG.WORLD says western Pacific animals once called H. infucata are H. obscura, the H. infucata it describes being the Red Sea and Mediterranean one: no mark until the name is settled (data/points.json seaslug-infucata-obscura).",
     "Hypselodoris maculosa": "SEASLUG.WORLD: H. maculosa and H. decorata \"cannot be reliably told apart by appearance alone. Confident separation requires molecular data\": no mark telling it from H. decorata.",
     "Longibranchus putnami": "The only species of Longibranchus in the game: no other species of its genus to tell it from (the genus is the unit asked).",
     "Mariaglaja tsurugensis": "The only species of Mariaglaja in the game: no other species of its genus to tell it from (the genus is the unit asked).",

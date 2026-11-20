@@ -1,0 +1,1740 @@
+{
+ "about": "Whether a source says a fish species' young look clearly different from its adult, the juvenile card's trigger (docs/decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md): differs true, a source says the juveniles look clearly different (colour or pattern, not a matter of degree nor of shape alone); false, a source says they look like the adult (or like one adult sex or phase); sub true, a source names a sub-adult stage with its own look, false, a source gives sub-adults the juvenile's or the adult's look. Each value with its sources {t, u}, the quote q (the sources' words, ' | ' between quotes), note (why, in our words) and the date read. unknown: species read with no source either way (no card). Built into fish.json species jd {d, sub, src, ssrc} by tools/build_fish.py (juv_differs); the juvenile card (quiz.js juvCard) reads differs alone, for juveniles and sub-adults alike (sub is information only); the draw, the ease and the judging never read it. Sources that disagree are in points.json (rule C5), never settled here.",
+ "read": "2026-11-20",
+ "species": {
+  "Acanthurus olivaceus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Acanthurus-olivaceus.html"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1029"
+    }
+   ],
+   "q": "Body of adult dark grayish brown; juveniles yellow; posterior to upper end of gill opening is a bright orange horizontal band, with purplish black border. | The bright yellow juveniles have a pale blue margin on the anal fin, and the band behind the eye gradually develops with growth.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Acanthurus pyroferus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1030"
+    }
+   ],
+   "q": "A yellowish-brown surgeonfish with a white band around the mouth, an orange to black margin around the eye, a dark band from the chin to the top of the gill cover, an orange area around the pectoral fin base, and a yellow margin on the caudal fin. The yellow juveniles mimic several species of pygmy angelfish of the genus Centropyge",
+   "read": "2026-11-20"
+  },
+  "Aluterus scriptus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Aluterus-scriptus.html"
+    }
+   ],
+   "q": "olive brown to grey in color, juveniles may be yellowish brown with dark spots",
+   "note": "the juvenile 'may be' yellowish brown with dark spots",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Amphiprion biaculeatus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Amphiprion_biaculeatus"
+    }
+   ],
+   "q": "Male and juvenile fish are bright red-orange which darkens on the fish changing to female, ranging from maroon to dark brown.",
+   "note": "like the males; females darken",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Anampses caeruleopunctatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1217"
+    }
+   ],
+   "q": "Very small juveniles are a mottled olive-green with narrow brown stripes and a mostly transparent tail. | Juveniles have a broad transparent margin on the caudal fin which lacks the pale blue spots of females.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Anampses melanurus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Anampses-melanurus.html"
+    }
+   ],
+   "q": "The primary phase of this species closely resembles that of A. meleagrides , but never has a uniformly yellow tail, and the color pattern does not change much with growth or sex",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Anyperodon leucogrammicus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/4408"
+    }
+   ],
+   "q": "A slender greenish to brownish-grey rockcod with reddish spots, 3-4 irregular pale stripes along the sides, and a pointed snout. The distinctive blue and gold striped juveniles mimic some small lined wrasses of the genus Halichoeres",
+   "read": "2026-11-20"
+  },
+  "Arothron stellatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/852"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Arothron-stellatus.html"
+    }
+   ],
+   "q": "Juveniles are orange with dark stripes that break up into spots as they grow. | Juveniles with dark stripes on belly, becoming spots with growth",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Bodianus axillaris": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Bodianus-axillaris.html"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/210"
+    }
+   ],
+   "q": "Juveniles and females easily recognized by the generally black body with large white spots | Females and juveniles are blackish overall with large white spots along the upper and lower sides.",
+   "note": "like the females; males differ (Fishes of Australia re-read 2026-11-20: males reddish-brown in front, white behind)",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Bodianus mesothorax": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Bodianus-mesothorax.html"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/215"
+    }
+   ],
+   "q": "Color of juveniles changes completely to adult pattern when about 5-6 cm long. | Juveniles are deep purple with two rows of bright yellow spots.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Canthigaster valentini": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Records of the Australian Museum",
+     "u": "https://journals.australian.museum/media/Uploads/Journals/17520/192_complete.pdf"
+    }
+   ],
+   "q": "In all cases, except for C. amboinensis and C. callisterna, the juveniles (individuals less than approximately 35 mm SL) resemble the adults, although the number of spots or stripes may be reduced.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Caranx melampygus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Caranx-melampygus.html"
+    }
+   ],
+   "q": "covered with small blue black spots (forming at about 16 to 22 cm fork length and increasing in number with size); second dorsal, anal, and caudal fins electric blue; juveniles and young adults, head and body silvery grey and fins pale to dark dusky, except pectoral fins yellow",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Caranx sexfasciatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1654"
+    }
+   ],
+   "q": "A large dark bluish-green to gold trevally, a paler yellowish-green to silvery below, with a dark caudal fin and dark grey to dusky tips on the soft dorsal and anal fins. Juveniles have 4-7 broad dark cross-bars, a round dark spot on the gill cover and a yellow caudal fin with black tip on the upper lobe.",
+   "read": "2026-11-20"
+  },
+  "Centropyge bicolor": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/centropyge-bicolor/"
+    }
+   ],
+   "q": "Adults and juveniles with similar colouration.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Cephalopholis boenak": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/4409"
+    }
+   ],
+   "q": "A brownish to greenish-grey rockcod, usually with 7-8 dark bars on sides, a broad dark submarginal band and a narrow white margin on the dorsal, anal fins, and upper and lower caudal-fin lobes. Juveniles are yellowish on the rear of the body with a white stripe from the snout to the origin of the dorsal fin.",
+   "read": "2026-11-20"
+  },
+  "Cephalopholis cyanostigma": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Cephalopholis-cyanostigma.html"
+    }
+   ],
+   "q": "Juveniles dark brown with bright yellow dorsal, anal, pelvic and tail fins. | At size about 9 cm, small scattered blue dots appear and yellow on fins begins to recede",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Cephalopholis miniata": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Cephalopholis-miniata.html"
+    }
+   ],
+   "q": "Color orange-red to reddish brown, usually dark posteriorly with numerous bright blue spots | juveniles may be yellow with scattered faint blue spots.",
+   "note": "the juvenile 'may be' yellow",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Cephalopholis sonnerati": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Cephalopholis-sonnerati.html"
+    }
+   ],
+   "q": "Adults from Pacific Ocean generally pale reddish to yellowish brown, covered with numerous small brownish red or dark brown spots on head, body, and fins; while the juveniles are dark reddish brown to nearly black, the rear margin of caudal fin and sometimes pectoral fins whitish",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Cetoscarus ocellatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Cetoscarus_ocellatus"
+    }
+   ],
+   "q": "Juveniles are usually white with a thick orange band that surrounds the head, except snout and chin. | Females of the initial phase have a dark purple to reddish brown head, finely spotted with black ventrally. | The color of the C. ocellatus varies between genders as well as between adults and juveniles.",
+   "read": "2026-11-20"
+  },
+  "Cheilinus fasciatus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Cheilinus-fasciatus.html"
+    }
+   ],
+   "q": "Colour of subadults and females with similar white bars on nape and body as juveniles",
+   "note": "like the subadults and females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Cheilinus-fasciatus.html"
+    }
+   ],
+   "sub_q": "Colour of subadults and females with similar white bars on nape and body as juveniles",
+   "sub_note": "subadults keep the juvenile bars",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Chlorurus spilurus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/5300"
+    }
+   ],
+   "q": "Females (initial phase) are dark brownish-maroon with a pinkish/red snout and chin, and often two rows of white spots along the side. | Small juveniles are dark brown with four white stripes along the side.",
+   "note": "against the initial-phase females",
+   "read": "2026-11-20",
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/5300"
+    }
+   ],
+   "sub_q": "Small juveniles are dark brown with four white stripes along the side. | Larger juveniles gradually brownish-maroon anteriorly with a white tail and a white caudal peduncles surrounding a large dark spot.",
+   "sub_note": "small striped juveniles, then larger maroon-and-white-tail juveniles",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Coris batuensis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/219"
+    }
+   ],
+   "q": "Body overall pale greenish to whitish with several dark bars on upper sides; A black ocellus in middle of dorsal fin (lost in large males) and a black marking at pectoral-fin base; Juveniles greenish (whitish anteriorly) with pink to reddish spots and several ocelli on dorsal fin.",
+   "read": "2026-11-20"
+  },
+  "Coris gaimard": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Coris_gaimard"
+    }
+   ],
+   "q": "As a juvenile, it is a bright red colour with large, black-margined white spots. | As an adult, it has a pink face and fins, with the exception of the tail fin, which is bright yellow. | The body is green towards the anterior darkening and decorated with bright blue specks towards the caudal peduncle.",
+   "read": "2026-11-20"
+  },
+  "Ctenochaetus binotatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Ctenochaetus-binotatus.html"
+    }
+   ],
+   "q": "Caudal fin brown in adults, yellow in young.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Ctenochaetus cyanocheilus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Ctenochaetus-cyanocheilus.html"
+    }
+   ],
+   "q": "Color orangish brown to dark brown with bluish lines following scale rows | Young bright yellow.",
+   "read": "2026-11-20"
+  },
+  "Cyclichthys orbicularis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Cyclichthys-orbicularis.html"
+    }
+   ],
+   "q": "Adults brown to grey with blotches and clusters of black spots on back and sides; pelagic juveniles covered with black spots",
+   "note": "pelagic juveniles",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Dascyllus aruanus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Humbug_damselfish"
+    }
+   ],
+   "q": "The colors remain the same throughout their lives.",
+   "read": "2026-11-20"
+  },
+  "Dascyllus trimaculatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/349"
+    }
+   ],
+   "q": "Juveniles are black often with bluish scale centres, and have a white blotch on the forehead and another on the upper side. | Adults lack the spot on the head, and the spot on the sides becomes smaller and disappears with age.",
+   "note": "the juvenile's white spots shrink or go; partly a difference of degree",
+   "read": "2026-11-20"
+  },
+  "Diagramma melanacrum": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2438"
+    }
+   ],
+   "q": "Juveniles and subadults are yellowish with black stripes and rows of large spots along the sides. | Silvery-grey to yellowish sweetlip with brown spots on the head and body",
+   "read": "2026-11-20",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2438"
+    }
+   ],
+   "sub_q": "Juveniles and subadults are yellowish with black stripes and rows of large spots along the sides.",
+   "sub_note": "the source gives subadults the juvenile's pattern, not a separate one",
+   "sub_read": "2026-11-20"
+  },
+  "Diagramma pictum": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FAO field guide (Maldives), Haemulidae sheet",
+     "u": "https://www.fao.org/docrep/pdf/006/ad471e/ad471e33.pdf"
+    }
+   ],
+   "q": "Colour: Adults light grey with scattered large blackish blotches on sides, white on belly. Juveniles with conspicuous alternating black and white stripes, and yellowish on head and belly. Stripes eventually break up into spots that disappear in adults.",
+   "read": "2026-11-20",
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "FAO field guide (Maldives), Haemulidae sheet",
+     "u": "https://www.fao.org/docrep/pdf/006/ad471e/ad471e33.pdf"
+    },
+    {
+     "t": "Fishes of Australia (D. pictum labiosum)",
+     "u": "https://fishesofaustralia.net.au/home/species/450"
+    }
+   ],
+   "sub_q": "Stripes eventually break up into spots that disappear in adults. | Adults are slate-grey, and along with subadult fish, lack yellow or orange spots",
+   "sub_note": "a spotted stage between the striped juvenile and the adult; the adult's own spotting varies by region (Fishes of Australia: Australian adults and subadults slate-grey without yellow or orange spots), not settled here",
+   "sub_read": "2026-11-20"
+  },
+  "Diodon holocanthus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Diodon-holocanthus.html"
+    }
+   ],
+   "q": "Pelagic juveniles with spots, particularly prominent on belly; adults with dark blotches across back and spots between the blotches; fins without spots",
+   "note": "pelagic juveniles",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Diploprion bifasciatum": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Diploprion-bifasciatum.html"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/3866"
+    }
+   ],
+   "q": "Normally yellow, but sometimes nearly all black and juveniles take-on colors of the local venomous Meiacanthus blennies that are yellow or grey | Small juveniles are bluish on the front half of the body becoming yellow towards the rear, with a black spinous dorsal fin.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Diproctacanthus xanthurus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Diproctacanthus-xanthurus.html"
+    }
+   ],
+   "q": "Juveniles with 3 broad black stripes from head to caudal fin where the stripes merge; with growth, lower stripe disappears, upper stripe is less distinct; black caudal fin becomes entirely yellow in adults.",
+   "read": "2026-11-20"
+  },
+  "Dischistodus perspicillatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/dischistodus-perspicillatus/"
+    }
+   ],
+   "q": "Light body and fins, with 3 black patches on upper body in adult, 2 black bars in juvenile.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Epinephelus maculatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/4674"
+    }
+   ],
+   "q": "Small juveniles are black with white blotches, becoming more spotted with age.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Gnathanodon speciosus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/4274"
+    }
+   ],
+   "q": "Adults are silvery grey, with black spots or blotches scattered on sides, and often faint bands. | Juveniles and subadults are bright yellow with narrow blackish bars on head and sides, the first through the eye.",
+   "read": "2026-11-20",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/4274"
+    }
+   ],
+   "sub_q": "Juveniles and subadults are bright yellow with narrow blackish bars on head and sides, the first through the eye.",
+   "sub_note": "subadults share the juvenile pattern",
+   "sub_read": "2026-11-20"
+  },
+  "Gracila albomarginata": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Gracila_albomarginata"
+    }
+   ],
+   "q": "The juveniles are colourful being violet with bright red margins on their dorsal, anal and caudal fins. | a greenish to reddish-brown or brownish-grey body",
+   "read": "2026-11-20"
+  },
+  "Grammistes sexlineatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Grammistes-sexlineatus.html"
+    }
+   ],
+   "q": "small juveniles with spots, specimens up to 5 cm SL with 3 stripes, specimens at least 8 cm SL with 6 stripes, the number of stripes increases and may break into a series of dashes in large adults | Small juveniles have only two white stripes, dividing with growth into numerous lines.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Halichoeres chloropterus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Halichoeres-chloropterus.html"
+    }
+   ],
+   "q": "Juveniles and females with dark dots dorsally and posteriorly",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Halichoeres hortulanus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Halichoeres-hortulanus.html"
+    }
+   ],
+   "q": "Small juveniles black and white, gradually changing with growth to adult pattern",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Halichoeres margaritaceus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Halichoeres-margaritaceus.html"
+    }
+   ],
+   "q": "One of several similar species that have near identical juvenile and female stages",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Halichoeres melanurus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/halichoeres-melanurus/"
+    }
+   ],
+   "q": "Females and juveniles with fine pinstripes, two ocelli on dorsal fin (which disappear with age), and one on upper tail base.",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Halichoeres prosopeion": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Australian Museum",
+     "u": "https://australian.museum/learn/animals/fishes/twotone-wrasse-halichoeres-prosopeion-bleeker-1853/"
+    }
+   ],
+   "q": "Adult Twotone Wrasse are blue on the front half of the body, changing abruptly to yellow posteriorly. | Juvenile Twotone Wrasse are white with four black stripes on the body.",
+   "read": "2026-11-20"
+  },
+  "Halichoeres richmondi": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/halichoeres-richmondi/"
+    }
+   ],
+   "q": "Females and juveniles with yellow and blue stripes along body similar to H. melanurus (Hoeven's Wrasse) , best distinguished by presence of males.",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Hemigymnus fasciatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/244"
+    }
+   ],
+   "q": "Juveniles are dark brown with six narrow irregular white bars, the first across the nape and chest, the next three extending onto the dorsal and anal fins, and the last two on the caudal peduncle and caudal-fin base; head with pale yellowish lines radiating from eye, lips whitish. | Females are blackish with four white bars, the first progressively broader ventrally, ending on abdomen, the remaining bars progressively thinner, the last two sometimes faint",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Hippocampus kuda": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Animal Diversity Web",
+     "u": "https://animaldiversity.org/accounts/Hippocampus_kuda/"
+    }
+   ],
+   "q": "Juvenile seahorses emerge from the pouch as independent, miniature adults.",
+   "note": "shape: miniature adults with other proportions",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Hipposcarus longiceps": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/397"
+    }
+   ],
+   "q": "Females (initial phase) are pale brown to pale grey with a yellowish tail. Small juveniles are whitish to pale brownish with a broad orange stripe ending in a black spot on the tail base.",
+   "note": "against the initial-phase females",
+   "read": "2026-11-20"
+  },
+  "Hologymnosus doliatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/247"
+    }
+   ],
+   "q": "Juveniles whitish with three narrow orange-red stripes. | Initial phase pale bluish, greenish or pinkish gray with 20-23 orange brown bars on body",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Iniistius aneitensis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Marine Life Photography",
+     "u": "https://www.marinelifephotography.com/fishes/wrasses/iniistius-aneitensis.htm"
+    }
+   ],
+   "q": "Juveniles light with brown blotches and two false eye spots on the dorsal fin, adults gray with large white patch behind the pectoral fins and three dark vertical blotches",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Labrichthys unilineatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Labrichthys-unilineatus.html"
+    }
+   ],
+   "q": "juveniles brown with 2 bluish white stripes on body, the lateral stripe disappearing with increase in size; female yellowish brown, stripes dull and faint",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Labroides bicolor": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Labroides_bicolor"
+    },
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/labroides-bicolor/"
+    }
+   ],
+   "q": "The male is black with light color in the back of the body | the female is gray with black | juveniles are yellow and black | Juveniles white or pale yellow with black stripe from snout through eye which terminates two thirds of the way along body.",
+   "read": "2026-11-20"
+  },
+  "Labroides dimidiatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Bluestreak_cleaner_wrasse"
+    }
+   ],
+   "q": "The young are black with an electric-blue line. | the back and the stomach are white (sometimes slightly yellowish) | This white part changes to a bright blue on the front of the animal, while the black band widens at the tail.",
+   "read": "2026-11-20"
+  },
+  "Labropsis manabei": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Labropsis-manabei.html"
+    }
+   ],
+   "q": "juveniles and small females with 3 broad black stripes on head and body, separated by narrow pale blue stripes.",
+   "note": "like the small females; larger adults change colour",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Lethrinus erythracanthus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2458"
+    }
+   ],
+   "q": "A large dark grey emperor with a greyish-blue head and yellow to yellowish-orange fins. Juveniles are yellowish with a grey head and narrow whitish broken lines or stripes along the sides.",
+   "read": "2026-11-20"
+  },
+  "Lutjanus argentimaculatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/548"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Lutjanus-argentimaculatus.html"
+    }
+   ],
+   "q": "Juveniles have a series of about 8 whitish bars on the sides, and 1-2 blue lines across the cheek. | Colour of the body generally greenish brown on back, grading to reddish",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Lutjanus lemniscatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/560"
+    }
+   ],
+   "q": "Juveniles are pale grey with a broad black mid-lateral stripe between narrow white stripes from the tip of the snout to the tail base. | A greyish to pinkish-brown, to olive-green or silvery tropical snapper with dusky brown to blackish dorsal and caudal fins (often with a narrow white margin).",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Lutjanus russellii": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/566"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Lutjanus-russellii.html"
+    }
+   ],
+   "q": "Juveniles (usually <5 cm SL) are white with four (sometimes broken) brown to blackish stripes along the side, and a horizontally-elongate black spot or ocellus on the lateral line. | Colour generally pink to whitish with a silvery sheen; a black spot, mainly above lateral line, below anterior rays of soft dorsal fin",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Lutjanus sebae": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/567"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Lutjanus-sebae.html"
+    }
+   ],
+   "q": "Juveniles and young adults have a dark red band from the snout tip through the eye to the first dorsal-fin spine, a broad band from the middle of the dorsal-fin spines to the pelvic fin, and a diagonal band from the end of the last dorsal spine to the lower lobe of the caudal fin. | Large adults become uniformly red",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Lutjanus vitta": {
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/569"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Lutjanus-vitta.html"
+    }
+   ],
+   "sub_q": "Juveniles and sub-adults have a broader, darker stripe than adults. | Juveniles and sub-adults with an intensely black mid-lateral stripe and an oval black spot, eye-sized or greater, lying in the middle of the stripe below last dorsal spines.",
+   "sub_note": "subadults share the juvenile stripe",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Macolor macularis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Macolor-macularis.html"
+    }
+   ],
+   "q": "juveniles with distinct black and white pattern, with more than 5 white spots on back | Colour of adults dark grey brown dorsally and shading to yellow on head and ventral body, head with fine blue lines or spots",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Macolor niger": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Macolor-niger.html"
+    }
+   ],
+   "q": "juveniles with black and white pattern but broader white area encompassing posterior head and adjacent body and with less than 5 white spots on back | Colour of adults silvery grey, strongly blotched with blackish patches",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Macropharyngodon meleagris": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Macropharyngodon-meleagris.html"
+    }
+   ],
+   "q": "Color in life of young and females whitish to greenish with irregular black spots",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Macropharyngodon negrosensis": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/macropharyngodon-negrosensis/"
+    }
+   ],
+   "q": "Females and juveniles usually seen, and have a dense covering of fine white spots on black body, white dorsal fin crossed by black lines, black ventral and anal fins, transparent tail fin.",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Monotaxis grandoculis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2756"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Monotaxis-grandoculis.html"
+    }
+   ],
+   "q": "Juveniles have 3 broad dark brown to blackish bars or saddles on the body (rear two extending onto dorsal fin), a black bar through the eye and an orange to reddish band along the outer caudal-fin lobes. | Color of adult silvery grey with narrow dark scale margins, lips yellowish, a large black blotch covering pectoral fin axil",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Naso brevirostris": {
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2195"
+    }
+   ],
+   "sub_q": "Subadults have small dark spots on the head and body, and the horn starts as a bump in juveniles from a length of about 10 cm.",
+   "sub_note": "subadults have small dark spots",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Naso vlamingii": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/naso-vlamingii/"
+    }
+   ],
+   "q": "Juveniles olive-brown with a covering of blue spots and dashes. | Head profile with rounded nose-like bump above mouth, blue or violet stripe across snout between eyes, narrow bars on body which break in to spots on upper body and underside, blue lips, and a large blue or violet patch behind gill cover over pectoral fin base.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Neoglyphidodon melas": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/359"
+    }
+   ],
+   "q": "Adults are a deep bluish-black, and the juveniles are very pale blue with a yellow dorsal surface, yellow outer caudal-fin rays",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Neoglyphidodon nigroris": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase, morphology",
+     "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=5708&GenusName=Neoglyphidodon&SpeciesName=nigroris"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/360"
+    }
+   ],
+   "q": "juveniles distinctively yellow with two black stripes | Juveniles are bright yellow with a pair of black stripes along the head and body, and a black spot at the pectoral-fin base.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Neoglyphidodon thoracotaeniatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase, morphology",
+     "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=6922&GenusName=Neoglyphidodon&SpeciesName=thoracotaeniatus"
+    }
+   ],
+   "q": "Small juveniles bright yellow with black band, gradually changes to an all black posterior body when adult",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)",
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "FishBase, morphology",
+     "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=6922&GenusName=Neoglyphidodon&SpeciesName=thoracotaeniatus"
+    }
+   ],
+   "sub_q": "Small juveniles bright yellow with black band, gradually changes to an all black posterior body when adult | Juveniles dark posteriorly with large black ocellus at mid-base of dorsal fin",
+   "sub_note": "yellow small juvenile, then a dark-rear juvenile with a dorsal ocellus",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Novaculichthys taeniourus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Novaculichthys_taeniourus"
+    }
+   ],
+   "q": "Juveniles found in Hawaii are usually green and those in the western Pacific are burgundy to brownish. | Both are spotted in white. | The adult fish has a dark greenish-brown body with an elongated white spot on each scale.",
+   "note": "the article's juvenile colour sentence is marked 'citation needed'",
+   "read": "2026-11-20"
+  },
+  "Novaculoides macrolepidotus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/258"
+    }
+   ],
+   "q": "Adults are usually bright green, while juveniles are variable in colour ranging from brown to green, usually with a blotched pattern.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/258"
+    }
+   ],
+   "sub_q": "Juvenile and subadult Seagrass Wrasses mimic venomous waspfishes of the genus Ablaby s.",
+   "sub_note": "subadults share the juvenile mimicry",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Oplopomus oplopomus": {
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Oplopomus-oplopomus.html"
+    }
+   ],
+   "sub_q": "subadults lack the blue and yellow spotting but have more black spots",
+   "sub_note": "subadults lack the adult's blue and yellow spots",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Ostorhinchus aureus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Ostorhinchus-aureus.html"
+    }
+   ],
+   "q": "Black bar encircling caudal peduncle present in both young and adult phases",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Ostorhinchus compressus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/ostorhinchus-compressus/"
+    }
+   ],
+   "q": "Juveniles have yellow tail base where the mid stripe ends in black spot, stripes are black rather than brown and appear more even, and body shape is more like a normal cardinalfish shape.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Ostracion cubicus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Ostracion-cubicus.html"
+    }
+   ],
+   "q": "Juveniles bright yellow with black spots; the spots decrease proportionately and the bright yellow becomes a dirty mustard with growth; large adults become bluish with yellowish seams between the plates.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Ostracion meleagris": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Ostracion-meleagris.html"
+    }
+   ],
+   "q": "Juveniles and females brown or green with white spots; large males with orange bands and spots on side of body",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Oxycheilinus bimaculatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/261"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Oxycheilinus-bimaculatus.html"
+    }
+   ],
+   "q": "Juveniles have a broad, dark mid-lateral stripe that breaks into dark blotches in adults, the largest above the pectoral-fin tip. | Young with a broad, dark lateral stripe which breaks into dark blotches in adults",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Paracirrhites forsteri": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Paracirrhites-forsteri.html"
+    }
+   ],
+   "q": "In Oceania, juveniles are a golden green dorsally and white ventrally; in continental areas juveniles may be red dorsally | Body yellowish with broad blackish stripe on upper side; head and anterior part of body with small dark reddish spots | Color changes with growth as well as varies among adults",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Parupeneus heptacantha": {
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Parupeneus-heptacantha.html"
+    }
+   ],
+   "sub_q": "an indistinct narrow yellow stripe often visible above the lateral line (more evident in juveniles and subadults)",
+   "sub_note": "the stripe is clearer in juveniles and subadults alike",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Pholidichthys leucotaenia": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Pholidichthys-leucotaenia.html"
+    }
+   ],
+   "q": "Juveniles resemble the venomous striped catfish Plotosus lineatus . | Adults live secretively in reefs and have a barred or spotted color pattern",
+   "note": "mimic",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Platax batavianus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Platax_batavianus"
+    }
+   ],
+   "q": "Juveniles and adults have different coloration. | Adults are silver with a dark bar around the eye and a faint one on the back. | Juveniles are brown and are tall in appearance.",
+   "read": "2026-11-20",
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Platax-batavianus.html"
+    }
+   ],
+   "sub_q": "Small juveniles black, vertical white lines on body and fins. | Subadults brown, with black bar from nape, over eye to chest and another black bar from dorsal-fin origin, over pectoral fins to pelvic fins, pectoral and pelvic fins dark brown or black.",
+   "sub_note": "black-and-white small juvenile, then a brown subadult with black bars, then the silver adult",
+   "sub_read": "2026-11-20"
+  },
+  "Platax boersii": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Platax-boersii.html"
+    }
+   ],
+   "q": "Small juveniles yellowish brown or silvery, with 2 black bars as in adults.",
+   "note": "shape: fins far taller",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Platax orbicularis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Orbicular_batfish"
+    }
+   ],
+   "q": "The colour of adults is silvery grey with black vertical bars running through the pectoral fin and eye. | The small juveniles are reddish brown in colour, marked with irregular black spots and blotches",
+   "read": "2026-11-20"
+  },
+  "Platax pinnatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Platax_pinnatus"
+    }
+   ],
+   "q": "The juveniles are mainly black with the body and median fins outlined in orange | The overall colour is silvery with a dusky or dark vertical bar running through the eye.",
+   "read": "2026-11-20"
+  },
+  "Platax teira": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2210"
+    }
+   ],
+   "q": "Very small juveniles are brownish and resemble floating leaves. | Yellowish silvery or dusky, with a black (or dusky) bar through eye and another dark bar from dorsal-fin origin across rear edge of operculum and pectoral-fin base to belly",
+   "note": "Wikipedia (read 2026-11-20) gives the adult as 'usually silver, grey or brownish', overlapping the brownish juvenile",
+   "read": "2026-11-20"
+  },
+  "Plectorhinchus chaetodonoides": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2440"
+    }
+   ],
+   "q": "juveniles brownish with large, well-defined creamy white blotches on body that include brown spots with age; gradually becoming greyish with large, deep brown spots.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)",
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2440"
+    }
+   ],
+   "sub_q": "juveniles brownish with large, well-defined creamy white blotches on body that include brown spots with age; gradually becoming greyish with large, deep brown spots.",
+   "sub_note": "white blotches that come to include brown spots, then grey with brown spots",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Plectorhinchus lessonii": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Churaumi Aquarium fish encyclopedia (Okinawa)",
+     "u": "https://churaumi.okinawa/en/fishbook/00000224"
+    }
+   ],
+   "q": "Juveniles are black with white horizontal stripes. | They change appearance as they mature reaching 30 cm in length.",
+   "note": "the sources disagree on the adult's pattern (points.json fish-juv-plectorhinchus-lessonii), not on the change",
+   "read": "2026-11-20"
+  },
+  "Plectorhinchus lineatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Plectorhinchus-lineatus.html"
+    }
+   ],
+   "q": "Colour of juveniles with few horizontal to slightly oblique dark brown bands which subdivide with age until the body appears to be dark chocolate brown above, with a network of fine white lines running up and back",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/457"
+    }
+   ],
+   "sub_q": "Juveniles and subadult fish have black horizontal stripes along the body that become increasingly diagonal with growth.",
+   "sub_note": "subadults share the juvenile stripes, which turn diagonal gradually",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Plectorhinchus picus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Australian Museum",
+     "u": "https://australian.museum/learn/animals/fishes/dotted-sweetlips-plectorhinchus-picus/"
+    }
+   ],
+   "q": "The Dotted Sweetlips is white to grey with numerous small black spots on the upper half of the head and body. | Juveniles are black above and white below. | They have a white snout, a white saddle on the nape and another on the back below the middle of the dorsal fin.",
+   "read": "2026-11-20"
+  },
+  "Plectorhinchus vittatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Plectorhinchus-vittatus.html"
+    }
+   ],
+   "q": "juveniles with connected black blotches and spots that gradually break up into horizontal stripes; pectoral fins black in juveniles becoming uniform yellow in adults",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Pomacanthus imperator": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Emperor_angelfish"
+    }
+   ],
+   "q": "The emperor angelfish shows a marked difference between the juveniles and the adults. | The juveniles have a dark blue body which is marked with concentric curving lines | The adults are striped with blue and yellow horizontal stripes",
+   "read": "2026-11-20"
+  },
+  "Pomacanthus navarchus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Bluegirdled_angelfish"
+    }
+   ],
+   "q": "Juvenile fish are dark blue with slightly curved, white lateral stripes. | Adult fish have three main colored sections",
+   "read": "2026-11-20",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Bluegirdled_angelfish"
+    }
+   ],
+   "sub_q": "The change from the juvenile to the adult coloring takes place quite abruptly, with little intermediate coloring.",
+   "sub_note": "the change is abrupt, little intermediate colouring",
+   "sub_read": "2026-11-20"
+  },
+  "Pomacanthus semicirculatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Pomacanthus_semicirculatus"
+    }
+   ],
+   "q": "The adults are brownish green in colour with the scales edged in blue creating a blue speckling over the body and tail. | The juveniles in contrast, are blue-black marked from top to bottom with narrow white stripes. | The juveniles gradually adopt the adult colouration when they are 8 to 16 centimetres (3.1 to 6.3 in).",
+   "read": "2026-11-20"
+  },
+  "Pomacanthus sexstriatus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Sixbar_angelfish"
+    }
+   ],
+   "q": "juveniles have an overall blue-black color broken by many vertical white bands | The adults, in contrast, have an overall color of brownish-yellow on the body and the median fins, with vivid blue spots.",
+   "read": "2026-11-20"
+  },
+  "Pseudanthias huchtii": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/pseudanthias-huchtii/"
+    }
+   ],
+   "q": "Juveniles same colouration as females but with green eyes.",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Pseudodax moluccanus": {
+   "sub": true,
+   "sub_src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/269"
+    }
+   ],
+   "sub_q": "Juveniles are pale blue with a broad midbody stripe, and subadults have a yellow band on the tail base.",
+   "sub_note": "subadults gain a yellow tail-base band",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Pygoplites diacanthus": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/pygoplites-diacanthus/"
+    }
+   ],
+   "q": "Juveniles (not shown) with similar markings to adults.",
+   "note": "Fishes of Australia (as read 2026-11-19) adds fewer bands, a dorsal ocellus and no eye patch (degree)",
+   "read": "2026-11-20"
+  },
+  "Rhinomuraena quaesita": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Rhinomuraena-quaesita.html"
+    },
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/3568"
+    }
+   ],
+   "q": "Juveniles all black, males have yellow dorsal fin and females change to a nearly all yellow color, but usually with blue in the posterior | Males are bright blue with a yellow snout, lower jaw and dorsal fin.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)",
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "Australian Museum",
+     "u": "https://australian.museum/learn/animals/fishes/ribbon-eel-rhinomuraena-quaesita/"
+    }
+   ],
+   "sub_q": "Juveniles and subadults are jet black with a yellow dorsal fin.",
+   "sub_note": "subadults share the black juvenile colour",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Scarus altipinnis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/399"
+    }
+   ],
+   "q": "Females (initial phase) area brownish with scattered white spots, and small juveniles have a striped to mottled body with a distinctive yellow head.",
+   "note": "against the initial-phase females",
+   "read": "2026-11-20"
+  },
+  "Scarus niger": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/926"
+    }
+   ],
+   "q": "Females have a reddish head, belly and fins, with wavy dark and white stripes along the side, dark green bands around the mouth and eye. | Juveniles are dark greenish black, covered in small white spots, with a black spot at the top and bottom of a white band on the tail base.",
+   "note": "against the females",
+   "read": "2026-11-20"
+  },
+  "Scarus oviceps": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Reef Life Survey",
+     "u": "https://reeflifesurvey.com/species/scarus-dimidiatus/"
+    }
+   ],
+   "q": "S. oviceps juvenile and female have single light bar on upper side.",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Scolopsis affinis": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Scolopsis-affinis.html"
+    }
+   ],
+   "q": "Juveniles with dusky brown stripe on either side of dorsal midline, and dusky brown midlateral stripe, yellowish above anteriorly. | Color: Body silvery-white.",
+   "read": "2026-11-20"
+  },
+  "Scolopsis bilineata": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Scolopsis-bilineata.html"
+    }
+   ],
+   "q": "juveniles with alternating black and yellow stripes on the upper half and whitish below, Batesian mimic of the poison-fanged blenny Meiacanthus grammistes | Colour dark grey on head and back with diagonal black-edged white band separating dark area from the rest of the mainly whitish body; white blotch below posterior dorsal fin",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Scolopsis lineata": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/1206"
+    }
+   ],
+   "q": "Upper body olive brown, silvery-white below. 3 yellowish white stripes along head and body. Juveniles white, with 3 black bands on upper half of body, interspace between lower pair of yellow bands; black spot between first three dorsal spines.",
+   "read": "2026-11-20"
+  },
+  "Seriola dumerili": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/2990"
+    }
+   ],
+   "q": "Small juveniles have clear fins and a series of bands along the body that often appear divided. | A large predatory jack with a brownish to bluish-grey body becoming silvery-white below, a dusky to dark stripe from the snout to just before the dorsal fin, and a dusky band from the upper jaw through the eye to the first dorsal fin.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Siganus corallinus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/4733"
+    },
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Siganus-corallinus.html"
+    }
+   ],
+   "q": "Small juveniles have narrow blue vertical lines on the sides that fragment into ocelli with growth. | Very small juveniles (up to 50 mm SL) may have vertical blue lines on side, fragmenting into the ocelli with increase in size.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Solenostomus paradoxus": {
+   "differs": true,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Solenostomus-paradoxus.html"
+    }
+   ],
+   "q": "Post-pelagic are almost fully transparent and more slender compared to those established in the benthic phase",
+   "note": "post-pelagic transparent stage",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Sufflamen bursa": {
+   "sub": false,
+   "sub_src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Sufflamen-bursa.html"
+    }
+   ],
+   "sub_q": "The characteristic scythe mark crossing the pectoral base is yellowish-tan to green in juveniles and subadults.",
+   "sub_note": "subadults share the juvenile's scythe colour",
+   "sub_read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Sufflamen chrysopterum": {
+   "differs": true,
+   "src": [
+    {
+     "t": "Fishes of Australia",
+     "u": "https://fishesofaustralia.net.au/home/species/773"
+    }
+   ],
+   "q": "A pale yellowish-brown to brown triggerfish with a narrow whitish to bluish or yellowish-orange bar below the rear of the eye, a yellowish-brown triangle edged in white on the tail, and sometimes a bluish chin and belly. Small juveniles are dark brown above and white below with a dark horseshoe-shaped mark on the tail.",
+   "read": "2026-11-20"
+  },
+  "Taeniura lymma": {
+   "differs": false,
+   "src": [
+    {
+     "t": "Wikipedia",
+     "u": "https://en.wikipedia.org/wiki/Taeniura_lymma"
+    }
+   ],
+   "q": "Females bear litters of up to seven young, each a miniature version of the adult measuring around 13–14 cm (5.1–5.5 in) across.",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Thalassoma hardwicke": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Thalassoma-hardwicke.html"
+    }
+   ],
+   "q": "Color pattern remains similar with growth with terminal males becoming gaudier than primary males",
+   "read": "2026-11-20"
+  },
+  "Thalassoma jansenii": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Thalassoma-jansenii.html"
+    }
+   ],
+   "q": "Large juveniles and females are mostly black with a single white band and white area below the head to the anus.",
+   "note": "like the females",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  },
+  "Variola albimarginata": {
+   "differs": false,
+   "src": [
+    {
+     "t": "FishBase",
+     "u": "https://www.fishbase.se/summary/Variola-albimarginata.html"
+    }
+   ],
+   "q": "juveniles similar in colour to adults, but with relatively fewer and larger pale blue or pink spots",
+   "read": "2026-11-19 (tools/fish_juveniles.json, not re-fetched)"
+  }
+ },
+ "unknown": [
+  "Abalistes stellatus",
+  "Ablabys taenianotus",
+  "Abudefduf sexfasciatus",
+  "Abudefduf vaigiensis",
+  "Acanthurus auranticavus",
+  "Acanthurus lineatus",
+  "Acanthurus mata",
+  "Acanthurus nigrofuscus",
+  "Acanthurus thompsoni",
+  "Acanthurus triostegus",
+  "Acanthurus xanthopterus",
+  "Acreichthys tomentosus",
+  "Aeoliscus strigatus",
+  "Alopias pelagicus",
+  "Amblyeleotris diagonalis",
+  "Amblyglyphidodon aureus",
+  "Amblyglyphidodon curacao",
+  "Amblyglyphidodon leucogaster",
+  "Amblygobius phalaena",
+  "Amblygobius sphynx",
+  "Amblypomacentrus breviceps",
+  "Amphiprion annamensis",
+  "Amphiprion clarkii",
+  "Amphiprion frenatus",
+  "Amphiprion percula",
+  "Anampses meleagrides",
+  "Antennarius commerson",
+  "Antennarius maculatus",
+  "Antennarius pictus",
+  "Antennarius randalli",
+  "Arothron hispidus",
+  "Arothron immaculatus",
+  "Arothron mappa",
+  "Arothron meleagris",
+  "Asterropteryx striata",
+  "Aulostomus chinensis",
+  "Balistapus undulatus",
+  "Balistoides viridescens",
+  "Bodianus dictynna",
+  "Caesio caerulaurea",
+  "Caesio teres",
+  "Calotomus spinidens",
+  "Caranx ignobilis",
+  "Carcharhinus melanopterus",
+  "Centropyge multifasciata",
+  "Centropyge nox",
+  "Cephalopholis leopardus",
+  "Cephalopholis microprion",
+  "Cephalopholis sexmaculata",
+  "Chaetodon adiergastos",
+  "Chaetodon baronessa",
+  "Chaetodon citrinellus",
+  "Chaetodon lineolatus",
+  "Chaetodon lunula",
+  "Chaetodon lunulatus",
+  "Chaetodon ocellicaudus",
+  "Chaetodon octofasciatus",
+  "Chaetodon rafflesi",
+  "Chaetodon selene",
+  "Chaetodon speculum",
+  "Chaetodon trifascialis",
+  "Chaetodon vagabundus",
+  "Cheilinus oxycephalus",
+  "Cheilinus trilobatus",
+  "Cheilio inermis",
+  "Cheilodipterus artus",
+  "Cheilodipterus isostigmus",
+  "Cheilodipterus quinquelineatus",
+  "Chromis agilis",
+  "Chromis amboinensis",
+  "Chromis analis",
+  "Chromis caudalis",
+  "Chromis margaritifer",
+  "Chromis retrofasciata",
+  "Chromis viridis",
+  "Chromis xanthura",
+  "Chrysiptera rollandi",
+  "Chrysiptera talboti",
+  "Cirrhilabrus lubbocki",
+  "Cirrhilabrus ryukyuensis",
+  "Cirrhilabrus temminckii",
+  "Cirrhitichthys aprinus",
+  "Coradion melanopus",
+  "Coris dorsomacula",
+  "Coris pictoides",
+  "Coris schroederii",
+  "Ctenochaetus tominiensis",
+  "Dactyloptena orientalis",
+  "Dactylopus kuiteri",
+  "Dascyllus melanurus",
+  "Dascyllus reticulatus",
+  "Dendrochirus zebra",
+  "Dischistodus chrysopoecilus",
+  "Dischistodus melanotus",
+  "Dunckerocampus dactyliophorus",
+  "Echeneis naucrates",
+  "Ecsenius namiyei",
+  "Elagatis bipinnulata",
+  "Epibulus brevis",
+  "Epinephelus bleekeri",
+  "Epinephelus merra",
+  "Epinephelus ongus",
+  "Eurypegasus draconis",
+  "Ferdauia ferdau",
+  "Fistularia commersonii",
+  "Fusigobius inframaculatus",
+  "Genicanthus lamarck",
+  "Gnathodentex aureolineatus",
+  "Gnatholepis cauerensis",
+  "Gomphosus varius",
+  "Gymnothorax chilospilus",
+  "Gymnothorax enigmaticus",
+  "Gymnothorax fimbriatus",
+  "Gymnothorax phasmatodes",
+  "Gymnothorax pseudothyrsoideus",
+  "Gymnothorax richardsonii",
+  "Gymnothorax thyrsoideus",
+  "Halichoeres argus",
+  "Halichoeres binotopsis",
+  "Halichoeres biocellatus",
+  "Halichoeres chrysus",
+  "Halichoeres hartzfeldi",
+  "Halichoeres leucurus",
+  "Halichoeres marginatus",
+  "Halichoeres nebulosus",
+  "Halichoeres papilionaceus",
+  "Halichoeres podostigma",
+  "Halichoeres scapularis",
+  "Halichoeres solorensis",
+  "Hemigymnus melapterus",
+  "Hemitaurichthys polylepis",
+  "Heniochus acuminatus",
+  "Heniochus chrysostomus",
+  "Heniochus singularius",
+  "Heniochus varius",
+  "Hippocampus spinosissimus",
+  "Hologymnosus annulatus",
+  "Iniistius bakunawa",
+  "Iniistius dea",
+  "Iniistius pavo",
+  "Iniistius pentadactylus",
+  "Labroides pectoralis",
+  "Lactoria cornuta",
+  "Lactoria fornasini",
+  "Lethrinus harak",
+  "Liachirus melanospilos",
+  "Lutjanus fulviflamma",
+  "Lutjanus quinquelineatus",
+  "Lutjanus rufolineatus",
+  "Macropharyngodon ornatus",
+  "Meiacanthus atrodorsalis",
+  "Monotaxis heterodon",
+  "Myrichthys colubrinus",
+  "Naso annulatus",
+  "Naso hexacanthus",
+  "Naso lituratus",
+  "Naso minor",
+  "Naso thynnoides",
+  "Naso unicornis",
+  "Neochirus brachyptera",
+  "Neoniphon sammara",
+  "Neopomacentrus azysron",
+  "Neopomacentrus violascens",
+  "Neotrygon orientale",
+  "Nudiantennarius subteres",
+  "Odonus niger",
+  "Ostorhinchus angustatus",
+  "Ostorhinchus apogonides",
+  "Ostorhinchus chrysopomus",
+  "Ostorhinchus cyanosoma",
+  "Ostorhinchus hartzfeldii",
+  "Ostorhinchus hoevenii",
+  "Ostorhinchus moluccensis",
+  "Ostorhinchus wassinki",
+  "Ostracion rhinorhynchos",
+  "Ostracion solorensis",
+  "Oxycheilinus celebicus",
+  "Oxycheilinus digrammus",
+  "Oxycheilinus orientalis",
+  "Parachaetodon ocellatus",
+  "Paraluteres prionurus",
+  "Paramonacanthus curtorhynchos",
+  "Parapercis schauinslandii",
+  "Pardachirus pavoninus",
+  "Parupeneus barberinoides",
+  "Parupeneus ciliatus",
+  "Parupeneus cyclostomus",
+  "Parupeneus indicus",
+  "Parupeneus multifasciatus",
+  "Petroscirtes breviceps",
+  "Petroscirtes mitratus",
+  "Plagiotremus rhinorhynchos",
+  "Plectorhinchus polytaenia",
+  "Plectroglyphidodon lacrymatus",
+  "Plectropomus laevis",
+  "Plotosus lineatus",
+  "Pogonoperca punctata",
+  "Pomacentrus amboinensis",
+  "Pomacentrus bankanensis",
+  "Pomacentrus brachialis",
+  "Pomacentrus chrysurus",
+  "Pomacentrus coelestis",
+  "Pomacentrus lepidogenys",
+  "Pomacentrus moluccensis",
+  "Pomacentrus nagasakiensis",
+  "Pomacentrus pavo",
+  "Pomacentrus philippinus",
+  "Pomacentrus simsiang",
+  "Pomacentrus stigma",
+  "Pomacentrus tripunctatus",
+  "Pomacentrus vaiuli",
+  "Pseudanthias cheirospilos",
+  "Pseudanthias tuka",
+  "Pseudobalistes flavimarginatus",
+  "Pteragogus enneacanthus",
+  "Pteragogus turdus",
+  "Ptereleotris evides",
+  "Ptereleotris heteroptera",
+  "Pterocaesio pisang",
+  "Pterocaesio tile",
+  "Pteroidichthys amboinensis",
+  "Pterois antennata",
+  "Pterois volitans",
+  "Rhincodon typus",
+  "Rhinecanthus verrucosus",
+  "Salarias fasciatus",
+  "Scarus dimidiatus",
+  "Scarus flavipectoralis",
+  "Scarus forsteni",
+  "Scarus frenatus",
+  "Scarus ghoban",
+  "Scarus hypselopterus",
+  "Scarus psittacus",
+  "Scarus rivulatus",
+  "Scarus rubroviolaceus",
+  "Scolopsis ciliata",
+  "Scolopsis trilineata",
+  "Scolopsis xenochrous",
+  "Scorpaenopsis diabolus",
+  "Scorpaenopsis macrochir",
+  "Siganus guttatus",
+  "Siganus unimaculatus",
+  "Siganus virgatus",
+  "Soleichthys heterorhinos",
+  "Sphaeramia nematoptera",
+  "Sphyraena barracuda",
+  "Sphyraena flavicauda",
+  "Sphyraena obtusata",
+  "Stethojulis bandanensis",
+  "Stethojulis interrupta",
+  "Stethojulis strigiventer",
+  "Synanceia verrucosa",
+  "Synchiropus splendidus",
+  "Thalassoma amblycephalum",
+  "Thalassoma lunare",
+  "Trachinocephalus trachinus",
+  "Trachinotus baillonii",
+  "Trachyrhamphus bicoarctatus",
+  "Triaenodon obesus",
+  "Tylosurus crocodilus",
+  "Upeneus tragula",
+  "Valenciennea puellaris",
+  "Valenciennea sexguttata",
+  "Vanderhorstia dorsomacula",
+  "Xiphasia setifer",
+  "Zanclus cornutus",
+  "Zebrasoma scopas",
+  "Zebrasoma velifer"
+ ]
+}

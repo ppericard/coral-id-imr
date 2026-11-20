@@ -475,6 +475,15 @@ A card shows once per answer and direction, never the opposite of the last move 
 inferred answer, and never for a subject whose units say `startFb` false (the fish and the sea slugs, until their
 level is better calibrated).
 
+**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md)):
+the fish use the corals' `CHOICE.opts`. On the fish profiles of `tools/learnprof.js` (assumptions, not fits), the first
+20 answers' surprise under the truthful answer: "new" holds (beginner −0.01; corals 0.08); "imr" and "know"
+under-predict the lecture RA, strong RA and expert (0.11 to 0.12), as much as on the corals (0.09 to 0.14). The bands
+do not fit the levels in either subject; on the fish, at answer 60 the beginner is at 1.13 (corals 0.76) and the
+lecture RA at 1.98, so with today's bands the cards would offer "higher" to 7 of 10 truthful lecture RAs. Recommended
+(not built): keep the shared values and the fish's cards off; refit the bands on real fish players before turning the
+cards on.
+
 ### Comeback after a break
 
 Time is used here and only here (rule L1): progress, mastery and ability never decay. A break is expected to have cost
@@ -1689,7 +1698,9 @@ learning change".
   new, the lecture RA imr, the strong RA and the expert know; `--fallback keep|accept`, the answer to the card that comes when the
   answers do not fit the choice; `--vars`, for calibration only, other values of its variables): per run the first 20
   answers' mean surprise (right − e), their right % and the global level then, and the fallback card; the first 80
-  answers are kept as a trace for `tools/fallbackeval.js`.
+  answers are kept as a trace for `tools/fallbackeval.js` (either subject: the verdicts per profile and declared answer,
+  each profile's truthful answer from `learnprof.js`, and the prior's fit, the surprise and the global level at 20, 40
+  and 60 answers against the answer's band).
 - **Open all** (`--openall N`): every genus opens at question N, as My progress's button; the back card that may follow
   is answered `--back keep|one` (default `keep`). Per run: when all opened, when the back card showed, and after it each
   answer's expected success e against the learner's true chance and its answer, for the genera opened at once and

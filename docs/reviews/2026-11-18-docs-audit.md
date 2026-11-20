@@ -108,7 +108,7 @@ tables below hold exactly these 98 files: 4 root + 12 top level + 9 rules + 1 ar
 |---|---|---|---|---|
 | `archive/DONE-until-2026-11-04.md` | 99,416 | The frozen done list | A | Frozen on purpose (its hash is pinned in `tests/docs.test.js`) |
 | `reference/genus-overview-2026-10-31.md` | 15,123 | Pierre's first study of the genera | P | Superseded by `data.json` (its own header says background only) |
-| `reference/lit-componential-difficulty.md` | 34,417 | Literature review, 2026-11-09 | A | Frozen record; its decision (Q316) is built |
+| `reference/lit-componential-difficulty.md` | 34,417 | Literature review, 2026-11-09 | A | Frozen record; its decision (Q316) is not built yet: the offline fit's tool is (`tools/studies/q316/`), not yet run on the real log; the sheet and the app steps follow it |
 | `reference/lit-photo-memory.md` | 28,503 | Literature review, 2026-11-09 | A | Frozen record; step 2 waits on data |
 | `reference/lit-response-time.md` | 36,081 | Literature review, 2026-11-09 | A | Frozen record; decided (Q315) |
 
