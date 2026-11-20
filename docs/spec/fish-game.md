@@ -111,7 +111,8 @@ D4).
   `mergeUsers` keeps it only where both accounts have it (on either stays on).
 - **Where**: `progress.js` `learnCard`, right after the player's card on My progress: one line on phones that opens in
   place, open on desktop between the player's card and the side column; Home's Learn door has "What I learn ›" on its
-  kicker row (`home.js`), which opens it (`WIL_OPEN`). ⚙ has no Scientific names row, and My progress no "Turn on
+  kicker row (`home.js`), which opens it (`window.WIL_ASK`, set in tier 1 and read by `learnCard`, so a tap before
+  `progress.js` loads still counts; the link always navigates). ⚙ has no Scientific names row, and My progress no "Turn on
   scientific names" box. Tests: `tests/namesrows.test.js`, `tests/fish.smoke.js`.
 
 ## Fish species, step 1: by common name

@@ -45,10 +45,12 @@ function badge(ring, pct, sub) {
 // The What I learn card (docs/FISH_PATH.md "Which names a player learns"; Pierre, 2026-11-18, Q396, Q400 D, Q404 A): the
 // subject's names rows (app.js learnRows), each on or off, under its base level (always on). Right under the player's
 // card: on phones one line that opens it in place, on desktop open at the top of the side column (app.css .wil). Home's
-// Learn door links here with it open (WIL_OPEN, home.js). None for a subject without a names row (the corals).
+// Learn door links here with it open (home.js sets window.WIL_ASK in tier 1, so a tap before this file loads still
+// counts; read once here into WIL_OPEN). None for a subject without a names row (the corals).
 let WIL_OPEN = false;
-const learnOpen = () => (WIL_OPEN = true);
-function learnCard(rows = learnRows(), open = WIL_OPEN || (typeof matchMedia === 'function' && matchMedia('(min-width: 1024px)').matches)) {
+function learnCard(rows = learnRows(), open) {
+  if (typeof window !== 'undefined' && window.WIL_ASK) ((WIL_OPEN = true), (window.WIL_ASK = false));
+  if (open === undefined) open = WIL_OPEN || (typeof matchMedia === 'function' && matchMedia('(min-width: 1024px)').matches);
   if (!rows.length) return '';
   const base = SUBJ.many.charAt(0).toUpperCase() + SUBJ.many.slice(1),
     on = rows.filter(r => rowOn(r)),

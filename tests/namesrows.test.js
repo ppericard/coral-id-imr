@@ -166,6 +166,31 @@ test('the card: a base row, one switch per names row, a phone summary line', () 
   );
 });
 
+test("Home's link: a tap before progress.js loads still counts, and the link always navigates", () => {
+  const HOME = read('home.js');
+  // home.js's handler (tier 1) on a stub link, with no progress.js loaded
+  const h = {window: {}, $v: {querySelector: () => link}, wil: true},
+    link = {};
+  vm.createContext(h);
+  vm.runInContext(block(HOME, "    const wl = wil && $v.querySelector('.hdwil');", '\n  };\n', {file: 'home.js'}), h);
+  assert.strictEqual(typeof link.onclick, 'function');
+  assert.strictEqual(link.onclick(), undefined, 'never false: the link to My progress is never cancelled');
+  assert.strictEqual(h.window.WIL_ASK, true, 'the intent kept in tier 1');
+  // progress.js, loaded later, opens the card once from it
+  const X = run(),
+    ctx = {SUBJ: {many: 'families'}, WIL_OPEN: false, esc: String, rowOn: X.rowOn, rowState: X.rowState, learnRows: X.learnRows};
+  ctx.window = h.window;
+  ctx.matchMedia = () => ({matches: false});
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(PROG, 'let WIL_OPEN = false;\n', '\n}\n', {through: 1, file: 'progress.js'}).replace('let WIL_OPEN = false;\n', '') +
+      'this.learnCard = learnCard;',
+    ctx
+  );
+  assert.match(ctx.learnCard(), /<details class="wil" id="wil" open>/, 'open on arrival');
+  assert.strictEqual(ctx.window.WIL_ASK, false, 'read once');
+});
+
 test('mergeUsers: a row turned off stays off only where both accounts have it off', () => {
   const k = C.subjKey('fish', 'quiz'),
     m = (a, b) => {
