@@ -1466,6 +1466,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **App comment, the opening card's common name.** On the fish practice quiz, about the Spadefishes family's photo
+  fish-s480-cand-324346931: «La carte d'ouverture des bannerfish devrait être plus claire sur le nom commun (et pas que
+  dans une section IMR), et le mettre en avant, juste après le nom scientifique». Applied: docs/spec/fish.md "Curated
+  common names" (the card shows a unit's common name right under its scientific name, for every subject).
 - **Wrong answer, the two compared photos are cropped (fish practice quiz, Abudefduf given for Chromis).** «Sur mauvaise
   réponse, les 2 photos sont hyper croppées horizontalement et on ne voit plus que le milieu des poissons». The two
   photos are shown whole at every size. Applied: `app.css` `.qstage.qvs .qph img`, docs/DESIGN.md "Quiz on desktop"
