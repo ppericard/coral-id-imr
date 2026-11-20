@@ -604,7 +604,7 @@ function viewLookalikes(a, b) {
       gB = GX(m.B),
       x = mix(m);
     const half = (n, p, k) =>
-      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(unameT(n))}${SUBJ.views.length > 1 ? ', ' + viewWord(p.view).toLowerCase() + ' view' : ''}"></button><figcaption>${uname(n)}</figcaption></figure>`;
+      `<figure class="lkph"${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(unameT(n))}${SUBJ.views.length > 1 ? ', ' + viewWord(p.view).toLowerCase() + ' view' : ''}"></button><figcaption>${uname(n)}</figcaption></figure>`;
     // A unit's tips under its name, with the source its label names where it has one (a tree subject's marks and cues
     // carry theirs: tipsLabel; the corals' lecture tips are the pair's source, said above).
     const tip = (n, g) =>
@@ -765,25 +765,22 @@ function viewCompare(a, b) {
 // key is credited in full under the list. A region with no key: the entries in one block. The winks stay a surprise.
 // Each entry opens its family's sheet (viewFishSheet; an IMR entry by the family it was renamed into).
 function viewFishList() {
-  // Each photo enlarges in the shared viewer, as the coral photos do (a tap on a photo opens it).
-  const flat = [];
+  // Each entry is one card that opens its sheet (app.js listCard, shared with the corals' ID tips view; Pierre,
+  // 2026-11-20): the photo opens the sheet too, where the photos enlarge with their credits.
   const tip = n => {
     const g = GX(n),
-      p = cover(g); // the admin's ★ Cover while in play (app.js treeCurate), else the card photo (core.js easyCover)
-    if (p) flat.push({...p, genus: n});
-    // its first English name given as information (app.js vernFirst: the sea slugs'), under its name
-    const ven = vernFirst(n);
-    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b>${ven ? `<span class="ven">${esc(capFirst(ven))}</span>` : ''}<small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${g.tl ? `<p class="label">${g.tl}</p>` : ''}${tipsList(g)}${
-      g.lk.length
-        ? `<p class="note">Don't confuse with ${g.lk
-            .map(
-              ([o, t]) =>
-                // an edited line names the source given with it (app.js treeGenera lksrc; rule C2)
-                `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))}${((g.lksrc || {})[o] || {}).t ? '; ' + esc(g.lksrc[o].t) : ''})`
-            )
-            .join('; ')}</p>`
-        : ''
-    }${g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}</div></article>`;
+      // its first English name given as information (app.js vernFirst: the sea slugs'), under its name
+      ven = vernFirst(n);
+    // the photo: the admin's ★ Cover while in play (app.js treeCurate), else the card photo (core.js easyCover)
+    return listCard(
+      n,
+      cover(g),
+      `${ven ? `<span class="ven">${esc(capFirst(ven))}</span>` : ''}<small>${esc(altName(g.fam))}</small>`,
+      // the look-alikes' lines without their sources, which the sheet gives (app.js treeGenera lksrc; rule C2)
+      `${g.lk.length ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>` : ''}${
+        g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''
+      }`
+    );
   };
   const blk = (head, L) => (L.length ? `<section class="gblk" data-n="${L.length}">${head}${L.map(tip).join('')}</section>` : '');
   const key = TREEU.key,
@@ -836,7 +833,7 @@ function viewFishList() {
   // A subject's own line (UNITS lede: the sea slugs), else the fish's
   const lede =
     UNITS[SUBJ.id].lede ||
-    `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and IMR’s names. Photos: iNaturalist and FishBase.`;
+    `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named on its sheet) and IMR’s names. Tap a family to open its sheet. Photos: iNaturalist and FishBase.`;
   const tx = !key && UNITS[SUBJ.id].listBy && TREEU.taxa;
   // Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card before the groups.
   const bas = SUBJ.pages.includes('basics')
@@ -844,7 +841,6 @@ function viewFishList() {
     : '';
   $v.innerHTML = `<p class="lede">${lede}</p><div class="tiplist gpack${tx ? ' gtaxa' : ''}">${[bas, ...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : tx ? `<p class="note keycite">Groups: ${esc(tx.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
-  $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }
 
 /* ---------- Fish sheets ---------- */
