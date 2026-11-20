@@ -7466,7 +7466,7 @@ Moved from LEARNING.md "The calibration set" (#1130), which says what the code d
 
 ## `CAL.U` 1 → 0.25 for the corals: checked, not adopted (2026-11-20)
 
-ROADMAP "`CAL.U` after the hierarchical photo Elo": the corals' prior variance for a photo nobody has answered (`model.js`
+The ROADMAP row "`CAL.U` after the hierarchical photo Elo" (closed by this check): the corals' prior variance for a photo nobody has answered (`model.js`
 `CAL.U` 1, set for the Easy / Medium / Hard sets) against the spread of a photo around its genus offset, the prior since
 2026-11-03. A smaller value narrows an unanswered photo's targeting from sd √(0.7² + 1) = 1.22 to √(0.7² + 0.25) = 0.86
 logits. Nothing in the app changed.
@@ -7524,5 +7524,6 @@ since the wide targeting is what sends an unrated photo to players of other leve
   from the genus offsets plus a residual of sd 0.5). They would be needed to say "safe to ship", not to say "not
   shipped". Compute: about 17 minutes, within rule L11's 40.
 
-**Outcome**: not adopted; `CAL.U` stays 1. A guardrail breached goes to Pierre (rule L11): keep U 1, accept the
-lag, or have a level 3 choose a value on GitHub runners (his go).
+**Outcome**: not adopted; `CAL.U` stays 1 (the integrator's call: keeping it changes nothing), and the ROADMAP row was
+closed. Shipping a smaller U would mean accepting the lag, or a level 3 choosing a value on GitHub runners, both
+Pierre's.
