@@ -5611,6 +5611,7 @@ async function namesCheck(b, base) {
         bad.push('More is not closed');
       if (!m.before.line || /ID tips|Your answer|Similar names/.test(m.before.visible))
         bad.push('the short sheet holds more than one line');
+      if (/\(IMR\)/.test(m.before.visible)) bad.push('the short sheet shows an "(IMR)" source label (Pierre, 2026-11-21)');
       if (m.before.h < 44 || !m.before.row) bad.push('More is not a 44 px target on the row of Next');
       if (!m.before.rep) bad.push('Report a problem is not on the sheet in view, behind More or disabled');
       if (m.open.hidden || !m.open.tips || m.open.exp !== 'true' || m.open.label !== 'Less' || !m.open.next) bad.push('More does not open');

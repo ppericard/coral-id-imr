@@ -596,6 +596,10 @@ body:has(.home-page) main {
     padding-top: 10px;
   }
 }
+/* A subject with no key built has no Identify door (home.js, app.js keyOf): the Learn door takes the whole row. */
+.hdoors.one {
+  grid-template-columns: minmax(0, 1fr);
+}
 /* Landscape tiles (home.js land, the fish: Pierre, 2026-11-08, "most fish are horizontal": square tiles cut them): fewer,
    wider tiles near 3:2 (the fish photos' median shape), as many as the band's shape takes at every size. The band
    (.hdart, a size container) keeps its height rules above; only its tiles change. Two rows once the band is 120 px tall

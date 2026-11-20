@@ -59,6 +59,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
+| 2026-11-21 | [The answer feedback no longer says "(IMR)" as its line's source](2026-11-21-feedback-no-imr-label.md) | #1353 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
 | 2026-11-21 | [Rule W27: no fixed number of Codex rounds; a part whose findings keep coming back leaves the PR](2026-11-21-w27-no-round-count.md) | #1355 |
 | 2026-11-20 | [A level opens in a group: at least 4 close units together, no question before](2026-11-20-a-level-opens-in-a-group.md) | #1331 |
@@ -78,6 +79,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [The 86 Corals of the World screenshots are replaced by their originals, on R2](2026-11-20-lecture-originals.md) | #1292 |
 | 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |
 | 2026-11-20 | [A name root that echoes another unit's ID tip shows with a warning, never held back](2026-11-20-name-root-warning.md) | #1308 |
+| 2026-11-20 | [A subject with no ID key built shows no Identify door and no Identify tab](2026-11-20-no-key-no-door.md) | #1340 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
 | 2026-11-20 | [Each subject adopts its own opening hold from the sheet](2026-11-20-one-hold-path-app.md) | #1349 |
 | 2026-11-20 | [One opening hold path on the sheet for every subject; the app still adopts the corals' only](2026-11-20-one-hold-path-sheet.md) | #1346 |
