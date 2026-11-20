@@ -1983,7 +1983,7 @@ const modeKey = () =>
 const fuJ = f => {
   const g = ((FISHC && FISHC.gj) || {})[f],
     j = ((SUG && SUG[TK]) || {})[f];
-  return g && j ? {...g, ...j} : j || g || null;
+  return sortJudge(DRAFT[TK] || {}, f, g, j);
 };
 // A subject's part of the curation as the pages read a photo's tags, ease, phase and crop: what the auto-sort wrote that the
 // pass has judged anew since is left out, so the pass's value shows, as the game plays it (autosort.js sortView; for
@@ -3706,8 +3706,9 @@ function renderFishReview(kind) {
       b =>
         (b.onclick = () =>
           fx(G => {
-            const ph = f in (G.phase || {}) ? G.phase[f] : (fuJ(f) || {}).ph;
-            if (fishPhase(p, fuJ(f), G) !== 'juvenile') {
+            const W = readView(G), // as the review shows it; the writes below go against G
+              ph = f in (W.phase || {}) ? W.phase[f] : (fuJ(f) || {}).ph;
+            if (fishPhase(p, fuJ(f), W) !== 'juvenile') {
               const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
               return ph ? fishSet(N, f, 'phase', '') : N;
             }

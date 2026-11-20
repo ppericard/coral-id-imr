@@ -384,6 +384,15 @@
   // build's copy of the judgement adds the source's juvenile flag, or its phase when the pass gives none (fishCopy, as
   // read_cur's copy_of), so those two fields read that copy, not the bare pass value the readers fall back to.
   const VIEWC = new WeakMap();
+  // A photo's judgment for the pages: the game record g (fish-game.json: its older e, jt, ph) under the pass's j. A phase the
+  // pass no longer gives, on a photo whose phase the build reads anew (sortReads), is gone, not the game record's old one
+  // (read_cur removes it).
+  function sortJudge(F, f, g, j) {
+    if (!g || !j) return j || g || null;
+    const r = {...g, ...j};
+    if (!('ph' in j) && sortReads(F, f, j).includes('phase')) delete r.ph;
+    return r;
+  }
   function sortView(F, sug, recs) {
     if (!F || !sug || typeof sug !== 'object') return F;
     if (!VIEWC.has(F)) VIEWC.set(F, new WeakMap());
@@ -1549,6 +1558,7 @@
     sortOut,
     sortReads,
     sortView,
+    sortJudge,
     fishRun,
     fishUndo,
     fishOwn,

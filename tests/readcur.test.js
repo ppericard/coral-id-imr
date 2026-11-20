@@ -246,6 +246,17 @@ test('sortView: the same part with the fields read anew left out; the draft itse
   assert.strictEqual(A.sortView(none, sug), none, 'nothing of the auto-sort: the draft itself');
 });
 
+test('sortJudge: a phase the newer judgement no longer gives is gone, not the game record old one (review #1313)', () => {
+  const g = {e: 3, jt: 'p1d0sl1', ph: 'male'},
+    j = {jt: 'p1g0sl1', e: 4, k: 'best'},
+    F = {add: {f1: 's1'}, tags: {f1: 'p1d0sl1'}, phase: {f1: 'male'}, auto: {[old]: {f1: 'atep'}}};
+  assert.strictEqual('ph' in A.sortJudge(F, 'f1', g, j), false, 'read anew: no phase');
+  assert.strictEqual(A.sortJudge(F, 'f1', g, {...j, ph: 'female'}).ph, 'female');
+  assert.strictEqual(A.sortJudge({...F, auto: {[old]: {f1: 'ate'}}}, 'f1', g, j).ph, 'male', 'phase not written by the run: kept');
+  assert.strictEqual(A.sortJudge(F, 'f1', undefined, j), j);
+  assert.strictEqual(A.sortJudge(F, 'f1', g, undefined), g);
+});
+
 test('sortView with the candidates: the source juvenile flag stays, as the build copies it (review #1313)', () => {
   const pass = {jt: 'p1g0sl1', e: 4, k: 'best'},
     F = {
