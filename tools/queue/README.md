@@ -30,7 +30,7 @@ builders from `origin/main`'s reviewed copy over the PR's data (`trusted_root` i
 the way the session hooks run main's `tools/brief.py`. A PR that changes one of these tools is checked by main's copy
 until it merges.
 
-## Follow-ups (recorded under rule W27 after round 2; none is a one-line fix)
+## Follow-ups (cut from the PR under rule W27; none is a one-line fix)
 
 - **Pass the validated head SHA into the train.** `nightq.sh` rechecks the head just before `tools/train.py`, but the
   train still fetches the head itself; the full fix is a `--sha` option in `train.py` that refuses a different head
