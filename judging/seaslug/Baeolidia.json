@@ -1,8 +1,8 @@
 {
  "photos": {
   "seaslug-Baeolidia-cand-510967875": {"code": "o1g0ml1c2"},
-  "seaslug-Baeolidia-cand-81639841": {"code": "p1g0sl15"},
-  "seaslug-Baeolidia-cand-63745918": {"code": "d1g0sl14", "note": "the streaked, glinting wood competes with the pale cerata"},
-  "seaslug-Baeolidia-cand-521936302": {"code": "o1g0sl14", "note": "translucent cerata on a dark algal background"}
+  "seaslug-Baeolidia-cand-81639841": {"code": "p1g0sl15", "bb": [0.2093, 0.2541, 0.8407, 0.7625]},
+  "seaslug-Baeolidia-cand-63745918": {"code": "d1g0sl14", "bb": [0.2625, 0.2345, 0.725, 0.6802], "note": "the streaked, glinting wood competes with the pale cerata"},
+  "seaslug-Baeolidia-cand-521936302": {"code": "o1g0sl14", "bb": [0.2833, 0.2386, 0.7209, 0.6922], "note": "translucent cerata on a dark algal background"}
  }
 }

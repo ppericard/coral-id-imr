@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-Cratena-cand-719986906": {"code": "h1g0sl13", "note": "the head comes toward the camera, the body behind it"},
-  "seaslug-Cratena-cand-510968440": {"code": "p1g0sl15"},
+  "seaslug-Cratena-cand-510968440": {"code": "p1g0sl15", "bb": [0.3093, 0.2743, 0.8419, 0.7204]},
   "seaslug-Cratena-cand-96820901": {"code": "o1g0sms3", "note": "two animals among hydroids, the hydroids compete with the cerata"},
   "seaslug-Cratena-cand-63742679": {"code": "d1g0slo4", "note": "a blurred pale animal at the lower left, not the subject's shape"},
-  "seaslug-Cratena-cand-488728124": {"code": "p1g0sl14", "note": "the busy orange background competes with the cerata"},
+  "seaslug-Cratena-cand-488728124": {"code": "p1g0sl14", "bb": [0.1437, 0.2625, 0.8125, 0.8225], "note": "the busy orange background competes with the cerata"},
   "seaslug-Cratena-cand-180091765": {"code": "o1g0ml14"},
   "seaslug-Cratena-cand-323757595": {"code": "p1g0ml13", "note": "soft at full size; the busy red and white background competes with the outline"},
   "seaslug-Cratena-cand-567653946": {"code": "o0g0sm1c1"},
-  "seaslug-Cratena-cand-490547820": {"code": "p1g0sl1w4", "note": "the busy hydroids around it compete with the cerata"},
+  "seaslug-Cratena-cand-490547820": {"code": "p1g0sl1w4", "bb": [0.175, 0.275, 0.875, 0.725], "note": "the busy hydroids around it compete with the cerata"},
   "seaslug-Cratena-cand-338078268": {"code": "o1g0ss1c1"},
-  "seaslug-Cratena-cand-18782049": {"code": "p1g0sl14", "note": "the busy reef competes with the outline"},
+  "seaslug-Cratena-cand-18782049": {"code": "p1g0sl14", "bb": [0.2656, 0.2985, 0.6782, 0.8639], "note": "the busy reef competes with the outline"},
   "seaslug-Cratena-cand-178220683": {"code": "o1g0sm1cw2"},
   "seaslug-Cratena-cand-445577337": {"code": "o0g0sl13", "note": "the body curled into a U, the cerata folded over it"},
-  "seaslug-Cratena-cand-271744017": {"code": "o1g0sl14", "note": "a translucent body on a busy algal background of its colours"},
+  "seaslug-Cratena-cand-271744017": {"code": "o1g0sl14", "bb": [0.2001, 0.306, 0.6202, 0.8487], "note": "a translucent body on a busy algal background of its colours"},
   "seaslug-Cratena-cand-628984790": {"code": "o0g0sls3", "note": "two animals, one behind the other"},
-  "seaslug-Cratena-cand-84423959": {"code": "o1g0sl1fw4", "note": "the head end under the cerata"},
+  "seaslug-Cratena-cand-84423959": {"code": "o1g0sl1fw4", "bb": [0.2137, 0.1066, 0.75, 0.8942], "note": "the head end under the cerata"},
   "seaslug-Cratena-cand-87244964": {"code": "p1g0ml13", "note": "pink algae around it compete with the outline"},
-  "seaslug-Cratena-cand-180092741": {"code": "p1g0sl14", "note": "the busy orange algae compete with the outline"},
-  "seaslug-Cratena-cand-493374899": {"code": "p1g0sl1w5"},
+  "seaslug-Cratena-cand-180092741": {"code": "p1g0sl14", "bb": [0.182, 0.1309, 0.782, 0.8193], "note": "the busy orange algae compete with the outline"},
+  "seaslug-Cratena-cand-493374899": {"code": "p1g0sl1w5", "bb": [0.2406, 0.2791, 0.65, 0.6542]},
   "seaslug-Cratena-cand-625877319": {"code": "h1g0sl13"}
  }
 }

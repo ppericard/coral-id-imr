@@ -5907,6 +5907,12 @@ async function noUpscaleCheck(b, base) {
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+      // The player's id seeds the per-player reserve (core.js reserveOf: photos kept off this player's sheets and games).
+      // The app makes a random id, so each run was another player: the Tubastraea sheet, whose only lecture photos sit
+      // behind the "more" fold and can be reserved, had none for about 1 id in 1000 ("shows no IMR lecture photo", the
+      // merge train of #1294). A fixed one (JSON, as the app's store reads it; draw.smoke.js does the same) is the same
+      // player every run.
+      localStorage.setItem('reefid-anon-id', JSON.stringify('noupscale1'));
     });
     const p = await c.newPage();
     await p.goto(base);
