@@ -2364,6 +2364,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
     });
     if (nm.h !== 'Family ID marks' || nm.n < 1 || nm.imr || !/^ID marks \(FishBase/.test(nm.tl || '') || !nm.card || !nm.fb)
       ui.push(`${width}px family with no IMR cue: ${JSON.stringify(nm)}`);
+    // The first-meeting card of a scientific genus: its common name right after its name, before the family line
+    // (app.js unitCname), not only in the IMR section; a unit labelled by its common name adds none.
+    const cn = await q.evaluate(() => ({
+      gen: introCard('g:Heniochus').body,
+      fam: introCard('f:Frogfishes').body
+    }));
+    if (!/^<p class="ulcn">Bannerfishes<\/p><p class="ulfam">/.test(cn.gen) || cn.fam.includes('ulcn'))
+      ui.push(`${width}px opening card's common name: ${JSON.stringify(cn)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
     await q
       .waitForFunction(
