@@ -13,9 +13,9 @@ const cut = require('./block.js');
 const src = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8'),
   body = cut(src, '  hide: (n, f) =>', '  move: (n, f, v, to) =>', {file: 'admin.js'});
 
-const run = (genus, f) => {
+const run = (genus, f, flag) => {
   const ctx = {
-    DRAFT: {genera: {G: genus}},
+    DRAFT: {genera: {G: genus}, ...(flag ? {flag} : {})},
     CK: x => 'cand:' + x,
     clone: o => JSON.parse(JSON.stringify(o)),
     entry: () => ctx.DRAFT.genera.G,
@@ -25,7 +25,11 @@ const run = (genus, f) => {
       ctx.DRAFT.genera.G = k;
     },
     dropFeat: () => {},
-    aApplied: () => undefined
+    aApplied: () => undefined,
+    // the flag the removal clears (admin.js flagsOf / flagsSet on the corals' part, the curation itself)
+    ADM0: {},
+    flagsOf: C => C.flag || {},
+    flagsSet: (C, S, F) => (C.flag = F)
   };
   vm.createContext(ctx);
   vm.runInContext(`const ACT = {${body}}; this.ACT = ACT;`, ctx);
@@ -37,6 +41,11 @@ test('Remove on a candidate Pierre added himself: the add goes and the photo is 
   const D = run({add: {a: 'wide', b: 'close'}}, 'a');
   assert.deepStrictEqual(D.genera.G.add, {b: 'close'});
   assert.deepStrictEqual(D.seen, {'cand:a': 1});
+});
+
+test('Remove on an added candidate clears its flag, and only its flag', () => {
+  const D = run({add: {a: 'wide'}}, 'a', {a: {genus: 'G'}, z: {genus: 'G'}});
+  assert.deepStrictEqual(Object.keys(D.flag), ['z']);
 });
 
 test('a plain removal of a site photo marks nothing', () => {

@@ -103,7 +103,7 @@ test('admin: each flag goes to its subject, a fish flag never under a coral key'
   };
   vm.createContext(ctx);
   vm.runInContext(
-    block(admin, 'const flagsOf = ', '\n// Excluded photos', {file: 'admin.js'}) +
+    block(admin, 'const curPart = ', '\n// Excluded photos', {file: 'admin.js'}) +
       ';this.importFlags = importFlags; this.flagsOf = flagsOf;',
     ctx
   );

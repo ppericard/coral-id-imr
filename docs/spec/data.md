@@ -76,16 +76,21 @@ from the name study, [docs/reviews/2026-11-05-name-confusion-study.md](../review
 - `p` the parts that spell the name, each `[form, meaning, word, [source indexes]]` (an ending with no meaning has an
   empty meaning and no source);
 - `fit` one of the genus's own ID tips (`qt`, verbatim) the meaning points to;
+- `warn`, never with `fit`: the name study's misleading root, a meaning that echoes another genus's ID tip, each
+  `[genus, one of its ID tips verbatim]`, never one of the genus's own (Pocillopora "cup, bowl": Acropora's
+  "Cup-shaped radial corallites"; Favites "honeycomb": Porites's "Honeycomb pattern");
 - `src` the dictionaries (`{t, u}`: E. C. Jaeger's *Source-Book of Biological Names and Terms*, 1944, on archive.org,
   by page; Merriam-Webster).
 
 Shown on the genus sheet under the ID tips box, outside it (an addition, not an IMR line: rule C1), by `learn.js`
-`rootLine()` (`.nameroot`): the parts, each meaning with its word, the fit, and, when 3 or more slate genera share its
+`rootLine()` (`.nameroot`): the parts, each meaning with its word, the fit, the warning ("Careful: the name echoes the
+ID tip of *Acropora* (“Cup-shaped radial corallites”), not one of its own."), and, when 3 or more slate genera share its
 last root (-pora, -astrea), that the ending alone does not tell them apart (counted from `slateOf`, never written in the
-data). Written by `tools/apply_name_roots.py`, which also lists every other slate genus with the reason it has no line
-(a root with two meanings in the dictionary, a split not clear, a person honoured, an IMR mnemonic playing on another
-meaning). `tests/roots.test.js`: every meaning cites a dictionary link, the parts spell the name, a fit is one of its
-tips; `tests/pages.smoke.js` checks the line on Goniastrea's sheet. The fish genera carry the same `root`
+data). Written by `tools/apply_name_roots.py` (which stops on a warning that is not another genus's tip verbatim), which
+also lists every other slate genus with the reason it has no line (a root with two meanings in the dictionary, a split
+not clear, a person honoured, a meaning shared with another genus's root, an IMR mnemonic playing on another meaning).
+`tests/roots.test.js`: every meaning cites a dictionary link, the parts spell the name, a fit is one of its tips, a
+warning another genus's; `tests/pages.smoke.js` checks the line on Goniastrea's sheet. The fish genera carry the same `root`
 ([fish.md › Name roots of the fish genera](fish.md#name-roots-of-the-fish-genera)).
 
 ### A photo record
