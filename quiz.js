@@ -1202,8 +1202,16 @@ const tipsBy = g =>
         .filter(Boolean)
         .join('; ')
     : '';
+// IMR's own name is left out of the sources this line says (Pierre, 2026-11-21 05:53: the bare "(IMR)" took a line of its
+// own); the other sources stay. The IMR source is still there for the cue behind More (the tips' label "ID tips (IMR)")
+// and on the Compare page, so rule C2 holds.
+const noImr = s =>
+  String(s || '')
+    .split('; ')
+    .filter(x => x && x !== 'IMR')
+    .join('; ');
 function fbLine(target, c, good, chs = [], mim = null) {
-  const say = (t, s) => `<p class="vs fbline">${t}${s ? ` <small class="esrc">(${esc(s)})</small>` : ''}</p>`;
+  const say = (t, s) => `<p class="vs fbline">${t}${noImr(s) ? ` <small class="esrc">(${esc(noImr(s))})</small>` : ''}</p>`;
   const M = !good && mim ? mimMarks(mim, target) : null;
   if (M) return M.line;
   const P =
