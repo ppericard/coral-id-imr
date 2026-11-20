@@ -1,12 +1,12 @@
 {
  "photos": {
-  "seaslug-497250-cand-723449563": {"code": "o1g0sl15"},
-  "seaslug-497250-cand-605883279": {"code": "o1g1sl14"},
-  "seaslug-497250-cand-203889373": {"code": "o1g0sl1w4"},
+  "seaslug-497250-cand-723449563": {"code": "o1g0sl15", "bb": [0.1968, 0.2916, 0.7157, 0.775]},
+  "seaslug-497250-cand-605883279": {"code": "o1g1sl14", "bb": [0.3187, 0.1166, 0.6875, 0.7375]},
+  "seaslug-497250-cand-203889373": {"code": "o1g0sl1w4", "bb": [0.225, 0.25, 0.8563, 0.7625]},
   "seaslug-497250-cand-33465852": {"code": "d1d0ml13"},
   "seaslug-497250-cand-701441203": {"code": "p1d0sl14"},
-  "seaslug-497250-cand-182244306": {"code": "p1g0sl15"},
-  "seaslug-497250-cand-71200886": {"code": "d1g0sl15"},
+  "seaslug-497250-cand-182244306": {"code": "p1g0sl15", "bb": [0.06, 0.1294, 0.965, 0.8856]},
+  "seaslug-497250-cand-71200886": {"code": "d1g0sl15", "bb": [0.1406, 0.1358, 0.7813, 0.8405]},
   "seaslug-497250-cand-630575794": {"code": "d0g0sl12", "note": "a close-up of the cerata only: the animal's outline cannot be read"},
   "seaslug-497250-cand-87582368": {"code": "o0g0sl13"},
   "seaslug-497250-cand-67287183": {"code": "h1g0sl13"},
@@ -16,8 +16,8 @@
   "seaslug-497250-cand-598867526": {"code": "h1g0sl13"},
   "seaslug-497250-cand-641794255": {"code": "o1g0ml13"},
   "seaslug-497250-cand-269779295": {"code": "o1d0ml13"},
-  "seaslug-497250-cand-279793564": {"code": "p1g0sl15"},
-  "seaslug-497250-cand-274508377": {"code": "o1g0sl1w5"},
+  "seaslug-497250-cand-279793564": {"code": "p1g0sl15", "bb": [0.1656, 0.15, 0.8032, 0.9147]},
+  "seaslug-497250-cand-274508377": {"code": "o1g0sl1w5", "bb": [0.1, 0.0281, 0.9938, 0.9897]},
   "seaslug-497250-cand-609989974": {"code": "h1g0sl1w3"},
   "seaslug-497250-cand-607670799": {"code": "h1g0sl13"}
  }

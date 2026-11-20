@@ -2,14 +2,14 @@
  "photos": {
   "seaslug-Cyerce-cand-464116140": {"code": "d1g0ms1w1", "note": "a small pale blob on a leaf, its shape hard to read"},
   "seaslug-Cyerce-cand-427865203": {"code": "o1g0ml13", "note": "translucent cerata, the background shows through"},
-  "seaslug-Cyerce-cand-612949760": {"code": "o1g0sl14", "note": "translucent cerata, hydroid threads across them"},
-  "seaslug-Cyerce-cand-182570592": {"code": "p1g0sl14", "note": "translucent cerata"},
+  "seaslug-Cyerce-cand-612949760": {"code": "o1g0sl14", "bb": [0.1312, 0.15, 0.7813, 0.875], "note": "translucent cerata, hydroid threads across them"},
+  "seaslug-Cyerce-cand-182570592": {"code": "p1g0sl14", "bb": [0.16, 0.1049, 0.875, 0.9596], "note": "translucent cerata"},
   "seaslug-Cyerce-cand-336037198": {"code": "d1g0ss13"},
   "seaslug-Cyerce-cand-631269775": {"code": "o1g0ml1c2"},
-  "seaslug-Cyerce-cand-351574040": {"code": "o1g0sl15"},
-  "seaslug-Cyerce-cand-145599488": {"code": "d1g0sl14", "note": "translucent cerata"},
+  "seaslug-Cyerce-cand-351574040": {"code": "o1g0sl15", "bb": [0.1562, 0.0, 0.6875, 0.7816]},
+  "seaslug-Cyerce-cand-145599488": {"code": "d1g0sl14", "bb": [0.1312, 0.0561, 0.8344, 0.927], "note": "translucent cerata"},
   "seaslug-Cyerce-cand-87815382": {"code": "o1g0ml1c1", "note": "translucent on pale sand, its outline hard to pick out"},
   "seaslug-Cyerce-cand-176760667": {"code": "o1g0ml1cw2"},
-  "seaslug-Cyerce-cand-176879886": {"code": "o1g0sl1w5"}
+  "seaslug-Cyerce-cand-176879886": {"code": "o1g0sl1w5", "bb": [0.0937, 0.1006, 0.8938, 0.8553]}
  }
 }
