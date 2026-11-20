@@ -1,6 +1,7 @@
 # Backlog inventory: every open point, against Pierre's words (2026-11-20)
 
-**A dated snapshot of 2026-11-20 evening. [The ROADMAP](../ROADMAP.md) stays the one list of work to come**; this PR
+**A dated snapshot of 2026-11-20 evening, refreshed 2026-11-21 morning. [The ROADMAP](../ROADMAP.md) stays the one
+list of work to come**; this PR
 corrects its rows to what the sweep found. Pierre asked on 2026-11-20 at 17:12 Manila: «Sur le modèle de l'inventaire
 du 18, refait un point complet sur l'ensemble des points ouverts, non terminé, laissé en vrac et backlog. Confirme bien
 dans les documents ce à quoi j'ai déjà répondu ou permis de continuer (tu m'as affirmé "61 qui sont des idées ou du « plus
@@ -12,6 +13,25 @@ D verdicts are re-checked one by one in [appendix A](#appendix-a-the-audits-c-an
 
 Read from `origin/main` at `01bb16add` (#1312, 2026-11-20 17:07 Manila). `R30` is ROADMAP line 30 of that commit.
 
+**Refreshed on 2026-11-21 against `origin/main` at `93cffa96e`** (#1330, 2026-11-21 morning; Pierre, 05:42: «il faut
+remettre à jour encore cet inventaire et puis il faut le merger … sinon, tu n'utilises jamais la bonne info sur les
+points encore en cours et ce qui doit être lancé»). The row IDs keep their 11-20 meaning. A refreshed row says so in its
+basis cell, after **11-21:**; the rows nothing touched keep their 11-20 reading. What moved:
+
+- **The 34 PRs merged since the snapshot** (`git log --first-parent 01bb16add..93cffa96e`, besides two Candidate
+  photos commits; among them #1279 Memory, #1298 `data/`, #1299, #1310, #1324, #1328, #1330, #1333, #1335, #1336,
+  #1339, #1341, #1344): their rows are Done or Partly done, with the
+  PR number. The 13 PRs open on 11-20 all merged (§4.1); 5 PRs are open now besides this one and the ledger PR.
+- **Pierre's answers of 2026-11-21 05:32-05:42**, recorded by the ledger PR #1350 (not repeated in ANSWERS here):
+  §1.2b.
+- **Found obsolete or done by a check, not by a PR**: R71b (every FishBase main picture already carries `rep`) and R55's
+  cap (8.7%, under the code's 10% bar; the units over it are `RARE.FEW` by design): the integrator's checks of 11-21,
+  not in the repo.
+- **Files held now** (§2) and so **§1.3, ready to launch**, recomputed; §1.4 keeps only the questions still open.
+- Counts before the refresh, by the §6 script on this file at `d208682c0`: Done 3, Partly done 12, Decided ready 14,
+  Decided 7, Blocked 45, Waiting for Pierre 24, Waiting 42, Idea 44, Obsolete 5 (196). The 9 rows added (R77c, N6,
+  N7, PR15-PR20) bring the total to 205.
+
 ## 1. Summary
 
 ### 1.1 Counts per state
@@ -19,20 +39,23 @@ Read from `origin/main` at `01bb16add` (#1312, 2026-11-20 17:07 Manila). `R30` i
 One row per open point in section 3 (the ROADMAP rows and their sub-items whose state differs) and section 4 (what lies
 outside the ROADMAP). The counts are computed from those tables by a script (§6).
 
-| State                                                              | Rows    |
-| ------------------------------------------------------------------ | ------- |
-| Done (a row or sub-item the ROADMAP still held as open)            | 2       |
-| Partly done                                                        | 12      |
-| Decided, ready to launch                                           | 14      |
-| Decided (agreed, not started; waits only the order of work)        | 7       |
-| Blocked by an open PR or a held file (the 13 open PRs included)    | 46      |
-| Waiting for Pierre (a question, his review or his hands)           | 24      |
-| Waiting on data, a trigger he set or a third party                 | 42      |
-| Idea (nobody decided)                                              | 44      |
-| Obsolete or declined                                               | 5       |
-| **All**                                                            | **196** |
+| State                                                                       | 11-20   | 11-21   |
+| --------------------------------------------------------------------------- | ------- | ------- |
+| Done (a row or sub-item the ROADMAP held as open on 11-20)                  | 3       | 26      |
+| Partly done                                                                 | 12      | 17      |
+| Decided, ready to launch                                                    | 14      | 8       |
+| Decided (agreed, not started; waits only the order of work)                 | 7       | 9       |
+| Blocked by an open PR or a held file (the open PRs included)                | 45      | 27      |
+| Waiting for Pierre (a question, his review or his hands)                    | 24      | 23      |
+| Waiting on data, a trigger he set or a third party                          | 42      | 43      |
+| Idea (nobody decided, or his own doubt)                                     | 44      | 46      |
+| Obsolete or declined                                                        | 5       | 6       |
+| **All**                                                                     | **196** | **205** |
 
-Of the 46 blocked rows, 33 are decided work waiting for a file another PR holds; the other 13 are the open PRs.
+The 11-20 column is the §6 script on this file before the refresh (`d208682c0`; N5 had moved to Done after the table
+was written). On 11-21, of the 27 blocked rows, 21 are decided work waiting for a file another PR holds (most of them
+`core.js`, `Code.gs` or `sync.js`, all held by #1349; `app.js` by #1331 and #1340); the other 6 are the open PRs. Some
+"Partly done" and "Decided" rows have a part ready now: §1.3 names them.
 
 **What this says against "61 ideas or later"** (appendix A, counted by script). Of the audit's 61 single D entries:
 
@@ -46,8 +69,8 @@ Of the 46 blocked rows, 33 are decided work waiting for a file another PR holds;
   he agreed to**, **1 declined**, and **11 ideas nobody decided**.
 
 So 24 of the 61 are decided, done, or parked by him with a trigger, 22 wait on data he agreed to wait for, 14 are ideas
-(11 nobody decided, 3 in his own words of a wish or a doubt), and 1 is declined. Of the 17 C entries: 2 are decided by his words, 1 by a rule, 1 has its gate met, 1 is
-obsolete, 1 is an agent idea, and 11 are truly his (a question, his review or his hands).
+(11 nobody decided, 3 in his own words of a wish or a doubt), and 1 is declined. Of the 17 C entries: 2 are decided by his words, 1 has its gate met, 2 are
+obsolete (C9 since 11-21; it was decided by a rule), 1 is an agent idea, and 11 are truly his (a question, his review or his hands).
 
 ### 1.2 Rows that move because of his words
 
@@ -88,57 +111,87 @@ said otherwise.
   11-20 05:39) may let the ones over a tag he only let through go into play; which of the 152 are his hand tags is not
   checked (his hand fish tags were 13 of 5,862 on 11-19, decision record `2026-11-19-auto-proposals-newer-judgement`).
 - **Q351 (b), measuring the fish ease weight (R64).** A read-only measure, which AGENTS.md lets agents run without
-  asking; the ROADMAP still records it as his question.
+  asking; the ROADMAP still records it as his question. **11-21:** it ran (#1341): "Not enough data yet".
 - **A subject in a group's beta in live mode (R166).** Q437 may cover it.
 
-### 1.3 Ready to launch now (decided, no open PR on their files)
+Since 11-20, of the rows above: 1 measured (#1341), its build waits for the context he asked (§1.2b); 2 in review
+(#1331); 3 decided (§1.2b); 6 built (#1339; the screenshot is N4); 9 the fish part built (#1328); 13 and 16 measured
+(#1341; 16 closed by the cap check); 14 waits for #1342.
 
-In the integrator's order of work; files checked against the open PRs' file lists (§2).
+### 1.2b Rows that move because of his answers of 2026-11-21 (05:32-05:42)
 
-1. **IMR content split, the fish part** (R123): `tools/instances/imr/fish.json`, `tools/build_fish.py`.
-2. **Learn list photo first on its sheet** (R30), then one-admin Learn steps 9-10 (`learn.js`).
-3. **Report a problem, again on the same page** (recorded by #1319, in review; the fix, `sync.js` `reportDialog`, is
-   held by no open PR's file list).
-4. **Re-measures, read-only, any time**: the fish photo exposure (R55, ~500 fish answers passed long ago); the time and
-   enlargement signal over every subject (R103, R204-R206); the fish judged ease against the served ratings (R64, R72);
-   learnsim's late fish family levels (R31).
-5. **A new-RA review on a phone** (R95, read-only).
-6. **"Did you know?" tip (a)** (R49; `tips.js`, unless its counter needs `app.js`).
-7. **Try again on a failed tier** (R192, the `index.html` loader), from the integrator's queue of 2026-11-18 (STATUS
-   de83ee3a9 Next 3); the other small fixes of that queue, the tour leftovers (R116) and the About version line (R58),
-   wait for `app.js`, and the look-alike account names (R212) for `Code.gs`.
-8. **Fish sex and phase flags from FishBase** (R72): bulk work, measured first (INTEGRATOR "A large judging pass is
-   measured first"); check #1298's moved files first.
+His words are in the ledger PR #1350 (`claude/answers-1121`), which merges before this one; this PR does not repeat
+them in ANSWERS. Each row's basis cell quotes the part that decides it.
 
-Next once their files are free: opening, four units before a level is asked (N1, after #1318, #1319, #1322).
-Beta: remove everyone (N5) was found built by #1051 after this sweep (Players and Players › Groups, "Remove all").
+| His answer (#1350)                                         | Rows                       | Now                                                                                     |
+| ---------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------- |
+| Rule L4, a level opens in a group of at least 4: yes       | N1                         | In review (#1331), to be checked in use                                                 |
+| Q445 (A): one 45-genus coral scale, an "IMR slate" score   | R202b                      | Decided, built next; its files held by #1331 and #1349; it rewrites rule L6             |
+| Q445's follow-up, the species order                        | N2                         | Not answered: he did not follow it; context owed                                        |
+| Q446: a simple temporary store, deleted once processed     | N4                         | Not decided as proposed (no pCloud); the design goes back to him                        |
+| Q447 yes; Q448 (A)                                         | R220, R220b                | Decided; built with rights 2a and 2c (`Code.gs` held by #1349)                          |
+| Q449-Q451 «Ok» in direction; Q452 and the set: more context | R103, R204-R206           | Waiting for Pierre: the build waits for the context he asked                            |
+| Benthos (B1, Q442, Q443): «non … pas sûr qu'on le traitera un jour» | R223              | Idea: long term, maybe never                                                            |
+| Q444: yes, an implementation detail                        | R88                        | Decided; after the `core.js` holder (#1349)                                             |
+| Remove vs ×: «il me faut plus de contexte»                 | (§1.4)                     | Open: context owed                                                                      |
+| R2: delete the unused files, yes (the list shown first)    | R32                        | Decided, ready                                                                          |
+| R2 read-only CI token: «Ça sert à quoi?»                   | R35                        | Not answered (#1350); withdrawn by the integrator since: Obsolete                       |
+| Q439: «J'ai pas testé encore»                              | R75, R165, R176, R177, N7  | Still open                                                                              |
+| The compared photos stacked on a phone (05:32)             | N6                         | Decided; being built (no PR yet at this refresh)                                        |
+| The inventory merged first (05:42)                         | this PR                    | INTEGRATOR "A reference doc PR goes first" (#1350)                                      |
+
+### 1.3 Ready to launch now (decided, unbuilt, no open PR on their files)
+
+Refreshed 2026-11-21; files checked against the file lists of the 6 open PRs (§2) and the remote branches without a PR
+(§4.2: none builds any of these). In the integrator's order of work, oldest decision first where nothing else ranks them.
+
+1. **R2: the files nothing uses** (R32): the list shown to Pierre, then the deletion (his yes of 05:40, #1350).
+2. **Q316's offline fit on the real log** (R102; the read-only tool of #1310, outside the repo), then check 2B.
+3. **FishBase judging pass on its candidates** (R71) and **watermark pass 5** (R78, the lists refilled since pass 4).
+4. **Measured photo block, the full run** (R91; over rule L11's compute cap: a GitHub runner or `--minutes 35` slices).
+5. **learnsim: the `shareFree` arm** (R31, read-only; a question to him only if it shows a cost).
+6. **The Tree tab's build section** (R46's rest; `tools/*_game.py` free since #1298).
+7. **Lab: Down the tree, Life stages matched** (R179, R180; `proto/lab.js` free).
+8. **Sea slug species pairs, the 2 sourced** (R223b; `tools/seaslug_lookalikes_source.json` free).
+9. **"Did you know?" tip (b)**, the next one of (b)-(h), one at a time (R49; `tips.js` free unless a counter needs
+   `app.js`).
+10. **Analyses: structure views, the later items** (R39) and the name-confusion study's (h) (R106; `analysis.js` free).
+11. **Deploy right after Candidate photos** (R34; the integrator's call, a workflow change; the ROADMAP calls it an open
+    question, so it is the integrator's to take or drop).
+
+Next once their files are free: after #1349 (`core.js`, `Code.gs`, `sync.js`, `quiz.js`): the sea slug species
+achievements (R125), fish `fbasics` and fpct100 (R76, R76b), the fish path's #892 and species exams (R85, R85b), the
+level's answer count from the log (R118), architecture steps 3-4 (R93), Find the X on the mimicry pair (R67), `ORG`
+(R123), Q444's common-name lists (R88), rights 2a and 2c (R220, R220b), the look-alike account names and Alerts lines
+(R212, R214), typed Rejected tries (R37), the admin's leaner log reply (R36b), Activity C2 (R51), the Analyses' next
+views (R47); after #1331 and #1349: Q445's coral scale (R202b); after #1331 and #1340 (`app.js`): the tour leftovers
+(R116), the About version line (R58), the calmer About text (R44); after #1348 (`admin.js`): species look-alike pairs in
+the admin (R151); after #1342: the fish sex and phase flags (R72) and the photos re-judged on its phase list.
 
 ### 1.4 Questions still truly open
 
-Already in STATUS "Questions for Pierre" unless marked new. None is minted a number here.
+Refreshed 2026-11-21 from STATUS (#1343) and #1350. None is minted a number here.
 
-1. **B1**: the benthic slate and the benthos lecture (rule C2 blocks the benthos units).
-2. **Q442**: what goes into Benthos. **Q443**: photos of sand, rubble, rock and turf.
-3. **Q444**: a fish species' own common-name list as a `curation.json` key.
-4. **Remove vs ×** in the admin (his 11-20 07:00 «Réfléchis plus largement au problème et propose moi d'autres
-   solutions»: a proposal is owed to him, not an answer).
-5. **Where each cohort's trainer list is stored** (with rights PR 2).
-6. **Q439**: which Lab prototypes graduate (Matrix, Odd one out, Same or different?, the Fish ID Key).
-7. **New**: bonus genera in the global %: one scale for all or only the units on (opening study, question A).
-8. **New**: should species by common name wait for the scientific names? (opening study, question B; his «Pourquoi on
-   commence à m'ouvrir des noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?», 11-20; rec. no:
-   his «Ce sont 2 arbres pédagogiques indépendants», 11-18 ~09:17).
-9. **New**: where a photo or screenshot attached to a report is stored (his «Ajouter la possibilité de joindre une photo
-   ou un screenshot au formulaire de feedback», 11-20).
-10. **Asked never, costly**: deleting the unused files on R2 (deleting data: always ask first); the R2 read-only token
-    (access); the mimicry family pairs M7 and C11 (a structure change); `confTerm` if ever proposed (moves progress).
-11. **His review, not a blocker**: the fish and sea slug species-mark drafts (his 11-05 rule "agents draft, Pierre
-    validates"); the tell-apart lines; the 8 unsure fish candidates; the 3 near-duplicate groups; admin Points.
+1. **Q449-Q452** (response time): he asked for more context on the whole set before the build; Q452 open.
+2. **Q445's follow-up, the species order** (N2): he did not follow it; to ask again with context.
+3. **Remove vs ×** in the admin: «Je sais pas ce dont tu parles, il me faut plus de contexte» (05:40).
+4. **Q446**: the screenshot store, redesigned to his direction (a simple temporary store), back to him (N4).
+5. **Q439**: which Lab prototypes graduate (Matrix, Odd one out, Same or different?, the Fish ID Key), with the new-RA
+   review's two options (N7): he has not tested the Lab yet.
+6. **The R2 read-only CI token**: not answered (he asked what it is for); the integrator withdrew it (R35).
+7. **Asked never, costly**: the mimicry family pairs M7 and C11 (a structure change); `confTerm` if ever proposed
+   (moves progress; #1341 measured it, a lead only).
+8. **His review, not a blocker**: the fish and sea slug species-mark drafts (his 11-05 rule "agents draft, Pierre
+   validates"); the tell-apart lines; the 8 unsure fish candidates; the 3 near-duplicate groups; admin Points (three new
+   fish phase conflicts after #1342).
+
+Answered since 11-20: B1, Q442, Q443 (long term, maybe never), Q444, Q445 (A), Q447, Q448 (A), rule L4, the R2
+deletion, where the trainer list is stored (Q448).
 
 **Probably not questions any more, to confirm** (STATUS still lists them): **Q351 (b)**, measuring the fish ease
-weight, reads as a read-only measure agents may run without asking; **Q390** appears settled: answered D on 11-17, and
-the species pairs enter play with species step 2 (the mimicry class decision of 11-18, paraphrase), which is built
-(#1273); what STATUS still asks under Q390 was not read beyond its one line. One engine §6 (a)-(d) was not re-checked.
+weight, ran read-only (#1341, "Not enough data yet"); **Q390** appears settled: answered D on 11-17, and the species
+pairs enter play with species step 2 (the mimicry class decision of 11-18, paraphrase), which is built (#1273); what
+STATUS still asks under Q390 was not read beyond its one line. One engine §6 (a)-(d) was not re-checked.
 
 ### 1.5 General permissions and their scope
 
@@ -157,7 +210,7 @@ what its source shows it answered.
 | «il faut que tu fasses une proposition qui intègre directement le jeu. Quitte à ce que je corrige a posteriori» and A1 «je valide»                                | 11-19 20:57, 20:59; 11-20 05:39             | Agent proposals he let through in `curation.json` (not his hand choices)                                 | R72 auto-sort; R73 only as a reading (§1.2) | His hand decisions (13 fish tags, the coral counts) |
 | «On valide par défaut et puis on corrige après si besoin»                                                                                                         | 11-18 (#1081)                               | The photo frames (subject, feature, context), agent-proposed                                             | the frames                            | The species-mark drafts (his 11-05 rule holds)      |
 | Q437 «il faut ouvrir tous les modes de jeu aux différentes matières, à toutes les matières. Et oui, c'est du code commun»                                         | 11-19 20:34                                 | Every game mode for every subject, in shared code                                                        | R163, R164, the Duel tab, Basics, Memory; R166's group-beta subjects only as a reading | Graduating Lab prototypes (U13, Q439)              |
-| «Tu dois régulièrement aller piocher dans la ROADMAP pour les taches suivantes»                                                                                   | 11-20 16:44 (#1321, open)                   | Where the integrator takes its next task                                                                 | every "Decided, ready" row            | Rows that wait for him                              |
+| «Tu dois régulièrement aller piocher dans la ROADMAP pour les taches suivantes»                                                                                   | 11-20 16:44 (#1321, merged 11-20)                   | Where the integrator takes its next task                                                                 | every "Decided, ready" row            | Rows that wait for him                              |
 | «si dans la nuit t'as plus assez de travail, il faut que tu ailles taper dans la roadmap et dans les trucs que tu peux avancer tout seul» and «tu fais les tâches qu'on a déterminées ensemble» | 11-19 20:42-20:43 | Night work: decided ROADMAP rows; no filler study                                                        | every "Decided, ready" row            | Ideas nobody decided                                |
 | «Plus tard ça veut juste dire qu'on le met dans la ROADMAP. Si t'écris litéralement ça, les agents suivant sont bloqués de manière permanente»                  | 11-19 15:07                                 | How a row is written: "later" is a ROADMAP row that says what to build                                   | the wording of every parked row       | Not a go to build what he doubted (R74)             |
 | «C'est toi qui est responsable de l'ordre du développement. Fait juste au mieux.»; «Mon seul input c'est quand j'ai besoin de mettre des choses en priorité»     | 11-19 08:54, 08:57                          | The order of work                                                                                        | every decided row: no "now or later" question | What is built                                  |
@@ -181,6 +234,11 @@ what its source shows it answered.
   which held `app.js` and `admin.js` too, merged during the sweep, at `dc373a62e`, merged into this branch); `autosort.js` #1298, #1313; `analysis.js` #1298, #1299; `proto/lab.js` #1279, #1319; the tools' data,
   `judging/*`, `approved-photos.yml` and `tools/seaslug_lookalikes_source.json` #1298. Free: `learn.js`, `sync.js`,
   `model.js`, `tips.js`, `tools/learnsim.js`, `tools/build_fish.py`. #1286, #1301, #1311, #1312 merged after the audit.
+- **Files held on 2026-11-21** (`gh api pulls/N/files` on the 6 open PRs besides this one, read in the morning):
+  `core.js`, `Code.gs`, `sync.js` #1349; `quiz.js` #1331, #1349; `app.js` #1331, #1340; `model.js` #1331; `admin.js`
+  #1348; `home.js`, `proto/pairs.js` #1340; `data/points.json`, `tools/fish_phases.json` #1342; #1350 holds docs only.
+  Free: `learn.js`, `tips.js`, `analysis.js`, `autosort.js`, `proto/lab.js`, the tools and their data, `judging/*`,
+  `approved-photos.yml`.
 
 **Sources swept** (rule W11):
 
@@ -206,97 +264,98 @@ what its source shows it answered.
 
 | ID   | Item                                                         | State             | His words or basis                                                                                                                                                                      | Horizon | Size |
 | ---- | ------------------------------------------------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
-| R30  | The Learn list's photo first on its sheet                    | Decided, ready    | [i] «la photo doit être un lien. Vers la fiche» (11-20 06:02, ANSWERS); the fix [ii]                                                                                                    | Short   | S    |
-| R31  | learnsim: late fish family levels; the `--live` arm          | Decided, ready    | [ii] read-only study; `tools/learnsim.js` is free since #1301 merged                                                                                                                    | Short   | S    |
-| R32  | R2 clean-up of unused files                                  | Waiting for Pierre | Deleting data: always ask first (AGENTS.md). Not asked yet                                                                                                                             | Short   | S    |
+| R30 | The Learn list's photo first on its sheet | Done | [i] «la photo doit être un lien. Vers la fiche» (11-20 06:02, ANSWERS); the fix [ii]; **11-21:** built (#1324) | - | - |
+| R31 | learnsim: late fish family levels; the `--live` arm | Partly done | [ii] read-only study; `tools/learnsim.js` is free since #1301 merged; **11-21:** the late family levels examined read-only (#1341: the old delay excluded); left: the `shareFree` arm (read-only) | Short | S |
+| R32 | R2 clean-up of unused files | Decided, ready | Deleting data: always ask first (AGENTS.md). Not asked yet; **11-21:** «R2, je peux supprimer les fichiers que plus rien n'utilise. Oui, carrément» (05:40, #1350); the list shown to him before deleting | Short | S |
 | R33  | CI speed: a third shard, an `admin 1280 main` split          | Idea              | The agents' study; "only the touched smokes" needs his OK                                                                                                                              | Medium  | S    |
-| R34  | Deploy right after Candidate photos                          | Blocked           | [ii] #1298 holds `approved-photos.yml`                                                                                                                                                  | Short   | S    |
-| R35  | Hosting capacity: an R2 reading in CI                        | Waiting for Pierre | His hands: a read-only Cloudflare token (access). The watch is built                                                                                                                  | Medium  | S    |
-| R36  | Admin opening: lazy loads                                    | Partly done       | [i] «la page admin sur mon téléphone met de plus en plus de temps à s'ouvrir» (11-19 20:55); `claude/admin-lazy-loads`, 3 commits, no PR                                               | Short   | S    |
-| R36b | Admin opening: a leaner answer-log reply                     | Blocked           | `Code.gs` holders; a rows-since-last-visit reply needs the declined device copy: his OK only                                                                                            | Medium  | M    |
-| R37  | Typed answers: Rejected tries served by `readAnswers`        | Blocked           | `Code.gs` holders                                                                                                                                                                       | Medium  | S    |
+| R34 | Deploy right after Candidate photos | Decided, ready | [ii] #1298 holds `approved-photos.yml`; **11-21:** `approved-photos.yml` free since #1298 merged; still the integrator's call (ROADMAP "Open question") | Short | S |
+| R35 | Hosting capacity: an R2 reading in CI | Obsolete | His hands: a read-only Cloudflare token (access). The watch is built; **11-21:** withdrawn by the integrator after his «Ça sert à quoi? Explique-moi à quoi ça sert» (05:40); the ledger records it as not answered (#1350) | - | - |
+| R36 | Admin opening: lazy loads | Done | [i] «la page admin sur mon téléphone met de plus en plus de temps à s'ouvrir» (11-19 20:55); `claude/admin-lazy-loads`, 3 commits, no PR; **11-21:** the lazy loads built (#1336); the log reply is R36b | - | - |
+| R36b | Admin opening: a leaner answer-log reply | Blocked | `Code.gs` holders; a rows-since-last-visit reply needs the declined device copy: his OK only; **11-21:** a sheet change: `Code.gs` held by #1349 | Medium | M |
+| R37 | Typed answers: Rejected tries served by `readAnswers` | Blocked | `Code.gs` holders; **11-21:** `Code.gs` held by #1349 | Medium | S |
 | R37b | Typed answers: `TYPED` tuning, dynamic share                 | Waiting           | 18 typed mix-ups on 11-18 (count not read today); a change players meet, for him                                                                                                        | Long    | M    |
 | R38  | Corals of the World captures replaced by their originals    | Partly done       | (paraphrase) "C12 A+D" (11-18, STATUS 00f82557c); the originals merged (#1292, during this sweep); left: the admin's Crop on a lecture photo                                             | Short   | S    |
-| R39  | Analyses: structure views, the later items                   | Blocked           | [i] Q70-Q77 (11-05); `analysis.js` held by #1298, #1299                                                                                                                                  | Medium  | M    |
+| R39 | Analyses: structure views, the later items | Decided | [i] Q70-Q77 (11-05); `analysis.js` held by #1298, #1299; **11-21:** `analysis.js` free since #1298, #1299 merged | Medium | M |
 | R40  | iNaturalist API v1 to v2                                     | Idea              | Parked by the agents (v1 has no shutdown date)                                                                                                                                          | Long    | M    |
 | R41  | Out-of-zone taxon-page photos (Q230)                         | Obsolete          | [i] Q230 "ok" to building nothing (11-14)                                                                                                                                               | -       | -    |
 | R42  | More good fish photos we missed                              | Idea              | (paraphrase) his request for ideas, 11-08; no go to run one                                                                                                                             | Long    | M    |
 | R43  | Feedback sheet lines: the 6 pairs left, a slot, the counter  | Partly done       | [i] «ok pour les 6 recommandations» (11-18 ~12:08, #1119); the lines are in play; his review corrects them, it blocks nothing                                                            | Medium  | S    |
-| R44  | About and credits, a calmer text                             | Blocked           | (paraphrase) 11-08, R44; #1292 merged; the About text is in `app.js` (held by #1279, #1298, #1318, #1322)                                                                              | Short   | S    |
+| R44 | About and credits, a calmer text | Blocked | (paraphrase) 11-08, R44; #1292 merged; the About text is in `app.js` (held by #1279, #1298, #1318, #1322); **11-21:** `app.js` held by #1331, #1340 | Short | S |
 | R45  | Coral ID Key photos in place of the drawings                 | Waiting           | [i] Q293 (11-08); as very good photos come                                                                                                                                              | Long    | M    |
-| R46  | The Tree tab: generic `tree` section, coral Look-alikes page | Partly done       | [i] Q339-Q341, Q359; the build section waits for #1298 (`tools/*_game.py`)                                                                                                              | Medium  | M    |
+| R46 | The Tree tab: generic `tree` section, coral Look-alikes page | Partly done | [i] Q339-Q341, Q359; the build section waits for #1298 (`tools/*_game.py`); **11-21:** `tools/*_game.py` free since #1298 merged: the build section can go | Medium | M |
 | R46b | The Tree tab: filters (a species, no cover)                  | Idea              | "if Pierre wants them"                                                                                                                                                                  | Long    | S    |
-| R47  | Analyses: next views; log card seen and comparisons          | Blocked           | (paraphrase) Pierre, 11-04; `analysis.js`, `sync.js` holders                                                                                                                            | Medium  | M    |
+| R47 | Analyses: next views; log card seen and comparisons | Blocked | (paraphrase) Pierre, 11-04; `analysis.js`, `sync.js` holders; **11-21:** `analysis.js` free; `sync.js` held by #1349 | Medium | M |
 | R48  | Analyses: the multiple-testing open items (a)-(e)            | Idea              | The agents' study; no decision                                                                                                                                                          | Medium  | M    |
-| R49  | "Did you know?" tips (a), then (b)-(h) one by one            | Decided, ready    | (paraphrase) the owner, 11-04: the pop-ups for players who never used a feature, enabled one at a time                                                                                 | Medium  | M    |
+| R49 | "Did you know?" tips (a), then (b)-(h) one by one | Partly done | (paraphrase) the owner, 11-04: the pop-ups for players who never used a feature, enabled one at a time; **11-21:** (a) built (#1333); (b)-(h) one at a time | Medium | M |
 | R50  | Do sheet readers progress faster?                            | Waiting           | (paraphrase) 11-03; the Pages tab's events, logged since 2026-11-03 (not read)                                                                                                           | Medium  | S    |
-| R51  | Activity outside the quiz: C2                                | Decided, ready    | [ii] integrator's call, design first; `sync.js` free since #1301                                                                                                                        | Short   | S    |
+| R51 | Activity outside the quiz: C2 | Blocked | [ii] integrator's call, design first; `sync.js` free since #1301; **11-21:** `sync.js` held by #1349 | Short | S |
 | R51b | Activity: C3 steps inside the Key, D daily roll-up           | Idea              | [i] «ça serait bien de compter les étapes dans la clé et les comparaisons» (11-08, #752): a wish                                                                                       | Long    | M    |
 | R52  | Professionalise the platform                                 | Waiting           | [i] «trop compliquée pour l'instant» (11-15); «quand l'infrastructure qu'on utilise ne suivra plus» (11-18): parked by him with a trigger                                                | Long    | L    |
 | R53  | First-launch fallback recalibrated                           | Waiting           | 5 players per answer with 80+ answers (not read)                                                                                                                                        | Long    | S    |
 | R54  | Re-measure whether the quiz presses one pair too long        | Waiting           | (paraphrase) 11-04: "once there are more players"                                                                                                                                       | Medium  | S    |
-| R55  | Fish photo exposure re-measure                               | Decided, ready    | [iii] Q193 (11-06, paraphrase): at ~500 fish answers, passed long ago                                                                                                                   | Short   | S    |
+| R55 | Fish photo exposure re-measure | Done | [iii] Q193 (11-06, paraphrase): at ~500 fish answers, passed long ago; **11-21:** measured (#1341); the cap check: 8.7%, under the code's 10% bar, the units over it `RARE.FEW` by design (the integrator's per-answer check of 11-21, not in the repo); its ROADMAP row deleted in this PR | - | - |
 | R56  | Unanswered photos while the hold is on                       | Waiting           | (paraphrase) 11-04: re-measure before building                                                                                                                                          | Medium  | S    |
 | R57  | No new genus after a miss outside the path                   | Idea              | "only if Pierre finds those odd too"                                                                                                                                                    | Medium  | S    |
-| R58  | Credits: a version line and a source link                    | Blocked           | [ii] the integrator's queue of 11-18 ("About version", STATUS de83ee3a9 Next 3); `app.js` holders                                                                                     | Short   | S    |
+| R58 | Credits: a version line and a source link | Blocked | [ii] the integrator's queue of 11-18 ("About version", STATUS de83ee3a9 Next 3); `app.js` holders; **11-21:** `app.js` held by #1331, #1340 | Short | S |
 | R59  | Fish mode: circle 3 species, barracudas, PDF slips           | Waiting for Pierre | His curation, in the admin's Points (rule W10: remind once)                                                                                                                           | Medium  | S    |
-| R60  | Fish sheets: the phase model, the shared components          | Decided           | [i] the 13 answers of 11-06                                                                                                                                                             | Medium  | L    |
-| R60b | Fish sheets: the species-mark drafts                         | Waiting for Pierre | (paraphrase) 11-05 "agents draft, Pierre validates": in play marked Draft; his review, not a blocker                                                                                  | Medium  | S    |
+| R60 | Fish sheets: the phase model, the shared components | Decided | [i] the 13 answers of 11-06; **11-21:** rule C1 reworded, fish phases from any cited source (#1334); the cited phase list in review (#1342) | Medium | L |
+| R60b | Fish sheets: the species-mark drafts | Waiting for Pierre | (paraphrase) 11-05 "agents draft, Pierre validates": in play marked Draft; his review, not a blocker; **11-21:** the sea slug marks for *Caloria* and *Taringa* added (#1325), drafts like the others | Medium | S |
 | R61  | Ability calibration (1)-(9)                                  | Idea              | Agent proposals of 11-03                                                                                                                                                                | Medium  | M    |
 | R62  | After the fixes of 11-04, (1)-(4)                            | Idea              | Agent proposals; (1) moves progress: his OK if ever proposed                                                                                                                            | Medium  | S    |
 | R63  | Admin per-genus abilities with the level's move              | Idea              | Agent proposal, display only; `admin.js` holders                                                                                                                                        | Medium  | S    |
-| R64  | Fish judged-ease prior: refit or drop                        | Decided, ready    | [iii] (paraphrase) 11-04 "once fish answers exist"; ratings served since v189 (#1148); measure first (Q351 (b) is that measure)                                                         | Medium  | M    |
+| R64 | Fish judged-ease prior: refit or drop | Waiting | [iii] (paraphrase) 11-04 "once fish answers exist"; ratings served since v189 (#1148); measure first (Q351 (b) is that measure); **11-21:** measured read-only (#1341): the gate is met in the code, not the data (one answer a photo); re-run at 6+ players with 20+ post-switch fish answers | Medium | M |
 | R65  | Juveniles: a card per species                                | Idea              | Parked by the agents                                                                                                                                                                    | Long    | S    |
 | R66  | Fish look-alikes at any rank                                 | Waiting           | (paraphrase) 11-04: pairs proposed by real data or named by him; none chosen                                                                                                            | Medium  | L    |
-| R67  | Mimicry: Find the X on the pair                              | Blocked           | [i] Q416 (c) «ok. Du coup à mettre dans la suite des trucs à faire» (11-19); `core.js`/`quiz.js` holders                                                                                | Medium  | M    |
+| R67 | Mimicry: Find the X on the pair | Blocked | [i] Q416 (c) «ok. Du coup à mettre dans la suite des trucs à faire» (11-19); `core.js`/`quiz.js` holders; **11-21:** `core.js` held by #1349; `quiz.js` #1331, #1349 | Medium | M |
 | R67b | Mimicry: the reverse trap                                    | Waiting           | [i] Q416 (a) "ok", when the species-level data shows the error                                                                                                                          | Long    | S    |
 | R67c | Mimicry: M7, C11 as family pairs; the deck's photo pick      | Waiting for Pierre | A structure change; never asked                                                                                                                                                        | Medium  | S    |
 | R68  | Fish confusion: memory and format offsets in the app         | Decided           | [i] Q123 a-o yes (11-14); moves progress (D5): its design first                                                                                                                         | Medium  | M    |
 | R69  | Species photos: the 8 unsure candidates                      | Waiting for Pierre | His hands, in the admin                                                                                                                                                               | Short   | S    |
 | R70  | Reef Life Survey Siquijor counts                             | Waiting           | Third party (not published on 11-04)                                                                                                                                                    | Long    | S    |
-| R71  | FishBase: judging pass, iNaturalist covers as candidates     | Blocked           | (paraphrase) 11-05, same rules as the other sources; `judging/*`, `tools/*` held by #1298                                                                                              | Medium  | M    |
-| R71b | FishBase: the 87 former stopgap photos' `rep` tag            | Decided           | [ii] easy to correct (AGENTS.md merge contract); the stopgap list is retired (11-15)                                                                                                    | Short   | S    |
+| R71 | FishBase: judging pass, iNaturalist covers as candidates | Decided, ready | (paraphrase) 11-05, same rules as the other sources; `judging/*`, `tools/*` held by #1298; **11-21:** `judging/*`, `tools/*` free since #1298 merged; a decided process (its rubric) | Medium | M |
+| R71b | FishBase: the 87 former stopgap photos' `rep` tag | Obsolete | [ii] easy to correct (AGENTS.md merge contract); the stopgap list is retired (11-15); **11-21:** every FishBase main picture already carries `rep`: nothing to tag (the integrator's check); the item left the ROADMAP (#1343) | - | - |
 | R71c | FishBase: a new rfishbase snapshot                           | Waiting           | Yearly                                                                                                                                                                                  | Long    | S    |
-| R72  | Fish judging: sex and phase flags, the judged ease checked   | Decided, ready    | [iii] (paraphrase) 11-04 "when species questions come": built (#1273); the ratings are served (#1148)                                                                                  | Medium  | M    |
-| R72b | Fish judging: the admin reads its proposals anew             | Blocked           | [i] Q438 «OK pour ta recommandation» (11-19 20:34); in review #1313                                                                                                                     | Short   | S    |
+| R72 | Fish judging: sex and phase flags, the judged ease checked | Partly done | [iii] (paraphrase) 11-04 "when species questions come": built (#1273); the ratings are served (#1148); **11-21:** the judged ease measured (#1341, not enough data yet: R64); the sex and phase flags wait for #1342's cited phase list (`data/points.json`, `tools/fish_phases.json`) | Medium | M |
+| R72b | Fish judging: the admin reads its proposals anew | Done | [i] Q438 «OK pour ta recommandation» (11-19 20:34); in review #1313; **11-21:** built (#1313) | - | - |
 | R73  | The 152 light proposals                                      | Waiting for Pierre | His hands in the admin (the proposals' page, decided 11-14); a reading under A1 (11-20 05:39) noted in the row, not his answer (§1.2)                                                               | Short   | S    |
 | R74  | Contrast correction                                          | Idea              | [i] «je ne suis pas convaincu qu'il faille les corriger, ou alors dans un deuxième temps» (11-19 15:01)                                                                                 | Long    | S    |
-| R75  | Fish ID Key into Identify                                    | Waiting for Pierre | Q439 (rule U13)                                                                                                                                                                       | Short   | S    |
-| R76  | Fish achievements: `fbasics`                                 | Blocked           | [i] «n'hésite pas à réfléchir au nom des succès» (11-08); `core.js` holders                                                                                                             | Short   | S    |
-| R76b | Fish achievements: fpct100 with the ultimate exam            | Blocked           | [i] Q395 «oui» (11-18); `core.js` holders                                                                                                                                               | Medium  | M    |
+| R75 | Fish ID Key into Identify | Waiting for Pierre | Q439 (rule U13); **11-21:** Q439 not answered: «J'ai pas testé encore, donc il faut que je regarde» (05:40, #1350) | Short | S |
+| R76 | Fish achievements: `fbasics` | Blocked | [i] «n'hésite pas à réfléchir au nom des succès» (11-08); `core.js` holders; **11-21:** `core.js` held by #1349 | Short | S |
+| R76b | Fish achievements: fpct100 with the ultimate exam | Blocked | [i] Q395 «oui» (11-18); `core.js` holders; **11-21:** `core.js` held by #1349 | Medium | M |
 | R76c | Fish achievements: the hunt set; Q261's two                  | Decided           | [i] (paraphrase) 11-04, #467: "a separate set of harder, specific 'hunt' achievements", designed later                                                                                 | Long    | M    |
-| R77  | Fish welcome: learnsim fish profiles, the names step         | Decided           | [i] (paraphrase) 11-04; the profiles first (`tools/learnsim.js` free)                                                                                                                   | Medium  | M    |
+| R77 | Fish welcome: learnsim fish profiles, the names step | Done | [i] (paraphrase) 11-04; the profiles first (`tools/learnsim.js` free); **11-21:** the fish profiles existed; the check of the welcome values ran (#1344, nothing changed); the names step is R77c | - | - |
+| R77c | Fish welcome: the names step (common / scientific / both) | Decided | [i] (paraphrase) 11-04, the row "Fish welcome question"'s Left; not started | Medium | S |
 | R77b | Fish welcome: Danger zone step 2, the "lower" card           | Waiting           | [i] «on ne fasse pas les propositions de changement de niveau sur les poissons tant qu'on n'a pas mieux calibré» (11-08); step 2 "only if results show it is still too easy" (#467) | Long    | S    |
-| R78  | Watermark pass 5                                             | Blocked           | [i] Q373 (11-15, relayed); after #1298                                                                                                                                                  | Short   | S    |
+| R78 | Watermark pass 5 | Decided, ready | [i] Q373 (11-15, relayed); after #1298; **11-21:** #1298 merged and the lists refilled since (Candidate photos, 11-20/21): pass 5 is due | Short | S |
 | R79  | Fish basics: glossary (2), the deck's other content (4)      | Idea              | "no words of Pierre's ask for it" (R79)                                                                                                                                                 | Medium  | S    |
 | R80  | Fish key label points                                        | Waiting for Pierre | Admin Points                                                                                                                                                                         | Medium  | S    |
 | R81  | Fish families left out on 11-08                              | Waiting           | [i] Q216: revisit at the next circle review                                                                                                                                             | Long    | S    |
 | R82  | Trace IMR lecture photos                                     | Done              | [i] «pour l'instant, ça reste source IMR sans plus d'infos» (11-20 05:46)                                                                                                               | -       | -    |
 | R83  | Corals of the World: permission before wider deployment      | Waiting           | (paraphrase) 11-15: he sends any request; trigger: a wider deployment                                                                                                                   | Long    | S    |
 | R84  | IMR lecture photos, second pass                              | Waiting           | (paraphrase) 11-08 "second pass"; 11-20 05:46: they stay in play for now                                                                                                                | Long    | M    |
-| R85  | Fish path: #892 (a wrong pick against both families)         | Blocked           | Rule L2; a fish rules version in `core.js`                                                                                                                                              | Medium  | M    |
-| R85b | Fish path: the species exams (Q395)                          | Blocked           | [i] Q395 «bonne idée», «oui» (11-17/18); `core.js` holders                                                                                                                              | Medium  | L    |
+| R85 | Fish path: #892 (a wrong pick against both families) | Blocked | Rule L2; a fish rules version in `core.js`; **11-21:** `core.js` held by #1349 | Medium | M |
+| R85b | Fish path: the species exams (Q395) | Blocked | [i] Q395 «bonne idée», «oui» (11-17/18); `core.js` holders; **11-21:** `core.js` held by #1349 | Medium | L |
 | R86  | Scientific genera: the reading                               | Waiting           | (paraphrase) 11-08: built, read on data                                                                                                                                                 | Medium  | S    |
 | R87  | Fish genera: further pairs from data; marks as a slot        | Waiting           | [i] Q418 (b): "the others later, from the players' data" (11-19 05:13)                                                                                                                 | Medium  | S    |
-| R88  | Fish common names: a species' own list                       | Waiting for Pierre | Q444                                                                                                                                                                                 | Medium  | M    |
+| R88 | Fish common names: a species' own list | Blocked | Q444; **11-21:** Q444 «Si tu penses que c'est le mieux, oui» (05:40, #1350): decided; after the `core.js` holder (#1349) | Medium | M |
 | R89  | Held-out set: the transfer analysis                          | Decided           | [i] Q385, Q420 «ok»                                                                                                                                                                     | Medium  | M    |
 | R90  | Auto-sort follow-ups (a), (b), (d)                           | Idea              | "no words of Pierre's"; measures first                                                                                                                                                  | Medium  | S    |
-| R91  | Measured photo block: the full run                           | Blocked           | [i] Q434 «oui» (11-19 15:05); #1229 merged, the run after #1298                                                                                                                         | Short   | S    |
+| R91 | Measured photo block: the full run | Decided, ready | [i] Q434 «oui» (11-19 15:05); #1229 merged, the run after #1298; **11-21:** #1229 and #1298 merged; the full run on a GitHub runner or in `--minutes 35` slices (rule L11) | Short | S |
 | R92  | Modules: `app.js` split; ES modules                          | Partly done       | (paraphrase) code review L1 accepted; ES modules an idea                                                                                                                                | Long    | L    |
-| R93  | Architecture steps 3 and 4                                   | Blocked           | (paraphrase) Q406, the plan to him first; `core.js` holders                                                                                                                             | Medium  | L    |
-| R94  | One engine for every subject, steps left                     | Partly done       | [i] «l'admin doit être le même ou presque le même pour l'ensemble des matières» (11-20 05:53); `core.js`, `Code.gs` holders                                                             | Medium  | L    |
-| R95  | Feedback without asking: a new-RA review on a phone          | Decided, ready    | (paraphrase) approved 11-02                                                                                                                                                             | Short   | S    |
+| R93 | Architecture steps 3 and 4 | Blocked | (paraphrase) Q406, the plan to him first; `core.js` holders; **11-21:** `core.js` held by #1349 | Medium | L |
+| R94 | One engine for every subject, steps left | Partly done | [i] «l'admin doit être le même ou presque le même pour l'ensemble des matières» (11-20 05:53); `core.js`, `Code.gs` holders; **11-21:** step 5's sheet half (#1346) and step 6 (#1337) built; step 5's app half in review (#1349) | Medium | L |
+| R95 | Feedback without asking: a new-RA review on a phone | Done | (paraphrase) approved 11-02; **11-21:** the review ran on 11-20: findings 4-5 written as options for him (#1332, N7); finding 3 in review (#1340); the regular reviews go on | - | - |
 | R96  | Level-dependent target from the one-tap answers              | Waiting           | ~20 answers a band from 5 devices (not read)                                                                                                                                            | Medium  | M    |
 | R97  | Simulated profiles fitted to real players                    | Waiting           | (paraphrase) 11-05 "always part of the plan"; ~10 players with 200+ answers (not read)                                                                                                 | Medium  | M    |
 | R98  | Lecture position bias                                        | Waiting           | (paraphrase) 11-03; camp data                                                                                                                                                           | Long    | S    |
 | R99  | Comeback recalibrated                                        | Waiting           | Q378; ~20 players back after 2+ days                                                                                                                                                    | Medium  | S    |
 | R100 | Next round of independent reviews                            | Waiting           | (paraphrase) 11-08: after everything planned                                                                                                                                            | Long    | L    |
-| R101 | Learning algorithm review, proposals 2, 3, 5                 | Obsolete          | Overtaken by #646 and Q316 (inventory 11-18 L37); declined "a probabilistic model beyond BKT + Elo" (11-08)                                                                             | -       | -    |
-| R102 | Engine coherence: Q316's offline fit                         | Blocked           | (paraphrase) Q316 (11-09); in review #1310                                                                                                                                              | Medium  | L    |
-| R103 | Time in the photo rating                                     | Decided, ready    | [i] «La vitesse de réponse est définitivement un signal de difficulté» (11-20, Reports): re-measure every subject now; the build waits for the figures                                  | Medium  | M    |
+| R101 | Learning algorithm review, proposals 2, 3, 5 | Idea | Overtaken by #646 and Q316 (inventory 11-18 L37); declined "a probabilistic model beyond BKT + Elo" (11-08); **11-21:** main's row: 2 measured and overtaken (#1341); 3 and 5 "to discuss with Pierre one by one" (agent proposals) | - | - |
+| R102 | Engine coherence: Q316's offline fit | Partly done | (paraphrase) Q316 (11-09); in review #1310; **11-21:** the read-only tool built (#1310); next: the fit on the real log (outside the repo), then check 2B | Medium | L |
+| R103 | Time in the photo rating | Waiting for Pierre | [i] «La vitesse de réponse est définitivement un signal de difficulté» (11-20, Reports): re-measure every subject now; the build waits for the figures; **11-21:** re-measured (#1341, thresholds not met); Q449-Q451 «Ok» in direction, the build waits for the context he asked; Q452 open (05:40, #1350) | Medium | M |
 | R104 | Photo memory: the lag table at the next milestone            | Waiting           | [i] Q317; corals 4,000, fish 3,000 answers (not read today)                                                                                                                             | Short   | S    |
 | R105 | More duels when several genera are shaky                     | Idea              | (paraphrase) 11-02 request partly built; the rate tied to shaky genera tried, no gain                                                                                                  | Medium  | S    |
-| R106 | Name similarity: the re-test, (h)                            | Waiting           | [i] Q124 «Je suis tes recommandations pour tout» (11-14); ~650 error trials; (h) also waits `analysis.js`                                                                              | Medium  | M    |
+| R106 | Name similarity: the re-test, (h) | Waiting | [i] Q124 «Je suis tes recommandations pour tout» (11-14); ~650 error trials; (h) also waits `analysis.js`; **11-21:** (h) free (`analysis.js`, #1298, #1299 merged) | Medium | M |
 | R107 | Photo difficulty with few genera open                        | Waiting           | (paraphrase) 11-02; data                                                                                                                                                                | Long    | M    |
 | R108 | Short lessons                                                | Idea              | (paraphrase) 11-02 "to think about"                                                                                                                                                     | Long    | M    |
 | R109 | The expectation's slope, per-format guesses                  | Waiting           | (paraphrase) Q368 (11-15): again at ~20 players                                                                                                                                         | Long    | M    |
@@ -306,16 +365,16 @@ what its source shows it answered.
 | R113 | Taxonomy reference: the monthly refresh                      | Waiting           | [i] Q49 (11-05); next due about 12-18                                                                                                                                                   | Medium  | S    |
 | R114 | Growth form and quality guesses                              | Waiting           | On his request                                                                                                                                                                          | Medium  | S    |
 | R115 | Near-duplicate groups: Keep or Exclude                       | Waiting for Pierre | His hands in Triage (3 groups; his and IMR photos)                                                                                                                                    | Short   | S    |
-| R116 | Tour leftovers                                               | Blocked           | [ii] the integrator's queue of 11-18 ("tour", STATUS de83ee3a9 Next 3); `app.js` holders                                                                                                | Short   | S    |
+| R116 | Tour leftovers | Blocked | [ii] the integrator's queue of 11-18 ("tour", STATUS de83ee3a9 Next 3); `app.js` holders; **11-21:** `app.js` held by #1331, #1340 | Short | S |
 | R117 | Paliform-lobe rings                                          | Waiting           | A clearer photo                                                                                                                                                                         | Long    | S    |
-| R118 | The level's answer count follows the log                     | Blocked           | (paraphrase) Q322, Q330 (11-09); `core.js` holders                                                                                                                                      | Short   | M    |
+| R118 | The level's answer count follows the log | Blocked | (paraphrase) Q322, Q330 (11-09); `core.js` holders; **11-21:** `core.js` held by #1349 | Short | M |
 | R119 | Full replay leftovers (a)-(e)                                | Idea              | The agent's list of 11-03; (b), (e) also wait `Code.gs`/`core.js`                                                                                                                       | Medium  | M    |
 | R120 | Fish progress replayed: the follow-ups                       | Decided           | [i] «il faut recalculer tous les progrès pour tous les joueurs à partir de leur réponse» (11-08, #776)                                                                                  | Medium  | M    |
-| R121 | Tool and admin data into `data/`                             | Blocked           | [i] Q265 «Ok pour tes propositions» (11-08); in review #1298                                                                                                                            | Short   | M    |
+| R121 | Tool and admin data into `data/` | Done | [i] Q265 «Ok pour tes propositions» (11-08); in review #1298; **11-21:** built (#1298) | - | - |
 | R122 | Domain and repository rename                                 | Waiting           | [i] «quand l'infrastructure qu'on utilise ne suivra plus» (11-18)                                                                                                                       | Long    | L    |
-| R123 | IMR content split: the fish part, then `ORG`                 | Decided, ready    | [i] «les droits, ils me sont à moi à 100 %»; «quitte si besoin à licencier une version IMR à IMR» (11-08, #737)                                                                         | Medium  | M    |
+| R123 | IMR content split: the fish part, then `ORG` | Partly done | [i] «les droits, ils me sont à moi à 100 %»; «quitte si besoin à licencier une version IMR à IMR» (11-08, #737); **11-21:** the fish part built (#1328); left: `core.js` `ORG` and the IMR wording (`core.js` held by #1349) | Medium | M |
 | R124 | Sea slugs "sp. N" (3)                                        | Waiting           | (paraphrase) Q389: published names                                                                                                                                                      | Long    | S    |
-| R125 | Sea slug species achievements                                | Blocked           | (paraphrase) the list ok (11-18), Q410 «ok»; species units built (#1273); `core.js` holders                                                                                             | Medium  | S    |
+| R125 | Sea slug species achievements | Blocked | (paraphrase) the list ok (11-18), Q410 «ok»; species units built (#1273); `core.js` holders; **11-21:** `core.js` held by #1349 | Medium | S |
 | R127 | Placement test, step 3 (the opt-in test)                     | Waiting           | (paraphrase) 11-18 (#1080); after the calibration set reaches 20+ answers a photo (not read)                                                                                            | Medium  | L    |
 | R131 | First-launch follow-ups (a), (b), (d)                        | Idea              | Agent notes of 11-03                                                                                                                                                                    | Medium  | S    |
 
@@ -324,16 +383,16 @@ what its source shows it answered.
 | ID   | Item                                                       | State       | His words or basis                                                                       | Horizon | Size |
 | ---- | ---------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------- | ------- | ---- |
 | R150 | 9: the prior beside the answers, per subject               | Partly done | (paraphrase) 11-04: one pooled admin                                                     | Medium  | S    |
-| R151 | 10: species look-alike pairs                               | Blocked     | `admin.js` holders                                                                       | Medium  | M    |
-| R152 | 11: the admin's pages per subject, the fish memory offsets | Partly done | [i] 11-20 05:53 (one admin); folded into R94                                             | Medium  | M    |
+| R151 | 10: species look-alike pairs | Blocked | `admin.js` holders; **11-21:** `admin.js` held by #1348 | Medium | M |
+| R152 | 11: the admin's pages per subject, the fish memory offsets | Partly done | [i] 11-20 05:53 (one admin); folded into R94; **11-21:** the band review for every subject built (#1337, step 6) | Medium | M |
 | R153 | 12: Photo stats, Taxa, Players columns                     | Done        | Built (#690, #692, #992, #1169): **row deleted** in this PR                              | -       | -    |
 
 ### 3.3 Game modes
 
 | ID   | Item                                                     | State             | His words or basis                                                                                                    | Horizon | Size |
 | ---- | -------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
-| R163 | Every game mode for every subject                        | Partly done       | [i] Q437 (11-19 20:34); Memory in review #1279                                                                        | Short   | M    |
-| R164 | Find the X: its offset; species questions                | Blocked           | (paraphrase) Q321; offset in review #1299                                                                             | Short   | M    |
+| R163 | Every game mode for every subject | Partly done | [i] Q437 (11-19 20:34); Memory in review #1279; **11-21:** Memory built (#1279); Find the X for the sea slugs waits for their photo boxes | Short | M |
+| R164 | Find the X: its offset; species questions | Partly done | (paraphrase) Q321; offset in review #1299; **11-21:** its own offset built (#1299); the species questions left | Short | M |
 | R165 | Matrix                                                   | Waiting for Pierre | Q439 (U13)                                                                                                           | Medium  | M    |
 | R166 | Live mode after v1: the subjects                         | Partly done       | The sea slugs hostable since they opened to all (#1051, `live.js` `liveSubjects`); a subject in a group's beta left (Q437 may cover it: a reading) | Short | S |
 | R166b | Live mode after v1: sets, a per-student view, WebSocket, typed and duels live | Idea | Each a product or cost choice for him (decision record `2026-11-18-live-after-v1`)                              | Long    | M    |
@@ -349,8 +408,8 @@ what its source shows it answered.
 | R176 | Odd one out                                              | Waiting for Pierre | Q439 (in the Lab)                                                                                                    | Medium  | M    |
 | R177 | Same or different?                                       | Waiting for Pierre | Q439 (in the Lab)                                                                                                    | Medium  | M    |
 | R178 | Sort them                                                | Idea              | No approval recorded                                                                                                  | Long    | M    |
-| R179 | Down the tree                                            | Blocked           | (paraphrase) approved 11-18 as #1081 relays it; the Lab, `proto/lab.js` held by #1279, #1319                          | Medium  | M    |
-| R180 | Life stages matched                                      | Blocked           | Same as R179                                                                                                          | Medium  | M    |
+| R179 | Down the tree | Decided, ready | (paraphrase) approved 11-18 as #1081 relays it; the Lab, `proto/lab.js` held by #1279, #1319; **11-21:** `proto/lab.js` free since #1279, #1319 merged | Medium | M |
+| R180 | Life stages matched | Decided, ready | Same as R179; **11-21:** `proto/lab.js` free | Medium | M |
 | R181 | Virtual dive                                             | Idea              | No approval recorded                                                                                                  | Long    | M    |
 | R182 | Trainer's set                                            | Idea              | No approval recorded                                                                                                  | Long    | M    |
 | R183 | Short-term study leftovers                               | Idea              | Parked                                                                                                                | Long    | M    |
@@ -362,7 +421,7 @@ what its source shows it answered.
 
 | ID   | Item                                                   | State             | His words or basis                                                                                                                            | Horizon | Size |
 | ---- | ------------------------------------------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
-| R192 | A later tier's script that never came: Try again       | Decided, ready    | [ii] the integrator's queue of 11-18 ("Try again", STATUS de83ee3a9 Next 3)                                                                   | Short   | S    |
+| R192 | A later tier's script that never came: Try again | Done | [ii] the integrator's queue of 11-18 ("Try again", STATUS de83ee3a9 Next 3); **11-21:** built (#1335) | - | - |
 | R193 | Player learning trajectories                           | Waiting           | (paraphrase) 11-05: a later level, beyond 2,000 answers                                                                                       | Long    | M    |
 | R194 | LEARNING.md and ARCHITECTURE.md split                  | Partly done       | (paraphrase) 11-05 "useful, not urgent"; the maps and specs restructuring (#1123-#1163)                                                       | Long    | M    |
 | R195 | Glossary entries for unglossed sheet words             | Idea              | The agents' note                                                                                                                              | Medium  | S    |
@@ -370,25 +429,25 @@ what its source shows it answered.
 | R200 | Load order (e)                                         | Idea              | Parked                                                                                                                                        | Long    | S    |
 | R201 | The CSS minified at deploy                             | Idea              | Parked (review R4)                                                                                                                            | Long    | S    |
 | R202 | Bonus genera: more of them, in Memory, an admin list   | Idea              | Parked                                                                                                                                        | Long    | S    |
-| R202b | Bonus genera count in the global progress             | Waiting for Pierre | [i] «Les genres bonus dans les coraux devraient définitivement compter dans le progres global» (11-20, Reports); one question: the scale       | Medium  | M    |
+| R202b | Bonus genera count in the global progress | Blocked | [i] «Les genres bonus dans les coraux devraient définitivement compter dans le progres global» (11-20, Reports); one question: the scale; **11-21:** Q445 (A): «une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR» (05:40, #1350): decided, built next; it rewrites rule L6; its files (`core.js`, `app.js`, `model.js`, `quiz.js`) held by #1331, #1349 | Medium | M |
 | R203 | Candidate photos outside the Philippines               | Obsolete          | [i] «Non, pour l'instant, on va pas élargir au-delà des Philippines.» (11-02, #337)                                                           | -       | -    |
-| R204 | Enlargement as a signal                                | Decided, ready    | [i] «(ainsi que le clic)» (11-20, Reports): the re-measure of R103                                                                           | Medium  | S    |
-| R205 | Response time, genus term                              | Decided, ready    | Same as R103                                                                                                                                  | Medium  | S    |
-| R206 | Response time, photo term                              | Decided, ready    | Same as R103                                                                                                                                  | Medium  | S    |
+| R204 | Enlargement as a signal | Waiting for Pierre | [i] «(ainsi que le clic)» (11-20, Reports): the re-measure of R103; **11-21:** counted (#1341, not enough data); Q451 «Ok» (a weak but different signal), the build waits for the context he asked (#1350) | Medium | S |
+| R205 | Response time, genus term | Waiting for Pierre | Same as R103; **11-21:** measured (#1341); the build waits for the context he asked on Q449-Q452 (#1350) | Medium | S |
+| R206 | Response time, photo term | Waiting for Pierre | Same as R103; **11-21:** measured (#1341); the build waits for the context he asked on Q449-Q452 (#1350) | Medium | S |
 | R207 | Reuse the data in ReefRecall                           | Waiting           | (paraphrase) 11-14: he will probably restart ReefRecall; a later question                                                                     | Long    | M    |
 | R208 | Rights tagged for a later split: the rest              | Idea              | Licence study, parked                                                                                                                         | Long    | M    |
 | R209 | First-time RA review: like-for-like comparisons        | Waiting           | Photo-dependent                                                                                                                               | Medium  | M    |
 | R210 | Sign-out draft: the clean-up                           | Waiting           | [i] Q334; from 2026-12-18                                                                                                                     | Medium  | S    |
 | R211 | PR preview links                                       | Waiting           | (paraphrase) 11-01 «plus tard»; with Professionalise                                                                                          | Long    | M    |
-| R212 | Look-alike account names                               | Blocked           | [ii] the integrator's queue of 11-18 ("account names"); `Code.gs` holders                                                                    | Medium  | S    |
+| R212 | Look-alike account names | Blocked | [ii] the integrator's queue of 11-18 ("account names"); `Code.gs` holders; **11-21:** `Code.gs` held by #1349 | Medium | S |
 | R213 | Security: archive old answers                          | Waiting           | [i] Q352 "ok" to D1 at a measured threshold (11-14)                                                                                           | Long    | L    |
-| R214 | Alerts lines of a name taken again                     | Blocked           | [ii] integrator's call; `Code.gs` holders                                                                                                     | Medium  | S    |
-| R220 | Roles: rights PR 2-4, groups by scope, the relay       | Blocked           | [i] Q408 (11-19 06:50-06:58); «Groups have to be either instance wide or subject specific» (11-20, Reports); `Code.gs` holders                | Medium  | L    |
-| R220b | Roles: where each cohort's trainer list is stored     | Waiting for Pierre | STATUS question (a sheet format)                                                                                                             | Medium  | S    |
+| R214 | Alerts lines of a name taken again | Blocked | [ii] integrator's call; `Code.gs` holders; **11-21:** `Code.gs` held by #1349 | Medium | S |
+| R220 | Roles: rights PR 2-4, groups by scope, the relay | Partly done | [i] Q408 (11-19 06:50-06:58); «Groups have to be either instance wide or subject specific» (11-20, Reports); `Code.gs` holders; **11-21:** rights PR 2b built (#1330); Q447 «oui, c'est pas con» (the scope in the Rights column), Q448 (A) (05:40, #1350); left: the audited-write path (`Code.gs` held by #1349), PRs 3-4 | Medium | L |
+| R220b | Roles: where each cohort's trainer list is stored | Decided | STATUS question (a sheet format); **11-21:** Q448 (A), lines in the Groups tab: «je soupçonne que ça doit être bon» (05:40, #1350); built with rights 2c | Medium | S |
 | R221 | The app as a generic product                           | Idea              | His own idea (11-08), not started                                                                                                             | Long    | L    |
 | R222 | Training for survey organisations                      | Idea              | (paraphrase) 11-08, five Parked rows folded                                                                                                   | Long    | L    |
-| R223 | More subjects: benthos                                 | Waiting for Pierre | B1, Q442, Q443                                                                                                                               | Medium  | L    |
-| R223b | More subjects: sea slug species pairs (2 sourced)     | Blocked           | (paraphrase) Q390 D; the species level built; `tools/seaslug_lookalikes_source.json` held by #1298                                            | Medium  | S    |
+| R223 | More subjects: benthos | Idea | B1, Q442, Q443; **11-21:** «non, on ne traite pas ça pour l'instant ... je suis même pas sûr qu'on le traitera un jour» (05:40, #1350): long term, maybe never (B1, Q442, Q443 with it) | Medium | L |
+| R223b | More subjects: sea slug species pairs (2 sourced) | Decided, ready | (paraphrase) Q390 D; the species level built; `tools/seaslug_lookalikes_source.json` held by #1298; **11-21:** `tools/seaslug_lookalikes_source.json` free since #1298 merged | Medium | S |
 | R223c | More subjects: sea slug ID key; the 4 genera without marks | Idea          | Low yield (no source found)                                                                                                                   | Long    | M    |
 | R224 | Content versions: served to the admin's readers        | Waiting           | When needed                                                                                                                                   | Long    | S    |
 | R225 | Partial transfer between regions                       | Idea              | A research question                                                                                                                           | Long    | M    |
@@ -397,38 +456,46 @@ what its source shows it answered.
 
 | ID  | Item                                                         | State             | His words or basis                                                                                                                                                         | Horizon | Size |
 | --- | ------------------------------------------------------------ | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---- |
-| N1  | Opening: at least four units before a level is asked         | Blocked           | [i] «Au minimum 4 espèces proches ouvertes»; «il faut au moins 4 items ouverts avant de commencer à poser des questions»; «Le mode espèce arrive bien trop tôt» (Reports); `quiz.js`, `app.js` held by #1318, #1319, #1322 (small, near merge); L4's sentence to his OK | Short   | M    |
-| N2  | Species by common name before the scientific names?          | Waiting for Pierre | [i] «Pourquoi on commence à m'ouvrir des noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (Reports); opening study question B                    | Short   | S    |
-| N3  | Report a problem, again on the same page                     | Blocked           | [i] «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page» (Reports); its ROADMAP row and ledger entry are on #1319 (in review)                     | Short   | S    |
-| N4  | A photo or screenshot attached to a report                   | Waiting for Pierre | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); recorded on #1319; where the file is stored is his                | Medium  | M    |
+| N1 | Opening: at least four units before a level is asked | Blocked | [i] «Au minimum 4 espèces proches ouvertes»; «il faut au moins 4 items ouverts avant de commencer à poser des questions»; «Le mode espèce arrive bien trop tôt» (Reports); `quiz.js`, `app.js` held by #1318, #1319, #1322 (small, near merge); L4's sentence to his OK; **11-21:** in review (#1331); rule L4 «Je pense que c'est une bonne idée» (05:40, #1350) | Short | M |
+| N2 | Species by common name before the scientific names? | Waiting for Pierre | [i] «Pourquoi on commence à m'ouvrir des noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (Reports); opening study question B; **11-21:** asked with Q445 as "the species order question" (STATUS): not answered, «Je ne sais pas exactement ce dont tu parles» (#1350); context owed | Short | S |
+| N3 | Report a problem, again on the same page | Done | [i] «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page» (Reports); its ROADMAP row and ledger entry are on #1319 (in review); **11-21:** built (#1339) | - | - |
+| N4 | A photo or screenshot attached to a report | Waiting for Pierre | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); recorded on #1319; where the file is stored is his; **11-21:** Q446 not decided as proposed: «Est-ce qu'on peut pas juste stocker temporairement la photo ... le temps qu'un agent puisse le traiter et ensuite on dégage la photo» (05:40, #1350): a simple temporary store; the design goes back to him | Medium | M |
 | N5  | Beta: remove everyone from a subject's beta                  | Done              | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1298, #1313, #1320                                       | Short   | S    |
+| N6  | The two compared photos stacked on a phone (fish)            | Decided           | [i] «je pense que ça s'afficherait beaucoup mieux en étant au-dessus, en dessous» (11-21 05:32, #1350); being built by another agent, no PR yet at this refresh | Short   | S    |
+| N7  | New-RA review findings 4-5: My progress's "Next step" line, the quiz photo's Colony / Close-up switch | Waiting for Pierre | Options for him (#1332), asked with Q439 in STATUS                                                                                | Short   | S    |
 
 ## 4. Outside the ROADMAP
 
-### 4.1 Open PRs (13; #1292 merged during the sweep)
+### 4.1 Open PRs (13 on 11-20, all merged since; 6 open on 11-21 besides this one, PR15-PR20)
 
 | ID    | PR                                                   | State   | Note                                                        | Horizon | Size |
 | ----- | ---------------------------------------------------- | ------- | ----------------------------------------------------------- | ------- | ---- |
-| PR1   | #1279 Memory for the fish and the sea slugs (Q437)   | Blocked | Needs a sheet `VERSION` at merge (rule D3)                  | Short   | M    |
-| PR3   | #1298 Tool and admin data into `data/`               | Blocked | Needs a `VERSION`; holds many files                         | Short   | M    |
-| PR4   | #1299 Find the X's own offset                        | Blocked | Needs a `VERSION`                                           | Short   | S    |
-| PR5   | #1310 Q316 offline-fit tool                          | Blocked | Held: cut side check 2B, three threads open                 | Short   | M    |
-| PR6   | #1313 #1259's two auto-sort follow-ups               | Blocked | Read its Codex first                                        | Short   | S    |
-| PR7   | #1315 Merge-queue scripts into `tools/queue`         | Blocked | In review                                                   | Short   | S    |
-| PR8   | #1316 Compared photos shown whole                    | Blocked | His report of 11-20                                         | Short   | S    |
-| PR9   | #1318 Cards per subject                              | Blocked | His reports of 11-20                                        | Short   | S    |
-| PR10  | #1319 Report a problem out of More                   | Blocked | His report of 11-20; the repeat is N3                       | Short   | S    |
-| PR11  | #1320 Admin ? help scrolls                           | Blocked | His report of 11-20                                         | Short   | S    |
-| PR12  | #1321 INTEGRATOR: the next task from the ROADMAP     | Blocked | His 16:44 words; its ledger entry is there                  | Short   | S    |
-| PR13  | #1322 A unit's common name on its opening card       | Blocked | His bannerfish report of 11-20                              | Short   | S    |
-| PR14  | #1323 Fish juvenile cards                            | Blocked | His two juvenile reports of 11-20                           | Short   | S    |
+| PR1 | #1279 Memory for the fish and the sea slugs (Q437) | Done | Needs a sheet `VERSION` at merge (rule D3); **11-21:** merged | - | - |
+| PR3 | #1298 Tool and admin data into `data/` | Done | Needs a `VERSION`; holds many files; **11-21:** merged | - | - |
+| PR4 | #1299 Find the X's own offset | Done | Needs a `VERSION`; **11-21:** merged | - | - |
+| PR5 | #1310 Q316 offline-fit tool | Done | Held: cut side check 2B, three threads open; **11-21:** merged (the tool; the real fit is R102) | - | - |
+| PR6 | #1313 #1259's two auto-sort follow-ups | Done | Read its Codex first; **11-21:** merged | - | - |
+| PR7 | #1315 Merge-queue scripts into `tools/queue` | Done | In review; **11-21:** merged | - | - |
+| PR8 | #1316 Compared photos shown whole | Done | His report of 11-20; **11-21:** merged; his 05:32 wish (stacked on phones) is N6 | - | - |
+| PR9 | #1318 Cards per subject | Done | His reports of 11-20; **11-21:** merged | - | - |
+| PR10 | #1319 Report a problem out of More | Done | His report of 11-20; the repeat is N3; **11-21:** merged; the repeat merged too (#1339) | - | - |
+| PR11 | #1320 Admin ? help scrolls | Done | His report of 11-20; **11-21:** merged | - | - |
+| PR12 | #1321 INTEGRATOR: the next task from the ROADMAP | Done | His 16:44 words; its ledger entry is there; **11-21:** merged | - | - |
+| PR13 | #1322 A unit's common name on its opening card | Done | His bannerfish report of 11-20; **11-21:** merged | - | - |
+| PR14 | #1323 Fish juvenile cards | Done | His two juvenile reports of 11-20; **11-21:** merged; #1329 followed (the young beside an adult) | - | - |
+| PR15  | #1331 A level opens in a group of at least 4 close units (rule L4) | Blocked | N1; L4 OK'd 05:40 (#1350)                          | Short   | M    |
+| PR16  | #1340 Sea slugs: no Identify door or tab while no ID key is built | Blocked | R95's finding 3                                  | Short   | S    |
+| PR17  | #1342 Fish colour phases sourced (`tools/fish_phases.json`)   | Blocked | R60, R72's flags                                            | Short   | S    |
+| PR18  | #1348 Admin: a Published toast is not replaced; Undo         | Blocked | Holds `admin.js`                                            | Short   | S    |
+| PR19  | #1349 Each subject adopts its own opening hold (one-engine step 5, the app's half) | Blocked | R94; holds `core.js`, `quiz.js`, `sync.js`, `Code.gs` | Short   | M    |
+| PR20  | #1350 Ledger: Pierre's answers of 2026-11-21 05:32-05:42      | Blocked | Merges before this PR; its answers are cited here          | Short   | S    |
 
-### 4.2 Branches without a PR (13 besides `main`, `release`)
+### 4.2 Branches without a PR (13 besides `main`, `release` on 11-20; 15 on 11-21, besides the `train/*` branches)
 
 | ID  | Branch                                                                 | State       | Note                                                                                           | Horizon | Size |
 | --- | ---------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- | ------- | ---- |
-| B1  | `claude/admin-lazy-loads` (3 commits, 11-20)                           | Partly done | R36: finish its record, tests, PR                                                              | Short   | S    |
-| B2  | `claude/admin-signout-seal`, `level-count-from-log`, `fish-todo-wip`, `stoic-ritchie-fp1ipu`, `optimistic-newton-b82nxm`, `compassionate-cori-ecyc2t`, `juvenile-no-cap-sim`, five `live-locked-*` | Obsolete | References or experiments of merged work (#1078, #1053, #1234, #1237); the weekly clean-up workflow can drop them | - | - |
+| B1 | `claude/admin-lazy-loads` (3 commits, 11-20) | Done | R36: finish its record, tests, PR; **11-21:** merged as #1336 | - | - |
+| B2  | `claude/admin-signout-seal`, `level-count-from-log`, `fish-todo-wip`, `stoic-ritchie-fp1ipu`, `optimistic-newton-b82nxm`, `compassionate-cori-ecyc2t`, `juvenile-no-cap-sim`, five `live-locked-*` | Obsolete | References or experiments of merged work (#1078, #1053, #1234, #1237); the weekly clean-up workflow can drop them; **11-21:** also without a PR now: `photo-genus-ability` (#637, closed unmerged), `time-weighted-steps` (#808, closed unmerged), `autosort-followups` (#1313, merged; a late push re-created it): references too; no branch without a PR builds a §1.3 item, and none holds the stacked compared photos (N6) yet | - | - |
 
 ### 4.3 Pierre's hands (STATUS)
 
@@ -437,8 +504,8 @@ what its source shows it answered.
 | H1  | Gold set 2: 42 photos to review                                        | Waiting for Pierre | Sent 11-19 15:36        | Short   | S    |
 | H2  | GitHub: a `release` ruleset                                            | Waiting for Pierre | Access                  | Short   | S    |
 | H3  | The trainer role for himself (a live game)                            | Waiting for Pierre | His own action          | Short   | S    |
-| H4  | The admin: the Boxfishes juvenile cover, Cover proposals, 5 aquarium photos, Points | Waiting for Pierre | His curation; the Light proposals are R73 | Short | S |
-| H5  | The analyses token's type, the R2 token's scope, the admin token before late January 2027 | Waiting for Pierre | Access | Medium | S |
+| H4  | The admin: the Boxfishes juvenile cover, Cover proposals, 5 aquarium photos, Points | Waiting for Pierre | His curation; the Light proposals are R73; **11-21:** Points holds three new fish phase conflicts after #1342 | Short | S |
+| H5  | The analyses token's type, the R2 token's scope, the admin token before late January 2027 | Waiting for Pierre | Access; **11-21:** still in STATUS; the read-only R2 CI token is withdrawn (R35) | Medium | S |
 
 ### 4.4 His reports of 2026-11-20 (Reports tab, 17 rows)
 
@@ -454,6 +521,9 @@ The audit's D section lists 65 entries split on " · ": 61 single ones (D1-D61) 
 his words decide or park it; **[ii]** a rule or the integrator's call; **[iii]** its data gate met since; **W** a data,
 trigger or third-party wait he agreed to; **I** an idea nobody decided; **X** obsolete or stale.
 
+The appendix is the 11-20 reading of the audit; the refresh of 11-21 changed only C9 (now X: nothing to tag) and its
+counts line. Where a row moved since, §3 gives its state today.
+
 | #   | Entry                                                   | Bucket | Now (row)                                                      |
 | --- | ------------------------------------------------------- | ------ | -------------------------------------------------------------- |
 | C1  | R2 clean-up                                             | -      | Waiting for Pierre (deleting data), R32                        |
@@ -464,7 +534,7 @@ trigger or third-party wait he agreed to; **I** an idea nobody decided; **X** ob
 | C6  | `confTerm`                                              | I      | An agent proposal; ask only if proposed, R62                   |
 | C7  | Fish prior refit, Q351 (b)                              | [iii]  | Measure now, R64                                               |
 | C8  | The 8 unsure candidates                                 | -      | His hands, R69                                                 |
-| C9  | Stopgap photos' `rep` tag                               | [ii]   | Easy to correct, R71b                                          |
+| C9  | Stopgap photos' `rep` tag                               | X      | 11-21: every FishBase main picture carries `rep`, R71b         |
 | C10 | Light proposals                                         | -      | His hands; an A1 reading noted, not his answer, R73            |
 | C11 | Fish ID Key into Identify                               | -      | Q439, R75                                                      |
 | C12 | Fish key points                                         | -      | Admin Points, R80                                              |
@@ -540,8 +610,8 @@ trigger or third-party wait he agreed to; **I** an idea nobody decided; **X** ob
 | D65 | Long term                                               | I      | R221-R225                                                      |
 
 Counts (by script, §6). D1-D61: [i] 19, [ii] 5, [iii] 3, W 22, I 11, X 1. The groups D62-D65: [i] 1, [ii] 1, I 2,
-each holding decided parts named in its cell. C1-C17: [i] 2, [ii] 1, [iii] 1, I 1, X 1, and 11 that are truly his (a
-question, his review or his hands). The [i] split of §1.1 (7 to build, 7 parked with a trigger, 3 a wish or doubt, 2
+each holding decided parts named in its cell. C1-C17: [i] 2, [iii] 1, I 1, X 2 (C9 moved from [ii] on 11-21), and 11
+that are truly his (a question, his review or his hands). The [i] split of §1.1 (7 to build, 7 parked with a trigger, 3 a wish or doubt, 2
 done or declined) is read from the "Now" cells above.
 
 ## 5. What changed in the docs (this PR)
@@ -563,6 +633,18 @@ done or declined) is read from the "Now" cells above.
 - **The reviews index**: this file's row.
 - STATUS is not edited (the integrator's): its "Questions for Pierre" still lists two questions that look settled
   (§1.4).
+- **The refresh of 2026-11-21** (main merged in at `93cffa96e`; the ROADMAP settled row by row against main, a 3-way
+  view of each row): against main, this PR now changes 19 ROADMAP rows, deletes 2 and adds 1. Main's later text won
+  wherever main measured or built a row (learnsim, the learning-algorithm review, the time terms, the fish prior: the
+  PR's "Next: re-measure" readings were dropped, the measures of #1341 having run); the PR's quotes of his words were
+  kept on top of main's text (the IMR content row, Roles, Enlargement, the fish prior's Q435 (a)). Rows corrected in the
+  refresh: "Fish photo judging, next" (the judged ease measured, #1313 built, the flags after #1342), the opening row
+  (in review, #1331), "Name-similarity confusion" ((h) free). **Deleted**: R153 (built) and the fish photo exposure
+  re-measure (R55): measured by #1341, its last open part, the cap, closed by the integrator's per-answer check of 11-21
+  (8.7%, under the 10% bar; the units over it `RARE.FEW` by design), which is not in the repo. The rows main deleted as
+  built (the Learn list photo, `data/`, Report again, Try again) stay deleted. ANSWERS gets nothing new: the answers of
+  11-21 are #1350's. **Conflicts to expect** with #1350 (merging first): the Bonus genera and Roles rows, which both
+  edit; #1350's text is taken there and this PR's quote kept where #1350 lacks it.
 
 ## 6. What I checked and what I did not
 
@@ -577,3 +659,11 @@ done or declined) is read from the "Now" cells above.
   tabs, so every data gate's count is the last one recorded in the docs.
 - **Paraphrases**: a "(paraphrase)" cell rests on an agent's wording of his answer (STATUS or a PR), never on his words.
 - No simulation was run; nothing in the app or the data changed.
+- **The refresh of 2026-11-21, checked**: `git log --first-parent 01bb16add..93cffa96e` (the merged PRs, mapped to their
+  rows by their titles, bodies where needed and the ROADMAP rows they changed); every ROADMAP row of `01bb16add`
+  compared with today's by a script (removed, status changed, text changed); the file lists of the 6 open PRs; the
+  remote branches without a PR (`git ls-remote --heads` against the open PRs' heads); STATUS on main (#1343) for the
+  open questions; the ledger PR #1350's ANSWERS entries for his answers of 05:32-05:42. The counts of §1.1 and the
+  appendix line are from the same script as on 11-20 (§6 above), run on this file before and after the refresh.
+- **Not checked by me in the refresh**: R55's cap figure and R71b's `rep` tags are the integrator's checks of 11-21
+  (not in the repo), taken as given; the rows nothing merged touched keep their 11-20 reading, data gates included.
