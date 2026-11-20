@@ -1388,6 +1388,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   source IMR sans plus d'infos.» They stay in play, credited to IMR with no more information; nobody asks the IMR
   trainers; if they are never sourced, removing them may come later. Applied: ROADMAP "Trace IMR lecture photos to
   their original source", #1282.
+- **06:58, flags and the two removals.** «Si je supprime une photo, pourquoi je dois encore cliquer sur Done pour
+  évacuer le warning? D'ailleurs, je ne comprend toujours pas bien la différence entre cliquer sur la croix ou cliquer
+  sur Remove. ça me gonfle qu'il y ait 2 mécanismes pas bien différenciés» A flag clears itself when its photo leaves
+  play, and a flag on a photo that no longer exists is no task; the Remove / × question stays open (07:00: «Du coup 2
+  clics pour chaque photos? Tu me donnes du travail en plus. Réfléchis plus largement au problème et propose moi
+  d'autres solutions»). Applied: docs/spec/admin.md "Each subject's admin part", decision record
+  `2026-11-20-flags-clear-themselves`, #1294.
 - **06:02, the Learn lists' cards, every subject.** «l'accès en fait aux fiches il n'est pas hyper facile, et je pense
   que ça doit être vrai partout dans toutes les matières. Parce qu'il faut qu'on voit du coup qu'il y a un lien qui est
   open this sheet, et ensuite qu'on clique pour accéder. […] la photo doit être un lien. Vers la fiche. Et du coup, ça
