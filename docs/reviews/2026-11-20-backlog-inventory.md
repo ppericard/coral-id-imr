@@ -24,15 +24,15 @@ basis cell, after **11-21:**; the rows nothing touched keep their 11-20 reading.
   merged (§4.1); the ledger PR #1350 merged last (`faf2e98db`); 5 PRs are open now besides this one (#1351 opened
   during the refresh). #1349 merged while this refresh was being
   written: its rows say "merged later on 11-21".
-- **Pierre's answers of 2026-11-21 05:32-05:42**, recorded by the ledger PR #1350, merged (not repeated in ANSWERS here):
-  §1.2b.
+- **Pierre's answers of 2026-11-21 05:32-05:48**, recorded by the ledger PR #1350, merged (not repeated in ANSWERS here):
+  §1.2b; his 05:48 answers settle Q446, Q449-Q452, Remove vs × and the R2 token.
 - **Found obsolete or done by a check, not by a PR**: R71b (every FishBase main picture already carries `rep`) and R55's
   cap (8.7%, under the code's 10% bar; the units over it are `RARE.FEW` by design): the integrator's checks of 11-21,
   not in the repo.
 - **Files held now** (§2) and so **§1.3, ready to launch**, recomputed; §1.4 keeps only the questions still open.
 - Counts before the refresh, by the §6 script on this file at `d208682c0`: Done 3, Partly done 12, Decided ready 14,
-  Decided 7, Blocked 45, Waiting for Pierre 24, Waiting 42, Idea 44, Obsolete 5 (196). The 10 rows added (R77c, N6,
-  N7, PR15-PR21) bring the total to 206.
+  Decided 7, Blocked 45, Waiting for Pierre 24, Waiting 42, Idea 44, Obsolete 5 (196). The 11 rows added (R77c, N6, N8,
+  N7, PR15-PR21) bring the total to 207.
 
 ## 1. Summary
 
@@ -45,20 +45,19 @@ outside the ROADMAP). The counts are computed from those tables by a script (§6
 | --------------------------------------------------------------------------- | ------- | ------- |
 | Done (a row or sub-item the ROADMAP held as open on 11-20)                  | 3       | 28      |
 | Partly done                                                                 | 12      | 17      |
-| Decided, ready to launch                                                    | 14      | 22      |
-| Decided (agreed, not started; waits only the order of work)                 | 7       | 8       |
-| Blocked by an open PR or a held file (the open PRs included)                | 45      | 13      |
-| Waiting for Pierre (a question, his review or his hands)                    | 24      | 23      |
+| Decided, ready to launch                                                    | 14      | 23      |
+| Decided (agreed, not started; waits only the order of work)                 | 7       | 11      |
+| Blocked by an open PR or a held file (the open PRs included)                | 45      | 15      |
+| Waiting for Pierre (a question, his review or his hands)                    | 24      | 18      |
 | Waiting on data, a trigger he set or a third party                          | 42      | 43      |
 | Idea (nobody decided, or his own doubt)                                     | 44      | 46      |
 | Obsolete or declined                                                        | 5       | 6       |
-| **All**                                                                     | **196** | **206** |
+| **All**                                                                     | **196** | **207** |
 
 The 11-20 column is the §6 script on this file before the refresh (`d208682c0`; N5 had moved to Done after the table
-was written). On 11-21, of the 13 blocked rows, 8 are decided work waiting for an open PR or a file one holds
+was written). On 11-21, of the 15 blocked rows, 10 are decided work waiting for an open PR or a file one holds
 (`app.js` held by #1331 and #1340, `quiz.js` and `model.js` by #1331, `admin.js` by #1348; N1 is #1331 and N6 is
-#1351); the other 5 are the open PRs. Of
-the 22 ready rows, 14 touch `core.js`, `Code.gs` or `sync.js`, freed when #1349 merged: rule W27 lets one PR at a time
+#1351); the other 5 are the open PRs. Of the 23 ready rows, 14 touch `core.js`, `Code.gs` or `sync.js`, freed when #1349 merged: rule W27 lets one PR at a time
 hold each of those files, so they go one after another. Some "Partly done" and "Decided" rows have a part ready now:
 §1.3 names them.
 
@@ -119,11 +118,11 @@ said otherwise.
   asking; the ROADMAP still records it as his question. **11-21:** it ran (#1341): "Not enough data yet".
 - **A subject in a group's beta in live mode (R166).** Q437 may cover it.
 
-Since 11-20, of the rows above: 1 measured (#1341), its build waits for the context he asked (§1.2b); 2 in review
+Since 11-20, of the rows above: 1 measured (#1341), then decided with the context he asked: a multifactor study first (§1.2b); 2 in review
 (#1331); 3 decided (§1.2b); 6 built (#1339; the screenshot is N4); 9 the fish part built (#1328); 13 and 16 measured
 (#1341; 16 closed by the cap check); 14 waits for #1342.
 
-### 1.2b Rows that move because of his answers of 2026-11-21 (05:32-05:42)
+### 1.2b Rows that move because of his answers of 2026-11-21 (05:32-05:48)
 
 His words are in the ledger PR #1350 (`claude/answers-1121`), merged before this one (`faf2e98db`); this PR does not repeat
 them in ANSWERS. Each row's basis cell quotes the part that decides it.
@@ -133,14 +132,14 @@ them in ANSWERS. Each row's basis cell quotes the part that decides it.
 | Rule L4, a level opens in a group of at least 4: yes       | N1                         | In review (#1331), to be checked in use                                                 |
 | Q445 (A): one 45-genus coral scale, an "IMR slate" score   | R202b                      | Decided, built next; its files held by #1331; it rewrites rule L6                       |
 | Q445's follow-up, the species order                        | N2                         | Not answered: he did not follow it; context owed                                        |
-| Q446: a simple temporary store, deleted once processed     | N4                         | Not decided as proposed (no pCloud); the design goes back to him                        |
+| Q446: a simple temporary store (05:40); the sheet tab (05:48) | N4                       | Decided: reduced on the device (~800 px JPEG), a separate sheet tab, deleted once read  |
 | Q447 yes; Q448 (A)                                         | R220, R220b                | Decided; built with rights 2a and 2c (`Code.gs` free since #1349 merged)                |
-| Q449-Q451 «Ok» in direction; Q452 and the set: more context | R103, R204-R206           | Waiting for Pierre: the build waits for the context he asked                            |
+| Q449-Q452: «Ok» (05:40); with the context, yes (05:48)     | R103, R204-R206            | Decided: a multifactor study first (time against player level and photo difficulty, weighed continuously by the player's strength), then the build; step 2 and a silent recalculation of everyone's progress |
 | Benthos (B1, Q442, Q443): «non … pas sûr qu'on le traitera un jour» | R223              | Idea: long term, maybe never                                                            |
 | Q444: yes, an implementation detail                        | R88                        | Decided, ready (`core.js` free since #1349 merged)                                      |
-| Remove vs ×: «il me faut plus de contexte»                 | (§1.4)                     | Open: context owed                                                                      |
+| Remove vs ×: context asked (05:40); option A (05:48)       | N8                         | Decided: one Remove, one click, Undo just after, a list of the removed photos           |
 | R2: delete the unused files, yes (the list shown first)    | R32                        | Decided, ready                                                                          |
-| R2 read-only CI token: «Ça sert à quoi?»                   | R35                        | Not answered (#1350); withdrawn by the integrator since: Obsolete                       |
+| R2 read-only CI token: «tu retires la demande, très bien» (05:48) | R35                  | Withdrawn, with his agreement: Obsolete                                                 |
 | Q439: «J'ai pas testé encore»                              | R75, R165, R176, R177, N7  | Still open                                                                              |
 | The compared photos stacked on a phone (05:32)             | N6                         | In review (#1351)                                                                       |
 | The inventory merged first (05:42)                         | this PR                    | INTEGRATOR "A reference doc PR goes first" (#1350)                                      |
@@ -163,21 +162,26 @@ Refreshed 2026-11-21; files checked against the file lists of the open PRs (§2)
 9. **"Did you know?" tip (b)**, the next one of (b)-(h), one at a time (R49; `tips.js` free unless a counter needs
    `app.js`).
 10. **Analyses: structure views, the later items** (R39) and the name-confusion study's (h) (R106; `analysis.js` free).
-11. **One admin, the study's steps 9-10 and 13** (R94; [admin one-engine study](2026-11-19-admin-one-engine.md) §5):
+11. **Response time: the multifactor study** (R103; Q449-Q452 decided 05:48, #1350): response time against player
+    level and photo difficulty, weighed continuously by the player's strength; read-only, before any build.
+12. **One admin, the study's steps 9-10 and 13** (R94; [admin one-engine study](2026-11-19-admin-one-engine.md) §5):
     Learn's one list and one sheet (`learn.js` free, unless they need `app.js`), one tree-game builder (the tools).
-12. **Deploy right after Candidate photos** (R34; the integrator's call, a workflow change; the ROADMAP calls it an open
+13. **Deploy right after Candidate photos** (R34; the integrator's call, a workflow change; the ROADMAP calls it an open
     question, so it is the integrator's to take or drop).
 
 **B. On `core.js`, `Code.gs` or `sync.js`, free since #1349 merged: one PR at a time on each file (rule W27)**, in
-STATUS's order (#1343, Next 3) where it names them: the level's answer count from the log (R118); Fish basics'
+STATUS's order (#1343, Next 3) where it names them (the level's answer count, R118, also needs `model.js` and
+`quiz.js`: after #1331): Fish basics'
 `fbasics` and fpct100 (R76, R76b); one engine's next steps (R94) and architecture steps 3-4 (R93); the fish path's #892
 and species exams (R85, R85b); then rights 2a, the audited-write path (R220, `Code.gs`), and 2c with Q448's trainer
 lines (R220b); then, unranked: the sea slug species achievements (R125), Q444's common-name lists (R88), `ORG` (R123's
-rest), the look-alike account names and the Alerts lines (R212, R214, `Code.gs`), typed Rejected tries (R37), the
+rest), the look-alike account names and the Alerts lines (R212, R214, `Code.gs`), the screenshot attached to a report (N4, Q446: `sync.js` and `Code.gs`), typed
+Rejected tries (R37), the
 admin's leaner log reply (R36b, a sheet change), Activity C2 (R51, `sync.js`), the Analyses' next views (R47).
 
-Next once their files are free: after #1331 (`quiz.js`, `model.js`, `app.js`): Q445's coral scale (R202b), Find the X
-on the mimicry pair (R67); after #1331 and #1340 (`app.js`): the tour leftovers (R116), the About version line (R58), the
+Next once their files are free: after #1331 (`quiz.js`, `model.js`, `app.js`): the level's answer count from the log
+(R118, its checkpoint readers in `model.js` and `quiz.js` first: decision record `2026-11-09-level-count-checkpoints`),
+Q445's coral scale (R202b), Find the X on the mimicry pair (R67); after #1348 (`admin.js`): Remove vs ×, option A (N8); after #1331 and #1340 (`app.js`): the tour leftovers (R116), the About version line (R58), the
 calmer About text (R44); after #1348 (`admin.js`): species look-alike pairs in the admin (R151) and the one-admin
 steps 7-8 (one montage and coverage page, one tile); after #1340 (`home.js`): the one-admin step 11 (the small Learn,
 home and progress readers); after #1342: the fish
@@ -188,21 +192,18 @@ phone (N6, #1351).
 
 Refreshed 2026-11-21 from STATUS (#1343) and #1350. None is minted a number here.
 
-1. **Q449-Q452** (response time): he asked for more context on the whole set before the build; Q452 open.
-2. **Q445's follow-up, the species order** (N2): he did not follow it; to ask again with context.
-3. **Remove vs ×** in the admin: «Je sais pas ce dont tu parles, il me faut plus de contexte» (05:40).
-4. **Q446**: the screenshot store, redesigned to his direction (a simple temporary store), back to him (N4).
-5. **Q439**: which Lab prototypes graduate (Matrix, Odd one out, Same or different?, the Fish ID Key), with the new-RA
+1. **Q445's follow-up, the species order** (N2): he did not follow it; to ask again with context.
+2. **Q439**: which Lab prototypes graduate (Matrix, Odd one out, Same or different?, the Fish ID Key), with the new-RA
    review's two options (N7): he has not tested the Lab yet.
-6. **Asked never, costly**: the mimicry family pairs M7 and C11 (a structure change); `confTerm` if ever proposed
+3. **Asked never, costly**: the mimicry family pairs M7 and C11 (a structure change); `confTerm` if ever proposed
    (moves progress; #1341 measured it, a lead only).
-7. **His review, not a blocker**: the fish and sea slug species-mark drafts (his 11-05 rule "agents draft, Pierre
+4. **His review, not a blocker**: the fish and sea slug species-mark drafts (his 11-05 rule "agents draft, Pierre
    validates"); the tell-apart lines; the 8 unsure fish candidates; the 3 near-duplicate groups; admin Points (three new
    fish phase conflicts after #1342).
 
-Answered since 11-20: B1, Q442, Q443 (long term, maybe never), Q444, Q445 (A), Q447, Q448 (A), rule L4, the R2
-deletion, where the trainer list is stored (Q448). The R2 read-only CI token is out of this list: he asked what it is
-for (not answered, #1350), and the integrator withdrew it (R35).
+Answered since 11-20 (#1350): B1, Q442, Q443 (long term, maybe never), Q444, Q445 (A), Q446 (a sheet tab, 05:48),
+Q447, Q448 (A), Q449-Q452 (with the context, 05:48: a multifactor study first), Remove vs × (A, 05:48), rule L4, the
+R2 deletion; the R2 read-only CI token withdrawn with his agreement (05:48).
 
 **Probably not questions any more, to confirm** (STATUS still lists them): **Q351 (b)**, measuring the fish ease
 weight, ran read-only (#1341, "Not enough data yet"); **Q390** appears settled: answered D on 11-17, and the species
@@ -285,7 +286,7 @@ what its source shows it answered.
 | R32 | R2 clean-up of unused files | Decided, ready | Deleting data: always ask first (AGENTS.md). Not asked yet; **11-21:** «R2, je peux supprimer les fichiers que plus rien n'utilise. Oui, carrément» (05:40, #1350); the list shown to him before deleting | Short | S |
 | R33  | CI speed: a third shard, an `admin 1280 main` split          | Idea              | The agents' study; "only the touched smokes" needs his OK                                                                                                                              | Medium  | S    |
 | R34 | Deploy right after Candidate photos | Decided, ready | [ii] #1298 holds `approved-photos.yml`; **11-21:** `approved-photos.yml` free since #1298 merged; still the integrator's call (ROADMAP "Open question") | Short | S |
-| R35 | Hosting capacity: an R2 reading in CI | Obsolete | His hands: a read-only Cloudflare token (access). The watch is built; **11-21:** withdrawn by the integrator after his «Ça sert à quoi? Explique-moi à quoi ça sert» (05:40); the ledger records it as not answered (#1350) | - | - |
+| R35 | Hosting capacity: an R2 reading in CI | Obsolete | His hands: a read-only Cloudflare token (access). The watch is built; **11-21:** withdrawn by the integrator after his «Ça sert à quoi? Explique-moi à quoi ça sert» (05:40); the ledger records it as not answered (#1350); **later 11-21:** his «tu retires la demande, très bien» (05:48, #1350): withdrawn with his agreement | - | - |
 | R36 | Admin opening: lazy loads | Done | [i] «la page admin sur mon téléphone met de plus en plus de temps à s'ouvrir» (11-19 20:55); `claude/admin-lazy-loads`, 3 commits, no PR; **11-21:** the lazy loads built (#1336); the log reply is R36b | - | - |
 | R36b | Admin opening: a leaner answer-log reply | Decided, ready | `Code.gs` holders; a rows-since-last-visit reply needs the declined device copy: his OK only; **11-21:** a sheet change: `Code.gs` held by #1349; #1349 merged later on 11-21: its files are free (one PR at a time on `core.js`, `Code.gs`, `sync.js`, rule W27) | Medium | M |
 | R37 | Typed answers: Rejected tries served by `readAnswers` | Decided, ready | `Code.gs` holders; **11-21:** `Code.gs` held by #1349; #1349 merged later on 11-21: its files are free (one PR at a time on `core.js`, `Code.gs`, `sync.js`, rule W27) | Medium | S |
@@ -368,7 +369,7 @@ what its source shows it answered.
 | R100 | Next round of independent reviews                            | Waiting           | (paraphrase) 11-08: after everything planned                                                                                                                                            | Long    | L    |
 | R101 | Learning algorithm review, proposals 2, 3, 5 | Idea | Overtaken by #646 and Q316 (inventory 11-18 L37); declined "a probabilistic model beyond BKT + Elo" (11-08); **11-21:** main's row: 2 measured and overtaken (#1341); 3 and 5 "to discuss with Pierre one by one" (agent proposals) | - | - |
 | R102 | Engine coherence: Q316's offline fit | Partly done | (paraphrase) Q316 (11-09); in review #1310; **11-21:** the read-only tool built (#1310); next: the fit on the real log (outside the repo), then check 2B | Medium | L |
-| R103 | Time in the photo rating | Waiting for Pierre | [i] «La vitesse de réponse est définitivement un signal de difficulté» (11-20, Reports): re-measure every subject now; the build waits for the figures; **11-21:** re-measured (#1341, thresholds not met); Q449-Q451 «Ok» in direction, the build waits for the context he asked; Q452 open (05:40, #1350) | Medium | M |
+| R103 | Time in the photo rating | Decided, ready | [i] «La vitesse de réponse est définitivement un signal de difficulté» (11-20, Reports): re-measure every subject now; the build waits for the figures; **11-21:** re-measured (#1341, thresholds not met); Q449-Q451 «Ok» in direction, the build waits for the context he asked; Q452 open (05:40, #1350); **later 11-21:** Q449-Q452 decided with the context (05:48, #1350): a multifactor study first (read-only), then the build, step 2 and a silent recalculation | Medium | M |
 | R104 | Photo memory: the lag table at the next milestone            | Waiting           | [i] Q317; corals 4,000, fish 3,000 answers (not read today)                                                                                                                             | Short   | S    |
 | R105 | More duels when several genera are shaky                     | Idea              | (paraphrase) 11-02 request partly built; the rate tied to shaky genera tried, no gain                                                                                                  | Medium  | S    |
 | R106 | Name similarity: the re-test, (h) | Waiting | [i] Q124 «Je suis tes recommandations pour tout» (11-14); ~650 error trials; (h) also waits `analysis.js`; **11-21:** (h) free (`analysis.js`, #1298, #1299 merged) | Medium | M |
@@ -383,7 +384,7 @@ what its source shows it answered.
 | R115 | Near-duplicate groups: Keep or Exclude                       | Waiting for Pierre | His hands in Triage (3 groups; his and IMR photos)                                                                                                                                    | Short   | S    |
 | R116 | Tour leftovers | Blocked | [ii] the integrator's queue of 11-18 ("tour", STATUS de83ee3a9 Next 3); `app.js` holders; **11-21:** `app.js` held by #1331, #1340 | Short | S |
 | R117 | Paliform-lobe rings                                          | Waiting           | A clearer photo                                                                                                                                                                         | Long    | S    |
-| R118 | The level's answer count follows the log | Decided, ready | (paraphrase) Q322, Q330 (11-09); `core.js` holders; **11-21:** `core.js` held by #1349; #1349 merged later on 11-21: its files are free (one PR at a time on `core.js`, `Code.gs`, `sync.js`, rule W27) | Short | M |
+| R118 | The level's answer count follows the log | Blocked | (paraphrase) Q322, Q330 (11-09); `core.js` holders; **11-21:** `core.js` held by #1349; #1349 merged later on 11-21: its files are free (one PR at a time on `core.js`, `Code.gs`, `sync.js`, rule W27); **later 11-21:** Codex on #1326: its checkpoint readers in `model.js` and `quiz.js` change first (record `2026-11-09-level-count-checkpoints`): held by #1331 | Short | M |
 | R119 | Full replay leftovers (a)-(e)                                | Idea              | The agent's list of 11-03; (b), (e) also wait `Code.gs`/`core.js`                                                                                                                       | Medium  | M    |
 | R120 | Fish progress replayed: the follow-ups                       | Decided           | [i] «il faut recalculer tous les progrès pour tous les joueurs à partir de leur réponse» (11-08, #776)                                                                                  | Medium  | M    |
 | R121 | Tool and admin data into `data/` | Done | [i] Q265 «Ok pour tes propositions» (11-08); in review #1298; **11-21:** built (#1298) | - | - |
@@ -447,9 +448,9 @@ what its source shows it answered.
 | R202 | Bonus genera: more of them, in Memory, an admin list   | Idea              | Parked                                                                                                                                        | Long    | S    |
 | R202b | Bonus genera count in the global progress | Blocked | [i] «Les genres bonus dans les coraux devraient définitivement compter dans le progres global» (11-20, Reports); one question: the scale; **11-21:** Q445 (A): «une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR» (05:40, #1350): decided, built next; it rewrites rule L6; its files (`core.js`, `app.js`, `model.js`, `quiz.js`) held by #1331, #1349; #1349 merged later on 11-21: its files are free; still held by #1331 (`app.js`, `model.js`, `quiz.js`) | Medium | M |
 | R203 | Candidate photos outside the Philippines               | Obsolete          | [i] «Non, pour l'instant, on va pas élargir au-delà des Philippines.» (11-02, #337)                                                           | -       | -    |
-| R204 | Enlargement as a signal | Waiting for Pierre | [i] «(ainsi que le clic)» (11-20, Reports): the re-measure of R103; **11-21:** counted (#1341, not enough data); Q451 «Ok» (a weak but different signal), the build waits for the context he asked (#1350) | Medium | S |
-| R205 | Response time, genus term | Waiting for Pierre | Same as R103; **11-21:** measured (#1341); the build waits for the context he asked on Q449-Q452 (#1350) | Medium | S |
-| R206 | Response time, photo term | Waiting for Pierre | Same as R103; **11-21:** measured (#1341); the build waits for the context he asked on Q449-Q452 (#1350) | Medium | S |
+| R204 | Enlargement as a signal | Decided | [i] «(ainsi que le clic)» (11-20, Reports): the re-measure of R103; **11-21:** counted (#1341, not enough data); Q451 «Ok» (a weak but different signal), the build waits for the context he asked (#1350); **later 11-21:** Q451 a term of its own (05:48, #1350); after R103's study | Medium | S |
+| R205 | Response time, genus term | Decided | Same as R103; **11-21:** measured (#1341); the build waits for the context he asked on Q449-Q452 (#1350); **later 11-21:** after R103's study (05:48, #1350) | Medium | S |
+| R206 | Response time, photo term | Decided | Same as R103; **11-21:** measured (#1341); the build waits for the context he asked on Q449-Q452 (#1350); **later 11-21:** after R103's study (05:48, #1350) | Medium | S |
 | R207 | Reuse the data in ReefRecall                           | Waiting           | (paraphrase) 11-14: he will probably restart ReefRecall; a later question                                                                     | Long    | M    |
 | R208 | Rights tagged for a later split: the rest              | Idea              | Licence study, parked                                                                                                                         | Long    | M    |
 | R209 | First-time RA review: like-for-like comparisons        | Waiting           | Photo-dependent                                                                                                                               | Medium  | M    |
@@ -475,10 +476,11 @@ what its source shows it answered.
 | N1 | Opening: at least four units before a level is asked | Blocked | [i] «Au minimum 4 espèces proches ouvertes»; «il faut au moins 4 items ouverts avant de commencer à poser des questions»; «Le mode espèce arrive bien trop tôt» (Reports); `quiz.js`, `app.js` held by #1318, #1319, #1322 (small, near merge); L4's sentence to his OK; **11-21:** in review (#1331); rule L4 «Je pense que c'est une bonne idée» (05:40, #1350) | Short | M |
 | N2 | Species by common name before the scientific names? | Waiting for Pierre | [i] «Pourquoi on commence à m'ouvrir des noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (Reports); opening study question B; **11-21:** asked with Q445 as "the species order question" (STATUS): not answered, «Je ne sais pas exactement ce dont tu parles» (#1350); context owed | Short | S |
 | N3 | Report a problem, again on the same page | Done | [i] «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page» (Reports); its ROADMAP row and ledger entry are on #1319 (in review); **11-21:** built (#1339) | - | - |
-| N4 | A photo or screenshot attached to a report | Waiting for Pierre | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); recorded on #1319; where the file is stored is his; **11-21:** Q446 not decided as proposed: «Est-ce qu'on peut pas juste stocker temporairement la photo ... le temps qu'un agent puisse le traiter et ensuite on dégage la photo» (05:40, #1350): a simple temporary store; the design goes back to him | Medium | M |
+| N4 | A photo or screenshot attached to a report | Decided, ready | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); recorded on #1319; where the file is stored is his; **11-21:** Q446 not decided as proposed: «Est-ce qu'on peut pas juste stocker temporairement la photo ... le temps qu'un agent puisse le traiter et ensuite on dégage la photo» (05:40, #1350): a simple temporary store; the design goes back to him; **later 11-21:** Q446 decided (05:48, #1350): reduced on the device (~800 px, light JPEG), stored by the sheet script in a separate tab, deleted once an agent has read it; `Code.gs` and `sync.js` free (one PR at a time, rule W27) | Medium | M |
 | N5  | Beta: remove everyone from a subject's beta                  | Done              | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1298, #1313, #1320                                       | Short   | S    |
 | N6  | The two compared photos stacked on a phone (fish)            | Blocked           | [i] «je pense que ça s'afficherait beaucoup mieux en étant au-dessus, en dessous» (11-21 05:32, #1350); in review (#1351) | Short   | S    |
 | N7  | New-RA review findings 4-5: My progress's "Next step" line, the quiz photo's Colony / Close-up switch | Waiting for Pierre | Options for him (#1332), asked with Q439 in STATUS                                                                                | Short   | S    |
+| N8  | Admin: Remove vs × (removing a photo from play)              | Blocked           | [i] option A: «il faut un bouton remove, là en un clic la photo ne revient jamais, avec un undo juste après, une liste des photos retirées pour en remettre» (11-21 05:48, #1350); `admin.js` held by #1348 | Short   | S    |
 
 ## 4. Outside the ROADMAP
 
@@ -684,7 +686,7 @@ bullet is the refresh of 11-21.
   rows by their titles, bodies where needed and the ROADMAP rows they changed); every ROADMAP row of `01bb16add`
   compared with today's by a script (removed, status changed, text changed); the file lists of the 6 PRs open in the morning; the
   remote branches without a PR (`git ls-remote --heads` against the open PRs' heads); STATUS on main (#1343) for the
-  open questions; the ledger PR #1350's ANSWERS entries for his answers of 05:32-05:42. The counts of §1.1 and the
+  open questions; the ledger PR #1350's ANSWERS entries for his answers of 05:32-05:48 (the 05:48 ones applied after Codex's review of `7026c9019`). The counts of §1.1 and the
   appendix line are from the same script as on 11-20 (§6 above), run on this file before and after the refresh.
 - **Not checked by me in the refresh**: R55's cap figure and R71b's `rep` tags are the integrator's checks of 11-21
   (not in the repo), taken as given; the rows nothing merged touched keep their 11-20 reading, data gates included.
