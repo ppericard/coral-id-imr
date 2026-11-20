@@ -1,4 +1,4 @@
-# The measured block of the game photos (`measured.json`)
+# The measured block of the game photos (`data/measured.json`)
 
 Values computed once from each game photo's pixels (rule L13), for every subject. They feed the multivariate analyses of
 the real answers and the calibration and checking of the judges. This is the specification of what the code does now;
@@ -7,8 +7,8 @@ photo's difficulty: the games correct nothing.
 
 ## The file
 
-- **Where**: `measured.json` at the root. It is for the admin and the tools only: players never download it and it is
-  not in the `sw.js` shell. `metrics.json` ([data.md](data.md)) stays the coral auto-sort's.
+- **Where**: `data/measured.json`. It is for the admin and the tools only: players never download it and it is
+  not in the `sw.js` shell. `data/metrics.json` ([data.md](data.md)) stays the coral auto-sort's.
 - **Layout**: `{"v": 1, "mv": method version, "w": 960, "size": "-m", "about": …, "ms": {f: block}}`, one photo per
   line, sorted by `f`. The key `f` is the photo's file name: the key of the game files, of `analysis.js` `ph` and `fph`,
   and of an answer's photos (`a.ph`).
@@ -27,7 +27,7 @@ photo's difficulty: the games correct nothing.
   (330°-70°). It is high when the warm colours are still there, and left out under 1% of saturated pixels.
 - `sh`: sharpness, the variance of the luminance's Laplacian × 10⁴.
 - `pk`: the sharpest part, independent of contrast: the 85th percentile, over an 8 × 8 grid, of each tile's Laplacian
-  variance over its luminance variance (as `metrics.json` `peak`).
+  variance over its luminance variance (as `data/metrics.json` `peak`).
 
 Values have 3 decimals; `sh` has 1. Besides the whole frame's block, a photo has:
 
@@ -81,6 +81,6 @@ agent machine, over rule L11's 40 minutes. Left (the list of record for this wor
 
 - the full run, on a GitHub runner or as resumed `--minutes 35` runs;
 - the upkeep: the Candidate photos workflow runs `--dir r2-upload` on the photos it downloads, and its push job allows
-  `measured.json`;
+  `data/measured.json`;
 - the measures in the analyses' photo features (a refit of every milestone) and in the judging checks;
 - the judge fields a measure could replace where it suffices (part of Q434), shown to Pierre with the figures.
