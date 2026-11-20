@@ -26,7 +26,8 @@ Running: the oldest-first wave (`afterall.sh`), then #1315 (queue tools), #1342 
   that differs 104, initial/terminal 37, sex colours 89; Pierre's three examples: sweetlips (D. pictum, P.
   chaetodonoides, P. vittatus) and P. batavianus yes; parrotfish "subadult" is the initial phase (Bellwood & Choat 1989).
   Three source conflicts went to Points.
-- **Held**: #1310 (Q316 fit: cut side check 2B into a follow-up with a Gibbs sampler; not done), #1331 (needs Pierre).
+- **Held**: #1331 (needs Pierre). #1310 (Q316 fit) has its side check 2B cut to a follow-up (ROADMAP, with a Gibbs
+  sampler) and its last finding fixed; it waits for its checks and Codex like the others.
 - A stray branch `claude/autosort-followups` (identical to main, re-created by a late push) could not be deleted by the
   integrator (auto mode refused): harmless.
 
