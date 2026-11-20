@@ -1170,6 +1170,11 @@ kbd {
   border-radius: var(--r-sm, 8px);
   box-shadow: 0 8px 24px #0003;
   font-size: 0.9rem;
+  /* It hangs from the sticky header, so the page cannot scroll to its end: it keeps to the room below the header
+     (--help-top, set by toggleHelp) and scrolls inside. */
+  max-height: calc(100dvh - var(--help-top, 120px) - 12px - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .adm-help p {
   margin: 0 0 8px;
