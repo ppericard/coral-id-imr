@@ -3,9 +3,9 @@
 
 The source it reads is two layers (design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5;
 tools/instance.py fish_source): tools/fish_source.json, the sources' part, with the instance's layer laid on (the file
-tools/instance.json names, today tools/instances/imr/fish.json): each teaching node's circle, cues, look and phase, each
-sub-entry's cues, look and phase, the starter core (start) and the declared look-alike groups (look). Below, "the
-source" is that composed source.
+tools/instance.json names, today tools/instances/imr/fish.json): each teaching node's circle, IMR tag (src imr), sign,
+slides (sl), cues, look and phase, each sub-entry's slides, cues, look and phase, each species' slide (sl), the starter
+core (start) and the declared look-alike groups (look). Below, "the source" is that composed source.
 
 Decided with Pierre, 2026-11-03: one engine for corals and fish, with a taxonomy made of two trees.
 1. Reference tree (`ref`), from WoRMS (World Register of Marine Species, https://www.marinespecies.org/rest/). No fixed
@@ -89,8 +89,9 @@ Usage: python3 tools/build_fish.py [--offline | --refresh] [--dry]   (--dry: pri
        python3 tools/build_fish.py --commonness   (offline: re-applies the commonness index and order to fish.json as it is,
        after an edit of tools/fish_commonness.json or a fish_commonness.py --fetch; --check: fail when fish.json differs)
 Every offline mode (--regroup, --commonness, --near) also lays the instance's layer again on fish.json as it is (relay):
-the teaching nodes' and sub-entries' cues, look and phase are taken off and put back from the layer in the build's
-layout, start is taken from it, and the families follow (add_families); so an edit of those in the layer file needs no
+the teaching nodes' and sub-entries' slides, cues, look and phase, the nodes' src and sign and the species' slide are
+taken off and put back from the layer in the build's layout, start is taken from it, and the families follow
+(add_families); so an edit of those in the layer file needs no
 WoRMS call, and --regroup --check proves fish.json is what the layer gives, byte for byte. A circle the layer changes
 stops these modes (the species' circles and their presence test follow it): run the full build.
 Check: node --test tests/fish.test.js
@@ -141,9 +142,11 @@ import inat  # noqa: E402  (the one paced, retried client: WoRMS 0.3 s, iNatural
 
 LOW = {"Subspecies", "Variety", "Forma", "Natio", "Mutatio"}  # synonyms below the species: not kept
 # A teaching node's fields after its species, in fish.json's order (teach_out); LAYER_TEXT: those of the instance's
-# layer that the offline modes lay again (relay).
+# layer that sit there and that the offline modes lay again (relay), in that order. The layer's others: a node's src
+# and sign (its head, relay_head), a species' sl (relay_species), its circle (a change stops the offline modes).
 TAIL = ("aka", "often", "sl", "cues", "look", "phase", "dimorph", "juv", "varAt", "why", "note")
-LAYER_TEXT = ("cues", "look", "phase")
+LAYER_TEXT = ("sl", "cues", "look", "phase")
+SPECIES_BEFORE_SL = ("present", "src", "sec", "pdf", "cs")  # a species' keys that come before its sl
 
 
 class Net:
@@ -1239,8 +1242,32 @@ def start_of(src, teach):
     return [t for t in src.get("start", []) if any(o["id"] == t and o["circle"] == 1 for o in teach)]
 
 
+def relay_head(rec, s):
+    """A teaching node of fish.json (rec) with its src and sign taken off and put back from the source node s, where
+    teach_out writes them: src right after circle, sign after wink."""
+    items = [(k, v) for k, v in rec.items() if k not in ("src", "sign")]
+    if s.get("src"):
+        items.insert([k for k, _ in items].index("circle") + 1, ("src", s["src"]))
+    if s.get("sign") is False:
+        at = max(i for i, (x, _) in enumerate(items) if x in ("circle", "src", "wink")) + 1
+        items.insert(at, ("sign", False))
+    rec.clear()
+    rec.update(items)
+
+
+def relay_species(rec, s):
+    """A species of fish.json (rec) with its sl taken off and put back from the source species s, where the build
+    writes it (after sec, pdf and cs)."""
+    items = [(k, v) for k, v in rec.items() if k != "sl"]
+    if s.get("sl"):
+        at = max(i for i, (x, _) in enumerate(items) if x in SPECIES_BEFORE_SL) + 1
+        items.insert(at, ("sl", s["sl"]))
+    rec.clear()
+    rec.update(items)
+
+
 def relay_node(rec, s):
-    """A teaching node or sub-entry of fish.json (rec) with its cues, look and phase taken off and put back from the
+    """A teaching node or sub-entry of fish.json (rec) with its sl, cues, look and phase taken off and put back from the
     source node s, where teach_out writes them (TAIL, after species)."""
     items = [(k, v) for k, v in rec.items() if k not in LAYER_TEXT]
     for k in LAYER_TEXT:
@@ -1274,9 +1301,15 @@ def relay(o, src):
     for t in o["teach"]:
         if t["id"] not in by:
             sys.exit(f"fish.json teach {t['id']}: no such teaching node in the source: run the full build")
+        relay_head(t, by[t["id"]])
         relay_node(t, by[t["id"]])
         for u in t.get("sub", []):
             relay_node(u, by[u["id"]])
+    sp = {s["id"]: s for s in src["species"]}
+    for s in o["species"]:
+        if s["id"] not in sp:
+            sys.exit(f"fish.json species {s['id']}: no such species in the source: run the full build")
+        relay_species(s, sp[s["id"]])
     o["start"] = start_of(src, o["teach"])
 
 
@@ -1645,7 +1678,8 @@ def build(src, report):
                 o["wfam"] = wf
             o["level"] = 1
             o["circle"] = u.get("circle", 1)
-            o["src"] = u.get("src", "imr")
+            if u.get("src"):  # the instance's tag (imr) or the sources' (pdf, diver, wink); none without the layer
+                o["src"] = u["src"]
             if u.get("wink"):
                 o["wink"] = u["wink"]
             if u.get("sign") is False:

@@ -14,9 +14,10 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
 - `tools/fish_source.json` (hand-maintained, the sources' part; its `_doc` key explains every field): the regional
   identification keys and the one in force (`keys`, `deploy`), the teaching nodes with their reference mapping, the
   species list in PDF order with the cheatsheet rank, the circle-3 sources (`sources`) and the retired ids (`retired`).
-- The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, cues, look-alike lines and
-  phase lines from the IMR fish presentation, the sub-entries' cues, the starter core `start` and the declared
-  look-alike groups `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
+- The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, IMR tag (`src: imr`), dive-sign
+  mark (`sign`), slides (`sl`), cues, look-alike lines and phase lines from the IMR fish presentation, the sub-entries'
+  slides and cues, each species' presentation slide (`sl`), the starter core `start` and the declared look-alike groups
+  `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
 - `tools/build_fish.py`, the build, documented at its top: it reads the two, composed by `tools/instance.py`
   `fish_source`, and writes `fish.json`. `tests/fish.test.js` checks its structure.
 - Only derived lists are in the repository, never the PDF or the slides.

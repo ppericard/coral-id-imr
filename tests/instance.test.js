@@ -74,7 +74,7 @@ test('fish: fish.json carries the layer’s fields as the build writes them (the
   assert.deepStrictEqual(F.start, src.start);
 });
 
-test('fish.json byte for byte: the layer laid again offline (cues, look, phase taken off and put back, start, the families)', () => {
+test('fish.json byte for byte: the layer laid again offline (slides, cues, look, phase, tag and mark taken off and put back, start, the families)', () => {
   let r = run(['tools/build_fish.py', '--regroup', '--check']);
   assert.strictEqual(r.status, 0, r.out);
   r = run(['tools/build_fish.py', '--commonness', '--check']);
@@ -123,6 +123,107 @@ test('fish: a base that still carries a field of the layer, or a layer node the 
   const sub = clone(FL);
   sub.nodes.t01a.circle = 2;
   assert.match(regroup(sub).out, /layer node t01a circle: not a field of the layer/);
+});
+
+// The fish part of the IMR content split: the presentation's slides (teaching nodes, sub-entries, species), the IMR tag and
+// the dive-sign mark are the layer's; the base keeps the other sources' tags (pdf, diver, wink).
+test('fish: the presentation’s slides, the IMR tag and the dive-sign mark are the layer’s; the base holds none of them', () => {
+  const sub = BASE.teach.flatMap(t => t.sub || []),
+    SRCS = ['pdf', 'diver', 'wink'];
+  [...BASE.teach, ...sub].forEach(u => ['sl', 'sign'].forEach(k => assert.ok(!(k in u), `${u.id} ${k} in the base`)));
+  BASE.species.forEach(s => assert.ok(!('sl' in s), `${s.id} sl in the base`));
+  BASE.teach.forEach(t => assert.ok(!('src' in t) || SRCS.includes(t.src), `${t.id}: base src ${t.src}`));
+  sub.forEach(u => assert.ok(!('src' in u), `${u.id} src`));
+  // Every entry has one tag, the layer's imr or the base's other source.
+  const tagged = Object.entries(FL.nodes).filter(([, x]) => 'src' in x);
+  tagged.forEach(([id, x]) => assert.strictEqual(x.src, 'imr', id));
+  BASE.teach.forEach(t => assert.ok('src' in t !== ((FL.nodes[t.id] || {}).src === 'imr'), `${t.id}: one tag`));
+  assert.strictEqual(tagged.length, 27, 'the 27 entries of the IMR presentation');
+  assert.deepStrictEqual(
+    tagged.map(([id]) => id),
+    F.teach.filter(t => t.src === 'imr').map(t => t.id)
+  );
+  assert.deepStrictEqual(
+    Object.keys(FL.species),
+    BASE.species.map(s => s.id).filter(id => id in FL.species),
+    'the layer’s species are the base’s, in its order'
+  );
+  Object.values(FL.species).forEach(x => assert.deepStrictEqual(Object.keys(x), ['sl']));
+  const withSl = Object.entries(FL.nodes).filter(([, x]) => x.sl);
+  assert.ok(withSl.length >= 27 && withSl.every(([, x]) => x.sl.every(n => Number.isInteger(n) && n > 0)), 'slide numbers');
+  // fish.json carries them as the build writes them, species included.
+  const src = JSON.parse(run(['tools/instance.py', '--fish-source']).out),
+    by = new Map(src.teach.flatMap(t => [t, ...(t.sub || [])]).map(t => [t.id, t])),
+    sp = new Map(src.species.map(s => [s.id, s]));
+  F.teach.forEach(t => {
+    assert.strictEqual(t.src, by.get(t.id).src, `${t.id} src`);
+    assert.strictEqual(t.sign, by.get(t.id).sign, `${t.id} sign`);
+    [t, ...(t.sub || [])].forEach(u => assert.deepStrictEqual(u.sl, by.get(u.id).sl, `${u.id} sl`));
+  });
+  F.species.forEach(s => assert.strictEqual(s.sl, sp.get(s.id).sl, `${s.id} sl`));
+  assert.strictEqual(F.species.filter(s => s.sl).length, Object.keys(FL.species).length);
+});
+
+test('fish: a changed slide, tag or mark of the layer no longer gives fish.json; a base or layer out of place stops the build', () => {
+  const t = "is not as key .* gives it, with the instance's layer";
+  const node = clone(FL);
+  node.nodes.t01.sl = [7, 8];
+  assert.match(regroup(node).out, new RegExp(t));
+  const subSl = clone(FL);
+  subSl.nodes.t06b.sl = [15];
+  assert.match(regroup(subSl).out, new RegExp(t));
+  const species = clone(FL);
+  species.species.s001.sl = 11;
+  assert.match(regroup(species).out, new RegExp(t));
+  const nospecies = clone(FL);
+  delete nospecies.species.s057;
+  assert.match(regroup(nospecies).out, new RegExp(t));
+  const tag = clone(FL);
+  delete tag.nodes.t05.src;
+  assert.match(regroup(tag).out, new RegExp(t));
+  const mark = clone(FL);
+  delete mark.nodes.t04.sign;
+  assert.match(regroup(mark).out, new RegExp(t));
+  // The base holds none of them (an edit made in the old place, a merge).
+  const stale = clone(BASE);
+  stale.teach[0].sl = [1];
+  assert.match(regroup(null, stale).out, /tools\/fish_source\.json t01 sl: the instance's/);
+  const stalesub = clone(BASE);
+  stalesub.teach[0].sub[0].sl = [1];
+  assert.match(regroup(null, stalesub).out, /tools\/fish_source\.json t01a sl: the instance's/);
+  const stalesp = clone(BASE);
+  stalesp.species[0].sl = 1;
+  assert.match(regroup(null, stalesp).out, /tools\/fish_source\.json s001 sl: the instance's/);
+  const tagged = clone(BASE);
+  tagged.teach[0].src = 'imr';
+  assert.match(regroup(null, tagged).out, /tools\/fish_source\.json t01 src: the instance's/);
+  const signed = clone(BASE);
+  signed.teach[3].sign = false;
+  assert.match(regroup(null, signed).out, /tools\/fish_source\.json t04 sign: the instance's/);
+  // The base's own tag (pdf, diver, wink) is not the layer's: another source, or a second tag on one node, stops it.
+  const other = clone(FL);
+  other.nodes.t28.src = 'pdf';
+  assert.match(regroup(other).out, /layer node t28 src: only the tag 'imr', on a node whose source the base does not name/);
+  const two = clone(FL);
+  two.nodes.t47 = {...two.nodes.t47, src: 'imr'};
+  assert.match(regroup(two).out, /layer node t47 src: only the tag 'imr'/);
+  const subTag = clone(FL);
+  subTag.nodes.t01a.src = 'imr';
+  assert.match(regroup(subTag).out, /layer node t01a src: not a field of the layer/);
+  const ghost = clone(FL);
+  ghost.species.s999 = {sl: 3};
+  assert.match(regroup(ghost).out, /layer species s999: no species/);
+  const field = clone(FL);
+  field.species.s001.common = 'x';
+  assert.match(regroup(field).out, /layer species s001 common: not a field of the layer \(sl\)/);
+  // An edition without the layer has no IMR tag, slide or mark on its entries and no slide on its species.
+  const bare = JSON.parse(
+    py(`from instance import fish_compose
+print(json.dumps(fish_compose(json.load(open('tools/fish_source.json', encoding='utf-8')), {})))`)
+  );
+  [...bare.teach, ...bare.teach.flatMap(u => u.sub || [])].forEach(u => assert.ok(!('sl' in u) && !('sign' in u), u.id));
+  assert.ok(bare.teach.every(u => !('src' in u) || ['pdf', 'diver', 'wink'].includes(u.src)));
+  assert.ok(bare.species.every(s => !('sl' in s)));
 });
 
 test('coral: the layer holds imrg, each genus’s n, ig, imr, mn, slides and ID tips, and the lecture’s pairs; data.json is the sources plus the layer, byte for byte', () => {
