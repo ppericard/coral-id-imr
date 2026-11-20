@@ -13,7 +13,7 @@ D verdicts are re-checked one by one in [appendix A](#appendix-a-the-audits-c-an
 
 Read from `origin/main` at `01bb16add` (#1312, 2026-11-20 17:07 Manila). `R30` is ROADMAP line 30 of that commit.
 
-**Refreshed on 2026-11-21 against `origin/main` at `7fd48432f`** (#1349, 2026-11-21 morning; Pierre, 05:42: «il faut
+**Refreshed on 2026-11-21 against `origin/main` at `faf2e98db`** (#1350, 2026-11-21 morning; Pierre, 05:42: «il faut
 remettre à jour encore cet inventaire et puis il faut le merger … sinon, tu n'utilises jamais la bonne info sur les
 points encore en cours et ce qui doit être lancé»). The row IDs keep their 11-20 meaning. A refreshed row says so in its
 basis cell, after **11-21:**; the rows nothing touched keep their 11-20 reading. What moved:
@@ -21,9 +21,10 @@ basis cell, after **11-21:**; the rows nothing touched keep their 11-20 reading.
 - **The 35 PRs merged since the snapshot** (`git log --first-parent 01bb16add..7fd48432f`, besides three commits
   without a PR: two Candidate photos runs and Pierre's photo curation; among them #1279 Memory, #1298 `data/`, #1299, #1310, #1324, #1328, #1330, #1333, #1335, #1336,
   #1339, #1341, #1344, #1349): their rows are Done or Partly done, with the PR number. The 13 PRs open on 11-20 all
-  merged (§4.1); 5 PRs are open now besides this one and the ledger PR #1350 (#1351 opened during the refresh). #1349 merged while this refresh was being
+  merged (§4.1); the ledger PR #1350 merged last (`faf2e98db`); 5 PRs are open now besides this one (#1351 opened
+  during the refresh). #1349 merged while this refresh was being
   written: its rows say "merged later on 11-21".
-- **Pierre's answers of 2026-11-21 05:32-05:42**, recorded by the ledger PR #1350 (not repeated in ANSWERS here):
+- **Pierre's answers of 2026-11-21 05:32-05:42**, recorded by the ledger PR #1350, merged (not repeated in ANSWERS here):
   §1.2b.
 - **Found obsolete or done by a check, not by a PR**: R71b (every FishBase main picture already carries `rep`) and R55's
   cap (8.7%, under the code's 10% bar; the units over it are `RARE.FEW` by design): the integrator's checks of 11-21,
@@ -42,11 +43,11 @@ outside the ROADMAP). The counts are computed from those tables by a script (§6
 
 | State                                                                       | 11-20   | 11-21   |
 | --------------------------------------------------------------------------- | ------- | ------- |
-| Done (a row or sub-item the ROADMAP held as open on 11-20)                  | 3       | 27      |
+| Done (a row or sub-item the ROADMAP held as open on 11-20)                  | 3       | 28      |
 | Partly done                                                                 | 12      | 17      |
 | Decided, ready to launch                                                    | 14      | 22      |
 | Decided (agreed, not started; waits only the order of work)                 | 7       | 8       |
-| Blocked by an open PR or a held file (the open PRs included)                | 45      | 14      |
+| Blocked by an open PR or a held file (the open PRs included)                | 45      | 13      |
 | Waiting for Pierre (a question, his review or his hands)                    | 24      | 23      |
 | Waiting on data, a trigger he set or a third party                          | 42      | 43      |
 | Idea (nobody decided, or his own doubt)                                     | 44      | 46      |
@@ -54,9 +55,9 @@ outside the ROADMAP). The counts are computed from those tables by a script (§6
 | **All**                                                                     | **196** | **206** |
 
 The 11-20 column is the §6 script on this file before the refresh (`d208682c0`; N5 had moved to Done after the table
-was written). On 11-21, of the 14 blocked rows, 8 are decided work waiting for an open PR or a file one holds
+was written). On 11-21, of the 13 blocked rows, 8 are decided work waiting for an open PR or a file one holds
 (`app.js` held by #1331 and #1340, `quiz.js` and `model.js` by #1331, `admin.js` by #1348; N1 is #1331 and N6 is
-#1351); the other 6 are the open PRs. Of
+#1351); the other 5 are the open PRs. Of
 the 22 ready rows, 14 touch `core.js`, `Code.gs` or `sync.js`, freed when #1349 merged: rule W27 lets one PR at a time
 hold each of those files, so they go one after another. Some "Partly done" and "Decided" rows have a part ready now:
 §1.3 names them.
@@ -124,7 +125,7 @@ Since 11-20, of the rows above: 1 measured (#1341), its build waits for the cont
 
 ### 1.2b Rows that move because of his answers of 2026-11-21 (05:32-05:42)
 
-His words are in the ledger PR #1350 (`claude/answers-1121`), which merges before this one; this PR does not repeat
+His words are in the ledger PR #1350 (`claude/answers-1121`), merged before this one (`faf2e98db`); this PR does not repeat
 them in ANSWERS. Each row's basis cell quotes the part that decides it.
 
 | His answer (#1350)                                         | Rows                       | Now                                                                                     |
@@ -503,7 +504,7 @@ what its source shows it answered.
 | PR17  | #1342 Fish colour phases sourced (`tools/fish_phases.json`)   | Blocked | R60, R72's flags                                            | Short   | S    |
 | PR18  | #1348 Admin: a Published toast is not replaced; Undo         | Blocked | Holds `admin.js`                                            | Short   | S    |
 | PR19 | #1349 Each subject adopts its own opening hold (one-engine step 5, the app's half) | Done | R94; holds `core.js`, `quiz.js`, `sync.js`, `Code.gs`; merged later on 11-21 | - | - |
-| PR20  | #1350 Ledger: Pierre's answers of 2026-11-21 05:32-05:42      | Blocked | Merges before this PR; its answers are cited here          | Short   | S    |
+| PR20  | #1350 Ledger: Pierre's answers of 2026-11-21 05:32-05:42      | Done    | Merged before this PR (`faf2e98db`); its answers are cited here | -       | -    |
 | PR21  | #1351 The two compared photos stacked on phones               | Blocked | N6; holds `app.css`, opened during the refresh             | Short   | S    |
 
 ### 4.2 Branches without a PR (13 besides `main`, `release` on 11-20; 15 on 11-21, besides the `train/*` branches)
@@ -653,7 +654,7 @@ bullet is the refresh of 11-21.
 - **The reviews index**: this file's row.
 - STATUS is not edited (the integrator's): its "Questions for Pierre" still lists two questions that look settled
   (§1.4).
-- **The refresh of 2026-11-21** (main merged in at `93cffa96e`, then `7fd48432f`; the ROADMAP settled row by row against main, a 3-way
+- **The refresh of 2026-11-21** (main merged in at `93cffa96e`, then `7fd48432f`, then `faf2e98db` with #1350; the ROADMAP settled row by row against main, a 3-way
   view of each row): against main, this PR now changes 18 ROADMAP rows, deletes 2 and adds 1. Main's later text won
   wherever main measured or built a row (learnsim, the learning-algorithm review, the time terms, the fish prior: the
   PR's "Next: re-measure" readings were dropped, the measures of #1341 having run); the PR's quotes of his words were
@@ -663,8 +664,8 @@ bullet is the refresh of 11-21.
   re-measure (R55): measured by #1341, its last open part, the cap, closed by the integrator's per-answer check of 11-21
   (8.7%, under the 10% bar; the units over it `RARE.FEW` by design), which is not in the repo. The rows main deleted as
   built (the Learn list photo, `data/`, Report again, Try again) stay deleted. ANSWERS gets nothing new: the answers of
-  11-21 are #1350's. **Conflicts to expect** with #1350 (merging first): the Bonus genera and Roles rows, which both
-  edit; #1350's text is taken there and this PR's quote kept where #1350 lacks it.
+  11-21 are #1350's. **#1350's merge**: the Bonus genera and Roles rows, which both edited, take #1350's text, with this PR's quote of
+  his 11-20 report kept in their source cells.
 
 ## 6. What I checked and what I did not
 
