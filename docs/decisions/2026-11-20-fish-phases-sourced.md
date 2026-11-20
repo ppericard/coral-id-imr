@@ -63,7 +63,7 @@ Integrator's call: the list's format and where it lives (`tools/`, a data file n
 ## Consequences
 
 - No tool reads the file yet, so nothing in play changes.
-- The three conflicts (*P. lineatus* sub, *R. quaesita* sub, *M. ornatus* sex) are listed in `data/points.json`, worded neutrally, for Pierre to settle (rule C5).
+- The three conflicts (*P. lineatus* sub, *R. quaesita* sub, *M. ornatus* sex) and the disagreement on the female pattern of *S. ghoban* (a `yes` verdict, the note records the conflict) are listed in `data/points.json`, worded neutrally, for Pierre to settle (rule C5). `tests/phasepoints.test.js` fails on a conflict of the list with no point.
 - The next step is in ROADMAP (row "Fish photo judging, next"): re-judge the fish photos for phases on this list, measured first (docs/INTEGRATOR.md "A large judging or boxing pass is measured first").
 - Left for later:
   - iNaturalist taxon pages;
