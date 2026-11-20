@@ -18,7 +18,7 @@ merged under another number). `## earlier` is the one entry from before the numb
 
 ## v205 (2026-11-20)
 
-The What I learn card's names rows (Pierre, 2026-11-18, Q396, Q400 D, Q404 A: each names row on or off, a families-only player allowed): `core.js` `SUBJECTS` `optin` gains `sp` for the fish (the species by their common names) and `ssp` for the sea slugs (their species by their scientific names), and `mergeUsers` keeps a row turned off on the card (`k + 'O'`) only where both accounts merged have it off, so a row on in either stays on, a row on by default included. The script's progress engine is unchanged: the rows only choose which units the app draws, and a row turned off keeps its units' bars and the one score scale (Q402 A), so no answer is scored, replayed or logged differently
+The sea slugs get their basics module (Q437, Pierre 2026-11-19: every game mode open to every subject): the script's copy of `core.js` `SUBJECTS` now lists `basics` first among the sea slugs' pages, drops it from their `closed` pages, and gives them their own done feat, `_sbasics`, kept in the synced achievements record as the corals' `_basics` and the fish's `_fbasics` are. Nothing else changes in the script
 
 ## v204 (2026-11-20)
 
