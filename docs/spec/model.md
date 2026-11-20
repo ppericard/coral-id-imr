@@ -70,7 +70,9 @@ there are no coded tracks; the player's own answers set the pace.
 **First-meeting cards, Open all and back to one at a time** (`model.js` `INTRO`, `introAdd`, `introduced`, `introReady`,
 `introAll`, `backDue`, `introBack`, `introMerge`; `quiz.js` `introShow`, `backShow`): a player starting from zero first
 meets `INTRO.START` units on cards and is asked about those; new units then come one at a time, each on its card, never
-as the answer of the question right after it (`INTRO.GAP`). `reefid-sync-coral-intro` (per subject) maps a unit to
+as the answer of the question right after it (`INTRO.GAP`). A level below the subject's own opens the same way, a group
+of `INTRO.START` close units on cards together, none of it before (`model.js` `lvlNeed`, `openFresh`, `openGroup`,
+`levelTop`; `app.js` `lvlNext`; LEARNING.md "A level opens in a group"), recorded as first cards (`s`). `reefid-sync-coral-intro` (per subject) maps a unit to
 [answers when shown, 1 when ready at once, time, kind: `s` the first cards, `c` a card of its own, `a` Open all, `b`
 closed again]; `reefid-sync-coral-intro-offer` is {at, open, via, t, n, h, bk, bat, bn, bt}: Open all (offered from the
 first cards or My progress; `via` 'offer' and `open` 0 only in older records), then `h`, the opening hold's CUSUM since

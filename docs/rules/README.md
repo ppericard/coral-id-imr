@@ -40,7 +40,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **L1** Time between sessions never decays progress, mastery or ability.
 - **L2** A wrong answer counts against both units.
 - **L3** Adaptive difficulty, no level selector; every account counts, Pierre's included.
-- **L4** One progression path: every game draws from `unlocked()`; only the quiz opens units.
+- **L4** One progression path: every game draws from `unlocked()`; only the quiz opens units, a level in a group of 4.
 - **L5** Corals: starred genera follow their look-alikes.
 - **L6** Corals: Millepora counts, bonus genera opt-in; no unit-specific code (rule S1).
 - **L7** Answer choices get harder gradually.

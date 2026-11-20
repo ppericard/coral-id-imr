@@ -283,7 +283,10 @@ The first fish questions must be easy and readable. Two decisions, each built in
     under each choice (schedule step 1).
   - **Opening**: the set `sp` (`UNITS` fish `sets`, no offer, no switch). `app.js` `spPlay` gives a family at Advanced its
     species met and the next one not met, in its order; how often one opens and is asked is the rank share's (2026-11-16,
-    Q382: `model.js` `SHARE`, `shareW`, `shareRoom`).
+    Q382: `model.js` `SHARE`, `shareW`, `shareRoom`). **The level starts with 4 close species together** (Pierre,
+    2026-11-20: «il faut au moins 4 items ouverts avant de commencer à poser des questions»; rule L4): none opens before
+    four can, shown as first cards, then one at a time (docs/LEARNING.md "A level opens in a group"); the same for the
+    scientific genera and the species by their scientific names.
   - **Start**: a species never answered starts from its family's ability (`core.js` `abilityOf` from, the replay too).
   - **No exam yet** (`noex`): the bar tops out at 95%.
   - **The milestone**: a line on the first species card ("Your first species name").
