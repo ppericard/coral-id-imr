@@ -1567,3 +1567,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sub-adult, brings the card whenever its species' young are sourced as different; the separate sub-adult flag is
   information only. Applied: `quiz.js` `juvCard`, docs/spec/model.md,
   decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md, #1329.
+
+## 2026-11-21
+
+- **05:53, the "(IMR)" line of the answer feedback (on #1351's screenshots, fish at 390 px).** «Alors tu vois sur les
+  captures de réponses fausses que tu me montres, le fait que IMR entre parenthèses ça prenne une ligne entière, moi je
+  trouve ça assez fou quoi. Donc faut le dégager en fait, ça n'a pas de sens. C'est pas grave qu'on ne dise pas que
+  cette manière de l'identifier c'est lié à IMR, là ça prend trop de place en fait.» Applied: `quiz.js` `fbLine` leaves
+  IMR's own name out of its sources (other sources and the photo credits stay; IMR stays named behind More and on the
+  Compare page, rule C2), docs/spec/quiz.md, docs/DESIGN.md,
+  decisions/2026-11-21-feedback-no-imr-label.md, #1353.
