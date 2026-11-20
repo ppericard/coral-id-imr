@@ -404,12 +404,11 @@ test("the corals' builder: Quality has a band a level with its drop value, Growt
   );
   // Growth form: a row per form, Form not visible, To classify (an empty one left out); the agreement block first
   P = B.page(flatS, 'growth-form');
-  const bands = P.bands.map(b => [b.drop, b.title.replace(/<[^>]+>/g, '')]);
-  assert.deepStrictEqual(plain(bands.slice(0, 2)), [
-    ['B', 'Br Form B'],
-    ['E', 'En Form E']
+  assert.deepStrictEqual(plain(P.bands.slice(0, 2).map(b => [b.drop, b.title])), [
+    ['B', '<b class="adm-fl">Br</b> Form B'],
+    ['E', '<b class="adm-fl">En</b> Form E']
   ]);
-  assert.deepStrictEqual(plain(bands[7]), ['x', '∅ Form not visible']);
+  assert.deepStrictEqual(plain([P.bands[7].drop, P.bands[7].title]), ['x', '<b class="adm-fl">∅</b> Form not visible']);
   const toClassify = P.bands.filter(b => /To classify/.test(b.title));
   assert.ok(toClassify.length >= 1 && toClassify.every(b => b.drop === undefined), 'To classify takes no drop');
   assert.deepStrictEqual(
