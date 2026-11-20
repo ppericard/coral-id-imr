@@ -1,6 +1,6 @@
 # Fish colour phases sourced: a cited list of each game species' phases, beyond the IMR presentation
 
-Date: 2026-11-20. PR: #0. Rules or docs touched: tools/fish_phases.json (new), docs/ROADMAP.md
+Date: 2026-11-20. PR: #1342. Rules or docs touched: tools/fish_phases.json (new), docs/ROADMAP.md
 
 ## Context
 
