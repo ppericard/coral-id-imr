@@ -172,11 +172,11 @@ test('prep.js: readAnswers form, left-out ids, offsets, practice counts and the 
 });
 
 test('checks.js: Q136 centring, its declared rule on planted logs (not centred, centred, too few units)', () => {
-  const plant = (slopeOnGd, units = 12) => {
+  const plant = (slopeOnGd, units = 12, flat = false) => {
     const rows = [],
       delta = [],
       gd = {};
-    for (let u = 0; u < units; u++) gd['U' + u] = (u - units / 2) / 4;
+    for (let u = 0; u < units; u++) gd['U' + u] = flat ? 0 : (u - units / 2) / 4;
     let s = 1;
     const noise = () => ((s = (s * 16807) % 2147483647) / 2147483647 - 0.5) * 0.2;
     // 8 players, each meeting the units in its own order (a rotation), 8 answers on each
@@ -192,6 +192,10 @@ test('checks.js: Q136 centring, its declared rule on planted logs (not centred, 
   assert.match(plant(-0.5).verdict, /^not centred/);
   assert.match(plant(0).verdict, /^centring not rejected/);
   assert.strictEqual(plant(-0.5, 6).verdict, 'the measure cannot tell');
+  // live offsets all equal (no trusted player yet): Spearman undefined, no p-value, the measure cannot tell
+  const flat = plant(0, 12, true);
+  assert.strictEqual(flat.verdict, 'the measure cannot tell');
+  assert.ok(!('p' in flat.C2));
 });
 
 test('checks.js: the whole run on a small made-up log; a deadline already past cuts it', () => {

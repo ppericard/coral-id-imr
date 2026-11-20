@@ -231,6 +231,8 @@ function centring(rows, delta, gd, D, rule = RULES.centring) {
   const corr = (M, ref) => {
     const us = Object.keys(M).filter(u => ref && typeof ref[u] === 'number');
     if (us.length < rule.minUnits) return {units: us.length, verdict: CANNOT};
+    // all-equal means or offsets (no trusted player yet): Spearman is undefined, so no p-value either
+    if (!Number.isFinite(spearman(us.map(u => M[u].m), us.map(u => ref[u])))) return {units: us.length, verdict: CANNOT};
     return {units: us.length, ...spearmanPerm(us.map(u => M[u].m), us.map(u => ref[u]))};
   };
   const all = unitMeans(rows, delta, () => true, rule),
