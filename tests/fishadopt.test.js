@@ -791,4 +791,35 @@ test("each subject's own opening hold from the sheet, from HOLDS_SHEET; before i
       for (const x of by('seaslug')) assert.strictEqual(x.h, 0);
     }
   }
+  // A fish reset made here while a save is on its way (Codex review #1349): the save's reply brings the hold from before
+  // it, which is not adopted (the device's started over); the corals', not reset, are. As replayAdoptS reads its cut.
+  const s = loadCodeGs(withFiles());
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
+  let a = null,
+    mark = -1;
+  const sheet = atv(s, HOLDS_SHEET),
+    during = {
+      get: sheet.get,
+      post: b => {
+        a.ctx.localStorage.setItem(C.subjKey('fish', 'reset'), JSON.stringify(T(40)));
+        mark = a.holds.length; // what the save's reply adopts comes after this
+        return sheet.post(b);
+      }
+    };
+  a = app({
+    sheet: during,
+    ls: {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-coral-rv': String(C.RV)},
+    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1}
+  });
+  await a.syncPush();
+  assert.ok(mark >= 0, 'a save was sent');
+  assert.ok(
+    a.holds.slice(0, mark).some(x => x.s === 'fish'),
+    'the load adopted the fish hold (no reset yet)'
+  );
+  assert.deepStrictEqual(
+    [...new Set(a.holds.slice(mark).map(x => x.s))].sort(),
+    ['coral', 'seaslug'],
+    "the save's reply: the corals' and the sea slugs' holds, not the fish's (reset meanwhile)"
+  );
 });

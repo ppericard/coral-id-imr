@@ -317,11 +317,15 @@ const holdOf = (j, S) => {
   return x && typeof x === 'object' && typeof x.h === 'number' ? x : null;
 };
 // The sheet's opening hold of subject S (model.js holdSync), taken as that subject (inSubject), with this device's queued
-// answers of that subject only (subjEntries). Nothing for a subject the reply has no hold of (holdOf).
-function holdAdopt(S, j, log) {
+// answers of that subject only (subjEntries). Nothing for a subject the reply has no hold of (holdOf). cut: the reset
+// of that subject as the request carried it (a save's, as replayAdoptS reads it): a reset made here meanwhile keeps
+// the device's hold (it started over), the next reply bringing the one since that reset. A load needs none
+// (mergeSubject returns before it when this device's reset is newer).
+function holdAdopt(S, j, log, cut) {
   const x = holdOf(j, S);
   if (!x) return;
-  if (S !== SUBJ) return inSubject(S.id, () => holdAdopt(S, j, log));
+  if (S !== SUBJ) return inSubject(S.id, () => holdAdopt(S, j, log, cut));
+  if (cut !== undefined && cut !== (store.get(sKey('reset'), '') || '')) return;
   if (typeof holdSync === 'function') holdSync(x.h, subjEntries(log, S.id), x.ids);
 }
 // The corals' replay (SUBJECTS replay), adopted as that subject whatever is on screen; the others' by replaysAdopt.
@@ -869,8 +873,8 @@ function syncOnce(tries = 0, pulled = null) {
         treesSeen(j, trees); // the leaderboard trees the sheet now holds (TREE_SHEET)
         saveOk(me); // a run of failed tries ends here
         // Each subject's hold on the sheet over every answer now logged, in time order, plus any answer given while this
-        // send was on its way.
-        SUBJECTS.forEach(S => holdAdopt(S, j, me.log));
+        // send was on its way; none for a subject reset here since the send (its reset as sent: cut, cuts).
+        SUBJECTS.forEach(S => holdAdopt(S, j, me.log, S.replay ? cut : (cuts || {})[S.id]));
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged, plus any answer given while this send was on its way.
         notesSeen(j);
