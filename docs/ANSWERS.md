@@ -1482,11 +1482,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (fish My progress). A question back, not a
   decision: whether species by common name wait for the scientific names goes back to him. Applied: ROADMAP "Opening:
   at least four units open before a level is asked" (its last sentences).
-- **Reports tab (no time recorded), Report a problem twice.** «Report a problem doit pouvoir être utilisé plusieurs
-  fois sur la même page» (sea slug practice quiz). Applied: ROADMAP "Report a problem, again on the same page".
-- **Reports tab (no time recorded), a screenshot with a report.** «Ajouter la possibilité de joindre une photo ou un
-  screenshot au formulaire de feedback» (a suggestion, fish practice quiz). Where the file is stored is asked first.
-  Applied: ROADMAP "A photo or a screenshot attached to a report".
 - **Reports tab (no time recorded), response time and the click.** «La vitesse de réponse est définitivement un signal
   de difficulté (ainsi que le clic), quelque soit la matière, et même si la réponse est juste. Soit difficulté de la
   photo, soit difficulté de la question pour le joueur» (coral practice quiz). The time and enlargement signals are
@@ -1505,7 +1500,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Recorded late, verbatim: Q265 (2026-11-08).** «Ok pour tes propositions», as the ROADMAP row of #751 quoted it. It
   corrects this day's entry "Correction of the 2026-11-08 entry that cites the activity item under Q265", which says
   his words for Q265 are not in the repo. Its scope: the move of the files players never download into `data/`, the
-  code into `js/` and `css/` with the domain move. Applied: ROADMAP "Tool and admin data into `data/`".
+  code into `js/` and `css/` with the domain move. Applied: #1298 (open, it builds that ROADMAP row and edits it; no
+  ROADMAP change here, to leave its row to it).
 - **Recorded late, verbatim: the IMR edition (2026-11-08).** «les droits, ils me sont à moi à 100 %» and «quitte si
   besoin à licencier une version IMR à IMR ... ça me garde l'ensemble des droits pour moi.» (#737's body). Applied:
   ROADMAP "Separate IMR-owned content from the core app".
@@ -1519,6 +1515,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   rendre hyper remarquables et donc facile à apprendre... Je sens qu'on va devoir finir par voir ce que ça donne sur
   les vrais données...» (#1228). The classes are read on the players' answers. Applied: ROADMAP "Remove the fish
   easy-photos bootstrap once fish answers exist".
-- **Rule A1 applied to the Q308 light proposals.** No new answer: his 2026-11-20 05:39 «Pour la nouvelle formulation de
-  A1, je valide» and 2026-11-19 20:57 cover the 152 light proposals whose curated tag was a proposal he let through.
-  Applied: ROADMAP "Fish judging: a flash or lamp on a dark background is not a night shot".
+- **Rule A1 and the Q308 light proposals, a reading.** No new answer: whether his 2026-11-20 05:39 «Pour la nouvelle
+  formulation de A1, je valide» lets the light proposals over a tag he only let through go into play is the inventory's
+  reading, written as a note for the integrator; which of the 152 are his hand tags is not checked. Applied: ROADMAP
+  "Fish judging: a flash or lamp on a dark background is not a night shot" (a note, the status unchanged).
