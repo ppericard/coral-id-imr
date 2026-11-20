@@ -40,6 +40,10 @@ for n in "$@"; do
     log "#$n: SKIPPED (needs a VERSION assign)"; continue
   fi
   git pull -q
+  # the head the gates above read (prstate's short sha) must still be the PR's head; train.py pins only the head it
+  # fetches itself (follow-up in README: pass the validated SHA into the train)
+  cur=$(gh api $R/pulls/$n --jq .head.sha)
+  case "$cur" in "$(echo "$line" | awk '{print $3}')"*) ;; *) log "#$n: SKIPPED (head moved since the gates were read)"; continue;; esac
   out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py "$n" 2>&1 | tail -4)
   log "#$n train: $(echo "$out" | tr '\n' ' ')"
 done

@@ -30,6 +30,18 @@ builders from `origin/main`'s reviewed copy over the PR's data (`trusted_root` i
 the way the session hooks run main's `tools/brief.py`. A PR that changes one of these tools is checked by main's copy
 until it merges.
 
+## Follow-ups (recorded under rule W27 after round 2; none is a one-line fix)
+
+- **Pass the validated head SHA into the train.** `nightq.sh` rechecks the head just before `tools/train.py`, but the
+  train still fetches the head itself; the full fix is a `--sha` option in `train.py` that refuses a different head
+  (a `train.py` PR of its own).
+- **A security alert needs an explicit answer.** `headfind.py` counts a person's later issue comment as the answer
+  (except `@codex review` requests); the full fix ties the answer to the alert (a reply to its thread or a quoted id).
+- **`fish.json` conflicts.** `uptodate.sh` takes the PR's copy (`--ours`) and runs `build_fish.py --regroup`, which
+  regroups the existing file and does not regenerate the species lists from the merged sources. Until it does a full
+  rebuild (or aborts to "needs a hand" when both sides changed species), the integrator checks a `fish.json` conflict's
+  result by hand.
+
 ## Order
 
 Code.gs PRs first, one at a time: `bash tools/queue/seqver.sh N1 N2`. The rest after them:

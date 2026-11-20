@@ -48,7 +48,8 @@ def findings(sha, head_date, review, threads, issue):
             continue
         if (c.get('created_at') or '') < head_date:
             continue
-        if any(not is_bot(d) and (d.get('created_at') or '') > c['created_at'] for d in issue[k + 1:]):
+        # the queue's own "@codex review" requests are no answer
+        if any(not is_bot(d) and not (d.get('body') or '').lstrip().startswith('@codex') and (d.get('created_at') or '') > c['created_at'] for d in issue[k + 1:]):
             continue
         found.append('security comment %s by %s' % (c['id'], c['user']['login']))
     return found
