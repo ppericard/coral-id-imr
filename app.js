@@ -2164,13 +2164,24 @@ const critRef = (g, link = true) => {
 };
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary. Tips the content editor reworded with a
 // source (qsrc: core.js treeGen, app.js treeGenera and build; rule C2) show it under them, wherever they are
-// shown; a summary he reworded with one, after it.
-const tipsList = (g, cls = '') =>
+// shown; a summary he reworded with one, after it. bare: the cues alone, their sources left to the sheet (a Learn list
+// card, listCard).
+const tipsList = (g, cls = '', bare = false) =>
   g.qt
     ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
         .map(x => `<li>${x}</li>`)
-        .join('')}</ul>${g.qsrc && g.qsrc.t ? `<p class="note esrc">Source: ${esrcHtml(g.qsrc)}</p>` : ''}`
-    : `<p class="keyid">${gloss(g.sum)}${esrcTag(g, 'sum')}</p>`;
+        .join('')}</ul>${!bare && g.qsrc && g.qsrc.t ? `<p class="note esrc">Source: ${esrcHtml(g.qsrc)}</p>` : ''}`
+    : `<p class="keyid">${gloss(g.sum)}${bare ? '' : esrcTag(g, 'sum')}</p>`;
+// A unit's card on a Learn list, for every subject (the corals' ID tips view, learn.js viewFishList; rule S1): its photo,
+// its name and the line under it, its ID cues (bare: no heading, no source; those are on the sheet, rule C2), then the
+// subject's notes. The whole card opens the unit's sheet (Pierre, 2026-11-20): one link, its name, stretched over the
+// card (.lcard .tipsheet::after), the card a tappable surface with a chevron; the photo opens the sheet, not the photo
+// viewer (its credits are on the sheet's photos, rule P5). Links inside the notes (the corals' Compare pairs) and the
+// glossary terms sit above it.
+const listCard = (n, p, sub, notes = '') => {
+  const g = GX(n);
+  return `<article class="tipg lcard"><span class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b>${sub}</a></span><div>${tipsList(g, '', true)}${notes}</div><span class="fgo" aria-hidden="true">›</span></article>`;
+};
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
 // [spelling, source]; docs/decisions/2026-11-18-decisions-from-app-comments.md). Plain text: escape it where it is shown.
@@ -2182,17 +2193,18 @@ const altName = s => {
 const tipsHead =
   () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
   <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="${esc(hr('lab-anatomy'))}"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
-const tipCard = n => {
-  const g = DATA.gen[n],
-    p = cover(g);
-  return `<article class="tipg"><a href="${esc(hr('g-' + n))}" class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${
+// The corals' card there: its look-alikes, each a link to their Compare page.
+const tipCard = n =>
+  listCard(
+    n,
+    cover(DATA.gen[n]),
+    '',
     lookOf(n).length
       ? `<p class="note">Don't confuse with ${lookOf(n)
           .map(b => `<a href="${esc(hr('cmp-' + n + '|' + b))}"><i>${esc(b)}</i></a>`)
           .join(', ')}</p>`
       : ''
-  }</div></article>`;
-};
+  );
 
 /* ---------- key helpers (Coral Finder book boxes, used by genus sheets and the Coral ID Key) + IMR groups ---------- */
 const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);

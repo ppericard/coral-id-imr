@@ -17,8 +17,8 @@ the PRs.
   exam, typed questions accepting the family's names, and the comeback after a break. Fish basics is step 0 of the Learn
   path.
 - **Learn** = the fish families page (`learn.js` `viewFishList`: by the groups of the identification key in force, in
-  its order, only those holding a family, the key credited in full under the list; cues, look-alike lines; each photo
-  enlarges in the shared viewer, `zoom`), and the sheets ([fish-sheets.md](fish-sheets.md)).
+  its order, only those holding a family, the key credited in full under the list; cues, look-alike lines; each family one
+  card that opens its sheet, `app.js` `listCard`: [front-end.md](front-end.md)), and the sheets ([fish-sheets.md](fish-sheets.md)).
 - **My progress**: the photo wall, levels, review, mix-ups, the headline % with its three bars
   ([the global score](#the-fish-global-score)), the fish's own leaderboard and achievements (`core.js` `FISH_ACH`).
 - **The Duel tab** (`#fish/practice/duels`), on the family look-alike pairs (`UNITS.fish.pairs`).
