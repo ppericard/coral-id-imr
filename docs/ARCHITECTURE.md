@@ -146,6 +146,8 @@ records, Identify, the switch, the sync per subject, who sees a subject, the sub
 - **Fish scientific genera**: [fish-game.md](spec/fish-game.md#fish-scientific-genera).
 - **Fish species, step 1: by common name**: its **Units**, **Opening**, **Display and typing**, **Score and gate** and
   **Rest**: [fish-game.md](spec/fish-game.md#fish-species-step-1-by-common-name).
+- **Species by scientific name (step 2)**, fish and sea slugs: its **Units**, **The class**, **Opening**, **Display**,
+  **Typed answers and Q394**, **Score and gate** and **Rest**: [fish-game.md](spec/fish-game.md#species-by-scientific-name-step-2).
 - **Fish global score**: [fish-game.md](spec/fish-game.md#the-fish-global-score).
 - **Fish sheets**: [fish-sheets.md](spec/fish-sheets.md).
 

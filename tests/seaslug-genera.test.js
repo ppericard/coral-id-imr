@@ -171,6 +171,7 @@ test('typed: a sea-slug genus question reads genera, and a family typed gets the
   vm.createContext(c);
   vm.runInContext(
     block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}) +
+      block(APP, 'const kindOf = n =>', '// The scientific genera in play', {file: 'app.js'}) +
       block(Q, 'const typeMatch = (text, rk', '// The nudge for a text typeKind reads', {file: 'quiz.js'}) +
       '\nthis.typeMatch = typeMatch; this.typeKind = typeKind;',
     c
@@ -218,9 +219,9 @@ test('treeGate on the sea slugs’ genera: circle 2 after every circle-1 genus a
   assert.strictEqual(g.treeGate(a3), true);
 });
 
-test('UNITS seaslug: no opt-in set, the genera in its words', () => {
+test('UNITS seaslug: no opt-in set but its species by their scientific names, the genera in its words', () => {
   const U = block(APP, '\n  seaslug: {', '\ntreeAt(SUBJ.id);', {file: 'app.js'});
-  assert.ok(/\n    sets: \[\]\n/.test(U), 'no opt-in set');
+  assert.ok(/\n    sets: \[SCI_SP\],\n/.test(U), 'no opt-in set of its own: the species by their scientific names, shared with the fish');
   assert.ok(!/sciOpen|TREEU\.sci/.test(U), 'no scientific-genera set');
   assert.ok(/Name the sea slug genus in the photo/.test(U) && /To learn a sea slug genus/.test(U));
   assert.ok(!/sea slug famil/i.test(U.replace(/\/\/[^\n]*/g, '')), 'no family wording left for the player');
