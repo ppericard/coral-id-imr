@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""FishBase photos for the fish subject: candidates in fish-cand.json, and the sheet-only photos' FishBase source.
+"""FishBase photos for the fish subject: candidates in data/fish-cand.json, and the sheet-only photos' FishBase source.
 
 Pierre, 2026-11-05: FishBase is "the reference platform for fish, photos well linked to the species; if their licence is
 compatible, integrate it, fully". A FishBase photo follows every game photo rule of the iNaturalist ones and never
-by-passes Pierre's curation: it enters as a candidate (fish-cand.json, judged on judging/FISH.md, Pierre's Publish), or
+by-passes Pierre's curation: it enters as a candidate (data/fish-cand.json, judged on judging/FISH.md, Pierre's Publish), or
 as a sheet-only photo for a species of tools/fish_photos.py SHEET (never in a game).
 
 Source: FishBase's own data, never its web pages (no scraping): the table `picturesmain` of the rfishbase snapshot
@@ -285,9 +285,9 @@ def main(argv=None):
     a.add_argument("--plan", action="store_true", help="print what a run would add; write nothing")
     a.add_argument("--fish", default=str(ROOT / "fish.json"))
     a.add_argument("--src", default=str(SRC))
-    a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
+    a.add_argument("--cand", default=str(ROOT / "data/fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))
-    a.add_argument("--suggest", default=str(ROOT / "suggest.json"))
+    a.add_argument("--suggest", default=str(ROOT / "data/suggest.json"))
     a.add_argument("--photos", default=str(ROOT / "fish-photos.json"), help="the game photos (their judging tags record phases)")
     args = a.parse_args(argv)
     if args.fishbase:

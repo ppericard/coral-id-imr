@@ -190,7 +190,9 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
   `add_families` (every build path, `--commonness` included).
 - The app completes it from `fish.json` itself (`core.js` `treeNameIndex`: `sp` a listed species name, `ss` a species'
   scientific name, `gs` a genus's, `gc` a genus's common name, each with `sc`, the species it designates) and Pierre's
-  exceptions (`curation.json` `fish` `names`); `treeGen` `scopes` gives the IMR genera and sub-entries their species.
+  exceptions (`curation.json` `fish` `names`, set in the admin's Names box on a family's Tree page:
+  [admin-tree.md › Names](admin-tree.md#names-the-shared-names-of-the-name-index)); `treeGen` `scopes` gives the IMR genera
+  and sub-entries their species.
 - `treeTypeNames` reads every name as the family it lifts to, with `sc` when it names part of it only (one key of a
   family read by two names takes the wider); `typeFits(m, t, sp)` says whether a reading names unit t as the photo shows
   it (sp: the photo's species, `quiz.js` from `app.js` `photoTaxon`; unknown: read as before). A name of part of the
@@ -270,7 +272,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   `trait`, Pierre's `obs`, `note` and sources (`src`, `by`), from a research note; `tools/fish_judge.py` caps the ease of
   a juvenile photo unless its entry is A or its species is in `early` (`judging/FISH.md`).
 - `tools/fish_judge.json` `add` holds the photos a judging pass added for entries short of very easy ones (from
-  `fish-cand.json`).
+  `data/fish-cand.json`).
 - Each judged photo carries `e` (ease 1-5), `jt` (its tags) and maybe `c` (a proposed crop `[l, t, r, b]`, never
   applied), written by `tools/fish_judge.py` from `tools/fish_judge.json` (rubric: `judging/FISH.md`;
   `tools/fish_photos.py` applies them again on a rebuild, `--check` tells whether the file is current).
@@ -403,7 +405,7 @@ order's first (ROADMAP "The Tree tab").
   Home's landscape tiles (a shape that suits the tile) do not read the default cover.
 - **Corals**: a coral genus is both the unit and the leaf, so the rule leaves its cover as it is (rule P1's source
   order, then `applySlots`); it would apply to coral nodes above the genus (a family) once the Tree tab has them, which
-  first needs each genus's distinct observers near the centre written at build (`presence.json` holds the coral
+  first needs each genus's distinct observers near the centre written at build (`data/presence.json` holds the coral
   species' presence in the Philippines, `ok`, `rg`, not counts near the centre; `tools/coral_presence.py` already asks
   iNaturalist for the counts around the centre and would keep them).
 

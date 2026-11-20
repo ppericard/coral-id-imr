@@ -5,7 +5,7 @@ Pierre, 2026-11-02: the search for new candidates (tools/fetch_local.py) runs on
 reminds him when a genus runs short. Run this at the start of a working session and in recaps; if it lists genera,
 say so to Pierre and offer to run the search for them. A short genus is only listed when iNaturalist still has
 something the search would take, near Dauin or elsewhere in the Philippines (the search goes no further for now;
-Pierre: no reminder when it cannot find anything better). It reads cand.json, data.json and curation.json, and asks
+Pierre: no reminder when it cannot find anything better). It reads data/cand.json, data.json and curation.json, and asks
 iNaturalist (read only) about the short genera; --offline skips that and lists every short genus.
 
 Usage: python3 tools/cand_gaps.py [MIN] [--offline]   (MIN: candidates waiting under which a genus is short; default 5)
@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
-from datajson import load_all  # noqa: E402  (data.json + cand.json, as fetch_local.py reads them)
+from datajson import load_all  # noqa: E402  (data.json + data/cand.json, as fetch_local.py reads them)
 from excluded import excluded, set_aside  # noqa: E402  (photos the admin excluded for good, set aside by the pre-sort)
 from genera import game_genera  # noqa: E402  (core.js gameOf: the slate, Millepora, the bonus genera)
 

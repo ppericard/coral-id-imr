@@ -3,7 +3,7 @@
 what needs a look (docs/reviews/2026-11-17-seaslug-literature-scan.md). Pierre, 2026-11-17: "C'est là où ça vaut le coup
 d'explorer la littérature scientifique parce que régulièrement ils séquencent des nudibranches et identifient des
 espèces." It changes no game data: it writes tools/seaslug_lit.json, read by people (the integrator applies a change in
-a PR of its own; a discrepancy between sources goes to points.json, rule C5).
+a PR of its own; a discrepancy between sources goes to data/points.json, rule C5).
 
 Inputs: tools/seaslugs.json (the species, their genus, family and WoRMS AphiaID) and tools/seaslug_lit_source.json
 (hand-kept: the year from which a species counts as new, the genera watched beyond the list, the informal labels, the

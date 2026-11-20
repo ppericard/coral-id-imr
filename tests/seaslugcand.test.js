@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
-// Sea-slug candidate photos (tools/fetch_seaslugs.py, seaslug-cand.json): the egg filter, the licence filter, one photo
+// Sea-slug candidate photos (tools/fetch_seaslugs.py, data/seaslug-cand.json): the egg filter, the licence filter, one photo
 // per observation, the juvenile room of a documented juvenile form, the Philippines before abroad, the record shape of
-// fish-cand.json. The network is stubbed: the whole script runs on a
+// data/fish-cand.json. The network is stubbed: the whole script runs on a
 // fixture cache with --offline (a request not in it stops the run), nothing here asks iNaturalist. Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -109,8 +109,8 @@ print(json.dumps([o['id'] for o in pick([usable(ob(i, lic=l), EGG) for i, l in (
   assert.deepStrictEqual(lic, [3], 'among equals in variety, an open licence first (the last tie-break)');
 });
 
-test('fetch_seaslugs.py offline: Philippines first, abroad only when short, the juvenile room, fish-cand.json fields; a rerun changes nothing', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slugcand-'));
+test('fetch_seaslugs.py offline: Philippines first, abroad only when short, the juvenile room, data/fish-cand.json fields; a rerun changes nothing', () => {
+  const dir = mkTmp('slugcand-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
   const src = {
@@ -146,11 +146,11 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const run = () =>
     execFileSync(
       'python3',
-      ['tools/fetch_seaslugs.py', '--offline', '--src', at('src.json'), '--cand', at('cand.json'), '--cache', at('cache.json')],
+      ['tools/fetch_seaslugs.py', '--offline', '--src', at('src.json'), '--cand', at('data/cand.json'), '--cache', at('cache.json')],
       {cwd: ROOT, encoding: 'utf8'}
     );
   const log = run();
-  const doc = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')),
+  const doc = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')),
     C = doc.cand,
     ids = L => L.map(p => +p.o.split('/').pop()).sort((a, b) => a - b);
   assert.deepStrictEqual(Object.keys(doc), ['v', 'cand']);
@@ -167,7 +167,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.ok(ids(C['602']).includes(31) && !ids(C['602']).includes(35));
   assert.deepStrictEqual(C['602'].filter(p => p.st === 'juvenile').length, 1);
   assert.match(log, /Slugus juvenilis\s+4 \/ 5 .*short \{"juvenile": 1\}/);
-  // The fields of fish-cand.json (tools/fetch_fish.py record), st only when annotated.
+  // The fields of data/fish-cand.json (tools/fetch_fish.py record), st only when annotated.
   const FIELDS = ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r'];
   for (const p of [...C['601'], ...C['602']]) {
     assert.deepStrictEqual(
@@ -178,16 +178,16 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
     assert.strictEqual(p.r, 1);
   }
   // The file layout: one species per line (tools/datajson.py).
-  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8').split('\n').length, 8);
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8').split('\n').length, 8);
   // A rerun asks nothing new (--offline) and writes the same file.
-  const before = fs.readFileSync(at('cand.json'), 'utf8');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run();
-  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before);
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
 test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, on top of a full list up to max, in the target on a new one; --own asks nothing else", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slugown-'));
+  const dir = mkTmp('slugown-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
   const src = {
@@ -210,7 +210,7 @@ test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter fi
     src: 'x',
     r: 1
   });
-  fs.writeFileSync(at('cand.json'), JSON.stringify({v: 1, cand: {701: [801, 802, 803].map(old)}}));
+  fs.writeFileSync(at('data/cand.json'), JSON.stringify({v: 1, cand: {701: [801, 802, 803].map(old)}}));
   py(
     `${OBS}
 from fetch_fish import API, FIELDS, queries
@@ -234,17 +234,17 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   const run = (cache, ...more) =>
     execFileSync(
       'python3',
-      ['tools/fetch_seaslugs.py', '--offline', '--src', at('src.json'), '--cand', at('cand.json'), '--cache', at(cache), ...more],
+      ['tools/fetch_seaslugs.py', '--offline', '--src', at('src.json'), '--cand', at('data/cand.json'), '--cache', at(cache), ...more],
       {cwd: ROOT, encoding: 'utf8'}
     );
   const ids = L => L.map(p => +p.o.split('/').pop());
   // 1. --own: his search only (the general search of 702 is not in this cache: --offline would stop on it).
   const log = run('cache.json', '--own');
-  let C = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')).cand;
+  let C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
   assert.deepStrictEqual(ids(C['701']).sort(), [801, 802, 803, 901, 902, 904], 'on top of the full list, up to max; nothing removed');
   assert.deepStrictEqual(ids(C['702']), [911]);
   const by = Object.fromEntries([...C['701'], ...C['702']].map(p => [+p.o.split('/').pop(), p]));
-  assert.strictEqual(by[901].ni, 1, 'his Needs ID observation is marked, as fish-cand.json (ni)');
+  assert.strictEqual(by[901].ni, 1, 'his Needs ID observation is marked, as data/fish-cand.json (ni)');
   assert.strictEqual(by[911].ni, 1);
   assert.strictEqual(by[902].ni, undefined, 'his Research Grade one is not');
   assert.strictEqual(by[904].lic, 'own', 'his photo without a licence, as the fish');
@@ -254,14 +254,14 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   assert.match(log, /Pierre's own added this run: 4/);
   // 2. The normal run: 702's others fill its target of 3 around his one; 701 has no room under its target.
   run('cache2.json');
-  C = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')).cand;
+  C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
   assert.strictEqual(C['702'].length, 3);
   assert.strictEqual(C['702'].filter(p => p.own).length, 1, 'his counts in the target: two others, not three');
   assert.strictEqual(C['701'].length, 6);
   // A rerun writes the same file.
-  const before = fs.readFileSync(at('cand.json'), 'utf8');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run('cache2.json');
-  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before);
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
@@ -291,7 +291,7 @@ print(json.dumps([
 });
 
 test('fetch_seaslugs.py --informal --genus-level offline: the label presence, its candidates first, the genus units’ gl candidates', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sluggl-'));
+  const dir = mkTmp('sluggl-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
   const src = {
@@ -362,7 +362,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
         '--informal-src',
         at('inf.json'),
         '--cand',
-        at('cand.json'),
+        at('data/cand.json'),
         '--cache',
         at('cache.json'),
         ...more
@@ -370,7 +370,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
       {cwd: ROOT, encoding: 'utf8'}
     );
   const log = run('--informal', '--genus-level');
-  const C = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')).cand,
+  const C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand,
     ids = L => L.map(p => +p.o.split('/').pop()).sort((a, b) => a - b);
   assert.deepStrictEqual(Object.keys(C), ['slugus-sp1', 'Slugus', 'Limax'], 'the species with no name, then the genera in list order');
   assert.strictEqual(C['slugus-sp1'].length, 2);
@@ -392,9 +392,9 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.match(log, /Limax sp\. 9: 2 observers .* no candidates/);
   assert.match(log, /genus level: 4 candidates added over 2 of 2 genera/);
   // A rerun adds nothing and writes the same file.
-  const before = fs.readFileSync(at('cand.json'), 'utf8');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run('--informal', '--genus-level');
-  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before);
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
@@ -484,7 +484,7 @@ print(json.dumps([{k: [[r['f'], r['o'].rsplit('/', 1)[-1], r.get('gl')] for r in
 });
 
 test('fetch_seaslugs.py --genus-level offline: an egg-only candidate’s observation keeps its place with its next photo, first; the target counts the rest', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slugegg-'));
+  const dir = mkTmp('slugegg-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
   fs.writeFileSync(
@@ -521,7 +521,7 @@ test('fetch_seaslugs.py --genus-level offline: an egg-only candidate’s observa
       gl: 1
     }
   ];
-  fs.writeFileSync(at('cand.json'), JSON.stringify({v: 1, cand: {Slugus: old}}));
+  fs.writeFileSync(at('data/cand.json'), JSON.stringify({v: 1, cand: {Slugus: old}}));
   fs.writeFileSync(at('sug.json'), JSON.stringify({seaslug: {'seaslug-Slugus-cand-100': {egg: 1, n: 'an egg rosette'}}}));
   py(
     `${OBS}
@@ -540,12 +540,12 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   );
   const args = ['tools/fetch_seaslugs.py', '--offline', '--genus-level', '--src', at('src.json'), '--informal-src', at('inf.json')];
   const run = () =>
-    execFileSync('python3', [...args, '--cand', at('cand.json'), '--cache', at('cache.json'), '--suggest', at('sug.json')], {
+    execFileSync('python3', [...args, '--cand', at('data/cand.json'), '--cache', at('cache.json'), '--suggest', at('sug.json')], {
       cwd: ROOT,
       encoding: 'utf8'
     });
   const log = run();
-  const L = JSON.parse(fs.readFileSync(at('cand.json'), 'utf8')).cand.Slugus;
+  const L = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand.Slugus;
   // 100 (the egg mass) stays, 110 stays, 101 (observation 10's next photo) takes the freed place: the target of 2 is
   // full again without a new observation; 12 and 13 wait.
   assert.deepStrictEqual(
@@ -555,9 +555,9 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.deepStrictEqual([L[2].o, L[2].gl], ['https://www.inaturalist.org/observations/10', 1]);
   assert.match(log, /egg masses: 1 observations brought their next photo \(Slugus 1\)/);
   assert.match(log, /Slugus\s+2 \/ 2 \(\+0;/);
-  const before = fs.readFileSync(at('cand.json'), 'utf8');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run();
-  assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before, 'a rerun changes nothing');
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before, 'a rerun changes nothing');
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
@@ -599,3 +599,10 @@ print(json.dumps([o['of'], labelled(o, F), labelled(o, {**F, 'value': 'No'}), la
                   'ofvs.value' in egg_query([9]) and 'ofvs.field_id' in egg_query([9])]))`);
   assert.deepStrictEqual(out, [[[5, 'Slugus sp. 1?', 'Yes']], true, false, false, true]);
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}
