@@ -2131,9 +2131,10 @@ function quizPhoto(cur = 'quiz') {
   let q = takePlan(cur) || planPhoto(cur);
   // Chosen again: every planned question after a new break (rustNow: the app may stay open across it), a comeback
   // question once the rust melted, and a card of the path that would now wait (noOpen, introHold, model.js openRight:
-  // an opening only after a right answer). The custom quiz's cards are the player's choice: they never wait.
+  // an opening only after a right answer; a level's group, lvl, as a card of the path). The custom quiz's cards are the
+  // player's choice: they never wait.
   const brk = rustNow();
-  if (brk || (q.intro && !q.custom && (noOpen() || (!q.start && (introHold() || !openRight())))) || !!q.warm !== cbIn(cur)) {
+  if (brk || (q.intro && !q.custom && (noOpen() || ((!q.start || q.lvl) && (introHold() || !openRight())))) || !!q.warm !== cbIn(cur)) {
     dropPlans();
     q = planPhoto(cur);
   }
@@ -2143,7 +2144,7 @@ function quizPhoto(cur = 'quiz') {
   question(...q);
   // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
   // The first cards' "Had the IMR lecture? Open all" box: not for a player who answered "I'm new to corals" (My progress
-  // keeps the button for them).
+  // keeps the button for them), nor on a level's group (introShow).
   if (q.intro)
     q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start, undefined, q.start && (startOf() || {}).c !== 'new');
   // The offers about which genera are in play (back to one at a time, bonus genera) belong to the photo quiz. Open all
@@ -2374,6 +2375,9 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
   document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove())); // with its keys
   let i = 0,
     told = false; // "tap an underlined word" said (once, on the first card whose tips have one)
+  // A level's group (model.js openGroup, levelTop): units below the subject's own (species, scientific genera), so its
+  // note names no subject word and it offers no Open all (the lecture's units are the subject's own).
+  const below = kind === 's' && L.some(n => rankKind(n));
   const card = () => {
     const n = L[i],
       more = i < L.length - 1;
@@ -2386,11 +2390,15 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
       // quiz's) say the next question is about them.
       note: start
         ? more
-          ? `The ${kind === 's' ? 'first questions are' : 'next question is'} about these ${L.length} ${SUBJ.many}.`
-          : 'Now, which is which?'
+          ? below
+            ? `The next questions are about these ${L.length}.`
+            : `The ${kind === 's' ? 'first questions are' : 'next question is'} about these ${L.length} ${SUBJ.many}.`
+          : below && L.length < 2
+            ? 'The next question is about it.'
+            : 'Now, which is which?'
         : 'It comes up in the questions a little later.',
       btn: more ? 'Next' : start ? 'Start' : 'Got it',
-      all: offerAll && introLeft().length > 0
+      all: offerAll && !below && introLeft().length > 0
     });
     if (c.hinted) told = true;
     c.primary = {...c.primary, stay: true, on: next};
@@ -2447,7 +2455,9 @@ function introCard(n, o = {}) {
   };
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
-// the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
+// the progressive path's draw, easiest first); else the rest of a level's group (model.js levelTop: a group left
+// half-way, a level an older record met fewer than INTRO.START times), shown and asked as first cards are; else none:
+// planPhoto may add one, or a level's group (model.js openGroup), when its draw falls on a unit not met.
 // The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js openPick,
 // first: drawn unit by unit, the confusion groups taking over from the next card).
 function introStart(list) {
@@ -2461,7 +2471,7 @@ function introStart(list) {
     fresh = fresh.filter(n => n !== L[L.length - 1])
   )
     L.push(openPick(fresh, fresh, met, {first: true}));
-  return L;
+  return L.length ? L : levelTop(list);
 }
 // Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of the subject's own rank,
 // met and ready, have tiles (UNITS tiles); the others its look-alikes first (distractors), each photo drawn by photoSet
@@ -2541,19 +2551,28 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     .filter(Boolean)
     .map(q => q[1]);
   let cards = sel || noOpen() ? [] : introStart(list);
-  const start = cards.length > 0,
-    ready = n => cards.includes(n) || introReady(n),
+  let start = cards.length > 0,
+    lvl = false;
+  const ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
     warmL = start || !cbIn(cur) ? null : comebackOf(met),
     warm = !!warmL,
     // One opening rule (model.js OPEN, openChance): when the path allows a card, this question opens a genus with the
-    // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
+    // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick); within the
+    // rank share (model.js SHARE), a level short of INTRO.START units met only as a group (openFresh, openGroup).
     fresh =
       !sel && !start && !warm && met.length && !noOpen() && !introHold() && openPace(at, soon) && openRight(at)
-        ? list.filter(n => !introduced(n) && mayOpen(n) && shareRoom(n)) // the rank share (model.js SHARE)
+        ? openFresh(
+            list.filter(n => !introduced(n) && mayOpen(n)),
+            list
+          )
         : [];
-  if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
+  if (fresh.length && Math.random() < openChance(list)) {
+    cards = openGroup(openPick(fresh, list), fresh, list);
+    // A level's group (rule L4): shown and asked as first cards are (lvl: the path's, so it waits as a card does).
+    lvl = start = lvlNeed(rankKind(cards[0]), list) > 0;
+  }
   // With the first cards, the question is on one of them; with a card of its own, on a genus already met. A genus opened
   // in the last OPEN.WIN answers and not asked yet is asked once ready (due), so the opening's pace is the ceiling's
   // (openPace holds the next card until then), not the luck of the draw.
@@ -2635,7 +2654,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       typed ? {...set, typed: 1} : set,
       fewm ? plausibleK(t, chm, mu) : 0
     ];
-  if (cards.length) Object.assign(q, {intro: cards, start});
+  if (cards.length) Object.assign(q, {intro: cards, start}, lvl ? {lvl: 1} : {});
   if (typed) q.typed = 1;
   if (warm) Object.assign(q, {warm: 1, cb: Math.round(R * 1000) / 1000});
   if (sel) q.custom = 1;
