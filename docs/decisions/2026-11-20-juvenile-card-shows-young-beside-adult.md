@@ -39,8 +39,9 @@ The integrator's design (integrator's call, easy to correct):
 
 ## Consequences
 
-- On the photos in play as the judging gives them (with #1323's two corrections): 1,174 young photos bring the card
-  (1,167 juveniles and the 7 sub-adults in play, all *Diagramma pictum*, its young sourced as different), 1,948
+- On the photos in play as the judging gives them (#1323 merged: the goatfish lost its `j`, the sweetlips stays
+  judged a sub-adult): 1,174 young photos bring the card (1,166 juveniles and the 8 sub-adults in play: 7 *Diagramma
+  pictum* and the *Diagramma melanacrum* sweetlips, their young sourced as different), 1,948
   juveniles do not (no sub-adult left without); every photo sourced as different has
   an adult of its species in play. The sweetlips Pierre named brings it; the goatfish does not (no source either way).
 - Only `quiz.js` reads `jd` (`juvCard`, `phaseCardFor`); the draw, the ease, the judging and the progress never do, so
