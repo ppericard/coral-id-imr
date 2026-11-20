@@ -49,8 +49,9 @@ const dateText = (t, k) => {
   return isNaN(d) ? 'Invalid Date' : (DTF[k] = DTF[k] || new Intl.DateTimeFormat([], DTF_O[k])).format(d);
 };
 // Demo mode (admin.html?demo, admin-demo.js): made-up sync data, and its own browser storage ("demo:" keys), so a
-// demo never reads or writes a real admin draft, token or Undo history.
-const DEMO = !!window.ADMIN_DEMO,
+// demo never reads or writes a real admin draft, token or Undo history. admin-demo.js is fetched only with ?demo, and
+// before the page boots (lazyLoad, below), so the address says it here, not window.ADMIN_DEMO.
+const DEMO = !!window.ADMIN_DEMO || /[?&]demo\b/.test((window.location || {}).search || ''),
   SK = k => (DEMO ? 'demo:' + k : k);
 const store = {
   get(k, d) {
@@ -3757,6 +3758,63 @@ function renderFishMont() {
       })
   );
 }
+// Scripts only some pages need are fetched when a page asks, not by every visit (the admin opens on Players › Activity,
+// which needs none of them): admin.html lists them as inert tags (type text/plain, data-lazy="group group"), kept there so
+// the version stamping and the name checks still see them. lazyLoad(group) inserts the real tag of each, in the order
+// listed (async = false), once per file; a file that failed to load is asked for again by the next call. Groups: analyses
+// (analysis.js, admin-analyses.js: the Analyses pages), demo (analysis.js, admin-demo.js: the boot of ?demo waits for them,
+// as the demo patches fetch before the first read). admin-heatmap.js stays a plain tag: it puts its heatLab, heatUp… in the
+// global scope, which admin-journey.js names on the first Journey. The file's src is as admin.html has it, so the Analyses
+// worker finds analysis.js's stamped address (script[src^="analysis.js"]).
+const LAZY = {};
+function lazyLoad(group) {
+  const tags = [...document.querySelectorAll('script[type="text/plain"][data-lazy]')].filter(t =>
+    t.dataset.lazy.split(' ').includes(group)
+  );
+  return Promise.all(
+    tags.map(t => {
+      const src = t.getAttribute('src');
+      return (LAZY[src] =
+        LAZY[src] ||
+        new Promise((ok, no) => {
+          const s = document.createElement('script');
+          s.async = false;
+          s.src = src;
+          s.onload = () => ok();
+          s.onerror = () => {
+            delete LAZY[src];
+            s.remove();
+            no(new Error(`${src} not loaded`));
+          };
+          document.head.appendChild(s);
+        }));
+    })
+  );
+}
+// The page `page` (its address) waits for a group: "Loading…" meanwhile, one request however many times render() runs. The
+// Analyses script draws the page on screen the moment it loads (its last line); when nothing has drawn over the note by the
+// time the whole group is in (a file asked for again after a failure), the page is drawn from here. A group that could not
+// be fetched says so, if the page is still on screen; opening it again (its address, or ↻) asks again.
+const LAZY_WAIT = new Set(),
+  LOADING = '<p class="note">Loading…</p>',
+  // The Analyses pages need both files: admin-analyses.js alone (analysis.js failed) draws nothing.
+  analysesIn = () => typeof renderAnalyses === 'function' && typeof ANALYSIS === 'object';
+function lazyPage(group, page) {
+  $v.innerHTML = LOADING;
+  if (LAZY_WAIT.has(group)) return;
+  LAZY_WAIT.add(group);
+  lazyLoad(group).then(
+    () => {
+      LAZY_WAIT.delete(group);
+      if (cur === page && $v.innerHTML === LOADING) render();
+    },
+    e => {
+      LAZY_WAIT.delete(group);
+      console.warn(e.message);
+      if (cur === page) $v.innerHTML = '<p class="note">This page could not be loaded: check the connection and open it again.</p>';
+    }
+  );
+}
 function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
@@ -3770,6 +3828,11 @@ function render() {
     $v.innerHTML = '<p class="note">Loading…</p>';
     sugLoad();
     return;
+  }
+  if (ASORT_WAIT && !sugOwn(cur)) {
+    const go = ASORT_WAIT;
+    ASORT_WAIT = null;
+    go();
   }
   document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A view with work of its own, on screen for a subject of its rank (liveOf): drawn even with no work left. Opened from its
@@ -3806,7 +3869,13 @@ function render() {
   // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
   if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
   if (cur.startsWith('players/list/journey/')) return renderJourney(cur.slice('players/list/journey/'.length)); // one player's path (admin-journey.js)
-  if (anPage(cur)) return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
+  // The Analyses group (admin-analyses.js, with analysis.js): fetched when the first of its pages is asked for; the script
+  // draws the page it finds on screen once it is in (its last line).
+  if (anPage(cur)) {
+    if (analysesIn()) return renderAnalyses();
+    status();
+    return lazyPage('analyses', cur);
+  }
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
   if (cur === 'photos/review/by-difficulty') return ASUBJ.sheets ? renderFishDiff() : renderDiff();
@@ -4472,7 +4541,7 @@ function toggleHelp() {
   let tab = store.get('reefid-admin-started', false) ? 'page' : 'start';
   const draw = () => {
     if (tab === 'start') store.set('reefid-admin-started', true);
-    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + HELP[m] + (m === 'ctree' ? HELP.genus : '') + (REC_PAGES.has(m) ? REC_HELP : '')}`;
+    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${tab === 'start' ? HELP.start : (m === 'fcand' ? candHelpOf(ASUBJ) : '') + (HELP[m] || '') + (m === 'ctree' ? HELP.genus : '') + (REC_PAGES.has(m) ? REC_HELP : '')}`;
     h.querySelector('.adm-link').onclick = () => h.remove();
     h.querySelectorAll('[data-ht]').forEach(
       b =>
@@ -7904,7 +7973,9 @@ const sugOwn = h => /^players\//.test(h),
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}));
 let SUG_LATE = null,
-  SUG_P = null;
+  SUG_P = null,
+  // The fish auto-sort of an admin who opened on a Players page: started (idle) by the first render() of any other page.
+  ASORT_WAIT = null;
 function sugLoad() {
   if (!SUG_LATE) return Promise.resolve();
   return (SUG_P =
@@ -8143,12 +8214,17 @@ async function start() {
     const ar = TOKEN && autoRun();
     if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
     // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
-    // which would share the line and the main thread with the first page. One Undo step.
+    // which would share the line and the main thread with the first page. One Undo step. An admin who opened on a Players
+    // page (late) does not read it there, a visit that needs none of it: it waits for the first page that is not a Players
+    // one (ASORT_WAIT, started by render()).
     const fishLater = () =>
       fishAutoRun().then(R => {
         if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
       });
-    'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+    const asortIdle = () =>
+      'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
+    if (late) ASORT_WAIT = asortIdle;
+    else asortIdle();
   };
   // Opened on a Players page: the suggestions, their laying and the auto-sorts follow (sugLater), or sooner (render's gate).
   if (late)
@@ -8493,8 +8569,21 @@ async function lockOther() {
 // names exist then). A token refused drops them all, so nothing read with it is kept.
 const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'alerts', 'reports'];
 const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRoute(p, S))(subjOfHash(hashNow()))));
+// An address that opens on an Analyses page asks for its scripts at once, beside the data files, as when every visit
+// fetched them: the page is not held up by a fetch that starts only when it is drawn.
+const lazyAhead = () => {
+  if (anPage(landing())) lazyLoad('analyses').catch(() => {}); // asked again, with a word on the page, when it is drawn (lazyPage)
+};
 (async () => {
+  lazyAhead();
   if (DEMO) {
+    // The demo answers the calls from the page (admin-demo.js patches fetch, analysis.js is what it builds its made-up
+    // log with): in before anything is asked.
+    try {
+      await lazyLoad('demo');
+    } catch (e) {
+      return lockScreen(e.message);
+    }
     TOKEN = 'demo';
     const pv = $('preview');
     if (pv) pv.hidden = true; // the site's ?draft preview reads the real draft, not the demo's

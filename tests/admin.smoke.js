@@ -462,6 +462,91 @@ async function loadPart(b, base, fails) {
   await p.close();
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await lc.close();
+  await lazyPart(b, base, fails);
+}
+// What a visit to Activity does not fetch (admin.js lazyLoad, ASORT_WAIT; Pierre, 2026-11-19): the Analyses scripts come with
+// their first page, and the fish auto-sort (fish-cand.json) with the first page that is not a Players one. The demo itself
+// needs analysis.js and admin-demo.js, in before the first read; admin-heatmap.js stays a plain tag (a Journey names its
+// heatLab). Once, at 1280.
+async function lazyPart(b, base, fails) {
+  const F = 'lazy: ',
+    lc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await lc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const errs = [],
+    open = async hash => {
+      const p = await lc.newPage(),
+        reqs = [];
+      p.on('pageerror', e => errs.push(e.stack || e.message));
+      // scripts and fetches only: the Analyses worker asks for analysis.js again, as a worker
+      p.on('request', r => r.resourceType() !== 'worker' && reqs.push(new URL(r.url()).pathname.slice(1)));
+      await p.goto(base + 'admin.html?demo&late' + hash);
+      return {p, reqs};
+    },
+    wait = (p, fn, arg) =>
+      p.waitForFunction(fn, arg, {timeout: 60000}).then(
+        () => true,
+        () => false
+      ),
+    asked = (reqs, f) => reqs.filter(x => x === f).length,
+    analysesIn = () => typeof renderAnalyses === 'function' && !/^\s*Loading/.test(document.getElementById('view').innerText);
+  // 1. Activity: drawn, the suggestions in, the idle time of the fish auto-sort over: none of the lazy files was asked for
+  let {p, reqs} = await open('');
+  if (!(await wait(p, () => /ANSWERS/.test(document.getElementById('view').innerText)))) fails.push(F + 'Activity did not draw');
+  if (!(await wait(p, () => SUG_LATE === null))) fails.push(F + 'the suggestions never came in');
+  if (!(await p.evaluate(() => Object.keys((SUG && SUG[AK]) || {}).length)))
+    fails.push(F + 'the suggestions hold no fish judgment (the fish auto-sort check is void)');
+  // the auto-sort's candidate file, by the address the admin reads it at (a subject's admin files: it moves with its folder)
+  const FC = await p.evaluate(() => ASORT.admin.files.cand);
+  if (!FC || !/fish-cand\.json$/.test(FC)) fails.push(F + `the auto-sort's candidate file is ${FC}`);
+  await p.waitForTimeout(6000); // past the idle callback's 4 s
+  // the demo's own pair (analysis.js may be asked for twice: the worker of the demo's report is a request too)
+  if (asked(reqs, 'admin-demo.js') !== 1 || !asked(reqs, 'analysis.js'))
+    fails.push(F + 'the demo did not ask for admin-demo.js once and analysis.js');
+  for (const f of ['admin-analyses.js', FC]) if (asked(reqs, f)) fails.push(F + `Activity asked for ${f}`);
+  if (!(await p.evaluate(() => typeof ASORT_WAIT === 'function'))) fails.push(F + 'the fish auto-sort is not waiting for a page');
+  // 2. a Players page that is not Activity (a Journey names the heatmap's heatLab): still no fish auto-sort
+  await p.evaluate(() => (location.hash = '#players/list'));
+  if (!(await wait(p, () => !!document.querySelector('.adm-urow')))) fails.push(F + 'Players › List did not draw');
+  await p.waitForTimeout(1000);
+  if (asked(reqs, FC)) fails.push(F + 'Players › List started the fish auto-sort');
+  // 3. an Analyses page: its scripts come, the page draws itself, the fish auto-sort starts
+  await p.evaluate(() => (location.hash = '#analyses/overview'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'the Analyses page did not draw after its scripts came');
+  if (asked(reqs, 'admin-analyses.js') !== 1) fails.push(F + `admin-analyses.js asked for ${asked(reqs, 'admin-analyses.js')} times`);
+  if (!(await wait(p, () => ASORT_WAIT === null)))
+    fails.push(F + 'the fish auto-sort did not start on the first page that is not a Players one');
+  for (let i = 0; i < 100 && !asked(reqs, FC); i++) await p.waitForTimeout(100);
+  if (!asked(reqs, FC)) fails.push(F + `the fish auto-sort never read ${FC}`);
+  // another Analyses view: nothing asked for again
+  await p.evaluate(() => (location.hash = '#analyses/difficulty/formats'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'a second Analyses view did not draw');
+  if (asked(reqs, 'admin-analyses.js') !== 1) fails.push(F + 'admin-analyses.js asked for again by a second Analyses view');
+  await p.close();
+  // 4. opened straight on an Analyses address (the script not in when the page first asks): drawn, asked for once
+  ({p, reqs} = await open('#analyses/overview'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'an Analyses address opened straight did not draw');
+  if (asked(reqs, 'admin-analyses.js') !== 1)
+    fails.push(F + `opened straight: admin-analyses.js asked for ${asked(reqs, 'admin-analyses.js')} times`);
+  await p.close();
+  // 5. a script that cannot be fetched: the page says so, and draws when asked for again
+  let cut = true;
+  await lc.route(
+    u => u.href.startsWith(base) && u.pathname === '/admin-analyses.js',
+    r => (cut ? r.abort() : r.fallback())
+  );
+  ({p, reqs} = await open('#analyses/overview'));
+  if (!(await wait(p, () => /could not be loaded/.test(document.getElementById('view').innerText))))
+    fails.push(F + 'an Analyses script that failed to load left no word on the page');
+  cut = false;
+  await p.evaluate(() => (location.hash = '#players/activity'));
+  await p.evaluate(() => (location.hash = '#analyses/overview'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'the Analyses page did not draw when asked for again');
+  await p.close();
+  if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
+  await lc.close();
 }
 (async () => {
   const run = slot.parts(PARTS, {main: ['main'], photos: ['photos'], rest: ['actions', 'players', 'seal']}),
