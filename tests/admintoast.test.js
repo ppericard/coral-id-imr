@@ -111,7 +111,7 @@ function stack() {
   const P = page();
   P.ctx.toast = (m, ms, bg) => P.shown.push(m);
   P.run(B('let HIST = [],', '\n// The Undo steps survive'));
-  P.run(B('function bgSink() {', '\nlet draftLost'));
+  P.run(B('const layRun = ', '\nlet draftLost'));
   P.run(B('function step(from, to, msg) {', '\n// When the admin answers a Check'));
   P.run(`
     let ASIG = null, ASIG_OF = null; // (autoWhen's, stubbed)
@@ -188,6 +188,26 @@ test('Undo: a value he changed in the step Undo leads to stays his when a run la
   P.run(`auto('c1')`);
   P.run('undo()');
   assert.deepStrictEqual(J(P, 'DRAFT.quality'), {p1: 'Good'});
+});
+
+test("Undo: a map his click made holds the run's entries after Undo (Codex, #1348)", () => {
+  const P = stack();
+  // his pick creates the map, the run then adds an entry to the same map, Undo takes his entry only
+  P.run(`DRAFT.crop = {p1: 'c1'}; saveDraft();`);
+  P.run(`DRAFT.crop = {...DRAFT.crop, c9: 'auto'}; saveDraft(true);`);
+  P.run('undo()');
+  assert.deepStrictEqual(J(P, 'DRAFT.crop'), {c9: 'auto'});
+  P.run('redo()');
+  assert.deepStrictEqual(J(P, 'DRAFT.crop'), {p1: 'c1', c9: 'auto'});
+});
+
+test('Undo: a key the run removes leaves the step Undo leads to too', () => {
+  const P = stack();
+  P.run(`DRAFT.seen = {a: 1, b: 1}; saveDraft();`);
+  P.run(`pick('p1', 'Good')`);
+  P.run(`delete DRAFT.seen.a; saveDraft(true);`);
+  P.run('undo()');
+  assert.deepStrictEqual(J(P, 'DRAFT.seen'), {b: 1});
 });
 
 test('admin.js: the auto-sorts save and toast in the background, nothing else does', () => {

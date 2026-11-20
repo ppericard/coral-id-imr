@@ -348,12 +348,27 @@ addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
 // What a background run changed (the draft now against snap, the draft before it), laid onto the step Undo leads to and the
-// one Redo leads to; a value the admin changed in that step stays his (merge3: mine wins).
+// one Redo leads to; a value the admin changed in that step stays his. Only what the run changed is laid (key by key, down
+// the maps), never a map his click made: undoing it must not take the run's entries of that map with it (merge3 would).
+const layRun = (before, run, onto) => {
+  const O = o => o && typeof o === 'object' && !Array.isArray(o),
+    J = v => JSON.stringify(v === undefined ? null : v),
+    B = before || {},
+    R = run || {},
+    T = onto || {},
+    out = {...T};
+  new Set([...Object.keys(B), ...Object.keys(R)]).forEach(k => {
+    if (J(R[k]) === J(B[k])) return;
+    if (O(R[k]) && (O(B[k]) || B[k] === undefined) && (O(T[k]) || T[k] === undefined)) out[k] = layRun(B[k], R[k], T[k]);
+    else if (J(T[k]) === J(B[k])) R[k] === undefined ? delete out[k] : (out[k] = R[k]);
+  });
+  return out;
+};
 function bgSink() {
   const before = JSON.parse(snap),
     onto = L => {
       if (!L.length) return;
-      const m = merge3(before, JSON.parse(L[L.length - 1]), DRAFT);
+      const m = layRun(before, DRAFT, JSON.parse(L[L.length - 1]));
       m.genera = m.genera || {};
       L[L.length - 1] = JSON.stringify(m);
     };
