@@ -1,5 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
+// @slow: a short rated-world run of the opening (tools/ratedworld.js runOne, 1,500 answers)
 // A level opens in a group (rule L4; docs/LEARNING.md "A level opens in a group"; Pierre, 2026-11-20): a level below the
 // subject's base (a fish scientific genus, a species by its common or its scientific name, a sea slug species) opens
 // INTRO.START close units together, as first cards, and none of it opens before (model.js lvlNeed, openFresh, openGroup,
