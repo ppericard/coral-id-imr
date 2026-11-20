@@ -10,6 +10,8 @@ while i < len(lines):
     if l.startswith("<<<<<<< "):
         j = next(k for k in range(i, len(lines)) if lines[k] == "=======")
         e = next(k for k in range(j, len(lines)) if lines[k].startswith(">>>>>>> "))
+        if any(x.startswith("|||||||") for x in lines[i + 1 : j]):
+            sys.exit(f"{p}: a diff3 conflict block (ancestor shown): resolve it by hand")
         out += lines[j + 1 : e] + lines[i + 1 : j]
         i, n = e + 1, n + 1
         continue

@@ -41,6 +41,12 @@ until it merges.
   regroups the existing file and does not regenerate the species lists from the merged sources. Until it does a full
   rebuild (or aborts to "needs a hand" when both sides changed species), the integrator checks a `fish.json` conflict's
   result by hand.
+- **A security alert survives a new head.** `headfind.py` reads alerts posted after the head's commit, so an
+  unanswered alert drops out of view once a catch-up merge makes a newer head; the full fix carries every unanswered
+  alert across heads. Meanwhile a CodeQL alert also fails its check, which the checks gate stops.
+- **Wait for the Candidate photos workflow.** A judging merge starts `approved-photos.yml`, whose `photos-push` job
+  pushes to `main`; a train started meanwhile aborts because main moved (nothing merges, the PR is skipped). The full
+  fix waits for that workflow before the next train.
 
 ## Order
 

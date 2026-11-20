@@ -67,6 +67,19 @@ const gs = (d, text) => {
 };
 const resolveGs = f => spawnSync('python3', ['-I', path.join(DIR, 'resolve_gs.py'), f], {encoding: 'utf8'});
 
+test("resolve_append: main's lines then the branch's; a diff3 block is refused, the file untouched (round 3)", () =>
+  tmp(d => {
+    const run = f => spawnSync('python3', ['-I', path.join(DIR, 'resolve_append.py'), f], {encoding: 'utf8'});
+    const f = path.join(d, 'README.md');
+    fs.writeFileSync(f, `a\n${conflict('ours\n', 'theirs\n')}z\n`);
+    assert.strictEqual(run(f).status, 0);
+    assert.strictEqual(fs.readFileSync(f, 'utf8'), 'a\ntheirs\nours\nz\n');
+    const d3 = `a\n<<<<<<< HEAD\nours\n||||||| base\nold\n=======\ntheirs\n>>>>>>> origin/main\nz\n`;
+    fs.writeFileSync(f, d3);
+    assert.notStrictEqual(run(f).status, 0);
+    assert.strictEqual(fs.readFileSync(f, 'utf8'), d3);
+  }));
+
 test('assignver: a Code.gs conflict in the PR code is "needs a hand", never main\'s whole file (P1)', () => {
   const t = read('assignver.sh');
   assert.match(
