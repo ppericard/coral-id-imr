@@ -35,6 +35,12 @@ corals, never a coral skeleton (`skel`, rule P6: `applyCuration` has dropped it 
   whoever took them); the cover stays when it already shows the form, and a genus with no photo of that form keeps its
   cover.
 
+**An IMR lecture photo is never drawn larger than its own pixels** (the full file in CSS pixels; Pierre, 2026-11-18, "C12
+A+D"; [record](../decisions/2026-11-20-lecture-photos-never-upscaled.md)). The genus sheet, its strips and the
+enlarged view never exceed it; the quiz stage's and the Look-alikes' tolerance for a small photo (`LOWRES`, 1.15x)
+does not apply to a figure marked `data-imr` (`quiz.js` `upMax`), and a lecture photo in the side-by-side quiz stage on a
+phone is shown whole, not filled. `tests/pages.smoke.js` part `noupscale` checks it at 390 and 1280 px.
+
 ## Served from Cloudflare R2
 
 Every address of a site photo is `PHOTO_BASE` + `img/<f>…webp`, `PHOTO_BASE` in `core.js` (the bucket

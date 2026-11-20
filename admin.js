@@ -1314,11 +1314,10 @@ const ACT = {
   hide: (n, f) =>
     edit(n, k => {
       if (k.add && k.add[f]) {
-        // Removing a photo the auto-sort added also marks it rejected (as ✕ Reject: it stays with the candidates below,
-        // off the Candidates queue), so the removal counts against the auto's Keep (autosort.js pierreOf), never as no
-        // decision at all. One Undo step for both.
-        const a = aApplied(f);
-        if (a && a.kind === 'a') DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
+        // Removing an added photo (the auto-sort's or Pierre's own) also marks it rejected (as ✕ Reject: it stays with
+        // the candidates below, off the Candidates queue, and the auto-sort never adds it again), so the removal counts
+        // against the auto's Keep (autosort.js pierreOf), never as no decision at all. One Undo step for both.
+        DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
         delete k.add[f];
         dropFeat(k, f);
         if (k.cover === f) delete k.cover;
