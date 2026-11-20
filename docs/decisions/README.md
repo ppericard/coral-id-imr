@@ -65,6 +65,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
 | 2026-11-20 | [Find the X's own offset: a format of its own, `find`, at 0 until its subject's format offsets are read](2026-11-20-find-the-x-own-offset.md) | #1299 |
 | 2026-11-20 | [The admin corrects the fish name index in a family's Names box; a species' own list waits for a format](2026-11-20-fish-names-admin.md) | #1311 |
+| 2026-11-20 | [Fish slides, IMR tag and dive-sign mark: moved into the IMR instance's layer](2026-11-20-fish-slides-tag-split.md) | #1328 |
 | 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
 | 2026-11-20 | [A goatfish judged a juvenile against its own note loses the flag; the juvenile card's per-photo trigger waits for the integrator's design](2026-11-20-juvenile-card-follows-the-judged-phase.md) | #1323 |
 | 2026-11-20 | [The juvenile card shows the young beside an adult, only for species whose young are sourced as different](2026-11-20-juvenile-card-shows-young-beside-adult.md) | #1329 |
