@@ -1,6 +1,6 @@
 # The juvenile card shows the young beside an adult, only for species whose young are sourced as different
 
-Date: 2026-11-20. PR: #NNNN. Rules or docs touched: spec/model.md, spec/fish-sheets.md "Juvenile card flags",
+Date: 2026-11-20. PR: #1329. Rules or docs touched: spec/model.md, spec/fish-sheets.md "Juvenile card flags",
 FISH_PATH.md, points.json.
 
 ## Context
