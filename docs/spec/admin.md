@@ -103,6 +103,14 @@ aside while the switch shows, so the page menu keeps its room) and its to-do cou
 open reports; the auto-sort's Checks are never to-dos). The tab's and the Inbox's count on a side is the same count
 (`todoHere`).
 
+**A flag is a task only while its photo is in play** (Pierre, 2026-11-20). `autosort.js` `flagGone` says a flag's photo left
+play (the corals: Remove, ×, Not this; a subject's own part: out, excluded, rejected), `admin.js` `flagStale` adds "no
+longer in the subject's data" once that subject's registry is read (the old "missing" cards), `flagsOpen` lists, counts
+and draws only the others, and `sweepFlags`, at every `saveDraft`, drops the stale ones of the subject on screen from the draft (another subject's part never moves with this one's tools; so the click that
+takes a photo off the site clears its flag in the same Undo step; Undo brings both back). A flag already stale in the
+draft is not listed and goes at the next click. Remove on a coral candidate that goes back with the candidates (no hide
+entry) clears its flag in `ACT.hide`. A report that carries a photo is not auto-handled (Done thanks the player).
+
 ### Each subject's admin part (`SUBJECTS` `admin`)
 
 Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine never names a subject:
