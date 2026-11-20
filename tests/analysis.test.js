@@ -960,7 +960,7 @@ test('photo views follow the game pipeline (2 zoom levels)', () => {
     data = rd('data.json'),
     cur = rd('curation.json'),
     C = require('../core.js'),
-    meta = A.photoMeta(data, cur, rd('quality.json'), rd('metrics.json'));
+    meta = A.photoMeta(data, cur, rd('quality.json'), rd('data/metrics.json'));
   const d = JSON.parse(JSON.stringify(data));
   C.applyCuration(d, cur);
   const two = Object.keys(d.gen).filter(g => d.gen[g].levels === 2);
@@ -1026,9 +1026,14 @@ test('plainOf: every effect of every analysis has a plain name, no code or model
   const rows = A.demoLog(require('../data.json'), Date.now() - 3 * 864e5, {
     cur: require('../curation.json'),
     qual: require('../quality.json'),
-    met: require('../metrics.json')
+    met: require('../data/metrics.json')
   });
-  const meta = A.photoMeta(require('../data.json'), require('../curation.json'), require('../quality.json'), require('../metrics.json'));
+  const meta = A.photoMeta(
+    require('../data.json'),
+    require('../curation.json'),
+    require('../quality.json'),
+    require('../data/metrics.json')
+  );
   const R = A.runAll(rows, meta, {B: 4, seed: 1});
   let n = 0;
   Object.entries(R.A).forEach(([k, a]) =>

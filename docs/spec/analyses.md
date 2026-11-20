@@ -38,7 +38,7 @@ enlarge alone and its observations are iNaturalist's, `SUBJECTS` `admin` `obs`; 
 no other unit among the choices counted apart, the typed ones and those logged before the choices were,
 `noChoiceMixups`; `tests/answerlog.test.js`).
 
-**The measured block** (`measured.json`, `tools/photo_measure.py`: contrast, brightness, saturation, warm share,
+**The measured block** (`data/measured.json`, `tools/photo_measure.py`: contrast, brightness, saturation, warm share,
 sharpness, whole frame and fish box; [measured.md](measured.md)) is not among the report's photo features yet. An
 analysis joins it by the photo's file name `f`, the key of `ph` and `fph`, which an answer's photos name (`a.ph`,
 `analysis.js` `fphRows`). Putting it in `photoMetaFish` or `photoMeta` changes the fingerprint and refits every
@@ -261,7 +261,7 @@ mode, sessions, exposures, the previous answer on a genus, Again after a miss), 
 effects), `fmtFit`, the eight analyses, `verdictOf`, `boot` (a cluster bootstrap over players, warm-started refits),
 `PRIMARY` / `pOf` / `holm` / `bh` / `correct` (the multiple-testing correction, applied by `runAll` to every milestone),
 `milestones`, `report`, `compact`, `photoMeta` (view, quality, sharpness, source of each photo from `data.json`,
-`curation.json`, `quality.json`, `metrics.json`; the view is the one the games use, through `core.js` `applyCuration`
+`curation.json`, `quality.json`, `data/metrics.json`; the view is the one the games use, through `core.js` `applyCuration`
 and `applySlots`), `synth` / `demoLog` (synthetic answers with known effects, for the tests and the demo).
 
 ## Demo (`admin.html?demo`)

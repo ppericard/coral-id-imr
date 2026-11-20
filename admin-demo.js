@@ -547,7 +547,7 @@
     // seven more made-up players from analysis.js demoLog (its known effects, on the real photos), their last answer
     // three days ago.
     const [cur, qual, met] = await Promise.all(
-      ['curation.json', 'quality.json', 'metrics.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json()))
+      ['curation.json', 'quality.json', 'data/metrics.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json()))
     );
     ANA_META = {ph: ANALYSIS.photoMeta(D, cur, qual, met)};
     const more = ANALYSIS.demoLog(D, NOW - 3 * DAY, {cur, qual, met});

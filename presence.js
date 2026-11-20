@@ -1,11 +1,11 @@
 // The presence rule, as the admin applies it to photos (rule C8), the photo licences and
 // the photo names (nameFlag).
 // Pure functions, no DOM: loaded by admin.html only (players never download it), tested in Node (tests/presence.test.js). The rule itself is
-// computed once in Python (tools/presence.py) into presence.json by tools/coral_presence.py; this file only reads it.
+// computed once in Python (tools/presence.py) into data/presence.json by tools/coral_presence.py; this file only reads it.
 (function (root) {
   // A photo out of the rule: taken abroad (loc world) of a species the rule does not confirm in the Philippines.
-  // sp = presence.json sp ({species name: {ok, by, rg, chk}}). Flagged in the admin, never removed automatically:
-  // the admin decides. A species presence.json does not know, or a photo named only to the genus, is not flagged.
+  // sp = data/presence.json sp ({species name: {ok, by, rg, chk}}). Flagged in the admin, never removed automatically:
+  // the admin decides. A species data/presence.json does not know, or a photo named only to the genus, is not flagged.
   const outOfRule = (p, sp) => {
     if (!p || p.loc !== 'world' || p.imr || p.cf || !sp) return false;
     const w = String(p.t || '').split(/\s+/);
@@ -40,7 +40,7 @@
     );
   // Names (docs/ROADMAP.md "Taxonomy reference"): a photo or candidate whose name (t, iNaturalist's at
   // fetch time) is a former combination or moved genus, or iNaturalist's spelling of a name WoRMS writes otherwise.
-  // nm = names.json's section for the subject ({sp: {name: {now, iname?, inat?}}, gen: {former genus: genus now}}),
+  // nm = data/names.json's section for the subject ({sp: {name: {now, iname?, inat?}}, gen: {former genus: genus now}}),
   // written by tools/taxonomy.py from its reference file, which the admin never loads. A flag only: nothing is renamed
   // (rule C1). null: nothing to say (a name the file does not know, a genus-only name of a current genus, an
   // IMR lecture or Coral Finder photo). kind: 'spelling' (t is iNaturalist's spelling of `now`), 'former' (t is a former

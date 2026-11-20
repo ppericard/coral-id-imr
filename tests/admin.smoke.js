@@ -53,7 +53,7 @@ const server = http.createServer((req, res) => {
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart) and, in the same part, the admin opened
-// with suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
+// with data/suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
 // first, as before); main, everything else.
 // SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
 // runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
@@ -366,7 +366,7 @@ async function sealPart(b, base, fails) {
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }
-// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): suggest.json, the largest file a Players
+// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): data/suggest.json, the largest file a Players
 // page would wait for, is held back by the test. Opened on Players › Activity (the default), the page draws without it and
 // the suggestions follow (admin.js sugLater: laid over the candidates, the auto-sort run), and a page that needs them, asked
 // for before they are in, shows Loading… and then draws; opened on a page that needs them, it waits for them as it always did.
@@ -378,19 +378,19 @@ async function loadPart(b, base, fails) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  // One made-up judgment, for a candidate of cand.json (the real suggest.json may name none of them: 2026-11-03).
-  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand || {}).flat()[0].f;
+  // One made-up judgment, for a candidate of data/cand.json (the real data/suggest.json may name none of them: 2026-11-03).
+  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/cand.json'))).cand || {}).flat()[0].f;
   let held = null,
     asked = 0;
   await lc.route(
-    u => u.href.startsWith(base) && u.pathname === '/suggest.json',
+    u => u.href.startsWith(base) && u.pathname === '/data/suggest.json',
     async r => {
       asked++;
       if (held) await held.p;
       r.fulfill({contentType: 'application/json', body: JSON.stringify({v: 1, cand: {[CF]: {v: 'wide', q: 3, k: 'best', fm: 'M'}}})});
     }
   );
-  // waits for the page to ask for suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
+  // waits for the page to ask for data/suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
   const askedOnce = async () => {
     for (let i = 0; i < 200 && !asked; i++) await new Promise(ok => setTimeout(ok, 100));
     return asked > 0;
@@ -428,7 +428,7 @@ async function loadPart(b, base, fails) {
   // 1. Activity (the default) draws while the suggestions are held; they are laid when they come
   let h = hold(),
     p = await open('');
-  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while suggest.json was held back');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while data/suggest.json was held back');
   if (!(await late(p)) || (await p.evaluate(() => Object.keys(SUG).length)))
     fails.push(F + 'Activity waited for the suggestions (nothing left to lay)');
   if (!(await askedOnce())) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
@@ -464,10 +464,11 @@ async function loadPart(b, base, fails) {
   await lc.close();
   await lazyPart(b, base, fails);
 }
-// What a visit to Activity does not fetch (admin.js lazyLoad, ASORT_WAIT; Pierre, 2026-11-19): the Analyses scripts come with
-// their first page, and the fish auto-sort (fish-cand.json) with the first page that is not a Players one. The demo itself
-// needs analysis.js and admin-demo.js, in before the first read; admin-heatmap.js stays a plain tag (a Journey names its
-// heatLab). Once, at 1280.
+// What a visit to Activity does not fetch (admin.js lazyLoad; Pierre, 2026-11-19): the Analyses scripts come with their first
+// page (one after the other: a failed analysis.js never runs admin-analyses.js). The fish auto-sort (data/fish-cand.json) is
+// not one of them: rule A1 has it populate the draft at each admin load, so a visit that stays on Players still gets it, at
+// idle, after the first page is drawn. The demo itself needs analysis.js and admin-demo.js, in before the first read;
+// admin-heatmap.js stays a plain tag (a Journey names its heatLab). Once, at 1280.
 async function lazyPart(b, base, fails) {
   const F = 'lazy: ',
     lc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
@@ -480,6 +481,13 @@ async function lazyPart(b, base, fails) {
       const p = await lc.newPage(),
         reqs = [];
       p.on('pageerror', e => errs.push(e.stack || e.message));
+      // when Activity's content first stood on the page (the page's own clock, as the resource timings of the fetches are)
+      await p.addInitScript(() => {
+        new MutationObserver(() => {
+          const v = document.getElementById('view');
+          if (v && !window.DRAWN_AT && /ANSWERS/.test(v.textContent)) window.DRAWN_AT = performance.now();
+        }).observe(document, {childList: true, subtree: true, characterData: true});
+      });
       // scripts and fetches only: the Analyses worker asks for analysis.js again, as a worker
       p.on('request', r => r.resourceType() !== 'worker' && reqs.push(new URL(r.url()).pathname.slice(1)));
       await p.goto(base + 'admin.html?demo&late' + hash);
@@ -492,7 +500,8 @@ async function lazyPart(b, base, fails) {
       ),
     asked = (reqs, f) => reqs.filter(x => x === f).length,
     analysesIn = () => typeof renderAnalyses === 'function' && !/^\s*Loading/.test(document.getElementById('view').innerText);
-  // 1. Activity: drawn, the suggestions in, the idle time of the fish auto-sort over: none of the lazy files was asked for
+  // 1. Activity: drawn, the suggestions in, the idle time of the fish auto-sort over: none of the lazy files was asked for, and
+  // the fish auto-sort (rule A1: at each admin load, a visit that stays on Players too) has run, after the first page was drawn
   let {p, reqs} = await open('');
   if (!(await wait(p, () => /ANSWERS/.test(document.getElementById('view').innerText)))) fails.push(F + 'Activity did not draw');
   if (!(await wait(p, () => SUG_LATE === null))) fails.push(F + 'the suggestions never came in');
@@ -505,21 +514,28 @@ async function lazyPart(b, base, fails) {
   // the demo's own pair (analysis.js may be asked for twice: the worker of the demo's report is a request too)
   if (asked(reqs, 'admin-demo.js') !== 1 || !asked(reqs, 'analysis.js'))
     fails.push(F + 'the demo did not ask for admin-demo.js once and analysis.js');
-  for (const f of ['admin-analyses.js', FC]) if (asked(reqs, f)) fails.push(F + `Activity asked for ${f}`);
-  if (!(await p.evaluate(() => typeof ASORT_WAIT === 'function'))) fails.push(F + 'the fish auto-sort is not waiting for a page');
-  // 2. a Players page that is not Activity (a Journey names the heatmap's heatLab): still no fish auto-sort
+  if (asked(reqs, 'admin-analyses.js')) fails.push(F + 'Activity asked for admin-analyses.js');
+  // the fish auto-sort read its candidates once, after the opening page was on screen (never on its critical path), and
+  // populated the draft; the page stayed on Players all along
+  if (asked(reqs, FC) !== 1) fails.push(F + `Activity (no page past Players): the fish auto-sort read ${FC} ${asked(reqs, FC)} times`);
+  if (!(await wait(p, () => ASORT_GO === null))) fails.push(F + 'the fish auto-sort never finished');
+  const ft = await p.evaluate(f => {
+    const e = performance.getEntriesByType('resource').find(r => r.name.endsWith(f));
+    return {drawn: window.DRAWN_AT || 0, read: e ? e.startTime : 0, auto: Object.keys((DRAFT[AK] || {}).auto || {}).length};
+  }, FC);
+  if (!ft.drawn || !ft.read || ft.read < ft.drawn)
+    fails.push(F + `the fish auto-sort read its candidates before the opening page was drawn ${JSON.stringify(ft)}`);
+  if (!ft.auto) fails.push(F + 'a visit that stays on Players got no fish proposals in its draft');
+  // 2. another Players page (a Journey names the heatmap's heatLab): nothing more asked for
   await p.evaluate(() => (location.hash = '#players/list'));
   if (!(await wait(p, () => !!document.querySelector('.adm-urow')))) fails.push(F + 'Players › List did not draw');
   await p.waitForTimeout(1000);
-  if (asked(reqs, FC)) fails.push(F + 'Players › List started the fish auto-sort');
-  // 3. an Analyses page: its scripts come, the page draws itself, the fish auto-sort starts
+  if (asked(reqs, FC) !== 1) fails.push(F + 'Players › List read the fish candidates again');
+  // 3. an Analyses page: its scripts come one after the other, the page draws itself
   await p.evaluate(() => (location.hash = '#analyses/overview'));
   if (!(await wait(p, analysesIn))) fails.push(F + 'the Analyses page did not draw after its scripts came');
   if (asked(reqs, 'admin-analyses.js') !== 1) fails.push(F + `admin-analyses.js asked for ${asked(reqs, 'admin-analyses.js')} times`);
-  if (!(await wait(p, () => ASORT_WAIT === null)))
-    fails.push(F + 'the fish auto-sort did not start on the first page that is not a Players one');
-  for (let i = 0; i < 100 && !asked(reqs, FC); i++) await p.waitForTimeout(100);
-  if (!asked(reqs, FC)) fails.push(F + `the fish auto-sort never read ${FC}`);
+  if (asked(reqs, FC) !== 1) fails.push(F + 'the Analyses page read the fish candidates again');
   // another Analyses view: nothing asked for again
   await p.evaluate(() => (location.hash = '#analyses/difficulty/formats'));
   if (!(await wait(p, analysesIn))) fails.push(F + 'a second Analyses view did not draw');
@@ -586,13 +602,13 @@ async function lazyPart(b, base, fails) {
         r.abort();
       }
     );
-    // Candidate pass of the judging agent (suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
+    // Candidate pass of the judging agent (data/suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
     // (autosort.js) decides the sure ones at load: CF[0] a sure add (Good, Corallites), CF[1] a sure near-duplicate
     // (rejected), CF[2] a comparison image (left set aside, Pierre's), CF[3] unsure (his); CHK, a sure add that the
     // 1-in-20 draw makes a Check (shown to him blind).
     // The auto-sort only decides photos nobody decided, so these are taken among the candidates of a game genus that
     // Pierre's real curation.json never names (no add, move, hide, Not this genus, reject mark, exclusion, rating, form,
-    // crop or auto-log entry): the first entries of cand.json were often ones he had already decided, and every publish
+    // crop or auto-log entry): the first entries of data/cand.json were often ones he had already decided, and every publish
     // of his and every candidate refill changed the result (2026-11-03). CF[0] also has metrics that cannot stop a sure
     // Good add (autosort.js metFlag, with the admin's percentiles).
     const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f))),
@@ -600,8 +616,8 @@ async function lazyPart(b, base, fails) {
       CUR_S = JSON.stringify(CUR),
       named = f => CUR_S.includes(JSON.stringify(f)) || CUR_S.includes(JSON.stringify('cand:' + f)),
       DJ = rd('data.json'),
-      CJ = rd('cand.json').cand || {},
-      MET = rd('metrics.json').m || {},
+      CJ = rd('data/cand.json').cand || {},
+      MET = rd('data/metrics.json').m || {},
       {autoCheck, metFlag, curIdx, pierreOf} = require('../autosort.js'),
       GAME = new Set(require('../core.js').gameOf(DJ)),
       FREE = Object.entries(CJ)
@@ -621,9 +637,11 @@ async function lazyPart(b, base, fails) {
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
     // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     // FF[3]: a photo the auto-sort set aside earlier (log r), judged since a sure add with a crop: brought back (Q438, b).
-    const FCAND = rd('fish-cand.json').cand,
+    // FF[4]: a photo the auto-sort put in earlier (log ate), judged since a sure rejection (other species one could take for
+    // it): taken out, set aside, logged r (the route out, rule A1).
+    const FCAND = rd('data/fish-cand.json').cand,
       FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
-      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 4),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 5),
       FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
@@ -659,7 +677,14 @@ async function lazyPart(b, base, fails) {
           body: JSON.stringify({
             ...CUR,
             auto: {[day]: LOG},
-            fish: {out: {[FF[2][1]]: 'x'}, seen: {[FF[3][1]]: 1}, auto: {'2026-10-30': {[FF[3][1]]: 'r'}}}
+            fish: {
+              out: {[FF[2][1]]: 'x'},
+              seen: {[FF[3][1]]: 1},
+              add: {[FF[4][1]]: FF[4][0]},
+              tags: {[FF[4][1]]: 'p1g0sl1'},
+              ease: {[FF[4][1]]: 3},
+              auto: {'2026-10-30': {[FF[3][1]]: 'r', [FF[4][1]]: 'ate'}}
+            }
           })
         })
     );
@@ -667,7 +692,7 @@ async function lazyPart(b, base, fails) {
     await ctx.route(base + 'reports-handled.json', r =>
       r.fulfill({contentType: 'application/json', body: JSON.stringify({demorep1: {pr: 577, at: '2026-11-05'}})})
     );
-    await ctx.route(base + 'suggest.json', r =>
+    await ctx.route(base + 'data/suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({
@@ -684,9 +709,10 @@ async function lazyPart(b, base, fails) {
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
             [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
             [FF[3][1]]: {jt: 'p1g0sl1', e: 4, k: 'best', c: [0.2, 0.1, 0.8, 0.9]},
+            [FF[4][1]]: {jt: 'p1g0slk', e: 2, k: 'best'},
             [FC[1]]: {jt: 'o1g1sso', e: 3, k: 'best', n: 'Demo check'}
           },
-          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}}
+          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}, [FF[4][0]]: {fish: {by: 'claude', at: day, n: 1}}}
         })
       })
     );
@@ -1525,7 +1551,7 @@ async function lazyPart(b, base, fails) {
           x = await wp();
           if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
             fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
-          // A photo named as iNaturalist writes a species WoRMS writes otherwise (names.json fish, tools/taxonomy.py):
+          // A photo named as iNaturalist writes a species WoRMS writes otherwise (data/names.json fish, tools/taxonomy.py):
           // the WoRMS tag on its tile (admin.js nameTag; s213 Cheilinus fasciatus, iNaturalist's Concholabrus fasciatus).
           if (w === 1280) {
             await go(other.hash + 'photos/tree/key/s213');
@@ -1721,7 +1747,7 @@ async function lazyPart(b, base, fails) {
             loaded: !!FISHC.plays
           };
         });
-        // A reference photo only the game holds has no Not this (the publish rebuild resolves a correction against fish-cand.json
+        // A reference photo only the game holds has no Not this (the publish rebuild resolves a correction against data/fish-cand.json
         // alone), but can be removed or excluded.
         const rf = await p.evaluate(() => {
           const r = FISHC.plays.find(q => q.auto === 'ref' && FISHC.units.some(u => u.id === 'f:Damselfishes' && u.species.includes(q.sp))),
@@ -3997,7 +4023,7 @@ async function lazyPart(b, base, fails) {
     }
     if (once && run.has('actions')) await timed('actions', actionsPart);
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
-    // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
+    // data/points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
@@ -4145,7 +4171,7 @@ async function lazyPart(b, base, fails) {
         await go('inbox/todo/points/no-such-point');
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
       }
-      // Each side lists its own points (fish admin at parity; points.json subj, the Corals | Fish switch): the corals' none of
+      // Each side lists its own points (fish admin at parity; data/points.json subj, the Corals | Fish switch): the corals' none of
       // the fish ones, the fish side its own with their open count, a point's page and its way back under its prefix.
       {
         const want = await p.evaluate(() => {
@@ -4788,7 +4814,7 @@ async function lazyPart(b, base, fails) {
         // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
         // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
         // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
-        // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
+        // files (data/cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
         // pages opened (Analyses › Stops) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
         {
           const q = await p.context().newPage();
@@ -4822,7 +4848,7 @@ async function lazyPart(b, base, fails) {
               () => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart
             );
           if (!a || !(cj > 0) || !(a.t0 < cj))
-            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
+            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, data/cand.json in at ${Math.round(cj)} ms`);
           await q.unroute(/\/cand\.json$/);
           await q.goto(base + 'admin.html?demo&load=3#photos/candidates');
           await quiet();
@@ -7584,7 +7610,7 @@ async function lazyPart(b, base, fails) {
       }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
       // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
-      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health. With 25
+      // at load, is kept out (data/suggest.json without its fish part), so nothing else has read them before Health. With 25
       // photos everyone misses (24 shown: statsHealth MAXPH), one Removed leaves the list and the 25th comes in.
       {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
@@ -7594,7 +7620,7 @@ async function lazyPart(b, base, fails) {
           r => r.abort()
         );
         await fc.route(
-          u => u.pathname === '/suggest.json',
+          u => u.pathname === '/data/suggest.json',
           async r => {
             const j = await (await r.fetch()).json();
             delete j.fish;
@@ -7614,11 +7640,11 @@ async function lazyPart(b, base, fails) {
             }
           )
           .catch(() => fe.push('Health not drawn'));
-        // three players miss a candidate photo in play (fish-cand.json and the fish photos) three times each, first in the
+        // three players miss a candidate photo in play (data/fish-cand.json and the fish photos) three times each, first in the
         // list, and 24 other fish photos twice each
         const pre = await fq.evaluate(async () => {
           const was = !!FISHC,
-            C = await fetch('fish-cand.json').then(r => r.json()),
+            C = await fetch('data/fish-cand.json').then(r => r.json()),
             cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
             D = DRAFT.fish || {},
             // photos the demo's players never answered (its fish answers draw from fish-photos.json's first photos, the
@@ -9401,7 +9427,7 @@ async function lazyPart(b, base, fails) {
       if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
       await go('photos/candidates');
       if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
-      // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
+      // A suggested crop (data/suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
       const sc = await p.evaluate(F => {
         const n = Object.keys(DATA.cand).find(g => DATA.cand[g].some(x => x.f === F[0])),
           q = DATA.cand[n].find(x => x.f === F[0]),
@@ -9760,7 +9786,13 @@ async function lazyPart(b, base, fails) {
         fa.fish.add[FF[3][1]] !== FF[3][0] ||
         FF[3][1] in fa.fish.seen ||
         JSON.stringify((fa.fish.crop || {})[FF[3][1]]) !== '[0.2,0.1,0.8,0.9]' ||
-        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec'
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec' ||
+        // taken out: no add, no tags, no ease, set aside, logged r (the earlier ate stays beside it)
+        FF[4][1] in fa.fish.add ||
+        FF[4][1] in fa.fish.tags ||
+        FF[4][1] in fa.fish.ease ||
+        fa.fish.seen[FF[4][1]] !== 1 ||
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[4][1]] !== 'r'
       )
         fails.push(
           `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto, crop: fa.fish.crop, tags: fa.fish.tags, phase: fa.fish.phase, sum: fa.sum})}`

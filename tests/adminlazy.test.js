@@ -2,8 +2,9 @@ require('./slot.js').testGuard();
 // The admin's lazy scripts (admin.js lazyLoad, lazyPage; admin.html's inert tags; Pierre, 2026-11-19: the admin on his phone
 // "takes longer and longer to open"): analysis.js, admin-analyses.js and admin-demo.js are fetched when a page needs them,
 // not by every visit. Tags in order, once per file, a failed file asked for again, the page waiting says Loading… and one
-// request however many times render() runs; the boot of ?demo waits for the demo; the fish auto-sort of an admin who opened
-// on a Players page waits for the first other page. admin-heatmap.js stays a plain tag: it puts heatLab, heatUp… in the
+// request however many times render() runs; the boot of ?demo waits for the demo; a file loads only after the one before it
+// (a failed dependency never runs its dependent); the fish auto-sort still runs at every load (rule A1), at idle, and a
+// Publish before it runs it. admin-heatmap.js stays a plain tag: it puts heatLab, heatUp… in the
 // global scope, which admin-journey.js names (found by the smoke: "heatLab is not defined" on a Journey).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -56,7 +57,8 @@ function world(fail = new Set(), selfDraw = false) {
   };
   vm.createContext(ctx);
   vm.runInContext(
-    block(src, 'const LAZY = {};', '\nfunction render() {', {file: 'admin.js'}) + '\nthis.M = {lazyLoad, lazyPage, LAZY_WAIT, analysesIn};',
+    block(src, 'const LAZY = {};', '\nfunction render() {', {file: 'admin.js'}) +
+      '\nthis.M = {lazyLoad, lazyPage, LAZY_WAIT, analysesIn, LAZYMAP: LAZY};',
     ctx
   );
   return Object.assign(W, {ctx, ...ctx.M});
@@ -90,15 +92,20 @@ test('admin.html: the lazy scripts are inert tags, in the order they ran in, wit
   assert.match(html, /<script src="admin-heatmap\.js\?v=\d+"><\/script>/);
 });
 
-test('lazyLoad: a group inserts its files in order, asynchronously false, once; groups share a file', async () => {
+test('lazyLoad: a group inserts its files in order, each only once the one before it has loaded, once; groups share a file', async () => {
   const w = world();
   const a = w.lazyLoad('analyses');
+  await Promise.resolve();
+  assert.deepStrictEqual(
+    w.inserted.map(s => bare(s.src)),
+    ['analysis.js'],
+    'the dependent waits for its dependency to load'
+  );
+  await a;
   assert.deepStrictEqual(
     w.inserted.map(s => s.src),
     inert.filter(t => t.lazy.includes('analyses')).map(t => t.src)
   );
-  assert.ok(w.inserted.every(s => s.async === false));
-  await a;
   await w.lazyLoad('analyses');
   assert.strictEqual(w.inserted.length, 2, 'asked again: nothing inserted again');
   // the demo wants analysis.js too: only admin-demo.js is new
@@ -147,8 +154,8 @@ test('lazyPage: Loading… at once, one request however often it is asked, no se
   assert.match(w.v.innerHTML, /Loading…/);
   w.lazyPage('analyses', w.ctx.cur);
   w.lazyPage('analyses', w.ctx.cur);
-  assert.strictEqual(w.inserted.length, 2);
   await tick();
+  assert.strictEqual(w.inserted.length, 2);
   // the Analyses script drew its page over the note (its last line): render() is not called again from here
   assert.strictEqual(w.v.innerHTML, '<div>the page</div>');
   assert.strictEqual(w.rendered, 0);
@@ -163,27 +170,38 @@ test('lazyPage: the note still on screen once the whole group is in: the page is
   assert.strictEqual(w.rendered, 1);
 });
 
-test('lazyPage: analysis.js fails, admin-analyses.js loads: a word on the page, then only analysis.js is asked for again and the page drawn', async () => {
+test('lazyPage: analysis.js fails: admin-analyses.js is never run, a word on the page, the next visit asks for both and the page is drawn', async () => {
   const first = inert.find(t => t.src.startsWith('analysis.js')).src,
     fail = new Set([first]),
     w = world(fail);
   w.lazyPage('analyses', w.ctx.cur);
   await tick();
   assert.match(w.v.innerHTML, /could not be loaded/);
+  // the dependent is not even inserted: it would run, throw at its top level, and be cached as loaded (Codex, P2)
   assert.deepStrictEqual(
     w.inserted.map(s => bare(s.src)),
-    ['analysis.js', 'admin-analyses.js']
+    ['analysis.js']
   );
-  // the next visit: the gate (analysesIn) says the group is not in, and only the missing file is fetched
   assert.strictEqual(w.analysesIn(), false);
+  assert.deepStrictEqual(Object.keys(w.LAZYMAP), [], 'nothing cached: neither a failure nor the dependent as loaded');
+  // the next visit: both files are fetched, in order
   fail.clear();
   w.lazyPage('analyses', w.ctx.cur);
   await tick();
   assert.deepStrictEqual(
     w.inserted.map(s => bare(s.src)),
-    ['analysis.js', 'admin-analyses.js', 'analysis.js']
+    ['analysis.js', 'analysis.js', 'admin-analyses.js']
   );
   assert.strictEqual(w.rendered, 1, 'nothing drew over the note: drawn from here');
+});
+
+// The reason the loads are a chain: the real admin-analyses.js, run without analysis.js, throws at its top level (AN_HELP_COMMON
+// reads ANALYSIS.PRIMARY) before it registers its help, and the browser would still fire its load event.
+test('admin-analyses.js run without analysis.js throws at its top level (so it never runs after a failed dependency)', () => {
+  const ctx = {HELP: {}, document: {}, window: {}, location: {search: ''}, addEventListener() {}, console};
+  vm.createContext(ctx);
+  assert.throws(() => vm.runInContext(fs.readFileSync(path.join(ROOT, 'admin-analyses.js'), 'utf8'), ctx), /ANALYSIS|not defined/);
+  assert.deepStrictEqual(Object.keys(ctx.HELP), [], 'its help was not registered');
 });
 
 test('analysesIn: both files are needed, admin-analyses.js alone draws nothing', () => {
@@ -271,11 +289,43 @@ test('no always-loaded script names what a lazy script defines, but behind a typ
   assert.ok(/typeof anKey === 'function' && anKey\(cur\)/.test(src) && /typeof renderAnalyses === 'function'/.test(src));
 });
 
-test('the fish auto-sort of an admin who opened on a Players page waits for the first other page', () => {
+// Rule A1: the fish auto-sort populates the draft at each admin load, whatever page the admin stays on. It is scheduled at idle
+// by the laying (sugRun, in both openings), never held for a page, and a Publish that comes first runs it (asortDone).
+test('the fish auto-sort runs at every admin load, at idle, whatever the opening; a Publish before it runs it first', () => {
+  assert.ok(!/ASORT_WAIT/.test(src), 'no page holds the fish auto-sort back');
   const run = block(src, 'const fishLater = () =>', '  };\n  // Opened on a Players page', {file: 'admin.js'});
-  assert.match(run, /if \(late\) ASORT_WAIT = asortIdle;\n\s*else asortIdle\(\);/);
-  // render() starts it for a page that is not a Players one (sugOwn), once, after the suggestions' gate
-  const r = block(src, 'function render() {', "document.body.classList.toggle('adm-cmode'", {file: 'admin.js'});
-  assert.match(r, /if \(ASORT_WAIT && !sugOwn\(cur\)\) \{\n\s*const go = ASORT_WAIT;\n\s*ASORT_WAIT = null;\n\s*go\(\);/);
-  assert.ok(r.indexOf('sugLoad();') < r.indexOf('ASORT_WAIT'), 'after the gate that waits for the suggestions');
+  assert.match(run, /ASORT_GO = fishLater;/);
+  assert.match(run, /requestIdleCallback\(fishLater, \{timeout: 4000\}\) : setTimeout\(fishLater, 1500\)/);
+  assert.ok(!/\blate\b/.test(run), 'the opening does not change when the auto-sort is scheduled');
+  // the laying, so the auto-sort with it, runs in both openings: at once, or in SUG_LATE (sugLater: sheet reads in, idle)
+  const start = block(src, 'const keep = changed().length;', '\n  else sugRun();', {file: 'admin.js'});
+  assert.match(start, /SUG_LATE = \(\) => \{\n\s*sugCands\(\);\n\s*sugRun\(\);/);
+  // Publish reads the draft after the auto-sorts of the load are done
+  const save = block(src, 'async function save() {', 'const ch = changed(),', {file: 'admin.js'});
+  assert.match(save, /if \(TOKEN && \(SUG_LATE \|\| ASORT_GO\)\) await asortDone\(\);/);
+});
+
+// asortDone with stubs: the laying first when it is still to come, then the auto-sort (once), never a rejection.
+test('asortDone: waits for the suggestions, then runs or joins the fish auto-sort', async () => {
+  const calls = [];
+  const ctx = {
+    SUG_LATE: null,
+    ASORT_GO: null,
+    sugLoad: () => (calls.push('sug'), ctx.SUG_LATE ? Promise.reject(new Error('x')) : Promise.resolve()),
+    console
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(src, 'async function asortDone() {', '\nfunction sugLoad() {', {file: 'admin.js'}) + '\nthis.asortDone = asortDone;',
+    ctx
+  );
+  await ctx.asortDone();
+  assert.deepStrictEqual(calls, ['sug'], 'nothing pending: nothing run');
+  let n = 0;
+  ctx.ASORT_GO = () => (calls.push('fish'), n++, Promise.resolve());
+  await ctx.asortDone();
+  assert.deepStrictEqual(calls, ['sug', 'sug', 'fish']);
+  ctx.SUG_LATE = () => {};
+  await ctx.asortDone(); // the laying failed: the auto-sort is still asked, nothing rejects
+  assert.strictEqual(n, 2);
 });

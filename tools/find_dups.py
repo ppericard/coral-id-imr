@@ -1,5 +1,5 @@
 # Near-duplicate photos within each genus, crops included (same lecture photo on two slides, the same iNat photo
-# imported twice...). Writes dups.json {"dup": [{genus, keep, f: [others], note}]}, listed in the admin Triage
+# imported twice...). Writes data/dups.json {"dup": [{genus, keep, f: [others], note}]}, listed in the admin Triage
 # (Keep / Exclude). Only suggestions: nothing is hidden or excluded automatically.
 # Keep = IMR first, then the admin's own, then the larger image.
 import json, os, sys
@@ -13,7 +13,7 @@ from datajson import load_all
 import photos as ph  # img/, or R2 for the photos that live there only (Photos out of the repo)
 import slot
 slot.guard('tools/find_dups.py')  # one heavy run at a time on the machine (rule W24)
-d = load_all()  # data.json + the candidates waiting in cand.json
+d = load_all()  # data.json + the candidates waiting in data/cand.json
 HAVE = set(ph.every())  # the downloaded photos, wherever their files are
 
 def photos(n):
@@ -83,5 +83,5 @@ for n in d['gen']:
         note = 'near-identical' + (' (slides ' + ', '.join(str(P[f]['slide']) for f in L if P[f].get('slide')) + ')' if any(P[f].get('slide') for f in L) else '')
         out.append({'genus': n, 'keep': keep, 'f': L[1:], 'note': note})
         print(n, keep, L[1:], note, flush=True)
-json.dump({'dup': out}, open(f'{R}/dups.json', 'w'), indent=1)
+json.dump({'dup': out}, open(f'{R}/data/dups.json', 'w'), indent=1)
 print(len(out), 'groups')

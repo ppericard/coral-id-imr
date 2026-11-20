@@ -4450,7 +4450,7 @@
   /* ---------- Photo features, from the public files (the same for the workflow and the admin) ---------- */
   // {file: [view, quality 1-3, sharpness or null, source]}: the view after the admin's moves and adds (curation.json),
   // his quality rating else the automatic one (quality.json; an IMR lecture photo is never rated Poor automatically, as
-  // the app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, the admin's own, other iNaturalist).
+  // the app's autoQ), the sharpness of data/metrics.json, and the source (IMR lecture, the admin's own, other iNaturalist).
   function photoMeta(data, cur, qual, met, core) {
     const out = {},
       C = (cur && cur.genera) || {},

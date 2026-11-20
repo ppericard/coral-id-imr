@@ -155,8 +155,12 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   pages and the tiles still read each side's own state (the study's steps 6-8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
-  set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
-  candidate list, `fishLoad` `key`); its Auto details label each decision in, back in (log `b`) or set aside;
+  set aside and its route out of one it put in (`sortBack`, `sortOut`) reading the pass's date of each candidate
+  (`passAt`: `data/suggest.json` `by`, through the key of its candidate list, `fishLoad` `key`); its Auto details label each
+  decision in, back in (log `b`) or set aside (a photo taken out is logged as a plain reject); the tile, family, coverage,
+  pairs and review pages and the Candidates rows read a photo's tags, ease, phase and crop through `readView` (`autosort.js`
+  `sortView`: what the auto-sort wrote that the pass has judged anew since is left out, so the pass's value shows, as the
+  game plays it), the writers never (rule A1);
 - `tags`, for every tree subject (the fish, the sea slugs), its whole rubric, declared and never defaulted: the seven
   positions of a photo's tag code (`names` and, by position, `[value, label, words, more]`), the flags and the phase row;
   `core.js` `treeRubric` writes down what the tree subjects share once (the whole, colour loss, clarity, size and count
@@ -262,8 +266,9 @@ the sign-out seal's [design note](../reviews/2026-11-09-admin-signout-seal.md)).
 - **A click's cost**: a click's write stores the draft's text `snap` as it is and parses no draft when no other tab
   wrote, and `autoWhen` skips the fish part's keeps when the click left that part as it was (the same object: the admin
   never writes into it; `tests/adminclick.test.js`). The fish auto-sort at load (`fishAutoRun`, which reads
-  `fish-cand.json`) runs once the first page is drawn and the page is idle (`requestIdleCallback`, 4 s at most); an admin
-  who opened on a Players page waits for the first page past Players (below, "What the first page waits for").
+  `data/fish-cand.json`) runs once the first page is drawn and the page is idle (`requestIdleCallback`, 4 s at most), at
+  every admin load whatever page the admin stays on (rule A1); a Publish that comes first runs it before it reads the
+  draft (`asortDone`; "What the first page waits for", below).
 - **Undo steps**: the last 60, as many as fit in `HIST_ROOM` (4.5 million characters: with a draft over a million
   characters, one or two), kept in `sessionStorage` `reefid-admin-undo` with the draft they lead to (`keepHist`, written
   once the clicks pause for `HIST_WAIT`, 1.5 s, and when the page is hidden or left), so they survive a reload of the tab
@@ -333,18 +338,19 @@ The draft button carries the status: "● Publish" with a draft (its title lists
     Cache Storage under the blob's sha (`blobText`, `reefid-admin-blobs`, the latest only: a sha never changes its blob):
     the next visit and every Publish (`fresh()` re-reads it) ask GitHub for the sha only. Public data (the file is on the
     site), not the declined copy of players' data (ROADMAP "Declined for now"). Not in the demo.
-  - `suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
+  - `data/suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
     work of laying them over the candidates) is read by the photo pages, the Inbox count and the auto-sorts, never by a
     Players page (`sugOwn`). Opened on a Players page (the default), `start()` does not wait for it: the candidates' laying
     (`sugCands`) and the auto-sorts (`sugRun`) are left in `SUG_LATE`, run by `sugLoad` once the sheet's reads are in and the
     page is idle (`sugLater`), or at once when a page that needs them is asked for (`render()`'s gate: Loading… until
     then). Opened on any other page it waits for them as before. Until they are in, the header's Inbox count leaves out the
     suggestions (it comes up with the laying, a few seconds after Activity).
-  Two more things are fetched only by the pages that need them (Pierre, 2026-11-19; [record](../decisions/2026-11-20-admin-lazy-loads.md)):
+  Some scripts are fetched only by the pages that need them (Pierre, 2026-11-19; [record](../decisions/2026-11-20-admin-lazy-loads.md)):
   - **Scripts.** `analysis.js` (207 KB), `admin-analyses.js` and `admin-demo.js` are inert tags in `admin.html`
     (`type="text/plain"`, `data-lazy="group group"`: the version stamping and the name checks still see them, in their old
-    order); `lazyLoad(group)` inserts the real tag of each in that order (`async = false`), once per file, and a file that
-    failed is asked for again. Groups: `analyses` (`analysis.js`, `admin-analyses.js`) and `demo` (`analysis.js`,
+    order); `lazyLoad(group)` inserts the real tag of each in that order, one after the other (a file only once the one
+    before it has loaded: a dependent never runs after its dependency failed, and the group rejects, so the page shows its
+    load error), once per file, and a file that failed is asked for again. Groups: `analyses` (`analysis.js`, `admin-analyses.js`) and `demo` (`analysis.js`,
     `admin-demo.js`). `render()` asks for `analyses` for any Analyses page that is not live (`anPage`; `lazyPage`:
     Loading…, one request however often `render()` runs, a word on the page if the file cannot be fetched);
     `admin-analyses.js` draws the page it finds on screen when it loads, as it always did for an address that came before
@@ -352,10 +358,11 @@ The draft button carries the status: "● Publish" with a draft (its title lists
     after `lazyLoad('demo')` (the demo patches `fetch` before the first read), so `DEMO` reads the address, not
     `window.ADMIN_DEMO`. A visit to Activity fetches none of them but the demo's own pair. `admin-heatmap.js` stays a
     plain tag: it puts `heatLab`, `heatUp`… in the global scope, which `admin-journey.js` names on any Journey.
-  - **The fish auto-sort** (`fishAutoRun`: `fish-cand.json` 10 MB and `fish.json`, a 1-second block on a phone profile)
-    runs, for an admin who opened on a Players page, on the first `render()` of a page that is not a Players one
-    (`ASORT_WAIT`, set by `sugRun`, run at idle there as before); opened on any other page, as before. A visit that stays
-    on Players never reads them, and its Publish sends the fish proposals only once a page past Players has run it.
+  - **The fish auto-sort** (`fishAutoRun`: `data/fish-cand.json` 10 MB and `fish.json`, a 1-second block on a phone
+    profile) is never on the opening's path: it starts once the first page is drawn and the page is idle (an admin who
+    opened on a Players page: once its suggestions are in, `sugLater`, then idle, 4 s at most), at every admin load
+    whatever page the admin stays on (rule A1). A Publish that comes before it has finished runs it, or waits for it,
+    first (`asortDone`: the draft it reads holds the load's fish proposals).
   Left, ROADMAP "Admin opening": the answer log, and the data files' revalidation in one call (a deploy manifest).
 - **Memos**: `photos` / `own` / `cands` walk every genus and are memoized per draft state, kept from page to page:
   `render()` clears them only when the draft differs from the one they were computed for (`memoFresh`), and photos or
