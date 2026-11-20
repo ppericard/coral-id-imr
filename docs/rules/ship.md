@@ -223,7 +223,7 @@ interface change or redesign at every width of rule U4** (surprises hide in the 
 screen; open the browser console: no errors. **Dark is the app's ⚙ Theme, never the system's**: set `reefid-sync-theme`
 to `dark` (plain text) in localStorage before the page loads (an init script), or `data-theme="dark"` on `<html>`; Playwright's
 `colorScheme: 'dark'` changes nothing, since the app and the admin ignore `prefers-color-scheme` (rule U3), so its "dark"
-screenshot is the light page (#908's were; three agents' "dark" shots on 2026-11-20 too). The recipe, checked at 390 px
+screenshot is the light page (#908's were). The recipe, checked at 390 px
 (`colorScheme: 'dark'` alone: no `data-theme`, light background; with the init script: `data-theme="dark"`, dark
 background): `const c = await b.newContext({viewport: {width: 390, height: 800}}); await c.addInitScript("try{localStorage.setItem('reefid-sync-theme','dark')}catch(e){}");`,
 then `p.goto(...)`. Read it back (`document.documentElement.dataset.theme === 'dark'`) before trusting a shot; launch
