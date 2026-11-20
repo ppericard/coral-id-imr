@@ -246,12 +246,14 @@
   //           subject of an unlabelled row (replaySubject); the others the sheet replays are SUBJECTS replayed
   //   The subject differences one-engine step 2 split out of replay (docs/reviews/2026-11-19-one-engine-audit.md;
   //   rule S1), each a feature switched on for the subjects that hold it, at the values replay gave:
-  //   hold    the sheet's opening hold counts its answers (Code.gs hold_), adopted as this subject (sync.js holdAdopt)
+  //   hold    the app adopts the sheet's opening hold for this subject (sync.js holdAdopt); the sheet computes every
+  //           replayed subject's from its own answers (Code.gs holdsInto_, the reply's holds)
   //   offsets  the sheet's photo memory and format offsets are fitted on its answers (Code.gs stats_): the app reads
   //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
   //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
   //           signIn); any other subject adds all the progress this device holds
-  //   hold and offsets follow the sheet, which computes them for replay's subject alone (tests/subject-neutral.test.js)
+  //   offsets follows the sheet, which computes it for replay's subject alone; hold stays on that subject until the app
+  //           adopts each subject's own (tests/subject-neutral.test.js)
   //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
   //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
   //   ach     it has achievements: achs() its list (ACH, FISH_ACH), all in the one synced record (progress.js ACHK)
@@ -422,11 +424,8 @@
   // that score, the plain mean.
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
   // The Learn and Practice pages the tree subjects do not have yet, each with its reason (SUBJECTS closed): the plan that
-  // opens them is docs/reviews/2026-11-19-modes-every-subject.md. Memory pairs a colony with its corallites, two views of
-  // one unit, and these subjects have one view (SUBJECTS views).
-  const CLOSED_TREE = {
-    pairs: 'Memory matches two views of one unit (colony and corallites); this subject has one view (views)'
-  };
+  // opens them is docs/reviews/2026-11-19-modes-every-subject.md.
+  const CLOSED_TREE = {};
   // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
   // (SUBJECTS admin.tags) and read by the admin in one place (admin.js tagWords, tagRows, tagFlags). A photo's code is its
   // seven tags by position, 0-6, then its flags' letters; each position and the flags is a list of
@@ -689,7 +688,7 @@
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
-      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
@@ -755,7 +754,7 @@
         // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
         // its tree; ph, its first photos (none for a subject without); gm, its game photos; cand, its candidate photos
         // (admin.js fishLoad: Photos › Tree's tools, Candidates).
-        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'fish-cand.json'},
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'data/fish-cand.json'},
         // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
         // the candidates judged sure that the game does not take in by itself.
         autosort: true,
@@ -781,7 +780,7 @@
           ]
         }),
         // To do › All lists the reports, flags and errors with its photo work (todo), never the corals' photo sections;
-        // Points, the fish points of points.json.
+        // Points, the fish points of data/points.json.
         todo: ['photos'],
         pages: [
           'inbox/todo/all',
@@ -904,7 +903,7 @@
       gate: TREE_GATE,
       // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
       // (reefid-seaslug-basics) and done feat.
-      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
@@ -960,7 +959,7 @@
         cur: 'seaslug',
         // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports), and
         // for Photos › Tree (its candidates: Not this, the candidates waiting).
-        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'seaslug-cand.json'},
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'data/seaslug-cand.json'},
         // target: a species' photos in play its Candidates fill up to (autosort.js fishTarget; the fish's FISHT by
         // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
         // play up to it; tests/seaslugadmin.test.js keeps the two equal).
@@ -989,7 +988,7 @@
           ]
         }),
         todo: [],
-        // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
+        // Points: its own (data/points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js): every genus against every genus, live from its answers, the genera in their family's
         // block, the families in their taxonomic group (seaslug.json taxa).
         pages: [
@@ -1007,7 +1006,7 @@
           // admin.js fuWormsOf), as the fish's.
           'photos/tree/key',
           'photos/tree/worms',
-          // Candidates: seaslug-cand.json one at a time, as the fish's (admin-fish.js
+          // Candidates: data/seaslug-cand.json one at a time, as the fish's (admin-fish.js
           // renderFishCand), a photo moved with Not this waiting as its new species' candidate; no auto-sort (autosort)
           'photos/candidates',
           // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
@@ -1071,7 +1070,7 @@
     return {sid: s, L: n < 0 ? L : L.slice(0, n)};
   };
   // The subject of the sheet's first replay path (SUBJECTS replay: the corals): its replay, and the subject of an
-  // unlabelled row. The sheet's hold and photo memory follow it too (SUBJECTS hold, offsets).
+  // unlabelled row. The sheet's photo memory follows it too (SUBJECTS offsets), and the hold the app adopts (hold).
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
   // The other subjects whose progress the sheet replays from their own answers (SUBJECTS replayed: fish), by id.
   const replayedSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed).map(S => S.id);
@@ -3307,12 +3306,14 @@
   };
   // Question formats (analysis.js FORMATS, whose fmtOf this is: tests/analysis.test.js checks both agree), from the mode
   // quiz.js logs and the number of choices shown: typed (|t), the Duel tab (quiz-duel…), a look-alike duel in the quiz
-  // (|d), an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
+  // (|d), a Find the X (|f: one name, four photos; its own offset, the one its photo is aimed with, quiz.js planFind),
+  // an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
   function fmtOf(m, nch) {
     m = String(m || '');
     if (TYPED_RE.test(m)) return 'typed';
     if (m.indexOf('quiz-duel') === 0) return 'duel';
     if (/\|d(\||$)/.test(m)) return 'qduel';
+    if (/\|f(\||$)/.test(m)) return 'find';
     if (/\|x(\||$)/.test(m)) return 'exam';
     if (nch === 2) return 'again';
     const k = /\|k(\d)/.exec(m);
@@ -5251,7 +5252,7 @@
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
 
   // Photos out of the repo (docs/ROADMAP.md): git keeps only the photos with no other backup (IMR lecture photos, our own
-  // drawings); the photos with an online original (data.json / cand.json / fish-photos.json src: iNaturalist, Pierre's
+  // drawings); the photos with an online original (data.json / data/cand.json / fish-photos.json src: iNaturalist, Pierre's
   // own iNaturalist photos, FishBase) are to leave img/. So once R2 fails, a photo with an online original is read from
   // that original, at a light size, and only the others from the site's img/ (app.js photoFail, quiz.js pump, admin.js).
   // Our files are 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (''); iNaturalist serves small (240 px), medium (500 px),

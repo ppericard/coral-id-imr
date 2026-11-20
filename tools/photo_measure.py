@@ -13,12 +13,12 @@
 #   python3 tools/photo_measure.py --minutes 35       stop cleanly after that long (default 35, rule L11's cap); a rerun
 #                                                      resumes where it stopped
 #   python3 tools/photo_measure.py --dir D             read <D>/<f>-m.webp instead of R2 (the photo workflow's
-#                                                      r2-upload/, a test's fixtures); --out P writes P, not measured.json
+#                                                      r2-upload/, a test's fixtures); --out P writes P, not data/measured.json
 #   python3 tools/photo_measure.py --judges            measures nothing: how each measure goes with the judges' tags
 #                                                      (light, colour loss, clarity, ease) on the photos measured
 #
 # Downloads are kept in memory only (nothing written to disk); R2 is asked by WORKERS threads at most RATE requests a
-# second. measured.json is written every FLUSH photos and at the end, so a stop loses little.
+# second. data/measured.json is written every FLUSH photos and at the end, so a stop loses little.
 import argparse, hashlib, io, json, math, os, sys, threading, time, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -26,7 +26,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import fish_short  # noqa: E402  (fish-game.json's short form)
 
-OUT = os.path.join(ROOT, 'measured.json')
+OUT = os.path.join(ROOT, 'data/measured.json')
 MV = 1  # the method's version: a change to any measure below bumps it, and every photo is measured again
 W = 960  # every photo is measured at this long side (its -m file, resampled when smaller): values are comparable
 SUF = '-m'
@@ -309,7 +309,7 @@ def run(a):
             print(f'{n}/{len(fs)} ({done} measured, {fail} failed, {time.monotonic() - t0:.0f} s)')
     if done + fail < len(fs):
         print(f'stopped at the {a.minutes}-minute budget, {len(fs) - done - fail} left; run again to resume')
-    print(f'measured.json: {len(ms)} photos ({done} measured now, {fail} failed)')
+    print(f'data/measured.json: {len(ms)} photos ({done} measured now, {fail} failed)')
     return 0
 
 

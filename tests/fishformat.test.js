@@ -23,7 +23,9 @@ const CORAL = {
   again: [0.29, 411],
   duel: [0.3, 204],
   qduel: [0.02, 92],
-  typed: [-0.42, 64]
+  typed: [-0.42, 64],
+  // Find the X's own offset (core.js fmtOf |f): made up, no sheet serves it for the corals, whose units have no tile.
+  find: [0.5, 40]
 };
 // An object whose every read of a format throws: a code path that reads a coral offset fails the test.
 const untouchable = () =>
@@ -94,12 +96,13 @@ function question(subject, F, {mode, chs, k}) {
   vm.createContext(env);
   return vm.runInContext(QSRC + '\nq;', env);
 }
-// The formats a question can have (core.js fmtOf): 2 plausible among 4, 4 plausible, Again, typed.
+// The formats a question can have (core.js fmtOf): 2 plausible among 4, 4 plausible, Again, typed, Find the X.
 const FORMATS = [
   {mode: 'quiz|k2', chs: ['u', 'a', 'b', 'c'], k: 2, f: 'k2'},
   {mode: 'quiz', chs: ['u', 'a', 'b', 'c'], k: 4, f: 'k4'},
   {mode: 'quiz', chs: ['u', 'a'], k: 2, f: 'again'},
-  {mode: 'quiz|t', chs: [], k: Infinity, f: 'typed'}
+  {mode: 'quiz|t', chs: [], k: Infinity, f: 'typed'},
+  {mode: 'quiz|f', chs: ['u', 'a', 'b', 'c'], k: 4, f: 'find'}
 ];
 
 test('fish: the expectation and the scoring record take no format offset, never a coral one', () => {
@@ -125,9 +128,9 @@ test('fish: the draw aims its photo with no format offset, never a coral one', (
   const L = Array.from({length: 12}, (_, i) => ({f: `p${i}`, o: `o${i}`, e: 1 + (i % 5)}));
   const E = engine('fish', L, {PFMT: untouchable(), fmtOff: C.fmtOff}),
     E0 = engine('fish', L, {PFMT: {}, fmtOff: C.fmtOff});
-  ['k4', 'k3', 'k2', 'again', 'typed'].forEach(f => {
+  ['k4', 'k3', 'k2', 'again', 'typed', 'find'].forEach(f => {
     for (let i = 0; i < 100; i++) {
-      const k = f === 'typed' ? Infinity : f === 'k4' ? 4 : f === 'k3' ? 3 : 2;
+      const k = f === 'typed' ? Infinity : f === 'k4' || f === 'find' ? 4 : f === 'k3' ? 3 : 2;
       assert.strictEqual(JSON.stringify(E.photoSet('u', null, 0, k, f)), JSON.stringify(E0.photoSet('u', null, 0, k, f)), f);
     }
   });

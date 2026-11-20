@@ -66,8 +66,8 @@ test('licOf, rightsClass: the app (core.js), the admin (presence.js) and Python 
     add(g.book);
   });
   Object.values(D.course || {}).forEach(add);
-  Object.values(read('cand.json').cand || {}).forEach(add);
-  Object.values(read('fish-cand.json').cand || {}).forEach(add);
+  Object.values(read('data/cand.json').cand || {}).forEach(add);
+  Object.values(read('data/fish-cand.json').cand || {}).forEach(add);
   Object.values(C.treeGameRead(read('fish-game.json')).photos || {}).forEach(add);
   Object.values(read('fish-photos.json').photos || {}).forEach(add);
   assert.ok(all.length > 1000, 'photo records read');

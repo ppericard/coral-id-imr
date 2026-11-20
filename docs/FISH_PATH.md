@@ -478,7 +478,7 @@ Supported now:
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
 - Presence near Dauin (`present.near`).
-- Candidate photos per species (`fish-cand.json`: up to 30 observations each, life stage `st`, pre-sort phase `ph`).
+- Candidate photos per species (`data/fish-cand.json`: up to 30 observations each, life stage `st`, pre-sort phase `ph`).
 
 Gaps before species questions ship:
 
@@ -569,7 +569,9 @@ Decided from the admin pooling study:
   of X, it looks very different", or "this species' males and females can look very different". Possibly one per species.
   Built 2026-11-15 (`quiz.js` `phaseShow`): two cards per subject, the first juvenile and the first sex or colour phase a
   player meets, at the break at Next, the photo beside one of its species in another phase, with the unit's IMR phase
-  lines; one per species stays a ROADMAP row.
+  lines; one per species stays a ROADMAP row. Since 2026-11-20 the juvenile card says nothing in words: the young photo
+  beside an adult of its species, only for species whose young a source says look clearly different
+  ([decision](decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md)).
 
 ## Look-alikes at any rank (design, Pierre, 2026-11-04; view 2 built for the mimicry class only)
 

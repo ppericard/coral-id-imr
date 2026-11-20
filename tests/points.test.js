@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The points to handle: points.json's shape (written by agents, read by the admin's To do › Points)
+// The points to handle: data/points.json's shape (written by agents, read by the admin's To do › Points)
 // and the list's order (points.js, shared with admin.js).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -8,21 +8,21 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const {PT_STATUS, ptStatus, pointsOrder, pointAge, pointsProblems, photoKey} = require('../points.js');
-const J = read('points.json'),
+const J = read('data/points.json'),
   SUBJ = require('../core.js').SUBJECTS.map(s => s.id);
 
-test('points.json: every point has the right shape, ids unique', () => {
+test('data/points.json: every point has the right shape, ids unique', () => {
   assert.deepStrictEqual(pointsProblems(J, SUBJ), []);
   assert.ok(J.points.length >= 20);
 });
 
-test('points.json: the Astrea question first, with its 7 photos to show, each in the app', () => {
+test('data/points.json: the Astrea question first, with its 7 photos to show, each in the app', () => {
   const p = J.points[0];
   assert.strictEqual(p.id, 'astrea-reefcloud');
   assert.strictEqual(p.kind, 'trainer');
   assert.strictEqual(p.photos.length, 7);
   const D = read('data.json'),
-    C = read('cand.json'),
+    C = read('data/cand.json'),
     F = new Set();
   const walk = o =>
     Array.isArray(o) ? o.forEach(walk) : o && typeof o === 'object' ? (o.f && F.add(o.f), Object.values(o).forEach(walk)) : 0;
@@ -33,12 +33,12 @@ test('points.json: the Astrea question first, with its 7 photos to show, each in
     // 5-7: the photos flagged in the players' reports (two "?", one "Astrea?").
     ['Astrea curta', 'Favites colemani', 'Plesiastrea peroni', 'Favites colemani', 'Astrea curta', 'Astrea curta', 'Favites valenciennesi']
   );
-  p.photos.forEach(x => assert.ok(F.has(x.f), `${x.f} is not a photo of data.json or cand.json`));
+  p.photos.forEach(x => assert.ok(F.has(x.f), `${x.f} is not a photo of data.json or data/cand.json`));
   // The admin's own F. colemani observation (iNaturalist 406194912) is the fourth.
   assert.match(p.photos[3].o, /observations\/406194912$/);
 });
 
-test('points.json: a photo in points.json names a photo id or an https copy, with its credit', () => {
+test('data/points.json: a photo in data/points.json names a photo id or an https copy, with its credit', () => {
   J.points
     .flatMap(p => p.photos || [])
     .forEach(x => {
@@ -106,7 +106,7 @@ test('photoKey: the photo id, else its place', () => {
   assert.strictEqual(photoKey({none: 'n'}, 2), 'p2');
 });
 
-test('the trainer questions and content questions left ROADMAP for points.json', () => {
+test('the trainer questions and content questions left ROADMAP for data/points.json', () => {
   const R = fs.readFileSync(path.join(ROOT, 'docs/ROADMAP.md'), 'utf8');
   ['Slide 16 right half', 'exclusively extra-tentacular', 'Stylophora wording', 'Merulina placement'].forEach(s =>
     assert.ok(!R.includes(s), `ROADMAP still lists "${s}"`)
