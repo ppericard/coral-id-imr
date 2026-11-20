@@ -59,6 +59,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
+| 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
 | 2026-11-20 | [The sea slug box pass: the model decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
 | 2026-11-20 | [Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)](2026-11-20-slug-find-the-x.md) | #1284 |
