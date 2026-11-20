@@ -393,11 +393,25 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       );
     }
     await p.goto(base + '#seaslug');
-    await p.waitForFunction(() => /Identify a sea slug/.test(document.querySelector('#view').innerText), null, {timeout: 15000});
-    const home = await p.evaluate(() => document.querySelector('#view').innerText);
-    check(!/EventMeasure|Identify a fish/.test(home), "2: Home in the fish's words");
+    await p.waitForSelector('.hdoor.learn', {timeout: 15000});
+    // No sea slug ID key is built: Home is the Learn door alone, no Identify door, no Identify tab (app.js keyOf), and the
+    // Identify address opens Home. A player never meets a page that says "coming soon" or "not yet".
+    const home = await p.evaluate(() => ({
+      text: document.querySelector('#view').innerText,
+      doors: document.querySelectorAll('.hdoor').length,
+      identify: !!document.querySelector('.hdoor.identify'),
+      one: !!document.querySelector('.hdoors.one'),
+      tabs: [...document.querySelectorAll('[data-tab=identify]')].map(a => a.hidden)
+    }));
+    check(!/EventMeasure|Identify a fish|Identify a sea slug|coming soon|not yet/i.test(home.text), "2: Home in the sea slugs' words");
+    check(home.doors === 1 && !home.identify && home.one, `2: Home is the Learn door alone: ${JSON.stringify(home)}`);
+    check(home.tabs.length > 0 && home.tabs.every(Boolean), `2: no Identify tab: ${JSON.stringify(home.tabs)}`);
     await p.goto(base + '#seaslug/identify/key');
-    await p.waitForFunction(() => /Sea slug ID key/.test(document.querySelector('#view').innerText), null, {timeout: 15000});
+    await p.waitForSelector('.hdoor.learn', {timeout: 15000});
+    check(
+      !(await p.evaluate(() => /Sea slug ID key|coming soon|not yet/i.test(document.querySelector('#view').innerText))),
+      '2: Identify opens no key page'
+    );
     // The switch to the fish and back: each tree in force in turn.
     await p.evaluate(() => setSubject(SUBJECTS.find(S => S.hash === 'fish/').id));
     await p.waitForFunction(() => TREE_AT === SUBJ.id && TREEU && TREEU.gen['f:Damselfishes'], null, {timeout: 30000});

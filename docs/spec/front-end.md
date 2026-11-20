@@ -48,7 +48,8 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   (`.hcred`: "By Pierre Pericard · for IMR · Credits", linking `#about`). The doors grow to fill the screen above the
   phone tab bar: on phones the Learn and Practice buttons (tab bar icon, label, one-line purpose) take the height left
   past a capped photo band (at most 28% of the screen), Identify is a compact row. Learn is the primary door, Identify
-  the secondary one (DESIGN.md "Home hierarchy"). In the Learn & practise door, under its buttons, a quiet line leads
+  the secondary one (DESIGN.md "Home hierarchy"). A subject with no key built (the sea slugs) has the Learn door
+  alone, across the whole row (`.hdoors.one`). In the Learn & practise door, under its buttons, a quiet line leads
   to the subject's basics module ("New to corals? Start with the basics (5 min)" to `#learn/basics`; "New to reef
   fish?" on the fish: `UNITS` `basics` `ask`), only while the module is not done (`app.js` `basicsDone`, `basicsDue`),
   the player has fewer than `CHOICE.ASK` (50) answers, and their first-launch answer was not "I had the IMR coral

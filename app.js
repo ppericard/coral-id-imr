@@ -44,7 +44,11 @@ const isStacked = () => matchMedia(MQ.stack).matches; // phone + tablet: games a
 // subject's prefix first for a subject other than the corals (#fish/practice/quiz). The code names a page by its page key
 // ('genera', 'g-Acropora', 'quiz-duel|A|B'…); core.js routeIn and routeOut translate, here only (hashNow, hr).
 // The address on screen read (core.js routeIn: split before decoding, so a malformed %-escape does not throw).
-const routeNow = () => routeIn(location.hash, S => UNITS[S.id].identify);
+// The subject's Identify tool (UNITS identify), '' for a subject with no key built: its Home has the one door, it has no
+// Identify tab, and an Identify address opens its Home (subjPage). routeIn needs a name for the address, so a subject
+// with no key reads as the corals' key there; subjPage sends it Home.
+const keyOf = S => UNITS[S.id].identify || '';
+const routeNow = () => routeIn(location.hash, S => keyOf(S) || 'idkey');
 // The page key of the address on screen; an old or unknown address gives the page route() sends it to (its section's
 // page, else Home: no old address is translated, rule W3).
 const hashNow = () => {
@@ -67,7 +71,7 @@ const subjHas = (S, k) => {
         .split('|')
         .every(n => sheetIdOf(S, n) != null)
     );
-  return t === 'identify' ? UNITS[S.id].identify === m : (t !== 'learn' && t !== 'practice') || S.pages.includes(m);
+  return t === 'identify' ? keyOf(S) === m : (t !== 'learn' && t !== 'practice') || S.pages.includes(m);
 };
 const hr = (k, S = SUBJ) => {
   const T = subjHas(S, k) ? S : SUBJECTS.find(x => subjHas(x, k)) || S;
@@ -1657,6 +1661,8 @@ function showSubj() {
   // The header's links to the pages that follow the subject carry its prefix (index.html data-key: a page key), each the
   // subject's own page (subjPage: Identify's key is the Fish ID Key with Fish chosen, #fish/identify/key).
   document.querySelectorAll('a[data-key]').forEach(a => a.setAttribute('href', hr(subjPage(a.dataset.key))));
+  // No Identify tab for a subject with no key built (UNITS identify): a player never meets a page that is not there yet.
+  document.querySelectorAll('[data-tab=identify]').forEach(a => (a.hidden = !keyOf(SUBJ)));
 }
 // The header chip's menu (three subjects or more): opened and closed by the chip, closed by a choice, Escape or a tap
 // elsewhere (as ⚙).
@@ -1690,7 +1696,7 @@ document.addEventListener('keydown', e => {
 const subjPage = h => {
   const tab = sectionOf(h),
     m = h.startsWith('g-') ? 'sheet' : modeOf(h);
-  if (tab === 'identify') return m === UNITS[SUBJ.id].identify ? h : UNITS[SUBJ.id].identify;
+  if (tab === 'identify') return m === keyOf(SUBJ) ? h : keyOf(SUBJ);
   if (m === 'sheet' && subjHas(SUBJ, h)) return h;
   if (
     (tab !== 'learn' && tab !== 'practice') ||
@@ -2887,8 +2893,7 @@ const UNITS = {
   // only, scientific names only, no IMR content.
   seaslug: {
     ...TREE_UNITS,
-    // No key of its own: the "coming soon" key page, in its words (door).
-    identify: 'fishkey',
+    // No `identify`: no key is built for the sea slugs, so Home has the one door and there is no Identify tab (keyOf).
     // Its basics module's words (as the fish's: proto/seaslugbasics.js, learn.js BASICS_TRAIL_S). offer is for the
     // first-launch answer "new" and lo, all for the "lower" card: the sea slugs have neither yet (no first-launch
     // question, startFb false), so only the Home line, the Learn card and the tab read it.
@@ -2905,14 +2910,7 @@ const UNITS = {
       trail: () => ({stops: BASICS_TRAIL_S, at: BASICS_AT_S, turn: 1})
     },
     door: {
-      need: 'a sea slug you photographed on a dive',
       before: 'your next dive',
-      when: 'A photo from your dive',
-      title: 'Identify a sea slug',
-      desc: 'There is no sea slug ID key yet: learn the genera in the quiz.',
-      btn: 'Sea slug ID key',
-      soon: 'Not yet',
-      key: 'There is no key to name sea slugs yet. Learn their genera in the quiz.',
       // Home's Learn and Practice lines (home.js; the fish's are written there)
       learn: 'The genera by family, in their taxonomic groups',
       practice: 'Name the genus from photos'
@@ -2924,7 +2922,8 @@ const UNITS = {
     pick: 'The sea slugs of the Philippines, nudibranchs first, by their scientific names.',
     tour: {
       doors: {
-        d: 'Learn & practise while you learn the sea slug genera, by their scientific names. There is no sea slug ID key yet.'
+        t: 'Learn & practise',
+        d: 'Learn the sea slug genera, by their scientific names, then train your eye on photos.'
       },
       games: {
         t: 'The sea slug quiz',
@@ -3488,7 +3487,7 @@ function showModes(tab, h) {
     MODES[tab] && (tab === 'learn' || tab === 'practice')
       ? MODES[tab].filter(x => SUBJ.pages.includes(x[0]))
       : tab === 'identify'
-        ? MODES[tab].filter(x => x[0] === UNITS[SUBJ.id].identify)
+        ? MODES[tab].filter(x => x[0] === keyOf(SUBJ))
         : MODES[tab];
   const L = M && M.length > 1 ? M : null;
   $modes.hidden = !L;
@@ -3770,7 +3769,7 @@ function route() {
     // the subject's own tool.
     const S =
       (/^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && subjHas(x, h))) ||
-      (sectionOf(h) === 'identify' && h.includes('|') && SUBJECTS.find(x => subjOpen(x) && UNITS[x.id].identify === modeOf(h)));
+      (sectionOf(h) === 'identify' && h.includes('|') && SUBJECTS.find(x => subjOpen(x) && keyOf(x) === modeOf(h)));
     if (S && S !== SUBJ) return void setSubject(S.id).catch(() => location.replace(hrFull(sp)));
     return void location.replace(hrFull(sp));
   }

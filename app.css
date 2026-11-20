@@ -636,6 +636,10 @@ header {
 .chip {
   min-height: var(--ctl-h);
 }
+/* A tab the subject has no page for (app.js showSubj: Identify with no key built). */
+.sections a[hidden] {
+  display: none;
+}
 .sections a {
   min-height: 38px;
 }
