@@ -768,7 +768,7 @@ def add_families(o, key, declared=()):
         if rt and g in rskip:
             sys.exit(f"tools/fish_genus_roots.json: {g} both has a root and is in skip")
         if rt:
-            r["root"] = genus_root(g, rt, r)
+            r["root"] = genus_root(g, rt, r, by, by[x["family"]])
         elif g not in rskip:
             sys.exit(f"tools/fish_genus_roots.json: genus {g} has neither a root nor a reason in skip")
         mk = mks.pop(g, None)
@@ -1115,17 +1115,20 @@ def genus_csrc(gid, gn, r, u, mine, sp, fam):
     sys.exit(f"tools/fish_genus_names.json {gid}: from {gn['from']}?")
 
 
-def genus_root(name, x, r):
+def genus_root(name, x, r, by, own):
     """A genus's name roots (tools/fish_genus_roots.json, read from its entry in The ETYFish Project) as fish.json root, the
     shape of data.json's (tools/apply_name_roots.py, learn.js rootLine): p, the parts that spell the name, each [form,
     meaning, word, [source indexes]] (an ending or a part ETYFish does not gloss: no meaning, no source), with a fifth item
     "genus" (another genus the entry names) or "honours" (the person the entry says the name honours); fit, one of the
-    genus's own IMR cues the entry says the name refers to; src, its ETYFish page. The build stops on anything else (rule
-    C2: every meaning and word verbatim in the entry's text kept beside it, ety)."""
+    genus's own IMR cues the entry says the name refers to; warn, the IMR cues of other families the name points to (the
+    name study's misleading root), each [family name, one of its IMR cues verbatim], never the genus's own family nor
+    one of its own or its family's cues, never with fit (a family the key in force does not have is left aside); src, its ETYFish page. The build stops on anything else (rules
+    C1, C2: every meaning and word verbatim in the entry's text kept beside it, ety; every cue verbatim in the IMR's).
+    by: the families by id; own: the genus's family."""
     def bad(why):
         sys.exit(f"tools/fish_genus_roots.json {name}: {why}")
-    if set(x) - {"page", "ety", "p", "fit"} or not x.get("page") or not x.get("ety"):
-        bad("keys page, ety, p and fit only, page and ety given")
+    if set(x) - {"page", "ety", "p", "fit", "warn"} or not x.get("page") or not x.get("ety"):
+        bad("keys page, ety, p, fit and warn only, page and ety given")
     if "".join(q[0] for q in x["p"]) != name:
         bad("the parts do not spell the name")
     p = []
@@ -1146,6 +1149,24 @@ def genus_root(name, x, r):
         if x["fit"] not in (r.get("cues") or []):
             bad("fit is not one of its IMR cues")
         root["fit"] = x["fit"]
+    if "warn" in x:
+        named = {f["name"]: f for f in by.values()}
+        mine = set(r.get("cues") or []) | set(own.get("cues") or [])
+        if x.get("fit") or not x["warn"] or len({str(w[0]) for w in x["warn"]}) != len(x["warn"]):
+            bad("warn: one or more families, each once, never with fit")
+        keep = []
+        for w in x["warn"]:
+            if not (isinstance(w, list) and len(w) == 2):
+                bad(f"warn {w}: [family name, one of its IMR cues]")
+            f = named.get(w[0])
+            if not f:
+                continue  # a family of another key (the names are the key in force's): left aside, as genus marks
+            if f is own or w[1] not in (f.get("cues") or []) or w[1] in mine:
+                why = "its own family" if f is own else "not verbatim one of its IMR cues" if w[1] not in (f.get("cues") or []) else "one of the genus's own cues"
+                bad(f"warn {w}: {why} (another family and one of its IMR cues verbatim, not one of the genus's own)")
+            keep.append(list(w))
+        if keep:
+            root["warn"] = keep
     root["src"] = [{"t": f"The ETYFish Project ({name})", "u": f"https://etyfish.org/{x['page']}/"}]
     return root
 
@@ -1347,7 +1368,7 @@ def dumps(o):
 
 
 def main():
-    global NET, GMARKS, SPMARKS, CUR, JUVS
+    global NET, GMARKS, SPMARKS, CUR, JUVS, GROOTS
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
@@ -1363,7 +1384,10 @@ def main():
     ap.add_argument("--marks", help=argparse.SUPPRESS)  # tests: another genus marks file (fish_genus_marks.json)
     ap.add_argument("--spmarks", help=argparse.SUPPRESS)  # tests: another species marks file (fish_species_marks.json)
     ap.add_argument("--juveniles", help=argparse.SUPPRESS)  # tests: another juveniles file (fish_juveniles.json)
+    ap.add_argument("--roots", help=argparse.SUPPRESS)  # tests: another genus roots file (fish_genus_roots.json)
     a = ap.parse_args()
+    if a.roots:
+        GROOTS = Path(a.roots)
     if a.juveniles:
         JUVS = Path(a.juveniles)
     if a.marks:
