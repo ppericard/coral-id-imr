@@ -4279,11 +4279,11 @@ const json = u =>
 // index.html runs the scripts through its loader (retries on an unstable line): window.BOOT says they have all run.
 const domReady =
   window.BOOT || new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
-// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in cand.json, out of data.json
+// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in data/cand.json, out of data.json
 // (tools/datajson.py; the players never need them), so the preview fetches them too.
 const draftCand = () =>
   /[?&]draft\b/.test(location.search)
-    ? fetch('cand.json', {cache: 'no-cache'})
+    ? fetch('data/cand.json', {cache: 'no-cache'})
         .then(okJson)
         .then(j => j.cand || {})
         .catch(() => ({}))

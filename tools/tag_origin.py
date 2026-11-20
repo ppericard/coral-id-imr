@@ -4,7 +4,7 @@
 # iNaturalist through tools/inat.py (rule C7): 200 observations a request (iNaturalist's most), about one a second.
 import math
 import inat
-from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
+from datajson import load_all, dump_all  # data.json + data/cand.json (candidates waiting live in data/cand.json)
 d = load_all()
 P = [p for g in d['gen'].values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L]
 P += [p for L in (d.get('cand') or {}).values() for p in L]

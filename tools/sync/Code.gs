@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 207 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 208 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 207;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 208;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -4922,7 +4922,7 @@ const CORE_ = (function () { const module = {exports: {}};
         // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
         // its tree; ph, its first photos (none for a subject without); gm, its game photos; cand, its candidate photos
         // (admin.js fishLoad: Photos › Tree's tools, Candidates).
-        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'fish-cand.json'},
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'data/fish-cand.json'},
         // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
         // the candidates judged sure that the game does not take in by itself.
         autosort: true,
@@ -4948,7 +4948,7 @@ const CORE_ = (function () { const module = {exports: {}};
           ]
         }),
         // To do › All lists the reports, flags and errors with its photo work (todo), never the corals' photo sections;
-        // Points, the fish points of points.json.
+        // Points, the fish points of data/points.json.
         todo: ['photos'],
         pages: [
           'inbox/todo/all',
@@ -5127,7 +5127,7 @@ const CORE_ = (function () { const module = {exports: {}};
         cur: 'seaslug',
         // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports), and
         // for Photos › Tree (its candidates: Not this, the candidates waiting).
-        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'seaslug-cand.json'},
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'data/seaslug-cand.json'},
         // target: a species' photos in play its Candidates fill up to (autosort.js fishTarget; the fish's FISHT by
         // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
         // play up to it; tests/seaslugadmin.test.js keeps the two equal).
@@ -5156,7 +5156,7 @@ const CORE_ = (function () { const module = {exports: {}};
           ]
         }),
         todo: [],
-        // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
+        // Points: its own (data/points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js): every genus against every genus, live from its answers, the genera in their family's
         // block, the families in their taxonomic group (seaslug.json taxa).
         pages: [
@@ -5174,7 +5174,7 @@ const CORE_ = (function () { const module = {exports: {}};
           // admin.js fuWormsOf), as the fish's.
           'photos/tree/key',
           'photos/tree/worms',
-          // Candidates: seaslug-cand.json one at a time, as the fish's (admin-fish.js
+          // Candidates: data/seaslug-cand.json one at a time, as the fish's (admin-fish.js
           // renderFishCand), a photo moved with Not this waiting as its new species' candidate; no auto-sort (autosort)
           'photos/candidates',
           // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
@@ -9420,7 +9420,7 @@ const CORE_ = (function () { const module = {exports: {}};
   const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
 
   // Photos out of the repo (docs/ROADMAP.md): git keeps only the photos with no other backup (IMR lecture photos, our own
-  // drawings); the photos with an online original (data.json / cand.json / fish-photos.json src: iNaturalist, Pierre's
+  // drawings); the photos with an online original (data.json / data/cand.json / fish-photos.json src: iNaturalist, Pierre's
   // own iNaturalist photos, FishBase) are to leave img/. So once R2 fails, a photo with an online original is read from
   // that original, at a light size, and only the others from the site's img/ (app.js photoFail, quiz.js pump, admin.js).
   // Our files are 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (''); iNaturalist serves small (240 px), medium (500 px),

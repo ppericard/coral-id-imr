@@ -8,7 +8,7 @@
 # below), or, in the Philippines only, a trusted expert's identification (EXPERTS) at the genus or below that no other
 # current identification disagrees with (expert_ok). Abroad: Research Grade only.
 # Licences: CC0, CC BY, CC BY-NC, never share-alike (it would block a later commercial reuse), checked photo by photo.
-# drop_share_alike takes the waiting share-alike candidates out of cand.json at each run (never one curation.json names);
+# drop_share_alike takes the waiting share-alike candidates out of data/cand.json at each run (never one curation.json names);
 # the share-alike photos already on the site are the admin's to keep or remove (admin To do › Share-alike), never here.
 # Caps, so the pile to sort stays small: at most DAUIN_CAP Dauin observations waiting per genus, Philippines ones only
 # while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings all its photos
@@ -24,12 +24,12 @@
 # --plan: offline, prints as JSON what a run would refill (new observations it may add per genus and source, and a
 # Key-only genus's need) without asking iNaturalist; tests/fetch_local.test.js checks it.
 # --tidy: offline, refills nothing: only puts back the photos the admin restored, drops the excluded photos and the waiting
-# share-alike candidates, and re-splits data.json / cand.json (tidy(), which every refill ends with), so the lists follow
+# share-alike candidates, and re-splits data.json / data/cand.json (tidy(), which every refill ends with), so the lists follow
 # a Publish without asking iNaturalist.
 import json, re, sys, urllib.request
 import inat  # the one paced, retried iNaturalist client (rule C7)
 from collections import Counter
-from datajson import load_all, dump_all, curated  # data.json + cand.json (candidates waiting live in cand.json)
+from datajson import load_all, dump_all, curated  # data.json + data/cand.json (candidates waiting live in data/cand.json)
 from excluded import excluded, drop_excluded, restore_unexcluded, load_gone, save_gone, set_aside, SUG
 from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
@@ -217,16 +217,16 @@ def room(cap, waiting_here, need=None, waiting_all=0):
 
 def tidy(d, gone=None):
     """Brings the photo lists in line with curation.json, offline: puts back the photos Pierre restored (un-excluded in
-    admin Genera › Excluded) from excluded.json, drops the photos he excluded (tools/excluded.py drop_excluded: from every
-    list, candidates included, each kept in excluded.json; the auto-sort's exclusions keep their candidate entry, for its
+    admin Genera › Excluded) from data/excluded.json, drops the photos he excluded (tools/excluded.py drop_excluded: from every
+    list, candidates included, each kept in data/excluded.json; the auto-sort's exclusions keep their candidate entry, for its
     Undo), then the waiting share-alike candidates. dump_all then splits the candidates: data.json keeps those
-    curation.json uses, cand.json the others. Every refill ends with it; --tidy runs it alone. gone: excluded.json
+    curation.json uses, data/cand.json the others. Every refill ends with it; --tidy runs it alone. gone: data/excluded.json
     "photos" (read and written here when not given)."""
     own = gone is None
     if own: gone = load_gone()
     back, held = restore_unexcluded(d, gone)
     if back: print('restored (no longer excluded):', ', '.join(back))
-    if held: print('not excluded any more, held in excluded.json (its file is not in img/, or its genus left):', ', '.join(held))
+    if held: print('not excluded any more, held in data/excluded.json (its file is not in img/, or its genus left):', ', '.join(held))
     drop_excluded(d, gone)  # first, so an excluded share-alike candidate is kept too, for a Restore
     sa = drop_share_alike(d, curated())
     if sa: print('share-alike candidates dropped:', len(sa))
@@ -241,7 +241,7 @@ def main():
     d = load_all()
     if '--tidy' in sys.argv:
         # Offline, no iNaturalist: the Candidate photos workflow runs it last, before its commit, so a Publish with
-        # exclusions or un-added candidates leaves data.json and cand.json consistent.
+        # exclusions or un-added candidates leaves data.json and data/cand.json consistent.
         dump_all(tidy(d))
         print('photo lists tidied')
         return
@@ -286,7 +286,7 @@ def main():
         if where != DAUIN and dauin_n(g) >= POOR and not PH_ALL: return loc, 0
         return loc, room({'dauin': DAUIN_CAP_, 'ph': PH_CAP_, 'world': WORLD_CAP}[loc], len(waiting_obs(g, loc)), need(g), len(waiting_obs(g)))
     if PLAN:
-        # drop: waiting share-alike candidates a run would take out of cand.json (drop_share_alike), shown only when some.
+        # drop: waiting share-alike candidates a run would take out of data/cand.json (drop_share_alike), shown only when some.
         keep = curated()
         drop = Counter(g for g, L in cand.items() for p in L if p['f'] not in keep and not p.get('restored') and share_alike(p))
         print(json.dumps({g: {'keyonly': g in KEY_ONLY, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}, **({'drop': drop[g]} if drop[g] else {})} for g in GEN if not ONLY or g in ONLY}))

@@ -254,9 +254,9 @@ let SHOWN_COVER = null,
   FU0,
   PICKS = {},
   PHOTOS = {},
-  PRES = {}, // presence.json sp: each photo species confirmed in the Philippines or not (tools/coral_presence.py)
-  NAMES = {}, // names.json, the first subject's section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
-  NAMEJ = {}, // names.json by subject id: every subject's section (nameTag)
+  PRES = {}, // data/presence.json sp: each photo species confirmed in the Philippines or not (tools/coral_presence.py)
+  NAMES = {}, // data/names.json, the first subject's section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
+  NAMEJ = {}, // data/names.json by subject id: every subject's section (nameTag)
   FISHA = null, // the tree subject in force's entries and photos, for its reports (fishAdmin; UNITA's, by subject)
   KNOWN = new Set(),
   DATA,
@@ -451,7 +451,7 @@ const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
 // "Bad photo" flags the admin raised on the site (flag.js, localStorage 'reefid-photo-flags'): curation.json "flag"
 // {f: {genus, view, where, at}}. Triage lists them; "Done" removes one (one at a time, never in bulk).
 const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
-// Suggestions from the outside judging agent (suggest.json, tools/judging_import.py): Triage lists them one at a time.
+// Suggestions from the outside judging agent (data/suggest.json, tools/judging_import.py): Triage lists them one at a time.
 // Accept runs the normal action (move, Not this genus, exclude, hide, add); "Several corals" keeps the photo off games
 // (curation.json "use" {f: 'ref'}); Dismiss is remembered in curation.json "seen" {kind:f: 1} so it never comes back.
 // seen holds three kinds: 'cand:f' (Candidates), 'rep:<id>' (a player's report Done) and the rest (Triage).
@@ -602,7 +602,7 @@ const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // A photo's src and its draft crop as a preview (object-view-box). A downloaded photo's local file already has the
 // published crop in it (data.json "cr", tools/fetch_approved.py): shown as is while the draft keeps that crop, and the
 // original (iNat) with the draft crop as soon as the draft differs (a crop laid over a file cropped already is wrong).
-// A candidate's suggested crop (suggest.json cand c, the judging pass): shown on it until it is added, then written to
+// A candidate's suggested crop (data/suggest.json cand c, the judging pass): shown on it until it is added, then written to
 // the admin's crops (ACT.addc), where it changes as any crop. The admin's own crop, or Full photo ([0, 0, 1, 1]), wins.
 const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
 // A crop [l, t, r, b] as object-view-box's inset(top right bottom left).
@@ -1211,9 +1211,9 @@ const saTag = p =>
 const saList = () => saQueue(Object.keys(DATA.gen), photos, hidden, saKept);
 const saKeptList = () => saQueue(Object.keys(DATA.gen), photos, hidden).filter(p => saKept(p.f));
 // A photo or candidate whose name is a former combination, a moved genus or iNaturalist's spelling of a name WoRMS writes
-// otherwise (ROADMAP "Taxonomy reference"; presence.js nameFlag, names.json): a neutral tag with
+// otherwise (ROADMAP "Taxonomy reference"; presence.js nameFlag, data/names.json): a neutral tag with
 // the name WoRMS accepts now. Information only, no action: nothing is renamed (rule C1). S: the photo's subject (the
-// fish pages pass theirs; names.json holds one section per subject).
+// fish pages pass theirs; data/names.json holds one section per subject).
 const NAME_KIND = {spelling: 'iNaturalist spelling', former: 'Former name', genus: 'Former genus'};
 const nameTag = (p, S = ADM0) => {
   const k = nameFlag(p, NAMEJ[S && S.id]);
@@ -1978,12 +1978,26 @@ const modeKey = () =>
 // (fishOrder; rule P1), each the one fish tile (fishTile, bindFishTiles). The family's choices go to curation.json fish
 // genera keyed by family id (fishPick), through the draft and Publish only (rule A1); ✓ Validated once fishNeeds has
 // nothing to say. Fish data load once (fishLoad).
-// A photo's judgment: the pass's (suggest.json), else the game record's own ease and tags (a reference photo is judged
-// outside suggest.json; fish-game.json keeps its e and jt).
+// A photo's judgment: the pass's (data/suggest.json), else the game record's own ease and tags (a reference photo is judged
+// outside data/suggest.json; fish-game.json keeps its e and jt).
 const fuJ = f => {
   const g = ((FISHC && FISHC.gj) || {})[f],
     j = ((SUG && SUG[TK]) || {})[f];
-  return g && j ? {...g, ...j} : j || g || null;
+  return sortJudge(DRAFT[TK] || {}, f, g, j);
+};
+// A subject's part of the curation as the pages read a photo's tags, ease, phase and crop: what the auto-sort wrote that the
+// pass has judged anew since is left out, so the pass's value shows, as the game plays it (autosort.js sortView; for
+// reading only: a writer takes the draft's own part, rule A1).
+const readView = F => sortView(F, SUG && SUG[TK], FISHC && FISHC.byF);
+// The tags an edit of photo f starts from: what the pages show (readView: the pass's where it judged anew, with the source's
+// juvenile flag as the build copies it), else the pass's, so changing one row never puts back a value the page no longer
+// shows. A write still goes against the real draft (fishSet, rule A1).
+const viewTags = (f, jt) => fishTagsMine(readView(DRAFT[TK] || {}), f, jt) || jt || '';
+// Whether a crop (or rotation) is on photo f as the game reads it: the draft's, or the pass's, which it reads anew in place of
+// the copy the auto-sort wrote.
+const cropOn = (F, f) => {
+  const j = ((SUG && SUG[TK]) || {})[f];
+  return !!((readView(F).crop || {})[f] || (j && j.c && sortReads(F, f, j).includes('crop')) || fishRot(f));
 };
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
 let FU_WALL = false; // this tab: a wink species' photos in play all shown, not only FISHT.wink of them (fishWinkFold)
@@ -2042,7 +2056,10 @@ const fuImr = u =>
 // crop, [0, 0, 1, 1] = uncropped on purpose), else the judging pass's; and the admin's rotation (fish rot).
 const fuP = p =>
   p
-    ? {...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT[TK] || {}).rot || {})[p.f])}}
+    ? {
+        ...p,
+        j: {c: (readView(DRAFT[TK] || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT[TK] || {}).rot || {})[p.f])}
+      }
     : p;
 // A node's page in the Key view (where the other pages send a family: Coverage, reports, Pairs), and in the Tree view on
 // screen (TT_VIEW: its tree, its crumbs, its cards and selects).
@@ -2102,13 +2119,14 @@ function fuFam(u, D) {
     ok = s => sp[s] && !sp[s].out,
     // its species', then its genera's genus-level photos (gl: the genus's own row, under its id)
     ids = [...u.species.filter(ok), ...u.genera.map(g => g.id).filter(g => (D.play[g] || []).length)],
-    rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
+    V = readView(D.F), // the order, the cover and the needs read the ease and tags as the game does
+    rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], V, u.id, sid, fuJ)])),
     k = (D.F.genera || {})[u.id] || {},
     all = ids.flatMap(s => [...rows[s].feat, ...rows[s].rest]),
     // the admin's pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
     // as the game's card cover: reference-level first)
-    cover = fishCoverOf(all, D.F, u.id, fuJ);
-  return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
+    cover = fishCoverOf(all, V, u.id, fuJ);
+  return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, V, fuJ), n: u.species.filter(ok).length};
 }
 const fuName = sid => (FISHC.species[sid] || {}).name || (FISHC.genera[sid] ? FISHC.genera[sid].name + ' sp.' : sid);
 // A species whose candidate photos come from another iNaturalist taxon (fish.json photoTaxon: the Pacific form
@@ -2186,9 +2204,10 @@ function fishTile(p, o) {
     cand = !!(FISHC && FISHC.byF[f]),
     x = (o.XI || fishIdx(F))[f],
     J = fuJ(f),
-    ease = (F.ease || {})[f] || (J || {}).e,
-    ph = fishPhase(p, J, F),
-    jt = fuJt(F, f),
+    V = readView(F), // the draft as the game reads it (tags, ease, phase, crop the pass judged anew since): reading only
+    ease = (V.ease || {})[f] || (J || {}).e,
+    ph = fishPhase(p, J, V),
+    jt = fuJt(V, f),
     num = (o.st || {}).num,
     isCover = !!(o.cover && o.cover.f === f),
     // On a node's page only (o.path: the photo's node ids by rank, broadest first, from its unit: TREE_BUILD tree; o.lv:
@@ -2223,7 +2242,7 @@ function fishTile(p, o) {
         : 'Cover',
     rows = !out && (o.play || cand) && FT_OPEN.has(f),
     btn = (a, t, more = '') => `<button type="button" data-fu="${a}"${more} title="${t}">${t}</button>`,
-    crop = !!((F.crop || {})[f] || fishRot(f));
+    crop = cropOn(F, f);
   FT_REC[f] = p;
   const acts = out
     ? `<span class="adm-src view">${out}</span>`
@@ -2240,7 +2259,7 @@ function fishTile(p, o) {
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
     <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${refLevel({e: ease, jt}) ? '<span class="adm-src view" title="Reference level: ease 4-5 with the reference look">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
-    <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
+    <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(V, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (TREE_BUILD tree page): st {num} for a featured photo; cover: the page node's cover in force; path: the
 // photo's node ids from its unit down (its unit, its genus, its species for fish), lv: the page's node along it (★ Cover
@@ -2341,7 +2360,7 @@ function bindFishTiles(scope, o = {}) {
     bindFishRows(
       R,
       f,
-      () => fishTagsMine(DRAFT[TK] || {}, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '',
+      () => viewTags(f, (fuJ(f) || {}).jt),
       (fn, w) => {
         const off = play && w && w.pos === 6 && (w.v === 'k' || w.v === 'x');
         DRAFT[TK] = off ? fishReject(fishDrop(fn(DRAFT[TK] || {}), fam, f), f) : fn(DRAFT[TK] || {});
@@ -3226,7 +3245,7 @@ function renderFishCov() {
   status();
   const U = FISHC.units,
     D = fuData(),
-    C = fishCov(U, D.play, FISHC.species, FISHC.cand, D.F, fuJ),
+    C = fishCov(U, D.play, FISHC.species, FISHC.cand, readView(D.F), fuJ),
     UB = Object.fromEntries(U.map(u => [u.id, u])),
     imrOn = FU_IMR === 'imr',
     inImr = r => {
@@ -3340,7 +3359,7 @@ function fishTodoLines() {
   if (!(M.todo && M.todo.k.every((x, i) => x === k[i]))) {
     const F = DRAFT[TK] || {},
       UB = Object.fromEntries(FISHC.units.map(u => [u.id, u])),
-      C = fishCov(FISHC.units, M.D.play, FISHC.species, FISHC.cand, M.D.F, fuJ),
+      C = fishCov(FISHC.units, M.D.play, FISHC.species, FISHC.cand, readView(M.D.F), fuJ),
       Q = fishQueue(FISHC.cand, (SUG && SUG[TK]) || {}, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
       pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
       L = [
@@ -3560,11 +3579,12 @@ function renderFishReview(kind) {
     F = D.F,
     sp = FISHC.species,
     L = u.species.flatMap(s => (D.play[s] || []).map(p => ({...p, sid: s}))),
-    ease = p => ((F.ease || {})[p.f] != null ? [F.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
-    jt = p => ((F.tags || {})[p.f] ? [F.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
+    V = readView(F), // the values as the game reads them: the pass's where it judged anew what the auto-sort copied (shown as its guess)
+    ease = p => ((V.ease || {})[p.f] != null ? [V.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
+    jt = p => ((V.tags || {})[p.f] ? [V.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
     phOf = p => {
-      const mine = p.f in (F.phase || {}) || p.f in (F.tags || {});
-      return [fishPhase(p, fuJ(p.f), F), !mine];
+      const mine = p.f in (V.phase || {}) || p.f in (V.tags || {});
+      return [fishPhase(p, fuJ(p.f), V), !mine];
     };
   // The rows: by ease 5-1 (then not judged), or by phase (juvenile, intermediate, male, female, none).
   const rows =
@@ -3584,7 +3604,7 @@ function renderFishReview(kind) {
   const tile = p => {
     const [e, eAuto] = ease(p),
       [code, tAuto] = jt(p),
-      phMine = (F.phase || {})[p.f],
+      phMine = (V.phase || {})[p.f],
       phPass = (fuJ(p.f) || {}).ph || '',
       ph = phMine !== undefined ? phMine : phPass,
       s = sp[p.sid] || {};
@@ -3647,7 +3667,7 @@ function renderFishReview(kind) {
   $v.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
     const f = tl.dataset.f,
       p = L.find(x => x.f === f),
-      base = () => fishTagsMine(DRAFT[TK], f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '';
+      base = () => viewTags(f, (fuJ(f) || {}).jt);
     tl.querySelector('[data-frz]').onclick = () =>
       zoomSet(
         L.map(fuP),
@@ -3671,9 +3691,9 @@ function renderFishReview(kind) {
       b =>
         (b.onclick = () =>
           fx(G => {
-            const ph0 = fishPhase(p, fuJ(f), G);
+            const ph0 = fishPhase(p, fuJ(f), readView(G));
             let N = fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv));
-            if (fishPhase(p, fuJ(f), N) === ph0) return N;
+            if (fishPhase(p, fuJ(f), readView(N)) === ph0) return N;
             if (ph0 === 'juvenile') return fishSet(N, f, 'tags', fishTag(N.tags[f], 'j'));
             return fishSet(N, f, 'phase', ph0);
           }))
@@ -3686,8 +3706,9 @@ function renderFishReview(kind) {
       b =>
         (b.onclick = () =>
           fx(G => {
-            const ph = f in (G.phase || {}) ? G.phase[f] : (fuJ(f) || {}).ph;
-            if (fishPhase(p, fuJ(f), G) !== 'juvenile') {
+            const W = readView(G), // as the review shows it; the writes below go against G
+              ph = f in (W.phase || {}) ? W.phase[f] : (fuJ(f) || {}).ph;
+            if (fishPhase(p, fuJ(f), W) !== 'juvenile') {
               const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
               return ph ? fishSet(N, f, 'phase', '') : N;
             }
@@ -3721,7 +3742,7 @@ function renderFishMont() {
     D = fuData(),
     F = D.F,
     P = typeof montPairs === 'function' ? montPairs(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ), U) : fishPairs(U),
-    ph = p => fishPhase(p, fuJ(p.f), F),
+    ph = p => fishPhase(p, fuJ(p.f), readView(F)),
     famL = id => (u => fuFam(u, D).all)(UB[id]),
     STRIP = 24;
   const thumb = (p, side, x, on) =>
@@ -4389,7 +4410,7 @@ const HELP = {
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   fishtodo: `<p>Everything on the fish side that needs your eye, most urgent first: a red <b>Health</b> line when Health finds fish photos everyone misses or families or genera players are stuck on (nothing when all is well), the players' <b>reports</b> about fish (and those about no subject), the fish photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days, and last the fish <b>photos</b> work as counts, each opening its page: the <b>candidates</b> waiting in Candidates (the auto-sort's Checks apart, and those of a species at its target or set aside, as the swiper hides them), the open <b>cover proposals</b> and <b>light proposals</b> (Photo review), and Coverage's To do (under its All | IMR filter; a click opens Coverage › Games on those rows). The corals' photo sections (out of the presence rule, share-alike, Featured rated Poor, the judging agent's suggestions) have no fish counterpart here: the fish candidates already carry the pass's judgment. Each part works as in its own view: <b>Reports</b>, <b>Errors</b>, <b>Health</b>.</p>`,
   fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the photos' difficulty is on Photo stats › Difficulty). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
-  points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
+  points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>data/points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} more, whoever took them): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
@@ -4439,14 +4460,14 @@ const HELP = {
     <p>Click, drag a photo to another row, or select it (click it or Tab to it) and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder book letter.</p>
     <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or select a photo (click it or Tab to it) and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. The list follows Corals | Fish: each side shows its own reports and those about no subject (sent from Home, About, the leaderboard). Feedback sent from a game carries the question's photos. Each report has one bar: its status, then the tools it can use. <b>Done</b> clears it, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). <b>Stand-by</b> sets it aside below the open ones; <b>Dismiss</b> clears it without thanks; Done and Dismissed fold at the bottom with their counts, where <b>Reopen</b> takes one back. <b>Journey</b> opens the reporter's journey (a player on the list), <b>Open genus</b> or <b>Open family</b> the page of what it is about, <b>Open page</b> the app page it was sent from; a report with no photo can <b>Attach a photo</b> of its genus or family (pick one first when it names none), with its tools, for this visit only (not saved). Each photo has every tool of its page: a coral photo those of its genus page, a fish photo those of its family page (Feature, ★ Cover, Remove, Not this, Crop, Tags with its ease and tag rows, ×) and Open in Tree; on a fish photo in play, Count <i>Other species, confusable</i> or <i>Unclear</i> also takes it out of play (rule P3), one Undo step. A reason names the organism in its subject's words (Several fish species). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; a fish photo has every tool of its family page (× excludes it from the fish games for good, Remove takes it out of play, Not this, Feature, ★ Cover, Crop, Tags), those that take it out of play clearing the flag (Undo brings it back), and Done. A coral photo's Remove, × and Not this clear its flag the same way, and a flag on a photo that no longer exists is not listed (nor counted) and goes at your next click: Done is for a photo that stays and needs nothing more.</p><p>The last four parts are the corals' only (no fish counterpart: the fish candidates carry the pass's judgment in Candidates). Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. The list follows Corals | Fish: each side shows its own reports and those about no subject (sent from Home, About, the leaderboard). Feedback sent from a game carries the question's photos. Each report has one bar: its status, then the tools it can use. <b>Done</b> clears it, and once you Publish, the player who sent it is thanked at their next visit (a "Your feedback helped" card: only that it was handled, nothing you wrote; several handled reports in one card, at most one a week; never for a deleted account; sheet v57 for reports sent signed in on another device). <b>Stand-by</b> sets it aside below the open ones; <b>Dismiss</b> clears it without thanks; Done and Dismissed fold at the bottom with their counts, where <b>Reopen</b> takes one back. <b>Journey</b> opens the reporter's journey (a player on the list), <b>Open genus</b> or <b>Open family</b> the page of what it is about, <b>Open page</b> the app page it was sent from; a report with no photo can <b>Attach a photo</b> of its genus or family (pick one first when it names none), with its tools, for this visit only (not saved). Each photo has every tool of its page: a coral photo those of its genus page, a fish photo those of its family page (Feature, ★ Cover, Remove, Not this, Crop, Tags with its ease and tag rows, ×) and Open in Tree; on a fish photo in play, Count <i>Other species, confusable</i> or <i>Unclear</i> also takes it out of play (rule P3), one Undo step. A reason names the organism in its subject's words (Several fish species). A report fixed by a PR is marked handled in reports-handled.json by the integrator: it leaves the list and shows folded under it, "Handled in a PR", with the PR's link; its player is thanked the same way. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it, on the side of its subject (Corals | Fish). Hide, Poor or Done clear one flag at a time; a fish photo has every tool of its family page (× excludes it from the fish games for good, Remove takes it out of play, Not this, Feature, ★ Cover, Crop, Tags), those that take it out of play clearing the flag (Undo brings it back), and Done. A coral photo's Remove, × and Not this clear its flag the same way, and a flag on a photo that no longer exists is not listed (nor counted) and goes at your next click: Done is for a photo that stays and needs nothing more.</p><p>The last four parts are the corals' only (no fish counterpart: the fish candidates carry the pass's judgment in Candidates). Then the photos out of the presence rule: taken abroad, of a species not confirmed in the Philippines (Research Grade there by 3+ observers, or 1+ and the Corals of the World checklist, or 2+ observers within 40 km of Dauin; data/presence.json). They carry an "out of rule" tag on every page; nothing is removed for you. <b>Remove</b> excludes one for good, as the × on any photo does (Pierre: a photo out of the rule must not be there): removed from every genus, game and candidate list, imports skip it (Undo works; Excluded restores it). <b>Keep</b> accepts it as an exception: it stays on the site and moves down to <b>Kept</b> (folded, with its count) at the bottom of the section, out of the count and of Remove all; there Remove still excludes it, and Keep again (pressed) un-keeps it, back to the list. On other pages its tag reads "out of rule · kept". <b>Remove all</b> asks first, then excludes each one still to handle (one Undo step each; the kept ones stay). All three go into your draft; Publish sends them.</p><p>Then the <b>share-alike</b> photos on the site (CC BY-SA, CC BY-NC-SA, from their recorded licence, else their credit line). Since 5 Nov 2026 the candidate search no longer takes share-alike photos for corals, as for fish (a share-alike licence would bind any later reuse to the same licence), and the share-alike candidates waiting left the queue; the ones already on the site are yours to decide, never removed for you. They carry a "share-alike" tag on every page. <b>Remove</b>, <b>Keep</b> (down to Kept; its tag then reads "share-alike · kept") and <b>Remove all</b> work exactly as for the photos out of the presence rule.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (data/suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   fishcov: `<p><b>Rights</b> (the first line): the photos in play commercial-ready (yours, CC0 or CC BY) out of all, and each rights class; the link opens Coverage › Rights.</p><p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference-level photos (ease 4-5 with the reference look, read from the photo whoever took it),<b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates (a photo already in play, your add or one that entered by itself, is not one), <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
   lightprop: `<p>The light re-judge's proposals (rubric 6, Q308: a fish lit by a flash or a lamp on a dark background is good light, not a night shot): the photos you added whose tags and ease still hold the earlier judgement (<code>judging/fish-light-q308.json</code>). Each shows what would change, in words: struck through yours, in bold the re-judged value (light <b>g</b> good, <b>d</b> dim: the fish itself poorly lit, <b>n</b> night livery: a night colour pattern; the full codes in the tooltip). <b>One judgement per photo</b>, last: a photo judged twice (as a reference photo and as a candidate) whose two judgements disagreed was judged again once (<code>judging/fish-one-judgement.json</code>); where you added it with the earlier tags and ease, the new ones are proposed the same way. <b>Accept</b> writes the re-judged tags and ease into your draft (when they make one of your ★ covers a juvenile, it first asks whether to keep it as the cover anyway: yes keeps it, confirmed; no takes the tags and the cover is ignored until you confirm it on its Tree page); <b>Keep mine</b> keeps yours and the proposal goes; <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that photo's tags or ease elsewhere. The view leaves the switch once none is left.</p>`,
   coverprop: `<p>Your covers of a family or a genus (★ Cover on the Tree tab) where the default cover rule now picks another photo: the node's species with a reference photo most seen around the instance's centre by distinct observers, then your ★ cover of that species, else its easiest reference photo, never a juvenile, never a photo with a watermark while the node has an adult photo without one. Each shows yours and the rule's, with the species each shows and why the rule picks it. A cover of yours with a watermark says <b>Watermark</b>: its proposal (a photo without one) stays until you answer it, even if you kept that pair before. <b>Accept</b> makes the rule's photo your cover in your draft; <b>Keep mine</b> keeps yours, and that pair of photos is not proposed again (if the rule later picks another photo, it may come back; on a watermarked cover it is also the Tree page's <b>Keep</b>); <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that cover or the rule comes to agree. Nodes without a cover of yours get the rule anyway. The view leaves the switch once none is left.</p>`,
   fishmont: `<p>The look-alike pairs of families in force, one row each: the pairs the IMR course compares (its lines, from fish.json), less those you withdrew on the Tree, plus those you added there, marked <b>(added)</b> (your draft's, as on the Tree). A withdrawn pair's photos stay chosen and come back with it. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in its Tree page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
   units: `<p><b>Key</b> | <b>WoRMS</b> (at the top right): the same species in two classifications, each with one parent per node. <b>WoRMS</b>: the reference taxonomy (WoRMS, from fish.json), its classes, orders, suborders, families, subfamilies, genera and species as WoRMS names and ranks them, which are not always the key's (Labridae holds the wrasses and the parrotfishes; Pycnochromis five of the key's Chromis). A species is the same page in both views (its photos, its ★ cover, its tools); the switch keeps it. A WoRMS taxon's page is read-only for now: its cover is the default by the rule (its species with a reference photo most seen near the centre), and its children's cards show theirs; ★ Cover on a WoRMS taxon waits for your decision on how to store it. A count of tree problems in the bar (a missing parent) says fish.json's taxonomy needs a refresh.</p><p><b>Key</b>: the key's classification as a tree at the left (Allen et al. 2015, the key in force): its groups, the book's families, their genera and species, each with its rank in grey, its species and photos in play. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. Every node opens a page of its own: a group, its families' cards; a family, a genus or a species, its photos in play. Above the bar, the path from the group (each step a link); in the bar, the select of the node's children (its genera, its species: the way down on a phone, where the tree is hidden) and the family select. The families: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. <b>Tag…</b> beside it shows only what carries one tag, combined with All / IMR, in both views: a <b>Circle</b>, the <b>Look-alikes</b> (every family in a pair the IMR course compares, or one pair), <b>Needs photos</b> (species under their target), <b>Needs work</b> (families not ready to validate), <b>Draft</b> (what changed since your last Publish); each option says how many species it shows, the tree, the family select, the cards and the drill-down follow it, and it is remembered in this browser. <b>Tag…</b> again shows everything. Each page's bar shows its cover in force and why: your ★, else the default (for a family or a genus, its species with a reference photo most seen near the centre, then your ★ cover of that species, else its easiest reference photo; for a species, its first photo: featured, then the easiest), with a link to Cover proposals when the rule picks another photo than yours. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (${FISHT.obs}, ${FISHT.top} for the PDF's most sighted, ${FISHT.wink} for a species met only on the surprise cards) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). A surprise-card species shows ${FISHT.wink} photos, its featured ones first, then the surprise card's own; <b>N more</b> shows the rest, still in play. <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the cover of the page's node: the family's on its page, the genus's on the genus's, the species' on the species'; each genus and species heading shows its cover in force, ringed when it is yours, and its name opens its page; a photo shows which covers it is; the family's card and sheet, the genus's card, row and sheet cards, the species' first photo on the sheets; a juvenile only once you confirm it: on a juvenile photo it asks first; a pick on one you have not confirmed is ignored and flagged, its page offers <b>Juvenile: confirm as cover?</b> (also while a Light proposal would tag your cover juvenile), and it is counted in the bar of every page: <b>N ★ covers now juvenile</b> opens one; a photo with a watermark is never a default cover, but your ★ on one stays yours: its page asks <b>Watermark: keep as cover?</b>, <b>Keep</b> records your answer, <b>Choose another</b> opens its Cover proposal (a photo without one), and Home skips it either way), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> (on the family's page) once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. A species whose candidates come from another iNaturalist taxon (the Pacific form iNaturalist splits off) says so under its name, here and on its Candidates card; its IMR name is kept. Each species heading counts its candidates still waiting; they are added in Candidates. Publish sends it all (curation.json fish).</p><p><b>Sheet</b> (above the photos, on a family, a genus or a species the app gives a sheet; not on a genus the app opens as its species or its family, a surprise-card family or a WoRMS taxon): every text of its sheet you may edit, as the content editor (Pierre, 2026-11-15, Q359), with the text players see. <b>IMR</b> marks the IMR course's words: editable, the original kept; the sheet keeps their label. <b>✎</b> opens the text (a list one line per item; an empty box hides it), with an optional <b>Source</b> and <b>Link</b> shown with it on the sheet; when you fill an empty text with no source, Save asks once (<b>Save without source</b> then saves). <b>⊘</b> hides it, <b>↺</b> brings the original back (<b>Original</b> shows it beside yours). When the built text changed after your edit (<b>Base changed</b>), players keep yours and the box shows the three: when you edited, now, yours; <b>Keep mine</b>, <b>Take the new</b> or <b>Edit</b>. <b>In the base</b>: the build now says what you wrote; <b>Remove</b> drops your copy. An edit that cannot apply (its node gone, a text the page no longer has, the wrong kind) shows its text with <b>Remove</b>. <b>N sheet edits to check</b> in the bar of every Tree page opens the first. One click each, Undo steps back; Publish sends them (curation.json fish content) and counts them per rank.</p><p><b>Structure</b> (above the Sheet, on a family's page; not a surprise-card family): its <b>Circle</b> and its <b>Look-alikes</b>, as the content editor (Pierre, 2026-11-15, Q359). <b>1</b>, <b>2</b>, <b>3</b> or <b>None</b> (off the game: its species leave the game and the score) sets the circle in force; <b>↺</b> brings the built one back (<b>Original</b> says which). Each look-alike pair of the family: <b>Withdraw</b> takes it out (traps, duels, the exam's comparisons and the progress's look-alike weight), <b>↺</b> brings it back; <b>Add a look-alike…</b> picks the other family, then an optional <b>Source</b> and <b>Link</b> (left empty, Save asks once; <b>Save without source</b> then saves); its words are each sheet's Look-alike line, which shows at once. In the <b>Tag…</b> filter, <b>Any look-alike</b> offers <b>+ Pair</b> (both families chosen), one pair its state and the same tools; the pairs you withdrew or added say so, and <b>No circle</b> lists the families you took off the game. A built value changed since your edit (<b>Base changed</b>): yours stays in force; <b>Keep mine</b> or <b>Take the new</b>. One click each, Undo steps back. Publish asks once, saying it changes every player's path and progress: each player's progress is recalculated from their answers (Q363), and the leaderboard follows. Where the units are genera and the pairs join genera, the Structure box is on each genus's page (a genus the app opens as its family or its one species included), with no Circle, and <b>Tag…</b> › <b>Any look-alike</b> lists the genus pairs; there, each look-alike line on the Sheet (<b>Look-alike: …</b>) is the list of the sources that name the pair, one a line, its words then <b>|</b> and its link.</p><p><b>Names</b> (on a family's page, folded; where the subject has a name index, the fish: a name typed on a family question is read as the family it names): the names this family carries that another family carries too, and the kind words (razorfish, toby), each with the families it reaches. <b>Accepted</b> gives the name to the whole family, whatever part of it the name designates; <b>Often</b> the same, and the feedback names the family gently; <b>Off</b> takes it away from this family (it stays known, never a slip of another family). A click on the pressed one brings the built reading back. In the <b>Tag…</b> filter, <b>Shared names</b> shows the families with at least one such name. One click each, Undo steps back; Publish sends them (curation.json fish names). The lists of a species' names are not edited here yet.</p>`,
-  ctree: `<p>The genera as a tree, in two classifications, each with one parent per node; a genus is the same node in both, and the switch at the top right keeps it. <b>Key</b>: the IMR lecture groups (1 to 11), each with its genera, numbered first, then the ★ genera with the group of their look-alikes, as the app shows them; <b>No IMR group</b> holds Millepora, the bonus genera and the genera of the Coral Finder book (never its growth-form boxes: genera are never grouped by growth form). <b>WoRMS</b>: the family WoRMS gives each genus (names.json, refreshed by tools/taxonomy.py), which is not always the lecture's (Pachyseris, Plerogyra); a count of tree problems in the bar means a genus WoRMS has no record of. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. A group or a family opens its genera's cards (each as on the genus list: cover, number or ★, photos on the site, what it needs, ✓ and the draft's dot); a genus, its cover and why, what it needs, and all its photo tools (the former Photos › Genera tab, folded into the Tree, 19 Nov 2026): its photos per view with ★ Cover, Feature, Remove, Not this, × and the rest (see the notes below), Validated, and, when there are any, <b>Removed from the site</b> (<b>Put back</b> returns one) and <b>Excluded</b> (<b>Restore</b> puts one back; the ones that name no genus any more wait on the first page of the view). A group or a family lists those of its genera. No cover above the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only; <b>Tag…</b> beside it shows only the genera with one tag, in both views: ★ Starred, the <b>Look-alikes</b> (any, or one pair of Photos › Look-alikes), <b>Needs work</b>, <b>Candidates waiting</b>, <b>Draft</b> (changed since your last Publish); each option says how many genera it shows, and it is remembered in this browser.</p>`,
+  ctree: `<p>The genera as a tree, in two classifications, each with one parent per node; a genus is the same node in both, and the switch at the top right keeps it. <b>Key</b>: the IMR lecture groups (1 to 11), each with its genera, numbered first, then the ★ genera with the group of their look-alikes, as the app shows them; <b>No IMR group</b> holds Millepora, the bonus genera and the genera of the Coral Finder book (never its growth-form boxes: genera are never grouped by growth form). <b>WoRMS</b>: the family WoRMS gives each genus (data/names.json, refreshed by tools/taxonomy.py), which is not always the lecture's (Pachyseris, Plerogyra); a count of tree problems in the bar means a genus WoRMS has no record of. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. A group or a family opens its genera's cards (each as on the genus list: cover, number or ★, photos on the site, what it needs, ✓ and the draft's dot); a genus, its cover and why, what it needs, and all its photo tools (the former Photos › Genera tab, folded into the Tree, 19 Nov 2026): its photos per view with ★ Cover, Feature, Remove, Not this, × and the rest (see the notes below), Validated, and, when there are any, <b>Removed from the site</b> (<b>Put back</b> returns one) and <b>Excluded</b> (<b>Restore</b> puts one back; the ones that name no genus any more wait on the first page of the view). A group or a family lists those of its genera. No cover above the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only; <b>Tag…</b> beside it shows only the genera with one tag, in both views: ★ Starred, the <b>Look-alikes</b> (any, or one pair of Photos › Look-alikes), <b>Needs work</b>, <b>Candidates waiting</b>, <b>Draft</b> (changed since your last Publish); each option says how many genera it shows, and it is remembered in this browser.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
@@ -5914,7 +5935,7 @@ function renderTriage() {
       }${REP_PICK[c.id] && !c.photos.length ? repPicker(c, S) : ''}</article>`;
   };
   // The sections the subject on screen has (core.js SUBJECTS admin todo) besides the reports, the flags and the errors,
-  // every subject's: the corals' read the coral photos (the presence rule, licences, Featured, suggest.json), never shown
+  // every subject's: the corals' read the coral photos (the presence rule, licences, Featured, data/suggest.json), never shown
   // on another side.
   const has = k => (ASUBJ.admin.todo || []).includes(k);
   const poor = [];
@@ -6057,24 +6078,24 @@ function renderTriage() {
 }
 /* ---------- Points to handle: Inbox › To do › Points, and one page per point ---------- */
 // The admin settles the open points here, never from a text list (rule C5): questions for an IMR trainer, nomenclature,
-// discrepancies between sources, content. points.json holds them (written by agents; points.js checks its shape); the
+// discrepancies between sources, content. data/points.json holds them (written by agents; points.js checks its shape); the
 // state per point is curation.json "points" {id: {s, n, a}} (draft, Undo, Publish; never written by a script): s 'wait'
 // (stand-by: below the open ones), 'done' or 'drop' (both folded at the bottom with their counts), none = open; n the
 // notes; a the trainer's answer per photo (points.js photoKey). Each status keeps the file's order, its priority. A point opens on its own page (pointHash), made to show a trainer
 // from a phone: the question big, the photos large and enlargeable, blind (numbered, credit only: no names until
 // "Names", so the answer is the trainer's own), an answer field under each photo, notes, and Resolved / Stand-by /
 // Dismiss (/ Reopen once handled), one click each, Undo the safety net (rule A2).
-// Each side lists its own points (points.json subj; fish admin at parity: the Corals | Fish switch, rule A4, as the
+// Each side lists its own points (data/points.json subj; fish admin at parity: the Corals | Fish switch, rule A4, as the
 // reports follow it), the open count on its view; a point's page shows it from either side, with its subject's name when
 // it is another side's (an old link).
-let PTS = null; // points.json: {kinds, points}, its points with a shape problem left out
+let PTS = null; // data/points.json: {kinds, points}, its points with a shape problem left out
 const ptAll = () => (PTS && PTS.points) || [],
   ptList = (S = ASUBJ) => ptAll().filter(p => p.subj === S.id),
   ptOpen = () => pointsOrder(ptList(), DRAFT.points).open.length,
   ptKind = p => ((PTS && PTS.kinds) || {})[p.kind] || p.kind,
   ptSubj = p =>
     p.subj === ASUBJ.id ? '' : `<span class="adm-src adm-ptk">${esc((SUBJECTS.find(s => s.id === p.subj) || {}).name || p.subj)}</span>`,
-  // A photo slot: the app's photo (its credit, crop and fallbacks), else the copy points.json keeps, else nothing.
+  // A photo slot: the app's photo (its credit, crop and fallbacks), else the copy data/points.json keeps, else nothing.
   ptPhoto = x => (x.f && PHOTOS[x.f]) || (x.src ? {...x, f: x.f || x.src, r: 1} : null);
 let PT_NAMES = false; // this tab: the photos' names and origins shown on a point's page
 // One change to a point's state in the draft: an empty state leaves curation.json.
@@ -6091,7 +6112,7 @@ function ptSet(id, ch) {
 function renderPoints() {
   status();
   if (!PTS) {
-    $v.innerHTML = '<p class="note">No points.json.</p>';
+    $v.innerHTML = '<p class="note">No data/points.json.</p>';
     return;
   }
   const G = pointsOrder(ptList(), DRAFT.points),
@@ -6353,7 +6374,7 @@ function renderMont() {
       })
   );
 }
-/* ---------- Triage: the judging agent's suggestions (suggest.json) ---------- */
+/* ---------- Triage: the judging agent's suggestions (data/suggest.json) ---------- */
 const seen = k => !!(DRAFT.seen || {})[k];
 const vName = (n, v) => (DATA.gen[n] ? label(n, v) : v);
 // Pending suggestions only: once accepted (the curation now says the same) or dismissed, an item disappears.
@@ -6374,7 +6395,7 @@ function sugItems() {
       out.view.push({...p, genus: n, s, un});
     if (s.multi && p && !hidden(n, p) && !(DRAFT.use || {})[f] && !seen('multi:' + f)) out.multi.push({...p, genus: n, s, un});
   });
-  // Near-duplicates: the judging agent's and tools/find_dups.py's (dups.json), candidates included.
+  // Near-duplicates: the judging agent's and tools/find_dups.py's (data/dups.json), candidates included.
   const any = (n, f) => live(n, f) || pending(n).find(p => p.f === f);
   [...(S.dup || []), ...DUPS].forEach(d => {
     const n = d.genus;
@@ -6550,7 +6571,7 @@ const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Game genera first (isGame): the candidates of a Key-only genus come after every candidate of a game genus of the
 // source, in their own weighted draw, and only in its Colony and Close-up views (capViews): one guessed to be a
 // corallite photo (vg macro) is not proposed.
-// Judged candidates (suggest.json "cand": real diversity kept, sorted by hand after a pre-sort): the best photo of each
+// Judged candidates (data/suggest.json "cand": real diversity kept, sorted by hand after a pre-sort): the best photo of each
 // view of an observation first, other angles later, near-duplicates, Poor photos, several corals and other genera last.
 // Only the sure unusable ones, several corals, Poor photos, comparison images and near-duplicates are set aside (aside,
 // below); every other candidate still comes up. Not judged yet = like a best Fair photo.
@@ -6578,7 +6599,7 @@ const jLine = p => {
   const j = p.j;
   if (!j) return '';
   const what = j.g === 'exclude' ? 'unusable' : j.g === 'cmp' ? 'comparison image' : j.g ? `looks like <i>${esc(j.g)}</i>` : JKT[j.k] || '';
-  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}${p.mf ? ` · metrics: ${esc(p.mf)}` : ''}</p>`;
+  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (data/suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}${p.mf ? ` · metrics: ${esc(p.mf)}` : ''}</p>`;
 };
 
 /* ---------- Auto-sort (autosort.js: the obvious decided without the admin) ---------- */
@@ -6637,7 +6658,7 @@ function autoRun() {
   if (!plan.length) return null;
   // Each cell fills up to its cap (capOf, colonies): the nearest first (Dauin, the Philippines, abroad: the photo's loc),
   // whoever took it (rule P1: no source priority, Pierre's own included, so his Fair photo never takes the last slot
-  // ahead of another observer's Good one), then Good before Fair, then the sharper one (metrics.json, a tie-breaker
+  // ahead of another observer's Good one), then Good before Fair, then the sharper one (data/metrics.json, a tie-breaker
   // only), then an open licence before CC BY-NC (core.js rightsRank, the last tie-break), then a fixed order. The adds
   // that do not fit wait in their full cell, as candidates.
   const sh = p => (METRICS[p.f] || [0])[0],
@@ -6699,13 +6720,13 @@ function autoRun() {
   saveDraft();
   return R;
 }
-// The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (fish-cand.json, judged in
-// suggest.json "fish" on the judging/FISH.md rubric), into DRAFT[TK], one Undo step, sent by Publish. Runs only when
+// The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (data/fish-cand.json, judged in
+// data/suggest.json "fish" on the judging/FISH.md rubric), into DRAFT[TK], one Undo step, sent by Publish. Runs only when
 // the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out" (the
 // admin's Not this) and never touches a photo the admin decided. Its keep agreement (fishCompare, autoState) turns it off.
 let FISHC = null; // the tree subject in force's family pages' data, once loaded (TLOAD's, by subject)
 // The candidates and units of tree subject S (SUBJECTS admin files: its tree f and its candidates cand), fetched once
-// (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, an Undo needs a candidate's species, or a page shows
+// (data/fish-cand.json is 2.6 MB: only when the fish auto-sort has work, an Undo needs a candidate's species, or a page shows
 // them). withGame (the family pages): also the photos the game plays (its files gm: fish-game.json, 3 MB), so that counts
 // and lists show every photo in play whatever its route (the admin's adds, the sure candidates and the reference photos that
 // enter by themselves), not curation.json's adds alone. Not fetched for the auto-sort's own use. Each subject's loads and
@@ -6761,7 +6782,7 @@ async function fishLoad(withGame, S = FISHS) {
           // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
           game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
           byF: Object.fromEntries(Object.entries(cand).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}]))),
-          // {photo: the key of its candidate list in the file}: its pass's entry in suggest.json "by" (passAt)
+          // {photo: the key of its candidate list in the file}: its pass's entry in data/suggest.json "by" (passAt)
           key: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([k, L]) => (L || []).map(p => [p.f, k])))
         };
         if (S === FISHS) FISHC = T.C;
@@ -6772,7 +6793,7 @@ async function fishLoad(withGame, S = FISHS) {
       get(W.gm).then(G0 => {
         const G = treeGameRead(G0), // its records whole (core.js: the file's short form)
           L = Object.values((G && G.photos) || {}).flat();
-        // The judgment a game record carries (a reference photo is judged outside suggest.json), with its resolved phase.
+        // The judgment a game record carries (a reference photo is judged outside data/suggest.json), with its resolved phase.
         T.C.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
         T.C.plays = L;
       }));
@@ -6800,14 +6821,14 @@ async function fishAutoRun() {
   render();
   return R;
 }
-// The date a candidate of the auto-sort's subject was judged (YYYY-MM-DD), or null: its pass's in suggest.json "by" (the
+// The date a candidate of the auto-sort's subject was judged (YYYY-MM-DD), or null: its pass's in data/suggest.json "by" (the
 // judging tools stamp it), read by the route back of the photos the auto-sort set aside (autosort.js sortBack).
 const passAt = (C, f) => ((((SUG && SUG.by) || {})[(C.key || {})[f]] || {})[AK] || {}).at || null;
 // One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again (or, one
 // it had brought back, set aside again). One Undo step.
 async function fishAutoUndo(f) {
   const p = ASORT && (await fishLoad(false, ASORT)).byF[f];
-  // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to the admin.
+  // A candidate no longer in data/fish-cand.json: its species is unknown, so the add cannot be checked; left to the admin.
   if (!p) return toast('This photo is no longer a fish candidate: its auto decision cannot be undone here.');
   const back = (fishIdx(DRAFT[AK])[f] || {code: ''}).code[0] === 'b',
     F = fishUndo(DRAFT[AK], f, p.sid);
@@ -6820,7 +6841,7 @@ async function fishAutoUndo(f) {
   );
 }
 const fishToast = R =>
-  `Fish auto-sort: ${R.add} proposed in, ${R.back ? `${R.back} back in, ` : ''}${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
+  `Fish auto-sort: ${R.add} proposed in, ${R.back ? `${R.back} back in, ` : ''}${R.out ? `${R.out} taken out by a newer judgement, ` : ''}${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
 const autoToast = R =>
   `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
 // One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value the admin changed since stays),
@@ -6886,7 +6907,7 @@ const autoText = (d, n) =>
     : d.kind === 'x'
       ? 'exclude'
       : 'reject';
-// The evidence next to a disagreement: the agent's note (while suggest.json still has it) and the metrics.
+// The evidence next to a disagreement: the agent's note (while data/suggest.json still has it) and the metrics.
 const evid = f => {
   const m = METRICS[f],
     j = (PHOTOS[f] || {}).j;
@@ -7691,7 +7712,7 @@ function cropEditor(p, opt) {
             full = v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1;
           DRAFT.crop = {...(DRAFT.crop || {})};
           // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back (nor
-          // get written with the add, ACT.addc). Read from suggest.json: a Check's card is blind (no j) but has one.
+          // get written with the add, ACT.addc). Read from data/suggest.json: a Check's card is blind (no j) but has one.
           if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
@@ -8051,7 +8072,7 @@ function download() {
 }
 
 /* ---------- Start ---------- */
-// The judging agent's suggestions (suggest.json: 3.5 MB, the largest file a Players page would wait for, 0.4 MB gzipped,
+// The judging agent's suggestions (data/suggest.json: 3.5 MB, the largest file a Players page would wait for, 0.4 MB gzipped,
 // and the work of laying them over the candidates) are read by the photo pages, the Inbox count and the auto-sort, never
 // by a Players page (sugOwn: where the admin opens, Activity). An admin that opens there does not wait for them: start()
 // leaves the laying and the auto-sort in SUG_LATE, run once the sheet's reads are in (sugLater), or at once when a page
@@ -8059,7 +8080,7 @@ function download() {
 const sugOwn = h => /^players\//.test(h),
   landing = () => (([S, p]) => admRoute(p, S))(subjOfHash(hashNow())),
   sugGet = () =>
-    fetch('suggest.json', {cache: 'no-cache'})
+    fetch('data/suggest.json', {cache: 'no-cache'})
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}));
 let SUG_LATE = null,
@@ -8134,19 +8155,19 @@ async function start() {
       // and they follow (sugLater); every other page waits for them as before.
       late ? {} : sugGet(),
       loadSaved(),
-      side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
-      // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
+      side('data/dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
+      // Candidates waiting live in data/cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
       // curation.json names): merged in here, as one list per genus.
-      side('cand.json', 'cand'),
+      side('data/cand.json', 'cand'),
       // Objective metrics (tools/photo_metrics.py): tie-breakers and sanity flags for the auto-sort only.
-      side('metrics.json', 'm'),
+      side('data/metrics.json', 'm'),
       // The presence rule per photo species (tools/coral_presence.py; rule C8): the "out of rule" flag.
-      side('presence.json', 'sp'),
+      side('data/presence.json', 'sp'),
       // Former names and iNaturalist spellings (the extract tools/taxonomy.py writes of its reference file): the name tag,
       // one section per subject (one fetch: side keeps the reply).
-      Promise.all(SUBJECTS.map(S => side('names.json', S.id).then(x => [S.id, x]))).then(Object.fromEntries),
+      Promise.all(SUBJECTS.map(S => side('data/names.json', S.id).then(x => [S.id, x]))).then(Object.fromEntries),
       // The points to handle (To do › Points), written by agents; a point with a shape problem is left out.
-      fetch('points.json?v=1', {cache: 'no-cache'})
+      fetch('data/points.json?v=1', {cache: 'no-cache'})
         .then(r => (r.ok ? r.json() : null))
         .catch(() => null)
     ]);
@@ -8172,7 +8193,7 @@ async function start() {
     return;
   }
   FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
-  // The judging agent's candidate pass (suggest.json "cand", tools/judging_cand.py, run on demand): its view replaces the
+  // The judging agent's candidate pass (data/suggest.json "cand", tools/judging_cand.py, run on demand): its view replaces the
   // older guess, its quality and growth form become the dashed first guesses, the rest orders the swiper (jw, candQueue).
   // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to the admin, with the reason.
   const SH = Object.values(DATA.cand)
@@ -8301,11 +8322,11 @@ async function start() {
   const sugRun = () => {
     const ar = TOKEN && autoRun();
     if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-    // The fish auto-sort once the first page is drawn and the page is idle: it reads fish-cand.json, 9 million characters,
+    // The fish auto-sort once the first page is drawn and the page is idle: it reads data/fish-cand.json, 9 million characters,
     // which would share the line and the main thread with the first page. One Undo step.
     const fishLater = () =>
       fishAutoRun().then(R => {
-        if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+        if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
       });
     'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
   };
@@ -9047,7 +9068,7 @@ function pstatsFish(S, here) {
   const D = fuDataM().D,
     F = D.F,
     sp = FISHC.species,
-    C = fishCov(FISHC.units, D.play, sp, FISHC.cand, F, fuJ),
+    C = fishCov(FISHC.units, D.play, sp, FISHC.cand, readView(F), fuJ),
     // its photos in play, each with its family
     play = treePlayOf(D, FISHC.units, sp),
     PA = answersBy(photoAnswers(rowsOf(S)), treePid),

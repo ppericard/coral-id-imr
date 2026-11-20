@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-20 | [A photo the auto-sort put in has a route out, and the admin's pages read its proposals as the game does](2026-11-20-auto-route-out-pages-read-anew.md) | #1313 |
 | 2026-11-20 | [Cards per subject: the one-tap question's session is the subject's, and the sea slugs' all-met card before circle 3](2026-11-20-cards-per-subject.md) | #1318 |
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
 | 2026-11-20 | [Find the X's own offset: a format of its own, `find`, at 0 until its subject's format offsets are read](2026-11-20-find-the-x-own-offset.md) | #1299 |
@@ -74,6 +75,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [The sea slug box pass: Opus 5.5 medium, decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
 | 2026-11-20 | [Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)](2026-11-20-slug-find-the-x.md) | #1284 |
 | 2026-11-20 | [The coral pairs with a bonus or Key-only genus: 24 tell-apart lines written, one kept without](2026-11-20-tellapart-bonus-pairs.md) | #1296 |
+| 2026-11-20 | [Tool and admin data in `data/`, what players load stays at the root](2026-11-20-tool-admin-data-into-data.md) | #1298 |
 | 2026-11-19 | [Photo stats › Difficulty for the fish: one page for every subject with ratings of its own](2026-11-19-admin-difficulty-every-subject.md) | #1270 |
 | 2026-11-19 | [Admin opening on a phone: curation.json read raw and kept by sha, suggest.json no longer holds a Players page back](2026-11-19-admin-opening.md) | #1271 |
 | 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
