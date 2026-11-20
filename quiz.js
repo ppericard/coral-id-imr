@@ -1526,48 +1526,78 @@ function allMetShow(r, brk) {
   return d;
 }
 // Juveniles and colour phases (docs/ARCHITECTURE.md "Juveniles and colour phases on their unit's mastery"): the first
-// photo-quiz question showing one (core.js phaseKind) brings a card at Next, before prompts and tips: the photo beside
-// another phase (phasePair), its taxon, the unit's phase lines. Once per kind on the account (TOLD 'phase:<subject>-<kind>',
-// marked when shown); never over an overlay or a card due (it waits for the next such photo).
+// photo-quiz question showing one (juvCard) brings a card at Next, before prompts and tips: the photo beside another phase
+// (phasePair), its taxon. Once per kind on the account (TOLD 'phase:<subject>-<kind>', marked when shown); never over an
+// overlay or a card due (it waits for the next such photo).
 const PHASEC = {KEY: 'phase-', WORD: {juvenile: 'Juvenile', male: 'Male', female: 'Female', intermediate: 'Intermediate'}};
 const phaseTok = k => `phase:${SUBJ.id}-${k}`;
 const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || toldHas(phaseTok(k));
+// The card photo p brings, {p, k, q}, else null; sps: the subject's species by id (fish.json species), L: the photos of
+// its unit that may show (phasePair's pool). The juvenile card (k 'juvenile'; docs/decisions/
+// 2026-11-20-juvenile-card-shows-young-beside-adult.md) says nothing of its own on how the young look: it shows the
+// photo beside an adult of its species (q), so the learner sees the difference. One rule for every young photo, a
+// juvenile or a sub-adult (the phase intermediate without the phase flag p): it brings the card only where a source says
+// the species' young look clearly different (sps[p.sp].jd.d: tools/fish_juv_differs.json; jd.sub is information only);
+// false, or no source either way (no jd, as on a subject without them), and no adult of its species in L: no card. The
+// photo's phase is Pierre's in the admin when he set one (core.js phaseOf; rule A1). The sex or colour phase card (core.js
+// phaseKind 'phase', an entry marked dimorph) is as before.
+function juvCard(p, sps, L) {
+  if (!p) return null;
+  if (phaseKind(p) === 'phase') return {p, k: 'phase', q: phasePair(p, L)};
+  const w = phaseOf(p),
+    d = (p.sp && sps && sps[p.sp] && sps[p.sp].jd) || {};
+  if (!(w === 'juvenile' || w === 'intermediate') || d.d !== true) return null;
+  const q = phasePair(p, L);
+  return q ? {p, k: 'juvenile', q} : null;
+}
+// A photo's own word on its card: its phase, 'Sub-adult' for the phase intermediate on the juvenile card, else 'Adult'.
+const phaseWord = (x, k) => (k === 'juvenile' && phaseOf(x) === 'intermediate' ? 'Sub-adult' : PHASEC.WORD[phaseOf(x)] || 'Adult');
+// The photos unit n's card may show beside a photo: its photos in play for this player.
+const phasePool = n => ((GX(n).views || {}).wide || []).filter(x => gamePhotoOk(n, x));
+// The first photo of L ({n, p}: the photos shown, each with its unit) whose card has not been shown yet (seen(kind)):
+// {p, k, q, n}, else null.
+function phaseCardFor(L, seen) {
+  const sps = (TREEU && TREEU.sps) || {};
+  for (const {n, p} of L || []) {
+    const c = n && p ? juvCard(p, sps, phasePool(n)) : null;
+    if (c && !seen(c.k)) return {...c, n};
+  }
+  return null;
+}
 // L: the photos shown, each with its unit ({n, p}).
 function phaseArm(nb, cur, L, hold) {
-  const ph = L.map(x => x.p).filter(Boolean);
-  if (!photoQuiz(cur) || hold || !phaseCardOf(ph, phaseSeen)) return false;
+  if (!photoQuiz(cur) || hold || !phaseCardFor(L, phaseSeen)) return false;
   return breakArm(nb, () => {
     if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
-    const c = phaseCardOf(ph, phaseSeen),
+    const c = phaseCardFor(L, phaseSeen),
       nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
     if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
     promptMark();
-    phaseShow(c, L.find(x => x.p === c.p).n, true);
+    phaseShow(c, c.n, true);
     return true;
   });
 }
-// c: {p, k} (core.js phaseCardOf); n: the unit asked; brk: shown at the break, so its close goes on to the next question.
-function phaseShow({p, k}, n, brk) {
+// c: {p, k, q} (phaseCardFor; q the photo beside it, else phasePair's from n's photos); n: the unit asked; brk: shown at
+// the break, so its close goes on to the next question.
+function phaseShow({p, k, q: q0}, n, brk) {
   const g = GX(n),
-    q = phasePair(
-      p,
-      ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
-    ),
+    q = q0 !== undefined ? q0 : phasePair(p, phasePool(n)),
     tx = photoTaxon([p], n),
-    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js treeGenera psrc,
-    // core.js contentApply esrc; rule C2), else IMR's, the presentation's own words.
-    lines = g.phase || [],
+    juv = k === 'juvenile',
+    // The sex or colour phase card's lines, under their source: the one the content editor gave with an edit of them
+    // (app.js treeGenera psrc, core.js contentApply esrc; rule C2), else IMR's, the presentation's own words. The juvenile
+    // card has none: the two photos say it.
+    lines = juv ? [] : g.phase || [],
     w = phaseOf(p),
-    word = x => PHASEC.WORD[phaseOf(x)] || 'Adult',
+    word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
     // Each photo's credit under them, its author and its observation (rule P5): the answer is out.
     credits = [p, q].filter(Boolean).map(credit).join('<br>'),
-    title =
-      k === 'juvenile'
-        ? 'Careful: this was a juvenile, it can look very different from the adult'
-        : w === 'intermediate'
-          ? 'Careful: this species’ colour phases can look very different'
-          : 'Careful: this species’ males and females can look very different';
+    title = juv
+      ? `${word(p)} and ${q ? word(q).toLowerCase() : 'adult'}`
+      : w === 'intermediate'
+        ? 'Careful: this species’ colour phases can look very different'
+        : 'Careful: this species’ males and females can look very different';
   const d = cardShow({
     kind: 'tip',
     cls: 'tipcard phasecard',

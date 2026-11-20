@@ -37,3 +37,4 @@ What this PR does:
 - `suggest.json` changes by the one `fish-s330` record and its species' pass date (`judging_fish.py codes`);
   `fish-game.json` is rebuilt by the photos workflow after the merge.
 - `tests/fishjuvcard.test.js` pins that photo and that no photo whose judging note says it is not a juvenile carries `j`.
+- Since superseded on the card's trigger: the [juvenile card's new design](2026-11-20-juvenile-card-shows-young-beside-adult.md) (#1329) shows the card for a juvenile or sub-adult photo of a species sourced as different (`differs: true`), one rule with no single-species exception; the sweetlips stays judged a sub-adult and brings the card by that rule.

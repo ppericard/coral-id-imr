@@ -989,21 +989,28 @@ async function freshSeed(b, base, errs, seed, fresh) {
       P[n] = s0;
     });
     ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
-    // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
-    const nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
-      pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
-    ok(!!pJ, 'a juvenile with an adult of its species in play');
+    // Their card (quiz.js phaseCardFor, phaseShow): a juvenile of a species whose young are sourced as different
+    // (fish.json species jd.d) beside an adult of its species, then marked shown for this kind only; a juvenile of a
+    // species with no such source brings none.
+    const cardOf = (n, p) => phaseCardFor([{n, p}], () => false),
+      nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => (cardOf(n, p) || {}).k === 'juvenile')),
+      pJ = nJ && GX(nJ).views.wide.find(p => (cardOf(nJ, p) || {}).k === 'juvenile'),
+      nN = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && !((TREEU.sps[p.sp] || {}).jd || {}).d)),
+      pN = nN && GX(nN).views.wide.find(p => phaseOf(p) === 'juvenile' && !((TREEU.sps[p.sp] || {}).jd || {}).d);
+    ok(!!pJ, 'a juvenile sourced as different, with an adult of its species in play');
+    ok(!!pN && cardOf(nN, pN) === null, `a juvenile not sourced as different brings no card (${pN && pN.f})`);
     if (pJ) {
       ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
-      const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+      const d = phaseShow(cardOf(nJ, pJ), nJ, false);
       ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
       ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
-      ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+      ok(!d.querySelector('.phlines'), 'no words of its own: no phase lines');
+      ok(/^Juvenile and /.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
       const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
       ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
       d.close(1);
       ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
-      ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+      ok(phaseCardFor([{n: nJ, p: pJ}], phaseSeen) === null, 'a second juvenile brings no card');
     }
     // The mimicry card (quiz.js mimShow): the surgeonfish's juvenile (M1) beside the angelfish it resembles, with the
     // pair's marks; never a juvenile photo of it taken outside the region (fish.json species region); then marked shown
