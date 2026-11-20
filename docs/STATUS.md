@@ -8,68 +8,70 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
-Written 2026-11-20, about 14:05 Manila, by the integrator, **at Pierre's "stop everything. Prepare passation"**: the
-merge queue and every agent are stopped; nothing runs. **A new integrator starts here, then reads
-[INTEGRATOR.md](INTEGRATOR.md).**
+Written 2026-11-20, about 21:30 Manila, by the integrator, during the night queue (Rule 0: the questions below wait for
+Pierre's first message after 04:00). **A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
 
-Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 2026-11-17).
+Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 2026-11-17): read them at 04:00.
 
 ## Now
 
-Main: sheet script **v204** (#1285). Merged since 11:25: #1306 (sea slug boxes: 2,064 `bb`; 2,037 Find the X tiles cut
-and live), #1304 (`CAL.U` stays 1), #1307 (STATUS), #1294 (admin flags clear themselves), #1285 (rights PR 1: groups
-carry an instance's rights), #1308 (name roots' IMR-cue warning, 12 genera), #1309 (IMR content split: the corals'
-slate number, slides and lecture tips into the IMR layer).
+Main: sheet script **v208** (#1298, tool and admin data into `data/`). Merged this evening: #1313 (auto-sort
+follow-ups), #1321 (INTEGRATOR: the next task comes from the ROADMAP), #1298. Running: #1279 (Memory for fish and sea
+slugs) takes v209, then the oldest-first wave (`afterall.sh`), then #1315 (queue tools) and #1342 (fish phases list).
 
-**Open PRs, where each stands** (none is being worked on; resume each from its branch):
-
-- **Sheet version needed, one at a time** (rule D3; the integrator assigns at merge, `scratchpad/assignver.sh`, which
-  keeps the branch's `Code.gs` and takes only main's line 1 and `VERSION`): #1286 (sea slug Basics), #1279 (Memory, fish
-  and sea slugs), #1299 (Find the X's own offset), #1298 (tool and admin data into `data/`), #1301 (the "What I learn"
-  card: names rows). All four first were brought up to date at ~13:00 and waited for `VERSION`; #1301 fixed its Codex
-  round 3 (Home link before tier 2) and holds no version. Each needs main merged again before its assignment.
-- **Ordinary**: #1311 (fish Shared names box in the admin; Codex clean), #1312 (one-admin step 5: one Candidates swiper;
-  Codex requested on 9914bc5), #1292 (Corals of the World originals: a turned lecture photo waits for its `src` in the
-  one-path check; Codex requested on 51b2060; after merge, confirm `reefid-originals.yml` ran green), #1313 (#1259's
-  two auto-sort follow-ups; opened as its agent was stopped: read its body and Codex before anything).
-- **Held**: #1310 (Q316 offline-fit tool). Codex round 3 found three P2 in side check 2B (shared-arm replay). Decided
-  (W27): cut 2B out of the PR (keep the fit, its recovery test and check 2C) and move it to a follow-up that replays
-  through `core.js`'s own `eloReplay`/`replayProgress` (with `starts`), together with a Gibbs sampler for the photo SD
-  and τ, which the Laplace fit cannot estimate on today's cluster sizes. The cut is not done; the 3 threads are open.
-- **Branch without a PR**: `claude/admin-lazy-loads` (the admin opening's lazy loads, Pierre 2026-11-19 «la page admin
-  sur mon téléphone met de plus en plus de temps à s'ouvrir»; 3 commits, pushed at the stop; finish its record, then
-  tests, PR, Codex).
+- **Closed by measurement tonight**: R55 (the rare-photo cap works: 8.7% [7.0, 10.7] of 899 rows under the code's own
+  bar; the 14.1% under ease 4 is `RARE.FEW` by design); R71b (every FishBase main picture already carries `rep`, 68/68
+  candidates, 136/136 in play; the others stay untagged by spec, so the "FishBase `rep`" question is withdrawn).
+- **Fish phases sourced** (#1342, read-only data `tools/fish_phases.json`, 662 species): sourced sub-adult 16, juvenile
+  that differs 104, initial/terminal 37, sex colours 89; Pierre's three examples: sweetlips (D. pictum, P.
+  chaetodonoides, P. vittatus) and P. batavianus yes; parrotfish "subadult" is the initial phase (Bellwood & Choat 1989).
+  Three source conflicts went to Points.
+- **Held**: #1310 (Q316 fit: cut side check 2B into a follow-up with a Gibbs sampler; not done), #1331 (needs Pierre).
+- A stray branch `claude/autosort-followups` (identical to main, re-created by a late push) could not be deleted by the
+  integrator (auto mode refused): harmless.
 
 ## Next
 
 Decided and ready, launched at once unless a real dependency holds one back (rule W27: no agent cap; no two open PRs on
-the same sensitive file, `Code.gs`, `core.js`, `sync.js`, `model.js`; heavy runs share `tests/slot.js`):
+the same sensitive file, `Code.gs`, `core.js`, `sync.js`, `model.js`; heavy runs share `tests/slot.js`). The next task
+comes from the ROADMAP and the inventory (`docs/reviews/2026-11-20-backlog-inventory.md`, #1326), oldest PRs first.
 
-1. Rights PR 2 (Groups page) once no open PR holds `Code.gs`. It starts with one audited-write path for every
-   authorization change (join, leave, grant, revoke, rights edit), as answered on #1285's last thread.
-2. One-admin steps 6, 7, 8, 13 after #1312; Learn steps 9-11 after #1286.
-3. `core.js`, one holder at a time once the version queue is in: the level's answer count from the log; the "Fish
-   basics" achievement; one engine steps 3, 4, 6, then 5 and 9; #892 (a wrong pick against both families); Q395 exams.
-4. Watermark pass 5 and the measured block's full run (after #1298); About and credits, a calmer text (after #1292).
-5. Q316: after #1310, run the fit on the real log (Answers tab via the Sheets connector, outside the repo; never
-   committed), then the follow-up above.
-6. Activity outside the quiz C2 (integrator's call, design first). A `core.js` comment (~line 1005) still names
-   `renderFishCand`.
+1. Running: R77 learnsim fish profiles (figures only, the fish welcome values unchanged).
+2. One-admin step 7 after #1337, then 8 and 13; Learn steps 9-11 after #1324.
+3. `core.js`, one holder at a time once the version queue is in: the level count from the log; Fish basics; one engine
+   steps 3-6, 9; #892; Q395 exams. Then rights 2a (the audited-write path, `Code.gs`), 2c after Q447.
+4. Fish phases: re-judge the photos on `tools/fish_phases.json`, measured on a sample first.
+5. Q316: after #1310, the fit on the real log (outside the repo), then the 2B / Gibbs follow-up.
+6. Leads, not decided: `confTerm` predicts 0.696 against 0.80 actual on the 834 answers it touches (exploratory);
+   11 iNaturalist taxon covers may lack `rep` (the `--rep` route, network).
 
 ## Questions for Pierre
 
-- **B1** (a request, 12:10): the benthic slate and the benthos lecture in the IMR Drive folder (neither is there; rule
-  C2 blocks the benthos units until then). Study: scratchpad `benthos-study.md`.
-- **Q442** (12:10): what goes into Benthos. Rec. A, the slate's categories plus "hard coral"; coral genera stay in Corals.
-- **Q443** (12:10): photos of sand, rubble, rock and turf. Rec. C, public top-down archives first, his Dauin photos later.
-- **Q444** (13:16): a fish species' own common-name list (remove, reorder, add) as a new `curation.json` `fish` key of
-  per-species exceptions (study 2026-11-15 §7.2). Rec. yes, after the `core.js` holder.
-- **Remove vs ×** (07:00, reminded 13:16): rec. A, one Remove, one click, never proposed again, Undo and a list.
-- **With rights PR 2**: where each cohort's trainer list is stored. Rec. A, lines in the Groups tab marked trainer.
-- **Q439**: which Lab prototypes graduate (U13). Earlier still open: Q351 (b), Q390, one engine §6 (a)-(d).
+Asked in French, after 04:00 (Rule 0).
+
+- **#1331 / rule L4**: "a level opens in a group of at least 4 close units; no question before". Rec. yes, and accept
+  the one breached guardrail (lecture RA plateau 467 → 614 answers, 4 pairs), re-read on a runner before merge.
+- **Q445** bonus coral genera count: (A) one 45-genus scale for all, today's % kept as the "IMR slate" score. Rec. A.
+  With it, the species order question: rec. no.
+- **Q446** a screenshot attached to a report: stored on his pCloud (shrunk, no GPS, deleted with the account and 90
+  days after the report is handled). Rec. pCloud.
+- **Q447** a group's scope: in the existing Rights column (`content@subject:fish`), no new column. Rec. yes.
+- **Q448** each cohort's trainer list: lines in the Groups tab (`t:<cohort>`, name, code hash). Rec. A.
+- **Q449-Q452** response time as a difficulty signal (design `scratchpad/rt-design.md`, figures `rt-study.md`): Q449 a
+  separate photo time term fading by information, not by count (rec. yes); Q450 validate without wrong answers
+  (inter-player agreement +0.108 [0.037, 0.195] corals, test-retest +0.285, experts' time vs others' misses +0.171
+  corals, +0.445 fish), prediction kept as a guardrail (rec. yes); Q451 the enlargement as its own term (rec. yes);
+  Q452 step 2, the player's time net of the photo's, a silent replay (rec. yes, after step 1).
+- **B1** the benthic slate and benthos lecture in the IMR Drive folder; **Q442** (rec. A), **Q443** (rec. C).
+- **Q444** a species' own common-name list as a `curation.json` `fish` key (rec. yes, after the `core.js` holder).
+- **Remove vs ×** (rec. A, one Remove, Undo and a list). **R2**: delete files nothing uses (list shown first)? A
+  read-only R2 token for CI?
+- **Q439** Lab prototypes to graduate (U13), now with the Fish ID Key into Identify (rec. graduate it; #1340 hides the
+  sea slugs' empty Identify). RA review (#1332): My progress, a "Next step" line above the slate; the quiz photo, a
+  visible Colony / Close-up switch. Earlier still open: Q351 (b), Q390, one engine §6 (a)-(d).
 - Not asked, on purpose: contrast on the Learn sheets (his "plus tard"), the fish starting values (log too small).
 
-Last question number: Q444
+Last question number: Q452
 
 ## Pierre's hands
 
@@ -77,16 +79,16 @@ Last question number: Q444
 - **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
 - **Roles**: grant himself the trainer role to host a live game.
 - **In the admin**: "Juvenile: confirm as cover?" on Boxfishes (#1275); Light and Cover proposals, then Publish;
-  Points; 5 likely aquarium photos marked unsure (#1269); the unsure fish candidates.
+  Points (three new fish phase conflicts after #1342); 5 likely aquarium photos marked unsure (#1269); the unsure fish
+  candidates.
 - Check the analyses token's type and the R2 token's scope; renew the admin GitHub token before late January 2027.
 
 ## Parked after hours
 
-- None.
+- The questions above (Rule 0).
 
 ## Last stop
 
-2026-11-20 ~14:05 Manila: stopped at Pierre's word. Queue scripts in the scratchpad (a restart loses them): `nightq.sh`
-(one PR: bring up to date, wait for CI and Codex, `tools/train.py`), `afterall.sh` / `afterver.sh` → `seqver.sh` →
-`assignver.sh` (Code.gs PRs one at a time), `pushwait.sh`, `prstate.sh`, `failjobs.sh`, `thr.py`, `resolve_block.py`;
-log `nightq.log`. Studies: `backlog-audit.md`, `q316-study.md`, `benthos-study.md`, `slugbox/`. No real names.
+Not stopped: the night queue runs. Queue scripts in the scratchpad (a restart loses them; #1315 ports them to
+`tools/queue/`): `nightq.sh`, `afterall.sh`, `afterwave.sh`, `afterver.sh` → `seqver.sh` → `assignver.sh` (Code.gs
+PRs one at a time, `mainver.py`), `pushwait.sh`; log `nightq.log`. No real names.
