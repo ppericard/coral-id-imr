@@ -28,11 +28,7 @@ test('corals: the draw as before Q186 (CAL.U, the whole floor for every observat
   assert.ok(!('u' in C.calibOf(C.subjectOf('coral'))), 'no u for the corals');
   assert.strictEqual(C.calibOf(C.subjectOf('coral')).pool, Infinity);
   assert.strictEqual(M.calU(), M.CAL.U);
-  // CAL.U is the spread of a photo's difficulty around its unit offset (the prior): sd 0.5, variance 0.25, not the
-  // width of the Easy / Medium / Hard sets (1) it was set for (docs/decisions/2026-11-20-cal-u.md).
-  assert.strictEqual(M.CAL.U, 0.25);
-  assert.ok(Math.abs(M.calSd({f: 'new'}) - Math.sqrt(M.PICKD.SIGMA ** 2 + 0.25)) < 1e-12, 'an unanswered photo: sqrt(SIGMA² + 0.25)');
-  // The width of the targeting: sqrt(SIGMA² + CAL.U / (1 + answers / CAL.N)).
+  // The width the targeting had before: sqrt(SIGMA² + CAL.U / (1 + answers / CAL.N)).
   [{f: 'new'}, {f: 'a'}, {f: 'b'}].forEach(p =>
     assert.strictEqual(M.calSd(p), Math.sqrt(M.PICKD.SIGMA ** 2 + M.CAL.U / (1 + M.nAnswers(p) / M.CAL.N)), p.f)
   );
@@ -44,10 +40,7 @@ test('fish: a narrower targeting for unanswered photos, the floor shared over th
     M = engine('fish');
   assert.deepStrictEqual([cal.u, cal.pool], [0.25, 30]);
   assert.strictEqual(M.calU(), 0.25);
-  // The corals' CAL.U is the same spread since their prior became the unit offset (2026-11-20), so the two widths agree;
-  // both stay narrower than the targeting before (CAL.U 1).
-  assert.ok(M.calSd({f: 'new'}) <= engine('coral').calSd({f: 'new'}), 'no wider than the corals for a photo nobody answered');
-  assert.ok(M.calSd({f: 'new'}) < Math.sqrt(M.PICKD.SIGMA ** 2 + 1), 'narrower than the width of before');
+  assert.ok(M.calSd({f: 'new'}) < engine('coral').calSd({f: 'new'}), 'narrower than the corals for a photo nobody answered');
   // Up to the pool, the whole floor for each observation; beyond, the floor's total stays that of a pool-sized unit.
   assert.strictEqual(M.drawFloor(20), M.PICKD.FLOOR);
   assert.strictEqual(M.drawFloor(30), M.PICKD.FLOOR);
