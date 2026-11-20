@@ -32,9 +32,9 @@ Labels (rule W11): **[read]** = taken from the page or the PDF itself; **[not re
 
 | | Genera with marks | In `none` |
 |---|---|---|
-| Circle 1 (24) | 22: *Chromodoris*, *Goniobranchus*, *Hypselodoris*, *Doriprismatica*, *Phyllidia*, *Reticulidia*, *Jorunna*, *Nembrotha*, *Tambja*, *Thecacera*, *Pteraeolidia*, *Phyllodesmium*, *Chelidonura*, *Pleurobranchus*, *Hexabranchus*, *Costasiella*, *Phestilla*, *Melibe*; *Halgerda*, *Elysia*, *Thuridilla*, *Coryphellina* (2026-11-19) | 2: *Ardeadoris*, *Caloria* |
+| Circle 1 (24) | 22: *Chromodoris*, *Goniobranchus*, *Hypselodoris*, *Doriprismatica*, *Phyllidia*, *Reticulidia*, *Jorunna*, *Nembrotha*, *Tambja*, *Thecacera*, *Pteraeolidia*, *Phyllodesmium*, *Chelidonura*, *Pleurobranchus*, *Hexabranchus*, *Costasiella*, *Phestilla*, *Melibe*; *Halgerda*, *Elysia*, *Thuridilla*, *Coryphellina* (2026-11-19); *Caloria* (2026-11-20, §7) | 1: *Ardeadoris* |
 | Circle 2 (22) | 22: *Phyllidiella* (Brunckhorst's key), *Phyllidiopsis* (Brunckhorst's genus account and table, 2026-11-19); the circle-2 pass (2026-11-19, §3b): *Favorinus*, *Dolabella*, *Aplysia*, *Aegires*, *Ceratosoma*, *Miamira*, *Glossodoris*, *Sagaminopteron*, *Thorunna*, *Discodoris*, *Cadlinella*, *Tubulophilinopsis*, *Samla*, *Armina*, *Roboastra*, *Plakobranchus*, *Longibranchus*, *Bermudella*, *Diversidoris*, *Mexichromis* | |
-| Circle 3 (32) | 30 (2026-11-19, §6): *Asteronotus*, *Atagema*, *Baeolidia*, *Bornella*, *Bulbaeolidia*, *Cabangus*, *Colpodaspis*, *Cratena*, *Cyerce*, *Dendrodoris*, *Dermatobranchus*, *Doto*, *Euselenops*, *Gymnodoris*, *Janolus*, *Mariaglaja*, *Marioniopsis*, *Murphydoris*, *Notobryon*, *Notodoris*, *Odontoglaja*, *Pelagella*, *Philinopsis*, *Platydoris*, *Sclerodoris*, *Stylocheilus*, *Tenellia*, *Tomoberthella*, *Trapania*, *Tyrannodoris* | 2: *Taringa*, *Verconia* |
+| Circle 3 (32) | 30 (2026-11-19, §6): *Asteronotus*, *Atagema*, *Baeolidia*, *Bornella*, *Bulbaeolidia*, *Cabangus*, *Colpodaspis*, *Cratena*, *Cyerce*, *Dendrodoris*, *Dermatobranchus*, *Doto*, *Euselenops*, *Gymnodoris*, *Janolus*, *Mariaglaja*, *Marioniopsis*, *Murphydoris*, *Notobryon*, *Notodoris*, *Odontoglaja*, *Pelagella*, *Philinopsis*, *Platydoris*, *Sclerodoris*, *Stylocheilus*, *Tenellia*, *Tomoberthella*, *Trapania*, *Tyrannodoris*; *Taringa* (2026-11-20, §7) | 1: *Verconia* |
 
 Families with marks: Phyllidiidae, Plakobranchidae (the parapodia, which *Elysia* and *Thuridilla* share; Gosliner 1995
 tells the two genera apart by where they live and their rhinophores), and Pleurobranchidae.
@@ -135,10 +135,11 @@ or a Sea Slug Forum page saved and read), never from a search summary.
 
 ## 5. What is left
 
-- **The two circle-1 genera in `none`** (*Ardeadoris*, *Caloria*) and circle 3's two (*Taringa*, *Verconia*): the 2018 field guide would settle many; Rudman 1984 (the chromodorid genera, *Ardeadoris* among them), Pola et al. 2008 (*Nembrotha*, *Tambja*,
+- **The two genera in `none`** (*Ardeadoris*, *Verconia*; §7): the 2018 field guide would settle them; Rudman 1984 (the
+  chromodorid genera) and Rudman 1986 (the *Noumea* colour groups), Pola et al. 2008 (*Nembrotha*, *Tambja*,
   *Roboastra*) and Gosliner & Willan 1991 (Flabellinidae) are the papers to read next, each where it opens.
-- ***Caloria indica*'s genus**: the Sea Slug Forum says it cannot be settled (also placed in *Learchis*, *Hervia*,
-  *Facelina* and *Phidiana*): a nomenclature point for `points.json` (rule C5).
+- ***Caloria indica*'s and *Taringa halgerda*'s genus**: held as uncertain by some sources, WoRMS accepting both: the
+  point `seaslug-genus-caloria-taringa` (rule C5, 2026-11-20).
 - **Marks that tell two species apart** (the look-alike pairs) wait for the species level and #1042's pairs.
 - **SEASLUG.WORLD's species pages** give many more species cues (the *Thecacera* pair is in the literature scan, §4.1).
 - **Circle 3**: a genus diagnosis read in the paper itself for the genera whose marks come from one game species (§6,
@@ -210,6 +211,32 @@ discussion pages; SEASLUG.WORLD's *Verconia*, *Taringa*, *Cyerce nigra*, *Notodo
 *Cratena simba*, *Bulbaeolidia alba*, *Atagema intecta* pages beyond the lines cited. **Not read**: Paz-Sedano et al.
 2023 (*Pelagella*; the University of Barcelona repository's PDF answered 404), Kim et al. 2024 on PeerJ itself (a
 browser check; read on PubMed Central instead), the Plazi pages (a redirect; Zenodo's copy of the treatment read).
+
+## 7. The four genera left in `none`, retried (2026-11-20)
+
+The §6 tiers apply ([decision](../decisions/2026-11-20-seaslug-marks-retry.md)). Both species named are game species,
+so confirmed in the Philippines (rule C8): *Caloria indica* by observers and near Dauin, *Taringa halgerda* by
+observers (`tools/seaslugs.json`).
+
+| Genus | Marks (tier) | Sources |
+|---|---|---|
+| *Caloria* | long tapering oral tentacles, longer than the rhinophores (B); smooth rhinophores and a long pointed tail (B) | CIESM Atlas of Exotic Species, *C. indica* page, "Short description" **[read]** |
+| *Taringa* | low, flat tubercles with short round papillae (B); the largest, mid-back, club-shaped (B) | Gosliner & Behrens 1998, Proc. Calif. Acad. Sci. 50(11), *T. halgerda* external morphology p. 289 and discussion p. 292 **[read]**, BioStor's scan on the Internet Archive |
+| *Ardeadoris* | none | |
+| *Verconia* | none | |
+
+**Read, not used**: Gosliner & Behrens 1998's abstract and etymology (the placement in *Taringa* tentative; named for
+its likeness to *Halgerda*: the point `seaslug-genus-caloria-taringa`); the Sea Slug Forum's `noumangu`, `glosaver`,
+`ardeegre` (*Ardeadoris*: colours shared with the *Chromodoris aureomarginata* colour group), `noumflavgp` (colours only),
+and its genus pages (none: `/find/noumea`, `verconia`, `ardeadoris`, `caloria`, `taringa` answered 404); Gosliner 1994
+(*Noumea protea*, BioStor: internal anatomy); the Zenodo treatments of *C. indica* and *A. angustolutea* (Mozambique
+inventory, 2017: colours, a gill movement); English Wikipedia's *Ardeadoris*, *Caloria*, *Verconia* and *Taringa* pages
+(species lists); iNaturalist's taxon pages of the seven game species (one batched request through `tools/inat.py`:
+Wikipedia summaries, DNA placements). **Not read**: the Scientia Marina paper on *Caloria* (the site answered 503 and its
+certificate chain failed); Rudman 1984 and 1986 (paywalled); Plazi's *Ardeadoris* treatment (a redirect).
+**Requests**: web searches (8, one at a time); the Internet Archive (2 searches, 2 texts), the Sea Slug Forum (9 pages,
+2 s apart), English Wikipedia (4 raw pages, 3 s apart), Zenodo (1), CIESM (1), iNaturalist (1); a User-Agent naming the
+public app or a generic one, public terms only.
 
 ## Appendix. Requests (2026-11-17, 18:30-19:10 Manila)
 
