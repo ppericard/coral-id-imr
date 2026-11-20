@@ -121,20 +121,44 @@ replay sees only the questions that were asked).
 
 `python3 tools/studies/q316/fit.py synth <design> out.json`, 20 replicates each, seed 1, the study's designs and truth
 (its probe of `glmm`): fish-like 3,000 answers of 10 players (65 families, 130 genera, 325 species, 1,775 photos, ranks
-80/15/5%), coral-like 4,000 answers of 15 players (40 genera, 977 photos), and the data-rich fish-like 12,000 answers of
-20 players. Mean of the 20 estimates (bias), and how many 90% intervals covered the truth:
+80/15/5%), coral-like 4,000 answers of 15 players (40 genera, 977 photos), the data-rich fish-like 12,000 answers of
+20 players (2,567 photos: about 4.7 answers per photo, 4.2 per player × unit), and, added after the first three were
+read, a coral-like design with large clusters (10 genera of 4 photos: about 100 answers per photo, 27 per player ×
+unit). Mean of the 20 estimates (bias), and how many 90% intervals covered the truth:
 
-| Value (truth) | Fish-like | Coral-like | Fish-like, data-rich |
-| --- | --- | --- | --- |
-| player (0.5) | 0.44 (−0.06), 16: pass | 0.48 (−0.02), 15: pass | FISHRICH_PLAYER |
-| player × unit, τ (0.3) | 0.06 (−0.24), 13: fail | 0.18 (−0.12), 15: fail | FISHRICH_PU |
-| family (0.37) | 0.41 (+0.04), 17: pass | | FISHRICH_FAM |
-| genus (0.3; corals 0.37) | 0.17 (−0.13), 20: fail | 0.35 (−0.02), 20: pass | FISHRICH_GEN |
-| species (0.3) | 0.17 (−0.13), 17: fail | | FISHRICH_SP |
-| photo (0.46) | 0.04 (−0.42), 6: fail | 0.22 (−0.24), 15: fail | FISHRICH_PHOTO |
-| rank offset, genus (0.4) | 0.39 (−0.01), 19: pass | | FISHRICH_RG |
-| rank offset, species (0.8) | 0.64 (−0.16), 18: fail | | FISHRICH_RS |
+| Value (truth) | Fish-like | Coral-like | Fish-like, data-rich | Coral-like, large clusters |
+| --- | --- | --- | --- | --- |
+| player (0.5) | 0.44 (−0.06), 16: pass | 0.48 (−0.02), 15: pass | 0.49 (−0.01), 19: pass | 0.49 (−0.01), 19: pass |
+| player × unit, τ (0.3) | 0.06 (−0.24), 13: fail | 0.18 (−0.12), 15: fail | 0.11 (−0.19), 8: fail | 0.23 (−0.07), 17: pass |
+| family (0.37) | 0.41 (+0.04), 17: pass | | 0.35 (−0.02), 19: pass | |
+| genus (0.3; corals 0.37) | 0.17 (−0.13), 20: fail | 0.35 (−0.02), 20: pass | 0.29 (−0.01), 20: pass | 0.39 (+0.02), 18: pass |
+| species (0.3) | 0.17 (−0.13), 17: fail | | 0.27 (−0.03), 18: pass | |
+| photo (0.46) | 0.04 (−0.42), 6: fail | 0.22 (−0.24), 15: fail | 0.22 (−0.24), 11: fail | 0.41 (−0.05), 20: pass |
+| rank offset, genus (0.4) | 0.39 (−0.01), 19: pass | | 0.38 (−0.02), 16: pass | |
+| rank offset, species (0.8) | 0.64 (−0.16), 18: fail | | 0.72 (−0.08), 18: pass | |
 
-One fit takes about 10 seconds on the fish-like design, 3 on the coral-like, 60 on the data-rich (one core).
+One fit takes about 10 seconds on the fish-like design, 3 on the coral-like, 40-60 on the data-rich (one core). The
+whole `run.py` on a made-up log of today's size (4,000 coral and 3,000 fish answers, the real fish taxonomy) took 27 of
+its 40 minutes, the fish's shared-SD fallback included.
 
-FISHRICH_READING
+**Reading.** At today's size the estimator recovers the player SD, the fish family SD, the coral genus SD and the genus
+rank offset; with four times the answers, the genus and species SDs and both rank offsets too. The photo SD and τ are
+biased low (toward 0) whenever a photo or a player × unit pair has a handful of answers, even at 12,000 answers: by
+the rule declared above, that is the estimator's limit (the Laplace approximation's known downward bias on small binary
+clusters), not only the data's, since both pass with large clusters. So on the real log they will be reported "not
+estimable"; only another estimator (the study's Gibbs sampler, not built) could give them a value. Synthetic answers
+only: nothing here is about our players.
+
+## The side checks on made-up logs (no player)
+
+`checks.js` ran on made-up logs of today's size whose scoring records carry the difficulty the answers were drawn
+from, with no player × unit effect. Two things to know before reading it on the real log:
+
+- **2B uses the half fits' SDs as they come.** On the coral-sized log one half's photo SD came out at 0.01 (the bias
+  above), so arm 2's photos barely moved and arm 2 scored worse than today's engine (exploratory, p 0.02; the fish arm
+  2 scored better). Read 2B beside the acceptance report: an arm built on an SD that is "not estimable" tests that SD's
+  bias as much as the shared chain.
+- **2C reads the unit given in a miss.** With the wrong answers always falling on the same few genera, C2 said "not
+  centred" on a log with no player × unit effect: rule L2 takes a miss off the unit given too, so a genus often given by
+  mistake has a lower δ. With the choices drawn at random, the same log gave "centring not rejected". On the real log,
+  look-alikes given by mistake do the same: say so with the result.

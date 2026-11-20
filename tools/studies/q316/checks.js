@@ -127,16 +127,15 @@ function liveArm(rows, tick) {
   const out = new Array(rows.length).fill(null),
     eloRow = r => [r.p, r.t, r.u, r.c, r.y, r.mode, r.ph.join(' '), r.e, r.th, null, r.chs.join(' '), 0];
   const ER = rows.map(eloRow);
-  // the sheet's ?stats=1 photos and gd on the answers before (core.js eloOf, genusOffsetsOf: its eloReplay), refreshed
-  // at each new answer time
-  let V = {photos: {}, gd: {}},
-    at = -1;
+  // the sheet's ?stats=1 photos and gd on every answer before this one (core.js eloOf, genusOffsetsOf: its eloReplay),
+  // refreshed at each answer as the shared arms are (the log's times are to the minute: refreshing by time would score
+  // same-minute answers on older ratings than the other arms)
+  let V = {photos: {}, gd: {}};
   rows.forEach((r, i) => {
-    if (i && r.t !== at) {
-      tick();
+    if (i) {
+      if (i % 50 === 0) tick();
       const before = ER.slice(0, i);
       V = {photos: C.eloOf(before), gd: C.genusOffsetsOf(before)};
-      at = r.t;
     }
     const gd = n => (V.gd[n] ? V.gd[n][0] : 0);
     // model.js photoDiff: the rating with the unit asked's offset swapped in, blended with the prior by its answers

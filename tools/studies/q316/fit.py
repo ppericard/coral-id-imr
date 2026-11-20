@@ -30,7 +30,8 @@ genus and species levels is tested the same way (the study's fallback).
 
     python3 tools/studies/q316/fit.py fit <export.json> <out.json> [--reps 20] [--sibling] [--coral-family]
                                       [--half A|B] [--no-accept] [--deadline <epoch s>] [--budget <minutes>]
-    python3 tools/studies/q316/fit.py synth <fish|coral|fish-rich> <out.json> [--reps 20] [--seed 1] [--budget m]
+    python3 tools/studies/q316/fit.py synth <fish|coral|fish-rich|coral-large> <out.json> [--reps 20] [--seed 1]
+                                        [--budget m]
 
 fit: the export tools/studies/q316/prep.js writes (kept outside the repository). --half: the players of one half
 (prep.js's split) only, for the replay's held-out SDs. --no-accept: the fit alone (the halves, the replay's reference). --sibling (fish, exploratory): the "tell it from its
@@ -56,6 +57,7 @@ ACCEPT = {'reps': 20, 'bias': 0.1, 'cover': 15, 'level': 0.90}
 # The estimator's own adequacy, declared before the synthetic runs: a value that fails ACCEPT on the data-rich synthetic
 # design (synth fish-rich) is the estimator's fault (the next step would be the study's Gibbs sampler); one that passes
 # there and fails at today's size (synth fish, synth coral, the real design) is not estimable on that much data.
+# synth coral-large (added after the first figures: large clusters) tells the two apart for the photo SD and tau.
 # The rated world's values (tools/ratedworld.js RATED; the study's probe), the first truth of the acceptance test, and
 # the synthetic designs' truth. Rank offsets: the probe's +0.4 genus, +0.8 species (the rated world has none).
 RATED = {
@@ -473,8 +475,11 @@ def synth_rows(kind, rng):
     data-rich version (12,000 answers of 20 players, the probe's larger design), coral-like (40 units, 25 photos each; 4,000 answers of 15
     players). A few players hold most answers (share 1/i), as in the real log. Fish photos get an ease 1-5."""
     rows = []
-    if kind == 'coral':
-        units = [(f'u{u}', [f'u{u}p{i}' for i in range(25)]) for u in range(40)]
+    if kind in ('coral', 'coral-large'):
+        # coral-large (added after the first figures): 10 units of 4 photos, so about 100 answers per photo and 27 per
+        # player x unit; it tells the estimator's bias from too few answers per photo and per player x unit
+        nu_, nph = (10, 4) if kind == 'coral-large' else (40, 25)
+        units = [(f'u{u}', [f'u{u}p{i}' for i in range(nph)]) for u in range(nu_)]
         nans, npl = 4000, 15
     else:
         nans, npl = (12000, 20) if kind == 'fish-rich' else (3000, 10)
@@ -492,7 +497,7 @@ def synth_rows(kind, rng):
     for _ in range(nans):
         p = f'P{int(rng.choice(npl, p=share)) + 1}'
         k = 4 if rng.random() < 0.6 else 2
-        if kind == 'coral':
+        if kind in ('coral', 'coral-large'):
             u, phs = units[int(rng.integers(len(units)))]
             ph = phs[int(rng.integers(len(phs)))]
             row = {'p': p, 'u': u, 'rk': 'genus', 'F': None, 'G': u, 'S': None, 'ph': [ph], 'ez': [0.0]}
@@ -628,7 +633,7 @@ def run_synth(kind, args, clock, log):
     rng = np.random.default_rng(args.get('seed', 1))
     rows = synth_rows(kind, rng)
     D = build(rows)
-    subject = 'coral' if kind == 'coral' else 'fish'
+    subject = 'fish' if kind.startswith('fish') else 'coral'
     tr = truth_rated(D, subject)
     log(f'{kind}: {len(rows)} answers; levels ' + ', '.join(f'{b["name"]} {b["q"]}' for b in D['blocks']))
     out = {'design': kind, 'answers': len(rows), 'truth': tr, 'accept_rule': ACCEPT, 'cut': False}
@@ -669,13 +674,14 @@ def parse(argv):
     return a
 
 
-USAGE = 'usage: fit.py fit <export.json> <out.json> [options] | fit.py synth <fish|coral|fish-rich> <out.json> [options]'
+SYNTH = ('fish', 'coral', 'fish-rich', 'coral-large')
+USAGE = 'usage: fit.py fit <export.json> <out.json> [options] | fit.py synth <' + '|'.join(SYNTH) + '> <out.json> [options]'
 
 
 def main(argv):
     a = parse(argv)
     pos = a['pos']
-    if len(pos) != 3 or pos[0] not in ('fit', 'synth') or (pos[0] == 'synth' and pos[1] not in ('fish', 'coral', 'fish-rich')):
+    if len(pos) != 3 or pos[0] not in ('fit', 'synth') or (pos[0] == 'synth' and pos[1] not in SYNTH):
         print(USAGE, file=sys.stderr)
         return 2
     if pos[0] == 'fit' and not outside_repo(pos[2]):

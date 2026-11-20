@@ -252,7 +252,8 @@ function prepare(all, subject, opts = {}) {
     hs.forEach(h => ((h[0] += 1), (h[1] += row.y)));
     return row;
   });
-  // each answer's photos: the fewest earlier trusted answers among them (every player's)
+  // each answer's photos: the most earlier trusted answers any of them has (every player's), so pn < 3 means every
+  // photo of the question had fewer than 3
   const pn = {};
   out.forEach(x => {
     x.pn = x.ph.length ? Math.max(...x.ph.map(f => pn[f] || 0)) : 0;
