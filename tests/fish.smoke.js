@@ -2471,6 +2471,21 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const mr = await nameRoot();
     if (!rootOk(mr, /^Name roots: Gymno·thorax: “bare or naked” \(gymnós\) \+ “breast or chest” \(thṓrax\)\./))
       ui.push(`${width}px Gymnothorax name roots: ${JSON.stringify(mr)}`);
+    // A root that echoes another family's IMR cue shows with its warning (fish.json root.warn), on Pomacentrus's page.
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Pomacentrus'));
+    await q
+      .waitForFunction(() => /Pomacentrus/.test((document.querySelector('#view .fsheet .fn-t') || {}).textContent || ''), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const wr = await nameRoot();
+    if (
+      !rootOk(
+        wr,
+        /^Name roots: Poma·centrus: .*\. Careful: the name echoes the ID tip of Angelfishes \(“Spine on the gill cover \(opercular spine\)”\), not one of its own\..* The ETYFish Project \(Pomacentrus\)$/
+      )
+    )
+      ui.push(`${width}px Pomacentrus name roots warning: ${JSON.stringify(wr)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
     await q
       .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})
