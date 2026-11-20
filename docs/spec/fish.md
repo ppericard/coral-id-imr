@@ -295,7 +295,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 - **A genus's and a species' ★ Cover** sit in the same map under their `fish.json` ids, `{cover}` only (`g:Chromis`,
   `s091`), set on the Tree tab's node pages: ★ Cover on a genus's or a species' own page sets that node's cover; ★ Cover
   elsewhere (a report, Health) sets the family's. The rank words are read from `core.js` `SUBJECTS` `sheets`, broadest
-  first, never a list of our own (`admin.js` `fuRanks`, `fuRankOf`, rule S1). Each genus and species heading shows its
+  first, never a list of our own (`admin.js` `ranksOf`, `fuRankOf`, rule S1). Each genus and species heading shows its
   cover in force (ringed when it is his pick), the tile marked (Family / Genus / Species cover) (`admin.js`
   `renderFishUnits`); Publish counts them apart, rank by rank (`pubSummary`: fish family, fish genus cover, fish species
   cover).

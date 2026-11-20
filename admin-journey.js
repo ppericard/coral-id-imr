@@ -224,8 +224,8 @@ const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js date
 // repUnit, a coral genus in italics with its page, another subject's unit once its entries are read (admin.js fishAdmin)
 // by its name (a family plain, a genus or species in italics, its id's prefix off) with its family's page in Tree; an IMR
 // sub-entry (a genus the IMR course names otherwise: fishAdmin imr) with its IMR name beside it. jName: the same in plain
-// text, for a title or a chart's tooltip. The units of the subject on screen (admin.js unitWait: the sea slugs' own).
-const jReg = () => unitRegOf(unitWait(ASUBJ)),
+// text, for a title or a chart's tooltip. The units of the subject on screen, from its registry (admin.js reg).
+const jReg = () => reg(ASUBJ),
   jImr = g => (jReg() && jReg().imr[g]) || '',
   jName = g => heatLab(jReg(), g) + (jImr(g) ? ` (${ORG.short} ${jImr(g)})` : ''),
   jUnit = g =>
@@ -351,11 +351,11 @@ function renderJourney(name, anonId = '') {
   // One journey per subject (docs/decisions/2026-11-18-decisions-from-comments-3.md), under the subject's prefix: the
   // page's own subject switch shows the player's answers in each and opens the other (the header switch keeps the page
   // too). Every subject's progress is replayed here from its answers (admin.js progOf, unitsOf), with its saved copy's
-  // cards and mastery exams; the Elo and the genus sheets opened are the replayed subject's (SUBJECTS replay) only.
+  // cards and mastery exams; the Elo is the replayed subject's (SUBJECTS replay) only; the sheets opened, every subject's.
   const M = unitsOf(ASUBJ),
     full = !!M,
     own = !!ASUBJ.replay;
-  if (!M && !jReg()) unitAdmin(unitWait(ASUBJ)).then(() => cur === here && jReg() && render());
+  if (!M && !jReg()) regLoad(ASUBJ).then(() => cur === here && jReg() && render());
   // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (flag 2).
   const jRows = S => (u.arch ? subjRows(ANS.all || ANS.rows || [], S.id) : rowsOf(S)).filter(r => r[0] === u.id),
     jn = S => jRows(S).length,
@@ -757,37 +757,42 @@ function renderJourney(name, anonId = '') {
       S = subjectOf(sj);
     return esc(pg) + (S.pv ? ` (${esc(S.name)})` : '');
   };
-  // The pages they spent most time on: every page, or on the side of a subject with sheets at several ranks, its own.
+  // The pages they spent most time on: the subject's own (its page prefix SUBJECTS pv: every page for the corals, whose
+  // pages have none).
   const pagesTop = Object.entries(RT_)
-    .filter(([k]) => !ASUBJ.sheets || k.startsWith(ASUBJ.pv))
+    .filter(([k]) => k.startsWith(ASUBJ.pv))
     .sort((a, b) => b[1][1] - a[1][1] || b[1][0] - a[1][0])
     .slice(0, 8);
-  // A subject whose sheets sit at several ranks (SUBJECTS sheets: the fish family, genus and species sheets) logs them as
-  // one page with no unit (admin.js sheetVisit, as Analyses › Learning › Stops counts them): the times and the time
-  // spent over the visits that showed its pages, no table per unit (fish admin at parity, Journey details).
+  // One section for every subject (sheetsTitle: Genus sheets opened; Family, genus and species sheets opened): the visits
+  // that showed the subject's pages (admin.js sheetVisit, as Analyses › Learning › Stops counts them, "with Fish pages"
+  // for a subject whose pages carry a prefix); its sheets one by one where the log lists them so (admin.js sheetsByUnit:
+  // the corals' genus sheets, with when each was first opened and from where), else the times and the time spent over
+  // those visits (the fish family, genus and species sheets are logged as one page with no unit).
   const mine = PR ? PR.filter(x => x.id === u.id) : [],
-    SV = ASUBJ.sheets ? mine.map(x => sheetVisit(x, ASUBJ)) : [],
+    byUnit = sheetsByUnit(ASUBJ),
+    SV = mine.map(x => sheetVisit(x, ASUBJ)),
     sv = SV.filter(Boolean).reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]),
-    svN = new Set(mine.filter((x, i) => SV[i]).map(x => x.vi)).size;
-  const sheetsSec = `<section class="adm-scard" data-jsheets><h3>${ASUBJ.sheets ? esc(sheetsTitle(ASUBJ)) : 'Genus sheets opened'}${SH && !ASUBJ.sheets ? ` <small>${SH.G.length}</small>` : ''}</h3>${
+    svN = new Set(mine.filter((x, i) => SV[i]).map(x => x.vi)).size,
+    withPages = ASUBJ.pv ? ` with ${esc(ASUBJ.name)} pages` : '';
+  const sheetsSec = `<section class="adm-scard" data-jsheets><h3>${esc(sheetsTitle(ASUBJ))}${SH && byUnit ? ` <small>${SH.G.length}</small>` : ''}</h3>${
     !PGS
       ? '<p class="note">Loading…</p>'
       : PGS.err
         ? `<p class="note">${esc(PGS.err)}</p>`
-        : !(ASUBJ.sheets ? svN : SH.visits)
-          ? `<p class="note">No visit${ASUBJ.sheets ? ` with ${esc(ASUBJ.name)} pages` : ''} recorded yet.</p>`
+        : !svN
+          ? `<p class="note">No visit${withPages} recorded yet.</p>`
           : `${
-              ASUBJ.sheets
+              !byUnit
                 ? sv[0]
                   ? `<p>Opened ${sv[0]} time${sv[0] === 1 ? '' : 's'} · ${secs(sv[1])}</p>`
                   : '<p class="note">None opened.</p>'
                 : SH.G.length
-                  ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
+                  ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>${esc(jOne())}</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
                       o =>
                         `<tr><td><a class="adm-gen" href="${esc(genusHref(o.g))}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
                     ).join('')}</tbody></table></div>`
                   : '<p class="note">None opened.</p>'
-            }<p class="note">${(n => `${n} visit${n === 1 ? '' : 's'}${ASUBJ.sheets ? ` with ${esc(ASUBJ.name)} pages` : ''} recorded`)(ASUBJ.sheets ? svN : SH.visits)}${pagesTop.length ? ` · most time on ${pagesTop.map(([k, [n, sc]]) => `${pageLabel(k)} ${secs(sc)} (${n}×)`).join(', ')}` : ''}</p>`
+            }<p class="note">${svN} visit${svN === 1 ? '' : 's'}${withPages} recorded${pagesTop.length ? ` · most time on ${pagesTop.map(([k, [n, sc]]) => `${pageLabel(k)} ${secs(sc)} (${n}×)`).join(', ')}` : ''}</p>`
   }</section>`;
 
   $v.innerHTML =
@@ -824,7 +829,7 @@ function renderJourney(name, anonId = '') {
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
       ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${own || ASUBJ.sheets ? sheetsSec : ''}${recentSessions(R, {own: 1, user: anonId ? {id: anonId, anon: 1} : u})}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${sheetsSec}${recentSessions(R, {own: 1, user: anonId ? {id: anonId, anon: 1} : u})}${daysSec}</div>`;
   bindJReload();
   bindSess(); // the sessions unfold under their row (admin.js)
   pagesFresh(here); // read again once stale (admin.js)

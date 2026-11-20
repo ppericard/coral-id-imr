@@ -131,18 +131,24 @@
 const TAXA_PAGE = 'photos/stats/taxa';
 const TAXA_SEL = {}; // the reason on screen per subject (this tab only): '' = every reason
 // The rows for the subject on screen, or null while the family pages' data are on their way (the page says Loading… and
-// draws again once in, if still on screen on that side).
+// draws again once in, if still on screen on that side). A flat subject's (SUBJECTS flat, the corals) from its registry
+// (admin.js reg); a tree subject's from its family pages' data (FISHC, its species out of play).
 function taxaRows(S, here) {
-  if (!S.sheets)
-    return taxaGenera({
-      genera: Object.keys(DATA.gen).map(n => ({
-        name: n,
-        fam: DATA.gen[n].fam,
-        game: isGame(n),
-        n: covViews(n).reduce((t, [v]) => t + covOf(n, v).n, 0)
-      })),
-      link: genusHref
-    });
+  if (S.flat) {
+    const R = reg(S);
+    return (
+      R &&
+      taxaGenera({
+        genera: Object.keys(R.gen).map(n => ({
+          name: n,
+          fam: R.gen[n].fam,
+          game: isGame(n),
+          n: covViews(n).reduce((t, [v]) => t + covOf(n, v).n, 0)
+        })),
+        link: genusHref
+      })
+    );
+  }
   if (!FISHC || !FISHC.plays || FISHS !== S) {
     fishLoad(true).then(() => here() && render());
     return null;
@@ -181,7 +187,7 @@ function renderTaxa() {
     why = r => r.why.map(w => `<div>${esc(w.text)}${w.detail ? `<br><small>${esc(w.detail)}</small>` : ''}</div>`).join('');
   $v.innerHTML = `<section class="adm-taxa" data-taxa-n="${all.length}"><div class="adm-filter">${chip('', 'All', all.length)}${C.map(([k, t, n]) => chip(k, t, n)).join('')}</div>${
     rows.length
-      ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>${S.sheets ? 'Species' : 'Genus'}</th><th>Family</th><th>Reason</th></tr></thead><tbody>${rows
+      ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>${esc(cap1(ranksOf(S).slice(-1)[0]))}</th><th>Family</th><th>Reason</th></tr></thead><tbody>${rows
           .map(
             r =>
               `<tr data-taxon="${esc(r.id)}"><td class="an-w">${name(r)}</td><td class="an-w">${esc(r.unit)}</td><td class="an-w">${why(r)}</td></tr>`

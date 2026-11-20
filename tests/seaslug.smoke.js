@@ -210,7 +210,10 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
             .map(x => x.rk)
         )
       ],
-      sets: SETS().length,
+      // no opt-in set: only its species by their scientific names (app.js SCI_SP, no switch), empty below SCI_SHEET
+      sets: SETS()
+        .map(S => S.k + ':' + (S.all ? S.all().length : 0))
+        .join(','),
       met: slateGenera().filter(n => introduced(n)).length,
       slate: slateGenera().length
     }));
@@ -218,7 +221,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     check(units.length && units.every(n => c1.has(n)), `2: the sea-slug progress: ${pr.s}`);
     check(!pr.f.some(n => gens.has(n) || fams.has(n)), `2: sea-slug units in the fish progress: ${pr.f}`);
     check(pr.rk.length === 1 && pr.rk[0] === 'genus', `2: the answers are not logged at the genus: ${pr.rk}`);
-    check(pr.sets === 0, `2: the sea slugs have an opt-in set: ${pr.sets}`);
+    check(pr.sets === 'ssp:0', `2: the sea slugs have an opt-in set, or their species open below SCI_SHEET: ${pr.sets}`);
     check(pr.slate === F.genera.length && pr.met > 3, `2: the slate ${pr.slate} (of ${F.genera.length} genera), ${pr.met} met`);
     // The genera page (its families as blocks), a family sheet, a genus sheet, Home and the key page.
     await p.goto(base + '#seaslug/learn/families');

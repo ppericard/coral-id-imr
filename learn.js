@@ -935,11 +935,15 @@ const famUnit = fid => {
 };
 // "Opened for me": a species counts as opened once its family is at Advanced, the level at which a family's
 // species open (docs/FISH_PATH.md "Unlock rules"), once its scientific genus is met, or once its own unit is met (the
-// species level, app.js treeGenera: s:s091).
+// species level, app.js treeGenera: s:s091, by its common name; sci:s091, by its scientific name).
 const spOpen = s => {
   if (typeof genScore !== 'function') return false;
   const u = famUnit(s.family);
-  return (!!GX('s:' + s.id) && introduced('s:' + s.id)) || (!!GX(s.genus) && introduced(s.genus)) || (!!u && genScore(u) >= LV_AT[1]);
+  return (
+    ['cn', 'sci'].some(lv => !!GX(spUnitId(lv, s.id)) && introduced(spUnitId(lv, s.id))) ||
+    (!!GX(s.genus) && introduced(s.genus)) ||
+    (!!u && genScore(u) >= LV_AT[1])
+  );
 };
 // The species filter, on by default each time a sheet opens (viewFishSheet): one tap shows every species.
 let fishMine = true;
