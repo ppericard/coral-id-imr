@@ -301,8 +301,7 @@ let draftAt = null;
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [],
   FUT = [],
-  snap = null,
-  ACTED = false; // the admin clicked, undid or redid in this visit: a background run then lands under his steps (saveDraft)
+  snap = null;
 // The Undo steps survive a reload of this tab: kept in sessionStorage (this tab only, gone when it closes; the last 60
 // steps), with the draft they lead to, so another tab's draft never picks them up. As many of the latest steps as fit in
 // HIST_ROOM characters, under the ~5 million a tab's sessionStorage takes (60 steps of a 1.3-million-character curation
@@ -348,49 +347,15 @@ const keepHist = () => {
 addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
-// What a background run changed (the draft now against snap, the draft before it), laid onto the step Undo leads to and the
-// one Redo leads to; a value the admin changed in that step stays his. Only what the run changed is laid (key by key, down
-// the maps), never a map his click made: undoing it must not take the run's entries of that map with it (merge3 would).
-const layRun = (before, run, onto) => {
-  const O = o => o && typeof o === 'object' && !Array.isArray(o),
-    J = v => JSON.stringify(v === undefined ? null : v),
-    B = before || {},
-    R = run || {},
-    T = onto || {},
-    out = {...T};
-  new Set([...Object.keys(B), ...Object.keys(R)]).forEach(k => {
-    if (J(R[k]) === J(B[k])) return;
-    if (O(R[k]) && (O(B[k]) || B[k] === undefined) && (O(T[k]) || T[k] === undefined)) out[k] = layRun(B[k], R[k], T[k]);
-    else if (J(T[k]) === J(B[k])) R[k] === undefined ? delete out[k] : (out[k] = R[k]);
-  });
-  return out;
-};
-function bgSink() {
-  const before = JSON.parse(snap),
-    onto = L => {
-      if (!L.length) return;
-      const m = layRun(before, DRAFT, JSON.parse(L[L.length - 1]));
-      m.genera = m.genera || {};
-      L[L.length - 1] = JSON.stringify(m);
-    };
-  onto(HIST);
-  onto(FUT);
-}
-// bg: the save of a background run (the auto-sorts). Run before the admin's first click, it is one Undo step; once he has
-// clicked, it is no step of his stack: Undo and Redo always take back his own action, never the run, and the redo steps
-// stay. The run goes into the step Undo or Redo leads to instead (bgSink), so taking his click back leaves what it proposed.
-function saveDraft(bg = false) {
+function saveDraft() {
   memoReset();
   sweepFlags();
-  const sink = bg && ACTED && snap !== null;
   if (snap !== null) {
     autoWhen();
-    if (sink) bgSink();
-    else HIST.push(snap);
+    HIST.push(snap);
   }
   if (HIST.length > 300) HIST.shift();
-  if (!sink) FUT = [];
-  if (!bg) ACTED = true;
+  FUT = [];
   snap = JSON.stringify(DRAFT);
   if (ASIG) ASIG_OF = snap;
   if (!TOKEN) return;
@@ -436,7 +401,6 @@ function putDraft() {
 const draftBusy = () => draftLost || !!(DW && (DW.busy || DW.lost));
 function step(from, to, msg) {
   if (!from.length) return toast(msg[0]);
-  ACTED = true;
   to.push(snap);
   snap = from.pop();
   DRAFT = JSON.parse(snap);
@@ -7045,7 +7009,7 @@ function autoRun() {
   });
   if (!(R.add + R.reject + R.exclude + R.check)) return R;
   DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
-  saveDraft(true);
+  saveDraft();
   return R;
 }
 // The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (data/fish-cand.json, judged in
@@ -7145,7 +7109,7 @@ async function fishAutoRun() {
     {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => passAt(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
-  saveDraft(true);
+  saveDraft();
   render();
   return R;
 }
