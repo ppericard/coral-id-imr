@@ -148,6 +148,19 @@
     if ((F.out || {})[f] || (F.exclude || {})[f] || (F.seen || {})[f]) return 'reject';
     return (F.add || {})[f] ? 'add' : null;
   }
+  // A flag (curation.json flag: To do › Flagged on the site) whose photo has left play in the curation C: removed (hide,
+  // or Remove), excluded (×) or sent away (Not this) for the corals; out, excluded or rejected (seen) in a subject's own
+  // part (P: that part; the curation C itself for the corals). Such a flag is no task: the admin clears it by itself
+  // (Pierre, 2026-11-20). key: the flag's key; fl: the flag (fl.file: the photo's own id when the key is another's).
+  function flagGone(C, P, key, fl) {
+    C = C || {};
+    const f = (fl && fl.file) || key;
+    if (P && P !== C)
+      // a Not this that names the species it was added under keeps the photo in play (core.js treePhotoOn)
+      return [f, key].some(n => !!(P.exclude || {})[n] || !!(P.seen || {})[n] || (!!(P.out || {})[n] && P.out[n] !== (P.add || {})[n]));
+    if ((C.exclude || {})[key]) return true;
+    return Object.values(C.genera || {}).some(k => (k.hide || []).includes(key) || !!(k.out || {})[key]);
+  }
   // Comparisons for the agreement (field keep, as autoCompare): every answered Check, and every later correction of an
   // applied decision (a disagreement; a decision left alone says nothing), oldest answer first.
   function fishCompare(F) {
@@ -1439,6 +1452,7 @@
     fishParse,
     fishIdx,
     fishMine,
+    flagGone,
     fishCompare,
     sortBack,
     fishRun,

@@ -313,7 +313,7 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2, E3,
   assert.match(bad, /phase is one of/);
   assert.match(bad, /crop must be \[left, top, right, bottom\]/);
   // The code is read on the photo as cropped: a crop keeps the whole fish, its box inside (Q430).
-  assert.match(bad, /fish-s1-cand-11: the crop cuts the fish's box bb/);
+  assert.match(bad, /fish-s1-cand-11: the crop cuts the animal's box bb/);
   assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule W3)
   assert.match(bad, /fish-s1-cand-99: not a candidate of s1/);
   assert.match(bad, /1 candidate\(s\) not judged yet/);

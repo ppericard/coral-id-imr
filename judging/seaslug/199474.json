@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-199474-cand-492257932": {"code": "d1g0ml1j2", "note": "a white body with purple spots and rim, the mantle's horn short: a young animal's colours, no life-stage annotation"},
-  "seaslug-199474-cand-615044754": {"code": "p1g0sl1w5"},
-  "seaslug-199474-cand-32160831": {"code": "o1g0sl15"},
+  "seaslug-199474-cand-615044754": {"code": "p1g0sl1w5", "bb": [0.1218, 0.1364, 0.9907, 0.7056]},
+  "seaslug-199474-cand-32160831": {"code": "o1g0sl15", "bb": [0.1366, 0.095, 0.8, 0.88]},
   "seaslug-199474-cand-507945340": {"code": "o1g2sl13"},
   "seaslug-199474-cand-444824675": {"code": "o0g0sl13"},
   "seaslug-199474-cand-276163044": {"code": "o1g0ml14"},
-  "seaslug-199474-cand-519115886": {"code": "o1g0sl14"},
+  "seaslug-199474-cand-519115886": {"code": "o1g0sl14", "bb": [0.0041, 0.0687, 0.7084, 0.8875]},
   "seaslug-199474-cand-64832081": {"code": "p1d0sl14"},
   "seaslug-199474-cand-438169376": {"code": "p1g0ml14"},
-  "seaslug-199474-cand-104106854": {"code": "p1g0sl15"},
+  "seaslug-199474-cand-104106854": {"code": "p1g0sl15", "bb": [0.1416, 0.2496, 0.9334, 0.8303]},
   "seaslug-199474-cand-712333264": {"code": "o0g0sl13"},
-  "seaslug-199474-cand-118005749": {"code": "d1g0sl14"},
-  "seaslug-199474-cand-33625797": {"code": "d1g0sl14"},
-  "seaslug-199474-cand-181193930": {"code": "p1g0sl15"},
+  "seaslug-199474-cand-118005749": {"code": "d1g0sl14", "bb": [0.1656, 0.0703, 0.7469, 0.9428]},
+  "seaslug-199474-cand-33625797": {"code": "d1g0sl14", "bb": [0.0783, 0.1381, 0.8111, 0.8702]},
+  "seaslug-199474-cand-181193930": {"code": "p1g0sl15", "bb": [0.012, 0.0374, 0.977, 0.8246]},
   "seaslug-199474-cand-66337680": {"code": "o1g2mm11"},
   "seaslug-199474-cand-468074262": {"code": "o0g0sl13"},
   "seaslug-199474-cand-109201548": {"code": "o0g0sl13"},
-  "seaslug-199474-cand-257316884": {"code": "p1g0sl15"},
+  "seaslug-199474-cand-257316884": {"code": "p1g0sl15", "bb": [0.1343, 0.1002, 0.9782, 0.8647]},
   "seaslug-199474-cand-564145429": {"code": "o0g0sl1w3"},
-  "seaslug-199474-cand-173704319": {"code": "d1g0sl1w5"}
+  "seaslug-199474-cand-173704319": {"code": "d1g0sl1w5", "bb": [0.1987, 0.0103, 0.9082, 0.9479]}
  }
 }

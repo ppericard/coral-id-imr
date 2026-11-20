@@ -1,23 +1,23 @@
 {
  "photos": {
-  "seaslug-143227-cand-29131767": {"code": "d1g0sl1w5"},
+  "seaslug-143227-cand-29131767": {"code": "d1g0sl1w5", "bb": [0.1343, 0.1013, 0.7894, 0.925]},
   "seaslug-143227-cand-48750727": {"code": "h1g0sl1w3"},
-  "seaslug-143227-cand-178215379": {"code": "p1g0sl15"},
+  "seaslug-143227-cand-178215379": {"code": "p1g0sl15", "bb": [0.055, 0.2474, 0.89, 0.7686]},
   "seaslug-143227-cand-479568726": {"code": "o1d0sm13"},
   "seaslug-143227-cand-545720052": {"code": "o1g0mm13"},
-  "seaslug-143227-cand-257317154": {"code": "p1g0sl15"},
+  "seaslug-143227-cand-257317154": {"code": "p1g0sl15", "bb": [0.0593, 0.0834, 0.9344, 0.889]},
   "seaslug-143227-cand-614167661": {"code": "d1g0sl14"},
   "seaslug-143227-cand-689154561": {"code": "o1g0sm1w3"},
-  "seaslug-143227-cand-505983424": {"code": "o1g0sl15"},
+  "seaslug-143227-cand-505983424": {"code": "o1g0sl15", "bb": [0.1281, 0.076, 0.8407, 0.8285]},
   "seaslug-143227-cand-566637258": {"code": "o1g0sl14"},
   "seaslug-143227-cand-468217439": {"code": "h1g0sm12"},
   "seaslug-143227-cand-115681109": {"code": "d0g0sl13"},
   "seaslug-143227-cand-596377632": {"code": "o1g0sm14"},
   "seaslug-143227-cand-69683507": {"code": "p1g0sl14"},
-  "seaslug-143227-cand-331152565": {"code": "o1g0sl15"},
+  "seaslug-143227-cand-331152565": {"code": "o1g0sl15", "bb": [0.1781, 0.1234, 0.7988, 0.8032]},
   "seaslug-143227-cand-608855272": {"code": "d1g0sm13"},
-  "seaslug-143227-cand-443257528": {"code": "d1g0sl1w5"},
-  "seaslug-143227-cand-279705553": {"code": "p1g0sl15"},
+  "seaslug-143227-cand-443257528": {"code": "d1g0sl1w5", "bb": [0.3964, 0.0021, 0.625, 0.8982]},
+  "seaslug-143227-cand-279705553": {"code": "p1g0sl15", "bb": [0.2128, 0.2777, 0.669, 0.8507]},
   "seaslug-143227-cand-669568295": {"code": "p1g0ml14"},
   "seaslug-143227-cand-362803913": {"code": "o1g0sls4"},
   "seaslug-143227-cand-723438651": {"code": "o0g0sl13", "note": "the head end behind a rock"},
@@ -27,8 +27,8 @@
   "seaslug-143227-cand-103864099": {"code": "o0g0sl13"},
   "seaslug-143227-cand-257317160": {"code": "o1g0sls4", "note": "a second animal under the subject, the two overlapping"},
   "seaslug-143227-cand-596132769": {"code": "d1g0ss12", "note": "a tiny animal on a large busy reef"},
-  "seaslug-143227-cand-10173723": {"code": "d1g0sm14"},
+  "seaslug-143227-cand-10173723": {"code": "d1g0sm14", "bb": [0.2791, 0.2675, 0.7392, 0.7769]},
   "seaslug-143227-cand-631811031": {"code": "o1g0sm13", "note": "the body twisted under a ledge"},
-  "seaslug-143227-cand-491138728": {"code": "d1g0sl1w5"}
+  "seaslug-143227-cand-491138728": {"code": "d1g0sl1w5", "bb": [0.3968, 0.015, 0.6544, 0.8134]}
  }
 }

@@ -1,9 +1,9 @@
 {
  "photos": {
-  "seaslug-Sclerodoris-cand-507549485": {"code": "p1g0sl15"},
+  "seaslug-Sclerodoris-cand-507549485": {"code": "p1g0sl15", "bb": [0.2031, 0.2716, 0.8157, 0.6982]},
   "seaslug-Sclerodoris-cand-108213177": {"code": "d1g0smo3", "note": "a chromodorid cut by the top edge, plainly another shape and colour"},
-  "seaslug-Sclerodoris-cand-593237235": {"code": "d1g0sl1f4", "note": "the rhinophores and gills out of sight on the translucent mantle"},
-  "seaslug-Sclerodoris-cand-174127421": {"code": "p1g0sl15"},
+  "seaslug-Sclerodoris-cand-593237235": {"code": "d1g0sl1f4", "bb": [0.3808, 0.085, 0.7208, 0.6496], "note": "the rhinophores and gills out of sight on the translucent mantle"},
+  "seaslug-Sclerodoris-cand-174127421": {"code": "p1g0sl15", "bb": [0.11, 0.1055, 0.895, 0.8534]},
   "seaslug-Sclerodoris-cand-327391678": {"code": "o1g0sl1c3"}
  }
 }

@@ -7,10 +7,10 @@
   "seaslug-Aplysia-cand-713127923": {"code": "o1g0mm13"},
   "seaslug-Aplysia-cand-288438555": {"code": "p1g0sl1cw3"},
   "seaslug-Aplysia-cand-447539255": {"code": "p1d0ml13"},
-  "seaslug-Aplysia-cand-497910250": {"code": "o1g0sl1w4", "note": "red algae around it compete with the outline"},
+  "seaslug-Aplysia-cand-497910250": {"code": "o1g0sl1w4", "bb": [0.2656, 0.1963, 0.7469, 0.7212], "note": "red algae around it compete with the outline"},
   "seaslug-Aplysia-cand-380834098": {"code": "p1g0sls4", "note": "a second animal partly hidden behind it"},
-  "seaslug-Aplysia-cand-257316556": {"code": "p1g0sm14"},
-  "seaslug-Aplysia-cand-29721345": {"code": "p1g0sl15"},
+  "seaslug-Aplysia-cand-257316556": {"code": "p1g0sm14", "bb": [0.3437, 0.2128, 0.65, 0.6177]},
+  "seaslug-Aplysia-cand-29721345": {"code": "p1g0sl15", "bb": [0.0625, 0.1625, 0.9594, 0.875]},
   "seaslug-Aplysia-cand-688315245": {"code": "d1g0sl1a3", "note": "on a dry-looking shore surface, no water seen over it: read as out of water"},
   "seaslug-Aplysia-cand-103060692": {"code": "o0g0ml12"},
   "seaslug-Aplysia-cand-172664241": {"code": "p1g0sl1w4", "note": "rearing up, the body upright and foreshortened"}

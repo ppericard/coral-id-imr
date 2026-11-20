@@ -297,7 +297,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   elsewhere (a report, Health) sets the family's. The rank words are read from `core.js` `SUBJECTS` `sheets`, broadest
   first, never a list of our own (`admin.js` `ranksOf`, `fuRankOf`, rule S1). Each genus and species heading shows its
   cover in force (ringed when it is his pick), the tile marked (Family / Genus / Species cover) (`admin.js`
-  `renderFishUnits`); Publish counts them apart, rank by rank (`pubSummary`: fish family, fish genus cover, fish species
+  `renderTree`, its node pages `TREE_BUILD` `tree`); Publish counts them apart, rank by rank (`pubSummary`: fish family, fish genus cover, fish species
   cover).
 - **Another subject** (a nudibranch or plant key, or the corals at more than one rank) needs only data: its ranks in
   `SUBJECTS` `sheets`, its tree on its unit page (the fish page's `fishUnits`: units, then nodes, then leaves), and its

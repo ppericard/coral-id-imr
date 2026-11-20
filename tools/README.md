@@ -79,7 +79,7 @@ Conventions that hold across them:
 | `apply_plain_terms.py` | The glossary's plain first sentences |
 | `apply_name_roots.py` | The sourced roots of genus names |
 | `apply_id_tips.py`, `id_tips.txt` | Writes the short ID tips into `data.json` |
-| `apply_coral_apart.py`, `coral_apart.json` | The slate pairs' tell-apart lines with their sources, into `data.json` `ap` / `apsrc`; `--check` for a test |
+| `apply_coral_apart.py`, `coral_apart.json` | The declared coral pairs' tell-apart lines with their sources (the slate's, and those with a bonus or Key-only genus), into `data.json` `ap` / `apsrc`; `--check` for a test |
 | `apply_imr_corrections.py`, `apply_review_slides.py`, `apply_favites.py`, `apply_some_species.py` | One-time content passes on the lecture notes and the traits of some genera |
 | `apply_imr_forms.py` | The IMR growth-form definitions into `forms.json` |
 | `apply_imr_sources.py`, `imr_sources.json` | Credits the IMR lecture photos traced to their original source |

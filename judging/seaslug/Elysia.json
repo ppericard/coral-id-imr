@@ -1,24 +1,24 @@
 {
  "photos": {
-  "seaslug-Elysia-cand-2670715": {"code": "o1g0sl1w5"},
+  "seaslug-Elysia-cand-2670715": {"code": "o1g0sl1w5", "bb": [0.1112, 0.0768, 0.8394, 0.8192]},
   "seaslug-Elysia-cand-726284341": {"code": "o1g0ss13"},
   "seaslug-Elysia-cand-334537890": {"code": "p1g0bl13"},
-  "seaslug-Elysia-cand-704483633": {"code": "p1g0sl15"},
+  "seaslug-Elysia-cand-704483633": {"code": "p1g0sl15", "bb": [0.2281, 0.2222, 0.7782, 0.5723]},
   "seaslug-Elysia-cand-490498801": {"code": "o0g0mm1c1"},
   "seaslug-Elysia-cand-474781051": {"code": "o1g0ms1c1"},
   "seaslug-Elysia-cand-360978980": {"code": "o1g0mm1c1"},
-  "seaslug-Elysia-cand-568524109": {"code": "o1g0sl1w4", "note": "a translucent blue tunicate behind the body competes with the outline"},
-  "seaslug-Elysia-cand-451038583": {"code": "o1g0sl15"},
+  "seaslug-Elysia-cand-568524109": {"code": "o1g0sl1w4", "bb": [0.2592, 0.0855, 0.8272, 0.8997], "note": "a translucent blue tunicate behind the body competes with the outline"},
+  "seaslug-Elysia-cand-451038583": {"code": "o1g0sl15", "bb": [0.1175, 0.1483, 0.7363, 0.8067]},
   "seaslug-Elysia-cand-179830767": {"code": "p1g0mm1w3"},
   "seaslug-Elysia-cand-450163440": {"code": "o1g0ml1c2"},
   "seaslug-Elysia-cand-180966555": {"code": "d1g0ml14"},
   "seaslug-Elysia-cand-638442128": {"code": "o1g0mm1c1"},
   "seaslug-Elysia-cand-270932999": {"code": "o1g0bs1c1"},
-  "seaslug-Elysia-cand-744676903": {"code": "o1g0sl15"},
+  "seaslug-Elysia-cand-744676903": {"code": "o1g0sl15", "bb": [0.1406, 0.3451, 0.8594, 0.7593]},
   "seaslug-Elysia-cand-625544482": {"code": "o1g0ml14"},
-  "seaslug-Elysia-cand-299678783": {"code": "o1g0sl15"},
+  "seaslug-Elysia-cand-299678783": {"code": "o1g0sl15", "bb": [0.1674, 0.2309, 0.7078, 0.8638]},
   "seaslug-Elysia-cand-625546904": {"code": "d1g0mm1c1"},
-  "seaslug-Elysia-cand-275810658": {"code": "d1g0sl1w5"},
+  "seaslug-Elysia-cand-275810658": {"code": "d1g0sl1w5", "bb": [0.0625, 0.1757, 0.87, 0.8477]},
   "seaslug-Elysia-cand-445657195": {"code": "p1g0mm1c1"}
  }
 }

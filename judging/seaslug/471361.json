@@ -1,24 +1,24 @@
 {
  "photos": {
-  "seaslug-471361-cand-507944858": {"code": "p1g0sl15"},
-  "seaslug-471361-cand-700071873": {"code": "o1g0sl15"},
-  "seaslug-471361-cand-626730314": {"code": "o1g0sl15"},
+  "seaslug-471361-cand-507944858": {"code": "p1g0sl15", "bb": [0.1281, 0.1008, 0.9375, 0.715]},
+  "seaslug-471361-cand-700071873": {"code": "o1g0sl15", "bb": [0.1156, 0.2948, 0.7269, 0.7377]},
+  "seaslug-471361-cand-626730314": {"code": "o1g0sl15", "bb": [0.2031, 0.2066, 0.8032, 0.7852]},
   "seaslug-471361-cand-178579043": {"code": "p0g0sl13"},
   "seaslug-471361-cand-265420432": {"code": "o0g0sl13"},
   "seaslug-471361-cand-617132076": {"code": "d1g0sl1f4"},
   "seaslug-471361-cand-702034072": {"code": "o1g0sl14"},
-  "seaslug-471361-cand-640626519": {"code": "p1g0sl15"},
+  "seaslug-471361-cand-640626519": {"code": "p1g0sl15", "bb": [0.0781, 0.0753, 0.6063, 0.6076]},
   "seaslug-471361-cand-71201386": {"code": "o0g0sl13"},
-  "seaslug-471361-cand-714422498": {"code": "d1g0sl1w5"},
-  "seaslug-471361-cand-66637289": {"code": "o1g0sl15"},
-  "seaslug-471361-cand-443320984": {"code": "d1g0sm1w4"},
+  "seaslug-471361-cand-714422498": {"code": "d1g0sl1w5", "bb": [0.1125, 0.0311, 0.44, 0.8134]},
+  "seaslug-471361-cand-66637289": {"code": "o1g0sl15", "bb": [0.1425, 0.0187, 0.9563, 0.9373]},
+  "seaslug-471361-cand-443320984": {"code": "d1g0sm1w4", "bb": [0.3928, 0.2143, 0.6415, 0.7557]},
   "seaslug-471361-cand-19347959": {"code": "d0g0sl13"},
   "seaslug-471361-cand-9732088": {"code": "p1g0ml14"},
-  "seaslug-471361-cand-118471903": {"code": "p1g0sl15"},
+  "seaslug-471361-cand-118471903": {"code": "p1g0sl15", "bb": [0.1781, 0.4333, 0.7594, 0.825]},
   "seaslug-471361-cand-554576798": {"code": "o1g0slsw4"},
-  "seaslug-471361-cand-706232137": {"code": "p1g0sl15"},
-  "seaslug-471361-cand-34211858": {"code": "p1g0sl15"},
+  "seaslug-471361-cand-706232137": {"code": "p1g0sl15", "bb": [0.0656, 0.2138, 0.7825, 0.6239]},
+  "seaslug-471361-cand-34211858": {"code": "p1g0sl15", "bb": [0.1811, 0.2509, 0.8237, 0.7504]},
   "seaslug-471361-cand-599432927": {"code": "d1g0sm1f3"},
-  "seaslug-471361-cand-93021126": {"code": "p1g0sl15", "note": "its pink egg ribbon behind it: background (the egg rule keeps the animal)"}
+  "seaslug-471361-cand-93021126": {"code": "p1g0sl15", "bb": [0.1303, 0.1785, 0.7676, 0.7771], "note": "its pink egg ribbon behind it: background (the egg rule keeps the animal)"}
  }
 }

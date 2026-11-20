@@ -1,15 +1,15 @@
 {
  "photos": {
-  "seaslug-52862-cand-269799225": {"code": "p1g0sl15"},
+  "seaslug-52862-cand-269799225": {"code": "p1g0sl15", "bb": [0.3076, 0.0658, 0.8741, 0.8319]},
   "seaslug-52862-cand-460600179": {"code": "d1g0sms4"},
   "seaslug-52862-cand-32516684": {"code": "p0g0sl13", "note": "the rear folded under and cut by the right edge"},
   "seaslug-52862-cand-682419391": {"code": "o1g0ss13"},
   "seaslug-52862-cand-96173135": {"code": "o0g0sls3"},
   "seaslug-52862-cand-277701805": {"code": "o0g0sm12"},
   "seaslug-52862-cand-460666108": {"code": "o1g0sl14"},
-  "seaslug-52862-cand-352570631": {"code": "o1g0sm1w4"},
+  "seaslug-52862-cand-352570631": {"code": "o1g0sm1w4", "bb": [0.3551, 0.1438, 0.639, 0.8629]},
   "seaslug-52862-cand-264464543": {"code": "h1g0sm12"},
-  "seaslug-52862-cand-85536826": {"code": "o1g0sm14"},
+  "seaslug-52862-cand-85536826": {"code": "o1g0sm14", "bb": [0.2899, 0.1606, 0.7154, 0.8033]},
   "seaslug-52862-cand-113204434": {"code": "o1g0ml14"},
   "seaslug-52862-cand-472981201": {"code": "h1g0ml12"},
   "seaslug-52862-cand-453908558": {"code": "d1g0smo3", "note": "a smaller chromodorid with an orange midline behind, another pattern"},
@@ -19,6 +19,6 @@
   "seaslug-52862-cand-469309157": {"code": "o1g0ms12"},
   "seaslug-52862-cand-268994602": {"code": "o0g0ms11"},
   "seaslug-52862-cand-354581390": {"code": "t1g0ml12"},
-  "seaslug-52862-cand-4542858": {"code": "o1g0sl15"}
+  "seaslug-52862-cand-4542858": {"code": "o1g0sl15", "bb": [0.02, 0.12, 0.8934, 0.73]}
  }
 }

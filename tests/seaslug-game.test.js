@@ -510,6 +510,21 @@ test(
   }
 );
 
+test('an unsure box keeps the photo in the ordinary games and out of Find the X; another unsure field still keeps it out', () => {
+  const dir = world({
+      ...SUG,
+      'seaslug-1-cand-1': {...SUG['seaslug-1-cand-1'], bb: [0.05, 0.2, 0.95, 0.8]},
+      'seaslug-1-cand-2': {...SUG['seaslug-1-cand-2'], bb: [0.05, 0.2, 0.95, 0.8], u: ['bb'], n: 'the tail may run on'},
+      'seaslug-1-cand-4': {...SUG['seaslug-1-cand-4'], u: ['code', 'bb'], n: 'juvenile?'}
+    }),
+    [text] = offline(dir),
+    B = Object.fromEntries(JSON.parse(text).photos['f:Afam'].map(p => [p.f.split('-').pop(), p]));
+  assert.deepStrictEqual(B[1].bb, [0.05, 0.2, 0.95, 0.8], 'a sure box: kept, for its tile');
+  assert.ok(B[2], 'a doubted box: the photo is in play all the same');
+  assert.strictEqual(B[2].bb, undefined, 'but carries no box, so no tile');
+  assert.strictEqual(B[4], undefined, 'a doubt on the code too: out, as before');
+});
+
 test('--plan prints what the R2 step would download, by circle, and writes nothing', () => {
   const r = spawnSync('python3', [path.join(TOOLS, 'seaslug_game.py'), '--plan'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, r.stderr);

@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-goniobranchus-sp5-cand-479452331": {"code": "d1g2mm11"},
-  "seaslug-goniobranchus-sp5-cand-589260180": {"code": "o1g0sl15"},
+  "seaslug-goniobranchus-sp5-cand-589260180": {"code": "o1g0sl15", "bb": [0.0575, 0.0333, 0.925, 0.9625]},
   "seaslug-goniobranchus-sp5-cand-410464201": {"code": "o1g0ml1w4"},
   "seaslug-goniobranchus-sp5-cand-693199586": {"code": "p1g0sm1w4"},
-  "seaslug-goniobranchus-sp5-cand-655737695": {"code": "d1g0sl15"},
+  "seaslug-goniobranchus-sp5-cand-655737695": {"code": "d1g0sl15", "bb": [0.1984, 0.2843, 0.7924, 0.7782]},
   "seaslug-goniobranchus-sp5-cand-720650518": {"code": "o1g0sl15"},
   "seaslug-goniobranchus-sp5-cand-636827178": {"code": "o1g2bl11"},
   "seaslug-goniobranchus-sp5-cand-693417917": {"code": "o0g0sl13"},
-  "seaslug-goniobranchus-sp5-cand-537855703": {"code": "d1g0sl15"},
+  "seaslug-goniobranchus-sp5-cand-537855703": {"code": "d1g0sl15", "bb": [0.1325, 0.3343, 0.7688, 0.6594]},
   "seaslug-goniobranchus-sp5-cand-66159672": {"code": "o1g0sm14"},
-  "seaslug-goniobranchus-sp5-cand-2617827": {"code": "d1g0sl1w5"},
-  "seaslug-goniobranchus-sp5-cand-489195874": {"code": "o1g0sl15"},
-  "seaslug-goniobranchus-sp5-cand-467097287": {"code": "o1g0sl15"},
-  "seaslug-goniobranchus-sp5-cand-668575769": {"code": "p1g0sl1w5"},
-  "seaslug-goniobranchus-sp5-cand-64967827": {"code": "d1g0sl15"},
-  "seaslug-goniobranchus-sp5-cand-452857272": {"code": "d1g0sl15"},
-  "seaslug-goniobranchus-sp5-cand-719154006": {"code": "d1g0sl15"},
-  "seaslug-goniobranchus-sp5-cand-479254072": {"code": "p1g0sl15"},
+  "seaslug-goniobranchus-sp5-cand-2617827": {"code": "d1g0sl1w5", "bb": [0.0515, 0.0687, 0.8884, 0.9638]},
+  "seaslug-goniobranchus-sp5-cand-489195874": {"code": "o1g0sl15", "bb": [0.1156, 0.1407, 0.855, 0.8396]},
+  "seaslug-goniobranchus-sp5-cand-467097287": {"code": "o1g0sl15", "bb": [0.2156, 0.2435, 0.7207, 0.7399]},
+  "seaslug-goniobranchus-sp5-cand-668575769": {"code": "p1g0sl1w5", "bb": [0.1914, 0.245, 0.8766, 0.7212]},
+  "seaslug-goniobranchus-sp5-cand-64967827": {"code": "d1g0sl15", "bb": [0.152, 0.0797, 0.88, 0.8894]},
+  "seaslug-goniobranchus-sp5-cand-452857272": {"code": "d1g0sl15", "bb": [0.2637, 0.2683, 0.6863, 0.825]},
+  "seaslug-goniobranchus-sp5-cand-719154006": {"code": "d1g0sl15", "bb": [0.0277, 0.1781, 0.8759, 0.8188]},
+  "seaslug-goniobranchus-sp5-cand-479254072": {"code": "p1g0sl15", "bb": [0.1512, 0.2433, 0.7825, 0.7834]},
   "seaslug-goniobranchus-sp5-cand-703915539": {"code": "o1g1mm12"},
-  "seaslug-goniobranchus-sp5-cand-442883042": {"code": "o1g0sl1w5"}
+  "seaslug-goniobranchus-sp5-cand-442883042": {"code": "o1g0sl1w5", "bb": [0.2821, 0.0428, 0.7872, 0.8048]}
  }
 }

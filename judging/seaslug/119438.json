@@ -4,9 +4,9 @@
   "seaslug-119438-cand-524210370": {"code": "o1g2ms11"},
   "seaslug-119438-cand-388014298": {"code": "o0g0sl1w3"},
   "seaslug-119438-cand-682625129": {"code": "p1g2sm12"},
-  "seaslug-119438-cand-741832236": {"code": "p1g0sl14"},
+  "seaslug-119438-cand-741832236": {"code": "p1g0sl14", "bb": [0.1281, 0.3483, 0.7969, 0.8584]},
   "seaslug-119438-cand-645805572": {"code": "h1g0sm12"},
-  "seaslug-119438-cand-290210766": {"code": "d1g0sm14"},
+  "seaslug-119438-cand-290210766": {"code": "d1g0sm14", "bb": [0.4656, 0.1407, 0.7857, 0.7787]},
   "seaslug-119438-cand-489196917": {"code": "o1g0sm13"},
   "seaslug-119438-cand-630770368": {"code": "o0g0sl13"},
   "seaslug-119438-cand-604391514": {"code": "o1d0sl14"},
@@ -14,14 +14,14 @@
   "seaslug-119438-cand-537494549": {"code": "o1g0sm13"},
   "seaslug-119438-cand-352078827": {"code": "o0g0sl1w3"},
   "seaslug-119438-cand-714917954": {"code": "o0g0smx1"},
-  "seaslug-119438-cand-257318435": {"code": "p1g0sl15"},
-  "seaslug-119438-cand-271390417": {"code": "p1g0sl15"},
-  "seaslug-119438-cand-440907728": {"code": "o1g0sl14"},
+  "seaslug-119438-cand-257318435": {"code": "p1g0sl15", "bb": [0.075, 0.1164, 0.87, 0.832]},
+  "seaslug-119438-cand-271390417": {"code": "p1g0sl15", "bb": [0.166, 0.0381, 0.8155, 0.9237]},
+  "seaslug-119438-cand-440907728": {"code": "o1g0sl14", "bb": [0.1343, 0.1, 0.75, 0.7959]},
   "seaslug-119438-cand-362797196": {"code": "p1g1ml13"},
   "seaslug-119438-cand-415323165": {"code": "o1g0sls4"},
   "seaslug-119438-cand-444579123": {"code": "o1g0sm13"},
   "seaslug-119438-cand-724373668": {"code": "d0g0sl13", "note": "the head hidden among green ascidians"},
   "seaslug-119438-cand-724937895": {"code": "d0g0sls3", "note": "two animals side by side, one over the other"},
-  "seaslug-119438-cand-486666101": {"code": "d1g0sl15"}
+  "seaslug-119438-cand-486666101": {"code": "d1g0sl15", "bb": [0.2421, 0.0718, 0.7032, 0.8607]}
  }
 }

@@ -1,20 +1,20 @@
 {
  "photos": {
   "seaslug-Trapania-cand-278220405": {"code": "o1g0sl1c3", "note": "a yellow tuberculate body on an orange sponge"},
-  "seaslug-Trapania-cand-508574453": {"code": "p1g0sl15"},
+  "seaslug-Trapania-cand-508574453": {"code": "p1g0sl15", "bb": [0.1968, 0.2587, 0.8138, 0.6279]},
   "seaslug-Trapania-cand-626716013": {"code": "o1g0mm1c1"},
   "seaslug-Trapania-cand-354209414": {"code": "o1g0sl14", "note": "a green sea squirt in front of the lower body"},
   "seaslug-Trapania-cand-277711876": {"code": "o0g0sm12", "note": "the rear behind a red sponge"},
-  "seaslug-Trapania-cand-627030807": {"code": "p1g0sl15"},
-  "seaslug-Trapania-cand-451848199": {"code": "d1g0sl14", "note": "a fuzzy translucent body, its outline uneven"},
+  "seaslug-Trapania-cand-627030807": {"code": "p1g0sl15", "bb": [0.134, 0.0297, 0.9215, 0.6463]},
+  "seaslug-Trapania-cand-451848199": {"code": "d1g0sl14", "bb": [0.2814, 0.3218, 0.8415, 0.7457], "note": "a fuzzy translucent body, its outline uneven"},
   "seaslug-Trapania-cand-103992793": {"code": "o1g0sl14", "note": "the body twisted around a stalk, its outline folded"},
-  "seaslug-Trapania-cand-393742572": {"code": "o1g0sl15"},
+  "seaslug-Trapania-cand-393742572": {"code": "o1g0sl15", "bb": [0.164, 0.2712, 0.7169, 0.7216]},
   "seaslug-Trapania-cand-626716025": {"code": "o1g0mm1c1"},
-  "seaslug-Trapania-cand-79193470": {"code": "d1g0sl15"},
-  "seaslug-Trapania-cand-380194603": {"code": "p1g0sl15"},
+  "seaslug-Trapania-cand-79193470": {"code": "d1g0sl15", "bb": [0.1575, 0.1525, 0.8794, 0.7025]},
+  "seaslug-Trapania-cand-380194603": {"code": "p1g0sl15", "bb": [0.1968, 0.2437, 0.8313, 0.7176]},
   "seaslug-Trapania-cand-626716027": {"code": "p1g0ml14"},
-  "seaslug-Trapania-cand-630061696": {"code": "o1g0sl14", "note": "translucent, tuberculate body"},
-  "seaslug-Trapania-cand-105277762": {"code": "o1g0sl15"},
-  "seaslug-Trapania-cand-393743640": {"code": "o1g0sl15"}
+  "seaslug-Trapania-cand-630061696": {"code": "o1g0sl14", "bb": [0.2468, 0.1984, 0.775, 0.8282], "note": "translucent, tuberculate body"},
+  "seaslug-Trapania-cand-105277762": {"code": "o1g0sl15", "bb": [0.12, 0.1291, 0.795, 0.8059]},
+  "seaslug-Trapania-cand-393743640": {"code": "o1g0sl15", "bb": [0.1781, 0.1942, 0.8582, 0.7183]}
  }
 }

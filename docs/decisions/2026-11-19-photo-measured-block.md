@@ -6,17 +6,19 @@ the Learn sheets".
 
 ## Context
 
-The contrast test series (Q429) showed photos side by side before and after a mild contrast filter. Pierre judged low
-contrast to be part of a photo's difficulty, not a defect to correct in the games. The judges estimated contrast-like
+The contrast test series (Q429) showed photos side by side before and after a mild contrast filter. Pierre doubted any
+correction: low contrast is part of a photo's difficulty, not a defect to correct in the games. The judges estimated contrast-like
 qualities by eye (the light, colour loss and clarity tags) while the pixels can give them directly. An earlier machine
 estimate of colour loss (the warm share of the saturated pixels) had agreed with the eye within one level on 98% of the
 fish photos of the first pass (`judging/FISH.md` "Agreement with other sources"). Its code was not kept.
 
 ## Decision
 
-- Pierre, 2026-11-19 15:01 Manila, on the series: contrast is information about difficulty, not a defect to correct in
-  the games: «on ne peut plus s'entrainer sur des photos réalistes avec peu de contraste». A correction goes no further
-  than the Learn sheets (the ROADMAP row). The filter of the before/after series was one linear map shared by R, G and
+- Pierre, 2026-11-19 15:01 Manila, on the series: «je ne suis pas convaincu qu'il faille les corriger, ou alors dans un
+  deuxième temps», because contrast is information about difficulty: «on ne peut plus s'entrainer sur des photos
+  réalistes avec peu de contraste». At 15:07, on "plus tard": «Plus tard ça veut juste dire qu'on le met dans la
+  ROADMAP». So no correction now: the ROADMAP row "Contrast correction on the Learn sheets" stays as an idea. The Learn-sheets-only scope in that row is the integrator's reading, not Pierre's words, and it decides
+  nothing. The filter of the before/after series was one linear map shared by R, G and
   B, from the 1st and 99th percentiles, at 60% of the full stretch. Its gain was at most 1.5, with none under 1.1, and
   the midtone moved at most 0.1. It was written as CSS `brightness()` `contrast()`.
 - Pierre, 2026-11-19 15:02: «c'est aussi une variable qui se calcule plutôt que s'estime par un agent. Tout comme les
