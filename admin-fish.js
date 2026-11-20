@@ -5,7 +5,7 @@
 // The tree subjects' Candidates builder (CAND_BUILD.tree, at the end of this file; the swiper itself is admin.js renderCand,
 // the same for every subject: #fish/photos/candidates, #seaslug/photos/candidates): the candidates of the subject's
 // candidate file one at a time, with what the tree subjects' curation needs: the thinnest species first, stopping at each species' target, the pass's
-// judgment (suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species'
+// judgment (data/suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species'
 // photos in play beside the card (most of them the auto-sort's proposals, which the admin can take out of play), the
 // auto-sort's agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd,
 // fishReject, fishExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
@@ -104,7 +104,7 @@ const FKEEP = {best: 'best photo of its observation', alt: 'another angle of its
 const fishJudged = j =>
   !j
     ? '<p class="adm-judge">Not judged yet</p>'
-    : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', tagText(j.jt, FISHS, true), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
+    : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (data/suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', tagText(j.jt, FISHS, true), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
 // A fish photo with its crop: the admin's (draft), else, outside a Check, the pass's, or for a record with no judgment (a
 // photo fishGameIn put in play from fish-game.json: a sure candidate, a reference photo) its published crop (cr, the one
 // tools/fish_game.py baked in); and his rotation (fish rot). Through admin.js crSrc, as the family pages (fuP): a

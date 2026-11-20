@@ -148,11 +148,11 @@ test('read_cur: tags read anew bring the judge crop when the photo has none; his
 });
 
 test("curplay: the players' copy reads the curation as the build does", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'readcur-'));
+  const dir = mkTmp('readcur-');
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('curation.json', {fish: {seen: {f1: 1, f8: 1}, auto: {[old]: {f1: 'r'}}}});
-  w('suggest.json', {fish: {f1: {jt: 'p1g0sl1', e: 4, k: 'best'}}, by: by('2026-11-19')});
-  w('fish-cand.json', cand);
+  w('data/suggest.json', {fish: {f1: {jt: 'p1g0sl1', e: 4, k: 'best'}}, by: by('2026-11-19')});
+  w('data/fish-cand.json', cand);
   execFileSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), dir], {stdio: 'ignore'});
   const P = JSON.parse(fs.readFileSync(path.join(dir, 'curation-play.json'), 'utf8'));
   assert.deepStrictEqual(P.fish.seen, {f8: 1});
@@ -163,6 +163,13 @@ test("curplay: the players' copy reads the curation as the build does", () => {
   );
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}
 
 // The admin's pages read the auto-sort's proposals as the build does (autosort.js sortReads, sortView; Pierre, 2026-11-19
 // 20:57): the same photos and the same fields as tools/fish_game.py read_cur, shown as the pass's value. Every pass value

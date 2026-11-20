@@ -135,9 +135,10 @@ def fish_files(d, n_species=14):
            "present": {"ph": True, "near": i % 3 == 0}} for i in range(n_species)]
     fish = {"species": sp, "teach": [{"id": "t01", "name": "Fakes", "circle": 1, "species": [s["id"] for s in sp]}]}
     (d / "fish.json").write_text(json.dumps(fish))
-    (d / "cand.json").write_text(json.dumps({"v": 1, "cand": {}}))
+    (d / "data").mkdir(exist_ok=True)
+    (d / "data/cand.json").write_text(json.dumps({"v": 1, "cand": {}}))
     return ["--fish", str(d / "fish.json"), "--cur", str(d / "none.json"), "--suggest", str(d / "none.json"),
-            "--photos", str(d / "none.json"), "--fbsrc", str(d / "none.json"), "--cand", str(d / "cand.json")]
+            "--photos", str(d / "none.json"), "--fbsrc", str(d / "none.json"), "--cand", str(d / "data/cand.json")]
 
 
 def case_fetch_fish():
@@ -151,12 +152,12 @@ def case_fetch_fish():
         args = fish_files(d) + ["--cache", str(d / "c.json")]
         with contextlib.redirect_stdout(io.StringIO()):
             ff.main(args + ["--cap", "40"])
-        cand = (d / "cand.json").read_text()
+        cand = (d / "data/cand.json").read_text()
         # The same run again, offline: everything it asks is in the cache, batched or not.
-        (d / "cand.json").write_text(json.dumps({"v": 1, "cand": {}}))
+        (d / "data/cand.json").write_text(json.dumps({"v": 1, "cand": {}}))
         with contextlib.redirect_stdout(io.StringIO()):
             ff.main(args + ["--cap", "40", "--offline"])
-        out[mode] = {"cand": cand, "again": (d / "cand.json").read_text(), "calls": dict(w.calls), "n": sum(w.calls.values())}
+        out[mode] = {"cand": cand, "again": (d / "data/cand.json").read_text(), "calls": dict(w.calls), "n": sum(w.calls.values())}
     return out
 
 
