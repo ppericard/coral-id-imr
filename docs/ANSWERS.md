@@ -1466,3 +1466,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **16:44, the next task comes from the ROADMAP.** «On en a déjà discuté. STATUS est limité en taille (d'ailleurs
+  pourquoi?). Tu dois régulièrement aller piocher dans la ROADMAP pour les taches suivantes». STATUS's size mark (about
+  100 lines) dates from #561 (2026-11-05), so that every session start reads it cheaply; its "Next" is a pointer, never
+  the backlog. Applied: INTEGRATOR.md "Where open work sits".
