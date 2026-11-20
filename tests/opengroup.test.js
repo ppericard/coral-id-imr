@@ -75,7 +75,10 @@ test('a level short of INTRO.START units met: none of it opens before four are r
   // Drawn from the small family: its own first, then the others'.
   const g2 = F.openGroup(fewOwn[0], fresh, l2);
   assert.strictEqual(g2.length, 4);
-  assert.ok(fewOwn.every(n => g2.includes(n)), String(g2));
+  assert.ok(
+    fewOwn.every(n => g2.includes(n)),
+    String(g2)
+  );
   // The base still opens one at a time: a family's group is itself alone.
   same(F.openGroup(X.c1[0], fresh, l2), [X.c1[0]]);
 });
@@ -114,7 +117,10 @@ test('a small level opens what it has, none waits for good; no room in the share
   const rk = ctx.rankUnits;
   ctx.rankUnits = k => (k === SP ? fewOwn : rk(k));
   assert.strictEqual(F.lvlNeed(SP, ctx.pool()), fewOwn.length);
-  same(F.openFresh(cand(), ctx.pool()).filter(n => F.rankKind(n) === SP), fewOwn);
+  same(
+    F.openFresh(cand(), ctx.pool()).filter(n => F.rankKind(n) === SP),
+    fewOwn
+  );
   ctx.rankUnits = rk;
   // The share without room (the units met below the families already over the cap): nothing below them opens.
   ctx.P[fam] = {mx: 1};
