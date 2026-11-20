@@ -1161,8 +1161,9 @@ function reportDialog(c, btn) {
     // The Contributions achievement counts it as it is sent (progress.js). progress.js comes with tier 2 (index.html): a
     // report sent from Home or About before it waits for it (app.js need).
     (typeof achReport === 'function' ? Promise.resolve() : need(2)).then(() => typeof achReport === 'function' && achReport(r));
+    // The button stays live: a tap opens a fresh dialog (empty fields) and its send makes a new report id, so a second
+    // report on the same page or answer goes through as its own.
     btn.textContent = kind === 'page' ? 'Thank you' : '⚑ Reported, thank you';
-    btn.disabled = true;
   };
   d.showModal();
   d.querySelector('input[name="why"]').focus();
