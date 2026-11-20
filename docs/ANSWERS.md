@@ -1468,7 +1468,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   relayed, never as his words. No doc change.
 - **15:29-15:32, two juvenile cards in the fish practice quiz (reports under g:Pomacentrus and f:Sweetlips).** «J'ai eu
   une carte de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»; «Celui là c'est un
-  juvénile qui aurait mérité la carte, pas le goatfish d'avant».
+  juvénile qui aurait mérité la carte, pas le goatfish d'avant». Applied: the next entry (#1323).
 - **17:01-17:02, the same two cards, clarified.** «Je dis pas que c'était pas un juvénile. Mais la carte disait
   explicitement qu'il fallait vraiment se méfier parce que les juvéniles pouvaient être très différents des adultes.
   C'était l'un des pires exemples pour ça»; «Pas en général !!!!!!!!! Sur celui là spécifiquement !»; «Non c'était bien un
