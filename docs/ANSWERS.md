@@ -1545,6 +1545,21 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
   de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
   window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
+- **19:23-19:32, the juvenile card, fish phases and rule C1.** On the sub-adult card on one species only: «Pourquoi tu
+  fais une exception pour une espèce, donc en l'occurrence Diagramma Pictum … soit on décide de mettre la carte
+  seulement sur des juvéniles, soit on décide de le mettre aussi sur des formes qui ont des sous-adultes … Là, on a
+  encore créé une exception basée sur une remarque hyper spécifique de ma part»; on the IMR course as the only source of
+  phases: «la parole d'IMR, c'est pas la vérité absolue. C'est une source solide parmi d'autres sources solides … il y
+  a plein d'autres espèces qui ont des sous-adultes … il faut me vérifier, mais et aller chercher dans des sources. Mais
+  pour le coup, il faut peut-être revoir cette règle qui donne parole d'évangile à ce qui est écrit dans le cours
+  d'IMR»; on the new phase rule's wording: «la nouvelle formulation, en fait, elle devrait même pas citer la
+  présentation IMR, puisque c'est une source comme les autres»; on C1: «la règle C1, ne jamais contredire le cours,
+  dit comme ça, elle me paraît trop absolue. Premièrement, parce qu'il peut y avoir des erreurs factuelles dans le
+  cours. Ensuite, parce qu'on peut venir complémenter le cours, ou on peut venir mettre à jour le cours»; and on the
+  reworded C1: «Ok, comme ça, cette formulation me va». Applied: rule C1 reworded (docs/rules/content.md, AGENTS.md,
+  docs/rules/README.md); judging/FISH.md `phase`: a phase a solid, cited source documents for the species; #1329: one
+  rule for juvenile and sub-adult photos (a card whenever the species' young are sourced as different); the sourcing of
+  every species' phases is running (his three examples first: other sweetlips, spadefish, parrotfish).
 - **19:23, the juvenile card's sub-adults (on #1329's first rule).** «Pourquoi tu fais une exception pour une espèce …
   Diagramma Pictum … pour les sous-adultes … soit on décide de mettre la carte seulement sur des juvéniles, soit on
   décide de le mettre aussi sur des formes qui ont des sous-adultes … Là, on a encore créé une exception basée sur une

@@ -404,9 +404,10 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
      An observation of which Pierre already added a photo (its other photos come at a later run) shows that photo
      first on its sheet, marked as context and not to judge: its new photos are judged against it, at most one of
      them `best` (when it beats his), none needed.
-   - `phase` (optional): the sex or colour phase the IMR fish presentation names for the entry (`fish.json`
-     `teach[].phase`) when the photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile
-     is the code's `j` flag; an adult needs no tag.
+   - `phase` (optional): the sex or colour phase a solid, cited source documents for the species (the IMR fish
+     presentation, `fish.json` `teach[].phase`, is one such source among others; Pierre, 2026-11-20 19:29) when the
+     photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile is the code's `j` flag;
+     an adult needs no tag.
    - `crop` (optional): as "A proposed crop" above.
    - `bb` (for a photo whose code passes the tile rule): the fish's box, as "The fish's box" above.
    - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`, `bb`) and `note` (140 characters at most; required with
