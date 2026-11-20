@@ -12,7 +12,8 @@ const test = require('node:test'),
 const rng = seed => () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const normal = R => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R());
 // One answer through ptimeStep, every field defaulted (a trusted right answer, 4 choices, one photo, at level 1).
-const step = (T, o) => C.ptimeStep(T, {w: 'p1', fs: ['x'], m: 'quiz', nch: 4, rk: 'genus', ok: 1, sec: 8, zm: 0, L: 1, rt: true, wt: 0.8, inf: 0.1, ...o});
+const step = (T, o) =>
+  C.ptimeStep(T, {w: 'p1', fs: ['x'], m: 'quiz', nch: 4, rk: 'genus', ok: 1, sec: 8, zm: 0, L: 1, rt: true, wt: 0.8, inf: 0.1, ...o});
 // A player's habit: n timed answers at sec seconds on other photos.
 const habit = (T, w, n = 20, sec = 8) => {
   for (let i = 0; i < n; i++) step(T, {w, fs: ['h-' + w + i], sec});
@@ -57,7 +58,8 @@ test('the weight follows the level only where the players show it: steadier stro
     players = Array.from({length: 10}, (_, i) => ({w: 'p' + i, L: i < 5 ? 0 : 2.5, sd: i < 5 ? 0.8 : 0.3}));
   players.forEach(p => habit(T, p.w, 15));
   assert.strictEqual(C.ptimeBeta(T), 0, 'too few answers for a fit: equal weights');
-  for (let k = 0; k < 120; k++) players.forEach(p => step(T, {w: p.w, L: p.L, fs: ['q' + k], sec: Math.exp(Math.log(8) + p.sd * normal(R))}));
+  for (let k = 0; k < 120; k++)
+    players.forEach(p => step(T, {w: p.w, L: p.L, fs: ['q' + k], sec: Math.exp(Math.log(8) + p.sd * normal(R))}));
   const b = C.ptimeBeta(T);
   assert.ok(b < -0.1, 'the variance falls with the level: ' + b);
   assert.ok(C.ptimeVar(T, 2.5) < C.ptimeVar(T, 0), 'a strong player`s answer has the smaller variance, so the larger weight');
@@ -66,12 +68,16 @@ test('the weight follows the level only where the players show it: steadier stro
   const T2 = C.ptimeNew(),
     R2 = rng(9);
   players.forEach(p => habit(T2, p.w, 15));
-  for (let k = 0; k < 120; k++) players.forEach(p => step(T2, {w: p.w, L: p.L, fs: ['q' + k], sec: Math.exp(Math.log(8) + 0.5 * normal(R2))}));
+  for (let k = 0; k < 120; k++)
+    players.forEach(p => step(T2, {w: p.w, L: p.L, fs: ['q' + k], sec: Math.exp(Math.log(8) + 0.5 * normal(R2))}));
   assert.ok(Math.abs(C.ptimeBeta(T2)) < Math.abs(b) / 3, 'no clear slope: about equal weights, ' + C.ptimeBeta(T2));
   // fewer than MIN_P players: equal weights whatever the data
   const T3 = C.ptimeNew(),
     R3 = rng(2);
-  players.slice(0, 2).concat(players.slice(5, 7)).forEach(p => habit(T3, p.w, 15));
+  players
+    .slice(0, 2)
+    .concat(players.slice(5, 7))
+    .forEach(p => habit(T3, p.w, 15));
   for (let k = 0; k < 300; k++)
     players
       .slice(0, 2)
@@ -83,7 +89,8 @@ test('the weight follows the level only where the players show it: steadier stro
 test('the enlargement counts against each player’s own habit', () => {
   const T = C.ptimeNew();
   // a player who always enlarges, and one who never does
-  for (let i = 0; i < 30; i++) (step(T, {w: 'zoomer', fs: ['h' + i], zm: 1, sec: null}), step(T, {w: 'plain', fs: ['g' + i], zm: 0, sec: null}));
+  for (let i = 0; i < 30; i++)
+    (step(T, {w: 'zoomer', fs: ['h' + i], zm: 1, sec: null}), step(T, {w: 'plain', fs: ['g' + i], zm: 0, sec: null}));
   step(T, {w: 'zoomer', fs: ['A'], zm: 1, sec: null});
   step(T, {w: 'plain', fs: ['B'], zm: 1, sec: null});
   const o = C.ptimeOut(T);
@@ -128,7 +135,10 @@ test('model.js photoDiff adds the term to the blend as it is, rated or not; none
   vm.runInContext(block(src, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}) + '\nthis.photoDiff = photoDiff;', c);
   const blend = (5 * 0.6 + 5 * 0.2) / 10;
   assert.ok(Math.abs(c.photoDiff('Acropora', {f: 'r'}) - blend - C.ptimeOff([0.2, 0, 0.5], 5)) < 1e-12);
-  assert.ok(Math.abs(c.photoDiff('Acropora', {f: 'u'}) - 0.2 - C.PTIME.C * 0.2) < 1e-12, 'a photo nobody rated: its prior and its whole term');
+  assert.ok(
+    Math.abs(c.photoDiff('Acropora', {f: 'u'}) - 0.2 - C.PTIME.C * 0.2) < 1e-12,
+    'a photo nobody rated: its prior and its whole term'
+  );
   c.PTM = {};
   assert.ok(Math.abs(c.photoDiff('Acropora', {f: 'r'}) - blend) < 1e-12, 'no term: as before');
 });
@@ -139,7 +149,19 @@ test('rule D5: the progress replay never reads the photos or their time terms', 
   const gen = {Acropora: {}, Porites: {}},
     row = (i, ok) => {
       const r = new Array(C.LOG_SC + 1).fill(null);
-      Object.assign(r, {0: 'p1', 1: Date.UTC(2026, 10, 10) + i * 60000, 2: 'Acropora', 3: ok ? 'Acropora' : 'Porites', 4: ok, 5: 'quiz', 6: 'a1', 7: 0.7, 8: 0.2, 10: 'Acropora Porites', 12: 5 + i});
+      Object.assign(r, {
+        0: 'p1',
+        1: Date.UTC(2026, 10, 10) + i * 60000,
+        2: 'Acropora',
+        3: ok ? 'Acropora' : 'Porites',
+        4: ok,
+        5: 'quiz',
+        6: 'a1',
+        7: 0.7,
+        8: 0.2,
+        10: 'Acropora Porites',
+        12: 5 + i
+      });
       r[C.LOG_SC] = {d: 0.3 + i / 20, m: 0, n: 0};
       return r;
     },

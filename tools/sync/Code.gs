@@ -7706,11 +7706,18 @@ const CORE_ = (function () { const module = {exports: {}};
   const PTIME = {CLIP: 1, FN: 5, V0: 0.3, VN: 20, MIN_P: 5, MIN_N: 500, BMAX: Math.log(3), TAU2: 0.06, E0: 0.1, EM: 10, NE: 10, C: 0.5};
   // The format cell of an answer for its time: the game (the mode before its first |), fmtOf, the photos shown (1, 2, 3+)
   // and the rank asked (a fish genus question is slower than a family one).
-  const fmtCell = (m, nch, nph, rk) => String(m || '').split('|')[0] + ':' + fmtOf(m, nch) + ':' + Math.min(3, nph) + ':' + String(rk || '');
+  const fmtCell = (m, nch, nph, rk) =>
+    String(m || '').split('|')[0] + ':' + fmtOf(m, nch) + ':' + Math.min(3, nph) + ':' + String(rk || '');
   // An empty state: Z per player {r: their timed answers as rtAdd keeps them, e: [answers with Enlarged, enlarged]}, F per
   // format cell [sum z, answers], A the fit's sums [n, sum L, sum L^2, sum y, sum L y] (y = z^2) and Q the same per player,
   // P per photo [sum w z / V, sum w / V, sum w (enlarged - rate), sum w, information].
-  const ptimeNew = () => ({Z: Object.create(null), F: Object.create(null), A: [0, 0, 0, 0, 0], Q: Object.create(null), P: Object.create(null)});
+  const ptimeNew = () => ({
+    Z: Object.create(null),
+    F: Object.create(null),
+    A: [0, 0, 0, 0, 0],
+    Q: Object.create(null),
+    P: Object.create(null)
+  });
   // The slope of the variance on the level, relative to its mean, shrunk by its cluster-robust standard error.
   function ptimeBeta(T) {
     const [n, sl, sll, sy, sly] = T.A,
@@ -7795,7 +7802,10 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // A photo's time term in logits, as the app adds it to its difficulty (model.js photoDiff): C (time + enlargement) x
   // I0 / (I + I0); o a tm entry (none: 0), W the photo prior's weight in answers (model.js PDIFF.W).
-  const ptimeOff = (o, W) => (Array.isArray(o) && o.length >= 3 && o.slice(0, 3).every(v => typeof v === 'number' && isFinite(v)) && o[2] >= 0 ? (PTIME.C * (o[0] + o[1]) * W * infoAt(1, 4)) / (o[2] + W * infoAt(1, 4)) : 0);
+  const ptimeOff = (o, W) =>
+    Array.isArray(o) && o.length >= 3 && o.slice(0, 3).every(v => typeof v === 'number' && isFinite(v)) && o[2] >= 0
+      ? (PTIME.C * (o[0] + o[1]) * W * infoAt(1, 4)) / (o[2] + W * infoAt(1, 4))
+      : 0;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf),

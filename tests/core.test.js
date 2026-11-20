@@ -170,7 +170,9 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
             ch: i % 5 === 4 ? 'Acropora Porites' : 'Acropora Porites Favites Montipora',
             ph: ph.join(' '),
             // Seconds and the enlarged mark (the photos' time terms), some answers without either.
-            ...(i % 9 === 8 ? {} : {rt: 2 + ((i * 7 + (who === 'Ben' ? 3 : 0)) % 13) + (ph[0] === 'favia-1' ? 6 : 0), zm: i % 6 === 0 ? 1 : 0})
+            ...(i % 9 === 8
+              ? {}
+              : {rt: 2 + ((i * 7 + (who === 'Ben' ? 3 : 0)) % 13) + (ph[0] === 'favia-1' ? 6 : 0), zm: i % 6 === 0 ? 1 : 0})
           }
         ]
       });
@@ -194,7 +196,10 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   const tm = photoTimeOf(rows);
   Object.keys(tm).forEach(f => assert.deepStrictEqual(st.photos[f].slice(5), tm[f], f));
   assert.ok(tm['favia-1'] && tm['favia-1'][0] > 0 && tm['favia-1'][2] > 0, JSON.stringify(tm));
-  assert.ok(Object.values(tm).some(o => o[1] !== 0), 'the enlargement term moved: ' + JSON.stringify(tm));
+  assert.ok(
+    Object.values(tm).some(o => o[1] !== 0),
+    'the enlargement term moved: ' + JSON.stringify(tm)
+  );
 });
 
 test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the direction', () => {

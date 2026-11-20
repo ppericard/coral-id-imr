@@ -192,7 +192,9 @@ test('the fold serves what the whole log gives, after every run, at any number o
     for (const sid of SUBJ) {
       const F = full(s, sid);
       assert.ok(
-        Object.keys(F.fmt).length >= 3 && Object.keys(F.conf).length >= 3 && F.memn[3] > 0 &&
+        Object.keys(F.fmt).length >= 3 &&
+          Object.keys(F.conf).length >= 3 &&
+          F.memn[3] > 0 &&
           // the photos' time terms (core.js ptimeInto), both kinds
           Object.values(F.photos).some(o => o.length === 8 && o[5] !== 0) &&
           Object.values(F.photos).some(o => o.length === 8 && o[6] !== 0),
