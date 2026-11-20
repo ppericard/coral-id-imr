@@ -60,6 +60,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 |---|---|---|
 | 2026-11-20 | [A photo the auto-sort put in has a route out, and the admin's pages read its proposals as the game does](2026-11-20-auto-route-out-pages-read-anew.md) | #1313 |
 | 2026-11-20 | [Cards per subject: the one-tap question's session is the subject's, and the sea slugs' all-met card before circle 3](2026-11-20-cards-per-subject.md) | #1318 |
+| 2026-11-20 | [The two compared photos after a wrong answer show whole](2026-11-20-compare-photos-whole.md) | #1316 |
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
 | 2026-11-20 | [Find the X's own offset: a format of its own, `find`, at 0 until its subject's format offsets are read](2026-11-20-find-the-x-own-offset.md) | #1299 |
 | 2026-11-20 | [The admin corrects the fish name index in a family's Names box; a species' own list waits for a format](2026-11-20-fish-names-admin.md) | #1311 |
