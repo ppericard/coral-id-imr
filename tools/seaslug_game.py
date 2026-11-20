@@ -91,9 +91,9 @@ line:
     whose judgement carries the animal's box (suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
     pass the sea slugs' tile rule (tile_tags here: the fish's plus the dorsal view) carries bb, and its download (or, on R2 already, a run for the
     tile alone) cuts {f}-x.webp with the fish's own cut (fish_game.py tile_crop, tile_write: nothing is copied), the
-    record then carrying xc (the tile's square) or xn (why not). No sea-slug judgement carries a box yet (judging/
-    SEASLUG.md "no bb"), so no record has a tile and the app's Find the X (app.js UNITS tiles) is not drawn for the sea
-    slugs until a box pass puts boxes in.
+    record then carrying xc (the tile's square) or xn (why not). A judging file may carry bb (judging/SEASLUG.md "The
+    animal's box"; the box pass of the sea slugs' photos, then imported); until a box is imported no record has a tile
+    and the app's Find the X (app.js UNITS tiles) is not drawn for the sea slugs.
 
 The R2 step is off in the Candidate photos workflow until Pierre's go (.github/workflows/approved-photos.yml
 SEASLUG_R2): the workflow builds offline (every new photo remote, r: 1) while it is off.
@@ -198,8 +198,10 @@ def genus_looks(cand, genera):
 
 
 def sure(j):
-    """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric)."""
-    if not j or j.get('egg') or j.get('u') or j.get('k', 'best') not in ('best', 'alt'):
+    """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric): no
+    unsure field but the box, whose doubt only withholds the photo's tile (fish_game.unsure; box_of)."""
+    import fish_game as FG
+    if not j or j.get('egg') or FG.unsure(j) or j.get('k', 'best') not in ('best', 'alt'):
         return False
     jt, e = j.get('jt') or '', j.get('e')
     return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
@@ -444,7 +446,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
             t = (sp_of.get(unit) or gens.get(unit) or {}).get('name') or t
         ph = phase(jt)
         # The animal's box, for the Find the X tile (the fish's rule and cut, tools/fish_game.py tile_tags, tile_crop): a
-        # judgement carrying one (bb, which no sea-slug judgement does yet) on a photo whose tags pass the tile rule.
+        # judgement carrying one (bb: judging/SEASLUG.md "The animal's box") on a photo whose tags pass the tile rule.
         bb = FG.box_of(f, None, sug) if tile_tags(jt) else None
         return {'f': f, 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': t, 'sp': unit,
                 **({'gl': 1} if unit in gens else {}), 'loc': p.get('loc'), **({'own': True} if p.get('own') else {}),
