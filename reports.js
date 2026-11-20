@@ -202,6 +202,37 @@
       ...(F.taxa ? {taxa: F.taxa} : {})
     };
   }
+  // The same registry for a flat subject (core.js SUBJECTS flat: its data.json, its units its genera keyed by name, at one
+  // rank; docs/reviews/2026-11-19-admin-one-engine.md §4, step 3), in repReg's shape and built in memory, no file of its
+  // own, so the admin's pages read every subject alike (admin.js reg). d: data.json (the admin's copy, whose gen also
+  // holds its x genera: admin.js load); photosOf(n): a genus's photos as its page shows them (admin.js photos: the draft's
+  // moves and outs applied); slate: the genera the app's slate holds (core.js slateOf). gen: each genus of d.gen, its
+  // record as data.json has it (its look-alikes, family, lecture group...) with its id and name, the genus's name; ph: each
+  // of those photos with its genus (entry); extra: the genera of data.json's x part (the bonus genera and Millepora, played
+  // once on), records only, for a pair's start (admin.js regRec). Nothing above or below the genera: fam, spid, spg, spu
+  // and imr are empty and groups has none (data.json's own fam, ig and imr are fields of a genus record, not these maps).
+  // null without data.
+  function flatReg(d, photosOf, slate) {
+    if (!d || !d.gen) return null;
+    const gen = {},
+      ph = {};
+    Object.keys(d.gen).forEach(n => {
+      gen[n] = {...d.gen[n], id: n, name: n};
+      (photosOf ? photosOf(n) : []).forEach(p => (ph[p.f] = {...p, entry: n}));
+    });
+    return {
+      gen,
+      ph,
+      slate: [...(slate || [])],
+      fam: Object.create(null),
+      spid: Object.create(null),
+      spg: Object.create(null),
+      imr: Object.create(null),
+      groups: [],
+      spu: {},
+      extra: {...((d.x || {}).gen || {})}
+    };
+  }
   const API = {
     REP_STATUS,
     repStatus,
@@ -214,7 +245,8 @@
     repOn,
     REP_WHY,
     repWhyText,
-    repReg
+    repReg,
+    flatReg
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);

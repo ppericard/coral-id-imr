@@ -772,14 +772,14 @@ test('real data: a genus and a species cover picked in the admin are the app’s
 
 // The ranks ★ Cover can set are the subject's own (corals, sea slugs or plants alike): read from SUBJECTS sheets,
 // broadest first, else the unit's rank alone (no switch); a key's rank from its sheet prefix, else the narrowest rank
-// (admin.js fuRanks, fuRankOf; rule S1).
+// (admin.js ranksOf, fuRankOf; rule S1).
 test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alone', () => {
   const ad = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
     ctx = {ASUBJ: null};
   vm.createContext(ctx);
   vm.runInContext(
-    block(ad, 'const fuRanks = (S = ASUBJ) =>', '// The rubric a subject declares', {file: 'admin.js'}) +
-      '\nthis.ranks = fuRanks; this.rankOf = fuRankOf;',
+    block(ad, 'const ranksOf = (S = ASUBJ) =>', '// The rubric a subject declares', {file: 'admin.js'}) +
+      '\nthis.ranks = ranksOf; this.rankOf = fuRankOf;',
     ctx
   );
   const [coral, fish] = [C.SUBJECTS.find(s => !s.sheets), C.SUBJECTS.find(s => s.sheets)];
