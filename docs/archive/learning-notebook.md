@@ -7463,3 +7463,67 @@ Moved from LEARNING.md "The calibration set" (#1130), which says what the code d
 - **Two earlier variants, dropped**: ×2 on every unit (share 4.17% → 5.94%, but the beginner met 2.4 fewer genera at
   300 and reached its first Open Water 44 answers later) and held units only (share 5.21%, the beginner's true
   knowledge at 300 down 0.023 on seeds 6-20). Both breached a guardrail; the built version is in LEARNING.md.
+
+## `CAL.U` 1 → 0.25 for the corals: checked, not adopted (2026-11-20)
+
+The ROADMAP row "`CAL.U` after the hierarchical photo Elo" (closed by this check): the corals' prior variance for a photo nobody has answered (`model.js`
+`CAL.U` 1, set for the Easy / Medium / Hard sets) against the spread of a photo around its genus offset, the prior since
+2026-11-03. A smaller value narrows an unanswered photo's targeting from sd √(0.7² + 1) = 1.22 to √(0.7² + 0.25) = 0.86
+logits. Nothing in the app changed.
+
+**The real data** (rule L12; the sheet's `?stats=1` reply read 2026-11-20, `av=tool`, no player in it; the coral game
+photos as `tools/game_forms.js` builds them). A replay of the answer log cannot judge a draw change (another draw asks
+other questions), so this is what was measured instead, descriptive: the sheet's rating minus its genus offset, by the
+photo's plain answer count.
+
+| Answers | 0 | 1-2 | 3-5 | 6-9 | 10-19 | 20+ |
+| --- | --- | --- | --- | --- | --- | --- |
+| Game photos (1,558) | 176 (11%) | 647 (42%) | 519 (33%) | 173 (11%) | 43 (3%) | 0 |
+| sd of rating − genus offset | - | 0.31 | 0.37 | 0.42 | 0.47 | - |
+
+The raw sd is not the true spread: the Elo shrinks a photo with few answers toward its offset and adds noise as answers
+come; it was not calibrated against a world with a known spread, it still rises with the answers, and no photo has 20,
+so it gives no upper bound. It agrees with the earlier measures (0.46, the rated world's `RATED.EPS`; 0.5, the
+2026-11-03 study's residual): a spread of about 0.5, so U 1 is about four times that variance [guess: the raw figures
+cannot exclude a larger spread]. 86% of the coral game photos have fewer than 6 answers, so U acts on
+most of the draw. The genus offsets: 45 units, sd 0.45.
+
+**The value, fixed before any run**: U is the variance of a photo's difficulty around its unit offset; the largest
+spread measured, rounded up to sd 0.5, gives 0.25 (the fish's `calib.u`). One value, no sweep (a sweep is level 3).
+
+**The check** (rule L11 level 2: the draw, broadly; declared before running). The rated world, corals, `--app sheet`
+(each photo starts unrated and the sheet's photo Elo is replayed on the population's own answers, so U acts as it does
+for a new photo), the four profiles, 3,000 answers, normal photos; the same tree, before `--calib '{"u":1}'`, after U
+0.25. Primary `know@3000:up` (none expected: the count learner learns from the number of answers alone, and D\* is 0.99
+at 3,000, so this world can show a cost, never this gain). Two looks (10 seeds, then 10 fresh ones, `--seed0 10`);
+guardrails `tools/learncmp.js`'s. Declared watch: the sheet's photo ratings (`rateErr`, the correlation with the truth),
+since the wide targeting is what sends an unrated photo to players of other levels. Ship only if every guardrail holds.
+
+| Measure (paired difference after − before [one-sided 95% bound]) | Seeds 1-10 | Seeds 11-20 | Pooled, 20 seeds |
+| --- | --- | --- | --- |
+| Primary `know@3000` | +0.000, p 1 | +0.000 | +0.000, p 1 |
+| Shown score at 1,000 answers, strong RA (margin −1) | −1.3 [−2.5] breached | −1.5 [−3.0] breached | −1.4 [−2.3] breached |
+| Shown score at 1,000, beginner / lecture RA / expert | −0.5 / +0.2 / −0.6, unclear | −1.4 / −2.0 / −1.3, breached | −0.9 / −0.9 / −0.9, unclear |
+| Shown score at 3,000, the four profiles | +0.7 to −0.2, unclear or held | −0.7 to −1.0, unclear | −0.1 to −0.5, unclear or held |
+| True knowledge at 300 / 1,000, every profile | held (beginner at 300 unclear) | held (beginner at 300 unclear) | held (beginner at 300 −0.010 [−0.023] unclear) |
+| Photo ratings, correlation with the truth at 3,000 | 0.284 → 0.236, p 0.008 | 0.294 → 0.286, p 0.53 | 0.289 → 0.261, p 0.010 |
+| Photo rating error (centred RMS) at 3,000 | +0.031, p 0.012 | +0.003, p 0.77 | +0.017, p 0.044 |
+
+- **The shown score lags about one point at 1,000 answers** for every profile (−0.9 to −1.4 pooled), breached for the
+  strong RA on both halves and for all four on the fresh seeds; equal or nearly at 3,000; true knowledge unchanged.
+  The bar sits a little further below true knowledge (E at 1,000, strong RA, −0.017).
+- **The measure cannot tell** (20 seeds, unclear, no third look): units met at 300 (beginner −1.1, lecture RA −0.8),
+  units at Open Water (expert at 300 −1.1, strong RA at 1,000 −1.3), the beginner's first Open Water (+6 answers), the
+  beginner's true knowledge at 300, and the shown score at 3,000 for three profiles.
+- **The photo ratings are a little worse** with the narrower targeting (pooled; the fresh seeds alone could not tell).
+  Why is a guess, not measured: an unrated photo goes less often to players far from its prior, so its answers may say
+  less about where it sits; both measures are over the photos answered, which may not be the same set in the two arms.
+  In this world the four simulated players rate photos poorly (rating error 0.66-0.75, above the truth's own spread of
+  about 0.54, √(0.286² + 0.46²); correlation 0.26-0.29), so read the direction, not the size.
+- **Not run**, as the result was already a breach: the heavy-tailed photos, and the app world (cold start, `--truth`
+  from the genus offsets plus a residual of sd 0.5). They would be needed to say "safe to ship", not to say "not
+  shipped". Compute: about 17 minutes, within rule L11's 40.
+
+**Outcome**: not adopted; `CAL.U` stays 1 (the integrator's call: keeping it changes nothing), and the ROADMAP row was
+closed. Shipping a smaller U would mean accepting the lag, or a level 3 choosing a value on GitHub runners, both
+Pierre's.
