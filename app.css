@@ -7432,6 +7432,16 @@ html.touring .unlock {
     white-space: nowrap;
   }
 }
+/* A unit's common name right under its scientific name on its first-meeting card (app.js unitCname). */
+.ulcard .ulcn {
+  margin: -4px 0 4px;
+  color: var(--ink);
+  font-size: var(--fs-l);
+  font-weight: 600;
+}
+.ulcard .ulcn + .ulfam {
+  margin-top: 0;
+}
 /* A fish entry's family under its name on its first-meeting card. */
 .ulcard .ulfam {
   margin: -4px 0 6px;

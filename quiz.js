@@ -2395,7 +2395,7 @@ function introCard(n, o = {}) {
     photo: p ? img(p, 's') : '',
     kick: `${isBonus(n) ? setOf(n).tag : 'New ' + SUBJ.one}${o.pos ? ` · ${o.pos}` : ''}`,
     title: uname(n),
-    body: `${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
+    body: `${unitCname(n) ? `<p class="ulcn">${esc(unitCname(n))}</p>` : ''}${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
       ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : scard ? `<p class="ulnote">${scard}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>

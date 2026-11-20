@@ -59,6 +59,8 @@ test('the IMR genera: those an IMR sub-entry names alone, Naso alone of the surg
   // the first-meeting card: its IMR cues and slide (Anemonefish has no cues: its species, with its slide)
   assert.strictEqual(X.gen['g:Chromis'].tl, 'ID tips (IMR, Chromis, slide 8)');
   assert.strictEqual(X.gen['g:Heniochus'].tl, 'ID tips (IMR, Bannerfish, slides 13, 23)');
+  // the card's common name, right after the scientific name (quiz.js introCard, app.js unitCname): fish.json common
+  assert.strictEqual(X.gen['g:Heniochus'].cname, 'Bannerfishes');
   assert.ok(!X.gen['g:Amphiprion'].qt && X.gen['g:Amphiprion'].tl === 'Its species here (IMR, Anemonefish, slide 22)');
   // a genus with a presentation and no marks (tools/fish_genus_marks.json none: Abudefduf) keeps its species line
   assert.ok(X.gen['g:Abudefduf'].tl === 'Its species here' && X.gen['g:Abudefduf'].plain);
