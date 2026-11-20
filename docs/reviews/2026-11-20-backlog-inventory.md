@@ -18,10 +18,10 @@ remettre à jour encore cet inventaire et puis il faut le merger … sinon, tu n
 points encore en cours et ce qui doit être lancé»). The row IDs keep their 11-20 meaning. A refreshed row says so in its
 basis cell, after **11-21:**; the rows nothing touched keep their 11-20 reading. What moved:
 
-- **The 35 PRs merged since the snapshot** (`git log --first-parent 01bb16add..7fd48432f`, besides two Candidate
-  photos commits; among them #1279 Memory, #1298 `data/`, #1299, #1310, #1324, #1328, #1330, #1333, #1335, #1336,
+- **The 35 PRs merged since the snapshot** (`git log --first-parent 01bb16add..7fd48432f`, besides three commits
+  without a PR: two Candidate photos runs and Pierre's photo curation; among them #1279 Memory, #1298 `data/`, #1299, #1310, #1324, #1328, #1330, #1333, #1335, #1336,
   #1339, #1341, #1344, #1349): their rows are Done or Partly done, with the PR number. The 13 PRs open on 11-20 all
-  merged (§4.1); 4 PRs are open now besides this one and the ledger PR #1350. #1349 merged while this refresh was being
+  merged (§4.1); 5 PRs are open now besides this one and the ledger PR #1350 (#1351 opened during the refresh). #1349 merged while this refresh was being
   written: its rows say "merged later on 11-21".
 - **Pierre's answers of 2026-11-21 05:32-05:42**, recorded by the ledger PR #1350 (not repeated in ANSWERS here):
   §1.2b.
@@ -30,8 +30,8 @@ basis cell, after **11-21:**; the rows nothing touched keep their 11-20 reading.
   not in the repo.
 - **Files held now** (§2) and so **§1.3, ready to launch**, recomputed; §1.4 keeps only the questions still open.
 - Counts before the refresh, by the §6 script on this file at `d208682c0`: Done 3, Partly done 12, Decided ready 14,
-  Decided 7, Blocked 45, Waiting for Pierre 24, Waiting 42, Idea 44, Obsolete 5 (196). The 9 rows added (R77c, N6,
-  N7, PR15-PR20) bring the total to 205.
+  Decided 7, Blocked 45, Waiting for Pierre 24, Waiting 42, Idea 44, Obsolete 5 (196). The 10 rows added (R77c, N6,
+  N7, PR15-PR21) bring the total to 206.
 
 ## 1. Summary
 
@@ -45,17 +45,18 @@ outside the ROADMAP). The counts are computed from those tables by a script (§6
 | Done (a row or sub-item the ROADMAP held as open on 11-20)                  | 3       | 27      |
 | Partly done                                                                 | 12      | 17      |
 | Decided, ready to launch                                                    | 14      | 22      |
-| Decided (agreed, not started; waits only the order of work)                 | 7       | 9       |
-| Blocked by an open PR or a held file (the open PRs included)                | 45      | 12      |
+| Decided (agreed, not started; waits only the order of work)                 | 7       | 8       |
+| Blocked by an open PR or a held file (the open PRs included)                | 45      | 14      |
 | Waiting for Pierre (a question, his review or his hands)                    | 24      | 23      |
 | Waiting on data, a trigger he set or a third party                          | 42      | 43      |
 | Idea (nobody decided, or his own doubt)                                     | 44      | 46      |
 | Obsolete or declined                                                        | 5       | 6       |
-| **All**                                                                     | **196** | **205** |
+| **All**                                                                     | **196** | **206** |
 
 The 11-20 column is the §6 script on this file before the refresh (`d208682c0`; N5 had moved to Done after the table
-was written). On 11-21, of the 12 blocked rows, 7 are decided work waiting for a file another PR holds (`app.js` held by #1331 and
-#1340, `quiz.js` and `model.js` by #1331, `admin.js` by #1348; N1 is #1331 itself); the other 5 are the open PRs. Of
+was written). On 11-21, of the 14 blocked rows, 8 are decided work waiting for an open PR or a file one holds
+(`app.js` held by #1331 and #1340, `quiz.js` and `model.js` by #1331, `admin.js` by #1348; N1 is #1331 and N6 is
+#1351); the other 6 are the open PRs. Of
 the 22 ready rows, 14 touch `core.js`, `Code.gs` or `sync.js`, freed when #1349 merged: rule W27 lets one PR at a time
 hold each of those files, so they go one after another. Some "Partly done" and "Decided" rows have a part ready now:
 §1.3 names them.
@@ -140,7 +141,7 @@ them in ANSWERS. Each row's basis cell quotes the part that decides it.
 | R2: delete the unused files, yes (the list shown first)    | R32                        | Decided, ready                                                                          |
 | R2 read-only CI token: «Ça sert à quoi?»                   | R35                        | Not answered (#1350); withdrawn by the integrator since: Obsolete                       |
 | Q439: «J'ai pas testé encore»                              | R75, R165, R176, R177, N7  | Still open                                                                              |
-| The compared photos stacked on a phone (05:32)             | N6                         | Decided; being built (no PR yet at this refresh)                                        |
+| The compared photos stacked on a phone (05:32)             | N6                         | In review (#1351)                                                                       |
 | The inventory merged first (05:42)                         | this PR                    | INTEGRATOR "A reference doc PR goes first" (#1350)                                      |
 
 ### 1.3 Ready to launch now (decided, unbuilt, no open PR on their files)
@@ -161,7 +162,9 @@ Refreshed 2026-11-21; files checked against the file lists of the open PRs (§2)
 9. **"Did you know?" tip (b)**, the next one of (b)-(h), one at a time (R49; `tips.js` free unless a counter needs
    `app.js`).
 10. **Analyses: structure views, the later items** (R39) and the name-confusion study's (h) (R106; `analysis.js` free).
-11. **Deploy right after Candidate photos** (R34; the integrator's call, a workflow change; the ROADMAP calls it an open
+11. **One admin, the study's steps 9-10 and 13** (R94; [admin one-engine study](2026-11-19-admin-one-engine.md) §5):
+    Learn's one list and one sheet (`learn.js` free, unless they need `app.js`), one tree-game builder (the tools).
+12. **Deploy right after Candidate photos** (R34; the integrator's call, a workflow change; the ROADMAP calls it an open
     question, so it is the integrator's to take or drop).
 
 **B. On `core.js`, `Code.gs` or `sync.js`, free since #1349 merged: one PR at a time on each file (rule W27)**, in
@@ -174,9 +177,11 @@ admin's leaner log reply (R36b, a sheet change), Activity C2 (R51, `sync.js`), t
 
 Next once their files are free: after #1331 (`quiz.js`, `model.js`, `app.js`): Q445's coral scale (R202b), Find the X
 on the mimicry pair (R67); after #1331 and #1340 (`app.js`): the tour leftovers (R116), the About version line (R58), the
-calmer About text (R44); after #1348 (`admin.js`): species look-alike pairs in the admin (R151); after #1342: the fish
-sex and phase flags (R72) and the photos re-judged on its phase list; being built without a PR: the compared photos
-stacked on a phone (N6).
+calmer About text (R44); after #1348 (`admin.js`): species look-alike pairs in the admin (R151) and the one-admin
+steps 7-8 (one montage and coverage page, one tile); after #1340 (`home.js`): the one-admin step 11 (the small Learn,
+home and progress readers); after #1342: the fish
+sex and phase flags (R72) and the photos re-judged on its phase list; in review: the compared photos stacked on a
+phone (N6, #1351).
 
 ### 1.4 Questions still truly open
 
@@ -188,15 +193,15 @@ Refreshed 2026-11-21 from STATUS (#1343) and #1350. None is minted a number here
 4. **Q446**: the screenshot store, redesigned to his direction (a simple temporary store), back to him (N4).
 5. **Q439**: which Lab prototypes graduate (Matrix, Odd one out, Same or different?, the Fish ID Key), with the new-RA
    review's two options (N7): he has not tested the Lab yet.
-6. **The R2 read-only CI token**: not answered (he asked what it is for); the integrator withdrew it (R35).
-7. **Asked never, costly**: the mimicry family pairs M7 and C11 (a structure change); `confTerm` if ever proposed
+6. **Asked never, costly**: the mimicry family pairs M7 and C11 (a structure change); `confTerm` if ever proposed
    (moves progress; #1341 measured it, a lead only).
-8. **His review, not a blocker**: the fish and sea slug species-mark drafts (his 11-05 rule "agents draft, Pierre
+7. **His review, not a blocker**: the fish and sea slug species-mark drafts (his 11-05 rule "agents draft, Pierre
    validates"); the tell-apart lines; the 8 unsure fish candidates; the 3 near-duplicate groups; admin Points (three new
    fish phase conflicts after #1342).
 
 Answered since 11-20: B1, Q442, Q443 (long term, maybe never), Q444, Q445 (A), Q447, Q448 (A), rule L4, the R2
-deletion, where the trainer list is stored (Q448).
+deletion, where the trainer list is stored (Q448). The R2 read-only CI token is out of this list: he asked what it is
+for (not answered, #1350), and the integrator withdrew it (R35).
 
 **Probably not questions any more, to confirm** (STATUS still lists them): **Q351 (b)**, measuring the fish ease
 weight, ran read-only (#1341, "Not enough data yet"); **Q390** appears settled: answered D on 11-17, and the species
@@ -247,7 +252,7 @@ what its source shows it answered.
 - **Files held on 2026-11-21** (`gh api pulls/N/files` on the open PRs besides this one, read in the morning; #1349,
   which held `core.js`, `Code.gs`, `sync.js` and `quiz.js`, merged during the refresh): `quiz.js`, `model.js` #1331;
   `app.js` #1331, #1340; `admin.js` #1348; `home.js`, `proto/pairs.js` #1340; `data/points.json`,
-  `tools/fish_phases.json` #1342; #1350 holds docs only. Free: `core.js`, `Code.gs`, `sync.js`, `learn.js`, `tips.js`,
+  `tools/fish_phases.json` #1342; `app.css` #1351; #1350 holds docs only. Free: `core.js`, `Code.gs`, `sync.js`, `learn.js`, `tips.js`,
   `analysis.js`, `autosort.js`, `proto/lab.js`, the tools and their data, `judging/*`, `approved-photos.yml`.
 
 **Sources swept** (rule W11):
@@ -309,7 +314,7 @@ what its source shows it answered.
 | R58 | Credits: a version line and a source link | Blocked | [ii] the integrator's queue of 11-18 ("About version", STATUS de83ee3a9 Next 3); `app.js` holders; **11-21:** `app.js` held by #1331, #1340 | Short | S |
 | R59  | Fish mode: circle 3 species, barracudas, PDF slips           | Waiting for Pierre | His curation, in the admin's Points (rule W10: remind once)                                                                                                                           | Medium  | S    |
 | R60 | Fish sheets: the phase model, the shared components | Decided | [i] the 13 answers of 11-06; **11-21:** rule C1 reworded, fish phases from any cited source (#1334); the cited phase list in review (#1342) | Medium | L |
-| R60b | Fish sheets: the species-mark drafts | Waiting for Pierre | (paraphrase) 11-05 "agents draft, Pierre validates": in play marked Draft; his review, not a blocker; **11-21:** the sea slug marks for *Caloria* and *Taringa* added (#1325), drafts like the others | Medium | S |
+| R60b | Fish sheets: the species-mark drafts | Waiting for Pierre | (paraphrase) 11-05 "agents draft, Pierre validates": in play marked Draft; his review, not a blocker | Medium | S |
 | R61  | Ability calibration (1)-(9)                                  | Idea              | Agent proposals of 11-03                                                                                                                                                                | Medium  | M    |
 | R62  | After the fixes of 11-04, (1)-(4)                            | Idea              | Agent proposals; (1) moves progress: his OK if ever proposed                                                                                                                            | Medium  | S    |
 | R63  | Admin per-genus abilities with the level's move              | Idea              | Agent proposal, display only; `admin.js` holders                                                                                                                                        | Medium  | S    |
@@ -458,7 +463,7 @@ what its source shows it answered.
 | R222 | Training for survey organisations                      | Idea              | (paraphrase) 11-08, five Parked rows folded                                                                                                   | Long    | L    |
 | R223 | More subjects: benthos | Idea | B1, Q442, Q443; **11-21:** «non, on ne traite pas ça pour l'instant ... je suis même pas sûr qu'on le traitera un jour» (05:40, #1350): long term, maybe never (B1, Q442, Q443 with it) | Medium | L |
 | R223b | More subjects: sea slug species pairs (2 sourced) | Decided, ready | (paraphrase) Q390 D; the species level built; `tools/seaslug_lookalikes_source.json` held by #1298; **11-21:** `tools/seaslug_lookalikes_source.json` free since #1298 merged | Medium | S |
-| R223c | More subjects: sea slug ID key; the 4 genera without marks | Idea          | Low yield (no source found)                                                                                                                   | Long    | M    |
+| R223c | More subjects: sea slug ID key; the 4 genera without marks | Idea          | Low yield (no source found); **11-21:** marks found and added for *Caloria* and *Taringa* (#1325, drafts); *Ardeadoris* and *Verconia* stay without                                                                                                                   | Long    | M    |
 | R224 | Content versions: served to the admin's readers        | Waiting           | When needed                                                                                                                                   | Long    | S    |
 | R225 | Partial transfer between regions                       | Idea              | A research question                                                                                                                           | Long    | M    |
 
@@ -471,12 +476,12 @@ what its source shows it answered.
 | N3 | Report a problem, again on the same page | Done | [i] «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page» (Reports); its ROADMAP row and ledger entry are on #1319 (in review); **11-21:** built (#1339) | - | - |
 | N4 | A photo or screenshot attached to a report | Waiting for Pierre | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); recorded on #1319; where the file is stored is his; **11-21:** Q446 not decided as proposed: «Est-ce qu'on peut pas juste stocker temporairement la photo ... le temps qu'un agent puisse le traiter et ensuite on dégage la photo» (05:40, #1350): a simple temporary store; the design goes back to him | Medium | M |
 | N5  | Beta: remove everyone from a subject's beta                  | Done              | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1298, #1313, #1320                                       | Short   | S    |
-| N6  | The two compared photos stacked on a phone (fish)            | Decided           | [i] «je pense que ça s'afficherait beaucoup mieux en étant au-dessus, en dessous» (11-21 05:32, #1350); being built by another agent, no PR yet at this refresh | Short   | S    |
+| N6  | The two compared photos stacked on a phone (fish)            | Blocked           | [i] «je pense que ça s'afficherait beaucoup mieux en étant au-dessus, en dessous» (11-21 05:32, #1350); in review (#1351) | Short   | S    |
 | N7  | New-RA review findings 4-5: My progress's "Next step" line, the quiz photo's Colony / Close-up switch | Waiting for Pierre | Options for him (#1332), asked with Q439 in STATUS                                                                                | Short   | S    |
 
 ## 4. Outside the ROADMAP
 
-### 4.1 Open PRs (13 on 11-20, all merged since; on 11-21 PR15-PR20, of which #1349 merged during the refresh)
+### 4.1 Open PRs (13 on 11-20, all merged since; on 11-21 PR15-PR21, of which #1349 merged and #1351 opened during the refresh)
 
 | ID    | PR                                                   | State   | Note                                                        | Horizon | Size |
 | ----- | ---------------------------------------------------- | ------- | ----------------------------------------------------------- | ------- | ---- |
@@ -499,13 +504,15 @@ what its source shows it answered.
 | PR18  | #1348 Admin: a Published toast is not replaced; Undo         | Blocked | Holds `admin.js`                                            | Short   | S    |
 | PR19 | #1349 Each subject adopts its own opening hold (one-engine step 5, the app's half) | Done | R94; holds `core.js`, `quiz.js`, `sync.js`, `Code.gs`; merged later on 11-21 | - | - |
 | PR20  | #1350 Ledger: Pierre's answers of 2026-11-21 05:32-05:42      | Blocked | Merges before this PR; its answers are cited here          | Short   | S    |
+| PR21  | #1351 The two compared photos stacked on phones               | Blocked | N6; holds `app.css`, opened during the refresh             | Short   | S    |
 
 ### 4.2 Branches without a PR (13 besides `main`, `release` on 11-20; 15 on 11-21, besides the `train/*` branches)
 
 | ID  | Branch                                                                 | State       | Note                                                                                           | Horizon | Size |
 | --- | ---------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- | ------- | ---- |
 | B1 | `claude/admin-lazy-loads` (3 commits, 11-20) | Done | R36: finish its record, tests, PR; **11-21:** merged as #1336 | - | - |
-| B2  | `claude/admin-signout-seal`, `level-count-from-log`, `fish-todo-wip`, `stoic-ritchie-fp1ipu`, `optimistic-newton-b82nxm`, `compassionate-cori-ecyc2t`, `juvenile-no-cap-sim`, five `live-locked-*` | Obsolete | References or experiments of merged work (#1078, #1053, #1234, #1237); the weekly clean-up workflow can drop them; **11-21:** also without a PR now: `photo-genus-ability` (#637, closed unmerged), `time-weighted-steps` (#808, closed unmerged), `autosort-followups` (#1313, merged; a late push re-created it): references too; no branch without a PR builds a §1.3 item, and none holds the stacked compared photos (N6) yet | - | - |
+| B2  | `claude/admin-signout-seal`, `level-count-from-log`, `fish-todo-wip`, `stoic-ritchie-fp1ipu`, `optimistic-newton-b82nxm`, `compassionate-cori-ecyc2t`, `juvenile-no-cap-sim`, five `live-locked-*` | Obsolete | References or experiments of merged work (#1078, #1053, #1234, #1237); the weekly clean-up workflow can drop them; **11-21:** also without a PR now: `photo-genus-ability` (#637, closed unmerged), `time-weighted-steps` (#808, closed unmerged), `autosort-followups` (#1313, merged; a late push re-created it): references too; no branch without a PR builds a §1.3 item (`level-count-from-log` holds the parked design note for R118, cut from #840 by
+rule W27: a starting point, not work in flight), and the stacked compared photos (N6) are #1351 | - | - |
 
 ### 4.3 Pierre's hands (STATUS)
 
@@ -625,6 +632,9 @@ that are truly his (a question, his review or his hands). The [i] split of §1.1
 done or declined) is read from the "Now" cells above.
 
 ## 5. What changed in the docs (this PR)
+
+The bullets before the last are the PR as written on 11-20 (the PRs they call open have all merged since); the last
+bullet is the refresh of 11-21.
 
 - **ROADMAP**: 25 rows corrected (state and source, his words quoted, or a reading marked as one): R31, R43, R55, R58,
   R60, R64, R72, R73 (a note only), R76, R85, R101, R103, R106, R116, R123, R125, R166, R192, R202, R203, R204, R205,
