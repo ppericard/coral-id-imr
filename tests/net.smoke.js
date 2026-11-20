@@ -843,6 +843,33 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('learn.js held: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
+  // A script of a later tier that never comes (ROADMAP R192; index.html loader): learn.js fails (aborted) 4 times, the
+  // loader goes on without nothing: the page offers Try again, the tier waits (Learn's set-up has not run); once the
+  // line is back, Try again brings learn.js and the Genera page opens.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    let up = false,
+      seen = 0;
+    await ctx.route(/\/learn\.js\?v=/, r => (up ? r.fallback() : (seen++, r.abort())));
+    await p.goto(base + '#' + require('../core.js').routeOut('genera'), {waitUntil: 'commit'});
+    const shown = await p
+      .waitForSelector('#tierwarn:not([hidden]) button', {timeout: 30000})
+      .then(() => p.evaluate(() => ({late: typeof viewGenera, text: document.getElementById('tierwarn').textContent})))
+      .catch(() => null);
+    if (!shown) fails.push('learn.js failed: no Try again offered');
+    else {
+      if (seen < 4) fails.push(`learn.js failed: Try again offered after ${seen} tries, not 4`);
+      if (shown.late !== 'undefined') fails.push(`learn.js failed: it ran all the same (${shown.late})`);
+      up = true;
+      await p.click('#tierwarn button');
+      await p
+        .waitForFunction(() => document.querySelector('#view .card') && !document.querySelector('#view .boot'), null, {timeout: 20000})
+        .catch(() => fails.push('learn.js failed: the Genera page did not open after Try again'));
+      if (!(await p.evaluate(() => document.getElementById('tierwarn').hidden)))
+        fails.push('learn.js failed: the offer stays after it came');
+    }
+    await ctx.close();
+  }
   // Home's doors before the data (ROADMAP "Load order, further steps" (a); app.js beforeData): with data.json held, the
   // doors come, their band empty and no tour offered in ?; a tap on Practice shows the loading bar, Back brings the doors
   // again; once data.json is in, Home is drawn again with its band, the scroll and the open help kept.
