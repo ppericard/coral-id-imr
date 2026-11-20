@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v211 (2026-11-21)
+
+The sheet script's copy of `core.js` follows the app: `SUBJECTS` no longer has the corals' `hold` field, since the app now adopts each subject's own opening hold from the `holds` of a light load or save reply (`sync.js` `holdOf`, `holdAdopt`, from the script that serves them, `HOLDS_SHEET`), the one-engine audit's step 5, the app's half (Pierre, 2026-11-19 05:15: one engine for every subject, with only small per-subject parameters). The script never read that field: `hold_` and `holdsInto_` compute and send the same holds as before, `hold` and `holdIds` staying the replay subject's for an older app; only a comment in `holdsInto_` changes. No answer is scored, replayed, held or logged differently
+
 ## v210 (2026-11-20)
 
 One opening hold path for every subject the sheet replays (the one-engine audit's step 5, the sheet's half; Pierre, 2026-11-19 05:15: one engine for every subject, with only small per-subject parameters): `hold_` takes the subject and reads its own answers (`subjRows_`) since its own reset (`resetOf_` with its id), cached per player and subject (`hold~<subject>:<name>`, every subject's key dropped with `dropHold_`, so on a delete, merge or archive too; the corals' cached holds are read again once after the update). A light load or save reply (every app since the lighter saves) also carries `holds`, `{subject: {h, ids}}` for the corals, the fish and the sea slugs; `hold` and `holdIds` stay the corals' as before, and a request without `light` gets those two alone. No app reads `holds` yet (the app's half, each subject adopting its own, waits for its own PR, gated on this version), so nobody's hold or progress moves and no rules version is appended; the copy of `core.js` in this script changes only in comments
