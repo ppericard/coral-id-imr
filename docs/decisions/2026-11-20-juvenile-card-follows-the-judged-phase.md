@@ -29,5 +29,7 @@ judging's phase word, else its `j` flag, else the observer's life stage `st`.
 - `suggest.json` changes by the two records and the two species' pass date (`judging_fish.py codes`); `fish-game.json` is
   rebuilt by the photos workflow after the merge.
 - A sub-adult phase of an entry that is not `dimorph` still brings no card: 7 other *Diagramma pictum* photos are
-  judged that way; whether a sub-adult card should exist is a `core.js` change, not made here.
+  judged that way; whether a sub-adult card should exist is a `core.js` change, not made here. Since superseded: the
+  [juvenile card's new design](2026-11-20-juvenile-card-shows-young-beside-adult.md) brings it where a source names a
+  sub-adult stage of its own, from `quiz.js`.
 - `tests/fishjuvcard.test.js` pins both photos and that no photo whose judging says it is not a juvenile carries `j`.
