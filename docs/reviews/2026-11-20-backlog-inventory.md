@@ -644,7 +644,7 @@ done or declined) is read from the "Now" cells above.
 - STATUS is not edited (the integrator's): its "Questions for Pierre" still lists two questions that look settled
   (§1.4).
 - **The refresh of 2026-11-21** (main merged in at `93cffa96e`, then `7fd48432f`; the ROADMAP settled row by row against main, a 3-way
-  view of each row): against main, this PR now changes 19 ROADMAP rows, deletes 2 and adds 1. Main's later text won
+  view of each row): against main, this PR now changes 18 ROADMAP rows, deletes 2 and adds 1. Main's later text won
   wherever main measured or built a row (learnsim, the learning-algorithm review, the time terms, the fish prior: the
   PR's "Next: re-measure" readings were dropped, the measures of #1341 having run); the PR's quotes of his words were
   kept on top of main's text (the IMR content row, Roles, Enlargement, the fish prior's Q435 (a)). Rows corrected in the
