@@ -7,13 +7,15 @@ rule is in [README.md](README.md#the-index). Fish-only content rules are in [sub
 
 ### C1
 
-**Never contradict or "correct" the IMR course or its lecturers in the app.** Keep the IMR wording (families, lecture
-lines, mnemonics, spellings). Where another source differs, add at most a discreet, dated, sourced note ("Source X
-(year) says…", shown as "Other sources" from `gen[g].info`), never "the lecture is wrong/outdated". Obvious slide slips
-are silently not reproduced and mentioned to Pierre only. When a source is old, trust IMR unless a very reliable
-*recent* source says otherwise: IMR trainers may be more up to date than the literature.
-*Why:* Pierre is new at IMR and the app is used there; visibly correcting the trainers would hurt his relationships.
-*Source:* Pierre, by 2026-11-01.
+**Respect the IMR course: keep its wording, complement and update it with sourced, dated notes, never present it as
+wrong.** Keep the IMR wording (families, lecture lines, mnemonics, spellings). Where another source differs or adds to
+it, a discreet, dated, sourced note ("Source X (year) says…", shown as "Other sources" from `gen[g].info`), never "the
+lecture is wrong/outdated". An error of substance goes to `points.json` with its sources and is mentioned to Pierre; an
+obvious slide slip is not reproduced. The course is one solid source among others, never the only one: a category,
+phase or fact a solid, cited source documents may be added beside it (rule C2).
+*Why:* the app is used at IMR; openly correcting the trainers would hurt relationships, but the course is one solid
+source among others.
+*Source:* Pierre, by 2026-11-01; reworded 2026-11-20 («Ok, comme ça, cette formulation me va»).
 
 ### C2
 

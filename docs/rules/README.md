@@ -19,7 +19,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 ## The index
 
 **Content** ([content.md](content.md))
-- **C1** Never contradict or "correct" the IMR course.
+- **C1** Respect the IMR course: keep its wording, complement it with sourced notes, never present it as wrong.
 - **C2** Never invent categories or information; every clue carries its source.
 - **C3** An ID tip is short and simple for anyone; detail goes on the sheet; the answer's feedback shows one decisive line, the rest behind "More".
 - **C4** Corals: growth form is an entry point only: rank, never filter or group genera by it.
