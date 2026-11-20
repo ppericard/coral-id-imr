@@ -101,7 +101,7 @@ function bindFishRows(S, f, base, edit) {
 // rot) with it, one Undo step for both, through edit(fn).
 const fishCrop = (p, start, sug, edit) =>
   cropEditor(p, {
-    start: ((DRAFT[TK] || {}).crop || {})[p.f] || start || null,
+    start: (readView(DRAFT[TK] || {}).crop || {})[p.f] || start || null,
     rot: fishRot(p.f),
     save: (v, full, ro) =>
       edit(G => fishSet(fishSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
@@ -120,7 +120,7 @@ const fishJudged = j =>
 // with the draft's (drawn over the baked file, a published 90° would show as 180°).
 const fishRot = f => rotNorm(((DRAFT[TK] || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) =>
-  crSrc({...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
+  crSrc({...p, j: {c: (readView(DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
 // Where a fish photo comes from: the admin's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag) and, when
 // its name is a former combination or an iNaturalist spelling WoRMS writes otherwise, the WoRMS name (admin.js nameTag).
@@ -330,7 +330,7 @@ function renderFishCand() {
             `<button type="button" class="adm-fth" data-fp="${esc(q.f)}" aria-label="Enlarge a photo in play">${q.src ? `<img ${fishSrc(q, 1)} alt="" loading="lazy">` : ''}</button>`
         )
         .join('')}</div>
-      <div class="adm-acts adm-swacts">${fishRows(F, p, j, chk, FISHC.entry[sid])}<div class="adm-swrow">${fishNotThisSel(sid, from)}<button type="button" class="adm-swcrop${(F.crop || {})[p.f] || fishRot(p.f) ? ' on' : ''}" data-fcrop aria-pressed="${!!((F.crop || {})[p.f] || fishRot(p.f))}">Crop</button><button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-acts adm-swacts">${fishRows(readView(F), p, j, chk, FISHC.entry[sid])}<div class="adm-swrow">${fishNotThisSel(sid, from)}<button type="button" class="adm-swcrop${cropOn(F, p.f) ? ' on' : ''}" data-fcrop aria-pressed="${cropOn(F, p.f)}">Crop</button><button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button><button type="button" data-skip>Skip</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button><button type="button" class="add${s && s.keep === 'add' ? ' sug' : ''}" data-add title="${s && s.keep === 'add' ? 'Suggested · ' : ''}Add (1)">+ Add</button></div>
     </section>${fishAutoBlock(true)}`;
     if (nx && nx.p.src) new Image().src = img(nx.p);

@@ -208,9 +208,30 @@
     const s = fishSure(j);
     return s && s.keep === 'add' ? s : null;
   }
-  // at(f): the date (YYYY-MM-DD) photo f's judgement was made, for the route back (sortBack); without it, no photo comes
-  // back. A photo it brings back is no longer set aside: it is added like an add (code b and the fields written) while its
-  // species has room, else it waits as a candidate (code b alone), which the game plays as any sure candidate.
+  // The one route out (Pierre, 2026-11-19 20:57: «il faut que tu fasses une proposition qui intègre directement le jeu»;
+  // rule A1: a newer, better proposal replaces one he only let through): a photo the run put in leaves play when a newer
+  // judgement is a sure rejection. True when all of these hold (the mirror of sortBack):
+  // - its log code is the run's add or brought-back add (a, b), not a Check, not undone, with no time (@t: he answered or
+  //   corrected it), and lists the tags (t: still the run's copy; a photo he tagged himself is his);
+  // - it is still the run's add in this species (sid), not rejected, excluded or moved with Not this, and no re-judge
+  //   proposal of it was answered Keep mine (F.kept);
+  // - its judgement was made on or after the day of the add (at(f), as sortBack), and is a sure rejection now (fishSure).
+  // It goes into his draft as the run's plain reject (no new log letter): one Undo step like any of the run's; the photo
+  // then waits as a candidate, and a later sure add brings it back by sortBack.
+  function sortOut(F, x, f, sid, j, at) {
+    const d = x && x.d;
+    if (!d || d.check || d.undone || d.t || !'ab'.includes(d.kind) || !(d.w || []).includes('tags')) return false;
+    if ((F.add || {})[f] !== sid || (F.seen || {})[f] || (F.exclude || {})[f] || (F.out || {})[f] || (F.kept || {})[f]) return false;
+    const a = typeof at === 'function' ? at(f) : null;
+    if (!a || a < x.day) return false;
+    const s = fishSure(j);
+    return !!s && s.keep === 'reject';
+  }
+  // at(f): the date (YYYY-MM-DD) photo f's judgement was made, for the route back (sortBack) and the route out (sortOut);
+  // without it, none moves. A photo it brings back is no longer set aside: it is added like an add (code b and the fields
+  // written) while its species has room, else it waits as a candidate (code b alone), which the game plays as any sure
+  // candidate. A photo it takes out loses its add and the fields its code lists (as fishUndo does) and is set aside (seen,
+  // code r); the room it frees is filled at the next load.
   function fishRun(cands, sug, species, F, day, keepOn = true, at = null) {
     F = F || {};
     const I = fishIdx(F),
@@ -222,13 +243,14 @@
         if (busy(p.f)) {
           const s = sortBack(F, I[p.f], p.f, (sug || {})[p.f], at);
           if (s) plan.push({sid, p, s, check: false, back: true});
+          else if (sortOut(F, I[p.f], p.f, sid, (sug || {})[p.f], at)) plan.push({sid, p, s: {keep: 'reject'}, check: false, out: true});
           return;
         }
         const s = fishSure((sug || {})[p.f]);
         if (s) plan.push({sid, p, s, check: autoCheck(p.f)});
       })
     );
-    const R = {add: 0, back: 0, reject: 0, check: 0, full: 0, off: 0};
+    const R = {add: 0, back: 0, out: 0, reject: 0, check: 0, full: 0, off: 0};
     if (!plan.length) return {F, R};
     plan.sort(
       (a, b) =>
@@ -255,13 +277,26 @@
         N[k] = {...(N[k] || {}), [f]: v};
         return FISHW[k];
       };
-    plan.forEach(({sid, p, s, check, back}) => {
+    plan.forEach(({sid, p, s, check, back, out}) => {
       const f = p.f;
       if (check) {
         L[f] = s.keep === 'add' ? '?a' : '?r';
         return R.check++;
       }
       if (!keepOn) return R.off++;
+      if (out) {
+        // Taken out: the add and the fields its code lists leave (fishUndo's drop; a map left empty stays {}: merge3), the
+        // photo is set aside, its code the run's plain reject.
+        delete N.add[f];
+        (I[f].d.w || []).forEach(k => {
+          if (!N[k] || !(f in N[k])) return;
+          N[k] = {...N[k]};
+          delete N[k][f];
+        });
+        N.seen[f] = 1;
+        L[f] = 'r';
+        return R.out++;
+      }
       if (s.keep === 'add') {
         const r = (room[sid] = room[sid] || new Set()),
           o = p.o || f,
@@ -285,7 +320,7 @@
     // A map the run created and left empty goes; one that was there stays (as {}: merge3 reads a missing map as removed).
     if (!F.add && !Object.keys(N.add).length) delete N.add;
     if (!F.seen && !Object.keys(N.seen).length) delete N.seen;
-    const n = R.add + R.back + R.reject + R.check;
+    const n = R.add + R.back + R.out + R.reject + R.check;
     if (n) N.auto = {...(F.auto || {}), [day]: L};
     return {F: n ? N : F, R};
   }
@@ -324,6 +359,45 @@
       c = FISHW[field];
     if (!x || !c || !(x.d.w || []).includes(field)) return F;
     return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[abr][tepc]*?)${c}`), '$1')}}};
+  }
+  // What the admin's pages show of what the run proposed (Pierre, 2026-11-19 20:57 and 20:59; rule A1): the game reads a
+  // value the run wrote (its log code lists it) from the pass's newer judgement, so the pages that show a photo's tags,
+  // ease, phase or crop do too, for reading only. sortReads: the fields of photo f of curation F (a subject's part) that the
+  // build reads from the pass's judgement j (tools/fish_game.py read_cur, which this follows): the run's add or brought-back
+  // add, not a Check, not undone, not moved with Not this, no re-judge proposal answered Keep mine (F.kept), the judgement a
+  // sure add; the fields are the ones its code lists (a value he edited took its letter off: fishOwn), and the judge's crop
+  // with the tags when the photo has no crop. A value with no log, or his, is never in the list.
+  function sortReads(F, f, j) {
+    F = F || {};
+    const x = idxOf(F)[f];
+    if (!x || !j || x.d.check || x.d.undone || (F.out || {})[f] || (F.kept || {})[f]) return [];
+    const s = fishSure(j);
+    if (!s || s.keep !== 'add') return [];
+    const w = [...(x.d.w || [])];
+    if (w.includes('tags') && !w.includes('crop') && !(F.crop || {})[f] && j.c) w.push('crop');
+    return w.filter(k => k !== 'ease' || j.e != null);
+  }
+  // Curation F as the pages read it: the same part with each field sortReads lists left out, so a reader that falls back to
+  // the pass's value when the curation has none (every display reader does) shows the one the game plays. Never given to a
+  // writer (rule A1: Publish would send the pass's values as his and lose the log's letters); one object per (F, sug),
+  // F itself when nothing reads differently.
+  const VIEWC = new WeakMap();
+  function sortView(F, sug) {
+    if (!F || !sug || typeof sug !== 'object') return F;
+    if (!VIEWC.has(F)) VIEWC.set(F, new WeakMap());
+    const memo = VIEWC.get(F);
+    if (memo.has(sug)) return memo.get(sug);
+    let N = F;
+    Object.keys(idxOf(F)).forEach(f =>
+      sortReads(F, f, sug[f]).forEach(k => {
+        if (!(f in (F[k] || {}))) return;
+        if (N === F) N = {...F};
+        if (N[k] === F[k]) N[k] = {...F[k]};
+        delete N[k][f];
+      })
+    );
+    memo.set(sug, N);
+    return N;
   }
   // When the admin answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the
   // agreement window follows the order he answered in, as autoStamp does for the corals. fishSigs: his keep on each
@@ -1455,6 +1529,9 @@
     flagGone,
     fishCompare,
     sortBack,
+    sortOut,
+    sortReads,
+    sortView,
     fishRun,
     fishUndo,
     fishOwn,

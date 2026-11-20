@@ -1980,6 +1980,16 @@ const fuJ = f => {
     j = ((SUG && SUG[TK]) || {})[f];
   return g && j ? {...g, ...j} : j || g || null;
 };
+// A subject's part of the curation as the pages read a photo's tags, ease, phase and crop: what the auto-sort wrote that the
+// pass has judged anew since is left out, so the pass's value shows, as the game plays it (autosort.js sortView; for
+// reading only: a writer takes the draft's own part, rule A1).
+const readView = F => sortView(F, SUG && SUG[TK]);
+// Whether a crop (or rotation) is on photo f as the game reads it: the draft's, or the pass's, which it reads anew in place of
+// the copy the auto-sort wrote.
+const cropOn = (F, f) => {
+  const j = ((SUG && SUG[TK]) || {})[f];
+  return !!((readView(F).crop || {})[f] || (j && j.c && sortReads(F, f, j).includes('crop')) || fishRot(f));
+};
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
 let FU_WALL = false; // this tab: a wink species' photos in play all shown, not only FISHT.wink of them (fishWinkFold)
 // A subject's ranks, broadest first (SUBJECTS sheets), else its unit's alone (SUBJECTS rank): the one helper every
@@ -2037,7 +2047,10 @@ const fuImr = u =>
 // crop, [0, 0, 1, 1] = uncropped on purpose), else the judging pass's; and the admin's rotation (fish rot).
 const fuP = p =>
   p
-    ? {...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT[TK] || {}).rot || {})[p.f])}}
+    ? {
+        ...p,
+        j: {c: (readView(DRAFT[TK] || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT[TK] || {}).rot || {})[p.f])}
+      }
     : p;
 // A node's page in the Key view (where the other pages send a family: Coverage, reports, Pairs), and in the Tree view on
 // screen (TT_VIEW: its tree, its crumbs, its cards and selects).
@@ -2097,13 +2110,14 @@ function fuFam(u, D) {
     ok = s => sp[s] && !sp[s].out,
     // its species', then its genera's genus-level photos (gl: the genus's own row, under its id)
     ids = [...u.species.filter(ok), ...u.genera.map(g => g.id).filter(g => (D.play[g] || []).length)],
-    rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
+    V = readView(D.F), // the order, the cover and the needs read the ease and tags as the game does
+    rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], V, u.id, sid, fuJ)])),
     k = (D.F.genera || {})[u.id] || {},
     all = ids.flatMap(s => [...rows[s].feat, ...rows[s].rest]),
     // the admin's pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
     // as the game's card cover: reference-level first)
-    cover = fishCoverOf(all, D.F, u.id, fuJ);
-  return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
+    cover = fishCoverOf(all, V, u.id, fuJ);
+  return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, V, fuJ), n: u.species.filter(ok).length};
 }
 const fuName = sid => (FISHC.species[sid] || {}).name || (FISHC.genera[sid] ? FISHC.genera[sid].name + ' sp.' : sid);
 // A species whose candidate photos come from another iNaturalist taxon (fish.json photoTaxon: the Pacific form
@@ -2181,9 +2195,10 @@ function fishTile(p, o) {
     cand = !!(FISHC && FISHC.byF[f]),
     x = (o.XI || fishIdx(F))[f],
     J = fuJ(f),
-    ease = (F.ease || {})[f] || (J || {}).e,
-    ph = fishPhase(p, J, F),
-    jt = fuJt(F, f),
+    V = readView(F), // the draft as the game reads it (tags, ease, phase, crop the pass judged anew since): reading only
+    ease = (V.ease || {})[f] || (J || {}).e,
+    ph = fishPhase(p, J, V),
+    jt = fuJt(V, f),
     num = (o.st || {}).num,
     isCover = !!(o.cover && o.cover.f === f),
     // On a node's page only (o.path: the photo's node ids by rank, broadest first, from its unit: TREE_BUILD tree; o.lv:
@@ -2218,7 +2233,7 @@ function fishTile(p, o) {
         : 'Cover',
     rows = !out && (o.play || cand) && FT_OPEN.has(f),
     btn = (a, t, more = '') => `<button type="button" data-fu="${a}"${more} title="${t}">${t}</button>`,
-    crop = !!((F.crop || {})[f] || fishRot(f));
+    crop = cropOn(F, f);
   FT_REC[f] = p;
   const acts = out
     ? `<span class="adm-src view">${out}</span>`
@@ -2235,7 +2250,7 @@ function fishTile(p, o) {
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
     <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${refLevel({e: ease, jt}) ? '<span class="adm-src view" title="Reference level: ease 4-5 with the reference look">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
-    <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
+    <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(V, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (TREE_BUILD tree page): st {num} for a featured photo; cover: the page node's cover in force; path: the
 // photo's node ids from its unit down (its unit, its genus, its species for fish), lv: the page's node along it (★ Cover
@@ -3214,7 +3229,7 @@ function renderFishCov() {
   status();
   const U = FISHC.units,
     D = fuData(),
-    C = fishCov(U, D.play, FISHC.species, FISHC.cand, D.F, fuJ),
+    C = fishCov(U, D.play, FISHC.species, FISHC.cand, readView(D.F), fuJ),
     UB = Object.fromEntries(U.map(u => [u.id, u])),
     imrOn = FU_IMR === 'imr',
     inImr = r => {
@@ -3328,7 +3343,7 @@ function fishTodoLines() {
   if (!(M.todo && M.todo.k.every((x, i) => x === k[i]))) {
     const F = DRAFT[TK] || {},
       UB = Object.fromEntries(FISHC.units.map(u => [u.id, u])),
-      C = fishCov(FISHC.units, M.D.play, FISHC.species, FISHC.cand, M.D.F, fuJ),
+      C = fishCov(FISHC.units, M.D.play, FISHC.species, FISHC.cand, readView(M.D.F), fuJ),
       Q = fishQueue(FISHC.cand, (SUG && SUG[TK]) || {}, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
       pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
       L = [
@@ -3548,11 +3563,12 @@ function renderFishReview(kind) {
     F = D.F,
     sp = FISHC.species,
     L = u.species.flatMap(s => (D.play[s] || []).map(p => ({...p, sid: s}))),
-    ease = p => ((F.ease || {})[p.f] != null ? [F.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
-    jt = p => ((F.tags || {})[p.f] ? [F.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
+    V = readView(F), // the values as the game reads them: the pass's where it judged anew what the auto-sort copied (shown as its guess)
+    ease = p => ((V.ease || {})[p.f] != null ? [V.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
+    jt = p => ((V.tags || {})[p.f] ? [V.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
     phOf = p => {
-      const mine = p.f in (F.phase || {}) || p.f in (F.tags || {});
-      return [fishPhase(p, fuJ(p.f), F), !mine];
+      const mine = p.f in (V.phase || {}) || p.f in (V.tags || {});
+      return [fishPhase(p, fuJ(p.f), V), !mine];
     };
   // The rows: by ease 5-1 (then not judged), or by phase (juvenile, intermediate, male, female, none).
   const rows =
@@ -3572,7 +3588,7 @@ function renderFishReview(kind) {
   const tile = p => {
     const [e, eAuto] = ease(p),
       [code, tAuto] = jt(p),
-      phMine = (F.phase || {})[p.f],
+      phMine = (V.phase || {})[p.f],
       phPass = (fuJ(p.f) || {}).ph || '',
       ph = phMine !== undefined ? phMine : phPass,
       s = sp[p.sid] || {};
@@ -3709,7 +3725,7 @@ function renderFishMont() {
     D = fuData(),
     F = D.F,
     P = typeof montPairs === 'function' ? montPairs(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ), U) : fishPairs(U),
-    ph = p => fishPhase(p, fuJ(p.f), F),
+    ph = p => fishPhase(p, fuJ(p.f), readView(F)),
     famL = id => (u => fuFam(u, D).all)(UB[id]),
     STRIP = 24;
   const thumb = (p, side, x, on) =>
@@ -6810,7 +6826,7 @@ async function fishAutoUndo(f) {
   );
 }
 const fishToast = R =>
-  `Fish auto-sort: ${R.add} proposed in, ${R.back ? `${R.back} back in, ` : ''}${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
+  `Fish auto-sort: ${R.add} proposed in, ${R.back ? `${R.back} back in, ` : ''}${R.out ? `${R.out} taken out by a newer judgement, ` : ''}${R.reject} set aside${R.check ? `, ${R.check} to check` : ''}${R.full ? ` (${R.full} wait: their species is at its target)` : ''}. Publish sends them.`;
 const autoToast = R =>
   `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
 // One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value the admin changed since stays),
@@ -8180,7 +8196,7 @@ async function start() {
     // which would share the line and the main thread with the first page. One Undo step.
     const fishLater = () =>
       fishAutoRun().then(R => {
-        if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+        if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
       });
     'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
   };
@@ -8922,7 +8938,7 @@ function pstatsFish(S, here) {
   const D = fuDataM().D,
     F = D.F,
     sp = FISHC.species,
-    C = fishCov(FISHC.units, D.play, sp, FISHC.cand, F, fuJ),
+    C = fishCov(FISHC.units, D.play, sp, FISHC.cand, readView(F), fuJ),
     // its photos in play, each with its family
     play = treePlayOf(D, FISHC.units, sp),
     PA = answersBy(photoAnswers(rowsOf(S)), treePid),

@@ -223,11 +223,19 @@ const adminVm = (extra = '') => {
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
     AF = fs.readFileSync(path.join(ROOT, 'admin-fish.js'), 'utf8'),
     H = {},
-    ctx = vm.createContext({...CORE, rotNorm, document: {addEventListener: (t, fn) => (H[t] = fn)}, navigator: {}});
+    ctx = vm.createContext({
+      ...CORE,
+      sortView: require('../autosort.js').sortView,
+      rotNorm,
+      document: {addEventListener: (t, fn) => (H[t] = fn)},
+      navigator: {}
+    });
   vm.runInContext(
     'let R2 = true, AWAY = false, DRAFT = {fish: {}}, SAVED = {}, TK = "fish", IDX = photoIndex();\n' +
       'const photoIdx = () => IDX, photoLook = f => IDX.f.get(f), photoRetry = () => false;\n' +
       'class HTMLImageElement {}\n' +
+      'let SUG = null;\n' +
+      block(A, 'const readView = F =>', '\n', {file: 'admin.js', through: true}) +
       block(A, 'const same = (a, b) => ', '\n', {file: 'admin.js', through: true}) +
       block(A, 'const ver = p => ', '\n', {file: 'admin.js', through: true}) +
       block(A, 'const img = (p, s) =>', '\n// A draft rotation drawn on a preview', {file: 'admin.js'}) +
