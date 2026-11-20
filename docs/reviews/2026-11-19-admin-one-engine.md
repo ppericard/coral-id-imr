@@ -212,6 +212,22 @@ green checks; refactors of this size probably run longer.
    views and three Journeys, for each subject, identical before and after (1280 px, the clock fixed).
 4. **One Tree** (Dup-1, second half; admin L): `renderTree(S)`, the builders declared in one place. Depends on 0 and
    3.
+   **Done** (spec/admin-tree.md "The tab and its two views", `tests/treebuild.test.js`): `admin.js` `renderTree(S, id,
+   view)` draws every subject's Tree page (the tree, the bar, the selects, All | IMR, Tag…, the drill-down, the content
+   editor's boxes, the cards, the shared photo lists); `TREE_BUILD` holds the two builders, picked by the declared shape
+   (`SUBJECTS` `flat`: `treeShape`, `treeBuild`) as `reg(S)` is: `flat` (the corals' `ctTree`, `ctRow`, `ctFilters`,
+   `coralLive`) and `tree` (the fish's and the sea slugs' `fuTreeOf`, `fuWormsOf`, `fuRow`, `fuFilters` and their node
+   page). `tvTree`, the help key and `admin-nodephotos.js` `NODE_PHOTOS` read the same shape. Gone: `renderFishUnits`,
+   `renderCoralTree`, `fuTreeMount` (now the shared `treeMount`), `fuTagK`, `ctTagK`, and the three `ASUBJ.rank ===
+   'family'` proxies of the Tree (the dispatch, `tvTree`, the help key) and `NODE_PHOTOS[ASUBJ.rank]`. The ratchet: 251
+   occurrences to 246, 41 file-proxy pairs to 40 (`ASUBJ.rank` 21 to 17, `DATA.gen` in `admin-coraltree.js` 2 to 1: the
+   genus page reads `reg(S)`), five names fewer. Checked: the demo admin's HTML of 61 Tree pages (each subject, Key and
+   WoRMS, every node kind, plain, IMR on and four tags), before and after at 1280 px, the clock fixed: the same but for
+   the unified behaviour, each the integrator's call (admin only): the view alone opens on its first node of the broadest
+   rank for every subject (a coral genus, was the first lecture group; WoRMS's first genus, was its first family; the
+   fish and the sea slugs as before); a tree subject's key group page has the drill-down select (the corals' and the
+   other pages had it); the WoRMS families' select in the tree's order; the sea slugs' families' select labelled Family
+   (was Genus). Photo stats › Taxa's tree half still reads `FISHC` (Dup-10, not the Tree's).
 5. **One Candidates swiper** (Dup-3; admin L, the biggest single duplicate after the Tree). Depends on 2 and 3.
 6. **One band review** (Dup-4 + Dup-5; admin L). Adds `admin.review` (the axes); the growth-form axis is the corals'
    named hook.
