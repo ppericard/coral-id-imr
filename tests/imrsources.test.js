@@ -10,10 +10,10 @@ const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const S = read('tools/imr_sources.json'),
   D = read('data.json'),
-  X = read('excluded.json');
+  X = read('data/excluded.json');
 const FOUND = new Set(['original', 'copy-only', 'none']);
 
-// Pierre's Publish can exclude a lecture photo (it leaves data.json course for excluded.json) or restore one: a record
+// Pierre's Publish can exclude a lecture photo (it leaves data.json course for data/excluded.json) or restore one: a record
 // stays valid either way, so the test only asks that each record names a lecture photo the data files know.
 test('every record names a known IMR lecture photo, and the 120 of the study are there', () => {
   const known = new Set([...Object.values(D.course).flatMap(L => L.map(p => p.f)), ...D.cmp.map(p => p.f), ...Object.keys(X.photos)]);
@@ -42,8 +42,8 @@ test('an author or a licence only comes with the page that states it', () => {
 // The credits: each lecture photo traced
 // to its original carries on its course record its credit a ("<photographer> / <site>") and pg (the page that states it,
 // the credit's link), as tools/apply_imr_sources.py writes them; one not traced carries neither. Never o (the draw's
-// observation and the photo memory's key: two photos of one species page are two colonies) nor src (an online original).
-// The course records are data.json course and the ones Pierre's exclusions archived in excluded.json (tools/excluded.py:
+// observation and the photo memory's key: two photos of one species page are two colonies) nor src (written by tools/apply_imr_originals.py).
+// The course records are data.json course and the ones Pierre's exclusions archived in data/excluded.json (tools/excluded.py:
 // a Publish may move one there at any time, so every traced photo is in one or the other).
 test('course records: a traced lecture photo credits its photographer and links its page; never o or src', () => {
   const C = require('../core.js'),
@@ -56,7 +56,9 @@ test('course records: a traced lecture photo credits its photographer and links 
   for (const [f, r] of Object.entries(S.photos)) {
     const p = by[f];
     if (!p) continue; // the comparison picture (data.json cmp)
-    assert.ok(p.imr && !('o' in p) && !('src' in p), f + ': no o or src on a lecture photo');
+    // No o on a lecture photo; src (the online original, ROADMAP "IMR lecture photos never upscaled") only on a traced one.
+    assert.ok(p.imr && !('o' in p), f + ': no o on a lecture photo');
+    assert.strictEqual(p.src, r.found === 'original' ? r.source.image : undefined, f + ': src is the traced original');
     if (r.found === 'original') {
       n++;
       assert.strictEqual(p.a, `${r.source.author} / ${r.source.site}`, f);
@@ -73,7 +75,35 @@ test('course records: a traced lecture photo credits its photographer and links 
   require('child_process').execFileSync('python3', ['tools/apply_imr_sources.py', '--check'], {cwd: ROOT});
 });
 
-// A traced photo Pierre excludes (its record archived in excluded.json by tools/excluded.py) keeps its credit, so a
+// The Corals of the World originals (ROADMAP "IMR lecture photos never upscaled; the Corals of the World captures replaced
+// by their originals", Pierre, 2026-11-18, "C12 A+D"): every traced original has a frame in tools/imr_frames.json, its
+// record says how it was cut (cr, ro) and its shape, its files live on R2 only (the screenshots are out of img/), the
+// 34 photos with no source stay as they were, in img/, with no src (Pierre, 2026-11-20), and the tool's file is as written.
+test('lecture originals: every traced photo is framed, recorded and off img/; the untraced stay in img/', () => {
+  const F = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'imr_frames.json'), 'utf8')).photos,
+    archived = Object.values(X.photos)
+      .filter(x => x.in === 'course' && x.p)
+      .map(x => x.p),
+    by = Object.fromEntries([...Object.values(D.course).flat(), ...archived].map(p => [p.f, p])),
+    traced = Object.entries(S.photos)
+      .filter(([, r]) => r.found === 'original')
+      .map(([f]) => f);
+  assert.deepStrictEqual(Object.keys(F).sort(), traced.sort(), 'a frame for every traced original, and only those');
+  for (const [f, fr] of Object.entries(F)) {
+    const p = by[f];
+    assert.deepStrictEqual(p.cr, fr.cr, f + ': cr');
+    assert.strictEqual(p.ro, fr.ro, f + ': ro');
+    assert.ok(Math.abs(p.ar - fr.px[0] / fr.px[1]) < 0.02, f + ': ar matches the cut');
+    assert.ok(fr.px[0] >= 500 && fr.px[1] >= 500 * 0.5, f + ': a real picture size');
+    for (const s of ['', '-m', '-s', '-t']) assert.ok(!fs.existsSync(path.join(ROOT, 'img', `${f}${s}.webp`)), f + ': lives on R2 only');
+  }
+  for (const [f, r] of Object.entries(S.photos))
+    if (r.found !== 'original' && by[f] && by[f].imr) assert.ok(fs.existsSync(path.join(ROOT, 'img', `${f}.webp`)), f + ': stays in img/');
+  require('child_process').execFileSync('python3', ['tools/apply_imr_originals.py', '--check'], {cwd: ROOT});
+  require('child_process').execFileSync('python3', ['tools/fetch_imr_originals.py', '--plan'], {cwd: ROOT});
+});
+
+// A traced photo Pierre excludes (its record archived in data/excluded.json by tools/excluded.py) keeps its credit, so a
 // Restore brings it back credited; the tool credits it there and does not call it missing.
 test('apply_imr_sources: a traced photo archived by an exclusion is credited there, not missing', () => {
   const out = JSON.parse(

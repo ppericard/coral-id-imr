@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // No coral skeleton photo anywhere (rule P6, Pierre, 2026-11-09: "coral skeletons must be excluded, because you cannot
 // see the features properly"). judging/skeletons.json lists the photos judged by eye; tools/apply_skeletons.py marks
-// them skel: 1 in data.json / cand.json; core.js applyCuration drops them from every list, so the games, the wrong-answer
+// them skel: 1 in data.json / data/cand.json; core.js applyCuration drops them from every list, so the games, the wrong-answer
 // comparisons, the genus sheets, the Coral ID Key, Memory and Coral basics never meet one. Checked on the real files and
 // on a made-up genus where a skeleton photo is pinned, made the cover, added and sent to the comparisons.
 const test = require('node:test'),
@@ -37,15 +37,15 @@ function shown(d) {
 test('the list names known photos, each once, with its genus and why', () => {
   const J = read('judging/skeletons.json');
   assert.ok(J.note && Object.keys(J.photos).length > 0);
-  const all = new Set([...records(read('data.json')), ...records(read('cand.json'))].map(p => p.f));
+  const all = new Set([...records(read('data.json')), ...records(read('data/cand.json'))].map(p => p.f));
   Object.entries(J.photos).forEach(([f, x]) => {
     assert.ok(all.has(f), `${f}: in no data file (remove it from the list once it left the data)`);
     assert.ok(x.g && x.note, `${f}: genus and note`);
   });
 });
 
-test('data.json and cand.json carry skel exactly on the listed photos (python3 tools/apply_skeletons.py)', () => {
-  [...records(read('data.json')), ...records(read('cand.json'))].forEach(p =>
+test('data.json and data/cand.json carry skel exactly on the listed photos (python3 tools/apply_skeletons.py)', () => {
+  [...records(read('data.json')), ...records(read('data/cand.json'))].forEach(p =>
     assert.strictEqual(!!p.skel, SKEL.has(p.f), `${p.f}: skel ${p.skel ? 'set' : 'missing'}`)
   );
 });

@@ -39,7 +39,7 @@ const metaOf = (subject = C.replaySubject()) => {
       k === 'judged'
         ? {ph: {}, fph: A.photoMetaFish(C.treeGameRead(rd(S.admin.files.gm)))}
         : k
-          ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))}
+          ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('data/metrics.json'))}
           : {ph: {}};
   return rk ? {...m, rk} : m;
 };
@@ -192,7 +192,7 @@ if (require.main === module) {
       return;
     }
     let rows;
-    if (argv.includes('--demo')) rows = A.demoLog(rd('data.json'), Date.now() - 3 * 864e5, {cur: rd('curation.json'), qual: rd('quality.json'), met: rd('metrics.json')});
+    if (argv.includes('--demo')) rows = A.demoLog(rd('data.json'), Date.now() - 3 * 864e5, {cur: rd('curation.json'), qual: rd('quality.json'), met: rd('data/metrics.json')});
     else if (arg('--in')) {
       const J = JSON.parse(fs.readFileSync(arg('--in'), 'utf8'));
       rows = C.subjRows(Array.isArray(J) ? J : J.rows, subject);

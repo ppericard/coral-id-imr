@@ -10,7 +10,7 @@ J = lambda p: json.load(open(os.path.join(ROOT, p)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from datajson import load_all
 import photos as ph  # where a photo's files are: img/, or R2 only (Photos out of the repo)
-d, c = load_all(), J('curation.json')  # data.json + the candidates waiting in cand.json
+d, c = load_all(), J('curation.json')  # data.json + the candidates waiting in data/cand.json
 VIEWS = ['wide', 'medium', 'macro']
 X = c.get('exclude', {})
 FJ = J('forms.json')

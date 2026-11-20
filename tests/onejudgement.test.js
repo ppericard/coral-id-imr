@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // One judgement per photo (Pierre, 2026-11-15): a fish photo met both as a reference photo (tools/fish_refs.json fi<id>,
-// its code in tools/fish_judge.json) and as a candidate (fish-cand.json fish-<species>-cand-<id>, judged in
+// its code in tools/fish_judge.json) and as a candidate (data/fish-cand.json fish-<species>-cand-<id>, judged in
 // judging/fish/<species>.json) is one photo (tools/fish_game.py pid) with one judgement, the candidate's judging file
 // (tools/fish_judge.py cand_judgements, one_judgement; tools/fish_game.py inputs). tools/judging_fish.py one copies it
 // onto the reference copies, and its --check fails on any divergence: run here on the repository's own files, so a new
@@ -59,8 +59,8 @@ function world(dir, judge) {
   };
   w('fish.json', FISH);
   w('curation.json', {fish: {}});
-  w('fish-cand.json', {v: 1, cand: {s001: []}});
-  w('suggest.json', {fish: {}});
+  w('data/fish-cand.json', {v: 1, cand: {s001: []}});
+  w('data/suggest.json', {fish: {}});
   w('fish-game.json', {photos: {}});
   w('tools/fish_refs.json', {photos: {s001: [REF(1, 91), REF(2, 92), REF(3, 93), REF(4, 94), REF(5, 95), REF(6, 96)]}});
   w('tools/fish_judge.json', judge);
@@ -81,7 +81,7 @@ const JUDGE = {
 };
 
 test('a photo judged twice yields one judgement: its candidate judgement, in the build and in the reference copy', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'one-'));
+  const dir = mkTmp('one-');
   try {
     world(dir, JUDGE);
     const out = py(
@@ -144,7 +144,7 @@ JF.cmd_one(${args.includes('--check') ? 'True' : 'False'}, ${JSON.stringify(dir)
 // with its code onto the reference route (tools/fish_judge.py one_crops); a candidate judgement with none leaves the
 // reference copy's own crop, and a reference photo with no candidate judgement keeps its own.
 test("the candidate judgement's crop goes with its code: a reference photo in play by itself is cut by it", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'one-crop-'));
+  const dir = mkTmp('one-crop-');
   try {
     world(dir, {...JUDGE, crops: {fi1: [0.1, 0, 1, 1], fi2: [0, 0.2, 1, 1], fi5: [0, 0, 0.9, 0.9]}});
     const f = path.join(dir, 'judging', 'fish', 's001.json'),
@@ -179,3 +179,10 @@ test('no photo has two judgements that disagree (tools/judging_fish.py one --che
   const r = spawnSync('python3', [path.join(ROOT, 'tools', 'judging_fish.py'), 'one', '--check'], {cwd: ROOT, encoding: 'utf8'});
   assert.strictEqual(r.status, 0, r.stdout.split('\n').slice(-12).join('\n') + r.stderr);
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

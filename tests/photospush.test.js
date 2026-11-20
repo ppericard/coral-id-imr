@@ -55,7 +55,7 @@ function step(jobName, name) {
 }
 
 // The throwaway world: HOME and git config isolated, every commit dated and named.
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'photospush-'));
+const TMP = mkTmp('photospush-');
 test.after(() => fs.rmSync(TMP, {recursive: true, force: true}));
 const ENV = {
   PATH: process.env.PATH,
@@ -81,14 +81,14 @@ const fresh = () => path.join(TMP, `w${++n}`);
   git(TMP, 'init', '-q', '-b', 'main', seed);
   for (const f of [
     'data.json',
-    'cand.json',
-    'excluded.json',
+    'data/cand.json',
+    'data/excluded.json',
     'fish-game.json',
     'fish-photos.json',
-    'fish-cand.json',
+    'data/fish-cand.json',
     'tools/fish_refill.json',
     'tools/fish_refs.json',
-    'seaslug-cand.json',
+    'data/seaslug-cand.json',
     'seaslug.json',
     'seaslug-game.json'
   ])
@@ -160,9 +160,9 @@ test("photos-push commits the photos job's change on top of a main that moved, s
   const change = build(d => {
     write(d, 'data.json', '{"a": 2}\n');
     // The licence refresh's sources of the fish photos in play (tools/licences.py).
-    write(d, 'fish-cand.json', '{"a": 2}\n');
+    write(d, 'data/fish-cand.json', '{"a": 2}\n');
     write(d, 'tools/fish_refs.json', '{"a": 2}\n');
-    write(d, 'seaslug-cand.json', '{"a": 2}\n'); // the sea slugs' candidates, refreshed too
+    write(d, 'data/seaslug-cand.json', '{"a": 2}\n'); // the sea slugs' candidates, refreshed too
     write(d, 'img/b.webp', Buffer.concat([BIN, BIN]));
     fs.rmSync(path.join(d, 'img/a.webp'));
     write(d, 'tools/x.py', 'print(2)\n'); // not this job's file: the job's own git add leaves it out
@@ -185,8 +185,8 @@ test("photos-push commits the photos job's change on top of a main that moved, s
     'A\timg/b.webp',
     'D\timg/a.webp',
     'M\tdata.json',
-    'M\tfish-cand.json',
-    'M\tseaslug-cand.json',
+    'M\tdata/fish-cand.json',
+    'M\tdata/seaslug-cand.json',
     'M\ttools/fish_refs.json'
   ]);
   assert.deepStrictEqual(
@@ -282,7 +282,7 @@ test("fish-push commits only the fish job's two files", () => {
   );
   const change = build(
     d => {
-      write(d, 'fish-cand.json', '{"a": 5}\n');
+      write(d, 'data/fish-cand.json', '{"a": 5}\n');
       write(d, 'tools/fish_refill.json', '{"a": 6}\n');
       write(d, 'data.json', '{"a": 7}\n'); // left out by the job's own git add
     },
@@ -291,7 +291,7 @@ test("fish-push commits only the fish job's two files", () => {
   assert.ok(push(change, 'fish-push').ok);
   assert.strictEqual(git(ORIGIN, 'log', '-1', '--format=%s', 'main'), 'Candidate photos: refill the short fish species');
   assert.deepStrictEqual(git(ORIGIN, 'diff', '--name-only', 'main~1', 'main').split('\n').sort(), [
-    'fish-cand.json',
+    'data/fish-cand.json',
     'tools/fish_refill.json'
   ]);
 });
@@ -357,3 +357,10 @@ test('pip installs only hashed packages', () => {
   assert.ok(reqs.length >= 1);
   reqs.forEach(r => assert.match(r, /^[a-z0-9._-]+==[\w.]+( +--hash=sha256:[0-9a-f]{64})+\s*$/i, r.slice(0, 60)));
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

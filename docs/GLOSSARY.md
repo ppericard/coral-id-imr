@@ -53,7 +53,7 @@ each is listed. Rule IDs (C3, D4…) are in [the rules index](rules/README.md#th
 - **ID tip** (`qt`): a short line telling a unit from the others (rule C3).
 - **Coral ID Key**: the Identify page: tap the clues you see, get a ranked shortlist. `proto/idkey.js`.
 - **Candidate**: a photo found by a tool and waiting for Pierre's decision in the admin. Waiting coral candidates are in
-  `cand.json`, fish in `fish-cand.json`, sea slugs in `seaslug-cand.json`.
+  `data/cand.json`, fish in `data/fish-cand.json`, sea slugs in `data/seaslug-cand.json`.
 - **In play**: a photo the games draw from. The fish and sea-slug photos in play are in `fish-game.json` and
   `seaslug-game.json`.
 - **Curation**: Pierre's choices on photos and content, kept in `curation.json` and written only by the admin's
@@ -63,7 +63,7 @@ each is listed. Rule IDs (C3, D4…) are in [the rules index](rules/README.md#th
 - **Presence rule**: a species counts only where it is confirmed near Dauin or in the Philippines (rule C8,
   `tools/presence.py`).
 - **Point**: a discrepancy between sources, or a question for the trainers, kept for Pierre to settle (rule C5,
-  `points.json`).
+  `data/points.json`).
 - **Report**: a player's message sent through "Send feedback"; Pierre handles it in the admin.
 - **R2**: the Cloudflare bucket that hosts the photos; the app falls back to a photo's online original.
 - **Instance**: the organisation the content is built for (today IMR); `tools/instance.json`.
