@@ -10,6 +10,7 @@
 // stay optional; kept in reefid-basics (fin), and as the achievement "Coral basics" (feat _basics, synced with the
 // achievements record, progress.js), which the Home line and the first-launch offers read (app.js basicsDone).
 // Add ?edit=1 to print photo coordinates on a tap and show the tap targets (for placing labels).
+// The pieces the subjects' own modules share are BASICS_KIT, at the end of this file.
 (() => {
   /* ---------- photos: coordinates are pixels of the 960 px file (w 960, h given), crops are [x, y, w, h] ---------- */
   const PH = {
@@ -968,3 +969,80 @@
     }
   }
 })();
+
+// The pieces the subjects' own basics modules share (Fish basics, proto/fishbasics.js; Sea slug basics,
+// proto/seaslugbasics.js), read by them at render time, never at load: drawCheck, a check whose options are drawings, in
+// a new order each time; unitFigs, a few units' covers (the Learn tiles' photo, app.js cover), each enlarging with its
+// credit; groupView, one group of the module's groups step and its units' covers; groupCheck, that step's optional check,
+// a unit's cover to place among three groups (two when only two hold units), blind until answered. A group is
+// {gr: {n, title}, units}; the module says how a group is named (name) and asked (q, alt, line).
+const BASICS_KIT = (() => {
+  function drawCheck(kind, q, opts, key, why) {
+    const o = shuffle(opts);
+    return {type: 'draw', kind, q, opts: o, a: o.indexOf(key), why};
+  }
+  function unitFigs(units, cls = '') {
+    const flat = [];
+    const html = `<div class="bx-gfam${cls ? ' ' + cls : ''}">${units
+      .map(n => {
+        const p = cover(GX(n));
+        if (p) flat.push({...p, genus: n});
+        return `<figure>${p ? `<button type="button" class="zoom bx-fx" data-x="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '(max-width: 599.98px) 30vw, 150px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<figcaption>${esc(unameT(n))}</figcaption></figure>`;
+      })
+      .join('')}</div>`;
+    return {html, bind: fig => fig.querySelectorAll('[data-x]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.x))))};
+  }
+  // A view of the groups step: {id, name, short, icon, say, src} from the module (W(g)), the figure its units' covers.
+  function groupView(g, W) {
+    let last = null;
+    return {
+      id: 'g' + g.gr.n,
+      ...W(g),
+      fig: () => (last = unitFigs(g.units)).html,
+      bind: fig => last && last.bind(fig)
+    };
+  }
+  // The check: groups() the groups shown, name(gr) a group's name on its button, q the question, alt the photo's text
+  // alternative, line(unit, gr) the answer's line.
+  function groupCheck(box, E, {groups, name, q, alt, line}) {
+    const gs = groups();
+    let t = null;
+    for (let k = 0; k < 20 && !t && gs.length > 1; k++) {
+      const {gr, units} = pick(gs),
+        u = pick(units),
+        p = cover(GX(u));
+      if (p) t = {gr, u, p};
+    }
+    if (!t) {
+      box.innerHTML = '<p class="note">No photo to place right now.</p>';
+      return;
+    }
+    const opts = shuffle([t.gr, ...shuffle(gs.map(x => x.gr).filter(g => g.n !== t.gr.n)).slice(0, 2)]),
+      one = {...t.p, genus: t.u};
+    box.innerHTML = `<p class="bx-qt">${esc(q)}</p><div class="bx-cphw"><button type="button" class="bx-cph" aria-label="Enlarge photo"><img ${thumb(t.p, '(max-width: 599.98px) 90vw, 460px')} alt="${esc(alt)}" loading="lazy"></button></div><div class="choices col">${opts
+      .map(g => `<button type="button" class="choice" data-j="${g.n}">${esc(name(g))}</button>`)
+      .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
+    box.querySelector('.bx-cph').onclick = () => zoom([one], 0, {blind: () => !box.querySelector('.choice.right')});
+    box.querySelectorAll('[data-j]').forEach(
+      b =>
+        (b.onclick = () => {
+          if (box.querySelector('.choice.right')) return;
+          const j = Number(b.dataset.j),
+            ok = j === t.gr.n;
+          box
+            .querySelectorAll('[data-j]')
+            .forEach(x => x.classList.add(Number(x.dataset.j) === t.gr.n ? 'right' : x === b ? 'wrong' : 'off'));
+          E.src(box.querySelector('.bx-cphw'), one);
+          E.fb(box, ok, `${esc(line(t.u, t.gr))} ${E.again}`, {
+            g: t.u,
+            a: opts.find(g => g.n === j).title,
+            ph: [t.p.f],
+            m: E.m
+          });
+          box.querySelector('.bx-again').onclick = () => groupCheck(box, E, {groups, name, q, alt, line});
+          if (ok) E.markDone();
+        })
+    );
+  }
+  return {drawCheck, unitFigs, groupView, groupCheck};
+})(); // end of BASICS_KIT
