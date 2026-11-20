@@ -46,13 +46,13 @@ carry the pass's judgment in Candidates). The switch's and the tab's counts stay
 ### Points to handle
 
 Pierre settles most open points himself, from a page, never a text list. Inbox › To do › Points `#inbox/todo/points`
-(`renderPoints`) lists the points of **`points.json`** (repository root, written by agents, never by the admin: `kinds`
+(`renderPoints`) lists the points of **`data/points.json`** (written by agents, never by the admin: `kinds`
 {key: label} and `points` [{`id` stable, `kind` trainer / names / sources / content, `subj` a subject id of `SUBJECTS`,
 `at` the date added, `title` the list's line, `q` the question in plain words, `ctx` context lines, `ask` the answer field
-under each photo, `photos` [{`f` a photo id of `data.json` / `cand.json`, with `t`, `a`, `o`, `src` as a fallback copy} or
+under each photo, `photos` [{`f` a photo id of `data.json` / `data/cand.json`, with `t`, `a`, `o`, `src` as a fallback copy} or
 {`none`: why a slot is empty}], `src` [{`t`, `u`}]}]; the file's order is the priority; neutral wording, rule C1). Its
 shape is checked by `points.js` `pointsProblems` (`tests/points.test.js`), and a point with a problem is left out of the
-admin. Loaded once at start (`points.json?v=1`, stamped at deploy). Pure logic in **`points.js`** (admin only:
+admin. Loaded once at start (`data/points.json?v=1`, stamped at deploy). Pure logic in **`points.js`** (admin only:
 `PT_STATUS`, `pointsOrder`, `pointAge`, `photoKey`).
 
 - **The list**: Open first, Stand-by below (muted), Resolved and Dismissed folded with their counts (the Kept style);

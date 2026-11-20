@@ -103,7 +103,7 @@ def read(root, cur):
                 return json.load(fh)
         except FileNotFoundError:
             return None
-    S, cand = get('suggest.json'), get('fish-cand.json')
+    S, cand = get('data/suggest.json'), get('data/fish-cand.json')
     if not S or not cand:
         return cur
     return fish_game.read_cur(cur, cand, S.get('fish') or {}, S.get('by'))

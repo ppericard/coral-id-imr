@@ -3,7 +3,7 @@
 #   python3 tools/judging_import.py --check [Genus ...]   check only, write nothing (exit 1 on any error)
 #   python3 tools/judging_import.py [--by astra] [Genus ...]   check, then import every genus that passes
 # Import writes:
-#   suggest.json   quality ratings (kept so tools/photo_quality.py re-runs keep them); per photo: view / genus / multi suggestions; near-duplicates; candidates worth adding
+#   data/suggest.json   quality ratings (kept so tools/photo_quality.py re-runs keep them); per photo: view / genus / multi suggestions; near-duplicates; candidates worth adding
 #                  (listed one at a time in admin.html Triage: Accept runs the normal admin action, Dismiss is kept)
 #   forms.json     "gf" {f: IMR growth form letter, + 'p' when polyps are extended} (dashed first guess in the admin);
 #                  unsure ones also go to "gunsure". The legacy keys "form" and "unsure" are left untouched.
@@ -127,7 +127,7 @@ def main():
     sys.exit(1 if bad else 0)
 
 def imp(ok, by):
-    S = load('suggest.json', {}) or {}
+    S = load('data/suggest.json', {}) or {}
     S = {'v': 1, 'note': 'Suggestions from an outside judging agent, imported by tools/judging_import.py. Shown in admin.html Triage; '
          'Pierre accepts (normal admin action) or dismisses (curation.json "seen"). Never edit by hand.',
          'by': S.get('by', {}), 'photo': S.get('photo', {}), 'quality': S.get('quality', {}), 'dup': S.get('dup', []), 'add': S.get('add', {}),
@@ -178,13 +178,13 @@ def imp(ok, by):
     S['photo'] = dict(sorted(S['photo'].items())); S['quality'] = dict(sorted(S['quality'].items()))
     F['gunsure'] = sorted(unsure)
     F['gf'] = dict(sorted(F['gf'].items())); Q['q'] = dict(sorted(Q['q'].items()))
-    dump('suggest.json', S, 1); dump('quality.json', Q); dump('picks.json', K)
+    dump('data/suggest.json', S, 1); dump('quality.json', Q); dump('picks.json', K)
     # forms.json: big {photo: value} maps one entry per line (readable diffs), every other key on one line.
     big = lambda v: isinstance(v, dict) and len(v) > 20 and all(isinstance(y, str) for y in v.values())
     with open(P('forms.json'), 'w') as fh:
         fh.write('{' + ',\n'.join(f'{json.dumps(k)}:' + ('{\n' + ',\n'.join(f'{json.dumps(a)}:{json.dumps(b)}' for a, b in v.items()) + '\n}' if big(v) else json.dumps(v, ensure_ascii=False)) for k, v in F.items()) + '}\n')
     print(f'Imported {len(ok)} genus file(s): {len(S["photo"])} photo suggestions, {len(S["dup"])} duplicate sets, '
-          f'{sum(len(v) for v in S["add"].values())} candidates to add in suggest.json; forms.json, quality.json and picks.json updated.')
+          f'{sum(len(v) for v in S["add"].values())} candidates to add in data/suggest.json; forms.json, quality.json and picks.json updated.')
 
 if __name__ == '__main__':
     main()

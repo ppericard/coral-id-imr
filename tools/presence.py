@@ -1,6 +1,6 @@
 """The presence rule, defined once (Pierre, 2026-11-04, rule C8: "the same scientific rigour for everyone, me
 included"). Read by tools/build_fish.py (fish.json present), tools/fetch_fish.py (through fish.json), tools/fetch_local.py
-(the coral search abroad) and tools/coral_presence.py (presence.json, the admin's "out of rule" flag).
+(the coral search abroad) and tools/coral_presence.py (data/presence.json, the admin's "out of rule" flag).
 
 Confirmed near Dauin (`near_dauin`), any of:
   - "observers": Research Grade iNaturalist observations within 40 km of Dauin by at least NEAR_OBSERVERS (2) distinct

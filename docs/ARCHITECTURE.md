@@ -167,13 +167,15 @@ player, `reefid-*` stay on the device, `core.js` `KEYS`) and of its caches (**Ca
 
 ## Data files
 
-**What it is.** The JSON files at the root of the repository are the data the site loads: the coral content
-(`data.json`), Pierre's choices (`curation.json`, written only by the admin's Publish), the machine-written suggestion
-files, the fish and sea-slug content and photo lists, and the admin-only candidate lists. A built file is its sources
+**What it is.** The JSON files at the root of the repository are the data players' pages load: the coral content
+(`data.json`), Pierre's choices (`curation.json`, written only by the admin's Publish), the quality, forms and picks
+files, and the fish and sea-slug content and game photo lists. What only the tools and the admin read lives in `data/`
+(Q265; it is published, the admin fetches it): the candidate lists, the suggestions of the judging passes, excluded
+photos, presence, names, points, metrics and the measured block. A built file is its sources
 plus the instance's layer; the content editor's edits and Pierre's curation are laid over it when it is read.
 
 **Main files.** [DATA.md](DATA.md), the table of every data file with its writer and its readers; `tools/datajson.py`
-(the one writer of `data.json` and `cand.json`), `tools/build_fish.py` (`fish.json`), `tools/fetch_local.py`,
+(the one writer of `data.json` and `data/cand.json`), `tools/build_fish.py` (`fish.json`), `tools/fetch_local.py`,
 `tools/fetch_fish.py` and `tools/fetch_fishbase.py` (the candidates), `tools/fish_game.py` (`fish-game.json`,
 `fish-photos.json`), `tools/instance.py` and `tools/instance.json` (the instance); in the app and the admin, `core.js`
 (`applyCuration`, `contentApply`, `treeGen`, `treePhotos`, `rightsClass`), `presence.js` and `autosort.js`.
@@ -211,7 +213,7 @@ to game.
 - **Fish photos (the sources and the area rule)**: **Sources**, **Rules**, **The area**, **On the way to the game**:
   [fish-photos.md](spec/fish-photos.md#where-fish-photos-come-from-the-sources-and-the-area-rule).
 - **Fish candidates**: **Fetch**, **Photo taxon**, **Automatic refill**, **FishBase**, **Reference photos**,
-  **`fish-cand.json`**, **Curation**, **Pre-sort**, **One judgement per photo**, **Fish auto-sort**,
+  **`data/fish-cand.json`**, **Curation**, **Pre-sort**, **One judgement per photo**, **Fish auto-sort**,
   **Fish Candidates**: [fish-photos.md](spec/fish-photos.md#candidates-from-inaturalist-toolsfetch_fishpy).
 - **Curated game photos**, **The file's short form**:
   [fish-photos.md › The photos in play](spec/fish-photos.md#the-photos-in-play-fish-gamejson-toolsfish_gamepy).
@@ -250,8 +252,8 @@ P1-P6 ([rules/photos.md](rules/photos.md)) govern them.
 - **Sources** of the coral photos: [photos.md](spec/photos.md#coral-photo-sources).
 - **New candidates are not stored**, the Candidate photos workflow, the **Key-only genus** cap:
   [photos.md](spec/photos.md#the-candidate-photos-workflow).
-- **Excluded photos** (`tools/excluded.py`, `excluded.json`, **Restore**): [photos.md](spec/photos.md#excluded-photos).
-- **Measured values** of each game photo (contrast, brightness, saturation, warm share, sharpness; `measured.json`,
+- **Excluded photos** (`tools/excluded.py`, `data/excluded.json`, **Restore**): [photos.md](spec/photos.md#excluded-photos).
+- **Measured values** of each game photo (contrast, brightness, saturation, warm share, sharpness; `data/measured.json`,
   `tools/photo_measure.py`): [spec/measured.md](spec/measured.md).
 
 ## Admin back-office (`admin.html`)
@@ -265,7 +267,7 @@ reaches the site only with his Publish.
 `admin-draft.js` (the draft's IndexedDB store and the sign-out seal); `autosort.js` (the auto-sort and the fish photo
 logic, pure); `taxtree.js` (the generic tree); `admin-fish.js`, `admin-coraltree.js`, `admin-content.js`,
 `admin-covers.js`, `admin-light.js` (the Tree tab, the content editor's boxes, the proposals); `admin-journey.js`,
-`admin-visits.js`, `admin-heatmap.js`, `admin-analyses.js` (players and analyses); `admin-taxa.js` (Photo stats › Taxa); `points.js` and `points.json` (the
+`admin-visits.js`, `admin-heatmap.js`, `admin-analyses.js` (players and analyses); `admin-taxa.js` (Photo stats › Taxa); `points.js` and `data/points.json` (the
 points to handle); `admin-demo.js` (`?demo`).
 
 **How it connects.** It reads the site's data files and `curation.json` (Data files), the sync sheet with its admin token

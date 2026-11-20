@@ -160,12 +160,12 @@ test('tools/seaslug_names.json derives as written and holds every family, genus 
     'T. picta: cited as a cousin, not as a nickname'
   );
   assert.ok(!pk('Thecacera pikachu').note && !pk('Thecacera pacifica').note, 'the note is on T. picta only');
-  // A name on two taxa is a point for the admin (rule C5): each in points.json.
-  const P = read('points.json').points.filter(p => p.subj === 'seaslug'),
+  // A name on two taxa is a point for the admin (rule C5): each in data/points.json.
+  const P = read('data/points.json').points.filter(p => p.subj === 'seaslug'),
     said = P.map(p => p.title + ' ' + p.q + ' ' + (p.ctx || []).join(' '))
       .join(' ')
       .toLowerCase();
-  d.shared.forEach(s => assert.ok(said.includes(s.n.toLowerCase()), `"${s.n}" on two taxa is in points.json`));
+  d.shared.forEach(s => assert.ok(said.includes(s.n.toLowerCase()), `"${s.n}" on two taxa is in data/points.json`));
 });
 
 test('seaslug.json carries the names (en) and their sources (ensrc) on families, genera and species; no choice changes', () => {

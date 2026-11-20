@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The measured block of every game photo (tools/photo_measure.py, measured.json; Pierre, 2026-11-19, Q434): the
+// The measured block of every game photo (tools/photo_measure.py, data/measured.json; Pierre, 2026-11-19, Q434): the
 // measures on made-up images whose values are known, the fish's box in the cropped file's frame, and an incremental run
 // on a fixture (a stub game file and lossless images in a temporary folder: never R2). Needs python3 with numpy and
 // Pillow (tools/requirements.txt, installed by checks.yml); skipped without them.
