@@ -253,6 +253,20 @@
   letter-spacing: 0.06em;
   color: var(--accent);
 }
+/* The What I learn link on the Learn door's kicker row (home.js; progress.js learnCard), at its right end. */
+.hdwhen:has(.hdwil) {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+}
+.hdwil {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--accent);
+  white-space: nowrap;
+}
 .hdoor h2 {
   font-family: var(--display);
   font-size: var(--fs-xl);

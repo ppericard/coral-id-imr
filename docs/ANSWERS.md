@@ -1470,3 +1470,27 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pourquoi?). Tu dois régulièrement aller piocher dans la ROADMAP pour les taches suivantes». STATUS's size mark (about
   100 lines) dates from #561 (2026-11-05), so that every session start reads it cheaply; its "Next" is a pointer, never
   the backlog. Applied: INTEGRATOR.md "Where open work sits".
+- **Reports tab, "Report a problem" out of More (seen on a sea slug practice quiz answer).** «Report a problem doit pas
+  être caché derrière "more"». The report link is in view on every answer's feedback, whatever the subject or game.
+  Applied: docs/rules/ui.md U14, docs/decisions/2026-11-20-report-link-in-view.md, #1319.
+- **Reports tab, "Report a problem" more than once on a page (sea slug practice quiz).** «Report a problem doit pouvoir
+  être utilisé plusieurs fois sur la même page». A second report on the same answer or page must open; the cause is in
+  `sync.js` `reportDialog`, held by an open PR (rule W27). Applied: ROADMAP "Report a problem again on the same page",
+  docs/decisions/2026-11-20-report-link-in-view.md, #1319.
+- **Reports tab, a photo or screenshot on the feedback form (a later item).** «Ajouter la possibilité de joindre une
+  photo ou un screenshot au formulaire de feedback». A wish, not built; where the file would live is his to choose.
+  Applied: ROADMAP "Attach a photo or a screenshot to a report", #1319.
+- **The one-tap question per subject (a report from the app, the coral practice quiz).** «Carte "this questions are"
+  après une seule question dans les coraux. Attention à avoir des compteurs par matière». Each subject paced its own
+  question already, but the session it waits for (15 answers over 5 minutes) was the device's, so a long session in
+  another subject brought it at the first coral answer: the session is now the subject's, an answer in another subject
+  starting a new one. Applied: `quiz.js` `pulseVisit`, `pulseDue`; docs/spec/cards.md "One-tap questions",
+  decisions/2026-11-20-cards-per-subject.md.
+- **A card before the sea slugs' next circle (a report from the app, Home).** «Ya pas de carte avant de passer au cercle
+  suivant pour les nudibranches?». Their circle 3 opens by itself with no offer card (#1005) and they had no all-met
+  card: they get the fish's all-met card in their own words, which says what comes next before circle 3. Applied:
+  `app.js` `UNITS.seaslug` `done`, `slugNextOf`, `CARD_KINDS`; docs/spec/seaslugs.md "Their circles",
+  decisions/2026-11-20-cards-per-subject.md.
+- **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
+  de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
+  window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
