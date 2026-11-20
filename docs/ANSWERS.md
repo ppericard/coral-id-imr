@@ -1466,6 +1466,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **Wrong answer, the two compared photos are cropped (fish practice quiz, Abudefduf given for Chromis).** «Sur mauvaise
+  réponse, les 2 photos sont hyper croppées horizontalement et on ne voit plus que le milieu des poissons». The two
+  photos are shown whole at every size. Applied: `app.css` `.qstage.qvs .qph img`, docs/DESIGN.md "Quiz on desktop"
+  (the compared photos), `tests/qvswhole.test.js`.
 - **15:29-15:32, two juvenile cards in the fish practice quiz (reports under g:Pomacentrus and f:Sweetlips).** «J'ai eu
   une carte de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»; «Celui là c'est un
   juvénile qui aurait mérité la carte, pas le goatfish d'avant». Applied: the next entry (#1323).
