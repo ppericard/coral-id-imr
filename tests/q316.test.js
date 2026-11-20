@@ -256,6 +256,73 @@ test('checks.js: the whole run on a small made-up log; a deadline already past c
   assert.ok(K.run(X, {full: fit, A: fit, B: fit}, null, 1).cut);
 });
 
+test("checks.js: the person replay scores as the game does: a smaller fault's weight (z), a species' starting unit (from)", () => {
+  const C = require(path.join(ROOT, 'core.js')),
+    F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')),
+    gen = C.treeReplayGen(F),
+    sp = Object.keys(gen).find(u => u.startsWith('s:') && gen[u].from),
+    fam = gen[sp].from;
+  const base = {p: 'P1', k: 4, g: 0.25, sec: 5, e: null, th: null, mem: 0, cf: 0, R: 1, df: 0, Sl: 1, ph: ['x']},
+    rows = [
+      {...base, u: fam, c: fam, y: 1, chs: [fam, 'f:a', 'f:b', 'f:c'], d0: -1, z: null},
+      {...base, u: fam, c: fam, y: 1, chs: [fam, 'f:a', 'f:b', 'f:c'], d0: -1, z: null},
+      {...base, u: sp, c: 's:other', y: 0, chs: [sp, 's:other'], k: 2, g: 0.5, d0: 0.5, z: 'cn'},
+      {...base, u: sp, c: sp, y: 1, chs: [sp, 's:other'], k: 2, g: 0.5, d0: 0.5, z: null}
+    ];
+  // the reference: core.js scoreAnswer with what the sheet's replay passes (replayProgress: from, cfrom, z)
+  const P = {},
+    want = rows.map(r => {
+      const q = {t: r.u, c: r.c, ok: !!r.y, k: r.k, chs: r.chs, ph: r.ph, cv: !r.y && r.c !== r.u, p: 0, sec: r.sec, timed: true, rt: true};
+      Object.assign(q, {d0: r.d0, fam: 0, cf: 0, R: 1, df: 0, S: 1, look: false, dom: true});
+      if (gen[r.u] && gen[r.u].from) q.from = gen[r.u].from;
+      if (!r.y && gen[r.c] && gen[r.c].from) q.cfrom = gen[r.c].from;
+      if (r.z) q.z = r.z;
+      return C.scoreAnswer(P, q).th0;
+    });
+  assert.deepStrictEqual(K.persons(rows, gen).th, want);
+  assert.notDeepStrictEqual(K.persons(rows, {}).th, want, 'without the starting units the species starts elsewhere');
+  assert.notDeepStrictEqual(
+    K.persons(
+      rows.map(r => ({...r, z: null})),
+      gen
+    ).th,
+    want,
+    'without z the smaller fault weighs as a full miss'
+  );
+  // prep.js keeps the kind of fault from the scoring record
+  const X = Pr.prepare([ra('w', 0, 'Acropora', ['p'], 0, ['Acropora', 'Porites'], {d: 0.1, z: 'g'})], 'coral', {coralTax: () => ({})});
+  assert.strictEqual(X.rows[0].z, 'g');
+});
+
+test('checks.js: an answer without photos, or any non-finite loss, never enters a test; compression for every arm run', () => {
+  const ch = ['Acropora', 'Porites', 'Favia', 'Montipora'],
+    rows = [];
+  for (let i = 0; i < 240; i++)
+    rows.push(
+      ra('w' + (i % 6), i, ch[i % 4], i % 40 === 5 ? [] : ['c' + (i % 4) + '-' + (i % 7)], (i * 7) % 10 < 7, ch, {
+        d: 0.2 * (i % 4),
+        f: 0,
+        o: 0
+      })
+    );
+  const X = Pr.prepare(rows, 'coral', {coralTax: () => ({})});
+  const fit = {fit: {sd: {player: [0.5], pu: [0.2], gen: [0.3], photo: [0.4]}, fixed: {c: [0.8]}, effects: {gen: {Acropora: 0.1}}}};
+  const out = K.run(X, {full: fit, A: fit, B: fit}, null, null);
+  assert.ok(
+    out.exploratory.all.perPlayer.every(x => Number.isFinite(x.d)),
+    JSON.stringify(out.exploratory.all.perPlayer)
+  );
+  assert.ok(out.exploratory.all.p > 0);
+  assert.deepStrictEqual(Object.keys(out.compression).sort(), ['1', '2', '4b', '4c']);
+  const t = K.pairedTest([{p: 'P1'}, {p: 'P1'}], () => true, [0.5, 0.5], [NaN, 0.4], {...K.RULES, minAnswers: 1, minPlayers: 1});
+  assert.strictEqual(t.answers, 1);
+  // the clock: never past 40 minutes from now, whatever deadline is given (rule L11)
+  const now = Date.now() / 1000;
+  assert.ok(K.capDeadline(now + 3 * 3600) <= now + 40 * 60 + 1);
+  assert.ok(K.capDeadline(null) <= now + 40 * 60 + 1);
+  assert.strictEqual(K.capDeadline(now + 60), now + 60);
+});
+
 test("the rules the README declares are the code's (fit.py ACCEPT, the clock; checks.js RULES)", () => {
   const fit = fs.readFileSync(path.join(DIR, 'fit.py'), 'utf8');
   assert.match(fit, /ACCEPT = \{'reps': 20, 'bias': 0\.1, 'cover': 15, 'level': 0\.90\}/);
@@ -302,6 +369,7 @@ test(
     assert.ok(est > 0.7 && est < 1.5 && lo < 1 && hi > 1, JSON.stringify(o.gen));
     assert.deepStrictEqual(o.rule, {pass: 'pass', bias: 'fail', cover: 'fail', short: 'the measure cannot tell'});
     assert.ok(o.deadline && o.finite);
+    assert.deepStrictEqual(o.cap, {fit: true, short: true, run: [40, 10, 40]}, 'never past 40 minutes (rule L11)');
   }
 );
 

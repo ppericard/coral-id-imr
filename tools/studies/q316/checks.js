@@ -58,9 +58,16 @@ const sig = x => 1 / (1 + Math.exp(-x)),
   mean = l => (l.length ? l.reduce((t, x) => t + x, 0) / l.length : NaN);
 
 class Cut extends Error {}
+// Rule L11's cap: a deadline (epoch seconds) never later than 40 minutes from now, none given included.
+const CAP_MIN = 40;
+const capDeadline = d => {
+  const cap = Date.now() / 1000 + CAP_MIN * 60;
+  return d && d < cap ? d : cap;
+};
 function clock(deadline) {
+  const end = capDeadline(deadline);
   return () => {
-    if (deadline && Date.now() / 1000 > deadline) throw new Cut();
+    if (Date.now() / 1000 > end) throw new Cut();
   };
 }
 
@@ -76,8 +83,11 @@ function rng(seed) {
   };
 }
 
-// ---- The person side: each player's app replay (unit ability and global level before each answer).
-function persons(rows) {
+// ---- The person side: each player's app replay (unit ability and global level before each answer), passing what the
+// sheet's replay passes (core.js replayProgress): the unit given in a miss (cv), the units a unit shown or given starts
+// from when never answered (gen: core.js treeReplayGen's from, a fish species its family or genus), a smaller fault's
+// kind (z).
+function persons(rows, gen = {}) {
   const by = new Map();
   rows.forEach((r, i) => (by.has(r.p) ? by.get(r.p) : by.set(r.p, []).get(r.p)).push(i));
   const th = new Array(rows.length).fill(null),
@@ -90,15 +100,16 @@ function persons(rows) {
       let d0 = r.d0;
       if (d0 == null && isFinite(r.e) && isFinite(r.th) && r.e != null && r.th != null && k > 1)
         d0 = r.th - logit(clamp((r.e - r.g) / (1 - r.g), 0.005, 0.995)) - (r.mem || 0);
-      const L = P[C.LEVEL] && typeof P[C.LEVEL].th === 'number' ? P[C.LEVEL].th : null;
-      const res = C.scoreAnswer(P, {
+      const L = P[C.LEVEL] && typeof P[C.LEVEL].th === 'number' ? P[C.LEVEL].th : null,
+        wrong = !r.y && !!r.c && r.c !== r.u;
+      const q = {
         t: r.u,
         c: r.c,
         ok: !!r.y,
         k,
         chs: r.chs,
         ph: r.ph,
-        cv: false,
+        cv: wrong,
         p: 0,
         sec: isFinite(r.sec) && r.sec != null ? r.sec : null,
         timed: true,
@@ -111,7 +122,11 @@ function persons(rows) {
         S: r.Sl,
         look: false,
         dom: true
-      });
+      };
+      if (gen[r.u] && gen[r.u].from) q.from = gen[r.u].from;
+      if (wrong && gen[r.c] && gen[r.c].from) q.cfrom = gen[r.c].from;
+      if (r.z) q.z = r.z;
+      const res = C.scoreAnswer(P, q);
       if (d0 != null && typeof res.th0 === 'number') {
         th[i] = res.th0;
         lvl[i] = L;
@@ -256,7 +271,7 @@ function predict(r, th, d) {
 function pairedTest(rows, keep, la, lb, rule = RULES, names = ["today's engine", 'arm 2']) {
   const by = new Map();
   rows.forEach((r, i) => {
-    if (!keep(r, i) || la[i] == null || lb[i] == null) return;
+    if (!keep(r, i) || !Number.isFinite(la[i]) || !Number.isFinite(lb[i])) return;
     (by.has(r.p) ? by.get(r.p) : by.set(r.p, []).get(r.p)).push(lb[i] - la[i]);
   });
   const dp = [...by.entries()].filter(([, l]) => l.length >= rule.minAnswers).map(([p, l]) => [p, mean(l), l.length]);
@@ -402,13 +417,16 @@ const fitVals = F => ({
   eff: (F.fit || F).effects || {}
 });
 
-function run(ex, fits, stats, deadline, log = console.log) {
+// gen: the units' starting units (core.js treeReplayGen; default: the fish's from this checkout's fish.json, none for
+// the corals).
+function run(ex, fits, stats, deadline, gen = null) {
   const tick = clock(deadline),
     rows = ex.rows,
     fish = ex.subject !== 'coral',
-    out = {subject: ex.subject, rules: RULES, cut: false, done: []};
+    out = {subject: ex.subject, rules: RULES, cut: false, done: []},
+    G = gen || (fish ? C.treeReplayGen(JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'))) : {});
   try {
-    const {th, lvl} = persons(rows);
+    const {th, lvl} = persons(rows, G);
     const delta = th.map((x, i) => (x != null && lvl[i] != null ? x - lvl[i] : null));
     tick();
     const live = liveArm(rows, tick);
@@ -439,8 +457,9 @@ function run(ex, fits, stats, deadline, log = console.log) {
     const P = {},
       LL = {};
     Object.entries(arms).forEach(([k, A]) => {
-      P[k] = rows.map((r, i) => (th[i] == null || A.d[i] == null ? null : predict(r, th[i], A.d[i])));
-      LL[k] = P[k].map((p, i) => (p == null ? null : ll(p, rows[i].y)));
+      // an answer without photos (no item to rate) or any non-finite term is scored by no arm
+      P[k] = rows.map((r, i) => (th[i] == null || !r.ph.length || !Number.isFinite(A.d[i]) ? null : predict(r, th[i], A.d[i])));
+      LL[k] = P[k].map((p, i) => (p == null || !Number.isFinite(p) ? null : ll(p, rows[i].y)));
     });
     const primaryKeep = r => fish && r.pn < RULES.pnMax;
     out.primary = fish ? {measure: RULES.primary, ...pairedTest(rows, primaryKeep, LL[1], LL[2])} : {measure: 'none (corals: no primary in 2B)'};
@@ -457,7 +476,11 @@ function run(ex, fits, stats, deadline, log = console.log) {
     const get = F => (lv, id) => (F.eff[lv] && typeof F.eff[lv][id] === 'number' ? F.eff[lv][id] : 0);
     const D = unitD(rows, get(full), full.fx),
       big = Object.keys(D).filter(u => nU[u] >= RULES.compressionMin);
-    const armUnits = {1: live.unit, 2: unitD(rows, (lv, id) => arms[2].m[{fam: 'F:', gen: 'G:', sp: 'S:'}[lv] + id] || 0, halfOf.A.fx)};
+    // arm 1: the sheet's gd; every shared arm run (2, 3, 4b, 4c): its component means down to the unit
+    const armUnits = {1: live.unit};
+    Object.keys(arms)
+      .filter(k => k !== '1')
+      .forEach(k => (armUnits[k] = unitD(rows, (lv, id) => arms[k].m[{fam: 'F:', gen: 'G:', sp: 'S:'}[lv] + id] || 0, halfOf.A.fx)));
     out.compression = Object.fromEntries(
       Object.entries(armUnits).map(([k, U]) => {
         const us = big.filter(u => typeof U[u] === 'number');
@@ -481,7 +504,7 @@ function run(ex, fits, stats, deadline, log = console.log) {
   return out;
 }
 
-module.exports = {RULES, persons, liveArm, sharedArm, unitD, pairedTest, spearman, spearmanPerm, unitMeans, dersimonian, centring, calibration, run};
+module.exports = {RULES, capDeadline, persons, liveArm, sharedArm, unitD, pairedTest, spearman, spearmanPerm, unitMeans, dersimonian, centring, calibration, run};
 
 if (require.main === module) {
   const argv = process.argv.slice(2),

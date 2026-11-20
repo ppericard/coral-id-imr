@@ -90,9 +90,13 @@ class Deadline(Exception):
 
 
 class Clock:
+    """The run's deadline: the one given (run.py's) or budget minutes from now, never past BUDGET_MIN from now (rule
+    L11's cap)."""
+
     def __init__(self, deadline=None, budget=BUDGET_MIN):
         self.t0 = time.time()
-        self.end = deadline if deadline else self.t0 + budget * 60
+        cap = self.t0 + BUDGET_MIN * 60
+        self.end = min(deadline if deadline else self.t0 + budget * 60, cap)
         self.cut = False
 
     def left(self):

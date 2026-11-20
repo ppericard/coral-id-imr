@@ -233,6 +233,7 @@ function prepare(all, subject, opts = {}) {
       R: sc && typeof sc.r === 'number' ? sc.r : 1,
       Sl: sc && sc.s ? sc.s : 1,
       d0: sc ? sc.d : null,
+      z: sc && sc.z ? sc.z : null, // a smaller fault's kind (core.js PART): the replay weighs the miss by it
       e: r[7],
       th: r[8],
       sec: r[12],

@@ -95,7 +95,14 @@ def main():
         stopped = False
     except Q.Deadline:
         stopped = clock.cut
-    print(json.dumps({'laplace': gap, 'gen': [gen[0], gen[1][0.95]], 'rule': rule, 'deadline': stopped,
+    # rule L11's cap: no clock past 40 minutes, whatever budget or deadline is asked
+    import run as RUN  # noqa: E402
+
+    long = Q.Clock(budget=90)
+    far = Q.Clock(deadline=long.t0 + 5 * 3600)
+    cap = {'fit': max(long.end - long.t0, far.end - far.t0) <= 40 * 60 + 1, 'short': Q.Clock(budget=5).end - long.t0 < 5 * 60 + 1,
+           'run': [RUN.budget_of(['--budget', '60']), RUN.budget_of(['--budget', '10']), RUN.budget_of([])]}
+    print(json.dumps({'laplace': gap, 'gen': [gen[0], gen[1][0.95]], 'rule': rule, 'deadline': stopped, 'cap': cap,
                       'accept': Q.ACCEPT, 'budget': Q.BUDGET_MIN, 'evals': F['evals'], 'finite': math.isfinite(F['loglik'])}))
 
 

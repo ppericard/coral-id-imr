@@ -1,7 +1,7 @@
 """Q316's offline fit on the real log, every step under one 40-minute clock (rule L11; tools/studies/q316/README.md).
 
     python3 tools/studies/q316/run.py <log.json> <out dir> [--exclude names.txt] [--stats-coral s.json]
-                                      [--stats-fish s.json] [--budget 40]
+                                      [--stats-fish s.json] [--budget <minutes, 40 at most>]
 
 <out dir>: a new, empty directory outside the repository, kept off GitHub (rule D2): every file written goes there.
 For each subject, corals first then fish:
@@ -26,6 +26,12 @@ def opt(argv, name):
     return argv[argv.index(name) + 1] if name in argv else None
 
 
+def budget_of(argv):
+    """The minutes allowed: --budget when shorter, never more than rule L11's 40."""
+    b = opt(argv, '--budget')
+    return min(float(b), BUDGET_MIN) if b else BUDGET_MIN
+
+
 def main(argv):
     pos = [a for i, a in enumerate(argv) if not a.startswith('--') and (i == 0 or not argv[i - 1].startswith('--'))]
     if len(pos) != 2:
@@ -41,7 +47,7 @@ def main(argv):
 
     slot.guard('tools/studies/q316/run.py')  # one heavy run at a time on the machine (rule W24); the steps run in it
     os.makedirs(out, exist_ok=True)
-    budget = float(opt(argv, '--budget') or BUDGET_MIN)
+    budget = budget_of(argv)
     deadline = time.time() + budget * 60
     py, node = sys.executable, 'node'
     f = lambda name: os.path.join(out, name)  # noqa: E731

@@ -62,7 +62,8 @@ estimator's fault (the next step would be the study's Gibbs sampler); one that p
 not estimable on that much data.
 
 **2B** (`checks.js` `RULES`). Each answer scored before it moves anything, the same person term (the app's unit
-ability, replayed per player), memory, mix-ups and format terms in every arm; the SDs of arms 2-4 from `fit.py --half`
+ability, replayed per player as the sheet's replay does it: the unit given in a miss, a fish species' starting unit,
+a smaller fault's weight), memory, mix-ups and format terms in every arm; an answer without photos is scored by no arm; the SDs of arms 2-4 from `fit.py --half`
 on the other half of the players (P1 A, P2 B, P3 B, P4 A, ...).
 
 - **Primary**: next-answer log-loss on fish answers whose photos each had fewer than 3 earlier trusted answers, arm 2
@@ -83,7 +84,8 @@ meeting units. **Clearly negative** (not centred) = below 0 at p < 0.05, and bel
 uses the centred δ or stays on the chain. Otherwise the choice rests on 2B. With fewer than 8 units: "the measure cannot
 tell". Who reaches which unit is a confound (practice raises δ): an association, not a cause.
 
-**The clock**: 40 minutes for everything (rule L11), from when the machine slot is held. Past it each step stops,
+**The clock**: 40 minutes for everything (rule L11), from when the machine slot is held; `--budget` and `--deadline`
+can shorten it, never lengthen it (each step caps its own clock too). Past it each step stops,
 keeps what it has and marks the rest "the measure cannot tell"; nothing escalates, and nothing chooses a value (no
 level 3).
 
