@@ -75,7 +75,7 @@ keep every unit; wrong choices may name any unit, as the quiz's). LEARNING.md "O
 "A level opens in a group".
 *Why:* one path for every game and mode, present and future, with no exception; a unit asked among units never opened
 is just too easy. *Source:* Pierre, 2026-11-04; subject-neutral wording, 2026-11-06; evidence on a locked unit,
-2026-11-18; a level in a group of at least 4, 2026-11-20 (#PR).
+2026-11-18; a level in a group of at least 4, 2026-11-20 (#1331).
 
 ### L5
 

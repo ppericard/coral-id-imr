@@ -1,6 +1,6 @@
 # A level opens in a group: at least 4 close units together, no question before
 
-Date: 2026-11-20. PR: #PR. Rules or docs touched: L4; docs/LEARNING.md "A level opens in a group", "Opening pace",
+Date: 2026-11-20. PR: #1331. Rules or docs touched: L4; docs/LEARNING.md "A level opens in a group", "Opening pace",
 "First meeting with a genus", the species sections; docs/spec/model.md; docs/FISH_PATH.md "Unlock rules"; ROADMAP.
 
 ## Context
