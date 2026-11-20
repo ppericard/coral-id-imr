@@ -25,7 +25,7 @@ function load() {
   vm.runInContext(
     'const labObs = p => p.o || p.f;\n' +
       block(src, 'function memoryGenera', 'const MEMORY') +
-      '\nthis.f = memoryGenera; this.photos = memoryPhotos; this.kin = memoryKin;',
+      '\nthis.f = memoryGenera; this.photos = memoryPhotos; this.kin = memoryKin; this.tree = memoryTree;',
     ctx
   );
   return ctx;
@@ -103,6 +103,42 @@ test('kin: a family and its genus never share a board', () => {
       for (const a of g) for (const b of g) assert.ok(a === b || !ctx.kin(a, b, parentOf), `${look}: ${g}`);
       assert.ok(g.length >= 3, `${look}: ${g}`);
     }
+});
+
+// Both kinds of name unlocked: a common-name species and the scientific genus or species of the same fish are one taxon,
+// and the parent walk never links them (kin cannot see it), so a board keeps to one naming tree (memoryTree).
+test('naming trees: a board holds one tree, the units both share stay', () => {
+  const ctx = load(),
+    TREE = {fam1: '', fam2: '', cnA: 'cn', cnB: 'cn', cnC: 'cn', sciG: 'sci', sciA: 'sci', sciB: 'sci'},
+    all = Object.keys(TREE),
+    treeOf = n => TREE[n];
+  const seen = new Set();
+  for (let k = 0; k < 200; k++) {
+    const kept = ctx.tree(all, treeOf),
+      trees = new Set(kept.map(treeOf).filter(Boolean));
+    assert.strictEqual(trees.size, 1, `one naming tree: ${kept}`);
+    assert.ok(kept.includes('fam1') && kept.includes('fam2'), 'the shared units stay');
+    seen.add([...trees][0]);
+  }
+  assert.deepStrictEqual([...seen].sort(), ['cn', 'sci'], 'either tree can be drawn');
+  // One tree in play (or none): nothing changes, the very same list.
+  for (const L of [['fam1', 'cnA', 'cnB'], ['sciG', 'sciA', 'fam1'], ['fam1', 'fam2'], []]) assert.strictEqual(ctx.tree(L, treeOf), L);
+  // A tree that cannot hold a game (one unit, no shared unit) is not kept while another can.
+  for (let k = 0; k < 100; k++) assert.deepStrictEqual([...ctx.tree(['cnA', 'cnB', 'cnC', 'sciG'], treeOf)].sort(), ['cnA', 'cnB', 'cnC']);
+  // Every tree too short: still one tree.
+  assert.strictEqual(new Set(ctx.tree(['cnA', 'sciG'], treeOf).map(treeOf)).size, 1);
+});
+
+test('naming trees: the cards fall back to the full photo, and the board takes the tree of the unit', () => {
+  const code = SRC.split('\n')
+    .map(l => l.replace(/(^|\s)\/\/.*$/, ''))
+    .join('\n');
+  // A cropped tile that fails falls back to the square photo, as every other tile (data-lo, app.js photoGone).
+  const face = code.slice(code.indexOf('face: (c, size) => {'), code.indexOf('aria: () =>'));
+  assert.match(face, /<img src="[^"]*" data-lo="\$\{img\(c\.p, 's'\)\}"/);
+  assert.match(face, /data-f="\$\{esc\(c\.p\.f\)\}"/);
+  // The units a game draws from are one tree's (memoryTree), by the kind of name, never by which subject it is.
+  assert.match(code, /memoryTree\(unlocked\(\), n => kindOf\(n\)/);
 });
 
 test('look-alike set from the subject own pairs: likes replaces the data look-alikes', () => {

@@ -35,6 +35,30 @@ function memoryKin(a, b, parentOf) {
   };
   return under(a, b) || under(b, a);
 }
+// A board stays within one naming tree. A fish player may have both kinds of name unlocked: a species by its common name
+// (its parent is its family) and the scientific genera and species (a species' parent is its genus), so the parent walk
+// (memoryKin) never links a common-name species to its scientific genus or twin, and two photos of one species could be
+// dealt under two units and refused as a pair. treeOf(n) gives the tree n names ('' for a unit both trees share, such as a
+// family). With two trees in play one is kept, drawn by its share of the units, among those that can hold a game (two units
+// with the shared ones); the shared units stay. Pure (tests/pairs.test.js).
+function memoryTree(names, treeOf) {
+  const by = new Map();
+  names.forEach(n => by.set(treeOf(n), (by.get(treeOf(n)) || 0) + 1));
+  const shared = by.get('') || 0,
+    trees = [...by].filter(([t]) => t);
+  if (trees.length < 2) return names;
+  const able = trees.filter(([, k]) => k + shared >= 2),
+    from = able.length ? able : trees;
+  let r = Math.random() * from.reduce((s, [, k]) => s + k, 0),
+    keep = from[from.length - 1][0];
+  for (const [t, k] of from) {
+    if ((r -= k) < 0) {
+      keep = t;
+      break;
+    }
+  }
+  return names.filter(n => [keep, ''].includes(treeOf(n)));
+}
 // The two photos of unit n for a one-view subject (rule P4: two different observations, never one photo twice): photo(n,
 // want) gives a photo of n or null (lab.js labShots, the draw's own choice, want {not, fit}); juv(p): a juvenile photo
 // (app.js juvP). The first photo is the draw's; the second shows the unit differently from it, the first of these that
@@ -86,7 +110,13 @@ const MEMORY = {
       let looks = [],
         used = new Set();
       return {
-        names: () => ((looks = UNITS[SUBJ.id].pairs()), (used = new Set()), unlocked()),
+        // One naming tree a board (memoryTree): a species by common name beside a scientific genus or species is the same
+        // taxon twice. A genus is scientific; a species is by its kind of name; a family is shared.
+        names: () => (
+          (looks = UNITS[SUBJ.id].pairs()),
+          (used = new Set()),
+          memoryTree(unlocked(), n => kindOf(n) || (rankOf(n) === 'genus' ? 'sci' : ''))
+        ),
         // A unit plays only with two observations in play (gamePics: the draw's photos of it).
         met: n => new Set(gamePics(n, 'wide').map(labObs)).size >= 2,
         likes: n => looks.flatMap(([a, b]) => (a === n ? [b] : b === n ? [a] : [])),
@@ -105,7 +135,7 @@ const MEMORY = {
         face: (c, size) => {
           const t = UNITS[SUBJ.id].taxon(c.p, c.n),
             sp = t && t.id !== c.n ? ` · ${esc(t.common || t.sci)}` : '';
-          return `<img src="${c.p.xc && !c.p.r ? tileSrc(c.p) : img(c.p, size)}" alt="${esc(SUBJ.what)} photo"><b>${uname(c.n)}${sp}</b>`;
+          return `<img src="${c.p.xc && !c.p.r ? tileSrc(c.p) : img(c.p, size)}" data-lo="${img(c.p, 's')}"${c.p.f ? ` data-f="${esc(c.p.f)}"` : ''} alt="${esc(SUBJ.what)} photo"><b>${uname(c.n)}${sp}</b>`;
         },
         aria: () => `${SUBJ.what} photo`,
         credit: c => (typeof photoSrc === 'function' ? photoSrc(c.p) : ''),
