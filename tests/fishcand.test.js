@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The fish Candidates swiper (autosort.js "Fish Candidates", admin-fish.js renderFishCand): the queue
+// The tree subjects' Candidates swiper (autosort.js "Fish Candidates", the `tree` builder of admin.js CAND_BUILD, in admin-fish.js): the queue
 // lists what Pierre has not decided, the thinnest species first, stops at each species' target, keeps the fish
 // auto-sort's Checks his to answer; his clicks write the fish part of the draft as the auto-sort does (tags and ease
 // beside the add), never "out" (Not this) and never a coral key; his answers to Checks are timed for the agreement.

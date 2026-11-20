@@ -44,7 +44,8 @@ test('the subject field: the sea slugs play their genera from the start, the fis
     ]
   );
   assert.ok(!('unitRank' in FISHS) && !('unitRank' in C.subjectOf('coral')), 'the fish and the corals keep their rank');
-  assert.deepStrictEqual([SEA.one, SEA.many, SEA.optin], ['genus', 'genera', []]);
+  // its one opt-in choice: its species by their scientific names, the What I learn card's row (on by default)
+  assert.deepStrictEqual([SEA.one, SEA.many, SEA.optin], ['genus', 'genera', ['ssp']]);
 });
 
 test('core.js treeGen unit genus: every genus of the circles a unit, in its best species’ circle; families structure only', () => {

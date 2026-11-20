@@ -6230,6 +6230,19 @@ ul.adm-csv {
 .adm-cstruct .adm-stseg button:disabled {
   cursor: default;
 }
+/* A family's shared names (admin-content.js namesBox): the name, who else carries it, its three choices at the right. */
+.adm-cnames .adm-cslot {
+  padding: 4px 8px;
+}
+.adm-cnames .adm-cshd > small {
+  flex: 1 1 12em;
+  min-width: 0;
+  color: var(--muted);
+}
+.adm-cnames .adm-stseg {
+  flex: none;
+  margin-left: auto;
+}
 .adm-stpairs > .adm-cslots {
   margin-top: 6px;
   gap: 6px;
