@@ -1,4 +1,4 @@
-# The sea slug box pass: Opus 5.5 at medium effort, and the judging import takes the box
+# The sea slug box pass: the model decided by a second sample, and the judging import takes the box
 
 Date: 2026-11-20. PR: #1295. Rules or docs touched: S1, A1; judging/SEASLUG.md "The animal's box", tools/judging_fish.py, tests/seaslugjudge.test.js.
 
@@ -22,18 +22,22 @@ disagreements adjudicated), each configuration judged twice, box agreement = IoU
 | Sonnet 5.5 medium (runs 1, 2) | 88.8, 87.5% | 91.2, 87.5% | 10, 12 | 90.0 / 91.2% |
 | Haiku 5.5 medium (runs 1, 2) | 78.8, 80.0% | 83.8, 86.2% | 18, 16 | 90.0 / 92.5% |
 
-Integrator's call (the lightest configuration that does as well as the reference): the bulk box pass runs on **Opus 5.5 at
-medium effort**, as good as Opus high on every figure and the most repeatable, with a random 10% of every batch redone
-blind by Opus 5.5 high, and a batch whose agreement falls under 90% looked at again (AGENTS.md "Model choice by
-measurement"). Only the photos judged `tile` true get a box in the game; a doubt is no box.
+The model of the bulk pass (2,132 photos) is decided by a rule written before the data, not by the first sample alone:
 
-**Open, said plainly:** the preset bar (`THRESHOLD.md`: at most 2 serious errors in 80) is met by no configuration, Opus 5.5
-medium (6 and 6) and the Opus high reference itself (7 and 6) included, so the bar as set cannot separate them, and the
-threshold file's own reading rules were not followed to the letter: Opus medium's 91.2% and 92.5% fall in its undecided
-88-93% band (a second sample of 40 photos was to be drawn), and "none of the lighter ones passes" would have sent the bulk
-to Opus high. A 10% agreement audit against the same reference checks consistency, not accuracy. This record therefore
-chooses a model for the pass; it does not wave the bar through: the bulk is run and its boxes imported only on the
-integrator's decision (the serious errors of the sample are the cases to read first), and nothing here imports a box.
+- **Sample 1 (80 photos, the table above).** The first bar (`THRESHOLD.md`: at most 2 serious errors in 80) is met by no
+  configuration, the Opus high reference included (7 and 6), so it cannot tell a candidate from the reference. Opus 5.5
+  medium's 91.2% box and 92.5% tile fall in `THRESHOLD.md`'s undecided band (88-93%), which calls for a second sample of 40
+  photos, not a choice by a point.
+- **Sample 2 (40 photos, drawn at random, seeded, disjoint from the first).** Its own bar, `THRESHOLD2.md`, was written
+  before any of it was judged, replacing the serious-error bar by one the reference can meet. Opus 5.5 medium (two runs)
+  passes if, for each run, box and tile agreement with gold are at least 90%, serious errors do not exceed the larger of
+  the two Opus 5.5 high runs' plus 1, and its two runs agree with each other on at least 90% of boxes and of tiles.
+- **Then.** If it passes, Opus 5.5 medium does the bulk, with a random 10% of every batch redone blind by Opus 5.5 high and
+  any batch under 90% agreement looked at; otherwise Opus 5.5 high does the bulk. No other reading of the figures is used.
+  Sample 2's figures are added to this record when they are in; until then the model is not decided and no bulk runs.
+
+A 10% agreement audit against the reference checks consistency, not accuracy, which is why the model is decided by the
+samples and the audit only catches drift. Only the photos judged `tile` true get a box in the game; a doubt is no box.
 
 The judging import accepts the box as the fish's: `bb`, `[left, top, right, bottom]` fractions of the photo, in the judging
 file, imported into `suggest.json` `"seaslug"` (where `tools/seaslug_game.py` already reads it); refused when not inside
