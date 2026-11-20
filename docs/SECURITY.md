@@ -33,10 +33,10 @@ itself from. Since the security check of 2026-11-13 and its follow-ups:
 - only the two push jobs (`photos-push`, `fish-push`) get `contents: write`. They run no repository code and nothing
   downloaded (a checkout of `main`, the artifact, their own shell), and treat the artifact as hostile: the base must be a
   commit of `main` (else `git pull --rebase` would carry foreign commits onto it); before anything is written, every
-  path the diff changes must be one of their job's files (`git apply --numstat`: `data.json`, `cand.json`,
-  `excluded.json`, `fish-game.json`, `fish-photos.json`, `img/<name>`, and since the licence refresh of 2026-11-15
-  `fish-cand.json` and `tools/fish_refs.json`, the sources of the fish photos in play that `tools/licences.py` updates;
-  `fish-cand.json`, `tools/fish_refill.json`) and its only extended
+  path the diff changes must be one of their job's files (`git apply --numstat`: `data.json`, `data/cand.json`,
+  `data/excluded.json`, `fish-game.json`, `fish-photos.json`, `img/<name>`, and since the licence refresh of 2026-11-15
+  `data/fish-cand.json` and `tools/fish_refs.json`, the sources of the fish photos in play that `tools/licences.py` updates;
+  `data/fish-cand.json`, `tools/fish_refill.json`) and its only extended
   headers a regular file created or deleted (`git apply --summary`: a rename, a copy, a mode change, a symlink are
   refused); once applied, the staged files are checked again (paths, mode 100644 or deleted, nothing else changed).
   Then they commit under the bot's name and the same message as before, rebase on today's `main` and push
