@@ -1545,3 +1545,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
   de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
   window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
+- **19:23, the juvenile card's sub-adults (on #1329's first rule).** «Pourquoi tu fais une exception pour une espèce …
+  Diagramma Pictum … pour les sous-adultes … soit on décide de mettre la carte seulement sur des juvéniles, soit on
+  décide de le mettre aussi sur des formes qui ont des sous-adultes … Là, on a encore créé une exception basée sur une
+  remarque hyper spécifique de ma part.» One rule (the integrator's call, easy to correct): a young photo, juvenile or
+  sub-adult, brings the card whenever its species' young are sourced as different; the separate sub-adult flag is
+  information only. Applied: `quiz.js` `juvCard`, docs/spec/model.md,
+  decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md, #1329.
