@@ -208,6 +208,121 @@ test('rootLine for fish: a word-less meaning, another genus, a person honoured, 
   assert.match(rootLine(G.Seriatopora, slateOf(DATA)), / genera on the slate end in -pora:/);
 });
 
+// The name study's misleading root (docs/reviews/2026-11-05-name-confusion-study.md 5.2, Q124 d): a root whose meaning
+// echoes another unit's ID tip shows with a warning (root.warn) naming that unit and its tip verbatim, never one of the
+// genus's own (rule C1: an addition beside the IMR course, never a correction of it).
+test('every warning names another unit and one of its ID tips verbatim, never the genus’s own, never with a fit', () => {
+  const corals = Object.keys(G).filter(n => (G[n].root || {}).warn),
+    fish = FISH.genera.filter(g => (g.root || {}).warn).map(g => g.name);
+  assert.deepStrictEqual(corals.sort(), ['Favites', 'Pocillopora']);
+  assert.deepStrictEqual(fish.sort(), [
+    'Caesio',
+    'Flavocaranx',
+    'Gnathanodon',
+    'Grammistes',
+    'Ostorhinchus',
+    'Plectropomus',
+    'Pogonoperca',
+    'Pomacentrus',
+    'Taenianotus',
+    'Taeniura'
+  ]);
+  for (const n of corals) {
+    const r = G[n].root;
+    assert.ok(!r.fit && r.warn.length, n);
+    for (const [o, tip] of r.warn) {
+      assert.ok(o !== n && G[o], `${n}: ${o}`);
+      assert.ok((G[o].qt || []).includes(tip), `${n}: “${tip}” is not an ID tip of ${o}`);
+      assert.ok(!(G[n].qt || []).includes(tip), `${n}: “${tip}” is one of its own`);
+    }
+  }
+  const fam = Object.fromEntries(FISH.families.map(f => [f.name, f])),
+    famId = Object.fromEntries(FISH.families.map(f => [f.id, f]));
+  for (const n of fish) {
+    const g = FG[n],
+      r = g.root,
+      own = famId[g.family];
+    assert.ok(!r.fit && r.warn.length, n);
+    assert.deepStrictEqual(r.warn, FR.genera[n].warn, `${n}: fish.json is the tool file’s`);
+    for (const [f, cue] of r.warn) {
+      assert.ok(fam[f] && fam[f] !== own, `${n}: ${f} is not another family`);
+      assert.ok((fam[f].cues || []).includes(cue), `${n}: “${cue}” is not an IMR cue of ${f}`);
+      assert.ok(![...(g.cues || []), ...(own.cues || [])].includes(cue), `${n}: “${cue}” is one of its own`);
+    }
+  }
+  // Nothing is left in skip for the warning alone.
+  for (const [n, why] of Object.entries(FR.skip)) assert.ok(!/misleading root, held back/.test(why), `skip ${n}: ${why}`);
+});
+
+test('the fish build refuses a warning on the genus’s own family, a cue not verbatim, an unknown family or one with a fit', () => {
+  const {spawnSync} = require('child_process'),
+    os = require('os');
+  const run = m => {
+    const tmp = path.join(os.tmpdir(), `roots.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(tmp, JSON.stringify(m));
+    try {
+      const r = spawnSync('python3', [path.join(ROOT, 'tools/build_fish.py'), '--regroup', '--check', '--roots', tmp], {
+        cwd: ROOT,
+        encoding: 'utf8'
+      });
+      return {status: r.status, out: r.stdout + r.stderr};
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  };
+  assert.strictEqual(run(FR).status, 0, 'the file as it is passes');
+  const own = FISH.families.find(f => f.id === FG.Pomacentrus.family);
+  const bad = [
+    [[own.name, own.cues[0]]], // its own family
+    [['Angelfishes', 'Spine on the gill cover']], // a shortened cue
+    [['Gill-cover fishes', 'Spine on the gill cover (opercular spine)']], // no such family
+    [] // nothing to warn about
+  ];
+  for (const warn of bad) {
+    const m = JSON.parse(JSON.stringify(FR));
+    m.genera.Pomacentrus.warn = warn;
+    const r = run(m);
+    assert.notStrictEqual(r.status, 0, JSON.stringify(warn));
+    assert.match(r.out, /fish_genus_roots\.json Pomacentrus: warn/);
+  }
+  const m = JSON.parse(JSON.stringify(FR));
+  m.genera.Acanthurus.warn = [['Angelfishes', 'Spine on the gill cover (opercular spine)']];
+  assert.match(run(m).out, /Acanthurus: warn: one or more families, each once, never with fit/);
+});
+
+test('rootLine: the warning names the unit and its tip, one or several, escaped; a genus in italics, a family plain', () => {
+  const rootLine = rootLineIn(),
+    names = FISH.genera.map(g => g.name),
+    fishLine = n => rootLine(FG[n], names, 'among the fish', s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
+  assert.ok(
+    fishLine('Pomacentrus').includes(
+      '“lid or cover” (poma) + “thorn or spine” (kentron). Careful: the name echoes the ID tip of Angelfishes (“Spine on the gill cover (opercular spine)”), not one of its own.'
+    ),
+    fishLine('Pomacentrus')
+  );
+  assert.ok(
+    fishLine('Grammistes').includes(
+      'Careful: the name echoes the ID tips of Coral Breams (“Often a horizontal line along the body”), Cardinalfishes (“Horizontal stripes, small body”) and Squirrelfishes (“Horizontal stripes, medium body”), none of its own.'
+    ),
+    fishLine('Grammistes')
+  );
+  const slate = slateOf(DATA),
+    p = rootLine(G.Pocillopora, slate);
+  assert.match(
+    p,
+    /<i>Pocillo·pora<\/i>: “cup, bowl” \(Latin pocillum\) \+ “pore” \(Latin porus\)\. Careful: the name echoes the ID tip of <i>Acropora<\/i> \(“Cup-shaped radial corallites”\), not one of its own\. \d+ genera on the slate end in -pora:/
+  );
+  assert.ok(!/Careful/.test(rootLine(G.Seriatopora, slate)));
+  assert.ok(
+    rootLine({root: {p: [['A', 'x', 'y', [0]]], warn: [['<b>', '"&']], src: [{t: 't', u: 'https://x.org/'}]}}, slate).includes(
+      'the ID tip of <i>&lt;b&gt;</i> (“&quot;&amp;”), not one of its own.'
+    )
+  );
+  // The fish sheets pass their families' names plain.
+  const learn = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8');
+  assert.ok(/'among the fish',\s*esc\s*\)/.test(block(learn, 'const treeRoot = ', "\n    : '';\n")));
+});
+
 test('a fish genus root shows on the one sheet the genus opens: its page, its one species’ sheet, or its family’s', () => {
   const learn = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8');
   assert.ok(block(learn, 'function treeGenus(g) {', '\n}\n').includes('${treeRoot(g, g.id)}'));

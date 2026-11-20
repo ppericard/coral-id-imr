@@ -299,9 +299,18 @@ addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 // tell them apart, counted here (rule U8). '' for a genus without a sourced root. Fish genera (fish.json `root`, from
 // The ETYFish Project: tools/fish_genus_roots.json) pass their own genus names and words for where they are counted
 // (treeRoot); their parts may have no word, or be another genus the entry names ("genus") or the person it honours.
-const rootLine = (g, slate, where = 'on the slate') => {
+// `warn` (the name study's misleading root): the other units whose ID tip the name echoes, each with that tip verbatim,
+// never one of the genus's own (checked by the builds); `unit` writes a unit's name (a genus in italics; the fish pass
+// their families' plain names).
+const rootLine = (g, slate, where = 'on the slate', unit = n => `<i>${esc(n)}</i>`) => {
   const r = g && g.root;
   if (!r) return '';
+  const warn = (r.warn || []).map(([u, tip]) => `${unit(u)} (“${esc(tip)}”)`),
+    warnLine = warn.length
+      ? ` Careful: the name echoes ${warn.length > 1 ? 'the ID tips' : 'the ID tip'} of ${
+          warn.length > 1 ? `${warn.slice(0, -1).join(', ')} and ${warn[warn.length - 1]}` : warn[0]
+        }, ${warn.length > 1 ? 'none' : 'not one'} of its own.`
+      : '';
   const rootPart = x =>
     x[4] === 'genus'
       ? `the genus <i>${esc(x[1])}</i>`
@@ -318,6 +327,7 @@ const rootLine = (g, slate, where = 'on the slate') => {
       .map(rootPart)
       .join(' + ') +
     `.${r.fit ? ` It fits the ID tip “${esc(r.fit)}”.` : ''}` +
+    warnLine +
     `${shared >= 3 ? ` ${shared} genera ${esc(where)} end in -${esc(tail)}: the ending alone does not tell them apart.` : ''}` +
     ` <span class="rsrc">${r.src.map(srcA).join(' · ')}</span></p>`
   );
@@ -1043,13 +1053,14 @@ function viewFishSheet(id) {
 }
 // A fish genus's name roots (fish.json root, rootLine) on the one sheet the genus opens (treeSheets go,
 // `at`): its own page, its one species' sheet, or its family's when it is the only genus with several species; the
-// shared ending counted over every fish genus (rule U8). '' anywhere else.
+// shared ending counted over every fish genus (rule U8); a warning names families, in plain text. '' anywhere else.
 const treeRoot = (g, at) =>
   g && g.root && treeGo(g.id) === at
     ? rootLine(
         g,
         Object.values(ftree().gen).map(x => x.name),
-        'among the fish'
+        'among the fish',
+        esc
       )
     : '';
 // A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json), on the
