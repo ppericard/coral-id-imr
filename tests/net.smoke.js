@@ -117,7 +117,12 @@ const server = http.createServer((req, res) => {
   const INAT = [],
     STUB = require('./photostub.js')(ROOT);
   const anyS = () => fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'));
-  const inatLocal = ctx => STUB.inat(ctx, INAT);
+  // The lecture photos traced to their original (R2 only, no img/ file) fall back to Corals of the World's file: stood in
+  // for here too, else a question that draws one shows no photo and the check fails by the draw.
+  const inatLocal = async ctx => {
+    await STUB.inat(ctx, INAT);
+    await STUB.cotw(ctx);
+  };
   const R2 = require('../core.js').PHOTO_BASE;
   const fromR2 = ctx => STUB.r2(ctx);
   const ctxOf = async (opts = {}) => {
