@@ -1,24 +1,24 @@
 {
  "photos": {
-  "seaslug-823909-cand-488716037": {"code": "d1g0sl15"},
+  "seaslug-823909-cand-488716037": {"code": "d1g0sl15", "bb": [0.3257, 0.0827, 0.7149, 0.8873]},
   "seaslug-823909-cand-49571112": {"code": "o1g1sl1w4"},
-  "seaslug-823909-cand-724520655": {"code": "o1g0sl15"},
+  "seaslug-823909-cand-724520655": {"code": "o1g0sl15", "bb": [0.1875, 0.0375, 0.7844, 0.8084]},
   "seaslug-823909-cand-77999288": {"code": "p1g1sl14"},
-  "seaslug-823909-cand-171954810": {"code": "p1g0sl15"},
+  "seaslug-823909-cand-171954810": {"code": "p1g0sl15", "bb": [0.045, 0.2773, 0.942, 0.7563]},
   "seaslug-823909-cand-605883428": {"code": "p1g0sm14"},
-  "seaslug-823909-cand-419950963": {"code": "p1g0sl15"},
+  "seaslug-823909-cand-419950963": {"code": "p1g0sl15", "bb": [0.1156, 0.3549, 0.9113, 0.7184]},
   "seaslug-823909-cand-250376643": {"code": "o1g0ml14"},
-  "seaslug-823909-cand-257319613": {"code": "o1g0sl14"},
+  "seaslug-823909-cand-257319613": {"code": "o1g0sl14", "bb": [0.1281, 0.1508, 0.8282, 0.855]},
   "seaslug-823909-cand-715549630": {"code": "o1g1ms11"},
   "seaslug-823909-cand-98785716": {"code": "o1g0sl14"},
   "seaslug-823909-cand-329663622": {"code": "d1g0ml14"},
   "seaslug-823909-cand-196487606": {"code": "p1g0ml14"},
   "seaslug-823909-cand-564145444": {"code": "o1g0sls4"},
-  "seaslug-823909-cand-197766817": {"code": "p1g0sm14"},
-  "seaslug-823909-cand-717754337": {"code": "p1g0sl15"},
+  "seaslug-823909-cand-197766817": {"code": "p1g0sm14", "bb": [0.3, 0.1394, 0.6188, 0.8458]},
+  "seaslug-823909-cand-717754337": {"code": "p1g0sl15", "bb": [0.2718, 0.3569, 0.8938, 0.7406]},
   "seaslug-823909-cand-33465962": {"code": "p1d0ml13"},
-  "seaslug-823909-cand-71201859": {"code": "o1g0sl15"},
-  "seaslug-823909-cand-29570392": {"code": "o1g0sl15"},
+  "seaslug-823909-cand-71201859": {"code": "o1g0sl15", "bb": [0.2031, 0.1933, 0.77, 0.8426]},
+  "seaslug-823909-cand-29570392": {"code": "o1g0sl15", "bb": [0.1487, 0.1125, 0.9238, 0.8959]},
   "seaslug-823909-cand-450163572": {"code": "o1g0ml14"}
  }
 }

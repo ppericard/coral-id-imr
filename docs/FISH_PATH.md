@@ -380,7 +380,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 - **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
-  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice. Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
+  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim (the names choice is the What I learn card's, Q396, Q400, Q404). Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
   answers, a forced choice:
   1. *I'm new to reef fish*;
@@ -399,7 +399,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   the corals').
 - **"I'm at IMR" brings scientific names earlier** (Pierre, 2026-11-04): both names, scientific names early ("Which names a player
   learns"); the adaptive difficulty still holds them back, since they are hard.
-- **Open all in two steps** (Pierre, 2026-11-04, later; replaces Claude's one-step proposal), both always optional and declinable:
+- **Open all in two steps**, an idea, not decided (proposed 2026-11-04, paraphrase only, #458; the offer card it described went on 2026-11-12, Q337, and Open all now sits on the What I learn card, Q400-Q404: today it opens the families, the scientific genera being a separate opt-in), both steps always optional and declinable:
   1. **"Danger zone"**: all the families and all the scientific genera (for a player learning common names only: all the families).
   2. Later, **only if the results show it is still too easy** (e.g. a high success over all the open genera after enough answers):
      **"Super Hyper Mega Danger Zone"**, all the species at once.
@@ -771,8 +771,8 @@ Every question here is answered (3: Q394 A; 5: Q395).
    kept by a hidden checklist (no threshold on the boxes) and an ultimate exam (100 to 200 questions, 95% to pass), the only way from 99%
    to 100% ([species step 2 plan](reviews/2026-11-18-species-step2-plan.md) §3).
 6. **The fish open-all card and the IMR answer.** **Answered (Pierre, 2026-11-04)**: "I'm at IMR" = both names, scientific names early
-   (the adaptive difficulty still holds them back); Open all in two steps, "Danger zone" (families and genera) then, only if still too
-   easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").
+   (the adaptive difficulty still holds them back). Open all in two steps ("Danger zone", then "Super Hyper Mega Danger Zone") is an
+   idea, not an answer ("The fish welcome question and the IMR answer").
 
 ## Checks before release
 

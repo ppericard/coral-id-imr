@@ -103,6 +103,14 @@ aside while the switch shows, so the page menu keeps its room) and its to-do cou
 open reports; the auto-sort's Checks are never to-dos). The tab's and the Inbox's count on a side is the same count
 (`todoHere`).
 
+**A flag is a task only while its photo is in play** (Pierre, 2026-11-20). `autosort.js` `flagGone` says a flag's photo left
+play (the corals: Remove, ×, Not this; a subject's own part: out, excluded, rejected), `admin.js` `flagStale` adds "no
+longer in the subject's data" once that subject's registry is read (the old "missing" cards), `flagsOpen` lists, counts
+and draws only the others, and `sweepFlags`, at every `saveDraft`, drops the stale ones of the subject on screen from the draft (another subject's part never moves with this one's tools; so the click that
+takes a photo off the site clears its flag in the same Undo step; Undo brings both back). A flag already stale in the
+draft is not listed and goes at the next click. Remove on a coral candidate that goes back with the candidates (no hide
+entry) clears its flag in `ACT.hide`. A report that carries a photo is not auto-handled (Done thanks the player).
+
 ### Each subject's admin part (`SUBJECTS` `admin`)
 
 Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine never names a subject:
@@ -133,8 +141,11 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   from `data.json` and its genus pages' photos under the draft (`reports.js` `flatReg`, built again when the draft
   changes; no file of its own, no format change), its `extra` the bonus genera of `data.json` `x`. Analyses (the mix-up
   map, the units' names, the photo thumbnails), Pairs, the Heatmap, Photo stats › Taxa (the corals' half) and the
-  Journey read it (`tests/registry.test.js`); the Tree, Candidates, the photo review pages and the tiles still read each
-  side's own state (the study's steps 4-8);
+  Journey read it (`tests/registry.test.js`). **One Tree page for every subject** (`admin.js` `renderTree`): its trees,
+  rows, tags and node pages come from the subject's builder in `TREE_BUILD`, picked by the same declared shape
+  (`treeShape`, `treeBuild`; the shared node-photo lists' adapters, `admin-nodephotos.js` `NODE_PHOTOS`, too;
+  `tests/treebuild.test.js`; [admin-tree.md](admin-tree.md)). Candidates, the photo review pages and the tiles still read
+  each side's own state (the study's steps 5-8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
