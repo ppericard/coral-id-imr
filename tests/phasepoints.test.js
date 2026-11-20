@@ -25,7 +25,8 @@ const slug = name => name.toLowerCase().replace(/[^a-z]+/g, '-');
 const DISAGREE = /conflict|disagree|differ(s)? between|contradict|inconsistent/i;
 // Flagged by DISAGREE but not a disagreement between sources (read note by note, 2026-11-20).
 const NOT_A_DISAGREEMENT = {
-  'Abalistes stellatus': 'juv note: a difference of degree (blotches fade in large fish) from dive-site pages seen only in a search summary, none quoted or fetched, so no sourced point can be written',
+  'Abalistes stellatus':
+    'juv note: a difference of degree (blotches fade in large fish) from dive-site pages seen only in a search summary, none quoted or fetched, so no sourced point can be written'
 };
 
 test('every disagreement in the fish colour phases list is a point for Pierre', () => {
