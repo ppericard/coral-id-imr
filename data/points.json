@@ -1364,6 +1364,23 @@
       ]
     },
     {
+      "id": "fish-sex-scarus-ghoban",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Scarus ghoban: what does the female look like?",
+      "q": "Fishes of Australia and FishBase describe different female colour patterns for Scarus ghoban (FishBase writes ghobban). Which pattern do the game's female photos of this species show?",
+      "ctx": [
+        "Fishes of Australia: \"Females (Initial phase) are dull yellowish to orange-brown with 4-5 irregular indistinct darker bars along the side, blue bands around the mouth and eye\"; males are bluish to bluish-green with pinkish scale margins.",
+        "FishBase, Short description for S. ghobban: \"female red on head, belly and fins, side with wavy black and white stripes\" (the same text as its S. niger page).",
+        "Both sources say the sexes differ in colour; they disagree on the female's pattern. Recorded as a conflict on the pattern, not on the phase, in tools/fish_phases.json (sex); nothing in play depends on it yet. Listed, not settled (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Scarus ghobban", "u": "https://fishesofaustralia.net.au/home/species/2360"},
+        {"t": "FishBase, Scarus ghobban", "u": "https://www.fishbase.se/summary/Scarus-ghobban.html"}
+      ]
+    },
+    {
       "id": "fish-juv-hologymnosus-annulatus",
       "kind": "sources",
       "subj": "fish",
