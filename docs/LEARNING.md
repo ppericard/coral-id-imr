@@ -296,6 +296,22 @@ logit of the pooled score, when higher; the most over the choices (`model.js` `c
 plausible choices. The expectation, the ability step, the bar and the photo's aim all take it (the `cf` of the scorer).
 The pooled score is already in the photos' difficulty, so only the player's excess counts.
 
+**Measured on the real log, 2026-11-20** (read-only; the Answers tab's scored rows since 2026-11-06, every subject; players
+P1, P2…; the expectation without the term is the logged one with the term added back; one-step counterfactual). The
+term acts on 17-20% of scored answers. Overall it cannot be told from no term: 12 players with 20 or more scored
+answers, 4,593 answers (834 where the term acts), mean log-loss with the term less without +0.0022 [−0.0034, +0.0078],
+sign-flip p 0.41 (corals +0.0032, 11 players; fish +0.0070 [+0.0004, +0.0137], 9 players, exploratory). Where it acts
+(834 answers, 11 players), players are right 0.803 while the app expects 0.696 with the term and 0.805 without it
+(corals 316 answers: right 0.756, 0.681, 0.751; fish 486: 0.831, 0.702, 0.835); the declared test, 8 players, gives
++0.046 [+0.002, +0.091] in favour of no term, sign-flip p 0.063, not clear; exploratory, against each player's own
+baseline, the term's expectation is under by +0.082 [+0.053, +0.112] with the 8 players all the same way (p 0.008).
+Zeroing the term on the corals' scored rows moves a unit's bar by +0.30 points on average (6 of 460 records by 5 points
+or more, none across the exam threshold) and the global level by 0 to +0.16. This reverses the 88-answer measure of
+2026-11-03 that led to the term; a guess, not measured: the per-format offsets and the Again and duels after a mix-up
+now teach the pair faster than the term fades. Seeing an overall effect of this size at 95% would take about 24 players
+with 20 or more scored answers. A check of the term off is a progress-rule change (rule D5): ROADMAP "After the fixes
+of 2026-11-04".
+
 **Look-alikes from the data** (`core.js` `dataLook`, `model.js` `isDataLook`, `dataLooks`): a pair no source declares,
 offered together `CONF.N` times or more, whose pooled score reaches `CONF.TRAP`, joins the declared look-alikes in the
 duels, the Again and the sheet's "Don't confuse with". A subject's data may seed such a pair (`model.js` `dataSeed`: the
@@ -813,6 +829,29 @@ genus opens once its family is at Advanced (`app.js` `sciOpen`). A player who ev
 genera without the offer, each once its family is at Open Water. **Families met first**: while a slate family may
 still open, the genera wait (`model.js` `laterWaits`). Their share of the questions follows "The rank share".
 
+**Do the genera delay the families?** Measured read-only on 2026-11-20 (rated world, fish, `--app truth`, learner
+`count`, 5,000 answers; the offer accepted against declined, paired by seed; docs/reviews/2026-11-20-fish-remeasures.md
+"The family levels and the genera"). The old delay of about 900 answers is excluded: from the 5th family at Advanced to the
+25th, the mean paired differences run from −67 to +89 answers, and no row's 95% interval (5 paired seeds, about ±1.24 sd, so ±55
+to ±170) reaches past +240. A smaller delay, up to about 250 answers, is not excluded: an interval's half-width is not a bound on
+the delay. The paired differences, in answers, mean (sd):
+
+| nth family at Advanced | beginner | lecture RA |
+| --- | --- | --- |
+| 5th (fq80a) | +19 (98) | −67 (137) |
+| 10th | −17 (87) | −62 (134) |
+| 15th (fq80b) | +17 (60) | +5 (94) |
+| 20th | +22 (45) | +55 (135) |
+| 25th | +89 (119) | +13 (102) |
+
+The 30th family is too noisy to read (sd about 700). Accepting changes what fills the share below the families (genera
+in place of species by common name), not the families' own share (64% against 64% at answers 1,001-2,000, beginner).
+Beyond reach of these runs: whether a real player's genus answers also teach the family (each simulated unit has its own
+knowledge, so any delay seen is dilution) and the app world (the run was cut at its budget). An IMR player's genera
+without the offer sit outside the rank share (`app.js` `shareFree`); they take 15% of the lecture RA's answers 301-1,000
+and 9% of 1,001-2,000, mostly before the 5th family is at Advanced, and the arms do not vary that (ROADMAP
+"learnsim: long runs crash, and the genus share").
+
 ### Fish: the species level, step 1, by common name
 
 One unit per species (`core.js` `treeSpUnits`), named by its common names: the main name shown (the IMR name for a
@@ -1140,6 +1179,67 @@ replay".
 offsets and the opening order take no answer time; only a right answer's ability steps do ("Response time"). Two
 studies measured what the time could add on the unit and the photo side, and one option was tried in three simulated
 rounds and not adopted; their records are in the notebook, and the next step is ROADMAP "Time in the photo rating".
+
+### Response time, re-measured over every subject
+
+Pierre, 2026-11-20: response time carries difficulty, experts included, even when the answer is right (either the
+photo's or the question's difficulty for that player); a fact to integrate, not a hypothesis. How the engine takes it
+waits on a design study (ROADMAP "Time in the photo rating"). This is the read-only re-measure of the same day, on the
+sheet's Answers tab (6,653 rows, 2026-11-01 to 2026-11-20; players P1, P2…; the subject from `core.js` `rowSubject`; z
+exactly as `rtWeight`; players are the statistical unit; the plan was declared before the runs). Nothing in the game
+changed. Timed answers are those with seconds, not typed:
+
+| Subject | Rows | Timed | Enlarged (players) | Timed players with 20+ | Photos timed by 2+ players | Photos with 5+ timed answers from 2+ players |
+| --- | --- | --- | --- | --- | --- | --- |
+| Corals | 3,662 | 3,020 | 284 (10) | 12 | 747 | 134 (107 by `tools/rtdecomp.py`'s definition) |
+| Fish | 2,816 | 2,694 | 27 (4) | 9 | 361 | 5 |
+| Sea slugs | 168 | 164 | 0 | 1 | 0 | 0 |
+
+The ROADMAP thresholds (photo term about 120 photos, genus term 15-20 players, the player rule and enlargement about
+5,000 timed answers and 10+ players): none met; the photo term is the closest, 107 of about 120 for corals.
+
+- **A right answer's time and the next miss on the same unit, beyond today's Expected: no residual signal.** Mean z
+  slope per player on the next answer's miss residual (the next format and the time since as covariates): corals
+  +0.001 [−0.020, +0.022] (4 of 10 players positive, sign-flip p 0.91), fish −0.006 [−0.055, +0.043] (3 of 7, p 0.80);
+  sea slugs "Not enough data yet". For corals this rules out an effect above about 1.5 points of next-miss probability for
+  an answer twice as slow as the player's usual. It cannot tell an absent signal from one `rtWeight` already absorbs; the
+  corals' dates hint at the second (to 2026-11-04, before the weight: +0.051 [−0.015, +0.116], 5 of 6 positive; from
+  2026-11-05: −0.020 [−0.042, +0.001], 1 of 9; exploratory, neither half clear). On wrong answers: corals −0.010
+  [−0.128, +0.108], fish −0.098 [−0.193, −0.004] (0 of 6, uncorrected: a slow miss is followed by fewer misses than
+  predicted).
+- **The answer's own time and its own miss** (descriptive: the time is known only after the answer). A slower answer is
+  more often wrong beyond its Expected: corals +0.073 [+0.045, +0.101], 9 of 10 players, p 0.004; fish +0.102
+  [+0.055, +0.150], 8 of 8, p 0.008.
+- **Who carries the time** (shares of the variance of log seconds, after the number of choices, views, right or wrong
+  and practice):
+
+  | Subject | Player | Unit | Photo | Player × unit | Residual |
+  | --- | --- | --- | --- | --- | --- |
+  | Corals (12 players, 1,150 photos) | 4.7% [0.4, 11.9] | 3.2% [−0.7, 8.4] | 3.9% [0.1, 9.7] | 11.9% [−0.8, 22.2] | 76% |
+  | Fish (9 players, 2,151 photos) | 12.7% [0.5, 24.2] | −0.5% [−10.8, 1.9] | 13.6% [−3.6, 24.3] | 11.0% [5.5, 22.3] | 63% |
+
+  Most of the time is noise within an answer; the player's knowledge of the unit is the largest stable part in both. The
+  corals' photo share is below the 15-18% of 2026-11-04 (a different method: REML and other fixed effects).
+- **The photo's time from the other players predicts a miss, for corals** (exploratory; leave-player-out; Expected, the
+  format and the others' time on the unit's other photos as covariates). From the others' right answers only,
+  +0.086 [+0.039, +0.133], 10 of 12 players, p 0.002 (without the unit control +0.101 [+0.062, +0.140], 12 of 12); from
+  all their answers +0.065 [+0.008, +0.122], p 0.031. A photo others answer right 1.6 times slower than their usual
+  (z = 0.5) carries about 4 points more miss than its rating predicts. It uses the photo's answers from before and
+  after: a lasting difficulty, where ROADMAP "Response time, photo term"'s replay is the online test. Fish +0.125
+  [−0.230, +0.480], 5 players, 185 answers: "Not enough data yet". The others' enlargement rate of the photo (corals)
+  +0.163 [−0.049, +0.375], p 0.093: not clear.
+- **`rtWeight` (K 1.5, LO 0.5, HI 1.5) against no weight and a per-player K** (`tools/abilityeval.js`, a subject switch
+  in a scratchpad copy identical to the repo tool on corals; the per-player K by leaving one player out over 0-3):
+  corals 15 players, no time against today's `e` − `e+A` +0.000 [−0.001, +0.002], p 0.66, a per-player K +0.001
+  [−0.000, +0.002] (worse, p 0.016); fish 9 players −0.000 [−0.003, +0.002], p 0.77 and +0.000 [−0.002, +0.003], p 0.99,
+  K 0 for 8 of 9. By the declared test no K is clearly better than 1.5, and today's weight is not clearly better than
+  none. Fish, exploratory: the weight helps after a fast right answer (removing it costs +0.007 [+0.003, +0.011]) and
+  hurts after a slow one (removing it gains −0.010 [−0.018, −0.001]); after a slow right answer `e+A` predicts 0.81
+  where players get 0.89, which hints that the slow side (`RTIME.LO`) is too harsh, to re-measure and not build until it
+  holds in corals and fish together.
+- Expected is under-confident in both subjects (the next answer predicted 0.79, actual 0.82 for corals; 0.81 and 0.87
+  for fish); each player's own intercept takes it out of the slopes. The fish replay runs a tool built for corals (no
+  false-alarm or mix-up rows, no format offsets), so its group rows are rougher.
 
 ## Multifactor analyses (`analysis.js`, admin Analyses)
 

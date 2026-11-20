@@ -80,6 +80,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [Report a problem: a line of its own on the answer's feedback, never behind More](2026-11-20-report-link-in-view.md) | #1319 |
 | 2026-11-20 | [Sea slug basics: the basics module for the sea slugs, and Basics open for them](2026-11-20-seaslug-basics.md) | #1286 |
 | 2026-11-20 | [The sea slug box pass: Opus 5.5 medium, decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
+| 2026-11-20 | [Sea slug ID marks: Caloria and Taringa from a game species' own description, Ardeadoris and Verconia left](2026-11-20-seaslug-marks-retry.md) | #1325 |
 | 2026-11-20 | [Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)](2026-11-20-slug-find-the-x.md) | #1284 |
 | 2026-11-20 | [The coral pairs with a bonus or Key-only genus: 24 tell-apart lines written, one kept without](2026-11-20-tellapart-bonus-pairs.md) | #1296 |
 | 2026-11-20 | [Tool and admin data in `data/`, what players load stays at the root](2026-11-20-tool-admin-data-into-data.md) | #1298 |
