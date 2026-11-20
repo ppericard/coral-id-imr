@@ -2,23 +2,23 @@
  "photos": {
   "seaslug-779446-cand-626726787": {"code": "o1g0mm1c1"},
   "seaslug-779446-cand-171008754": {"code": "p1g0sl1c3"},
-  "seaslug-779446-cand-628546690": {"code": "o1g0sl15"},
+  "seaslug-779446-cand-628546690": {"code": "o1g0sl15", "bb": [0.075, 0.0595, 0.9219, 0.9057]},
   "seaslug-779446-cand-268983651": {"code": "o0g0ml1c1"},
-  "seaslug-779446-cand-568513456": {"code": "p1g0sl14"},
+  "seaslug-779446-cand-568513456": {"code": "p1g0sl14", "bb": [0.0718, 0.0875, 0.9063, 0.875]},
   "seaslug-779446-cand-714284149": {"code": "o1g0mm13"},
   "seaslug-779446-cand-360995696": {"code": "p0g0sl13"},
   "seaslug-779446-cand-354573370": {"code": "o1g0bl1c1"},
-  "seaslug-779446-cand-609151518": {"code": "d1g0sl1w4"},
+  "seaslug-779446-cand-609151518": {"code": "d1g0sl1w4", "bb": [0.1781, 0.1208, 0.8532, 0.8917]},
   "seaslug-779446-cand-271229928": {"code": "o1g0ml1c1"},
   "seaslug-779446-cand-450828571": {"code": "h1g0ml12"},
-  "seaslug-779446-cand-634056293": {"code": "p1g0sl15"},
+  "seaslug-779446-cand-634056293": {"code": "p1g0sl15", "bb": [0.0531, 0.0951, 0.9438, 0.8153]},
   "seaslug-779446-cand-277718588": {"code": "o1g0ml1c1"},
   "seaslug-779446-cand-450165069": {"code": "o1g0ml1c1"},
   "seaslug-779446-cand-29831594": {"code": "d1g0ml14"},
-  "seaslug-779446-cand-626505688": {"code": "o1g0sl15"},
+  "seaslug-779446-cand-626505688": {"code": "o1g0sl15", "bb": [0.1937, 0.1868, 0.7563, 0.8265]},
   "seaslug-779446-cand-171008748": {"code": "o1g0ml1c1"},
   "seaslug-779446-cand-391679012": {"code": "p0g0sl13"},
-  "seaslug-779446-cand-568513446": {"code": "o1g0sl15"},
-  "seaslug-779446-cand-391721808": {"code": "o1g0sl15"}
+  "seaslug-779446-cand-568513446": {"code": "o1g0sl15", "bb": [0.0718, 0.0666, 0.8438, 0.8584]},
+  "seaslug-779446-cand-391721808": {"code": "o1g0sl15", "bb": [0.125, 0.0942, 0.8407, 0.8258]}
  }
 }

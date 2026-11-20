@@ -4,21 +4,21 @@
   "seaslug-418333-cand-268773145": {"code": "p1g0mm13"},
   "seaslug-418333-cand-270954120": {"code": "o1g0mm13"},
   "seaslug-418333-cand-649943461": {"code": "h1g0sm1c1"},
-  "seaslug-418333-cand-238030611": {"code": "o1g0sl15"},
+  "seaslug-418333-cand-238030611": {"code": "o1g0sl15", "bb": [0.1906, 0.3733, 0.7169, 0.6359]},
   "seaslug-418333-cand-348289933": {"code": "o1g0sl1c3"},
   "seaslug-418333-cand-277673372": {"code": "p1g0ml1c2"},
   "seaslug-418333-cand-168259854": {"code": "o1g0sls5"},
-  "seaslug-418333-cand-113198865": {"code": "p1g0sl15"},
+  "seaslug-418333-cand-113198865": {"code": "p1g0sl15", "bb": [0.1643, 0.4483, 0.95, 0.6275]},
   "seaslug-418333-cand-612989444": {"code": "o1g0ml14"},
   "seaslug-418333-cand-100936254": {"code": "o1g0sl1c3"},
   "seaslug-418333-cand-453038857": {"code": "o0g0sl13"},
   "seaslug-418333-cand-277709895": {"code": "o1g0ml14"},
   "seaslug-418333-cand-269191427": {"code": "o1g0sl14", "note": "the body on a busy yellow-green turf that competes with its outline"},
   "seaslug-418333-cand-303120524": {"code": "o1g0ml1c2"},
-  "seaslug-418333-cand-315733358": {"code": "o1g0sl15"},
+  "seaslug-418333-cand-315733358": {"code": "o1g0sl15", "bb": [0.0831, 0.3183, 0.8207, 0.7229]},
   "seaslug-418333-cand-291600177": {"code": "o0d0ml11"},
-  "seaslug-418333-cand-353886078": {"code": "o1g0sl15"},
+  "seaslug-418333-cand-353886078": {"code": "o1g0sl15", "bb": [0.2066, 0.1833, 0.7917, 0.8856]},
   "seaslug-418333-cand-459464728": {"code": "p1d0mm11", "note": "a dark speckled animal on dark speckled rock that competes with its outline"},
-  "seaslug-418333-cand-577970606": {"code": "o1g0sl14", "note": "a dark green body on dark rubble that competes with its outline"}
+  "seaslug-418333-cand-577970606": {"code": "o1g0sl14", "bb": [0.1679, 0.3312, 0.854, 0.7584], "note": "a dark green body on dark rubble that competes with its outline"}
  }
 }

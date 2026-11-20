@@ -1,24 +1,24 @@
 {
  "photos": {
-  "seaslug-505174-cand-105399574": {"code": "p1g0sl15"},
+  "seaslug-505174-cand-105399574": {"code": "p1g0sl15", "bb": [0.1562, 0.2291, 0.8157, 0.8225]},
   "seaslug-505174-cand-701423918": {"code": "h1g0ss11"},
-  "seaslug-505174-cand-384260228": {"code": "p1g0sl15"},
+  "seaslug-505174-cand-384260228": {"code": "p1g0sl15", "bb": [0.2706, 0.2119, 0.7675, 0.7488]},
   "seaslug-505174-cand-442899744": {"code": "o0g0sls3"},
   "seaslug-505174-cand-444542902": {"code": "o0g0sl13"},
   "seaslug-505174-cand-277698856": {"code": "p1g0ss12", "note": "a small animal in busy green turf that competes with its outline"},
   "seaslug-505174-cand-270411208": {"code": "o1g0ms12"},
   "seaslug-505174-cand-351979586": {"code": "d1g0bs11"},
-  "seaslug-505174-cand-443286018": {"code": "p1g0sl15"},
-  "seaslug-505174-cand-172765128": {"code": "o1g0sl14", "note": "debris and hydroids across the lower body"},
-  "seaslug-505174-cand-510967820": {"code": "p1g0sl15"},
+  "seaslug-505174-cand-443286018": {"code": "p1g0sl15", "bb": [0.275, 0.4072, 0.7322, 0.7718]},
+  "seaslug-505174-cand-172765128": {"code": "o1g0sl14", "bb": [0.1, 0.2309, 0.895, 0.74], "note": "debris and hydroids across the lower body"},
+  "seaslug-505174-cand-510967820": {"code": "p1g0sl15", "bb": [0.2562, 0.2545, 0.7938, 0.8111]},
   "seaslug-505174-cand-501234023": {"code": "p1g0ml14"},
   "seaslug-505174-cand-627849275": {"code": "h1g0sl13"},
-  "seaslug-505174-cand-605667819": {"code": "o1g0sm14"},
+  "seaslug-505174-cand-605667819": {"code": "o1g0sm14", "bb": [0.3312, 0.3375, 0.5888, 0.7934]},
   "seaslug-505174-cand-426589167": {"code": "d1g0ms12"},
   "seaslug-505174-cand-462671032": {"code": "h1g0sm12"},
   "seaslug-505174-cand-691220761": {"code": "o1g1sm13"},
-  "seaslug-505174-cand-593180048": {"code": "d1g0sl15"},
+  "seaslug-505174-cand-593180048": {"code": "d1g0sl15", "bb": [0.2875, 0.1444, 0.8334, 0.6889]},
   "seaslug-505174-cand-466294994": {"code": "d1g0ml14"},
-  "seaslug-505174-cand-312798211": {"code": "d1g0sl15"}
+  "seaslug-505174-cand-312798211": {"code": "d1g0sl15", "bb": [0.275, 0.1914, 0.7513, 0.7599]}
  }
 }

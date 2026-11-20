@@ -1,8 +1,8 @@
 {
  "photos": {
-  "seaslug-Chromodoris-cand-129404772": {"code": "p1g0sl15"},
+  "seaslug-Chromodoris-cand-129404772": {"code": "p1g0sl15", "bb": [0.3737, 0.3208, 0.87, 0.625]},
   "seaslug-Chromodoris-cand-711727214": {"code": "p0g0sl1j2"},
-  "seaslug-Chromodoris-cand-181341233": {"code": "o1g0sl15"},
+  "seaslug-Chromodoris-cand-181341233": {"code": "o1g0sl15", "bb": [0.138, 0.2703, 0.813, 0.7822]},
   "seaslug-Chromodoris-cand-692710236": {"code": "p0g0sls3"},
   "seaslug-Chromodoris-cand-492257783": {"code": "d1g0sls5"},
   "seaslug-Chromodoris-cand-479514629": {"code": "o0g1mm11"},
@@ -12,15 +12,15 @@
   "seaslug-Chromodoris-cand-32160988": {"code": "o0g0sl13"},
   "seaslug-Chromodoris-cand-446729699": {"code": "o0g0sl13"},
   "seaslug-Chromodoris-cand-350038142": {"code": "o0g0sm12"},
-  "seaslug-Chromodoris-cand-114976170": {"code": "p1g0sl15"},
-  "seaslug-Chromodoris-cand-63746382": {"code": "o1g0sl15"},
-  "seaslug-Chromodoris-cand-470877291": {"code": "d1g0sm14"},
-  "seaslug-Chromodoris-cand-362738958": {"code": "p1g1sl14"},
-  "seaslug-Chromodoris-cand-627849317": {"code": "o1g0sl15"},
-  "seaslug-Chromodoris-cand-264941708": {"code": "p1g0sl15"},
+  "seaslug-Chromodoris-cand-114976170": {"code": "p1g0sl15", "bb": [0.125, 0.2933, 0.8675, 0.7434]},
+  "seaslug-Chromodoris-cand-63746382": {"code": "o1g0sl15", "bb": [0.1468, 0.1294, 0.8032, 0.8284]},
+  "seaslug-Chromodoris-cand-470877291": {"code": "d1g0sm14", "bb": [0.4762, 0.1278, 0.6669, 0.678]},
+  "seaslug-Chromodoris-cand-362738958": {"code": "p1g1sl14", "bb": [0.18, 0.3291, 0.7988, 0.6542]},
+  "seaslug-Chromodoris-cand-627849317": {"code": "o1g0sl15", "bb": [0.2621, 0.2175, 0.7817, 0.7313]},
+  "seaslug-Chromodoris-cand-264941708": {"code": "p1g0sl15", "bb": [0.1637, 0.1958, 0.605, 0.6542]},
   "seaslug-Chromodoris-cand-725645166": {"code": "h1g0ml12"},
   "seaslug-Chromodoris-cand-70027624": {"code": "o1g1mm12"},
-  "seaslug-Chromodoris-cand-181341228": {"code": "d1g0sl15"},
+  "seaslug-Chromodoris-cand-181341228": {"code": "d1g0sl15", "bb": [0.183, 0.1589, 0.818, 0.812]},
   "seaslug-Chromodoris-cand-697323925": {"code": "o0g0sm12"},
   "seaslug-Chromodoris-cand-610094434": {"code": "o1g0sms4"},
   "seaslug-Chromodoris-cand-264941469": {"code": "h1g0sl13"},
@@ -28,7 +28,7 @@
   "seaslug-Chromodoris-cand-472819105": {"code": "o1g0ss11", "note": "a tiny animal on a large busy reef"},
   "seaslug-Chromodoris-cand-471558679": {"code": "d1g2bs11"},
   "seaslug-Chromodoris-cand-501337566": {"code": "h1g0mm11"},
-  "seaslug-Chromodoris-cand-116872575": {"code": "d1g0sl15"},
-  "seaslug-Chromodoris-cand-443336618": {"code": "o1g0sl1w4", "note": "the mantle folded, the body twisted"}
+  "seaslug-Chromodoris-cand-116872575": {"code": "d1g0sl15", "bb": [0.2077, 0.2382, 0.8522, 0.8451]},
+  "seaslug-Chromodoris-cand-443336618": {"code": "o1g0sl1w4", "bb": [0.2478, 0.2175, 0.7643, 0.7718], "note": "the mantle folded, the body twisted"}
  }
 }
