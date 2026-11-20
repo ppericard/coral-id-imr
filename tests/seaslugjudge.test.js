@@ -112,7 +112,7 @@ test('the judging files: keep optional (one photo per observation), the egg rule
     },
     'judging/seaslug/901.json': {
       photos: {
-        'seaslug-901-cand-4': {code: 'p1n0slm15', phase: 'male', bb: [0, 0, 1, 1], unsure: ['egg']}
+        'seaslug-901-cand-4': {code: 'p1n0slm15', phase: 'male', unsure: ['egg']}
       }
     }
   });
@@ -134,7 +134,7 @@ print(json.dumps([E1, [JF.entry('900', x) for x in j['photos'].values()], E2, E3
   ]);
   const bad = E2.join('\n');
   assert.match(bad, /code must follow judging\/SEASLUG.md "Tags" \(e\.g\. d1g0sl15\)/);
-  assert.match(bad, /unknown fields \['bb', 'phase'\]/);
+  assert.match(bad, /unknown fields \['phase'\]/, 'no phase for sea slugs; the box is a field now');
   assert.match(bad, /unsure must be a list of field names/, 'an egg photo is never a doubt: one that cannot be told apart goes');
   assert.match(E3.join('\n'), /an egg-mass photo is \{"egg": true\} \(a note at most\)/);
   // An observation whose only photo is an egg mass needs no best (E1 passes with cand-3 egg only).
@@ -143,11 +143,51 @@ print(json.dumps([E1, [JF.entry('900', x) for x in j['photos'].values()], E2, E3
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
+test("the animal's box: [left, top, right, bottom] fractions, inside the photo, not a speck, not cut by the crop; unsure may name it", () => {
+  const dir = world({});
+  const out = RUN(
+    dir,
+    `ok = {'code': 'd1g0sl15'}
+def errs(x):
+    bad = {'photos': {'seaslug-900-cand-1': {**ok, **x}, 'seaslug-900-cand-2': {'egg': True}, 'seaslug-900-cand-3': {'egg': True}}}
+    JF.load, real = (lambda p, d=None: bad if p.endswith('900.json') else real(p, d)), JF.load
+    try:
+        return JF.check('900')[0]
+    finally:
+        JF.load = real
+cases = {
+  'good': {'bb': [0.1, 0.2, 0.8, 0.9]},
+  'whole photo': {'bb': [0, 0, 1, 1]},
+  'pixels': {'bb': [80, 70, 1250, 640]},
+  'outside': {'bb': [0.5, 0.2, 1.2, 0.9]},
+  'negative': {'bb': [-0.1, 0.2, 0.8, 0.9]},
+  'inverted': {'bb': [0.8, 0.2, 0.1, 0.9]},
+  'not four': {'bb': [0.1, 0.2, 0.8]},
+  'a speck': {'bb': [0.5, 0.5, 0.51, 0.9]},
+  'cut by the crop': {'bb': [0.1, 0.2, 0.8, 0.9], 'crop': [0.3, 0, 1, 1]},
+  'inside the crop': {'bb': [0.4, 0.2, 0.8, 0.9], 'crop': [0.3, 0, 1, 1]},
+  'doubted': {'bb': [0.1, 0.2, 0.8, 0.9], 'unsure': ['bb'], 'note': 'the tail may run on'},
+  'doubted, no note': {'bb': [0.1, 0.2, 0.8, 0.9], 'unsure': ['bb']},
+}
+print(json.dumps({k: errs(v) for k, v in cases.items()}))`
+  );
+  const n = k => out[k].length;
+  for (const k of ['good', 'whole photo', 'inside the crop', 'doubted']) assert.deepStrictEqual(out[k], [], k);
+  for (const k of ['pixels', 'outside', 'negative', 'inverted', 'not four']) {
+    assert.strictEqual(n(k), 1, k);
+    assert.match(out[k][0], /bb must be the animal's box \[left, top, right, bottom\], fractions of the photo/, k);
+  }
+  assert.match(out['a speck'][0], /bb is under 2% of the photo's width or height/);
+  assert.match(out['cut by the crop'][0], /the crop cuts the fish's box bb/);
+  assert.match(out['doubted, no note'][0], /note required when unsure is not empty/);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 test('the import writes suggest.json "seaslug" beside the fish judgements, which stay as they were; codes re-applies a re-judge', () => {
   const dir = world({
     'judging/seaslug/900.json': {
       photos: {
-        'seaslug-900-cand-1': {code: 'd1g0sl15'},
+        'seaslug-900-cand-1': {code: 'd1g0sl15', bb: [0.1, 0.2, 0.8, 0.9]},
         'seaslug-900-cand-2': {code: 'v1g0sl15'},
         'seaslug-900-cand-3': {egg: true}
       }
@@ -169,7 +209,7 @@ print(json.dumps(code))`
   assert.deepStrictEqual(S.fish, before.fish);
   assert.deepStrictEqual(S.by.s001, before.by.s001);
   assert.deepStrictEqual(S.seaslug, {
-    'seaslug-900-cand-1': {jt: 'd1g0sl1', e: 5, k: 'best'},
+    'seaslug-900-cand-1': {jt: 'd1g0sl1', e: 5, k: 'best', bb: [0.1, 0.2, 0.8, 0.9]}, // the animal's box, as the fish's
     'seaslug-900-cand-2': {jt: 'v1g0sl1', e: 3, k: 'best'},
     'seaslug-900-cand-3': {egg: 1}
   });
@@ -181,7 +221,7 @@ print(json.dumps(code))`
       photos: {
         'seaslug-900-cand-1': {egg: true},
         'seaslug-900-cand-2': {code: 'v1g0sl15'},
-        'seaslug-900-cand-3': {code: 'o1g0sl14', crop: [0.1, 0.2, 0.9, 0.8]}
+        'seaslug-900-cand-3': {code: 'o1g0sl14', crop: [0.1, 0.2, 0.9, 0.8], bb: [0.2, 0.3, 0.7, 0.7]}
       }
     })
   );
@@ -197,7 +237,13 @@ print(json.dumps(datetime.date.today().isoformat()))`
   );
   const S2 = JSON.parse(fs.readFileSync(path.join(dir, 'suggest.json'), 'utf8'));
   assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-1'], {egg: 1});
-  assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-3'], {jt: 'o1g0sl1', e: 4, k: 'best', c: [0.1, 0.2, 0.9, 0.8]});
+  assert.deepStrictEqual(S2.seaslug['seaslug-900-cand-3'], {
+    jt: 'o1g0sl1',
+    e: 4,
+    k: 'best',
+    c: [0.1, 0.2, 0.9, 0.8],
+    bb: [0.2, 0.3, 0.7, 0.7]
+  });
   assert.deepStrictEqual(S2.fish, before.fish);
   assert.deepStrictEqual(S2.by['900'].seaslug, {...S.by['900'].seaslug, at: today}, 'the re-judged species is dated');
   assert.deepStrictEqual(S2.by.s001, before.by.s001, 'a species it did not change keeps its date');
