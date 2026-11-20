@@ -604,7 +604,7 @@ function viewLookalikes(a, b) {
       gB = GX(m.B),
       x = mix(m);
     const half = (n, p, k) =>
-      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(unameT(n))}${SUBJ.views.length > 1 ? ', ' + viewWord(p.view).toLowerCase() + ' view' : ''}"></button><figcaption>${uname(n)}</figcaption></figure>`;
+      `<figure class="lkph"${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(unameT(n))}${SUBJ.views.length > 1 ? ', ' + viewWord(p.view).toLowerCase() + ' view' : ''}"></button><figcaption>${uname(n)}</figcaption></figure>`;
     // A unit's tips under its name, with the source its label names where it has one (a tree subject's marks and cues
     // carry theirs: tipsLabel; the corals' lecture tips are the pair's source, said above).
     const tip = (n, g) =>

@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-56646-cand-479441296": {"code": "d1g1ms11"},
-  "seaslug-56646-cand-2670598": {"code": "o1g0sl15"},
+  "seaslug-56646-cand-2670598": {"code": "o1g0sl15", "bb": [0.2543, 0.2607, 0.8907, 0.6755]},
   "seaslug-56646-cand-655727345": {"code": "d1g0sm14"},
-  "seaslug-56646-cand-487806147": {"code": "o1g0sm14"},
+  "seaslug-56646-cand-487806147": {"code": "o1g0sm14", "bb": [0.3056, 0.3636, 0.8033, 0.6772]},
   "seaslug-56646-cand-407928988": {"code": "d1g0ml14"},
   "seaslug-56646-cand-654706886": {"code": "p1g0bl12"},
-  "seaslug-56646-cand-269790957": {"code": "o1g0sl15"},
-  "seaslug-56646-cand-614854124": {"code": "o1g0sm14"},
+  "seaslug-56646-cand-269790957": {"code": "o1g0sl15", "bb": [0.0525, 0.1722, 0.8834, 0.6445]},
+  "seaslug-56646-cand-614854124": {"code": "o1g0sm14", "bb": [0.4031, 0.2681, 0.825, 0.8452]},
   "seaslug-56646-cand-596086052": {"code": "o0g0sl13"},
   "seaslug-56646-cand-627035539": {"code": "d1g0sm14"},
-  "seaslug-56646-cand-604507161": {"code": "o1g0sl15"},
-  "seaslug-56646-cand-163934583": {"code": "d1g0sm14"},
-  "seaslug-56646-cand-257317001": {"code": "o1g0sl15"},
+  "seaslug-56646-cand-604507161": {"code": "o1g0sl15", "bb": [0.0911, 0.3196, 0.8301, 0.729]},
+  "seaslug-56646-cand-163934583": {"code": "d1g0sm14", "bb": [0.1914, 0.125, 0.711, 0.7709]},
+  "seaslug-56646-cand-257317001": {"code": "o1g0sl15", "bb": [0.0656, 0.1762, 0.8469, 0.8729]},
   "seaslug-56646-cand-543395355": {"code": "d1g0sm13", "note": "Curled up: the shape reads less well."},
   "seaslug-56646-cand-601645327": {"code": "o1g0ss12"},
-  "seaslug-56646-cand-254174224": {"code": "p1g0sl15"},
-  "seaslug-56646-cand-623515867": {"code": "p1g0sm14"},
+  "seaslug-56646-cand-254174224": {"code": "p1g0sl15", "bb": [0.225, 0.3483, 0.9125, 0.59]},
+  "seaslug-56646-cand-623515867": {"code": "p1g0sm14", "bb": [0.25, 0.2983, 0.9375, 0.7209]},
   "seaslug-56646-cand-608897830": {"code": "o1g1ms11"},
-  "seaslug-56646-cand-641808299": {"code": "d1g0sl15"},
-  "seaslug-56646-cand-352825326": {"code": "d1g0sl15"}
+  "seaslug-56646-cand-641808299": {"code": "d1g0sl15", "bb": [0.1343, 0.3625, 0.6532, 0.675]},
+  "seaslug-56646-cand-352825326": {"code": "d1g0sl15", "bb": [0.1718, 0.3092, 0.8357, 0.7008]}
  }
 }

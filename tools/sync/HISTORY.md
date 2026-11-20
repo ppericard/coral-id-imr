@@ -16,10 +16,6 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
-## v204 (2026-11-20)
-
-Memory opens to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `pairs` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: Memory records nothing for any subject (no answer, no progress, no log row), so no answer is scored, replayed or logged differently and no rules version is appended; the copy of `core.js` in this script carries only the new `pages`
-
 ## v203 (2026-11-20)
 
 The species by their scientific names become the app's own (docs/reviews/2026-11-18-species-step2-plan.md §5 item 3): `core.js` `SUBJECTS` gains `names`, the kinds of name a tree subject's species are asked by (fish `cn` and `sci`, sea slugs `sci` only, Q369), which the app's units read. The script reads none of it: its replay, its board tree and its smaller faults are v198's, unchanged

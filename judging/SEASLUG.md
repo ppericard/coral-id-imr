@@ -177,6 +177,31 @@ later species level to check; the cues are the sources', never shown to players 
   pustulosa*, *Thuridilla gracilis*, *Costasiella kuroshimae*, *Jorunna funebris*, *Plakobranchus ocellatus*): a
   species-level photo is a photo of the complex, sure at the genus level. Nothing to add.
 
+## The animal's box (Find the X, Pierre, 2026-11-19, Q437)
+
+"Find the X" shows a photo as a small square tile, so the tile must show almost only the animal, tight, whole.
+`tools/seaslug_game.py` cuts it from the animal's **box** with the fish's own cut ([FISH.md](FISH.md) "The fish's box":
+`tools/fish_game.py` `tile_crop`).
+
+- **Which photos**: those whose tags pass `tools/seaslug_game.py` `tile_tags`: the fish's rule (profile or oblique, whole,
+  good light, colour loss 0 or 1, sharp, large or medium, one animal, no `j`, `c` or `a`) with the dorsal view added.
+  Any other photo gets no box.
+- **The box**: `bb` = `[left, top, right, bottom]` as fractions of the original photo (the crop's format), the tightest
+  rectangle around the **whole** animal to its tips: body and mantle, foot and tail, rhinophores, gill plume, oral
+  tentacles or veil, cerata, parapodia, the mantle's rim and papillae; long thin parts count. Never the host or
+  substrate it sits on, its shadow, its egg ribbon or another slug; no margin (the tile adds its own).
+- **No box** (leave `bb` out; the first that applies): no sea slug in the frame; the animal cut by the frame; two animals
+  overlapping or touching, so that no rectangle holds one without a part of the other; more than a fifth hidden; an outline
+  that cannot be traced (camouflage alone is not a reason: trace it if you can). In doubt, no box.
+- **The tile must not show another slug**: if any part of another sea slug lies inside the square cut around the box
+  (1.2 x the box's longer side, centred on it), the photo gets no `bb` either (a box is always cut into a tile).
+- **A bulk pass**: pixel boxes `[x, y, w, h]` judged on 1,600 px images are converted to these fractions, rounded outward,
+  and imported as `bb` (the measurement, [decision record](../docs/decisions/2026-11-20-seaslug-box-model.md)).
+  `unsure` may name `bb`, which withholds the tile only.
+- **Checked on import**: `python3 tools/judging_fish.py --subject seaslug --check` refuses a box that is not four fractions
+  with `0 <= left < right <= 1` and `0 <= top < bottom <= 1`, one narrower or shorter than 2% of the photo, or one the
+  proposed `crop` cuts.
+
 ## Candidates: the judging files
 
 `judging/seaslug/<taxon id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:
@@ -185,10 +210,12 @@ later species level to check; the cues are the sources', never shown to players 
 - `keep` (optional): `best`, `alt` or `dup`, as the fish's. A sea-slug candidate is one observation (one photo each,
   `tools/fetch_seaslugs.py`), so a judgement without `keep` reads `best`; exactly one `best` per observation still holds.
 - `crop` (optional): `[left, top, right, bottom]` fractions of the photo, as FISH.md "A proposed crop", Q430 aside.
-- `unsure` (the fields you doubt: `code`, `keep`, `crop`) and `note` (140 characters at most; required with `unsure`).
+- `unsure` (the fields you doubt: `code`, `keep`, `crop`, `bb`) and `note` (140 characters at most; required with `unsure`).
 - An egg-mass photo: `{"egg": true}` and nothing else but a `note`.
 
-No `phase` (no presentation names a sea-slug phase; rule C2) and no `bb` (the fish's box is for the fish games' tiles).
+- `bb` (optional, for a photo whose code passes the tile rule): the animal's box, "The animal's box" above.
+
+No `phase` (no presentation names a sea-slug phase; rule C2).
 
 `python3 tools/judging_fish.py --subject seaslug --check [id ...]` until it passes, then `python3 tools/judging_fish.py
 --subject seaslug [id ...]` imports every passing species into `suggest.json` `"seaslug"`: `{jt, e, k, c, u, n}` (`jt`

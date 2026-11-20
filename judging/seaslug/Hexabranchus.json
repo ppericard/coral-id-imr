@@ -1,16 +1,16 @@
 {
  "photos": {
-  "seaslug-Hexabranchus-cand-202816171": {"code": "o1g0sl1w5"},
+  "seaslug-Hexabranchus-cand-202816171": {"code": "o1g0sl1w5", "bb": [0.05, 0.0791, 0.8094, 0.7709]},
   "seaslug-Hexabranchus-cand-46854618": {"code": "o1g0mm13"},
   "seaslug-Hexabranchus-cand-103005218": {"code": "o0g0mm1j3"},
   "seaslug-Hexabranchus-cand-362873284": {"egg": true, "note": "a red egg rosette in branching coral, no animal"},
-  "seaslug-Hexabranchus-cand-71201868": {"code": "p1g0sl14", "note": "swimming: the mantle folded over itself"},
+  "seaslug-Hexabranchus-cand-71201868": {"code": "p1g0sl14", "bb": [0.125, 0.138, 0.8938, 0.8816], "note": "swimming: the mantle folded over itself"},
   "seaslug-Hexabranchus-cand-63746658": {"code": "d1g0sl1j5"},
   "seaslug-Hexabranchus-cand-351286648": {"egg": true, "note": "a red egg rosette on algae, no animal"},
   "seaslug-Hexabranchus-cand-310596729": {"egg": true, "note": "a red egg rosette, no animal"},
   "seaslug-Hexabranchus-cand-342262997": {"egg": true, "note": "a pink egg rosette on coral, no animal"},
   "seaslug-Hexabranchus-cand-376997163": {"egg": true, "note": "a red egg rosette round a rock, no animal"},
-  "seaslug-Hexabranchus-cand-202816204": {"code": "o1g0sl1w5"},
+  "seaslug-Hexabranchus-cand-202816204": {"code": "o1g0sl1w5", "bb": [0.1062, 0.1833, 0.6657, 0.6917]},
   "seaslug-Hexabranchus-cand-310604908": {"egg": true, "note": "a red egg rosette on rubble, no animal"},
   "seaslug-Hexabranchus-cand-497714232": {"code": "o1g0ml14"},
   "seaslug-Hexabranchus-cand-376997137": {"egg": true, "note": "a red egg rosette on rubble among soft corals, no animal"}

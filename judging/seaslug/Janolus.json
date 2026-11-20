@@ -1,19 +1,19 @@
 {
  "photos": {
-  "seaslug-Janolus-cand-678057036": {"code": "o1g0sl15"},
-  "seaslug-Janolus-cand-585402079": {"code": "o1g0sl1w4", "note": "hydroid branches across the cerata"},
-  "seaslug-Janolus-cand-628984992": {"code": "o1g0sl15"},
-  "seaslug-Janolus-cand-445578489": {"code": "o1g0sl15"},
+  "seaslug-Janolus-cand-678057036": {"code": "o1g0sl15", "bb": [0.0281, 0.0656, 0.75, 0.7438]},
+  "seaslug-Janolus-cand-585402079": {"code": "o1g0sl1w4", "bb": [0.2428, 0.4287, 0.6465, 0.9379], "note": "hydroid branches across the cerata"},
+  "seaslug-Janolus-cand-628984992": {"code": "o1g0sl15", "bb": [0.1562, 0.1724, 0.875, 0.8285]},
+  "seaslug-Janolus-cand-445578489": {"code": "o1g0sl15", "bb": [0.0562, 0.1875, 0.9219, 0.9125]},
   "seaslug-Janolus-cand-631755839": {"code": "o1g0mm1c1"},
-  "seaslug-Janolus-cand-182247127": {"code": "p1g0sl15"},
-  "seaslug-Janolus-cand-610992456": {"code": "p1g0sl1w5"},
-  "seaslug-Janolus-cand-63745537": {"code": "d1g0sl15"},
-  "seaslug-Janolus-cand-638436166": {"code": "p1g0sl15"},
-  "seaslug-Janolus-cand-279756434": {"code": "o1g0sl14", "note": "algal threads across the head end"},
-  "seaslug-Janolus-cand-608327722": {"code": "o1g0sl15"},
+  "seaslug-Janolus-cand-182247127": {"code": "p1g0sl15", "bb": [0.085, 0.1239, 0.915, 0.8954]},
+  "seaslug-Janolus-cand-610992456": {"code": "p1g0sl1w5", "bb": [0.1091, 0.1805, 0.9855, 0.8936]},
+  "seaslug-Janolus-cand-63745537": {"code": "d1g0sl15", "bb": [0.1375, 0.0797, 0.85, 0.91]},
+  "seaslug-Janolus-cand-638436166": {"code": "p1g0sl15", "bb": [0.265, 0.2733, 0.97, 0.7334]},
+  "seaslug-Janolus-cand-279756434": {"code": "o1g0sl14", "bb": [0.1171, 0.1043, 0.5616, 0.9305], "note": "algal threads across the head end"},
+  "seaslug-Janolus-cand-608327722": {"code": "o1g0sl15", "bb": [0.0375, 0.2687, 0.8819, 0.7282]},
   "seaslug-Janolus-cand-628265371": {"code": "d1g0sl14", "note": "the pale algae around it compete with the pale body"},
-  "seaslug-Janolus-cand-182247132": {"code": "d1g0sl15"},
+  "seaslug-Janolus-cand-182247132": {"code": "d1g0sl15", "bb": [0.22, 0.0857, 0.755, 0.8736]},
   "seaslug-Janolus-cand-391590159": {"code": "o1g0mlx1", "note": "a brown frayed shape among hydroids: which part is the animal is not obvious"},
-  "seaslug-Janolus-cand-505093451": {"code": "o1g0sl15"}
+  "seaslug-Janolus-cand-505093451": {"code": "o1g0sl15", "bb": [0.1562, 0.1609, 0.8, 0.8506]}
  }
 }

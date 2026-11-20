@@ -11,7 +11,7 @@
   "seaslug-49860-cand-509072672": {"code": "d1d1mm11"},
   "seaslug-49860-cand-727339702": {"code": "d1g1ml1c1"},
   "seaslug-49860-cand-277475656": {"code": "d0g1ml11"},
-  "seaslug-49860-cand-169494049": {"code": "o1g0sl15"},
+  "seaslug-49860-cand-169494049": {"code": "o1g0sl15", "bb": [0.07, 0.0355, 0.94, 0.9447]},
   "seaslug-49860-cand-394079885": {"code": "d1g1mm1c1"},
   "seaslug-49860-cand-629511633": {"code": "d1g0ms12"},
   "seaslug-49860-cand-254608577": {"code": "d1g1ml13"},

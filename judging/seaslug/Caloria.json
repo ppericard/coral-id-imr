@@ -1,18 +1,18 @@
 {
  "photos": {
-  "seaslug-Caloria-cand-96177532": {"code": "o1g0sl15"},
-  "seaslug-Caloria-cand-182088306": {"code": "p1g0sl15"},
-  "seaslug-Caloria-cand-443261430": {"code": "o1g0sl1w4", "note": "hydroid stems around the cerata compete with the outline"},
-  "seaslug-Caloria-cand-380834753": {"code": "o1g0sl15"},
-  "seaslug-Caloria-cand-613905569": {"code": "p1g0sl1w5"},
+  "seaslug-Caloria-cand-96177532": {"code": "o1g0sl15", "bb": [0.1838, 0.1431, 0.899, 0.8416]},
+  "seaslug-Caloria-cand-182088306": {"code": "p1g0sl15", "bb": [0.058, 0.1553, 0.915, 0.8503]},
+  "seaslug-Caloria-cand-443261430": {"code": "o1g0sl1w4", "bb": [0.3771, 0.1629, 0.7022, 0.8972], "note": "hydroid stems around the cerata compete with the outline"},
+  "seaslug-Caloria-cand-380834753": {"code": "o1g0sl15", "bb": [0.1218, 0.1315, 0.9125, 0.8489]},
+  "seaslug-Caloria-cand-613905569": {"code": "p1g0sl1w5", "bb": [0.07, 0.1975, 0.9813, 0.7131]},
   "seaslug-Caloria-cand-370144610": {"code": "h1g0sm1w2"},
   "seaslug-Caloria-cand-182088301": {"code": "o0g0sl13"},
-  "seaslug-Caloria-cand-380835064": {"code": "p1g0sl15"},
+  "seaslug-Caloria-cand-380835064": {"code": "p1g0sl15", "bb": [0.1737, 0.1965, 0.8769, 0.7905]},
   "seaslug-Caloria-cand-100095979": {"code": "o1g0sl14", "note": "hydroid stems around the cerata compete with the outline"},
-  "seaslug-Caloria-cand-354756755": {"code": "o1g0sm14"},
-  "seaslug-Caloria-cand-628098074": {"code": "p1g0sl15"},
-  "seaslug-Caloria-cand-87246511": {"code": "p1g0sm14"},
-  "seaslug-Caloria-cand-182088294": {"code": "o1g0sl15"},
+  "seaslug-Caloria-cand-354756755": {"code": "o1g0sm14", "bb": [0.2266, 0.2437, 0.7584, 0.8375]},
+  "seaslug-Caloria-cand-628098074": {"code": "p1g0sl15", "bb": [0.095, 0.1332, 0.8888, 0.718]},
+  "seaslug-Caloria-cand-87246511": {"code": "p1g0sm14", "bb": [0.2093, 0.265, 0.85, 0.6584]},
+  "seaslug-Caloria-cand-182088294": {"code": "o1g0sl15", "bb": [0.158, 0.2326, 0.93, 0.8449]},
   "seaslug-Caloria-cand-182088547": {"code": "h1g0sl13"},
   "seaslug-Caloria-cand-182088312": {"code": "p1g0sl15"}
  }

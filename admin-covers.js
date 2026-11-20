@@ -80,7 +80,7 @@
       .filter(Boolean)
       .join(' · ');
   }
-  // A node page's cover (Photos › Tree, admin.js renderFishUnits): the photo in force on node id among its photos in play
+  // A node page's cover (Photos › Tree, admin.js renderTree): the photo in force on node id among its photos in play
   // L, in its page's order, and how it was chosen. by: 'mine' (his ★ pick, in play, not a juvenile), 'rule' (a node with
   // leaves under it: the default cover rule, fishCoverRule, its result in rule) or 'first' (a leaf: its first adult photo,
   // fishLeafCover); juv: his pick is a juvenile he has not confirmed as the cover (ignored), jok: one he confirmed (in
