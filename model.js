@@ -350,11 +350,20 @@ function photoAny(n) {
   );
 }
 // The photo variants of unit n (core.js varKindOf, VAR_AT): a unit's home, the record at its subject's unit rank
-// it hangs from (itself for a family; a fish genus's or species' family), holds its juvenile classes (juv) and its
-// thresholds' overrides (varAt); a unit's own varAt wins over its home's for a kind, the default table VAR_AT last.
+// it hangs from (itself for a family; a fish genus's or species' family, a fish species by its scientific name through its
+// genus), holds its juvenile classes (juv) and its thresholds' overrides (varAt); a unit's own varAt wins over its home's
+// for a kind, the default table VAR_AT last.
 const varHome = n => {
-  const g = GX(n) || {};
-  return (typeof rankOf === 'function' ? rankOf(n) : '') === '' ? n : g.parent || g.family || n;
+  const rk = x => (typeof rankOf === 'function' ? rankOf(x) : '');
+  let x = n;
+  for (let i = 0; i < 4 && rk(x) !== ''; i++) {
+    const g = GX(x) || {},
+      up = g.parent || g.family;
+    if (!up) break;
+    x = up;
+    if (!GX(x)) break;
+  }
+  return x;
 };
 const varAtOf = (n, v) => ((GX(n) || {}).varAt || {})[v] || ((GX(varHome(n)) || {}).varAt || {})[v] || VAR_AT[v] || [0, 0];
 const varKind = (n, p) => varKindOf(p, (GX(varHome(n)) || {}).juv);
@@ -399,7 +408,7 @@ function varOf(n, L) {
 // class, or when the pair sits inside t (two blennies asked as their family).
 const mimUnit = (t, p) => {
   const m = p ? mimOf(t, p) : null,
-    u = m ? m.m.find(x => GX(x) && rankOf(x) === rankOf(t)) : null;
+    u = m ? m.m.find(x => GX(x) && rankKind(x) === rankKind(t)) : null;
   return u && u !== t ? u : null;
 };
 // mimMix: the entry of the mimicry pair a wrong answer c mixed up on photo p of unit t (the answer's feedback shows its
@@ -410,7 +419,7 @@ const mimUnit = (t, p) => {
 // wrasse's young, resembled by one blenny's young, all of it by another's). The feedback only: the draw and the scoring
 // read mimUnit.
 const mimMix = (t, p, c) => {
-  if (!p || !c || c === t || !GX(c) || rankOf(c) !== rankOf(t)) return null;
+  if (!p || !c || c === t || !GX(c) || rankKind(c) !== rankKind(t)) return null;
   if (mimUnit(t, p) === c) return mimOf(t, p);
   const juv = m => (m.pair.st || {}).b === 'juvenile',
     L = ((GX(varHome(c)) || {}).mim || []).filter(
@@ -826,7 +835,7 @@ const groupsNow = () => {
     key = L.join('|');
   if (GROUPS && GROUPS.key === key && GROUPS.pc === PCONF) return Object.assign(GROUPS, {tick});
   const by = {};
-  L.forEach(n => (by[rankOf(n)] = by[rankOf(n)] || []).push(n));
+  L.forEach(n => (by[rankKind(n)] = by[rankKind(n)] || []).push(n));
   GROUPS = {tick, key, pc: PCONF, of: Object.assign({}, ...Object.values(by).map(groupsOfRank))};
   return GROUPS;
 };
@@ -1867,16 +1876,21 @@ const choiceApart = (L, taken = []) => {
   const seen = new Set(taken.map(choiceKey));
   return L.filter(n => !seen.has(choiceKey(n)) && seen.add(choiceKey(n)));
 };
+// The class of unit n a question's choices, groups and traps stay in (app.js kindRank: its rank and its kind of name, a
+// species by its scientific name apart from one by its common name); its rank alone (rankOf) where app.js is not loaded.
+// mimUnit, mimMix and groupsNow, above, read it too (once the file is in).
+const rankKind = n => (typeof kindRank === 'function' ? kindRank(n) : typeof rankOf === 'function' ? rankOf(n) : '');
 // wide: false keeps a ranked target's choices to list (the custom quiz's selection: it names no unit of its rank outside).
 function distractors(t, list, traps = trapsFor(t), known = introduced, wide = true) {
-  // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
+  // Choices of the target's class only (rankKind: its rank and kind of name): a fish scientific genus among genera, an
+  // entry among entries, a species by its scientific name among the scientific names.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (a family with one genus in play still gets three choices).
   // Never a choice of the target's label or of another name it lists (choiceKeys), nor two of one label (choiceApart):
   // of two units of one label, the one the rules below rank first is kept and the next one takes the other's place.
-  const rk = rankOf(t),
+  const rk = rankKind(t),
     tk = choiceKeys(t);
-  list = list.filter(n => rankOf(n) === rk);
+  list = list.filter(n => rankKind(n) === rk);
   if (rk && wide) list = [...new Set([...list, ...rankUnits(rk)])];
   list = list.filter(n => n === t || !tk.has(choiceKey(n)));
   const ranked = list
