@@ -529,22 +529,23 @@ test('a right variant answer the log lacks does not bring the mark back: the exa
   assert.ok(quizSrc.indexOf('if (good) varRight(target, seenPh);') > quizSrc.indexOf('const res = scoreAnswer(P, q)'));
 });
 
-// The phase card (quiz.js phaseShow) names the source of its lines: the one the content editor gave with an edit of
-// them (app.js treeGenera psrc), else IMR's.
+// The sex or colour phase card (quiz.js phaseShow) names the source of its lines: the one the content editor gave with
+// an edit of them (app.js treeGenera psrc), else IMR's. The juvenile card has none (tests/fishjuvdiff.test.js).
 test('the phase card shows its lines under their recorded source, else IMR', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8'),
     fn = require('./block.js')(src, 'function phaseShow(', '\n}\n', {through: 1, file: 'quiz.js'}),
-    p = {f: 'j', ph: 'juvenile'},
+    p = {f: 'm', ph: 'male'},
     show = g => {
       let body = '';
       const stubs = {
         GX: () => g,
         phasePair: () => null,
+        phasePool: () => [],
         gamePhotoOk: () => true,
         photoTaxon: () => null,
         taxonLine: () => '',
         phaseOf: x => x.ph || '',
-        PHASEC: {WORD: {juvenile: 'Juvenile'}},
+        phaseWord: x => x.ph || 'Adult',
         img: x => x.f,
         esc: x => String(x).replace(/</g, '&lt;'),
         credit: () => 'c',
@@ -552,7 +553,7 @@ test('the phase card shows its lines under their recorded source, else IMR', () 
         setTimeout: () => {},
         TIP: {WAIT: 0}
       };
-      new Function(...Object.keys(stubs), fn + '\nreturn phaseShow;')(...Object.values(stubs))({p, k: 'juvenile'}, 'u');
+      new Function(...Object.keys(stubs), fn + '\nreturn phaseShow;')(...Object.values(stubs))({p, k: 'phase'}, 'u');
       return body;
     };
   assert.match(show({phase: ['Juveniles yellow']}), /<p class="phlines"><b>IMR<\/b>: Juveniles yellow<\/p>/);

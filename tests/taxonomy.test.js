@@ -241,10 +241,10 @@ print(json.dumps({"refreshed": sec["refreshed"], "log": sec["log"][0]["date"]}))
 
 // A candidate the admin approved is served (curation.json genera[n].add, core.js applyCuration), so
 // its species name is a photo name too.
-// Every candidate, approved (data.json) or waiting (cand.json): the admin flags a candidate's name too (names.json).
+// Every candidate, approved (data.json) or waiting (data/cand.json): the admin flags a candidate's name too (data/names.json).
 test('taxonomy.py: the photo names include every candidate, approved or waiting', () => {
   const R = py(`import taxonomy as X
-d = json.load(open("data.json")); w = json.load(open("cand.json"))
+d = json.load(open("data.json")); w = json.load(open("data/cand.json"))
 def names(c): return {" ".join(p["t"].split()[:2]) for ps in (c.get("cand") or {}).values() for p in ps
                       if len((p.get("t") or "").split()) >= 2 and p["t"].split()[1][:1].islower()}
 a, b = names(d), names(w)
@@ -270,8 +270,8 @@ test('taxonomy.py --offline never asks the network: a reply missing from the cac
 // The tools read the file, the admin its extract (ROADMAP "Taxonomy reference").
 const {nameFlag} = require('../presence.js');
 
-test('names.json: the admin extract, in step with taxonomy.json; the admin reads it, never taxonomy.json', () => {
-  const N = read('names.json'),
+test('data/names.json: the admin extract, in step with taxonomy.json; the admin reads it, never taxonomy.json', () => {
+  const N = read('data/names.json'),
     C = T.coral;
   assert.strictEqual(N.v, 1);
   assert.strictEqual(N.coral.date, [C.refreshed.worms, C.refreshed.inat].sort().pop());
@@ -291,19 +291,22 @@ test('names.json: the admin extract, in step with taxonomy.json; the admin reads
   assert.strictEqual(N.coral.worms.Diploastrea.fam, 'Diploastraeidae');
   // The admin loads every subject's section (one fetch), the first subject's for the corals' Tree.
   const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
-  assert.match(A, /SUBJECTS\.map\(S => side\('names\.json', S\.id\)/);
+  assert.match(A, /SUBJECTS\.map\(S => side\('data\/names\.json', S\.id\)/);
   assert.match(A, /NAMES = NAMEJ\[ADM0\.id\]/);
   // The fish section: its rows and former genera, no WoRMS map (the fish Tree reads fish.json ref).
   assert.deepStrictEqual(Object.keys(N.fish.sp), Object.keys(T.fish.spp));
   assert.ok(!('worms' in N.fish));
   assert.strictEqual(N.fish.gen.Concholabrus, 'Cheilinus');
-  const kb = fs.statSync(path.join(ROOT, 'names.json')).size / 1024;
-  assert.ok(kb < 40, `names.json is ${Math.round(kb)} KB`);
+  const kb = fs.statSync(path.join(ROOT, 'data/names.json')).size / 1024;
+  assert.ok(kb < 40, `data/names.json is ${Math.round(kb)} KB`);
 });
 
 test('nameFlag on the fish photos: a former combination or an iNaturalist spelling WoRMS writes otherwise', () => {
-  const N = read('names.json').fish;
-  const photos = [...Object.values(read('fish-cand.json').cand || {}).flat(), ...Object.values(read('fish-game.json').photos || {}).flat()];
+  const N = read('data/names.json').fish;
+  const photos = [
+    ...Object.values(read('data/fish-cand.json').cand || {}).flat(),
+    ...Object.values(read('fish-game.json').photos || {}).flat()
+  ];
   const flagged = photos.filter(p => nameFlag(p, N));
   assert.ok(flagged.length > 0, 'no fish photo flagged');
   flagged.forEach(p => assert.ok(N.sp[p.t.split(' ').slice(0, 2).join(' ')] || N.gen[p.t.split(' ')[0]], p.f));
@@ -421,7 +424,7 @@ print(json.dumps({"same": fa == fb, "valid": json.loads(fa)["fish"] == b, "ch1":
     spelling: ['Aus dii: iNaturalist Aus dii, WoRMS Aus diii'],
     inactive: ['Aus eus: iNaturalist Fus eus, WoRMS Aus eus']
   });
-  // names.json: rows and former genera, no WoRMS map (this subject's Tree reads its own file).
+  // data/names.json: rows and former genera, no WoRMS map (this subject's Tree reads its own file).
   assert.deepStrictEqual(R.names.gen, {Hus: 'Aus'});
   assert.ok(!('worms' in R.names));
   assert.deepStrictEqual(R.names.sp['Gus hus'], {now: 'Cus bus'});
@@ -429,7 +432,7 @@ print(json.dumps({"same": fa == fb, "valid": json.loads(fa)["fish"] == b, "ch1":
   assert.match(R.inat[0], /taxa\/1000,2000,3000,4000$/);
 });
 
-test('names_extract / render_names: a made-up file, and --check fails when names.json lags', () => {
+test('names_extract / render_names: a made-up file, and --check fails when data/names.json lags', () => {
   const R = py(`import taxonomy as X, tempfile, os
 o = {"v": 1, "doc": "d", "refs": {}, "coral": {"refreshed": {"worms": "2026-11-05", "inat": "2026-12-01", "checklist": "2026-11-04"},
   "gen": {"Astrea": {"worms": {"id": 7, "st": "accepted", "fam": "Merulinidae"}}, "Nowhere": {"worms": {}}}, "spp": {"Montastrea curta": {"now": "Astrea curta", "id": 11, "src": ["worms"]},
@@ -463,7 +466,7 @@ print(json.dumps({"e": e, "same": json.loads(txt) == e, "ok": ok, "late": late})
     worms: {Astrea: {id: 7, fam: 'Merulinidae'}}
   });
   assert.deepStrictEqual(R.ok, []);
-  assert.strictEqual(R.late.length, 1, 'a names.json out of step fails the check');
+  assert.strictEqual(R.late.length, 1, 'a data/names.json out of step fails the check');
 });
 
 test('nameFlag: former names, moved genera and iNaturalist spellings; flags only', () => {
@@ -492,14 +495,14 @@ test('nameFlag: former names, moved genera and iNaturalist spellings; flags only
   assert.strictEqual(nameFlag({t: ''}, nm), null);
   assert.strictEqual(nameFlag({t: 'Favites bestae', imr: 1}, nm), null, 'IMR lecture photo');
   assert.strictEqual(nameFlag({t: 'Favites bestae', cf: 1}, nm), null, 'Coral Finder photo');
-  assert.strictEqual(nameFlag({t: 'Favites bestae'}, {}), null, 'names.json not loaded');
+  assert.strictEqual(nameFlag({t: 'Favites bestae'}, {}), null, 'data/names.json not loaded');
   // On the real files: the photo names iNaturalist spells otherwise are flagged, and only what the extract knows.
-  const N = read('names.json').coral,
+  const N = read('data/names.json').coral,
     D = read('data.json');
   const photos = [
     ...Object.values({...D.gen, ...D.x.gen}).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()),
     ...Object.values(D.cand || {}).flat(),
-    ...Object.values(read('cand.json').cand || {}).flat()
+    ...Object.values(read('data/cand.json').cand || {}).flat()
   ];
   const flagged = photos.filter(p => nameFlag(p, N));
   assert.ok(

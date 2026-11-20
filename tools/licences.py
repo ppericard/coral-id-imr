@@ -6,15 +6,15 @@ it"). No field is added: a record keeps its shape, only its a (the credit) and l
 lic its rights class and tie-break (tools/rights.py, core.js rightsRank), which every reader derives from them.
 
 What it reads and writes (FILES), each through its own writer, so an unchanged file keeps its bytes:
-  - fish-cand.json, tools/fish_refs.json: the sources of the fish photos in play (tools/fish_game.py record copies a and
+  - data/fish-cand.json, tools/fish_refs.json: the sources of the fish photos in play (tools/fish_game.py record copies a and
     lic from them at each run), and the sheet-only photos of fish-photos.json ("sheet");
   - fish-game.json, the fish photos in play, and fish-photos.json "photos", its first photos, written again from it
     (tools/fish_game.py first_photos: the licence is the last key of their order);
-  - data.json (the coral photos in play, the candidates curation.json names), cand.json (the coral candidates waiting),
-    excluded.json (the photos Pierre excluded, kept for his Restore: tools/excluded.py restore_unexcluded puts one back
+  - data.json (the coral photos in play, the candidates curation.json names), data/cand.json (the coral candidates waiting),
+    data/excluded.json (the photos Pierre excluded, kept for his Restore: tools/excluded.py restore_unexcluded puts one back
     without a licence check, so one whose licence the rules now refuse leaves it too, the rest only follow);
-  - seaslug-cand.json, the sea slugs' candidate photos (tools/fetch_seaslugs.py; no sea-slug photo is in play yet).
-Not read: points.json (a point's photos carry a, o, src only as a fallback, written by hand; no licence there),
+  - data/seaslug-cand.json, the sea slugs' candidate photos (tools/fetch_seaslugs.py; no sea-slug photo is in play yet).
+Not read: data/points.json (a point's photos carry a, o, src only as a fallback, written by hand; no licence there),
 tools/fish_judge.json "add" (the stopgap's additions, no longer read by the game), curation.json (rule A1: it holds no
 credit anyway).
 
@@ -32,11 +32,11 @@ What a new licence does (the existing licence rules, nothing new):
       tools/fish_game.py does not bring it back; one Pierre added in the admin leaves with it (fish_game.py in_play
       finds no record for it);
       corals (tools/fetch_local.py LICS: CC0, CC BY, CC BY-NC): an all-rights-reserved or "no derivatives" photo leaves
-      data.json, cand.json or excluded.json (his Restore cannot bring it back). Share-alike follows rule P1: a coral candidate waiting is dropped by tools/fetch_local.py
+      data.json, data/cand.json or data/excluded.json (his Restore cannot bring it back). Share-alike follows rule P1: a coral candidate waiting is dropped by tools/fetch_local.py
       drop_share_alike at the same workflow run (never one curation.json names); a coral photo in play stays, its
       licence updated, for Pierre to keep or remove (admin To do › Share-alike); both are reported;
       sea slugs (the fish's rule, lic_ok: CC0, CC BY, CC BY-NC; Pierre's own without a licence, which
-      tools/fetch_seaslugs.py never takes but a later change of his could leave): the candidate leaves seaslug-cand.json;
+      tools/fetch_seaslugs.py never takes but a later change of his could leave): the candidate leaves data/seaslug-cand.json;
     a photo that leaves comes back only through the candidate searches, once its licence allows it again (they search
     the accepted licences only);
   - an observation or a photo iNaturalist no longer returns (deleted, hidden, made private) is reported and left as it
@@ -70,12 +70,12 @@ BATCH = 200  # observations a request (iNaturalist's most per page)
 FIELDS = 'id,user.login,photos.id,photos.license_code,photos.attribution'
 CORAL_OK = ('cc0', 'cc-by', 'cc-by-nc')  # tools/fetch_local.py LICS
 SHARE_ALIKE = ('cc-by-sa', 'cc-by-nc-sa')
-# (file, subject, role): every list loses a photo whose new licence the rules refuse; "gone" (excluded.json: {f: {place,
+# (file, subject, role): every list loses a photo whose new licence the rules refuse; "gone" (data/excluded.json: {f: {place,
 # p: record}}) loses its entry, and a photo turned share-alike there is not reported (out of play). fish-photos.json is handled apart (its sheet, then its first
 # photos from fish-game.json).
-FILES = (('fish-cand.json', 'fish', 'cand'), (os.path.join('tools', 'fish_refs.json'), 'fish', 'play'),
-         ('fish-game.json', 'fish', 'play'), ('data.json', 'coral', 'play'), ('cand.json', 'coral', 'cand'),
-         ('excluded.json', 'coral', 'gone'), ('seaslug-cand.json', 'seaslug', 'cand'))
+FILES = (('data/fish-cand.json', 'fish', 'cand'), (os.path.join('tools', 'fish_refs.json'), 'fish', 'play'),
+         ('fish-game.json', 'fish', 'play'), ('data.json', 'coral', 'play'), ('data/cand.json', 'coral', 'cand'),
+         ('data/excluded.json', 'coral', 'gone'), ('data/seaslug-cand.json', 'seaslug', 'cand'))
 PHOTOS_FILE = 'fish-photos.json'
 # http as well: a few old coral records name their observation so.
 OBS_RE = re.compile(r'^(?:https?://(?:www\.)?inaturalist\.org/observations/)?(\d+)$')
@@ -108,7 +108,7 @@ def lists(v):
 
 
 def records(v):
-    """Every photo record in v (a dict with f and a), in a list or not (excluded.json keeps each under its place, p)."""
+    """Every photo record in v (a dict with f and a), in a list or not (data/excluded.json keeps each under its place, p)."""
     if isinstance(v, dict):
         if 'f' in v and isinstance(v.get('a'), str):
             yield v

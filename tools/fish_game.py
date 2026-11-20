@@ -9,7 +9,7 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
     species, the photo is neither rejected (seen) nor excluded, and its Not this (out), if set, names that same species;
     never one whose count in force is other species one could take for its subject (k), nor his legacy m the pass has
     not sorted into o or k (count_of, other_out: Pierre, 2026-11-09, Q323; rule P3);
-  - the candidates judged sure (suggest.json "fish", cand_sure: autosort.js fishSure's add, one kind of fish) he has not
+  - the candidates judged sure (data/suggest.json "fish", cand_sure: autosort.js fishSure's add, one kind of fish) he has not
     decided on, listed with auto: "cand", the pass's proposed crop applied as the auto-sort would write it;
   - the units' reference photos (tools/fish_refs.json) judged sure on the same rubric as a candidate, whatever their
     reference level (tools/fish_judge.json codes after the caps; judged_sure: one kind of fish, in the water; Pierre,
@@ -21,7 +21,7 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
   The top-level "exclude" (photos excluded for good everywhere) is honoured too, by name and by photo id. At most MAX
   downloads a run (--max), the reference photos and the starter entries first; the rest at the next runs.
 
-For each photo in play, from its fish-cand.json record (the original: iNaturalist, or FishBase):
+For each photo in play, from its data/fish-cand.json record (the original: iNaturalist, or FishBase):
   - downloaded from its original (src: iNaturalist's photo hosts or www.fishbase.de only; FishBase answers 500 at times,
     so its photos are asked up to FB_TRIES times with a pause), Pierre's crop applied (fish.crop [l, t, r, b]; [0, 0, 1, 1]
     = the whole photo), then his rotation (fish.rot {f: 90 | 180 | 270} degrees clockwise: tools/photos.py turn), written in the four sizes by tools/photos.py save() into --out DIR (default r2-upload/,
@@ -32,14 +32,14 @@ For each photo in play, from its fish-cand.json record (the original: iNaturalis
   - listed under its teaching entry (fish.json teach: the level-1 entry whose species list holds the species) as
     {f, o (its observation, or the FishBase photo page; an iNaturalist observation by its id alone), src (the original;
     on iNaturalist, its extension alone when the photo is the record's own: tools/fish_short.py, core.js fishGameRow), a, lic, t, sp (the species it is in play for), loc, own,
-    ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, his legacy m refined by the pass's o or k,
+    ar, e (fish.ease, else the pass's data/suggest.json fish e), jt (fish.tags, his legacy m refined by the pass's o or k,
     and, where they are the auto-sort's copy, the pass's watermark flag w: mine_tags; else the pass's jt), ph (its phase, as the
     admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
 The tile (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix): a photo in play whose tags pass the
 tile rule (tile_tags: profile or slight oblique, whole, good light, colour loss 0-1, sharp, large or medium, one fish, no
 juvenile, camouflage or out-of-water flag) and that carries a fish bounding box (bb, judged with the rubric: tools/
-fish_judge.json boxes, else the candidate's suggest.json fish bb; judging/FISH.md "The fish's box") gets a fifth file,
+fish_judge.json boxes, else the candidate's data/suggest.json fish bb; judging/FISH.md "The fish's box") gets a fifth file,
 {f}-x.webp, a TILE px square cut from the original around the box (tile_crop: the box plus MARGIN on each side, squared,
 kept inside Pierre's crop, then his rotation; a fish longer than the photo's short side keeps its square, the photo's
 blurred copy filling past the edge), written next to the four sizes and uploaded with them. It is kept only when the fish
@@ -250,7 +250,7 @@ def tile_write(im, r, out, crop=None):
 
 def box_of(f, boxes, sug):
     """Photo f's fish box: the rubric's box of a game or reference photo (tools/fish_judge.json boxes), else its candidate
-    judgement's (suggest.json fish bb, unless the judge doubted it: unsure bb). None when not judged yet."""
+    judgement's (data/suggest.json fish bb, unless the judge doubted it: unsure bb). None when not judged yet."""
     b = (boxes or {}).get(f)
     if b is None:
         j = (sug or {}).get(f) or {}
@@ -278,7 +278,7 @@ PLAY_COUNT, OTHER_COUNT = '1so', 'km'
 
 def count_of(mine, passed):
     """core.js fishCount: the count in force, Pierre's tag (mine) first, his legacy m refined by the pass's o or k
-    (passed: the judging pass's jt, suggest.json "fish"); '' with no tag."""
+    (passed: the judging pass's jt, data/suggest.json "fish"); '' with no tag."""
     c, q = (mine or '')[6:7], (passed or '')[6:7]
     return q if c == 'm' and q in ('o', 'k') else c or q
 
@@ -340,7 +340,7 @@ def unsure(j):
 
 
 def cand_sure(j):
-    """A judged candidate that enters play by itself (suggest.json "fish" {jt, e, k, ph, c, bb, u}; Pierre, 2026-11-06, Q180):
+    """A judged candidate that enters play by itself (data/suggest.json "fish" {jt, e, k, ph, c, bb, u}; Pierre, 2026-11-06, Q180):
     autosort.js fishSure's add (no unsure field but the box, keep best or alt, never dup) on a sure judgement
     (judged_sure)."""
     if not j or unsure(j) or j.get('k') not in ('best', 'alt'):
@@ -369,13 +369,13 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
     """The curation as the build reads it (Pierre, 2026-11-19 20:57 and 20:59: what the auto-sort proposed and he only let
     through is no curation of his; a newer judgement goes into the game, his own decisions keep priority; rule A1:
     curation.json itself is never written). What his log marks as the auto-sort's (autosort.js fishIdx: a photo's latest
-    code, neither a Check, '?', nor undone, '-') reads the pass's newer judgement (suggest.json "fish", sug):
+    code, neither a Check, '?', nor undone, '-') reads the pass's newer judgement (data/suggest.json "fish", sug):
     - the fields it wrote (the code's letters: t tags, e ease, p phase, c crop; his own edit takes its letter off,
       autosort.js fishOwn) read the pass's values when its judgement is a sure add (cand_sure: tags and phase as the
       auto-sort copies them, copy_of; a crop the pass no longer gives leaves), unless he answered its re-judge proposal
       Keep mine (kept); a newer sure rejection stays a proposal;
     - its reject, while he never corrected it (no @t), on a sure judgement made on or after the day it decided (by:
-      suggest.json "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js sortBack) is in play again
+      data/suggest.json "by", {species: {fish: {at}}}): a photo it set aside (plain r: autosort.js sortBack) is in play again
       when the pass now puts it in (cand_sure), unless he gave it tags or a crop.
     Tags read anew bring the judge's crop when the photo has none; his phase choice stops the source's juvenile flag; a
     photo he moved with Not this is his, skipped whole. Everything else is his, or cannot be told from his (a value with
@@ -462,8 +462,8 @@ def ref_play(fish, refs, codes):
 
 
 def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
-    """[(species id, record, its fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
-    Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that fish-cand.json still
+    """[(species id, record, its data/fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
+    Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that data/fish-cand.json still
     describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
     "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the same photo. Never
     the same photo twice (pid); a candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
@@ -522,7 +522,7 @@ def mine_tags(F, f, passed, auto=None):
 
 def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
-    with Not this (orig, its fish-cand.json species, is not sid) is named after its new species (fish.json species: the
+    with Not this (orig, its data/fish-cand.json species, is not sid) is named after its new species (fish.json species: the
     WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614). route (in_play):
     "cand" or "ref" for a photo that entered automatically, recorded as auto (core.js fishIn); a reference photo keeps its
     judged e and jt, and from (cover, taxon, fishbase), unless Pierre set its tags or ease in the admin (his values, as on
@@ -769,8 +769,8 @@ def inputs(root=ROOT):
     one_crops), never its copy in tools/fish_judge.json."""
     import fish_judge as FJ
     fish, cur = load(root, 'fish.json'), load(root, 'curation.json', {})
-    S = load(root, 'suggest.json', {}) or {}
-    cand, sug = load(root, 'fish-cand.json', {'cand': {}}), S.get('fish') or {}
+    S = load(root, 'data/suggest.json', {}) or {}
+    cand, sug = load(root, 'data/fish-cand.json', {'cand': {}}), S.get('fish') or {}
     cur = read_cur(cur, cand, sug, S.get('by'))  # the auto-sort's proposals read the newer judgement; his decisions stand
     refs = (load(root, os.path.join('tools', 'fish_refs.json'), {}) or {}).get('photos') or {}
     J = load(root, os.path.join('tools', 'fish_judge.json'), {}) or {}

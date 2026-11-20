@@ -8,8 +8,8 @@ Inputs, all in the repository (no network but --r2's downloads):
     1, the 21 stars and the 24 most common other species; circles 2 and 3, the next 60 and 100 by commonness), their
     WoRMS names, commonness, presence and the photo target (photoTarget: start 6, game cap 12, +5 for a documented
     juvenile form; Pierre, 2026-11-15, Q377);
-  - seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos, one per observation, by iNaturalist taxon id;
-  - suggest.json "seaslug" (tools/judging_fish.py --subject seaslug, from judging/seaslug/*.json): the judgements on
+  - data/seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos, one per observation, by iNaturalist taxon id;
+  - data/suggest.json "seaslug" (tools/judging_fish.py --subject seaslug, from judging/seaslug/*.json): the judgements on
     judging/SEASLUG.md's rubric, the caps applied;
   - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
   - tools/seaslug_groups.json (hand-kept from WoRMS's classification): the taxonomic groups the families sit in, in
@@ -53,7 +53,7 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     tools/seaslug_species_marks.json gives ID marks (agent drafts): marks, msrc, mby and mdraft, as a fish species'
     (seaslug_cues.species_apply), shown on its sheet only.
   - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
-    is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
+    is in the tree with no photo, and its photos come in at the next build once its judgements are in data/suggest.json);
   - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
     tag;
   - ref {AphiaID: {name, rank, parent}}: the reference taxonomy (WoRMS, as fish.json ref; Pierre, 2026-11-13, Q340: the
@@ -88,7 +88,7 @@ line:
     A photo already on R2 (the committed file) keeps its files; one whose crop or rotation changed is listed with its
     old files until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
   - the tile (Pierre, 2026-11-19, Q437: every game mode for every subject; Find the X, one name and four photos): a photo
-    whose judgement carries the animal's box (suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
+    whose judgement carries the animal's box (data/suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
     pass the sea slugs' tile rule (tile_tags here: the fish's plus the dorsal view) carries bb, and its download (or, on R2 already, a run for the
     tile alone) cuts {f}-x.webp with the fish's own cut (fish_game.py tile_crop, tile_write: nothing is copied), the
     record then carrying xc (the tile's square) or xn (why not). A judging file may carry bb (judging/SEASLUG.md "The
@@ -124,8 +124,8 @@ from presence import label_confirmed  # noqa: E402  the label rule beside C8
 import seaslug_cues  # noqa: E402  the sourced ID marks (study §9 step 7)
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
-CAND = os.path.join(ROOT, 'seaslug-cand.json')
-SUGGEST = os.path.join(ROOT, 'suggest.json')
+CAND = os.path.join(ROOT, 'data/seaslug-cand.json')
+SUGGEST = os.path.join(ROOT, 'data/suggest.json')
 TREE_OUT = os.path.join(ROOT, 'seaslug.json')
 GAME_OUT = os.path.join(ROOT, 'seaslug-game.json')
 V = 1
@@ -133,7 +133,7 @@ V = 1
 CUR = 'seaslug'
 # The circles in the game: those whose candidates were fetched and judged. Circle 4, the rest, has no candidates.
 CIRCLES = (1, 2, 3)
-# The sea slugs' rubric code without its ease digit, as suggest.json keeps it (tools/fish_judge.py RUBRICS "seaslug").
+# The sea slugs' rubric code without its ease digit, as data/suggest.json keeps it (tools/fish_judge.py RUBRICS "seaslug").
 TAGS = re.compile(r'^[pohtdv][01][gd][0-3][smb][lms][1sokx][jcawf]*$')
 # The counts an automatic route may put in play (core.js TREE_COUNT.play): one sea slug, several of its kind, another
 # species that cannot be taken for it (rule P3).
@@ -554,7 +554,7 @@ def check(tree, game, tree_text, game_text):
     """(the files out of date, the species waiting) for --check, from the build and the committed texts (None: missing).
     seaslug.json must be the build; seaslug-game.json too, but for the species with no photo in it yet whose judgements
     have come since (circle 3's last part, a species judged later): the Candidate photos workflow, which a change of
-    suggest.json starts, builds them in at its run after the merge, so a judging PR needs no rebuild of its own. A species
+    data/suggest.json starts, builds them in at its run after the merge, so a judging PR needs no rebuild of its own. A species
     already in play must match the build (a re-judge of it rebuilds the file in its PR)."""
     bad = [] if tree_text == dump(tree) else ['seaslug.json']
     try:
@@ -624,7 +624,7 @@ def download_all(todo, out, get=None, pause=None, workers=6):
 
 def inputs(root=ROOT):
     j = lambda n, d=None: load(os.path.join(root, n), d)
-    return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
+    return (j(os.path.join('tools', 'seaslugs.json')), j('data/seaslug-cand.json'), (j('data/suggest.json') or {}).get('seaslug') or {},
             j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_names.json'), {}) or None,
