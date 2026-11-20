@@ -52,6 +52,7 @@ const LAB = {
     'fishkey',
     'basics',
     'fishbasics',
+    'seaslugbasics',
     'map',
     'anatomy',
     'zoom',
@@ -77,8 +78,9 @@ const LAB = {
 };
 // Graduated prototypes and the section of MODES (app.js) they now live in. fishbasics (Fish basics, proto/fishbasics.js)
 // is the page key 'basics' of the fish: labTool opens the module of the subject on screen (UNITS basics mod); it has no
-// address of its own and no line on the Tools page (hub: false).
-const GRADUATED = {idkey: 'identify', pairs: 'practice', basics: 'learn', fishbasics: 'learn'};
+// address of its own and no line on the Tools page (hub: false); seaslugbasics (Sea slug basics,
+// proto/seaslugbasics.js) is the sea slugs' the same way.
+const GRADUATED = {idkey: 'identify', pairs: 'practice', basics: 'learn', fishbasics: 'learn', seaslugbasics: 'learn'};
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly. One that fails (unstable

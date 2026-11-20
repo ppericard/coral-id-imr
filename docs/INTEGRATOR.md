@@ -261,6 +261,24 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   min). The container restarted 3 times on 11-06 (never memory).
 - **Learning changes** need rule L11-L12 checks (learnsim before/after, 4 profiles × 5 seeds) or Codex flags them; fish
   has no real-log replay yet (say what was measured instead).
+- **Assigning a version on top of main** (2026-11-20): bring main in, then take **only** main's line 1 and `const
+  VERSION` (and main's HISTORY.md) before `--assign`; never check out main's whole `Code.gs`: that wiped #1285's code
+  once (its tests caught it). When another PR merges first with the same number, the stale one is put back to
+  "waiting" (its changes file restored from the commit that deleted it, main's line 1, `VERSION`, HISTORY.md) and
+  assigned again.
+- **Order the queue: Code.gs PRs first** (2026-11-20): ordinary PRs that keep arriving starve the PRs that wait for a
+  version, which need a quiet main between the assignment and the train. Run the version PRs one at a time, then the
+  rest.
+- **The queue glue lives in the session's scratchpad, not in the repo**: a loop per PR (merge main, push, `@codex
+  review`, wait for CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a
+  wait so that only one wave runs. A new session rebuilds it (STATUS "Last stop" names the pieces) or runs the same
+  steps by hand. A container restart kills it and every agent: an hourly check-in (`send_later`) restarts them.
+- **A "decided" backlog item is checked against Pierre's words before launch** (2026-11-20): three items launched from
+  STATUS's list that morning were already built, the integrator's own prose, or a "plus tard". The agent's brief says
+  to stop and report when his words, verbatim and dated, do not settle what players see.
+- **A crowded machine cuts agents off**: an agent that waits too long for a `tests/slot.js` slot or a train is handed
+  back unfinished. Keep its worktree; resume it later or finish the push and PR yourself (wait until no `train.py`
+  runs, then push).
 
 ## Where open work sits
 

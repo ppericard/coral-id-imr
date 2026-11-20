@@ -15,7 +15,7 @@ vulnerability reporting, enabled), never in a public issue.
 | Admin (`admin.html`) | Anyone can open the page, only a GitHub token with write access to the repo can change anything | Someone with Pierre's token rewrites `curation.json`. | Fine-grained token, this repo only, 90-day expiry, stored encrypted in Pierre's browser (password). Every Publish is a commit: reversible. The unpublished draft is kept in the browser (IndexedDB, plain while an admin is signed in); **Sign out** seals it with the token (AES-GCM, key derived from the token; model B, Pierre, 2026-11-18; ARCHITECTURE "Admin back-office"), in every admin tab of that token (a tab of it reloaded later locks too: only the password typed again opens the seal), so the next person on a shared browser, another token or the site's `?draft` cannot read or publish it. Limit: an admin tab of another token already open at that moment keeps the draft it holds (the signed-out admin's clicks it took in included) and writes it back in plain; the precaution covers the next person who opens the admin, not an admin already in. It covers one browser profile against its next user, not someone with access to the disk while the admin is signed in. |
 | Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (10 million cells per spreadsheet, the figure of the infrastructure request of 2026-11-18 (this page said 20 million before; to confirm against Google's limits page), watched in the admin: "Infrastructure" below; script run quotas) and sync slows or stops for real players. | See below. |
 | Leaderboard (`GET ?board=1`, v14) | Anyone | Shows each signed-in player's chosen name, progress % and Elo unless they opted out (⚙ Leaderboard: Off, a `reefid-sync` setting so it holds on every device; privacy.html says so). The progress % is computed by the script from the saved progress (v16), like the Elo from the answers; a tampered app could still save inflated progress, as it could fake answers. | Cached 5 minutes; nothing else about a player is returned. **Group boards** (v171, the staff and cohorts; v179, the player groups): the same rows split by who is where, every scope public like the general board (Pierre, 2026-11-17: "ça serait rigolo que les étudiants voient le leaderboard du staff et inversement"): `groups` gives each board group's name and its members' rows; an opted-out, hidden or archived player is on none, and a group's membership is never listed apart from its board (a member with no answer yet or opted out does not show; a group without a board is never named). The player's own groups come in their load and save replies only (code checked). Per-player numbers (the anonymous answer log, each id's ability) are admin-only from v14 (POST with the token), so a public leaderboard row can't be matched to an anonymous id and its answer history. |
-| Names, reports, user management, roles | Only with the admin GitHub token (checked by the script with GitHub) | — | `gate_` → `can_()` (roles step 1, below); the token reached through `caller_` → `isAdmin_` only. |
+| Names, reports, user management, rights | Only with the admin GitHub token (checked by the script with GitHub) | — | `gate_` → `can_()` ("Rights and the Audit tab", below); the token reached through `caller_` → `isAdmin_` only. |
 | Self-update of the script | Whoever can push to `release` (from 2026-11-18; before, `main`): only the merge train does | Arbitrary script code. | The script installs from `release`, which only `tools/train.py` moves after a green train (rule D3), so a commit that reached `main` without a train (the admin's Publish, the Candidate photos workflow's bot, a hand push) is never installed. Pushing `release` takes the same write access as `main`, so the trust is the site's; give it `main`'s ruleset (no deletion, no force push: HANDOVER "Protect main"). |
 | The weekly backup to pCloud (sheet v139, [BACKUP.md](BACKUP.md)) | The script only; the credential is the Script Property `PCLOUD_UPLOAD_CODE` (the code of a pCloud upload link, v144, the one Pierre uses) or `PCLOUD_TOKEN` (a pCloud OAuth token; used when both are set) | Code pushed to `main` runs as the script, so it can read that credential (as it can `ANON_SALT`). The upload link's code only adds files to the link's folder: it cannot read, list or delete anything, so a leaked code lets someone fill that folder (up to the link's limits, or Pierre's pCloud space), not read the backups. The token reaches everything the pCloud app was allowed to reach. A backup file leaked from pCloud exposes the sheet: names, code hashes, answers. | Either is sent only to `api.pcloud.com` or `eapi.pcloud.com` (any other `PCLOUD_HOST` is refused before any request) and never logged or returned (`backup_` scrubs both, as typed and URL-encoded, from any error text; only pCloud's numeric result is logged; `tests/backup.test.js`). The token goes only in the `Authorization` header (never a URL, which fetch errors can echo); the code goes in the `uploadtolink` URL, the only form pCloud documents, with no `Authorization` header. Revoke: delete the upload link in pCloud (code), or the app (token). |
 
@@ -153,33 +153,50 @@ as before. The reply it serves holds what `?stats=1` always sent (photo ratings,
 Its row 4 (sheet v145) holds what the admin's `readStats` adds, each player's ability by admin id, never a name, and
 is read only with the admin token; the same deletes blank it with the fold, and the archived players are left out
 when it is read.
-The Roles tab (sheet v156, below): a delete, a self-delete, a merge (its from) and an archive drop the account's
-grants (`rolesDrop_`), never move them to Into or to the archive name, so whoever takes the name later holds nothing (a
-grant also holds only for the code hash it was made for). Each dropped grant writes an Audit row, by anonymous id. The
-Audit tab keeps its rows: they hold anonymous ids only, never a name, and nothing reads them in normal operation.
+The rights (below): a delete, a self-delete, a merge (its from) and an archive drop the account's memberships of groups
+that carry rights (`rightsDrop_`) and its place on the admin list (`rolesDrop_`, with its rows of the Roles tab's record),
+never move them to Into or to the archive name, so whoever takes the name later holds nothing (a right also holds only
+for the code hash it was given under). Each dropped right writes an Audit row, by anonymous id. The Audit tab keeps its
+rows: they hold anonymous ids only, never a name, and nothing reads them in normal operation.
 
-## Roles and the Audit tab (sheet v156, roles step 1)
+## Rights and the Audit tab
 
 Pierre, 2026-11-13 (Q342-Q349, ROADMAP "Roles, instances and cohorts"): scoped roles, enforced by the sync script, never
 by the page; 2026-11-15 (Q364): rights are separate, the platform admin may grant himself a role, and the grant is
-logged; (Q365) the pilot's name and 4-digit code are enough for now.
-- **Grants**: the Roles tab, one row a grant (Account, Role, Scope, Since, Code hash). Roles and what they give:
-  `admin` at `platform` (the code, the base database, creating instances; it may grant any role at any scope), `owner`
-  at an instance (its players, its settings, granting its roles), `editor` at an instance (its content), `trainer` at
-  an instance (`live`: hosting a live game, sheet v172; its cohorts, from roles step 2). The player role is every
-  account's and is not stored. This sheet serves
-  one instance, `instance:imr` (`Code.gs` `INSTANCE_`; Q343, one shared sheet for now).
+logged; (Q365) the pilot's name and 4-digit code are enough for now, confirmed for the Trainers' and the Managers'
+rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q408,
+[the decision](decisions/2026-11-19-groups-carry-rights.md)): groups carry an instance's rights, Admin stays apart.
+- **Where rights live.** An account's rights are the union of two sources:
+  - **its groups**: a group carries an instance's rights (the Group settings tab's Rights column; `Code.gs` `RIGHTS`:
+    `players` (its players' management), `settings`, `grant` (changing who holds its rights), `content`, `live`
+    (hosting a live game), `cohorts` (roles step 2's), each at the instance). A membership of a group that carries
+    rights holds the account's code hash (the Groups tab's Code hash column), and gives its rights only while that hash
+    is the account's: a name taken again, or a code changed, gives nothing until the membership is made again. Every
+    right only adds: no deny, no mask on a group;
+  - **the admin list**: the platform admin's accounts, the `admin` rows of the Roles tab (Account, Role, Scope, Since,
+    Code hash), kept apart from the groups and not editable from the Groups page (Admin is the one role across
+    instances). An admin holds `platform` (the code, the base database, creating instances) and `grant` at every scope.
+  The player's rights are every account's and are not stored. This sheet serves one instance, `instance:imr`
+  (`Code.gs` `INSTANCE_`; Q343, one shared sheet for now).
 - **One check**: every privileged endpoint calls `gate_(token, right, action)`, which asks `can_(caller, right,
-  scope)`. Today's endpoints need the `players` right on `instance:imr`; the roles list and `roleGrant` / `roleRevoke`
-  need `grant` at the grant's scope.
+  scope)`. The players' management needs `players` on `instance:imr`; a group's rights and the members of a group that
+  carries rights need `grant` there (users_ picks it, `usersDo_` and `groupDo_` check it again under the script lock);
+  the admin list's `roleGrant` / `roleRevoke` need `grant` at `platform`, its list `grant` at the instance.
+- **The escalation paths closed.** The `players` right never adds anyone, itself included, to a group that carries
+  rights, nor gives a group a right. A group that carries rights takes one name a call (no Add all: a list is refused),
+  and its first right is refused while it has members. A merge never moves a right: the merged-away account's groups
+  without rights join the kept one's, its groups with rights and its place on the admin list go, each audited
+  (`mergePlan_`, which the admin reads before, for the warning). A player's own act never joins a group that carries
+  rights. A self-change (the account's own, or with the token the admin's account's) is allowed and audited `(self)`.
 - **The admin token is the platform admin, with every right.** A token that can push to the repository can change this
-  script, so no right is withheld from it. Q364's separation holds for the grants an account holds: an account holding
-  only `admin` is refused an instance's players and content until it holds that instance's role.
+  script, so no right is withheld from it. Q364's separation holds for the rights an account holds: an account on the
+  admin list only is refused an instance's players and content until a group of that instance gives them.
 - **Callers today: the token** (`caller_`), **and one account endpoint**: starting a live game (sheet v172, below)
-  takes the account's name and code (`lname`, `lpin`) and asks `can_` for its `live` right. Letting a granted account
-  act with its name and code elsewhere is a later step (the editors' relay, the trainer view).
+  takes the account's name and code (`lname`, `lpin`) and asks `can_` for its `live` right. Letting an account act
+  with its name and code elsewhere is a later step (the editors' relay, the trainer view, the load reply's rights).
 - **Live games** (sheet v172; Pierre, 2026-11-17, Q393; [the design note](reviews/2026-11-18-live-mode-design.md)): a
-  session is started only by an account holding the trainer role (`lvTrainer_`: its code checked against the RAs tab,
+  session is started only by an account in a group that carries `live`, such as Trainers (`lvTrainer_`: its code
+  checked against the RAs tab,
   a wrong one counting towards the name's 10-minute lock as a load's does, an archived account refused, then
   `can_(…, 'live', 'instance:imr')`); one Audit row a start (`live start`), refusals capped as every refusal. The
   trainer's later calls carry the session's random key, the students' calls their own; a code is 6 random digits, and
@@ -187,22 +204,31 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
   What a student is sent never holds the right answer before the reveal, nor another student's key or answers; what
   the trainer sends is filtered (photo addresses by pattern, labels as plain text). Sessions live in the script cache
   only (6 hours at most), never in a sheet tab: nothing to clean when an account goes (rule D7).
-- **The staff are a group, not a role** (v179; Pierre, 2026-11-18: "Staff" is not a role, and the toggle that granted the trainer role is not fine enough for rights management). The staff board is a player group's (ARCHITECTURE.md "Player groups": a board; the general board shows everyone, an admin's Hide keeps one player off every board), filled by the admin with the `players` right (`userGroup`, audited); no group grants a right, and a grant or a revoke changes no board. The migration made today's trainers at `instance:imr` (under the code hash of their grant) the members of the group `staff`, their trainer role kept. The trainer role's rights stay: starting a live game (above), its `cohorts` right waiting for roles step 2. The admin's Players no longer grants or revokes `trainer` (v171's Staff toggle is gone); a later PR builds the roles' own page.
-- **Pierre's grants**: platform admin, and owner and content editor of `instance:imr`. Given once, as self-grants by
+- **The staff are a group, not a role** (v179; Pierre, 2026-11-18: "Staff" is not a role, and the toggle that granted the trainer role is not fine enough for rights management). The staff board is a player group's (ARCHITECTURE.md "Player groups": a board; the general board shows everyone, an admin's Hide keeps one player off every board), filled by the admin with the `players` right (`userGroup`, audited); the Staff group carries no right, and the groups that carry rights have no board unless the admin gives one. The trainers' rights are the Trainers group's (below): starting a live game, its `cohorts` right waiting for roles step 2. The admin's Players no longer grants or revokes `trainer` (v171's Staff toggle is gone); the Groups page gives rights (the next PR).
+- **The rights migration** (one-shot, rule W3): the Roles tab's `owner`, `editor` and `trainer` grants at
+  `instance:imr` became the groups Managers (`players`, `settings`, `grant`), Curators (`content`) and Trainers
+  (`live`, `cohorts`), each grant a membership under its code hash (a grant whose hash was no longer its account's
+  stays without right, as before). The Roles tab keeps every row: the admin rows are the admin list, the others the
+  record of the roles before, read by nothing. One `join … (migration)` Audit row a membership.
+- **Pierre's rights**: the admin list, and the Managers and Curators of `instance:imr`. Given once, as self-grants by
   the token, to the admin's account (`ADMIN_ACCT`) the first time the admin page reads the answer log signed in to it
-  (`rolesSeed_`). A property marks it done, so a revoke or a delete is never silently granted again. It is marked done
-  only once every grant has its Audit row (v159): a try that fails part way (a Sheets error) writes a Deploy log line,
-  and the admin page's next read finishes it.
+  (`rolesSeed_`). A property marks it done, so a revoke, a leave or a delete is never silently undone. It is marked done
+  only once every grant and membership has its Audit row: a try that fails part way (a Sheets error) writes a Deploy log
+  line, and the admin page's next read finishes it.
 - **The Audit tab**: Time, Admin id, Action, Scope, Result, Target id. One row per change (the players' management, the
-  Analyses report's put, each grant and revoke, a self-grant marked `(self)`), and per refusal at most 20 every 6 hours
-  (`over_`: anyone can send one; refusals take no script lock). Reads are not written: the admin page reads every
-  minute. Every id is an anonymous id: `aid_` for an account, `gh:` and 8 characters for a token (a salted hash, never
-  the token; blank for a refusal, whose caller is nobody known), never a name; the target of a request is written as
-  its id, never the name it carries.
-  A grant is never without its row (v159, `grantPut_`): a row that cannot be written fails the grant (the request
-  answers an error), and the next try of a grant held with no `ok` row since its last revoke (`grantAudited_`) writes
-  that `ok` row instead of `held`. A row that cannot be written is a line in the Deploy log (`roleLog_`, the same line
-  at most once an hour), never silent.
+  Analyses report's put, the admin list's grants and revokes, `join` and `leave` of a group that carries rights, a
+  group's right given or taken, one `grant` / `revoke … (via <group id>)` row per member, then `right+` / `right-`; a
+  self-change marked `(self)`), and per refusal at most 20 every 6 hours (`over_`: anyone can send one; refusals take no
+  script lock). Reads are not written: the admin page reads every minute. Every id is an anonymous id: `aid_` for an
+  account, `gh:` and 8 characters for a token (a salted hash, never the token; blank for a refusal, whose caller is
+  nobody known), `script` for the migration, never a name; the target of a request is written as its id, never the name
+  it carries.
+  A grant on the admin list, a membership of a group that carries rights and a group's right given or taken are never
+  without their row (`grantPut_`, `joinPut_`, `groupDo_`): a row that cannot be written fails the request (an error),
+  and its next try writes that `ok` row instead of `held`, or, for a group's rights, the rows its change was saved
+  without (`grantAudited_`, `joinAudited_`, `rightsAudited_`: the group's last `right+` / `right-` row per right, a role
+  group's rights from the migration counted without one). Any other row that cannot be written is a line in the Deploy log
+  (`roleLog_`, the same line at most once an hour), never silent.
 - **No editor or trainer ever gets a GitHub token that can push** (Q342): their later steps go through this script.
 
 ## The Alerts tab in the admin (v152)

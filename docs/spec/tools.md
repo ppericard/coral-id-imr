@@ -194,7 +194,9 @@ written with `tools/datajson.py`.
 - **`apply_name_roots.py`**: the sourced roots of the coral genus names → `root` (re-runnable); the slate genera left
   without one, each with its reason (`SKIP`). The fish genus roots are `tools/fish_genus_roots.json`, read by
   `build_fish.py`.
-- **`apply_id_tips.py`**: `tools/id_tips.txt` → `gen[g].qt`. A line with a third column, "Coral Finder", is a slate genus
+- **`apply_id_tips.py`**: `tools/id_tips.txt` → `gen[g].qt`, written in the IMR instance's coral layer
+  (`tools/instances/imr/coral.json`) and laid on `data.json`, except the Coral Finder genera's, below, which stay in
+  `data.json`. A line with a third column, "Coral Finder", is a slate genus
   the lecture slides do not cover (no `imr`: Merulina, Cyphastrea, Halomitra): its tips are condensed from its Coral
   Finder criteria (`crit`, book pages `pages`) and the script also writes `gen[g].tl`, "ID tips (Coral Finder p. …)",
   the heading every tips box shows (`app.js` `tipsLabel`, `learn.js` `viewGenus`), never "ID tips (IMR)" (rules C1, C2).

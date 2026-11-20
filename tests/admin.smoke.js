@@ -8632,6 +8632,110 @@ async function loadPart(b, base, fails) {
         if (se.length) fails.push(`Sheet text: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
+      // Photos › Tree, a family's shared names (admin-content.js namesBox; Pierre, 2026-11-08, Q313: "Publie, je corrige à
+      // l'usage"), in a context of its own, on a family a name shared with another family reaches. The Names box is folded
+      // until opened (remembered), lists the name with Accepted | Often | Off and none pressed; a click sets the exception in
+      // the draft (curation.json fish names: {name: {family id: state}}), one step each, Undo and Redo, the pressed one again
+      // brings the built reading back and an emptied name goes; the other family's page names the first as also carrying it;
+      // a family no shared name reaches has no box; the Tag… filter offers Shared names; Publish counts the exceptions and
+      // the published fish part carries them; dark theme; no overflow at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => d.accept());
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const R = namesRows(FISHC.raw, {}),
+            r = R.find(x => x.owners.length > 1),
+            has = namesFams(FISHC.raw, {}),
+            none = FISHC.raw.families.find(f => !f.wink && !has.has(f.id));
+          return {x: r.x, a: r.owners[0].g, b: r.owners[1].g, an: r.owners[0].name, none: none && none.id};
+        });
+        const nm = () => sq.evaluate(() => (DRAFT.fish || {}).names || null),
+          rowS = `#view .adm-cnames [data-nmx="${ids.x}"]`,
+          press = () =>
+            sq.evaluate(s => [...document.querySelectorAll(s + ' [data-nmv]')].map(x => x.getAttribute('aria-pressed')).join(), rowS);
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.a));
+        await swait(() => document.querySelector('#view .adm-cnames'));
+        if (await sq.evaluate(() => document.querySelector('#view .adm-cnames').open)) se.push('the Names box is open on its own');
+        await sq.click('#view .adm-cnames > summary');
+        await swait(() => document.querySelector('#view .adm-cnames').open);
+        const labs = await sq.evaluate(s => [...document.querySelectorAll(s + ' [data-nmv]')].map(x => x.textContent).join(), rowS);
+        if (labs !== 'Accepted,Often,Off' || (await press()) !== 'false,false,false') se.push(`the choices ${labs} ${await press()}`);
+        // Off: one draft entry, Undo and Redo; the pressed one again brings the built reading back, the name goes.
+        await sq.click(`${rowS} [data-nmv="off"]`);
+        await swait(() => document.querySelector('#view .adm-cnames .is-fresh'));
+        let x = await nm();
+        if (JSON.stringify(x) !== JSON.stringify({[ids.x]: {[ids.a]: 'off'}})) se.push(`Off ${JSON.stringify(x)}`);
+        if ((await press()) !== 'false,false,true') se.push(`Off pressed ${await press()}`);
+        if (!(await sq.evaluate(() => /name exception/.test(pubSummary())))) se.push('Publish does not count it');
+        await sq.click('#undo');
+        await swait(() => !document.querySelector('#view .adm-cnames .is-fresh'));
+        if (await nm()) se.push(`Undo left ${JSON.stringify(await nm())}`);
+        await sq.click('#redo');
+        await swait(() => document.querySelector('#view .adm-cnames .is-fresh'));
+        await sq.click(`${rowS} [data-nmv="off"]`);
+        await swait(() => !document.querySelector('#view .adm-cnames .is-fresh'));
+        if (await nm()) se.push(`the pressed one again left ${JSON.stringify(await nm())}`);
+        // Accepted, then Often replaces it; the draft says it changed.
+        await sq.click(`${rowS} [data-nmv="on"]`);
+        await swait(() => document.querySelector('#view .adm-cnames .is-fresh'));
+        await sq.click(`${rowS} [data-nmv="often"]`);
+        await sq
+          .waitForFunction(s => document.querySelector(`${s} [data-nmv="often"][aria-pressed="true"]`), rowS, {timeout: 90000})
+          .catch(() => se.push('timed out: Often pressed'));
+        x = await nm();
+        if (JSON.stringify(x) !== JSON.stringify({[ids.x]: {[ids.a]: 'often'}})) se.push(`Often ${JSON.stringify(x)}`);
+        if (!(await sq.evaluate(() => /name exception/.test(document.querySelector('#save').title)))) {
+          if (!(await sq.evaluate(() => status0().parts.some(p => /fish curation/.test(p))))) se.push('the draft does not say it changed');
+        }
+        // The Tag… filter offers Shared names, and the families it shows carry a shared name.
+        const tag = await sq.evaluate(() =>
+          [...document.querySelectorAll('[data-tttag] option')].some(o => /Shared names/.test(o.textContent))
+        );
+        if (!tag) se.push('no Shared names in Tag…');
+        // The other family: the first named as also carrying the name; a family no shared name reaches: no box.
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.b));
+        await swait(() => document.querySelector('#view .adm-cnames'));
+        const also = await sq.evaluate(s => (document.querySelector(s + ' small') || {}).textContent || '', rowS);
+        if (!also.includes('also ') || !also.includes(ids.an)) se.push(`the other family's line ${JSON.stringify(also)}`);
+        if (ids.none) {
+          await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.none));
+          await swait(() => document.querySelector('#view .adm-sname'));
+          if (await sq.evaluate(() => !!document.querySelector('#view .adm-cnames'))) se.push(`a Names box on ${ids.none}`);
+        }
+        // Dark theme and no overflow at 1280 and 390, the box open.
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.a));
+        await swait(() => document.querySelector('#view .adm-cnames'));
+        if (!(await sq.evaluate(() => document.querySelector('#view .adm-cnames').open))) await sq.click('#view .adm-cnames > summary');
+        const dk = await darkCards(sq, '#view .adm-cnames .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        for (const w of [1280, 390]) {
+          await sq.setViewportSize({width: w, height: 900});
+          const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+          if (wide > 0) se.push(`${w}px: ${wide}px too wide`);
+        }
+        await sq.setViewportSize({width: 1280, height: 900});
+        // Publish: counted, and the published fish part carries the exception and no empty map.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 fish name exception$/m.test(sum)) se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).names);
+        if (JSON.stringify(pub) !== JSON.stringify({[ids.x]: {[ids.a]: 'often'}})) se.push(`published ${JSON.stringify(pub)}`);
+        if (se.length) fails.push(`Shared names: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
       // Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, structBar; the structure editor,
       // step 4 of docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A, Q366): in a
       // context of its own, on a family with a look-alike line. The circle segments set the circle slot (one draft step,

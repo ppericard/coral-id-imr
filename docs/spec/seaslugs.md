@@ -89,6 +89,11 @@ family name on a genus question gets the "that's a family" nudge (`quiz.js` `typ
 (`reports.js` `repReg`'s `unit`, `admin.js` `unitRead`): its registry's slate is the genera (Players, the Journey through
 `unitsOf`, the heatmap's roster), each photo shown by its genus.
 
+**Their basics module**, Sea slug basics (`proto/seaslugbasics.js`, `UNITS.seaslug` `basics`, `SUBJECTS` `basics`
+`_sbasics`): step 0 of their Learn path, the first Learn tab and the "0" block of the genera page; the parts their ID marks
+name (rhinophores, gills, mantle, cerata, parapodia, headshield, side gill) on drawings and their genera's photos, then
+their groups ([basics.md › Sea slug basics](basics.md#sea-slug-basics-protoseaslugbasicsjs)).
+
 The species have their sheets but no game unit yet; no key (rule S3: the Identify page says there is none yet), no
 first-launch "I'm at IMR" answer, no level-change card (`startFb: false`, as the fish). Their words where the fish's are
 written into shared pages are `UNITS` fields (`door`: Home's doors and the key page; `lede`: the genera page; `words`:
