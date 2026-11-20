@@ -66,14 +66,16 @@ every account, 2026-11-04; subject-neutral wording, groups for every subject, 20
 
 ### L4
 
-**One progression path for every game**: the photo quiz is the path that opens units (one at a time, for corals the ★
-rule L5, Open all); every other game or mode (the Duel tab, Memory, the custom quiz, any future game) draws only from
+**One progression path for every game**: the photo quiz is the path that opens units (a level opens in a group of at
+least 4 close units; no question before; for corals the ★ rule L5, Open all); every other game or mode (the Duel tab, Memory, the custom quiz, any future game) draws only from
 the units the player has unlocked, `model.js` `unlocked()`, the one source of truth, and never opens a unit (no card
 from a game). **Another mode's answers may count as evidence on a locked unit (live, the placement test), never opening it; the unit keeps
 them when the path opens it** (Pierre, 2026-11-18: live answers "count without unlocking", "ok"). A new game uses `unlocked()` too; the Tools' games through `proto/lab.js` `labPlay()` (the reference tools
-keep every unit; wrong choices may name any unit, as the quiz's). LEARNING.md "One progression path for every game".
-*Why:* one path for every game and mode, present and future, with no exception. *Source:* Pierre, 2026-11-04;
-subject-neutral wording, 2026-11-06; evidence on a locked unit, 2026-11-18.
+keep every unit; wrong choices may name any unit, as the quiz's). LEARNING.md "One progression path for every game",
+"A level opens in a group".
+*Why:* one path for every game and mode, present and future, with no exception; a unit asked among units never opened
+is just too easy. *Source:* Pierre, 2026-11-04; subject-neutral wording, 2026-11-06; evidence on a locked unit,
+2026-11-18; a level in a group of at least 4, 2026-11-20 (#1331).
 
 ### L5
 

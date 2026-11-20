@@ -422,3 +422,20 @@ test('break measures: the comeback and the questions after it, per break, a prim
   // The first session's guardrails are read too.
   assert.strictEqual(R.guardrails.find(g => g.m === 'know').at[0].per[0].verdict, 'held');
 });
+
+// A level opens in a group (rule L4): the rated world's uo per question, the first scientific genus and species asked.
+test('unopen, firstGen and firstSp read from a run', () => {
+  const run = {
+    kinds: {'f:A': 'family', 'g:A': 'genus', 's:1': 'species', 'sci:1': 'species:sci'},
+    expo: [['f:A'], ['f:A'], ['s:1'], ['g:A'], ['sci:1'], ['s:1']],
+    uo: [null, null, 1, 0, null, 0]
+  };
+  close(L.MEASURES.unopen.get(run, 6), 1 / 3);
+  close(L.MEASURES.unopen.get(run, 3), 1);
+  assert.strictEqual(L.MEASURES.unopen.get(run, 2), null, 'no question below the base yet');
+  assert.strictEqual(L.MEASURES.unopen.get({expo: run.expo}, 6), null, 'a file without uo');
+  assert.strictEqual(L.MEASURES.firstSp.get(run), 3);
+  assert.strictEqual(L.MEASURES.firstGen.get(run), 4);
+  assert.strictEqual(L.MEASURES.firstSp.get({...run, expo: run.expo.slice(0, 2)}), null);
+  assert.strictEqual(L.MEASURES.firstGen.get({kinds: {Acropora: 'genus'}, expo: [['Acropora']]}), null, 'the corals: none');
+});
