@@ -194,6 +194,14 @@ test('a changes README is no pending version; an answers conflict that is not ap
     );
 });
 
+test("a clean review is the Codex bot's receipt field only, never another account or the PR's own text (round 5)", () => {
+  assert.match(read('prstate.sh'), /select\(\.user\.login=="chatgpt-codex-connector\[bot\]" and \.user\.type=="Bot"\)/);
+  assert.doesNotMatch(read('prstate.sh'), /test\("codex";"i"\)\)\|select\(\.body\|test\(\$short\)\)/);
+  const t = read('nightq.sh');
+  assert.match(t, /case "\$codex" in "Didn't find any major issues"\*\) ;; \*\) log "#\$n: SKIPPED \(Codex not clean on head\)"/);
+  assert.doesNotMatch(t, /case "\$line" in \*"Didn't find any major issues"\*\)/);
+});
+
 test('nightq skips a PR with unanswered head findings and passes the queue repository to the train (P1, P2)', () => {
   const t = read('nightq.sh');
   assert.match(t, /\*"unanswered@head: 0 \|"\*\) ;; \*\) log "#\$n: SKIPPED \(findings or security comments on the head/);

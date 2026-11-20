@@ -47,6 +47,9 @@ until it merges.
 - **Wait for the Candidate photos workflow.** A judging merge starts `approved-photos.yml`, whose `photos-push` job
   pushes to `main`; a train started meanwhile aborts because main moved (nothing merges, the PR is skipped). The full
   fix waits for that workflow before the next train.
+- **A data file the PR deletes under `tools/`.** `trusted_root` overlays the PR's tracked files on main's `tools/`, so
+  a file the PR deleted stays as main's copy for the tools run through it; the full fix removes from the shadow tree
+  every file the PR deleted.
 
 ## Order
 

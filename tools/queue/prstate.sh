@@ -16,7 +16,7 @@ for n in "$@"; do
   # every page of the issue comments (a receipt can sit past the first 100), then the latest one for this head
   ok=1  # any page that could not be read leaves unanswered@head at "?", which nightq.sh treats as not clean
   gh api --paginate "$R/issues/$n/comments?per_page=100" > "$d/issue.json" 2>/dev/null || ok=0
-  codex=$(jq -rs --arg short "$short" '(add // []) | [.[]|select(.user.login|test("codex";"i"))|select(.body|test($short))|.body|capture("Codex Review: (?<v>[^\\n]*)").v // "summary"]|last // "none"' "$d/issue.json" 2>/dev/null || echo none)
+  codex=$(jq -rs --arg short "$short" '(add // []) | [.[]|select(.user.login=="chatgpt-codex-connector[bot]" and .user.type=="Bot")|select(.body|test($short))|.body|capture("Codex Review: (?<v>[^\\n]*)").v // "summary"]|last // "none"' "$d/issue.json" 2>/dev/null || echo none)
   gh api --paginate "$R/pulls/$n/comments?per_page=100" > "$d/review.json" 2>/dev/null || ok=0
   rc=$(jq -rs --arg sha "$sha" '(add // []) | [.[]|select(.commit_id==$sha)]|length' "$d/review.json" 2>/dev/null || echo "?")
   gh api $R/pulls/$n/ccr/review_threads > "$d/threads.json" 2>/dev/null || ok=0

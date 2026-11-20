@@ -37,7 +37,9 @@ for n in "$@"; do
   log "$line"
   failed=$(echo "$line" | sed -n 's/.*pending, \([^|]*\) failed.*/\1/p' | tr -d ' ')
   if [ -n "$failed" ]; then log "#$n: SKIPPED (red on head: $failed)"; continue; fi
-  case "$line" in *"Didn't find any major issues"*) ;; *) log "#$n: SKIPPED (Codex not clean on head)"; continue;; esac
+  # the receipt field only, never the whole line (a PR's own text could carry the phrase)
+  codex=$(echo "$line" | sed -n 's/.*codex@head: \([^|]*\) |.*/\1/p')
+  case "$codex" in "Didn't find any major issues"*) ;; *) log "#$n: SKIPPED (Codex not clean on head)"; continue;; esac
   case "$line" in *"open threads: 0 |"*) ;; *) log "#$n: SKIPPED (open threads)"; continue;; esac
   # a finding on the head can exist before its thread does, and a security bot's comment is no thread: both count
   # like a Codex finding (merge contract); "?" (unreadable) skips too
