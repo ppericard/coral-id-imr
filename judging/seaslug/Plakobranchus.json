@@ -1,12 +1,12 @@
 {
  "photos": {
   "seaslug-Plakobranchus-cand-764143268": {"code": "o1g0sl1c3"},
-  "seaslug-Plakobranchus-cand-182598007": {"code": "o1g0sl15"},
-  "seaslug-Plakobranchus-cand-333242127": {"code": "o1g0sl14", "note": "the pale rubble background competes with the pale body"},
+  "seaslug-Plakobranchus-cand-182598007": {"code": "o1g0sl15", "bb": [0.085, 0.128, 0.91, 0.8891]},
+  "seaslug-Plakobranchus-cand-333242127": {"code": "o1g0sl14", "bb": [0.1781, 0.319, 0.8394, 0.7479], "note": "the pale rubble background competes with the pale body"},
   "seaslug-Plakobranchus-cand-254046453": {"code": "p0g0ml1c1"},
-  "seaslug-Plakobranchus-cand-625127695": {"code": "o1g0sl14", "note": "the sandy, algal background competes with the outline"},
+  "seaslug-Plakobranchus-cand-625127695": {"code": "o1g0sl14", "bb": [0.2081, 0.2967, 0.8238, 0.7213], "note": "the sandy, algal background competes with the outline"},
   "seaslug-Plakobranchus-cand-209312464": {"code": "d1g0ml1a3", "note": "in a plastic cup"},
-  "seaslug-Plakobranchus-cand-174530677": {"code": "o1g0sl14", "note": "the mottled body is close to the silt's colours"},
+  "seaslug-Plakobranchus-cand-174530677": {"code": "o1g0sl14", "bb": [0.21, 0.2471, 0.7417, 0.7529], "note": "the mottled body is close to the silt's colours"},
   "seaslug-Plakobranchus-cand-98243300": {"code": "o0g0ml1c1"}
  }
 }

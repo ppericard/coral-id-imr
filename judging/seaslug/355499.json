@@ -1,24 +1,24 @@
 {
  "photos": {
-  "seaslug-355499-cand-379548041": {"code": "p1g0sl15"},
-  "seaslug-355499-cand-278228338": {"code": "d1g0sl14", "note": "the body twisted at the middle, the front folded back"},
+  "seaslug-355499-cand-379548041": {"code": "p1g0sl15", "bb": [0.1875, 0.3107, 0.8344, 0.6544]},
+  "seaslug-355499-cand-278228338": {"code": "d1g0sl14", "bb": [0.1123, 0.1649, 0.6495, 0.7726], "note": "the body twisted at the middle, the front folded back"},
   "seaslug-355499-cand-638458045": {"code": "o1g0sl14", "note": "algae strands across the body on a busy red background"},
   "seaslug-355499-cand-86059968": {"code": "o1g0sl14", "note": "the front raised and folded over a bryozoan, the rear down"},
-  "seaslug-355499-cand-63745882": {"code": "d1g0sl15"},
-  "seaslug-355499-cand-113205044": {"code": "d1g0sl15"},
-  "seaslug-355499-cand-444561873": {"code": "p1g0sl15"},
+  "seaslug-355499-cand-63745882": {"code": "d1g0sl15", "bb": [0.1637, 0.2457, 0.7363, 0.8143]},
+  "seaslug-355499-cand-113205044": {"code": "d1g0sl15", "bb": [0.3012, 0.2166, 0.7425, 0.7167]},
+  "seaslug-355499-cand-444561873": {"code": "p1g0sl15", "bb": [0.0955, 0.1519, 0.925, 0.7942]},
   "seaslug-355499-cand-152625199": {"code": "h1g0ss11"},
   "seaslug-355499-cand-610163618": {"code": "h0g0sm1w1"},
-  "seaslug-355499-cand-171045894": {"code": "p1g0sl15"},
-  "seaslug-355499-cand-277692499": {"code": "p1g1sl14"},
-  "seaslug-355499-cand-507947763": {"code": "p1g0sl15"},
+  "seaslug-355499-cand-171045894": {"code": "p1g0sl15", "bb": [0.165, 0.2066, 0.83, 0.7507]},
+  "seaslug-355499-cand-277692499": {"code": "p1g1sl14", "bb": [0.27, 0.35, 0.9438, 0.8667]},
+  "seaslug-355499-cand-507947763": {"code": "p1g0sl15", "bb": [0.2, 0.2376, 0.8313, 0.7131]},
   "seaslug-355499-cand-80353085": {"code": "p1g0sl14", "note": "the white animal on white coral rubble that competes with its outline"},
-  "seaslug-355499-cand-113199562": {"code": "d1g0sm14"},
-  "seaslug-355499-cand-63742588": {"code": "p1g0sl15"},
-  "seaslug-355499-cand-278438697": {"code": "p1g0sl15"},
+  "seaslug-355499-cand-113199562": {"code": "d1g0sm14", "bb": [0.42, 0.0933, 0.7363, 0.6292]},
+  "seaslug-355499-cand-63742588": {"code": "p1g0sl15", "bb": [0.1968, 0.1857, 0.705, 0.652]},
+  "seaslug-355499-cand-278438697": {"code": "p1g0sl15", "bb": [0.3271, 0.2686, 0.835, 0.7141]},
   "seaslug-355499-cand-171045896": {"code": "o0g0sl13", "note": "the tail runs off the frame edge at the top right"},
   "seaslug-355499-cand-444561849": {"code": "h0g0sl11"},
   "seaslug-355499-cand-310596578": {"code": "d1g0sm14"},
-  "seaslug-355499-cand-104449822": {"code": "p1g0sl14", "note": "the pale tail fades into pale rubble that competes with its outline"}
+  "seaslug-355499-cand-104449822": {"code": "p1g0sl14", "bb": [0.1637, 0.2541, 0.9063, 0.7], "note": "the pale tail fades into pale rubble that competes with its outline"}
  }
 }

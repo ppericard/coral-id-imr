@@ -1,24 +1,24 @@
 {
  "photos": {
-  "seaslug-136327-cand-623507774": {"code": "d1g0sl15"},
+  "seaslug-136327-cand-623507774": {"code": "d1g0sl15", "bb": [0.2866, 0.2375, 0.6812, 0.8282]},
   "seaslug-136327-cand-90214": {"code": "o1g1sl14"},
   "seaslug-136327-cand-655728775": {"code": "o1g0sm13"},
-  "seaslug-136327-cand-719974557": {"code": "o1g0sl14"},
+  "seaslug-136327-cand-719974557": {"code": "o1g0sl14", "bb": [0.25, 0.3125, 0.7188, 0.6438]},
   "seaslug-136327-cand-693417116": {"code": "h1g0sm12"},
-  "seaslug-136327-cand-604391146": {"code": "d1g0sl15"},
+  "seaslug-136327-cand-604391146": {"code": "d1g0sl15", "bb": [0.275, 0.3541, 0.73, 0.7292]},
   "seaslug-136327-cand-391721970": {"code": "d1g0ml14"},
   "seaslug-136327-cand-639453699": {"code": "d1g1ss1w2"},
   "seaslug-136327-cand-442928078": {"code": "d1d0sl1w4"},
-  "seaslug-136327-cand-461906147": {"code": "p1g0sl1w5"},
+  "seaslug-136327-cand-461906147": {"code": "p1g0sl1w5", "bb": [0.18, 0.2673, 0.9, 0.6408]},
   "seaslug-136327-cand-178451208": {"code": "p1g0ml1w4"},
   "seaslug-136327-cand-656414083": {"code": "o1g1sm13"},
   "seaslug-136327-cand-108543375": {"code": "o0g0sl13"},
-  "seaslug-136327-cand-494976731": {"code": "o1g0sm1w4"},
+  "seaslug-136327-cand-494976731": {"code": "o1g0sm1w4", "bb": [0.4093, 0.3291, 0.6669, 0.6167]},
   "seaslug-136327-cand-612944719": {"code": "o1g0ss12"},
-  "seaslug-136327-cand-264453678": {"code": "p1g0sm14"},
-  "seaslug-136327-cand-254609467": {"code": "o1g0sl15"},
-  "seaslug-136327-cand-712501371": {"code": "d1g0sl15"},
+  "seaslug-136327-cand-264453678": {"code": "p1g0sm14", "bb": [0.4487, 0.425, 0.7863, 0.5959]},
+  "seaslug-136327-cand-254609467": {"code": "o1g0sl15", "bb": [0.2446, 0.2921, 0.7535, 0.6375]},
+  "seaslug-136327-cand-712501371": {"code": "d1g0sl15", "bb": [0.3012, 0.2363, 0.5469, 0.7785]},
   "seaslug-136327-cand-714368384": {"code": "o1d0mm12"},
-  "seaslug-136327-cand-34282726": {"code": "d1g0sl15"}
+  "seaslug-136327-cand-34282726": {"code": "d1g0sl15", "bb": [0.2024, 0.3082, 0.78, 0.6754]}
  }
 }

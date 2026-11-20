@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-126108-cand-90210": {"code": "o1d0sl14"},
-  "seaslug-126108-cand-589258384": {"code": "d1g0sm14"},
+  "seaslug-126108-cand-589258384": {"code": "d1g0sm14", "bb": [0.3483, 0.1, 0.6584, 0.8907]},
   "seaslug-126108-cand-60506791": {"code": "o1d0ss12"},
-  "seaslug-126108-cand-151120030": {"code": "p1g0sm14"},
+  "seaslug-126108-cand-151120030": {"code": "p1g0sm14", "bb": [0.1531, 0.3536, 0.7657, 0.6698]},
   "seaslug-126108-cand-467362803": {"code": "o1g0ml14"},
-  "seaslug-126108-cand-596704654": {"code": "o1g0sl15"},
+  "seaslug-126108-cand-596704654": {"code": "o1g0sl15", "bb": [0.1175, 0.2625, 0.6644, 0.7334]},
   "seaslug-126108-cand-266207181": {"code": "d1g0ss13"},
-  "seaslug-126108-cand-630770374": {"code": "p1g0sm14"},
+  "seaslug-126108-cand-630770374": {"code": "p1g0sm14", "bb": [0.3125, 0.4444, 0.7563, 0.6223]},
   "seaslug-126108-cand-353146808": {"code": "o1d0sm13"},
-  "seaslug-126108-cand-465665663": {"code": "o1g0sm14"},
-  "seaslug-126108-cand-622861603": {"code": "o1g0sm14"},
+  "seaslug-126108-cand-465665663": {"code": "o1g0sm14", "bb": [0.3218, 0.0691, 0.6063, 0.6109]},
+  "seaslug-126108-cand-622861603": {"code": "o1g0sm14", "bb": [0.3468, 0.2625, 0.65, 0.7792]},
   "seaslug-126108-cand-530666509": {"code": "o1g0ss12"},
   "seaslug-126108-cand-527046381": {"code": "d1g0ss1a1"},
   "seaslug-126108-cand-460665905": {"code": "o1g0ml14"},
-  "seaslug-126108-cand-61447754": {"code": "o1g0sl15"},
+  "seaslug-126108-cand-61447754": {"code": "o1g0sl15", "bb": [0.0987, 0.1593, 0.5769, 0.8776]},
   "seaslug-126108-cand-90583203": {"code": "h1g0sm12"},
   "seaslug-126108-cand-19580399": {"code": "o1g0ml1w4"},
-  "seaslug-126108-cand-601422139": {"code": "o1g0sm14"},
-  "seaslug-126108-cand-34199746": {"code": "o1g0sl15"},
+  "seaslug-126108-cand-601422139": {"code": "o1g0sm14", "bb": [0.3708, 0.295, 0.9067, 0.6294]},
+  "seaslug-126108-cand-34199746": {"code": "o1g0sl15", "bb": [0.1891, 0.2096, 0.8414, 0.8249]},
   "seaslug-126108-cand-478930078": {"code": "o1g0ss12"}
  }
 }

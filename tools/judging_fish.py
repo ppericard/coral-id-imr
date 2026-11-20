@@ -38,7 +38,7 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    tools/fetch_seaslugs.py), on their rubric (judging/SEASLUG.md:
                                                    tools/fish_judge.py RUBRICS "seaslug"): judging/seaslug/<taxon id>.json,
                                                    imported into suggest.json "seaslug"; ids = iNaturalist taxon ids (the
-                                                   keys of seaslug-cand.json) or scientific names; no phase, no box, keep
+                                                   keys of seaslug-cand.json) or scientific names; no phase, the animal's box bb as the fish's, keep
                                                    optional (one photo per observation: read as best), and the egg rule
                                                    (#970's filter 2): {"egg": true} and no code excludes an egg-mass photo
 
@@ -57,6 +57,8 @@ from collections import Counter, OrderedDict, defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fish_judge import RUBRICS, cap  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
 from fish_game import box_in, box_ok  # noqa: E402  the fish's box, as the tile tool reads it
+# A box narrower or shorter than this share of the photo is a mistake, not an animal (the tile needs 320 px of the original).
+MIN_BB = 0.02
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = lambda *a: os.path.join(ROOT, *a)  # noqa: E731
@@ -72,13 +74,13 @@ def load(p, d=None):
 # The subjects this pass judges (use() switches; fish by default). Each: its candidates, its judging files, its rubric
 # (tools/fish_judge.py RUBRICS), the fields a judgement may hold, its phases, and the keep a judgement without one reads
 # (None: keep is required). Sea slugs (Pierre, 2026-11-15, Q369, Q377): one photo per observation (tools/fetch_seaslugs.py),
-# so keep reads best; no phase (rule C2: no presentation names one) and no fish's box (the tile is the fish games'); egg,
-# #970's filter 2 (judging/SEASLUG.md "Egg masses").
+# so keep reads best; no phase (rule C2: no presentation names one); the animal's box bb as the fish's, for the Find the X
+# tile (Pierre, 2026-11-19, Q437: judging/SEASLUG.md "The animal's box"); egg, #970's filter 2 (judging/SEASLUG.md "Egg masses").
 SUBJECTS = {
     "fish": {"dir": os.path.join("judging", "fish"), "cand": "fish-cand.json", "doc": "judging/FISH.md", "eg": "p1g0sm14",
              "fields": {"code", "keep", "phase", "crop", "bb", "unsure", "note"}, "keep": None},
     "seaslug": {"dir": os.path.join("judging", "seaslug"), "cand": "seaslug-cand.json", "doc": "judging/SEASLUG.md",
-                "eg": "d1g0sl15", "fields": {"code", "keep", "crop", "egg", "unsure", "note"}, "keep": "best"},
+                "eg": "d1g0sl15", "fields": {"code", "keep", "crop", "bb", "egg", "unsure", "note"}, "keep": "best"},
 }
 SUBJECT = "fish"
 CFG = SUBJECTS[SUBJECT]
@@ -336,11 +338,13 @@ def check(sid):
                      "0 <= top < bottom <= 1")
         b = x.get("bb")
         if b is not None and not box_ok(b):
-            E.append(f"{at}: bb must be the fish's box [left, top, right, bottom], fractions of the photo, 0 <= left < right <= 1, "
+            E.append(f"{at}: bb must be the animal's box [left, top, right, bottom], fractions of the photo, 0 <= left < right <= 1, "
                      "0 <= top < bottom <= 1")
+        elif b is not None and min(b[2] - b[0], b[3] - b[1]) < MIN_BB:
+            E.append(f"{at}: bb is under {MIN_BB:.0%} of the photo's width or height: that is a speck, not an animal's box")
         elif b is not None and c_ok and not box_in(b, c):
             # The code is read on the photo as cropped (judging/FISH.md "A proposed crop"): the crop keeps the fish whole.
-            E.append(f"{at}: the crop cuts the fish's box bb: a crop keeps the whole fish (judging/FISH.md \"A proposed crop\")")
+            E.append(f"{at}: the crop cuts the animal's box bb: a crop keeps the whole animal (judging/FISH.md \"A proposed crop\")")
     missing = [f for f in mine if f not in j["photos"]]
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")

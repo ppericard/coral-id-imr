@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-121406-cand-682742079": {"code": "o1g0sl14"},
-  "seaslug-121406-cand-500753960": {"code": "d1g0sl15"},
+  "seaslug-121406-cand-500753960": {"code": "d1g0sl15", "bb": [0.2828, 0.0562, 0.7422, 0.8925]},
   "seaslug-121406-cand-90223": {"code": "d1g0ml14"},
   "seaslug-121406-cand-502097306": {"code": "p0g0sl13"},
   "seaslug-121406-cand-624473600": {"code": "o1g0sl14"},
   "seaslug-121406-cand-703389934": {"code": "o1g2sl13"},
   "seaslug-121406-cand-711509604": {"code": "o0g1sl12"},
-  "seaslug-121406-cand-108289973": {"code": "o1g0sl14"},
+  "seaslug-121406-cand-108289973": {"code": "o1g0sl14", "bb": [0.1062, 0.0332, 0.7513, 0.867]},
   "seaslug-121406-cand-112938039": {"code": "p1g0ml14"},
-  "seaslug-121406-cand-255399489": {"code": "p1g0sl1w4"},
-  "seaslug-121406-cand-344029297": {"code": "o1g0sl1w4"},
-  "seaslug-121406-cand-53804370": {"code": "d1g0sl1w5"},
+  "seaslug-121406-cand-255399489": {"code": "p1g0sl1w4", "bb": [0.2375, 0.2607, 0.7575, 0.6877]},
+  "seaslug-121406-cand-344029297": {"code": "o1g0sl1w4", "bb": [0.2562, 0.233, 0.8594, 0.9098]},
+  "seaslug-121406-cand-53804370": {"code": "d1g0sl1w5", "bb": [0.1, 0.2039, 0.9157, 0.8259]},
   "seaslug-121406-cand-759430896": {"code": "t1g0sl13"},
-  "seaslug-121406-cand-586155683": {"code": "p1g0sl15"},
-  "seaslug-121406-cand-464115967": {"code": "p1g0sl1w5"},
+  "seaslug-121406-cand-586155683": {"code": "p1g0sl15", "bb": [0.0312, 0.1292, 0.9219, 0.8925]},
+  "seaslug-121406-cand-464115967": {"code": "p1g0sl1w5", "bb": [0.1406, 0.2985, 0.7925, 0.7742]},
   "seaslug-121406-cand-503657449": {"code": "o1g0sm13"},
-  "seaslug-121406-cand-10839712": {"code": "p1g1sl14"},
-  "seaslug-121406-cand-750050337": {"code": "p1g0sl15"},
-  "seaslug-121406-cand-497975778": {"code": "d1g0sl1w5"},
-  "seaslug-121406-cand-566635660": {"code": "o1g0sl14"}
+  "seaslug-121406-cand-10839712": {"code": "p1g1sl14", "bb": [0.2437, 0.2041, 0.7657, 0.65]},
+  "seaslug-121406-cand-750050337": {"code": "p1g0sl15", "bb": [0.13, 0.2958, 0.7894, 0.6059]},
+  "seaslug-121406-cand-497975778": {"code": "d1g0sl1w5", "bb": [0.1, 0.1416, 0.9238, 0.76]},
+  "seaslug-121406-cand-566635660": {"code": "o1g0sl14", "bb": [0.3293, 0.2441, 0.7169, 0.7984]}
  }
 }

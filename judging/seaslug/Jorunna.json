@@ -1,21 +1,21 @@
 {
  "photos": {
   "seaslug-Jorunna-cand-323526496": {"code": "h1g0sl13"},
-  "seaslug-Jorunna-cand-178315053": {"code": "p1g0sl1f4"},
+  "seaslug-Jorunna-cand-178315053": {"code": "p1g0sl1f4", "bb": [0.038, 0.1377, 0.893, 0.8662]},
   "seaslug-Jorunna-cand-427770204": {"code": "d1g0sl1cw2", "note": "the white animal almost merges with the white veins of its sponge"},
   "seaslug-Jorunna-cand-106422113": {"code": "p1g0ml1f3"},
   "seaslug-Jorunna-cand-410804327": {"code": "p1g0ml14"},
   "seaslug-Jorunna-cand-106585929": {"code": "d0g0sl1f2"},
-  "seaslug-Jorunna-cand-181476847": {"code": "o1g0sl1f4"},
+  "seaslug-Jorunna-cand-181476847": {"code": "o1g0sl1f4", "bb": [0.2, 0.1162, 0.852, 0.9115]},
   "seaslug-Jorunna-cand-79369727": {"code": "p1g0sl1c3"},
-  "seaslug-Jorunna-cand-181478376": {"code": "p1g0sl15"},
-  "seaslug-Jorunna-cand-102323873": {"code": "o1g0sl1w4", "note": "a twisted body among busy algae threads"},
+  "seaslug-Jorunna-cand-181478376": {"code": "p1g0sl15", "bb": [0.055, 0.2679, 0.928, 0.7363]},
+  "seaslug-Jorunna-cand-102323873": {"code": "o1g0sl1w4", "bb": [0.2237, 0.1458, 0.7844, 0.8334], "note": "a twisted body among busy algae threads"},
   "seaslug-Jorunna-cand-315048084": {"code": "p1g0ss12", "note": "the large pale sponge draws the eye from the small white animal on its rim"},
   "seaslug-Jorunna-cand-106500251": {"code": "o1g0sl1c3"},
-  "seaslug-Jorunna-cand-181478374": {"code": "o1g0sl15"},
+  "seaslug-Jorunna-cand-181478374": {"code": "o1g0sl15", "bb": [0.188, 0.069, 0.845, 0.9474]},
   "seaslug-Jorunna-cand-658825770": {"code": "o0g0mm1c1"},
   "seaslug-Jorunna-cand-437070001": {"code": "p1g0ml14"},
-  "seaslug-Jorunna-cand-106500230": {"code": "o1g0sm14"},
-  "seaslug-Jorunna-cand-335040193": {"code": "p1g0sl15"}
+  "seaslug-Jorunna-cand-106500230": {"code": "o1g0sm14", "bb": [0.3375, 0.1541, 0.6688, 0.8]},
+  "seaslug-Jorunna-cand-335040193": {"code": "p1g0sl15", "bb": [0.1612, 0.3125, 0.8375, 0.7834]}
  }
 }
