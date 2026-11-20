@@ -382,7 +382,9 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 - **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
-  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim (the names choice is the What I learn card's, Q396, Q400, Q404). Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
+  now (docs/ARCHITECTURE.md "First-launch question"). The coral values checked on learnsim's fish profiles on 2026-11-20
+  (docs/reviews/2026-11-20-fish-welcome-values-check.md): they fit the fish as well as the corals, the bands of the
+  level-change cards do not (the names choice is the What I learn card's, Q396, Q400, Q404). Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
   answers, a forced choice:
   1. *I'm new to reef fish*;
