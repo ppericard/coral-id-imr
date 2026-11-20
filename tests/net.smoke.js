@@ -224,9 +224,14 @@ const server = http.createServer((req, res) => {
     const {ctx, p, errs} = await ctxOf({failFull: true, dpr: 2}); // 2x: the 960 px file, not the 480 px one
     await p.goto(base + '#practice/quiz');
     await ready(p);
+    // A lecture photo kept only on R2 falls back to its online original (a Corals of the World file, stubbed): the
+    // failure injection never touches it, so it has no smaller version to fall back to; it only has to load.
     await p
       .waitForFunction(
-        () => [...document.querySelectorAll('#view .qstage img')].every(i => i.dataset.low && i.complete && i.naturalWidth > 0),
+        () =>
+          [...document.querySelectorAll('#view .qstage img')].every(
+            i => (i.dataset.low || /^https:\/\/www\.coralsoftheworld\.org\//.test(i.currentSrc)) && i.complete && i.naturalWidth > 0
+          ),
         null,
         {timeout: 15000}
       )
