@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v207 (2026-11-20)
+
+Memory opens to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `pairs` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: Memory records nothing for any subject (no answer, no progress, no log row), so no answer is scored, replayed or logged differently and no rules version is appended; the copy of `core.js` in this script carries only the new `pages`
+
 ## v206 (2026-11-20)
 
 The What I learn card's names rows (Pierre, 2026-11-18, Q396, Q400 D, Q404 A: each names row on or off, a families-only player allowed): `core.js` `SUBJECTS` `optin` gains `sp` for the fish (the species by their common names) and `ssp` for the sea slugs (their species by their scientific names), and `mergeUsers` keeps a row turned off on the card (`k + 'O'`) only where both accounts merged have it off, so a row on in either stays on, a row on by default included. The script's progress engine is unchanged: the rows only choose which units the app draws, and a row turned off keeps its units' bars and the one score scale (Q402 A), so no answer is scored, replayed or logged differently
