@@ -29,12 +29,12 @@ estimable on today's log", with no value. If the genus or the species SD fails, 
 genus and species levels is tested the same way (the study's fallback).
 
     python3 tools/studies/q316/fit.py fit <export.json> <out.json> [--reps 20] [--sibling] [--coral-family]
-                                      [--half A|B] [--no-accept] [--deadline <epoch s>] [--budget <minutes>]
+                                      [--no-accept] [--deadline <epoch s>] [--budget <minutes>]
     python3 tools/studies/q316/fit.py synth <fish|coral|fish-rich|coral-large> <out.json> [--reps 20] [--seed 1]
                                         [--budget m]
 
-fit: the export tools/studies/q316/prep.js writes (kept outside the repository). --half: the players of one half
-(prep.js's split) only, for the replay's held-out SDs. --no-accept: the fit alone (the halves, the replay's reference). --sibling (fish, exploratory): the "tell it from its
+fit: the export tools/studies/q316/prep.js writes (kept outside the repository). --no-accept: the fit alone (the
+reference D(u) of checks.js's 2C, without the acceptance test). --sibling (fish, exploratory): the "tell it from its
 siblings" genus term. --coral-family (corals, exploratory): the coral families of tools/taxonomy.json as a level.
 synth: the study's synthetic designs (no player), the estimator's own check; its figures are in the README.
 --reps other than 20 runs the refits for a look (timing, a quick trial) but gives no verdict ("the measure cannot tell").
@@ -540,14 +540,11 @@ def shares(F, keys, rng, draws=2000):
 def run_real(ex, args, clock, log):
     subject = ex['subject']
     rows = [r for r in ex['rows'] if r.get('use')]  # trusted answers with photos and a known taxon (prep.js)
-    if args.get('half'):
-        rows = [r for r in rows if r.get('half') == args['half']]
     rng = np.random.default_rng(args.get('seed', 1))
     out = {
         'subject': subject,
         'answers': len(rows),
         'players': len({r['p'] for r in rows}),
-        'half': args.get('half'),
         'accept_rule': ACCEPT,
         'cut': False,
         'steps': [],
@@ -667,9 +664,6 @@ def parse(argv):
             i += 2
         elif x in ('--deadline', '--budget'):
             a[x[2:]] = float(argv[i + 1])
-            i += 2
-        elif x == '--half':
-            a['half'] = argv[i + 1]
             i += 2
         elif x in ('--sibling', '--coral-family', '--no-accept'):
             a[x[2:].replace('-', '_')] = True

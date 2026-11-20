@@ -168,7 +168,7 @@ learning change" (rule L11).
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
 | `perf.js` | Speed from a player's side: cold and warm start, throttled phone and network |
 | `studies/q351/` | The scripts of one batch-model study |
-| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, and two replays of the real log; read-only, one 40-minute clock ([README](studies/q316/README.md)) |
+| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, and the Q136 centring check on the real log (2B is its follow-up); read-only, one 40-minute clock ([README](studies/q316/README.md)) |
 
 ## Archive
 

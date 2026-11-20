@@ -6,8 +6,8 @@
 <out dir>: a new, empty directory outside the repository, kept off GitHub (rule D2): every file written goes there.
 For each subject, corals first then fish:
   1. prep.js: the export (labels P1, P2..., and labels.json, the label of each player, for the integrator only);
-  2. fit.py --no-accept on every player (the replay's reference D(u)), then on each half (the replay's held-out SDs);
-  3. checks.js: 2B and 2C;
+  2. fit.py --no-accept on every player (check 2C's offline reference D(u));
+  3. checks.js: 2C;
 then, for each subject, fit.py with its acceptance test (the values reported, or "not estimable on today's log").
 The clock starts once the machine slot is held; past it each step stops, keeps what it has and marks the rest "the
 measure cannot tell"; nothing escalates. Prints aggregates and labels only.
@@ -67,12 +67,10 @@ def main(argv):
         if not step([node, os.path.join(HERE, 'prep.js'), log_path, s, f(f'export-{s}.json'), '--map', f(f'labels-{s}.json'), *ex]):
             continue
         step([py, os.path.join(HERE, 'fit.py'), 'fit', f(f'export-{s}.json'), f(f'ref-{s}.json'), '--no-accept', *dl])
-        for h in ('A', 'B'):
-            step([py, os.path.join(HERE, 'fit.py'), 'fit', f(f'export-{s}.json'), f(f'half{h}-{s}.json'), '--no-accept', '--half', h, *dl])
         st = opt(argv, f'--stats-{s}')
-        if all(os.path.exists(f(x)) for x in (f'ref-{s}.json', f'halfA-{s}.json', f'halfB-{s}.json')):
+        if os.path.exists(f(f'ref-{s}.json')):
             step([node, os.path.join(HERE, 'checks.js'), f(f'export-{s}.json'), f(f'checks-{s}.json'), '--fit', f(f'ref-{s}.json'),
-                  '--fitA', f(f'halfA-{s}.json'), '--fitB', f(f'halfB-{s}.json'), *(['--stats', st] if st else []), *dl])
+                  *(['--stats', st] if st else []), *dl])
     for s in ('coral', 'fish'):
         if os.path.exists(f(f'export-{s}.json')):
             print(f'== {s}: the fit and its acceptance test', flush=True)

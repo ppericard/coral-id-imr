@@ -116,7 +116,7 @@ test('prep.js: the Answers tab with its header; names become P1, P2... by answer
   fs.rmSync(d, {recursive: true});
 });
 
-test('prep.js: readAnswers form, left-out ids, halves, offsets, practice counts and the fish taxa from the photos', () => {
+test('prep.js: readAnswers form, left-out ids, offsets, practice counts and the fish taxa from the photos', () => {
   const ch = ['Acropora', 'Porites', 'Favia', 'Montipora'];
   const rows = [];
   // four players: 30, 20, 12, 5 answers; P1's first answer has a scoring record
@@ -144,10 +144,6 @@ test('prep.js: readAnswers form, left-out ids, halves, offsets, practice counts 
   assert.strictEqual(L.rows.length, 67);
   const X = Pr.prepare(L.rows, 'coral', {coralTax: () => ({})});
   const by = p => X.rows.filter(r => r.p === p);
-  assert.deepStrictEqual(
-    [1, 2, 3, 4].map(i => by('P' + i)[0].half),
-    ['A', 'B', 'B', 'A']
-  );
   const first = by('P1')[0];
   assert.ok(Math.abs(first.off - (-0.5 + 0.1 - 0.2 + 0.5)) < 1e-9, 'memory + mix-ups - format + one photo alone');
   const second = by('P1')[1];
@@ -171,94 +167,6 @@ test('prep.js: readAnswers form, left-out ids, halves, offsets, practice counts 
   assert.strictEqual(FX.rows[0].S, pics[0].sp);
   assert.strictEqual(FX.rows[0].ez[0], 3 - pics[0].e);
   assert.strictEqual(FX.rows[0].ezK, 0.5);
-});
-
-test('checks.js: the paired test over players and its declared floor; the Kalman split moves the uncertain part most', () => {
-  const rows = [],
-    la = [],
-    lb = [];
-  for (let p = 1; p <= 8; p++)
-    for (let i = 0; i < 25; i++) {
-      rows.push({p: 'P' + p});
-      la.push(0.5);
-      lb.push(0.5 - 0.01 * p);
-    }
-  let t = K.pairedTest(rows, () => true, la, lb);
-  assert.strictEqual(t.players, 8);
-  assert.strictEqual(t.p, 2 / 256);
-  assert.strictEqual(t.verdict, "arm 2 better than today's engine");
-  t = K.pairedTest(rows.slice(0, 125), () => true, la, lb);
-  assert.strictEqual(t.verdict, 'the measure cannot tell');
-  assert.match(t.why, /fewer than 6 players/);
-  // the split: one right answer on a new photo of a well-known genus
-  const r = {
-    p: 'P1',
-    u: 'G1',
-    rk: 'genus',
-    F: null,
-    G: 'G1',
-    S: null,
-    ph: ['ph1'],
-    ez: [0],
-    g: 0.25,
-    y: 1,
-    mem: 0,
-    cf: 0,
-    df: 0,
-    solo: 0,
-    tr: true
-  };
-  const warm = Array.from({length: 30}, (_, i) => ({...r, ph: ['old'], y: i % 3 ? 1 : 0}));
-  const before = K.sharedArm(warm, {gen: 0.3, photo: 0.46}, {}).m,
-    after = K.sharedArm([...warm, r], {gen: 0.3, photo: 0.46}, {}).m,
-    dGen = after['G:G1'] - before['G:G1'];
-  assert.ok(
-    after['I:ph1'] < 0 && dGen < 0 && -after['I:ph1'] > -dGen,
-    `photo ${after['I:ph1']}, genus ${dGen}: a right answer, the new photo moves most`
-  );
-});
-
-test('checks.js: the shared arm trusts a player as the live arm does, on the answers before each prediction only', () => {
-  const C = require(path.join(ROOT, 'core.js'));
-  // P2 is trusted on the whole log but not on its first answers (a slow start); P1 always
-  const rows = [];
-  for (let i = 0; i < 60; i++) {
-    const p = i % 2 ? 'P2' : 'P1',
-      j = Math.floor(i / 2);
-    rows.push({
-      p,
-      u: 'G' + (i % 3),
-      rk: 'genus',
-      F: null,
-      G: 'G' + (i % 3),
-      S: null,
-      ph: ['ph' + (i % 5)],
-      ez: [0],
-      g: 0.25,
-      y: p === 'P1' ? (i % 7 ? 1 : 0) : j < 12 ? (j % 3 ? 0 : 1) : 1,
-      mem: 0,
-      cf: 0,
-      df: 0,
-      solo: 0.5
-    });
-  }
-  const sd = {gen: 0.3, photo: 0.46},
-    eloRow = r => [r.p, 0, r.u, r.u, r.y, 'quiz', r.ph.join(' '), null, null, null, 'a b c d', 0];
-  // the reference: for each answer, the arm run afresh on the answers before it, each trusted as core.js trustOf says on
-  // those answers alone (what eloOf(before) does for the live arm)
-  const want = rows.map((r, i) => {
-    const before = rows.slice(0, i),
-      T = C.trustOf(before.map(eloRow));
-    return K.sharedArm([...before.map(x => ({...x, tr: !!T[x.p]})), r], sd, {}, {trust: 'given'}).d[i];
-  });
-  const whole = C.trustOf(rows.map(eloRow));
-  assert.ok(whole.P2 && !C.trustOf(rows.slice(0, 20).map(eloRow)).P2, 'the planted log: P2 trusted late');
-  const got = K.sharedArm(
-    rows.map(r => ({...r, tr: !!whole[r.p]})),
-    sd,
-    {}
-  ).d;
-  got.forEach((x, i) => assert.ok(Math.abs(x - want[i]) < 1e-12, `answer ${i}: ${x} against ${want[i]}`));
 });
 
 test('checks.js: Q136 centring, its declared rule on planted logs (not centred, centred, too few units)', () => {
@@ -291,12 +199,17 @@ test('checks.js: the whole run on a small made-up log; a deadline already past c
     rows.push(ra('w' + (i % 6), i, ch[i % 4], ['c' + (i % 4) + '-' + (i % 7)], (i * 7) % 10 < 7, ch, {d: 0.2 * (i % 4), f: 0, o: 0}));
   const X = Pr.prepare(rows, 'coral', {coralTax: () => ({})});
   const fit = {fit: {sd: {player: [0.5], pu: [0.2], gen: [0.3], photo: [0.4]}, fixed: {c: [0.8]}, effects: {gen: {Acropora: 0.1}}}};
-  const out = K.run(X, {full: fit, A: fit, B: fit}, null, null);
+  const out = K.run(X, {full: fit}, null, null);
   assert.ok(!out.cut);
-  assert.deepStrictEqual(out.done, ['live', 'shared', 'q136 variants', 'centring']);
-  assert.ok(out.exploratory.all.players === 6 && typeof out.exploratory.all.verdict === 'string');
-  assert.ok(out.calibration[1]['rank genus'].n > 0);
-  assert.ok(K.run(X, {full: fit, A: fit, B: fit}, null, 1).cut);
+  assert.deepStrictEqual(out.done, ['live units', 'centring']);
+  assert.ok(out.centring.primary && typeof out.centring.verdict === 'string');
+  assert.ok(!('primary' in out) && !('exploratory' in out), 'check 2B is not in this tool (the README follow-up)');
+  assert.ok(K.run(X, {full: fit}, null, 1).cut);
+  // the clock: never past 40 minutes from now, whatever deadline is given (rule L11)
+  const now = Date.now() / 1000;
+  assert.ok(K.capDeadline(now + 3 * 3600) <= now + 40 * 60 + 1);
+  assert.ok(K.capDeadline(null) <= now + 40 * 60 + 1);
+  assert.strictEqual(K.capDeadline(now + 60), now + 60);
 });
 
 test("checks.js: the person replay scores as the game does: a smaller fault's weight (z), a species' starting unit (from)", () => {
@@ -337,35 +250,6 @@ test("checks.js: the person replay scores as the game does: a smaller fault's we
   assert.strictEqual(X.rows[0].z, 'g');
 });
 
-test('checks.js: an answer without photos, or any non-finite loss, never enters a test; compression for every arm run', () => {
-  const ch = ['Acropora', 'Porites', 'Favia', 'Montipora'],
-    rows = [];
-  for (let i = 0; i < 240; i++)
-    rows.push(
-      ra('w' + (i % 6), i, ch[i % 4], i % 40 === 5 ? [] : ['c' + (i % 4) + '-' + (i % 7)], (i * 7) % 10 < 7, ch, {
-        d: 0.2 * (i % 4),
-        f: 0,
-        o: 0
-      })
-    );
-  const X = Pr.prepare(rows, 'coral', {coralTax: () => ({})});
-  const fit = {fit: {sd: {player: [0.5], pu: [0.2], gen: [0.3], photo: [0.4]}, fixed: {c: [0.8]}, effects: {gen: {Acropora: 0.1}}}};
-  const out = K.run(X, {full: fit, A: fit, B: fit}, null, null);
-  assert.ok(
-    out.exploratory.all.perPlayer.every(x => Number.isFinite(x.d)),
-    JSON.stringify(out.exploratory.all.perPlayer)
-  );
-  assert.ok(out.exploratory.all.p > 0);
-  assert.deepStrictEqual(Object.keys(out.compression).sort(), ['1', '2', '4b', '4c']);
-  const t = K.pairedTest([{p: 'P1'}, {p: 'P1'}], () => true, [0.5, 0.5], [NaN, 0.4], {...K.RULES, minAnswers: 1, minPlayers: 1});
-  assert.strictEqual(t.answers, 1);
-  // the clock: never past 40 minutes from now, whatever deadline is given (rule L11)
-  const now = Date.now() / 1000;
-  assert.ok(K.capDeadline(now + 3 * 3600) <= now + 40 * 60 + 1);
-  assert.ok(K.capDeadline(null) <= now + 40 * 60 + 1);
-  assert.strictEqual(K.capDeadline(now + 60), now + 60);
-});
-
 test("the rules the README declares are the code's (fit.py ACCEPT, the clock; checks.js RULES)", () => {
   const fit = fs.readFileSync(path.join(DIR, 'fit.py'), 'utf8');
   assert.match(fit, /ACCEPT = \{'reps': 20, 'bias': 0\.1, 'cover': 15, 'level': 0\.90\}/);
@@ -376,20 +260,14 @@ test("the rules the README declares are the code's (fit.py ACCEPT, the clock; ch
     '15 of the 20',
     '90% interval',
     '40 minutes',
-    'fewer than 3 earlier trusted answers',
-    'fewer than 6 players',
-    '20 or more primary answers',
-    'α 0.05',
     '6th answer',
     '3 or more',
     'fewer than 8 units',
     '10,000'
   ])
     assert.ok(README.includes(s), 'README: ' + s);
-  assert.strictEqual(K.RULES.pnMax, 3);
-  assert.strictEqual(K.RULES.minPlayers, 6);
-  assert.strictEqual(K.RULES.minAnswers, 20);
-  assert.strictEqual(K.RULES.alpha, 0.05);
+  assert.ok(README.includes('p < 0.05'), 'README: 2C alpha');
+  assert.strictEqual(K.RULES.centring.alpha, 0.05);
   assert.deepStrictEqual(
     [K.RULES.centring.after, K.RULES.centring.minPlayers, K.RULES.centring.minUnits, K.RULES.centring.perms],
     [5, 3, 8, 10000]

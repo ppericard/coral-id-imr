@@ -14,15 +14,14 @@
 //     times are read as Manila time (the sheet's clock, +08:00).
 // --exclude: the players the admin left out of the statistics, one name per line (the Answers tab form only; the
 //   readAnswers form carries its own list).
-// Each answer gets: its player's label and half (A or B: the players in order of answers, A B B A A B B A..., the
-//   replay's split), the unit, rank, and the family, genus and species of what was shown (fish: the photos' species
+// Each answer gets: its player's label, the unit, rank, and the family, genus and species of what was shown (fish: the photos' species
 //   through fish-game.json and fish-photos.json, its family and genus in fish.json; corals: the genus shown, its family
 //   from tools/taxonomy.json), its photos with their judged ease (fish, fish-game.json e, as analysis.js photoMetaFish),
 //   the guess rate (core.js guessOf), the engine's own terms as one offset (off: the photo memory and the mix-ups term
 //   from its scoring record, else the memory prior by the player's history with the photo, core.js MEM; minus the format
 //   offset logged, else the latest one logged for that format; plus core.js DOM.SINGLE for one photo alone), the player's
 //   earlier answers in the subject and on the unit, trusted (core.js trustOf on the subject's rows, as the sheet's pass),
-//   use (trusted, with photos and a known taxon: the fit's rows), and what the replay of checks.js needs.
+//   use (trusted, with photos and a known taxon: the fit's rows), and what the check 2C of checks.js needs.
 const fs = require('fs'),
   path = require('path');
 const ROOT = path.join(__dirname, '..', '..', '..');
@@ -172,8 +171,7 @@ function prepare(all, subject, opts = {}) {
   const cnt = new Map();
   rows.forEach(r => cnt.set(r[0], (cnt.get(r[0]) || 0) + 1));
   const order = [...cnt.keys()].sort((a, b) => cnt.get(b) - cnt.get(a)),
-    label = new Map(order.map((w, i) => [w, 'P' + (i + 1)])),
-    half = new Map(order.map((w, i) => [w, i % 4 === 0 || i % 4 === 3 ? 'A' : 'B']));
+    label = new Map(order.map((w, i) => [w, 'P' + (i + 1)]));
   const fish = subject !== 'coral',
     FT = fish ? (opts.fishTax || fishTax)() : null,
     CF = fish ? null : (opts.coralTax || coralTax)(),
@@ -208,7 +206,6 @@ function prepare(all, subject, opts = {}) {
     if (!sc) noSc++;
     const row = {
       p: label.get(w),
-      half: half.get(w),
       t: r[1],
       u,
       rk: String(r[18] || (fish ? '' : 'genus')),
@@ -240,9 +237,7 @@ function prepare(all, subject, opts = {}) {
       sc: !!sc,
       np: seenS[w] || 0,
       nu: seenU[w + '|' + u] || 0,
-      tr: !!trust[w],
-      // a photo's earlier trusted answers, the replay's primary measure (photos with fewer than 3)
-      pn: null
+      tr: !!trust[w]
     };
     row.use = row.tr && ph.length > 0 && !!tax && !!row.G;
     if (!ph.length) drop.photos++;
@@ -252,13 +247,6 @@ function prepare(all, subject, opts = {}) {
     seenU[w + '|' + u] = row.nu + 1;
     hs.forEach(h => ((h[0] += 1), (h[1] += row.y)));
     return row;
-  });
-  // each answer's photos: the most earlier trusted answers any of them has (every player's), so pn < 3 means every
-  // photo of the question had fewer than 3
-  const pn = {};
-  out.forEach(x => {
-    x.pn = x.ph.length ? Math.max(...x.ph.map(f => pn[f] || 0)) : 0;
-    if (x.tr) x.ph.forEach(f => (pn[f] = (pn[f] || 0) + 1));
   });
   const counts = {
     answers: out.length,
