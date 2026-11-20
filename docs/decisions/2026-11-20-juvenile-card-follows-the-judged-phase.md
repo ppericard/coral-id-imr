@@ -1,6 +1,6 @@
 # Two fish photos judged against the evidence, corrected; the observer's juvenile on a photo that looks adult waits for Pierre
 
-Date: 2026-11-20. PR: #1321. Rules or docs touched: judging/FISH.md "Tags", "The observer's life stage"; ANSWERS.
+Date: 2026-11-20. PR: #1323. Rules or docs touched: judging/FISH.md "Tags", "The observer's life stage"; ANSWERS.
 
 ## Context
 

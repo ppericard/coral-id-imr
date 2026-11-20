@@ -1472,4 +1472,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   corrected in its judging (`j`, no phase). A goatfish judged `j` against its own note lost the flag (integrator's
   call). The goatfish he saw takes its juvenile phase from the observer's life stage: proposed to him, not changed.
   Applied: judging/fish/s597.json, s330.json, suggest.json,
-  decisions/2026-11-20-juvenile-card-follows-the-judged-phase.md, #1321.
+  decisions/2026-11-20-juvenile-card-follows-the-judged-phase.md, #1323.
