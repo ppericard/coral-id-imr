@@ -22,5 +22,9 @@ gonfle qu'il y ait 2 mécanismes pas bien différenciés» (the second part, one
   brings both back, and nothing is written outside a click (A1: no automatic write of a choice; a flag is a task marker).
 - Not built: an automatic Done for a report that carries a photo (Done thanks the player, a decision for Pierre).
 
+Known cost, accepted: a coral photo sent to another genus with Not this counts as having left play (Pierre named Not
+this among the tools), so a flag raised on it after the move is dropped at the next click; re-flagging from the site
+brings it back. A fish photo re-added under its corrected species (`out` equal to `add`) stays in play and keeps its flag.
+
 Integrator's call, easy to correct (admin only): clearing at the next click rather than at once for a flag already stale
 in the draft (it is not listed or counted meanwhile).
