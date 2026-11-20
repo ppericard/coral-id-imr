@@ -1329,6 +1329,23 @@
       ]
     },
     {
+      "id": "fish-phase-plectorhinchus-vittatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Indian Ocean oriental sweetlips: which juvenile pattern?",
+      "q": "Fishes of Australia and FishBase describe the juvenile pattern of Plectorhinchus vittatus differently. Which pattern do the game's juvenile photos of this species show?",
+      "ctx": [
+        "FishBase: \"juveniles with connected black blotches and spots that gradually break up into horizontal stripes; pectoral fins black in juveniles becoming uniform yellow in adults\".",
+        "Fishes of Australia (as hand-read 2026-11-20, extraction not checked against the raw page): a yellow head and irregular broad black stripes; its subadults \"have broad stripes on the head, body and fins\".",
+        "The two sources describe the juvenile pattern differently. Recorded in tools/fish_phases.json (juv note); nothing in play depends on it yet. Listed, not settled (rule C5)."
+      ],
+      "src": [
+        {"t": "FishBase, Plectorhinchus vittatus", "u": "https://www.fishbase.se/summary/Plectorhinchus-vittatus.html"},
+        {"t": "Fishes of Australia, Plectorhinchus vittatus", "u": "https://fishesofaustralia.net.au/home/species/459"}
+      ]
+    },
+    {
       "id": "fish-phase-rhinomuraena-quaesita",
       "kind": "sources",
       "subj": "fish",

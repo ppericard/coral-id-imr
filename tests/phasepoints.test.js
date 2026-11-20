@@ -21,11 +21,18 @@ const ids = [];
 
 const slug = name => name.toLowerCase().replace(/[^a-z]+/g, '-');
 
+// A note that records a disagreement between sources, in any wording.
+const DISAGREE = /conflict|disagree|differ(s)? between|contradict|inconsistent/i;
+// Flagged by DISAGREE but not a disagreement between sources (read note by note, 2026-11-20).
+const NOT_A_DISAGREEMENT = {
+  'Abalistes stellatus': 'juv note: a difference of degree (blotches fade in large fish) from dive-site pages seen only in a search summary, none quoted or fetched, so no sourced point can be written',
+};
+
 test('every disagreement in the fish colour phases list is a point for Pierre', () => {
   const missing = [];
   for (const [name, e] of Object.entries(phases)) {
-    if (name.startsWith('_')) continue;
-    const found = ['juv', 'sub', 'ip_tp', 'sex'].filter(k => e[k] === 'conflict' || /\bconflict\b/i.test((e.note || {})[k] || ''));
+    if (name.startsWith('_') || NOT_A_DISAGREEMENT[name]) continue;
+    const found = ['juv', 'sub', 'ip_tp', 'sex'].filter(k => e[k] === 'conflict' || DISAGREE.test((e.note || {})[k] || ''));
     if (found.length && !ids.some(id => id.includes(slug(name)))) missing.push(`${name} (${found.join(', ')})`);
   }
   assert.deepStrictEqual(missing, [], `no entry in data/points.json names: ${missing.join('; ')}`);
