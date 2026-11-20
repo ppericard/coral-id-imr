@@ -2,7 +2,7 @@
 // trainer page (1280 px) and three students (390 px), against the sync script on an in-memory sheet in this process
 // (tests/gas.js; each page's app.js sheetFetch answered through SHEET_STUB: rule D1, and any request that leaves the local
 // server is refused and counted). Checks:
-// 1. the trainer (an account with the trainer role) sets up a game on an IMR lecture group and gets a code; a player
+// 1. the trainer (an account in a group that carries the live right) sets up a game on an IMR lecture group and gets a code; a player
 //    without the role is refused by the script;
 // 2. three students join by the code (one signed in, two by a nickname) and appear in the lobby;
 // 3. every question: the same photo on every screen, four choices, the right one never sent before the reveal; the
@@ -57,7 +57,12 @@ const s = loadCodeGs();
 const escaped = [];
 s.post({name: 'Tess', pin: '1234', data: {}, summary: {}, answers: []});
 s.post({name: 'Pat', pin: '1234', data: {}, summary: {}, answers: []});
-s.post({roleGrant: {account: 'Tess', role: 'trainer', scope: 'instance:imr'}, token: 'ghp_write000000000000000000'});
+// Tess in a group that carries the trainer's rights (Code.gs: groups carry an instance's rights).
+{
+  const tok = 'ghp_write000000000000000000',
+    g = s.post({groupMake: {n: 'Trainers', rights: ['live@instance:imr', 'cohorts@instance:imr']}, token: tok}).group.id;
+  s.post({userGroup: 'Tess', group: g, on: true, token: tok});
+}
 const sheet = (url, body) => {
   const u = new URL(url),
     j = body ? s.post(JSON.parse(body)) : s.get(Object.fromEntries(u.searchParams));

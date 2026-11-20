@@ -72,7 +72,8 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
   [the pages](spec/front-end.md#the-pages).
   - **About and credits**, **Delete my account**, **Quiz**: [front-end.md › The pages](spec/front-end.md#the-pages).
   - **Custom quiz**: [quiz.md › Custom quiz](spec/quiz.md#custom-quiz).
-  - **Coral basics**, **Fish basics**, **One engine, two contents**: [basics.md](spec/basics.md#one-engine-two-contents).
+  - **Coral basics**, **Fish basics**, **Sea slug basics**, **One engine, one content per subject**:
+    [basics.md](spec/basics.md#one-engine-one-content-per-subject).
   - **Achievements**, **Contributions**, **Your feedback helped**, **Never again and again**, **Never for an account the
     admin deleted**: [achievements.md](spec/achievements.md#achievements),
     [Your feedback helped](spec/achievements.md#your-feedback-helped).
@@ -347,7 +348,7 @@ back-office"). Rules A2, A4 and A5 ([rules/admin.md](rules/admin.md)) govern its
 Google account), in a Google Sheet behind an Apps Script web app, the sheet script. Every answer is logged there; the
 progress is merged across a player's devices and recalculated from the answer log whenever the progress rules change;
 the same script serves the pooled photo statistics, the leaderboard, the admin's reads, the players' reports and events,
-roles, live games and player groups, and updates itself from GitHub.
+rights, live games and player groups (which carry an instance's rights), and updates itself from GitHub.
 
 **Main files.** `sync.js` (signing in, saving and loading, the three-way merge, adopting a replay, the events queue);
 `core.js` (the shared engine: merges, `replayProgress`, the formats stored, `SUBJECTS`; embedded in the sheet script by
@@ -381,7 +382,7 @@ Rules D1-D9 ([rules/sheet.md](rules/sheet.md)) govern it, [SECURITY.md](SECURITY
 - **Pooled stats built incrementally**: [sync.md › Pooled photo statistics](spec/sync.md#pooled-photo-statistics).
 - **Pages opened**, **First page from Home**: [sync.md › Events and pages](spec/sync.md#events-and-pages).
 - **`Timings` tab**: [sync.md › The Timings tab](spec/sync.md#the-timings-tab).
-- **Roles and the Audit tab**, **Live games**, **Player groups**: [sync.md](spec/sync.md#roles-and-the-audit-tab),
+- **Rights and the Audit tab**, **Live games**, **Player groups**: [sync.md](spec/sync.md#rights-and-the-audit-tab),
   [live](spec/sync.md#live-games), [groups](spec/sync.md#player-groups).
 - **Backup to pCloud**: [sync.md](spec/sync.md#backup-to-pcloud); restoring: [BACKUP.md](BACKUP.md).
 - **Versioning and deploy**: [sync.md](spec/sync.md#versioning-and-deploy).

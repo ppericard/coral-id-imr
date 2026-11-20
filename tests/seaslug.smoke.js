@@ -766,13 +766,195 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
-  // 9. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
-  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
-  {
+  // 9. Sea slug basics (proto/seaslugbasics.js; Q437), as pages.smoke.js fishBasicsCheck plays Fish basics: the first Learn
+  // tab, the "0" block of the genera page with its four-stop trail, the Home line, every step and view drawn and fitting
+  // the screen (rule U2: the drawing at most 45% of a phone's height, 62% of a desktop's; on a phone, from the picker to
+  // the end of the view's sentence and source, within the room between the header and the tab bar; the answered check
+  // too, as Fish basics'), the groups from seaslug.json taxa, the checks, done = every step seen in its
+  // own record and feat (the corals' and the fish's untouched), the Tools page's line. Photos stubbed.
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const W = `9 (${w}px):`,
+      STEPS = ['dorid', 'cerata', 'others', 'groups'];
     const {ctx, p, errs} = await page(b, base, () => {
       try {
         if (sessionStorage.getItem('s9')) return;
         sessionStorage.setItem('s9', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+      } catch (e) {}
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: w, height: h});
+    await p.goto(base + '#home');
+    await ready(p);
+    const home = await p.evaluate(() => {
+      const a = document.querySelector('.hdoor.learn .hdnew a, .hdoor.learn .hdnewk');
+      return a ? {href: a.getAttribute('href'), text: a.textContent} : null;
+    });
+    check(
+      home && home.href === '#seaslug/learn/basics' && /New to sea slugs\?/.test(home.text),
+      `${W} Home's line ${JSON.stringify(home)}`
+    );
+    await p.evaluate(() => (location.hash = hr('genera')));
+    await p.waitForSelector('.gbasics .bxcard, .gbasics .bxtip', {timeout: 20000}).catch(() => fails.push(`${W} no Sea slug basics block`));
+    const card = await p.evaluate(() => {
+      const s = document.querySelector('.gbasics');
+      return s
+        ? {
+            title: (s.querySelector('.gt') || {}).textContent,
+            stops: s.querySelectorAll('.bxt-stop').length,
+            next: (s.querySelector('.bxt-lab.is-next') || {}).textContent,
+            href: s.querySelector('a[href*="basics"]') && s.querySelector('a[href*="basics"]').getAttribute('href'),
+            first: !!document.querySelector('.tiplist > .gblk.gbasics:first-child'),
+            tab: [...document.querySelectorAll('#modes a')].map(a => a.getAttribute('href') + ' ' + a.textContent.trim())[0]
+          }
+        : null;
+    });
+    check(
+      card &&
+        card.title === 'Sea slug basics' &&
+        card.stops === STEPS.length &&
+        /^Start: A dorid/.test(card.next || '') &&
+        card.href === '#seaslug/learn/basics/dorid' &&
+        card.first &&
+        /^#seaslug\/learn\/basics /.test(card.tab || ''),
+      `${W} the genera page's block ${JSON.stringify(card)}`
+    );
+    check(!(await p.evaluate(() => basicsDone() || !!localStorage.getItem(basicsKey()))), `${W} done before any step was seen`);
+    for (const st of STEPS) {
+      await p.evaluate(s => (location.hash = 'seaslug/learn/basics/' + s), st);
+      await p.waitForSelector('.bx .bx-picks button', {timeout: 15000}).catch(() => fails.push(`${W} ${st}: no picker`));
+      const n = await p.$$eval('.bx-picks button', L => L.length);
+      for (let k = 0; k < n; k++) {
+        await p.click(`.bx-picks button >> nth=${k}`);
+        const m = await p.evaluate(() => {
+          const f = document.querySelector('.bx-vfig'),
+            g = f && (f.querySelector(':scope > svg') || f.querySelector('.bx-gfam')),
+            r = g && g.getBoundingClientRect(),
+            fr = f && f.getBoundingClientRect(),
+            say = document.querySelector('.bx-wsay'),
+            top = document.querySelector('header').getBoundingClientRect().bottom,
+            tabs = document.querySelector('nav.sections'),
+            tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight;
+          return {
+            room: Math.round(tb - top),
+            h: r ? Math.round(r.height) : 0,
+            all:
+              f && say
+                ? Math.round(
+                    Math.max(fr.bottom, say.getBoundingClientRect().bottom) -
+                      document.querySelector('.bx-picks').getBoundingClientRect().top
+                  )
+                : 0,
+            say: ((say || {}).textContent || '').trim(),
+            wide: document.documentElement.scrollWidth > innerWidth + 1,
+            alt: !g || g.tagName !== 'svg' || !!g.getAttribute('aria-label'),
+            src: !!(say && say.querySelector('.bx-off'))
+          };
+        });
+        check(m.h && m.say, `${W} ${st} view ${k}: nothing drawn ${JSON.stringify(m)}`);
+        check(m.src, `${W} ${st} view ${k}: no source under its sentence (rule C2)`);
+        if (st !== 'groups') check(m.h <= h * (w < 1000 ? 0.45 : 0.62) + 1, `${W} ${st} view ${k}: the drawing is ${m.h}px of ${h}`);
+        if (w < 1000)
+          check(m.all <= m.room, `${W} ${st} view ${k}: the picker, figure and sentence take ${m.all}px, only ${m.room}px on screen`);
+        check(!m.wide, `${W} ${st} view ${k}: wider than the screen`);
+        check(m.alt, `${W} ${st} view ${k}: a drawing without its text alternative`);
+      }
+      const ck = await p.evaluate(() => {
+        const d = document.querySelector('.bx-check');
+        if (d) d.open = true;
+        return !!document.querySelector('.bx-q .choice');
+      });
+      check(ck, `${W} ${st}: no check`);
+      if (ck) {
+        await p.click('.bx-q .choice >> nth=0');
+        const m = await p.evaluate(() => {
+          const top = document.querySelector('header').getBoundingClientRect().bottom,
+            tabs = document.querySelector('nav.sections'),
+            tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight,
+            sum = document.querySelector('.bx-check summary').getBoundingClientRect(),
+            fb = document.querySelector('.bx-q .bx-fb');
+          return {
+            check: Math.round(fb.getBoundingClientRect().bottom - sum.top),
+            room: Math.round(tb - top),
+            text: fb.textContent.trim().length,
+            rep: !!fb.querySelector('[data-rep]')
+          };
+        });
+        check(m.text && m.rep, `${W} ${st}: the answered check ${JSON.stringify(m)}`);
+        if (w < 1000) check(m.check <= m.room, `${W} ${st}: the answered check takes ${m.check}px, only ${m.room}px on screen`);
+      }
+    }
+    // The groups are seaslug.json's taxa that hold genera of the slate, in their order.
+    await p.evaluate(() => (location.hash = 'seaslug/learn/basics/groups'));
+    await p.waitForSelector('.bx-gfam figure', {timeout: 15000}).catch(() => fails.push(`${W} groups: no genus tile`));
+    await p.click('.bx-picks button >> nth=0');
+    const grp = await p.evaluate(() => {
+      const tg = n => (GX(GX(n).parent) || {}).tg,
+        first = slateGenera().filter(n => tg(n) === TREEU.taxa.groups[0].n);
+      return {
+        picks: [...document.querySelectorAll('.bx-picks button')].map(x => x.title),
+        taxa: TREEU.taxa.groups.filter(g => slateGenera().some(n => tg(n) === g.n)).map(g => g.title),
+        tiles: document.querySelectorAll('.bx-vfig .bx-gfam figure').length,
+        want: Math.min(6, first.length),
+        cite: [...document.querySelectorAll('.bx-off')].some(x => /WoRMS/.test(x.textContent))
+      };
+    });
+    check(
+      JSON.stringify(grp.picks) === JSON.stringify(grp.taxa) && grp.tiles === grp.want && grp.cite,
+      `${W} the groups are not the Learn page's: ${JSON.stringify(grp)}`
+    );
+    for (const st of STEPS) {
+      await p.evaluate(s => (location.hash = 'seaslug/learn/basics/' + s), st);
+      await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
+      for (let k = 0; k < 8 && (await p.$('.bx-wnext')); k++) await p.click('.bx-wnext');
+    }
+    const done = await p.evaluate(() => {
+      const st = JSON.parse(localStorage.getItem('reefid-seaslug-basics') || '{}'),
+        a = JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}');
+      return {
+        fin: !!st.fin,
+        seen: Object.keys(st.seen || {}).length,
+        feat: !!a._sbasics,
+        others: !!a._basics || !!a._fbasics || !!localStorage.getItem('reefid-basics') || !!localStorage.getItem('reefid-fish-basics'),
+        done: basicsDone()
+      };
+    });
+    check(done.fin && done.seen === STEPS.length && done.feat && done.done && !done.others, `${W} done: ${JSON.stringify(done)}`);
+    await p.evaluate(() => (location.hash = 'home'));
+    await p.waitForSelector('.hdoor.learn', {timeout: 15000});
+    check(!(await p.$('.hdoor.learn .hdnew, .hdoor.learn .hdnewk')), `${W} the Home line stays once Sea slug basics is done`);
+    await p.evaluate(() => (location.hash = 'tools'));
+    await p.waitForSelector('.labgrad', {timeout: 15000}).catch(() => fails.push(`${W} the Tools page does not open`));
+    const tools = await p.evaluate(() =>
+      [...document.querySelectorAll('.labgrad a')].map(a => a.getAttribute('href') + ' ' + a.querySelector('b').textContent)
+    );
+    check(
+      tools.includes('#seaslug/learn/basics Sea slug basics') && !tools.some(x => /Coral basics|Fish basics/.test(x)),
+      `${W} the Tools page: ${tools}`
+    );
+    check(!errs.length, `${W} page errors: ` + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 10. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
+  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s10')) return;
+        sessionStorage.setItem('s10', '1');
         localStorage.setItem('reefid-tour', '"done"');
         localStorage.setItem('reefid-sync-subject', '"seaslug"');
         localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
@@ -799,7 +981,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       introAdd(L, true);
       return L.length;
     });
-    check(n >= 6, `9: ${n} sea slug genera with two observations`);
+    check(n >= 6, `10: ${n} sea slug genera with two observations`);
     for (const [w, h] of [
       [390, 844],
       [1280, 800]
@@ -808,7 +990,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       await p.waitForTimeout(300);
       await require('./memory.check.js')(p, w, fails, 'sea slugs', 3);
     }
-    check(!errs.length, '9: page errors: ' + errs.join('; '));
+    check(!errs.length, '10: page errors: ' + errs.join('; '));
     await ctx.close();
   }
 
