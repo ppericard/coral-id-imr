@@ -257,9 +257,9 @@ test('no always-loaded script names what a lazy script defines, but behind a typ
         const line = t.slice(t.lastIndexOf('\n', m.index) + 1, t.indexOf('\n', m.index));
         if (/^\s*\/\//.test(line) || new RegExp(`typeof ${esc(n)} `).test(line) || /^\s*\/\//.test(line.slice(0, m.index))) continue;
         // a comment's mention, a declaration of its own (a local of the same name), a property
-        const own = new RegExp(
-          `(?:function\\s+|const\\s+|let\\s+|var\\s+|,\\s*|\\(\\s*|\\{\\s*)${esc(n)}\\s*(?:=|,|\\)|\\(|;|\\})`
-        ).test(t);
+        const own = new RegExp(`(?:function\\s+|const\\s+|let\\s+|var\\s+|,\\s*|\\(\\s*|\\{\\s*)${esc(n)}\\s*(?:=|,|\\)|\\(|;|\\})`).test(
+          t
+        );
         if (!own && !t.slice(t.lastIndexOf('\n', m.index) + 1, m.index).includes('//'))
           hits.push(`${f}: ${n}: ${line.trim().slice(0, 100)}`);
       }
