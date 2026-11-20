@@ -1637,6 +1637,30 @@
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Long, tapering oral tentacles, longer than the rhinophores, as C. indica",
+    "Smooth rhinophores and a long, pointed tail, as C. indica"
+   ],
+   "msrc": [
+    {
+     "t": "CIESM Atlas of Exotic Species, Caloria indica page, Short description: the oral tentacles",
+     "u": "https://www.ciesm.org/atlas/Caloriaindica.html"
+    },
+    {
+     "t": "CIESM Atlas of Exotic Species, Caloria indica page, Short description: the rhinophores and the tail",
+     "u": "https://www.ciesm.org/atlas/Caloriaindica.html"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -3271,7 +3295,31 @@
    "species": [
     "s469508"
    ],
-   "ref": 138359
+   "ref": 138359,
+   "marks": [
+    "Low, flat tubercles, each with short round papillae, as T. halgerda",
+    "Its largest tubercles, mid-back, are club-shaped, as T. halgerda"
+   ],
+   "msrc": [
+    {
+     "t": "Gosliner and Behrens 1998, Two new discodorid nudibranchs from the western Pacific (Proc. Calif. Acad. Sci. 50), Taringa halgerda, external morphology, p. 289",
+     "u": "https://archive.org/details/biostor-3261"
+    },
+    {
+     "t": "Gosliner and Behrens 1998, Two new discodorid nudibranchs from the western Pacific (Proc. Calif. Acad. Sci. 50), Taringa halgerda, external morphology, p. 289; discussion, p. 292",
+     "u": "https://archive.org/details/biostor-3261"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Doto",

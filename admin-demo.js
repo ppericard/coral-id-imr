@@ -1047,15 +1047,37 @@
       [NOW - 40 * DAY, 'limit reached: anon (6000 per 6 h)']
     ];
     // Sheet GROUPADM_SHEET (Code.gs groupDo_): two made-up groups, a staff board and a cohort, each player's gids.
-    const gdefs = [
-      {id: 'g:demo0001', n: 'Staff', board: 1, beta: '', at: NOW - 5 * DAY},
-      {id: 'g:demo0002', n: 'RA November 2026', board: 1, beta: '', at: NOW - DAY}
-    ];
+    // From RIGHTSADM_SHEET (Code.gs groupDo_ rights, roff): a third group, Trainers, that carries rights; Ana in it, Ben
+    // in it with a code changed since (rights off); Ana on the admin list (roles_).
+    const rightsV = V >= RIGHTSADM_SHEET,
+      gdefs = [
+        {id: 'g:demo0001', n: 'Staff', board: 1, beta: '', at: NOW - 5 * DAY, rights: []},
+        {id: 'g:demo0002', n: 'RA November 2026', board: 1, beta: '', at: NOW - DAY, rights: []},
+        ...(rightsV
+          ? [
+              {
+                id: 'g:demo0003',
+                n: 'Trainers',
+                board: 0,
+                beta: '',
+                at: NOW - 3 * DAY,
+                rights: ['live@instance:imr', 'cohorts@instance:imr']
+              }
+            ]
+          : [])
+      ];
     [
       ['Ana Demo', 'g:demo0001'],
       ['Mara Demo', 'g:demo0002'],
-      ['Test Demo', 'g:demo0002']
+      ['Test Demo', 'g:demo0002'],
+      ...(rightsV
+        ? [
+            ['Ana Demo', 'g:demo0003'],
+            ['Ben Demo', 'g:demo0003']
+          ]
+        : [])
     ].forEach(([n, g]) => users[n.toLowerCase()] && (users[n.toLowerCase()].gids = [...(users[n.toLowerCase()].gids || []), g]));
+    if (rightsV && users['ben demo']) users['ben demo'].roff = ['g:demo0003'];
     S = {
       rows,
       frows,
@@ -1071,7 +1093,8 @@
       slate: slateOf(D),
       pools: {},
       excluded: [],
-      gdefs
+      gdefs,
+      admins: rightsV ? ['Ana Demo'] : []
     };
     S.alerts = alerts;
     // Code.gs pools_: each subject's game photos per unit, from the real public files its SUBJECTS pool names.
@@ -1303,7 +1326,9 @@
         size: JSON.stringify(u.data).length,
         groups: (u.groups || []).slice(),
         // COHORT_SHEET (Code.gs users_): the player's cohort; GROUPADM_SHEET: the ids of their groups instead
-        ...(V >= GROUPADM_SHEET ? {gids: (u.gids || []).slice()} : V >= COHORT_SHEET ? {cohort: u.cohort || ''} : {})
+        ...(V >= GROUPADM_SHEET ? {gids: (u.gids || []).slice()} : V >= COHORT_SHEET ? {cohort: u.cohort || ''} : {}),
+        // RIGHTSADM_SHEET: their rights groups whose membership holds another code (rights off)
+        ...(V >= RIGHTSADM_SHEET ? {roff: (u.roff || []).filter(g => (u.gids || []).includes(g))} : {})
       };
     });
     const days = {},
@@ -1378,28 +1403,59 @@
       removed: S.removed.slice().reverse(),
       archived,
       excluded: S.excluded.slice(),
-      ...(V >= GROUPADM_SHEET ? {groupDefs: S.gdefs.map(d => ({...d}))} : {})
+      ...(V >= GROUPADM_SHEET
+        ? {groupDefs: S.gdefs.map(d => (V >= RIGHTSADM_SHEET ? {...d, rights: d.rights.slice()} : (({rights, ...x}) => x)(d)))}
+        : {})
+    };
+  }
+  // RIGHTSADM_SHEET (Code.gs mergePlan_): what merging a into b changes; join, a's groups without rights b is not in;
+  // drop, a's groups with rights; admin, 1 when a is on the admin list.
+  function mergePlan(a, b) {
+    const R = id => ((S.gdefs.find(d => d.id === id) || {}).rights || []).length > 0,
+      A = a.gids || [];
+    return {
+      join: A.filter(g => !R(g) && !(b.gids || []).includes(g)),
+      drop: A.filter(R),
+      admin: S.admins.some(x => lc(x) === lc(a.name)) ? 1 : 0
     };
   }
   function users(p) {
+    if (p.mergePlan && V >= RIGHTSADM_SHEET) {
+      const a = S.users[lc((p.mergePlan || {}).from)],
+        b = S.users[lc((p.mergePlan || {}).into)];
+      if (!a || !b || a === b) return {ok: false, error: 'user'};
+      return {ok: true, ...mergePlan(a, b)};
+    }
     // Sheet GROUPADM_SHEET (Code.gs userGroup, groupDo_): players in or out of any group; a group made, renamed, set or
     // deleted (an empty one only).
     if (V >= GROUPADM_SHEET && (p.userGroup || p.groupMake || p.groupEdit || p.groupDrop)) {
       const gd = id => S.gdefs.find(d => d.id === id),
-        mem = id => Object.values(S.users).filter(u => (u.gids || []).includes(id));
+        mem = id => Object.values(S.users).filter(u => (u.gids || []).includes(id)),
+        // RIGHTSADM_SHEET: a group that carries rights (Code.gs groupDo_, joinPut_, leavePut_)
+        rg = d => V >= RIGHTSADM_SHEET && d && d.rights && d.rights.length > 0,
+        // window.DEMO_FAIL = 'server' (tests/admin.smoke.js): the next rights change is saved and its Audit row fails,
+        // as Code.gs answers then; its retry finishes it.
+        part = () =>
+          window.DEMO_FAIL === 'server'
+            ? ((window.DEMO_FAIL = ''), {ok: false, error: 'server', msg: 'its Audit row was not written'})
+            : null;
       if (p.userGroup) {
         const g = String(p.group || ''),
           L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
         if (!gd(g)) return {ok: false, error: 'group'};
+        if (rg(gd(g)) && Array.isArray(p.userGroup)) return {ok: false, error: 'input'};
         if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
         let n = 0;
         L.forEach(x => {
           const u = S.users[lc(x)];
-          if (!u || u.board === -2 || (u.gids || []).includes(g) === !!p.on) return;
+          if (!u || u.board === -2) return;
+          // a rights group's membership is written again with the account's code: rights off no more
+          if (rg(gd(g)) && (u.roff || []).includes(g)) u.roff = u.roff.filter(y => y !== g);
+          if ((u.gids || []).includes(g) === !!p.on) return;
           u.gids = p.on ? [...(u.gids || []), g] : u.gids.filter(y => y !== g);
           n++;
         });
-        return {ok: true, group: g, n, members: mem(g).length};
+        return (rg(gd(g)) && part()) || {ok: true, group: g, n, members: mem(g).length};
       }
       const id = p.groupMake ? '' : String(p.groupEdit || p.groupDrop),
         cur = id ? gd(id) : null,
@@ -1418,15 +1474,23 @@
               .trim();
       if (!n || n.length > 40) return {ok: false, error: 'name'};
       if (S.gdefs.some(d => d !== cur && lc(d.n) === lc(n))) return {ok: false, error: 'exists'};
+      // RIGHTSADM_SHEET: the whole list of rights, each a RIGHTS entry at the instance; a first right refused while the
+      // group has members (Code.gs groupDo_).
+      const was = cur ? cur.rights || [] : [],
+        RS = ['players', 'settings', 'grant', 'content', 'live', 'cohorts'].map(r => r + '@instance:imr'),
+        rights = o.rights === undefined || V < RIGHTSADM_SHEET ? was : o.rights;
+      if (!Array.isArray(rights) || rights.some(e => !RS.includes(e))) return {ok: false, error: 'input'};
+      if (!was.length && rights.length && cur && mem(cur.id).length) return {ok: false, error: 'members'};
       const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0),
         d = cur || {id: 'g:' + Math.random().toString(16).slice(2, 10), at: Date.now()};
       Object.assign(d, {
         n,
         board: flag('board', cur ? cur.board : 0),
-        beta: o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '')
+        beta: o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || ''),
+        rights: RS.filter(e => rights.includes(e))
       });
       if (!cur) S.gdefs.push(d);
-      return {ok: true, group: {...d}};
+      return (o.rights !== undefined && rg({rights: [...was, ...rights]}) && part()) || {ok: true, group: {...d}};
     }
     // COHORT_SHEET: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
     if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {
@@ -1534,7 +1598,11 @@
       b.data = m.data;
       b.rev++;
       if (a.groups) b.groups = [...new Set([...(b.groups || []), ...a.groups])]; // the merged name's beta groups join
-      if (a.gids) b.gids = [...new Set([...(b.gids || []), ...a.gids])]; // GROUPADM_SHEET: every group of the merged name joins
+      // GROUPADM_SHEET: every group of the merged name joins; from RIGHTSADM_SHEET only those without rights, the rights
+      // groups and the admin list dropped (Code.gs mergePlan_)
+      const plan = mergePlan(a, b);
+      if (a.gids) b.gids = [...new Set([...(b.gids || []), ...(V >= RIGHTSADM_SHEET ? plan.join : a.gids)])];
+      if (V >= RIGHTSADM_SHEET) S.admins = S.admins.filter(x => lc(x) !== lc(a.name));
       b.updated = Date.now();
       let answers = 0,
         reports = 0;
@@ -1542,7 +1610,7 @@
       S.reports.forEach(r => lc(r[2]) === lc(a.name) && ((r[2] = b.name), reports++));
       delete S.users[lc(a.name)];
       S.removed.push({name: a.name, into: b.name, time: Date.now()});
-      return {ok: true, rev: b.rev, answers, reports};
+      return {ok: true, rev: b.rev, answers, reports, ...(V >= RIGHTSADM_SHEET ? plan : {})};
     }
     return userList();
   }
@@ -1685,9 +1753,16 @@
         p.userStart ||
         p.statsExclude ||
         p.userGroup ||
-        ((p.groupMake || p.groupEdit || p.groupDrop) && V >= GROUPADM_SHEET)
+        ((p.groupMake || p.groupEdit || p.groupDrop) && V >= GROUPADM_SHEET) ||
+        (p.mergePlan && V >= RIGHTSADM_SHEET)
       )
         return ok(users(p));
+      // RIGHTSADM_SHEET (Code.gs roles_ {roles: 1}): the admin list.
+      if (p.roles && V >= RIGHTSADM_SHEET)
+        return ok({
+          ok: true,
+          grants: S.admins.map(name => ({name, id: aid(name), role: 'admin', scope: 'platform', since: NOW - 30 * DAY}))
+        });
       return ok({ok: false, error: 'demo'});
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));

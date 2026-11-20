@@ -1,6 +1,6 @@
 # Review of the IMR Coral ID adaptive learning algorithm
 
-> Status (2026-11-02, copied into the repo): to discuss with Pierre one proposal at a time (ROADMAP "Independent review"). Agreed since: progress shown as a moving average weighted by what each answer proves (in the spirit of §Mastery criteria), simulated before shipping.
+> Status (2026-11-02, copied into the repo): to discuss with Pierre one proposal at a time (ROADMAP "Independent review"). Agreed since: progress shown as a moving average weighted by what each answer proves (in the spirit of §Mastery criteria), simulated before shipping. Proposition 2 (§4.2) is overtaken: it was written against BKT, which #646 removed; its gate cannot open on 38 of the 45 coral genera (`ELO.hi` caps the ability at 3), and today's exam entry already meets the review's own test (true success on the reference question at entry 0.975, lower bound 0.968, needed 0.85; docs/reviews/2026-11-20-fish-remeasures.md "Proposition 2").
 
 Reviewer: independent (Claude), 2026-11-02. Scope: `model.js`, `quiz.js` (planPhoto, duelPick, planDuel, introStart, answer), `core.js` (playerStart, levelSeed, eloOf, trustOf, guessOf, CONF), `tools/sync/Code.gs` `stats_`, `tests/profiles.smoke.js`, `docs/LEARNING.md`. Nothing in the repository was changed.
 
