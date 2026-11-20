@@ -2311,20 +2311,19 @@ async function freshSeed(b, base, errs, seed, fresh) {
     if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
       ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
     if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
-    // Its hero photo is the family's curated cover too, when it has one in play (app.js treeCurate).
+    // Its hero photo is the photo its list card showed (learn.js listPhoto: the curated cover while in play, app.js
+    // treeCurate, else the card's own photo), first in the viewer with its credits (Pierre, 2026-11-20).
     const hc = await q.evaluate(() => {
-      const g = TREEU.gen['f:' + decodeURIComponent(location.hash.split('/').pop())],
+      const p = listPhoto('f:' + decodeURIComponent(location.hash.split('/').pop())),
         h = document.querySelector('#view .hero-ph img');
       // By photo, not by address: a photo's address moves from R2 to its iNaturalist original when R2 fails mid-run
       // (core.js photoUrl fallback), so the same cover can show under either.
-      const id = String((g && g.coverP && g.coverP.f) || ''),
+      const id = String((p && p.f) || ''),
         got = h ? h.getAttribute('src') : '',
         alt = id.replace(/^fi(\d+)$/, 'photos/$1/');
-      return !g || !g.coverP
-        ? null
-        : {want: img(g.coverP, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
+      return !p ? null : {want: img(p, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
     });
-    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
+    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not its list photo ${JSON.stringify(hc)}`);
     // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
     const mk = await q.evaluate(() => {
       const m = document.querySelector('#view .fmarks');
@@ -2364,6 +2363,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
     });
     if (nm.h !== 'Family ID marks' || nm.n < 1 || nm.imr || !/^ID marks \(FishBase/.test(nm.tl || '') || !nm.card || !nm.fb)
       ui.push(`${width}px family with no IMR cue: ${JSON.stringify(nm)}`);
+    // The first-meeting card of a scientific genus: its common name right after its name, before the family line
+    // (app.js unitCname), not only in the IMR section; a unit labelled by its common name adds none.
+    const cn = await q.evaluate(() => ({
+      gen: introCard('g:Heniochus').body,
+      fam: introCard('f:Frogfishes').body
+    }));
+    if (!/^<p class="ulcn">Bannerfishes<\/p><p class="ulfam">/.test(cn.gen) || cn.fam.includes('ulcn'))
+      ui.push(`${width}px opening card's common name: ${JSON.stringify(cn)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
     await q
       .waitForFunction(
