@@ -8672,7 +8672,8 @@ async function start() {
         fishAutoRun()
           .then(
             R => {
-              if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R), 3500, true), keep || ar ? 8000 : 0);
+              if (R && R.add + R.back + R.out + R.reject + R.check)
+                setTimeout(() => toast(fishToast(R), 3500, true), keep || ar ? 8000 : 0);
             },
             e => console.warn('fish auto-sort:', e.message)
           )
