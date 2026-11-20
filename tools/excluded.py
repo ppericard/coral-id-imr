@@ -14,7 +14,7 @@ IDS = {pid(f) for f in EX} - {None}
 # several corals and Poor photos, with no doubt (judging/BRIEF.md, rules learnt from 85 photos the admin rejected).
 # They are not shown to the admin, so they do not count as waiting either: they would fill the caps and stop new
 # candidates from being fetched.
-try: SUG = json.load(open(f'{R}/suggest.json')).get('cand') or {}
+try: SUG = json.load(open(f'{R}/data/suggest.json')).get('cand') or {}
 except (OSError, ValueError): SUG = {}
 def set_aside(f):
     j = SUG.get(f) or {}
@@ -22,11 +22,11 @@ def set_aside(f):
 def excluded(f=None, photo_id=None):
     return f in EX or (photo_id is not None and str(photo_id) in IDS) or (f is not None and pid(f) in IDS)
 # What an exclusion removed (drop_excluded), kept so that the admin's Restore (admin Genera › Excluded) brings it back
-# by itself (restore_unexcluded). excluded.json = {"photos": {f:
+# by itself (restore_unexcluded). data/excluded.json = {"photos": {f:
 # {"in": "gen" | "x" | "course" | "cand" | "cmp", "g": genus, "k": "views" | "more", "v": view, "i": index, "p": record}}},
 # written by tools/fetch_local.py tidy() (the Candidate photos workflow). Seeded from git history by
-# tools/apply_excluded_archive.py for the photos removed before excluded.json.
-GONE_PATH = f'{R}/excluded.json'
+# tools/apply_excluded_archive.py for the photos removed before data/excluded.json.
+GONE_PATH = f'{R}/data/excluded.json'
 
 
 def _lists(d):
@@ -42,10 +42,10 @@ def _lists(d):
 
 def drop_excluded(d, gone=None):
     """Removes excluded photos from every photo list in data.json (views, more, course, cand, cmp). A candidate the
-    auto-sort excluded (reason 'auto', admin.js autoRun) keeps its entry in the candidate lists (cand.json, which players
+    auto-sort excluded (reason 'auto', admin.js autoRun) keeps its entry in the candidate lists (data/cand.json, which players
     never download): Pierre can undo each auto decision one by one (rule A1), and its Undo brings the candidate
     back only if its genus, source URL and credit are still there (Codex review #400). Excluded, it is never shown nor
-    counted as waiting (admin.js rawCands, fetch_local.py waiting). gone (excluded.json "photos"): each record removed is
+    counted as waiting (admin.js rawCands, fetch_local.py waiting). gone (data/excluded.json "photos"): each record removed is
     kept there with its place, for restore_unexcluded."""
     for at, L in list(_lists(d)):
         out = [p for p in L if excluded(p.get('f')) and not (at['in'] == 'cand' and EX.get(p.get('f')) == 'auto')]
@@ -66,7 +66,7 @@ def files_ok(p, img=None):
 
 
 def restore_unexcluded(d, gone):
-    """Puts back, at its place, every photo of gone (excluded.json "photos") that curation.json no longer excludes (Pierre's
+    """Puts back, at its place, every photo of gone (data/excluded.json "photos") that curation.json no longer excludes (Pierre's
     Restore), and forgets it. A view gone since is recreated; a photo already back is only forgotten. A candidate comes
     back marked restored (fetch_local.py drop_share_alike spares it: a share-alike one Pierre restores stays a candidate
     he can add, Codex review #628). Held back, still in gone: a photo the site could not show (files_ok: no online

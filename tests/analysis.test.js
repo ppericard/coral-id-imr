@@ -38,6 +38,13 @@ test('formats read from the mode and the choices; core.js fmtOf (the per-format 
   assert.strictEqual(A.fmtOf('quiz-duel|A|B', 2), 'duel');
   assert.strictEqual(A.fmtOf('quiz|x', 4), 'exam');
   assert.strictEqual(A.fmtOf('quiz|s|t', 0), 'typed');
+  // A Find the X (|f), in the photo quiz and the custom quiz: its own format, never k4; a Duel tab on two fish families
+  // (ids f:…) stays a duel.
+  assert.strictEqual(A.fmtOf('quiz|f', 4), 'find');
+  assert.strictEqual(A.fmtOf('quiz|s|f', 4), 'find');
+  assert.strictEqual(A.fmtOf('quiz-duel|f:a|f:b', 2), 'duel');
+  assert.strictEqual(A.fmtOf('quiz|f:a', 4), 'k4');
+  assert.ok(A.FORMATS.some(([k]) => k === 'find') && A.FMT_PLAIN.find, 'the Formats report has a Find the X row');
   const C = require('../core.js');
   for (const [m, n] of [
     ['quiz', 4],
@@ -53,9 +60,26 @@ test('formats read from the mode and the choices; core.js fmtOf (the per-format 
     ['quiz|t|x', 0],
     ['quiz|s|t', 0],
     ['quiz|c|k2', 4],
-    ['quiz|s|c', 4]
+    ['quiz|s|c', 4],
+    ['quiz|f', 4],
+    ['quiz|s|f', 4],
+    ['quiz-duel|f:a|f:b', 2]
   ])
     assert.strictEqual(C.fmtOf(m, n), A.fmtOf(m, n), m + ' ' + n);
+});
+
+test("the sheet's format fit gives Find the X its own offset, its answers out of the 4-choice one", () => {
+  const C = require('../core.js');
+  // Rows as readAnswers gives them: [id, t, shown, answered, ok, mode, photos, _, e, _, choices]; one trusted player.
+  const row = (i, mode, ok) => ['p1', i, 'A', ok ? 'A' : 'B', ok ? 1 : 0, mode, 'A-1', 0.6, null, null, 'A B C D'];
+  const rows = [];
+  for (let i = 0; i < 60; i++) rows.push(row(i, 'quiz', i % 5 !== 0));
+  for (let i = 60; i < 90; i++) rows.push(row(i, 'quiz|f', i % 3 !== 0));
+  const fit = C.fmtOffsetsOf(rows);
+  assert.strictEqual(fit.k4 && fit.k4[1], 60, JSON.stringify(fit));
+  assert.strictEqual(fit.find && fit.find[1], 30, JSON.stringify(fit));
+  assert.ok(fit.find[0] < fit.k4[0], 'right less often: a lower offset of its own');
+  assert.deepStrictEqual(C.fmtPoint('quiz|f', 0.6, 'A B C D', 1), ['find', 0.6, 0.25, 1]);
 });
 
 test('prep: sessions, exposures, the previous answer on the genus, an Again after a miss', () => {
@@ -936,7 +960,7 @@ test('photo views follow the game pipeline (2 zoom levels)', () => {
     data = rd('data.json'),
     cur = rd('curation.json'),
     C = require('../core.js'),
-    meta = A.photoMeta(data, cur, rd('quality.json'), rd('metrics.json'));
+    meta = A.photoMeta(data, cur, rd('quality.json'), rd('data/metrics.json'));
   const d = JSON.parse(JSON.stringify(data));
   C.applyCuration(d, cur);
   const two = Object.keys(d.gen).filter(g => d.gen[g].levels === 2);
@@ -1002,9 +1026,14 @@ test('plainOf: every effect of every analysis has a plain name, no code or model
   const rows = A.demoLog(require('../data.json'), Date.now() - 3 * 864e5, {
     cur: require('../curation.json'),
     qual: require('../quality.json'),
-    met: require('../metrics.json')
+    met: require('../data/metrics.json')
   });
-  const meta = A.photoMeta(require('../data.json'), require('../curation.json'), require('../quality.json'), require('../metrics.json'));
+  const meta = A.photoMeta(
+    require('../data.json'),
+    require('../curation.json'),
+    require('../quality.json'),
+    require('../data/metrics.json')
+  );
   const R = A.runAll(rows, meta, {B: 4, seed: 1});
   let n = 0;
   Object.entries(R.A).forEach(([k, a]) =>

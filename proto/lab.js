@@ -184,7 +184,7 @@ const labObs = p => p.o || p.f;
 // shows, the closest view: a close-up for a coral, the one photo of a fish) or null. want narrows it: {view, not, tile}: in
 // that view of the draw's, not of the observation or observations `not` (a key or a list), and, tile, only with (true) or
 // only without (false) the fish's square cut (xc), so the photos of one question are framed alike, whichever of them is
-// the odd one. A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
+// the odd one; fit(q): a test the photo must pass (Memory's pair: a species or a phase beside the first photo's). A photo carries its view as `sdv`. seen(list) adds the photos shown, so the next draw leaves them out while
 // others can be drawn (the last `max`).
 // k and f: the question's format as photoSet takes it (its plausible choices and its format: 2 and 'compare' for a side by
 // side; Infinity and 'typed' for a typed answer, 4 and 'k4' for four choices), so a photo is aimed as the quiz aims it.
@@ -198,7 +198,8 @@ function labShots(max = 8, k = 2, f = 'compare') {
         !want ||
         ((!want.view || view(n, q) === want.view) &&
           !not.includes(labObs(q)) &&
-          (want.tile === undefined || !!(q.xc && !q.r) === want.tile));
+          (want.tile === undefined || !!(q.xc && !q.r) === want.tile) &&
+          (!want.fit || want.fit(q)));
     for (const keep of [q => fits(q) && !recent.includes(labObs(q)), fits]) {
       const s = photoSet(n, null, 0, k, f, keep).shown,
         p = s[s.length - 1];
@@ -252,13 +253,14 @@ const labTips = units =>
     })
     .join('');
 // The short feedback sheet of a photo game in q (the quiz's own: .fb.fbs, #after, rule C3): o.good, the verdict; o.head, its
-// sentence; o.line, the one decisive line (quiz.js fbLine); o.more, the panel behind More before the credits of o.photos and
-// the report button for o.rep (sync.js repBtn); o.next draws the next question; o.fit lays the stage out again.
+// sentence; o.line, the one decisive line (quiz.js fbLine); o.more, the panel behind More before the credits of o.photos;
+// the report button for o.rep (sync.js repBtn) under the decisive line, in view as the quiz's is; o.next draws the next
+// question; o.fit lays the stage out again.
 function labSheet(q, o) {
   q.classList.add('done');
   q.querySelector('#after').innerHTML = `<div class="fb fbs">
-    <h3 class="${o.good ? 'ok cheer' : 'ko'}"><span class="v">${o.good ? '✓ Yes' : '✗ No'},</span> ${o.head}</h3>${o.line}
-    <div class="fbmore" id="fbmore" hidden>${o.more}<p class="credit">${o.photos.map(credit).join('<br>')}</p>${repBtn(o.rep)}</div>
+    <h3 class="${o.good ? 'ok cheer' : 'ko'}"><span class="v">${o.good ? '✓ Yes' : '✗ No'},</span> ${o.head}</h3>${o.line}<p class="fbrep">${repBtn(o.rep)}</p>
+    <div class="fbmore" id="fbmore" hidden>${o.more}<p class="credit">${o.photos.map(credit).join('<br>')}</p></div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
   const mb = q.querySelector('#fbmbtn'),

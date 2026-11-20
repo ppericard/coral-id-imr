@@ -94,7 +94,7 @@ needs a written reason next to the pin.
 in status messages, not in ROADMAP. **Reminders of what only he can do live where he reads them when he wants**: STATUS
 "Pierre's hands" (later the admin's To do › Points). In the chat, a reminder is given once, when it is useful and
 related to the work at hand (e.g. "these units are short of photos", "these 31 photos are out of the presence rule"),
-never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `points.json`)
+never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `data/points.json`)
 stay: he asked for that list.
 *Why:* an agent reminded him every few minutes, in the chat, of things unrelated to its own work.
 *Source:* Pierre, 2026-11-01; scope restored, 2026-11-05; subject-neutral wording, 2026-11-06.
@@ -210,7 +210,7 @@ it at merge (rule D3).
 **Corals: write `data.json` only with `tools/datajson.py`.** Editing it by hand is normal (the original build script reads a
 scratchpad that no longer exists), but write it with `from datajson import dump` then `dump(d, path)`, never
 `json.dump`: one top-level key per line and one genus per line in `gen`, `course`, `cand`, `x` and `x.gen`, compact
-within a line, so two edits to different genera merge cleanly. Candidates waiting live in `cand.json`, admin only: read
+within a line, so two edits to different genera merge cleanly. Candidates waiting live in `data/cand.json`, admin only: read
 both with `load_all()`, write with `dump_all()`, which keeps in `data.json` only the candidates `curation.json` names.
 After a hand edit, `python3 tools/datajson.py` puts the file back in that layout; the PR check (`--check`) fails
 otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
@@ -223,7 +223,11 @@ interface change or redesign at every width of rule U4** (surprises hide in the 
 screen; open the browser console: no errors. **Dark is the app's ⚙ Theme, never the system's**: set `reefid-sync-theme`
 to `dark` (plain text) in localStorage before the page loads (an init script), or `data-theme="dark"` on `<html>`; Playwright's
 `colorScheme: 'dark'` changes nothing, since the app and the admin ignore `prefers-color-scheme` (rule U3), so its "dark"
-screenshot is the light page (#908's were). **After a big change to the interface or the flow, replay the whole app as
+screenshot is the light page (#908's were). The recipe, checked at 390 px
+(`colorScheme: 'dark'` alone: no `data-theme`, light background; with the init script: `data-theme="dark"`, dark
+background): `const c = await b.newContext({viewport: {width: 390, height: 800}}); await c.addInitScript("try{localStorage.setItem('reefid-sync-theme','dark')}catch(e){}");`,
+then `p.goto(...)`. Read it back (`document.documentElement.dataset.theme === 'dark'`) before trusting a shot; launch
+through `tests/calm.js` so the machine slot is taken (rule W24). **After a big change to the interface or the flow, replay the whole app as
 a brand-new player**: an empty browser, phone and desktop, light and dark, from the first load through the tour, the
 first cards, a few dozen questions (Again, duels, the offer, achievements), My progress, the other games, Identify,
 Tools, help and settings; screenshots at each step, every overlay alone on screen and closable. Not needed for internal

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-33B3gm26eU7bsLh+VKMawLw29HnIFyczdWQ/VoEvREY='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org https://www.fishbase.de https://www.fishbase.se; connect-src 'self' https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-33B3gm26eU7bsLh+VKMawLw29HnIFyczdWQ/VoEvREY='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org https://www.fishbase.de https://www.fishbase.se https://www.coralsoftheworld.org; connect-src 'self' https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>IMR Reef ID Admin</title>
@@ -47,8 +47,13 @@
 <script src="points.js?v=1"></script>
 <script src="taxtree.js?v=1"></script>
 <script src="reports.js?v=1"></script>
-<script src="analysis.js?v=2"></script>
-<script src="admin-demo.js?v=28"></script>
+<!-- Inert tags (type text/plain: the browser neither fetches nor runs them), so the version stamping and the name checks
+     still see them: admin.js lazyLoad inserts the real script when a page of its group is asked for (data-lazy: the groups
+     the file belongs to), in the order listed. All of them stand before admin.js, whose start may ask for one while the
+     page is still being parsed: a tag below it might not be in the page yet (tests/adminlazy.test.js). -->
+<script type="text/plain" data-lazy="analyses demo" src="analysis.js?v=2"></script>
+<script type="text/plain" data-lazy="demo" src="admin-demo.js?v=28"></script>
+<script type="text/plain" data-lazy="analyses" src="admin-analyses.js?v=1"></script>
 <script src="admin-draft.js?v=1"></script>
 <script src="admin-coraltree.js?v=1"></script>
 <script src="admin-nodephotos.js?v=1"></script>
@@ -59,7 +64,6 @@
 <script src="admin-covers.js?v=1"></script>
 <script src="admin-journey.js?v=22"></script>
 <script src="admin-visits.js?v=1"></script>
-<script src="admin-analyses.js?v=1"></script>
 <script src="admin-heatmap.js?v=1"></script>
 <script src="admin-taxa.js?v=1"></script>
 </body>

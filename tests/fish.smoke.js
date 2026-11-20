@@ -766,6 +766,53 @@ async function lookAlikes(b, base, errs) {
   await c.close();
   return fails.map(m => `look-alikes: ${m}`);
 }
+// (19) Memory (proto/pairs.js, Practice › Memory) on the fish: ten families with two observations unlocked, the photos stubbed;
+// tests/memory.check.js plays the games at 390 and 1280 px (each family twice on the board as two photos of two observations,
+// nothing named before the pair, a wrong pair turned back, the end, one screen, no progress, log or answer count changes).
+async function memoryGame(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-mem')) {
+        sessionStorage.setItem('fish-mem', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 777;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`memory: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  const n = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => new Set(gamePics(n, 'wide').map(p => p.o || p.f)).size >= 2)
+      .slice(0, 10);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (n < 6) return [`memory: ${n} fish families with two observations`];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./memory.check.js')(q, w, fails, 'fish', 3);
+  }
+  await c.close();
+  return fails.map(m => `memory: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -942,21 +989,28 @@ async function freshSeed(b, base, errs, seed, fresh) {
       P[n] = s0;
     });
     ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
-    // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
-    const nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
-      pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
-    ok(!!pJ, 'a juvenile with an adult of its species in play');
+    // Their card (quiz.js phaseCardFor, phaseShow): a juvenile of a species whose young are sourced as different
+    // (fish.json species jd.d) beside an adult of its species, then marked shown for this kind only; a juvenile of a
+    // species with no such source brings none.
+    const cardOf = (n, p) => phaseCardFor([{n, p}], () => false),
+      nJ = TREEU.c1.find(n => GX(n).views.wide.some(p => (cardOf(n, p) || {}).k === 'juvenile')),
+      pJ = nJ && GX(nJ).views.wide.find(p => (cardOf(nJ, p) || {}).k === 'juvenile'),
+      nN = TREEU.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && !((TREEU.sps[p.sp] || {}).jd || {}).d)),
+      pN = nN && GX(nN).views.wide.find(p => phaseOf(p) === 'juvenile' && !((TREEU.sps[p.sp] || {}).jd || {}).d);
+    ok(!!pJ, 'a juvenile sourced as different, with an adult of its species in play');
+    ok(!!pN && cardOf(nN, pN) === null, `a juvenile not sourced as different brings no card (${pN && pN.f})`);
     if (pJ) {
       ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
-      const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+      const d = phaseShow(cardOf(nJ, pJ), nJ, false);
       ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
       ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
-      ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+      ok(!d.querySelector('.phlines'), 'no words of its own: no phase lines');
+      ok(/^Juvenile and /.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
       const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
       ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
       d.close(1);
       ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
-      ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+      ok(phaseCardFor([{n: nJ, p: pJ}], phaseSeen) === null, 'a second juvenile brings no card');
     }
     // The mimicry card (quiz.js mimShow): the surgeonfish's juvenile (M1) beside the angelfish it resembles, with the
     // pair's marks; never a juvenile photo of it taken outside the region (fish.json species region); then marked shown
@@ -2293,20 +2347,19 @@ async function freshSeed(b, base, errs, seed, fresh) {
     if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
       ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
     if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
-    // Its hero photo is the family's curated cover too, when it has one in play (app.js treeCurate).
+    // Its hero photo is the photo its list card showed (learn.js listPhoto: the curated cover while in play, app.js
+    // treeCurate, else the card's own photo), first in the viewer with its credits (Pierre, 2026-11-20).
     const hc = await q.evaluate(() => {
-      const g = TREEU.gen['f:' + decodeURIComponent(location.hash.split('/').pop())],
+      const p = listPhoto('f:' + decodeURIComponent(location.hash.split('/').pop())),
         h = document.querySelector('#view .hero-ph img');
       // By photo, not by address: a photo's address moves from R2 to its iNaturalist original when R2 fails mid-run
       // (core.js photoUrl fallback), so the same cover can show under either.
-      const id = String((g && g.coverP && g.coverP.f) || ''),
+      const id = String((p && p.f) || ''),
         got = h ? h.getAttribute('src') : '',
         alt = id.replace(/^fi(\d+)$/, 'photos/$1/');
-      return !g || !g.coverP
-        ? null
-        : {want: img(g.coverP, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
+      return !p ? null : {want: img(p, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
     });
-    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
+    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not its list photo ${JSON.stringify(hc)}`);
     // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
     const mk = await q.evaluate(() => {
       const m = document.querySelector('#view .fmarks');
@@ -2346,6 +2399,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
     });
     if (nm.h !== 'Family ID marks' || nm.n < 1 || nm.imr || !/^ID marks \(FishBase/.test(nm.tl || '') || !nm.card || !nm.fb)
       ui.push(`${width}px family with no IMR cue: ${JSON.stringify(nm)}`);
+    // The first-meeting card of a scientific genus: its common name right after its name, before the family line
+    // (app.js unitCname), not only in the IMR section; a unit labelled by its common name adds none.
+    const cn = await q.evaluate(() => ({
+      gen: introCard('g:Heniochus').body,
+      fam: introCard('f:Frogfishes').body
+    }));
+    if (!/^<p class="ulcn">Bannerfishes<\/p><p class="ulfam">/.test(cn.gen) || cn.fam.includes('ulcn'))
+      ui.push(`${width}px opening card's common name: ${JSON.stringify(cn)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
     await q
       .waitForFunction(
@@ -3685,6 +3746,54 @@ async function freshSeed(b, base, errs, seed, fresh) {
       rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
     await c3.close();
   }
+  // (6b) From the script that serves each subject's own opening hold (sync.js HOLDS_SHEET, holdOf; Code.gs holdsInto_),
+  // each subject takes its own from holds: the fish's here, the corals' under their key, the fish's in force on screen
+  // (model.js HOLDS). Before that script, the stub above (v 29): the corals' alone, the fish keeping the device's.
+  {
+    const c6 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+    await c6.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c6.addInitScript(() => {
+      const F = {t01: {ok: 10, ko: 2}};
+      try {
+        if (!sessionStorage.getItem('fish-holds')) {
+          sessionStorage.setItem('fish-holds', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+          localStorage.setItem('reefid-sync-fish-progress', JSON.stringify(F));
+          localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', log: [], base: {}, fbase: F, srv: 1}));
+        }
+      } catch (e) {}
+      const data = {
+        'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}}),
+        'reefid-sync-fish-progress': JSON.stringify(F)
+      };
+      const H = {hold: 5, holdIds: [], holds: {coral: {h: 5, ids: []}, fish: {h: 2, ids: []}}};
+      // HOLDS_SHEET: sync.js's, read when the app asks (after it has loaded).
+      window.SHEET_STUB = (url, o) => {
+        const reply = o && o.method === 'POST' ? {ok: true, log: true, rev: 3, ...H} : {ok: true, found: true, data, rev: 2, ...H};
+        return Promise.resolve({json: () => Promise.resolve({...reply, v: HOLDS_SHEET})});
+      };
+    });
+    const q = await c6.newPage();
+    q.on('pageerror', e => errs.push(`holds: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+    await q.evaluate(() => syncPush());
+    const h = await q.evaluate(() => ({
+      subj: SUBJ.id,
+      on: HOLDS,
+      fish: Number(localStorage.getItem('reefid-fish-hold')),
+      coral: Number(localStorage.getItem('reefid-hold'))
+    }));
+    if (h.subj !== 'fish' || h.on !== 2 || h.fish !== 2 || h.coral !== 5)
+      rv.push(`each subject's own hold from the sheet's holds: ${JSON.stringify(h)} (want fish 2 on screen and stored, corals 5)`);
+    await c6.close();
+  }
   // (7) A saved copy without fish keys (saved by an app from before fish) is not an empty fish record: the fish
   // progress synced before stays here and goes with the next save (never erased).
   {
@@ -3812,6 +3921,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
   // (18) The Look-alikes deck and Compare: lookAlikes, above.
   const la = run.has('main') ? await lookAlikes(b, base, errs) : [];
+  // (19) Memory: memoryGame, above.
+  const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -4156,6 +4267,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...lg,
     ...cqz,
     ...la,
+    ...mem,
     ...cold,
     ...grp,
     ...all,

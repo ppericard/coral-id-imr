@@ -44,25 +44,23 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   ledgers included); its last
   line ("searched: … — N hits") goes under the question.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
-  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), the decisions index
+  otherwise), `data/suggest.json` (re-import the PR's species over `main`'s file), the decisions index
   (`python3 tools/decisions_index.py --fix`; it also deletes the retired OLDER.md of the split index, which a branch may carry).
 - **A doc past its size mark** (`MARK` in the docs test, the brief's last line) is a warning, never a block: read the
   doc against rule W19 (history, versions and duplicates out); if all of it belongs there, raise its mark in
   `tests/docs.test.js` in the same PR. Never move content out of its doc to fit a number
   ([decision](decisions/2026-11-19-doc-size-marks.md)).
-- **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`. A
+- **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `data/suggest.json`. A
   fish judging batch runs `python3 tools/judging_fish.py one` before committing (`one --check` fails CI).
 - **Wait on trains with `pgrep -f "python3 tools/train.py"`**, never `ps aux | grep` on a word: the waiter's own command
   line holds the word. A wait loop must end: check with `ps` that a queued train runs, and read its output.
 - **After merging `main` into a PR**, check for conflict markers (`git diff --check`, `grep -n '^<<<<<<<'`) before the
   commit and resolve per hunk, never `git checkout --ours` on a whole file; commit the merge before
   `sheet_version.py --assign` (it refuses otherwise).
-- **The integrator's helpers do not live in the session scratchpad**, which goes with the session: a PR state line (head,
-  checks, Codex receipt on the head, open threads via `pulls/N/ccr/review_threads`, "Choices I made" None), a wait for the
-  Codex receipt, a train queue that never starts `tools/train.py` while one runs and waits for the Candidate photos
-  workflow, and the sheet VERSION step (`tools/sheet_version.py --assign` in a sparse worktree with `main` merged, commit
-  "Sheet script vN assigned at merge", `@codex review`). None is committed as a tool yet: rebuild them first thing as
-  small scripts. A docs-only PR has 5 checks, not 17.
+- **The integrator's helpers are in `tools/queue/`**, not in the session scratchpad, which goes with the session: a PR
+  state line (head, checks, Codex receipt on the head, open threads via `pulls/N/ccr/review_threads`, "Choices I made"
+  None), a train queue that never starts `tools/train.py` while one runs, and the sheet VERSION step (`assignver.sh`).
+  A docs-only PR has 5 checks, not 17.
 - **Test every new card at 390 px with a long list**: a card with a long list once pushed itself off screen behind its
   backdrop. The safety net stays (an invisible card closes itself 2.5 s after the first frame drawn with it, so a card opened
   while the page is busy or hidden is not judged before it could fade in; the events `empty card closed` and
@@ -161,7 +159,7 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **Rule 0** (AGENTS.md, one sentence): after 17:30 Manila, ask him nothing until his first message after 04:00;
   questions wait in STATUS. It protects his time, not the agents' (Pierre, 2026-11-20 05:31-05:33): the work goes on
   at every hour, and nothing stops at 04:00. A session restart kills the queue and the background waits, so a
-  check-in at most an hour apart, night and day, re-starts them (the scratchpad's queue script).
+  check-in at most an hour apart, night and day, re-starts them (`tools/queue/`).
 - **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
   The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
   2026-11-18: no morning report); the session-start summary of reports and events (AGENTS.md "Working mode") stands.
@@ -268,17 +266,39 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   assigned again.
 - **Order the queue: Code.gs PRs first** (2026-11-20): ordinary PRs that keep arriving starve the PRs that wait for a
   version, which need a quiet main between the assignment and the train. Run the version PRs one at a time, then the
-  rest.
-- **The queue glue lives in the session's scratchpad, not in the repo**: a loop per PR (merge main, push, `@codex
-  review`, wait for CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a
-  wait so that only one wave runs. A new session rebuilds it (STATUS "Last stop" names the pieces) or runs the same
-  steps by hand. A container restart kills it and every agent: an hourly check-in (`send_later`) restarts them.
+  rest, and **the oldest PRs first** in each group, so that none lingers (Pierre, 2026-11-20 17:48).
+- **Think before building an engine change** (the integrator's lesson, not a rule of Pierre's; from his remark of
+  2026-11-20 17:33 on the response-time change, decided too fast): a fact he states (answer time carries difficulty) is
+  decided; how the engine integrates it was not, and the response-time design got a study first. For other engine work,
+  weigh the same way how much study the change needs.
+- **Every answer reaches the ledger the same day** (Pierre, 2026-11-20 17:53): a decision he gives in the chat that no
+  open PR records goes into `docs/ANSWERS.md` at the next check-in, in a small PR of its own, without waiting for the
+  work it decides.
+- **The queue glue lives in `tools/queue/`** (README there): a loop per PR (merge main, push, `@codex review`, wait for
+  CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a wait so that only one
+  wave runs. Its log and state go to `QUEUE_DIR` (default `~/.cache/reefid-queue`), never into the repo. A container
+  restart (an idle session's container is reclaimed) kills it and every agent: run the wave as a tracked background
+  task, and an hourly check-in (`send_later`) restarts whatever stopped.
 - **A "decided" backlog item is checked against Pierre's words before launch** (2026-11-20): three items launched from
   STATUS's list that morning were already built, the integrator's own prose, or a "plus tard". The agent's brief says
   to stop and report when his words, verbatim and dated, do not settle what players see.
 - **A crowded machine cuts agents off**: an agent that waits too long for a `tests/slot.js` slot or a train is handed
   back unfinished. Keep its worktree; resume it later or finish the push and PR yourself (wait until no `train.py`
   runs, then push).
+
+### Quota (rule W25), lessons of 2026-11-20
+
+Pierre asked where a third of the quota went in a few hours.
+
+- **Price before launch.** Any image pass or large wave gets a cost estimate first (images × reads per image × runs),
+  then a cap. The sea slug box pass read about 8,000 images on Opus (photo, grid and check picture per photo, bench and
+  drift included): about half the morning's quota.
+- **One read per image** when judging photos: no grid plus check picture unless the measure shows it is needed, a
+  smaller resolution where it suffices, and Sonnet wherever the sample test allows.
+- **No more test-running agents than test slots**, in practice 2 on this machine. Agents waiting for `tests/slot.js` are
+  cut off and resumed, which spends quota for nothing. Agents that only read can run beyond that.
+- **Wake the integrator per wave, not per item**: batch judges report through one waiter at the end of a wave, not one
+  notification per batch.
 
 ## Where open work sits
 
@@ -288,6 +308,10 @@ Never copied here, so it cannot go stale:
   for Pierre", "Pierre's hands"), and the PR list `python3 tools/brief.py` prints.
 - **Ideas agreed but not built, and their order**: [ROADMAP.md](ROADMAP.md) ("Backlog in priority order" is the one
   list; Pierre, 2026-11-08: first everything that speeds up development, then the rest).
+- **Where the next task comes from: the ROADMAP, not STATUS** (Pierre, 2026-11-20 16:44). STATUS "Next" is a short
+  pointer (the file stays near 100 lines so that every session start reads it cheaply); it never holds the whole
+  backlog. At every check-in, and whenever agents finish, go through the ROADMAP's rows and launch every row that is
+  decided (his words, or an integrator's call) and blocked by no open PR's file (rule W27).
 - **Why something is as it is**: the rule's *Source* line, then [decisions/](decisions/README.md), then the LEARNING.md
   or ARCHITECTURE.md section the rule or record names.
 - **Branches without a PR**: `python3 tools/brief.py` lists them. Two keep a design note on the branch only:

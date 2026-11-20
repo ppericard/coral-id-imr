@@ -53,7 +53,7 @@ const server = http.createServer((req, res) => {
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart) and, in the same part, the admin opened
-// with suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
+// with data/suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
 // first, as before); main, everything else.
 // SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
 // runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
@@ -95,6 +95,29 @@ const darkCards = (p, sel) =>
     else delete H.dataset.theme;
     return C.length < 2 ? `no ${sel}` : light.map(([k, c]) => `${k} ${c}`).join(', ');
   }, sel);
+// Every text the admin's toast (.adm-toast) shows from now on, kept in the page (window.__toasts, read with toastsOf): a
+// check reads what was shown, not only what is on screen when it polls. A toast scheduled earlier can replace another
+// (the fish auto-sort's comes 8 s after its run: admin.js sugRun; in the demo it has decisions to make since #1313), and a
+// check that missed one says every text shown, not only the last.
+const toastLog = p =>
+  p.evaluate(() => {
+    // each text node the toast was given (toast sets textContent), so two toasts in one task are both kept
+    const T = (window.__toasts = []),
+      add = s => s && T.push(s),
+      watch = t =>
+        new MutationObserver(R =>
+          R.forEach(r => (r.type === 'characterData' ? add(r.target.data) : r.addedNodes.forEach(n => add(n.textContent))))
+        ).observe(t, {childList: true, characterData: true, subtree: true});
+    const t = document.querySelector('.adm-toast');
+    if (t) return watch(t);
+    // the first toast of the page creates the element (its text set before it is added): watch it once it is there
+    const mo = new MutationObserver(() => {
+      const e = document.querySelector('.adm-toast');
+      if (e) (mo.disconnect(), add(e.textContent), watch(e));
+    });
+    mo.observe(document.body, {childList: true});
+  });
+const toastsOf = p => p.evaluate(() => window.__toasts || []);
 // Sign out on a shared device (model B of the seal, Pierre, 2026-11-18; admin-draft.js): two admin tabs of one token (the
 // demo's) in one browser, with the real IndexedDB. A rates a photo, B takes it in at once and rates another, A takes that
 // in. B then stops hearing the other tabs (a frozen tab) and A signs out: the store keeps no plain draft and no base, only
@@ -366,7 +389,7 @@ async function sealPart(b, base, fails) {
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }
-// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): suggest.json, the largest file a Players
+// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): data/suggest.json, the largest file a Players
 // page would wait for, is held back by the test. Opened on Players › Activity (the default), the page draws without it and
 // the suggestions follow (admin.js sugLater: laid over the candidates, the auto-sort run), and a page that needs them, asked
 // for before they are in, shows Loading… and then draws; opened on a page that needs them, it waits for them as it always did.
@@ -378,19 +401,19 @@ async function loadPart(b, base, fails) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  // One made-up judgment, for a candidate of cand.json (the real suggest.json may name none of them: 2026-11-03).
-  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand || {}).flat()[0].f;
+  // One made-up judgment, for a candidate of data/cand.json (the real data/suggest.json may name none of them: 2026-11-03).
+  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/cand.json'))).cand || {}).flat()[0].f;
   let held = null,
     asked = 0;
   await lc.route(
-    u => u.href.startsWith(base) && u.pathname === '/suggest.json',
+    u => u.href.startsWith(base) && u.pathname === '/data/suggest.json',
     async r => {
       asked++;
       if (held) await held.p;
       r.fulfill({contentType: 'application/json', body: JSON.stringify({v: 1, cand: {[CF]: {v: 'wide', q: 3, k: 'best', fm: 'M'}}})});
     }
   );
-  // waits for the page to ask for suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
+  // waits for the page to ask for data/suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
   const askedOnce = async () => {
     for (let i = 0; i < 200 && !asked; i++) await new Promise(ok => setTimeout(ok, 100));
     return asked > 0;
@@ -428,7 +451,7 @@ async function loadPart(b, base, fails) {
   // 1. Activity (the default) draws while the suggestions are held; they are laid when they come
   let h = hold(),
     p = await open('');
-  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while suggest.json was held back');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while data/suggest.json was held back');
   if (!(await late(p)) || (await p.evaluate(() => Object.keys(SUG).length)))
     fails.push(F + 'Activity waited for the suggestions (nothing left to lay)');
   if (!(await askedOnce())) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
@@ -459,6 +482,107 @@ async function loadPart(b, base, fails) {
   h.go();
   await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
   if ((await late(p)) || !(await laid(p))) fails.push(F + 'opened on Candidates, the suggestions were not laid at the start');
+  await p.close();
+  if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
+  await lc.close();
+  await lazyPart(b, base, fails);
+}
+// What a visit to Activity does not fetch (admin.js lazyLoad; Pierre, 2026-11-19): the Analyses scripts come with their first
+// page (one after the other: a failed analysis.js never runs admin-analyses.js). The fish auto-sort (data/fish-cand.json) is
+// not one of them: rule A1 has it populate the draft at each admin load, so a visit that stays on Players still gets it, at
+// idle, after the first page is drawn. The demo itself needs analysis.js and admin-demo.js, in before the first read;
+// admin-heatmap.js stays a plain tag (a Journey names its heatLab). Once, at 1280.
+async function lazyPart(b, base, fails) {
+  const F = 'lazy: ',
+    lc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+  await lc.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  const errs = [],
+    open = async hash => {
+      const p = await lc.newPage(),
+        reqs = [];
+      p.on('pageerror', e => errs.push(e.stack || e.message));
+      // when Activity's content first stood on the page (the page's own clock, as the resource timings of the fetches are)
+      await p.addInitScript(() => {
+        new MutationObserver(() => {
+          const v = document.getElementById('view');
+          if (v && !window.DRAWN_AT && /ANSWERS/.test(v.innerText)) window.DRAWN_AT = performance.now();
+        }).observe(document, {childList: true, subtree: true, characterData: true});
+      });
+      // scripts and fetches only: the Analyses worker asks for analysis.js again, as a worker
+      p.on('request', r => r.resourceType() !== 'worker' && reqs.push(new URL(r.url()).pathname.slice(1)));
+      await p.goto(base + 'admin.html?demo&late' + hash);
+      return {p, reqs};
+    },
+    wait = (p, fn, arg) =>
+      p.waitForFunction(fn, arg, {timeout: 60000}).then(
+        () => true,
+        () => false
+      ),
+    asked = (reqs, f) => reqs.filter(x => x === f).length,
+    analysesIn = () => typeof renderAnalyses === 'function' && !/^\s*Loading/.test(document.getElementById('view').innerText);
+  // 1. Activity: drawn, the suggestions in, the idle time of the fish auto-sort over: none of the lazy files was asked for, and
+  // the fish auto-sort (rule A1: at each admin load, a visit that stays on Players too) has run, after the first page was drawn
+  let {p, reqs} = await open('');
+  if (!(await wait(p, () => /ANSWERS/.test(document.getElementById('view').innerText)))) fails.push(F + 'Activity did not draw');
+  if (!(await wait(p, () => SUG_LATE === null))) fails.push(F + 'the suggestions never came in');
+  if (!(await p.evaluate(() => Object.keys((SUG && SUG[AK]) || {}).length)))
+    fails.push(F + 'the suggestions hold no fish judgment (the fish auto-sort check is void)');
+  // the auto-sort's candidate file, by the address the admin reads it at (a subject's admin files: it moves with its folder)
+  const FC = await p.evaluate(() => ASORT.admin.files.cand);
+  if (!FC || !/fish-cand\.json$/.test(FC)) fails.push(F + `the auto-sort's candidate file is ${FC}`);
+  await p.waitForTimeout(6000); // past the idle callback's 4 s
+  // the demo's own pair (analysis.js may be asked for twice: the worker of the demo's report is a request too)
+  if (asked(reqs, 'admin-demo.js') !== 1 || !asked(reqs, 'analysis.js'))
+    fails.push(F + 'the demo did not ask for admin-demo.js once and analysis.js');
+  if (asked(reqs, 'admin-analyses.js')) fails.push(F + 'Activity asked for admin-analyses.js');
+  // the fish auto-sort read its candidates once, after the opening page was on screen (never on its critical path), and
+  // populated the draft; the page stayed on Players all along
+  if (asked(reqs, FC) !== 1) fails.push(F + `Activity (no page past Players): the fish auto-sort read ${FC} ${asked(reqs, FC)} times`);
+  if (!(await wait(p, () => ASORT_GO === null))) fails.push(F + 'the fish auto-sort never finished');
+  const ft = await p.evaluate(f => {
+    const e = performance.getEntriesByType('resource').find(r => r.name.endsWith(f));
+    return {drawn: window.DRAWN_AT || 0, read: e ? e.startTime : 0, auto: Object.keys((DRAFT[AK] || {}).auto || {}).length};
+  }, FC);
+  if (!ft.drawn || !ft.read || ft.read < ft.drawn)
+    fails.push(F + `the fish auto-sort read its candidates before the opening page was drawn ${JSON.stringify(ft)}`);
+  if (!ft.auto) fails.push(F + 'a visit that stays on Players got no fish proposals in its draft');
+  // 2. another Players page (a Journey names the heatmap's heatLab): nothing more asked for
+  await p.evaluate(() => (location.hash = '#players/list'));
+  if (!(await wait(p, () => !!document.querySelector('.adm-urow')))) fails.push(F + 'Players › List did not draw');
+  await p.waitForTimeout(1000);
+  if (asked(reqs, FC) !== 1) fails.push(F + 'Players › List read the fish candidates again');
+  // 3. an Analyses page: its scripts come one after the other, the page draws itself
+  await p.evaluate(() => (location.hash = '#analyses/overview'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'the Analyses page did not draw after its scripts came');
+  if (asked(reqs, 'admin-analyses.js') !== 1) fails.push(F + `admin-analyses.js asked for ${asked(reqs, 'admin-analyses.js')} times`);
+  if (asked(reqs, FC) !== 1) fails.push(F + 'the Analyses page read the fish candidates again');
+  // another Analyses view: nothing asked for again
+  await p.evaluate(() => (location.hash = '#analyses/difficulty/formats'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'a second Analyses view did not draw');
+  if (asked(reqs, 'admin-analyses.js') !== 1) fails.push(F + 'admin-analyses.js asked for again by a second Analyses view');
+  await p.close();
+  // 4. opened straight on an Analyses address (the script not in when the page first asks): drawn, asked for once
+  ({p, reqs} = await open('#analyses/overview'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'an Analyses address opened straight did not draw');
+  if (asked(reqs, 'admin-analyses.js') !== 1)
+    fails.push(F + `opened straight: admin-analyses.js asked for ${asked(reqs, 'admin-analyses.js')} times`);
+  await p.close();
+  // 5. a script that cannot be fetched: the page says so, and draws when asked for again
+  let cut = true;
+  await lc.route(
+    u => u.href.startsWith(base) && u.pathname === '/admin-analyses.js',
+    r => (cut ? r.abort() : r.fallback())
+  );
+  ({p, reqs} = await open('#analyses/overview'));
+  if (!(await wait(p, () => /could not be loaded/.test(document.getElementById('view').innerText))))
+    fails.push(F + 'an Analyses script that failed to load left no word on the page');
+  cut = false;
+  await p.evaluate(() => (location.hash = '#players/activity'));
+  await p.evaluate(() => (location.hash = '#analyses/overview'));
+  if (!(await wait(p, analysesIn))) fails.push(F + 'the Analyses page did not draw when asked for again');
   await p.close();
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await lc.close();
@@ -501,13 +625,13 @@ async function loadPart(b, base, fails) {
         r.abort();
       }
     );
-    // Candidate pass of the judging agent (suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
+    // Candidate pass of the judging agent (data/suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
     // (autosort.js) decides the sure ones at load: CF[0] a sure add (Good, Corallites), CF[1] a sure near-duplicate
     // (rejected), CF[2] a comparison image (left set aside, Pierre's), CF[3] unsure (his); CHK, a sure add that the
     // 1-in-20 draw makes a Check (shown to him blind).
     // The auto-sort only decides photos nobody decided, so these are taken among the candidates of a game genus that
     // Pierre's real curation.json never names (no add, move, hide, Not this genus, reject mark, exclusion, rating, form,
-    // crop or auto-log entry): the first entries of cand.json were often ones he had already decided, and every publish
+    // crop or auto-log entry): the first entries of data/cand.json were often ones he had already decided, and every publish
     // of his and every candidate refill changed the result (2026-11-03). CF[0] also has metrics that cannot stop a sure
     // Good add (autosort.js metFlag, with the admin's percentiles).
     const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f))),
@@ -515,8 +639,8 @@ async function loadPart(b, base, fails) {
       CUR_S = JSON.stringify(CUR),
       named = f => CUR_S.includes(JSON.stringify(f)) || CUR_S.includes(JSON.stringify('cand:' + f)),
       DJ = rd('data.json'),
-      CJ = rd('cand.json').cand || {},
-      MET = rd('metrics.json').m || {},
+      CJ = rd('data/cand.json').cand || {},
+      MET = rd('data/metrics.json').m || {},
       {autoCheck, metFlag, curIdx, pierreOf} = require('../autosort.js'),
       GAME = new Set(require('../core.js').gameOf(DJ)),
       FREE = Object.entries(CJ)
@@ -536,9 +660,11 @@ async function loadPart(b, base, fails) {
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
     // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     // FF[3]: a photo the auto-sort set aside earlier (log r), judged since a sure add with a crop: brought back (Q438, b).
-    const FCAND = rd('fish-cand.json').cand,
+    // FF[4]: a photo the auto-sort put in earlier (log ate), judged since a sure rejection (other species one could take for
+    // it): taken out, set aside, logged r (the route out, rule A1).
+    const FCAND = rd('data/fish-cand.json').cand,
       FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
-      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 4),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 5),
       FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
@@ -574,7 +700,14 @@ async function loadPart(b, base, fails) {
           body: JSON.stringify({
             ...CUR,
             auto: {[day]: LOG},
-            fish: {out: {[FF[2][1]]: 'x'}, seen: {[FF[3][1]]: 1}, auto: {'2026-10-30': {[FF[3][1]]: 'r'}}}
+            fish: {
+              out: {[FF[2][1]]: 'x'},
+              seen: {[FF[3][1]]: 1},
+              add: {[FF[4][1]]: FF[4][0]},
+              tags: {[FF[4][1]]: 'p1g0sl1'},
+              ease: {[FF[4][1]]: 3},
+              auto: {'2026-10-30': {[FF[3][1]]: 'r', [FF[4][1]]: 'ate'}}
+            }
           })
         })
     );
@@ -582,7 +715,7 @@ async function loadPart(b, base, fails) {
     await ctx.route(base + 'reports-handled.json', r =>
       r.fulfill({contentType: 'application/json', body: JSON.stringify({demorep1: {pr: 577, at: '2026-11-05'}})})
     );
-    await ctx.route(base + 'suggest.json', r =>
+    await ctx.route(base + 'data/suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({
@@ -599,9 +732,10 @@ async function loadPart(b, base, fails) {
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
             [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
             [FF[3][1]]: {jt: 'p1g0sl1', e: 4, k: 'best', c: [0.2, 0.1, 0.8, 0.9]},
+            [FF[4][1]]: {jt: 'p1g0slk', e: 2, k: 'best'},
             [FC[1]]: {jt: 'o1g1sso', e: 3, k: 'best', n: 'Demo check'}
           },
-          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}}
+          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}, [FF[4][0]]: {fish: {by: 'claude', at: day, n: 1}}}
         })
       })
     );
@@ -715,7 +849,8 @@ async function loadPart(b, base, fails) {
     const ROUTES = await p.evaluate(() => {
       // The corals' tabs (a tab for one unit rank only, Families, is checked on the fish side below).
       const L = TABS.filter(t => !t[4].rank).flatMap(t => {
-        const V = t[2].filter(([, , o]) => !o.rank); // a view for one unit rank only (fish Photo review) is checked below
+        // a view for one unit rank only, or a review axis of the tree builder (fish Photo review), is checked below
+        const V = t[2].filter(([, , o]) => !o.rank && (!o.axis || reviewBuild(ASUBJ).axes.includes(o.axis)));
         return V.map(([h, v]) => ({h, tab: t[1], view: V.length > 1 ? h : null, n: V.length, name: v}));
       });
       // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
@@ -820,6 +955,35 @@ async function loadPart(b, base, fails) {
         await q.click('.cov-t [data-cs="macro"]');
         const x = await wide(h);
         if (x > 0) fails.push(`360px #${h}, sorted on a view: page ${x} px wider than the window`);
+      }
+      // The ? help hangs from the sticky header: it must stay inside the window and scroll to its last line (the
+      // panel once ran off the bottom, with nothing to scroll). 360x640 through the ⋯ menu, then a short desktop window.
+      for (const [vw, vh] of [
+        [360, 640],
+        [1280, 500]
+      ]) {
+        await q.setViewportSize({width: vw, height: vh});
+        await q.evaluate(() => (location.hash = '#players/activity'));
+        await q.waitForSelector('#tools:not([hidden])', {timeout: 15000});
+        if (vw < 600) {
+          await q.click('.adm-more summary');
+          await q.click('#help2');
+        } else await q.click('#help');
+        const hf = await q.evaluate(() => {
+          const e = document.getElementById('admhelp'),
+            r = e.getBoundingClientRect();
+          e.scrollTop = e.scrollHeight;
+          const last = e.lastElementChild.getBoundingClientRect();
+          return {
+            bottom: Math.round(r.bottom),
+            vh: innerHeight,
+            scrolls: e.scrollHeight > e.clientHeight,
+            reach: Math.round(last.bottom) <= Math.round(e.getBoundingClientRect().bottom)
+          };
+        });
+        if (hf.bottom > hf.vh || !hf.scrolls || !hf.reach) fails.push(`${vw}x${vh} admin ? help: ${JSON.stringify(hf)}`);
+        await q.evaluate(() => document.getElementById('admhelp').remove());
+        await q.evaluate(() => (document.querySelector('.adm-more') || {}).open && (document.querySelector('.adm-more').open = false));
       }
       await c3.close();
     }
@@ -1150,13 +1314,36 @@ async function loadPart(b, base, fails) {
             await q.screenshot({path: require('path').join(process.env.SHOTS, 'tree-species-pick-390.png')});
           const sum = await q.evaluate(() => pubSummary());
           if (!/1 fish genus cover/.test(sum) || !/1 fish species cover/.test(sum)) ne.push(`Publish summary ${JSON.stringify(sum)}`);
+          // Publish has ended when the published curation (SAVED, set just before its toast) carries both picks; its toast is
+          // then read from every text the toast showed (toastLog), not polled on screen, where another toast can replace it.
+          await toastLog(q);
+          const t0 = Date.now();
           await q.click('#save');
           await q
-            .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
-            .catch(() => ne.push('Publish: no "Published" toast'));
+            .waitForFunction(
+              ([g, s]) => {
+                const P = (SAVED.fish || {}).genera || {};
+                return (P['g:Chromis'] || {}).cover === g && (P.s091 || {}).cover === s;
+              },
+              [gf, sf],
+              {timeout: 30000}
+            )
+            .catch(() => {});
+          const shown = await toastsOf(q);
+          if (!shown.some(s => /^Published/.test(s))) {
+            const sv = await q.evaluate(() => ({text: $('save').textContent, disabled: $('save').disabled}));
+            ne.push(
+              `Publish: no "Published" toast (${Date.now() - t0} ms after the click; the toasts since the click: ${JSON.stringify(shown)}; the button ${JSON.stringify(sv)})`
+            );
+          }
           const pub = await q.evaluate(() => (SAVED.fish || {}).genera || {});
           if ((pub['g:Chromis'] || {}).cover !== gf || (pub.s091 || {}).cover !== sf)
             ne.push(`published ${JSON.stringify({g: pub['g:Chromis'], s: pub.s091, gf, sf})}`);
+          // the log keeps a toast replaced before any frame came (two in one task)
+          await toastLog(q);
+          await q.evaluate(() => (toast('Smoke: first'), toast('Smoke: second')));
+          const two = await toastsOf(q);
+          if (two.join(' | ') !== 'Smoke: first | Smoke: second') ne.push(`the toast log ${JSON.stringify(two)}`);
           // A node he covered whose rule picks another photo, still open: its page links to Cover proposals, which shows it.
           const pn = await q.evaluate(() => (coverOpen(coverList(), DRAFT.fish)[0] || {}).id || null);
           if (pn) {
@@ -1411,7 +1598,7 @@ async function loadPart(b, base, fails) {
           x = await wp();
           if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
             fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
-          // A photo named as iNaturalist writes a species WoRMS writes otherwise (names.json fish, tools/taxonomy.py):
+          // A photo named as iNaturalist writes a species WoRMS writes otherwise (data/names.json fish, tools/taxonomy.py):
           // the WoRMS tag on its tile (admin.js nameTag; s213 Cheilinus fasciatus, iNaturalist's Concholabrus fasciatus).
           if (w === 1280) {
             await go(other.hash + 'photos/tree/key/s213');
@@ -1607,7 +1794,7 @@ async function loadPart(b, base, fails) {
             loaded: !!FISHC.plays
           };
         });
-        // A reference photo only the game holds has no Not this (the publish rebuild resolves a correction against fish-cand.json
+        // A reference photo only the game holds has no Not this (the publish rebuild resolves a correction against data/fish-cand.json
         // alone), but can be removed or excluded.
         const rf = await p.evaluate(() => {
           const r = FISHC.plays.find(q => q.auto === 'ref' && FISHC.units.some(u => u.id === 'f:Damselfishes' && u.species.includes(q.sp))),
@@ -3883,7 +4070,7 @@ async function loadPart(b, base, fails) {
     }
     if (once && run.has('actions')) await timed('actions', actionsPart);
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
-    // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
+    // data/points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
@@ -4031,7 +4218,7 @@ async function loadPart(b, base, fails) {
         await go('inbox/todo/points/no-such-point');
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
       }
-      // Each side lists its own points (fish admin at parity; points.json subj, the Corals | Fish switch): the corals' none of
+      // Each side lists its own points (fish admin at parity; data/points.json subj, the Corals | Fish switch): the corals' none of
       // the fish ones, the fish side its own with their open count, a point's page and its way back under its prefix.
       {
         const want = await p.evaluate(() => {
@@ -4674,7 +4861,7 @@ async function loadPart(b, base, fails) {
         // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
         // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
         // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
-        // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
+        // files (data/cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
         // pages opened (Analyses › Stops) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
         {
           const q = await p.context().newPage();
@@ -4708,7 +4895,7 @@ async function loadPart(b, base, fails) {
               () => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart
             );
           if (!a || !(cj > 0) || !(a.t0 < cj))
-            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
+            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, data/cand.json in at ${Math.round(cj)} ms`);
           await q.unroute(/\/cand\.json$/);
           await q.goto(base + 'admin.html?demo&load=3#photos/candidates');
           await quiet();
@@ -5007,6 +5194,456 @@ async function loadPart(b, base, fails) {
         if (!shown) fails.push(`${w}px Players: Carla's row not found`);
         else if (shown.color === shown.muted || shown.italic === 'italic')
           fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
+      }
+      // Groups that carry rights (sheet RIGHTSADM_SHEET; docs/decisions/2026-11-19-groups-carry-rights.md), at both widths: the
+      // rights group first with its key and its Rights row, no Add all or Remove all on it, "+ Add a player" asked first
+      // naming its rights, "rights off" on a member whose code changed, the admin list read-only, a right given and taken
+      // away, a group with members and no rights offered none, a change saved in part ("server") and its Try again
+      // sending the same request, the player's bar (key, Rights line), the merge warning read from mergePlan first. One
+      // version below: the page as before, and no roles or mergePlan read sent. No sideways scroll.
+      {
+        const q = await p.context().newPage(),
+          said = [];
+        q.on('pageerror', e => fails.push(`${w}px rights groups page error: ${e.message}`));
+        q.on('dialog', d => {
+          said.push(d.type() + ': ' + d.message());
+          return d.type() === 'confirm' && !/^Give Carla Demo/.test(d.message()) ? d.accept() : d.dismiss();
+        });
+        const calm = () =>
+          q
+            .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+              timeout: 20000
+            })
+            .then(() => q.waitForTimeout(300))
+            .catch(() => fails.push(`${w}px rights groups: never settled`));
+        const page = () =>
+          q.evaluate(() => ({
+            cards: [...document.querySelectorAll('.adm-gcard')].map(c => ({
+              n: c.querySelector('.adm-gname').textContent.replace('Carries rights', ''), // the key's title
+              key: !!c.querySelector('.adm-gname .adm-gkey'),
+              rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')),
+              add: !!c.querySelector('[data-gradd]'),
+              none: (c.querySelector('.adm-gnone') || {}).textContent || '',
+              bulk: !!c.querySelector('[data-gall], [data-gnone]'),
+              off: [...c.querySelectorAll('.adm-gmem .adm-gchip')]
+                .filter(x => x.querySelector('.adm-goff'))
+                .map(x => x.firstChild.textContent)
+            })),
+            admins: (document.querySelector('.adm-gadmins') || {}).textContent || '',
+            note: (document.querySelector('.adm-gnote') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          }));
+        const sent = k => q.evaluate(k => window.DEMO_CALLS.filter(c => c.k === k).length, k);
+        const posts = () => q.evaluate(() => window.__posts || []);
+        try {
+          const X = await p.evaluate(() => RIGHTSADM_SHEET);
+          // One version below: the page as before.
+          await q.goto(base + `admin.html?demo&v=${X - 1}#players/groups`);
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          let g = await page();
+          if (
+            g.cards.length !== 2 ||
+            g.cards.some(c => c.key || c.rights.length || c.add || c.none) ||
+            !g.cards.every(c => c.bulk) ||
+            g.admins ||
+            (await sent('roles'))
+          )
+            fails.push(`${w}px rights groups before v${X}: ${JSON.stringify(g)}`);
+          await q.goto(base + `admin.html?demo&v=${X}#players/groups`);
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          await calm();
+          // From the version: every group request the page sends, kept for the retry check.
+          await q.evaluate(() => {
+            window.__posts = [];
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              try {
+                const b = o && o.body && JSON.parse(o.body);
+                if (b && (b.groupEdit || b.userGroup)) window.__posts.push(JSON.stringify({...b, token: undefined}));
+              } catch (e) {}
+              return f(u, o);
+            };
+          });
+          g = await page();
+          const T = g.cards[0] || {};
+          if (
+            T.n !== 'Trainers' ||
+            !T.key ||
+            T.rights.join('|') !== 'Host live games|Cohorts' ||
+            !T.add ||
+            T.bulk ||
+            T.off.join('|') !== 'Ben Demo' ||
+            g.cards.slice(1).some(c => c.key || !c.bulk || c.add || !/make a new group/.test(c.none)) ||
+            !/^Admins \(outside the groups\): Ana Demo$/.test(g.admins) ||
+            (await q.$('.adm-gadmins button, .adm-gadmins select')) ||
+            g.wide
+          )
+            fails.push(`${w}px rights groups: the page ${JSON.stringify(g)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              await q.screenshot({path: require('path').join(process.env.SHOTS, `rights-groups-${w}-${th}.png`), fullPage: true});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          // + Add a player asks first, naming the rights; refused, nothing is sent
+          await q.selectOption('.adm-gcard:first-child [data-gjoin]', {label: 'Carla Demo'});
+          await calm();
+          g = await page();
+          if (!said.includes('confirm: Give Carla Demo: Host live games, Cohorts?') || (await posts()).length)
+            fails.push(`${w}px rights groups: + Add a player did not ask first ${JSON.stringify(said)} ${JSON.stringify(await posts())}`);
+          // accepted: Dio joins (rights on, no "rights off")
+          await q.selectOption('.adm-gcard:first-child [data-gjoin]', {label: 'Dio Demo'});
+          await calm();
+          g = await page();
+          if (!said.includes('confirm: Give Dio Demo: Host live games, Cohorts?') || g.cards[0].off.join('|') !== 'Ben Demo')
+            fails.push(`${w}px rights groups: + Add a player ${JSON.stringify(g.cards[0])}`);
+          // a right given: saved in part (its Audit row failed), then Try again sends the same request and finishes it
+          await q.evaluate(() => (window.DEMO_FAIL = 'server'));
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
+          await calm();
+          g = await page();
+          if (g.note.indexOf('Saved in part: its Audit record failed. Try again to finish it.') !== 0 || !(await q.$('[data-gretry]')))
+            fails.push(`${w}px rights groups: saved in part ${JSON.stringify(g.note)}`);
+          await q.click('[data-gretry]');
+          await calm();
+          g = await page();
+          const P = await posts();
+          if (
+            g.note ||
+            g.cards[0].rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            P.length < 2 ||
+            P[P.length - 1] !== P[P.length - 2] ||
+            !/"rights":\["live@instance:imr","cohorts@instance:imr","content@instance:imr"\]/.test(P[P.length - 1])
+          )
+            fails.push(`${w}px rights groups: Try again ${JSON.stringify({g: g.cards[0], note: g.note, P: P.slice(-2)})}`);
+          // × takes a right away
+          await q.click('.adm-gcard:first-child [data-grx][data-e="content@instance:imr"]');
+          await calm();
+          g = await page();
+          if (g.cards[0].rights.join('|') !== 'Host live games|Cohorts')
+            fails.push(`${w}px rights groups: × a right ${JSON.stringify(g.cards[0])}`);
+          // A change on its way survives the page being drawn again (the players list read again, away and back): its
+          // card shows the pending list and stays off, a second change dispatched at it is not sent, and when the sheet
+          // answers the group holds the first change (Content), not the second (Settings) built from the old list.
+          await q.evaluate(() => {
+            window.__sent = [];
+            window.__hold = new Promise(r => (window.__release = r));
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              try {
+                const b = o && o.body && JSON.parse(o.body);
+                if (b && b.groupEdit && b.rights) {
+                  window.__sent.push(b.rights.join(','));
+                  return window.__hold.then(() => f(u, o));
+                }
+              } catch (e) {}
+              return f(u, o);
+            };
+          });
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
+          await q.evaluate(() => (location.hash = '#players/list'));
+          await calm();
+          await q.evaluate(() => (location.hash = '#players/groups'));
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          const pend = () =>
+            q.evaluate(() => {
+              const c = document.querySelector('.adm-gcard');
+              return {
+                busy: c.getAttribute('aria-busy') === 'true',
+                off: [...c.querySelectorAll('button, select')].every(x => x.disabled),
+                rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')).join('|')
+              };
+            });
+          let pd = await pend();
+          if (!pd.busy || !pd.off || pd.rights !== 'Host live games|Cohorts|Content')
+            fails.push(`${w}px rights groups: a change on its way, page drawn again ${JSON.stringify(pd)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              await q.screenshot({path: require('path').join(process.env.SHOTS, `rights-pending-${w}-${th}.png`), fullPage: true});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          await q.evaluate(() => {
+            const s = document.querySelector('.adm-gcard [data-gradd]');
+            s.value = 'settings@instance:imr';
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+            render();
+          });
+          pd = await pend();
+          if (!pd.busy || !pd.off || pd.rights !== 'Host live games|Cohorts|Content')
+            fails.push(`${w}px rights groups: a second change meanwhile ${JSON.stringify(pd)}`);
+          await q.evaluate(() => window.__release());
+          await calm();
+          g = await page();
+          pd = await q.evaluate(() => ({sent: window.__sent, busy: !!document.querySelector('.adm-gcard[aria-busy]')}));
+          if (
+            g.cards[0].rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            pd.sent.length !== 1 ||
+            pd.sent[0] !== 'live@instance:imr,cohorts@instance:imr,content@instance:imr' ||
+            pd.busy
+          )
+            fails.push(`${w}px rights groups: change on its way, after ${JSON.stringify({g: g.cards[0], pd})}`);
+          // One rights change at a time on the whole page (rule W27): with a second group (Fieldwork, made here), Content
+          // is given to Trainers and its write held. Every rights control of both groups is off, a change dispatched at
+          // Fieldwork meanwhile sends nothing. The write answered, the players read is held, and another read forced meanwhile
+          // drops it: its answer is not applied, so the controls stay off and the page reads again; they come on only with
+          // a read that applied its answer. Then Fieldwork gets Settings from a list that holds Trainers' Content too:
+          // exactly one rights request at a time, no right lost.
+          await q.click('.adm-gcard:first-child [data-grx][data-e="content@instance:imr"]'); // Trainers: back to its two
+          await calm();
+          const tid = await q.evaluate(() => document.querySelector('.adm-gcard:first-child').dataset.g);
+          await q.evaluate(async () => {
+            await userPost({groupMake: {n: 'Fieldwork', board: 1}});
+            await loadUsers(true);
+            render();
+          });
+          await calm();
+          const fid = await q.evaluate(
+            () => [...document.querySelectorAll('.adm-gcard')].find(c => /Fieldwork/.test(c.textContent)).dataset.g
+          );
+          // The two groups' rights controls (a rights group's player controls too: the other's stay on), off or on
+          const lockOf = () =>
+            q.evaluate(
+              ids => {
+                const R = [...document.querySelectorAll('.adm-gcard')]
+                  .filter(c => ids.includes(c.dataset.g))
+                  .map(c => ({
+                    rights: [...c.querySelectorAll('[data-gjoin], [data-ugout]')].filter(() => c.querySelector('.adm-gkey')),
+                    add: [...c.querySelectorAll('[data-gradd], [data-grx]')]
+                  }));
+                return {
+                  allOff: R.length === 2 && R.every(c => c.add.length && c.add.every(x => x.disabled) && c.rights.every(x => x.disabled)),
+                  allOn: R.length === 2 && R.every(c => c.add.length && c.add.every(x => !x.disabled)),
+                  w: (window.__w || {}).writes || [],
+                  max: (window.__w || {}).max,
+                  users: (window.__w || {}).users
+                };
+              },
+              [tid, fid]
+            );
+          await q.evaluate(() => {
+            const W = (window.__w = {writes: [], users: 0, cur: 0, max: 0, gates: [], writeHold: null});
+            W.writeHold = new Promise(r => (W.release = r));
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              let b = null;
+              try {
+                b = o && o.body && JSON.parse(o.body);
+              } catch (e) {}
+              if (b && (b.groupEdit || b.userGroup)) {
+                W.writes.push(b.groupEdit + ':' + (b.rights || []).join(','));
+                W.max = Math.max(W.max, ++W.cur);
+                return W.writeHold.then(() => f(u, o)).finally(() => W.cur--);
+              }
+              if (b && b.users) {
+                W.users++;
+                const gt = W.gates.shift();
+                if (gt) return gt.then(() => f(u, o));
+              }
+              return f(u, o);
+            };
+          });
+          await q.selectOption(`.adm-gcard[data-g="${tid}"] [data-gradd]`, {label: 'Content'});
+          let L = await lockOf();
+          if (!L.allOff || L.w.length !== 1 || L.w[0] !== tid + ':live@instance:imr,cohorts@instance:imr,content@instance:imr')
+            fails.push(`${w}px rights groups: one at a time, write on its way ${JSON.stringify(L)}`);
+          await q.evaluate(
+            ([id, tid]) => {
+              // Fieldwork's control, dispatched although off, and a player into Trainers
+              const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+              s.value = 'settings@instance:imr';
+              s.dispatchEvent(new Event('change', {bubbles: true}));
+              const j = document.querySelector(`.adm-gcard[data-g="${tid}"] [data-gjoin]`);
+              if (j) {
+                j.value = j.options[1].value;
+                j.dispatchEvent(new Event('change', {bubbles: true}));
+              }
+            },
+            [fid, tid]
+          );
+          L = await lockOf();
+          if (L.w.length !== 1 || !L.allOff) fails.push(`${w}px rights groups: one at a time, a second sent ${JSON.stringify(L)}`);
+          // the write answered; its players read held, then dropped by another read, held too, and the retry held
+          await q.evaluate(() => {
+            const W = window.__w;
+            W.gates.length = 0;
+            W.rel = [];
+            for (let i = 0; i < 3; i++) W.gates.push(new Promise(r => W.rel.push(r)));
+            W.release();
+          });
+          await q
+            .waitForFunction(() => window.__w.users === 1, null, {timeout: 20000})
+            .catch(() => fails.push(`${w}px rights groups: the players read after the write never started`));
+          L = await lockOf();
+          if (!L.allOff) fails.push(`${w}px rights groups: one at a time, write done, read on its way ${JSON.stringify(L)}`);
+          await q.evaluate(() => void loadUsers(true)); // a newer read drops the first one
+          await q.waitForFunction(() => window.__w.users === 2, null, {timeout: 20000}).catch(() => {});
+          await q.evaluate(() => window.__w.rel[0]()); // the dropped read answers: not applied
+          await q
+            .waitForFunction(() => window.__w.users === 3, null, {timeout: 20000})
+            .catch(() => fails.push(`${w}px rights groups: the dropped read was not made again`));
+          L = await lockOf();
+          if (!L.allOff || L.w.length !== 1) fails.push(`${w}px rights groups: one at a time, the read dropped ${JSON.stringify(L)}`);
+          await q.evaluate(() => {
+            window.__w.rel[2]();
+            window.__w.rel[1]();
+          });
+          await q
+            .waitForFunction(() => [...document.querySelectorAll('[data-gradd]')].every(x => !x.disabled), null, {timeout: 20000})
+            .catch(() => {});
+          await calm();
+          L = await lockOf();
+          g = await page();
+          const T2 = g.cards.find(c => /^Trainers/.test(c.n)) || {rights: []};
+          if (!L.allOn || T2.rights.join('|') !== 'Content|Host live games|Cohorts' || L.w.length !== 1 || L.users !== 3)
+            fails.push(`${w}px rights groups: one at a time, the read applied ${JSON.stringify({L, T2})}`);
+          await q.selectOption(`.adm-gcard[data-g="${fid}"] [data-gradd]`, {label: 'Settings'});
+          await q.waitForFunction(() => window.__w.writes.length === 2, null, {timeout: 20000}).catch(() => {});
+          await calm();
+          L = await lockOf();
+          g = await page();
+          const F2 = g.cards.find(c => /^Fieldwork/.test(c.n)) || {rights: []},
+            T3 = g.cards.find(c => /^Trainers/.test(c.n)) || {rights: []};
+          if (
+            L.max !== 1 ||
+            L.w.length !== 2 ||
+            L.w[1] !== fid + ':settings@instance:imr' ||
+            !L.allOn ||
+            T3.rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            F2.rights.join('|') !== 'Settings'
+          )
+            fails.push(`${w}px rights groups: one at a time, then the other group ${JSON.stringify({L, T3, F2})}`);
+          await q.click(`.adm-gcard[data-g="${tid}"] [data-grx][data-e="content@instance:imr"]`);
+          await calm();
+          // Taking away a group's last right: while it is on its way the group is still locked for its memberships,
+          // although it shows no right (Players › List: its option is off; a change dispatched at it asks nothing and
+          // sends nothing), and the lock lifts with the applied read.
+          const nSaid = said.length;
+          await q.evaluate(() => {
+            const W = window.__w;
+            W.writeHold = new Promise(r => (W.release = r));
+          });
+          await q.click(`.adm-gcard[data-g="${fid}"] [data-grx][data-e="settings@instance:imr"]`);
+          await q.evaluate(() => (location.hash = '#players/list'));
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await q.click('[data-uopen="Ana Demo"]');
+          const optOff = () =>
+            q.evaluate(id => {
+              const s = document.querySelector('[data-ugadd="Ana Demo"]'),
+                o = s && [...s.options].find(x => x.value === id);
+              return o ? s.disabled || o.disabled : 'none';
+            }, fid);
+          const nW = (await lockOf()).w.length;
+          if ((await optOff()) !== true) fails.push(`${w}px rights groups: last right on its way, the group's option is on in the list`);
+          await q.evaluate(id => {
+            const s = document.querySelector('[data-ugadd="Ana Demo"]');
+            s.value = id;
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+          }, fid);
+          L = await lockOf();
+          if (L.w.length !== nW || said.length !== nSaid)
+            fails.push(`${w}px rights groups: last right on its way, a join went out ${JSON.stringify({w: L.w, said: said.slice(nSaid)})}`);
+          await q.evaluate(() => window.__w.release());
+          await q
+            .waitForFunction(
+              () => {
+                const s = document.querySelector('[data-ugadd="Ana Demo"]');
+                return s && !s.disabled;
+              },
+              fid,
+              {timeout: 20000}
+            )
+            .catch(() => {});
+          await calm();
+          if ((await optOff()) !== false) fails.push(`${w}px rights groups: last right done, the group's option is still off in the list`);
+          await q.click('[data-uopen="Ana Demo"]'); // her bar closed again, for the check below
+          // One Groups write at a time, of any kind: a player added to the empty group Fieldwork (no right, an ordinary
+          // write) on its way, then a first right offered: the control is off, a change dispatched at it sends nothing,
+          // so the player never joins a group that carries rights unasked. When the write and the applied read are in,
+          // the control is on again.
+          await q.evaluate(() => {
+            location.hash = '#players/groups';
+            const W = window.__w;
+            W.writeHold = new Promise(r => (W.release = r));
+          });
+          await q.waitForSelector(`.adm-gcard[data-g="${fid}"] [data-gjoin]`, {timeout: 20000}).catch(() => {});
+          await calm();
+          const nW2 = (await lockOf()).w.length;
+          await q.selectOption(`.adm-gcard[data-g="${fid}"] [data-gjoin]`, {label: 'Dio Demo'});
+          const addOff = () =>
+            q.evaluate(id => {
+              const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+              return s ? s.disabled : 'none';
+            }, fid);
+          if ((await addOff()) !== true) fails.push(`${w}px rights groups: a join on its way, the first right is offered`);
+          await q.evaluate(id => {
+            const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+            s.value = 'players@instance:imr';
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+          }, fid);
+          L = await lockOf();
+          if (L.w.length !== nW2 + 1 || L.max !== 1)
+            fails.push(`${w}px rights groups: a join on its way, a second request ${JSON.stringify({w: L.w.slice(nW2), max: L.max})}`);
+          await q.evaluate(() => window.__w.release());
+          // done: Dio is in, the group has members, so it offers no right (Code.gs 'members'), and its controls are on
+          const xOn = () =>
+            q.evaluate(id => (x => !!x && !x.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-ugout="Dio Demo"]`)), fid);
+          await q
+            .waitForFunction(id => (x => x && !x.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-ugout]`)), fid, {
+              timeout: 20000
+            })
+            .catch(() => {});
+          await calm();
+          g = await page();
+          const F3 = g.cards.find(c => /^Fieldwork/.test(c.n)) || {rights: ['?']};
+          if (!(await xOn()) || F3.rights.length || !/make a new group/.test(F3.none) || (await lockOf()).w.length !== nW2 + 1)
+            fails.push(`${w}px rights groups: a join done ${JSON.stringify({F3, w: (await lockOf()).w.slice(nW2)})}`);
+          await q.click(`.adm-gcard[data-g="${fid}"] [data-ugout="Dio Demo"]`); // Dio out again, for the checks below
+          await q
+            .waitForFunction(id => (s => s && !s.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`)), fid, {
+              timeout: 20000
+            })
+            .catch(() => fails.push(`${w}px rights groups: Dio out, the group never offered a right again`));
+          await calm();
+          // The player's bar: the rights group's chip carries the key, a line sums up the rights; a merge asks with the plan
+          await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ana Demo"]');
+          await calm();
+          const b = await q.evaluate(() => ({
+            keys: [...document.querySelectorAll('.adm-ubar .adm-gchip')]
+              .filter(c => c.querySelector('.adm-gkey'))
+              .map(c => c.textContent.replace('Carries rights', '').replace('×', '')),
+            line: (document.querySelector('.adm-ubar .adm-urights') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          }));
+          if (b.keys.join('|') !== 'Trainers' || b.line !== 'Rights: host live games; cohorts' || b.wide)
+            fails.push(`${w}px rights groups: the player's bar ${JSON.stringify(b)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              const el = await q.$('.adm-ubar');
+              if (el) await el.screenshot({path: require('path').join(process.env.SHOTS, `rights-bar-${w}-${th}.png`)});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          await q.selectOption('.adm-ubar [data-umerge="Ana Demo"]', {label: 'Carla Demo'});
+          await calm();
+          const m = said.find(s => s.startsWith('confirm: Merge "Ana Demo" into "Carla Demo"?')) || '';
+          if (
+            !(await sent('mergePlan')) ||
+            !m.includes('"Carla Demo" joins: Staff.') ||
+            !m.includes('"Ana Demo" leaves, its rights not moved: Trainers (Host live games, Cohorts).') ||
+            !m.includes('"Ana Demo" leaves the admin list.')
+          )
+            fails.push(`${w}px rights groups: the merge warning ${JSON.stringify(m)}`);
+        } catch (e) {
+          fails.push(`${w}px rights groups: ${String(e.message).split('\n')[0]}`);
+        }
+        await q.close();
       }
       // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
       // (admin.css --cut), the name ends in "…" and its title holds it whole.
@@ -7470,7 +8107,7 @@ async function loadPart(b, base, fails) {
       }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
       // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
-      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health. With 25
+      // at load, is kept out (data/suggest.json without its fish part), so nothing else has read them before Health. With 25
       // photos everyone misses (24 shown: statsHealth MAXPH), one Removed leaves the list and the 25th comes in.
       {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
@@ -7480,7 +8117,7 @@ async function loadPart(b, base, fails) {
           r => r.abort()
         );
         await fc.route(
-          u => u.pathname === '/suggest.json',
+          u => u.pathname === '/data/suggest.json',
           async r => {
             const j = await (await r.fetch()).json();
             delete j.fish;
@@ -7500,11 +8137,11 @@ async function loadPart(b, base, fails) {
             }
           )
           .catch(() => fe.push('Health not drawn'));
-        // three players miss a candidate photo in play (fish-cand.json and the fish photos) three times each, first in the
+        // three players miss a candidate photo in play (data/fish-cand.json and the fish photos) three times each, first in the
         // list, and 24 other fish photos twice each
         const pre = await fq.evaluate(async () => {
           const was = !!FISHC,
-            C = await fetch('fish-cand.json').then(r => r.json()),
+            C = await fetch('data/fish-cand.json').then(r => r.json()),
             cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
             D = DRAFT.fish || {},
             // photos the demo's players never answered (its fish answers draw from fish-photos.json's first photos, the
@@ -8317,8 +8954,8 @@ async function loadPart(b, base, fails) {
         }
         // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
         await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
-        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
-        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-cfull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-cfull]');
         await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
         const cf = await sq.evaluate(() => {
           const S = document.querySelector('#view .adm-fsw');
@@ -9287,7 +9924,7 @@ async function loadPart(b, base, fails) {
       if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
       await go('photos/candidates');
       if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
-      // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
+      // A suggested crop (data/suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
       const sc = await p.evaluate(F => {
         const n = Object.keys(DATA.cand).find(g => DATA.cand[g].some(x => x.f === F[0])),
           q = DATA.cand[n].find(x => x.f === F[0]),
@@ -9303,7 +9940,7 @@ async function loadPart(b, base, fails) {
       await p.click('#undo');
       await settle();
       // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
-      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over candQueue(CSRC)), and
+      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over the builder's queue), and
       // CF[2] is whichever undecided candidate the real curation leaves (Dauin, Philippines…: Pierre's Publish of
       // 2026-11-08 moved it from Dauin to Philippines while the page showed Dauin), so the page is put on CF[2]'s own
       // source first, All when that is not a source of the swiper; the source shown before is restored after.
@@ -9404,7 +10041,7 @@ async function loadPart(b, base, fails) {
       await go('photos/candidates');
       const ck = await p.evaluate(C => {
         CSRC = 'all';
-        candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
+        candQueue('all').forEach(x => x.p.f !== C && cst().skip.add(x.p.f));
         render();
         const S = document.querySelector('.adm-sw[data-f]');
         return {
@@ -9455,7 +10092,7 @@ async function loadPart(b, base, fails) {
       }
       // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
       await p.evaluate(() => {
-        CSKIP.clear();
+        cst().skip.clear();
         render();
       });
       // The line is folded behind the Auto chip (Pierre, 2026-11-06: one phone screen); the chip opens it.
@@ -9646,7 +10283,13 @@ async function loadPart(b, base, fails) {
         fa.fish.add[FF[3][1]] !== FF[3][0] ||
         FF[3][1] in fa.fish.seen ||
         JSON.stringify((fa.fish.crop || {})[FF[3][1]]) !== '[0.2,0.1,0.8,0.9]' ||
-        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec'
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec' ||
+        // taken out: no add, no tags, no ease, set aside, logged r (the earlier ate stays beside it)
+        FF[4][1] in fa.fish.add ||
+        FF[4][1] in fa.fish.tags ||
+        FF[4][1] in fa.fish.ease ||
+        fa.fish.seen[FF[4][1]] !== 1 ||
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[4][1]] !== 'r'
       )
         fails.push(
           `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto, crop: fa.fish.crop, tags: fa.fish.tags, phase: fa.fish.phase, sum: fa.sum})}`
@@ -9788,7 +10431,7 @@ async function loadPart(b, base, fails) {
         }
         await p.click('.adm-fsw [data-ft="2"][data-fv="n"]');
         await settle();
-        await p.click('.adm-fsw [data-fcrop]');
+        await p.click('.adm-fsw [data-crop]');
         await p.waitForSelector('#lightbox .adm-crop [data-c="save"]');
         await p.click('#lightbox [data-c="full"]');
         await p.click('#lightbox [data-c="save"]');
@@ -9845,7 +10488,27 @@ async function loadPart(b, base, fails) {
       // (fish.rot), and both left in the draft for the Publish below.
       {
         await go('photos/candidates');
-        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        const G = await p.evaluate(() =>
+          Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.imr && !x.r && !crOf(x.f) && !roOf(x.f)))
+        );
+        // An IMR lecture photo traced to its original has no Crop tool: its framing is the lecture's, and a crop saved for it
+        // would never reach its R2 file (Codex review of #1292).
+        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r)));
+        if (L) {
+          await goGenus(L);
+          const lc = await p.evaluate(n => {
+            const imr = new Set(
+              photos(n)
+                .filter(x => x.imr && x.src)
+                .map(x => x.f)
+            );
+            return [...document.querySelectorAll('#view .adm-tile[data-f]')]
+              .filter(t => imr.has(t.dataset.f))
+              .map(t => !!t.querySelector('[data-act="crop"]'));
+          }, L);
+          if (!lc.length || lc.some(Boolean))
+            fails.push(`${w}px Rotate: a lecture photo's tile on ${L} has the Crop tool: ${JSON.stringify(lc)}`);
+        } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
         const f = await p.evaluate(() => {
           const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
@@ -9937,9 +10600,9 @@ async function loadPart(b, base, fails) {
         }
         // The fish Candidates: the same editor writes fish.rot, a quarter left = 270, drawn on the card.
         await go('fish/photos/candidates');
-        if (await p.$('.adm-fsw [data-fcrop]')) {
+        if (await p.$('.adm-fsw [data-crop]')) {
           const ff = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
-          await p.click('.adm-fsw [data-fcrop]');
+          await p.click('.adm-fsw [data-crop]');
           await p.waitForSelector('#lightbox .adm-rotbar [data-r="-90"]');
           await p.click('#lightbox [data-r="-90"]');
           await p.click('#lightbox [data-c="save"]');
@@ -9949,7 +10612,7 @@ async function loadPart(b, base, fails) {
               rot: ((DRAFT.fish || {}).rot || {})[f],
               coral: (DRAFT.rot || {})[f],
               card: (document.querySelector('.adm-fsw .adm-swph img') || {}).dataset?.rot,
-              on: !!document.querySelector('.adm-fsw [data-fcrop].on'),
+              on: !!document.querySelector('.adm-fsw [data-crop].on'),
               sum: pubSummary(),
               out: ((output().fish || {}).rot || {})[f]
             }),

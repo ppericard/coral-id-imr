@@ -46,13 +46,13 @@ carry the pass's judgment in Candidates). The switch's and the tab's counts stay
 ### Points to handle
 
 Pierre settles most open points himself, from a page, never a text list. Inbox › To do › Points `#inbox/todo/points`
-(`renderPoints`) lists the points of **`points.json`** (repository root, written by agents, never by the admin: `kinds`
+(`renderPoints`) lists the points of **`data/points.json`** (written by agents, never by the admin: `kinds`
 {key: label} and `points` [{`id` stable, `kind` trainer / names / sources / content, `subj` a subject id of `SUBJECTS`,
 `at` the date added, `title` the list's line, `q` the question in plain words, `ctx` context lines, `ask` the answer field
-under each photo, `photos` [{`f` a photo id of `data.json` / `cand.json`, with `t`, `a`, `o`, `src` as a fallback copy} or
+under each photo, `photos` [{`f` a photo id of `data.json` / `data/cand.json`, with `t`, `a`, `o`, `src` as a fallback copy} or
 {`none`: why a slot is empty}], `src` [{`t`, `u`}]}]; the file's order is the priority; neutral wording, rule C1). Its
 shape is checked by `points.js` `pointsProblems` (`tests/points.test.js`), and a point with a problem is left out of the
-admin. Loaded once at start (`points.json?v=1`, stamped at deploy). Pure logic in **`points.js`** (admin only:
+admin. Loaded once at start (`data/points.json?v=1`, stamped at deploy). Pure logic in **`points.js`** (admin only:
 `PT_STATUS`, `pointsOrder`, `pointAge`, `photoKey`).
 
 - **The list**: Open first, Stand-by below (muted), Resolved and Dismissed folded with their counts (the Kept style);
@@ -150,6 +150,29 @@ the top (its name asked, Board on). A player's row bar shows their groups as chi
 (`ugChips`, `memberSet`). On a sheet version before `GROUPADM_SHEET` the page says what it needs, and the list keeps the
 beta group's Add / Remove and the Cohort select. Its help: `HELP.groups`. What a group does in the game:
 [sync.md › Player groups](sync.md#player-groups).
+
+**Groups that carry rights** (`RIGHTSADM_SHEET`, v204; Q408, [the decision](../decisions/2026-11-19-groups-carry-rights.md)):
+- A group's card has a **Rights** row: a chip per right in words (`RIGHT_WORDS`: Manage players, Settings, Give rights,
+  Content, Host live games, Cohorts), each with ×, and **+ Add a right**; each change sends the group's whole list
+  (`groupEdit` `rights`). A group with members and no rights offers none: a line says to make a new group, then add
+  players one by one (Code.gs `members`).
+- A rights group has a key beside its name and comes first (then the others, the newest first within each); its members
+  have no **Add all** or **Remove all**, and **+ Add a player** asks one confirm naming its rights ("Give X: Host live
+  games?", `giveOk`; the player's bar asks the same). A member in `roff` shows "rights off: the code changed".
+- The player's bar: a rights group's chip carries the key, and **Rights:** sums up the rights they hold.
+- **Merge into** reads `{mergePlan}` first and its confirm lists the groups the kept name joins, the rights groups
+  dropped with their rights, and leaving the admin list; not read, no merge.
+- **Admins (outside the groups)**: a read-only line from `{roles: 1}` (Q408 answer 6).
+- A rights change's errors in words (`rightsErr`: `token`, `members`, `input`, `server`); for `server` ("Saved in part:
+  its Audit record failed. Try again to finish it.") **Try again** sends the same request again. After any answer the
+  players are read again, so no change is sent from a list the sheet no longer has.
+- **One Groups write at a time on the whole page, of any kind** (rule W27; `rPend`, `gStart`, `gReread`): a group made,
+  renamed, set or deleted, a right given or taken away, a player in or out. From the request until the players are read
+  again with the answer applied (a read dropped by a newer one is made again), every Groups control is off (the page's
+  buttons and selects, a player's bar's × and "+ Add to a group"); the group changed is greyed and shows the rights list
+  sent. So no join reaches a group whose rights are changing, and none goes in unasked.
+- Before v204: the page as before, and no `roles` or `mergePlan` read. `tests/admin.smoke.js` (players part, both
+  widths), `tests/gates.test.js`.
 
 ### A player's Journey
 

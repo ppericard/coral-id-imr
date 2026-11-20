@@ -1065,6 +1065,41 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
+  // own id, its own kind and note).
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await qa.ready(p);
+    await p.evaluate(() => smokeAnswer(false));
+    await p.waitForSelector('#view .q.done [data-rep]', {state: 'attached', timeout: 10000});
+    // On a phone the Report button sits under More.
+    if (!(await p.isVisible('#view .q.done [data-rep]'))) await p.click('#view #fbmbtn');
+    const again = [];
+    for (const [why, note] of [
+      ['wrong', 'first'],
+      ['other', 'second']
+    ]) {
+      await p.click('#view .q.done [data-rep]');
+      await p.check(`#repdlg input[name="why"][value="${why}"]`);
+      await p.fill('#repdlg textarea[name="note"]', note);
+      await p.click('#repdlg button[type="submit"]');
+      await p.waitForSelector('#repdlg', {state: 'detached', timeout: 5000});
+      again.push(await p.evaluate(() => document.querySelector('#view .q.done [data-rep]').disabled));
+      // Achievement toasts or cards must not sit over the next tap.
+      await p.evaluate(() => document.querySelectorAll('.unlock, .achpop').forEach(x => x.remove()));
+    }
+    const sent = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-reports') || '[]').map(x => [x.id, x.why, x.note]));
+    if (again.some(Boolean) || sent.length !== 2 || sent[0][0] === sent[1][0] || sent.map(x => x[2]).join() !== 'first,second')
+      fails.push(`Two reports from one answer: ${JSON.stringify({again, sent})}`);
+    await c.close();
+  }
   // The Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
   // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
   {
@@ -3165,8 +3200,8 @@ async function tipsCheck(b, base) {
       await p.evaluate(() => {
         const t = Date.now();
         localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
-        // The one-tap question's session: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
-        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7}}));
+        // The one-tap question's session in the corals: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
+        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7, s: 'coral'}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
       });
       await p.reload();
@@ -3223,8 +3258,51 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
-    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged.
+    // The Custom quiz tip: a player with 100 questions, 3 photos enlarged (no zoom tip) and the Custom quiz never opened
+    // gets it at a break in the Quiz; the card says what the Custom quiz does, fits the screen; Show me opens the Custom
+    // quiz's picking page and counts as an open, so it never comes again (also not to one who opened it before).
+    {
+      const [c, p, errs] = await open(w, h, {q: 100, z: 3});
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p, {right: true});
+      if (!r.next) fails.push(`${W} custom tip: not shown to a player who never opened the Custom quiz`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Quiz yourself on just the genera you pick' ||
+          !/^The Custom quiz asks only the genera you choose\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} custom tip card: ${JSON.stringify(k)}`);
+        await p.click('.tipcard [data-b="1"]');
+        // The page is drawn (the open is counted when its route runs, after the address changes).
+        await p
+          .waitForFunction(() => location.hash === '#practice/custom' && JSON.parse(localStorage.getItem('reefid-tips')).u.c === 1, null, {
+            timeout: 5000
+          })
+          .catch(() => {});
+        const st = await tips(p);
+        if ((await p.evaluate(() => location.hash)) !== '#practice/custom' || st.u.c !== 1 || (st.s.custom || []).length !== 1)
+          fails.push(`${W} custom tip Show me: ${JSON.stringify({hash: await p.evaluate(() => location.hash), st})}`);
+      }
+      if (errs.length) fails.push(`${W} custom tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened.
     for (const u of [
+      {q: 100, z: 3, c: 1},
       {q: 5, z: 0},
       {q: 80, z: 3}
     ]) {
@@ -5227,6 +5305,12 @@ async function onePath(b, base) {
         if (start) await p.click(start).catch(() => {});
       } else await p.click(again).catch(() => {});
       await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
+      // A turned lecture photo (imr-p12_i8) shown from its original has no src while its picture is being made (app.js
+      // turnSet: "nothing shown meanwhile", tests/rotate.test.js): the photos are read once each has one. One that never
+      // gets one stays "" and fails below.
+      await p
+        .waitForFunction(sel => [...document.querySelectorAll('#view ' + sel)].every(i => i.getAttribute('src')), sel, {timeout: 5000})
+        .catch(() => {});
       // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it), by its file
       // name, or by its online original once R2 failed (core.js photoAway: R2 is cut off here).
       seen.push(
@@ -5239,15 +5323,18 @@ async function onePath(b, base) {
             )
           );
           return [...document.querySelectorAll('#view ' + sel)].map(i => {
-            const u = i.getAttribute('src') || '',
-              x = photoFileOf(u),
+            const u = i.getAttribute('src') || '';
+            // A turned lecture photo (imr-p12_i8) shown from its original once R2 is cut off is a picture the app drew in a
+            // canvas (a blob: address, app.js turnSet): it names no genus, so it is counted as a photo and left out of the genus check.
+            if (u.startsWith('blob:')) return '(turned)';
+            const x = photoFileOf(u),
               f = x ? x.f : u.replace(/#.*$/, '').replace(/\/(small|medium|large)\.(\w+)$/, '/original.$2');
             return of[f] || f;
           });
         }, sel))
       );
     }
-    const out = seen.filter(n => !MET.includes(n));
+    const out = seen.filter(n => n !== '(turned)' && !MET.includes(n));
     if (!seen.length || out.length) labOut[h + (start ? ' ' + start : '')] = {photos: seen.length, out: out.slice(0, 3)};
   }
   if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
@@ -5403,7 +5490,12 @@ async function namesCheck(b, base) {
             line: (q('#after .fbline') || {}).textContent || '',
             visible: q('#after .fb').innerText,
             h: box(mb).height,
-            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1
+            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1,
+            // ⚑ Report a problem (rule U14): on the sheet itself, never inside the More panel, in view and enabled with More closed
+            rep: (e =>
+              !!e && !!e.offsetParent && !e.disabled && box(e).top >= 0 && box(e).bottom <= innerHeight && !q('#fbmore [data-rep]'))(
+              q('#after .fb > .fbrep [data-rep]')
+            )
           };
         mb.click();
         const open = st();
@@ -5418,6 +5510,7 @@ async function namesCheck(b, base) {
       if (!m.before.line || /ID tips|Your answer|Similar names/.test(m.before.visible))
         bad.push('the short sheet holds more than one line');
       if (m.before.h < 44 || !m.before.row) bad.push('More is not a 44 px target on the row of Next');
+      if (!m.before.rep) bad.push('Report a problem is not on the sheet in view, behind More or disabled');
       if (m.open.hidden || !m.open.tips || m.open.exp !== 'true' || m.open.label !== 'Less' || !m.open.next) bad.push('More does not open');
       if (!m.shut.hidden || m.shut.tips || m.shut.label !== 'More') bad.push('Less does not close');
       if (m.open.fb[1] - m.before.fb[1] !== 1 || m.again.fb[1] !== m.open.fb[1] || m.before.fb[0] < 1)
@@ -5914,6 +6007,7 @@ async function noUpscaleCheck(b, base) {
     const p = await c.newPage();
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    let measured = 0;
     for (const g of ['Tubastraea', 'Stylophora', 'Pocillopora', 'Anacropora']) {
       await p.evaluate(g => (location.hash = 'learn/genus/' + g), g);
       await drawn(p);
@@ -5935,6 +6029,8 @@ async function noUpscaleCheck(b, base) {
         const fileOf = i => (/\/(imrl?-[^/]*?)(?:-[tsm])?\.webp/.exec(i.currentSrc || i.src) || [])[1];
         const mine = [...document.querySelectorAll('img')].filter(fileOf);
         await Promise.all(mine.map(loaded));
+        // A lecture photo traced to its Corals of the World original lives on R2 only (no file in img/, where the pixels are
+        // read, and the stub gives it a stand-in of no real size): it is counted as shown, not measured.
         const out = {n: mine.length, over: [], lb: 0};
         for (const i of mine) {
           const n = await nat(fileOf(i));
@@ -5947,8 +6043,9 @@ async function noUpscaleCheck(b, base) {
           const li = document.querySelector('#lightbox .lb-in img');
           if (li) {
             await loaded(li);
+            if (fileOf(li)) out.lb++;
             const n = await nat(fileOf(li));
-            if (n) (out.lb++, out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)}));
+            if (n) out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)});
             document.querySelector('#lightbox [data-x]')?.click();
           }
         }
@@ -5956,10 +6053,13 @@ async function noUpscaleCheck(b, base) {
       });
       if (!sh.n) fails.push(`no upscale ${w}: the ${g} sheet shows no IMR lecture photo`);
       if (!sh.lb) fails.push(`no upscale ${w}: the enlarged view of a ${g} lecture photo did not open`);
+      measured += sh.over.length;
       for (const o of sh.over)
         if (o.s > 1.005)
           fails.push(`no upscale ${w}: ${o.f} (${o.n.join('x')}) on the ${g} sheet is drawn ${o.s}x its pixels (${JSON.stringify(o)})`);
     }
+    // The pixels of some photo were read: a sheet check that measures nothing is no check.
+    if (!measured) fails.push(`no upscale ${w}: no lecture photo on the four sheets has a file in img/ to measure`);
     const seen = await p.evaluate(async f => {
       const nat = await new Promise(ok => {
         const i = new Image();
@@ -6056,6 +6156,25 @@ const PARTS = [
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
+    // An IMR lecture photo traced to its original lives on R2 only (no file in img/: tools/apply_imr_originals.py) and
+    // its element falls back to that original on www.coralsoftheworld.org once R2 is cut off. Every address outside the
+    // site is cut off in these checks, so a stand-in picture answers for that one host (4:3, the size of no real photo)
+    // and the pages that show a lecture photo keep one on screen, as when img/ held the screenshots. A context's own
+    // "cut off everything outside the site" route (registered later, so it wins) is made to leave that host alone; the
+    // net smoke checks the real fallback chain.
+    const CW = 'www.coralsoftheworld.org',
+      route = c.route.bind(c);
+    await route(
+      u => u.hostname === CW,
+      r =>
+        r.fulfill({
+          status: 200,
+          contentType: 'image/svg+xml',
+          headers: {'access-control-allow-origin': '*'},
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900"><rect width="1200" height="900" fill="#789"/></svg>'
+        })
+    );
+    c.route = (m, h, op) => route(typeof m === 'function' ? u => m(u) && u.hostname !== CW : m, h, op);
     // Fetches in flight, for drawn().
     await c.addInitScript(() => {
       const f = window.fetch;

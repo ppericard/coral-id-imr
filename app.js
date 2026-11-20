@@ -148,9 +148,12 @@ const photoIdx = () => {
 const photoLook = f => photoIdx().f.get(f);
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 240 (small), 500 (medium) and 1024 px (large).
-// A bare {f} (the Lab's photos) finds its record, so its online original, by name (R2 switched off: AWAY from the start).
+// A bare {f} (the Lab's photos, Coral basics') finds its record by name: its online original (R2 switched off: AWAY from the
+// start), and its version (ver: a photo whose files were remade, as the IMR lecture photos replaced by their originals, is a
+// new address for the caches, whoever asks for it).
+const bareF = p => !!p.f && Object.keys(p).length === 1;
 const loc = (p, s) => {
-  const o = AWAY && !p.src ? photoLook(p.f) || p : p;
+  const o = (AWAY && !p.src) || (bareF(p) && DATA) ? photoLook(p.f) || p : p;
   return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
@@ -747,6 +750,7 @@ function treeGenera(X, F) {
         fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
         wfam: [],
         imrName: G.imr || '', // the IMR tag
+        cname: G.common || '', // its common name (fish.json common), under its name on its first-meeting card (unitCname)
         // that IMR sub-entry names this genus alone (Chromis; not Surgeonfish, which names three)
         imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
         fish: 1,
@@ -2349,6 +2353,31 @@ const fishNextOf = o => {
     lines: ['Every fish family open to you is in your game: no new one comes for a while.', ...L]
   };
 };
+// The sea slugs' card when every genus in play is met and none may open now (quiz.js allMetDue; UNITS seaslug done):
+// their circle 3 opens by itself at its gate, so the card says, before it, what comes next (Pierre, 2026-11-20: «Ya pas
+// de carte avant de passer au cercle suivant pour les nudibranches?»). o: c3 circle-3 genera not met, c3due treeC3, wait
+// genera with no photo yet. Pure (tests call it): {k, kick, title, lines}, k 'c3' before circle 3, else 'all'.
+const slugNextOf = o => {
+  const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`,
+    L = [];
+  let k = 'all';
+  if (o.c3 && !o.c3due) {
+    k = 'c3';
+    L.push(
+      `Next: ${pl(o.c3, 'more genus', 'more genera')}. They come once you know the genera you have well, about Open Water on average: keep practising them!`
+    );
+  } else {
+    if (o.wait)
+      L.push(`${pl(o.wait, 'more genus joins', 'more genera join')} the game as soon as ${o.wait > 1 ? 'their' : 'its'} photos are in.`);
+    if (!L.length) L.push('What’s left: take each genus to Instructor, through its mastery exam.');
+  }
+  return {
+    k,
+    kick: 'Every genus met',
+    title: 'You’ve seen them all, for now',
+    lines: ['Every sea slug genus open to you is in your game: no new one comes for a while.', ...L]
+  };
+};
 // A tree subject's photo by its name, for the admin's "Bad photo" flag (flag.js; UNITS photo): {id, its key in the
 // subject's curation (core.js treePid: one photo under its candidate and reference names), and what the flag records:
 // file (its name), unit (the family showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
@@ -2415,6 +2444,9 @@ const TREE_UNITS = {
   circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : []),
   // Circle 2 once every circle-1 unit was asked, circle 3 at its gate (treeGate, treeC3).
   gate: treeGate,
+  // How a Memory pair is made (proto/pairs.js MEMORY): two photos of one unit that show it differently (one view per unit:
+  // a different species, else a juvenile and an adult, else another observation).
+  memory: 'photos',
   // The species a photo shows (its sp, by the name treeGenera spn gives it), for the answer log (speciesShown).
   species: p => (TREEU && TREEU.spn && p && p.sp && TREEU.spn[p.sp]) || '',
   // A photo by its name, for the admin's "Bad photo" flag (flag.js; treePhoto).
@@ -2461,6 +2493,8 @@ const UNITS = {
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
+    memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
     // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
     // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
@@ -2926,6 +2960,17 @@ const UNITS = {
     startFb: false,
     // Its three circles (tools/seaslug_game.py CIRCLES) of genera (core.js SUBJECTS unitRank) open at the fish's
     // thresholds (TREE_UNITS gate), circle 3 by itself: no offer card (the fish's speaks of the IMR course).
+    // Every genus in play met and none may open now (quiz.js allMetDue): the card that says what comes next (slugNextOf),
+    // circle 3 above all.
+    done: () => {
+      if (!TREEU) return null;
+      const left = n => photoAny(n) && !introduced(n);
+      return slugNextOf({
+        c3: (TREEU.c3 || []).filter(left).length,
+        c3due: treeC3(),
+        wait: slateGenera().filter(n => !photoAny(n)).length
+      });
+    },
     // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
     // its first English name as information (vernFirst; never a choice).
     taxon: p => {
@@ -3149,6 +3194,14 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
+// The common name of a unit whose own label is a scientific name (a coral genus, a fish scientific genus, a sea slug
+// genus), for its first-meeting card, right under its name: its record's `cname` (fish.json common), else its first
+// English name (vernFirst); '' for a unit labelled by its common name already, or one with none. Any subject (rule S1).
+const unitCname = n => {
+  const g = GX(n) || {},
+    c = uplain(n) ? '' : g.cname || vernFirst(n);
+  return c && c.toLowerCase() !== unameT(n).toLowerCase() ? c.charAt(0).toUpperCase() + c.slice(1) : '';
+};
 // ID tips heading: the lecture for slate genera (a slate genus the lecture skips carries its own `tl`, naming the
 // Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
@@ -3381,7 +3434,7 @@ const MODES = {
     ['quiz', 'Quiz', 'Name the genus'],
     ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
-    ['pairs', 'Memory', 'Match colony and corallites']
+    ['pairs', 'Memory', 'Match photos of the same genus']
   ],
   // Identify shows the current subject's tool only: each subject names its own (app.js UNITS
   // identify); the other subject's tool is reached through the subject switch.
@@ -3499,8 +3552,10 @@ const CARD_KINDS = {
   step: '🧗', // a big step the player chooses (fish circle 3, quiz.js openOfferShow): the warm --warn hue, "Not now" on top
   update: '🔄',
   feature: '✨',
+  // each subject's own cards (core.js SUBJECTS card: its genus cards, its all-met card), one each
   genus: '🪸',
   fish: '🐟',
+  'sea slug': '🐌',
   tip: '💡',
   bonus: '🎁',
   account: '💾',
@@ -4244,11 +4299,11 @@ const json = u =>
 // index.html runs the scripts through its loader (retries on an unstable line): window.BOOT says they have all run.
 const domReady =
   window.BOOT || new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
-// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in cand.json, out of data.json
+// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in data/cand.json, out of data.json
 // (tools/datajson.py; the players never need them), so the preview fetches them too.
 const draftCand = () =>
   /[?&]draft\b/.test(location.search)
-    ? fetch('cand.json', {cache: 'no-cache'})
+    ? fetch('data/cand.json', {cache: 'no-cache'})
         .then(okJson)
         .then(j => j.cand || {})
         .catch(() => ({}))

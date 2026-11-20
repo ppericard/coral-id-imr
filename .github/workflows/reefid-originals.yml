@@ -1,0 +1,39 @@
+# The Corals of the World originals of the IMR lecture photos, to Cloudflare R2 (ROADMAP "IMR lecture photos never
+# upscaled; the Corals of the World captures replaced by their originals", Pierre, 2026-11-18, "C12 A+D"):
+# tools/fetch_imr_originals.py downloads each original once from coralsoftheworld.org (one request every 2 s), cuts and turns
+# it as the lecture framed it (tools/imr_frames.json) and writes its four sizes under the lecture photo's own file name;
+# tools/r2_sync.sh then uploads them. Their records (data.json course: src, cr, ro, ar, iv) are in the PR, the old
+# screenshots out of img/. Runs on a push that changes the frames file, and by hand (Actions > IMR lecture originals to R2).
+# Read only: no commit, no repository code beyond the tool and Pillow (from PyPI by hash); the downloaded pictures are
+# decoded here only, in a job that holds the R2 secrets and nothing else (host fixed in the tool: www.coralsoftheworld.org).
+name: IMR lecture originals to R2
+on:
+  push:
+    branches: [main]
+    paths: [tools/imr_frames.json, tools/fetch_imr_originals.py]
+  workflow_dispatch:
+permissions:
+  contents: read
+# One writer of the bucket at a time (photos-r2.yml, approved-photos.yml).
+concurrency:
+  group: photos-r2
+  cancel-in-progress: false
+jobs:
+  originals:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      - run: pip install --require-hashes -r tools/requirements.txt
+      - run: python tools/fetch_imr_originals.py --out r2-upload
+      - run: tools/r2_sync.sh r2-upload
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}

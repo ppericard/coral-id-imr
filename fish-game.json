@@ -1,5 +1,5 @@
 {"v":1,
-"built":"2026-11-19",
+"built":"2026-11-20",
 "about":"the fish photos Pierre put in play, hosted on R2 (tools/fish_game.py; core.js fishPhotos)",
 "photos":{
 "t01":[
@@ -13620,7 +13620,6 @@
 {"f":"fish-s162-cand-590335293","o":"326003666","src":"jpg","a":"(c) Debra Baker, some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"world","e":2,"jt":"o1g3ml1p","auto":"cand","ar":1.27},
 {"f":"fish-s162-cand-591236658","o":"326452089","src":"jpg","a":"(c) Debra Baker, some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"world","e":2,"jt":"p1g2smsp","ar":1.35},
 {"f":"fish-s162-cand-642270750","o":"351915253","src":"jpg","a":"(c) Ben Costamagna, some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"dauin","e":2,"jt":"o1g1sssp","auto":"cand","ar":1.33},
-{"f":"fish-s162-cand-648857166","o":"355804123","src":"jpg","a":"(c) Ben Costamagna, some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"dauin","e":2,"jt":"d1g1sm1p","ar":0.75},
 {"f":"fish-s162-cand-654671822","o":"358844968","src":"jpg","a":"(c) Ben Costamagna, some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"ph","e":2,"jt":"p1g2sssp","ar":1.33},
 {"f":"fish-s162-cand-654773714","o":"358899282","src":"jpg","a":"(c) Ben Costamagna, some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"ph","e":2,"jt":"o1d1ml1p","auto":"cand","ar":1.33},
 {"f":"fish-s162-cand-682566659","o":"373492574","src":"jpg","a":"(c) 呂一起(Lyu yi-chi), some rights reserved (CC BY)","lic":"cc-by","t":"Mirolabrichthys tuka","sp":"s162","loc":"ph","e":2,"jt":"h1g2sm1p","ar":1.33},
@@ -14622,7 +14621,7 @@
 {"f":"fish-s330-cand-425929594","o":"239181323","src":"png","a":"(c) 呂一起(Lyu yi-chi), some rights reserved (CC BY)","lic":"cc-by","t":"Parupeneus barberinoides","sp":"s330","loc":"world","e":1,"jt":"p0g2bl1","auto":"cand","ar":1.07},
 {"f":"fish-s330-cand-429457438","o":"241003116","src":"jpeg","a":"(c) Nicola Crockford, some rights reserved (CC BY)","lic":"cc-by","t":"Parupeneus barberinoides","sp":"s330","loc":"ph","e":1,"jt":"o1g2bm1","auto":"cand","ar":1.78},
 {"f":"fish-s330-cand-525973262","o":"292284890","src":"jpg","a":"(c) libby hepburn, some rights reserved (CC BY)","lic":"cc-by","t":"Parupeneus barberinoides","sp":"s330","loc":"world","e":1,"jt":"p1g2bl1","auto":"cand","ar":2.14},
-{"f":"fish-s330-cand-551266134","o":"305729774","src":"jpg","a":"(c) 呂一起(Lyu yi-chi), some rights reserved (CC BY)","lic":"cc-by","t":"Parupeneus barberinoides","sp":"s330","loc":"world","e":1,"jt":"p1g2bm1j","ph":"juvenile","auto":"cand","ar":1.33},
+{"f":"fish-s330-cand-551266134","o":"305729774","src":"jpg","a":"(c) 呂一起(Lyu yi-chi), some rights reserved (CC BY)","lic":"cc-by","t":"Parupeneus barberinoides","sp":"s330","loc":"world","e":1,"jt":"p1g2bm1","auto":"cand","ar":1.33},
 {"f":"fish-s330-cand-597909874","o":"329807253","src":"jpg","a":"(c) TonyT, some rights reserved (CC BY)","lic":"cc-by","t":"Parupeneus barberinoides","sp":"s330","loc":"world","e":1,"jt":"p1d1ss1","auto":"cand","ar":2.05},
 {"f":"fish-s330-cand-693196487","o":"378985582","src":"jpg","a":"(c) Martin Kennewell, some rights reserved (CC BY-NC)","lic":"cc-by-nc","t":"Parupeneus barberinoides","sp":"s330","loc":"ph","e":1,"jt":"d1g1bm1","auto":"cand","ar":0.71},
 {"f":"fbPahep_uk","o":"https://www.fishbase.se/photos/PicturesSummary.php?ID=5991&what=species&pic=Pahep_uk.jpg","src":"https://www.fishbase.se/images/species/Pahep_uk.jpg","a":"(c) N. Bailly, via FishBase, some rights reserved (CC BY-NC 4.0)","lic":"cc-by-nc","t":"Parupeneus heptacanthus","sp":"s556","loc":"ph","e":5,"jt":"p1g0sl1","auto":"ref","via":"fishbase","from":"fishbase","ar":1.45},

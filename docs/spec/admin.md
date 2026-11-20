@@ -144,12 +144,30 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   Journey read it (`tests/registry.test.js`). **One Tree page for every subject** (`admin.js` `renderTree`): its trees,
   rows, tags and node pages come from the subject's builder in `TREE_BUILD`, picked by the same declared shape
   (`treeShape`, `treeBuild`; the shared node-photo lists' adapters, `admin-nodephotos.js` `NODE_PHOTOS`, too;
-  `tests/treebuild.test.js`; [admin-tree.md](admin-tree.md)). Candidates, the photo review pages and the tiles still read
-  each side's own state (the study's steps 5-8);
+  `tests/treebuild.test.js`; [admin-tree.md](admin-tree.md)). **One Candidates swiper for every subject**
+  (`admin.js` `renderCand`): the frame (the queue's switch, the row of toggles, the card and its bar, the empty page, the
+  keys, the photo that does not load) is one; the queue, the card's parts and what each button writes come from the
+  subject's builder in `CAND_BUILD`, picked by the same declared shape (`candBuild`): `flat` in `admin.js` (the corals'
+  `candQueue`, quality and growth form, the cells' cap and the colony a photo replaces, Retest), `tree` in `admin-fish.js`
+  (`fishQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
+  listed above `CAND_BUILD`; the draft writes stay where they were (the corals' top level, a tree subject's part) and so
+  do `cand.json` and every browser key (`tests/candbuild.test.js`; [admin-photos.md](admin-photos.md)). **One band review
+  for every subject** (`admin.js` `renderReview`, and `renderDiff` for By difficulty): the gate, the bar, the bands and
+  their tiles, the zoom and ×, the drag and the keys are one frame; the axes (the corals' Quality and Growth form, the
+  tree subjects' Ease and Phase & framing), their bands and tiles, and By difficulty's ratings come from the subject's
+  builder in `REVIEW_BUILD`, picked by the same declared shape (`reviewBuild`; the `GROUPS` review views carry an `axis`
+  and `hasPage` gives a subject the axes of its builder, no subject field needed). The growth-form axis is the corals'
+  named hook (rule C4); the quality and ease scales stay two (study §6 c); every draft write and browser key is where it
+  was (`tests/reviewbuild.test.js`; [admin-photos.md](admin-photos.md)). The tiles still read each side's own state (the
+  study's step 8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
-  set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
-  candidate list, `fishLoad` `key`); its Auto details label each decision in, back in (log `b`) or set aside;
+  set aside and its route out of one it put in (`sortBack`, `sortOut`) reading the pass's date of each candidate
+  (`passAt`: `data/suggest.json` `by`, through the key of its candidate list, `fishLoad` `key`); its Auto details label each
+  decision in, back in (log `b`) or set aside (a photo taken out is logged as a plain reject); the tile, family, coverage,
+  pairs and review pages and the Candidates rows read a photo's tags, ease, phase and crop through `readView` (`autosort.js`
+  `sortView`: what the auto-sort wrote that the pass has judged anew since is left out, so the pass's value shows, as the
+  game plays it), the writers never (rule A1);
 - `tags`, for every tree subject (the fish, the sea slugs), its whole rubric, declared and never defaulted: the seven
   positions of a photo's tag code (`names` and, by position, `[value, label, words, more]`), the flags and the phase row;
   `core.js` `treeRubric` writes down what the tree subjects share once (the whole, colour loss, clarity, size and count
@@ -255,7 +273,9 @@ the sign-out seal's [design note](../reviews/2026-11-09-admin-signout-seal.md)).
 - **A click's cost**: a click's write stores the draft's text `snap` as it is and parses no draft when no other tab
   wrote, and `autoWhen` skips the fish part's keeps when the click left that part as it was (the same object: the admin
   never writes into it; `tests/adminclick.test.js`). The fish auto-sort at load (`fishAutoRun`, which reads
-  `fish-cand.json`) runs once the first page is drawn and the page is idle (`requestIdleCallback`, 4 s at most).
+  `data/fish-cand.json`) runs once the first page is drawn and the page is idle (`requestIdleCallback`, 4 s at most), at
+  every admin load whatever page the admin stays on (rule A1); a Publish that comes first runs it before it reads the
+  draft (`asortDone`; "What the first page waits for", below).
 - **Undo steps**: the last 60, as many as fit in `HIST_ROOM` (4.5 million characters: with a draft over a million
   characters, one or two), kept in `sessionStorage` `reefid-admin-undo` with the draft they lead to (`keepHist`, written
   once the clicks pause for `HIST_WAIT`, 1.5 s, and when the page is hidden or left), so they survive a reload of the tab
@@ -292,8 +312,8 @@ The draft button carries the status: "● Publish" with a draft (its title lists
 
 - `admin.html?readonly` works without a token (download JSON instead of Publish); `?readonly` keeps no draft (clicks
   live in the tab only); the lock screen links to it.
-- `admin.html?demo` opens every page without a token, so agents can see and test the admin: `admin-demo.js` (loaded
-  before `admin.js`, inert without `?demo`) replaces `fetch` for the sync script and the GitHub API with in-memory
+- `admin.html?demo` opens every page without a token, so agents can see and test the admin: `admin-demo.js` (fetched
+  only with `?demo`, before the page boots: "What the first page waits for") replaces `fetch` for the sync script and the GitHub API with in-memory
   replies shaped like `Code.gs`'s (`answers_`, `stats_` via `core.js` `eloOf` / `confusionOf`, `users_` with merge and
   delete, `reports_`) and GitHub's (`curation.json` from the site, Publish kept in memory), on 7 made-up players (~1150
   answers, seeded so every run is the same), a few anonymous answers and 5 reports; any other outside call is refused.
@@ -325,15 +345,32 @@ The draft button carries the status: "● Publish" with a draft (its title lists
     Cache Storage under the blob's sha (`blobText`, `reefid-admin-blobs`, the latest only: a sha never changes its blob):
     the next visit and every Publish (`fresh()` re-reads it) ask GitHub for the sha only. Public data (the file is on the
     site), not the declined copy of players' data (ROADMAP "Declined for now"). Not in the demo.
-  - `suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
+  - `data/suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
     work of laying them over the candidates) is read by the photo pages, the Inbox count and the auto-sorts, never by a
     Players page (`sugOwn`). Opened on a Players page (the default), `start()` does not wait for it: the candidates' laying
     (`sugCands`) and the auto-sorts (`sugRun`) are left in `SUG_LATE`, run by `sugLoad` once the sheet's reads are in and the
     page is idle (`sugLater`), or at once when a page that needs them is asked for (`render()`'s gate: Loading… until
     then). Opened on any other page it waits for them as before. Until they are in, the header's Inbox count leaves out the
     suggestions (it comes up with the laying, a few seconds after Activity).
-  The fish auto-sort still reads `fish-cand.json` (10 MB) and `fish.json` at idle after that (a 1-second block on a phone
-  profile): left, ROADMAP "Admin opening".
+  Some scripts are fetched only by the pages that need them (Pierre, 2026-11-19; [record](../decisions/2026-11-20-admin-lazy-loads.md)):
+  - **Scripts.** `analysis.js` (207 KB), `admin-analyses.js` and `admin-demo.js` are inert tags in `admin.html`
+    (`type="text/plain"`, `data-lazy="group group"`: the version stamping and the name checks still see them, in their old
+    order); `lazyLoad(group)` inserts the real tag of each in that order, one after the other (a file only once the one
+    before it has loaded: a dependent never runs after its dependency failed, and the group rejects, so the page shows its
+    load error), once per file, and a file that failed is asked for again. Groups: `analyses` (`analysis.js`, `admin-analyses.js`) and `demo` (`analysis.js`,
+    `admin-demo.js`). `render()` asks for `analyses` for any Analyses page that is not live (`anPage`; `lazyPage`:
+    Loading…, one request however often `render()` runs, a word on the page if the file cannot be fetched);
+    `admin-analyses.js` draws the page it finds on screen when it loads, as it always did for an address that came before
+    it. An address that opens on an Analyses page asks at once (`lazyAhead`), beside the data files. `?demo` boots only
+    after `lazyLoad('demo')` (the demo patches `fetch` before the first read), so `DEMO` reads the address, not
+    `window.ADMIN_DEMO`. A visit to Activity fetches none of them but the demo's own pair. `admin-heatmap.js` stays a
+    plain tag: it puts `heatLab`, `heatUp`… in the global scope, which `admin-journey.js` names on any Journey.
+  - **The fish auto-sort** (`fishAutoRun`: `data/fish-cand.json` 10 MB and `fish.json`, a 1-second block on a phone
+    profile) is never on the opening's path: it starts once the first page is drawn and the page is idle (an admin who
+    opened on a Players page: once its suggestions are in, `sugLater`, then idle, 4 s at most), at every admin load
+    whatever page the admin stays on (rule A1). A Publish that comes before it has finished runs it, or waits for it,
+    first (`asortDone`: the draft it reads holds the load's fish proposals).
+  Left, ROADMAP "Admin opening": the answer log, and the data files' revalidation in one call (a deploy manifest).
 - **Memos**: `photos` / `own` / `cands` walk every genus and are memoized per draft state, kept from page to page:
   `render()` clears them only when the draft differs from the one they were computed for (`memoFresh`), and photos or
   candidates sent to another genus are indexed once per state (`sentTo`); code that changes `DRAFT` and then reads them

@@ -14,9 +14,10 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
 - `tools/fish_source.json` (hand-maintained, the sources' part; its `_doc` key explains every field): the regional
   identification keys and the one in force (`keys`, `deploy`), the teaching nodes with their reference mapping, the
   species list in PDF order with the cheatsheet rank, the circle-3 sources (`sources`) and the retired ids (`retired`).
-- The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, cues, look-alike lines and
-  phase lines from the IMR fish presentation, the sub-entries' cues, the starter core `start` and the declared
-  look-alike groups `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
+- The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, IMR tag (`src: imr`), dive-sign
+  mark (`sign`), slides (`sl`), cues, look-alike lines and phase lines from the IMR fish presentation, the sub-entries'
+  slides and cues, each species' presentation slide (`sl`), the starter core `start` and the declared look-alike groups
+  `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
 - `tools/build_fish.py`, the build, documented at its top: it reads the two, composed by `tools/instance.py`
   `fish_source`, and writes `fish.json`. `tests/fish.test.js` checks its structure.
 - Only derived lists are in the repository, never the PDF or the slides.
@@ -178,6 +179,10 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
   `quiz.js` `duelPick` and `planDuel` never pair two units one label names (`choiceNames`: no duel "Brown damsel or
   Brown damsel?"). The genus questions' "common name" nudge (`typeOther`) and the family questions' name index read them
   too. Tests: `tests/fishcommon.test.js`.
+- A unit labelled by its scientific name (a fish genus, any subject's genus) shows its common name in bold right
+  after it on its first-meeting card, above the family line (`quiz.js` `introCard`, `app.js` `unitCname`: the
+  record's `cname`, a genus's fish.json `common`, else its first English name; Pierre, 2026-11-20). Tests:
+  `tests/scigenera.test.js`, `tests/fish.smoke.js`.
 
 ## The name index
 
@@ -272,7 +277,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   `trait`, Pierre's `obs`, `note` and sources (`src`, `by`), from a research note; `tools/fish_judge.py` caps the ease of
   a juvenile photo unless its entry is A or its species is in `early` (`judging/FISH.md`).
 - `tools/fish_judge.json` `add` holds the photos a judging pass added for entries short of very easy ones (from
-  `fish-cand.json`).
+  `data/fish-cand.json`).
 - Each judged photo carries `e` (ease 1-5), `jt` (its tags) and maybe `c` (a proposed crop `[l, t, r, b]`, never
   applied), written by `tools/fish_judge.py` from `tools/fish_judge.json` (rubric: `judging/FISH.md`;
   `tools/fish_photos.py` applies them again on a rebuild, `--check` tells whether the file is current).
@@ -405,7 +410,7 @@ order's first (ROADMAP "The Tree tab").
   Home's landscape tiles (a shape that suits the tile) do not read the default cover.
 - **Corals**: a coral genus is both the unit and the leaf, so the rule leaves its cover as it is (rule P1's source
   order, then `applySlots`); it would apply to coral nodes above the genus (a family) once the Tree tab has them, which
-  first needs each genus's distinct observers near the centre written at build (`presence.json` holds the coral
+  first needs each genus's distinct observers near the centre written at build (`data/presence.json` holds the coral
   species' presence in the Philippines, `ok`, `rg`, not counts near the centre; `tools/coral_presence.py` already asks
   iNaturalist for the counts around the centre and would keep them).
 

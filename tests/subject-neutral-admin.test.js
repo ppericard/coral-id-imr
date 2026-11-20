@@ -99,7 +99,7 @@ const PROXIES = [
 // The counts today: proxy -> file -> occurrences on non-comment lines.
 const COUNTS = {
   'ASUBJ.rank': {'admin-journey.js': 1, 'admin.js': 15, 'analysis.js': 1},
-  "rank: 'family' view option": {'admin.js': 4},
+  "rank: 'family' view option": {'admin.js': 2},
   '.sheets': {
     'admin-analyses.js': 1,
     'admin-content.js': 1,
@@ -107,18 +107,18 @@ const COUNTS = {
     'admin-heatmap.js': 3,
     'admin-journey.js': 2,
     'admin-visits.js': 4,
-    'admin.js': 32,
+    'admin.js': 30,
     'analysis.js': 2
   },
-  '.admin.cur': {'admin-content.js': 8, 'admin-covers.js': 2, 'admin-demo.js': 1, 'admin-fish.js': 1, 'admin-light.js': 2, 'admin.js': 25},
+  '.admin.cur': {'admin-content.js': 8, 'admin-covers.js': 2, 'admin-demo.js': 1, 'admin-light.js': 2, 'admin.js': 24},
   '.replay': {'admin-demo.js': 2, 'admin-journey.js': 1, 'admin-visits.js': 2, 'admin.js': 13},
   '.hash test': {'admin.js': 3},
-  FISHS: {'admin-covers.js': 3, 'admin-fish.js': 10, 'admin-taxa.js': 1, 'admin.js': 22},
+  FISHS: {'admin-covers.js': 3, 'admin-fish.js': 6, 'admin-taxa.js': 1, 'admin.js': 22},
   'DATA.gen': {
     'admin-coraltree.js': 1,
     'admin-journey.js': 1,
     'admin-nodephotos.js': 2,
-    'admin.js': 46,
+    'admin.js': 45,
     'home.js': 2,
     'learn.js': 14,
     'progress.js': 1,
@@ -131,7 +131,7 @@ const COUNTS = {
 // 2. The names. [file, the study's row, the names]. admin-fish.js is one subject's file: every top-level name in it is
 // listed. In the other files a name is listed when it carries a subject word (SUBJECTS ids) or starts with a known family
 // (fu, frev, ct, fam: the fish units, the fish review, the corals' tree, the fish family sheet), plus, by hand, the other
-// half of a duplicate whose name says nothing (renderCand, viewGenus...). autosort.js is the tree subjects' auto-sort, all
+// half of a duplicate whose name says nothing (renderMont, viewGenus...). autosort.js is the tree subjects' auto-sort, all
 // of it named fish before the rename (ROADMAP "Architecture review, steps 3 and 4"): it has no twin, so only its number of
 // such names is held (NAME_COUNTS), not each name; likewise the basics modules, already one engine whose content
 // each subject registers into (Dup-18).
@@ -142,7 +142,7 @@ const WHOLE = ['admin-fish.js'],
     [
       'admin-fish.js',
       'Dup-3',
-      'FQ FFULL FASIDE FSKIP FPIN fishNotThisSel fishCrop FKEEP fishJudged fishRot fishSrc fishSrcTag fishName candSpecies fishInPlay fishZoom fishEdit fishAutoBlock bindFishAuto renderFishCand'
+      'FQ fishNotThisSel fishCrop FKEEP fishJudged fishRot fishSrc fishSrcTag fishName candSpecies fishInPlay fishZoom fishEdit fishAutoBlock bindFishAuto'
     ],
     ['admin-fish.js', 'Dup-9', 'FTAGS_OPEN fRow fVals fishRows bindFishRows'],
     ['admin-nodephotos.js', 'Dup-1', 'coralLive'],
@@ -153,9 +153,7 @@ const WHOLE = ['admin-fish.js'],
       'FUNSURE FUT fuJ FU_IMR FU_WALL fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuTreeOf fuGenusRef fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters famHref'
     ],
     ['admin.js', 'Dup-2', 'FISHS FISHA fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
-    ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo renderCand'],
-    ['admin.js', 'Dup-4', 'FREV frevRow renderFishReview renderQuality renderForm'],
-    ['admin.js', 'Dup-5', 'renderDiff FDIFF_MAX renderFishDiff'],
+    ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo'],
     ['admin.js', 'Dup-6', 'FMONT_T renderFishMont renderMont'],
     ['admin.js', 'Dup-7', 'FISHCOV renderFishCov fishTodoLines bindFishTodo FSCOPE renderCov'],
     ['admin.js', 'Dup-8', 'fishTile fuTile bindFishTiles repPhotoSubj coralRepTile fishRepTile'],

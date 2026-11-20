@@ -20,10 +20,10 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
   `cancel-in-progress: true`. Settings > Pages must use **GitHub Actions**; the workflow fails early while the legacy
   branch source is selected.
 - **The admin's Publish** pushes `curation.json` to `main`, which starts both Deploy Pages and Candidate photos (which
-  also runs on a push changing `suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json`, `tools/fish_game.py` or
-  `fish-photos.json`). Candidate photos commits `data.json`, `cand.json`, `excluded.json`, `fish-game.json`,
-  `fish-photos.json`, `fish-cand.json`, `tools/fish_refs.json`, `seaslug-cand.json`,
-  `seaslug.json`, `seaslug-game.json` and `img/` (and, in its `fish` job, `fish-cand.json` and
+  also runs on a push changing `data/suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json`, `tools/fish_game.py` or
+  `fish-photos.json`). Candidate photos commits `data.json`, `data/cand.json`, `data/excluded.json`, `fish-game.json`,
+  `fish-photos.json`, `data/fish-cand.json`, `tools/fish_refs.json`, `data/seaslug-cand.json`,
+  `seaslug.json`, `seaslug-game.json` and `img/` (and, in its `fish` job, `data/fish-cand.json` and
   `tools/fish_refill.json`) with `GITHUB_TOKEN`; its completion starts Deploy Pages again, so the bot's changes are published too
   ([photos.md › The Candidate photos workflow](photos.md#the-candidate-photos-workflow)).
 - **The build**: the deploy writes the players' curation, minifies the scripts of its staged copy with source maps,
@@ -67,10 +67,12 @@ The sync's tests: [sync.md › Tests](sync.md#tests).
 
 ## Repository attributes
 
-`.gitattributes`: every text file stored with LF (`* text=auto eol=lf`); the machine-written JSON (`cand.json`,
-`fish-cand.json`, `fish-game.json`, `suggest.json`) marked `linguist-generated`, so GitHub folds their diffs (`data.json`,
+`.gitattributes`: every text file stored with LF (`* text=auto eol=lf`); the machine-written JSON (`data/cand.json`,
+`data/fish-cand.json`, `fish-game.json`, `data/suggest.json`) marked `linguist-generated`, so GitHub folds their diffs (`data.json`,
 the hand-edited source of truth, stays shown); `docs/`, `tests/`, `tools/`, `judging/`, `.github/` and `.claude/` are
 `export-ignore`, so the deploy's `git archive` leaves them out of the site (nothing it serves loads them:
-`tests/artifact.test.js`; the sync script reads `tools/sync/Code.gs` from raw.githubusercontent.com). `.gitignore` also
+`tests/artifact.test.js`; the sync script reads `tools/sync/Code.gs` from raw.githubusercontent.com). `data/` is **not**
+`export-ignore`: the admin fetches its files from the published site (`tools/curplay.py` also reads two of them in the
+staged copy). `.gitignore` also
 keeps out `node_modules/` (a Playwright install by hand), `.DS_Store`, `r2-upload/`, `tools/.cache/` and
 `curation-play.json`.

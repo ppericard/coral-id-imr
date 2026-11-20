@@ -7,13 +7,15 @@ rule is in [README.md](README.md#the-index). Fish-only content rules are in [sub
 
 ### C1
 
-**Never contradict or "correct" the IMR course or its lecturers in the app.** Keep the IMR wording (families, lecture
-lines, mnemonics, spellings). Where another source differs, add at most a discreet, dated, sourced note ("Source X
-(year) says…", shown as "Other sources" from `gen[g].info`), never "the lecture is wrong/outdated". Obvious slide slips
-are silently not reproduced and mentioned to Pierre only. When a source is old, trust IMR unless a very reliable
-*recent* source says otherwise: IMR trainers may be more up to date than the literature.
-*Why:* Pierre is new at IMR and the app is used there; visibly correcting the trainers would hurt his relationships.
-*Source:* Pierre, by 2026-11-01.
+**Respect the IMR course: keep its wording, complement and update it with sourced, dated notes, never present it as
+wrong.** Keep the IMR wording (families, lecture lines, mnemonics, spellings). Where another source differs or adds to
+it, a discreet, dated, sourced note ("Source X (year) says…", shown as "Other sources" from `gen[g].info`), never "the
+lecture is wrong/outdated". An error of substance goes to `points.json` with its sources and is mentioned to Pierre; an
+obvious slide slip is not reproduced. The course is one solid source among others, never the only one: a category,
+phase or fact a solid, cited source documents may be added beside it (rule C2).
+*Why:* the app is used at IMR; openly correcting the trainers would hurt relationships, but the course is one solid
+source among others.
+*Source:* Pierre, by 2026-11-01; reworded 2026-11-20 («Ok, comme ça, cette formulation me va»).
 
 ### C2
 
@@ -54,7 +56,7 @@ wording, 2026-11-06.
 ### C5
 
 **Leave open discrepancies between sources to Pierre and the IMR trainers.** List them (questions for an IMR
-trainer, nomenclature points, content questions) in `points.json`, which Pierre settles in the admin (Inbox › To do ›
+trainer, nomenclature points, content questions) in `data/points.json`, which Pierre settles in the admin (Inbox › To do ›
 Points), in neutral wording (rule C1); don't settle them yourself. The slide text is not the whole course: some points are only said in class or
 only shown in an uncaptioned photo, so a criterion missing from the slides is "check with an IMR trainer", never "not
 taught".
@@ -94,7 +96,7 @@ its genus, the label sourced by an article (`tools/presence.py` `label_confirmed
 count, his Needs ID ones confirm nothing, here or near Dauin (his species-level photos stay usable, rule S2). Defined
 once in `tools/presence.py` and used everywhere presence is decided: `tools/build_fish.py` (`fish.json` `present`: in
 the game or out), `tools/fetch_fish.py` and `tools/fetch_local.py` (photos from abroad only of confirmed species),
-`tools/coral_presence.py` (`presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
+`tools/coral_presence.py` (`data/presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
 rule" in the admin, never removed automatically: Pierre decides). Change the rule there, not in a tool.
 *Why:* one standard of evidence for every species and every observer, Pierre included. *Source:* Pierre, 2026-11-04;
 the species with no name yet, 2026-11-17 (this wording approved 17:40 Manila).

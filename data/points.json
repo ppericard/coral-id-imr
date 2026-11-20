@@ -1,0 +1,1372 @@
+{
+  "about": "Points to handle, shown in the admin (Inbox › To do › Points, admin.js renderPoints; docs/ARCHITECTURE.md \"Points to handle\"). Written by agents: questions for an IMR trainer, nomenclature points, discrepancies between sources, content questions for Pierre. Pierre's state per point (status, notes, the trainer's answers) is his curation, in curation.json points, never here. The list's order is the priority: the most important first. Wording: neutral questions, never that IMR is wrong (rule C1). Fields: id (stable, never reused), kind (a key of kinds), subj (coral or fish), at (date added, Manila), title (the list's line), q (the question in plain words, shown big), ctx (context lines, folded), ask (the answer field under each photo), photos ([{f: a photo id of data.json or cand.json, with src, a, o, t as fallback when it leaves the app} or {none: why a slot is empty}]), src (sources: [{t, u?}]).",
+  "kinds": {
+    "trainer": "Trainer",
+    "names": "Names",
+    "sources": "Sources",
+    "content": "Content"
+  },
+  "points": [
+    {
+      "id": "astrea-reefcloud",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-05",
+      "title": "Which corals does IMR label Astrea in ReefCloud?",
+      "q": "Which ReefCloud label would you give each of these corals?",
+      "ctx": [
+        "Which corals does IMR label \"Astrea\" in ReefCloud: only Astrea curta and A. annuligera (Astrea in WoRMS and iNaturalist), or also the former Phymastrea, now Favites colemani, F. valenciennesii and F. magnistellata in WoRMS and iNaturalist, and maybe Paramontastraea salebrosa?",
+        "Slide 62's \"refer to Astrea / Phymastrea\" suggests the second; only a trainer can say.",
+        "Photos: 1 Astrea curta from abroad (one of the app's Astrea photos); 2 Favites colemani from the Philippines (one of the app's 4 F. colemani photos, under Favites); 3 Plesiastrea peroni from Dauin (a look-alike, from the Coral Finder's extra genera); 4 Pierre's Favites colemani near Dauin (iNaturalist observation 406194912); 5 and 6 Astrea curta from abroad (two of the app's Astrea photos, from two other observations), which Pierre doubts are Astrea; 7 Favites valenciennesi near Dauin (one of the app's Favites photos, a candidate Pierre added), which Pierre asks whether it is Astrea.",
+        "Until the answer the app changes nothing: its 4 F. colemani photos stay under Favites.",
+        "Waiting on this answer (Q47): if IMR calls these corals Astrea, Pierre's F. colemani near Dauin can serve as an Astrea photo (rule S2: his species-level photos stay usable as photos)."
+      ],
+      "ask": "ReefCloud label",
+      "photos": [
+        {
+          "f": "astrea-wide-502260981",
+          "t": "Astrea curta",
+          "a": "(c) K.L. Chew, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/279687005",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/502260981/original.jpeg"
+        },
+        {
+          "f": "favites-medium-230790299",
+          "t": "Favites colemani",
+          "a": "(c) Albert Kang, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/135324117",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/230790299/original.jpeg"
+        },
+        {
+          "f": "plesiastrea-x-472828703",
+          "t": "Plesiastrea peroni",
+          "a": "(c) shannencharter, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/263219661",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/472828703/original.jpeg"
+        },
+        {
+          "f": "favites-wide-746237677",
+          "t": "Favites colemani",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/406194912",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/746237677/original.jpg"
+        },
+        {
+          "f": "astrea-medium-550371649",
+          "t": "Astrea curta",
+          "a": "(c) Josy Lai, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/305258255",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/550371649/original.jpg"
+        },
+        {
+          "f": "astrea-macro-102598426",
+          "t": "Astrea curta",
+          "a": "(c) Damien Brouste, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/63886028",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/102598426/original.jpg"
+        },
+        {
+          "f": "favites-cand-386693010",
+          "t": "Favites valenciennesi",
+          "a": "(c) deadpetvet, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/218524063",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/386693010/original.jpg"
+        }
+      ],
+      "src": [
+        {"t": "Pierre, 2026-11-05, Q45"},
+        {"t": "Pierre's reports of 2026-11-05 (admin To do › Reports): photos 5 and 6 marked \"?\" (not Astrea?), photo 7 \"Astrea?\"; added 2026-11-06"},
+        {"t": "Coral taxonomy study, sections 4 and 6 (question 1)", "u": "docs/reviews/2026-11-05-coral-taxonomy-study.md"}
+      ]
+    },
+    {
+      "id": "anacropora-white-colony",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-11-09",
+      "title": "IMR's white Anacropora colony: skeleton or live colony?",
+      "q": "Is this a coral skeleton (out everywhere, rule P6) or a live colony?",
+      "ctx": [
+        "IMR lecture photo (Lecture 6, slide 19), Anacropora, Colony view: white branches lit by a flash on a dark background. It stands on the reef among live encrusting organisms, so it reads as a live (pale or bleached) colony, not a loose skeleton; but it looks like one.",
+        "It is the lead Branching photo of Coral basics (growth forms step) and a game photo of Anacropora. An RA review (2026-11-01, item 7) saw a wrong-answer comparison where Anacropora appeared \"as a white skeleton on black\" next to a live Alveopora close-up: probably this photo.",
+        "IMR lecture photos are never excluded automatically (rule P1), so it is not on the skeleton list (judging/skeletons.json). If it should go: × Exclude on Anacropora's page; if it stays, Resolved."
+      ],
+      "ask": "Skeleton?",
+      "photos": [
+        {
+          "f": "imrl-p11_i7",
+          "t": "Anacropora",
+          "a": "IMR Lecture 6, slide 19"
+        }
+      ],
+      "src": [
+        {
+          "t": "docs/reviews/2026-11-01-ra-re-review.md, item 7"
+        },
+        {
+          "t": "Rule P6 (Pierre, 2026-11-09)"
+        }
+      ]
+    },
+    {
+      "id": "favites-slide62-phymastrea",
+      "kind": "names",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Slide 62: \"refer to Astrea / Phymastrea\"",
+      "q": "Slide 62 says \"refer to Astrea / Phymastrea\". Corals of the World's Phymastrea species (colemani, valenciennesi, magnistellata) are Favites species in WoRMS, and Astrea's are under Astrea. Which corals does the slide mean?",
+      "ctx": [
+        "Favites and its neighbours, for Pierre to raise with IMR (research report of 2026-11-04; only species present in the Philippines by Pierre's rule, rule C6; the app keeps the lecture's wording and adds \"Other sources\" notes, tools/apply_favites.py).",
+        "Slide 62: \"refer to Astrea / Phymastrea\". Corals of the World's Phymastrea pages (colemani, valenciennesi, magnistellata) are Favites species in WoRMS; Astrea's are under Astrea.",
+        "See also: Which corals does IMR label Astrea in ReefCloud?"
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "reefcloud-merulinid-labels",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "ReefCloud labels for Paragoniastrea, Coelastrea, Paramontastraea",
+      "q": "How should RAs label Paragoniastrea, Coelastrea and Paramontastraea in ReefCloud?",
+      "ctx": [
+        "All three are recorded in the Philippines: Paragoniastrea russelli, Coelastrea aspera, Paramontastraea salebrosa.",
+        "Part of the Favites block (research report of 2026-11-04; the app keeps the lecture's wording)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "stylophora-slide16",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Slide 16, right half: Stylophora?",
+      "q": "Is the coral on the right half of lecture slide 16 a Stylophora?",
+      "ctx": ["Slide 16 right half: Pierre ~90% sure it is Stylophora (captioned \"likely\")."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "starred-genera-groups",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Merulina, Cyphastrea, Halomitra: no lecture group",
+      "q": "The lecture does not cover Merulina, Cyphastrea and Halomitra. Which lecture group, if any, does each belong with?",
+      "ctx": ["Lecture doesn't cover Merulina, Cyphastrea, Halomitra (starred genera): no lecture group of their own."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "tubastraea-colour",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-02",
+      "title": "Tubastraea: dark green to black, and bright orange",
+      "q": "The lecture describes Tubastraea as dark green to black; most photos show bright orange colonies. Should RAs expect both at Dauin?",
+      "ctx": [
+        "Tubastraea: the lecture says \"dark green to black\" while most game photos show bright orange colonies (beginner RA review, 2026-11-02).",
+        "Pierre: two main species, black sun coral (dark green) and sun coral (bright orange); the app's ID tip now gives both (tools/id_tips.txt), the lecture text stays verbatim."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (beginner RA review, 2026-11-02)"}]
+    },
+    {
+      "id": "duncanopsammia-peltata",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Duncanopsammia at Dauin: D. peltata plates?",
+      "q": "Is the Duncanopsammia at Dauin D. peltata, growing as plates?",
+      "ctx": ["\"Duncanopsammia at Dauin = D. peltata plates; Favites with shared + separate walls.\" (one line of the old list, split in two points)"],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "favites-walls",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Favites with shared and separate walls",
+      "q": "Can one Favites colony show both shared and separate walls?",
+      "ctx": ["\"Duncanopsammia at Dauin = D. peltata plates; Favites with shared + separate walls.\" (one line of the old list, split in two points)"],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "corallite-arrangement",
+      "kind": "trainer",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Corallite arrangement: Mycedium, Diploastrea, Pectinia",
+      "q": "Where do Mycedium, Diploastrea and Pectinia go among the corallite arrangements?",
+      "ctx": ["Corallite arrangement placements to check: Mycedium, Diploastrea, Pectinia (Corallite anatomy tool)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "plerogyra-family",
+      "kind": "names",
+      "subj": "coral",
+      "at": "2026-11-01",
+      "title": "Plerogyra: Euphylliidae or Plerogyridae",
+      "q": "The lecture places Plerogyra in Euphylliidae; WoRMS lists Plerogyridae. Which family does IMR use?",
+      "ctx": ["Plerogyra family: lecture says Euphylliidae; WoRMS lists Plerogyridae (shown as an \"Other sources\" note)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer"}]
+    },
+    {
+      "id": "diploastreidae-spelling",
+      "kind": "names",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Diploastreidae or Diploastraeidae",
+      "q": "The slate spells the family \"Diploastreidae\"; WoRMS spells it \"Diploastraeidae\". Which spelling does IMR use?",
+      "ctx": [
+        "Family spelling: the slate's \"Diploastreidae\" is \"Diploastraeidae\" in WoRMS (the app now shows both, the IMR one first).",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "favites-budding",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Favites budding: \"exclusively extra-tentacular\"",
+      "q": "Slide 61's notes say Favites buds exclusively extra-tentacularly; Huang et al. 2014 give Favites both intra- and extra-tentacular budding, and Dipsastraea intra only. How should RAs use budding to tell them apart?",
+      "ctx": [
+        "Slide 61 notes: Favites \"exclusively extra-tentacular\". Huang et al. 2014 (WoRMS diagnosis) give Favites intra- and extra-tentacular budding, Dipsastraea intra only; possible wording: \"extra-tentacular budding rules out Dipsastraea; Favites can also bud intra-tentacularly\".",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "paliform-lobes-separator",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Paliform lobes: Goniastrea or Favites",
+      "q": "The lecture uses paliform lobes to tell Goniastrea from Favites. Corals of the World shows a well-developed crown in some Favites and in Paragoniastrea russelli and Paramontastraea salebrosa, all recorded in the Philippines. How should RAs use paliform lobes?",
+      "ctx": [
+        "Paliform lobes as the Goniastrea / Favites separator (slide 40 notes, Goniastrea's ID tip): a well-developed crown also appears in F. pentagona and F. colemani, often in F. vasta (Corals of the World), and in Paragoniastrea russelli and Paramontastraea salebrosa, all recorded in the Philippines.",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "goniastrea-shared-walls",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Goniastrea \"shared walls\" and G. stelligera",
+      "q": "The lecture gives Goniastrea shared walls; G. stelligera, recorded in the Philippines, has separate-walled, conical corallites. How should RAs treat it?",
+      "ctx": [
+        "Goniastrea \"shared walls\": G. stelligera (recorded in the Philippines) has separate-walled, conical corallites.",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "cyphastrea-axial-corallite",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-19",
+      "title": "Cyphastrea branch tips: an axial corallite or not",
+      "q": "The Coral Finder says a branching Cyphastrea's tip corallite is like Acropora's but not different from the others; Corals of the World gives Cyphastrea decadia Acropora-like axial corallites. How should RAs tell a branching Cyphastrea from Acropora?",
+      "ctx": [
+        "Cyphastrea decadia is the one Cyphastrea confirmed in the Philippines (an iNaturalist Research Grade observation there and the Corals of the World checklist, checked 2026-11-19); the other Cyphastrea species have no Research Grade observation in the Philippines.",
+        "Until this is settled the Acropora / Cyphastrea pair has no tell-apart line (tools/coral_apart.json none): the feedback sheet shows the first ID tip."
+      ],
+      "src": [
+        {"t": "Coral Finder, p. 8"},
+        {"t": "Corals of the World (Veron et al.), Cyphastrea decadia factsheet", "u": "https://www.coralsoftheworld.org/species_factsheets/species_factsheet_summary/cyphastrea-decadia/"}
+      ]
+    },
+    {
+      "id": "fish-clownfish-dorsal",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-04",
+      "title": "Clownfish dorsal fins, fish slides 4 and 7",
+      "q": "Slide 4 shows two dorsal fins on a clownfish; slide 7 says damselfish have a continuous dorsal fin. How should RAs read the clownfish's dorsal fin?",
+      "ctx": ["Fish (Pierre, 2026-11-04): the IMR fish presentation's slide 4 shows two dorsal fins on a clownfish, while slide 7 says damselfish have a continuous dorsal fin: a slip, or an exception to the rule?"],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (Pierre, 2026-11-04)"}]
+    },
+    {
+      "id": "fish-sweetlips-juvenile",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-04",
+      "title": "Sweetlips juveniles: \"swim erratically\"",
+      "q": "The fish lecture says sweetlips juveniles \"swim erratically\"; the sources describe a head-down, wriggling swim. Are they the same behaviour?",
+      "ctx": ["Fish (Pierre, 2026-11-04): the sweetlips juvenile wording, \"swim erratically\", against the sources' head-down wriggling swimming (FISH_PATH \"Juveniles and colour phases\")."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (Pierre, 2026-11-04)"}, {"t": "FISH_PATH \"Juveniles and colour phases\"", "u": "docs/FISH_PATH.md"}]
+    },
+    {
+      "id": "fish-chromis-agilis",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-05",
+      "title": "Chromis agilis or Pycnochromis pacifica",
+      "q": "Allen & Erdmann (2020) and iNaturalist treat the Pacific populations of Chromis agilis as a separate species, Pycnochromis pacifica. Which name should RAs use for this fish at Dauin?",
+      "ctx": [
+        "IMR reference list: Chromis agilis (Reef chromis), PDF page 19; WoRMS: Pycnochromis agilis. The IMR name stays in the app (rules C1, S2).",
+        "Allen & Erdmann (2020) describe the Pacific form as Pycnochromis pacifica; iNaturalist follows them (P. pacifica, taxon 1313512, about 345 observations; P. agilis, taxon 1316764).",
+        "The sourced check of 2026-11-14 found no photo of it in play and no Research Grade observation of iNaturalist's P. agilis in the Indo-West Pacific area the app takes photos from.",
+        "Since 2026-11-14 (Pierre, Q354 b) its candidate photos come from iNaturalist's P. pacifica; the admin says so beside its photos. The name players see is unchanged."
+      ],
+      "src": [{"t": "Allen & Erdmann 2020, Journal of the Ocean Science Foundation 35", "u": "https://zenodo.org/records/3988552/files/josf35m.pdf"}, {"t": "iNaturalist, Pycnochromis pacifica", "u": "https://www.inaturalist.org/taxa/1313512"}, {"t": "iNaturalist, Pycnochromis agilis", "u": "https://www.inaturalist.org/taxa/1316764"}, {"t": "Sourced check of the IMR fish species, 2026-11-14 (Q354)"}]
+    },
+    {
+      "id": "fish-halichoeres-marginatus",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-14",
+      "title": "Halichoeres marginatus or H. annularis",
+      "q": "iNaturalist treats the Pacific populations of Halichoeres marginatus as a separate species, H. annularis; WoRMS keeps them as one species. Which name should RAs use for this wrasse at Dauin?",
+      "ctx": [
+        "IMR reference list: Halichoeres marginatus (Dusky wrasse), PDF page 50. The IMR name stays in the app (rules C1, S2).",
+        "iNaturalist: H. marginatus (taxon 102056) and the Pacific H. annularis (taxon 1474879), with 23 Research Grade observations in the Philippines at the check. WoRMS: one species, H. marginatus.",
+        "Fishes of Australia (H. marginatus) cites Kuiter (2010), who treats the Pacific form as a separate species, H. annularis, and Barber & Bellwood (2005), who found an Indian Ocean clade and a Pacific Ocean clade.",
+        "The sourced check of 2026-11-14 found no photo of it in play. Since 2026-11-14 (Pierre, Q354 b) its candidate photos come from iNaturalist's H. annularis; the admin says so beside its photos. The name players see is unchanged."
+      ],
+      "src": [{"t": "Fishes of Australia, Halichoeres marginatus", "u": "https://fishesofaustralia.net.au/home/species/2291"}, {"t": "iNaturalist, Halichoeres annularis", "u": "https://www.inaturalist.org/taxa/1474879"}, {"t": "iNaturalist, Halichoeres marginatus", "u": "https://www.inaturalist.org/taxa/102056"}, {"t": "Sourced check of the IMR fish species, 2026-11-14 (Q354)"}]
+    },
+    {
+      "id": "fish-lyretail-anthias",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-14",
+      "title": "Two lyretail anthias: Pseudanthias squamipinnis and P. cheirospilos",
+      "q": "The app has both Pseudanthias squamipinnis (IMR reference list) and P. cheirospilos (seen near Dauin). WoRMS and iNaturalist now restrict P. squamipinnis to the Indian Ocean. Should the list keep both lyretail anthias?",
+      "ctx": [
+        "IMR reference list: Pseudanthias squamipinnis (Scalefin anthias), PDF page 32. The IMR name stays in the app (rules C1, S2).",
+        "P. cheirospilos (Pacific lyretail anthias; WoRMS 1909723, iNaturalist 1579632) is a separate species in the app, from Research Grade observations near Dauin, with 37 photos in play at the check.",
+        "The sourced check of 2026-11-14 reads WoRMS and iNaturalist as restricting P. squamipinnis (iNaturalist 127530) to the Indian Ocean: 10 of its 12 photos in play are from the eastern Indian Ocean (Andaman Sea, northern Sumatra), which iNaturalist still files under that taxon.",
+        "Pierre (2026-11-14, Q354 a): P. squamipinnis stays as it is for now, pending this question."
+      ],
+      "src": [{"t": "WoRMS, Pseudanthias cheirospilos", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1909723"}, {"t": "iNaturalist, Pseudanthias squamipinnis", "u": "https://www.inaturalist.org/taxa/127530"}, {"t": "iNaturalist, Pseudanthias cheirospilos", "u": "https://www.inaturalist.org/taxa/1579632"}, {"t": "Sourced check of the IMR fish species, 2026-11-14 (Q354)"}]
+    },
+    {
+      "id": "fish-siganus-margaritiferus",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-05",
+      "title": "Siganus margaritiferus or S. fuscescens",
+      "q": "WoRMS lists Siganus margaritiferus as a synonym of S. fuscescens. Which name does IMR use?",
+      "ctx": ["Fish (2026-11-05): Siganus margaritiferus is a synonym of S. fuscescens in WoRMS. The IMR name stays in the app (rule S2)."],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer (2026-11-05)"}]
+    },
+    {
+      "id": "favites-submassive",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Favites \"submassive rather than massive\" (low priority)",
+      "q": "The lecture says Favites is \"submassive rather than massive\"; Corals of the World describes F. vasta and F. magnistellata as massive, often over 1 m. Which do RAs meet at Dauin?",
+      "ctx": [
+        "Favites \"submassive rather than massive\" (low priority): F. vasta and F. magnistellata are massive, often over 1 m (Corals of the World).",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "dipsastraea-crowding",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-04",
+      "title": "Dipsastraea \"colony not crowded\" (low priority)",
+      "q": "The lecture says a Dipsastraea colony is \"not crowded\"; Corals of the World says spacing depends on depth (D. pallida: \"closely compacted in shallow water, more widely spaced in deeper water\"). Does that hold at Dauin's depths?",
+      "ctx": [
+        "Dipsastraea \"colony not crowded\" (low priority): depends on depth, e.g. D. pallida, \"closely compacted in shallow water, more widely spaced in deeper water\" (Corals of the World).",
+        "Part of the Favites block (research report of 2026-11-04)."
+      ],
+      "src": [{"t": "ROADMAP › Questions for an IMR trainer, Favites block (research report of 2026-11-04)"}]
+    },
+    {
+      "id": "lecture-points-review",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "~10 debatable lecture points, left verbatim",
+      "q": "Review the ~10 debatable lecture points left verbatim: keep each as it is, or add a discreet note?",
+      "ctx": ["Review ~10 debatable lecture points (left verbatim): Pocillopora \"verrucae purely ornamental\", Goniastrea \"paliform lobes on the oral disc\", Montipora \"smallest corallites of all\", Tubastraea \"dark green to black\", Mycedium \"no tentacles\", Plerogyra \"looks solitary\", Herpolitha \"solitary\"; better mnemonics proposed (Acropora = pore at the tip, Pavona = peacock). Any change becomes a discreet note, never a correction."],
+      "src": [{"t": "Thread \"Fact-check all coral content on the site\""}, {"t": "PR #22", "u": "https://github.com/ppericard/coral-id-imr/pull/22"}]
+    },
+    {
+      "id": "stylophora-wording",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "Stylophora wording",
+      "q": "Stylophora: keep the written wording (\"smooth from afar, unlike Pocillopora\", \"chicken popcorn\"), or the one you remember (\"like Pocillopora but fuzzy\")?",
+      "ctx": ["Stylophora wording: Pierre remembered \"like Pocillopora but fuzzy\"; presenter notes say \"smooth from afar, unlike Pocillopora\" and \"chicken popcorn\" (Pierre remembered \"chicken nuggets\" for Pocillopora). App keeps the written wording. Pierre reviews the course on Mon 2026-11-02 and corrects it himself."],
+      "src": [{"t": "Project chat, 2026-10-31"}]
+    },
+    {
+      "id": "merulina-placement",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "Merulina: with Hydnophora or in group 5",
+      "q": "Merulina is shown with Hydnophora (lecture group 7). Keep it there, or move it to group 5?",
+      "ctx": ["Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative."],
+      "src": [{"t": "Thread \"Declutter the UI across the app\""}, {"t": "PR #66", "u": "https://github.com/ppericard/coral-id-imr/pull/66"}]
+    },
+    {
+      "id": "lookalikes-page",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-10-31",
+      "title": "Look-alikes page: keep or drop the tab",
+      "q": "Does the Look-alikes montage deck convince you in use? If not, the tab goes (the pairs stay on the sheets, Home and the duels).",
+      "ctx": ["Look-alikes page: Pierre will judge the montage deck in use; if it doesn't convince, drop the tab (pairs stay on sheets, Home, duels)."],
+      "src": [{"t": "Thread \"Review the site as a new RA\""}, {"t": "PR #159", "u": "https://github.com/ppericard/coral-id-imr/pull/159"}]
+    },
+    {
+      "id": "coral-basics-anatomy",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-11-03",
+      "title": "Coral basics: Corallite anatomy as the \"more\" level",
+      "q": "Should the existing Corallite anatomy become the \"more\" level of the Coral basics module?",
+      "ctx": ["Coral basics, point (4): the existing Corallite anatomy becomes the module's \"more\" level (proposed 2026-11-03 with points 1-3, which shipped: the glossary links, the Learn tab, the Home line). Waiting on Pierre (rule U13: a Lab tool graduates only with his approval)."],
+      "src": [{"t": "Study, 2026-11-03"}]
+    },
+    {
+      "id": "key-shared-walls",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-11-02",
+      "title": "Coral ID Key: \"Shared walls?\" after a separate-walls box",
+      "q": "The Coral ID Key asks \"Shared walls?\" after a separate-walls box; that question comes from the IMR Lecture 6 wall trait, not the Coral Finder book. Keep it?",
+      "ctx": ["Beginner RA review (2026-11-02), point (b): the Coral ID Key's question \"Shared walls?\" after a separate-walls box is not in the Coral Finder book (it comes from the IMR Lecture 6 wall trait); proposal sent to Pierre. The other points were answered and built."],
+      "src": [{"t": "Beginner RA review, 2026-11-02"}]
+    },
+    {
+      "id": "angelfish-spine",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-06",
+      "title": "Angelfishes: the spine on the gill cover or on the cheek?",
+      "q": "IMR's cue for the angelfishes says \"Spine on the gill cover (opercular spine)\"; FishBase's family summary puts the strong spine at the angle of the preopercle (the cheek). Which wording should the sheet and the cue use?",
+      "ctx": [
+        "IMR fish presentation, slide 11: \"Spine on the gill cover (opercular spine)\" (fish.json, f:Angelfishes cues).",
+        "FishBase, family Pomacanthidae: \"Angle of preopercle with a strong spine\"; the family sheet's ID marks follow it, beside IMR's cue (rule C1: IMR's words unchanged).",
+        "Pierre's own words for Q11 of the fish-sheets study (2026-11-06): \"the small spine sticking out on the cheek (preopercular spine)\"."
+      ],
+      "src": [{"t": "FishBase, family Pomacanthidae", "u": "https://www.fishbase.se/summary/FamilySummary.php?family=Pomacanthidae"}, {"t": "IMR fish presentation, slide 11"}]
+    },
+    {
+      "id": "wrasse-teeth",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-06",
+      "title": "Wrasses: no visible teeth, or teeth that jut forward?",
+      "q": "IMR's cue for the wrasses says \"Thick lips, no visible teeth\" (against the parrotfishes' beak); FishBase's family summary says most wrasses have jaw teeth with gaps, usually jutting outward. Should the sheet add a line on the teeth, and how?",
+      "ctx": [
+        "IMR fish presentation (fish.json f:Wrasses cues): \"Thick lips, no visible teeth\"; its look-alike line for the parrotfishes: \"Wrasse: thick lips, no visible teeth\".",
+        "FishBase, family Labridae: \"Most jaw teeth with gaps between them; teeth usually jutting outward\". The family sheet leaves this out until Pierre decides (rule C1: IMR's cue unchanged; Codex review #695)."
+      ],
+      "src": [{"t": "FishBase, family Labridae", "u": "https://www.fishbase.se/summary/FamilySummary.php?family=Labridae"}, {"t": "IMR fish presentation, Wrasse"}]
+    },
+    {
+      "id": "other-species-doubtful",
+      "kind": "content",
+      "subj": "fish",
+      "at": "2026-11-09",
+      "title": "Other species in view: confusion possible or not? (25 photos)",
+      "q": "In each photo, could another fish be taken for the main one at the level the game asks (its family, or its genus for a circle-1 species)? Answer \"no risk\" (the photo plays) or \"confusable\" (it stays out).",
+      "ctx": [
+        "Q323 (2026-11-09): the old count \"other species in view\" (m) is split in two, no risk of confusion (o, in play) and confusion possible (k, out of play, rule P3). An agent sorted the 1,047 photos that carried m (judging/FISH.md \"Other species: the split\"); these 27 were doubtful.",
+        "Meanwhile every one stays out of play (conservative). Photos 1-14 are photos you had in play (the auto-sort's adds): on their family page (Photos › Families) they now sit under \"Other species, out of play\"; Keep in play puts one back in one tap.",
+        "Photos 15-20 are stopgap or reference photos and 21-25 candidates still waiting: answer here and an agent applies it (tools/fish_judge.json, judging/fish).",
+        "The agent leaned \"no risk\" on 6 of them (photos 6, 7, 15, 17, 18, 23), \"confusable\" on the others.",
+        "Two candidates left this point on 2026-11-19: a crop takes the other fish out of their frame, and they play cropped (Q430, #1240)."
+      ],
+      "ask": "No risk / confusable",
+      "photos": [
+        {
+          "f": "fish-s162-cand-451490168",
+          "t": "Mirolabrichthys tuka",
+          "a": "no rights reserved",
+          "o": "https://www.inaturalist.org/observations/252233440",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/451490168/original.jpeg"
+        },
+        {
+          "f": "fish-s297-cand-390613987",
+          "t": "Ostorhinchus hartzfeldii",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/220615959",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/390613987/original.jpg"
+        },
+        {
+          "f": "fish-s294-cand-32030600",
+          "t": "Ostorhinchus luteus",
+          "a": "(c) Roger Rittmaster, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/20770689",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/32030600/original.jpeg"
+        },
+        {
+          "f": "fish-s067-cand-682479463",
+          "t": "Amblyglyphidodon curacao",
+          "a": "(c) 呂一起(Lyu yi-chi), some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/373440928",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/682479463/original.jpg"
+        },
+        {
+          "f": "fish-s119-cand-351336703",
+          "t": "Pomacentrus moluccensis",
+          "a": "(c) Slunky, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/199241106",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/351336703/original.jpeg"
+        },
+        {
+          "f": "fish-s119-cand-464458634",
+          "t": "Pomacentrus moluccensis",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/258818264",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/464458634/original.jpg"
+        },
+        {
+          "f": "fish-s137-cand-428492141",
+          "t": "Macolor niger",
+          "a": "(c) Nicola Crockford, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/240502598",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/428492141/original.jpeg"
+        },
+        {
+          "f": "fish-s050-cand-245276721",
+          "t": "Naso caesius",
+          "a": "(c) Peter, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/143025791",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/245276721/original.jpeg"
+        },
+        {
+          "f": "fish-s263-cand-541157592",
+          "t": "Bodianus axillaris",
+          "a": "(c) Debra Baker, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/300346955",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/541157592/original.jpg"
+        },
+        {
+          "f": "fish-s236-cand-335320613",
+          "t": "Halichoeres leucurus",
+          "a": "(c) Jim Moore (Maryland), some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/191182403",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/335320613/original.jpg"
+        },
+        {
+          "f": "fish-s240-cand-453758327",
+          "t": "Halichoeres scapularis",
+          "a": "(c) Jim Moore (Maryland), some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/253425024",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/453758327/original.jpg"
+        },
+        {
+          "f": "fish-s224-cand-615721476",
+          "t": "Hemigymnus melapterus",
+          "a": "(c) PampaSorro, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/338556272",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/615721476/original.jpg"
+        },
+        {
+          "f": "fish-s271-cand-244512249",
+          "t": "Labroides pectoralis",
+          "a": "no rights reserved",
+          "o": "https://www.inaturalist.org/observations/142603792",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/244512249/original.jpg"
+        },
+        {
+          "f": "fish-s256-cand-265916874",
+          "t": "Thalassoma lunare",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/153931490",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/265916874/original.jpg"
+        },
+        {
+          "f": "fi464458634",
+          "t": "Pomacentrus moluccensis",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/258818264",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/464458634/original.jpg"
+        },
+        {
+          "f": "fi332302145",
+          "t": "Zanclus cornutus",
+          "a": "(c) Nicola Crockford, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/189658030",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/332302145/original.jpeg"
+        },
+        {
+          "f": "fi428492141",
+          "t": "Macolor niger",
+          "a": "(c) Nicola Crockford, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/240502598",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/428492141/original.jpeg"
+        },
+        {
+          "f": "fi552611754",
+          "t": "Halichoeres chrysus",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/306431312",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/552611754/original.jpg"
+        },
+        {
+          "f": "fbPshuc_u1",
+          "t": "Pseudanthias huchtii",
+          "a": "(c) J.E. Randall, via FishBase, some rights reserved (CC BY-NC 4.0)",
+          "o": "https://www.fishbase.se/photos/PicturesSummary.php?ID=6567&what=species&pic=Pshuc_u1.jpg",
+          "src": "https://www.fishbase.se/images/species/Pshuc_u1.jpg"
+        },
+        {
+          "f": "fi32030600",
+          "t": "Ostorhinchus luteus",
+          "a": "(c) Roger Rittmaster, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/20770689",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/32030600/original.jpeg"
+        },
+        {
+          "f": "fish-s508-cand-596070783",
+          "t": "Centropyge bispinosa",
+          "a": "(c) Ben Costamagna, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/328891261",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/596070783/original.jpg"
+        },
+        {
+          "f": "fish-s283-cand-733711413",
+          "t": "Ostorhinchus moluccensis",
+          "a": "(c) Ben Costamagna, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/399879143",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/733711413/original.jpg"
+        },
+        {
+          "f": "fish-s208-cand-396367777",
+          "t": "Coris dorsomacula",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/223683869",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/396367777/original.jpg"
+        },
+        {
+          "f": "fish-s269-cand-459838985",
+          "t": "Labropsis manabei",
+          "a": "no rights reserved",
+          "o": "https://www.inaturalist.org/observations/256468178",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/459838985/original.jpg"
+        },
+        {
+          "f": "fish-s261-cand-385019225",
+          "t": "Pseudocheilinus evanidus",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/217628872",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/385019225/original.jpg"
+        }
+      ],
+      "src": [
+        {
+          "t": "judging/FISH.md, Tags (count) and \"Other species: the split\""
+        },
+        {
+          "t": "Pierre, 2026-11-09, Q323"
+        }
+      ]
+    },
+    {
+      "id": "fish-diploprion-family",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-15",
+      "title": "Diploprion: Soapfishes, or WoRMS's Liopropomatidae",
+      "q": "The app teaches Diploprion (D. bifasciatum, s178) among the Soapfishes (Grammistidae, Diploprioninae); WoRMS and iNaturalist now place the genus in Liopropomatidae. Should the app keep it among the Soapfishes?",
+      "ctx": [
+        "Found by the fish section of tools/taxonomy.json (2026-11-15, WoRMS and iNaturalist). Nothing changed in the app (rules C1, C5).",
+        "WoRMS: Diploprion (AphiaID 204362), family Liopropomatidae; iNaturalist (taxon 87970) the same. The app's teaching family Soapfishes holds Grammistidae and the subfamily Diploprioninae."
+      ],
+      "src": [
+        {"t": "WoRMS, Diploprion", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=204362"},
+        {"t": "iNaturalist, Diploprion", "u": "https://www.inaturalist.org/taxa/87970"},
+        {"t": "tools/taxonomy.json fish gen.Diploprion (tools/taxonomy.py, 2026-11-15)"}
+      ]
+    },
+    {
+      "id": "fish-ferdauia-worms",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-15",
+      "title": "Ferdauia in WoRMS: the genus unaccepted, its species accepted",
+      "q": "WoRMS marks the genus Ferdauia as unaccepted (→ Carangoides) while it keeps Ferdauia ferdau and F. orthogrammus as accepted species under it. Keep the app's Ferdauia ferdau as it is until WoRMS settles it?",
+      "ctx": [
+        "Found by the fish section of tools/taxonomy.json (2026-11-15). The app shows Ferdauia ferdau (circle 3, s466); nothing changed (rules C1, C5).",
+        "WoRMS: genus Ferdauia (AphiaID 296636) unaccepted, valid name Carangoides; Ferdauia ferdau (AphiaID 1802000) accepted, its parent that same genus record. iNaturalist: Ferdauia, an active genus (taxon 1359822)."
+      ],
+      "src": [
+        {"t": "WoRMS, Ferdauia ferdau", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1802000"},
+        {"t": "iNaturalist, Ferdauia", "u": "https://www.inaturalist.org/taxa/1359822"},
+        {"t": "tools/taxonomy.json fish gen.Ferdauia (tools/taxonomy.py, 2026-11-15)"}
+      ]
+    },
+    {
+      "id": "fish-pomacentrus-armillatus",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Pomacentrus armillatus and P. opisthostigma: two species in the game, one in WoRMS and FishBase",
+      "q": "The IMR reference list names both Pomacentrus armillatus (Borneo damsel) and P. opisthostigma (Brown damsel), and the game asks them as two species. WoRMS and FishBase treat P. armillatus as a synonym of P. opisthostigma. Does IMR tell them apart, and by what?",
+      "ctx": [
+        "fish.json: P. armillatus (s105) and P. opisthostigma (s104) carry the same WoRMS record (AphiaID 277163); the app shows \"now Pomacentrus opisthostigma in WoRMS\" on P. armillatus (rule S2). The IMR names stay in the app (rules C1, S2).",
+        "FishBase's page for P. armillatus opens P. opisthostigma (read 2026-11-19, the species marks' sourcing).",
+        "The species sheets: P. opisthostigma has a sourced ID mark (FishBase: \"a relatively non-descript brown colouration, an orange pectoral-fin axil; dorsal-fin ocellus persists in adults\"); P. armillatus has none until this is settled (tools/fish_species_marks.json none)."
+      ],
+      "src": [
+        {"t": "WoRMS, Pomacentrus opisthostigma", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=277163"},
+        {"t": "FishBase, Pomacentrus opisthostigma", "u": "https://www.fishbase.se/summary/Pomacentrus-opisthostigma.html"},
+        {"t": "FishBase, Pomacentrus armillatus (opens P. opisthostigma)", "u": "https://www.fishbase.se/summary/Pomacentrus-armillatus.html"}
+      ]
+    },
+    {
+      "id": "fish-naso-species-plates",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Naso minor and N. thynnoides: one tail plate in FishBase, two scalpels in IMR's cue",
+      "q": "IMR's cue for the unicornfishes says two scalpels on the tail base. FishBase's pages for Naso minor and N. thynnoides speak of a single plate. Should RAs expect one plate on these two species?",
+      "ctx": [
+        "IMR cue for Naso (Unicornfish): \"Two scalpels on the tail base\"; the app shows it as written (rule C1).",
+        "FishBase, Naso thynnoides: \"Peduncular plate single, with a semicircular, retrorsely curved keel.\"",
+        "FishBase, Naso minor: \"Fresh specimens with yellow caudal fin and blackish peduncular plate\" (one plate named).",
+        "The species ID marks name no number of plates: N. minor's mark is its yellow tail fin only, N. thynnoides' its shape and eye (tools/fish_species_marks.json). The same question from the FAO species guide's key to Naso, for the genus, may be another point of the list (the genus marks' work)."
+      ],
+      "src": [
+        {"t": "IMR fish presentation, Unicornfish cue"},
+        {"t": "FishBase, Naso thynnoides", "u": "https://www.fishbase.se/summary/Naso-thynnoides.html"},
+        {"t": "FishBase, Naso minor", "u": "https://www.fishbase.se/summary/Naso-minor.html"}
+      ]
+    },
+    {
+      "id": "fish-amphiprion-annamensis",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Amphiprion annamensis: the sources describe it as A. polymnus",
+      "q": "The game has Amphiprion annamensis (seen near Dauin), accepted in WoRMS. FishBase sends its name to A. polymnus and Reef Life Survey has no page for it, so its only descriptions are A. polymnus's. Can A. polymnus's description stand for it on its sheet, or does IMR tell them apart?",
+      "ctx": [
+        "fish.json: Amphiprion annamensis (s533), WoRMS AphiaID 1804594, confirmed near Dauin by observers; A. polymnus is not in the game.",
+        "FishBase's page for A. annamensis opens A. polymnus; Reef Life Survey has no page under A. annamensis (read 2026-11-19, the species marks' sourcing).",
+        "Its sheet has no ID mark of its own until this is settled (tools/fish_species_marks.json none)."
+      ],
+      "src": [
+        {"t": "WoRMS, Amphiprion annamensis", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1804594"},
+        {"t": "FishBase, Amphiprion annamensis (opens A. polymnus)", "u": "https://www.fishbase.se/summary/Amphiprion-annamensis.html"},
+        {"t": "Reef Life Survey, Amphiprion polymnus", "u": "https://reeflifesurvey.com/species/amphiprion-polymnus/"}
+      ]
+    },
+    {
+      "id": "fish-amphiprion-percula-place",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Clown anemonefish: Reef Life Survey tells A. percula from A. ocellaris mainly by place",
+      "q": "Reef Life Survey says Amphiprion percula and A. ocellaris are almost identical and tells them apart mainly by place: A. percula east of Torres Strait, A. ocellaris west of it. The IMR reference list has both. Which name do RAs give the clown anemonefish at Dauin?",
+      "ctx": [
+        "Reef Life Survey, A. percula: \"Almost identical to A. ocellaris (Western Clown Anemonefish), but sometimes with wider black margins around white bars and shorter 1st dorsal fin. Distinguished by location, found east of Torres Strait, including on the Great Barrier Reef.\"",
+        "Reef Life Survey, A. ocellaris: \"Also differs by location, occuring west of Torres Strait.\"",
+        "fish.json: both are game species; A. percula is confirmed near Dauin by the IMR reference list (rule C8). Each species sheet shows its own marks (the wider or narrower black edges, the dorsal fin's height), as drafts."
+      ],
+      "src": [
+        {"t": "Reef Life Survey, Amphiprion percula", "u": "https://reeflifesurvey.com/species/amphiprion-percula/"},
+        {"t": "Reef Life Survey, Amphiprion ocellaris", "u": "https://reeflifesurvey.com/species/amphiprion-ocellaris/"}
+      ]
+    },
+    {
+      "id": "fish-platax-batavianus-head",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Platax batavianus: concave or convex head profile?",
+      "q": "FishBase gives large adults of Platax batavianus a concave snout profile; Reef Life Survey gives it a convex head profile with a large hump. Which should its sheet say?",
+      "ctx": [
+        "FishBase, Platax batavianus: \"Snout profile of large adults (above 40 cm) concave, with prominent bony swelling between eyes.\"",
+        "Reef Life Survey, Platax batavianus: \"convex head profile, developing large hump and a squarer body shape in adults than other batfishes.\"",
+        "Its species marks use Reef Life Survey's hump and squarer body, not the profile's shape (tools/fish_species_marks.json)."
+      ],
+      "src": [
+        {"t": "FishBase, Platax batavianus", "u": "https://www.fishbase.se/summary/Platax-batavianus.html"},
+        {"t": "Reef Life Survey, Platax batavianus", "u": "https://reeflifesurvey.com/species/platax-batavianus/"}
+      ]
+    },
+    {
+      "id": "fish-valenciennea-puellaris-side",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Valenciennea puellaris: orange spots, a stripe, or dots and dashes on the side?",
+      "q": "Three sources draw the side of Valenciennea puellaris differently: a row of large orange spots (FishBase, Pacific fish), a blue-edged orange stripe along the lower sides (Fishes of Australia), dots and dashes (Reef Life Survey). Which pattern do RAs see at Dauin?",
+      "ctx": [
+        "FishBase: \"pale grey body color for Pacific fish with row of large orange spots on side, a series of dash-like markings below\".",
+        "Fishes of Australia: \"a blue-edged orange stripe along the lower sides, a series of orange dashes along the upper sides\".",
+        "Reef Life Survey: \"Bright gold/orange dots and dashes on side and light blue spots on head.\" Its species mark follows Reef Life Survey (tools/fish_species_marks.json)."
+      ],
+      "src": [
+        {"t": "FishBase, Valenciennea puellaris", "u": "https://www.fishbase.se/summary/Valenciennea-puellaris.html"},
+        {"t": "Fishes of Australia, Valenciennea puellaris", "u": "https://fishesofaustralia.net.au/home/species/177"},
+        {"t": "Reef Life Survey, Valenciennea puellaris", "u": "https://reeflifesurvey.com/species/valenciennea-puellaris/"}
+      ]
+    },
+    {
+      "id": "seaslug-cladobranchia-inat",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-16",
+      "title": "Cladobranchia: WoRMS's suborder, five suborders in iNaturalist",
+      "q": "The Learn page groups the non-dorid nudibranch families under Cladobranchia, as WoRMS does; iNaturalist splits the same 15 families into Aeolidina, Dendronotina, Arminina, Janolina and Tritonina, with no Cladobranchia. Keep WoRMS's Cladobranchia?",
+      "ctx": [
+        "Read 2026-11-16 for the Learn page's taxonomic groups (tools/seaslug_groups.json; Pierre, 2026-11-16: the true nudibranchs apart from the other sea slugs, Doridina then Cladobranchia). WoRMS is followed; nothing else differs: the 9 Doridina families and the other orders (Sacoglossa, Cephalaspidea, Aplysiida, Pleurobranchida) are placed alike (rule C5).",
+        "iNaturalist: Aeolidina (Facelinidae, Myrrhinidae, Flabellinidae, Trinchesiidae, Samlidae, Eubranchidae, Aeolidiidae), Dendronotina (Tethydidae, Bornellidae, Dotidae, Dendronotidae, Scyllaeidae), Arminina (Arminidae), Janolina (Janolidae), Tritonina (Tritoniidae). WoRMS: all 15 in the suborder Cladobranchia, by superfamily below it."
+      ],
+      "src": [
+        {"t": "WoRMS, Facelinidae (its classification)", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=191"},
+        {"t": "iNaturalist, Facelinidae (its ancestry)", "u": "https://www.inaturalist.org/taxa/47211"},
+        {"t": "tools/seaslug_groups.json (2026-11-16)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-spanish-dancer",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Spanish dancer\": Hexabranchus sanguineus, H. lacer or the genus?",
+      "q": "The sources give \"Spanish dancer\" to Hexabranchus sanguineus (iNaturalist, WoRMS, Wikipedia, SEASLUG.WORLD, nudibranch.com.au), to H. lacer (SEASLUG.WORLD's article on the nicknames: the one Japanese divers know, since the genus was split) and, as \"Spanish Dancers\", to the genus Hexabranchus (iNaturalist; DAN's Alert Diver: \"hexabranchs, also known as Spanish dancers\"). The app shows the name, as information, on each taxon a source gives it to. Keep it so, or show it on one of them only?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17; Pierre, 2026-11-17: the sea slugs' common names and nicknames as information wherever names are shown). Nothing settled (rule C5); the game's choices stay scientific names.",
+        "H. lacer's own English names in iNaturalist: Decumbent Spanish Dancer, Mottled Spanish Dancer, Torn Spanish Dancer; WoRMS: mottled Spanish dancer. The Philippine Spanish dancers are mostly H. lacer (study 2.3; the list note's sources note, 1.5: Tibiriçá et al. 2023 split the genus)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Hexabranchus sanguineus", "u": "https://www.inaturalist.org/taxa/244849"},
+        {"t": "iNaturalist, Hexabranchus", "u": "https://www.inaturalist.org/taxa/49745"},
+        {"t": "WoRMS, Hexabranchus sanguineus", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=220381"},
+        {"t": "English Wikipedia, Spanish dancer", "u": "https://en.wikipedia.org/wiki/Spanish_dancer"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "Gary Cobb, nudibranch.com.au, Naming Nudibranchs", "u": "https://nudibranch.com.au/common.html"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-pikachu",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Pikachu nudibranch\": Thecacera pacifica or T. pikachu?",
+      "q": "\"Pikachu nudibranch\" is Thecacera pacifica's nickname in iNaturalist and Wikipedia (\"sometimes also nicknamed the Pikachu nudibranch\"), and \"Pikachu\" its nickname among Japanese divers (SEASLUG.WORLD, whose table of viral nicknames gives \"Pikachu\" to both species); SEASLUG.WORLD's species page also calls Thecacera pikachu, described in 2026 and named after the nickname, \"Pikachu Nudibranch\". Both species are in the game. Keep the name on both?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5); the game's choices stay scientific names.",
+        "SEASLUG.WORLD's article: \"When a Japanese diver says \"Pikachu,\" this is the animal\" (T. pacifica); \"The internet nickname went straight into the scientific name\" (T. pikachu).",
+        "Answered by Pierre (2026-11-17 and 2026-11-19, Q417): the nickname is kept on both species, and T. picta, which local divers also call Pikachu, is cited as a cousin of the species called Pikachu (Pierre, 2026-11-19 14:50) (docs/decisions/2026-11-19-pikachu-nickname.md). Applied; to mark Resolved in the admin."
+      ],
+      "src": [
+        {"t": "iNaturalist, Thecacera pacifica", "u": "https://www.inaturalist.org/taxa/142790"},
+        {"t": "English Wikipedia, Thecacera pacifica", "u": "https://en.wikipedia.org/wiki/Thecacera_pacifica"},
+        {"t": "SEASLUG.WORLD, Thecacera pikachu", "u": "https://en.seaslug.world/species/thecacera_pikachu"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-leaf-sheep",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Leaf sheep\", \"Shaun the Sheep\": Costasiella kuroshimae or an undescribed Costasiella?",
+      "q": "iNaturalist, Wikipedia and Florent's Guide give \"Leaf sheep\" to Costasiella kuroshimae, and iNaturalist, DIVERNET and DAN's Alert Diver give it \"Shaun the Sheep\" (\"Shaun the Sheep, or Costasiella kuroshimae, can be found in shallow waters in the Philippines\"; \"Costasiella kuroshimae, also known as leaf sheep or Shaun the Sheep\"); SEASLUG.WORLD says the animal of the viral posts, with pink cheeks, is Costasiella sp. 3, not formally described yet, and that C. kuroshimae \"gets labeled 'leaf sheep' just as often\". The app shows both names on C. kuroshimae. Keep them there?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). Costasiella sp. 3 is not in the game (no scientific name)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Costasiella kuroshimae", "u": "https://www.inaturalist.org/taxa/469221"},
+        {"t": "English Wikipedia, Costasiella kuroshimae", "u": "https://en.wikipedia.org/wiki/Costasiella_kuroshimae"},
+        {"t": "DIVERNET (Scuba Diver Magazine), Shaun The Sheep Slug: The Satori Of Diving (2025-09-21)", "u": "https://divernet.com/scuba-news/marine-biology/shaun-the-sheep-slug-the-satori-of-diving/"},
+        {"t": "DAN Alert Diver, A Quest for Life (2025-08-28)", "u": "https://dan.org/?p=53983"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-blue-dragon",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Blue dragon\": Pteraeolidia semperi, the genus, P. ianthina or Glaucus?",
+      "q": "iNaturalist and SEASLUG.WORLD give \"Blue Dragon\" to Pteraeolidia semperi (SEASLUG.WORLD: the reef one) and iNaturalist \"Blue Dragons\" to the genus Pteraeolidia; nudibranch.com.au gives it to Pteraeolidia ianthina (not in the game), and SEASLUG.WORLD notes the nickname is used as much for the pelagic Glaucus atlanticus (not in the game). The app shows it on P. semperi and on the genus. Keep it so?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). The species list's source already marked \"blue dragon\" as a point to check (tools/seaslug_source.json nicknames, ask)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Pteraeolidia semperi", "u": "https://www.inaturalist.org/taxa/469568"},
+        {"t": "iNaturalist, Pteraeolidia", "u": "https://www.inaturalist.org/taxa/48754"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "Gary Cobb, nudibranch.com.au, Naming Nudibranchs", "u": "https://nudibranch.com.au/common.html"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-sea-hares",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Sea hares\": the family Aplysiidae and the genus Aplysia",
+      "q": "iNaturalist and WoRMS call the family Aplysiidae \"Sea Hares\"; WoRMS gives the genus Aplysia the same name. The app shows it on both, as information. Keep it so?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). The game asks the genera (Aplysia, Dolabella, Stylocheilus in this family), never the family; a typed English name is never a right answer."
+      ],
+      "src": [
+        {"t": "iNaturalist, Aplysiidae", "u": "https://www.inaturalist.org/taxa/48656"},
+        {"t": "WoRMS, Aplysiidae", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=172"},
+        {"t": "WoRMS, Aplysia", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=137654"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-named-labels",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Seven \"sp. N\" of the 2018 guide now have names",
+      "q": "Papers since 2020 name seven \"sp. N\" of the 2018 guide (Gosliner, Valdés & Behrens, 2nd edition): Thecacera sp. 8 is T. pikachu, Tenellia sp. 20 T. nakapila, Phyllidia sp. 10 P. ovata, Goniobranchus sp. 43 Chromodoris kalawakan, Chromodoris sp. 11 C. quagga, Chromodoris sp. 12 C. balat, Nembrotha sp. 5 N. lorosae. Five are already in the species list under their names; C. quagga and P. ovata are not confirmed in the Philippines (rule C8). Nothing to rename. Anything you want done with them, such as a line on their species sheets giving the guide's old label?",
+      "ctx": [
+        "Found by the literature watch (tools/seaslug_lit.py; the scan's note §3.2). Nothing settled (rule C5); the game's units are genera (Pierre, 2026-11-16), so players meet no change.",
+        "How each link is known: Thecacera sp. 8 and Nembrotha sp. 5, SEASLUG.WORLD's species pages, whose references cite the 2018 guide; Tenellia sp. 20, 8 of the 9 iNaturalist observations whose description says \"Tenellia sp. 20\" are identified T. nakapila now; Phyllidia sp. 10 (sp. 9 in the 2015 edition), the paper's synonymy; the three Chromodoris, the paper's treatments (\"sp. 11 — Gosliner et al. 2018: 139\").",
+        "Distinct Research Grade observers in the Philippines: T. pikachu 31, T. nakapila 27, C. kalawakan 16, C. balat 3, N. lorosae 3 (all confirmed); C. quagga 2 (one short, see the point on new species); P. ovata none at species level (the paper's Philippine record is a Dauin photo on Nudi Pixel, which rule C8 does not count).",
+        "Also named before 2018: Doriprismatica balut (13 observers, in the list) was Glossodoris sp. 1 of the 2008 guide and Doriprismatica sp. 1 of 2015 (Matsuda & Gosliner 2018). None of the 31 labels with 4 or more observers, Goniobranchus sp. 5 included, has a published name yet."
+      ],
+      "src": [
+        {"t": "Pola, Paz-Sedano, Martín, Warren, Noble & Martín-Hervás (2026), Zootaxa 5793(1): 193-217 (abstract)", "u": "https://www.mapress.com/zt/article/view/57331"},
+        {"t": "SEASLUG.WORLD, Thecacera pikachu", "u": "https://en.seaslug.world/species/thecacera_pikachu"},
+        {"t": "SEASLUG.WORLD, Nembrotha lorosae", "u": "https://en.seaslug.world/species/nembrotha_lorosae"},
+        {"t": "Kim, Donohoo & Gosliner (2024), Stirring up the muck: the systematics of soft-sediment Fionidae from the tropical Indo-Pacific, PeerJ 12: e18517", "u": "https://doi.org/10.7717/peerj.18517"},
+        {"t": "Wägele, Raubold, Papu, Undap & Yonow (2025), On two new Phyllidia species and some histology from the Coral Triangle, ZooKeys 1245: 1-18", "u": "https://zookeys.pensoft.net/article/153046/"},
+        {"t": "Bonomo & Gosliner (2020), Adding stars to the Chromodoris galaxy with the description of four new species, Zootaxa 4819(3): 401-435 (abstract and Plazi treatments)", "u": "https://www.mapress.com/zt/article/view/39300"},
+        {"t": "Matsuda & Gosliner (2018), Zootaxa 4444(5): 501-529", "u": "https://doi.org/10.11646/zootaxa.4444.5.1"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §3.2"}
+      ]
+    },
+    {
+      "id": "seaslug-complexes",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "One name, several species: eight of our sea slugs are species complexes",
+      "q": "Papers show eight species of our list to be complexes of several species, the others not named yet: Pteraeolidia semperi, Coryphellina exoptata, Samla bicolor, Phyllidiella pustulosa, Thuridilla gracilis, Costasiella kuroshimae, Jorunna funebris and Plakobranchus ocellatus. WoRMS and iNaturalist keep each as one species, and so does the app. A photo of one is sure at the genus (today's units), less so at the species. Keep them as single species, or mark them as complexes on their species sheets and for the species level later?",
+      "ctx": [
+        "Found by the literature watch (the scan's note §4 and §5.3). Nothing settled (rule C5); no name to add or change. Observers: distinct Research Grade observers in the Philippines (tools/seaslugs.json, 2026-11-15).",
+        "Pteraeolidia semperi (162 observers, circle 1): Meshik et al. 2026, two clades living together in Vietnam, \"at least two species within a broader and highly diverse species complex\", species delimitation giving \"about six and 20 units\"; the clades differ mainly in colour, which depends on light and symbionts; no Philippine specimen.",
+        "Coryphellina exoptata (92, circle 1): Ekimova et al. 2026, \"the Coryphellina exoptata species complex, represented by two species\". Samla bicolor (49): the same paper, specimens \"split into five monophyletic groups\".",
+        "Phyllidiella pustulosa (61): Papu et al. 2022 (its Plazi treatment), still a species complex to solve, the name kept for one clade; the lectotype is \"completely white\", so no photo cue for the true form.",
+        "Thuridilla gracilis (31): Martín-Hervás et al. 2021, a complex of 13 species, T. gracilis, T. splendens, T. bayeri, T. ratna \"plus nine undescribed species\" (abstract summaries only). T. bayeri (3) and T. ratna (4) are in our list too.",
+        "Costasiella kuroshimae (53, circle 1, the \"leaf sheep\"): Jensen et al. 2014, \"numerous distinct species that currently await description\" (a search summary only); C. fridae was described from the Maldives in 2023 (Cunha et al.). See also the \"Leaf sheep\" point.",
+        "Jorunna funebris (153, circle 1): Tibiriçá, Strömvoll & Cervera 2023, \"retrieved as a species complex in all possible partitions\" (a search summary only).",
+        "Plakobranchus ocellatus (30): Meyers-Muñoz et al. 2016, 10 candidate species, P. papua (39, in our list) named that year; a \"Plakobranchus sp. 6\" of the 2018 guide (Philippines) still unnamed (search summaries only)."
+      ],
+      "src": [
+        {"t": "Meshik, Antokhina, Deart, Chichvarkhina & Ekimova (2026), Dragons guard secrets: integrative systematics of Pteraeolidia semperi species complex, ZooKeys 1293: 347-376", "u": "https://zookeys.pensoft.net/article/195366/"},
+        {"t": "Ekimova et al. (2026), Neither 'lumpers' nor 'splitters': A global revision of Flabellinidae s.l. nudibranchs, PLOS One 21(5): e0347759", "u": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0347759"},
+        {"t": "Papu et al. (2022), Phyllidiidae: an integrative taxonomic approach including chemical analyses, Organisms Diversity & Evolution 22: 585-629 (Plazi treatment of Phyllidiella pustulosa)", "u": "https://tb.plazi.org/GgServer/xhtml/E60487942A01FFCDFCBEFC81685B522C"},
+        {"t": "Martín-Hervás, Carmona, Malaquias, Krug, Gosliner & Cervera (2021), Cladistics 37(6): 647-676", "u": "https://doi.org/10.1111/cla.12465"},
+        {"t": "Jensen et al. (2014), Journal of Molluscan Studies (Costasiella; search summary)"},
+        {"t": "Cunha, Fernández-Simón, Petrula, Giribet & Moles (2023), Diversity 15(2): 219", "u": "https://doi.org/10.3390/d15020219"},
+        {"t": "Tibiriçá, Strömvoll & Cervera (2023), Jorunna liviae (search summary)"},
+        {"t": "Meyers-Muñoz et al. (2016), Plakobranchus (search summary)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.2, §4.7, §4.9, §4.10, §4.12"}
+      ]
+    },
+    {
+      "id": "seaslug-ovata-in-picta",
+      "kind": "content",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Phyllidia ovata among the P. picta and P. coelestis photos?",
+      "q": "Wägele et al. 2025 described Phyllidia ovata (the 2018 guide's Phyllidia sp. 10) and found photos of it \"in files of P. picta Pruvot-Fol, 1957 and P. coelestis in both iNaturalist and NudiPixel\", with a Philippine record from Dauin. Our list holds P. picta (96 observers) and P. coelestis (154), both in circle 1, not P. ovata, which has no Philippine observation at species level on iNaturalist (rule C8). Should the photo judging check the P. picta and P. coelestis photos against P. ovata's description, and leave out those that match?",
+      "ctx": [
+        "Found by the literature watch (the scan's note §4.2). Nothing settled (rule C5).",
+        "The paper's diagnosis of P. ovata: a white mantle \"rarely with a tinge of blue\", a black area on the central notum, \"Large white conical tubercles have yellow apices\", yellow rhinophores, a black line on the foot sole. Its range: \"a narrow band in the Western Pacific from Japan south to Taiwan, Indonesia, and the Philippines\".",
+        "P. ovata cannot serve as a look-alike cue yet: a species not confirmed in the Philippines stays out of the cues (rule C6). Its companion P. fontjei is not recorded from the Philippines."
+      ],
+      "src": [
+        {"t": "Wägele, Raubold, Papu, Undap & Yonow (2025), On two new Phyllidia species and some histology from the Coral Triangle, ZooKeys 1245: 1-18", "u": "https://zookeys.pensoft.net/article/153046/"},
+        {"t": "SEASLUG.WORLD, Phyllidia ovata and P. fontjei, new species (2025)", "u": "https://en.seaslug.world/blog/phyllidia-ovata-fontjei-new-species-2025"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.2"}
+      ]
+    },
+    {
+      "id": "seaslug-alcalai-dianae",
+      "kind": "content",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Chromodoris dianae photos from before 2021: some may be C. alcalai",
+      "q": "Chromodoris alcalai (Gosliner 2021) \"had been confused\" with C. dianae before its description; the two are \"separated by molecular evidence, external morphology, colour pattern, and internal anatomy\" (SEASLUG.WORLD, on the paper). Both are in our list (C. alcalai 66 observers, C. dianae 52). A C. dianae photo taken before 2021 may show C. alcalai. Should the photo judging check older C. dianae photos, or prefer recent ones?",
+      "ctx": [
+        "Found by the literature watch (the scan's note §4.3). Nothing settled (rule C5). The paper itself was not read (its DOI answered 503 on 2026-11-15); the cue between the two is in it.",
+        "The pair now has a written source for the look-alikes: the look-alike survey (docs/reviews/2026-11-17-seaslug-lookalikes-survey.md) found it the strongest Chromodoris pair on iNaturalist (12 confusions in the Philippines), with no source then.",
+        "Layton, Gosliner & Wilson 2018: \"only five of 39\" Chromodoris taxa have stable colour patterns."
+      ],
+      "src": [
+        {"t": "SEASLUG.WORLD, Chromodoris alcalai", "u": "https://en.seaslug.world/species/chromodoris_alcalai"},
+        {"t": "Gosliner (2021), Sleuthing cryptic chromodorids: adding to Philippine marine biodiversity, Philippine Journal of Systematic Biology 14(2)", "u": "https://doi.org/10.26757/pjsb2020b14014"},
+        {"t": "Layton, Gosliner & Wilson (2018), Molecular Phylogenetics and Evolution 124: 27-36", "u": "https://doi.org/10.1016/j.ympev.2018.02.008"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.3"}
+      ]
+    },
+    {
+      "id": "seaslug-tenellia-genera",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Tenellia, Phestilla or Trinchesia?",
+      "q": "iNaturalist names Tenellia viei and T. goniophaga, which WoRMS gives as Phestilla viei and P. goniophaga (\"alternative representation\", for a \"controversed genus allocation\"); Korshunova, Fletcher & Martynov 2025 move T. nakapila to \"Trinchesia\", while WoRMS keeps Tenellia nakapila. The app follows iNaturalist's genera, with WoRMS's name beside. The units are genera, so a species' genus decides which unit its photos teach. Keep iNaturalist's genera, or follow WoRMS (Phestilla) for the two?",
+      "ctx": [
+        "Found by the literature watch (`rename`; the scan's note §4.11) and the mode study (docs/reviews/2026-11-15-nudibranch-mode-study.md: 450 of our 452 names are WoRMS's accepted name, these 2 differ). Nothing settled (rule C5).",
+        "In the game today: the Tenellia unit holds T. bughaw, T. nakapila and T. puti; the Phestilla unit P. melanobrachia and P. sibogae. T. viei (9 observers) and T. goniophaga (5) are in the species list, not in the game.",
+        "The Trinchesia recombination is from a Plazi treatment's summary of the 2025 paper (not read); WoRMS cites the paper as the status source of Phestilla sibogae, P. melanobrachia and P. lugubris."
+      ],
+      "src": [
+        {"t": "WoRMS, Tenellia viei", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1783808"},
+        {"t": "WoRMS, Tenellia goniophaga", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1783820"},
+        {"t": "WoRMS, Tenellia nakapila", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1783802"},
+        {"t": "Korshunova, Fletcher & Martynov (2025), Zoological Journal of the Linnean Society 204(4): zlaf057", "u": "https://doi.org/10.1093/zoolinnean/zlaf057"},
+        {"t": "Kim, Donohoo & Gosliner (2024), Stirring up the muck: the systematics of soft-sediment Fionidae from the tropical Indo-Pacific, PeerJ 12: e18517", "u": "https://doi.org/10.7717/peerj.18517"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §4.11"}
+      ]
+    },
+    {
+      "id": "seaslug-new-species-watch",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "256 species described since 2018 in our genera: two one observer short",
+      "q": "WoRMS accepts 256 species described since 2018 in our 146 genera and 3 watched ones. 59 are already in our list; none is confirmed in the Philippines (rule C8) without being in it; 27 are observed there but not confirmed. Chromodoris quagga (6 Research Grade observations, 2 observers; holotype from Tingloy, Batangas) and Trapania tigger (3, 2 observers) each need one more observer, Sacoproteus nishae (4, 1 observer) two more. tools/build_seaslugs.py takes a species in on its next pull once it passes the rule, and tools/seaslug_lit.py reruns the watch. Keep it so, or do you want to hear when one comes in?",
+      "ctx": [
+        "Found by the literature watch (tools/seaslug_lit.py; the scan's note §3 and §5.1). Nothing to add today.",
+        "By year: 67 of 2018, 9 of 2019, 23 of 2020, 13 of 2021, 29 of 2022, 48 of 2023, 14 of 2024, 35 of 2025, 15 of 2026; most in Halgerda (20), Hypselodoris (17), Trapania (17), Cyerce (14), Gymnodoris (13). 170 have no observation in the Philippines at species level.",
+        "Next with 2 Research Grade observations each: Coryphellina pannae, Halgerda mango, Hypselodoris rositoi, Naisdoris aurornata, Phanerophthalmus albotriangulatus, Polybranchia jensenae, Trapania stegodon.",
+        "Phyllidia ovata (2025) cannot come in this way yet: no Philippine observation at species level (see the P. ovata point)."
+      ],
+      "src": [
+        {"t": "Bonomo & Gosliner (2020), Adding stars to the Chromodoris galaxy with the description of four new species, Zootaxa 4819(3): 401-435 (abstract and Plazi treatments)", "u": "https://www.mapress.com/zt/article/view/39300"},
+        {"t": "iNaturalist, Chromodoris quagga, Research Grade in the Philippines", "u": "https://www.inaturalist.org/observations?taxon_id=1115868&place_id=6873&quality_grade=research"},
+        {"t": "Smirnoff, Donohoo & Gosliner (2022), Zoological Journal of the Linnean Society 196(1): 270-313", "u": "https://doi.org/10.1093/zoolinnean/zlac009"},
+        {"t": "iNaturalist, Trapania tigger, Research Grade in the Philippines", "u": "https://www.inaturalist.org/observations?taxon_id=1392151&place_id=6873&quality_grade=research"},
+        {"t": "Krug, Wong, Medina, Gosliner & Valdés (2018), Zoologica Scripta 47(6): 699-713 (Sacoproteus nishae)"},
+        {"t": "iNaturalist, Sacoproteus nishae, Research Grade in the Philippines", "u": "https://www.inaturalist.org/observations?taxon_id=787078&place_id=6873&quality_grade=research"},
+        {"t": "tools/seaslug_lit.json (WoRMS and iNaturalist, pulled 2026-11-16)"},
+        {"t": "docs/reviews/2026-11-17-seaslug-literature-scan.md §3, §5.1"}
+      ]
+    },
+    {
+      "id": "seaslug-guide-3rd-edition",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "Watch: the guide's 3rd edition renumbers the \"sp. N\"",
+      "q": "A 3rd edition of Nudibranch & Sea Slug Identification – Indo-Pacific (Gosliner, Valdés & Behrens, New World Publications; ISBN 978-1-878348-73-9) is announced for November 2026. The guides renumber their \"sp. N\" from one edition to the next, and the labels our tools keep and the iNaturalist notes they read mostly cite the 2018 edition (\"Stiliger sp. 1 in NSSI2\"). When it is out: use it as a source (the 2018 edition is not used: dated and DRM-protected), and map the labels to its numbers, each label keeping its edition?",
+      "ctx": [
+        "A watch, nothing to decide before the book is out. The ISBN and the November 2026 date come from the publisher's announcement Pierre shared on 2026-11-17 (a screenshot of its post; not committed); a web search that day found no listing of the ISBN, only a search engine's summary of the publisher's page listing a 3rd edition, \"updated and reorganized\", with 500 new species and taxonomic changes (the page answered 503 and was not read). The undescribed study (2026-11-17, §3.2) had found no 3rd edition; 4 iNaturalist observations already write \"NSSI3\".",
+        "How the books renumber: Doriprismatica balut was \"Glossodoris sp. 1\" (2008), then \"Doriprismatica sp. 1\" (2015); one Gymnodoris is sp. 51 in 2018 and sp. 12 in 2008. Our labels name their edition (tools/seaslug_lit_source.json, \"(NSSI2)\"), and the papers' synonymies cite edition and page (\"Gosliner et al. 2018: 139\"), so a new edition breaks none of them.",
+        "Pierre, 2026-11-17 (Q389): the guide's \"sp. N\" other than Goniobranchus sp. 5 wait for a published name; the literature watch brings them in as papers name them."
+      ],
+      "src": [
+        {"t": "New World Publications, Nudibranch & Sea Slug Identification – Indo-Pacific (publisher's page; search summary, not read)", "u": "https://fishid.com/nudiindo.html"},
+        {"t": "Gosliner, Valdés & Behrens (2018), Nudibranch & Sea Slug Identification – Indo-Pacific, 2nd ed., New World Publications, ISBN 978-1-878348-67-8"},
+        {"t": "docs/reviews/2026-11-17-seaslug-undescribed-species-study.md §3.2, §6"},
+        {"t": "tools/seaslug_lit_source.json (labels)"}
+      ]
+    },
+    {
+      "id": "coral-finder-starred-pages",
+      "kind": "sources",
+      "subj": "coral",
+      "at": "2026-11-18",
+      "title": "Coral Finder 2022: do its pages compare Merulina with Hydnophora, and Duncanopsammia with Turbinaria?",
+      "q": "On the Coral Finder 2022 pages, is Merulina compared in words with Hydnophora (pages 11-12, 17, 51, 62, 75), and Duncanopsammia with Turbinaria (page 50, also 9 and 74)? If so, on which page and by which feature? And on which page is the comment that sets Herpolitha (elongate) apart from the dome-shaped mushroom corals such as Halomitra (page 65 or 66)?",
+      "ctx": [
+        "The four starred genera Alveopora, Merulina, Halomitra and Duncanopsammia have no card in Learn's Look-alikes deck: their look-alike pair cites only a shared Coral Finder box, and the deck takes only pairs a source compares in words (rule C2).",
+        "Coral Finder 2022 on Pierre's Drive is scanned with no text layer, so an agent could not read it. The earlier printing on his Drive (2009, look-alike pages 1-29) compares Alveopora with Goniopora (12 against 24 tentacles) and, in a page comment, Herpolitha with the dome-shaped free-living corals; it does not compare Merulina with Hydnophora, and its Duncanopsammia is the branching D. axifuga (D. peltata was then Turbinaria peltata).",
+        "Pages given here are data.json's pages for each genus. The study: docs/reviews/2026-11-18-classic-lookalike-pairs.md section 6.2."
+      ],
+      "src": [
+        {"t": "Coral Finder 2022 (R. Kelley, BYOGUIDES), Pierre's Drive copy"},
+        {"t": "Coral Finder, earlier printing (R. Kelley, 2009), Pierre's Drive copy"},
+        {"t": "Study 2026-11-18, classic look-alike pairs, section 6.2"}
+      ]
+    },
+    {
+      "id": "fish-juv-parrotfish-striped",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Parrotfish juveniles: \"striped, alike across species\"?",
+      "q": "The Parrotfish entry's juvenile note says small juveniles are striped and alike across species. Bellwood & Choat (1989), which the note cites, write that their 24 species can all be told apart as juveniles but two pairs, and some juveniles are not striped. Should the note stay as it is?",
+      "ctx": [
+        "tools/fish_source.json t08 juv (class B): \"Small juveniles are striped, alike across species, and change pattern as they grow.\"",
+        "Bellwood & Choat 1989 (abstract): \"All species can be identified to the species level with the exception of two pairs of closely related species.\"",
+        "Fishes of Australia: Cetoscarus ocellatus juveniles \"are white with a broad orange band around the head, a black ocellus on the dorsal fin\"; Scarus niger juveniles \"are dark greenish black, covered in small white spots\"; Scarus altipinnis \"small juveniles have a striped to mottled body with a distinctive yellow head\" (Reef Life Survey: S. prasiognathos has \"very similar juveniles\").",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5): the entry keeps class B in the game; as a label, its species are Off, except S. altipinnis, Finer rank from its own source."
+      ],
+      "src": [
+        {"t": "Bellwood & Choat 1989, Records of the Australian Museum 41(1): 1-41", "u": "https://journals.australian.museum/bellwood-and-choat-1989-rec-aust-mus-411-141/"},
+        {"t": "Fishes of Australia, Cetoscarus ocellatus", "u": "https://fishesofaustralia.net.au/home/species/390"},
+        {"t": "Fishes of Australia, Scarus niger", "u": "https://fishesofaustralia.net.au/home/species/926"},
+        {"t": "Fishes of Australia, Scarus altipinnis", "u": "https://fishesofaustralia.net.au/home/species/399"},
+        {"t": "Reef Life Survey, Scarus altipinnis", "u": "https://reeflifesurvey.com/species/scarus-altipinnis/"}
+      ]
+    },
+    {
+      "id": "fish-juv-monotaxis-emperor",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Emperor juveniles: Monotaxis grandoculis barred, the adult silvery",
+      "q": "The Emperor entry's juvenile note says juveniles are not very different from the adults. Fishes of Australia describes Monotaxis grandoculis juveniles with broad dark bars, a black bar through the eye and orange-red tail lobes, while FishBase gives the adult as silvery grey. Does the note hold for Monotaxis?",
+      "ctx": [
+        "tools/fish_source.json t11 juv (class B, Pierre, 2026-11-04): \"Not very different from adults but not specific at all: early juveniles share a few patterns of stripes and bands, told apart by close examination.\" It cites Fishes of Australia 2756, the Monotaxis grandoculis page.",
+        "Fishes of Australia 2756: \"Juveniles have 3 broad dark brown to blackish bars or saddles on the body (rear two extending onto dorsal fin), a black bar through the eye and an orange to reddish band along the outer caudal-fin lobes.\" FishBase: \"Color of adult silvery grey with narrow dark scale margins\".",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Monotaxis grandoculis", "u": "https://fishesofaustralia.net.au/home/species/2756"},
+        {"t": "FishBase, Monotaxis grandoculis", "u": "https://www.fishbase.se/summary/Monotaxis-grandoculis.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-rabbitfish-class-c",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Rabbitfish juveniles: like the adults?",
+      "q": "The Rabbitfish entry's juvenile note says juveniles look similar to the adults. The Siganus corallinus page it cites says small juveniles have narrow blue vertical lines that break up into the adult's eyespots. Should the note stay as it is?",
+      "ctx": [
+        "tools/fish_source.json t07 juv (class C): \"Juveniles look similar to the adults (Siganus puellus); same body plan.\" It cites Fishes of Australia 4733, the Siganus corallinus page.",
+        "Fishes of Australia 4733: \"Small juveniles have narrow blue vertical lines on the sides that fragment into ocelli with growth.\" FishBase: \"Very small juveniles (up to 50 mm SL) may have vertical blue lines on side, fragmenting into the ocelli with increase in size.\"",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Siganus corallinus", "u": "https://fishesofaustralia.net.au/home/species/4733"},
+        {"t": "FishBase, Siganus corallinus", "u": "https://www.fishbase.se/summary/Siganus-corallinus.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-spadefish-resemblance",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Spadefish juveniles: a resemblance \"suggested, not established\"?",
+      "q": "The Spadefish entry's juvenile note says a resemblance to floating leaves or flatworms has been suggested, not established. Fishes of Australia states it for three species. Should the note say so, in the source's words?",
+      "ctx": [
+        "tools/fish_source.json t04 juv (class A, Pierre, 2026-11-04): \"A resemblance to floating leaves or flatworms has been suggested, not established.\"",
+        "Fishes of Australia: Platax orbicularis \"Small juveniles are yellowish to reddish-brown and resemble leaves drifting amongst flotsam\"; P. teira \"Very small juveniles are brownish and resemble floating leaves\"; P. pinnatus \"They mimic a toxic flatworm in shape, colour and movement.\"",
+        "Found by the juvenile sourcing of 2026-11-19 (tools/fish_juveniles.json). Nothing changed (rule C5): the Spadefish keep class A, and Bold as a label."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Platax orbicularis", "u": "https://fishesofaustralia.net.au/home/species/2208"},
+        {"t": "Fishes of Australia, Platax teira", "u": "https://fishesofaustralia.net.au/home/species/2210"},
+        {"t": "Fishes of Australia, Platax pinnatus", "u": "https://fishesofaustralia.net.au/home/species/2209"}
+      ]
+    },
+    {
+      "id": "fish-juv-iniistius-dea-photos",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Iniistius dea juveniles: one published image is I. pavo",
+      "q": "Fishes of Australia says a published image of an Iniistius dea juvenile (Kuiter's) is a juvenile I. pavo. Are the game's 13 juvenile photos of I. dea all I. dea?",
+      "ctx": [
+        "Fishes of Australia 294: \"Kuiter's image of Iniistius dea is a juvenile Iniistius pavo.\"",
+        "The game has 13 juvenile photos under Iniistius dea and 36 under I. pavo (fish-game.json, 2026-11-19). Found by the juvenile sourcing of 2026-11-19; no photo changed (rule C5)."
+      ],
+      "src": [{"t": "Fishes of Australia, Iniistius dea", "u": "https://fishesofaustralia.net.au/home/species/294"}]
+    },
+    {
+      "id": "fish-juv-frogfish-black-orange",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "The black, orange-spotted juvenile frogfish: Antennarius maculatus, not A. pictus?",
+      "q": "Frogfish.ch writes that the black frogfish with orange-yellow spots, long taken for the juvenile of Antennarius pictus, is the juvenile of A. maculatus (Pietsch 2018). Are the game's 13 juvenile photos under A. pictus all A. pictus?",
+      "ctx": [
+        "Frogfish.ch, the Antennarius pictus group: \"The black frogfish with orange-yellow spots and bluish fins was long thought to be the juvenile of A. pictus. According to T. Pietsch 2018 (University of Waschington) this is the juvenile of the Warty Frogfish.\" It adds: \"the juvenile of the Giant-Frogfishes looks nearly the same as the Warty Frogfish - only the lure is different\".",
+        "The game has 13 juvenile photos under Antennarius pictus and 21 under A. maculatus (fish-game.json, 2026-11-19). The A. pictus sheet line gives no colour. Found by the juvenile sourcing of 2026-11-19; no photo changed (rule C5)."
+      ],
+      "src": [{"t": "Frogfish.ch, the Antennarius pictus group", "u": "https://frogfish.ch/Antennarius-pictus-group.html"}]
+    },
+    {
+      "id": "fish-juv-iniistius-pavo-ocelli",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Iniistius pavo juveniles: two or three dorsal eyespots?",
+      "q": "FishBase gives Iniistius pavo juveniles two large eyespots in the dorsal fin; Fishes of Australia gives three. Which count holds for the juveniles at Dauin?",
+      "ctx": [
+        "FishBase: \"Juveniles with black anal fin and two large ocelli, thinly edged with white, in dorsal fin\". Fishes of Australia 296: \"Juveniles have elongate anterior dorsal-fin spines forming a 'flag\" and three ocelli along the dorsal fin.\"",
+        "The species sheet's juvenile line says \"eyespots\", with no count. Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "FishBase, Iniistius pavo", "u": "https://www.fishbase.se/summary/Iniistius-pavo.html"},
+        {"t": "Fishes of Australia, Iniistius pavo", "u": "https://fishesofaustralia.net.au/home/species/296"}
+      ]
+    },
+    {
+      "id": "fish-juv-halichoeres-biocellatus-ocelli",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Halichoeres biocellatus juveniles: two or three dorsal eyespots?",
+      "q": "Reef Life Survey tells Halichoeres biocellatus juveniles from H. marginatus and H. melanurus by three dorsal-fin eyespots; FishBase gives the juveniles a pair. Which count holds?",
+      "ctx": [
+        "Reef Life Survey: \"Juveniles distinguished from H. marginatus (Dusky Wrasse) and H. melanurus (Hoeven's Wrasse) by having 3 dorsal fin ocelli and a black spot on the tail base.\" FishBase: \"Juveniles and sub adults have a pair of ocelli on the dorsal fin which disappears with growth\".",
+        "The species sheet's juvenile line says \"two or three, the sources differ\". Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "Reef Life Survey, Halichoeres biocellatus", "u": "https://reeflifesurvey.com/species/halichoeres-biocellatus/"},
+        {"t": "FishBase, Halichoeres biocellatus", "u": "https://www.fishbase.se/summary/Halichoeres-biocellatus.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-hemigymnus-melapterus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Hemigymnus melapterus juveniles: two descriptions",
+      "q": "Fishes of Australia describes the juvenile as greenish-brown with a diagonal white bar behind the pectoral fin; Reef Life Survey gives females and juveniles the adult's two-tone body, juveniles with a yellow tail. Which describes the juveniles seen at Dauin?",
+      "ctx": [
+        "Fishes of Australia 245: \"Juveniles are greenish-brown with a diagonal white bar behind the pectoral fin, before developing the pale anterior and dark posterior bicolor pattern.\"",
+        "Reef Life Survey: \"Females and juveniles with a two tone body, head and fore body silver, divided by an oblique white bar from a black rear body with light vertical streaks on scales, dark patch behind eye and juveniles with a yellow tail.\"",
+        "Until it is settled, the species sheet gives both descriptions, each with its source. Found by the juvenile sourcing of 2026-11-19 (rule C5).",
+        "The juvenile card's sourcing of 2026-11-20 also read Fishes of Australia's \"Changes colour dramatically from juvenile to adult.\" against Reef Life Survey's two-tone juveniles: until this is settled the species has no juvenile card (tools/fish_juv_differs.json lists it as unknown); 11 juvenile photos of it in play."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Hemigymnus melapterus", "u": "https://fishesofaustralia.net.au/home/species/245"},
+        {"t": "Reef Life Survey, Hemigymnus melapterus", "u": "https://reeflifesurvey.com/species/hemigymnus-melapterus/"}
+      ]
+    },
+    {
+      "id": "fish-juv-ctenochaetus-binotatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Ctenochaetus binotatus juveniles: easily recognised, or easily confused?",
+      "q": "A regional dive survey group calls the juveniles easily recognised by the yellow tail and the blue ring around the eye; FishBase's morphology page says the species is likely to be confused with closely related species. Which holds for the juveniles?",
+      "ctx": [
+        "Solitary Islands Underwater Research Group: \"juveniles often seen in the Solitary Islands Marine Park, easily recognised by the yellow caudal fin and blue ring around the eye.\" FishBase, morphology: \"Ease of Identification likely to be confused with closely related species.\"",
+        "As a label (no effect on the game) it is Bold, from the juvenile-specific statement. Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+      ],
+      "src": [
+        {"t": "Solitary Islands Underwater Research Group, Ctenochaetus binotatus", "u": "https://www.surg.org.au/species/ctenochaetus-binotatus-randall-1955/"},
+        {"t": "FishBase, Ctenochaetus binotatus, morphology", "u": "https://www.fishbase.se/physiology/MorphDataList.php?ID=6012&GenusName=Ctenochaetus&SpeciesName=binotatus"}
+      ]
+    },
+    {
+      "id": "seaslug-infucata-obscura",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-19",
+      "title": "Hypselodoris infucata in the Philippines: or H. obscura?",
+      "q": "Our list holds Hypselodoris infucata (29 observers in the Philippines, circle 3), as iNaturalist and WoRMS name it. SEASLUG.WORLD says western Pacific animals once called H. infucata belong to H. obscura, leaving H. infucata largely to the Red Sea and the Mediterranean; the Sea Slug Forum (1998) treats it as Indo-West Pacific. Keep the name for our photos, or follow the split?",
+      "ctx": [
+        "Found by the sea slug species marks' sourcing (2026-11-19). Nothing settled (rule C5).",
+        "SEASLUG.WORLD: \"Western Pacific specimens previously identified as Hypselodoris infucata have, since Wilson & Lee 2005 and subsequent molecular analyses, been recognised as belonging to Hypselodoris obscura ; the confirmed range of H. infucata is therefore largely confined to the Mediterranean and Red Sea region.\"",
+        "H. infucata has no species mark until this is settled (tools/seaslug_species_marks.json none); H. obscura is not in our list."
+      ],
+      "src": [
+        {"t": "SEASLUG.WORLD, Hypselodoris infucata", "u": "https://en.seaslug.world/species/hypselodoris_infucata"},
+        {"t": "Sea Slug Forum, Rudman 1998, Hypselodoris infucata fact sheet", "u": "https://www.seaslugforum.net/find/hypsinfu"}
+      ]
+    },
+    {
+      "id": "seaslug-polkadotsa-range",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-19",
+      "title": "Phyllidia polkadotsa: known only from Hawaii, yet observed in the Philippines",
+      "q": "Both pages read on Phyllidia polkadotsa (after Brunckhorst 1993) give it as known only from the Hawaiian Islands, while 17 observers have Research Grade observations of it in the Philippines (Batangas mostly), which brings it into our list (rule C8). Are the Philippine animals P. polkadotsa, or a look-alike yet to be named?",
+      "ctx": [
+        "Found by the sea slug species marks' sourcing (2026-11-19). Nothing settled (rule C5).",
+        "SEASLUG.WORLD: \"Known only from the Hawaiian Islands\"; Sea Slug Forum: \"Known only from Hawaii.\" Its marks (golden yellow with large round black spots, no white) are shown as drafts meanwhile."
+      ],
+      "src": [
+        {"t": "SEASLUG.WORLD, Phyllidia polkadotsa", "u": "https://en.seaslug.world/species/phyllidia_polkadotsa"},
+        {"t": "Sea Slug Forum, Rudman 1999, Phyllidia polkadotsa fact sheet", "u": "https://www.seaslugforum.net/find/phylpolk"},
+        {"t": "tools/seaslugs.json (iNaturalist, pulled 2026-11-15)"}
+      ]
+    },
+    {
+      "id": "fish-naso-one-plate",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-19",
+      "title": "Unicornfishes: two scalpels, or one for some species?",
+      "q": "The IMR fish presentation (slide 14) tells the unicornfishes (Naso) by two scalpels on the tail base. The FAO species guide's key to Naso gives a single keeled plate on each side of the tail base for Naso minor, N. thynnoides and N. caeruleacauda, all three in the game. Should RAs expect one plate on these species, or does IMR count them otherwise?",
+      "ctx": [
+        "IMR cue for Naso (Unicornfish, slide 14): \"Two scalpels on the tail base\"; the app shows it as written (rule C1).",
+        "FAO species guide, Acanthuridae (Randall 2001), key to the species of Naso, couplet 1, p. 3661: \"A single keeled plate posteriorly on each side of caudal peduncle\" for N. minor, N. thynnoides and N. caeruleacauda; two keeled plates for the others (N. lituratus, N. unicornis, N. brevirostris, N. vlamingii, N. annulatus, N. hexacanthus, N. caesius). The family remarks (p. 3653) say \"1 or 2 fixed peduncular plates\" for the Nasinae.",
+        "The genus's own ID marks (tools/fish_genus_marks.json) name no number of plates, so nothing in the app changes until the answer."
+      ],
+      "src": [
+        {"t": "IMR fish presentation, slide 14"},
+        {"t": "FAO species guide, Acanthuridae (Randall 2001), key to the species of Naso, p. 3661", "u": "https://www.fao.org/4/y0870e/y0870e29.pdf"}
+      ]
+    },
+    {
+      "id": "fish-juv-hologymnosus-annulatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Hologymnosus annulatus juveniles: barred, or black with a yellow stripe?",
+      "q": "Wikipedia gives juveniles brown bars, Fishes of Australia gives the same bars to the initial phase, and Reef Life Survey describes black juveniles with a pale yellow stripe. Which do the game's juvenile photos of Hologymnosus annulatus show?",
+      "ctx": [
+        "Wikipedia (read 2026-11-20): \"The juvelines are brown to olive brown and have 17-19 dark brown bars.\"",
+        "Fishes of Australia 246 (as read 2026-11-19): \"Initial phase brown to olive brown with 17-19 dark brown bars\" (the same pattern, given to the initial phase).",
+        "Reef Life Survey (read 2026-11-20): \"Juveniles black with a broad pale yellow stripe from snout along upper body to tail base, and a thin dark stripe from head along base of dorsal fin.\"",
+        "FishBase (as read 2026-11-19): \"Juvenile H. annulatus very closely resemble juvenile Malacanthus latovittatus\".",
+        "The game has 22 juvenile photos of it in play (2026-11-20). Until this is settled the species has no juvenile card (tools/fish_juv_differs.json lists it as unknown). Found by the juvenile card's sourcing of 2026-11-20; nothing settled (rule C5)."
+      ],
+      "src": [
+        {"t": "Wikipedia, Hologymnosus annulatus", "u": "https://en.wikipedia.org/wiki/Hologymnosus_annulatus"},
+        {"t": "Fishes of Australia, Hologymnosus annulatus", "u": "https://fishesofaustralia.net.au/home/species/246"},
+        {"t": "Reef Life Survey, Hologymnosus annulatus", "u": "https://reeflifesurvey.com/species/hologymnosus-annulatus/"},
+        {"t": "FishBase, Hologymnosus annulatus", "u": "https://www.fishbase.se/summary/Hologymnosus-annulatus.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-plectorhinchus-lessonii",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Plectorhinchus lessonii: the sources describe the juvenile and the adult differently",
+      "q": "Three sources agree the young look different from the adult but describe the patterns differently. Which pattern do the game's juvenile and adult photos of Plectorhinchus lessonii show?",
+      "ctx": [
+        "Churaumi Aquarium (read 2026-11-20): \"Juveniles are black with white horizontal stripes.\" and \"They change appearance as they mature reaching 30 cm in length.\" The juvenile card's flag (tools/fish_juv_differs.json, differs) rests on this source.",
+        "Image du Monde, New Caledonia fishes: juvenile \"with three broad black stripes and narrower yellow white band between them\"; adult \"body white with four Irish dark brown strips on upper side\".",
+        "Reeflings (via a search summary, not fetched): juveniles black spots on a white body, adults silver-grey with black spots.",
+        "The game has 24 juvenile photos of it in play (2026-11-20). Found by the juvenile card's sourcing of 2026-11-20; nothing settled (rule C5)."
+      ],
+      "src": [
+        {"t": "Churaumi Aquarium fish encyclopedia (Okinawa)", "u": "https://churaumi.okinawa/en/fishbook/00000224"},
+        {"t": "Image du Monde, New Caledonia fishes, Plectorhinchus lessonii", "u": "https://picture-worl.org/actinopterygien-nouvelle-caledonie-4a-plectorhinchus-lessonii-cuvier-1830.html"},
+        {"t": "Reeflings, Plectorhinchus lessonii (via a search summary, not fetched)", "u": "https://reeflings.com/species/plectorhinchus-lessonii"}
+      ]
+    },
+    {
+      "id": "seaslug-genus-caloria-taringa",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-20",
+      "title": "Caloria indica and Taringa halgerda: their genus held as uncertain by some sources",
+      "q": "WoRMS accepts Caloria indica in Caloria and Taringa halgerda in Taringa, as the game does. The Sea Slug Forum says Caloria indica's genus cannot be resolved at present, and the authors of Taringa halgerda placed it in Taringa only tentatively. The two genera's ID marks are written from these species (\"as C. indica\", \"as T. halgerda\"). Keep both genera as they are?",
+      "ctx": [
+        "Found by the sea slug genus marks' retry (2026-11-20). Nothing settled (rule C5); the game follows WoRMS meanwhile.",
+        "Gosliner and Behrens 1998, abstract: \"Neither Hoplodoris estrelyado, Taringa luteola nor Taringa halgerda are placed with certainty in the genera where they are here assigned.\" The species is named for its outward likeness to Halgerda (its etymology)."
+      ],
+      "src": [
+        {"t": "WoRMS, Caloria indica", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=181240"},
+        {"t": "WoRMS, Taringa halgerda", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=457500"},
+        {"t": "Sea Slug Forum, Phidiana indica fact sheet (now Caloria indica)", "u": "https://www.seaslugforum.net/find/phidindi"},
+        {"t": "Gosliner and Behrens 1998, Proc. Calif. Acad. Sci. 50(11): 279-293, abstract", "u": "https://archive.org/details/biostor-3261"},
+        {"t": "CIESM Atlas of Exotic Species, Caloria indica page", "u": "https://www.ciesm.org/atlas/Caloriaindica.html"}
+      ]
+    }
+  ]
+}

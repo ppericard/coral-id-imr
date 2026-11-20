@@ -23,7 +23,7 @@ let BUILD = 0;
 // Every request for admin.html that reached this server, with the time it came and the time it was answered: printed
 // with the pending list if the admin page of test 9 never reaches DOMContentLoaded (did the worker's fetch get here?).
 const ADMIN_HITS = [];
-// Files this server holds without an answer while HOLD matches their path (test 9: cand.json never answers), answered
+// Files this server holds without an answer while HOLD matches their path (test 9: data/cand.json never answers), answered
 // with nothing when the test ends. The server holds them, not a Playwright route: see test 9.
 let HOLD = null;
 const HELD = [];
@@ -117,7 +117,12 @@ const server = http.createServer((req, res) => {
   const INAT = [],
     STUB = require('./photostub.js')(ROOT);
   const anyS = () => fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'));
-  const inatLocal = ctx => STUB.inat(ctx, INAT);
+  // The lecture photos traced to their original (R2 only, no img/ file) fall back to Corals of the World's file: stood in
+  // for here too, else a question that draws one shows no photo and the check fails by the draw.
+  const inatLocal = async ctx => {
+    await STUB.inat(ctx, INAT);
+    await STUB.cotw(ctx);
+  };
   const R2 = require('../core.js').PHOTO_BASE;
   const fromR2 = ctx => STUB.r2(ctx);
   const ctxOf = async (opts = {}) => {
@@ -219,9 +224,14 @@ const server = http.createServer((req, res) => {
     const {ctx, p, errs} = await ctxOf({failFull: true, dpr: 2}); // 2x: the 960 px file, not the 480 px one
     await p.goto(base + '#practice/quiz');
     await ready(p);
+    // A lecture photo kept only on R2 falls back to its online original (a Corals of the World file, stubbed): the
+    // failure injection never touches it, so it has no smaller version to fall back to; it only has to load.
     await p
       .waitForFunction(
-        () => [...document.querySelectorAll('#view .qstage img')].every(i => i.dataset.low && i.complete && i.naturalWidth > 0),
+        () =>
+          [...document.querySelectorAll('#view .qstage img')].every(
+            i => (i.dataset.low || /^https:\/\/www\.coralsoftheworld\.org\//.test(i.currentSrc)) && i.complete && i.naturalWidth > 0
+          ),
         null,
         {timeout: 15000}
       )
@@ -426,7 +436,8 @@ const server = http.createServer((req, res) => {
       await p.waitForTimeout(1500);
       const t = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
       const kb = await p.evaluate(() => Math.round(linkMeasure() / 1000));
-      if (!(kb > 0 && kb < 500) || t.some(u => tier(u) !== 's'))
+      // A photo shown from its online original (R2 is cut off here) has no size tier: only the site's and R2's files count.
+      if (!(kb > 0 && kb < 500) || t.some(u => /\bimg\//.test(u) && tier(u) !== 's'))
         fails.push(`Auto on a line measured at ${kb} kbit/s did not take the 480 px files: ${t}`);
       await ctx.close();
     }
@@ -516,7 +527,7 @@ const server = http.createServer((req, res) => {
   {
     // No Playwright route in this test: every request of a context with a route, the worker's included, passes through
     // Playwright's interception, which can hold the worker's own fetch of admin.html. Here nothing is intercepted: other
-    // hosts do not resolve in this browser (nothing reaches the real sheet), and cand.json is held by the server (HOLD).
+    // hosts do not resolve in this browser (nothing reaches the real sheet), and data/cand.json is held by the server (HOLD).
     // A leftover deploy can hang the page too: see SWV = 1 below.
     const b9 = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
     const ctx = await b9.newContext({viewport: {width: 390, height: 800}});
@@ -607,7 +618,7 @@ const server = http.createServer((req, res) => {
       qQuiet = track(q);
     await q.goto(base + 'admin.html?demo');
     // Loaded first (DRAFT is set after the last of its files), its first page's photos in, and quiet (see above; Playwright's
-    // 'networkidle' is reached once per load, then never waited for again). Published while start() still fetches cand.json, the
+    // 'networkidle' is reached once per load, then never waited for again). Published while start() still fetches data/cand.json, the
     // new worker can stay waiting past the 30 s below (likely the same restart of the old worker); a version that takes over while the admin loads is checked next.
     await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
       timeout: 20000
@@ -625,9 +636,9 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
     // fetches still in flight, then takes over once the old one is idle (or later, see above), maybe before start() goes
-    // on, so what is checked is that admin.js listens while start() still waits for its files (here cand.json never
+    // on, so what is checked is that admin.js listens while start() still waits for its files (here data/cand.json never
     // answers), not only from the end of start().
-    // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
+    // The reloaded page's own files are in first (its quiet): only the new page's data/cand.json is the one that never answers.
     await qQuiet();
     // The last page may open while a version still waits (waitForFunction takes a returned Promise as truthy, so a check
     // that there is none cannot wait for it). sw.js leaves such a page to the network, and has a swap held by Chromium
@@ -832,6 +843,33 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('learn.js held: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
+  // A script of a later tier that never comes (ROADMAP R192; index.html loader): learn.js fails (aborted) 4 times, the
+  // loader goes on without nothing: the page offers Try again, the tier waits (Learn's set-up has not run); once the
+  // line is back, Try again brings learn.js and the Genera page opens.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    let up = false,
+      seen = 0;
+    await ctx.route(/\/learn\.js\?v=/, r => (up ? r.fallback() : (seen++, r.abort())));
+    await p.goto(base + '#' + require('../core.js').routeOut('genera'), {waitUntil: 'commit'});
+    const shown = await p
+      .waitForSelector('#tierwarn:not([hidden]) button', {timeout: 30000})
+      .then(() => p.evaluate(() => ({late: typeof viewGenera, text: document.getElementById('tierwarn').textContent})))
+      .catch(() => null);
+    if (!shown) fails.push('learn.js failed: no Try again offered');
+    else {
+      if (seen < 4) fails.push(`learn.js failed: Try again offered after ${seen} tries, not 4`);
+      if (shown.late !== 'undefined') fails.push(`learn.js failed: it ran all the same (${shown.late})`);
+      up = true;
+      await p.click('#tierwarn button');
+      await p
+        .waitForFunction(() => document.querySelector('#view .card') && !document.querySelector('#view .boot'), null, {timeout: 20000})
+        .catch(() => fails.push('learn.js failed: the Genera page did not open after Try again'));
+      if (!(await p.evaluate(() => document.getElementById('tierwarn').hidden)))
+        fails.push('learn.js failed: the offer stays after it came');
+    }
+    await ctx.close();
+  }
   // Home's doors before the data (ROADMAP "Load order, further steps" (a); app.js beforeData): with data.json held, the
   // doors come, their band empty and no tour offered in ?; a tap on Practice shows the loading bar, Back brings the doors
   // again; once data.json is in, Home is drawn again with its band, the scroll and the open help kept.
@@ -938,7 +976,12 @@ const server = http.createServer((req, res) => {
         [...document.querySelectorAll('#view .qstage img')]
           .map(i => [i.dataset.f, i.getAttribute('src'), photoLook(i.dataset.f)])
           .filter(([f, u, r]) =>
-            r && r.src ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\./.test(u) : !u.startsWith('img/')
+            // An online original is iNaturalist's file or, for an IMR lecture photo traced to its original, Corals of the World's.
+            r && r.src
+              ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\.|^https:\/\/www\.coralsoftheworld\.org\/media\/images\//.test(
+                  u
+                )
+              : !u.startsWith('img/')
           )
           .map(([f, u]) => `${f} ${u}`)
       );
@@ -974,7 +1017,10 @@ const server = http.createServer((req, res) => {
       const cr = await p.evaluate(async () => {
         const idx = photoIdx(),
           c = [...idx.f.values()].find(x => x.cr && !x.r),
-          imr = Object.values(DATA.course).flat()[0],
+          // One with no original online: its file is the site's img/ (the traced ones live on R2 only).
+          imr = Object.values(DATA.course)
+            .flat()
+            .find(x => !x.src),
           box = document.createElement('figure');
         box.className = 'qph';
         box.innerHTML = [c, imr]

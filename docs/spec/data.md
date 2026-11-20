@@ -104,7 +104,7 @@ photo is never shown (rule P6: written by `tools/apply_skeletons.py` from `judgi
 
 **IMR lecture photos** (`course`) carry `imr: true`, `slide` and `v`, their view. Once traced to their original source
 (`tools/imr_sources.json`, written by
-`tools/apply_imr_sources.py` on `course` and on the course records archived in `excluded.json`, so that a Restore brings
+`tools/apply_imr_sources.py` on `course` and on the course records archived in `data/excluded.json`, so that a Restore brings
 one back credited; `--check` runs in the tests), a lecture photo has `a` "<photographer> / Corals of the World" and
 **`pg`**, the page that states that credit: the credit's link (`app.js` `credit`, `lectCredit`, `photoSrc`, the genus
 sheet's strip; the admin's `lbCap`), never `o` (two lecture photos from one species page are two colonies) nor `src`
@@ -112,10 +112,10 @@ sheet's strip; the admin's `lbCap`), never `o` (two lecture photos from one spec
 `blindCredit` names the photographer and the site, with no link (rule P5: the page's address names the species). A
 lecture photo not traced has neither, and the admin tags it "source unknown" (`unkTag`).
 
-### Candidates: `cand` and `cand.json`
+### Candidates: `cand` and `data/cand.json`
 
 `data.json` `cand` holds only the candidates `curation.json` names (those Pierre added, moved or sent to another genus:
-the app needs them to apply the curation). The candidates still waiting live in **`cand.json`** (same layout, top key
+the app needs them to apply the curation). The candidates still waiting live in **`data/cand.json`** (same layout, top key
 `cand`), so a large backlog never weighs on a player's download: only the admin loads it, and the app's `?draft`
 preview. The tools read both with `datajson.load_all()` and write back with `dump_all()`, which splits them again by
 what `curation.json` names; `python3 tools/datajson.py --split` only splits them again, and `--check` checks both
@@ -164,7 +164,7 @@ key onto the latest published file ([ARCHITECTURE.md](../ARCHITECTURE.md) "Admin
   and `gf`.
 - `fish{add, seen, exclude, out, tags, ease, phase, crop, rot, auto}`: the fish curation
   ([fish-photos.md › The fish curation](fish-photos.md#the-fish-curation); `out` is Pierre's Not this only).
-- `points{id:{s, n, a{photo key: text}, t}}`: his state of the points to handle (`points.json`): `s` `wait` (stand-by),
+- `points{id:{s, n, a{photo key: text}, t}}`: his state of the points to handle (`data/points.json`): `s` `wait` (stand-by),
   `done` (resolved) or `drop` (dismissed), absent for open; `n` his notes; `a` the trainer's answer per photo (keyed by
   the photo id, `p<i>` for an empty slot); `t` when he last set the status (ms). A key of its own rather than `seen`,
   because a point carries four states and text.
@@ -192,15 +192,15 @@ Machine-written; Pierre confirms them in the admin.
   looked at) into `gf` and `gunsure`; such a pass is kept in `judging/game-forms.json`.
 - **`quality.json`**: the automatic quality 3/2/1 from `tools/photo_quality.py`.
 - **`picks.json`**: the suggested featured photos.
-- **`dups.json`**: the near-duplicates from `tools/find_dups.py`.
-- **`metrics.json`**: objective photo metrics from `tools/photo_metrics.py`, `m{f:[sharp, peak, px, cast]}` (sharpness
+- **`data/dups.json`**: the near-duplicates from `tools/find_dups.py`.
+- **`data/metrics.json`**: objective photo metrics from `tools/photo_metrics.py`, `m{f:[sharp, peak, px, cast]}` (sharpness
   as the variance of the Laplacian at 960 px, the sharpness of the sharpest part, the long side in px, the colour cast in
   %), for the live photos (`img/<f>-m.webp`) and the iNaturalist candidates (their 1024 px file, cached in
   `~/.cache/coral-id-imr/metrics/`, outside the repository). Admin only: tie-breakers and sanity flags of the
   auto-sort, evidence next to a disagreement, never a decision alone (on the 134 photos Pierre rated, the size
   separates Poor from the rest, AUC 0.90, while the sharpness at 960 px hardly does, 0.4-0.6). One photo per line;
   run again after a candidate pass (`--cand`) or a large photo change.
-- **`suggest.json`**: the outside judging agent's results, one part per pass:
+- **`data/suggest.json`**: the outside judging agent's results, one part per pass:
   - the coral candidate pass, `"cand"` (`tools/judging_cand.py`): per candidate photo its view, quality, growth form,
     `best`/`alt`/`dup` within its observation and view, or another genus, and `c`, a suggested crop `[l, t, r, b]`
     judged at full size and moved halfway toward Pierre's own crops by the import (`CROP_K`);
@@ -243,7 +243,7 @@ pass judges quality and crop from.
 ## Presence of coral species (`presence.json`)
 
 The presence rule (rule C8, `tools/presence.py`) applied to every coral species named on a photo (game, sheet and Key
-photos, candidates): `python3 tools/coral_presence.py [--offline | --refresh]` writes `presence.json` =
+photos, candidates): `python3 tools/coral_presence.py [--offline | --refresh]` writes `data/presence.json` =
 `{v, date, sp: {species (iNaturalist's name, as on the photo's t): {ok, by, rg, chk}}}`, one species per line (the
 replies cached in
 `tools/.cache/presence.json`, git-ignored). Per genus (its iNaturalist taxon from `tools/taxonomy.json`): two batched
@@ -253,7 +253,7 @@ ecoregions that cover the Philippines, confirmed and strongly predicted, COTW's 
 count near the centre settles. `tools/fetch_local.py` asks the same rule (`confirmed_species`) before its last tier,
 abroad.
 
-The admin loads it (`side('presence.json', 'sp')`), and `presence.js` `outOfRule(p, sp)` flags a photo taken abroad
+The admin loads it (`side('data/presence.json', 'sp')`), and `presence.js` `outOfRule(p, sp)` flags a photo taken abroad
 (`loc` world) of a species the rule does not confirm: an "out of rule" tag next to its source on every admin page
 (`srcTag`), and a part of To do (Reports) listing the game and sheet photos so flagged. Nothing is removed
 automatically: Pierre keeps the rule strict and sorts them himself from that part of To do:
@@ -276,7 +276,7 @@ labelled `ph` that were taken abroad.
 
 No share-alike licence for corals, as for the fish. The candidate search takes CC0, CC BY and CC BY-NC only
 (`tools/fetch_local.py` `LIC`, imported by `tools/cand_gaps.py` and `tools/build_extra.py`), checked photo by photo
-(`photo_ok`: one observation may mix licences); every refill drops the waiting share-alike candidates from `cand.json`
+(`photo_ok`: one observation may mix licences); every refill drops the waiting share-alike candidates from `data/cand.json`
 (`drop_share_alike`, never a candidate `curation.json` names, one Pierre added for instance; `--plan` shows them as
 `drop`; `tools/apply_no_share_alike.py` did it once for the backlog).
 
@@ -343,11 +343,11 @@ An author can change the licence of their photos on iNaturalist at any time, in 
 (`v2/observations?id=`, 200 a request through `tools/inat.py`, rule C7: about 140 requests) and brings each record's
 `lic` and `a` up to date, in place, with no field added:
 
-- at the sources of the fish photos in play (`fish-cand.json`, `tools/fish_refs.json`, the sheet-only photos of
+- at the sources of the fish photos in play (`data/fish-cand.json`, `tools/fish_refs.json`, the sheet-only photos of
   `fish-photos.json`), so `tools/fish_game.py` `record` copies them at its next run;
 - in `fish-game.json` and in `fish-photos.json`'s first photos (whose order depends on the licence);
-- in `data.json`, `cand.json` and `excluded.json`;
-- in the sea slugs' candidates, `seaslug-cand.json` (the fish's licence rule; a refused one leaves the file, reported).
+- in `data.json`, `data/cand.json` and `data/excluded.json`;
+- in the sea slugs' candidates, `data/seaslug-cand.json` (the fish's licence rule; a refused one leaves the file, reported).
 
 The credit changes with the licence or the author's name, never for its wording alone; the rights class and the
 tie-break follow, every reader deriving them from `lic`. A photo whose new licence the rules refuse leaves play,
@@ -355,7 +355,7 @@ reported (in the run's summary, a warning each):
 
 - a fish photo leaves every fish list (`tools/fetch_fish.py` `lic_ok`: CC0, CC BY, CC BY-NC, or Pierre's own without a
   licence), a photo he added in the admin with it (`in_play` finds no record);
-- a coral photo turned "no derivatives" or all rights reserved leaves `data.json`, `cand.json` or `excluded.json`
+- a coral photo turned "no derivatives" or all rights reserved leaves `data.json`, `data/cand.json` or `data/excluded.json`
   (`tools/excluded.py` `restore_unexcluded` checks no licence: Pierre's Restore would bring it back);
 - a coral photo turned share-alike follows rule P1: in play, it is kept for Pierre (admin To do › Share-alike);
   waiting, `tools/fetch_local.py` `drop_share_alike` drops it at the same run.
@@ -390,7 +390,7 @@ back on `dauinU`, `dauin`: [fish.md › The default cover](fish.md#the-default-c
   would read `tools/instance.json` instead;
 - the texts players read that name Dauin (`app.js`, `learn.js`, the credit's "Dauin" tag of Pierre's own photos), which
   would read `fish.json` `centre` `name`;
-- the coral presence (`presence.json`, `tools/coral_presence.py`), which keeps its `loc: 'dauin'` tag until then.
+- the coral presence (`data/presence.json`, `tools/coral_presence.py`), which keeps its `loc: 'dauin'` tag until then.
 
 ### The instance's layer
 
@@ -400,14 +400,19 @@ and step 5); the content editor's edits are the third layer, in `curation.json` 
 ([content.md](content.md)), never at build. `tools/instance.json` names the instance (`id` `imr`, `name`), its `centre`
 and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR instance's, in `tools/instances/imr/`:
 
-- **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families) and `nodes` {teaching
-  node or sub-entry id: `circle` (nodes only), `cues`, `look`, `phase`}. `tools/instance.py` `fish_source` lays them on
+- **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families), `nodes` {teaching
+  node or sub-entry id: `circle`, `src` and `sign` (nodes only), `sl`, `cues`, `look`, `phase`} and `species` {species id:
+  `sl`}. `src` is the IMR tag (`"imr"`, the 27 entries of the IMR fish presentation: `fish.json` `families[].imr` is
+  the entry's name as IMR writes it), `sign: false` an entry off the presentation's dive-sign list, `sl` the
+  presentation's slide numbers (a species': the slide that names it). `tools/instance.py` `fish_source` lays them on
   `tools/fish_source.json` (the sources' part), and `tools/build_fish.py` reads the result in every mode. It stops when
-  the base still carries one of those fields (an edit made in the old place, a merge) or when the layer names a node the
-  base does not hold. The offline modes (`--regroup`, `--commonness`, `--near`) lay the layer again on `fish.json` as it
-  is (`relay`: cues, look and phase taken off and put back where the build writes them, `start`, then the families), so
-  an edit of those needs no WoRMS call; a changed circle stops them (the species' circles and their presence test follow
-  it: the full build).
+  the base still carries one of those fields (an edit made in the old place, a merge; the base's own `src`, `pdf`,
+  `diver` or `wink`, is not the layer's) or when the layer names a node or species the base does not hold. The offline
+  modes (`--regroup`, `--commonness`, `--near`) lay the layer again on `fish.json` as it is (`relay`: slides, cues,
+  look and phase, the tag and the mark, the species' slides, taken off and put back where the build writes them,
+  `start`, then the families), so an edit of those needs no WoRMS call; a changed circle stops them (the species'
+  circles and their presence test follow it: the full build). An edition without the layer has no IMR tag, slide or
+  mark on its entries, and the families then carry no `imr` name.
 - **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `n` (its number on the IMR slate, 0 for a starred
   genus), `ig`, `imr`, `mn`, `sl` and `rsl` (its Lecture 6 slide numbers and review slide numbers, when it has them),
   `qt` (its short ID tips, condensed from the lecture notes: `tools/id_tips.txt`)} and `pairs`, the IMR
@@ -436,7 +441,9 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
-- **Not in the layer yet** (easy to move later): the fish slide references (`sl`, laid by `build_fish.py`'s `relay`);
-  the IMR tag (`src: imr`, `sign`, the teaching nodes' IMR names); the references of the lecture photos
+- **Not in the layer yet** (easy to move later): the fish teaching nodes' names, `fam`, references (`ref`, `pdf`) and
+  tree (they identify the entries, and the layer holds fields of an entry the base names, never an entry); the IMR PDF's
+  common names and sections (`common`, `pdf`, `sec`, `cs`) and the species' `src` of the species the slides name; the
+  references of the lecture photos
   (`data.json` `course`, photos marked `imr`); the coral slate's structure beyond each genus's number (the starred
   genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`); and `deploy` (the key in force).

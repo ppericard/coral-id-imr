@@ -16,6 +16,26 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v211 (2026-11-21)
+
+The sheet script's copy of `core.js` follows the app: `SUBJECTS` no longer has the corals' `hold` field, since the app now adopts each subject's own opening hold from the `holds` of a light load or save reply (`sync.js` `holdOf`, `holdAdopt`, from the script that serves them, `HOLDS_SHEET`), the one-engine audit's step 5, the app's half (Pierre, 2026-11-19 05:15: one engine for every subject, with only small per-subject parameters). The script never read that field: `hold_` and `holdsInto_` compute and send the same holds as before, `hold` and `holdIds` staying the replay subject's for an older app; only a comment in `holdsInto_` changes. No answer is scored, replayed, held or logged differently
+
+## v210 (2026-11-20)
+
+One opening hold path for every subject the sheet replays (the one-engine audit's step 5, the sheet's half; Pierre, 2026-11-19 05:15: one engine for every subject, with only small per-subject parameters): `hold_` takes the subject and reads its own answers (`subjRows_`) since its own reset (`resetOf_` with its id), cached per player and subject (`hold~<subject>:<name>`, every subject's key dropped with `dropHold_`, so on a delete, merge or archive too; the corals' cached holds are read again once after the update). A light load or save reply (every app since the lighter saves) also carries `holds`, `{subject: {h, ids}}` for the corals, the fish and the sea slugs; `hold` and `holdIds` stay the corals' as before, and a request without `light` gets those two alone. No app reads `holds` yet (the app's half, each subject adopting its own, waits for its own PR, gated on this version), so nobody's hold or progress moves and no rules version is appended; the copy of `core.js` in this script changes only in comments
+
+## v209 (2026-11-20)
+
+Memory opens to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `pairs` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: Memory records nothing for any subject (no answer, no progress, no log row), so no answer is scored, replayed or logged differently and no rules version is appended; the copy of `core.js` in this script carries only the new `pages`
+
+## v208 (2026-11-20)
+
+The sheet script's copy of `core.js` follows the app: the fish and the sea slugs' candidate files (`SUBJECTS` `admin.files.cand`) are now `data/fish-cand.json` and `data/seaslug-cand.json`, the tools' and the admin's data having moved from the repository root into `data/` (the ROADMAP row "Tool and admin data into `data/`", Pierre, 2026-11-08: "Ok pour tes propositions"). Nothing the script computes changes: only the admin reads that path, and the script reads no candidate file, so players, progress and the sheet's tabs are untouched
+
+## v207 (2026-11-20)
+
+Find the X gets its own format: `core.js` `fmtOf` reads a `|f` answer as `find` instead of `k4`, so each subject's pooled pass (`statsStep_`, `fmtPoint`) fits Find the X its own offset (`fmt.find`, served with the rest) and takes its answers out of the 4-choice one. No progress moves: the corals never play it (no tile), the fish and the sea slugs are replayed with no format offset, and every Find the X row carries its scoring record (ROADMAP "Find the X": "its own offset (`core.js` `fmtOf` and `analysis.js` `FORMATS` reading `|f` as `find`)"; Pierre, 2026-11-03, and Q321, 2026-11-09). The pooled snapshots rebuild on the new version, so their old `k4` points and the new `find` ones never mix
+
 ## v206 (2026-11-20)
 
 The What I learn card's names rows (Pierre, 2026-11-18, Q396, Q400 D, Q404 A: each names row on or off, a families-only player allowed): `core.js` `SUBJECTS` `optin` gains `sp` for the fish (the species by their common names) and `ssp` for the sea slugs (their species by their scientific names), and `mergeUsers` keeps a row turned off on the card (`k + 'O'`) only where both accounts merged have it off, so a row on in either stays on, a row on by default included. The script's progress engine is unchanged: the rows only choose which units the app draws, and a row turned off keeps its units' bars and the one score scale (Q402 A), so no answer is scored, replayed or logged differently

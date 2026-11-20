@@ -67,8 +67,8 @@ print(json.dumps(out))`);
   all.filter(p => p.lic && p.a).forEach(p => assert.strictEqual(licence({a: p.a}), p.lic, `${p.f}: lic ${p.lic}, credit ${p.a}`));
 });
 
-test('cand.json: no share-alike candidate waits (only those curation.json names may stay, e.g. one Pierre added, or restored)', () => {
-  const C = read('cand.json').cand;
+test('data/cand.json: no share-alike candidate waits (only those curation.json names may stay, e.g. one Pierre added, or restored)', () => {
+  const C = read('data/cand.json').cand;
   Object.entries(C).forEach(([g, L]) => L.forEach(p => assert.ok(p.restored || !shareAlike(p), `${g}: ${p.f} ${p.lic}`)));
 });
 
@@ -82,7 +82,7 @@ print(json.dumps({'gone': g1, 'again': g2, 'left': {g: [p['f'] for p in L] for g
   assert.deepStrictEqual(R, {gone: ['a1', 'b1'], again: [], left: {A: ['a2', 'a3', 'a4']}}, 'a licence it cannot read is not dropped');
 });
 
-// A Publish with exclusions: the admin's exclusion takes a photo out of every list, kept in excluded.json with its
+// A Publish with exclusions: the admin's exclusion takes a photo out of every list, kept in data/excluded.json with its
 // place; Restore (admin Genera › Excluded) puts it back by itself; an excluded candidate is not "used" by curation.json.
 const EXCL = `import excluded as X
 X.EX = {'a-wide-1': 'excluded', 'a-cand-2': 'excluded', 'a-cand-3': 'auto', 'a-cand-4': 'excluded', 'imrl-p1_i1': 'excluded'}
@@ -123,11 +123,11 @@ print(json.dumps({'after': a, 'places': places, 'none': none, 'back': back, 'aga
   assert.deepStrictEqual(R.back, [['a-wide-1'], ['imrl-p1_i1']], 'a photo with no online original and no file in img/ is held back');
   assert.deepStrictEqual(R.again, [[], ['imrl-p1_i1']], 'restored once');
   assert.deepStrictEqual(R.restored.wide, ['a-wide-0', 'a-wide-1', 'a-wide-5'], 'back at its place');
-  assert.deepStrictEqual(R.left, ['a-cand-2', 'a-cand-4', 'imrl-p1_i1'], 'the held one stays in excluded.json (Codex review #628)');
+  assert.deepStrictEqual(R.left, ['a-cand-2', 'a-cand-4', 'imrl-p1_i1'], 'the held one stays in data/excluded.json (Codex review #628)');
   assert.deepStrictEqual(R.course, []);
 });
 
-test('fetch_local tidy: excluded candidates kept in excluded.json (share-alike ones too), waiting share-alike dropped', () => {
+test('fetch_local tidy: excluded candidates kept in data/excluded.json (share-alike ones too), waiting share-alike dropped', () => {
   const R = py(`${EXCL}
 import fetch_local as fl, io, contextlib
 fl.curated = lambda: set()
@@ -162,11 +162,11 @@ test('curated(): an id curation.json excludes is not used, even if a genus still
   }
 });
 
-test('the photo lists follow curation.json: nothing Pierre excluded in data.json or cand.json, nothing un-excluded left in excluded.json', () => {
+test('the photo lists follow curation.json: nothing Pierre excluded in data.json or data/cand.json, nothing un-excluded left in data/excluded.json', () => {
   const cur = read('curation.json').exclude || {},
-    gone = read('excluded.json').photos,
+    gone = read('data/excluded.json').photos,
     D = read('data.json'),
-    C = read('cand.json'),
+    C = read('data/cand.json'),
     F = [];
   const walk = o =>
     Array.isArray(o) ? o.forEach(walk) : o && typeof o === 'object' ? (o.f && F.push(o.f), Object.values(o).forEach(walk)) : 0;
@@ -206,7 +206,7 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
   assert.match(
     job,
-    /git add data\.json cand\.json excluded\.json fish-game\.json fish-photos\.json fish-cand\.json tools\/fish_refs\.json seaslug-cand\.json seaslug\.json seaslug-game\.json img/
+    /git add data\.json data\/cand\.json data\/excluded\.json fish-game\.json fish-photos\.json data\/fish-cand\.json tools\/fish_refs\.json data\/seaslug-cand\.json seaslug\.json seaslug-game\.json img/
   );
   // The licence refresh (tools/licences.py): weekly and by hand, never at a Publish; before tools/fish_game.py builds
   // fish-game.json from the sources it refreshed.

@@ -33,15 +33,19 @@ tools below are `coralLive` in `admin-nodephotos.js`.
 - **Removed from the site** (`genera[g].hide`): the genus's photos taken off the site, each with **Put back**; the Tag…
   filter **Removed photos**.
 - **Excluded** (`exclude`): the genus's excluded photos, each with **Restore**; a restored photo comes back at its place
-  at the next run of the candidate workflow (`excluded.json`, `tools/fetch_local.py` `tidy()`); the Tag… filter
+  at the next run of the candidate workflow (`data/excluded.json`, `tools/fetch_local.py` `tidy()`); the Tag… filter
   **Excluded photos**; one that names no genus any more is listed on the first root page of each view.
 
 ## Candidates (the corals)
 
-`#photos/candidates` (the default view on phones, `renderCand`): one pending candidate per screen (iNaturalist candidates
+`#photos/candidates` (the default view on phones): one pending candidate per screen (iNaturalist candidates
 from `data.json` `cand`), with a source filter Pierre / Dauin / PH / All (default Dauin; a source with nothing left gives
-way to the first one, in that order, that still has candidates). The fish's and the sea slugs' Candidates are
-[fish-photos.md › The Fish Candidates page](fish-photos.md#the-fish-candidates-page).
+way to the first one, in that order, that still has candidates). **One swiper for every subject**: `admin.js`
+`renderCand(S)` draws the frame (the queue's switch, the row of toggles, the card and its decision bar, the empty page,
+the keys), and what differs between subjects is the builder `CAND_BUILD` gives for the data shape the subject declares
+(`SUBJECTS` `flat`: `candBuild`, as `TREE_BUILD`); this page is the `flat` builder's (the corals), the fish's and the sea
+slugs' the `tree` builder's, in `admin-fish.js`:
+[fish-photos.md › The Fish Candidates page](fish-photos.md#the-fish-candidates-page) (`tests/candbuild.test.js`).
 
 - **Game genera first** (`isGame`, `GAME` = `core.js` `gameOf`: the slate, Millepora, the bonus genera): every candidate
   of a game genus of the source comes before any candidate of a Key-only genus, which come after in their own weighted
@@ -81,7 +85,7 @@ way to the first one, in that order, that still has candidates). The fish's and 
   among the 5% sharpest) is left to him with the reason in the judgment line, and is never set aside.
 - **Caps**: adds fill each genus × view up to `capOf` colonies, the nearest first (Dauin, the Philippines, abroad: the
   photo's `loc`), whoever took it (rule P1: no source priority, so Pierre's own Fair photo never takes the last slot
-  ahead of another observer's Good one), then Good first, then the sharper (`metrics.json`), then an open licence
+  ahead of another observer's Good one), then Good first, then the sharper (`data/metrics.json`), then an open licence
   (`rightsRank`); the rest waits in the full cell as candidates. Decided again at each load.
 - **Checks** (`autoCheck`: FNV-1a of the name, 1 in `AUTO.every` = 20, the same on every device): a sure candidate drawn
   is logged `?…` and not applied; it comes up in the swiper with a **Check** tag, blind (no judgment line, dashed
@@ -110,7 +114,7 @@ way to the first one, in that order, that still has candidates). The fish's and 
   card (added, set aside, Checks left, agreement and n per field, off in red), folded behind the **Auto** chip at the end
   of the chips' row (marked "off" when a field is), so the photo and the buttons fit one phone screen; and Details below
   it: the table (agreement, n, threshold, on/off, Pierre's own retest agreement), the disagreements (both answers, Check
-  or correction, the agent's note while `suggest.json` has it, the metrics: sharpness percentile among candidates, px,
+  or correction, the agent's note while `data/suggest.json` has it, the metrics: sharpness percentile among candidates, px,
   cast), every auto decision, newest first (the latest day, and within a day the latest run), each with **Undo**
   (`autoUndo`: removes what it wrote unless Pierre changed it since, marks it `-` so it is never applied again, the photo
   is a candidate again, one Undo step). An auto exclusion keeps its candidate entry through the candidate refill
@@ -147,7 +151,7 @@ ranking as the full list, `needsOf()`); "All N" opens the full list there (`#inb
   Key-only genus's cells over its cap are counted on the Sheets & ID Key view and outlined there.
 - The swiper's full test (`cellFull`, `candQueue`) uses each genus's own cap: `candQueue` marks a candidate `full` when
   its guessed view (`cellView`: `vg`, else its view) has `CELL_MAX` colonies and its colony is not one of them; full ones
-  leave the queue (a line counts them, "Show them" brings them in for the tab, `CFULL`) and come back when the cell drops
+  leave the queue (a line counts them, "Show them" brings them in for the tab, the subject's `cst()` `full`) and come back when the cell drops
   below.
 - **Adding to a full view** (`cellFull`) opens `renderRepl()`, semi-automatic for the most variety: one tile per colony
   of the cell, in `retireOrder()`: the suggested colony first, outlined, with its reasons (Poor quality; a difficulty the
@@ -186,10 +190,21 @@ with candidates waiting, species with no photo in play, families validated but i
 
 ### Quality and Growth form
 
-Quality `#photos/review/quality` and Growth form `#photos/review/growth-form`: the same grid and tools, every photo with
-the filters of the filter bar (Photo review's unit select and check boxes, `QF` / `FF`).
+**One band-review page for every subject** (`admin.js` `renderReview(S, id)`, the study's step 6): the loading gate, the
+bar, the bands with their tiles, the photo's zoom and ×, the drag to another band and the keys are drawn once; a subject's
+axes and their bands come from its builder, `REVIEW_BUILD` (`// review build: begin/end`), picked by the data shape the
+subject declares (`SUBJECTS` `flat`, through `treeShape`, as the Tree, the Candidates and `reg(S)`): `flat` (the corals:
+Quality, Growth form) and `tree` (the fish and the sea slugs: Ease, Phase & framing), each with the same members
+(`axes`, `ready`, `load`, `page`, `diff`, documented above `REVIEW_BUILD`). The review views of `GROUPS` carry an `axis`
+option and `hasPage` gives a subject those of its builder. No `SUBJECTS` field was added (`flat` already says the shape);
+no stored key, draft write or browser key changed. The growth-form axis is the corals' named hook (rule C4: a growth
+form is tagged and taught, never a grouping of genera). The quality scale (Good, Fair, Poor) and the ease scale (1-5)
+stay two scales: one scale for every subject is a data-format and process change, Pierre's call (study §6 c).
 
-- **Growth form** (`renderForm`): one row per IMR form; each photo has the form buttons, ✿ polyps and, on colony and
+Quality `#photos/review/quality` and Growth form `#photos/review/growth-form`: the same grid and tools, every photo with
+the filters of the filter bar (Photo review's unit select and check boxes, the flat builder's `QF` / `FF`).
+
+- **Growth form** (the flat builder's `form` axis): one row per IMR form; each photo has the form buttons, ✿ polyps and, on colony and
   close-up photos the tiles can show, **📌** (`togglePin`): a pinned photo leads its form's tile on the Coral ID Key start,
   then the tile fills automatically. Up to 3 per form in click order (a 4th drops the oldest); giving the photo another
   form unpins it in the same Undo step (a ✿ click never does). `proto/idkey.js` `pinLead()` applies the pins to the IMR
@@ -203,7 +218,7 @@ the filters of the filter bar (Photo review's unit select and check boxes, `QF` 
   on the guess. Nothing new is recorded; a click refreshes it in place (`agreeRefresh()` from `formTile`); ✓ Validate N
   counts as agreeing. A `<details>` opens a guess × yours table (diagonal = agreed, per-guess agreement), its title lists
   the same pairs on hover.
-- **Guesses first** (`FF.gfirst`, a checkbox beside Not checked yet): in each row the photos still on a guess first,
+- **Guesses first** (the form axis's `gfirst`, a checkbox beside Not checked yet): in each row the photos still on a guess first,
   unsure ones first, the ones he set last (`fRank`).
 - **Keys on Quality and Growth form** (`tileKeys`): 1 2 3, or B E T U M S F, X and P, act only on the photo that has the
   keyboard focus (clicked, or reached with Tab; ringed, `.adm-qt:focus-within`), never on one the mouse merely passes
@@ -212,20 +227,24 @@ the filters of the filter bar (Photo review's unit select and check boxes, `QF` 
 
 ### By difficulty
 
+One page for every subject (`admin.js` `renderDiff(S)`: the minimum of answers, the Hardest | Easiest switch, "No answers
+yet"), the photos and their tiles from the subject's builder (`REVIEW_BUILD` `diff`: `gate`, `page`, `help`).
+
 `#photos/review/by-difficulty`: every coral photo with answers, hardest or easiest first, with its quality to re-rate
 and its reading in words ([admin.md › Difficulty in words](admin.md#difficulty-in-words)).
 
-On the fish side, `#fish/photos/review/by-difficulty` (`renderFishDiff`, after the fish views so that the tab still opens
+On the tree subjects' side, `#fish/photos/review/by-difficulty` (after the axes so that the tab still opens
 on Ease): the fish photos players answered, by their answers alone since the sheet rates the corals' photos only
 (`diffByAnswers` over `photoAnswers` and `rowsOf`, as fish Health counts them: every answer that showed the photo,
 family and genus questions alike), Hardest (lowest share right) or Easiest first, more answers first on a tie, the
 corals' ≥1 / ≥3 / ≥10 answers; each photo a family-page tile (`fishRepTile`: Tags with its ease, Remove, Not this, Crop,
 ×) with its share right, answers and players who miss it; a photo already out (excluded, Not this, removed) left out, as
-on Health; the first 48 shown (`FDIFF_MAX`), the rest counted; its own ? (`fishdiff`, no photo-difficulty note).
+on Health; the first 48 shown (the tree builder's `max`), the rest counted; its own ? (`fishdiff`, no photo-difficulty
+note).
 
 ### The fish views: Ease and Phase & framing
 
-`renderFishReview`, views for the family rank only (`GROUPS` view option `rank`): Ease `#fish/photos/review/ease` and
+The tree builder's axes (`REVIEW_BUILD` `tree`; the `GROUPS` view option `axis`): Ease `#fish/photos/review/ease` and
 Phase & framing `#fish/photos/review/phase-framing`, one family's photos in play at a time (`reefid-admin-fishrev`), each
 in the row of its value now; one click sets Pierre's ease, juvenile flag, phase word (a family with IMR phase lines only)
 or view (`autosort.js` `fishSet`, `fishTag`, as the fish Candidates); the agreement line, the draft's values against the

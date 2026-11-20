@@ -34,7 +34,7 @@ stays closed).
 | Custom quiz (`quiz-custom`) | open | closed | closed | data: one fixed key `reefid-sync-coral-custom` (`model.js` `CUSTOM.KEY`), merged and cleared for the corals only (`sync.js` ~469-474, ~1712). code: `cqGroups` reads `DATA.imrg`, `isBenthic`, `shownGroup`. UI: tiles, search, the select and the count print raw ids (`esc(n)`) and the word "genera"; coral help text | `quiz.js` `viewCustom`, `cqGroups`; `model.js` `CUSTOM`; `sync.js` |
 | Look-alikes deck (`cmp`, Learn) | open | **open (PR 3)** | **open (PR 3)** | Was code: `classics` reads `model.js` `pairs()` (coral `DATA.gen` look); `montage` reads `DATA.gen[n].views` and `MONT_V`; `srcTag` knows only "IMR lecture" and "Coral Finder". The fish have sourced pairs (`look`, `lsrc`: the IMR fish presentation); the sea slugs `decl` | `learn.js` `viewLookalikes`, `montage`, `srcTag` |
 | Compare (`cmp-A\|B`) | open | **open (PR 3)** | **open (PR 3)** | Was code: `viewCompare` reads `gameGenus`, `g.crit` and `critRef` (Coral ID Key criteria), `g.ig`, the three `VIEWS`, `DATA.cmp`. UI: the quiz feedback's "Compare them" hidden by a data-shape test (`quiz.js` `fbBody` `fish = !!g.name`) | `learn.js` `viewCompare`; `quiz.js` `fbBody` |
-| Memory (`pairs`) | open | closed, reason | closed, reason | reason: it matches a colony photo with its corallites, two views of one unit; these subjects have one view (`SUBJECTS` `views`). A Memory for them is a different game (below) | `proto/pairs.js` |
+| Memory (`pairs`) | open | open (built: two photos of one unit that show it differently) | open (same) | `UNITS` `memory` names how a pair is made: the corals' two views of one unit, the tree subjects' two photos of it ([decision](../decisions/2026-11-19-memory-every-subject.md)) | `proto/pairs.js` |
 | Basics (Learn step 0) | open | open | **open (PR 5)** | Was content: no basics module written for the sea slugs | `SUBJECTS` `pages` `basics`; `proto/basics.js`, `proto/fishbasics.js`, `proto/seaslugbasics.js` |
 | Learn list and sheets | open | open | open | none | `UNITS` `list`, `sheet` |
 | Identify | Coral ID Key | Fish ID Key, coming soon | the same page, coming soon | a separate ROADMAP row ("Fish ID Key for EventMeasure"); not a game mode | `UNITS` `identify`; `home.js` `viewFishKey` |
@@ -103,20 +103,19 @@ answers that are scored exactly like those of the same page for the corals.
 (0 of 3,014 in play; the rubric gives none) nor a usable crop, so the tool and `UNITS` are built on the fish's shared code
 and no tile exists yet; the box pass is left. Content, M:
    comparable to #961, #972, #985, #1223, #1245: median 18 min (range 14 min-18 min).
-7. **Memory for one-view subjects**: not planned until the game is defined (below).
+7. **Memory for one-view subjects**: built (the integrator's call after Pierre's Q437, below).
 
 PRs 2, 3 and 4 touch different files (the custom quiz in `quiz.js`, `model.js` and `sync.js`; `learn.js`; `proto/`)
 and can run in parallel once PR 1 is merged (it adds `SUBJECTS` `closed`, which each of them edits by one line).
 
 ## 3. What stays closed, and why
 
-- **Memory for the fish and the sea slugs.** It teaches that a colony and its corallites are one coral. A one-view
-  subject has no such link. A Memory there would be a different game: for example, two photos of one family (two of its
-  species, or a juvenile and an adult). That is a new game players would see, and Q437 does not describe it, so it is
-  a question, not a build: "Memory pour les poissons et les limaces : associer deux photos d'une même famille (deux
-  espèces, ou juvénile et adulte), ou le laisser aux coraux ?" It is for the integrator to ask, after Rule 0's window.
+- **Memory for the fish and the sea slugs: no longer closed.** The plan's agent held it back (a colony and its corallites
+  are one coral; a one-view subject has no such link) and proposed a question. Pierre then answered Q437 for every mode
+  («il faut ouvrir tous les modes de jeu … à toutes les matières»), and the integrator made the pair (easy to correct):
+  two photos of the same unit that show it differently, [built](../decisions/2026-11-19-memory-every-subject.md).
 - **Find the X for the corals** (thumbnails) and **the corallite Lab tools** (traits): their reasons are in the code
-  comments and in `CLOSED_TREE`'s Memory line. They are not `SUBJECTS` `pages`, so the `closed` test does not cover
+  comments. They are not `SUBJECTS` `pages`, so the `closed` test does not cover
   them.
 
 ## 4. What was checked and what was not (rule W11)
