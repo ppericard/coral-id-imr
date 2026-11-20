@@ -6089,6 +6089,17 @@ async function noUpscaleCheck(b, base) {
         fitStage();
         await new Promise(ok => setTimeout(ok, 100));
         ims.forEach(i => out.stage.push({vs, ...over(i, nat)}));
+        // The two compared photos' boxes (and each photo in its box), to check the layout by size class below.
+        if (vs) {
+          const rc = e => {
+            const r = e.getBoundingClientRect();
+            return {x: r.x, y: r.y, r: r.right, b: r.bottom};
+          };
+          out.pair = {
+            st: rc(q.querySelector('.qstage')),
+            boxes: [...q.querySelectorAll('.qph')].map(f => ({box: rc(f), img: rc(f.querySelector('img'))}))
+          };
+        }
       }
       return out;
     }, F);
@@ -6097,6 +6108,30 @@ async function noUpscaleCheck(b, base) {
       for (const o of seen.stage)
         if (o.s > 1.005)
           fails.push(`no upscale ${w}: ${F} (${seen.nat.join('x')}) on the quiz stage is drawn ${o.s}x its pixels (${JSON.stringify(o)})`);
+      // The two compared photos after a wrong answer (Pierre, 2026-11-21): on a phone one above the other (same column, equal
+      // boxes, the second below the first, both inside the stage, nothing to scroll); on desktop (two portrait photos, data-r
+      // 0.75) side by side; both whole (no cover) and each photo inside its box, at every size.
+      const pr = seen.pair,
+        [a, z] = pr ? pr.boxes : [];
+      if (!pr || !z) fails.push(`compared photos ${w}: no pair of photos on the stage`);
+      else {
+        const near = (x, y) => Math.abs(x - y) <= 2;
+        if (w < 600) {
+          if (!(near(a.box.x, z.box.x) && near(a.box.r, z.box.r) && z.box.y >= a.box.b - 1))
+            fails.push(`compared photos ${w}: not stacked on a phone ${JSON.stringify(pr.boxes.map(x => x.box))}`);
+          if (!near(a.box.b - a.box.y, z.box.b - z.box.y))
+            fails.push(`compared photos ${w}: the two boxes are not equal ${JSON.stringify(pr.boxes.map(x => x.box))}`);
+          if (a.box.y < pr.st.y - 1 || z.box.b > pr.st.b + 1)
+            fails.push(`compared photos ${w}: a box leaves the stage ${JSON.stringify(pr)}`);
+        } else if (w >= 1024) {
+          if (!(near(a.box.y, z.box.y) && near(a.box.b, z.box.b) && z.box.x >= a.box.r - 1))
+            fails.push(`compared photos ${w}: not side by side on desktop ${JSON.stringify(pr.boxes.map(x => x.box))}`);
+        }
+        for (const x of pr.boxes)
+          if (x.img.x < x.box.x - 1 || x.img.r > x.box.r + 1 || x.img.y < x.box.y - 1 || x.img.b > x.box.b + 1)
+            fails.push(`compared photos ${w}: a photo is bigger than its box ${JSON.stringify(x)}`);
+      }
+      for (const o of seen.stage) if (o.vs && o.fit === 'cover') fails.push(`compared photos ${w}: a photo is cropped (object-fit cover)`);
     }
     await c.close();
   }

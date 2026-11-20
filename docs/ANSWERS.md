@@ -1567,3 +1567,14 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sub-adult, brings the card whenever its species' young are sourced as different; the separate sub-adult flag is
   information only. Applied: `quiz.js` `juvCard`, docs/spec/model.md,
   decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md, #1329.
+
+## 2026-11-21
+
+- **05:32, the two compared photos stacked on phones (on #1316).** «la PR 1316 avec les deux photos comparées qui
+  s'affichent entières sur téléphone, pour les poissons, je me demande si au lieu de les mettre côte à côte, c'est-à-dire
+  droite et gauche, il ne vaut pas mieux les mettre au-dessus et en dessous, parce que maintenant on a la place, on avait
+  dégagé de la place pour le faire […] Alors après sur ordinateur je sais pas, mais sur téléphone je pense que ça
+  marcherait mieux.» On phones, after a wrong answer, the two compared photos are stacked, one above the other, each
+  whole; tablets and desktop keep what they had and every subject gets it (the integrator's call, easy to correct).
+  Applied: `app.css` (`.q .qstage.qvs`, phone block), docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`,
+  decisions/2026-11-21-compare-photos-stacked-on-phones.md, #1350.
