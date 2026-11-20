@@ -521,11 +521,11 @@ def marks_line(past, short):
 
 def fish_todo():
     """(photos, species) of the fish candidates waiting for the judging pass: not decided by Pierre (curation.json fish
-    add, seen, exclude, out) and not judged (suggest.json fish), as tools/judging_fish.py todo counts them; the automatic
+    add, seen, exclude, out) and not judged (data/suggest.json fish), as tools/judging_fish.py todo counts them; the automatic
     refill (tools/fetch_fish.py --refill, Q171) brings new ones after each Publish. None when a file is missing."""
     try:
         rd = lambda f: json.load(open(os.path.join(ROOT, f), encoding='utf8'))  # noqa: E731
-        cand, cur, sug = rd('fish-cand.json').get('cand') or {}, rd('curation.json').get('fish') or {}, rd('suggest.json').get('fish') or {}
+        cand, cur, sug = rd('data/fish-cand.json').get('cand') or {}, rd('curation.json').get('fish') or {}, rd('data/suggest.json').get('fish') or {}
     except (OSError, ValueError):
         return None
     done = set().union(*(cur.get(k) or {} for k in ('add', 'seen', 'exclude', 'out')), sug)

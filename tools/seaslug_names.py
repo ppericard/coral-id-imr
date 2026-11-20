@@ -36,7 +36,7 @@ of `web` does (its `nick`). Each taxon's names: one per spelling (case, hyphens 
 number of sources giving it, then iNaturalist's preferred name, then by source (inat, worms, wiki, web) and as each
 source lists them (inat, worms, wiki, guide, web). The first is the one the app shows first (learn.js, quiz.js).
 
-Disagreements (rule C5): one name given to two taxa by the sources (`shared`) is listed, never settled: points.json holds
+Disagreements (rule C5): one name given to two taxa by the sources (`shared`) is listed, never settled: data/points.json holds
 them for Pierre (subj seaslug, kind names).
 
 Two stages, as tools/build_seaslugs.py:
