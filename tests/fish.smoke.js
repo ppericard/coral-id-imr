@@ -3717,6 +3717,54 @@ async function freshSeed(b, base, errs, seed, fresh) {
       rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
     await c3.close();
   }
+  // (6b) From the script that serves each subject's own opening hold (sync.js HOLDS_SHEET, holdOf; Code.gs holdsInto_),
+  // each subject takes its own from holds: the fish's here, the corals' under their key, the fish's in force on screen
+  // (model.js HOLDS). Before that script, the stub above (v 29): the corals' alone, the fish keeping the device's.
+  {
+    const c6 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+    await c6.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c6.addInitScript(() => {
+      const F = {t01: {ok: 10, ko: 2}};
+      try {
+        if (!sessionStorage.getItem('fish-holds')) {
+          sessionStorage.setItem('fish-holds', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke'); // the fish beta is the admin's only
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'); // the fish welcome question answered
+          localStorage.setItem('reefid-sync-fish-progress', JSON.stringify(F));
+          localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', log: [], base: {}, fbase: F, srv: 1}));
+        }
+      } catch (e) {}
+      const data = {
+        'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}}),
+        'reefid-sync-fish-progress': JSON.stringify(F)
+      };
+      const H = {hold: 5, holdIds: [], holds: {coral: {h: 5, ids: []}, fish: {h: 2, ids: []}}};
+      // HOLDS_SHEET: sync.js's, read when the app asks (after it has loaded).
+      window.SHEET_STUB = (url, o) => {
+        const reply = o && o.method === 'POST' ? {ok: true, log: true, rev: 3, ...H} : {ok: true, found: true, data, rev: 2, ...H};
+        return Promise.resolve({json: () => Promise.resolve({...reply, v: HOLDS_SHEET})});
+      };
+    });
+    const q = await c6.newPage();
+    q.on('pageerror', e => errs.push(`holds: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+    await q.evaluate(() => syncPush());
+    const h = await q.evaluate(() => ({
+      subj: SUBJ.id,
+      on: HOLDS,
+      fish: Number(localStorage.getItem('reefid-fish-hold')),
+      coral: Number(localStorage.getItem('reefid-hold'))
+    }));
+    if (h.subj !== 'fish' || h.on !== 2 || h.fish !== 2 || h.coral !== 5)
+      rv.push(`each subject's own hold from the sheet's holds: ${JSON.stringify(h)} (want fish 2 on screen and stored, corals 5)`);
+    await c6.close();
+  }
   // (7) A saved copy without fish keys (saved by an app from before fish) is not an empty fish record: the fish
   // progress synced before stays here and goes with the next save (never erased).
   {

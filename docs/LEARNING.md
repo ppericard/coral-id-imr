@@ -426,9 +426,10 @@ it shows.
 - **Held while the player falls behind** (`model.js` `holdStep`, `introHold`): no new card while a CUSUM of how far the
   answers fall below the success the game expected (each answer's e), less `INTRO.SLACK` an answer and never below 0, is
   `INTRO.HOLD` or more. A run of misses adds up however long it lasts; right answers pay it back by what they beat the
-  expectation by; the slack keeps a player the game slightly overrates from being held for good. Kept on the device
-  (`reefid-hold`) and, signed in, rebuilt by the sheet from every answer since the last reset (`model.js` `holdSync`,
-  the sheet's `hold_`). While it is on the questions are easier ("Easier questions when a run goes wrong").
+  expectation by; the slack keeps a player the game slightly overrates from being held for good. One per subject, kept
+  on the device (`reefid-hold`, `reefid-fish-hold`…) and, signed in, rebuilt by the sheet from every answer of that
+  subject since its last reset (`model.js` `holdSync`, the sheet's `hold_`; every subject from `sync.js` `HOLDS_SHEET`,
+  the real-log check in [its record](decisions/2026-11-20-one-hold-path-app.md)). While it is on the questions are easier ("Easier questions when a run goes wrong").
 - **"I've had the IMR lecture": Open all** (`model.js` `introAll`): on the first cards and in My progress, one tap
   opens every unit the lecture teaches (`UNITS` core: the corals' slate, the fish circle 1) without cards; the bonus
   genera and the later fish circles still open one at a time.
