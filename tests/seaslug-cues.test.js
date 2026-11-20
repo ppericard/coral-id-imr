@@ -21,7 +21,7 @@ const G = Object.fromEntries(T.genera.map(g => [g.name, g])),
 // scan on the Internet Archive or, for Basteria, its page on Naturalis's natuurtijdschriften.nl) and Wikipedia at a fixed
 // revision.
 const HOSTS =
-  /^https:\/\/(www\.seaslugforum\.net\/find\/|en\.seaslug\.world\/species\/|doi\.org\/|archive\.org\/details\/biostor-\d+$|natuurtijdschriften\.nl\/pub\/\d+$|en\.wikipedia\.org\/w\/index\.php\?title=[^&]+&oldid=\d+$)/;
+  /^https:\/\/(www\.seaslugforum\.net\/find\/|en\.seaslug\.world\/species\/|www\.ciesm\.org\/atlas\/[A-Za-z]+\.html$|doi\.org\/|archive\.org\/details\/biostor-\d+$|natuurtijdschriften\.nl\/pub\/\d+$|en\.wikipedia\.org\/w\/index\.php\?title=[^&]+&oldid=\d+$)/;
 
 // The tool's verdict on a made-up tree and cues (its error text, '' when it passes).
 const verdict = (cues, tree) => {
