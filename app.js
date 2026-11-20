@@ -148,9 +148,12 @@ const photoIdx = () => {
 const photoLook = f => photoIdx().f.get(f);
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 240 (small), 500 (medium) and 1024 px (large).
-// A bare {f} (the Lab's photos) finds its record, so its online original, by name (R2 switched off: AWAY from the start).
+// A bare {f} (the Lab's photos, Coral basics') finds its record by name: its online original (R2 switched off: AWAY from the
+// start), and its version (ver: a photo whose files were remade, as the IMR lecture photos replaced by their originals, is a
+// new address for the caches, whoever asks for it).
+const bareF = p => !!p.f && Object.keys(p).length === 1;
 const loc = (p, s) => {
-  const o = AWAY && !p.src ? photoLook(p.f) || p : p;
+  const o = (AWAY && !p.src) || (bareF(p) && DATA) ? photoLook(p.f) || p : p;
   return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
@@ -2343,6 +2346,31 @@ const fishNextOf = o => {
     lines: ['Every fish family open to you is in your game: no new one comes for a while.', ...L]
   };
 };
+// The sea slugs' card when every genus in play is met and none may open now (quiz.js allMetDue; UNITS seaslug done):
+// their circle 3 opens by itself at its gate, so the card says, before it, what comes next (Pierre, 2026-11-20: «Ya pas
+// de carte avant de passer au cercle suivant pour les nudibranches?»). o: c3 circle-3 genera not met, c3due treeC3, wait
+// genera with no photo yet. Pure (tests call it): {k, kick, title, lines}, k 'c3' before circle 3, else 'all'.
+const slugNextOf = o => {
+  const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`,
+    L = [];
+  let k = 'all';
+  if (o.c3 && !o.c3due) {
+    k = 'c3';
+    L.push(
+      `Next: ${pl(o.c3, 'more genus', 'more genera')}. They come once you know the genera you have well, about Open Water on average: keep practising them!`
+    );
+  } else {
+    if (o.wait)
+      L.push(`${pl(o.wait, 'more genus joins', 'more genera join')} the game as soon as ${o.wait > 1 ? 'their' : 'its'} photos are in.`);
+    if (!L.length) L.push('What’s left: take each genus to Instructor, through its mastery exam.');
+  }
+  return {
+    k,
+    kick: 'Every genus met',
+    title: 'You’ve seen them all, for now',
+    lines: ['Every sea slug genus open to you is in your game: no new one comes for a while.', ...L]
+  };
+};
 // A tree subject's photo by its name, for the admin's "Bad photo" flag (flag.js; UNITS photo): {id, its key in the
 // subject's curation (core.js treePid: one photo under its candidate and reference names), and what the flag records:
 // file (its name), unit (the family showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
@@ -2925,6 +2953,17 @@ const UNITS = {
     startFb: false,
     // Its three circles (tools/seaslug_game.py CIRCLES) of genera (core.js SUBJECTS unitRank) open at the fish's
     // thresholds (TREE_UNITS gate), circle 3 by itself: no offer card (the fish's speaks of the IMR course).
+    // Every genus in play met and none may open now (quiz.js allMetDue): the card that says what comes next (slugNextOf),
+    // circle 3 above all.
+    done: () => {
+      if (!TREEU) return null;
+      const left = n => photoAny(n) && !introduced(n);
+      return slugNextOf({
+        c3: (TREEU.c3 || []).filter(left).length,
+        c3due: treeC3(),
+        wait: slateGenera().filter(n => !photoAny(n)).length
+      });
+    },
     // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
     // its first English name as information (vernFirst; never a choice).
     taxon: p => {
@@ -3498,8 +3537,10 @@ const CARD_KINDS = {
   step: '🧗', // a big step the player chooses (fish circle 3, quiz.js openOfferShow): the warm --warn hue, "Not now" on top
   update: '🔄',
   feature: '✨',
+  // each subject's own cards (core.js SUBJECTS card: its genus cards, its all-met card), one each
   genus: '🪸',
   fish: '🐟',
+  'sea slug': '🐌',
   tip: '💡',
   bonus: '🎁',
   account: '💾',

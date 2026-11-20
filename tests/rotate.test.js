@@ -274,6 +274,26 @@ test('the fish Candidates: a photo in play with no judgment shows its published 
   assert.ok(T.fishSrc(p, 1).endsWith(` style="${vb}"`), T.fishSrc(p, 1));
 });
 
+// An IMR lecture photo traced to its Corals of the World original: the lecture's framing (cr, ro) is its baseline, not in
+// the draft, so the admin shows its framed R2 file as the players see it (Codex review, #1292).
+test('the admin shows a framed lecture photo as its file, and draws its framing from the original once R2 fails', () => {
+  const T = adminVm(),
+    o = 'https://www.coralsoftheworld.org/media/images/0345_C01_02.jpg',
+    p = {f: 'imr-p12_i8', imr: true, src: o, cr: [0.1, 0.2, 0.9, 0.8], ro: 90, ar: 0.67};
+  T.set({DRAFT: {}});
+  assert.strictEqual(T.crSrc(p, 1), `src="${T.img(p, 1)}"`, 'the framed file as it is');
+  // His own crop or turn is laid on the original, as for any photo.
+  T.set({DRAFT: {crop: {[p.f]: [0, 0, 0.5, 1]}, rot: {[p.f]: 90}}});
+  assert.strictEqual(T.crSrc(p, 1), `src="${o}" style="object-view-box:inset(0% 50% 0% 0%)" data-rot="90"`);
+  // R2 failed: the original with the lecture's framing drawn.
+  T.set({DRAFT: {}, AWAY: true});
+  assert.strictEqual(T.crSrc(p, 1), `src="${o}" style="object-view-box:inset(20% 10% 20% 10%)" data-rot="90"`);
+  // A lecture photo with no framing (the whole picture) is shown as its file.
+  T.set({DRAFT: {}, AWAY: false});
+  const q = {f: 'imr-p1_i1', imr: true, src: o, ar: 1.5};
+  assert.strictEqual(T.crSrc(q, 1), `src="${T.img(q, 1)}"`);
+});
+
 test('R2 failed: the published rotation is drawn on the original with its crop (admin.js photoRoOf, its error handler)', () => {
   const {photoIndex, photoCropOf, PHOTO_BASE} = CORE,
     iN = (n, s) => `https://inaturalist-open-data.s3.amazonaws.com/photos/${n}/${s}.jpg`,
@@ -386,6 +406,35 @@ test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turne
   assert.strictEqual(w2.style.transform, 'rotate(180deg)');
 });
 
+// A page that names a photo by its file only ({f}: Coral basics, the Lab's games) gets the record's version in the address
+// (app.js loc, ver), R2 healthy or not: a lecture photo replaced by its original keeps its name, and the service worker
+// serves a photo cache-first by address (Codex review of #1292).
+test('a bare {f} photo asks for its record’s version, as the record itself does', () => {
+  const A = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    {PHOTO_BASE} = CORE,
+    ctx = vm.createContext({...CORE});
+  vm.runInContext(
+    'let R2 = true, AWAY = false, DATA = {}, RECS = {};\nconst photoUrl = p => (R2 ? PHOTO_BASE : "") + p, photoLook = f => RECS[f];\n' +
+      block(A, 'const ver = p => ', '\n', {file: 'app.js', through: true}) +
+      block(A, 'const bareF = ', '\nconst img = (p, size)', {file: 'app.js'}) +
+      '\nthis.T = {loc, bareF, set: o => ({R2, AWAY, DATA, RECS} = {R2, AWAY, DATA, RECS, ...o})};',
+    ctx
+  );
+  const T = ctx.T,
+    rec = {f: 'imrl-p11_i6', imr: true, cr: [0.1, 0.2, 0.9, 0.8], iv: 1, src: 'https://www.coralsoftheworld.org/media/images/x.jpg'},
+    want = `${PHOTO_BASE}img/imrl-p11_i6-s.webp?c=0.1_0.2_0.9_0.8.1`;
+  T.set({RECS: {[rec.f]: rec}});
+  assert.strictEqual(T.loc(rec, 's'), want, 'the record itself');
+  assert.strictEqual(T.loc({f: rec.f}, 's'), want, 'a bare {f}, R2 healthy');
+  // Not bare: a record is taken as it is, never looked up; a bare one with no record has no version.
+  assert.strictEqual(T.bareF({f: 'a'}), true);
+  assert.strictEqual(T.bareF({f: 'a', ar: 1}), false);
+  assert.strictEqual(T.loc({f: 'other'}, 's'), `${PHOTO_BASE}img/other-s.webp`);
+  // Before the data is built there is no index to ask.
+  T.set({DATA: undefined});
+  assert.strictEqual(T.loc({f: rec.f}, 's'), `${PHOTO_BASE}img/imrl-p11_i6-s.webp`);
+});
+
 // The app's fallback (app.js turnPlan, turnSet): a turned photo shown from its online original is cut
 // and turned in a canvas as the workflow does, and every use of its original on the element swapped for that picture.
 const appTurn = () => {
@@ -433,6 +482,32 @@ test('the app fallback: the canvas cuts and turns the original as the workflow d
   // The canvas: the cut's size, swapped for a quarter turn (as turnedSize).
   assert.deepStrictEqual([turnPlan(W, H, [0, 0, 0.5, 1], 90).w, turnPlan(W, H, [0, 0, 0.5, 1], 90).h], [600, 400]);
   assert.deepStrictEqual([turnPlan(W, H, null, 180).w, turnPlan(W, H, null, 180).h], [800, 600]);
+});
+
+// A turned lecture photo (imr-p12_i8, turned a quarter) shown from its Corals of the World original: for the time its
+// picture takes the element has no src at all (a check reading the page then sees an empty address: tests/pages.smoke.js
+// waits for the src), and once made it is a blob picture, never the original (#1292).
+test('a turned lecture photo from its Corals of the World original: no src while made, then its picture (turnSet)', async () => {
+  const T = appTurn(),
+    cw = 'https://www.coralsoftheworld.org/media/images/0345_C01_02.jpg';
+  T.idx(CORE.photoIndex({p: [{f: 'imr-p12_i8', imr: true, src: cw, cr: [0.1, 0.2, 0.9, 0.8], ro: 90}]}));
+  assert.strictEqual(T.turnRec(cw).f, 'imr-p12_i8');
+  const A = {src: cw, alt: 'x'},
+    i = {
+      getAttribute: k => (k in A ? A[k] : null),
+      setAttribute: (k, v) => (A[k] = String(v)),
+      removeAttribute: k => delete A[k],
+      hasAttribute: k => k in A,
+      dataset: {},
+      closest: () => null
+    };
+  let go;
+  const w = T.turnSet(i, () => new Promise(ok => (go = ok)));
+  assert.strictEqual(i.hasAttribute('src'), false, 'no src while the picture is made');
+  assert.strictEqual(i.getAttribute('src') || '', '');
+  go('blob:turned');
+  await w;
+  assert.strictEqual(A.src, 'blob:turned');
 });
 
 test('the app fallback: every use of a turned original on an element swapped for its picture, none shown meanwhile (turnSet)', async () => {

@@ -89,12 +89,14 @@ know"; `quiz.js` `fbBody`, `fbLine`, `pairText`, `pairLine`; styles `.fb.fbs`, `
 `app.css`; [the feedback sheet study](../reviews/2026-11-18-feedback-sheet-study.md), rule C3):
 
 - **The sheet** is the verdict (`--fs-xl`), the photo's species line (`taxonLine`, right under it), a typed answer's
-  reading (`tyread`) and **one decisive line**, then one row, **More / Less and Next** (More a 44 px button naming the
-  panel it opens, `aria-controls`, `aria-expanded`; Next never moves).
+  reading (`tyread`) and **one decisive line**, then **⚑ Report a problem** on a line of its own (`.fbrep`, rule U14:
+  in view after every answer, whatever the subject or format, never behind More), then one row, **More / Less and
+  Next** (More a 44 px button naming the panel it opens, `aria-controls`, `aria-expanded`; Next never moves). The
+  Lab's photo games use the same sheet (`proto/lab.js` `labSheet`).
 - **The More panel** (`#fbmore`, hidden until opened, in the same sheet) holds the rest, in this order: the ID tips box
   with its source label, "Similar names" (below), "Your answer would show" with Compare them, "This pair comes back as a
   duel" (counted as told once More is opened, `againLeft`, `againTold`), a coral genus's Coral ID Key criteria fold or a
-  fish entry's IMR names and phases, the credits, ⚑ Report a problem (rule U14: one tap more). `fbMoreBind` toggles it
+  fish entry's IMR names and phases, the credits. `fbMoreBind` toggles it
   (and runs `fitStage` again on phones and tablets, where the sheet is a bottom sheet over the stage). The mix-up
   montage keeps its ✓ / ✗ name chips and carries no notes.
 - **The line** (`fbLine`, subject-neutral: it reads record fields, never a subject, rule S1): after a miss, the pair's

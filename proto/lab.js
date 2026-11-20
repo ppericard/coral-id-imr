@@ -253,13 +253,14 @@ const labTips = units =>
     })
     .join('');
 // The short feedback sheet of a photo game in q (the quiz's own: .fb.fbs, #after, rule C3): o.good, the verdict; o.head, its
-// sentence; o.line, the one decisive line (quiz.js fbLine); o.more, the panel behind More before the credits of o.photos and
-// the report button for o.rep (sync.js repBtn); o.next draws the next question; o.fit lays the stage out again.
+// sentence; o.line, the one decisive line (quiz.js fbLine); o.more, the panel behind More before the credits of o.photos;
+// the report button for o.rep (sync.js repBtn) under the decisive line, in view as the quiz's is; o.next draws the next
+// question; o.fit lays the stage out again.
 function labSheet(q, o) {
   q.classList.add('done');
   q.querySelector('#after').innerHTML = `<div class="fb fbs">
-    <h3 class="${o.good ? 'ok cheer' : 'ko'}"><span class="v">${o.good ? '✓ Yes' : '✗ No'},</span> ${o.head}</h3>${o.line}
-    <div class="fbmore" id="fbmore" hidden>${o.more}<p class="credit">${o.photos.map(credit).join('<br>')}</p>${repBtn(o.rep)}</div>
+    <h3 class="${o.good ? 'ok cheer' : 'ko'}"><span class="v">${o.good ? '✓ Yes' : '✗ No'},</span> ${o.head}</h3>${o.line}<p class="fbrep">${repBtn(o.rep)}</p>
+    <div class="fbmore" id="fbmore" hidden>${o.more}<p class="credit">${o.photos.map(credit).join('<br>')}</p></div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
   const mb = q.querySelector('#fbmbtn'),

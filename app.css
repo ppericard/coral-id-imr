@@ -2599,7 +2599,7 @@ kbd {
 }
 /* The short feedback sheet (Pierre, 2026-11-18, rule C3; quiz.js fbBody): the verdict, the photo's species line and one
    decisive line, then one row: More / Less (a 44 px target) and Next. More opens the panel behind it (the ID tips, why the
-   answer given is another unit, the criteria, the report button), in the same sheet.
+   answer given is another unit, the criteria, the credits), in the same sheet. The report link has its line above the row.
    When it makes the phone's sheet or the desktop's side column scroll, the row stays in view at the bottom and the feedback
    scrolls under it (desktop pinned Next already, design re-review p2). Nothing moves when everything fits. */
 .fbrow {
@@ -2643,6 +2643,26 @@ kbd {
 }
 .fb .vs.fbline .esrc {
   color: var(--muted);
+}
+/* The report link (rule U14), under the decisive line and never behind More: one quiet line of its own, as small as the
+   other links of the sheet, a 32 px tap target on a touch screen, a plain line with a mouse (a desktop's feedback column
+   has no height to spare after the longest round end). */
+.fb .fbrep {
+  margin: 0;
+}
+.fb .fbrep .rep {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .fb .fbrep .rep {
+    min-height: 0;
+    padding: 2px 0;
+  }
 }
 .fbmore[hidden] {
   display: none;
