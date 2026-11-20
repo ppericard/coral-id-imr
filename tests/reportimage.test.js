@@ -70,6 +70,24 @@ test('Code.gs: a chunk that starts with + is kept as text, never a formula (Code
   assert.deepStrictEqual(tool.decode(I.getRange(1, 1, 2, 8).getValues(), 'p1'), b);
 });
 
+test('Code.gs: an anonymous id that starts with + stays text in the Player column, and a merge still finds it (Codex review)', () => {
+  const s = loadCodeGs(),
+    run = code => require('vm').runInContext(code, s.ctx);
+  let name = '',
+    other = '';
+  for (let i = 0; i < 5000 && !(name && other); i++) {
+    const id = run(`aid_('Zed${i}')`);
+    if (id.startsWith('+') && !name) name = 'Zed' + i;
+    else if (id.startsWith('+') && !other) other = 'Zed' + i;
+  }
+  assert.ok(name && other, 'two names whose id starts with +');
+  assert.deepStrictEqual(post(s, [rep('z1', {img: img(40)})], {rname: name, rpin: ''}).img, {z1: 1});
+  const cell = () => s.sheets['Report images'].getRange(2, 3, 1, 1).getValues()[0][0];
+  assert.strictEqual(cell(), run(`aid_('${name}')`));
+  run(`relabel_('Reports', 2, '${name}', '${other}')`);
+  assert.strictEqual(cell(), run(`aid_('${other}')`), 'the merge moved it');
+});
+
 test('Code.gs: the image tab grows before a row past its grid; a retried image replaces its row (Codex review)', () => {
   const s = signedIn(),
     I = makeSheet('Report images'),

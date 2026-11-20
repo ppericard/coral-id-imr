@@ -1535,7 +1535,7 @@ function repImgPut_(id, who, d, bytes){
   const sh = sheet_(REPIMG.TAB, REPIMG.HEAD), parts = [];
   for (let i = 0; i < d.length; i += CHUNK) parts.push(safe_(d.slice(i, i + CHUNK)));  // a chunk starting with + must not become a formula
   const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [], k = ids.indexOf(String(id));
-  const row = [id, new Date(), who ? aid_(who) : '', 'image/jpeg', bytes].concat(parts), at = k >= 0 ? k + 2 : sh.getLastRow() + 1;
+  const row = [id, new Date(), who ? safe_(aid_(who)) : '', 'image/jpeg', bytes].concat(parts), at = k >= 0 ? k + 2 : sh.getLastRow() + 1;
   if (k >= 0) while (row.length < sh.getLastColumn()) row.push('');  // the chunks of the row replaced
   const extra = at - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -1562,7 +1562,7 @@ function repImgDrop_(ids){
 function repImgRelabel_(from, into){
   const im = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(REPIMG.TAB); if (!im || im.getLastRow() < 2) return 0;
   const rg = im.getRange(2, 3, im.getLastRow() - 1, 1), v = rg.getValues(), a = aid_(from), b = aid_(into); let n = 0;
-  v.forEach(r => { if (String(r[0]) === a) { r[0] = b; n++; } });
+  v.forEach(r => { if (String(r[0]) === a) { r[0] = safe_(b); n++; } });  // an id may start with +: kept as text
   if (n) rg.setValues(v);
   return n;
 }
