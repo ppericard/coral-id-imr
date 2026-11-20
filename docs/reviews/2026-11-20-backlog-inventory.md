@@ -22,17 +22,17 @@ outside the ROADMAP). The counts are computed from those tables by a script (§6
 | State                                                              | Rows    |
 | ------------------------------------------------------------------ | ------- |
 | Done (a row or sub-item the ROADMAP still held as open)            | 3       |
-| Partly done                                                        | 10      |
+| Partly done                                                        | 11      |
 | Decided, ready to launch                                           | 15      |
 | Decided (agreed, not started; waits only the order of work)        | 7       |
-| Blocked by an open PR or a held file (the 14 open PRs included)    | 48      |
+| Blocked by an open PR or a held file (the 13 open PRs included)    | 46      |
 | Waiting for Pierre (a question, his review or his hands)           | 23      |
 | Waiting on data, a trigger he set or a third party                 | 42      |
 | Idea (nobody decided)                                              | 44      |
 | Obsolete or declined                                               | 5       |
-| **All**                                                            | **197** |
+| **All**                                                            | **196** |
 
-Of the 48 blocked rows, 34 are decided work waiting for a file another PR holds; the other 14 are the open PRs.
+Of the 46 blocked rows, 33 are decided work waiting for a file another PR holds; the other 13 are the open PRs.
 
 **What this says against "61 ideas or later"** (appendix A, by script): of the audit's 61 single D entries, **19 rest on
 Pierre's own words** (a decision, a wish or doubt he worded himself, or a park with its trigger), **5 are decided by a
@@ -70,7 +70,7 @@ ledger said otherwise.
 
 ### 1.3 Ready to launch now (decided, no open PR on their files)
 
-In the integrator's order of work; files checked against the 14 open PRs' file lists of 17:07.
+In the integrator's order of work; files checked against the open PRs' file lists (§2).
 
 1. **IMR content split, the fish part** (R123): `tools/instances/imr/fish.json`, `tools/build_fish.py`.
 2. **Learn list photo first on its sheet** (R30), then one-admin Learn steps 9-10 (`learn.js`).
@@ -153,8 +153,8 @@ what its source shows it answered.
 - **Data gates**: the sheet's answer counts were not read today (the Answers tab was not queried); each gate gives its
   last recorded figure.
 - Files held by the open PRs (`gh api pulls/N/files`, read at about 18:00): `core.js` and `Code.gs` #1279, #1298,
-  #1299; `quiz.js` #1318, #1319, #1322; `app.js` #1279, #1292, #1298, #1318, #1322; `admin.js` #1292, #1298, #1313,
-  #1320; `autosort.js` #1298, #1313; `analysis.js` #1298, #1299; `proto/lab.js` #1279, #1319; the tools' data,
+  #1299; `quiz.js` #1318, #1319, #1322; `app.js` #1279, #1298, #1318, #1322; `admin.js` #1298, #1313, #1320 (#1292,
+  which held `app.js` and `admin.js` too, merged during the sweep, at `dc373a62e`, merged into this branch); `autosort.js` #1298, #1313; `analysis.js` #1298, #1299; `proto/lab.js` #1279, #1319; the tools' data,
   `judging/*`, `approved-photos.yml` and `tools/seaslug_lookalikes_source.json` #1298. Free: `learn.js`, `sync.js`,
   `model.js`, `tips.js`, `tools/learnsim.js`, `tools/build_fish.py`. #1286, #1301, #1311, #1312 merged after the audit.
 
@@ -167,7 +167,7 @@ what its source shows it answered.
 - the 1,323 PR bodies (`gh api pulls?state=all`, 14 pages), their Decisions sections searched by keyword, and every
   French quote in them extracted by a script and compared with the ledger (143 quotes absent from it; the ones that
   decide an open row are in §1.2 and the ledger);
-- the 14 open PRs and their ledger copies (`tools/asked.py` reads them): today's reports already recorded on #1316,
+- the 14 PRs open at 17:07 and their ledger copies (`tools/asked.py` reads them): today's reports already recorded on #1316,
   #1318, #1319, #1320, #1322, #1323 are not added again;
 - the 13 remote branches without a PR;
 - the sheet's Reports tab, read-only (17 reports by Pierre on 2026-11-20; the other reporters' rows are not quoted);
@@ -192,13 +192,13 @@ what its source shows it answered.
 | R36b | Admin opening: a leaner answer-log reply                     | Blocked           | `Code.gs` holders; a rows-since-last-visit reply needs the declined device copy: his OK only                                                                                            | Medium  | M    |
 | R37  | Typed answers: Rejected tries served by `readAnswers`        | Blocked           | `Code.gs` holders                                                                                                                                                                       | Medium  | S    |
 | R37b | Typed answers: `TYPED` tuning, dynamic share                 | Waiting           | 18 typed mix-ups on 11-18 (count not read today); a change players meet, for him                                                                                                        | Long    | M    |
-| R38  | Corals of the World captures replaced by their originals    | Blocked           | (paraphrase) "C12 A+D" (11-18, STATUS 00f82557c); in review #1292                                                                                                                       | Short   | M    |
+| R38  | Corals of the World captures replaced by their originals    | Partly done       | (paraphrase) "C12 A+D" (11-18, STATUS 00f82557c); the originals merged (#1292, during this sweep); left: the admin's Crop on a lecture photo                                             | Short   | S    |
 | R39  | Analyses: structure views, the later items                   | Blocked           | [i] Q70-Q77 (11-05); `analysis.js` held by #1298, #1299                                                                                                                                  | Medium  | M    |
 | R40  | iNaturalist API v1 to v2                                     | Idea              | Parked by the agents (v1 has no shutdown date)                                                                                                                                          | Long    | M    |
 | R41  | Out-of-zone taxon-page photos (Q230)                         | Obsolete          | [i] Q230 "ok" to building nothing (11-14)                                                                                                                                               | -       | -    |
 | R42  | More good fish photos we missed                              | Idea              | (paraphrase) his request for ideas, 11-08; no go to run one                                                                                                                             | Long    | M    |
 | R43  | Feedback sheet lines: the 6 pairs left, a slot, the counter  | Partly done       | [i] «ok pour les 6 recommandations» (11-18 ~12:08, #1119); the lines are in play; his review corrects them, it blocks nothing                                                            | Medium  | S    |
-| R44  | About and credits, a calmer text                             | Blocked           | (paraphrase) 11-08, R44; after #1292                                                                                                                                                    | Short   | S    |
+| R44  | About and credits, a calmer text                             | Blocked           | (paraphrase) 11-08, R44; #1292 merged; the About text is in `app.js` (held by #1279, #1298, #1318, #1322)                                                                              | Short   | S    |
 | R45  | Coral ID Key photos in place of the drawings                 | Waiting           | [i] Q293 (11-08); as very good photos come                                                                                                                                              | Long    | M    |
 | R46  | The Tree tab: generic `tree` section, coral Look-alikes page | Partly done       | [i] Q339-Q341, Q359; the build section waits for #1298 (`tools/*_game.py`)                                                                                                              | Medium  | M    |
 | R46b | The Tree tab: filters (a species, no cover)                  | Idea              | "if Pierre wants them"                                                                                                                                                                  | Long    | S    |
@@ -377,16 +377,15 @@ what its source shows it answered.
 | N2  | Species by common name before the scientific names?          | Waiting for Pierre | [i] «Pourquoi on commence à m'ouvrir des noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (Reports); opening study question B                    | Short   | S    |
 | N3  | Report a problem, again on the same page                     | Decided, ready    | [i] «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page» (Reports)                                                                                | Short   | S    |
 | N4  | A photo or screenshot attached to a report                   | Waiting for Pierre | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); where the file is stored                                         | Medium  | M    |
-| N5  | Beta: remove everyone from a subject's beta                  | Blocked           | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1292, #1298, #1313, #1320                                       | Short   | S    |
+| N5  | Beta: remove everyone from a subject's beta                  | Blocked           | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1298, #1313, #1320                                       | Short   | S    |
 
 ## 4. Outside the ROADMAP
 
-### 4.1 Open PRs (14)
+### 4.1 Open PRs (13; #1292 merged during the sweep)
 
 | ID    | PR                                                   | State   | Note                                                        | Horizon | Size |
 | ----- | ---------------------------------------------------- | ------- | ----------------------------------------------------------- | ------- | ---- |
 | PR1   | #1279 Memory for the fish and the sea slugs (Q437)   | Blocked | Needs a sheet `VERSION` at merge (rule D3)                  | Short   | M    |
-| PR2   | #1292 Corals of the World originals                  | Blocked | Codex requested; then `reefid-originals.yml`                | Short   | M    |
 | PR3   | #1298 Tool and admin data into `data/`               | Blocked | Needs a `VERSION`; holds many files                         | Short   | M    |
 | PR4   | #1299 Find the X's own offset                        | Blocked | Needs a `VERSION`                                           | Short   | S    |
 | PR5   | #1310 Q316 offline-fit tool                          | Blocked | Held: cut side check 2B, three threads open                 | Short   | M    |
@@ -534,7 +533,7 @@ question, his review or his hands).
 ## 6. What I checked and what I did not
 
 - **Checked**: every ROADMAP row's status cell and, for the audit's C and D rows, the whole row; the sources of §2,
-  with the searches named there; the files of the 14 open PRs (`gh api pulls/N/files`, a watched list of 16 files); `admin.js` for a "remove all"
+  with the searches named there; the files of the 14 PRs open at 17:07 (`gh api pulls/N/files`, a watched list of 16 files); `admin.js` for a "remove all"
   beta button (none: "Add all" only); `live.js` subjects through the modes plan; #467 and #458 for the hunt set and the
   Danger zone.
 - **Counted by script**: the state counts of §1.1, from the State column of §3 and §4.
