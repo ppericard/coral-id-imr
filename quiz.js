@@ -866,9 +866,8 @@ function recordAnswer({
   if (warm) comebackStep(q.R, th0, dm, k, good);
   // When it was given: a live answer recorded later (live.js liveFlush) keeps its own time, never one after now.
   answeredAt(s, good, Math.min(Date.now(), Date.parse(at) || Infinity));
-  // Every subject's answers go to the sheet. A subject the
-  // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
-  // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
+  // Every subject's answers go to the sheet, each subject's counted in its own opening hold and replay (Code.gs
+  // subjRows_, holdsInto_; sync.js holdAdopt, replayAdoptS), never in another subject's.
   logAnswer(ans);
   save();
   // Achievements on the photos seen before answering: a corallites hint left closed is not one. The runs and Sharp eye
