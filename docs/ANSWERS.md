@@ -1395,9 +1395,35 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   clics pour chaque photos? Tu me donnes du travail en plus. Réfléchis plus largement au problème et propose moi
   d'autres solutions»). Applied: docs/spec/admin.md "Each subject's admin part", decision record
   `2026-11-20-flags-clear-themselves`, #1294.
+- **06:02, the Learn lists' cards, every subject.** «l'accès en fait aux fiches il n'est pas hyper facile, et je pense
+  que ça doit être vrai partout dans toutes les matières. Parce qu'il faut qu'on voit du coup qu'il y a un lien qui est
+  open this sheet, et ensuite qu'on clique pour accéder. […] la photo doit être un lien. Vers la fiche. Et du coup, ça
+  serait une exception sur le fait que si on clique, on voit les crédits […] Et le titre du genre aussi devrait être un
+  lien. […] ID Marks, ben, en fait, on s'en fiche un peu, c'est redondant […] Les sources, c'est pas aussi utile que ça
+  soit affiché à cet endroit-là […] je me demande si peut-être toute la partie à gauche doit pas être cliquable,
+  c'est-à-dire la photo, le titre, tout ça, en dégageant le Open This Sheet qui sert à rien en fait et qui est pas
+  intuitif. Par contre, il faudrait rendre très clair le fait que bah, c'est cliquable et que du coup il y a une fiche à
+  ouvrir derrière […] il faut qu'il y ait une réflexion de design sur comment mieux présenter ça, et c'est vrai pour
+  toutes les matières du coup. Qu'est-ce qui est vraiment absolument utile d'avoir dans cette page, et comment est-ce
+  que on fait en sorte que l'utilisateur, ça soit très clair qu'il y a un truc à cliquer et qu'il peut ouvrir une fiche
+  sans forcément explicitement avoir un lien». A unit's card on a Learn list opens its sheet, photo and name included,
+  plainly tappable, with no "Open the sheet" line, no ID marks heading and no sources there (they stay on the sheet).
+  Applied: docs/decisions/2026-11-20-learn-cards-open-the-sheet.md, docs/spec/front-end.md, DESIGN.md, #1290.
+- **05:53, one admin for every subject.** «l'admin doit être le même ou presque le même pour l'ensemble des matières
+  et des modes de jeu. Donc il y a un admin qui ensuite est adapté pour chacune des matières. Et donc du coup c'est
+  aussi valable pour le nidibranche, c'est aussi valable pour quoi que ce soit qu'on veuille plugger derrière.» One
+  admin adapted to each subject, the sea slugs and any later one included, each subject declaring only its
+  differences in one place; the fish parity goal becomes the one-engine plan. Applied: ROADMAP "One engine for every
+  subject, what is left" (the row "Fish admin at parity with the corals, Analyses first" folded into it, the backlog's
+  item 4), the study's §5 (step 3 built), decision record `2026-11-20-one-admin-every-subject`, #1288.
 - **06:42-06:44, Q441 (a box pass on the sea slug photos so Find the X opens to them; the cost).** «Il faut faire des
   tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; then «Je ne devrais pas
   devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un
   problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
   judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
   judging or boxing pass is measured first), #1287.
+- **06:48-06:50, the reference of a measurement.** «Et tu as bien vu que ce n'est pas toujours le plus juste? On s'est
+  déjà apperçu que des fois c'est la calibration qui n'est pas bonne»; «Je pense que ça dépend des sujets/taches. Mais
+  parfois ya effectivement besoin d'une recalibration». The strong model is not the truth by itself; how the
+  reference is checked depends on the task, and a recalibration is made when the task needs one. Applied: INTEGRATOR
+  "Working with Pierre" (the same line), #1291.

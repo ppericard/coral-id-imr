@@ -67,7 +67,7 @@ LAB.add({
       let answered = false;
       // The photos: the unit is not named until the answer (the enlarged view is blind too, rule P5).
       const fig = (p, k) =>
-        `<figure class="qph" data-i="${k}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-z="${k}" aria-label="Enlarge photo ${k + 1}"><img src="${qsrc(p, 2)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="${esc(SUBJ.what)} ${k + 1}">${ZOOMI}</button></figure>`;
+        `<figure class="qph" data-i="${k}"${p.ar ? ` data-r="${p.ar}"` : ''}${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-z="${k}" aria-label="Enlarge photo ${k + 1}"><img src="${qsrc(p, 2)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="${esc(SUBJ.what)} ${k + 1}">${ZOOMI}</button></figure>`;
       root.innerHTML = `<div class="q bleed sdq">
         <div class="qstage qvs">${R.ph.map(fig).join('')}</div>
         <aside class="qside">

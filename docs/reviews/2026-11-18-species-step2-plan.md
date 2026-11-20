@@ -2,7 +2,9 @@
 
 **Status: every question answered (Q394-Q398); the sheet PR of section 5 built (`claude/sci-sheet`, sheet script
 v198: the `sci:` units of both subjects in the replay and the board's tree, Q394's smaller faults, the gate `SCI_SHEET`);
-the app PR, the names rows, the exams and the ultimate exam next.** Written on 2026-11-17 in the
+the app PR built (#1273: the units of both subjects, their opening, choices, display, typed answers and
+faults, the milestone card, fspsci1-fpct70, the species tiles of My progress, behind `SCI_SHEET`); the names rows, the
+exams and the ultimate exam next.** Written on 2026-11-17 in the
 evening, Manila time, on `origin/main` at 444d4e61, the day #975 (step 1, sheet script v161) was merged. Pierre answered
 on 2026-11-17 in the evening and on 2026-11-18 in the morning; the answers are recorded where each question stood
 (section 3) and folded into the design (section 2), the check (section 4) and the order of PRs (section 5). No
@@ -423,7 +425,9 @@ runs on top: about 41 minutes of machine time, outside these figures.
 3. **App PR (both subjects)**: `SUBJECTS` `names`, the units, the parent (the genus, Q397), the opening and the share
    (C0, with live answers and the placement test counting on a locked unit), the choices by kind, the display, typed
    answers and Q394's faults, the log's suffixes, the milestone card, fspsci1-fpct70, the species tiles of My progress
-   (the sea slugs' too). The fish behind `SCI_SHEET`; the sea slugs behind their own replay script version, as the fish. The check of section 4. **Size engine XL,
+   (the sea slugs' too). The fish behind `SCI_SHEET`; the sea slugs behind their own replay script version, as the fish. The check of section 4.
+   **Built** (#1273): the sheet PR replayed both subjects' species in one script version, so one gate,
+   `SCI_SHEET`, opens both (rule S1); `names` in `SUBJECTS`, one shared set (`app.js` `SCI_SP`). **Size engine XL,
    about 6 hours**: comparable to #839, #954, #987, #1062 and #1076, median 6.4 h (range 1.6 h to 9.6 h); if it splits
    into the units and the display, each part is engine L, comparable to #861, #885, #957, #1047 and #1075, median 2.9 h
    (range 1.6 h to 3.2 h).

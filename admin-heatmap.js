@@ -200,15 +200,15 @@ function statsHeat() {
         ? ofAns('rows-pl:' + S.id + pk, () => rowsOf(S).filter(r => r[0] === who))
         : []
       : ofAns('rows-all:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id)),
-    many = !!S.sheets, // units at several ranks, named from the subject's data (unitAdmin: fishAdmin for the fish), as on Pairs
-    FA = many ? unitRegOf(S) : null,
+    many = !!S.sheets, // units at several ranks, each named from the subject's registry (admin.js reg), as on Pairs
+    FA = reg(S),
     typedOn = SF.hm === 'typed',
     // the ranks the log asked (heatRanks), the one on screen (SF.hr, kept per browser; the first by default) and its
     // place among the subject's ranks (0: its top rank, even when the log asked only a lower one)
     ranks = heatRanks(R, S.sheets),
     rk = ranks.find(r => r[0] === SF.hr) || ranks[0],
     ri = rk ? Object.keys(S.sheets).indexOf(rk[0]) : 0;
-  if (many && !FA) unitAdmin(S).then(() => cur === HEAT_PAGE && unitRegOf(S) && render());
+  if (!FA) regLoad(S).then(() => cur === HEAT_PAGE && reg(S) && render());
   const seg = (k, L, on, aria) =>
       `<span class="adm-qseg adm-sseg" role="group" aria-label="${aria}">${L.map(
         ([v, t]) => `<button type="button" data-sf="${k}" data-v="${esc(v)}" aria-pressed="${v === on}">${esc(t)}</button>`
@@ -261,16 +261,15 @@ function statsHeat() {
     bind();
     return;
   }
-  // a unit's name: a coral genus as it is, another subject's unit by its name (its registry), else its id's prefix off
-  const lab = n => (many ? heatLab(FA, n) : n),
+  // a unit's name, from its registry: a coral genus as it is, another subject's unit by its name, else its id's prefix off
+  const lab = n => heatLab(FA, n),
     // trust and the pairs over the subject's whole log, as Pairs reads them; then the rank's part (heatRank)
     // (one player's: their part, by the same rules; each memo kept apart by pk)
     C0 = ofAns('conf:' + S.id + pk, () => confusionOf(R)),
     NC = ofAns('nochoice:' + S.id + pk, () => noChoiceMixups(R)),
     P = rk ? ofAns('heatrk:' + S.id + ':' + rk[0] + pk, () => heatRank(C0, NC.typed, rk[1])) : {C: C0, typed: NC.typed},
     Rr = rk ? R.filter(r => String(r[2] || '').startsWith(rk[1])) : R,
-    gx = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || {look: []},
-    rec = n => (many ? fishUnitRec(FA, n, S.sheets.genus) : gx(n)),
+    rec = n => regRec(S, n, FA),
     prior = (a, b) => pairPrior(a, b, rec(a), rec(b)),
     // the blocks of another subject's units: below its top rank, the unit of the rank above (a species' genus, a genus's
     // family); at its top rank, its group in the identification key in force (rule S3), none where it has no key
@@ -293,10 +292,10 @@ function statsHeat() {
           return '';
         }
       : undefined,
-    // the roster: the corals' slate (core.js slateOf: the games' and the progress's genera), the bonus genera once met;
-    // another subject's slate at the rank on screen (the fish: every family in the game at their top rank; the sea slugs:
-    // every genus at theirs, their units' rank, core.js unitRankOf), its other ranks as met
-    roster = many ? (FA ? FA.slate.filter(u => (rk ? String(u).startsWith(rk[1]) : !ri)) : []) : slateOf(DATA),
+    // the roster: the subject's slate in its registry at the rank on screen (the corals': core.js slateOf, the games' and
+    // the progress's genera, the bonus genera once met; the fish: every family in the game at their top rank; the sea
+    // slugs: every genus at theirs, their units' rank, core.js unitRankOf), its other ranks as met
+    roster = FA ? FA.slate.filter(u => (rk ? String(u).startsWith(rk[1]) : !ri)) : [],
     M = ofAns('heat:' + S.id + ':' + !!FA + ':' + (rk ? rk[0] : '') + pk, () =>
       heatMatrix(P.C, P.typed, rec, prior, roster, blockOf, supOf)
     ),

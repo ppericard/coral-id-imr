@@ -874,11 +874,12 @@ function anConv(rep, key) {
   });
   return anCard('As the answers came in', `<div class="adm-an-convs">${cells.join('')}</div>`, 'wide', false);
 }
-// Photo thumbnails that open the photo (Photo factors, Response time). A photo of a subject with its own data (the fish:
-// admin.js fishAdmin's FISHA.ph) shows with its unit's name, and opens enlarged on its own (zoomOne).
+// Photo thumbnails that open the photo (Photo factors, Response time). A coral photo opens on its genus's photos (zoom);
+// another subject's photo (its registry's: admin.js reg) shows with its unit's name, and opens enlarged on its own
+// (zoomOne).
 function anThumbs(L, val) {
   const by = new Map(allPhotos().map(p => [p.f, p])),
-    fa = (typeof FISHA !== 'undefined' && FISHA && FISHA.ph) || {};
+    fa = (anReg() || {}).ph || {};
   return `<div class="adm-an-thumbs">${L.map(x => {
     const p = by.get(x.f),
       q = !p && fa[x.f];
@@ -1008,10 +1009,10 @@ function anEnt(a, key) {
 // phone, the dendrogram as a list of genera (the tree on their left), each family a band that opens, on a tap, its own
 // block and its mix-ups. In words: the families, those no genus sheet names as look-alikes, and the mix-ups across
 // families. A table of the exact numbers beside it.
-// The units of the subject on screen, with their look-alikes: the corals' genera (data.json), another subject's units as
-// the admin reads them (admin.js fishAdmin: the fish families).
-const anGen = () =>
-  (ASUBJ.sheets ? typeof FISHA !== 'undefined' && FISHA && FISHA.gen : typeof DATA !== 'undefined' && DATA && DATA.gen) || {};
+// The units of the subject on screen, with their look-alikes, from its registry (admin.js reg: the corals' genera of
+// data.json, the fish families...).
+const anReg = () => (typeof reg === 'function' && reg(ASUBJ)) || null,
+  anGen = () => (anReg() || {}).gen || {};
 function anMixMap(a) {
   const m = a.map;
   if (!m || !m.g || m.g.length < 3) return '';
@@ -2340,13 +2341,10 @@ function anWords(root, S) {
   const rx = pre.length
       ? new RegExp(`\\b(?:${pre.map(x => x.replace(/[^a-z]/g, '')).join('|')}):(?:[A-Z][A-Za-z]*(?: [a-z]+)?|s\\d+)`, 'g')
       : null,
-    // a fish species unit (s:s091) by its scientific name (the registry's spu), as admin.js repUnit names it
-    name = id =>
-      typeof FISHA !== 'undefined' && FISHA && FISHA.gen[id]
-        ? FISHA.gen[id].name
-        : typeof FISHA !== 'undefined' && FISHA && FISHA.spu && FISHA.spu[id]
-          ? FISHA.spu[id].name
-          : id.replace(/^[a-z]+:/, ''),
+    // a unit by its name in the subject's registry (admin.js reg), a fish species unit (s:s091) by its scientific name
+    // (the registry's spu), as admin.js repUnit names it
+    R = typeof reg === 'function' ? reg(S) : null,
+    name = id => (R && R.gen[id] ? R.gen[id].name : R && R.spu && R.spu[id] ? R.spu[id].name : id.replace(/^[a-z]+:/, '')),
     say = t => {
       let o = rx ? t.replace(rx, name) : t;
       if (W.one)
@@ -2379,9 +2377,8 @@ const anNotHere = S => {
 function renderAnalyses() {
   status();
   const SU = anOn();
-  // a subject whose units have sheets (the fish): their names, read once (admin.js fishAdmin), for anWords
-  if (SU.sheets && typeof FISHA !== 'undefined' && !FISHA && typeof fishAdmin === 'function')
-    fishAdmin().then(() => anPage(cur) && FISHA && render());
+  // the subject's registry (admin.js reg): its units' names, read once, for anWords; its photos, for the thumbnails
+  if (typeof reg === 'function' && !reg(SU)) regLoad(SU).then(() => anPage(cur) && reg(SU) && render());
   if (!ANREP) {
     $v.innerHTML = '<p class="note">Loading…</p>';
     anLoad(SU).then(() => anPage(cur) && render());
@@ -2443,9 +2440,13 @@ function anBind() {
       })
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
-  // a fish photo (anThumbs): enlarged on its own
+  // another subject's photo (anThumbs): enlarged on its own
   $v.querySelectorAll('[data-zone]').forEach(
-    b => (b.onclick = () => typeof FISHA !== 'undefined' && FISHA && FISHA.ph[b.dataset.zone] && zoomOne(FISHA.ph[b.dataset.zone]))
+    b =>
+      (b.onclick = () => {
+        const p = ((anReg() || {}).ph || {})[b.dataset.zone];
+        if (p) zoomOne(p);
+      })
   );
   // show / sort / the results with no clear verdict: redraw the page (the card whose control was tapped stays where it was
   // on screen); a folded card: fold or open it at once (no redraw), remembered per page
