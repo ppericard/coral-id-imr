@@ -1065,6 +1065,41 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
+  // own id, its own kind and note).
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await qa.ready(p);
+    await p.evaluate(() => smokeAnswer(false));
+    await p.waitForSelector('#view .q.done [data-rep]', {state: 'attached', timeout: 10000});
+    // On a phone the Report button sits under More.
+    if (!(await p.isVisible('#view .q.done [data-rep]'))) await p.click('#view #fbmbtn');
+    const again = [];
+    for (const [why, note] of [
+      ['wrong', 'first'],
+      ['other', 'second']
+    ]) {
+      await p.click('#view .q.done [data-rep]');
+      await p.check(`#repdlg input[name="why"][value="${why}"]`);
+      await p.fill('#repdlg textarea[name="note"]', note);
+      await p.click('#repdlg button[type="submit"]');
+      await p.waitForSelector('#repdlg', {state: 'detached', timeout: 5000});
+      again.push(await p.evaluate(() => document.querySelector('#view .q.done [data-rep]').disabled));
+      // Achievement toasts or cards must not sit over the next tap.
+      await p.evaluate(() => document.querySelectorAll('.unlock, .achpop').forEach(x => x.remove()));
+    }
+    const sent = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-reports') || '[]').map(x => [x.id, x.why, x.note]));
+    if (again.some(Boolean) || sent.length !== 2 || sent[0][0] === sent[1][0] || sent.map(x => x[2]).join() !== 'first,second')
+      fails.push(`Two reports from one answer: ${JSON.stringify({again, sent})}`);
+    await c.close();
+  }
   // The Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
   // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
   {
@@ -3223,8 +3258,51 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
-    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged.
+    // The Custom quiz tip: a player with 100 questions, 3 photos enlarged (no zoom tip) and the Custom quiz never opened
+    // gets it at a break in the Quiz; the card says what the Custom quiz does, fits the screen; Show me opens the Custom
+    // quiz's picking page and counts as an open, so it never comes again (also not to one who opened it before).
+    {
+      const [c, p, errs] = await open(w, h, {q: 100, z: 3});
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p, {right: true});
+      if (!r.next) fails.push(`${W} custom tip: not shown to a player who never opened the Custom quiz`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Quiz yourself on just the genera you pick' ||
+          !/^The Custom quiz asks only the genera you choose\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} custom tip card: ${JSON.stringify(k)}`);
+        await p.click('.tipcard [data-b="1"]');
+        // The page is drawn (the open is counted when its route runs, after the address changes).
+        await p
+          .waitForFunction(() => location.hash === '#practice/custom' && JSON.parse(localStorage.getItem('reefid-tips')).u.c === 1, null, {
+            timeout: 5000
+          })
+          .catch(() => {});
+        const st = await tips(p);
+        if ((await p.evaluate(() => location.hash)) !== '#practice/custom' || st.u.c !== 1 || (st.s.custom || []).length !== 1)
+          fails.push(`${W} custom tip Show me: ${JSON.stringify({hash: await p.evaluate(() => location.hash), st})}`);
+      }
+      if (errs.length) fails.push(`${W} custom tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened.
     for (const u of [
+      {q: 100, z: 3, c: 1},
       {q: 5, z: 0},
       {q: 80, z: 3}
     ]) {

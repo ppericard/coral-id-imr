@@ -292,7 +292,7 @@ ROADMAP "Did you know? tips").
 - **State, per device** (`reefid-tips`, outside the `reefid-sync-*` progress keys, so not synced and kept on sign-out,
   like `reefid-zoomhint`): `u` the usage counters (`q` game questions answered here: photo quiz, custom quiz, duels; `z`
   quiz photos the player enlarged here, on a question or its mix-up montage, `quiz.js` `tipZoomed`; a tip's own Show me
-  is not counted), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
+  is not counted; `c` times the Custom quiz was opened here), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
   a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
@@ -308,6 +308,13 @@ ROADMAP "Did you know? tips").
   view of the photo just answered through the stage's own enlarge button, so with the answer shown; after a mix-up the
   photo shown, then the one of the unit answered; the player is back on the feedback when it closes, and Next goes on)
   and **Got it** (the next question). Anti-reflex as above (`TIP.WAIT`); Escape = Got it.
+- **The Custom quiz tip** (`id` `custom`, ROADMAP "Did you know? tips" (a)): for a player with 100 questions or more here
+  who never opened the Custom quiz (counter `u.c`, one per open of its picking page or its quiz, `quiz.js` `quizCustom`;
+  the answer log cannot tell its answers from the Quiz's, so a saved selection also counts as one open, `tipsLoad`). In
+  the Quiz only, at any break; twice at most, the second 150 questions after the first; after the zoom tip when both are
+  due (one tip a visit). Card: "Did you know?", "Quiz yourself on just the genera you pick" (the subject's own word,
+  `SUBJECTS` `many`), "The Custom quiz asks only the genera you choose. Quick picks choose for you: your weakest, or those
+  you missed lately.", **Show me** (opens the Custom quiz's picking page) and **Got it**.
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,

@@ -151,8 +151,15 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   `candQueue`, quality and growth form, the cells' cap and the colony a photo replaces, Retest), `tree` in `admin-fish.js`
   (`fishQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
   listed above `CAND_BUILD`; the draft writes stay where they were (the corals' top level, a tree subject's part) and so
-  do `cand.json` and every browser key (`tests/candbuild.test.js`; [admin-photos.md](admin-photos.md)). The photo review
-  pages and the tiles still read each side's own state (the study's steps 6-8);
+  do `cand.json` and every browser key (`tests/candbuild.test.js`; [admin-photos.md](admin-photos.md)). **One band review
+  for every subject** (`admin.js` `renderReview`, and `renderDiff` for By difficulty): the gate, the bar, the bands and
+  their tiles, the zoom and ×, the drag and the keys are one frame; the axes (the corals' Quality and Growth form, the
+  tree subjects' Ease and Phase & framing), their bands and tiles, and By difficulty's ratings come from the subject's
+  builder in `REVIEW_BUILD`, picked by the same declared shape (`reviewBuild`; the `GROUPS` review views carry an `axis`
+  and `hasPage` gives a subject the axes of its builder, no subject field needed). The growth-form axis is the corals'
+  named hook (rule C4); the quality and ease scales stay two (study §6 c); every draft write and browser key is where it
+  was (`tests/reviewbuild.test.js`; [admin-photos.md](admin-photos.md)). The tiles still read each side's own state (the
+  study's step 8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside and its route out of one it put in (`sortBack`, `sortOut`) reading the pass's date of each candidate

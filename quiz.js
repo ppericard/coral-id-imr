@@ -1732,7 +1732,9 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
     try {
       seed = ((SYNC && SYNC.log) || store.get(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
     } catch (e) {}
-  return tipsInit(raw, seed);
+  const st = tipsInit(raw, seed);
+  // The log does not say which answers were the Custom quiz's: a saved selection shows it was used before c was counted.
+  return !st.u.c && customSaved().length ? {...st, u: {...st.u, c: 1}} : st;
 };
 // A quiz photo enlarged by the player (question(), the mix-up montage in answer()); a tip's "Show me" is not theirs.
 let tipDemo = false;
@@ -1770,6 +1772,8 @@ function tipAfter(nb, cur, miss, zm, hold) {
 const TIP_ACT = {
   // The enlarged view of the photo just answered, the answer shown (after a mix-up, the photo shown, then the one of the
   // genus answered, as a tap on the montage opens them). The player is back on the feedback when it closes; Next goes on.
+  // The Custom quiz's picking page (the Custom quiz tab).
+  custom: () => (location.hash = hr('quiz-custom')),
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -2868,6 +2872,7 @@ function leftShow(cur, k) {
   setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
 }
 function quizCustom(h) {
+  store.set(TIPR.KEY, tipUse(tipsLoad(), 'c')); // opened here: the Custom quiz tip is not for this player
   if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace(hr('quiz-custom'));
   viewCustom();
 }

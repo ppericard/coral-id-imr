@@ -1557,7 +1557,9 @@ const hasPage = (S, p) =>
   (p.startsWith('players/') ||
     EVERY.includes(p) ||
     (!TABS.some(
-      t => (t[4].rank && t[4].rank !== S.rank && under(p, t[0])) || t[2].some(([h, , o]) => o.rank && o.rank !== S.rank && under(p, h))
+      t =>
+        (t[4].rank && t[4].rank !== S.rank && under(p, t[0])) ||
+        t[2].some(([h, , o]) => ((o.rank && o.rank !== S.rank) || (o.axis && !reviewBuild(S).axes.includes(o.axis))) && under(p, h))
     ) &&
       (!S.admin.pages || S.admin.pages.some(x => under(p, x)))));
 // A subject's landing page: Players › Activity (every subject has it).
@@ -1652,13 +1654,14 @@ const GROUPS = [
         'review',
         'Photo review',
         [
-          ['quality', 'Quality'],
-          ['growth-form', 'Growth form'],
-          // The fish views (renderFishReview): a subject whose unit rank is the family (hasPage).
-          ['ease', 'Ease', {rank: 'family'}],
-          ['phase-framing', 'Phase & framing', {rank: 'family'}],
-          // Every subject's (fish admin at parity: the fish side's from its answers alone, renderFishDiff), after the fish
-          // views so that the fish Photo review still opens on Ease.
+          // The review axes (renderReview): a subject has the axes its builder lists (REVIEW_BUILD axes, by the data shape it
+          // declares: hasPage reads the option axis).
+          ['quality', 'Quality', {axis: 'quality'}],
+          ['growth-form', 'Growth form', {axis: 'growth-form'}],
+          ['ease', 'Ease', {axis: 'ease'}],
+          ['phase-framing', 'Phase & framing', {axis: 'phase-framing'}],
+          // Every subject's (renderDiff: the corals' from the sheet's photo ratings, the others' from their answers alone), after
+          // the axes so that the fish Photo review still opens on Ease.
           ['by-difficulty', 'By difficulty'],
           // Proposals of the light re-judge (admin-light.js): in the switch only while one is open.
           [
@@ -1760,7 +1763,8 @@ const GROUPS = [
   ]
 ];
 // Every tab as [address, name, [[view address, view name, options], ...], group slug, options]; every page's address.
-// options.rank: the tab or view is only for a subject whose unit rank it names (core.js SUBJECTS rank).
+// options.rank: the tab or view is only for a subject whose unit rank it names (core.js SUBJECTS rank); options.axis: a review
+// view, only for a subject whose builder has that axis (REVIEW_BUILD axes).
 const TABS = GROUPS.flatMap(([g, , L]) =>
   L.map(([t, n, V, o]) => [g + '/' + t, n, V.map(([v, w, vo]) => [[g, t, v].filter(Boolean).join('/'), w, vo || {}]), g, o || {}])
 );
@@ -3546,180 +3550,6 @@ function renderRights() {
       })
   );
 }
-// ---- Fish Photo review (docs/ROADMAP.md "Admin for every subject") ----
-// Photos › Photo review on the fish side: Ease (#fish/photos/review/ease) and Phase & framing
-// (#fish/photos/review/phase-framing), over one family's photos in play (the family select, remembered; the origin chips).
-// Each photo in a row by its value now (the admin's, else the pass's, dashed); one click sets the admin's value
-// (autosort.js fishSet, fishTag: through fishOwn, one Undo step), as the fish Candidates' rows do: ease 5-1; the phase
-// words (no phase, subadult, intermediate, terminal, female, male) and the juvenile flag; the view (the tags' first
-// letter). Guesses first: in each row, the photos with no value of the admin's in the draft first (a photo put in play
-// carries the pass's values, copied as its own: autosort.js fishAdd, fishRun). The agreement line: the draft's values
-// against the pass's over every photo in play (autosort.js fishAgree); what differs is the admin's correction.
-// The phase and view rows are the subject's rubric's (tagList: SUBJECTS admin.tags phase, its position 0).
-let FREV = Object.assign({fam: '', guess: true}, store.get('reefid-admin-fishrev', {}));
-const frevRow = (name, at, opts, v, auto) =>
-  `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
-    .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
-    .join('')}</span>`;
-function renderFishReview(kind) {
-  if (!FISHC || !FISHC.plays) {
-    status();
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad(true).then(() => cur.startsWith('photos/review/') && render());
-    return;
-  }
-  status();
-  const U = FISHC.units;
-  // fish.json not loaded (or without families): say so, as Tree does.
-  if (!U.length) {
-    $v.innerHTML = '<p class="note">No families in fish.json yet.</p>';
-    return;
-  }
-  const u = U.find(x => x.id === FREV.fam) || U[0],
-    D = fuData(),
-    F = D.F,
-    sp = FISHC.species,
-    L = u.species.flatMap(s => (D.play[s] || []).map(p => ({...p, sid: s}))),
-    V = readView(F), // the values as the game reads them: the pass's where it judged anew what the auto-sort copied (shown as its guess)
-    ease = p => ((V.ease || {})[p.f] != null ? [V.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
-    jt = p => ((V.tags || {})[p.f] ? [V.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
-    phOf = p => {
-      const mine = p.f in (V.phase || {}) || p.f in (V.tags || {});
-      return [fishPhase(p, fuJ(p.f), V), !mine];
-    };
-  // The rows: by ease 5-1 (then not judged), or by phase (juvenile, intermediate, male, female, none).
-  const rows =
-    kind === 'ease'
-      ? [5, 4, 3, 2, 1, null].map(e => [
-          e == null ? 'Not judged' : `Ease ${e}${e === 5 ? ' (very easy)' : e === 1 ? ' (very hard)' : ''}`,
-          p => ease(p)[0] === e
-        ])
-      : [
-          ['Juvenile', p => phOf(p)[0] === 'juvenile'],
-          ['Intermediate', p => phOf(p)[0] === 'intermediate'],
-          ['Male', p => phOf(p)[0] === 'male'],
-          ['Female', p => phOf(p)[0] === 'female'],
-          ['No phase', p => !phOf(p)[0]]
-        ];
-  const guess = p => (kind === 'ease' ? ease(p)[1] : phOf(p)[1] && jt(p)[1]);
-  const tile = p => {
-    const [e, eAuto] = ease(p),
-      [code, tAuto] = jt(p),
-      phMine = (V.phase || {})[p.f],
-      phPass = (fuJ(p.f) || {}).ph || '',
-      ph = phMine !== undefined ? phMine : phPass,
-      s = sp[p.sid] || {};
-    const ctl =
-      kind === 'ease'
-        ? frevRow(
-            'Ease',
-            'data-fre',
-            [5, 4, 3, 2, 1].map(x => [String(x), String(x)]),
-            e != null ? String(e) : null,
-            eAuto
-          )
-        : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', tagList(ASUBJ, 'phase'), ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', tagRows(ASUBJ)[0][2], code ? code[0] : null, tAuto)}`;
-    return `<figure class="adm-tile${guess(p) ? ' adm-guess' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-frz aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>
-      <figcaption><span class="adm-src o-${origin(p)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, ASUBJ)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span></figcaption>
-      <div class="adm-acts adm-frev">${ctl}</div></figure>`;
-  };
-  const shownL = L.filter(shown),
-    body = rows
-      .map(([t, fn]) => {
-        const R = shownL.filter(fn).sort((a, b) => (FREV.guess ? guess(b) - guess(a) : 0) || (a.f < b.f ? -1 : 1));
-        return R.length
-          ? `<section class="adm-row"><h3>${esc(t)} <small>${R.length} photo${R.length === 1 ? '' : 's'}</small></h3><div class="adm-grid">${R.map(tile).join('')}</div></section>`
-          : '';
-      })
-      .join('');
-  // The agreement line: over every photo in play of every family (the admin's values against the pass's).
-  // In play for the species add names now (a photo moved with Not this and added there counts).
-  const allF = Object.keys(F.add || {}).filter(f => FISHC.byF[f] && treePhotoOn(F, f, F.add[f])),
-    pct = (a, b) => (b ? `${Math.floor((100 * a) / b)}%` : '–'), // floored: 100% only when every one agrees
-    agree =
-      kind === 'ease'
-        ? (a =>
-            `Ease: same as the judging pass on ${a.same} of ${a.both} photos in play (${pct(a.same, a.both)}), within one point ${pct(a.near, a.both)}`)(
-            fishAgree(F, allF, 'ease', fuJ)
-          )
-        : [
-            ['phase', 'phase'],
-            ['view', 'view']
-          ]
-            .map(([k, t]) =>
-              (a => `${cap1(t)}: same as the judging pass on ${a.same} of ${a.both} (${pct(a.same, a.both)})`)(fishAgree(F, allF, k, fuJ))
-            )
-            .join(' · ');
-  const cnt = o => L.filter(p => origin(p) === o).length;
-  $v.innerHTML = `<div class="adm-filter adm-sticky adm-frevbar"><select id="frevfam" aria-label="${cap1(ASUBJ.one)}">${U.map(x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`).join('')}</select>${FB.check('frevguess', FREV.guess, 'Guesses first')}${FB.origins({cnt})}</div>
-    <p class="note adm-agree">${esc(agree)}</p>${body || '<p class="note">No photo in play in this family.</p>'}`;
-  bindBar($v, {redraw: render});
-  const keep = () => {
-    store.set('reefid-admin-fishrev', FREV);
-    render();
-  };
-  $('frevfam').onchange = e => ((FREV.fam = e.target.value), keep());
-  $('frevguess').onchange = e => ((FREV.guess = e.target.checked), keep());
-  const fx = fn => {
-    DRAFT[TK] = fn(DRAFT[TK] || {});
-    saveDraft();
-    render();
-  };
-  $v.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
-    const f = tl.dataset.f,
-      p = L.find(x => x.f === f),
-      base = () => viewTags(f, (fuJ(f) || {}).jt);
-    tl.querySelector('[data-frz]').onclick = () =>
-      zoomSet(
-        L.map(fuP),
-        L.findIndex(x => x.f === f),
-        q => lbCap(fuName(q.sid), q, (sp[q.sid] || {}).common || '')
-      );
-    tl.querySelectorAll('[data-fre]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'ease', +b.dataset.fre))));
-    // A phase word, No phase included, takes the juvenile flag off in the same step (the word wins over the flag otherwise,
-    // and No phase would leave the photo juvenile).
-    tl.querySelectorAll('[data-frp]').forEach(
-      b =>
-        (b.onclick = () =>
-          fx(G => {
-            const N = fishSet(G, f, 'phase', b.dataset.frp);
-            return base().slice(7).includes('j') ? fishSet(N, f, 'tags', fishTag(base(), 'j')) : N;
-          }))
-    );
-    // The view only: taking the tags as the admin's must not drop a phase the photo shows through its source's
-    // annotation (p.st) or the auto-sort's tags: it is written as the admin's too, in the same step.
-    tl.querySelectorAll('[data-frv]').forEach(
-      b =>
-        (b.onclick = () =>
-          fx(G => {
-            const ph0 = fishPhase(p, fuJ(f), readView(G));
-            let N = fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv));
-            if (fishPhase(p, fuJ(f), readView(N)) === ph0) return N;
-            if (ph0 === 'juvenile') return fishSet(N, f, 'tags', fishTag(N.tags[f], 'j'));
-            return fishSet(N, f, 'phase', ph0);
-          }))
-    );
-    // Juvenile: on and off as the photo shows now (fishPhase: the admin's values, the pass's, else the source's annotation
-    // p.st), so a juvenile by its source alone is taken off in one click. On: the j flag (as the fish Candidates set it),
-    // and a phase word that would win over it cleared. Off: the j flag taken off and No phase written as the admin's,
-    // which also stops the source's annotation from showing through.
-    tl.querySelectorAll('[data-frj]').forEach(
-      b =>
-        (b.onclick = () =>
-          fx(G => {
-            const W = readView(G), // as the review shows it; the writes below go against G
-              ph = f in (W.phase || {}) ? W.phase[f] : (fuJ(f) || {}).ph;
-            if (fishPhase(p, fuJ(f), W) !== 'juvenile') {
-              const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
-              return ph ? fishSet(N, f, 'phase', '') : N;
-            }
-            if (base().slice(7).includes('j')) G = fishSet(G, f, 'tags', fishTag(base(), 'j'));
-            return fishSet(G, f, 'phase', '');
-          }))
-    );
-    if (!p) tl.remove();
-  });
-}
 // ---- Fish Look-alikes (docs/ROADMAP.md "Admin for every subject") ----
 // Photos › Look-alikes on the fish side (#fish/photos/look-alikes): one row per look-alike pair of families in force
 // (admin-content.js montPairs: autosort.js fishPairs over fish.json with the draft's pairs laid over it, the content
@@ -3910,10 +3740,9 @@ function render() {
     $v.innerHTML = `<p class="note">Not for ${esc(ASUBJ.name.toLowerCase())} yet.</p>`;
     return;
   }
-  if (cur === 'photos/review/ease' || cur === 'photos/review/phase-framing')
-    return renderFishReview(cur === 'photos/review/ease' ? 'ease' : 'phase');
-  if (cur === 'photos/review/quality') return renderQuality();
-  if (cur === 'photos/review/growth-form') return renderForm();
+  // Photos › Photo review: one page for every subject, its axes (Quality, Growth form; Ease, Phase & framing) and By
+  // difficulty from the subject's builder (REVIEW_BUILD).
+  if (reviewAxis(cur)) return renderReview(ASUBJ, reviewAxis(cur));
   if (cur === 'inbox/todo/all' || cur === 'inbox/todo/reports') return renderTriage();
   if (cur === 'inbox/todo/errors') return renderEvents();
   if (cur === 'inbox/todo/alerts') return renderAlerts();
@@ -3943,7 +3772,7 @@ function render() {
   }
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
-  if (cur === 'photos/review/by-difficulty') return ASUBJ.sheets ? renderFishDiff() : renderDiff();
+  if (cur === 'photos/review/by-difficulty') return renderDiff(ASUBJ);
   if (cur === 'photos/stats/overview') return renderPstats();
   // Opened from its address, the page can be drawn before admin-taxa.js is in (as a journey, above).
   if (cur === 'photos/stats/taxa')
@@ -4245,73 +4074,6 @@ function allPhotos() {
   });
   return L;
 }
-const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('reefid-admin-qfilter', {}));
-function renderQuality() {
-  status();
-  const names = Object.keys(DATA.gen),
-    vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
-  const all = allPhotos().filter(
-    p => shown(p) && (QF.view === 'all' || p.view === QF.view) && (!QF.genus || p.genus === QF.genus) && (!QF.todo || !qSet(p.f))
-  );
-  const card =
-    p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
-    <div class="adm-acts">${qSeg(p)}</div></figure>`;
-  const sec = ([q, t]) => {
-    const L = all.filter(p => qOf(p.f) === q);
-    return `<section class="adm-row adm-qrow"><h3><span class="adm-q q${q}">${t}</span> <small>${L.length} photo${L.length === 1 ? '' : 's'}${q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : ''}</small></h3>
-      <div class="adm-grid adm-qgrid" data-qdrop="${q}">${L.map(card).join('')}</div></section>`;
-  };
-  $v.innerHTML = `<section class="adm-quality">
-    ${FB.origins()}
-    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'qv', cur: QF.view, items: FB.viewItems()})}
-      ${FB.unit({id: 'qgen', cur: QF.genus, names})}
-      ${FB.check('qtodo', QF.todo, 'Not checked yet')}</div>
-    ${QUAL.map(sec).join('')}</section>`;
-  bindBar($v, {redraw: renderQuality, f: QF, k: 'reefid-admin-qfilter', view: 'qv', unit: 'qgen', checks: {qtodo: 'todo'}});
-  $v.querySelectorAll('[data-act="zoom"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        zoom(t.dataset.g, t.dataset.f);
-      })
-  );
-  $v.querySelectorAll('[data-act="exclude"]').forEach(
-    b =>
-      (b.onclick = e => {
-        e.stopPropagation();
-        const t = b.closest('[data-f]');
-        ACT.exclude(t.dataset.g, t.dataset.f);
-      })
-  );
-  bindQ();
-  // Select a photo (click it or Tab to it) and press 1, 2 or 3.
-  tileKeys('photos/review/quality', (t, k) => {
-    const q = {'1': 1, '2': 2, '3': 3}[k];
-    if (q) rateTile(t, q);
-    return !!q;
-  });
-  // Drag a photo onto another level.
-  const clearQ = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
-  pointerDrag(
-    $v.querySelectorAll('.adm-qt'),
-    el => {
-      clearQ();
-      const g = el && el.closest('[data-qdrop]');
-      if (g) g.classList.add('drop-row');
-    },
-    (t, el) => {
-      clearQ();
-      const g = el && el.closest('[data-qdrop]');
-      if (g) {
-        rateTile(t, Number(g.dataset.qdrop));
-        g.prepend(t);
-      }
-    },
-    clearQ
-  );
-}
 
 // everyone: begin
 // Thresholds of Health and Stops (statsHealth), here because their help texts quote them.
@@ -4595,7 +4357,7 @@ function toggleHelp() {
             'analyses/difficulty/heatmap': ASUBJ.sheets ? 'fishheat' : 'statsheat',
             'analyses/learning/answer-log': 'statslog',
             'analyses/learning/stops': 'statsstop',
-            'photos/review/by-difficulty': ASUBJ.sheets ? 'fishdiff' : 'diff'
+            'photos/review/by-difficulty': reviewBuild(ASUBJ).diff.help
           }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
@@ -4624,11 +4386,10 @@ function toggleHelp() {
 /* ---------- Growth form ---------- */
 // One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
-const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false, gfirst: false}, store.get('reefid-admin-ffilter', {}));
 // Agreement of the automatic growth form with the admin's own (forms checked by hand show whether the automatic
 // detection is good, and help improve it). Nothing new is recorded: the admin's form (the draft's curation gf)
 // against the dashed guess (forms.json gf, or the judging agent's candidate pass for a candidate), form letters only (✿
-// apart), over the photos the Show, View and genus filters leave (FSCOPE, set by renderForm). A click that keeps the
+// apart), over the photos the Show, View and genus filters leave (FSCOPE, set by the growth-form axis of REVIEW_BUILD). A click that keeps the
 // dashed form counts as agreement, one that picks another as disagreement. "Unsure" = guesses to double-check (gunsure)
 // still on the guess.
 let FSCOPE = [],
@@ -4743,126 +4504,560 @@ function bindF(scope) {
       })
   );
 }
-function renderForm() {
+// review build: begin
+// Photos › Photo review, one frame for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 6, Dup-4 and Dup-5;
+// docs/spec/admin-photos.md). renderReview(S, id) draws a page that rates photos in bands, an axis of the subject's builder
+// (Quality and Growth form, Ease and Phase & framing): the loading gate, the sticky bar, the bands with their tiles, the photo's
+// zoom and ×, the drag to another band and the keys. renderDiff(S) draws By difficulty: the Hardest | Easiest switch, the
+// minimum of answers, the tiles, "No answers yet". What differs between subjects is a builder in REVIEW_BUILD, picked by the
+// data shape the subject declares (SUBJECTS flat: treeShape, as TREE_BUILD, CAND_BUILD and reg(S) are): `flat` (the corals:
+// every photo of every genus rated Quality 1-3 and Growth form, the Coral Finder's old letters) and `tree` (the tree subjects:
+// the photos in play of a family, rated Ease 1-5 and Phase & framing from the judging rubric). A builder's members, the same
+// in both:
+//   axes        the review views it has, by the last segment of their address (GROUPS' option axis): hasPage gives a subject the
+//               views of its shape and no other
+//   ready()     its data are read; load(): a promise of them (the page draws again when it comes)
+//   page(S, id) one render's page P of the axis id: {msg} (a note instead of the page) or {cls: {band, grid} (the classes the
+//               bands and their grids take), top (before the bar), bar, note (after it), empty (when no band has a photo),
+//               bands: [{title, note, tool, drop, items}] (the h3's title, the words after the count, a button after it, the
+//               value a photo dropped on it takes, its photos), tile(row): {cls, attrs, photo, tools, cap, acts, actsCls},
+//               zoom(row), exclude(row) (when the tile has a ×), bind(scope) (the bar's and the tiles' controls), keys(tile, key)
+//               and drop(tile, value) (when the axis has them)}
+//   diff        By difficulty: {help (its help page), gate(S, again): null when its data are in, else {msg} or {} (it asked for
+//               them, and calls again when they come), page(S, again): {cls, grid, rows (in order), max, tile(row), bind(scope)}}
+// Never a test on which subject: a builder knows only its data shape. The growth-form axis is the corals' named hook (rule C4:
+// a growth form is tagged and taught, never a grouping of genera): its agreement block, pins, Validate and To classify rows
+// are the flat builder's; the quality scale (Good, Fair, Poor) and the ease scale (1-5) stay two scales (study §6 c).
+const REVIEW_BUILD = {
+    flat: (() => {
+      // The two pages' filters, one each (browser keys reefid-admin-qfilter and reefid-admin-ffilter, as before).
+      const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('reefid-admin-qfilter', {})),
+        FF = Object.assign({view: 'all', genus: '', todo: false, pol: false, gfirst: false}, store.get('reefid-admin-ffilter', {})),
+        vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]),
+        // The photos the View and genus filters leave, over every photo of every genus (approved, hidden, given to another genus
+        // and candidates).
+        within = f => allPhotos().filter(p => shown(p) && (f.view === 'all' || p.view === f.view) && (!f.genus || p.genus === f.genus)),
+        bar = (f, ks, extra = '') => `${FB.origins()}
+    <div class="adm-filter"><span class="label">View</span>${FB.views({key: ks.view, cur: f.view, items: FB.viewItems()})}
+      ${FB.unit({id: ks.unit, cur: f.genus, names: Object.keys(DATA.gen)})}
+      ${extra}</div>`,
+        photo = p => `<img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false">`,
+        // The genus, the view, the source and whether it is hidden: the caption's start on both pages.
+        capOf = p =>
+          `<a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}`,
+        tileOf = (p, attrs, cap, acts) => ({
+          cls: ` adm-qt${p.hid ? ' is-hidden' : ''}`,
+          attrs: ` data-f="${esc(p.f)}" data-g="${esc(p.genus)}"${attrs} data-drag tabindex="0"`,
+          photo: photo(p),
+          tools: GRIP + XBTN,
+          cap,
+          acts,
+          actsCls: ''
+        }),
+        common = {cls: {band: ' adm-qrow', grid: ' adm-qgrid'}, zoom: p => zoom(p.genus, p.f), exclude: p => ACT.exclude(p.genus, p.f)};
+      // Quality: Good, Fair, Poor (QUAL), one band each, keys 1 2 3.
+      const quality = () => {
+        const all = within(QF).filter(p => !QF.todo || !qSet(p.f));
+        return {
+          ...common,
+          bar: bar(QF, {view: 'qv', unit: 'qgen'}, FB.check('qtodo', QF.todo, 'Not checked yet')),
+          bands: QUAL.map(([q, t]) => ({
+            title: `<span class="adm-q q${q}">${t}</span>`,
+            note: q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : '',
+            drop: q,
+            items: all.filter(p => qOf(p.f) === q)
+          })),
+          tile: p =>
+            tileOf(
+              p,
+              ` data-q="${qOf(p.f)}"`,
+              `${capOf(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}`,
+              qSeg(p)
+            ),
+          bind() {
+            bindBar($v, {redraw: render, f: QF, k: 'reefid-admin-qfilter', view: 'qv', unit: 'qgen', checks: {qtodo: 'todo'}});
+            bindQ();
+          },
+          // Select a photo (click it or Tab to it) and press 1, 2 or 3.
+          keys(t, k) {
+            const q = {'1': 1, '2': 2, '3': 3}[k];
+            if (q) rateTile(t, q);
+            return !!q;
+          },
+          drop: (t, q) => rateTile(t, Number(q))
+        };
+      };
+      // Growth form: one row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder
+      // letter). A letter on a photo (one form per photo; ∅ = form not visible), dragged to another row, or hovered and typed
+      // (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
+      const form = () => {
+        FSCOPE = within(FF);
+        const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
+        // Still to classify: grouped by the old Coral Finder letter, as a hint.
+        const rows = [
+          ...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]),
+          ['x', 'Form not visible', p => fOf(p.f) === 'x'],
+          ...[...'BMSPFLC', ''].map(c => [
+            '',
+            `To classify${c ? ` · was Coral Finder book ${cfName(c)}` : ''}`,
+            p => !fOf(p.f) && (LEGACY[p.f] || '') === c
+          ])
+        ];
+        return {
+          ...common,
+          top: `<details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>`,
+          bar: bar(
+            FF,
+            {view: 'fv', unit: 'fgen'},
+            `${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}`
+          ),
+          bands: rows
+            .map(([id, t, test]) => {
+              const L = all.filter(test);
+              if (FF.gfirst) L.sort((a, b) => fRank(a.f) - fRank(b.f));
+              if (!L.length && id === '') return null;
+              const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
+              return {
+                title: `${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)}`,
+                note: id === 'x' ? ' · never used on the growth-form tiles' : '',
+                tool: todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : '',
+                drop: id || undefined,
+                items: L
+              };
+            })
+            .filter(Boolean),
+          tile: p => tileOf(p, '', capOf(p), `${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}`),
+          bind() {
+            const fag = $('fagree');
+            agreeFill(fag);
+            fag.ontoggle = () => (FAG_OPEN = fag.open);
+            bindBar($v, {
+              redraw: render,
+              f: FF,
+              k: 'reefid-admin-ffilter',
+              view: 'fv',
+              unit: 'fgen',
+              checks: {ftodo: 'todo', fpol: 'pol', fgfirst: 'gfirst'}
+            });
+            $v.querySelectorAll('.adm-pinw').forEach(
+              w =>
+                (w.onclick = e => {
+                  const b = e.target.closest('[data-pin]');
+                  if (!b) return;
+                  e.stopPropagation();
+                  togglePin(b.closest('[data-f]').dataset.f, b.dataset.pin);
+                  render();
+                })
+            );
+            // Validate a whole row: every first guess still shown in it (with the filters on) becomes the admin's own choice, in one undo step.
+            $v.querySelectorAll('[data-fok]').forEach(
+              b =>
+                (b.onclick = () => {
+                  const c = b.dataset.fok,
+                    todo = all.filter(p => fOf(p.f) === c && !fSet(p.f));
+                  if (!confirm(`Validate ${todo.length} growth form${todo.length === 1 ? '' : 's'} as ${FABBR[c] || c}?`)) return;
+                  DRAFT.gf = {...(DRAFT.gf || {})};
+                  todo.forEach(p => {
+                    const m = fP(mineF(p.f)),
+                      pol = m === null ? fP(AUTOF[p.f]) === true : m;
+                    DRAFT.gf[p.f] = c + (m === false ? 'n' : pol ? 'p' : '');
+                  });
+                  saveDraft();
+                  render();
+                })
+            );
+            bindF($v);
+          },
+          keys(t, key) {
+            const k = key.toUpperCase();
+            if (k === 'P') {
+              polTile(t);
+              return true;
+            }
+            const c = k === '0' || k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null;
+            if (c) formTile(t, toggleF(t.dataset.f, c));
+            return !!c;
+          },
+          // Onto another row: it gets that form (not onto the To classify rows: they carry no drop value).
+          drop: (t, c) => formTile(t, c)
+        };
+      };
+      return {
+        axes: ['quality', 'growth-form'],
+        ready: () => true,
+        load: () => Promise.resolve(),
+        page: (S, id) => (id === 'quality' ? quality() : form()),
+        diff: {
+          help: 'diff',
+          // The sheet's photo ratings (?stats=1, the replayed subject's: loadStats) and the answers behind them.
+          gate(S, again) {
+            if (STATS && ANS) return null;
+            loadStats().then(again);
+            return {};
+          },
+          page() {
+            const R = photoStats(),
+              rows = allPhotos()
+                .filter(p => R[p.f] && nAns(R[p.f]) >= SF.min)
+                .sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (R[a.f][0] - R[b.f][0]));
+            return {
+              cls: '',
+              grid: '',
+              rows,
+              max: Infinity,
+              tile: p => {
+                const [d, n, r] = R[p.f];
+                return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${photo(p)}</button>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <div class="adm-acts">${qSeg(p)}</div></figure>`;
+              },
+              bind(scope) {
+                scope.querySelectorAll('[data-act="zoom"]').forEach(
+                  b =>
+                    (b.onclick = () => {
+                      const t = b.closest('[data-f]');
+                      zoom(t.dataset.g, t.dataset.f);
+                    })
+                );
+                bindQ();
+              }
+            };
+          }
+        }
+      };
+    })(),
+    // The tree subjects (fish, sea slugs): one family's photos in play (the family select, remembered; the origin chips), each in
+    // a band by its value now (the admin's, else the pass's, dashed). One click sets the admin's value (autosort.js fishSet,
+    // fishTag: through fishOwn, one Undo step): ease 5-1; the phase words (no phase, subadult, intermediate, terminal, female,
+    // male) and the juvenile flag; the view (the tags' first letter). Guesses first: in each band, the photos with no value of the
+    // admin's in the draft first (a photo put in play carries the pass's values, copied as its own: autosort.js fishAdd, fishRun).
+    // The agreement line: the draft's values against the pass's over every photo in play (autosort.js fishAgree); what differs is
+    // the admin's correction. The phase and view rows are the subject's rubric's (tagList: SUBJECTS admin.tags phase, position 0).
+    tree: (() => {
+      const FREV = Object.assign({fam: '', guess: true}, store.get('reefid-admin-fishrev', {})),
+        // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's.
+        segRow = (name, at, opts, v, auto) =>
+          `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
+            .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
+            .join('')}</span>`;
+      return {
+        axes: ['ease', 'phase-framing'],
+        ready: () => !!(FISHC && FISHC.plays),
+        load: () => fishLoad(true),
+        page(S, id) {
+          const kind = id === 'ease' ? 'ease' : 'phase',
+            U = FISHC.units;
+          // fish.json not loaded (or without families): say so, as Tree does.
+          if (!U.length) return {msg: '<p class="note">No families in fish.json yet.</p>'};
+          const u = U.find(x => x.id === FREV.fam) || U[0],
+            D = fuData(),
+            F = D.F,
+            sp = FISHC.species,
+            L = u.species.flatMap(s => (D.play[s] || []).map(p => ({...p, sid: s}))),
+            V = readView(F), // the values as the game reads them: the pass's where it judged anew what the auto-sort copied (shown as its guess)
+            ease = p => ((V.ease || {})[p.f] != null ? [V.ease[p.f], false] : [(fuJ(p.f) || {}).e || null, true]),
+            jt = p => ((V.tags || {})[p.f] ? [V.tags[p.f], false] : [(fuJ(p.f) || {}).jt || '', true]),
+            phOf = p => {
+              const mine = p.f in (V.phase || {}) || p.f in (V.tags || {});
+              return [fishPhase(p, fuJ(p.f), V), !mine];
+            };
+          // The bands: by ease 5-1 (then not judged), or by phase (juvenile, intermediate, male, female, none).
+          const rows =
+            kind === 'ease'
+              ? [5, 4, 3, 2, 1, null].map(e => [
+                  e == null ? 'Not judged' : `Ease ${e}${e === 5 ? ' (very easy)' : e === 1 ? ' (very hard)' : ''}`,
+                  p => ease(p)[0] === e
+                ])
+              : [
+                  ['Juvenile', p => phOf(p)[0] === 'juvenile'],
+                  ['Intermediate', p => phOf(p)[0] === 'intermediate'],
+                  ['Male', p => phOf(p)[0] === 'male'],
+                  ['Female', p => phOf(p)[0] === 'female'],
+                  ['No phase', p => !phOf(p)[0]]
+                ];
+          const guess = p => (kind === 'ease' ? ease(p)[1] : phOf(p)[1] && jt(p)[1]),
+            shownL = L.filter(shown),
+            bands = rows
+              .map(([t, fn]) => ({
+                title: esc(t),
+                items: shownL.filter(fn).sort((a, b) => (FREV.guess ? guess(b) - guess(a) : 0) || (a.f < b.f ? -1 : 1))
+              }))
+              .filter(b => b.items.length);
+          // The agreement line: over every photo in play of every family (the admin's values against the pass's).
+          // In play for the species add names now (a photo moved with Not this and added there counts).
+          const allF = Object.keys(F.add || {}).filter(f => FISHC.byF[f] && treePhotoOn(F, f, F.add[f])),
+            pc = (a, b) => (b ? `${Math.floor((100 * a) / b)}%` : '–'), // floored: 100% only when every one agrees
+            agree =
+              kind === 'ease'
+                ? (a =>
+                    `Ease: same as the judging pass on ${a.same} of ${a.both} photos in play (${pc(a.same, a.both)}), within one point ${pc(a.near, a.both)}`)(
+                    fishAgree(F, allF, 'ease', fuJ)
+                  )
+                : [
+                    ['phase', 'phase'],
+                    ['view', 'view']
+                  ]
+                    .map(([k, t]) =>
+                      (a => `${cap1(t)}: same as the judging pass on ${a.same} of ${a.both} (${pc(a.same, a.both)})`)(
+                        fishAgree(F, allF, k, fuJ)
+                      )
+                    )
+                    .join(' · ');
+          const cnt = o => L.filter(p => origin(p) === o).length,
+            keep = () => {
+              store.set('reefid-admin-fishrev', FREV);
+              render();
+            },
+            fx = fn => {
+              DRAFT[TK] = fn(DRAFT[TK] || {});
+              saveDraft();
+              render();
+            };
+          return {
+            cls: {band: '', grid: ''},
+            bar: `<div class="adm-filter adm-sticky adm-frevbar"><select id="frevfam" aria-label="${cap1(S.one)}">${U.map(x => `<option value="${esc(x.id)}"${x.id === u.id ? ' selected' : ''}>${esc(x.name)}${x.imr || x.imrWith ? ' · IMR' : ''}</option>`).join('')}</select>${FB.check('frevguess', FREV.guess, 'Guesses first')}${FB.origins({cnt})}</div>`,
+            note: `<p class="note adm-agree">${esc(agree)}</p>`,
+            empty: '<p class="note">No photo in play in this family.</p>',
+            bands,
+            tile: p => {
+              const [e, eAuto] = ease(p),
+                [code, tAuto] = jt(p),
+                phMine = (V.phase || {})[p.f],
+                phPass = (fuJ(p.f) || {}).ph || '',
+                ph = phMine !== undefined ? phMine : phPass,
+                s = sp[p.sid] || {};
+              const ctl =
+                kind === 'ease'
+                  ? segRow(
+                      'Ease',
+                      'data-fre',
+                      [5, 4, 3, 2, 1].map(x => [String(x), String(x)]),
+                      e != null ? String(e) : null,
+                      eAuto
+                    )
+                  : `${segRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? segRow('Phase', 'data-frp', tagList(S, 'phase'), ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${segRow('View', 'data-frv', tagRows(S)[0][2], code ? code[0] : null, tAuto)}`;
+              return {
+                cls: guess(p) ? ' adm-guess' : '',
+                attrs: ` data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"`,
+                photo: p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : '',
+                tools: '',
+                cap: `<span class="adm-src o-${origin(p)}">${esc((S.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, S)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span>`,
+                acts: ctl,
+                actsCls: ' adm-frev'
+              };
+            },
+            zoom: p =>
+              zoomSet(
+                L.map(fuP),
+                L.findIndex(x => x.f === p.f),
+                q => lbCap(fuName(q.sid), q, (sp[q.sid] || {}).common || '')
+              ),
+            bind(scope) {
+              bindBar(scope, {redraw: render});
+              $('frevfam').onchange = e => ((FREV.fam = e.target.value), keep());
+              $('frevguess').onchange = e => ((FREV.guess = e.target.checked), keep());
+              scope.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
+                const f = tl.dataset.f,
+                  p = L.find(x => x.f === f),
+                  base = () => viewTags(f, (fuJ(f) || {}).jt);
+                tl.querySelectorAll('[data-fre]').forEach(b => (b.onclick = () => fx(G => fishSet(G, f, 'ease', +b.dataset.fre))));
+                // A phase word, No phase included, takes the juvenile flag off in the same step (the word wins over the flag otherwise,
+                // and No phase would leave the photo juvenile).
+                tl.querySelectorAll('[data-frp]').forEach(
+                  b =>
+                    (b.onclick = () =>
+                      fx(G => {
+                        const N = fishSet(G, f, 'phase', b.dataset.frp);
+                        return base().slice(7).includes('j') ? fishSet(N, f, 'tags', fishTag(base(), 'j')) : N;
+                      }))
+                );
+                // The view only: taking the tags as the admin's must not drop a phase the photo shows through its source's
+                // annotation (p.st) or the auto-sort's tags: it is written as the admin's too, in the same step.
+                tl.querySelectorAll('[data-frv]').forEach(
+                  b =>
+                    (b.onclick = () =>
+                      fx(G => {
+                        const ph0 = fishPhase(p, fuJ(f), readView(G));
+                        let N = fishSet(G, f, 'tags', fishTag(base(), 0, b.dataset.frv));
+                        if (fishPhase(p, fuJ(f), readView(N)) === ph0) return N;
+                        if (ph0 === 'juvenile') return fishSet(N, f, 'tags', fishTag(N.tags[f], 'j'));
+                        return fishSet(N, f, 'phase', ph0);
+                      }))
+                );
+                // Juvenile: on and off as the photo shows now (fishPhase: the admin's values, the pass's, else the source's annotation
+                // p.st), so a juvenile by its source alone is taken off in one click. On: the j flag (as the fish Candidates set it),
+                // and a phase word that would win over it cleared. Off: the j flag taken off and No phase written as the admin's,
+                // which also stops the source's annotation from showing through.
+                tl.querySelectorAll('[data-frj]').forEach(
+                  b =>
+                    (b.onclick = () =>
+                      fx(G => {
+                        const W = readView(G), // as the review shows it; the writes below go against G
+                          ph = f in (W.phase || {}) ? W.phase[f] : (fuJ(f) || {}).ph;
+                        if (fishPhase(p, fuJ(f), W) !== 'juvenile') {
+                          const N = fishSet(G, f, 'tags', fishTag(base(), 'j'));
+                          return ph ? fishSet(N, f, 'phase', '') : N;
+                        }
+                        if (base().slice(7).includes('j')) G = fishSet(G, f, 'tags', fishTag(base(), 'j'));
+                        return fishSet(G, f, 'phase', '');
+                      }))
+                );
+              });
+            }
+          };
+        },
+        diff: {
+          help: 'fishdiff',
+          // The photos ranked by their answers alone, as its Health counts them (photoAnswers over rowsOf: every answer that
+          // showed the photo, family and genus questions alike), the lowest share right first (Hardest) or the highest
+          // (Easiest), more answers first on a tie; at least SF.min answers (diffByAnswers). The sheet's photo ratings (stats_)
+          // are the replayed subject's only. Each photo with every tool of its family's page (fishRepTile: Tags with its ease,
+          // Remove, Not this, ×...), its numbers in the caption as on Health; a photo already out (excluded, Not this, removed)
+          // left out, as Health does, so acting on one brings the next in. The fish data (fishAdmin) and the family pages' data
+          // for the tiles' tools (fishLoad) are read behind the page.
+          gate(S, again) {
+            if (!ANS) {
+              loadStats().then(again);
+              return {};
+            }
+            if (ANS.old)
+              return {
+                msg: `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`}</p>`
+              };
+            if (!FISHA) {
+              fishAdmin().then(() => FISHA && again());
+              return {};
+            }
+            return null;
+          },
+          page(S, again) {
+            const FD = DRAFT[TK] || {},
+              done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
+              PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
+              rows = diffByAnswers(PH, SF.min, DIFF_ORDER);
+            if (rows.length && !FISHC) fishLoad().then(again);
+            const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
+              num = o => {
+                const m = missedBy(PH[o.f]);
+                return `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>`;
+              };
+            return {
+              cls: ' adm-fdiff',
+              grid: ' adm-fdiffg',
+              rows,
+              max: 48, // shown, the rest counted
+              tile: o => fishRepTile({...FISHA.ph[o.f], genus: FISHA.ph[o.f].entry}, {cap: num(o)}),
+              bind(scope) {
+                const g = scope.querySelector('.adm-fdiffg');
+                if (g) bindFishTiles(g);
+              }
+            };
+          }
+        }
+      };
+    })()
+  },
+  // A subject's data shape (SUBJECTS flat), its builder; the review view an address names, if the subject has it.
+  reviewBuild = S => REVIEW_BUILD[treeShape(S)],
+  reviewAxis = p =>
+    (a => (p.startsWith('photos/review/') && reviewBuild(ASUBJ).axes.includes(a) ? a : ''))(p.slice('photos/review/'.length));
+function renderReview(S, id) {
+  const B = reviewBuild(S);
   status();
-  const names = Object.keys(DATA.gen),
-    vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
-  FSCOPE = allPhotos().filter(p => shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus));
-  const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
-  const card =
-    p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
-    <div class="adm-acts">${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}</div></figure>`;
-  // Still to classify: grouped by the old Coral Finder letter, as a hint.
-  const rows = [
-    ...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]),
-    ['x', 'Form not visible', p => fOf(p.f) === 'x'],
-    ...[...'BMSPFLC', ''].map(c => [
-      '',
-      `To classify${c ? ` · was Coral Finder book ${cfName(c)}` : ''}`,
-      p => !fOf(p.f) && (LEGACY[p.f] || '') === c
-    ])
-  ];
-  const sec = ([id, t, test]) => {
-    const L = all.filter(test);
-    if (FF.gfirst) L.sort((a, b) => fRank(a.f) - fRank(b.f));
-    if (!L.length && id === '') return '';
-    const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
-    return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
-      <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`;
-  };
-  $v.innerHTML = `<section class="adm-quality">
-    <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
-    ${FB.origins()}
-    <div class="adm-filter"><span class="label">View</span>${FB.views({key: 'fv', cur: FF.view, items: FB.viewItems()})}
-      ${FB.unit({id: 'fgen', cur: FF.genus, names})}
-      ${FB.check('ftodo', FF.todo, 'Not checked yet')}${FB.check('fpol', FF.pol, '✿ Polyps out')}${FB.check('fgfirst', FF.gfirst, 'Guesses first')}</div>
-    ${rows.map(sec).join('')}</section>`;
-  const fag = $('fagree');
-  agreeFill(fag);
-  fag.ontoggle = () => (FAG_OPEN = fag.open);
-  bindBar($v, {
-    redraw: renderForm,
-    f: FF,
-    k: 'reefid-admin-ffilter',
-    view: 'fv',
-    unit: 'fgen',
-    checks: {ftodo: 'todo', fpol: 'pol', fgfirst: 'gfirst'}
-  });
-  $v.querySelectorAll('[data-act="zoom"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        zoom(t.dataset.g, t.dataset.f);
-      })
-  );
+  if (!B.ready()) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    B.load().then(() => cur.startsWith('photos/review/') && render());
+    return;
+  }
+  const P = B.page(S, id);
+  if (P.msg) {
+    $v.innerHTML = P.msg;
+    return;
+  }
+  const by = new Map(),
+    tile = p => {
+      const t = P.tile(p);
+      return `<figure class="adm-tile${t.cls}"${t.attrs}><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${t.photo}</button>${t.tools}<figcaption>${t.cap}</figcaption><div class="adm-acts${t.actsCls}">${t.acts}</div></figure>`;
+    },
+    band = b => {
+      b.items.forEach(p => by.set(p.f, p));
+      return `<section class="adm-row${P.cls.band}"><h3>${b.title} <small>${b.items.length} photo${b.items.length === 1 ? '' : 's'}${b.note || ''}</small>${b.tool || ''}</h3>
+      <div class="adm-grid${P.cls.grid}"${b.drop === undefined ? '' : ` data-drop="${b.drop}"`}>${b.items.map(tile).join('')}</div></section>`;
+    },
+    body = P.bands.map(band).join('');
+  $v.innerHTML = `<section class="adm-quality">${P.top || ''}${P.bar}${P.note || ''}${body || P.empty || ''}</section>`;
+  P.bind($v);
+  const row = el => by.get(el.closest('[data-f]').dataset.f);
+  $v.querySelectorAll('[data-act="zoom"]').forEach(b => (b.onclick = () => P.zoom(row(b))));
   $v.querySelectorAll('[data-act="exclude"]').forEach(
     b =>
       (b.onclick = e => {
         e.stopPropagation();
-        const t = b.closest('[data-f]');
-        ACT.exclude(t.dataset.g, t.dataset.f);
+        P.exclude(row(b));
       })
   );
-  $v.querySelectorAll('.adm-pinw').forEach(
-    w =>
-      (w.onclick = e => {
-        const b = e.target.closest('[data-pin]');
-        if (!b) return;
-        e.stopPropagation();
-        togglePin(b.closest('[data-f]').dataset.f, b.dataset.pin);
-        renderForm();
-      })
-  );
-  // Validate a whole row: every first guess still shown in it (with the filters on) becomes the admin's own choice, in one undo step.
-  $v.querySelectorAll('[data-fok]').forEach(
+  // The keys act on the photo that has the keyboard focus, never on one the mouse passes over (tileKeys).
+  if (P.keys) tileKeys(cur, P.keys);
+  // Drag a photo onto another band: it gets that band's value (the bands that carry none take no drop).
+  if (P.drop) {
+    const clear = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row')),
+      at = el => el && el.closest('[data-drop]');
+    pointerDrag(
+      $v.querySelectorAll('.adm-qt'),
+      el => {
+        clear();
+        const g = at(el);
+        if (g) g.classList.add('drop-row');
+      },
+      (t, el) => {
+        clear();
+        const g = at(el);
+        if (g) {
+          P.drop(t, g.dataset.drop);
+          g.prepend(t);
+        }
+      },
+      clear
+    );
+  }
+}
+// Photo review › By difficulty, the same page for every subject: the photos ranked by their difficulty (the corals': the sheet's
+// photo ratings; the tree subjects': their answers alone), the Hardest | Easiest switch and the minimum of answers (SF.min).
+function renderDiff(S) {
+  const B = reviewBuild(S).diff,
+    again = () => cur === 'photos/review/by-difficulty' && ASUBJ === S && render();
+  status();
+  const g = B.gate(S, again);
+  if (g) {
+    $v.innerHTML = g.msg || '<p class="note">Loading…</p>';
+    return;
+  }
+  const D = B.page(S, again),
+    shownR = D.rows.slice(0, D.max);
+  $v.innerHTML = `<section class="adm-quality${D.cls}"><div class="adm-shead">${segBtns('min', [
+    [1, '≥1'],
+    [3, '≥3'],
+    [10, '≥10']
+  ])}<span class="note">answers</span>
+    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
+    ${
+      D.rows.length
+        ? `<div class="adm-grid adm-qgrid${D.grid}">${shownR.map(D.tile).join('')}</div>${D.rows.length > D.max ? `<p class="note">+${D.rows.length - D.max} more</p>` : ''}`
+        : '<p class="note">No answers yet.</p>'
+    }</section>`;
+  $v.querySelectorAll('[data-do]').forEach(
     b =>
       (b.onclick = () => {
-        const c = b.dataset.fok,
-          todo = all.filter(p => fOf(p.f) === c && !fSet(p.f));
-        if (!confirm(`Validate ${todo.length} growth form${todo.length === 1 ? '' : 's'} as ${FABBR[c] || c}?`)) return;
-        DRAFT.gf = {...(DRAFT.gf || {})};
-        todo.forEach(p => {
-          const m = fP(mineF(p.f)),
-            pol = m === null ? fP(AUTOF[p.f]) === true : m;
-          DRAFT.gf[p.f] = c + (m === false ? 'n' : pol ? 'p' : '');
-        });
-        saveDraft();
-        renderForm();
+        DIFF_ORDER = b.dataset.do;
+        store.set('reefid-admin-diff', DIFF_ORDER);
+        render();
       })
   );
-  bindF($v);
-  tileKeys('photos/review/growth-form', (t, key) => {
-    const k = key.toUpperCase();
-    if (k === 'P') {
-      polTile(t);
-      return true;
-    }
-    const c = k === '0' || k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null;
-    if (c) formTile(t, toggleF(t.dataset.f, c));
-    return !!c;
-  });
-  // Drag a photo onto another row: it gets that form (not onto the To classify rows).
-  const clearF = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
-  pointerDrag(
-    $v.querySelectorAll('.adm-qt'),
-    el => {
-      clearF();
-      const g = el && el.closest('[data-fdrop]');
-      if (g && g.dataset.fdrop) g.classList.add('drop-row');
-    },
-    (t, el) => {
-      clearF();
-      const g = el && el.closest('[data-fdrop]');
-      if (g && g.dataset.fdrop) {
-        formTile(t, g.dataset.fdrop);
-        g.prepend(t);
-      }
-    },
-    clearF
-  );
+  D.bind($v);
+  bindStats();
 }
+// review build: end
 
 // Players' reports (app.js reportDialog): wrong answer (+ the genus they suggest), several corals, bad photo, other,
 // with a note and WHO sent it (some players are trusted more than others). Every admin can read them:
@@ -8836,52 +9031,6 @@ const lazyAhead = () => {
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 let STATS = null,
   DIFF_ORDER = store.get('reefid-admin-diff', 'hard');
-function renderDiff() {
-  status();
-  if (!STATS || !ANS) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => {
-      if (cur === 'photos/review/by-difficulty') render();
-    });
-    return;
-  }
-  const vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]),
-    S = photoStats();
-  const L = allPhotos()
-    .filter(p => S[p.f] && nAns(S[p.f]) >= SF.min)
-    .sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (S[a.f][0] - S[b.f][0]));
-  const card = p => {
-    const [d, n, r] = S[p.f];
-    return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(S[p.f])} · ${pct(r, n)} right</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}</div></figure>`;
-  };
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead">${segBtns('min', [
-    [1, '≥1'],
-    [3, '≥3'],
-    [10, '≥10']
-  ])}<span class="note">answers</span>
-    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
-    ${L.length ? `<div class="adm-grid adm-qgrid">${L.map(card).join('')}</div>` : '<p class="note">No answers yet.</p>'}</section>`;
-  $v.querySelectorAll('[data-do]').forEach(
-    b =>
-      (b.onclick = () => {
-        DIFF_ORDER = b.dataset.do;
-        store.set('reefid-admin-diff', DIFF_ORDER);
-        render();
-      })
-  );
-  $v.querySelectorAll('[data-act="zoom"]').forEach(
-    b =>
-      (b.onclick = () => {
-        const t = b.closest('[data-f]');
-        zoom(t.dataset.g, t.dataset.f);
-      })
-  );
-  bindQ();
-  bindStats();
-}
 
 // Photo review › By difficulty on the side of a subject the sheet does not rate (fish admin at parity; the sheet's photo
 // ratings, stats_, are the replayed subject's only): its photos ranked by their answers alone, as its Health counts them
@@ -8894,64 +9043,6 @@ function diffByAnswers(PH, min, order) {
     .filter(([, o]) => o && o.n >= min)
     .map(([f, o]) => ({f, n: o.n, ok: o.ok, r: o.ok / o.n}))
     .sort((a, b) => s * (a.r - b.r) || b.n - a.n || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0));
-}
-// The page: each photo with every tool of its family's page (fishRepTile: Tags with its ease, Remove, Not this, ×...), its
-// numbers in the caption as on Health; a photo already out (excluded, Not this, removed) left out, as Health does, so
-// acting on one brings the next in. FDIFF_MAX shown, the rest counted. The fish data (fishAdmin) and the family pages'
-// data for the tiles' tools (fishLoad) are read behind the page.
-const FDIFF_MAX = 48;
-function renderFishDiff() {
-  status();
-  const S = ASUBJ,
-    here = () => cur === 'photos/review/by-difficulty' && ASUBJ === S;
-  if (!ANS) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => here() && render());
-    return;
-  }
-  if (ANS.old) {
-    $v.innerHTML = `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`}</p>`;
-    return;
-  }
-  if (!FISHA) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    fishAdmin().then(() => here() && FISHA && render());
-    return;
-  }
-  const FD = DRAFT[TK] || {},
-    done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
-    PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
-    L = diffByAnswers(PH, SF.min, DIFF_ORDER);
-  if (L.length && !FISHC) fishLoad().then(() => here() && render());
-  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
-    num = o => {
-      const m = missedBy(PH[o.f]);
-      return `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>`;
-    };
-  $v.innerHTML = `<section class="adm-quality adm-fdiff"><div class="adm-shead">${segBtns('min', [
-    [1, '≥1'],
-    [3, '≥3'],
-    [10, '≥10']
-  ])}<span class="note">answers</span>
-    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
-    ${
-      L.length
-        ? `<div class="adm-grid adm-qgrid adm-fdiffg">${L.slice(0, FDIFF_MAX)
-            .map(o => fishRepTile({...FISHA.ph[o.f], genus: FISHA.ph[o.f].entry}, {cap: num(o)}))
-            .join('')}</div>${L.length > FDIFF_MAX ? `<p class="note">+${L.length - FDIFF_MAX} more</p>` : ''}`
-        : '<p class="note">No answers yet.</p>'
-    }</section>`;
-  $v.querySelectorAll('[data-do]').forEach(
-    b =>
-      (b.onclick = () => {
-        DIFF_ORDER = b.dataset.do;
-        store.set('reefid-admin-diff', DIFF_ORDER);
-        render();
-      })
-  );
-  const g = $v.querySelector('.adm-fdiffg');
-  if (g) bindFishTiles(g);
-  bindStats();
 }
 
 /* ---------- Photo stats › Overview ---------- */
