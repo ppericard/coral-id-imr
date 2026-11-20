@@ -7471,12 +7471,14 @@ const CORE_ = (function () { const module = {exports: {}};
   };
   // Question formats (analysis.js FORMATS, whose fmtOf this is: tests/analysis.test.js checks both agree), from the mode
   // quiz.js logs and the number of choices shown: typed (|t), the Duel tab (quiz-duel…), a look-alike duel in the quiz
-  // (|d), an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
+  // (|d), a Find the X (|f: one name, four photos; its own offset, the one its photo is aimed with, quiz.js planFind),
+  // an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
   function fmtOf(m, nch) {
     m = String(m || '');
     if (TYPED_RE.test(m)) return 'typed';
     if (m.indexOf('quiz-duel') === 0) return 'duel';
     if (/\|d(\||$)/.test(m)) return 'qduel';
+    if (/\|f(\||$)/.test(m)) return 'find';
     if (/\|x(\||$)/.test(m)) return 'exam';
     if (nch === 2) return 'again';
     const k = /\|k(\d)/.exec(m);
