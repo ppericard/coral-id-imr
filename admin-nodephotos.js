@@ -11,13 +11,14 @@
 // lists are read, and put back, through the subject's adapter below; nothing else on this page knows a subject.
 //
 // What each subject specifies, declared here and nowhere else (rule S1: a parameter or a small piece of code, named, with its
-// reason; the adapter is the one in NODE_PHOTOS under the subject's unit rank, `SUBJECTS` `rank`):
+// reason; the adapter is the one in NODE_PHOTOS under the data shape the subject declares, `SUBJECTS` `flat`, as admin.js
+// TREE_BUILD's: admin.js treeShape):
 //   live       the node's photos in play: the page's body and its bar's tools. The corals' (coralLive): one section per VIEW of
 //              the genus (Colony, Close-up, Corallites: SUBJECTS `views`), the first 3 photos of a view featured, the genus's
-//              zooms (2 or 3), candidates, Not this genus. The fish's and the sea slugs' (renderFishUnits): one section per
-//              SPECIES under the family, Ease and phase (juvenile, colour phase) tags, the ★ Cover at every rank. Different
-//              data (curation.json genera[<genus>] against fish.genera[<node id>]) and different tiles: they stay behind
-//              `live` in this PR; one tile and one body for both is the next step (ROADMAP "The Tree tab").
+//              zooms (2 or 3), candidates, Not this genus. The fish's and the sea slugs' (admin.js TREE_BUILD tree page): one
+//              section per SPECIES under the family, Ease and phase (juvenile, colour phase) tags, the ★ Cover at every rank.
+//              Different data (curation.json genera[<genus>] against fish.genera[<node id>]) and different tiles: one tile
+//              and one body for both is a later step (docs/reviews/2026-11-19-admin-one-engine.md §5, step 8).
 //   removed    the photos taken off the site (Remove), and `back`, the click that returns one. The corals: genera[g].hide, back
 //              is the Remove toggle. The fish's Remove is a reviewed mark (fish.seen) that sends the photo back to the
 //              Candidates, with no inverse on a node page yet: null, so no list (next step).
@@ -79,10 +80,11 @@ const npTile = (it, kind) => {
       <figcaption>${it.cap}</figcaption>
       <div class="adm-acts"><button type="button" data-np="${kind}">${word}</button></div></figure>`;
 };
-// The adapters, by the subject's unit rank (SUBJECTS rank); the specifics are listed at the top of this file.
+// The adapters, by the subject's data shape (SUBJECTS flat: admin.js treeShape); the specifics are listed at the top of
+// this file.
 const NODE_PHOTOS = {
-  // The corals: the genus is the unit; photos curated per genus (curation.json genera[<genus>]).
-  genus: {
+  // A flat subject (the corals): the genus is the unit; photos curated per genus (curation.json genera[<genus>]).
+  flat: {
     live: n => coralLive(n),
     removed: units =>
       units.flatMap(n =>
@@ -96,7 +98,7 @@ const NODE_PHOTOS = {
           };
         })
       ),
-    excluded: units => npUnder(NODE_PHOTOS.genus.excludedAll(), units),
+    excluded: units => npUnder(NODE_PHOTOS.flat.excludedAll(), units),
     // every excluded photo as an item with its thumbnail and caption (a photo gone from data.json: its iNaturalist thumbnail)
     excludedAll: () => {
       const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
@@ -110,7 +112,7 @@ const NODE_PHOTOS = {
         cap: `${it.unit ? `<a class="adm-gen" href="${esc(genusHref(it.unit))}"><i>${esc(it.unit)}</i></a>` : `<span class="adm-gen">${it.lecture ? 'IMR lecture' : 'no genus'}</span>`}${!it.gone ? srcTag(it.p) : it.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${it.inat}" target="_blank" rel="noopener">iNat ↗</a>` : it.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(it.slide))}</i>` : ''}`
       }));
     },
-    orphans: () => NODE_PHOTOS.genus.excludedAll().filter(it => !it.unit),
+    orphans: () => NODE_PHOTOS.flat.excludedAll().filter(it => !it.unit),
     back: it => ACT.hide(it.unit, it.f),
     restore: it => {
       DRAFT.exclude = {...(DRAFT.exclude || {})};
@@ -120,10 +122,11 @@ const NODE_PHOTOS = {
     },
     zoom: (it, kind) => (kind === 'back' ? zoom(it.unit, it.f) : it.p && zoomOne(it.p))
   },
-  // The fish and the sea slugs (unit rank: the family): their body is renderFishUnits'; no list yet (see the top).
-  family: {live: null, removed: null, excluded: null, orphans: null}
+  // A tree subject (the fish and the sea slugs): their body is their builder's page (admin.js TREE_BUILD tree); no list yet
+  // (see the top).
+  tree: {live: null, removed: null, excluded: null, orphans: null}
 };
-const npOf = () => NODE_PHOTOS[ASUBJ.rank] || {};
+const npOf = () => NODE_PHOTOS[treeShape(ASUBJ)] || {};
 // The lists of node id for the tree T and the view's first root: the page's Removed and Excluded sections, '' when the
 // subject has none or they are empty (a leaf page with nothing taken off shows nothing: rule A2).
 let NP_ITEMS = new Map(); // the items drawn, by kind and photo: what the binder acts on

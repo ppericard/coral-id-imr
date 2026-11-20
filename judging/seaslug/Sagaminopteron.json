@@ -5,13 +5,13 @@
   "seaslug-Sagaminopteron-cand-182490541": {"code": "d1g0sl1c3"},
   "seaslug-Sagaminopteron-cand-568656416": {"code": "p1g0mls3", "note": "two animals touching, the left one folded"},
   "seaslug-Sagaminopteron-cand-264454517": {"code": "o1g0ssx1", "note": "subject not obvious: a small white lump on algae beside a fingertip, no animal shape readable"},
-  "seaslug-Sagaminopteron-cand-607671292": {"code": "o1g0sm14"},
-  "seaslug-Sagaminopteron-cand-4648423": {"code": "p1g0sm1w4"},
+  "seaslug-Sagaminopteron-cand-607671292": {"code": "o1g0sm14", "bb": [0.4925, 0.285, 0.7407, 0.5734]},
+  "seaslug-Sagaminopteron-cand-4648423": {"code": "p1g0sm1w4", "bb": [0.2916, 0.1875, 0.6334, 0.6875]},
   "seaslug-Sagaminopteron-cand-203419043": {"code": "o1g0bs1c1"},
   "seaslug-Sagaminopteron-cand-381971883": {"code": "h1g0sl13"},
   "seaslug-Sagaminopteron-cand-94665733": {"code": "p1g0ml1c2"},
-  "seaslug-Sagaminopteron-cand-629383834": {"code": "o1g0sl15"},
-  "seaslug-Sagaminopteron-cand-384486651": {"code": "o1g0sl15"},
+  "seaslug-Sagaminopteron-cand-629383834": {"code": "o1g0sl15", "bb": [0.2656, 0.1214, 0.7782, 0.7696]},
+  "seaslug-Sagaminopteron-cand-384486651": {"code": "o1g0sl15", "bb": [0.2125, 0.2449, 0.8238, 0.7133]},
   "seaslug-Sagaminopteron-cand-512008544": {"code": "o1g0bm1c1"}
  }
 }

@@ -1,5 +1,5 @@
 {
- "about": "The coral slate pairs' tell-apart lines for the quiz feedback's one decisive line (Pierre, 2026-11-18, the feedback sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md). Our own words, short and plain, each side describing its own genus with its sources: the IMR lecture first (the genus's notes and slides as data.json imr and sl hold them), then the Coral Finder (the genus's criteria as data.json crit holds them, on its pages), then Corals of the World for the starred genera with no IMR notes. A side is written only when its sources say it of that genus, and a pair only when the two sides really tell the genera apart; none lists the pairs left with the first ID tip, and why. tools/apply_coral_apart.py checks them and writes data.json ap and apsrc; quiz.js fbLine shows them.",
+ "about": "The declared coral pairs' tell-apart lines for the quiz feedback's one decisive line (Pierre, 2026-11-18, the feedback sheet study's question (d); docs/decisions/2026-11-18-tellapart-lines.md): every pair of data.json gen and x.gen genera that one of them declares in its look, the slate's and those with a bonus or Key-only genus (docs/decisions/2026-11-20-tellapart-bonus-pairs.md). Our own words, short and plain, each side describing its own genus with its sources: the IMR lecture first (the genus's notes and slides as data.json imr and sl hold them), then the Coral Finder (the genus's criteria as data.json crit holds them, on its pages), then Corals of the World for genera with no IMR notes. A side is written only when its sources say it of that genus, and a pair only when the two sides really tell the genera apart; none lists the pairs left with the first ID tip, and why. tools/apply_coral_apart.py checks them and writes data.json ap and apsrc; quiz.js fbLine shows them.",
  "src": {
   "imr": {"t": "IMR Lecture 6"},
   "cf": {"t": "Coral Finder"},
@@ -10,6 +10,10 @@
   "cow-halomitra": {
    "t": "Corals of the World (Veron et al.), Halomitra pileus factsheet",
    "u": "https://www.coralsoftheworld.org/species_factsheets/species_factsheet_summary/halomitra-pileus/"
+  },
+  "cow-catalaphyllia": {
+   "t": "Corals of the World (Veron et al.), Catalaphyllia jardinei factsheet",
+   "u": "https://www.coralsoftheworld.org/species_factsheets/species_factsheet_summary/catalaphyllia-jardinei/"
   }
  },
  "pairs": {
@@ -232,12 +236,109 @@
   "Tubastraea|Turbinaria": {
    "Tubastraea": ["tube-shaped corallites, dark green to black or bright orange", [["imr", "slide 27"]]],
    "Turbinaria": ["thin, regular plates, smooth between the corallites", [["imr", "slides 31, 32"]]]
+  },
+  "Acropora|Isopora": {
+   "Acropora": ["a larger axial corallite at the tip of every branch", [["imr", "slide 16"]]],
+   "Isopora": ["axial corallites faint or missing, sometimes several together", [["cf", "p. 10"]]]
+  },
+  "Astreopora|Plesiastrea": {
+   "Astreopora": ["corallites like holes, lined with ragged spinules", [["imr", "slide 29"], ["cf", "p. 25-26"]]],
+   "Plesiastrea": ["bigger corallites, round and 3-4 mm, with no spinules", [["cf", "p. 26"]]]
+  },
+  "Catalaphyllia|Euphyllia": {
+   "Catalaphyllia": ["loose on soft sediment; fleshy mantle over meandering valleys", [["cf", "p. 72-73"], ["cow-catalaphyllia", "Characters"]]],
+   "Euphyllia": ["a colony of stalked corallites, each with its own wall", [["cf", "p. 72"]]]
+  },
+  "Catalaphyllia|Fimbriaphyllia": {
+   "Catalaphyllia": ["large tube-shaped tentacles, green with pink tips", [["cow-catalaphyllia", "Characters, Colour"]]],
+   "Fimbriaphyllia": ["tentacle tips shaped like anchors or hammers, or bubbly", [["cf", "p. 72"]]]
+  },
+  "Caulastraea|Lobophyllia": {
+   "Caulastraea": ["stalked corallites of 8-15 mm; small septal teeth", [["cf", "p. 13"]]],
+   "Lobophyllia": ["large fleshy corallites with big spiky septal teeth", [["imr", "slide 36"]]]
+  },
+  "Cycloseris|Fungia": {
+   "Cycloseris": ["a small disc, 3-8 cm, on soft sediment; fine septal teeth", [["cf", "p. 67"]]],
+   "Fungia": ["a disc up to 30 cm with regular, saw-like teeth of about 1 mm", [["imr", "slide 49"], ["cf", "p. 63"]]]
+  },
+  "Cyphastrea|Plesiastrea": {
+   "Cyphastrea": ["small cone corallites, 1-2 mm, with beads and spinules between", [["cf", "p. 25-26"]]],
+   "Plesiastrea": ["bigger corallites, round and 3-4 mm, with no beads or spinules", [["cf", "p. 26"]]]
+  },
+  "Echinophyllia|Echinopora": {
+   "Echinophyllia": ["bigger, taller corallites, 5-10 mm, set at odd angles", [["cf", "p. 46"]]],
+   "Echinopora": ["rounded 3-6 mm corallites, walls hidden by fine spines", [["imr", "slide 28"], ["cf", "p. 46"]]]
+  },
+  "Echinophyllia|Oxypora": {
+   "Echinophyllia": ["bigger, taller corallites, 5-10 mm, set at odd angles", [["cf", "p. 46"]]],
+   "Oxypora": ["sparse, smaller corallites of 3-7 mm with poor walls", [["cf", "p. 46"]]]
+  },
+  "Echinopora|Oxypora": {
+   "Echinopora": ["denser, more regular corallites with fine spines between", [["imr", "slide 28"], ["cf", "p. 46"]]],
+   "Oxypora": ["sparse, less regular corallites on thin, ragged plates", [["cf", "p. 46"]]]
+  },
+  "Euphyllia|Fimbriaphyllia": {
+   "Euphyllia": ["simple tube-shaped tentacles by day", [["cf", "p. 72"]]],
+   "Fimbriaphyllia": ["tentacle tips shaped like anchors or hammers, or bubbly", [["cf", "p. 72"]]]
+  },
+  "Gardineroseris|Pavona": {
+   "Gardineroseris": ["corallites in sharp-edged pits: a scalloped surface", [["cf", "p. 33"]]],
+   "Pavona": ["star-like corallites joined by smooth, flowing septa", [["imr", "slide 37"]]]
+  },
+  "Halomitra|Podabacia": {
+   "Halomitra": ["lies free: a round dome or bell", [["cow-halomitra", "Characters"], ["cf", "p. 66"]]],
+   "Podabacia": ["a crust, a plate or tiers", [["cf", "p. 60"]]]
+  },
+  "Halomitra|Sandalolitha": {
+   "Halomitra": ["widely spaced corallites; margin often purple or pink", [["cf", "p. 66"]]],
+   "Sandalolitha": ["corallites close together; coarse, blunt septal teeth", [["cf", "p. 66"]]]
+  },
+  "Halomitra|Zoopilus": {
+   "Halomitra": ["obvious, widely spaced corallites", [["cf", "p. 66"]]],
+   "Zoopilus": ["thin sheets; corallites hard to make out", [["cf", "p. 66"]]]
+  },
+  "Leptoseris|Pavona": {
+   "Leptoseris": ["corallites on one face of each frond only, fewer of them", [["cf", "p. 57"]]],
+   "Pavona": ["leafy fronds carry corallites on both faces", [["imr", "slide 37"], ["cf", "p. 57"]]]
+  },
+  "Leptoseris|Podabacia": {
+   "Leptoseris": ["fewer corallites, joined by smooth septo-costae", [["cf", "p. 57, 60"]]],
+   "Podabacia": ["more corallites, a coarser texture of blunt teeth", [["cf", "p. 60"]]]
+  },
+  "Lobactis|Pleuractis": {
+   "Lobactis": ["tall tentacular lobes, often green, blue or white", [["imr", "slide 53"]]],
+   "Pleuractis": ["wavy septa, small teeth; less prominent tentacular lobes", [["cf", "p. 64"]]]
+  },
+  "Lobophyllia|Trachyphyllia": {
+   "Lobophyllia": ["large fleshy corallites with big spiky septal teeth", [["imr", "slide 36"]]],
+   "Trachyphyllia": ["small hourglass shape on soft sediment; small septal teeth", [["cf", "p. 13"]]]
+  },
+  "Oulophyllia|Pectinia": {
+   "Oulophyllia": ["a massive colony; walls taper to a narrow upper edge", [["cf", "p. 22"]]],
+   "Pectinia": ["tall thin plates and spires: a maze of hedge-like walls", [["imr", "slide 39"], ["cf", "p. 22"]]]
+  },
+  "Oulophyllia|Platygyra": {
+   "Oulophyllia": ["wide valleys, 10-20 mm; walls taper to a narrow edge", [["cf", "p. 22"]]],
+   "Platygyra": ["narrower valleys, 4-10 mm; ragged walls", [["cf", "p. 18, 22"]]]
+  },
+  "Physogyra|Plerogyra": {
+   "Physogyra": ["small grape-like vesicles; shared walls", [["cf", "p. 74"]]],
+   "Plerogyra": ["large grape-like vesicles; separate walls", [["imr", "slide 46"], ["cf", "p. 74"]]]
+  },
+  "Porites|Stylocoeniella": {
+   "Porites": ["a honeycomb of small corallites with shared walls, no spines", [["imr", "slide 26"], ["cf", "p. 31"]]],
+   "Stylocoeniella": ["tiny, widely spaced corallites with spines around them", [["cf", "p. 31"]]]
+  },
+  "Sandalolitha|Zoopilus": {
+   "Sandalolitha": ["obvious corallites, close together", [["cf", "p. 66"]]],
+   "Zoopilus": ["thin sheets; corallites hard to make out", [["cf", "p. 66"]]]
   }
  },
  "none": {
   "Acropora|Cyphastrea": "the sources disagree: Corals of the World gives Cyphastrea decadia, the one Cyphastrea confirmed in the Philippines (iNaturalist Research Grade there and the Corals of the World checklist, 2026-11-19), Acropora-like axial corallites, while the Coral Finder says Cyphastrea's tip corallite is undifferentiated; a discrepancy for Pierre (rule C5), not a line",
   "Anacropora|Montipora": "both have small, empty-looking corallites; IMR and the Coral Finder give Anacropora a smooth surface but say Montipora's surface varies, so bumps are no sure difference, and no source read compares the two (Corals of the World's Anacropora forbesi page names only other Anacropora as similar, read 2026-11-19)",
   "Astreopora|Turbinaria": "the sources describe different things on each side (Astreopora's corallites lined with spinules, Turbinaria's smooth surface between the corallites), so the contrast would be implied, not read; no source compares the two (Corals of the World's Astreopora myriophthalma page names only other Astreopora as similar, read 2026-11-19)",
+  "Cycloseris|Lithophyllon": "both have fine septal teeth (the Coral Finder, p. 64 and 67), so the one difference read is size and soft sediment, while the Cycloseris page says it is easily taken for a young Lithophyllon; no source read gives a feature of Lithophyllon beside Cycloseris's (Corals of the World's Cycloseris cyclolites page names only another Cycloseris as similar, read 2026-11-20)",
   "Duncanopsammia|Goniopora": "both show large polyps by day; the only difference read is the colony's form (plates against massive or columns), and no source gives Duncanopsammia's tentacles beside Goniopora's 24 (Corals of the World's Turbinaria peltata page, now D. peltata, compares it only with Turbinaria, read 2026-11-19)"
  }
 }

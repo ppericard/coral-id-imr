@@ -97,7 +97,7 @@ const PROXIES = [
 ];
 // The counts today: proxy -> file -> occurrences on non-comment lines.
 const COUNTS = {
-  'ASUBJ.rank': {'admin-journey.js': 1, 'admin-nodephotos.js': 1, 'admin.js': 18, 'analysis.js': 1},
+  'ASUBJ.rank': {'admin-journey.js': 1, 'admin.js': 15, 'analysis.js': 1},
   "rank: 'family' view option": {'admin.js': 4},
   '.sheets': {
     'admin-analyses.js': 1,
@@ -114,7 +114,7 @@ const COUNTS = {
   '.hash test': {'admin.js': 3},
   FISHS: {'admin-covers.js': 3, 'admin-fish.js': 10, 'admin-taxa.js': 1, 'admin.js': 22},
   'DATA.gen': {
-    'admin-coraltree.js': 2,
+    'admin-coraltree.js': 1,
     'admin-journey.js': 1,
     'admin-nodephotos.js': 2,
     'admin.js': 46,
@@ -137,7 +137,7 @@ const COUNTS = {
 const WHOLE = ['admin-fish.js'],
   FAMILY = /^(?:fu|frev|ct|fam|FU|FREV|FMONT|FSCOPE|FDIFF|CTREES|FTREE)(?=[A-Z_]|$)/,
   NAMES = [
-    ['admin-coraltree.js', 'Dup-1', 'ctLeaves ctKeyOf ctWormsOf ctFilters CTREES ctTrees ctTree ctOn ctRow ctTagK renderCoralTree'],
+    ['admin-coraltree.js', 'Dup-1', 'ctLeaves ctKeyOf ctWormsOf ctFilters CTREES ctTrees ctTree ctOn ctRow'],
     [
       'admin-fish.js',
       'Dup-3',
@@ -149,7 +149,7 @@ const WHOLE = ['admin-fish.js'],
     [
       'admin.js',
       'Dup-1',
-      'FUNSURE FUT fuJ FU_IMR FU_WALL fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuTreeOf fuGenusRef fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters fuTagK fuTreeMount renderFishUnits famHref'
+      'FUNSURE FUT fuJ FU_IMR FU_WALL fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuTreeOf fuGenusRef fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters famHref'
     ],
     ['admin.js', 'Dup-2', 'FISHS FISHA fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
     ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo renderCand'],

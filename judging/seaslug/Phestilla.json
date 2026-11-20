@@ -1,6 +1,6 @@
 {
  "photos": {
   "seaslug-Phestilla-cand-715412949": {"code": "o1g0ss1c1"},
-  "seaslug-Phestilla-cand-712558153": {"code": "d1g0sl14", "note": "seen through a round port: a dark vignette frames the photo"}
+  "seaslug-Phestilla-cand-712558153": {"code": "d1g0sl14", "bb": [0.3812, 0.2063, 0.85, 0.7411], "note": "seen through a round port: a dark vignette frames the photo"}
  }
 }
