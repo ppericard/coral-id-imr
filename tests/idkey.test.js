@@ -28,7 +28,8 @@ test('no identifier of the tool keeps the old name (routes, files, keys, classes
       .split('\n')
       .forEach((l, i) => {
         const t = l.replace(/Coral Finder|CoralFinder|coral_finder/g, '');
-        if (/finder|\bfcov/i.test(t) || /(?<![\w-])fd(?!rop)[a-z][\w-]*/.test(t)) bad.push(`${f}:${i + 1}: ${l.trim().slice(0, 120)}`);
+        if (/finder|\bfcov/i.test(t) || /(?<![\w-])fd(?!rop|auin20)[a-z][\w-]*/.test(t))
+          bad.push(`${f}:${i + 1}: ${l.trim().slice(0, 120)}`);
       })
   );
   assert.deepStrictEqual(bad, []);

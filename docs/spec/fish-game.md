@@ -117,6 +117,46 @@ docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, ste
   achievements fsp1, fsp10 and fsp50 read `achSnap` `setsAdv.sp`. A species unit opens its species sheet (`treeSheets`
   `spOf` reads `s:s091`).
 
+## Species by scientific name (step 2)
+
+docs/reviews/2026-11-18-species-step2-plan.md, docs/LEARNING.md "Species by their scientific names (step 2)". Both tree
+subjects, one code path (rule S1): `core.js` `SUBJECTS` `names` says which kinds of name a subject's species are asked by
+(fish `['cn', 'sci']`, sea slugs `['sci']`).
+
+- **Units**: `core.js` `treeSpUnits(F, X, 'sci')` (`sci:` + the species id in letters and digits: `sci:s091`,
+  `sci:xgoniobranchussp5`; the other scientific species of its family as `look`; `from` its genus). `app.js`
+  `treeGenera` builds each record for a subject with `sci` in its names (`X.kinds`): `kind: 'sci'`, `rank: 'species'`,
+  `name` its scientific name, `parent` and `from` its genus, its genus's group and forms, `noex`, its genus's photos of
+  that species (never a genus-level `gl` photo), `cn` the player's first common name (a getter; '' for the sea slugs),
+  `names` its own and its WoRMS name. `TREEU.ssl` lists them. The common-name units carry `kind: 'cn'`; the app's units
+  equal the sheet's replay units, both subjects (`tests/fishreplay.test.js`).
+- **The class**: `app.js` `kindRank` (its rank and its kind) keeps a question's choices (`model.js` `distractors`,
+  `rankUnits`), its typed names (`quiz.js` `typeMatch`, `typeKind`), its groups and its mimicry traps (`model.js`
+  `rankKind`) in one class; the logged rank and the share's levels read `rankOf` alone.
+- **Opening**: the set `ssp` (`app.js` `SCI_SP`, in both subjects' `sets`; `auto` only: no offer, no switch). `app.js`
+  `sciPlay` gives each genus in play (`sciUp`: the slate and the other sets' units in play) at its threshold (`shareAt`,
+  else Advanced) its species met and the next one in the genus's order; a genus out of play brings none (Q402 A). Share:
+  the genus level (`model.js` `SHARE`, unchanged). Live answers on a locked one count, opening nothing (`model.js`
+  `introLive`).
+- **Display**: `app.js` `sciShow` on the unit's own bar: `sc` (the common name under each scientific name, upright,
+  `.csn small.cnu`) below Open Water, `so` (scientific only) from Advanced, a chance rising from 0 to 1 between
+  (`SCISHOW`); `so` always for a species with no common name and the sea slugs. Typed: the usual `TYPED` share. Logged
+  in the mode, `|sc` or `|so`, before `|kN` (`quiz.js` `answer`, `SCIQ`).
+- **Typed answers and Q394**: `app.js` `sciTypeNames` (its name and the WoRMS name). `app.js` `sciPart`, read by
+  `quiz.js` `typeBind` (`o.part`) before the nudges and the spelling step: the species' own common name (`cn`, `cnr`)
+  is `cn`, its genus alone or with a second word no game species has is `g`; the answer is a miss with that kind
+  (`TYPEDQ.z`, the scoring record's `z`, `core.js` `PART`); the feedback says what was typed (`quiz.js` `partRead`).
+  Another species' common name, a genus or a family is no answer: the nudge says which (`app.js` `sciSay`, `typeBind`
+  `say`). On the other questions their scientific names stay out of `quiz.js` `typeKind` (the name index says them).
+- **Sheet**: a unit opens its species' sheet (`core.js` `routeOut` `learn/species/sci:s091`, `treeSheets` `spOf`).
+- **Score and gate**: `TREEU.treeSci` (`treeScoreTree(X, F, true, true)`, equal to `core.js` `treeBoardTree`) and the
+  set's units only once `app.js` `sciSpOn` (`sync.js` `sciOn`: `SCI_SHEET`, rule D4), for both subjects.
+- **Rest**: the first species' card (`SCI_SP` `card`, `UNITS` `sciCard`, in each subject's words). My progress shows the
+  species met in their own section (`progress.js` `boardParts`, the set). The achievements fspsci1 (`achSnap`
+  `setsAdv.ssp`), fboth25 (`achSnap` `both`, `achBoth`), fdauin20 (`achSnap` `top`, `UNITS` fish `top`, `app.js` `sciTop`)
+  and fpct70. The admin's Pairs read them (`reports.js` `repReg` `spu`); the mimicry entries name them (`app.js`
+  `mimLay`); a species by its scientific name has its family's variants (`model.js` `varHome` walks up to the unit rank).
+
 ## The fish global score
 
 docs/FISH_PATH.md "My progress (fish)", docs/LEARNING.md "Fish: the global score, built". `core.js` `treeScore(P, T, K)`,

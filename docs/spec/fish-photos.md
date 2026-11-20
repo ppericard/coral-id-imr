@@ -565,7 +565,8 @@ pass's `bb`: `tools/fish_judge.json` `boxes`, a candidate's `suggest.json` `bb`)
 fish fills 70% of it and its box is 320 px wide in the original; `fish-game.json` carries `bb` and `xc` (the square) or
 `xn` (why none). `tools/photos.py --r2-tiles` lists them and `tools/r2_sync.sh` checks the bucket has each. Rubric and
 thresholds: `judging/FISH.md` "The fish's box". Find the X reads them: `app.js` `UNITS` `tiles(n)` (a unit's game
-photos with `xc`; none for the corals, so they never play it) and `tileSrc(p)` (the tile's address, `?x=` its square;
+photos with `xc`, `unitTiles`, one declaration for the fish and the sea slugs ([seaslugs.md](seaslugs.md); no sea slug
+photo has a box yet); none for the corals, so they never play it) and `tileSrc(p)` (the tile's address, `?x=` its square;
 its 480 px photo once R2 has failed, a tile having no online original), `quiz.js` `planFind` (the question), `question`
 (the four tiles as the choices, `.qstage.qfx`, `app.css` `.fxt`).
 

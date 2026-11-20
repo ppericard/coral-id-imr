@@ -51,6 +51,8 @@ function model(G, {bar = {}, met = () => true, conf = {}} = {}) {
   const stubs = {
     GX: n => G[n],
     rankOf: n => (G[n] || {}).rank || '',
+    // model.js rankKind (beside distractors): the class a trap stays in, its rank here
+    rankKind: n => (G[n] || {}).rank || '',
     phaseOf: C.phaseOf,
     varKindOf: C.varKindOf,
     VAR_AT: C.VAR_AT,
