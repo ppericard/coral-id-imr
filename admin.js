@@ -3695,23 +3695,27 @@ function lazyLoad(group) {
 // Analyses script draws the page on screen the moment it loads (its last line); when nothing has drawn over the note by the
 // time the whole group is in (a file asked for again after a failure), the page is drawn from here. A group that could not
 // be fetched says so, if the page is still on screen; opening it again (its address, or ↻) asks again.
-const LAZY_WAIT = new Set(),
+const LAZY_WAIT = new Map(), // group -> the page (address) that asked last: the one that answers when the group is in or failed
   LOADING = '<p class="note">Loading…</p>',
   // The Analyses pages need both files: admin-analyses.js alone (analysis.js failed) draws nothing.
   analysesIn = () => typeof renderAnalyses === 'function' && typeof ANALYSIS === 'object';
 function lazyPage(group, page) {
   $v.innerHTML = LOADING;
-  if (LAZY_WAIT.has(group)) return;
-  LAZY_WAIT.add(group);
+  // Another view of the group asked while the files are on their way: it is the page that waits now, and the one that
+  // answers (the address is read when the group is in or failed, not the first asker's).
+  if (LAZY_WAIT.has(group)) return void LAZY_WAIT.set(group, page);
+  LAZY_WAIT.set(group, page);
   lazyLoad(group).then(
     () => {
+      const now = LAZY_WAIT.get(group);
       LAZY_WAIT.delete(group);
-      if (cur === page && $v.innerHTML === LOADING) render();
+      if (cur === now && $v.innerHTML === LOADING) render();
     },
     e => {
+      const now = LAZY_WAIT.get(group);
       LAZY_WAIT.delete(group);
       console.warn(e.message);
-      if (cur === page) $v.innerHTML = '<p class="note">This page could not be loaded: check the connection and open it again.</p>';
+      if (cur === now) $v.innerHTML = '<p class="note">This page could not be loaded: check the connection and open it again.</p>';
     }
   );
 }

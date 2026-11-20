@@ -214,6 +214,49 @@ test('analysesIn: both files are needed, admin-analyses.js alone draws nothing',
   assert.match(block(src, 'if (anPage(cur)) {', '\n  }', {file: 'admin.js'}), /if \(analysesIn\(\)\) return renderAnalyses\(\);/);
 });
 
+// Codex P2: a second Analyses view asked while the group was on its way returned early; the failure then looked at the first
+// view's address and left the second on Loading… for good.
+test('lazyPage: a second view asked while the group is on its way gets the answer, failed or in; the first one, left, is not touched', async () => {
+  const bad = inert.find(t => t.src.startsWith('admin-analyses.js')).src,
+    fail = new Set([bad]),
+    f = world(fail);
+  f.ctx.cur = 'analyses/overview';
+  f.lazyPage('analyses', f.ctx.cur);
+  f.ctx.cur = 'analyses/difficulty/formats';
+  f.lazyPage('analyses', f.ctx.cur);
+  assert.match(f.v.innerHTML, /Loading…/);
+  assert.strictEqual(f.inserted.length, 0, 'one request for the group, however many views ask');
+  await tick();
+  assert.match(f.v.innerHTML, /could not be loaded/, 'the view on screen says so, with the retry wording');
+  assert.match(f.v.innerHTML, /open it again/);
+  assert.strictEqual(f.LAZY_WAIT.size, 0, 'cleared: a retry fetches again');
+  assert.strictEqual(f.warned.length, 1);
+  // a retry from the second view fetches the file again and draws the page
+  fail.clear();
+  f.lazyPage('analyses', f.ctx.cur);
+  await tick();
+  assert.strictEqual(f.inserted.length, 3, 'only the file that failed is asked for again');
+  assert.strictEqual(f.rendered, 1, 'the second view is drawn');
+  // the same when the group comes in: the page on screen is drawn, not the first asker's
+  const g = world();
+  g.ctx.cur = 'analyses/overview';
+  g.lazyPage('analyses', g.ctx.cur);
+  g.ctx.cur = 'analyses/difficulty/formats';
+  g.lazyPage('analyses', g.ctx.cur);
+  await tick();
+  assert.strictEqual(g.rendered, 1);
+  // the admin left for an unrelated page: it is left alone
+  const h = world(new Set([bad]));
+  h.ctx.cur = 'analyses/overview';
+  h.lazyPage('analyses', h.ctx.cur);
+  h.ctx.cur = 'analyses/difficulty/formats';
+  h.lazyPage('analyses', h.ctx.cur);
+  h.ctx.cur = 'photos/candidates';
+  h.v.innerHTML = 'Candidates';
+  await tick();
+  assert.strictEqual(h.v.innerHTML, 'Candidates');
+});
+
 test('lazyPage: a failure says so only on the page that asked, and is asked again by the next visit', async () => {
   const bad = inert.find(t => t.src.startsWith('admin-analyses.js')).src;
   const f = world(new Set([bad]));
