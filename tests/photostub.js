@@ -5,6 +5,7 @@
 //   const stub = require('./photostub.js')(ROOT);
 //   await stub.r2(ctx)          R2 (core.js PHOTO_BASE) answering, with the bucket's CORS header
 //   await stub.inat(ctx, log)   iNaturalist answering (small 240, medium 480, large 960 px, as core.js photoOnline asks)
+//   await stub.cotw(ctx)        Corals of the World answering with a stand-in (the online original of an IMR lecture photo)
 //   stub.file('<f>-s.webp')     the local file that stands for a photo file, or null
 const fs = require('fs'),
   path = require('path');
@@ -72,5 +73,19 @@ module.exports = ROOT => {
         body: fs.readFileSync((f && file(`${f}${suf}.webp`)) || stand['-s'])
       });
     });
-  return {r2, inat, file, online, stand};
+  // An IMR lecture photo traced to its original (data.json course src) falls back to that original on Corals of the World
+  // once R2 is cut off, and has no file in img/. This host answers with a stand-in picture (4:3, the size of no real
+  // photo), so a question that draws one still shows it; a context that cuts every outside host off registers this later.
+  const cotw = ctx =>
+    ctx.route(
+      u => u.hostname === 'www.coralsoftheworld.org',
+      r =>
+        r.fulfill({
+          status: 200,
+          contentType: 'image/svg+xml',
+          headers: {'access-control-allow-origin': '*'},
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900"><rect width="1200" height="900" fill="#789"/></svg>'
+        })
+    );
+  return {r2, inat, cotw, file, online, stand};
 };
