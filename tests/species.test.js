@@ -28,6 +28,7 @@ const ctx = {
   treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights,
   LV_AT: [0.5, 0.8, 0.85],
+  INTRO: {START: 4},
   photoAny: n => !!(ctx.GXS[n] && ctx.GXS[n].views.wide.length),
   GXS: {}
 };
@@ -35,6 +36,7 @@ vm.createContext(ctx);
 vm.runInContext(
   [
     block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(src('app.js'), 'function lvlNext(O, L, met) {', '\n}\n', {through: 1, file: 'app.js'}),
     block(src('app.js'), 'function spPlay(L, score, met, on) {', '\n}\n', {through: 1, file: 'app.js'}),
     'const GX = n => GXS[n];',
     'this.T = {treeGenera, spPlay};'
@@ -90,7 +92,7 @@ test('the species units: one per species with a listed common name, in a family 
   );
 });
 
-test('spPlay: nothing while off; a family at Advanced brings its species one at a time, the most met first', () => {
+test('spPlay: nothing while off; a family at Advanced brings its species, the most met first: four while the level opens its group, then one at a time', () => {
   const fam = 'f:Butterflyfishes',
     L = X.spl,
     own = L.filter(n => X.gen[n].parent === fam && X.gen[n].views.wide.length),
@@ -104,12 +106,23 @@ test('spPlay: nothing while off; a family at Advanced brings its species one at 
       on
     )
   ];
+  assert.ok(own.length > 5, String(own.length));
   assert.deepStrictEqual(open(false), []);
-  assert.deepStrictEqual(open(), [own[0]]);
+  // the level holds fewer than INTRO.START species met: the next four, so a group of close ones can open (model.js
+  // openFresh, openGroup; rule L4)
+  assert.deepStrictEqual(open(), own.slice(0, 4));
   met.add(own[0]);
-  assert.deepStrictEqual(open(), [own[0], own[1]]);
+  assert.deepStrictEqual(open(), own.slice(0, 5));
+  // four met: the next one alone, as before
+  own.slice(1, 4).forEach(n => met.add(n));
+  assert.deepStrictEqual(open(), own.slice(0, 5));
+  met.add(own[4]);
+  assert.deepStrictEqual(open(), own.slice(0, 6));
   // under Advanced: the species met stay, no new one
   at[fam] = 0.79;
+  assert.deepStrictEqual(open(), own.slice(0, 5));
+  met.clear();
+  met.add(own[0]);
   assert.deepStrictEqual(open(), [own[0]]);
   at[fam] = 0;
   met.clear();

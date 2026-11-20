@@ -3034,12 +3034,8 @@ td i {
   .q .qstage.qfx {
     display: grid !important;
   }
-  .q .qstage.qvs {
-    grid-template-columns: 1fr 1fr !important;
-  }
-  .q .qstage.qvs {
-    grid-template-rows: minmax(0, 1fr) !important;
-  }
+  /* The grid of the two compared photos (a wrong answer) is not set here: quiz.js fitStage picks, for their shapes and the
+     room left above the feedback sheet, stacked (the shape of a phone's stage is tall) or side by side (Pierre, 2026-11-21). */
 }
 /* Phone base (mobile-first); larger screens restore below. */
 header {
@@ -3169,8 +3165,9 @@ body {
   overflow: hidden;
 }
 /* The two compared photos (a wrong answer) are always shown whole, on the blurred background, at every size: side by side
-   on a phone each box is portrait, and filling it (cover) cut a wide photo, a fish, to its middle (Pierre, 2026-11-20).
-   Never drawn past its own pixels either (an IMR lecture photo, quiz.js upMax). */
+   on a phone each box was portrait, and filling it (cover) cut a wide photo, a fish, to its middle (Pierre, 2026-11-20).
+   Never drawn past its own pixels either (an IMR lecture photo, quiz.js upMax). Stacked or side by side is quiz.js
+   fitStage's pick at every size, whichever shows both photos larger (stacked on a normal phone). */
 .q .qstage.qvs .qph img {
   object-fit: scale-down;
   background-size: contain;
