@@ -31,6 +31,7 @@ function appOf(subj, X0, Fx, {sheet = 1000, bar = {}, met = new Set()} = {}) {
   const ctx = {
     DOM: {EX: 0.9},
     LV_AT: [0.5, 0.8, 0.85],
+    INTRO: {START: 4},
     easyCover: C.easyCover,
     treeScoreTree: C.treeScoreTree,
     treeSpUnits: C.treeSpUnits,
@@ -50,6 +51,7 @@ function appOf(subj, X0, Fx, {sheet = 1000, bar = {}, met = new Set()} = {}) {
   vm.runInContext(
     [
       block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'function lvlNext(O, L, met) {', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const kindOf = n =>', '// The scientific genera in play', {file: 'app.js'}),
       block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
@@ -147,7 +149,7 @@ test('the sea slugs: the scientific species of every genus, no common-name unit,
   );
 });
 
-test('sciPlay: nothing while off or with the genus out of play; from the genus at Advanced, one at a time in its order', () => {
+test('sciPlay: nothing while off or with the genus out of play; from the genus at Advanced, in its order: four while the level opens its group, then one at a time', () => {
   const g = 'g:Chromis',
     L = X.ssl,
     own = L.filter(n => X.gen[n].parent === g && X.gen[n].views.wide.length),
@@ -164,19 +166,24 @@ test('sciPlay: nothing while off or with the genus out of play; from the genus a
         on
       )
     ];
-  assert.ok(own.length >= 3);
+  assert.ok(own.length >= 6, String(own.length));
   assert.deepStrictEqual(open(false), []);
   assert.deepStrictEqual(open(true, new Set()), [], 'its genus not in play (the scientific names turned off)');
-  assert.deepStrictEqual(open(), [order[0]], "the genus's first species first");
+  // the level holds fewer than INTRO.START species met: the next four (app.js lvlNext; a level opens in a group, rule L4)
+  assert.deepStrictEqual(open(), order.slice(0, 4), "the genus's first species first");
   met.add(order[0]);
-  assert.deepStrictEqual(open(), [order[0], order[1]]);
+  assert.deepStrictEqual(open(), order.slice(0, 5));
+  // four met: the next one alone
+  order.slice(1, 4).forEach(n => met.add(n));
+  assert.deepStrictEqual(open(), order.slice(0, 5));
   bar[g] = 0.79;
-  assert.deepStrictEqual(open(), [order[0]], 'under Advanced: the species met stay, no new one');
+  assert.deepStrictEqual(open(), order.slice(0, 4), 'under Advanced: the species met stay, no new one');
   assert.deepStrictEqual(open(true, new Set()), [], 'a genus out of play: its species met stop being asked (Q402 A)');
   // a threshold of its own (shareAt) wins over Advanced
   X.gen[g].shareAt = 0.7;
-  assert.deepStrictEqual(open(), [order[0], order[1]]);
+  assert.deepStrictEqual(open(), order.slice(0, 5));
   delete X.gen[g].shareAt;
+  order.slice(1, 4).forEach(n => met.delete(n));
   // the order a fish genus's species open in is its family's commonness order
   const fam = F.families.find(f => f.id === X.gen[g].parent).species.filter(id => order.includes('sci:' + id));
   assert.deepStrictEqual(
@@ -395,7 +402,9 @@ test('a locked scientific species takes a live answer as evidence without openin
   // not in play while its genus is under Advanced; offered on its card once the genus is there, its answers kept
   const play = b => [...A.sciPlay(X.ssl, n => (n === g ? b : 0), M.introduced, new Set([g]), true)];
   assert.deepStrictEqual(play(0.5), []);
-  assert.deepStrictEqual(play(0.85), [first], 'the next one, through its card (the usual opening)');
+  // among the next ones of its genus (four while the level opens its group: app.js lvlNext), through its card
+  const next = play(0.85);
+  assert.ok(next.includes(first) && next.length === 4, String(next));
   M.introAdd([first]);
   assert.ok(M.introduced(first) && P[first].ok === 1);
 });

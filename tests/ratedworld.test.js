@@ -81,8 +81,9 @@ test('the species units: the worlds of before unchanged, opened from their famil
     const p = X.gen[n].parent,
       own = U.sp.filter(o => X.gen[o].parent === p && X.gen[o].views.wide.length);
     assert.ok(r.advAt[p] && r.advAt[p] < i, `${n} at ${i}, its family at Advanced at ${r.advAt[p]}`);
-    // the earlier species of its family (with a photo) were met before it
-    own.slice(0, own.indexOf(n)).forEach(o => assert.ok(o in first && first[o] < i, `${o} before ${n}`));
+    // the earlier species of its family (with a photo) were met before it, but for those of its group (a level opens
+    // INTRO.START units together, asked in any order: model.js openGroup)
+    own.slice(0, Math.max(0, own.indexOf(n) - 3)).forEach(o => assert.ok(o in first && first[o] < i, `${o} before ${n}`));
   });
   assert.strictEqual(r.kinds[U.sp[0]], 'species');
 });
