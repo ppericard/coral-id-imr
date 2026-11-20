@@ -1,6 +1,6 @@
 # A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet
 
-Date: 2026-11-21. PR: #1352. Rules or docs touched: U14, D3, D4, D7; docs/spec/sync.md "Report images"; docs/spec/player-reports.md; docs/SECURITY.md; privacy.html.
+Date: 2026-11-21. PR: #1354. Rules or docs touched: U14, D3, D4, D7; docs/spec/sync.md "Report images"; docs/spec/player-reports.md; docs/SECURITY.md; privacy.html.
 
 ## Context
 
