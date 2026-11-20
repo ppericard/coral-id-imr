@@ -406,6 +406,35 @@ test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turne
   assert.strictEqual(w2.style.transform, 'rotate(180deg)');
 });
 
+// A page that names a photo by its file only ({f}: Coral basics, the Lab's games) gets the record's version in the address
+// (app.js loc, ver), R2 healthy or not: a lecture photo replaced by its original keeps its name, and the service worker
+// serves a photo cache-first by address (Codex review of #1292).
+test('a bare {f} photo asks for its record’s version, as the record itself does', () => {
+  const A = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    {PHOTO_BASE} = CORE,
+    ctx = vm.createContext({...CORE});
+  vm.runInContext(
+    'let R2 = true, AWAY = false, DATA = {}, RECS = {};\nconst photoUrl = p => (R2 ? PHOTO_BASE : "") + p, photoLook = f => RECS[f];\n' +
+      block(A, 'const ver = p => ', '\n', {file: 'app.js', through: true}) +
+      block(A, 'const bareF = ', '\nconst img = (p, size)', {file: 'app.js'}) +
+      '\nthis.T = {loc, bareF, set: o => ({R2, AWAY, DATA, RECS} = {R2, AWAY, DATA, RECS, ...o})};',
+    ctx
+  );
+  const T = ctx.T,
+    rec = {f: 'imrl-p11_i6', imr: true, cr: [0.1, 0.2, 0.9, 0.8], iv: 1, src: 'https://www.coralsoftheworld.org/media/images/x.jpg'},
+    want = `${PHOTO_BASE}img/imrl-p11_i6-s.webp?c=0.1_0.2_0.9_0.8.1`;
+  T.set({RECS: {[rec.f]: rec}});
+  assert.strictEqual(T.loc(rec, 's'), want, 'the record itself');
+  assert.strictEqual(T.loc({f: rec.f}, 's'), want, 'a bare {f}, R2 healthy');
+  // Not bare: a record is taken as it is, never looked up; a bare one with no record has no version.
+  assert.strictEqual(T.bareF({f: 'a'}), true);
+  assert.strictEqual(T.bareF({f: 'a', ar: 1}), false);
+  assert.strictEqual(T.loc({f: 'other'}, 's'), `${PHOTO_BASE}img/other-s.webp`);
+  // Before the data is built there is no index to ask.
+  T.set({DATA: undefined});
+  assert.strictEqual(T.loc({f: rec.f}, 's'), `${PHOTO_BASE}img/imrl-p11_i6-s.webp`);
+});
+
 // The app's fallback (app.js turnPlan, turnSet): a turned photo shown from its online original is cut
 // and turned in a canvas as the workflow does, and every use of its original on the element swapped for that picture.
 const appTurn = () => {

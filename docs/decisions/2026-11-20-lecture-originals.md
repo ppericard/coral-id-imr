@@ -29,4 +29,11 @@ lecture photos with no source in play as "IMR", untouched.
 - **How it is fetched.** `tools/fetch_imr_originals.py`: public pages, one request every 2 s, a generic User-Agent, each
   picture once, host fixed to www.coralsoftheworld.org, size checked against the recorded cut. It runs in
   `reefid-originals.yml` (read only, R2 secrets only), which uploads with `tools/r2_sync.sh`.
+- **The version reaches every page.** A page that names a photo by its file only (`{f}`: Coral basics, the Lab's games)
+  gets its record's version in the address too (`app.js` `loc`, `bareF`), R2 healthy or not: the file name never changes,
+  and the service worker serves photos cache-first by address, so the new pixels need a new address (integrator's call,
+  Codex review of #1292).
+- **No Crop on a lecture photo in the admin** (integrator's call, Codex review of #1292). A crop published for it would
+  never reach its R2 file (`tools/fetch_approved.py` remakes candidates and the views' photos, not `course`), and its
+  baseline framing (`cr`, `ro`) could not be undone with "Full photo". The button comes back with that pipeline (ROADMAP).
 - **Not touched.** The 34 untraced lecture photos, `curation.json`, the credits, `imr: true`, the rights class.

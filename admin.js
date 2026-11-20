@@ -580,7 +580,9 @@ const vbox = c =>
 // rotation is drawn on the original, after its crop, by a CSS rotate (data-rot, rotFit). p.j.ro: a fish photo's (fuP).
 // An IMR lecture photo traced to its original (data.json cr, ro: how the lecture framed it, tools/apply_imr_originals.py)
 // has that framing as its baseline, not in the draft: with no draft crop or turn it shows its framed file, and from its
-// original (AWAY) draws that framing.
+// original (AWAY) draws that framing. The admin offers no Crop on a lecture photo (genus tiles): a crop published for it
+// would never reach its R2 file (tools/fetch_approved.py remakes candidates and the views' photos, not `course`; Codex
+// review of #1292), so its framing is only ever that baseline and "Full photo" cannot arise.
 const crSrc = (p, s) => {
   const c = crOf(p.f) || sugCrop(p) || (p.imr ? p.cr : undefined),
     ro = p.j && p.j.ro != null ? rotNorm(p.j.ro) : roOf(p.f) || (p.imr ? rotNorm(p.ro) : 0),
@@ -1416,7 +1418,7 @@ function tile(n, p, v, st) {
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       <button type="button" data-act="hide" title="Remove">Remove</button>
-      ${p.src ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
+      ${p.src && !p.imr ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
       ${p.from ? '' : notThis(n)}`
       }${st.extra || ''}
     </div></figure>`;
@@ -3846,7 +3848,7 @@ function bindTiles(scope, g) {
     else if (a === 'crop')
       el.onclick = () => {
         const p = [...photos(n), ...pending(n)].find(x => x.f === f);
-        if (p) cropEditor(p);
+        if (p && !p.imr) cropEditor(p);
       };
     else if (a === 'out') {
       if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value);

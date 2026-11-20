@@ -5239,15 +5239,18 @@ async function onePath(b, base) {
             )
           );
           return [...document.querySelectorAll('#view ' + sel)].map(i => {
-            const u = i.getAttribute('src') || '',
-              x = photoFileOf(u),
+            const u = i.getAttribute('src') || '';
+            // A turned lecture photo (imr-p12_i8) shown from its original once R2 is cut off is a picture the app drew in a
+            // canvas (a blob: address, app.js turnSet): it names no genus, so it is counted as a photo and left out of the genus check.
+            if (u.startsWith('blob:')) return '(turned)';
+            const x = photoFileOf(u),
               f = x ? x.f : u.replace(/#.*$/, '').replace(/\/(small|medium|large)\.(\w+)$/, '/original.$2');
             return of[f] || f;
           });
         }, sel))
       );
     }
-    const out = seen.filter(n => !MET.includes(n));
+    const out = seen.filter(n => n !== '(turned)' && !MET.includes(n));
     if (!seen.length || out.length) labOut[h + (start ? ' ' + start : '')] = {photos: seen.length, out: out.slice(0, 3)};
   }
   if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
@@ -5908,6 +5911,7 @@ async function noUpscaleCheck(b, base) {
     const p = await c.newPage();
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    let measured = 0;
     for (const g of ['Tubastraea', 'Stylophora', 'Pocillopora', 'Anacropora']) {
       await p.evaluate(g => (location.hash = 'learn/genus/' + g), g);
       await drawn(p);
@@ -5929,6 +5933,8 @@ async function noUpscaleCheck(b, base) {
         const fileOf = i => (/\/(imrl?-[^/]*?)(?:-[tsm])?\.webp/.exec(i.currentSrc || i.src) || [])[1];
         const mine = [...document.querySelectorAll('img')].filter(fileOf);
         await Promise.all(mine.map(loaded));
+        // A lecture photo traced to its Corals of the World original lives on R2 only (no file in img/, where the pixels are
+        // read, and the stub gives it a stand-in of no real size): it is counted as shown, not measured.
         const out = {n: mine.length, over: [], lb: 0};
         for (const i of mine) {
           const n = await nat(fileOf(i));
@@ -5941,8 +5947,9 @@ async function noUpscaleCheck(b, base) {
           const li = document.querySelector('#lightbox .lb-in img');
           if (li) {
             await loaded(li);
+            if (fileOf(li)) out.lb++;
             const n = await nat(fileOf(li));
-            if (n) (out.lb++, out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)}));
+            if (n) out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)});
             document.querySelector('#lightbox [data-x]')?.click();
           }
         }
@@ -5950,10 +5957,13 @@ async function noUpscaleCheck(b, base) {
       });
       if (!sh.n) fails.push(`no upscale ${w}: the ${g} sheet shows no IMR lecture photo`);
       if (!sh.lb) fails.push(`no upscale ${w}: the enlarged view of a ${g} lecture photo did not open`);
+      measured += sh.over.length;
       for (const o of sh.over)
         if (o.s > 1.005)
           fails.push(`no upscale ${w}: ${o.f} (${o.n.join('x')}) on the ${g} sheet is drawn ${o.s}x its pixels (${JSON.stringify(o)})`);
     }
+    // The pixels of some photo were read: a sheet check that measures nothing is no check.
+    if (!measured) fails.push(`no upscale ${w}: no lecture photo on the four sheets has a file in img/ to measure`);
     const seen = await p.evaluate(async f => {
       const nat = await new Promise(ok => {
         const i = new Image();

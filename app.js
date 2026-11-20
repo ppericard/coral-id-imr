@@ -148,9 +148,12 @@ const photoIdx = () => {
 const photoLook = f => photoIdx().f.get(f);
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 240 (small), 500 (medium) and 1024 px (large).
-// A bare {f} (the Lab's photos) finds its record, so its online original, by name (R2 switched off: AWAY from the start).
+// A bare {f} (the Lab's photos, Coral basics') finds its record by name: its online original (R2 switched off: AWAY from the
+// start), and its version (ver: a photo whose files were remade, as the IMR lecture photos replaced by their originals, is a
+// new address for the caches, whoever asks for it).
+const bareF = p => !!p.f && Object.keys(p).length === 1;
 const loc = (p, s) => {
-  const o = AWAY && !p.src ? photoLook(p.f) || p : p;
+  const o = (AWAY && !p.src) || (bareF(p) && DATA) ? photoLook(p.f) || p : p;
   return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
