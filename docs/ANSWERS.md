@@ -1469,3 +1469,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
   de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
   window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
+- **15:29-15:32, two juvenile cards in the fish practice quiz (reports under g:Pomacentrus and f:Sweetlips).** «J'ai eu
+  une carte de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»; «Celui là c'est un
+  juvénile qui aurait mérité la carte, pas le goatfish d'avant». The sweetlips photo is a juvenile, not a sub-adult:
+  corrected in its judging (`j`, no phase). A goatfish judged `j` against its own note lost the flag (integrator's
+  call). The goatfish he saw takes its juvenile phase from the observer's life stage: proposed to him, not changed.
+  Applied: judging/fish/s597.json, s330.json, suggest.json,
+  decisions/2026-11-20-juvenile-card-follows-the-judged-phase.md, #1323.
