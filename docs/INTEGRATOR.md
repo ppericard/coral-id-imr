@@ -300,6 +300,10 @@ Never copied here, so it cannot go stale:
   for Pierre", "Pierre's hands"), and the PR list `python3 tools/brief.py` prints.
 - **Ideas agreed but not built, and their order**: [ROADMAP.md](ROADMAP.md) ("Backlog in priority order" is the one
   list; Pierre, 2026-11-08: first everything that speeds up development, then the rest).
+- **Where the next task comes from: the ROADMAP, not STATUS** (Pierre, 2026-11-20 16:44). STATUS "Next" is a short
+  pointer (the file stays near 100 lines so that every session start reads it cheaply); it never holds the whole
+  backlog. At every check-in, and whenever agents finish, go through the ROADMAP's rows and launch every row that is
+  decided (his words, or an integrator's call) and blocked by no open PR's file (rule W27).
 - **Why something is as it is**: the rule's *Source* line, then [decisions/](decisions/README.md), then the LEARNING.md
   or ARCHITECTURE.md section the rule or record names.
 - **Branches without a PR**: `python3 tools/brief.py` lists them. Two keep a design note on the branch only:
