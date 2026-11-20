@@ -83,6 +83,10 @@
       // Not for a player who said they had the IMR course or know corals well.
       said = (store.get(startKey(SUBJ.id), null) || {}).c,
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
+    // The What I learn card's link on the door's kicker row (Pierre, 2026-11-18, Q400 D: a Home line opens the card on My
+    // progress; on the kicker row it costs Home no height, so Home still fits one screen from 360 x 640): for a subject
+    // with a names row (app.js learnRows), opening the card (window.WIL_ASK: a tap before progress.js loads still counts).
+    const wil = typeof learnRows === 'function' && learnRows().length > 0;
     // A subject whose photos are wide (UNITS land: most fish are horizontal, and square tiles cut them; docs/DESIGN.md)
     // gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
     // photo picked to suit them, one of several, the day's (bandPhoto: the cover or a reference photo that suits the
@@ -141,7 +145,7 @@
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase<span class="wide"> · before ${fish ? W.before : 'ReefCloud or your next dive'}</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="' + esc(basicsWords().ask) + ' Start with the basics (5 min)">' + esc(basicsWords().ask) + ' Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen"><span>Learning phase<span class="wide"> · before ${fish ? W.before : 'ReefCloud or your next dive'}</span></span>${wil ? `<a class="hdwil" href="${esc(hr('progress'))}">What I learn ›</a>` : ''}</p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="' + esc(basicsWords().ask) + ' Start with the basics (5 min)">' + esc(basicsWords().ask) + ' Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
@@ -154,6 +158,10 @@ ${idoor}
       </div>
       <p class="hcred">By Pierre Pericard · for ${esc(ORG.short)} · <a href="${esc(hr('about'))}">Credits</a></p>
     </div>`;
+    const wl = wil && $v.querySelector('.hdwil');
+    // The intent kept in tier 1 (progress.js learnCard reads it once it is in); the handler returns nothing, so the link
+    // always goes to My progress.
+    if (wl) wl.onclick = () => void (window.WIL_ASK = true);
   };
   // The Fish ID Key, coming soon (Identify shows the current subject's tool only; docs/ROADMAP.md "Fish ID Key for
   // EventMeasure"). The Coral ID Key is reached through the subject switch.

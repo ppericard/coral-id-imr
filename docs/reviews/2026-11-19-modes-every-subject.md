@@ -35,7 +35,7 @@ stays closed).
 | Look-alikes deck (`cmp`, Learn) | open | **open (PR 3)** | **open (PR 3)** | Was code: `classics` reads `model.js` `pairs()` (coral `DATA.gen` look); `montage` reads `DATA.gen[n].views` and `MONT_V`; `srcTag` knows only "IMR lecture" and "Coral Finder". The fish have sourced pairs (`look`, `lsrc`: the IMR fish presentation); the sea slugs `decl` | `learn.js` `viewLookalikes`, `montage`, `srcTag` |
 | Compare (`cmp-A\|B`) | open | **open (PR 3)** | **open (PR 3)** | Was code: `viewCompare` reads `gameGenus`, `g.crit` and `critRef` (Coral ID Key criteria), `g.ig`, the three `VIEWS`, `DATA.cmp`. UI: the quiz feedback's "Compare them" hidden by a data-shape test (`quiz.js` `fbBody` `fish = !!g.name`) | `learn.js` `viewCompare`; `quiz.js` `fbBody` |
 | Memory (`pairs`) | open | closed, reason | closed, reason | reason: it matches a colony photo with its corallites, two views of one unit; these subjects have one view (`SUBJECTS` `views`). A Memory for them is a different game (below) | `proto/pairs.js` |
-| Basics (Learn step 0) | open | open | closed | content: no basics module written for the sea slugs | `SUBJECTS` `pages` `basics`; `proto/basics.js`, `proto/fishbasics.js` |
+| Basics (Learn step 0) | open | open | **open (PR 5)** | Was content: no basics module written for the sea slugs | `SUBJECTS` `pages` `basics`; `proto/basics.js`, `proto/fishbasics.js`, `proto/seaslugbasics.js` |
 | Learn list and sheets | open | open | open | none | `UNITS` `list`, `sheet` |
 | Identify | Coral ID Key | Fish ID Key, coming soon | the same page, coming soon | a separate ROADMAP row ("Fish ID Key for EventMeasure"); not a game mode | `UNITS` `identify`; `home.js` `viewFishKey` |
 | Live (trainer and students) | open | open | open | none (`live.js` `liveSubjects`: every subject open to all) | `live.js` |
@@ -96,7 +96,7 @@ answers that are scored exactly like those of the same page for the corals.
    They stay Lab prototypes (rule U13). Built: [decision](../decisions/2026-11-20-lab-tools-every-subject.md). Feature, M: comparable to #986, #1056, #1159, #1204, #1218: median 60 min
    (range 30 min-1.7 h).
 5. **Sea slug basics module**: the words of their ID marks (rhinophores, gills, cerata, mantle), sourced, as Fish basics
-   is (`proto/fishbasics.js`). Content, M: comparable to #961, #972, #985, #1223, #1245: median 18 min (range 14
+   is (`proto/fishbasics.js`). Built: [decision](../decisions/2026-11-20-seaslug-basics.md). Content, M: comparable to #961, #972, #985, #1223, #1245: median 18 min (range 14
    min-18 min); the sourcing makes it longer (a guess).
 6. **Sea slug Find the X**: the square tiles (`xc`) cut in `tools/seaslug_game.py` as `tools/fish_game.py` does, then
    `UNITS` `tiles` as the fish's. Checked 2026-11-20 (decision record `2026-11-20-slug-find-the-x.md`): no sea slug photo carries the animal's box

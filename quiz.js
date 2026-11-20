@@ -2276,7 +2276,7 @@ const bonusBackDue = () => SETS().find(S => S.back && S.rv && Q[S.k] === true &&
 function bonusBackShow(S = bonusBackDue()) {
   if (!S) return;
   const B = S.back,
-    keep = S.auto ? S.auto() : [];
+    keep = autoOf(S);
   cardShow({
     kind: 'bonus',
     cls: 'intro',
