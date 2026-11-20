@@ -536,15 +536,20 @@ function fitStage() {
   // grid that shows the most photo area wins: portrait or square views go side by side instead of in two wide
   // half-blurred bands. The stage keeps its full height (never a photo above an empty half screen), and nothing moves
   // while the photos load.
-  const rs = [...st.children].map(f => +f.dataset.r || 4 / 3);
+  // The two compared photos after a wrong answer (.qvs) are shown whole at every size: whatever the size class, the grid
+  // that shows both photos largest, by their known shapes and the stage's real gap, wins (stacked first on a tie): stacked
+  // on a normal phone, side by side when a tall feedback sheet leaves a small stage (Pierre, 2026-11-21).
+  const rs = [...st.children].map(f => +f.dataset.r || 4 / 3),
+    vs = st.classList.contains('qvs'),
+    gap = (vs && parseFloat(getComputedStyle(st).columnGap)) || 8;
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) {
     const r = Math.ceil(n / c),
-      cw = (W - 8 * (c - 1)) / c,
-      ch = (H - 8 * (r - 1)) / r;
+      cw = (W - gap * (c - 1)) / c,
+      ch = (H - gap * (r - 1)) / r;
     const score = fxs
       ? Math.min(cw, ch)
-      : isStacked()
+      : isStacked() && !vs
         ? Math.min(cw, (ch * 4) / 3)
         : rs.reduce((a, x) => a + Math.min(cw, ch * x) ** 2 / x, 0);
     if (score > best[2] * 1.02) best = [c, r, score];
