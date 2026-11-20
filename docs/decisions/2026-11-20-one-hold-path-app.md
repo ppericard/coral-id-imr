@@ -1,6 +1,6 @@
 # Each subject adopts its own opening hold from the sheet
 
-Date: 2026-11-20. PR: (this PR). Rules or docs touched: S1, D4, D5, L12; docs/spec/sync.md "The opening hold";
+Date: 2026-11-20. PR: #1349. Rules or docs touched: S1, D4, D5, L12; docs/spec/sync.md "The opening hold";
 docs/spec/subjects.md "The registry", "Sync and replay per subject"; ROADMAP "One engine for every subject, what is
 left".
 
