@@ -18,7 +18,13 @@ const IMR = 'instance:imr';
 const run = (s, js) => vm.runInContext(js, s.ctx);
 const copy = o => JSON.parse(JSON.stringify(o));
 const save = (s, name, pin = '1234') => s.post({name, pin, data: {}, summary: {}, answers: []});
-const grant = (s, account, role) => s.post({roleGrant: {account, role, scope: IMR}, token: TOK});
+// The account put in a group that carries a role's rights (Code.gs ROLES.DEF: trainer, owner, editor), one group a role.
+const grant = (s, account, role) => {
+  const rights = copy(run(s, `ROLES.DEF.${role}.rights`)).map(r => r + '@' + IMR),
+    had = s.post({users: 1, token: TOK}).groupDefs.find(d => d.n === role),
+    g = (had || s.post({groupMake: {n: role, rights}, token: TOK}).group).id;
+  return s.post({userGroup: account, group: g, on: true, token: TOK});
+};
 // A question as the trainer's page sends it (live.js liveBuild): photos, four choices, the right one's index.
 const Q = (k = 1, f = 'acropora-1') => ({
   ph: [{f, u: `img/${f}-m.webp`, v: 'wide'}],
@@ -30,7 +36,8 @@ const Q = (k = 1, f = 'acropora-1') => ({
   ],
   k
 });
-// A sheet with a trainer (Tess, the trainer role), a player with no role (Pat), and the clock under the test's hand.
+// A sheet with a trainer (Tess, in a group with the trainer's rights), a player with no right (Pat), and the clock under
+// the test's hand.
 function setup() {
   const s = loadCodeGs();
   let now = Date.UTC(2026, 10, 18, 2, 0, 0);
@@ -72,7 +79,7 @@ test('only an account with the trainer role starts a session, checked by the scr
     ['live start', IMR, 'ok']
   ]);
   assert.ok(!JSON.stringify(s.sheets.Audit.rows).includes('Tess'));
-  // The right is the trainer role's only: an owner or an editor without it is refused (rights are separate).
+  // The right is the Trainers group's only: a Manager or a Curator without it is refused (rights are separate).
   save(s, 'Owen');
   grant(s, 'Owen', 'owner');
   grant(s, 'Owen', 'editor');

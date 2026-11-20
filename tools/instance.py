@@ -14,8 +14,9 @@ layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance
   {circle, cues, look, phase}} (a sub-entry: cues, look, phase). fish_source() lays them on tools/fish_source.json, and
   tools/build_fish.py reads the result, the same source it read before step 5. The base never carries them: a node of
   the base with one of them, or a layer node the base does not hold, stops the build.
-- coral: imrg (the IMR lecture's groups), gen {genus: {ig, imr, mn}} (its lecture group, its lecture notes verbatim,
-  its mnemonic) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
+- coral: imrg (the IMR lecture's groups), gen {genus: {n, ig, imr, mn, sl, rsl, qt}} (its slate number, its lecture
+  group, its lecture notes verbatim, its mnemonic, its lecture slides and review slides, its ID tips: the tips of a
+  genus with a Coral Finder heading, tl, stay in data.json, condensed from the book) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
   side's place in its genus's look, a side whose look does not list the other left out; the Coral Finder's pairs stay in
   data.json alone). data.json is both the corals' source and their built file: it carries them too, written there by
   tools/datajson.py (dump() and its rewrite), the one writer of data.json (rule W16). An edit goes to the layer file,
@@ -45,7 +46,10 @@ DATA = ROOT / "data.json"
 FISH_NODE = ("circle", "cues", "look", "phase")  # a teaching node's fields that are the instance's
 FISH_SUB = ("cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle)
 FISH_TOP = ("start", "look")
-CORAL_AFTER = {"ig": "n", "imr": "ig", "mn": "imr"}  # a genus's fields that are the instance's, and where they sit
+# A genus's fields that are the instance's, and where they sit in data.json's record: n (its slate number, 0 for a starred
+# genus) after tr, then ig, imr and mn after it; sl (its lecture slides) after lsrc, then qt (its ID tips) and rsl (its
+# review slides) each right after sl, which puts qt after rsl. The order of the entries is the order they are laid.
+CORAL_AFTER = {"n": "tr", "ig": "n", "imr": "ig", "mn": "imr", "sl": "lsrc", "qt": "sl", "rsl": "sl"}
 CORAL_TOP_AFTER = {"imrg": "key"}
 CORAL_PAIR_AFTER = {"look": "crit", "lsrc": "levels"}  # where a genus's look and lsrc sit, should a record lack them
 SPLIT = ("nodes", "gen", "pairs")  # a layer file's maps written one entry per line
@@ -155,6 +159,13 @@ def _put(rec, k, v, after):
     rec.update(items)
 
 
+def coral_owns(rec, k):
+    """Whether field k of a genus record (data.json gen) is the instance's. All of CORAL_AFTER are, but the ID tips (qt) of
+    a genus with a Coral Finder heading (tl): its tips are condensed from the book, not from the lecture, so they stay in
+    the sources (tools/apply_id_tips.py)."""
+    return k in CORAL_AFTER and not (k == "qt" and "tl" in rec)
+
+
 def coral_sides(lay):
     """The layer's look-alike pairs (lay pairs {"A|B": {src, look}}), one row per side: (genus, other genus, the line,
     the other genus's place in the genus's look, or None when that look does not list it)."""
@@ -168,7 +179,7 @@ def coral_sides(lay):
 
 def coral_compose(d, lay):
     """data.json (d) with the instance's coral layer laid on, its fields where data.json has always had them (a genus's
-    ig, imr and mn after n; imrg after key; a pair's two sides in look at their stored places and in lsrc in gen order,
+    fields where CORAL_AFTER puts them; imrg after key; a pair's two sides in look at their stored places and in lsrc in gen order,
     the order data.json's lines follow). The fields and pairs the layer owns are taken off first, so a field the layer
     no longer gives (or no layer at all) leaves data.json too (Codex review #984); a pair, which data.json alone cannot
     tell apart from a source's, only when the layer given still names it. A new copy; a layer genus data.json does not
@@ -182,10 +193,10 @@ def coral_compose(d, lay):
     for k, after in CORAL_TOP_AFTER.items():
         if k in lay:
             _put(d, k, copy.deepcopy(lay[k]), after)
-    for g, x in (lay.get("gen") or {}).items():
-        for k, after in CORAL_AFTER.items():
-            if k in x:
-                _put(gen[g], k, copy.deepcopy(x[k]), after)
+    tips = [g for g, x in (lay.get("gen") or {}).items() if "qt" in x and "tl" in gen[g]]
+    if tips:
+        sys.exit(f"the instance's coral layer: qt of {', '.join(tips)}: their ID tips come from the Coral Finder (tl), "
+                 "the sources' (tools/id_tips.txt)")
     order, look, lines = {g: i for i, g in enumerate(gen)}, {}, {}
     for g, o, src, at in coral_sides(lay):
         lines.setdefault(g, []).append((o, src))
@@ -201,6 +212,11 @@ def coral_compose(d, lay):
         for o, src in L:
             out.insert(next((i for i, (k, _) in enumerate(out) if order.get(k, len(order)) > order[o]), len(out)), (o, src))
         _put(gen[g], "lsrc", dict(out), CORAL_PAIR_AFTER["lsrc"])
+    # After the pairs: sl sits after lsrc, which a genus whose every pair is the lecture's only gets from them.
+    for g, x in (lay.get("gen") or {}).items():
+        for k, after in CORAL_AFTER.items():
+            if k in x:
+                _put(gen[g], k, copy.deepcopy(x[k]), after)
     return d
 
 
@@ -214,7 +230,8 @@ def coral_strip(d, lay=None):
     gen = d.get("gen") or {}
     for rec in gen.values():
         for k in CORAL_AFTER:
-            rec.pop(k, None)
+            if coral_owns(rec, k):
+                rec.pop(k, None)
     for g, o, _, _ in coral_sides(lay):
         rec = gen.get(g) or {}
         if isinstance(rec.get("look"), list):
@@ -235,7 +252,7 @@ def coral_conflicts(d, lay):
     gen = d.get("gen") or {}
     for g, rec in gen.items():
         for k in CORAL_AFTER:
-            if k in rec and rec[k] != (lg.get(g) or {}).get(k):
+            if k in rec and coral_owns(rec, k) and rec[k] != (lg.get(g) or {}).get(k):
                 out.append(f"gen {g} {k}")
     for g, o, src, at in coral_sides(lay):
         rec = gen.get(g) or {}
