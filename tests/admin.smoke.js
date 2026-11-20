@@ -821,6 +821,35 @@ async function loadPart(b, base, fails) {
         const x = await wide(h);
         if (x > 0) fails.push(`360px #${h}, sorted on a view: page ${x} px wider than the window`);
       }
+      // The ? help hangs from the sticky header: it must stay inside the window and scroll to its last line (the
+      // panel once ran off the bottom, with nothing to scroll). 360x640 through the ⋯ menu, then a short desktop window.
+      for (const [vw, vh] of [
+        [360, 640],
+        [1280, 500]
+      ]) {
+        await q.setViewportSize({width: vw, height: vh});
+        await q.evaluate(() => (location.hash = '#players/activity'));
+        await q.waitForSelector('#tools:not([hidden])', {timeout: 15000});
+        if (vw < 600) {
+          await q.click('.adm-more summary');
+          await q.click('#help2');
+        } else await q.click('#help');
+        const hf = await q.evaluate(() => {
+          const e = document.getElementById('admhelp'),
+            r = e.getBoundingClientRect();
+          e.scrollTop = e.scrollHeight;
+          const last = e.lastElementChild.getBoundingClientRect();
+          return {
+            bottom: Math.round(r.bottom),
+            vh: innerHeight,
+            scrolls: e.scrollHeight > e.clientHeight,
+            reach: Math.round(last.bottom) <= Math.round(e.getBoundingClientRect().bottom)
+          };
+        });
+        if (hf.bottom > hf.vh || !hf.scrolls || !hf.reach) fails.push(`${vw}x${vh} admin ? help: ${JSON.stringify(hf)}`);
+        await q.evaluate(() => document.getElementById('admhelp').remove());
+        await q.evaluate(() => (document.querySelector('.adm-more') || {}).open && (document.querySelector('.adm-more').open = false));
+      }
       await c3.close();
     }
     // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
@@ -9845,7 +9874,27 @@ async function loadPart(b, base, fails) {
       // (fish.rot), and both left in the draft for the Publish below.
       {
         await go('photos/candidates');
-        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        const G = await p.evaluate(() =>
+          Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.imr && !x.r && !crOf(x.f) && !roOf(x.f)))
+        );
+        // An IMR lecture photo traced to its original has no Crop tool: its framing is the lecture's, and a crop saved for it
+        // would never reach its R2 file (Codex review of #1292).
+        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r)));
+        if (L) {
+          await goGenus(L);
+          const lc = await p.evaluate(n => {
+            const imr = new Set(
+              photos(n)
+                .filter(x => x.imr && x.src)
+                .map(x => x.f)
+            );
+            return [...document.querySelectorAll('#view .adm-tile[data-f]')]
+              .filter(t => imr.has(t.dataset.f))
+              .map(t => !!t.querySelector('[data-act="crop"]'));
+          }, L);
+          if (!lc.length || lc.some(Boolean))
+            fails.push(`${w}px Rotate: a lecture photo's tile on ${L} has the Crop tool: ${JSON.stringify(lc)}`);
+        } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
         const f = await p.evaluate(() => {
           const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
