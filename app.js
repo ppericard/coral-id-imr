@@ -2346,6 +2346,31 @@ const fishNextOf = o => {
     lines: ['Every fish family open to you is in your game: no new one comes for a while.', ...L]
   };
 };
+// The sea slugs' card when every genus in play is met and none may open now (quiz.js allMetDue; UNITS seaslug done):
+// their circle 3 opens by itself at its gate, so the card says, before it, what comes next (Pierre, 2026-11-20: «Ya pas
+// de carte avant de passer au cercle suivant pour les nudibranches?»). o: c3 circle-3 genera not met, c3due treeC3, wait
+// genera with no photo yet. Pure (tests call it): {k, kick, title, lines}, k 'c3' before circle 3, else 'all'.
+const slugNextOf = o => {
+  const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`,
+    L = [];
+  let k = 'all';
+  if (o.c3 && !o.c3due) {
+    k = 'c3';
+    L.push(
+      `Next: ${pl(o.c3, 'more genus', 'more genera')}. They come once you know the genera you have well, about Open Water on average: keep practising them!`
+    );
+  } else {
+    if (o.wait)
+      L.push(`${pl(o.wait, 'more genus joins', 'more genera join')} the game as soon as ${o.wait > 1 ? 'their' : 'its'} photos are in.`);
+    if (!L.length) L.push('What’s left: take each genus to Instructor, through its mastery exam.');
+  }
+  return {
+    k,
+    kick: 'Every genus met',
+    title: 'You’ve seen them all, for now',
+    lines: ['Every sea slug genus open to you is in your game: no new one comes for a while.', ...L]
+  };
+};
 // A tree subject's photo by its name, for the admin's "Bad photo" flag (flag.js; UNITS photo): {id, its key in the
 // subject's curation (core.js treePid: one photo under its candidate and reference names), and what the flag records:
 // file (its name), unit (the family showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
@@ -2923,6 +2948,17 @@ const UNITS = {
     startFb: false,
     // Its three circles (tools/seaslug_game.py CIRCLES) of genera (core.js SUBJECTS unitRank) open at the fish's
     // thresholds (TREE_UNITS gate), circle 3 by itself: no offer card (the fish's speaks of the IMR course).
+    // Every genus in play met and none may open now (quiz.js allMetDue): the card that says what comes next (slugNextOf),
+    // circle 3 above all.
+    done: () => {
+      if (!TREEU) return null;
+      const left = n => photoAny(n) && !introduced(n);
+      return slugNextOf({
+        c3: (TREEU.c3 || []).filter(left).length,
+        c3due: treeC3(),
+        wait: slateGenera().filter(n => !photoAny(n)).length
+      });
+    },
     // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
     // its first English name as information (vernFirst; never a choice).
     taxon: p => {
@@ -3496,8 +3532,10 @@ const CARD_KINDS = {
   step: '🧗', // a big step the player chooses (fish circle 3, quiz.js openOfferShow): the warm --warn hue, "Not now" on top
   update: '🔄',
   feature: '✨',
+  // each subject's own cards (core.js SUBJECTS card: its genus cards, its all-met card), one each
   genus: '🪸',
   fish: '🐟',
+  'sea slug': '🐌',
   tip: '💡',
   bonus: '🎁',
   account: '💾',
