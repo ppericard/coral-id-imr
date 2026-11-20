@@ -1468,8 +1468,12 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   relayed, never as his words. No doc change.
 - **15:29-15:32, two juvenile cards in the fish practice quiz (reports under g:Pomacentrus and f:Sweetlips).** «J'ai eu
   une carte de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»; «Celui là c'est un
-  juvénile qui aurait mérité la carte, pas le goatfish d'avant». The sweetlips photo is a juvenile, not a sub-adult:
-  corrected in its judging (`j`, no phase). A goatfish judged `j` against its own note lost the flag (integrator's
-  call). The goatfish he saw takes its juvenile phase from the observer's life stage: proposed to him, not changed.
-  Applied: judging/fish/s597.json, s330.json, suggest.json,
-  decisions/2026-11-20-juvenile-card-follows-the-judged-phase.md, #1323.
+  juvénile qui aurait mérité la carte, pas le goatfish d'avant».
+- **17:01-17:02, the same two cards, clarified.** «Je dis pas que c'était pas un juvénile. Mais la carte disait
+  explicitement qu'il fallait vraiment se méfier parce que les juvéniles pouvaient être très différents des adultes.
+  C'était l'un des pires exemples pour ça»; «Pas en général !!!!!!!!! Sur celui là spécifiquement !»; «Non c'était bien un
+  sub-adulte». The card was wrong on that one goatfish photo (`fish-s331-cand-269009395`), not the species' tag, and the
+  sweetlips judging (sub-adult) was right: no species-level rule, and the sweetlips is unchanged. The card's per-photo
+  trigger is the integrator's design (`core.js`, held by open PRs). A goatfish judged `j` against its own note
+  (`fish-s330-cand-551266134`) lost the flag (integrator's call). Applied: judging/fish/s330.json, suggest.json, ROADMAP
+  "The juvenile card's per-photo trigger", decisions/2026-11-20-juvenile-card-follows-the-judged-phase.md, #1323.

@@ -60,7 +60,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 |---|---|---|
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
 | 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
-| 2026-11-20 | [Two fish photos judged against the evidence, corrected; the observer's juvenile on a photo that looks adult waits for Pierre](2026-11-20-juvenile-card-follows-the-judged-phase.md) | #1323 |
+| 2026-11-20 | [A goatfish judged a juvenile against its own note loses the flag; the juvenile card's per-photo trigger waits for the integrator's design](2026-11-20-juvenile-card-follows-the-judged-phase.md) | #1323 |
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
 | 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
 | 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |

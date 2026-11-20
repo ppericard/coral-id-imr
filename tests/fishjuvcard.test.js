@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// The juvenile card follows the photo's judged phase (core.js phaseKind) and nothing else, so a photo judged a juvenile
-// brings it and a photo judged no juvenile does not (Pierre, 2026-11-20, on the fish practice quiz: «J'ai eu une carte
-// de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»; «Celui là c'est un juvénile qui
-// aurait mérité la carte»). The records are the ones tools/fish_game.py builds from judging/fish/ and suggest.json today
+// A photo whose judging says it is not a juvenile brings no juvenile card (core.js phaseKind reads the photo's phase and
+// tags): a goatfish in its adult colours had been kept `j` as "the harder value" (Pierre, 2026-11-20, on the fish
+// practice quiz: «J'ai eu une carte de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»;
+// «Pas en général !!!!!!!!! Sur celui là spécifiquement !»). The records are the ones tools/fish_game.py builds from judging/fish/ and suggest.json today
 // (tests/fishjuvcard_rec.py), not fish-game.json, which the photos workflow rebuilds after a merge.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -18,12 +18,6 @@ const photo = f => ({f, ...REC[f], ph: REC[f].ph || undefined});
 test('the records build from the judging', () => {
   assert.strictEqual(r.status, 0, r.stderr);
   assert.ok(Object.keys(REC).length > 1000, `${Object.keys(REC).length} records`);
-});
-
-test('a juvenile sweetlips judged a sub-adult brings the juvenile card (fish-s597-cand-254656964)', () => {
-  const p = photo('fish-s597-cand-254656964');
-  assert.strictEqual(C.phaseOf(p), 'juvenile');
-  assert.strictEqual(C.phaseKind(p), 'juvenile');
 });
 
 test('a goatfish whose judging says it is no juvenile has no j and brings no card (fish-s330-cand-551266134)', () => {
