@@ -725,7 +725,8 @@ async function loadPart(b, base, fails) {
     const ROUTES = await p.evaluate(() => {
       // The corals' tabs (a tab for one unit rank only, Families, is checked on the fish side below).
       const L = TABS.filter(t => !t[4].rank).flatMap(t => {
-        const V = t[2].filter(([, , o]) => !o.rank); // a view for one unit rank only (fish Photo review) is checked below
+        // a view for one unit rank only, or a review axis of the tree builder (fish Photo review), is checked below
+        const V = t[2].filter(([, , o]) => !o.rank && (!o.axis || reviewBuild(ASUBJ).axes.includes(o.axis)));
         return V.map(([h, v]) => ({h, tab: t[1], view: V.length > 1 ? h : null, n: V.length, name: v}));
       });
       // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
