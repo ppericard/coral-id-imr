@@ -1065,6 +1065,41 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
+  // own id, its own kind and note).
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await qa.ready(p);
+    await p.evaluate(() => smokeAnswer(false));
+    await p.waitForSelector('#view .q.done [data-rep]', {state: 'attached', timeout: 10000});
+    // On a phone the Report button sits under More.
+    if (!(await p.isVisible('#view .q.done [data-rep]'))) await p.click('#view #fbmbtn');
+    const again = [];
+    for (const [why, note] of [
+      ['wrong', 'first'],
+      ['other', 'second']
+    ]) {
+      await p.click('#view .q.done [data-rep]');
+      await p.check(`#repdlg input[name="why"][value="${why}"]`);
+      await p.fill('#repdlg textarea[name="note"]', note);
+      await p.click('#repdlg button[type="submit"]');
+      await p.waitForSelector('#repdlg', {state: 'detached', timeout: 5000});
+      again.push(await p.evaluate(() => document.querySelector('#view .q.done [data-rep]').disabled));
+      // Achievement toasts or cards must not sit over the next tap.
+      await p.evaluate(() => document.querySelectorAll('.unlock, .achpop').forEach(x => x.remove()));
+    }
+    const sent = await p.evaluate(() => JSON.parse(localStorage.getItem('reefid-reports') || '[]').map(x => [x.id, x.why, x.note]));
+    if (again.some(Boolean) || sent.length !== 2 || sent[0][0] === sent[1][0] || sent.map(x => x[2]).join() !== 'first,second')
+      fails.push(`Two reports from one answer: ${JSON.stringify({again, sent})}`);
+    await c.close();
+  }
   // The Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
   // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
   {
