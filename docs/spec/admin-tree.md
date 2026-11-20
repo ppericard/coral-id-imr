@@ -1,7 +1,8 @@
 # The admin's Tree tab: every subject's classification and its node pages
 
-Photos › Tree shows a subject's classification as a tree at the left and a page for every node at the right: the fish
-and the sea slugs through one adapter, the corals through their own, both on the generic tree of `taxtree.js`. Its node
+Photos › Tree shows a subject's classification as a tree at the left and a page for every node at the right: one page
+for every subject (`admin.js` `renderTree`), its trees and node pages from the subject's builder (the fish's and the sea
+slugs' one builder, the corals' their own), all on the generic tree of `taxtree.js`. Its node
 pages hold Pierre's photo choices (covers, featured photos, Not this, validation) and the content editor's Sheet and
 Structure boxes. The shell (addresses, the subject switch, the tree subject in force) is in [admin.md](admin.md), the
 other photo pages in [admin-photos.md](admin-photos.md); the data the pages edit is in [fish.md](fish.md),
@@ -10,19 +11,31 @@ each part was decided is in [docs/decisions/](../decisions/README.md) and the PR
 
 ## The tab and its two views
 
-Every subject's Tree, through its own adapter (the fish's and the sea slugs': `renderFishUnits`, `fuTreeOf`,
-`fuWormsOf`; the corals': `admin-coraltree.js` `renderCoralTree`; `admin.js` `render` picks the adapter by `SUBJECTS`
-`rank`). Its views, in the tab's view switch, are two classifications of the same leaves, one parent per node in each:
+Every subject's Tree is one page, `admin.js` `renderTree` (the study's step 4,
+[reviews/2026-11-19-admin-one-engine.md](../reviews/2026-11-19-admin-one-engine.md) §5; Pierre, 2026-11-20: one admin
+adapted to each subject). What differs between subjects is its **builder**, declared in one place, `admin.js`
+`TREE_BUILD`, and picked by the data shape the subject declares (`SUBJECTS` `flat`: `treeShape`, `treeBuild`), never by
+its rank or its name (rule S1; `tests/treebuild.test.js`): `flat`, a subject whose units are a flat list in `data.json`
+(the corals: `admin-coraltree.js` `ctTree`, `ctRow`, `ctFilters`, its genus pages' photos `admin-nodephotos.js`
+`coralLive`), and `tree`, a subject read from its files (the fish and the sea slugs: `fuTreeOf`, `fuWormsOf`, `fuRow`,
+`fuFilters`, its node pages' photos). A builder gives its help, whether its data is in and how to read it, a view's tree,
+and one render's context: the Key's tree and the view's, the rows, the Tag… options, All | IMR (when the IMR course tags
+some node), the content editor's data, and the node's own page (its cover, name, tools, why, body and binder) or none for
+a page of its children's cards. The page draws the rest the same for every subject: the tree at the left, the bar (the
+path, the selects, All | IMR, Tag…, the drill-down, the edits to check, the tree's problems), the + Pair box, the
+Structure and Sheet boxes, the cards and the shared Removed and Excluded lists. Its views, in the tab's view switch, are
+two classifications of the same leaves, one parent per node in each:
 
-- **Key** `#fish/photos/tree/key/<node id>` (`#fish/photos/tree/key/f%3ADamselfishes`, `…/g%3AChromis`, `…/s091`;
-  none or an unknown id: the first family; an address of the former Families tab is not kept, rule A4);
+- **Key** `#fish/photos/tree/key/<node id>` (`#fish/photos/tree/key/f%3ADamselfishes`, `…/g%3AChromis`, `…/s091`; an
+  address of the former Families tab is not kept, rule A4);
 - **WoRMS** `#fish/photos/tree/worms/<node id>`.
 
-The switch keeps a species, the one node of both views.
+None or an unknown id: the view's first node of the subject's broadest rank (`ranksOf`: a fish or sea slug family, a
+coral genus), else its first root. The switch keeps a leaf (a species, a coral genus), the one node of both views.
 
 ### The Key view
 
-The identification key's classification as a **collapsible tree** at the left (`fuTreeOf`, `fuTreeMount`, `ttMount`):
+The identification key's classification as a **collapsible tree** at the left (`fuTreeOf`, `treeMount`, `ttMount`):
 each key group (`k:<its number>`, `k:none` for a family with none), its families, their genera and species (the species
 in the game, as the family's page shows them), built with the generic tree ("The generic tree", below). Each row shows
 its rank as a small grey word, its species and photos in play (a family's row: its cover, circle, what it needs,
@@ -38,7 +51,7 @@ child, ← folds then goes to the parent, Home / End, `*` unfolds the siblings, 
 `tools/build_fish.py`) above the Key's own leaves (the species in the game, in the Key's order), with `taxtree.js`
 `ttFromRef`: any depth and WoRMS's ranks in lower case (class, order, suborder, family, subfamily, tribe, genus; up to 8
 levels), its problems (a reference or a parent missing, a cycle) counted in the bar (`.adm-ttprob`). None or an unknown
-id: its first family. The unfolded nodes are kept per view (`reefid-admin-tree-open-worms-<subject>`).
+id: its first family. The bar's families' select lists WoRMS's families in the tree's order. The unfolded nodes are kept per view (`reefid-admin-tree-open-worms-<subject>`).
 
 **Node ids**, one id space per view above the leaves: a species keeps its id (`s091`) and is **one node in both views**
 (its page, its cover `curation.json fish genera[s091]`, its choices are the same); every taxon above it is `w:<AphiaID>`
@@ -54,10 +67,12 @@ pass the Key's leaves, shown here with their WoRMS ancestors, so the same specie
 
 ## Node pages
 
-**Every node has a page of its own** (`renderFishUnits`). The sticky bar shows the path from the root above it
-(`.adm-crumbs`, each ancestor a link; `admin.js` `ttCrumbs`, shared with the corals), the families' select (none chosen
-above the families), All \| IMR, the tag select (`ttTagSel`), and the select of the node's children (`[data-ttkid]`, the
-drill-down: on phones, where the tree is hidden, the way down to a genus or a species; at every width).
+**Every node has a page of its own** (`renderTree`, the tree subjects' builder `TREE_BUILD` `tree`). The sticky bar
+shows the path from the root above it (`.adm-crumbs`, each ancestor a link; `admin.js` `ttCrumbs`, every subject's), the
+select of the view's nodes of the broadest rank (the families, in the tree's order, labelled by that rank: Family; none
+chosen above them), All \| IMR, the tag select (`ttTagSel`), and the select of the node's children (`[data-ttkid]`, the
+drill-down: on phones, where the tree is hidden, the way down to a family, a genus or a species; on every page with
+children, a key group's included, at every width).
 
 - A **key group** (any node above the unit rank) gets a light page: its children's cards (`.adm-tcard`, each its tree
   row: cover, names, counts, what it needs, ✓, the draft's dot), each opening its page.
@@ -155,19 +170,23 @@ subject differences as parameters or specialised pieces), which replaced the cor
 node's **Removed from the site** (**Put back**) and **Excluded** (**Restore**) lists, one tile, one click and one Undo
 step each (`npLists`, `npBind`): a leaf's own, a group's or a family's those of its leaves; the first root of a view
 also lists the excluded photos no leaf has any more; the Tag… filters **Removed photos** and **Excluded photos**
-(`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by unit rank:
+(`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by the data shape the
+subject declares (`SUBJECTS` `flat`, `admin.js` `treeShape`, as the Tree's builders):
 
 - **`live`**, the photos in play: the corals' `coralLive` (a section per view, 3 featured each, 2 or 3 zooms,
-  Candidates, Not this genus); the fish's `renderFishUnits` (a section per species, ease and phase tags, ★ Cover at
-  every rank). Different data (`genera[<genus>]`, `fish.genera[<node id>]`) and tiles; one body is the next step.
+  Candidates, Not this genus); the fish's their builder's node page (`TREE_BUILD` `tree`: a section per species, ease
+  and phase tags, ★ Cover at every rank). Different data (`genera[<genus>]`, `fish.genera[<node id>]`) and tiles; one
+  body is a later step (the study's step 8).
 - **`removed`, `excluded`**: the corals' `genera[g].hide` and top-level `exclude`; none for the fish yet: their Remove
   (`fish.seen`) returns the photo to Candidates and `fish.exclude` has no tested restore (next step).
 
 ## The corals' Tree
 
 `#photos/tree/key/<node id>`, `#photos/tree/worms/<node id>` (`admin-coraltree.js`: its pure part `ctKeyOf`,
-`ctWormsOf`, `ctFilters` tested in `tests/coraltree.test.js`, its page `renderCoralTree`; the tab is the corals' first
-Photos tab since the former Genera tab was folded into it, 2026-11-19). The leaves are the genera, every genus the admin has a page for (`data.json` `gen` and
+`ctWormsOf`, `ctFilters` tested in `tests/coraltree.test.js`, its admin part `ctTree`, `ctRow` read by the corals'
+builder, `admin.js` `TREE_BUILD` `flat`; the tab is the corals' first Photos tab since the former Genera tab was folded
+into it, 2026-11-19). None or an unknown id: the view's first genus (Acropora), as every subject's Tree opens on its
+first node of its broadest rank. The leaves are the genera, every genus the admin has a page for (`data.json` `gen` and
 `x.gen`), each its own name as id and one node in both views (a photo's species is only a name, never curated: no
 species rank).
 

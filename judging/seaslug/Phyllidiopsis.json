@@ -1,15 +1,15 @@
 {
  "photos": {
-  "seaslug-Phyllidiopsis-cand-44383918": {"code": "d1g1sl14"},
+  "seaslug-Phyllidiopsis-cand-44383918": {"code": "d1g1sl14", "bb": [0.162, 0.1134, 0.8288, 0.9555]},
   "seaslug-Phyllidiopsis-cand-571363817": {"code": "o0g0sl13"},
-  "seaslug-Phyllidiopsis-cand-626718227": {"code": "d1g0sm14"},
-  "seaslug-Phyllidiopsis-cand-64364065": {"code": "d1g0sl15"},
-  "seaslug-Phyllidiopsis-cand-34282601": {"code": "d1g0sl15"},
-  "seaslug-Phyllidiopsis-cand-3865365": {"code": "d1g0sl1w5"},
+  "seaslug-Phyllidiopsis-cand-626718227": {"code": "d1g0sm14", "bb": [0.3425, 0.148, 0.6332, 0.8179]},
+  "seaslug-Phyllidiopsis-cand-64364065": {"code": "d1g0sl15", "bb": [0.1233, 0.2072, 0.8114, 0.74]},
+  "seaslug-Phyllidiopsis-cand-34282601": {"code": "d1g0sl15", "bb": [0.2265, 0.1464, 0.7715, 0.8408]},
+  "seaslug-Phyllidiopsis-cand-3865365": {"code": "d1g0sl1w5", "bb": [0.0605, 0.1145, 0.92, 0.8594]},
   "seaslug-Phyllidiopsis-cand-725124988": {"code": "o1g0ss13"},
   "seaslug-Phyllidiopsis-cand-490541503": {"code": "o0g0sm1w2"},
-  "seaslug-Phyllidiopsis-cand-463321706": {"code": "p1g0sl1w5"},
-  "seaslug-Phyllidiopsis-cand-174293795": {"code": "d1g0sl15"},
+  "seaslug-Phyllidiopsis-cand-463321706": {"code": "p1g0sl1w5", "bb": [0.1925, 0.2933, 0.835, 0.6834]},
+  "seaslug-Phyllidiopsis-cand-174293795": {"code": "d1g0sl15", "bb": [0.055, 0.1343, 0.933, 0.8614]},
   "seaslug-Phyllidiopsis-cand-485898578": {"code": "h1g0sl1w3"}
  }
 }
