@@ -294,6 +294,19 @@ h2 {
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   font-size: var(--fs-s);
 }
+/* index.html loader: a script of a tier that never came (docs/spec/loading.md): the tier waits, this offers Try again */
+.tierwarn {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--tabbar-h, 0px) + env(safe-area-inset-bottom, 0px) + 16px);
+  margin: 0 auto;
+  z-index: 100; /* above the cards and the tour's backdrop (60) */
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+}
+.tierwarn[hidden] {
+  display: none;
+}
 .star {
   color: var(--accent);
   font-weight: 600;
@@ -3155,19 +3168,16 @@ body {
   gap: 4px;
   overflow: hidden;
 }
+/* The two compared photos (a wrong answer) are always shown whole, on the blurred background, at every size: side by side
+   on a phone each box is portrait, and filling it (cover) cut a wide photo, a fish, to its middle (Pierre, 2026-11-20).
+   Never drawn past its own pixels either (an IMR lecture photo, quiz.js upMax). */
 .q .qstage.qvs .qph img {
-  object-fit: cover;
-  background-size: cover;
+  object-fit: scale-down;
+  background-size: contain;
 }
 .qstage .qph.cov img {
   object-fit: cover;
   background-size: cover;
-}
-/* An IMR lecture photo is never drawn past its own pixels (quiz.js upMax): side by side on a phone it stays whole, at
-   most its own size, on the blurred background. */
-.q .qstage.qvs .qph[data-imr] img {
-  object-fit: scale-down;
-  background-size: contain;
 }
 .wide {
   display: none;
@@ -3265,10 +3275,6 @@ body {
   .q .qstage.qvs {
     gap: 8px;
     overflow: revert;
-  }
-  .q .qstage.qvs .qph img {
-    object-fit: scale-down;
-    background-size: contain;
   }
   .wide {
     display: revert;
@@ -7546,6 +7552,16 @@ html.touring .unlock {
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
+}
+/* A unit's common name right under its scientific name on its first-meeting card (app.js unitCname). */
+.ulcard .ulcn {
+  margin: -4px 0 4px;
+  color: var(--ink);
+  font-size: var(--fs-l);
+  font-weight: 600;
+}
+.ulcard .ulcn + .ulfam {
+  margin-top: 0;
 }
 /* A fish entry's family under its name on its first-meeting card. */
 .ulcard .ulfam {

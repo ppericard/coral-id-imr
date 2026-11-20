@@ -25,7 +25,7 @@ const copy = () => {
     const p = path.join(ROOT, f);
     if (fs.statSync(p).isFile()) fs.copyFileSync(p, path.join(d, f));
   }
-  for (const dir of ['proto', 'fonts']) fs.cpSync(path.join(ROOT, dir), path.join(d, dir), {recursive: true});
+  for (const dir of ['proto', 'fonts', 'data']) fs.cpSync(path.join(ROOT, dir), path.join(d, dir), {recursive: true});
   return d;
 };
 // A stand-in terser in a node_modules of its own: minify(code) = a comment line in front (body: what it does instead).

@@ -142,7 +142,7 @@ print(json.dumps([[ff.species_room(s, x, L(n), g, cap=c)[k] for k in ('cap', 'ro
     [3, 1], // a smaller fixed cap (--cap) holds
     [30, 28] // an ordinary species: cap_of
   ]);
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'winkstock-'));
+  const dir = mkTmp('winkstock-');
   const fish = {
     species: [
       {id: 'sw', name: 'Fishus wink', inat: 601, circle: 3, present: {ph: true}},
@@ -167,11 +167,11 @@ print(json.dumps([[ff.species_room(s, x, L(n), g, cap=c)[k] for k in ('cap', 'ro
   // sw: 8 photos, 2 of them an observation of the old limit of 4 photos (--topup would ask it again); s1: one photo.
   const cand = {v: 1, cand: {sw: [0, 1, 2, 3].map(k => r('sw', 5, k)).concat([6, 7, 8, 9].map(i => r('sw', i, 0))), s1: [r('s1', 3, 0)]}};
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
-  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify(cand));
+  fs.writeFileSync(path.join(dir, 'data/fish-cand.json'), JSON.stringify(cand));
   fs.writeFileSync(path.join(dir, 'cache.json'), '{}');
   const argv = [
     ['--fish', 'fish.json'],
-    ['--cand', 'fish-cand.json'],
+    ['--cand', 'data/fish-cand.json'],
     ['--cur', 'none.json'],
     ['--suggest', 'none.json'],
     ['--photos', 'none-photos.json'],
@@ -182,7 +182,7 @@ print(json.dumps([[ff.species_room(s, x, L(n), g, cap=c)[k] for k in ('cap', 'ro
   const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--circle', '3', ...a], {cwd: ROOT, encoding: 'utf8'});
   // --offline fails on any request not cached: an empty cache proves nothing was asked for sw.
   assert.match(run('--topup', '--offline'), /topup: 0 observations/);
-  assert.deepStrictEqual(read(path.relative(ROOT, path.join(dir, 'fish-cand.json'))), cand, 'nothing added');
+  assert.deepStrictEqual(read(path.relative(ROOT, path.join(dir, 'data/fish-cand.json'))), cand, 'nothing added');
   const P = JSON.parse(run('--refill', '--plan', '--today', '2026-11-15').trim().split('\n').pop());
   assert.deepStrictEqual(P.pick, ['s1'], 'the refill picks the ordinary species only');
   assert.ok(P.short.sw ? P.short.sw.room <= 0 : true, 'sw has no room');
@@ -248,3 +248,10 @@ print(json.dumps({'keep': sorted(f for f, r in keep.items() if r['sp'] in W), 't
   assert.ok(dropped.length <= out.pending.length, `${dropped.length} listed photos dropped, ${out.pending.length} downloads waiting`);
   if (!out.pending.length) assert.deepStrictEqual(out.keep, listed);
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

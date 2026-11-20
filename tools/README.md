@@ -22,7 +22,7 @@ Conventions that hold across them:
 |---|---|
 | `check_json.py` | Every JSON file git tracks parses. **CI**, and before each deploy |
 | `check_versions.py` | Cache-busting consistency (`?v=`, the service worker's lists) and the sheet script's version rules; `--dir` checks a built copy. **CI** |
-| `datajson.py` | The one writer of `data.json` and `cand.json` (one genus per line); `--check` is the layout check. **CI** |
+| `datajson.py` | The one writer of `data.json` and `data/cand.json` (one genus per line); `--check` is the layout check. **CI** |
 | `sync_core.py` | Copies `core.js` into `sync/Code.gs`; `--check` fails when the copy is stale, `--fix` rewrites it. **CI** |
 | `sheet_version.py` | The sheet script's version rules; `--assign` gives the next version at merge (the integrator) |
 | `stack.json`, `stack_check.py` | The pins of the whole stack (runtimes, tools, APIs); `--check` offline is **CI**, `--latest` lists what is behind |
@@ -72,8 +72,8 @@ Conventions that hold across them:
 | `apply_bonus.py` | Marks bonus-genus photos that are not Research Grade, moves multi-coral photos to `more` |
 | `commonness.py` | How common each game genus is near Dauin (`cm`) |
 | `genera.py` | Shared helper: the game genera and the Coral ID Key-only ones, from `core.js` |
-| `coral_presence.py`, `presence.py`, `presence_checklists.json` | The presence rule (C8) defined once, and its result per coral photo species (`presence.json`) |
-| `taxonomy.py`, `taxonomy.json` | The build-time reference of names (WoRMS, iNaturalist); writes `names.json`; reports, never renames |
+| `coral_presence.py`, `presence.py`, `presence_checklists.json` | The presence rule (C8) defined once, and its result per coral photo species (`data/presence.json`) |
+| `taxonomy.py`, `taxonomy.json` | The build-time reference of names (WoRMS, iNaturalist); writes `data/names.json`; reports, never renames |
 | `game_forms.js` | Lists game photos with no growth form; `--apply` writes a judging pass's guesses into `forms.json` |
 | `apply_plain_sheets.py`, `plain_sources.json` | The plain sentence of each genus |
 | `apply_plain_terms.py` | The glossary's plain first sentences |
@@ -84,11 +84,11 @@ Conventions that hold across them:
 | `apply_imr_forms.py` | The IMR growth-form definitions into `forms.json` |
 | `apply_imr_sources.py`, `imr_sources.json` | Credits the IMR lecture photos traced to their original source |
 | `apply_book_rewrite.py`, `book_rewrite.json` | Rewords the texts that followed a book too closely; `--check` for a test |
-| `apply_no_book.py` | Takes the book's crops out of `data.json` and `cand.json` |
+| `apply_no_book.py` | Takes the book's crops out of `data.json` and `data/cand.json` |
 | `apply_skeletons.py` | Marks skeleton photos from `judging/skeletons.json` (rule P6) |
 | `apply_covers.py`, `covers.txt`, `apply_cmp.py`, `lecture_cmp.tsv`, `apply_multi.py`, `recrop.txt`, `multi.txt`, `apply_look_sources.py`, `apply_sources.py` | One-time passes that record how covers, comparison images, multi-coral photos and sources were set |
 | `apply_loc_fix.py` | Hand corrections of a photo's `loc` |
-| `apply_no_share_alike.py` | Takes share-alike coral candidates out of `cand.json` |
+| `apply_no_share_alike.py` | Takes share-alike coral candidates out of `data/cand.json` |
 | `views.txt`, `summaries.txt`, `course_views.txt`, `lecture_more.tsv` | Inputs of the passes above and of the archived first build |
 
 ## Photos
@@ -98,14 +98,14 @@ Conventions that hold across them:
 | `fetch_local.py` | Coral candidate photos from iNaturalist, near Dauin first; `--plan` shows offline what it would fetch |
 | `fetch_approved.py` | Downloads the candidates Pierre added, in four sizes, for R2; run by the Candidate photos workflow |
 | `cand_gaps.py` | Game genera short of candidates (spec/photos.md "No more candidates") |
-| `photo_measure.py` | Measured photo values into `measured.json` |
+| `photo_measure.py` | Measured photo values into `data/measured.json` |
 | `r2_sync.sh` | Copies photos to the Cloudflare R2 bucket; never deletes. Run by workflows |
 | `r2_move.py` | Lists what leaves `img/` for R2 and verifies the bucket |
 | `photo_quality.py`, `quality_eye.json` | Automatic quality rating into `quality.json` |
-| `photo_metrics.py` | Objective metrics into `metrics.json` |
-| `find_dups.py` | Near-duplicate photos into `dups.json` |
+| `photo_metrics.py` | Objective metrics into `data/metrics.json` |
+| `find_dups.py` | Near-duplicate photos into `data/dups.json` |
 | `tag_origin.py` | Tags each iNaturalist photo `dauin`, `ph` or `world` |
-| `excluded.py`, `excluded.json`, `apply_excluded_archive.py` | Excluded photos and their archive, so Restore works |
+| `excluded.py`, `data/excluded.json`, `apply_excluded_archive.py` | Excluded photos and their archive, so Restore works |
 | `apply_ratios.py` | Writes each photo's shape (`ar`) into `data.json` |
 | `licences.py` | Re-reads licences and credits from iNaturalist and updates the stored ones |
 | `rights.py` | The rights class and tie-break of a photo (the copy of `core.js`) |
@@ -124,7 +124,7 @@ Conventions that hold across them:
 | `fish_genus_roots.json`, `fish_genus_marks.json` | Name roots and ID marks of fish genera, read by `build_fish.py` |
 | `fish_phases.json` | The colour phases a cited source documents per fish species in play (juvenile, sub-adult, initial/terminal, female/male), with quotes; no tool reads it yet |
 | `fish_lookalikes.json` | Species look-alike pairs and regional species, quoted from their sources; `build_fish.py` `lookalikes` writes `fish.json` `lookalikes` and `region` |
-| `fetch_fish.py`, `fish_refill.json` | Fish candidate photos into `fish-cand.json`; `--refill` for short species |
+| `fetch_fish.py`, `fish_refill.json` | Fish candidate photos into `data/fish-cand.json`; `--refill` for short species |
 | `fetch_fishbase.py`, `fishbase_src.json` | Fish candidates from FishBase |
 | `fish_refs.py`, `fish_refs.json` | Reference photos of the fish units |
 | `fish_judge.py`, `fish_judge.json` | The fish photo rubric's code and judgements |
@@ -139,7 +139,7 @@ Conventions that hold across them:
 |---|---|
 | `build_seaslugs.py`, `seaslug_source.json`, `seaslugs.json` | The species list, circles and photo targets |
 | `seaslug_game.py` | Builds `seaslug.json`, `seaslug-game.json` from the list and the judged candidates |
-| `fetch_seaslugs.py`, `seaslug_informal.json` | Candidate photos into `seaslug-cand.json`; species with no published name |
+| `fetch_seaslugs.py`, `seaslug_informal.json` | Candidate photos into `data/seaslug-cand.json`; species with no published name |
 | `seaslug_names.py`, `seaslug_names_src.json`, `seaslug_names.json` | English common names with their sources |
 | `seaslug_cues.py`, `seaslug_cues.json`, `seaslug_species_marks.json` | Sourced ID marks per family, genus and species, and the genus pairs' tell-apart lines |
 | `seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`, `seaslug_lookalikes_pull.json`, `seaslug_lookalikes_cand.json` | Look-alike candidates from iNaturalist and the literature |
@@ -169,6 +169,7 @@ learning change" (rule L11).
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
 | `perf.js` | Speed from a player's side: cold and warm start, throttled phone and network |
 | `studies/q351/` | The scripts of one batch-model study |
+| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, and the Q136 centring check on the real log (2B is its follow-up); read-only, one 40-minute clock ([README](studies/q316/README.md)) |
 
 ## Archive
 

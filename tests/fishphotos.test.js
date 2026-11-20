@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Fish candidate photos (tools/fetch_fish.py, fish-cand.json, tools/judging_fish.py, autosort.js fishSure): sources
+// Fish candidate photos (tools/fetch_fish.py, data/fish-cand.json, tools/judging_fish.py, autosort.js fishSure): sources
 // nearest first and abroad only when the Philippines are exhausted, free licences first, Pierre's own species-level
 // observations confirmed (rule S2), the pre-sort's sure decisions, the stricter "confirmed near Dauin" rule
 // (tools/build_fish.py near_dauin). Offline fixtures only: nothing here asks iNaturalist (the whole script runs on a
@@ -224,7 +224,7 @@ print(json.dumps([[x for x in 'abcdefgh' if gone(x)], sorted(excl)]))`);
 });
 
 test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard photos go in; python sure_out is its rejects', () => {
-  // suggest.json "fish": jt the rubric's tags after the caps (judging/FISH.md), e the ease, k best / alt / dup.
+  // data/suggest.json "fish": jt the rubric's tags after the caps (judging/FISH.md), e the ease, k best / alt / dup.
   const J0 = [
     null,
     {jt: 'p1g0sm1', e: 5, k: 'best'},
@@ -400,7 +400,7 @@ print(json.dumps([costs, a, b, c, [R['have'], R['room'], R['obs']], e]))`);
 });
 
 test('fetch_fish.py offline: every photo of an observation, also of one already a candidate; none more of one Pierre sent elsewhere', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishobs-'));
+  const dir = mkTmp('fishobs-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
@@ -424,7 +424,7 @@ test('fetch_fish.py offline: every photo of an observation, also of one already 
   // s2 keeps the 4 first photos of observation 5 (the old limit); s3 one photo of 7, which Pierre sent out of the fish.
   const cand = {v: 1, cand: {s2: [0, 1, 2, 3].map(k => rec('s2', 5, k)), s3: [rec('s3', 7, 0)]}};
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
-  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify(cand));
+  fs.writeFileSync(path.join(dir, 'data/fish-cand.json'), JSON.stringify(cand));
   fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {out: {'fish-s3-cand-70': 'x'}}}));
   py(
     `${OBS}
@@ -440,11 +440,11 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
     dir
   );
   const at = x => path.join(dir, x),
-    args = ['--fish', at('fish.json'), '--cand', at('fish-cand.json'), '--cur', at('cur.json'), '--suggest', at('none.json')];
+    args = ['--fish', at('fish.json'), '--cand', at('data/fish-cand.json'), '--cur', at('cur.json'), '--suggest', at('none.json')];
   args.push('--cache', at('cache.json'), '--cap', '6');
   const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...args, ...a], {cwd: ROOT, encoding: 'utf8'});
   run('--offline');
-  const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand,
+  const C = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand,
     obs = L => L.reduce((m, p) => ((m[p.o.split('/').pop()] = (m[p.o.split('/').pop()] || 0) + 1), m), {});
   // s1, room 6, in the fixed hash order (4, 1, 3, 2): 4, the 7 photos of 1 (4 of room), then 3.
   assert.deepStrictEqual(obs(C.s1), {1: 7, 3: 1, 4: 1});
@@ -454,12 +454,12 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.deepStrictEqual(obs(C.s3), {7: 1, 8: 1});
   // A rerun adds nothing: every photo the search sees is taken or left out on purpose.
   run('--offline');
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand, C);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand, C);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
 test('phase searches abroad (Codex review #715): the Philippines fill a phase as obs_cost counts, so one observation of 10 juvenile photos leaves the search abroad open', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishobsph-'));
+  const dir = mkTmp('fishobsph-');
   const fish = {
     species: [{id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}}],
     teach: [{id: 't1', name: 'Juvenile fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1']}]
@@ -481,7 +481,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   );
   const argv = [
     ['--fish', 'fish.json'],
-    ['--cand', 'fish-cand.json'],
+    ['--cand', 'data/fish-cand.json'],
     ['--cur', 'none.json'],
     ['--suggest', 'none.json'],
     ['--cache', 'cache.json']
@@ -540,7 +540,7 @@ print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
     [2, 1, 1],
     [1, 2, 1]
   ]);
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishtopup-'));
+  const dir = mkTmp('fishtopup-');
   const fish = {
     species: [{id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}}],
     teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1']}]
@@ -569,7 +569,7 @@ print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
       [0, 1, 2, 3].map(k => rec(9, k))
     );
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
-  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify({v: 1, cand: {s1: L0}}));
+  fs.writeFileSync(path.join(dir, 'data/fish-cand.json'), JSON.stringify({v: 1, cand: {s1: L0}}));
   fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {seen: {'fish-s1-cand-60': 1}, out: {'fish-s1-cand-80': 'x'}}}));
   // Only 5, 6 and 9, in one request, are in the cache: asking for 7 or 8 would stop the --offline run.
   py(
@@ -581,14 +581,14 @@ json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
   );
   const argv = [
     ['--fish', 'fish.json'],
-    ['--cand', 'fish-cand.json'],
+    ['--cand', 'data/fish-cand.json'],
     ['--cur', 'cur.json'],
     ['--suggest', 'none.json'],
     ['--cache', 'cache.json']
   ].flatMap(([f, x]) => [f, path.join(dir, x)]);
   const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--cap', '4', ...a], {cwd: ROOT, encoding: 'utf8'});
   run('--topup', '--offline');
-  const L = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1;
+  const L = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand.s1;
   assert.deepStrictEqual(
     L.slice(L0.length).map(p => p.f),
     ['fish-s1-cand-54', 'fish-s1-cand-55', 'fish-s1-cand-56', 'fish-s1-cand-64']
@@ -601,7 +601,7 @@ json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
 print(json.dumps({API + 'id=9&captive=false&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 1, 'results': [{**ob(9, n=6), 'tx': [777]}]}}))`)
   );
   run('--topup', '--offline');
-  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.length, L0.length + 4);
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand.s1.length, L0.length + 4);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
@@ -616,8 +616,8 @@ print(json.dumps([[sorted({x.split('.')[0] for x in S}) for S in P], [len(S) for
   ]);
 });
 
-test('fish-cand.json: every candidate photo once (one photo can belong to several iNaturalist observations)', () => {
-  const C = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-cand.json'), 'utf8')).cand,
+test('data/fish-cand.json: every candidate photo once (one photo can belong to several iNaturalist observations)', () => {
+  const C = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/fish-cand.json'), 'utf8')).cand,
     ids = Object.values(C).flatMap(L => L.map(p => p.f.split('-').pop())),
     seen = new Set(),
     dup = ids.filter(x => seen.has(x) || !seen.add(x)); // one pass (indexOf at each id was quadratic: 3 s)
@@ -627,7 +627,7 @@ test('fish-cand.json: every candidate photo once (one photo can belong to severa
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
   // The cap counts photos; --cap 3 here: one fixed cap for every species. Every photo of an observation, the first
   // counting 1, the others half.
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphotos-'));
+  const dir = mkTmp('fishphotos-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {dauin: 3, dauinNI: 0, ph: true, own: 1, dauinU: 2, near: true}},
@@ -677,7 +677,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
     '--fish',
     path.join(dir, 'fish.json'),
     '--cand',
-    path.join(dir, 'fish-cand.json'),
+    path.join(dir, 'data/fish-cand.json'),
     '--cur',
     path.join(dir, 'cur.json'),
     '--suggest',
@@ -693,9 +693,9 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.deepStrictEqual(plan.species.s1.add, {dauin: 1, ph: 1, world: 1}); // Pierre's own, then the free ones from anywhere
   assert.deepStrictEqual(plan.species.s2.add, {ph: 1, world: 2}); // the Philippines exhausted: abroad, CC BY first
   assert.ok(!plan.species.s3, 'a species out of the game gets nothing');
-  assert.ok(!fs.existsSync(path.join(dir, 'fish-cand.json')), '--plan writes nothing');
+  assert.ok(!fs.existsSync(path.join(dir, 'data/fish-cand.json')), '--plan writes nothing');
   run('--offline');
-  const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'));
+  const C = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8'));
   assert.strictEqual(C.v, 1);
   assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2', 's4']);
   // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines nearest
@@ -736,8 +736,8 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   );
   // A rerun keeps what is there and adds nothing (the cap counts usable photos); one species per line.
   run('--offline');
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C);
-  assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8').split('\n').length, 9);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')), C);
+  assert.strictEqual(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8').split('\n').length, 9);
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
@@ -751,7 +751,7 @@ test('photo taxon (Q354 b): searches, covers and top-up use photoTaxon; the cand
     ),
     [701, 602, 3, null]
   );
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishptx-'));
+  const dir = mkTmp('fishptx-');
   const fish = {
     species: [
       {
@@ -787,14 +787,14 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   );
   const argv = [
     ['--fish', 'fish.json'],
-    ['--cand', 'fish-cand.json'],
+    ['--cand', 'data/fish-cand.json'],
     ['--cur', 'cur.json'],
     ['--suggest', 'none.json'],
     ['--cache', 'cache.json']
   ].flatMap(([f, x]) => [f, path.join(dir, x)]);
   const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--cap', '3', ...a], {cwd: ROOT, encoding: 'utf8'});
   run('--offline');
-  const C = () => JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const C = () => JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
   assert.deepStrictEqual(
     C().s1.map(p => [p.f, p.t, p.loc]),
     [
@@ -814,7 +814,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   );
   // The top-up: an observation of the old limit of 4, still identified as the photo taxon (701), gets its other photos.
   const four = [0, 1, 2, 3].map(k => ({...C().s1[0], f: `fish-s1-cand-${10 + k}`}));
-  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify({v: 1, cand: {s1: four}}));
+  fs.writeFileSync(path.join(dir, 'data/fish-cand.json'), JSON.stringify({v: 1, cand: {s1: four}}));
   run('--topup', '--offline');
   assert.deepStrictEqual(
     C()
@@ -938,7 +938,7 @@ print(json.dumps([a, b, len(calls), phase_obs(P(), 'male', [5], 'ph')]))`);
 });
 
 test('fetch_fish.py with phases (Q36): the juvenile room filled with juveniles first, abroad when the Philippines run out, never adults in their place; --plan offline', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphase-'));
+  const dir = mkTmp('fishphase-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
@@ -965,7 +965,7 @@ test('fetch_fish.py with phases (Q36): the juvenile room filled with juveniles f
   };
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('fish.json', fish);
-  w('fish-cand.json', C0);
+  w('data/fish-cand.json', C0);
   py(
     `${OBS}
 d = sys.argv[1]
@@ -984,7 +984,7 @@ put(phase_query('juvenile', [501], 'world'), [{**ob(i, an=[J], ll=(-8.5, 115.2),
 json.dump(c, open(d + '/cache.json', 'w'))`,
     dir
   );
-  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json'];
+  const args = ['fish.json', 'data/fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json'];
   const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc'];
   const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
   const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, ...a], {cwd: ROOT, encoding: 'utf8'});
@@ -998,9 +998,9 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.deepStrictEqual(pick(plan.species.s2), [30, {}, 28, {}, 2, {}, 2]);
   assert.strictEqual(plan.species.s2.cached, false);
   assert.ok(plan.missing > 0);
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C0, '--plan writes nothing');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')), C0, '--plan writes nothing');
   run('--offline', '--only', 's1');
-  const L = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.slice(26);
+  const L = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand.s1.slice(26);
   // The 3 Philippine juveniles, then 2 from abroad (the Indo-West Pacific only), then 5 adults for the free room; the 4
   // juvenile places left stay open (a FishBase juvenile or a later run), never filled with adults.
   // (Within one source the order is the neutral hash order.)
@@ -1025,7 +1025,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
 // The automatic refill (a species searched to the end has no more candidates): tools/fetch_fish.py
 // --refill, shortness, easy_obs, pick_short, exhausted, pages; the exhaustion memory (tools/fish_refill.json).
 test('refill (Q171): short = room under the cap or too few easy observations; only room is refilled; searched-to-the-end species skipped until the re-check', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill-'));
+  const dir = mkTmp('fishrefill-');
   const sp = (id, i, k = {}) => ({id, name: `Fishus ${id}`, inat: 500 + i, circle: 1, present: {ph: true}, ...k});
   const fish = {
     species: [sp('s1', 1), sp('s2', 2), sp('s3', 3), sp('s4', 4), sp('s5', 5), sp('s6', 6), sp('s7', 7, {cs: 1})],
@@ -1058,11 +1058,11 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   const mem = {end: {s5: {at: '2026-11-01', parts: ['free']}, s6: {at: '2026-10-01', parts: ['free']}}};
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('fish.json', fish);
-  w('fish-cand.json', C);
+  w('data/fish-cand.json', C);
   w('sug.json', sug);
   w('cur.json', cur);
   w('mem.json', mem);
-  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'sug.json', 'none.json', 'none.json', 'none.json', 'mem.json'];
+  const args = ['fish.json', 'data/fish-cand.json', 'cur.json', 'sug.json', 'none.json', 'none.json', 'none.json', 'mem.json'];
   const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
   const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
   const plan = (...a) =>
@@ -1089,7 +1089,7 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   // A part of the room not searched to the end (a juvenile room opened since) is searched, whatever the memory says.
   w('mem.json', {end: {s5: {at: '2026-11-01', parts: ['juvenile']}}});
   assert.deepStrictEqual(plan().skip, []);
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C, '--plan writes nothing');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')), C, '--plan writes nothing');
   // python sure_add is exactly autosort.js fishSure's adds.
   const J0 = [
     null,
@@ -1110,7 +1110,7 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
 });
 
 test('refill (Q171) offline on a fixture cache: pages on while too few photos, never what Pierre rejected, excluded or sent elsewhere; the end remembered', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill2-'));
+  const dir = mkTmp('fishrefill2-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
@@ -1131,7 +1131,7 @@ test('refill (Q171) offline on a fixture cache: pages on while too few photos, n
   };
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('fish.json', fish);
-  w('fish-cand.json', C);
+  w('data/fish-cand.json', C);
   w('cur.json', cur);
   py(
     `${OBS}
@@ -1154,7 +1154,7 @@ for k in ('region', 'ph', 'world'):
 json.dump(c, open(d + '/cache.json', 'w'))`,
     dir
   );
-  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json', 'mem.json'];
+  const args = ['fish.json', 'data/fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json', 'mem.json'];
   const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
   const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
   const run = (...a) =>
@@ -1163,7 +1163,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
       encoding: 'utf8'
     });
   run('--offline');
-  const got = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const got = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
   const ids = L => L.map(p => p.o.split('/').pop());
   assert.deepStrictEqual(ids(got.s1).slice(0, 3), ['10', '20', '40'], 'the decided candidates stay, once each');
   assert.deepStrictEqual(ids(got.s1).slice(3).sort(), ['50', '60', '7', '8'], 'never what Pierre rejected, excluded or sent elsewhere');
@@ -1177,7 +1177,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.deepStrictEqual(JSON.parse(run('--plan', '--today', '2026-12-06')).pick, ['s1']);
   // A rerun asks nothing more: nothing short but s1, which is skipped.
   run('--offline');
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand, got);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand, got);
   // Per part of the room: a phase still open whose searches were read to the end, or which got nothing, is searched to
   // the end; one still filling (its searches had more) is not; a part filled is not either.
   const ex = (end, padd) =>
@@ -1289,3 +1289,10 @@ test('fetch_fish.py game_photos: the photos in play and the sheet photos, each o
   );
   assert.ok(!('ph' in got.s1[0]) && got.s1[0].jt === g.jt);
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}
