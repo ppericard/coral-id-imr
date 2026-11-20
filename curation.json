@@ -68932,6 +68932,18 @@
       "fish-s683-cand-690940792": "p1g1sl1"
     }
   },
+  "seaslug": {
+    "flag": {
+      "i360176587": {
+        "file": "seaslug-49904-cand-360176587",
+        "unit": "f:Pleurobranchidae",
+        "sp": "s49904",
+        "view": "wide",
+        "where": "seaslug/progress",
+        "at": "2026-11-20T06:32:58.451Z"
+      }
+    }
+  },
   "reps": {
     "mw5oze0ikpnw": "drop"
   }
