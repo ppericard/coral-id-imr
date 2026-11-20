@@ -94,7 +94,7 @@ function bindFishRows(S, f, base, edit) {
 // rot) with it, one Undo step for both, through edit(fn).
 const fishCrop = (p, start, sug, edit) =>
   cropEditor(p, {
-    start: ((DRAFT[TK] || {}).crop || {})[p.f] || start || null,
+    start: (readView(DRAFT[TK] || {}).crop || {})[p.f] || start || null,
     rot: fishRot(p.f),
     save: (v, full, ro) =>
       edit(G => fishSet(fishSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
@@ -113,7 +113,7 @@ const fishJudged = j =>
 // with the draft's (drawn over the baked file, a published 90° would show as 180°).
 const fishRot = f => rotNorm(((DRAFT[TK] || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) =>
-  crSrc({...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
+  crSrc({...p, j: {c: (readView(DRAFT[TK] || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
 // Where a fish photo comes from: the admin's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag) and, when
 // its name is a former combination or an iNaturalist spelling WoRMS writes otherwise, the WoRMS name (admin.js nameTag).
@@ -334,10 +334,10 @@ CAND_BUILD.tree = (() => {
             `<button type="button" class="adm-fth" data-fp="${esc(q.f)}" aria-label="Enlarge a photo in play">${q.src ? `<img ${fishSrc(q, 1)} alt="" loading="lazy">` : ''}</button>`
         )
         .join('')}</div>`,
-        rows: fishRows(F, p, j, chk, FISHC.entry[sid]),
+        rows: fishRows(readView(F), p, j, chk, FISHC.entry[sid]),
         not: fishNotThisSel(sid, from),
         tool: `<button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button>`,
-        crop: !!((F.crop || {})[p.f] || fishRot(p.f)),
+        crop: cropOn(F, p.f),
         adds: [{v: '', t: 'Add', sug: !!(s && s.keep === 'add')}]
       };
     },
@@ -367,7 +367,7 @@ CAND_BUILD.tree = (() => {
           st = cst(Q.S),
           play = fishInPlay(Q.F, sid);
         // The rows: each click the admin's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
-        bindFishRows(sw, f, () => fishTagsMine(DRAFT[TK], f, j && j.jt) || (!chk && j && j.jt) || '', pin(Q, c));
+        bindFishRows(sw, f, () => fishTagsMine(readView(DRAFT[TK] || {}), f, j && j.jt) || (!chk && j && j.jt) || '', pin(Q, c));
         sw.querySelector('[data-ftags]').onclick = () => {
           FTAGS_OPEN = !FTAGS_OPEN;
           store.set('reefid-admin-ftags', FTAGS_OPEN);
