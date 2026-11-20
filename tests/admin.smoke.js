@@ -821,6 +821,35 @@ async function loadPart(b, base, fails) {
         const x = await wide(h);
         if (x > 0) fails.push(`360px #${h}, sorted on a view: page ${x} px wider than the window`);
       }
+      // The ? help hangs from the sticky header: it must stay inside the window and scroll to its last line (the
+      // panel once ran off the bottom, with nothing to scroll). 360x640 through the ⋯ menu, then a short desktop window.
+      for (const [vw, vh] of [
+        [360, 640],
+        [1280, 500]
+      ]) {
+        await q.setViewportSize({width: vw, height: vh});
+        await q.evaluate(() => (location.hash = '#players/activity'));
+        await q.waitForSelector('#tools:not([hidden])', {timeout: 15000});
+        if (vw < 600) {
+          await q.click('.adm-more summary');
+          await q.click('#help2');
+        } else await q.click('#help');
+        const hf = await q.evaluate(() => {
+          const e = document.getElementById('admhelp'),
+            r = e.getBoundingClientRect();
+          e.scrollTop = e.scrollHeight;
+          const last = e.lastElementChild.getBoundingClientRect();
+          return {
+            bottom: Math.round(r.bottom),
+            vh: innerHeight,
+            scrolls: e.scrollHeight > e.clientHeight,
+            reach: Math.round(last.bottom) <= Math.round(e.getBoundingClientRect().bottom)
+          };
+        });
+        if (hf.bottom > hf.vh || !hf.scrolls || !hf.reach) fails.push(`${vw}x${vh} admin ? help: ${JSON.stringify(hf)}`);
+        await q.evaluate(() => document.getElementById('admhelp').remove());
+        await q.evaluate(() => (document.querySelector('.adm-more') || {}).open && (document.querySelector('.adm-more').open = false));
+      }
       await c3.close();
     }
     // The subject switch (admin plan PR 2): one segment per subject in the header, the corals' addresses unchanged (the
@@ -8317,8 +8346,8 @@ async function loadPart(b, base, fails) {
         }
         // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
         await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
-        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
-        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-cfull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-cfull]');
         await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
         const cf = await sq.evaluate(() => {
           const S = document.querySelector('#view .adm-fsw');
@@ -9303,7 +9332,7 @@ async function loadPart(b, base, fails) {
       await p.click('#undo');
       await settle();
       // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
-      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over candQueue(CSRC)), and
+      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over the builder's queue), and
       // CF[2] is whichever undecided candidate the real curation leaves (Dauin, Philippines…: Pierre's Publish of
       // 2026-11-08 moved it from Dauin to Philippines while the page showed Dauin), so the page is put on CF[2]'s own
       // source first, All when that is not a source of the swiper; the source shown before is restored after.
@@ -9404,7 +9433,7 @@ async function loadPart(b, base, fails) {
       await go('photos/candidates');
       const ck = await p.evaluate(C => {
         CSRC = 'all';
-        candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
+        candQueue('all').forEach(x => x.p.f !== C && cst().skip.add(x.p.f));
         render();
         const S = document.querySelector('.adm-sw[data-f]');
         return {
@@ -9455,7 +9484,7 @@ async function loadPart(b, base, fails) {
       }
       // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
       await p.evaluate(() => {
-        CSKIP.clear();
+        cst().skip.clear();
         render();
       });
       // The line is folded behind the Auto chip (Pierre, 2026-11-06: one phone screen); the chip opens it.
@@ -9788,7 +9817,7 @@ async function loadPart(b, base, fails) {
         }
         await p.click('.adm-fsw [data-ft="2"][data-fv="n"]');
         await settle();
-        await p.click('.adm-fsw [data-fcrop]');
+        await p.click('.adm-fsw [data-crop]');
         await p.waitForSelector('#lightbox .adm-crop [data-c="save"]');
         await p.click('#lightbox [data-c="full"]');
         await p.click('#lightbox [data-c="save"]');
@@ -9845,7 +9874,27 @@ async function loadPart(b, base, fails) {
       // (fish.rot), and both left in the draft for the Publish below.
       {
         await go('photos/candidates');
-        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        const G = await p.evaluate(() =>
+          Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.imr && !x.r && !crOf(x.f) && !roOf(x.f)))
+        );
+        // An IMR lecture photo traced to its original has no Crop tool: its framing is the lecture's, and a crop saved for it
+        // would never reach its R2 file (Codex review of #1292).
+        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r)));
+        if (L) {
+          await goGenus(L);
+          const lc = await p.evaluate(n => {
+            const imr = new Set(
+              photos(n)
+                .filter(x => x.imr && x.src)
+                .map(x => x.f)
+            );
+            return [...document.querySelectorAll('#view .adm-tile[data-f]')]
+              .filter(t => imr.has(t.dataset.f))
+              .map(t => !!t.querySelector('[data-act="crop"]'));
+          }, L);
+          if (!lc.length || lc.some(Boolean))
+            fails.push(`${w}px Rotate: a lecture photo's tile on ${L} has the Crop tool: ${JSON.stringify(lc)}`);
+        } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
         const f = await p.evaluate(() => {
           const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
@@ -9937,9 +9986,9 @@ async function loadPart(b, base, fails) {
         }
         // The fish Candidates: the same editor writes fish.rot, a quarter left = 270, drawn on the card.
         await go('fish/photos/candidates');
-        if (await p.$('.adm-fsw [data-fcrop]')) {
+        if (await p.$('.adm-fsw [data-crop]')) {
           const ff = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
-          await p.click('.adm-fsw [data-fcrop]');
+          await p.click('.adm-fsw [data-crop]');
           await p.waitForSelector('#lightbox .adm-rotbar [data-r="-90"]');
           await p.click('#lightbox [data-r="-90"]');
           await p.click('#lightbox [data-c="save"]');
@@ -9949,7 +9998,7 @@ async function loadPart(b, base, fails) {
               rot: ((DRAFT.fish || {}).rot || {})[f],
               coral: (DRAFT.rot || {})[f],
               card: (document.querySelector('.adm-fsw .adm-swph img') || {}).dataset?.rot,
-              on: !!document.querySelector('.adm-fsw [data-fcrop].on'),
+              on: !!document.querySelector('.adm-fsw [data-crop].on'),
               sum: pubSummary(),
               out: ((output().fish || {}).rot || {})[f]
             }),

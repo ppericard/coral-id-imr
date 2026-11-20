@@ -1477,3 +1477,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   trigger is the integrator's design (`core.js`, held by open PRs). A goatfish judged `j` against its own note
   (`fish-s330-cand-551266134`) lost the flag (integrator's call). Applied: judging/fish/s330.json, suggest.json, ROADMAP
   "The juvenile card's per-photo trigger", decisions/2026-11-20-juvenile-card-follows-the-judged-phase.md, #1323.
+- **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
+  de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
+  window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
