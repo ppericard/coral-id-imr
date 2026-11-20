@@ -22,7 +22,7 @@ if ! git merge-base --is-ancestor origin/main HEAD; then
       # against main's is "needs a hand", never main's whole file (that dropped the PR's code: #1315 review, P1).
       tools/sync/Code.gs) python3 -I "$Q/resolve_gs.py" "$f" >/dev/null || { echo "#$n: conflict in $f outside the version lines: needs a hand"; git merge --abort; exit 2; } ;;
       tools/sync/HISTORY.md|docs/decisions/README.md) git checkout -q --theirs "$f" ;;
-      docs/ANSWERS.md) python3 -I "$Q/resolve_append.py" "$f" >/dev/null ;;
+      docs/ANSWERS.md) python3 -I "$Q/resolve_append.py" "$f" >/dev/null || { echo "#$n: conflict in $f not append-only: needs a hand"; git merge --abort; exit 2; } ;;
       *) echo "#$n: conflict in $f: needs a hand"; git merge --abort; exit 2 ;;
     esac
     git add "$f"

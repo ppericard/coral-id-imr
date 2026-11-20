@@ -18,6 +18,7 @@ for n in "$@"; do
   sleep 60
   bash "$Q/wait_ready.sh" "$n" >/dev/null 2>&1
   i=0
+  sm=0
   while [ $i -lt 60 ]; do
     i=$((i + 1))
     line=$(bash "$Q/prstate.sh" "$n")
@@ -25,6 +26,11 @@ for n in "$@"; do
     codex=$(echo "$line" | sed -n 's/.*codex@head: \([^|]*\) |.*/\1/p')
     echo "$(TZ=Asia/Manila date +%H:%M) #$n wait $i pend=$pend codex=$codex" >> "$QUEUE_DIR/nightq.debug"
     if [ "$pend" = "0" ] && [ "$codex" != "none" ] && [ "$codex" != "summary" ]; then break; fi
+    # a findings receipt ("summary") on the head is Codex's answer: give it 3 minutes, then go on
+    if [ "$pend" = "0" ] && [ "$codex" = "summary" ]; then
+      sm=$((sm + 1))
+      [ $sm -ge 6 ] && break
+    fi
     sleep 30
   done
   line=$(bash "$Q/prstate.sh" "$n")
@@ -36,7 +42,9 @@ for n in "$@"; do
   # a finding on the head can exist before its thread does, and a security bot's comment is no thread: both count
   # like a Codex finding (merge contract); "?" (unreadable) skips too
   case "$line" in *"unanswered@head: 0 |"*) ;; *) log "#$n: SKIPPED (findings or security comments on the head, not answered)"; continue;; esac
-  if grep -q "^+++ .*tools/sync/changes/" <(git -C "$REPO_DIR" diff origin/main...origin/$(gh api $R/pulls/$n --jq .head.ref) 2>/dev/null); then
+  # a pending changes entry, as train.py and sheet_version.py count one: any file there but the folder's README
+  if git -C "$REPO_DIR" diff --name-only --diff-filter=AM origin/main...origin/$(gh api $R/pulls/$n --jq .head.ref) 2>/dev/null |
+    grep '^tools/sync/changes/' | grep -qv '/README\.md$'; then
     log "#$n: SKIPPED (needs a VERSION assign)"; continue
   fi
   git pull -q

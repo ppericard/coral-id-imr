@@ -182,6 +182,18 @@ test('nightq rechecks that the head is still the one its gates read before the t
   assert.ok(t.indexOf('SKIPPED (head moved') < t.indexOf('python3 tools/train.py'));
 });
 
+test('a changes README is no pending version; an answers conflict that is not append-only aborts (round 4)', () => {
+  const t = read('nightq.sh');
+  assert.match(t, /grep '\^tools\/sync\/changes\/' \| grep -qv '\/README\\\.md\$'/);
+  assert.match(t, /\[ "\$codex" = "summary" \]; then\n\s*sm=\$\(\(sm \+ 1\)\)\n\s*\[ \$sm -ge 6 \] && break/);
+  for (const f of ['assignver.sh', 'uptodate.sh'])
+    assert.match(
+      read(f),
+      /resolve_append\.py" "\$f" >\/dev\/null \|\| \{ echo "#\$n: conflict in \$f not append-only[^}]*git merge --abort; exit 2; \}/,
+      f
+    );
+});
+
 test('nightq skips a PR with unanswered head findings and passes the queue repository to the train (P1, P2)', () => {
   const t = read('nightq.sh');
   assert.match(t, /\*"unanswered@head: 0 \|"\*\) ;; \*\) log "#\$n: SKIPPED \(findings or security comments on the head/);

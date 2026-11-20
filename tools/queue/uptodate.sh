@@ -23,7 +23,7 @@ for f in $(git diff --name-only --diff-filter=U); do
     docs/decisions/README.md|docs/decisions/OLDER.md) git checkout -q --theirs "$f" 2>/dev/null || git rm -q -f "$f" ;;
     fish.json) git checkout -q --ours "$f"; REBUILD_FISH=1 ;;
     seaslug.json) git checkout -q --ours "$f"; REBUILD_SLUG=1 ;;
-    docs/ANSWERS.md|docs/reviews/README.md|tools/sync/HISTORY.md) python3 -I "$Q/resolve_append.py" "$f" >/dev/null ;;
+    docs/ANSWERS.md|docs/reviews/README.md|tools/sync/HISTORY.md) python3 -I "$Q/resolve_append.py" "$f" >/dev/null || { echo "#$n: conflict in $f not append-only: merge aborted, needs a hand"; git merge --abort; exit 2; } ;;
     *) echo "#$n: conflict in $f: merge aborted, needs a hand"; git merge --abort; exit 2 ;;
   esac
   git add "$f"
