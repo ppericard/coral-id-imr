@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 204 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 206 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 204;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 206;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -4395,7 +4395,8 @@ const CORE_ = (function () { const module = {exports: {}};
   //   views   the views a question may show, [code, label] (one view: one photo per question)
   //   optin   the opt-in choices: Q[k] true = on, Q[k + 'T'] when chosen, and for a part of the slate opened by choice
   //           Q[k + 'N'] its "Not now" count, Q[k + 'A'] the answer count at the last one (app.js UNITS[id].sets: units
-  //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button)
+  //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button);
+  //           Q[k + 'O'] turned off on the What I learn card (app.js learnSet: the units the set brings by itself stop too)
   //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins), logged with every answer in the
   //           sheet's Answers tab under the subject's id. For a tree subject, its top rank (the family), which the admin
   //           reads as its tree's
@@ -4803,8 +4804,9 @@ const CORE_ = (function () { const module = {exports: {}};
       views: [['wide', 'Photo']],
       // sci: the scientific genera (app.js treeGenera, docs/FISH_PATH.md "Levels"). beyond: circle 3, the families beyond
       // the IMR course, on the path and in the % but opened by the player's choice (app.js UNITS fish opens). A stored
-      // c2 / c3 choice (the old opt-in sets) is never read: a "no" to that old offer is not taken for this one.
-      optin: ['sci', 'beyond'],
+      // c2 / c3 choice (the old opt-in sets) is never read: a "no" to that old offer is not taken for this one. sp: the
+      // species by their common names, on unless turned off on the What I learn card (app.js UNITS fish learn).
+      optin: ['sci', 'beyond', 'sp'],
       // family: a family of the book (f:Damselfishes); the IMR course is a tag.
       rank: 'family',
       // Its species by their common names (step 1) and by their scientific names (step 2; docs/reviews/2026-11-18-species-
@@ -5028,8 +5030,9 @@ const CORE_ = (function () { const module = {exports: {}};
       open: 'all',
       sheet: SEASLUG_SHEET,
       views: [['wide', 'Photo']],
-      // No opt-in set: its genera are its units from the start.
-      optin: [],
+      // Its genera are its units from the start. ssp: its species by their scientific names, on unless turned off on the
+      // What I learn card (app.js UNITS seaslug learn).
+      optin: ['ssp'],
       rank: 'family',
       unitRank: 'genus',
       // Its species by their scientific names only (Q369, 2026-11-15: the English names are information, never a choice).
@@ -5066,8 +5069,11 @@ const CORE_ = (function () { const module = {exports: {}};
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
-      closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
+      // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
+      // (reefid-seaslug-basics) and done feat.
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      closed: CLOSED_TREE,
+      basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
       // contentApply (app.js treeBuild and the sheet's replay alike): a family's and a genus's ID marks
@@ -7324,6 +7330,9 @@ const CORE_ = (function () { const module = {exports: {}};
         const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
         S.optin.forEach(k => {
           if ((qa || {})[k] || (qb || {})[k]) q[k] = true;
+          // A What I learn row turned off (k + 'O') stays off only where both accounts have it off (or only one played the
+          // subject): on either stays on, a row on by default included.
+          if (q[k] || (qa && qb && !(qa[k + 'O'] && qb[k + 'O']))) delete q[k + 'O'];
           // An offer declined on either account is not made more often for the merge: the larger "Not now" count.
           const n = Math.max((qa || {})[k + 'N'] || 0, (qb || {})[k + 'N'] || 0);
           if (n) q[k + 'N'] = n;

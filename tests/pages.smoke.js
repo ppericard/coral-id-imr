@@ -3165,8 +3165,8 @@ async function tipsCheck(b, base) {
       await p.evaluate(() => {
         const t = Date.now();
         localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
-        // The one-tap question's session: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
-        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7}}));
+        // The one-tap question's session in the corals: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
+        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7, s: 'coral'}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
       });
       await p.reload();
@@ -5227,6 +5227,12 @@ async function onePath(b, base) {
         if (start) await p.click(start).catch(() => {});
       } else await p.click(again).catch(() => {});
       await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
+      // A turned lecture photo (imr-p12_i8) shown from its original has no src while its picture is being made (app.js
+      // turnSet: "nothing shown meanwhile", tests/rotate.test.js): the photos are read once each has one. One that never
+      // gets one stays "" and fails below.
+      await p
+        .waitForFunction(sel => [...document.querySelectorAll('#view ' + sel)].every(i => i.getAttribute('src')), sel, {timeout: 5000})
+        .catch(() => {});
       // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it), by its file
       // name, or by its online original once R2 failed (core.js photoAway: R2 is cut off here).
       seen.push(
@@ -5239,15 +5245,18 @@ async function onePath(b, base) {
             )
           );
           return [...document.querySelectorAll('#view ' + sel)].map(i => {
-            const u = i.getAttribute('src') || '',
-              x = photoFileOf(u),
+            const u = i.getAttribute('src') || '';
+            // A turned lecture photo (imr-p12_i8) shown from its original once R2 is cut off is a picture the app drew in a
+            // canvas (a blob: address, app.js turnSet): it names no genus, so it is counted as a photo and left out of the genus check.
+            if (u.startsWith('blob:')) return '(turned)';
+            const x = photoFileOf(u),
               f = x ? x.f : u.replace(/#.*$/, '').replace(/\/(small|medium|large)\.(\w+)$/, '/original.$2');
             return of[f] || f;
           });
         }, sel))
       );
     }
-    const out = seen.filter(n => !MET.includes(n));
+    const out = seen.filter(n => n !== '(turned)' && !MET.includes(n));
     if (!seen.length || out.length) labOut[h + (start ? ' ' + start : '')] = {photos: seen.length, out: out.slice(0, 3)};
   }
   if (Object.keys(labOut).length) fails.push(`one path, Tools games: ${JSON.stringify(labOut)}`);
@@ -5920,6 +5929,7 @@ async function noUpscaleCheck(b, base) {
     const p = await c.newPage();
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    let measured = 0;
     for (const g of ['Tubastraea', 'Stylophora', 'Pocillopora', 'Anacropora']) {
       await p.evaluate(g => (location.hash = 'learn/genus/' + g), g);
       await drawn(p);
@@ -5941,6 +5951,8 @@ async function noUpscaleCheck(b, base) {
         const fileOf = i => (/\/(imrl?-[^/]*?)(?:-[tsm])?\.webp/.exec(i.currentSrc || i.src) || [])[1];
         const mine = [...document.querySelectorAll('img')].filter(fileOf);
         await Promise.all(mine.map(loaded));
+        // A lecture photo traced to its Corals of the World original lives on R2 only (no file in img/, where the pixels are
+        // read, and the stub gives it a stand-in of no real size): it is counted as shown, not measured.
         const out = {n: mine.length, over: [], lb: 0};
         for (const i of mine) {
           const n = await nat(fileOf(i));
@@ -5953,8 +5965,9 @@ async function noUpscaleCheck(b, base) {
           const li = document.querySelector('#lightbox .lb-in img');
           if (li) {
             await loaded(li);
+            if (fileOf(li)) out.lb++;
             const n = await nat(fileOf(li));
-            if (n) (out.lb++, out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)}));
+            if (n) out.over.push({f: 'lightbox ' + fileOf(li), n, ...over(li, n)});
             document.querySelector('#lightbox [data-x]')?.click();
           }
         }
@@ -5962,10 +5975,13 @@ async function noUpscaleCheck(b, base) {
       });
       if (!sh.n) fails.push(`no upscale ${w}: the ${g} sheet shows no IMR lecture photo`);
       if (!sh.lb) fails.push(`no upscale ${w}: the enlarged view of a ${g} lecture photo did not open`);
+      measured += sh.over.length;
       for (const o of sh.over)
         if (o.s > 1.005)
           fails.push(`no upscale ${w}: ${o.f} (${o.n.join('x')}) on the ${g} sheet is drawn ${o.s}x its pixels (${JSON.stringify(o)})`);
     }
+    // The pixels of some photo were read: a sheet check that measures nothing is no check.
+    if (!measured) fails.push(`no upscale ${w}: no lecture photo on the four sheets has a file in img/ to measure`);
     const seen = await p.evaluate(async f => {
       const nat = await new Promise(ok => {
         const i = new Image();
@@ -6062,6 +6078,25 @@ const PARTS = [
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
+    // An IMR lecture photo traced to its original lives on R2 only (no file in img/: tools/apply_imr_originals.py) and
+    // its element falls back to that original on www.coralsoftheworld.org once R2 is cut off. Every address outside the
+    // site is cut off in these checks, so a stand-in picture answers for that one host (4:3, the size of no real photo)
+    // and the pages that show a lecture photo keep one on screen, as when img/ held the screenshots. A context's own
+    // "cut off everything outside the site" route (registered later, so it wins) is made to leave that host alone; the
+    // net smoke checks the real fallback chain.
+    const CW = 'www.coralsoftheworld.org',
+      route = c.route.bind(c);
+    await route(
+      u => u.hostname === CW,
+      r =>
+        r.fulfill({
+          status: 200,
+          contentType: 'image/svg+xml',
+          headers: {'access-control-allow-origin': '*'},
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900"><rect width="1200" height="900" fill="#789"/></svg>'
+        })
+    );
+    c.route = (m, h, op) => route(typeof m === 'function' ? u => m(u) && u.hostname !== CW : m, h, op);
     // Fetches in flight, for drawn().
     await c.addInitScript(() => {
       const f = window.fetch;

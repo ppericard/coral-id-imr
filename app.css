@@ -6964,6 +6964,87 @@ html.touring .unlock {
   content: ' · ';
   color: var(--muted);
 }
+/* The What I learn card (progress.js learnCard; docs/DESIGN.md "My progress"): under the player's card, one line on phones
+   that opens in place, open between the player's card and the side column on desktop; its rows' switches are ⚙'s
+   segmented On | Off. */
+.wil {
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: var(--fs-s);
+}
+.wil > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  cursor: pointer;
+  list-style: none;
+}
+.wil > summary::-webkit-details-marker {
+  display: none;
+}
+.wil > summary::after {
+  content: '\25BE';
+  margin-left: auto;
+  color: var(--muted);
+}
+.wil[open] > summary::after {
+  content: '\25B4';
+}
+.wil > summary > b {
+  flex: none;
+  color: var(--ink);
+}
+.wil > summary > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.wil[open] > summary > span {
+  display: none;
+}
+.wilrows {
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 6px;
+}
+.wilrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wiltxt {
+  min-width: 0;
+}
+.wiltxt b {
+  display: block;
+  color: var(--ink);
+}
+.wiltxt small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.wilrow.off .wiltxt b {
+  color: var(--muted);
+}
+.wilrow .seg {
+  flex: none;
+}
+@media (pointer: coarse) {
+  .wil > summary {
+    min-height: 44px;
+  }
+  .wilrow .seg button {
+    min-height: 40px;
+  }
+}
 /* Desktop: the card sits beside the board, so it can be roomier (Pierre, 2026-11-02: save space on phones only). */
 @media (min-width: 1024px) {
   .pboard .pbadge {
@@ -7005,6 +7086,20 @@ html.touring .unlock {
   .pboard > .gside {
     grid-column: 2;
     grid-row: 2;
+  }
+  /* The What I learn card between the player's card and the side column. */
+  .pgame.pboard:has(> .wil) {
+    grid-template-rows: auto auto 1fr;
+  }
+  .pboard > .wil {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .pboard:has(> .wil) > .pgwrap {
+    grid-row: 1 / span 3;
+  }
+  .pboard:has(> .wil) > .gside {
+    grid-row: 3;
   }
   .pgame.pboard:has(.pslate) {
     grid-template-columns: minmax(0, 680px) minmax(360px, 1fr);
