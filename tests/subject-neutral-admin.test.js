@@ -33,6 +33,7 @@ const SCOPE = [
     .filter(f => /^admin.*\.js$/.test(f) || ['analysis.js', 'autosort.js', 'learn.js', 'home.js', 'progress.js'].includes(f)),
   'proto/basics.js',
   'proto/fishbasics.js',
+  'proto/seaslugbasics.js',
   'proto/idkey.js'
 ].sort();
 
@@ -132,7 +133,7 @@ const COUNTS = {
 // (fu, frev, ct, fam: the fish units, the fish review, the corals' tree, the fish family sheet), plus, by hand, the other
 // half of a duplicate whose name says nothing (renderCand, viewGenus...). autosort.js is the tree subjects' auto-sort, all
 // of it named fish before the rename (ROADMAP "Architecture review, steps 3 and 4"): it has no twin, so only its number of
-// such names is held (NAME_COUNTS), not each name; likewise the two basics modules, already one engine whose content
+// such names is held (NAME_COUNTS), not each name; likewise the basics modules, already one engine whose content
 // each subject registers into (Dup-18).
 const WHOLE = ['admin-fish.js'],
   FAMILY = /^(?:fu|frev|ct|fam|FU|FREV|FMONT|FSCOPE|FDIFF|CTREES|FTREE)(?=[A-Z_]|$)/,
@@ -168,7 +169,7 @@ const WHOLE = ['admin-fish.js'],
     ],
     ['learn.js', 'Dup-15', 'classics viewLookalikes viewCompare treeGenusLooks']
   ],
-  NAME_COUNTS = {'autosort.js': 71, 'proto/basics.js': 1, 'proto/fishbasics.js': 3};
+  NAME_COUNTS = {'autosort.js': 71, 'proto/basics.js': 1, 'proto/fishbasics.js': 3, 'proto/seaslugbasics.js': 0};
 
 // 3. The one-off tests no pattern sees: [file, the line's text, the study's row].
 const LINES = [
