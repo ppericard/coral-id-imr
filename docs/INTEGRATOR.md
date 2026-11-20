@@ -282,6 +282,11 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **A "decided" backlog item is checked against Pierre's words before launch** (2026-11-20): three items launched from
   STATUS's list that morning were already built, the integrator's own prose, or a "plus tard". The agent's brief says
   to stop and report when his words, verbatim and dated, do not settle what players see.
+- **A reference doc PR goes first** (2026-11-21): the backlog inventory (#1326) conflicted with the ROADMAP at every
+  merge and was put back at the end of the queue each time, so for a day the integrator worked without it. Pierre,
+  2026-11-21 05:42: «c'est pas possible en fait d'avoir des choses qui sont aussi importantes qui ne sont pas
+  mergées». A PR the next work is chosen from (inventory, STATUS, the ledger), or one every merge conflicts with, is
+  merged first: pause the queue between trains, bring it up to date, run its train, then resume.
 - **A crowded machine cuts agents off**: an agent that waits too long for a `tests/slot.js` slot or a train is handed
   back unfinished. Keep its worktree; resume it later or finish the push and PR yourself (wait until no `train.py`
   runs, then push).

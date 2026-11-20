@@ -1466,6 +1466,60 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **17:12, the inventory of every open point.** «Sur le modèle de l'inventaire du 18, refait un point complet sur
+  l'ensemble des points ouverts, non terminé, laissé en vrac et backlog. Confirme bien dans les documents ce à quoi j'ai
+  déjà répondu ou permis de continuer (tu m'as affirmé "61 qui sont des idées ou du « plus tard »", ça n'est pas
+  cohérent avec ce que j'ai en tête)». Applied: docs/reviews/2026-11-20-backlog-inventory.md and the ROADMAP rows it
+  corrects (the entries below).
+- **Reports tab (no time recorded), opening: at least four units before a level is asked.** On a sea slug species
+  sheet: «Le mode espèce arrive bien trop tôt. Les switchs manquent pour les nudibranches»; «D'ailleurs, aucun intérêt
+  de n'ouvrir qu'une seule espèce et puis demander de l'identifier parmis d'autres espèces pas ouvertes. Au minimum 4
+  espèces proches ouvertes»; in the fish quiz: «Pas d'intérêt d'ouvrir un seul genre ou une seule espèce si on la
+  demande quelques cartes plus loin. Lorsqu'on ouvre un niveau taxonomique il faut au moins 4 items ouverts avant de
+  commencer à poser des questions. Sinon c'est juste trop facile». A level opens with at least four close units before
+  it is asked, every subject. Applied: ROADMAP "Opening: at least four units open before a level is asked".
+- **Reports tab (no time recorded), species names before the scientific names.** «Pourquoi on commence à m'ouvrir des
+  noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (fish My progress). A question back, not a
+  decision: whether species by common name wait for the scientific names goes back to him. Applied: ROADMAP "Opening:
+  at least four units open before a level is asked" (its last sentences).
+- **Reports tab (no time recorded), response time and the click.** «La vitesse de réponse est définitivement un signal
+  de difficulté (ainsi que le clic), quelque soit la matière, et même si la réponse est juste. Soit difficulté de la
+  photo, soit difficulté de la question pour le joueur» (coral practice quiz). The time and enlargement signals are
+  re-measured over every subject now. Applied: ROADMAP "Time in the photo rating", "Enlargement as a signal",
+  "Response time, genus term", "Response time, photo term".
+- **Reports tab (no time recorded), the bonus genera.** «Les genres bonus dans les coraux devraient définitivement
+  compter dans le progres global, mais on pourrait faire un score/succès dédié aux choix pédagogiques de l'instance (IMR
+  en l'occurence)» (a suggestion). The bonus genera count in the global progress (it changes Q101 and Q176); the scale
+  is asked first; the instance's own score is an idea. Applied: ROADMAP "Bonus genera: more of them".
+- **Reports tab (no time recorded), groups by scope.** «Groups have to be either instance wide or subject specific. For
+  example, student groups and staff are instance wide. Trainers and Curators could be subject specific» (a
+  suggestion). Applied: ROADMAP "Roles, instances and cohorts" (rights PR 2).
+- **Recorded late: the beta's Remove all (2026-11-17 ~19:10).** «Dans le futur, pour les futurs bêta, il me faudra un
+  bouton pour supprimer aussi ou enlever tous les gens de la bêta, de la même manière qu'il y a un bouton pour les
+  ajouter tous» (#1051's body). Built by #1051 itself (`admin.js` "Remove all" on Players and Players › Groups,
+  covered by `tests/admin.smoke.js`). Applied: no ROADMAP row (done).
+- **Recorded late, verbatim: Q265 (2026-11-08).** «Ok pour tes propositions», as the ROADMAP row of #751 quoted it. It
+  corrects this day's entry "Correction of the 2026-11-08 entry that cites the activity item under Q265", which says
+  his words for Q265 are not in the repo. Its scope: the move of the files players never download into `data/`, the
+  code into `js/` and `css/` with the domain move. Applied: #1298 (open, it builds that ROADMAP row and edits it; no
+  ROADMAP change here, to leave its row to it).
+- **Recorded late, verbatim: the IMR edition (2026-11-08).** «les droits, ils me sont à moi à 100 %» and «quitte si
+  besoin à licencier une version IMR à IMR ... ça me garde l'ensemble des droits pour moi.» (#737's body). Applied:
+  ROADMAP "Separate IMR-owned content from the core app".
+- **Recorded late, verbatim: no candidates outside the Philippines (2026-11-02).** «Non, pour l'instant, on va pas
+  élargir au-delà des Philippines.» (#337's body). Applied: ROADMAP "Candidate photos from outside the Philippines".
+- **Recorded late: the species marks (2026-11-19).** 15:37: «Est-ce qu'on a seulement fait le même travail pour les
+  adultes?» (#1232); 16:01: «On a fait le même travail de sourcing pour les coraux et les nudibranches?» (#1236); 16:02:
+  «Il faudra l'amener au niveau des espèces» (#1263). The adults' species marks and the sea slugs' circle-3 marks were
+  built. Applied: ROADMAP "Fish sheets at three levels".
+- **Recorded late: Q435 (a), the juvenile classes (2026-11-19 15:32).** «Je suis même pas sur, parce que ça peut les
+  rendre hyper remarquables et donc facile à apprendre... Je sens qu'on va devoir finir par voir ce que ça donne sur
+  les vrais données...» (#1228). The classes are read on the players' answers. Applied: ROADMAP "Remove the fish
+  easy-photos bootstrap once fish answers exist".
+- **Rule A1 and the Q308 light proposals, a reading.** No new answer: whether his 2026-11-20 05:39 «Pour la nouvelle
+  formulation de A1, je valide» lets the light proposals over a tag he only let through go into play is the inventory's
+  reading, written as a note for the integrator; which of the 152 are his hand tags is not checked. Applied: ROADMAP
+  "Fish judging: a flash or lamp on a dark background is not a night shot" (a note, the status unchanged).
 - **13:59-14:06, the stop and the handover.** «stop everything. Prepare passation»; «Est-ce que mettre à jour STATUS
   c'est suffisant pour la passation?»; then «ok» to merging the handover and moving the queue scripts into `tools/`;
   «oui stp» to writing the quota lessons into INTEGRATOR.md; and on one of them: «Pas la session neuve. ça ne marche
@@ -1567,3 +1621,142 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sub-adult, brings the card whenever its species' young are sourced as different; the separate sub-adult flag is
   information only. Applied: `quiz.js` `juvCard`, docs/spec/model.md,
   decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md, #1329.
+
+## 2026-11-21
+
+- **05:32, the two compared photos stacked on phones (on #1316).** «la PR 1316 avec les deux photos comparées qui
+  s'affichent entières sur téléphone, pour les poissons, je me demande si au lieu de les mettre côte à côte, c'est-à-dire
+  droite et gauche, il ne vaut pas mieux les mettre au-dessus et en dessous, parce que maintenant on a la place, on avait
+  dégagé de la place pour le faire […] Alors après sur ordinateur je sais pas, mais sur téléphone je pense que ça
+  marcherait mieux.» On phones, after a wrong answer, the two compared photos are stacked, one above the other, each
+  whole; every subject gets it (the integrator's call, easy to correct). Refined by the next entry. Applied:
+  docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`,
+  decisions/2026-11-21-compare-photos-stacked-on-phones.md, #1351.
+- **05:55, small phones: the layout is dynamic (on #1351; the 05:32 entry above).** «Après, petit téléphone, je veux dire,
+  à un moment donné, il faut être un peu logique sur l'espace qui nous reste, quoi. Mais bon, si en même temps la réponse,
+  ça prend toute la place de l'écran, c'est un problème en soi, en fait, si on ne peut plus afficher les photos. Mais
+  peut-être qu'il faut que ça soit dynamique, il faut que l'espace, en fonction de l'espace qu'on a, on a une présentation
+  qui est différente, je ne sais pas.» The compared photos are stacked or side by side, whichever shows both larger in the
+  room left: stacked on a normal phone, side by side on a small phone under a tall feedback sheet (the integrator's call,
+  easy to correct, the same pick at every size class). Applied: `quiz.js` `fitStage`, `app.css` (no forced grid),
+  docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`, `tests/pages.smoke.js` (`comparedLayoutCheck`), the
+  decision record above, #1351.
+- **05:32, #1316 (the two compared photos after a wrong answer), fish: stacked, not side by side, on a phone.** «la PR
+  1316 avec les deux photos comparées qui s'affichent entières sur téléphone, pour les poissons, je me demande si au
+  lieu de les mettre côte à côte, c'est-à-dire droite et gauche, il ne vaut pas mieux les mettre au-dessus et en
+  dessous, parce que maintenant on a la place, on avait dégagé de la place pour le faire, donc en fait je pense que ça
+  s'afficherait beaucoup mieux en étant au-dessus, en dessous. Alors après sur ordinateur je sais pas, mais sur
+  téléphone je pense que ça marcherait mieux.» A wish for the phone layout (the desktop left open to the build). Applied:
+  built by a separate agent's PR, which adds its own entry; nothing here changes.
+- **05:40, rule L4 (#1331: a level opens in a group of at least 4 close units, no question before).** «pour la règle L4,
+  un niveau s'ouvre par un groupe d'au moins 4 unités proches, aucune question avant. Je pense que c'est une bonne idée.
+  Voilà, il faudra vérifier à l'usage, mais je pense que c'est une bonne idée, quel que soit l'impact que ça a pour
+  l'instant sur les simulations.» Yes, including the one breached guardrail (the lecture RA plateau); to be checked in
+  use. Applied: #1331 itself (it carries his words and the rule).
+- **05:40, Q445 (the bonus coral genera count: (A) one 45-genus scale for all, today's % kept as the "IMR slate"
+  score).** «Question 445, une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score
+  ardoise IMR. Oui, pourquoi pas, oui, ah oui, Slate, oui c'est ça, oui, Slate IMR, oui, pourquoi pas, donc avoir un
+  score séparé pour IMR.» Option A decided: one scale of 45 genera for the coral players, today's percentage kept as a
+  separate "IMR slate" score. Built next; it changes rule L6 (the bonus genera, now opt-in and not counted), which the
+  build PR rewrites with his words. Applied: ROADMAP "Bonus genera: more of them". The follow-up question, whether the
+  species order should change with it: «Avec ça, faut-il changer l'ordre des espèces? Je ne sais pas exactement ce dont
+  tu parles, sachant que pour les coraux, il n'y a pas vraiment d'espèces, mais... Donc, je ne sais pas.» Not answered:
+  he did not follow it; it stays open and is asked again with more context.
+- **05:40, Q446 (a screenshot attached to a report: (pCloud) stored on his pCloud, shrunk, no GPS, deleted with the
+  account and 90 days after the report is handled).** «Question 446. Ah oui, pour les captures d'écran, jointe au
+  rapport. Stocké sur mon P-Cloud. C'est trop compliqué, ça. On peut pas trouver une manière vraiment à la con que de
+  stocker temporairement les... là on prend trop de précautions en fait. Est-ce qu'on peut pas juste stocker
+  temporairement la photo qui nous est envoyée, juste le temps qu'un agent puisse le traiter et ensuite on dégage la
+  photo quoi. Mais il faut trouver une manière simple, sans prendre 50 000 précautions, en fait, de pouvoir stocker
+  cette photo.» Not decided as proposed: his direction is a simple temporary store, the photo deleted once an agent has
+  processed the report, no pCloud and no pile of precautions; the design comes back to him. Applied: ROADMAP "Attach a
+  photo or a screenshot to a report".
+- **05:40, Q447 (a group's scope in the existing Rights column, e.g. `content@subject:fish`, no new column).**
+  «Question 447, pour le périmètre d'un groupe, dans la colonne des droits existants, oui, pourquoi pas, oui, c'est pas
+  con.» Yes. Applied: ROADMAP "Roles, instances and cohorts".
+- **05:40, Q448 (each cohort's trainer list: (A) lines in the Groups tab).** «448, formateur d'une cohorte des lignes
+  dans l'onglet groupe. Je sais pas le détail, mais je soupçonne que ça doit être bon.» Yes, option A, without having
+  looked at the detail. Applied: ROADMAP "Roles, instances and cohorts".
+- **05:40, Q449-Q452 (response time as a difficulty signal).** «Alors, question 449 à 452. Le temps de réponse comme
+  signal de difficulté. Ok. Question 449. Un terme temps séparé pour chaque photo qui s'efface selon l'information des
+  réponses et non leur norme. Puisqu'une réponse juste expert apporte peu d'informations. Ok. Question 450, valider sans
+  réponse fausse. Ok. On regarde l'accord entre joueurs, la stabilité dans le temps, et si le temps des experts prédit
+  les erreurs. Ok. Question 451, l'engrandissement d'une photo compte comme un terme à part. Oui, je pense que c'est un
+  signal différent, c'est un signal faible, mais c'est un signal différent, qui pour le coup est probablement plus
+  indicatif de la difficulté d'une photo que de la difficulté du taxon pour le joueur, à mon avis. Même si ça peut être
+  une combinaison des deux. Question 452, en deuxième étape, on retire de la lenteur d'un joueur la part due à la photo
+  avec un recalcul silencieux. Ouais, je vais avoir besoin d'un peu plus de contexte en fait pour l'ensemble de ces
+  questions quand même. Parce que je suis pas sûr exactement de ce que tu cherches à implémenter, de ce que tu veux
+  implémenter.» Q449, Q450 and Q451 «Ok» (the enlargement a weak but different signal, about the photo more than the
+  taxon's difficulty for the player, perhaps a mix of both); Q452 and the whole set: he wants more context first, so
+  the build waits for the integrator's reply with it, and Q452 stays open. Applied: ROADMAP "Time in the photo rating".
+- **05:40, benthos (B1, Q442, Q443): not now.** «Pour le Bentos... non, on ne traite pas ça pour l'instant. Tu peux
+  mettre ça dans les, tu peux laisser ça dans les roadmaps long terme. Et je suis même pas sûr qu'on le traitera un
+  jour.» No work on benthos (the benthic slate and the benthos lecture of the IMR Drive folder, Q442 and Q443 with them);
+  it stays in the long-term ROADMAP, maybe never. Applied: ROADMAP "More subjects".
+- **05:40, Q444 (a species' own common-name list as a `curation.json` `fish` key).** «Question 444, la liste de noms
+  communs propres à chaque espèce dans la curation. C'est un détail d'implémentation. Si tu penses que c'est le
+  mieux, oui.» Yes; an implementation detail, the integrator's choice. Applied: ROADMAP "Fish common names: 1 to 3
+  curated per species".
+- **05:40, Remove vs × (the admin's remove actions: (A) one Remove with Undo and a list).** «Remove contre X, un seul
+  remove à un clic avec undo et une liste. Je sais pas ce dont tu parles, il me faut plus de contexte.» Not answered:
+  he needs context; the question stays open. Applied: no doc change (open in STATUS).
+- **05:40, R2: delete the files nothing uses; a read-only R2 token for the CI.** «R2, je peux supprimer les fichiers que
+  plus rien n'utilise. Oui, carrément, tout à fait. Et peux-tu créer un jeton R2 en lecture seule pour la CI? Ça sert à
+  quoi? Explique-moi à quoi ça sert, et pourquoi est-ce qu'on peut pas utiliser le jeton actuel.» Deleting the unused
+  files: yes (the integrator shows him the list before deleting, as offered). The read-only token: not answered; he
+  asks what it is for and why the current token cannot serve; the question stays open. Applied: nothing in a doc
+  (the deletion is an action, after the list).
+- **05:42, the inventory PR (#1326) never merged.** «Je suis en train de m'apercevoir que t'as jamais mergé la pull
+  request avec l'inventaire qui a été fait sur tous les points ouverts. À mon avis, il faut remettre à jour encore cet
+  inventaire et puis il faut le merger, quoi. Parce que sinon, tu n'utilises jamais la bonne info sur les points encore
+  en cours et ce qui doit être lancé. Donc là, c'est pas possible en fait d'avoir des choses qui sont aussi importantes
+  qui ne sont pas mergées.» The inventory is brought up to date and merged; a reference PR the work is chosen from goes
+  first. Applied: INTEGRATOR "The merge mechanics" (A reference doc PR goes first); #1326's update is the integrator's.
+- **05:40, Q439 (the Lab prototypes to graduate).** «Question 439, prototype du lab. J'ai pas testé encore, donc il faut
+  que je regarde.» Not answered: he has not tested the Lab yet; the question stays open. Applied: no doc change (open in STATUS).
+- **05:48, Q449-Q451 (response time), with the context he asked for: step 1, and his addition.** «Ok, étape 1, d'accord,
+  ça y est, je comprends mieux. Alors le problème c'est qu'en fait tu mets tous les joueurs dans le même panier et je me
+  demande dans quelle mesure il faudrait pas arriver à différencier d'une certaine manière, mais de manière continue,
+  hein, sans forcément faire des catégories. Des réponses qui viennent de joueurs qui sont très forts, et ça on sait
+  qu'ils sont très forts parce que leur elo est très élevé, et parce qu'ils font très peu d'erreurs, leur taux de
+  réussite est très haut, leur elo est très haut, et donc ça ce sont des joueurs qui apportent un signal qui est
+  forcément différent des joueurs débutants. C'est-à-dire que quand un joueur débutant met du temps ou se trompe, bah, y
+  a quand même beaucoup de chances que ça soit parce qu'il connaît pas bien les genres. Pas forcément, alors peut-être
+  qu'il y a une petite partie qui est liée à la difficulté de la photo, mais le plus probable c'est quand même que ce
+  soit plutôt sa propre connaissance qui soit affectée. Alors que quand un joueur qui est très fort hésite, y a moins
+  de chances que ça soit sa connaissance propre qui soit affectée, mais plutôt la difficulté propre de la photo. Je ne
+  sais pas si tu vois ce que je veux dire. Et du coup, c'est mon intuition, mais du coup, je pense qu'il y a un signal
+  qui est intéressant à aller chercher, qui n'est pas un signal qu'on doit catégoriser, mais qui doit être probablement
+  un signal à analyser de manière continue. Mais je pense qu'il y a un biais multifactoriel sur cette question-là. Et
+  d'ailleurs, il faudrait qu'on utilise, enfin j'utilise, on fait des analyses multifactorielles sur nos données, et à
+  mon avis, c'est un sujet qui est vraiment à creuser, quoi. C'est typiquement comparer les temps de réponse par rapport
+  au niveau au niveau des joueurs et la difficulté des photos.» The direction of the 05:40 «Ok» stands, with his
+  addition: the time signal is weighed continuously by the player's strength (Elo, success rate), never in categories (a
+  strong player's hesitation points to the photo, a beginner's to the player); a multifactor analysis of response time
+  against player level and photo difficulty comes first, as a study, then the build. Applied: ROADMAP "Time in the photo
+  rating".
+- **05:48, Q452 (step 2: the player's time net of the photo's, a silent replay).** «Alors, pour l'étape 2, alors c'est
+  rigolo, je ne savais pas, j'avais pas retenu qu'une bonne réponse lente ne comptait qu'à moitié pour le niveau du
+  joueur. Ok, c'est pas, je dis pas que c'est déconnant, mais je dis juste que j'avais pas forcément retenu ça. Et
+  donc, ça fait effectivement peut-être un peu sens. Mais c'est là où je te rejoins, si la lenteur vient d'une photo
+  dure pour tout le monde, c'est injuste pour lui. Du coup, oui, effectivement. Ok, là maintenant je comprends mieux. Et
+  oui, il faut recalculer la progression de tous. On peut le faire en silence, c'est pas grave. Mais du coup, oui, je
+  suis assez d'accord.» Yes: a step 2 after step 1, and everyone's progress recalculated silently. Applied: ROADMAP
+  "Time in the photo rating".
+- **05:48, Remove vs × (answers the 05:40 entry).** «Alors, ah ça y est, j'ai compris. Le remove contre la croix, c'est
+  pour supprimer les photos du jeu. Donc... il faut un bouton remove, là en un clic la photo ne revient jamais, avec un
+  undo juste après, une liste des photos retirées pour en remettre si j'ai besoin. Oui, ça me va, ta proposition A me
+  va.» Option A decided: one Remove, one click, the photo never comes back, an Undo just after, a list of the removed
+  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph).
+- **05:48, the read-only R2 token for the CI (answers the 05:40 entry): withdrawn.** «Pour le jeton R2 en lecture seule,
+  ouais, ok, bon, tu retires la demande, très bien.» The integrator withdraws the request; he agreed. Applied: no doc
+  change (the question only sits in STATUS, the integrator's).
+- **05:48, Q446 (a screenshot attached to a report), decided (answers the 05:40 entry).** «question 446, capture d'écran
+  en simple. Là, réduit la capture. Ok. Environ 800 pixels en JPEG léger. Oui, quelques dizaines de kilos, moi ça me va.
+  Elle envoie avec le rapport et le script la range directement dans la feuille, dans un onglet à part. Là, j'en la lis
+  quand il traite le rapport, puis on l'efface. Oui, ça me va, c'est très bien. On va pas se faire pourrir de toute
+  façon, et on va pas stocker éternellement des trucs dans la feuille, donc ça me va. C'est pas lourd et ça me va.» The
+  capture is reduced on the device (about 800 px, light JPEG, a few tens of kB) and sent with the report; the sheet
+  script stores it in a separate tab of the sheet; the agent reads it when processing the report, then it is deleted;
+  no pCloud. Applied: ROADMAP "Attach a photo or a screenshot to a report" (Decided; build next).
