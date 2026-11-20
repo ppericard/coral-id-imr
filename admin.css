@@ -3539,6 +3539,41 @@ td.cov-c .cov-off {
 .adm-gcard .adm-ugroup {
   margin: 0;
 }
+/* Groups that carry rights (admin.js RIGHTSADM_SHEET): the key beside a group's name and on a player's chip, the
+   Rights row, "rights off" on a member, the player's rights line, the note of a failed rights change, the admin list. */
+.adm-gkey {
+  flex: none;
+  margin-right: 4px;
+  vertical-align: -2px;
+  color: var(--accent);
+}
+.adm-glabel,
+.adm-gnone,
+.adm-goff,
+.adm-urights {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+.adm-goff {
+  margin-left: 4px;
+  font-style: italic;
+}
+.adm-urights {
+  flex: 1 0 100%;
+}
+.adm-gnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.adm-ugchips .adm-gnote {
+  flex: 1 0 100%;
+  margin: 0;
+}
+.adm-gadmins {
+  margin-top: 12px;
+}
 .adm-gcard .adm-ugroup:empty {
   display: none;
 }

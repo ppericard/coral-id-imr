@@ -5008,6 +5008,172 @@ async function loadPart(b, base, fails) {
         else if (shown.color === shown.muted || shown.italic === 'italic')
           fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
       }
+      // Groups that carry rights (sheet RIGHTSADM_SHEET; docs/decisions/2026-11-19-groups-carry-rights.md), at both widths: the
+      // rights group first with its key and its Rights row, no Add all or Remove all on it, "+ Add a player" asked first
+      // naming its rights, "rights off" on a member whose code changed, the admin list read-only, a right given and taken
+      // away, a group with members and no rights offered none, a change saved in part ("server") and its Try again
+      // sending the same request, the player's bar (key, Rights line), the merge warning read from mergePlan first. One
+      // version below: the page as before, and no roles or mergePlan read sent. No sideways scroll.
+      {
+        const q = await p.context().newPage(),
+          said = [];
+        q.on('pageerror', e => fails.push(`${w}px rights groups page error: ${e.message}`));
+        q.on('dialog', d => {
+          said.push(d.type() + ': ' + d.message());
+          return d.type() === 'confirm' && !/^Give Carla Demo/.test(d.message()) ? d.accept() : d.dismiss();
+        });
+        const calm = () =>
+          q
+            .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+              timeout: 20000
+            })
+            .then(() => q.waitForTimeout(300))
+            .catch(() => fails.push(`${w}px rights groups: never settled`));
+        const page = () =>
+          q.evaluate(() => ({
+            cards: [...document.querySelectorAll('.adm-gcard')].map(c => ({
+              n: c.querySelector('.adm-gname').textContent,
+              key: !!c.querySelector('.adm-gname .adm-gkey'),
+              rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')),
+              add: !!c.querySelector('[data-gradd]'),
+              none: (c.querySelector('.adm-gnone') || {}).textContent || '',
+              bulk: !!c.querySelector('[data-gall], [data-gnone]'),
+              off: [...c.querySelectorAll('.adm-gmem .adm-gchip')]
+                .filter(x => x.querySelector('.adm-goff'))
+                .map(x => x.firstChild.textContent)
+            })),
+            admins: (document.querySelector('.adm-gadmins') || {}).textContent || '',
+            note: (document.querySelector('.adm-gnote') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          }));
+        const sent = k => q.evaluate(k => window.DEMO_CALLS.filter(c => c.k === k).length, k);
+        const posts = () => q.evaluate(() => window.__posts || []);
+        try {
+          const X = await p.evaluate(() => RIGHTSADM_SHEET);
+          // One version below: the page as before.
+          await q.goto(base + `admin.html?demo&v=${X - 1}#players/groups`);
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          let g = await page();
+          if (
+            g.cards.length !== 2 ||
+            g.cards.some(c => c.key || c.rights.length || c.add || c.none) ||
+            !g.cards.every(c => c.bulk) ||
+            g.admins ||
+            (await sent('roles'))
+          )
+            fails.push(`${w}px rights groups before v${X}: ${JSON.stringify(g)}`);
+          await q.goto(base + `admin.html?demo&v=${X}#players/groups`);
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          await calm();
+          // From the version: every group request the page sends, kept for the retry check.
+          await q.evaluate(() => {
+            window.__posts = [];
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              try {
+                const b = o && o.body && JSON.parse(o.body);
+                if (b && (b.groupEdit || b.userGroup)) window.__posts.push(JSON.stringify({...b, token: undefined}));
+              } catch (e) {}
+              return f(u, o);
+            };
+          });
+          g = await page();
+          const T = g.cards[0] || {};
+          if (
+            T.n !== 'Trainers' ||
+            !T.key ||
+            T.rights.join('|') !== 'Host live games|Cohorts' ||
+            !T.add ||
+            T.bulk ||
+            T.off.join('|') !== 'Ben Demo' ||
+            g.cards.slice(1).some(c => c.key || !c.bulk || c.add || !/make a new group/.test(c.none)) ||
+            !/^Admins \(outside the groups\): Ana Demo$/.test(g.admins) ||
+            (await q.$('.adm-gadmins button, .adm-gadmins select')) ||
+            g.wide
+          )
+            fails.push(`${w}px rights groups: the page ${JSON.stringify(g)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              await q.screenshot({path: require('path').join(process.env.SHOTS, `rights-groups-${w}-${th}.png`), fullPage: true});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          // + Add a player asks first, naming the rights; refused, nothing is sent
+          await q.selectOption('.adm-gcard:first-child [data-gjoin]', {label: 'Carla Demo'});
+          await calm();
+          g = await page();
+          if (!said.includes('confirm: Give Carla Demo: Host live games, Cohorts?') || (await posts()).length)
+            fails.push(`${w}px rights groups: + Add a player did not ask first ${JSON.stringify(said)} ${JSON.stringify(await posts())}`);
+          // accepted: Dio joins (rights on, no "rights off")
+          await q.selectOption('.adm-gcard:first-child [data-gjoin]', {label: 'Dio Demo'});
+          await calm();
+          g = await page();
+          if (!said.includes('confirm: Give Dio Demo: Host live games, Cohorts?') || g.cards[0].off.join('|') !== 'Ben Demo')
+            fails.push(`${w}px rights groups: + Add a player ${JSON.stringify(g.cards[0])}`);
+          // a right given: saved in part (its Audit row failed), then Try again sends the same request and finishes it
+          await q.evaluate(() => (window.DEMO_FAIL = 'server'));
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
+          await calm();
+          g = await page();
+          if (g.note.indexOf('Saved in part: its Audit record failed. Try again to finish it.') !== 0 || !(await q.$('[data-gretry]')))
+            fails.push(`${w}px rights groups: saved in part ${JSON.stringify(g.note)}`);
+          await q.click('[data-gretry]');
+          await calm();
+          g = await page();
+          const P = await posts();
+          if (
+            g.note ||
+            g.cards[0].rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            P.length < 2 ||
+            P[P.length - 1] !== P[P.length - 2] ||
+            !/"rights":\["live@instance:imr","cohorts@instance:imr","content@instance:imr"\]/.test(P[P.length - 1])
+          )
+            fails.push(`${w}px rights groups: Try again ${JSON.stringify({g: g.cards[0], note: g.note, P: P.slice(-2)})}`);
+          // × takes a right away
+          await q.click('.adm-gcard:first-child [data-grx][data-e="content@instance:imr"]');
+          await calm();
+          g = await page();
+          if (g.cards[0].rights.join('|') !== 'Host live games|Cohorts')
+            fails.push(`${w}px rights groups: × a right ${JSON.stringify(g.cards[0])}`);
+          // The player's bar: the rights group's chip carries the key, a line sums up the rights; a merge asks with the plan
+          await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ana Demo"]');
+          await calm();
+          const b = await q.evaluate(() => ({
+            keys: [...document.querySelectorAll('.adm-ubar .adm-gchip')]
+              .filter(c => c.querySelector('.adm-gkey'))
+              .map(c => c.textContent.replace('×', '')),
+            line: (document.querySelector('.adm-ubar .adm-urights') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          }));
+          if (b.keys.join('|') !== 'Trainers' || b.line !== 'Rights: host live games; cohorts' || b.wide)
+            fails.push(`${w}px rights groups: the player's bar ${JSON.stringify(b)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              const el = await q.$('.adm-ubar');
+              if (el) await el.screenshot({path: require('path').join(process.env.SHOTS, `rights-bar-${w}-${th}.png`)});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          await q.selectOption('.adm-ubar [data-umerge="Ana Demo"]', {label: 'Carla Demo'});
+          await calm();
+          const m = said.find(s => s.startsWith('confirm: Merge "Ana Demo" into "Carla Demo"?')) || '';
+          if (
+            !(await sent('mergePlan')) ||
+            !m.includes('"Carla Demo" joins: Staff.') ||
+            !m.includes('"Ana Demo" leaves, its rights not moved: Trainers (Host live games, Cohorts).') ||
+            !m.includes('"Ana Demo" leaves the admin list.')
+          )
+            fails.push(`${w}px rights groups: the merge warning ${JSON.stringify(m)}`);
+        } catch (e) {
+          fails.push(`${w}px rights groups: ${String(e.message).split('\n')[0]}`);
+        }
+        await q.close();
+      }
       // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
       // (admin.css --cut), the name ends in "…" and its title holds it whole.
       if (w === 390) {

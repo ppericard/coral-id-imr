@@ -773,7 +773,7 @@ See also SECURITY.md "Rights and the Audit tab", ROADMAP "Roles, instances and c
   `platform`), kept apart from the groups. An admin holds `platform` and `grant` at every scope, never an instance's
   players or content without a group that carries them. `POST {roles: 1, token}` lists it,
   `{roleGrant | roleRevoke: {account, role: 'admin', scope: 'platform'}, token}` changes it (any other role or scope:
-  `input`; no page sends them yet).
+  `input`; no page sends them yet; the admin's Groups page reads the list, read-only).
 
 The `Audit` tab (Time, Admin id, Action, Scope, Result, Target id; `AUDIT`) gets one row per change and capped refusals,
 ids only, never a name. Every privileged endpoint calls `gate_`, then `can_(caller, right, scope)`: the admin token
