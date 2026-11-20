@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
-"""The coral slate pairs' "tell them apart" lines (docs/decisions/2026-11-18-tellapart-lines.md): lays
-tools/coral_apart.json on data.json, as the fish's undeclared pairs' lines (fish.json apart) reach the quiz feedback's one decisive line (quiz.js fbLine, pairLine).
+"""The declared coral pairs' "tell them apart" lines (docs/decisions/2026-11-18-tellapart-lines.md; the pairs with a
+bonus or Key-only genus: docs/decisions/2026-11-20-tellapart-bonus-pairs.md): lays tools/coral_apart.json on data.json,
+as the fish's undeclared pairs' lines (fish.json apart) reach the quiz feedback's one decisive line (quiz.js fbLine,
+pairLine) and the Compare page (learn.js viewCompare), both for genera a game asks.
 
 tools/coral_apart.json, hand-kept: {about, src, pairs, none}.
   - src {key: {t, u?}}: each source, t its name (u its public page when it has one).
-  - pairs {"A|B": {A: [words, [[src key, where in it], ...]], B: [...]}}: for a declared slate pair (the slate as
-    core.js slateOf counts it: data.json gen, and Millepora from x.gen; each genus in the other's look), the feature
-    that tells each genus from the other, in our own words, each side with its sources (rule C2). One side may be left
-    out when no source read gives the other genus's feature; never a side guessed. Never a line made by comparing the
-    Coral Finder trait tags (rule C3); tests/booktext.test.js keeps book text out of them.
-  - none {"A|B": why}: a declared slate pair left without a line, and why (the quiz feedback then shows the first ID tip).
+  - pairs {"A|B": {A: [words, [[src key, where in it], ...]], B: [...]}}: for a declared coral pair (two genera of
+    data.json gen or x.gen, one in the other's look: the slate's pairs, Millepora's included, and those with a bonus or a
+    Key-only genus, which reach players once the genus is in a game), the feature that tells each genus from the other,
+    in our own words, each side with its sources (rule C2). One side may be left out when no source read gives the other
+    genus's feature; never a side guessed. Never a line made by comparing the Coral Finder trait tags (rule C3);
+    tests/booktext.test.js keeps book text out of them.
+  - none {"A|B": why}: a declared coral pair left without a line, and why (the quiz feedback then shows the first ID tip).
 Each side's words describe that genus; data.json gets them on the OTHER genus's record, as the fish's apart: rec[B].ap[A]
 = "A: <A's words>", rec[B].apsrc[A] = "<its sources>", so the feedback after a mix-up of A and B reads "A: ... · B: ..."
 (quiz.js pairText). A number is allowed: IMR's own deciding cue is sometimes one (Alveopora 12 tentacles, Goniopora 24).
 
-The script stops on anything else: a pair that is not a declared slate pair or is in both pairs and none, a declared
+The script stops on anything else: a pair that is not a declared coral pair or is in both pairs and none, a declared
 pair in neither, a side that is not one of its two genera, a line without a source or with a source not in src, a line
 too long, a source never used.
 
   python3 tools/apply_coral_apart.py           write data.json ap and apsrc from tools/coral_apart.json
   python3 tools/apply_coral_apart.py --check   exit 1 when data.json differs from tools/coral_apart.json
-  python3 tools/apply_coral_apart.py --list    print the slate pairs, with and without a line, and what the data says
+  python3 tools/apply_coral_apart.py --list    print the declared pairs, with and without a line, and what the data says
 """
 import json
 import os
@@ -51,8 +54,15 @@ def slate(d):
     return out
 
 
-def slate_pairs(G):
-    """Every declared pair of two slate genera, (a, b) sorted, once."""
+def coral(d):
+    """{genus: its data.json record} for every coral genus: the slate, then the rest of x.gen (bonus and Key-only)."""
+    out = slate(d)
+    out.update({g: r for g, r in ((d.get('x') or {}).get('gen') or {}).items() if g not in out})
+    return out
+
+
+def declared_pairs(G):
+    """Every declared pair of two genera of G, (a, b) sorted, once."""
     out = set()
     for a, g in G.items():
         for b in g.get('look') or []:
@@ -62,25 +72,25 @@ def slate_pairs(G):
 
 
 def lines(A, G):
-    """{genus: {other: (line, source)}} from tools/coral_apart.json A, checked against the slate records G."""
+    """{genus: {other: (line, source)}} from tools/coral_apart.json A, checked against the coral records G."""
     src, used = A.get('src') or {}, set()
     for k, s in src.items():
         if not isinstance(s, dict) or not str(s.get('t', '')).strip() or set(s) - {'t', 'u'}:
             bad(f'src {k}: {{t, u?}}')
         if 'u' in s and not str(s['u']).startswith('https://'):
             bad(f'src {k}: u must be https')
-    pairs = set(slate_pairs(G))
+    pairs = set(declared_pairs(G))
     P0, N0 = A.get('pairs') or {}, A.get('none') or {}
     for key in list(P0) + list(N0):
         ab = key.split('|')
         if len(ab) != 2 or tuple(sorted(ab)) != tuple(ab) or tuple(ab) not in pairs:
-            bad(f'{key}: not a declared slate pair written "A|B" in A-Z order')
+            bad(f'{key}: not a declared coral pair written "A|B" in A-Z order')
     both = set(P0) & set(N0)
     if both:
         bad('in pairs and in none: ' + ', '.join(sorted(both)))
     left = sorted(f'{a}|{b}' for a, b in pairs if f'{a}|{b}' not in P0 and f'{a}|{b}' not in N0)
     if left:
-        bad('declared slate pairs in neither pairs nor none: ' + ', '.join(left))
+        bad('declared coral pairs in neither pairs nor none: ' + ', '.join(left))
     for key, why in N0.items():
         if not str(why).strip():
             bad(f'none {key}: a reason')
@@ -117,8 +127,8 @@ def lines(A, G):
 
 
 def applied(d, A):
-    """data.json d with every slate genus's ap and apsrc from A (none: the keys left out)."""
-    G = slate(d)
+    """data.json d with every coral genus's ap and apsrc from A (none: the keys left out)."""
+    G = coral(d)
     L = lines(A, G)
     for g, rec in G.items():
         rec.pop('ap', None)
@@ -130,9 +140,9 @@ def applied(d, A):
 
 
 def listing(d, A):
-    G = slate(d)
+    G = coral(d)
     have, none = A.get('pairs') or {}, A.get('none') or {}
-    for a, b in slate_pairs(G):
+    for a, b in declared_pairs(G):
         k = f'{a}|{b}'
         print(('LINE ' if k in have else 'NONE ' if k in none else 'TODO ') + k)
         print('   lsrc:', (G[a].get('lsrc') or {}).get(b) or (G[b].get('lsrc') or {}).get(a) or '')
@@ -144,8 +154,8 @@ def listing(d, A):
             print(f'   {x} imr:', ' | '.join(str(i) for i in (g.get('imr') or [])))
     for g in sorted(G):
         print(f"   {g}: IMR Lecture 6 slides {G[g].get('sl') or []}, Coral Finder pages {G[g].get('pages') or []}")
-    n = len(slate_pairs(G))
-    print(f'{len(have)} of {n} slate pairs with a line, {len(none)} without')
+    n, s = len(declared_pairs(G)), len(declared_pairs(slate(d)))
+    print(f'{len(have)} of {n} declared pairs ({s} of the slate) with a line, {len(none)} without')
 
 
 def main():

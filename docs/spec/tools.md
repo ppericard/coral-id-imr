@@ -198,9 +198,10 @@ written with `tools/datajson.py`.
   the lecture slides do not cover (no `imr`: Merulina, Cyphastrea, Halomitra): its tips are condensed from its Coral
   Finder criteria (`crit`, book pages `pages`) and the script also writes `gen[g].tl`, "ID tips (Coral Finder p. …)",
   the heading every tips box shows (`app.js` `tipsLabel`, `learn.js` `viewGenus`), never "ID tips (IMR)" (rules C1, C2).
-- **`apply_coral_apart.py`**: the coral slate pairs' tell-apart lines. It checks the hand-kept `tools/coral_apart.json`
-  (every declared slate pair, Millepora's included, in `pairs` or in `none` with a reason; each side its own genus's
-  words with its sources) and writes `data.json` `ap` / `apsrc` (`--check`: exit 1 when they differ,
+- **`apply_coral_apart.py`**: the declared coral pairs' tell-apart lines. It checks the hand-kept `tools/coral_apart.json`
+  (every declared pair of `gen` and `x.gen` genera, the slate's with Millepora's and those with a bonus or Key-only
+  genus, in `pairs` or in `none` with a reason; each side its own genus's words with its sources) and writes
+  `data.json` `ap` / `apsrc` on every coral record (`--check`: exit 1 when they differ,
   `tests/tellapart.test.js`; `--list`: the pairs with what the data says of each genus). Shown in the feedback sheet:
   [quiz.md › The feedback sheet](quiz.md#the-feedback-sheet).
 - **`apply_imr_corrections.py`**: four IMR wordings Pierre corrected after the plain sentences' sources: Seriatopora,

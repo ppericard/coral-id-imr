@@ -9425,9 +9425,11 @@ async function loadPart(b, base, fails) {
           const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
           undo();
           undo();
+          r.after = rejected(c.f) || !!(entry(g).add || {})[c.f]; // both Undos: neither mark left
           return r;
         }, g);
-        if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
+        // Remove of a candidate Pierre added himself: rejected as well (no return to Candidates, no new auto add); two Undos restore.
+        if (own && (!own.rej || own.added || own.after)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
       }
       // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
       await go('photos/candidates');
