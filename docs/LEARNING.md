@@ -238,7 +238,7 @@ P(right) = 1/k + (1 − 1/k) σ(ability − difficulty + d_f), positive when eas
 (`core.js` `fmtOffsetsOf`, `fmtFit`; served as `?stats=1` `fmt`) on the trusted answers and their logged expectation e:
 Newton's method on d_f with a normal prior N(0, `FMT.SD`²), for a format with `FMT.N` answers or more;
 `core.js` `FMT = {N: 20, SD: 1}`. The guess rate stays 1/k (fitted together, the two are not identifiable). The format
-of an answer comes from its mode and choices (`core.js` `fmtOf`: `k4`, `k3`, `k2`, `again`, `qduel`, `typed`, `exam`…;
+of an answer comes from its mode and choices (`core.js` `fmtOf`: `k4`, `k3`, `k2`, `again`, `qduel`, `find`, `typed`, `exam`…;
 a format absent counts 0, `core.js` `fmtOff`). The ability steps expect the question with its format's offset, and the
 photo's aim takes it (`aimOff(k, df)`), so a 2-choice question that is right more often than 1 in 2 explains no longer
 over-credits the ability. Each subject the sheet does not rate (`SUBJECTS` `offsets` false) scores and aims with every
@@ -517,6 +517,10 @@ never with a card, in a comeback or with a mix-up queued. The unit and its three
 look-alikes first (`model.js` `distractors` with every trap); each photo drawn as the quiz draws a unit's, among its
 tiles. Scored as a quiz answer with 4 choices (the photo of another unit tapped counts as that unit given, rule L2),
 logged `|f` with the photo tapped (`pa`). A subject or player with no tile draws exactly as without it.
+It is a format of its own, `find` (`core.js` `fmtOf`, `analysis.js` `FORMATS`): its photo is aimed with the `find`
+offset and the answer scored with it, and the sheet fits that offset on Find the X answers alone, never in `k4`. Today
+it counts 0 wherever it is played, as every format offset does for a subject the sheet does not rate (`model.js`
+`pfmt`); it applies once that subject's format offsets are read.
 
 ### The Duel tab when the hold sets in
 
