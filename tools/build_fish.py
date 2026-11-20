@@ -1122,7 +1122,7 @@ def genus_root(name, x, r, by, own):
     "genus" (another genus the entry names) or "honours" (the person the entry says the name honours); fit, one of the
     genus's own IMR cues the entry says the name refers to; warn, the IMR cues of other families the name points to (the
     name study's misleading root), each [family name, one of its IMR cues verbatim], never the genus's own family nor
-    one of its own or its family's cues, never with fit; src, its ETYFish page. The build stops on anything else (rules
+    one of its own or its family's cues, never with fit (a family the key in force does not have is left aside); src, its ETYFish page. The build stops on anything else (rules
     C1, C2: every meaning and word verbatim in the entry's text kept beside it, ety; every cue verbatim in the IMR's).
     by: the families by id; own: the genus's family."""
     def bad(why):
@@ -1154,11 +1154,19 @@ def genus_root(name, x, r, by, own):
         mine = set(r.get("cues") or []) | set(own.get("cues") or [])
         if x.get("fit") or not x["warn"] or len({str(w[0]) for w in x["warn"]}) != len(x["warn"]):
             bad("warn: one or more families, each once, never with fit")
+        keep = []
         for w in x["warn"]:
-            f = named.get(w[0]) if isinstance(w, list) and len(w) == 2 else None
-            if not f or f is own or w[1] not in (f.get("cues") or []) or w[1] in mine:
-                bad(f"warn {w}: another family and one of its IMR cues verbatim, not one of the genus's own")
-        root["warn"] = [list(w) for w in x["warn"]]
+            if not (isinstance(w, list) and len(w) == 2):
+                bad(f"warn {w}: [family name, one of its IMR cues]")
+            f = named.get(w[0])
+            if not f:
+                continue  # a family of another key (the names are the key in force's): left aside, as genus marks
+            if f is own or w[1] not in (f.get("cues") or []) or w[1] in mine:
+                why = "its own family" if f is own else "not verbatim one of its IMR cues" if w[1] not in (f.get("cues") or []) else "one of the genus's own cues"
+                bad(f"warn {w}: {why} (another family and one of its IMR cues verbatim, not one of the genus's own)")
+            keep.append(list(w))
+        if keep:
+            root["warn"] = keep
     root["src"] = [{"t": f"The ETYFish Project ({name})", "u": f"https://etyfish.org/{x['page']}/"}]
     return root
 

@@ -309,7 +309,7 @@ const rootLine = (g, slate, where = 'on the slate', unit = n => `<i>${esc(n)}</i
     warnLine = warn.length
       ? ` Careful: the name echoes ${warn.length > 1 ? 'the ID tips' : 'the ID tip'} of ${
           warn.length > 1 ? `${warn.slice(0, -1).join(', ')} and ${warn[warn.length - 1]}` : warn[0]
-        }, ${warn.length > 1 ? 'none' : 'not one'} of its own.`
+        }, ${warn.length > 1 ? 'none of them' : 'not one of'} its own.`
       : '';
   const rootPart = x =>
     x[4] === 'genus'

@@ -27,7 +27,8 @@ Choices made while building, not decided with Pierre, each easy to change (integ
   written, as it passes where the shared ending is counted: rule S1).
 - **Which genera**: the 10 fish genera and 2 corals whose skip line said their root points to another unit's cue
   (Grammistes, Ostorhinchus, Caesio, Pomacentrus, Plectropomus, Pogonoperca, Taenianotus, Taeniura, Flavocaranx,
-  Gnathanodon; Pocillopora, Favites), each with the units its skip line named. Left in `skip`: the roots that read
+  Gnathanodon; Pocillopora, Favites), each with the units its skip line named, and the Spadefishes' "Black band over
+  the eye in adults" beside the Butterflyfishes' band for Taenianotus and Taeniura. Left in `skip`: the roots that read
   against the genus's own family cue (Macropharyngodon, Choerodon, Gracila; Ablabys, whose allusion is also a guess),
   since a line beside an IMR cue that reads against it could read as a correction (rule C1); Taeniamia, whose second
   part is an old genus name; Pectinia, a meaning shared with Ctenactis, not an IMR cue.

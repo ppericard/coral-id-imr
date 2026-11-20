@@ -254,7 +254,7 @@ test('every warning names another unit and one of its ID tips verbatim, never th
   for (const [n, why] of Object.entries(FR.skip)) assert.ok(!/misleading root, held back/.test(why), `skip ${n}: ${why}`);
 });
 
-test('the fish build refuses a warning on the genus’s own family, a cue not verbatim, an unknown family or one with a fit', () => {
+test('the fish build refuses a warning on the genus’s own family, a cue not verbatim or one with a fit; another key’s family is left aside', () => {
   const {spawnSync} = require('child_process'),
     os = require('os');
   const run = m => {
@@ -275,7 +275,7 @@ test('the fish build refuses a warning on the genus’s own family, a cue not ve
   const bad = [
     [[own.name, own.cues[0]]], // its own family
     [['Angelfishes', 'Spine on the gill cover']], // a shortened cue
-    [['Gill-cover fishes', 'Spine on the gill cover (opercular spine)']], // no such family
+    ['Angelfishes'], // not a pair
     [] // nothing to warn about
   ];
   for (const warn of bad) {
@@ -288,6 +288,13 @@ test('the fish build refuses a warning on the genus’s own family, a cue not ve
   const m = JSON.parse(JSON.stringify(FR));
   m.genera.Acanthurus.warn = [['Angelfishes', 'Spine on the gill cover (opercular spine)']];
   assert.match(run(m).out, /Acanthurus: warn: one or more families, each once, never with fit/);
+  // A family the key in force does not have (another region's key names its families otherwise) is left aside: the
+  // build goes on, and fish.json then differs from the file (the test above, every warning in fish.json, catches a typo).
+  const n = JSON.parse(JSON.stringify(FR));
+  n.genera.Pomacentrus.warn = [['Gill-cover fishes', 'Spine on the gill cover (opercular spine)']];
+  const r = run(n);
+  assert.doesNotMatch(r.out, /Pomacentrus: warn/);
+  assert.match(r.out, /fish\.json is not as key .* gives it/);
 });
 
 test('rootLine: the warning names the unit and its tip, one or several, escaped; a genus in italics, a family plain', () => {
@@ -302,7 +309,7 @@ test('rootLine: the warning names the unit and its tip, one or several, escaped;
   );
   assert.ok(
     fishLine('Grammistes').includes(
-      'Careful: the name echoes the ID tips of Coral Breams (“Often a horizontal line along the body”), Cardinalfishes (“Horizontal stripes, small body”) and Squirrelfishes (“Horizontal stripes, medium body”), none of its own.'
+      'Careful: the name echoes the ID tips of Coral Breams (“Often a horizontal line along the body”), Cardinalfishes (“Horizontal stripes, small body”) and Squirrelfishes (“Horizontal stripes, medium body”), none of them its own.'
     ),
     fishLine('Grammistes')
   );

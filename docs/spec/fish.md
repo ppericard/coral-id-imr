@@ -220,8 +220,9 @@ verbatim]`; 10 genera (Pomacentrus and Plectropomus: the Angelfishes' "Spine on 
 
 - `tools/build_fish.py` `add_families` (`genus_root`) builds it on every rebuild (`--regroup` applies an edit offline)
   and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, a warning names the
-  genus's own family, an unknown one, a cue not verbatim in that family's or one of the genus's own (or comes with a
-  `fit`), or a genus of any circle (1-3, all of `fish.json`'s) has neither a root nor a reason in `skip`. A fish part may have no word, or be another
+  genus's own family, a cue not verbatim in that family's or one of the genus's own (or comes with a `fit`; a family
+  the key in force does not have is left aside, as another key's genus marks are, and `tests/roots.test.js` checks that
+  every warning reaches `fish.json`), or a genus of any circle (1-3, all of `fish.json`'s) has neither a root nor a reason in `skip`. A fish part may have no word, or be another
   genus the entry names (fifth item `genus`: "the genus *Pomacentrus*") or the person it says the name honours
   (`honours`). A genus with no root is never an omission: its `skip` line says why (the root is a guess or unknown, has
   two meanings, names an old genus or reads against its own family's IMR cue: rules C1, C2). The genera
