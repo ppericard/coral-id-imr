@@ -326,8 +326,13 @@ Each planted world has the real design and the pooled variances. λ(L) = exp(γx
 
 1. **The form to build: continuous, with its parameter at today's null.** Each trusted right answer enters the photo's
    time term with a precision weight ω(L) = s(L)/(1 − s(L)) relative to the photo's prior:
-   - TI_f = Σ ω(L_a)·ẑ_a / (Σ ω(L_a) + 1). The photo's variance scales as exp(γ x), x = (L − L_ref)/sd_L: the
-     simulation's λ², so its γ is this γ. Hence s(L) = s₀e^{γx} / (s₀e^{γx} + 1 − s₀), about s₀e^{γx} while s is small;
+   - The model: ẑ_a = λ(L_a)·b_f + noise, b_f the photo's latent time effect. λ² = exp(γ x), x = (L − L_ref)/sd_L
+     (the simulation's λ, so its γ is this γ). Hence s(L) = s₀e^{γx} / (s₀e^{γx} + 1 − s₀), about s₀e^{γx} while s is
+     small.
+   - The photo term is the posterior mean of b_f, each answer divided by its loading:
+     TI_f = Σ ω(L_a)·(ẑ_a / λ(L_a)) / (Σ ω(L_a) + 1). ω already holds λ², so leaving out the division would scale the
+     estimate by the answers' typical λ (Codex's review of #1352).
+   - Step 2 subtracts λ(L)·TI_f from the player's z. At γ = 0 both reduce to the plain weighted mean and z − TI_f;
    - L is the player's level at the answer (the running mean of the logged Ability, or the global level if the sheet
      carries it);
    - **γ = 0 today** (the declared fallback): one ω for everyone, i.e. one N₀ = 1/ω.
