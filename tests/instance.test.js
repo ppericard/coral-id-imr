@@ -125,9 +125,13 @@ test('fish: a base that still carries a field of the layer, or a layer node the 
   assert.match(regroup(sub).out, /layer node t01a circle: not a field of the layer/);
 });
 
-test('coral: the layer holds imrg, each genus’s ig, imr and mn, and the lecture’s pairs; data.json is the sources plus the layer, byte for byte', () => {
+test('coral: the layer holds imrg, each genus’s n, ig, imr, mn, slides and ID tips, and the lecture’s pairs; data.json is the sources plus the layer, byte for byte', () => {
   assert.deepStrictEqual(Object.keys(CL.gen), Object.keys(RAW.gen));
-  Object.values(CL.gen).forEach(x => assert.deepStrictEqual(Object.keys(x), ['ig', 'imr', 'mn']));
+  Object.entries(CL.gen).forEach(([g, x]) => {
+    const keys = ['n', 'ig', 'imr', 'mn'];
+    if (RAW.gen[g].sl) keys.push('sl', 'qt', ...(RAW.gen[g].rsl ? ['rsl'] : []));
+    assert.deepStrictEqual(Object.keys(x), keys, g);
+  });
   assert.deepStrictEqual(Object.keys(CL).sort(), ['_doc', 'gen', 'imrg', 'pairs']);
   assert.strictEqual(CL.imrg.length, 11);
   const out = JSON.parse(
@@ -140,7 +144,7 @@ other = json.loads(json.dumps(lay)); other['gen']['Acropora']['mn'] = 'Another i
 fewer = json.loads(json.dumps(lay)); del fewer['gen']['Acropora']['mn']; del fewer['imrg']
 gone = coral_compose(d, fewer)
 print(json.dumps([
-  'imrg' in bare or any(k in r for r in bare['gen'].values() for k in ('ig', 'imr', 'mn')),
+  'imrg' in bare or any(k in r for r in bare['gen'].values() for k in ('n', 'ig', 'imr', 'mn', 'sl', 'rsl')),
   dumps(coral_compose(bare, lay)) == s,
   dumps(coral_compose(bare, other)) == s,
   dumps(coral_compose(d, lay)) == s,
@@ -250,4 +254,74 @@ except SystemExit as e:
     py(`from instance import coral_layered\nfrom datajson import load\nd = load()\nprint(coral_layered(d) == d)`).trim(),
     'True'
   );
+});
+
+test('coral: the slate number, the lecture slides and the lecture’s ID tips are the layer’s; the Coral Finder’s tips stay in the sources', () => {
+  const COMES_FROM_BOOK = Object.keys(RAW.gen).filter(g => RAW.gen[g].tl);
+  assert.deepStrictEqual(COMES_FROM_BOOK, ['Merulina', 'Cyphastrea', 'Halomitra'], 'the genera whose tips are the Coral Finder’s');
+  Object.entries(RAW.gen).forEach(([g, r]) => {
+    const x = CL.gen[g];
+    assert.strictEqual(x.n, r.n, `${g} n`);
+    assert.deepStrictEqual(x.sl, r.sl, `${g} sl`);
+    assert.deepStrictEqual(x.rsl, r.rsl, `${g} rsl`);
+    if (r.tl) assert.ok(!('qt' in x), `${g}: Coral Finder tips in the layer`);
+    else assert.deepStrictEqual(x.qt, r.qt, `${g} qt`);
+  });
+  assert.deepStrictEqual(
+    [
+      Object.values(CL.gen).filter(x => x.qt).length,
+      Object.values(CL.gen).filter(x => x.sl).length,
+      Object.values(CL.gen).filter(x => x.rsl).length,
+      Object.values(CL.gen).filter(x => x.n === 0).length
+    ],
+    [36, 36, 9, 5],
+    '[lecture ID tips, lecture slides, review slides, starred genera]'
+  );
+  const out = JSON.parse(
+    py(`from instance import coral_strip, coral_compose, load_layer
+from datajson import load
+d, lay = load(), load_layer('coral')
+bare = coral_strip(d)
+edition = coral_compose(bare, {})
+print(json.dumps([
+  [g for g, r in bare['gen'].items() if 'qt' in r],
+  [g for g, r in bare['gen'].items() if 'n' in r or 'sl' in r or 'rsl' in r],
+  [g for g, r in edition['gen'].items() if 'qt' in r],
+  [g for g, r in edition['gen'].items() if 'n' in r or 'sl' in r],
+  edition['gen']['Merulina']['qt'] == d['gen']['Merulina']['qt'],
+]))`)
+  );
+  assert.deepStrictEqual(
+    out,
+    [COMES_FROM_BOOK, [], COMES_FROM_BOOK, [], true],
+    '[the sources hold the Coral Finder’s tips alone and no number or slide; an edition without the layer has no slate, no slides and no lecture tips]'
+  );
+  // An edit of any of them made in data.json is refused (it belongs in the layer file); the Coral Finder’s tips are the sources’ own.
+  const refused = py(`from instance import coral_layered
+from datajson import load
+for g, k, v in [('Acropora', 'qt', ['an edit made in data.json']), ('Acropora', 'sl', [99]), ('Acropora', 'n', 99), ('Fungia', 'rsl', [99]), ('Merulina', 'qt', ['an edit of the book tips'])]:
+    d = load()
+    d['gen'][g][k] = v
+    try:
+        coral_layered(d)
+        print(g, k, 'written')
+    except SystemExit as e:
+        print(g, k, str(e)[:60])`);
+  assert.match(refused, /Acropora qt data\.json: gen Acropora qt differ from/);
+  assert.match(refused, /Acropora sl data\.json: gen Acropora sl differ from/);
+  assert.match(refused, /Acropora n data\.json: gen Acropora n differ from/);
+  assert.match(refused, /Fungia rsl data\.json: gen Fungia rsl differ from/);
+  assert.match(refused, /Merulina qt written/);
+  // The layer giving tips to a genus whose tips are the Coral Finder’s stops the build; a changed value no longer gives data.json.
+  const tips = py(`from instance import coral_compose, load_layer
+from datajson import load, dumps
+d, lay = load(), load_layer('coral')
+other = json.loads(json.dumps(lay)); other['gen']['Acropora']['n'] = 99; other['gen']['Fungia']['sl'] = [1]
+print(dumps(coral_compose(d, other)) == open('data.json', encoding='utf-8').read())
+lay['gen']['Merulina']['qt'] = ['x']
+try:
+    coral_compose(d, lay)
+except SystemExit as e:
+    print(e)`);
+  assert.match(tips, /^False\n.*qt of Merulina: their ID tips come from the Coral Finder \(tl\)/);
 });

@@ -639,11 +639,12 @@ test('sign-out clears the first-launch answer and Coral basics with the progress
   assert.match(src, /const signOff = \(\) => \{\s*signOutClear\(\);/, 'Sign out clears through it');
   // Every subject's record (reefid-sync-<subject>-start, core.js startKey) goes with that subject's other keys.
   assert.match(list, /\[[^\]]*'start'[^\]]*\]\.map\(k => subjKey\(S\.id, k\)\)/);
-  // Every subject's basics module record (subjDev 'basics': Coral basics', Fish basics') goes too: one device, several players.
+  // Every subject's basics module record (subjDev 'basics': Coral basics', Fish basics', Sea slug basics') goes too: one
+  // device, several players.
   assert.match(list, /\[[^\]]*'basics'[^\]]*\]\.map\(k => subjDev\(S\.id, k\)\)/);
   assert.deepStrictEqual(
     C.SUBJECTS.filter(S => S.pages.includes('basics')).map(S => C.subjDev(S.id, 'basics')),
-    ['reefid-basics', 'reefid-fish-basics'],
+    ['reefid-basics', 'reefid-fish-basics', 'reefid-seaslug-basics'],
     'each subject with a basics module has its own record, the corals keeping theirs'
   );
 });
@@ -791,7 +792,7 @@ test('per subject: the fish welcome question, its own record, window and cards',
   assert.ok(
     C.subjectOf('coral').pages.includes('basics') &&
       C.subjectOf('fish').pages.includes('basics') &&
-      !C.subjectOf('seaslug').pages.includes('basics'),
-    'a basics module: the corals and the fish, not the sea slugs'
+      C.subjectOf('seaslug').pages.includes('basics'),
+    'a basics module for each subject: the corals, the fish and the sea slugs (Q437)'
   );
 });

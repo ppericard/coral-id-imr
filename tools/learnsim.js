@@ -9,7 +9,7 @@
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
-//                          [--set calibration-set.json|none]
+//                          [--set calibration-set.json|none] [--rows sp:off,sci:off]
 //                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]]
 //                          [--budget MIN] [--per-job SEC] [--pierre-go "Q number or message, date"]
 // --budget MIN (rule L11, tools/checkbudget.js): minutes of compute, 40 at most and by default, in either world: the run
@@ -183,6 +183,11 @@ const SEEDS = Number(arg('seeds', 5)),
   LIVEOFF = process.argv.includes('--liveoff'),
   ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
   BEYOND = arg('beyond', ''),
+  // --rows sp:off,sci:off: the What I learn card's names rows, each k:on|off, switched before the first question.
+  ROWS = arg('rows', '')
+    .split(',')
+    .filter(Boolean)
+    .map(x => [x.split(':')[0], x.split(':')[1] !== 'off']),
   CHOICE = arg('choice', 'new'),
   FALLBACK = arg('fallback', 'keep'),
   VARS = JSON.parse(arg('vars', '{}')),
@@ -594,6 +599,8 @@ function play(cfg) {
   // The first-launch question (--choice), answered before the first question; the first answers measured, and the
   // fallback card that may follow them.
   if (typeof startSet === 'function') startSet(choice, 'tour');
+  // --rows: the What I learn card's names rows switched before the first question (app.js learnSet).
+  (cfg.rows || []).forEach(([k, on]) => typeof learnSet === 'function' && learnSet(k, on));
   const early = {n: 0, s: 0, ok: 0, lvl: null, fb: null, tr: []};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
@@ -1307,6 +1314,7 @@ async function run(browser, base, name, seed, n = QN) {
     calib: CALIBX,
     ach: ACHT,
     beyond: BEYOND,
+    rows: ROWS,
     live: LIVEN,
     liveOff: LIVEOFF
   });
