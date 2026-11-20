@@ -258,6 +258,16 @@ test('Code.gs (rule D7): a merge moves the images to the name they joined, no ol
   assert.strictEqual(cell(), require('vm').runInContext("aid_('Ana2')", s.ctx));
 });
 
+test('Code.gs: a merge writes every Player cell back escaped, an unrelated id starting with + stays text', () => {
+  const s = signedIn();
+  post(s, [rep('m2', {img: img(40)})]);
+  const tab = s.sheets['Report images'];
+  // a second image of an unrelated reporter, its id read back by getValues without the apostrophe Sheets drops
+  tab.getRange(3, 1, 1, 6).setValues([['x9', '2026-11-21', "'+zz9", 'image/jpeg', 8, 'AAAA']]);
+  require('vm').runInContext("relabel_('Reports', 2, 'Ana', 'Ana2')", s.ctx);
+  assert.strictEqual(tab.getRange(3, 3, 1, 1).getValues()[0][0], '+zz9', 'still text, not a formula');
+});
+
 test('tools/report_image.js: lists, decodes with its checks, names the range to clear', () => {
   const b = jpeg(100000),
     t = b.toString('base64'),

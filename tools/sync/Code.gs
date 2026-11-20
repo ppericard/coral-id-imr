@@ -1562,7 +1562,9 @@ function repImgDrop_(ids){
 function repImgRelabel_(from, into){
   const im = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(REPIMG.TAB); if (!im || im.getLastRow() < 2) return 0;
   const rg = im.getRange(2, 3, im.getLastRow() - 1, 1), v = rg.getValues(), a = aid_(from), b = aid_(into); let n = 0;
-  v.forEach(r => { if (String(r[0]) === a) { r[0] = safe_(b); n++; } });  // an id may start with +: kept as text
+  // getValues returns an escaped id without its apostrophe: every cell written back goes through safe_ again, so an
+  // unrelated id that starts with + stays text, not only the renamed ones
+  v.forEach(r => { if (String(r[0]) === a) { r[0] = b; n++; } r[0] = safe_(r[0]); });
   if (n) rg.setValues(v);
   return n;
 }
