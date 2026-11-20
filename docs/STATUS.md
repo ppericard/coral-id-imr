@@ -15,9 +15,9 @@ Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 
 
 ## Now
 
-Main: sheet script **v208** (#1298, tool and admin data into `data/`). Merged this evening: #1313 (auto-sort
-follow-ups), #1321 (INTEGRATOR: the next task comes from the ROADMAP), #1298. Running: #1279 (Memory for fish and sea
-slugs) takes v209, then the oldest-first wave (`afterall.sh`), then #1315 (queue tools) and #1342 (fish phases list).
+Main: sheet script **v209** (#1279, Memory for fish and sea slugs). Merged this evening: #1313 (auto-sort follow-ups),
+#1321 (INTEGRATOR: the next task comes from the ROADMAP), #1298 (v208, tool and admin data into `data/`), #1279.
+Running: the oldest-first wave (`afterall.sh`), then #1315 (queue tools), #1342 (fish phases list), this PR.
 
 - **Closed by measurement tonight**: R55 (the rare-photo cap works: 8.7% [7.0, 10.7] of 899 rows under the code's own
   bar; the 14.1% under ease 4 is `RARE.FEW` by design); R71b (every FishBase main picture already carries `rep`, 68/68
