@@ -60,6 +60,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 |---|---|---|
 | 2026-11-20 | [A photo the auto-sort put in has a route out, and the admin's pages read its proposals as the game does](2026-11-20-auto-route-out-pages-read-anew.md) | #1313 |
 | 2026-11-20 | [Cards per subject: the one-tap question's session is the subject's, and the sea slugs' all-met card before circle 3](2026-11-20-cards-per-subject.md) | #1318 |
+| 2026-11-20 | [The two compared photos after a wrong answer show whole](2026-11-20-compare-photos-whole.md) | #1316 |
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
 | 2026-11-20 | [Find the X's own offset: a format of its own, `find`, at 0 until its subject's format offsets are read](2026-11-20-find-the-x-own-offset.md) | #1299 |
 | 2026-11-20 | [The admin corrects the fish name index in a family's Names box; a species' own list waits for a format](2026-11-20-fish-names-admin.md) | #1311 |
@@ -72,6 +73,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |
 | 2026-11-20 | [A name root that echoes another unit's ID tip shows with a warning, never held back](2026-11-20-name-root-warning.md) | #1308 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
+| 2026-11-20 | [One opening hold path on the sheet for every subject; the app still adopts the corals' only](2026-11-20-one-hold-path-sheet.md) | #1346 |
 | 2026-11-20 | [Report a problem: a line of its own on the answer's feedback, never behind More](2026-11-20-report-link-in-view.md) | #1319 |
 | 2026-11-20 | [Sea slug basics: the basics module for the sea slugs, and Basics open for them](2026-11-20-seaslug-basics.md) | #1286 |
 | 2026-11-20 | [The sea slug box pass: Opus 5.5 medium, decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
