@@ -67,13 +67,14 @@ IMR sub-entry's cues when one names it (else its own ID marks,
 unchanged. The genera of circles 2 and 3 are in the game once the sheet replays them (`sciNow`, `sync.js` `generaOn`,
 rule D4). Tests: `tests/fishunits.test.js`.
 
-- **An opt-in set** of the fish (`sci`, `SUBJECTS` fish `optin`): offered once a family is at Advanced, ⚙ Scientific
-  names and My progress any time. `units()` is the genera of the families at Advanced plus those already met; `auto()`
-  (played whatever the set's state: `bonusList`) an IMR player's IMR genera (`imrg`: the IMR sub-entry names that genus
-  alone) from their family's Open Water plus those already met (`app.js` `sciOpen`; `model.js` `imrSaid`: ever answered
-  "I'm at IMR"); `all()` every genus in the game (`setOf`). `units()` reads the families at Open Water instead when the
-  player turned the set on by hand before any family was at Advanced (`Q.sciH`, set by `app.js` `bonusSet` from ⚙ or My
-  progress, synced with the choice). `rv` is the set's rules version, recorded with each choice as `Q.sciV` (synced with
+- **An opt-in set** of the fish (`sci`, `SUBJECTS` fish `optin`): offered once a family is at Advanced, the What I
+  learn card's Scientific names row any time ([below](#the-what-i-learn-card-names-rows)). `units()` is the genera of
+  the families at Advanced plus those already met; `auto()` (played whatever the set's state but the card's Off:
+  `app.js` `autoOf`, `bonusList`) an IMR player's IMR genera (`imrg`: the IMR sub-entry names that genus alone) from
+  their family's Open Water plus those already met (`app.js` `sciOpen`; `model.js` `imrSaid`: ever answered "I'm at
+  IMR"); `all()` every genus in the game (`setOf`). `units()` reads the families at Open Water instead for a record
+  that has `Q.sciH` (turned on by hand before any family was at Advanced, from the former ⚙ row or My progress box;
+  synced with the choice); the card never sets it (Q401 A). `rv` is the set's rules version, recorded with each choice as `Q.sciV` (synced with
   it, `sync.js` `mergeSubject`), and `back` the one-time card to a player who turned it on under earlier rules (`quiz.js`
   `bonusBackShow`).
 - **Kept in their rank**: `app.js` `rankOf(n)` ('' at the subject's own unit rank): `model.js` `distractors` keeps a
@@ -83,6 +84,32 @@ rule D4). Tests: `tests/fishunits.test.js`.
   the unit's `one`. Genera are never duel pairs (`UNITS.fish.pairs`), never on the families page (`page: false`), never
   in the families' mean (`progPct`); they count in the fish global score (half a genus's bar is its species' scientific
   credit: `core.js` `treeScore`, [below](#the-fish-global-score)).
+
+### The What I learn card: names rows
+
+Pierre, 2026-11-18 (Q396, Q400 D, Q401 A, Q402 A, Q404 A); decision record
+[2026-11-18-what-i-learn-names-rows](../decisions/2026-11-18-what-i-learn-names-rows.md). A subject declares its names rows in one
+place, `app.js` `UNITS[id].learn`: `{name, line(), when(), self(), k}`, `k` the opt-in set the row switches (in
+`SUBJECTS` `optin`, so the choice syncs and merges). The fish: Common names (`sp`, shown from `SPECIES_SHEET`) and
+Scientific names (`sci`: the genera, and through `sciUp` their species); the sea slugs: Species (`ssp`, shown from
+`SCI_SHEET`); the corals: none, so no card and no Home link. `learnRows()` keeps the rows whose `when()` holds (rule
+D4).
+
+- **A row's state** (`rowOn`): on while not turned off on the card (`Q[k + 'O']`) and either turned on (`Q[k]` true) or
+  bringing its units by itself (`self()`: the species; an IMR player's scientific genera, "I'm at IMR" meaning both). A
+  record no switch was tapped on reads as it plays: its pool is unchanged.
+- **Off** (`learnSet(k, false)`): `Q[k]` false and `Q[k + 'O']` true; `autoOf(S)` then returns nothing, so the units the
+  set brings by itself stop too (Q404 A), at every reader (`bonusList`, `setLater`, `shareFree`, `sciUp`, the back
+  card). A card's "Not now" or "Close them for now" writes `Q[k]` false alone and keeps them, as before. The units keep
+  their bars and the score its one scale (Q402 A). Both fish rows off leaves the families, allowed (Q404 A).
+- **On** (`learnSet(k, true)`): `Q[k]` true, `Q[k + 'O']` removed, never `Q.sciH`: a level turned on comes as its
+  parent reaches the usual threshold, never sooner (Q401 A).
+- **Sync and merge**: `O` travels with the choice (`sync.js` `mergeSubject`'s suffixes) and goes with a reset; `core.js`
+  `mergeUsers` keeps it only where both accounts have it (on either stays on).
+- **Where**: `progress.js` `learnCard`, right after the player's card on My progress: one line on phones that opens in
+  place, open on desktop between the player's card and the side column; Home's Learn door has "What I learn ›" on its
+  kicker row (`home.js`), which opens it (`WIL_OPEN`). ⚙ has no Scientific names row, and My progress no "Turn on
+  scientific names" box. Tests: `tests/namesrows.test.js`, `tests/fish.smoke.js`.
 
 ## Fish species, step 1: by common name
 

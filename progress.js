@@ -42,6 +42,46 @@ function badge(ring, pct, sub) {
         : ''
     }</span>${scoreBars(headScore())}</div></div>`;
 }
+// The What I learn card (docs/FISH_PATH.md "Which names a player learns"; Pierre, 2026-11-18, Q396, Q400 D, Q404 A): the
+// subject's names rows (app.js learnRows), each on or off, under its base level (always on). Right under the player's
+// card: on phones one line that opens it in place, on desktop open at the top of the side column (app.css .wil). Home's
+// Learn door links here with it open (WIL_OPEN, home.js). None for a subject without a names row (the corals).
+let WIL_OPEN = false;
+const learnOpen = () => (WIL_OPEN = true);
+function learnCard(rows = learnRows(), open = WIL_OPEN || (typeof matchMedia === 'function' && matchMedia('(min-width: 1024px)').matches)) {
+  if (!rows.length) return '';
+  const base = SUBJ.many.charAt(0).toUpperCase() + SUBJ.many.slice(1),
+    on = rows.filter(r => rowOn(r)),
+    sum = on.length ? [base, ...on.map(r => r.name.toLowerCase())].join(', ') : `${base} only`;
+  const row = r => {
+    const o = rowOn(r);
+    return `<div class="wilrow${o ? '' : ' off'}"><div class="wiltxt"><b>${esc(r.name)}</b><small>${esc(o ? r.line() : 'Off. Your progress on them is kept.')}</small></div><div class="seg" role="group" aria-label="${esc(r.name)}">${[
+      ['1', 'On'],
+      ['0', 'Off']
+    ]
+      .map(([v, t]) => `<button type="button" data-wil="${esc(r.k)}" data-on="${v}" aria-pressed="${(v === '1') === o}">${t}</button>`)
+      .join('')}</div></div>`;
+  };
+  return `<details class="wil" id="wil"${open ? ' open' : ''}><summary><b>What I learn</b><span>${esc(sum)}</span></summary><div class="wilrows"><div class="wilrow base"><div class="wiltxt"><b>${esc(base)}</b><small>Always on</small></div></div>${rows.map(row).join('')}</div></details>`;
+}
+// A row's switch on the card: the set on or off (app.js learnSet), the card kept open as the board redraws.
+function learnBind() {
+  document.querySelectorAll('#wil [data-wil]').forEach(
+    b =>
+      (b.onclick = () => {
+        const r = learnRows().find(x => x.k === b.dataset.wil),
+          on = b.dataset.on === '1';
+        if (!r || rowOn(r) === on) return;
+        WIL_OPEN = true;
+        NEXTQ = null;
+        learnSet(r.k, on);
+        quizBoard();
+        appToast(on ? `${r.name} on. ${r.line()}` : `${r.name} off. Your progress on them is kept.`, 6000);
+      })
+  );
+  const d = document.getElementById('wil');
+  if (d) d.ontoggle = () => (WIL_OPEN = d.open);
+}
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
 // tile breaks it there with a hyphen instead of anywhere, at the normal size.
 const shyName = n => {
@@ -217,7 +257,7 @@ function quizBoard() {
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
   <p class="lede"><b>Your tricky pairs</b>: the pairs of ${SUBJ.many} you mix up most, from your own answers alone, once you have mixed a pair up ${TRICKY.MIN} times ("3 of 5": mixed up 3 times in 5 questions that offered both). A pair you now tell apart sinks below the others. ${SUBJ.pages.includes('cmp') ? 'Tap one to see the two side by side. ' : ''}Ask yourself what tells the two apart for you.</p>
-  <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}<div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}${learnCard()}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
@@ -230,12 +270,6 @@ function quizBoard() {
       .map(
         S =>
           `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-opens="${esc(S.k)}">${esc(S.row(S.units().filter(n => !introduced(n)).length))}</button></div>`
-      )
-      .join('')}
-    ${SETS()
-      .filter(S => S.row && !Q[S.k])
-      .map(
-        S => `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-seton="${esc(S.k)}">${esc(S.row)}</button></div>`
       )
       .join('')}
     ${
@@ -278,18 +312,7 @@ function quizBoard() {
         appToast('They open one at a time as you play.', 6000);
       })
   );
-  // An opt-in set that is off (app.js UNITS sets) turns on here as with ⚙ On; its units then come by the set's own rule
-  // (units). Both buttons: docs/decisions/2026-11-18-decisions-from-comments-3.md.
-  document.querySelectorAll('[data-seton]').forEach(
-    b =>
-      (b.onclick = () => {
-        const S = SETS().find(x => x.k === b.dataset.seton);
-        bonusSet(true, b.dataset.seton, true);
-        NEXTQ = null;
-        quizBoard();
-        if (S && S.onToast) appToast(S.onToast(), 6000);
-      })
-  );
+  learnBind();
   bindSync();
   // The player's rank, on the first board of the Leaderboard page that lists them (boardScopes: their groups', then the
   // general one). The board brings the rank only: the Elo stays the device's own, so nothing jumps when the reply comes.
