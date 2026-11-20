@@ -1466,3 +1466,14 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **The one-tap question per subject (a report from the app, the coral practice quiz).** «Carte "this questions are"
+  après une seule question dans les coraux. Attention à avoir des compteurs par matière». Each subject paced its own
+  question already, but the session it waits for (15 answers over 5 minutes) was the device's, so a long session in
+  another subject brought it at the first coral answer: the session is now the subject's, an answer in another subject
+  starting a new one. Applied: `quiz.js` `pulseVisit`, `pulseDue`; docs/spec/cards.md "One-tap questions",
+  decisions/2026-11-20-cards-per-subject.md.
+- **A card before the sea slugs' next circle (a report from the app, Home).** «Ya pas de carte avant de passer au cercle
+  suivant pour les nudibranches?». Their circle 3 opens by itself with no offer card (#1005) and they had no all-met
+  card: they get the fish's all-met card in their own words, which says what comes next before circle 3. Applied:
+  `app.js` `UNITS.seaslug` `done`, `slugNextOf`, `CARD_KINDS`; docs/spec/seaslugs.md "Their circles",
+  decisions/2026-11-20-cards-per-subject.md.

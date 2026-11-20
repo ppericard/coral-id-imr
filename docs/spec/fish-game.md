@@ -40,7 +40,7 @@ IMR-tagged families first for a player who answered "I'm at IMR"). There is no â
 
 Once every unit in play is met and asked and none may open now, a calm card at the break at Next says so and what comes
 next, once per reason (`quiz.js` `allMetDue`, `allMetNone`, `allMetArm`, `allMetShow`; `UNITS` `done`, absent for the
-corals; `app.js` `fishNextOf`): `c3`, circle 3 not reached; `beyond`, circle 3 declined, once its offer will not come
+corals; `app.js` `fishNextOf`, the sea slugs' `slugNextOf` in their words: [seaslugs.md](seaslugs.md)): `c3`, circle 3 not reached; `beyond`, circle 3 declined, once its offer will not come
 back (after a first "Not now" it comes back once, and no card is shown meanwhile); `all`, else: the families still
 without a game photo and the Scientific names state, else the exams. It is seen on the device under
 `reefid-fish-allmet-<k>` (cleared at sign-out and account deletion with the account's keys, `sync.js` `signOutClear`,
