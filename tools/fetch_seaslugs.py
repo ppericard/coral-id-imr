@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sea-slug candidate photos from iNaturalist, into seaslug-cand.json: data only, for the later judging and admin tools
+"""Sea-slug candidate photos from iNaturalist, into data/seaslug-cand.json: data only, for the later judging and admin tools
 (no app subject yet; nothing downloaded, nothing judged, nothing uploaded).
 
 The sea-slug counterpart of tools/fetch_fish.py, whose searches, cache, pacing and record shape it reuses, with the
@@ -18,7 +18,7 @@ sea-slug decisions:
   usable licence, in the observer's order. Unlike the fish (every photo of an observation since 2026-11-08, Q226), a
   candidate is one observation.
 - What counts against the target: the candidates still usable, as the fish's cap counts them (fetch_fish.species_room):
-  a candidate the judging pass found an egg mass (suggest.json "seaslug" {egg: 1}, the egg rule's filter 2) frees its
+  a candidate the judging pass found an egg mass (data/suggest.json "seaslug" {egg: 1}, the egg rule's filter 2) frees its
   place. Its observation keeps it first (rule P4: the egg-only photo goes, not the observation's other photos): an
   observation whose every candidate is an egg mass brings its next usable photo, asked again by id (eggs_back, every
   list of the run in one request), under the same rules as a new candidate (still that taxon, Research Grade or agreed,
@@ -49,7 +49,7 @@ sea-slug decisions:
   then the licence, then a fixed hash of the observation id (fetch_fish.hord: no votes or quality order). A rerun keeps
   every candidate already there and only fills the room left; a photo or an observation is never taken twice.
 
-seaslug-cand.json is shaped like fish-cand.json, so the fish's judging and admin tools can be pointed at it:
+data/seaslug-cand.json is shaped like data/fish-cand.json, so the fish's judging and admin tools can be pointed at it:
 {"v": 1, "cand": {species key: [record, ...]}}, one species per line (tools/datajson.py layout), the species in
 tools/seaslugs.json order. The record fields are the fish's (fetch_fish.record): f, a, lic, o, t, own, loc, src, r
 (r: 1, the photo stays remote at `src`), plus st (the observer's Life Stage annotation) when there is one and ni (Pierre's
@@ -91,7 +91,7 @@ Two more kinds of candidate (Pierre, 2026-11-17, Q389; study docs/reviews/2026-1
     python3 tools/fetch_seaslugs.py [--circle 1] [--only "Jorunna parva,119434"] [--own] [--refresh | --offline]
     python3 tools/fetch_seaslugs.py --informal [--genus-level] [--refresh | --offline]
     python3 tools/fetch_seaslugs.py --genus-level [--only "Goniobranchus,Phyllidiella"] [--refresh | --offline]
-    (--suggest PATH: the judgements read for the egg masses, default suggest.json)
+    (--suggest PATH: the judgements read for the egg masses, default data/suggest.json)
 Tests: node --test tests/seaslugcand.test.js (stubbed network).
 """
 import argparse
@@ -112,7 +112,7 @@ from presence import NEAR_AREA, label_confirmed, near_dauin  # noqa: E402  rule 
 
 SRC = ROOT / "tools" / "seaslugs.json"
 INFORMAL = ROOT / "tools" / "seaslug_informal.json"
-CAND = ROOT / "seaslug-cand.json"
+CAND = ROOT / "data/seaslug-cand.json"
 CACHE = ROOT / "tools" / ".cache" / "seaslug_photos.json"
 PREFIX = "seaslug"
 CIRCLES = (1, 2, 3)  # the circles in the game (tools/seaslug_game.py CIRCLES): their genera are the genus units
@@ -123,7 +123,7 @@ GL_PAGES = 60  # pages of 200 a genus-level search reads at most (the Philippine
 EGG_BATCH = 200  # observations asked again by id in one request (eggs_back; rule C7)
 # eggs_back's fields: GL_FIELDS and the observation fields, whose label says a species with no name
 ID_FIELDS = GL_FIELDS + ",ofvs.field_id,ofvs.name,ofvs.value"
-SUGGEST = ROOT / "suggest.json"  # the judgements: suggest.json "seaslug" (tools/judging_fish.py --subject seaslug)
+SUGGEST = ROOT / "data/suggest.json"  # the judgements: data/suggest.json "seaslug" (tools/judging_fish.py --subject seaslug)
 
 
 def target(s, T):
@@ -136,7 +136,7 @@ def target(s, T):
 
 
 def egg_set(sug):
-    """The candidates judged an egg mass (suggest.json "seaslug" {f: {egg: 1}}: the egg rule's filter 2)."""
+    """The candidates judged an egg mass (data/suggest.json "seaslug" {f: {egg: 1}}: the egg rule's filter 2)."""
     return {f for f, j in ((sug or {}).get("seaslug") or {}).items() if isinstance(j, dict) and j.get("egg")}
 
 
@@ -195,7 +195,7 @@ def pick(items, room, n, used, taken):
 
 
 def record(key, o):
-    """A candidate, in fish-cand.json's fields (fetch_fish.record)."""
+    """A candidate, in data/fish-cand.json's fields (fetch_fish.record)."""
     p = o["p"]
     r = {"f": f"{PREFIX}-{key}-cand-{p[0]}", "a": p[3] or (f"(c) {o['u']}" if o["u"] else ""),
          "lic": p[2] or ("own" if o["own"] else ""), "o": obs_url(o["id"]), "t": o["t"], "own": o["own"],

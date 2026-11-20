@@ -33,7 +33,7 @@ SUFFIXES = tuple(s for _, _, s in SIZES)
 # The files that hold photo records (dicts with f): the game and sheet photos, the candidates waiting, the fish photos (on
 # R2: fish-game.json, and fish-photos.json's first and sheet-only photos, tools/fish_game.py), the sea-slug photos in play
 # (seaslug-game.json: on R2 once tools/seaslug_game.py --r2 has downloaded them, remote r: 1 until then).
-DATA = ('data.json', 'cand.json', 'fish-photos.json', 'fish-game.json', 'seaslug-game.json')
+DATA = ('data.json', 'data/cand.json', 'fish-photos.json', 'fish-game.json', 'seaslug-game.json')
 CACHE = os.path.join(ROOT, 'tools', '.cache', 'r2')  # gitignored
 UA = {'User-Agent': 'coral-id-imr/1.0'}  # R2's public address refuses Python's default user agent
 

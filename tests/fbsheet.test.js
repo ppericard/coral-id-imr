@@ -245,8 +245,15 @@ test('fbBody: the verdict, the species line and one line outside More; the rest 
   // outside More: the verdict, the species line, the one line; nothing else
   assert.match(top, /<h3 class="ko">/);
   assert.match(top, /<\/h3><p class="fbsp">This photo: a species<\/p><p class="vs fbline">Butterflyfish: no opercular spine/);
-  assert.ok(!/tipbox|Your answer|Similar names|again|rep"|credit/.test(top), 'no tips, mix-up lines, report or credits on the short sheet');
+  assert.ok(!/tipbox|Your answer|Similar names|again|credit/.test(top), 'no tips, mix-up lines or credits on the short sheet');
   assert.strictEqual(top.split('<p class="vs').length - 1, 1, 'one decisive line');
+  // the report button (rule U14) is on the sheet under the decisive line, never behind More, after a miss and after a right answer
+  assert.match(
+    top,
+    /<p class="vs fbline">[^]*<\/p><p class="fbrep"><button class="rep">⚑<\/button><\/p>\s*$/,
+    'the report button, in view'
+  );
+  assert.ok(!/class="rep"/.test(more), 'and not behind More');
   // inside More: the ID tips, why the answer given is another unit, the duel line, the credits, the report button
   const panel = more.slice(0, more.indexOf('</div>\n  </div>'));
   assert.match(panel, /tipbox fbtips/);
@@ -262,7 +269,6 @@ test('fbBody: the verdict, the species line and one line outside More; the rest 
   C.UNITS.s.inGame = () => true;
   assert.match(panel, /This pair comes back as a duel/);
   assert.match(panel, /<p class="credit">credit<\/p>/);
-  assert.match(panel, /<button class="rep">/);
   assert.ok(!/Tell them apart/.test(html), 'the pair line is not said twice');
   // More and Next on one row, More a button naming the panel it opens
   assert.match(
@@ -285,6 +291,22 @@ test('fbBody: the verdict, the species line and one line outside More; the rest 
   );
   assert.ok(!/Your answer|duel/.test(ok));
   assert.match(ok, /<h3 class="ok cheer">/);
+  // no report button given (a game that has none): no empty line
+  assert.ok(!/fbrep/.test(ok), 'no report line without a button');
+  const okRep = C.fbBody(
+    'f:Butterflyfishes',
+    'f:Butterflyfishes',
+    true,
+    false,
+    false,
+    [],
+    '',
+    null,
+    null,
+    [],
+    '<button class="rep">⚑</button>'
+  );
+  assert.match(okRep.split('<div class="fbmore"')[0], /<p class="fbrep"><button class="rep">⚑<\/button><\/p>/, 'a right answer has it too');
 });
 
 test('the quiz montage keeps its ✓ / ✗ name chips and drops its two notes', () => {

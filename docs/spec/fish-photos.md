@@ -1,7 +1,7 @@
 # Fish photos: sources, candidates and the photos in play
 
 Where a fish photo comes from, the rules every source applies, how a candidate is judged, curated and put in play, and
-the files on the way to the game (`fish-cand.json`, `tools/fish_refs.json`, `fish-game.json`, `fish-photos.json`).
+the files on the way to the game (`data/fish-cand.json`, `tools/fish_refs.json`, `fish-game.json`, `fish-photos.json`).
 This is the specification of what the code does now; why each part was decided is in
 [docs/decisions/](../decisions/README.md) and the PRs. [DATA.md](../DATA.md) is the short table of the data files; the
 fish content (`fish.json`: units, circles, presence, covers) is in [fish.md](fish.md); the judging rubric in
@@ -23,7 +23,7 @@ subject"); the photo files and R2 in [ARCHITECTURE.md](../ARCHITECTURE.md) "Phot
   box; any other species from the Philippines first, and from abroad only when it is confirmed in the Philippines
   (`present.ph`, rule C8; the iNaturalist search only once the Philippines are exhausted). Pierre's own observations
   come first, in the Philippines or the box.
-- **On the way to the game**: candidates wait in `fish-cand.json` (admin only) and the reference photos in
+- **On the way to the game**: candidates wait in `data/fish-cand.json` (admin only) and the reference photos in
   `tools/fish_refs.json`; once put in play (by Pierre in the admin, or by a sure judgement) they are downloaded with his
   crop, uploaded to R2 and listed in `fish-game.json` (`tools/fish_game.py`, the Candidate photos workflow). Nothing is
   shown from iNaturalist or FishBase: every fish photo in play is on R2.
@@ -114,7 +114,7 @@ and copied as is into `fish.json` by `tools/build_fish.py`.
   IMR-named species' evidence; both species are confirmed near Dauin by the IMR list either way), commonness and the
   sheet's iNaturalist link; the candidates are the species' (`fish-<id>-cand-…`), their `t` iNaturalist's name.
 - The admin says it under the species' name on its family page and on its Candidates card (`admin.js` `fishPtx`: "Photos
-  from *X* (iNat), Pacific form; IMR name kept"). Each one is also a C5 point for an IMR trainer (`points.json`).
+  from *X* (iNat), Pacific form; IMR name kept"). Each one is also a C5 point for an IMR trainer (`data/points.json`).
 - Now: s088 *Chromis agilis* from *Pycnochromis pacifica* (1313512), s244 *Halichoeres marginatus* from *Halichoeres
   annularis* (1474879).
 
@@ -122,7 +122,7 @@ and copied as is into `fish.json` by `tools/build_fish.py`.
 
 When a fish unit runs short of candidates the tools fetch more on their own, until there are none left to find
 ([photos spec](photos.md#no-more-candidates-is-no-more-candidates); `fetch_fish.py --refill`, tests `tests/fishphotos.test.js`). The "Candidate photos" workflow's `fish` job, after
-each Publish (and on manual dispatch), after the coral `photos` job, commits `fish-cand.json` and
+each Publish (and on manual dispatch), after the coral `photos` job, commits `data/fish-cand.json` and
 `tools/fish_refill.json`.
 
 - **Short** (`shortness`): a species under its cap (the room of `species_room`: the cap net of what Pierre rejected,
@@ -146,7 +146,7 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `fi
   read to their end (`ends`), or which got nothing, is searched to the end that day; the species is skipped while every
   open part of its room is in a record less than `RECHECK_DAYS` (30) old (a part opened since, a juvenile room for
   instance, is searched); a species filled loses its record.
-- **Judging**: nothing is judged in the workflow (the pass is visual): the new candidates wait in `fish-cand.json` for
+- **Judging**: nothing is judged in the workflow (the pass is visual): the new candidates wait in `data/fish-cand.json` for
   the judging pass (`python3 tools/judging_fish.py todo`; the full `tools/brief.py` prints how many wait), whose sure
   decisions the admin's fish auto-sort applies at the next load, then Pierre's Publish (rule A1).
 
@@ -190,7 +190,7 @@ judged and placed like any other photo, on what it shows (rule P1;
   sheet-only photos. The judging adds the flag `r` to the photo's tags and nothing to its ease (`tools/fish_judge.py`
   `cap`; one judgement per photo, whatever its route in; `judging/FISH.md` "Reference photos"); the flag weighs nothing
   in the order either (`core.js` `refScore`) and records the route only. `python3 tools/judging_fish.py rep` applies
-  the flag again to the judged candidates of `suggest.json` after a new tag.
+  the flag again to the judged candidates of `data/suggest.json` after a new tag.
 - **The units' reference photos**: covers and first photos must be reference photos, whoever took them.
   `tools/fish_refs.py` (iNaturalist v1 taxa, 30 a request; v2 observation searches with only the fields used: the 200
   most faved Research Grade observations in the `IWP` box, then the 200 most faved anywhere while a taxon photo is
@@ -209,9 +209,9 @@ judged and placed like any other photo, on what it shows (rule P1;
   `easyRank` (covers, each list's first photos) and, when never seen, weighs the subject's `calib.ref` (3 for the fish,
   `core.js` `SUBJECTS`) in the draw (`model.js` `photoSet`). Tested in `tests/fish.test.js` and `tests/subjects.test.js`.
 
-## `fish-cand.json`
+## `data/fish-cand.json`
 
-Admin only, like `cand.json`: players never download it, and it is not in the `sw.js` shell.
+Admin only, like `data/cand.json`: players never download it, and it is not in the `sw.js` shell.
 `{"v": 1, "cand": {species id: [photo]}}`, one species per line (the `tools/datajson.py` `dump` layout), species in `fish.json` order.
 Photo records have the coral candidates' shape: `f` (`fish-<species id>-cand-<iNat photo id>`), `a`, `lic`, `o`, `t`
 (iNaturalist's taxon name), `own`, `loc` (dauin / ph / world, world = abroad in the Indo-West Pacific), `src` (the
@@ -265,7 +265,7 @@ given, never judged by the pass.
   decision](../decisions/2026-11-19-fish-rubric-gold-set.md); `judging/FISH.md` "The gold set's corrections"). The import
   applies the rubric's caps (strong blur, clarity `b`, at most 2 for the fish since then; a fish juvenile caps nothing
   since Q435, [the decision](../decisions/2026-11-19-fish-juvenile-no-cap.md)) and phase flag
-  (`tools/fish_judge.py` `cap`) and writes `suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
+  (`tools/fish_judge.py` `cap`) and writes `data/suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
   photos, so a photo keeps its tags when it moves from the candidates to the game.
 - **Sure decisions** (`autosort.js` `fishSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
   phase and crop, whatever the ease; dup, the subject not obvious (count `x`), other species one could take for the
@@ -286,7 +286,7 @@ given, never judged by the pass.
 ## The fish auto-sort
 
 `autosort.js` `fishRun`, `fishCompare`; admin `fishAutoRun`. At each load of the admin by someone who can publish, when
-`suggest.json` `fish` has judged candidates (only then is `fish-cand.json` fetched), the sure judgments (`fishSure`) go
+`data/suggest.json` `fish` has judged candidates (only then is `data/fish-cand.json` fetched), the sure judgments (`fishSure`) go
 into the draft's `fish` part exactly as Pierre's clicks would write them, one Undo step, sent by his Publish.
 
 - Adds fill each species up to its target (`FISHT`: 8 observations, 12 for the PDF cheatsheet's 24 species, `fish.json`
@@ -308,11 +308,20 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
 - **The route back** (Pierre, 2026-11-19, Q438; `sortBack`): a photo the run set aside comes back into the draft when a
   judgement made since is a sure add, typically a crop that saves it (Q430, `judging/FISH.md` "A crop that saves a
   photo"). Only the run's own plain reject (`r`: not a Check, not undone, no `@t`), still set aside only, with no tags or
-  crop of his, judged on or after the reject's day (`suggest.json` `by` {species: {fish: {at}}}, which the import and
+  crop of his, judged on or after the reject's day (`data/suggest.json` `by` {species: {fish: {at}}}, which the import and
   `tools/judging_fish.py codes` stamp; admin `passAt`). It is added like an add (code `b` and the fields it wrote)
   while its species has room, else it waits as a candidate (code `b` alone). Undo sets it aside again (`-b`). His own
   Reject of a photo the run had set aside (left waiting by a Not this taken back) marks its code `-r`, so it is never
   taken for the run's (`fishReject`).
+- **The route out** (Pierre, 2026-11-19 20:57; rule A1; `sortOut`): a photo the run put in leaves play, in his draft, when
+  a judgement made since is a sure rejection (a near-duplicate, the subject unclear, other species one could take for it,
+  out of the water: `fishSure`). Only the run's own add or brought-back add (`a`, `b`: not a Check, not undone, no `@t`)
+  whose code lists the tags (`t`: still the run's copy), still its add in that species, not rejected, excluded or moved
+  with Not this, never one he answered Keep mine (`kept`), judged on or after the add's day (`passAt`). No new log letter:
+  the add and the fields its code lists leave (as `fishUndo` does; maps stay `{}` for the Publish merge), the photo is
+  set aside and its code becomes the run's plain reject `r`, so one Undo (`-r`) leaves it waiting as a candidate and a
+  later sure add brings it back by the route back. The room it frees is filled at the next load. Toast: "taken out by a
+  newer judgement". The build does not read it: until Publish the photo stays in play as it was.
 - **Proposals and his own decisions** (Pierre, 2026-11-19 20:57 and 20:59): what the log marks as the auto-sort's is a
   proposal he let through, and a newer judgement replaces it in the game, his own decisions keeping priority. The build
   reads the curation that way (`tools/fish_game.py` `read_cur`, from `inputs`; the players' copy too, `tools/curplay.py`),
@@ -320,13 +329,17 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   is a sure add (tags and phase as the auto-sort copies them, `copy_of`; a crop the pass no longer gives leaves), unless
   he answered its re-judge proposal Keep mine (`kept`); and, while he never corrected it (no `@t`), on a sure judgement
   made on or after its day, a photo it set aside is in play again (as the route back). A newer sure rejection of a photo
-  it put in stays a proposal: in play, its copy as it was. Tags read anew bring the judge's crop when the photo has
+  it put in stays a proposal: in play, its copy as it was, until the admin's route out puts it in his draft. Tags read anew bring the judge's crop when the photo has
   none (the crop goes with the code); his phase choice (No phase included) stops the source's juvenile flag; a photo he
   moved with Not this is his, skipped whole; an Undo of `b` on such a photo leaves it where he put it. A value with no log is his, or cannot be told from his,
-  and stands. The admin's own pages still show the draft's copies (ROADMAP "Fish photo judging, next"), but for whether
-  a photo is a juvenile (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy
-  (`autosort.js` `fishJuv`), as the app does: his ★ cover on a photo a newer judgement calls a juvenile waits for his
-  confirmation in both.
+  and stands. **The admin's pages read the same way** (`autosort.js` `sortReads`, `sortView`, held to `read_cur` by
+  `tests/readcur.test.js`, on the same photos and fields): the tile, the family, coverage and pairs pages and the review
+  and Candidates rows read a photo's tags, ease, phase and crop from a view of the draft where the fields read anew are
+  left out, so the pass's value shows (dashed, as the pass's guess); the writers, the agreement, the Light proposals (made
+  against the stored copy) and Publish read the draft itself, never the view (rule A1). For whether a photo is a juvenile
+  (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy (`autosort.js` `fishJuv`), as
+  the app does: his ★ cover on a photo a newer judgement calls a juvenile waits for his confirmation in both. The
+  corals' proposals are not read anew, by the game or by the admin (ROADMAP "Fish photo judging, next").
 
 ## The Fish Candidates page
 
@@ -352,7 +365,7 @@ corals'.
   Check tag), answered with the same buttons, after which a toast gives the auto-sort's answer.
 - **Card**: the photo (remote, iNaturalist or FishBase; Pierre's crop, else the pass's; "Photo not loading" when its
   host fails), the species (scientific name, common name, IMR entry), its source (FishBase named), the iNaturalist /
-  FishBase life stage (`st`) and link; above the bar the pass's judgment (`suggest.json` `fish`: keep, the rubric's tags
+  FishBase life stage (`st`) and link; above the bar the pass's judgment (`data/suggest.json` `fish`: keep, the rubric's tags
   in words, only what makes a photo harder, its phase, unsure fields, note, crop suggested) with its ease as a chip (the
   difficulty prior); **In play n/target** with the species' photos in play (most of them the auto-sort's proposals) as
   small tiles, each enlarged with **Out of play** (Pierre's ✕ Reject on it: off the species; a correction when the
@@ -445,7 +458,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
 ### Download and the runs
 
 - **Download** (the Candidate photos workflow, `tools/fetch_approved.py --fish` after each Publish): each photo in play is
-  fetched from its original in `fish-cand.json` (`src`: iNaturalist's photo hosts or FishBase's, `www.fishbase.se` and
+  fetched from its original in `data/fish-cand.json` (`src`: iNaturalist's photo hosts or FishBase's, `www.fishbase.se` and
   `www.fishbase.de`, only; FishBase is asked up to 4 times, 5 s, 10 s, 15 s apart, as it answers 500 at times, and after
   the others, one at a time), Pierre's crop applied (`fish.crop`; `[0, 0, 1, 1]` = none), saved in the four sizes by
   `tools/photos.py` `save()` into `r2-upload/`, never `img/` (it has an online original: R2 only), uploaded by
@@ -465,7 +478,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
   `img()` reads it from R2: `f` the candidate's name (`fish-<species>-cand-<id>` or `-cand-fb-<stem>`); `o` its
   observation, or the FishBase photo page; `src` the original (`core.js` `photoAway`'s fallback when R2 fails); `sp` the
   species it is in play for (after a Not this its new one), `t` then its `fish.json` name (WoRMS's, else the PDF's),
-  never the identification Pierre corrected; `e` the ease (`fish.ease`, else `suggest.json` fish `e`); `jt` the tags
+  never the identification Pierre corrected; `e` the ease (`fish.ease`, else `data/suggest.json` fish `e`); `jt` the tags
   (`fish.tags`, else the pass's); `ph` its phase (as `autosort.js` `fishPhase`).
 - **Layout**: by teaching entry (the level-1 entry whose `species` holds the species), entries in `fish.json` order, an
   entry's photos by its species order, the easiest, then by name (never Pierre's own by priority; the app orders them
@@ -561,7 +574,7 @@ written by `python3 tools/fish_photos.py` (the first photos kept as they are).
 ## The tiles
 
 For "Find the X" and Matrix: a photo in play whose tags pass the tile rule and that has the fish's box (the judging
-pass's `bb`: `tools/fish_judge.json` `boxes`, a candidate's `suggest.json` `bb`) gets a fifth file on R2,
+pass's `bb`: `tools/fish_judge.json` `boxes`, a candidate's `data/suggest.json` `bb`) gets a fifth file on R2,
 `img/<f>-x.webp`, a 360 px square cut around the fish (`tools/fish_game.py` `tile_crop`, `tile_write`), kept when the
 fish fills 70% of it and its box is 320 px wide in the original; `fish-game.json` carries `bb` and `xc` (the square) or
 `xn` (why none). `tools/photos.py --r2-tiles` lists them and `tools/r2_sync.sh` checks the bucket has each. Rubric and
