@@ -394,7 +394,7 @@ carries `holds`, `{subject: {h, ids}}`, each subject's hold over its own answers
 `hold` and `holdIds` too, and a request without `light` gets those two alone, as before. The app reads only `hold` and
 `holdIds` for now, as the corals' (`SUBJECTS` `hold`): each subject adopting its own from `holds` is the app's half of
 the one-engine audit's step 5 (ROADMAP "One engine for every subject, what is left"). Cached per player and subject
-(`hold:` and the name for the replay subject, `hold~<subject>:` and the name for another) until answers are logged or
+(`hold~<subject>:` and the name) until answers are logged or
 moved for that name. The app (`sync.js` `mergeSaved`, then `model.js` `holdSync`) adds the
 answers the sheet has not confirmed yet (`SYNC.log`, without the `|w` ones and those before the reset) and takes the
 result as its `reefid-hold`: the same sum over the same answers on every device. A reset made on this device and not

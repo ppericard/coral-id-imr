@@ -516,9 +516,8 @@ const scoring_ = x => { const o = CORE_.scoreRec(x); return o ? JSON.stringify(o
 // subject until their next answers are logged or moved (logAnswers_, relabel_, dropRows_).
 const HOLD = {SLACK: 0.1, IDS: 500};
 const holdSubjects_ = () => [CORE_.replaySubject()].concat(CORE_.replayedSubjects());
-// The replay subject's key as before ('hold:<name>'); another's 'hold~<id>:<name>', never a player's key (a name
-// follows the colon).
-const holdKey_ = (name, sid) => 'hold' + (sid && sid !== CORE_.replaySubject() ? '~' + sid : '') + ':' + lc_(name);
+// 'hold~<subject>:<name>': the subject first, so no name can read as another subject's key (the name follows the colon).
+const holdKey_ = (name, sid) => 'hold~' + (sid || CORE_.replaySubject()) + ':' + lc_(name);
 function dropHold_(name){ ROWS_ = null; holdSubjects_().forEach(id => { try { CacheService.getScriptCache().remove(holdKey_(name, id)); } catch (e) {} }); }
 // The first-launch answer in a player's saved data (reefid-sync-coral-start), null when there is none or it is broken.
 // sid: another subject's (core.js subjKey, startKey: reefid-sync-fish-start, -reset), under its new key name or
@@ -562,12 +561,12 @@ function hold_(name, since, pt, light, sid){
 }
 // The holds a load or save reply carries (load_, doPost_): holds, {subject: {h, ids}} for every subject the sheet
 // replays, each since its own reset; a subject that fails is left out (the app keeps its own). The replay subject's is
-// also hold and holdIds, the only ones an app before vNEXT reads (sync.js holdAdopt). holds only for a light request
+// also hold and holdIds, the only ones the app reads for now (sync.js holdAdopt). holds only for a light request
 // (every app since the lighter saves): an older app never reads it, and its non-light ids (the last HOLD.IDS of each
 // subject) would add several KB to each of its replies.
 function holdsInto_(out, name, data, pt, light){
   const R = CORE_.replaySubject(), H = {};
-  (light ? holdSubjects_() : [R]).forEach(id => { try { H[id] = hold_(name, resetOf_(data, id === R ? undefined : id), pt, light, id); } catch (err) {} });
+  (light ? holdSubjects_() : [R]).forEach(id => { try { H[id] = hold_(name, resetOf_(data, id), pt, light, id); } catch (err) {} });
   if (H[R]) { out.hold = H[R].h; out.holdIds = H[R].ids; }
   if (light) out.holds = H;
 }

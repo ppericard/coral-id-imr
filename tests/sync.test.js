@@ -1539,7 +1539,7 @@ test('v23 hold: the sheet replays the opening hold of model.js over the answers 
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(0, 15)});
   assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, want);
   // Cached until the player's next answers; their next answer changes it.
-  assert.ok('hold:ana' in s.cache);
+  assert.ok('hold~coral:ana' in s.cache);
   s.post({
     name: 'Ana',
     pin: '1234',
@@ -1731,11 +1731,11 @@ test("one hold path: every replayed subject's hold, over its own answers since i
   assert.strictEqual(g2.holds[F].h, want(F, cut));
   assert.notStrictEqual(want(F, cut), want(F));
   for (const sid of subjs.filter(x => x !== F)) assert.strictEqual(g2.holds[sid].h, want(sid), sid);
-  // One cache key per subject (the replay subject's as before).
+  // One cache key per subject, the same form for each.
   const keys = Object.keys(s.cache)
     .filter(k => /^hold/.test(k))
     .sort();
-  assert.deepStrictEqual(keys, subjs.map(sid => (sid === R ? 'hold:ana' : `hold~${sid}:ana`)).sort());
+  assert.deepStrictEqual(keys, subjs.map(sid => `hold~${sid}:ana`).sort());
   // Answers moved to the name (a sign-in: relabel_, the tab's row count unchanged) drop every subject's cached hold.
   const B = [1, 2, 3].map(i => ({id: 'm' + i, s: F, t: at(90 + i), ok: 0, e: 0.8, m: 'quiz'}));
   s.post({anon: 'abc123xyz0', anonAnswers: B.map(a => ans(a.id, {...a, g: unit[F], a: 'other', rk: 'family'}))});
