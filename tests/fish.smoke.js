@@ -1805,7 +1805,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       // typed: every listed name is its unit's (a shared one too); a family question reads it as the family
       ok(
         GX(t).also.every(x => {
-          const m = typeMatch(x, 'species');
+          const m = typeMatch(x, kindRank(t)); // its class: a species by its common name (app.js kindRank)
           return m && (m.g === t || (m.shared || []).includes(t));
         }),
         'species: every listed name typed is right'
@@ -1813,6 +1813,64 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(!typeMatch(GX(t).name) || typeMatch(GX(t).name).g !== t, 'species: a family question never reads it as a species');
       // its sheet: the species' own (core.js treeSheets go)
       ok(treeSheets(TREEF).go(t) === 's:' + GX(t).sci, 'species: its unit opens its species sheet');
+      store.set(SHEETV, v0);
+      dropPlans();
+      route();
+    }
+    // The species by their scientific names (the species step 2 plan, #1273): off below SCI_SHEET (rule D4); on, a
+    // scientific genus in play at Advanced brings its first species through pool(), its card marks the milestone, its
+    // wrong choices are scientific names, a choice answered logs |sc or |so at the rank species, its genus alone typed is a
+    // smaller fault (Q394: the scoring record's z), its unit opens its species' sheet.
+    {
+      // the scientific names on and the Spadefishes at Advanced: their genera in play
+      const q0 = Q.sci;
+      Q.sci = true;
+      pgAt('f:Spadefishes', 0.9);
+      const S2 = SETS().find(S => S.k === 'ssp'),
+        v0 = store.get(SHEETV, 0),
+        g = pool().find(n => rankOf(n) === 'genus' && TREEU.ssl.some(u => GX(u).parent === n && photoAny(u))),
+        logged = () => (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {};
+      store.set(SHEETV, SCI_SHEET - 1);
+      ok(!sciSpOn() && !S2.all().length && !S2.auto().length && UNITS.fish.tree() !== TREEU.treeSci, 'sci species: off below SCI_SHEET');
+      store.set(SHEETV, SCI_SHEET);
+      ok(!!g, 'sci species: a scientific genus in play');
+      if (g) {
+        pgAt(g, 0.9);
+        const L = S2.auto(),
+          t = L[0];
+        ok(
+          sciSpOn() && UNITS.fish.tree() === TREEU.treeSci && L.length === 1 && GX(t).parent === g && pool().includes(t),
+          'sci species: its genus at Advanced brings its first species: ' + L
+        );
+        ok(/unlocked scientific names/.test(introCard(t).body), 'sci species: its card marks the milestone');
+        const ch = distractors(t, pool(), 3);
+        ok(ch.length === 3 && ch.every(n => kindOf(n) === 'sci'), 'sci species: its wrong choices are scientific names: ' + ch);
+        dropPlans();
+        SHOWNQ = null;
+        question('quiz', t, [t, ...ch], 'Which species?', photoSet(t));
+        const b = document.querySelector(`#view .ans button[data-c="${t}"]`); // answer.js: the question drawn just above, its right choice
+        if (b) b.click();
+        const a1 = logged();
+        ok(
+          a1.g === t && a1.rk === 'species' && /\|s[co](\||$)/.test(a1.m || ''),
+          'sci species: a choice answered: ' + JSON.stringify({g: a1.g, rk: a1.rk, m: a1.m})
+        );
+        dropPlans();
+        SHOWNQ = null;
+        question('quiz', t, [], 'Which species? Type it', {...photoSet(t), typed: true});
+        const f = document.querySelector('#view .tyform'); // answer.js: the typed question drawn just above, a set text
+        if (f) {
+          f.querySelector('input').value = GX(g).name;
+          f.requestSubmit();
+        }
+        const a2 = logged();
+        ok(
+          a2.g === t && !a2.ok && a2.ty === GX(g).name && (a2.sc || {}).z === 'g',
+          'sci species: its genus alone typed, a smaller fault: ' + JSON.stringify({g: a2.g, ok: a2.ok, ty: a2.ty, z: (a2.sc || {}).z})
+        );
+        ok(treeSheets(TREEF).go(t) === 's:' + GX(t).name, 'sci species: its unit opens its species sheet');
+      }
+      Q.sci = q0;
       store.set(SHEETV, v0);
       dropPlans();
       route();

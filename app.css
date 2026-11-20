@@ -7461,6 +7461,11 @@ html.touring .unlock {
 .ans .ko .csn small {
   color: inherit;
 }
+/* A species by its scientific name (italics), its common name underneath while the display schedule shows it (step 2:
+   quiz.js question, app.js sciShow): the common name upright. */
+.ans .csn small.cnu {
+  font-style: normal;
+}
 /* A subject in beta (core.js SUBJECTS beta): a small tag on its name in the subject switches (Home, the header chip's menu). */
 small.beta {
   display: inline-block;

@@ -122,6 +122,18 @@ const famAdv = (run, cp) => {
   const K = (rowAt(run, cp) || {}).kinds;
   return K && K.family ? (K.family.adv ?? null) : null;
 };
+// The fish scientific genera at Advanced (kind genus), the level the species by their scientific names take their
+// questions from (docs/reviews/2026-11-18-species-step2-plan.md §4); the share of answers 1..cp on those species (kind
+// species:sci, learnsim kinds). None for the corals.
+const genAdv = (run, cp) => {
+  const K = (rowAt(run, cp) || {}).kinds;
+  return K && K.family ? ((K.genus || {}).adv ?? 0) : null;
+};
+const sciShare = (run, cp) => {
+  const K = run.kinds || {},
+    E = (run.expo || []).slice(0, cp);
+  return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'species:sci').length / E.length : null;
+};
 const spShare = (run, cp) => {
   const K = run.kinds || {},
     E = (run.expo || []).slice(0, cp);
@@ -181,6 +193,8 @@ const MEASURES = {
   genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
   famAdv: {label: 'Families at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => famAdv(r, cp)},
   spShare: {label: 'Share of answers on the species (fish)', kind: 'window', dg: 3, get: (r, cp) => spShare(r, cp)},
+  genAdv: {label: 'Scientific genera at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => genAdv(r, cp)},
+  sciShare: {label: 'Share of answers on the species by their scientific names (fish)', kind: 'window', dg: 3, get: (r, cp) => sciShare(r, cp)},
   // The photo variants on their unit's mastery (phEarly, phLate, phEasy, phOther, phAns above).
   phEarly: {label: `Share of phase photos in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEarly},
   phLate: {label: `Share of phase photos once a unit has ${2 * PHN} answers`, kind: 'window', dg: 3, get: phLate},
@@ -230,9 +244,10 @@ const GUARDRAILS = [
   {m: 'famAdv', cps: [300, 600, 1000, 3000, 10000], harm: -1, abs: 2, rel: 0.05}
 ];
 // Also measured, no margin (exploratory unless a PR declares bounds for them before running): the right rate, the shares
-// of answers on the fish scientific genera and on the species, at each checkpoint both files reach, with the one-sided
-// bounds either side.
-const WATCH = {ms: ['right', 'genShare', 'spShare'], cps: [300, 600, 1000, 3000, 10000]};
+// of answers on the fish scientific genera and on the species, the scientific genera at Advanced (the species step 2
+// plan's primary, read with the families' margin in its PR, #1273: too spread out over seeds to stand as a guardrail),
+// at each checkpoint both files reach, with the one-sided bounds either side.
+const WATCH = {ms: ['right', 'genShare', 'spShare', 'genAdv', 'sciShare'], cps: [300, 600, 1000, 3000, 10000]};
 // The margin's size for a guardrail on the before mean b (the larger of abs and rel x |b|).
 function marginOf(g, b, subject) {
   const rel = subject === 'coral' && 'coralRel' in g ? g.coralRel : g.rel || 0;
@@ -597,6 +612,8 @@ module.exports = {
   nearRep,
   genShare,
   famAdv,
+  genAdv,
+  sciShare,
   spShare,
   PHN,
   phEarly,
