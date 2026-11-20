@@ -201,6 +201,14 @@
    "t": "Sea Slug Forum, Rudman 2007, Cratena simba fact sheet",
    "u": "https://www.seaslugforum.net/find/cratsimb"
   },
+  "gb1998": {
+   "t": "Gosliner and Behrens 1998, Two new discodorid nudibranchs from the western Pacific (Proc. Calif. Acad. Sci. 50)",
+   "u": "https://archive.org/details/biostor-3261"
+  },
+  "ciesm-caloindi": {
+   "t": "CIESM Atlas of Exotic Species, Caloria indica page",
+   "u": "https://www.ciesm.org/atlas/Caloriaindica.html"
+  },
   "ssf-cyereleg": {
    "t": "Sea Slug Forum, Rudman 1999, Cyerce elegans fact sheet",
    "u": "https://www.seaslugforum.net/find/cyereleg"
@@ -939,6 +947,30 @@
     ["A long siphon on the right side of the mantle", [["ssf-colpthom", "the exhalant siphon"]]]
    ]
   },
+  "Caloria": {
+   "marks": [
+    [
+     "Long, tapering oral tentacles, longer than the rhinophores, as C. indica",
+     [["ciesm-caloindi", "Short description: the oral tentacles"]]
+    ],
+    [
+     "Smooth rhinophores and a long, pointed tail, as C. indica",
+     [["ciesm-caloindi", "Short description: the rhinophores and the tail"]]
+    ]
+   ]
+  },
+  "Taringa": {
+   "marks": [
+    [
+     "Low, flat tubercles, each with short round papillae, as T. halgerda",
+     [["gb1998", "Taringa halgerda, external morphology, p. 289"]]
+    ],
+    [
+     "Its largest tubercles, mid-back, are club-shaped, as T. halgerda",
+     [["gb1998", "Taringa halgerda, external morphology, p. 289; discussion, p. 292"]]
+    ]
+   ]
+  },
   "Cratena": {
    "marks": [
     ["Smooth rhinophores and oral tentacles, as C. simba", [["ssf-cratsimb", "the rhinophores and tentacles"]]],
@@ -1225,8 +1257,6 @@
  },
  "none": {
   "Ardeadoris": "Johnson and Gosliner 2012 define it by its DNA alone; SEASLUG.WORLD's Ardeadoris egretta page and the Sea Slug Forum's sheet give a white body with a yellow rim, a pattern other genera share (SEASLUG.WORLD: it differs inside); Rudman 1984's diagnosis not read",
-  "Caloria": "the Sea Slug Forum's Caloria indica sheet (as Phidiana indica) says its genus cannot be settled; no source read gives a feature of the genus",
-  "Taringa": "its one game species, T. halgerda, looks like a Halgerda: the Sea Slug Forum's and SEASLUG.WORLD's pages say only its anatomy places it in Taringa; no external feature of the genus was found",
   "Verconia": "Johnson and Gosliner 2012 place its species by DNA; the game's V. alboannulata and V. norba share the pink, white-rimmed pattern of Rudman's Noumea purpurea colour group, which the Sea Slug Forum shows across several genera"
  }
 }

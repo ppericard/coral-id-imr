@@ -1419,6 +1419,25 @@
         {"t": "Image du Monde, New Caledonia fishes, Plectorhinchus lessonii", "u": "https://picture-worl.org/actinopterygien-nouvelle-caledonie-4a-plectorhinchus-lessonii-cuvier-1830.html"},
         {"t": "Reeflings, Plectorhinchus lessonii (via a search summary, not fetched)", "u": "https://reeflings.com/species/plectorhinchus-lessonii"}
       ]
+    },
+    {
+      "id": "seaslug-genus-caloria-taringa",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-20",
+      "title": "Caloria indica and Taringa halgerda: their genus held as uncertain by some sources",
+      "q": "WoRMS accepts Caloria indica in Caloria and Taringa halgerda in Taringa, as the game does. The Sea Slug Forum says Caloria indica's genus cannot be resolved at present, and the authors of Taringa halgerda placed it in Taringa only tentatively. The two genera's ID marks are written from these species (\"as C. indica\", \"as T. halgerda\"). Keep both genera as they are?",
+      "ctx": [
+        "Found by the sea slug genus marks' retry (2026-11-20). Nothing settled (rule C5); the game follows WoRMS meanwhile.",
+        "Gosliner and Behrens 1998, abstract: \"Neither Hoplodoris estrelyado, Taringa luteola nor Taringa halgerda are placed with certainty in the genera where they are here assigned.\" The species is named for its outward likeness to Halgerda (its etymology)."
+      ],
+      "src": [
+        {"t": "WoRMS, Caloria indica", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=181240"},
+        {"t": "WoRMS, Taringa halgerda", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=457500"},
+        {"t": "Sea Slug Forum, Phidiana indica fact sheet (now Caloria indica)", "u": "https://www.seaslugforum.net/find/phidindi"},
+        {"t": "Gosliner and Behrens 1998, Proc. Calif. Acad. Sci. 50(11): 279-293, abstract", "u": "https://archive.org/details/biostor-3261"},
+        {"t": "CIESM Atlas of Exotic Species, Caloria indica page", "u": "https://www.ciesm.org/atlas/Caloriaindica.html"}
+      ]
     }
   ]
 }

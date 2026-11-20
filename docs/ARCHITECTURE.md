@@ -268,7 +268,8 @@ reaches the site only with his Publish.
 logic, pure); `taxtree.js` (the generic tree); `admin-fish.js`, `admin-coraltree.js`, `admin-content.js`,
 `admin-covers.js`, `admin-light.js` (the Tree tab, the content editor's boxes, the proposals); `admin-journey.js`,
 `admin-visits.js`, `admin-heatmap.js`, `admin-analyses.js` (players and analyses); `admin-taxa.js` (Photo stats › Taxa); `points.js` and `data/points.json` (the
-points to handle); `admin-demo.js` (`?demo`).
+points to handle); `admin-demo.js` (`?demo`). `analysis.js`, `admin-analyses.js` and `admin-demo.js` are
+fetched when a page needs them (`lazyLoad`; [spec/admin.md](spec/admin.md) "What the first page waits for").
 
 **How it connects.** It reads the site's data files and `curation.json` (Data files), the sync sheet with its admin token
 (Progress sync), the judging files through the GitHub API; Publish commits `curation.json` to `main`, and the Candidate
