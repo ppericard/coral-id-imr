@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // Sea slug photo judging (judging/SEASLUG.md, its egg rule included): the fish's
 // judging tools with a subject (tools/judging_fish.py --subject seaslug, tools/fish_judge.py RUBRICS "seaslug"), the fish
 // left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, juveniles (Q435), f and w
-// capping nothing), the judging files' check (keep optional, the egg rule, no phase or box), the import into suggest.json
+// capping nothing), the judging files' check (keep optional, the egg rule, no phase, the animal's box), the import into suggest.json
 // "seaslug" beside the fish's. Offline: made-up fixtures in a temporary folder; nothing is downloaded. Needs python3.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -101,7 +101,7 @@ JF.ROOT = ${JSON.stringify(dir)}
 JF.use('seaslug')
 ${code}`);
 
-test('the judging files: keep optional (one photo per observation), the egg rule, no phase or box; the fish curation never read', () => {
+test('the judging files: keep optional (one photo per observation), the egg rule, no phase; the fish curation never read', () => {
   const dir = world({
     'judging/seaslug/900.json': {
       photos: {
@@ -178,7 +178,7 @@ print(json.dumps({k: errs(v) for k, v in cases.items()}))`
     assert.match(out[k][0], /bb must be the animal's box \[left, top, right, bottom\], fractions of the photo/, k);
   }
   assert.match(out['a speck'][0], /bb is under 2% of the photo's width or height/);
-  assert.match(out['cut by the crop'][0], /the crop cuts the fish's box bb/);
+  assert.match(out['cut by the crop'][0], /the crop cuts the animal's box bb/);
   assert.match(out['doubted, no note'][0], /note required when unsure is not empty/);
   fs.rmSync(dir, {recursive: true, force: true});
 });

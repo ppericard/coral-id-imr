@@ -344,7 +344,7 @@ def check(sid):
             E.append(f"{at}: bb is under {MIN_BB:.0%} of the photo's width or height: that is a speck, not an animal's box")
         elif b is not None and c_ok and not box_in(b, c):
             # The code is read on the photo as cropped (judging/FISH.md "A proposed crop"): the crop keeps the fish whole.
-            E.append(f"{at}: the crop cuts the fish's box bb: a crop keeps the whole fish (judging/FISH.md \"A proposed crop\")")
+            E.append(f"{at}: the crop cuts the animal's box bb: a crop keeps the whole animal (judging/FISH.md \"A proposed crop\")")
     missing = [f for f in mine if f not in j["photos"]]
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
