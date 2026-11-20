@@ -52,7 +52,7 @@
   const autoCheck = f => fnv('check|' + f) % AUTO.every === 0;
   const fL = v => (v || '').replace(/[pn]/g, '');
 
-  // What the judging pass is sure of for one candidate (suggest.json "cand" entry j), or null when it is the admin's:
+  // What the judging pass is sure of for one candidate (data/suggest.json "cand" entry j), or null when it is the admin's:
   // - any field in `u` (unsure): his;
   // - `exclude` (unusable): excluded, as his ×;
   // - another genus or a comparison image: his call (a sure comparison image stays set aside, admin.js aside);
@@ -70,7 +70,7 @@
     return null;
   }
 
-  // The fish candidate pre-sort's sure decision (suggest.json "fish" entry j, tools/judging_fish.py), or null when it is
+  // The fish candidate pre-sort's sure decision (data/suggest.json "fish" entry j, tools/judging_fish.py), or null when it is
   // the admin's. Same shape as autoSure, so the fish candidates go the same path (autoRun, the "auto" log, Checks).
   // j.jt is the rubric's visual code (judging/FISH.md: view, whole, light, colour loss, clarity, size, count, flags; the
   // same tags as fish-photos.json jt), j.e the ease 1-5, j.k best / alt / dup within the observation, j.ph an IMR sex or
@@ -167,7 +167,7 @@
       });
     return out.sort((x, y) => (x.t == null ? -1 : x.t) - (y.t == null ? -1 : y.t));
   }
-  // The fish auto-sort's run (pure): from the candidates {species id: [photo]}, the pass's judgments (suggest.json
+  // The fish auto-sort's run (pure): from the candidates {species id: [photo]}, the pass's judgments (data/suggest.json
   // "fish"), the species records ({id: fish.json species}) and the curation's fish part, a new fish part with the sure
   // decisions written as the admin's clicks would write them, and the counts. A photo already decided (added, rejected,
   // excluded, Not this, logged) is never touched; a tag, ease, phase or crop he gave stays his. Adds fill each species up
@@ -184,7 +184,7 @@
   //   or corrected it) means he touched it, and his own Reject of a photo the run had set aside marks it '-r' (fishReject);
   // - it is still set aside only (seen 1), not added, excluded or moved with Not this, and he gave it no tags nor crop
   //   (the new code is read on the judge's crop: one of his would describe another photo);
-  // - its judgement was made on or after the day of the reject (at(f): its pass's date, suggest.json "by" {key: {fish:
+  // - its judgement was made on or after the day of the reject (at(f): its pass's date, data/suggest.json "by" {key: {fish:
   //   {at}}}; with none, never), and is a sure add now (fishSure). A reject is logged only from a sure reject, so a sure
   //   add judged since is a new judgement, never a rule read anew.
   function sortBack(F, x, f, j, at) {
@@ -278,7 +278,7 @@
   }
 
   // One fish auto decision taken back (the admin's Undo in the Auto details, as the coral autoUndo; rule A1: every auto
-  // decision undoable one by one). sid: the candidate's species (its fish-cand.json list). What the run wrote leaves the
+  // decision undoable one by one). sid: the candidate's species (its data/fish-cand.json list). What the run wrote leaves the
   // fish part, and only that: the add while it still names that species, and the fields its code lists (fishOwn takes
   // off those he set since). Never compared with the pass's judgment, which a new pass may have replaced. The log marks
   // the decision undone ('-'): never applied again, the photo waits as a candidate, or, brought back (b), is set aside
@@ -335,7 +335,7 @@
 
   // ---- Fish Candidates ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
-  // one observation). game: fishGameIn's records, counted beside the adds. sug: the pass's judgments (suggest.json
+  // one observation). game: fishGameIn's records, counted beside the adds. sug: the pass's judgments (data/suggest.json
   // "fish"): an add held out for other species one could take for its subject (core.js treeOther) counts nowhere.
   function fishPlay(cands, F, game, sug) {
     F = F || {};
@@ -540,7 +540,7 @@
   // now; out {f: 'x'} = no game species (or unknown): gone. Only the admin's click writes it (fishNotThis). A photo is in
   // play for a species when add names it, it is neither rejected nor excluded, and its out, if any, names that same
   // species (core.js treePhotoOn, as the game reads it). fishMine stays the keep on its first species, for the agreement.
-  // A photo's species now (orig: its fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
+  // A photo's species now (orig: its data/fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
   // (excluded, or Not this with no game species), or null (a candidate waiting).
   function fishState(F, f, orig) {
     F = F || {};
@@ -972,7 +972,7 @@
 
   // Fish Coverage (fishCov): per family, genus and species, the photos in play, the observations against the target, the
   // easy photos (ease 4-5), the reference-level photos (core.js refLevel), the phases shown and what is missing; and the candidates still
-  // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: fish-cand.json
+  // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: data/fish-cand.json
   // cand; F: the draft's fish part; j(f): the pass's judgment. Returns {fam, gen, sp}: rows {id, name, fam, n (photos),
   // obs, tgt (a species' target; a genus or family: ok of its species at target), easy, ref, ph, wait (a species also
   // waitObs, the new observations they hold), need (fishNeeds words), imr}.
@@ -1399,7 +1399,7 @@
     return S;
   }
 
-  // Objective metrics as a sanity flag (tools/photo_metrics.py, metrics.json [sharp, peak, px, cast]): a sure judgment
+  // Objective metrics as a sanity flag (tools/photo_metrics.py, data/metrics.json [sharp, peak, px, cast]): a sure judgment
   // they contradict goes to the admin instead of being applied. Never a decision on their own: they only ever stop one.
   // Measured on 133 photos he rated: size tells Poor apart (AUC 0.90), sharpness at 960 px hardly does (AUC 0.4-0.6), so
   // only the extremes count. ref = {lo, hi}: 5th and 95th percentiles of sharp over the candidates measured.

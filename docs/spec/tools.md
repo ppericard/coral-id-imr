@@ -145,8 +145,8 @@ written with `tools/datajson.py`.
   (`taxonomy.py` `aliases`: the name WoRMS accepts now and iNaturalist's spelling), for the subjects the file holds
   (corals and fish). A Corals of the World name mapped by decision rather than by WoRMS carries its reason in the
   checklists' `cotw` `decided` (*Plesiastrea versipora* of the Philippine lists is *P. peroni*, Juszkiewicz et al. 2022;
-  `presence.json` picks it up at the next `coral_presence.py` run).
-- **`coral_presence.py`**: `presence.json`, the presence rule per coral photo species, for the admin's "out of rule"
+  `data/presence.json` picks it up at the next `coral_presence.py` run).
+- **`coral_presence.py`**: `data/presence.json`, the presence rule per coral photo species, for the admin's "out of rule"
   flag (`presence.js`; [data.md › Presence](data.md#presence-of-coral-species-presencejson)).
 - **`taxonomy.py`, `taxonomy.json`**: the build-time reference of names
   ([taxonomy study](../reviews/2026-11-05-coral-taxonomy-study.md) section 5, small form). **The app never loads it.**
@@ -165,19 +165,19 @@ written with `tools/datajson.py`.
     know; the accepted name and AphiaID; the iNaturalist taxon `fish.json` gives it, its name when it differs, the taxa
     an inactive one points to; flags for a former combination, a moved genus, a spelling, iNaturalist differing from
     WoRMS and `fish.json` behind WoRMS); species rows for the names met that resolve to a fish species (`fish.json`'s own,
-    the photo names of `fish-cand.json` and `fish-game.json`, FishBase's checklist); the genera of those names WoRMS no
+    the photo names of `data/fish-cand.json` and `fish-game.json`, FishBase's checklist); the genera of those names WoRMS no
     longer accepts. The WoRMS synonyms stay in `fish.json` `ref`. WoRMS by name and by AphiaID
     (`AphiaRecordsByAphiaIDs`), 50 a call; iNaturalist details, 30 ids a call.
   - A report, never a change: the game's names are Pierre's (rule C5). WoRMS batched (50 names a call), iNaturalist in
     bulk (the Scleractinia genera and species, 500 a page) and paced (~1 request/s, a User-Agent, 429 / 5xx retries);
     the replies cached in `tools/.cache/taxonomy.json`, so a rerun is offline and identical (`--offline`, `--refresh`,
-    `--dry`); `--check` (offline, `tests/taxonomy.test.js`) checks the layout, `names.json` in step and the copied wording
+    `--dry`); `--check` (offline, `tests/taxonomy.test.js`) checks the layout, `data/names.json` in step and the copied wording
     against `data.json`. Run it monthly, and before a content pull request that touches names or families.
   - **Its readers**: `inat_taxon(genus)`, the iNaturalist taxon `fetch_local.py`, `cand_gaps.py` and `coral_presence.py`
     search for a genus (`gen.<genus>.inat.id`: no search by name, no homonym guard; a genus the file does not hold, or
     with an inactive taxon, is skipped and said so; another taxon only by Pierre's decision); `aliases(name)`, through
     which `presence.py` matches checklist names.
-  - **`names.json`**, written with the file (and alone, offline, by `--names`): the admin's extract,
+  - **`data/names.json`**, written with the file (and alone, offline, by `--names`): the admin's extract,
     `{v, doc, coral: {date, sp: {name: {now, iname?, inat?}}, gen: {former genus: genus now}, worms: {genus: {id, fam}}}}`
     (the species rows, the former genus names that are no longer a genus of their own, and each genus's WoRMS AphiaID
     and family, for the corals' Photos › Tree WoRMS view; `fish: {date, sp, gen}`, no `worms`: the fish Tree reads
@@ -217,7 +217,7 @@ written with `tools/datajson.py`.
   (`original`, `copy-only`, `none`), the source page and picture, the species and place it is captioned with, the
   photographer and the site's terms, the copies; `searched` says what was searched.
   `apply_imr_sources.py` reads it and credits each photo found as an original on its course record in `data.json` and
-  `excluded.json` (`a` the credit, `pg` the page that states it; `--check`); the admin shows the traced sites' terms
+  `data/excluded.json` (`a` the credit, `pg` the page that states it; `--check`); the admin shows the traced sites' terms
   from its own copy of the file's `terms` (`admin.js` `LECT_TERMS`) (`tests/imrsources.test.js`).
 - **`apply_book_rewrite.py`, `book_rewrite.json`**: the Coral Finder texts (criteria, summaries, look-alike sources, Coral
   ID Key box labels) that followed the book too closely, reworded in our own words (found by comparing each text with an
@@ -225,10 +225,10 @@ written with `tools/datajson.py`.
   keeps only hashes of the old wording and of its 5-word runs, never book text; `tests/booktext.test.js` fails when any of
   these fields shares a 5-word run with the old wording again (`--check`: exit 1 when a listed text has its old
   wording). `build_extra.py` holds the same new wording for the bonus genera.
-- **`apply_no_book.py`**: takes every Coral Finder book crop record out of `data.json` and `cand.json` (`gen` `book`,
+- **`apply_no_book.py`**: takes every Coral Finder book crop record out of `data.json` and `data/cand.json` (`gen` `book`,
   the key boxes' `ph`); re-runnable, guarded by `tests/nobook.test.js`.
 - **`apply_skeletons.py`**: the coral skeleton photos (rule P6): `skel: 1` on every record `judging/skeletons.json`
-  lists, in `data.json` and `cand.json`, and on no other (`--check`: exit 1 when they disagree); `core.js`
+  lists, in `data.json` and `data/cand.json`, and on no other (`--check`: exit 1 when they disagree); `core.js`
   `applyCuration` drops them, the admin (`own`, `rawCands`) and `fetch_local.py` (`colonies`, the waiting count) skip them
   (`tests/skeletons.test.js`). Run it again after editing the list or rebuilding records (`build_extra.py`).
 - **The one-time content passes**, `apply_covers.py`, `apply_look_sources.py`, `apply_sources.py`,
@@ -258,15 +258,15 @@ written with `tools/datajson.py`.
   the files R2 holds identically.
 - **`photo_quality.py`**: the automatic quality rating → `quality.json`.
 - **`photo_metrics.py`**: objective metrics (sharpness, size, colour cast) of live photos and iNaturalist candidates →
-  `metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).
+  `data/metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).
 - **`photo_measure.py`**: [measured.md](measured.md).
-- **`find_dups.py`**: near-duplicates → `dups.json` (run it again after adding photos).
+- **`find_dups.py`**: near-duplicates → `data/dups.json` (run it again after adding photos).
 - **`tag_origin.py`**: the `loc` tag (`dauin` / `ph` / `world`) on iNaturalist photos.
 - **`judging_manifest.py`, `judging_import.py`, `judging_cand.py`**: the outside photo-judging agent's package
   (`judging/`); `--check` validates.
-- **`excluded.py`, `excluded.json`**: shared helper for the excluded photos: imports skip them, `drop_excluded` keeps
-  what it removes in `excluded.json`, `restore_unexcluded` puts back what Pierre restored
-  ([photos.md › Excluded photos](photos.md#excluded-photos)). `apply_excluded_archive.py` seeds `excluded.json` from git
+- **`excluded.py`, `data/excluded.json`**: shared helper for the excluded photos: imports skip them, `drop_excluded` keeps
+  what it removes in `data/excluded.json`, `restore_unexcluded` puts back what Pierre restored
+  ([photos.md › Excluded photos](photos.md#excluded-photos)). `apply_excluded_archive.py` seeds `data/excluded.json` from git
   history; `--files` takes a restored lecture photo's file back from it.
 - **`apply_ratios.py`**: the photo shape `ar` into `data.json` (the quiz's layout before the photos load); run it after
   adding photos (the workflow runs it too).
@@ -293,12 +293,12 @@ The fish content and photos themselves: [fish.md](fish.md), [fish-photos.md](fis
   iNaturalist observers in three rings; inputs `tools/fish_commonness.json`, `tools/fish_commonness_inat.json`), applied
   to `fish.json` by `build_fish.py`. `--fetch` asks iNaturalist (batched, ~1 request/s, cached); given entry ids, it
   prints each species' raw values. [FISH_PATH.md](../FISH_PATH.md) "Species order: the commonness index".
-- **`fetch_fish.py`**: fish candidate photos from iNaturalist → `fish-cand.json`
+- **`fetch_fish.py`**: fish candidate photos from iNaturalist → `data/fish-cand.json`
   ([fish-photos.md › Candidates](fish-photos.md#candidates-from-inaturalist-toolsfetch_fishpy); `--plan` offline,
   `--only`, `--circle`, `--cap`; `--rep` tags the candidates that are their taxon's iNaturalist cover, 30 taxa a
   request; `--refill` refills the short species only and remembers the ones searched to the end in
   `tools/fish_refill.json`, run by the Candidate photos workflow).
-- **`fetch_fishbase.py`**: fish candidate photos from FishBase → `fish-cand.json`, after `fetch_fish.py`:
+- **`fetch_fishbase.py`**: fish candidate photos from FishBase → `data/fish-cand.json`, after `fetch_fish.py`:
   `--fishbase DIR` reads the rfishbase parquet snapshot (pyarrow) into `tools/fishbase_src.json`, then runs offline
   (`--plan`, `--only`, `--circle`, `--cap`); also the FishBase source of the sheet-only photos (`fish_photos.py --sheet`).
 - **`fish_refs.py`**: the fish units' reference photos (iNaturalist covers and every taxon-page photo passing the game
@@ -309,9 +309,9 @@ The fish content and photos themselves: [fish.md](fish.md), [fish-photos.md](fis
   only the genera with no reference photo yet and adds theirs, the rest kept (`add_genera`). Judged ones join the game
   photos ([fish-photos.md › Reference photos](fish-photos.md#candidates-from-inaturalist-toolsfetch_fishpy)).
 - **`judging_fish.py`**: the fish candidate pass on the fish rubric (`judging/FISH.md` "Candidates"): contact sheets,
-  `--check`, the import into `suggest.json` `fish`. `--subject seaslug` runs the same pass on the sea slugs' candidates
-  (`seaslug-cand.json`) and rubric (`judging/SEASLUG.md`; `fish_judge.py` `RUBRICS`), files
-  `judging/seaslug/<taxon id>.json`, imported into `suggest.json` `seaslug`.
+  `--check`, the import into `data/suggest.json` `fish`. `--subject seaslug` runs the same pass on the sea slugs' candidates
+  (`data/seaslug-cand.json`) and rubric (`judging/SEASLUG.md`; `fish_judge.py` `RUBRICS`), files
+  `judging/seaslug/<taxon id>.json`, imported into `data/suggest.json` `seaslug`.
 - **`fish_draw_sim.js`**: the fish draw's easy share in the real app: `model.js` `photoSet` drawn per entry and stage of
   a player's level, the share of photos under ease 4 (`--photos FILE`, `--calib JSON`, `--entries`, `--draws`;
   Playwright, in the machine slot); [LEARNING.md](../LEARNING.md) "The fish draw in big pools".
@@ -329,7 +329,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   offline and fails when the copied look-alikes or photo target are not the source's; `--target` copies them in again,
   offline, nothing else changed (the cache is not needed). [Note](../reviews/2026-11-15-seaslug-list.md).
 - **`seaslug_game.py`** → `seaslug.json`, `seaslug-game.json`: the subject's game data, from `tools/seaslugs.json`
-  circles 1 to 3 (`CIRCLES`) and the judged candidates (`suggest.json` "seaslug"):
+  circles 1 to 3 (`CIRCLES`) and the judged candidates (`data/suggest.json` "seaslug"):
   - **The tree** in `fish.json`'s shape: a family or genus takes its best species' circle; the families' taxonomic
     groups come from the hand-kept `tools/seaslug_groups.json` (WoRMS's classification: `taxa` and each family's
     `tgroup`; a family in no group fails the build); the reference taxonomy `ref` and each genus's `ref`, its WoRMS
@@ -378,7 +378,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     volume. The Candidate photos workflow runs `--r2` while its `SEASLUG_R2` is `on`; `tools/photos.py` `DATA` lists
     `seaslug-game.json`, so `tools/r2_sync.sh` checks the bucket holds the sea slugs' files once they are on R2.
     `tests/seaslug-game.test.js` (the R2 step on a fixture, the host stubbed).
-- **`fetch_seaslugs.py`** → `seaslug-cand.json`: the sea slugs' candidate photos, data only (nothing downloaded, judged
+- **`fetch_seaslugs.py`** → `data/seaslug-cand.json`: the sea slugs' candidate photos, data only (nothing downloaded, judged
   or uploaded here):
   - per species of `tools/seaslugs.json` circles 1, 2 and 3 (`--circle`), the photo target's 20 candidates (+5 Life
     Stage: Juvenile places for a documented juvenile form, `photoTarget.juvenile`: *Hexabranchus lacer*), one photo per
@@ -390,7 +390,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the rubric
     like any candidate;
   - it reuses `fetch_fish.py`'s searches, cache and pacing (~1 request/s, cached in
-    `tools/.cache/seaslug_photos.json`). The file has `fish-cand.json`'s shape and record fields, keyed by the species'
+    `tools/.cache/seaslug_photos.json`). The file has `data/fish-cand.json`'s shape and record fields, keyed by the species'
     iNaturalist taxon id, `f` = `seaslug-<taxon id>-cand-<photo id>` (the docstring lists the differences);
   - **The sea slugs without a species name** ([study](../reviews/2026-11-17-seaslug-undescribed-species-study.md)):
     `--informal` measures the presence of each species of `tools/seaslug_informal.json` (its label's observations and
@@ -409,7 +409,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     has `max` (30) as its target (`target`), never above it; a very variable genus's genus-level list takes the 30 too,
     any other keeps 20;
   - **Egg masses and rule P4**: the target counts the candidates still usable, as the fish's cap does: one judged an egg
-    mass (`suggest.json` `"seaslug"` `{egg: 1}`, the egg rule's filter 2) counts nothing (`held`), and an observation
+    mass (`data/suggest.json` `"seaslug"` `{egg: 1}`, the egg rule's filter 2) counts nothing (`held`), and an observation
     whose every candidate is one brings its next usable photo first (`eggs_back`: asked again by id, every observation
     with an egg-mass candidate in the run's lists in one request, under a new candidate's rules; for a species with no
     name, still its label, its observation fields read), the egg-mass record kept beside it (its judgement keeps it out
@@ -423,7 +423,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   page's links named by a scientific name: Florent's Guide; one page per species, its heading: SEASLUG.WORLD), and the
   names read by hand on public pages (`web`: the page, its words, the date). About one request a second to each API, 2 s
   between two pages; a page that refuses is recorded, never worked around. A name is a nickname when its source says so.
-  A name given to two taxa (`shared`) goes to `points.json` (rule C5). Cached in `tools/.cache/`; `--check` derives the
+  A name given to two taxa (`shared`) goes to `data/points.json` (rule C5). Cached in `tools/.cache/`; `--check` derives the
   merge again offline from the committed raw replies and fails when a taxon of the game is missing. `seaslug_game.py`
   copies the names into `seaslug.json` (`en`, `ensrc`). `tests/seaslug-names.test.js`.
 - **`seaslug_cues.py`, `seaslug_cues.json`**: the sourced ID marks: `seaslug_cues.json` holds, by genus and by family, 1
@@ -468,7 +468,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   in `tools/.cache/seaslug_lit.json` (WoRMS 0.3 s, iNaturalist through `tools/inat.py`, rule C7); `--derive` rewrites
   `look` from the committed `raw` and the current species list, offline; `--check` (offline) fails when `look` is not
   what `raw` gives (`raw.list`: the species list of the pull), and only reports a later change to `tools/seaslugs.json`.
-  It changes no game data: a proposed change goes to a pull request of its own, a discrepancy to `points.json` (rule C5).
+  It changes no game data: a proposed change goes to a pull request of its own, a discrepancy to `data/points.json` (rule C5).
   `tests/seaslug-lit.test.js`.
 
 ## The instance

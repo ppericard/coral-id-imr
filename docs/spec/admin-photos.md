@@ -32,7 +32,7 @@ tools below are `coralLive` in `admin-nodephotos.js`.
 - **Removed from the site** (`genera[g].hide`): the genus's photos taken off the site, each with **Put back**; the Tag…
   filter **Removed photos**.
 - **Excluded** (`exclude`): the genus's excluded photos, each with **Restore**; a restored photo comes back at its place
-  at the next run of the candidate workflow (`excluded.json`, `tools/fetch_local.py` `tidy()`); the Tag… filter
+  at the next run of the candidate workflow (`data/excluded.json`, `tools/fetch_local.py` `tidy()`); the Tag… filter
   **Excluded photos**; one that names no genus any more is listed on the first root page of each view.
 
 ## Candidates (the corals)
@@ -80,7 +80,7 @@ way to the first one, in that order, that still has candidates). The fish's and 
   among the 5% sharpest) is left to him with the reason in the judgment line, and is never set aside.
 - **Caps**: adds fill each genus × view up to `capOf` colonies, the nearest first (Dauin, the Philippines, abroad: the
   photo's `loc`), whoever took it (rule P1: no source priority, so Pierre's own Fair photo never takes the last slot
-  ahead of another observer's Good one), then Good first, then the sharper (`metrics.json`), then an open licence
+  ahead of another observer's Good one), then Good first, then the sharper (`data/metrics.json`), then an open licence
   (`rightsRank`); the rest waits in the full cell as candidates. Decided again at each load.
 - **Checks** (`autoCheck`: FNV-1a of the name, 1 in `AUTO.every` = 20, the same on every device): a sure candidate drawn
   is logged `?…` and not applied; it comes up in the swiper with a **Check** tag, blind (no judgment line, dashed
@@ -109,7 +109,7 @@ way to the first one, in that order, that still has candidates). The fish's and 
   card (added, set aside, Checks left, agreement and n per field, off in red), folded behind the **Auto** chip at the end
   of the chips' row (marked "off" when a field is), so the photo and the buttons fit one phone screen; and Details below
   it: the table (agreement, n, threshold, on/off, Pierre's own retest agreement), the disagreements (both answers, Check
-  or correction, the agent's note while `suggest.json` has it, the metrics: sharpness percentile among candidates, px,
+  or correction, the agent's note while `data/suggest.json` has it, the metrics: sharpness percentile among candidates, px,
   cast), every auto decision, newest first (the latest day, and within a day the latest run), each with **Undo**
   (`autoUndo`: removes what it wrote unless Pierre changed it since, marks it `-` so it is never applied again, the photo
   is a candidate again, one Undo step). An auto exclusion keeps its candidate entry through the candidate refill

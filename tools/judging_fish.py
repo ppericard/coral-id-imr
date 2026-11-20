@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fish candidate pass: the pre-sort of fish-cand.json, on the fish judging rubric (judging/FISH.md).
+"""Fish candidate pass: the pre-sort of data/fish-cand.json, on the fish judging rubric (judging/FISH.md).
 
 One fish judging vocabulary (Pierre, 2026-11-04): a candidate is judged on the same visual code as the game photos
 (judging/FISH.md "Tags": view, whole, light, colour loss, clarity, size in the frame, count / subject obvious, the
@@ -18,9 +18,9 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    (t01)
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
-    python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
+    python3 tools/judging_fish.py rep              re-apply the reference flag (data/fish-cand.json rep) to data/suggest.json "fish"
     python3 tools/judging_fish.py codes            re-apply the judging files' codes, keep, phase, crop, box, unsure
-                                                   fields and notes to the candidates already judged in suggest.json
+                                                   fields and notes to the candidates already judged in data/suggest.json
                                                    "fish" (a re-judge of some photos, e.g. the other species split, Q323;
                                                    the crops that save a photo, Q430), dating the pass of each species
                                                    it changed (the auto-sort's route back reads that date)
@@ -33,16 +33,16 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    else tools/fish_judge.json); then run codes and one. --check lists
                                                    the listed photos whose code lacks it (exit 1 on any)
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
-    python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
-    --subject seaslug (any command above but rep, one and watermark): the sea slugs' candidates instead (seaslug-cand.json,
+    python3 tools/judging_fish.py [id ...]         check, then import every species that passes into data/suggest.json "fish"
+    --subject seaslug (any command above but rep, one and watermark): the sea slugs' candidates instead (data/seaslug-cand.json,
                                                    tools/fetch_seaslugs.py), on their rubric (judging/SEASLUG.md:
                                                    tools/fish_judge.py RUBRICS "seaslug"): judging/seaslug/<taxon id>.json,
-                                                   imported into suggest.json "seaslug"; ids = iNaturalist taxon ids (the
-                                                   keys of seaslug-cand.json) or scientific names; no phase, no box, keep
+                                                   imported into data/suggest.json "seaslug"; ids = iNaturalist taxon ids (the
+                                                   keys of data/seaslug-cand.json) or scientific names; no phase, no box, keep
                                                    optional (one photo per observation: read as best), and the egg rule
                                                    (#970's filter 2): {"egg": true} and no code excludes an egg-mass photo
 
-judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, bb, unsure, note}}}; suggest.json "fish"
+judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, bb, unsure, note}}}; data/suggest.json "fish"
 {photo: {jt, e, k, ph, c, bb, u, n}} (autosort.js fishSure reads it): jt the tags and e the ease after the rubric's caps
 (tools/fish_judge.py cap, the same as the game photos' jt and e in fish-photos.json), c the proposed crop, bb the fish's
 box (judging/FISH.md "The fish's box": every photo whose code passes the tile rule; tools/fish_game.py cuts its tile); "by" {species: {fish: {by, at, n}}}. Re-importing a species replaces its candidates' entries; the rest is kept.
@@ -75,9 +75,9 @@ def load(p, d=None):
 # so keep reads best; no phase (rule C2: no presentation names one) and no fish's box (the tile is the fish games'); egg,
 # #970's filter 2 (judging/SEASLUG.md "Egg masses").
 SUBJECTS = {
-    "fish": {"dir": os.path.join("judging", "fish"), "cand": "fish-cand.json", "doc": "judging/FISH.md", "eg": "p1g0sm14",
+    "fish": {"dir": os.path.join("judging", "fish"), "cand": "data/fish-cand.json", "doc": "judging/FISH.md", "eg": "p1g0sm14",
              "fields": {"code", "keep", "phase", "crop", "bb", "unsure", "note"}, "keep": None},
-    "seaslug": {"dir": os.path.join("judging", "seaslug"), "cand": "seaslug-cand.json", "doc": "judging/SEASLUG.md",
+    "seaslug": {"dir": os.path.join("judging", "seaslug"), "cand": "data/seaslug-cand.json", "doc": "judging/SEASLUG.md",
                 "eg": "d1g0sl15", "fields": {"code", "keep", "crop", "egg", "unsure", "note"}, "keep": "best"},
 }
 SUBJECT = "fish"
@@ -87,7 +87,7 @@ CODE = RUBRICS[SUBJECT]["code"]
 NEW_COUNT = RUBRICS[SUBJECT]["count"]
 FISH = load("fish.json", {"species": [], "teach": []})
 SP = {s["id"]: s for s in FISH["species"]}
-CAND = (load("fish-cand.json", {}) or {}).get("cand", {})
+CAND = (load("data/fish-cand.json", {}) or {}).get("cand", {})
 CUR = (load("curation.json", {}) or {}).get("fish") or {}
 TEACH = {t["id"]: t for t in FISH["teach"]}
 # The teaching entry of each species (its first level-1 entry): its dimorph flag, which adds the phase flag.
@@ -105,7 +105,7 @@ FIELDS = CFG["fields"]
 
 def use(subject):
     """Points the pass at a subject of SUBJECTS: its candidates, species, judging files, rubric and fields. Sea slugs:
-    seaslug-cand.json keyed by iNaturalist taxon id, the species of tools/seaslugs.json, no teaching entry (no phase, no
+    data/seaslug-cand.json keyed by iNaturalist taxon id, the species of tools/seaslugs.json, no teaching entry (no phase, no
     juvenile class), their own curation.json key (none yet), never the fish's."""
     global SUBJECT, CFG, JDIR, CODE, NEW_COUNT, SP, CAND, CUR, TEACH, ENTRY, FIELDS
     if subject not in SUBJECTS:
@@ -357,9 +357,9 @@ def check(sid):
 
 
 def entry(sid, x, rep=None):
-    """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
+    """A judging file's record -> data/suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
     (tools/fish_judge.py cap: the phase flag for a dimorph entry, and the reference flag r, which leaves the ease as
-    judged, for a candidate whose fish-cand.json record carries `rep`; a juvenile caps nothing). A sea slug's: its
+    judged, for a candidate whose data/fish-cand.json record carries `rep`; a juvenile caps nothing). A sea slug's: its
     rubric's caps (no entry: no phase), keep best when the judgement names none, and an egg-mass
     photo as {egg: 1} (the egg rule: never in play)."""
     if x.get("egg"):
@@ -394,7 +394,7 @@ def cmd_import(names, only_check, by):
     print(f"{len(ok)} species file(s) pass, {len(bad)} fail{': ' + ', '.join(bad) if bad else ''}.")
     if only_check or not ok:
         sys.exit(1 if bad else 0)
-    S = load("suggest.json", {}) or {}
+    S = load("data/suggest.json", {}) or {}
     S.setdefault("by", {})
     Sf = S.setdefault(SUBJECT, {})
     stamp = datetime.date.today().isoformat()
@@ -406,16 +406,16 @@ def cmd_import(names, only_check, by):
             Sf[f] = entry(sid, x, rep.get(f))
         S["by"].setdefault(sid, {})[SUBJECT] = {"by": by, "at": stamp, "n": len(j["photos"])}
     S[SUBJECT] = dict(sorted(Sf.items()))
-    with open(P("suggest.json"), "w", encoding="utf-8") as fh:
+    with open(P("data/suggest.json"), "w", encoding="utf-8") as fh:
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
-    print(f'Imported {len(ok)} species file(s): {len(S[SUBJECT])} {SUBJECT} candidates judged in suggest.json "{SUBJECT}".')
+    print(f'Imported {len(ok)} species file(s): {len(S[SUBJECT])} {SUBJECT} candidates judged in data/suggest.json "{SUBJECT}".')
     sys.exit(1 if bad else 0)
 
 
 def cmd_rep(fields=("jt", "e"), stamp=False):
-    """Re-applies the reference flag (fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
-    judged candidates of suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
+    """Re-applies the reference flag (data/fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
+    judged candidates of data/suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
     judgement gets the flag r, one no longer tagged loses it, and the ease is the judgement's either way (no reference
     ease point). Only those entries change.
     fields ("codes": also u and n, the crop c and the fish's box bb): re-applies a re-judge of some photos' codes, crops,
@@ -423,9 +423,9 @@ def cmd_rep(fields=("jt", "e"), stamp=False):
     candidates already judged, without the whole species' --check (a species may hold new candidates not judged yet,
     which the import refuses); waiting or decided alike. A re-judge (stamp) dates the pass of each species it changed
     ("by" {species: {fish: {at}}}, as the import does): the auto-sort's route back reads it (autosort.js sortBack: a photo
-    it set aside comes back only on a judgement made since). The subject's (use): suggest.json "seaslug" and
+    it set aside comes back only on a judgement made since). The subject's (use): data/suggest.json "seaslug" and
     judging/seaslug/ for the sea slugs, whose codes also re-apply the egg rule."""
-    S = load("suggest.json", {}) or {}
+    S = load("data/suggest.json", {}) or {}
     Sf = S.get(SUBJECT) or {}
     n, changed = 0, set()
     for sid, L in CAND.items():
@@ -450,11 +450,11 @@ def cmd_rep(fields=("jt", "e"), stamp=False):
         for sid in changed:
             b = S.setdefault("by", {}).setdefault(sid, {}).setdefault(SUBJECT, {"by": globals().get("BY", "claude"), "n": 0})
             b["at"] = today
-    with open(P("suggest.json"), "w", encoding="utf-8") as fh:
+    with open(P("data/suggest.json"), "w", encoding="utf-8") as fh:
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
     what = "Reference flag" if fields == ("jt", "e") else "Codes, crops, keep, phase, unsure fields and notes"
-    print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"{SUBJECT}\""
+    print(f"{what} re-applied: {n} judged candidates changed in data/suggest.json \"{SUBJECT}\""
           + (f", the pass of {len(changed)} species dated {today}." if stamp and changed else "."))
 
 
@@ -558,7 +558,7 @@ def cmd_watermark(only_check):
 
 
 def cmd_todo():
-    Sf = (load("suggest.json", {}) or {}).get(SUBJECT, {})
+    Sf = (load("data/suggest.json", {}) or {}).get(SUBJECT, {})
     T = [(sid, sum(1 for p in cands(sid) if p["f"] not in Sf), len(cands(sid))) for sid in CAND]
     T = [t for t in T if t[1]]
     for sid, a, b in T:

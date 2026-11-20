@@ -176,7 +176,7 @@ species rank).
   ones; `k:none` (No IMR group) holds Millepora, the bonus and Coral Finder key genera, the slate's first, then A-Z.
   Never the Coral Finder key (`data.json` `key`): its branches are growth forms (rule C4) and a genus sits in several of
   its boxes.
-- **WoRMS**: the family WoRMS gives each genus (`names.json` `worms`, the extract `tools/taxonomy.py` writes), not the
+- **WoRMS**: the family WoRMS gives each genus (`data/names.json` `worms`, the extract `tools/taxonomy.py` writes), not the
   lecture's word (Pachyseris in Pachyseridae, Plerogyra in Plerogyridae); the extract holds each genus's AphiaID but no
   family's, so a family is `wf:<its name>` (rank family), never `w:`; a genus it lacks is a tree problem in the bar.
 - **A group's or a family's page**: its genera's cards, each as its row on the genus list (cover, No. or ★, photos on
@@ -213,7 +213,7 @@ photo tools on their own part of `curation.json`:
   the genus's `ref`, through `taxtree.js` `ttFromRef` `at`; their families sit under their taxonomic groups
   (`seaslug.json` `taxa`, each family's `tgroup`). All | IMR shows only for a tree the IMR course names; a species with no
   common name shows by its scientific name alone.
-- Photos › Candidates: the fish's swiper on `seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, the
+- Photos › Candidates: the fish's swiper on `data/seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, the
   game's cap) on each species and each genus-level list (`autosort.js` `fishSpecies(J, tgt)`, `fishTarget`,
   `admin-fish.js` `candSpecies`); no auto-sort, so the queue has no Checks switch; an egg-mass judgement (`{egg: 1}`) is
   set aside (`autosort.js` `fishSure`).

@@ -127,7 +127,7 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   rebase or another tab's Publish builds it again (`unitRefresh`);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
-  set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
+  set aside reading the pass's date of each candidate (`passAt`: `data/suggest.json` `by`, through the key of its
   candidate list, `fishLoad` `key`); its Auto details label each decision in, back in (log `b`) or set aside;
 - `tags`, for every tree subject (the fish, the sea slugs), its whole rubric, declared and never defaulted: the seven
   positions of a photo's tag code (`names` and, by position, `[value, label, words, more]`), the flags and the phase row;
@@ -234,7 +234,7 @@ the sign-out seal's [design note](../reviews/2026-11-09-admin-signout-seal.md)).
 - **A click's cost**: a click's write stores the draft's text `snap` as it is and parses no draft when no other tab
   wrote, and `autoWhen` skips the fish part's keeps when the click left that part as it was (the same object: the admin
   never writes into it; `tests/adminclick.test.js`). The fish auto-sort at load (`fishAutoRun`, which reads
-  `fish-cand.json`) runs once the first page is drawn and the page is idle (`requestIdleCallback`, 4 s at most).
+  `data/fish-cand.json`) runs once the first page is drawn and the page is idle (`requestIdleCallback`, 4 s at most).
 - **Undo steps**: the last 60, as many as fit in `HIST_ROOM` (4.5 million characters: with a draft over a million
   characters, one or two), kept in `sessionStorage` `reefid-admin-undo` with the draft they lead to (`keepHist`, written
   once the clicks pause for `HIST_WAIT`, 1.5 s, and when the page is hidden or left), so they survive a reload of the tab
@@ -304,14 +304,14 @@ The draft button carries the status: "● Publish" with a draft (its title lists
     Cache Storage under the blob's sha (`blobText`, `reefid-admin-blobs`, the latest only: a sha never changes its blob):
     the next visit and every Publish (`fresh()` re-reads it) ask GitHub for the sha only. Public data (the file is on the
     site), not the declined copy of players' data (ROADMAP "Declined for now"). Not in the demo.
-  - `suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
+  - `data/suggest.json` (3.5 MB, 0.4 MB gzipped; the judging agent's candidate pass, fish and sea slug judgments, and the
     work of laying them over the candidates) is read by the photo pages, the Inbox count and the auto-sorts, never by a
     Players page (`sugOwn`). Opened on a Players page (the default), `start()` does not wait for it: the candidates' laying
     (`sugCands`) and the auto-sorts (`sugRun`) are left in `SUG_LATE`, run by `sugLoad` once the sheet's reads are in and the
     page is idle (`sugLater`), or at once when a page that needs them is asked for (`render()`'s gate: Loading… until
     then). Opened on any other page it waits for them as before. Until they are in, the header's Inbox count leaves out the
     suggestions (it comes up with the laying, a few seconds after Activity).
-  The fish auto-sort still reads `fish-cand.json` (10 MB) and `fish.json` at idle after that (a 1-second block on a phone
+  The fish auto-sort still reads `data/fish-cand.json` (10 MB) and `fish.json` at idle after that (a 1-second block on a phone
   profile): left, ROADMAP "Admin opening".
 - **Memos**: `photos` / `own` / `cands` walk every genus and are memoized per draft state, kept from page to page:
   `render()` clears them only when the draft differs from the one they were computed for (`memoFresh`), and photos or

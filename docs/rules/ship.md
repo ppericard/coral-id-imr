@@ -94,7 +94,7 @@ needs a written reason next to the pin.
 in status messages, not in ROADMAP. **Reminders of what only he can do live where he reads them when he wants**: STATUS
 "Pierre's hands" (later the admin's To do › Points). In the chat, a reminder is given once, when it is useful and
 related to the work at hand (e.g. "these units are short of photos", "these 31 photos are out of the presence rule"),
-never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `points.json`)
+never repeated or nagged. The points to settle (rule C5: IMR trainer questions, content questions, in `data/points.json`)
 stay: he asked for that list.
 *Why:* an agent reminded him every few minutes, in the chat, of things unrelated to its own work.
 *Source:* Pierre, 2026-11-01; scope restored, 2026-11-05; subject-neutral wording, 2026-11-06.
@@ -210,7 +210,7 @@ it at merge (rule D3).
 **Corals: write `data.json` only with `tools/datajson.py`.** Editing it by hand is normal (the original build script reads a
 scratchpad that no longer exists), but write it with `from datajson import dump` then `dump(d, path)`, never
 `json.dump`: one top-level key per line and one genus per line in `gen`, `course`, `cand`, `x` and `x.gen`, compact
-within a line, so two edits to different genera merge cleanly. Candidates waiting live in `cand.json`, admin only: read
+within a line, so two edits to different genera merge cleanly. Candidates waiting live in `data/cand.json`, admin only: read
 both with `load_all()`, write with `dump_all()`, which keeps in `data.json` only the candidates `curation.json` names.
 After a hand edit, `python3 tools/datajson.py` puts the file back in that layout; the PR check (`--check`) fails
 otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.

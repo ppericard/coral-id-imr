@@ -660,7 +660,7 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
 test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
   const {execFileSync} = require('child_process'),
     C = require('../core.js'),
-    S = read('suggest.json').fish || {},
+    S = read('data/suggest.json').fish || {},
     // The curation as the build reads it (tools/fish_game.py read_cur: the auto-sort's proposals read the newer judgement).
     {plan, fish: FC} = JSON.parse(
       execFileSync(

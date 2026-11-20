@@ -24,7 +24,7 @@ module.exports = ROOT => {
     }
     Object.values(o).forEach(walk);
   };
-  ['data.json', 'cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
+  ['data.json', 'data/cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
     const p = path.join(ROOT, f);
     if (fs.existsSync(p)) walk(require(path.join(ROOT, 'core.js')).treeGameRead(JSON.parse(fs.readFileSync(p, 'utf8')))); // its records whole
   });

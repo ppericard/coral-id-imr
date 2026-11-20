@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fish candidate photos from iNaturalist, for Pierre to curate in the admin, into fish-cand.json.
+"""Fish candidate photos from iNaturalist, for Pierre to curate in the admin, into data/fish-cand.json.
 (The admin's fish Candidates page comes with the admin plan's PR 5, docs/ROADMAP.md "Admin for every subject".)
 
 The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions for fish photos (2026-11-03):
@@ -52,10 +52,10 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
   src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
-  fish-cand.json = {"v": 1, "cand": {species id: [photo, ...]}}, one species per line (tools/datajson.py layout).
+  data/fish-cand.json = {"v": 1, "cand": {species id: [photo, ...]}}, one species per line (tools/datajson.py layout).
 - Curation: curation.json "fish" (written by the admin only, never here; its full shape is the admin plan's PR 4): add
   {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id or "x"}. The top-level "exclude" (corals) is honoured too, by iNaturalist photo id.
-- Pre-sort: suggest.json "fish" (tools/judging_fish.py, judging/FISH.md "Candidates").
+- Pre-sort: data/suggest.json "fish" (tools/judging_fish.py, judging/FISH.md "Candidates").
 - Reference photos (Pierre, 2026-11-05): --rep tags each candidate whose photo is its taxon's iNaturalist cover (the
   taxon's default photo, what iNaturalist shows to represent the species) with rep: "inaturalist" (judging/FISH.md
   "Reference photos": its ease gets a bonus), 30 taxa a request, and refills nothing; run it after a refill. FishBase
@@ -109,7 +109,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
-from datajson import dump  # noqa: E402  one species per line, as cand.json
+from datajson import dump  # noqa: E402  one species per line, as data/cand.json
 from rights import rights_rank  # noqa: E402  the rights of a photo, as core.js rightsRank
 from fish_inforce import in_force  # noqa: E402  the circles in force (the content editor's)
 
@@ -575,7 +575,7 @@ def written_phases(s, t):
 
 
 def photo_phase(p, j=None):
-    """The extra phase one photo shows, or "" (adult, or not known): the judging tags first (j: its suggest.json "fish"
+    """The extra phase one photo shows, or "" (adult, or not known): the judging tags first (j: its data/suggest.json "fish"
     entry; a game photo carries jt itself): the rubric's phase tag, then its juvenile flag j; else the life stage or sex
     its source annotated (st: iNaturalist or FishBase), juvenile first."""
     j = j or {}
@@ -596,11 +596,11 @@ def species_phases(s, t, cands=(), sug=None, game=(), fb=(), moved=frozenset()):
     """{phase: [what records it]} for species s of teaching entry t, in PHASES order, only the phases recorded (Pierre,
     2026-11-05, Q36: "as the judging tags and the sources record them"):
     - "imr", "juv": the written sources of its entry (written_phases);
-    - "judged": a judging tag on one of its photos (suggest.json "fish" ph or the juvenile flag j on a candidate; jt on a
+    - "judged": a judging tag on one of its photos (data/suggest.json "fish" ph or the juvenile flag j on a candidate; jt on a
       game photo of fish-photos.json);
     - "inat:N": the iNaturalist Life Stage or Sex annotation of N distinct candidate observations, N >= MIN_ANNOT;
     - "fishbase:N": N FishBase underwater photos of it labelled with that life stage (tools/fishbase_src.json st).
-    cands: its candidates (fish-cand.json); sug: suggest.json "fish"; game: its game and sheet photos; fb: its FishBase
+    cands: its candidates (data/fish-cand.json); sug: data/suggest.json "fish"; game: its game and sheet photos; fb: its FishBase
     rows; moved: the candidates Pierre sent to another species (curation.json fish.out), which record nothing here."""
     sug = sug or {}
     why = written_phases(s, t)
@@ -1216,9 +1216,9 @@ def main(argv=None):
     a.add_argument("--today", help="--refill: the day, YYYY-MM-DD (tests; default today, UTC)")
     a.add_argument("--memory", default=str(REFILL), help="--refill: what was searched to the end (tools/fish_refill.json)")
     a.add_argument("--fish", default=str(ROOT / "fish.json"))
-    a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
+    a.add_argument("--cand", default=str(ROOT / "data/fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))
-    a.add_argument("--suggest", default=str(ROOT / "suggest.json"))
+    a.add_argument("--suggest", default=str(ROOT / "data/suggest.json"))
     a.add_argument("--photos", default=str(ROOT / "fish-photos.json"),
                    help="fish-photos.json; the photos in play are read from fish-game.json next to it (their judging tags record phases)")
     a.add_argument("--fbsrc", default=str(ROOT / "tools" / "fishbase_src.json"), help="FishBase rows (their life stages record phases)")

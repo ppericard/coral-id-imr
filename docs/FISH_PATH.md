@@ -469,7 +469,7 @@ Supported now:
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
 - Presence near Dauin (`present.near`).
-- Candidate photos per species (`fish-cand.json`: up to 30 observations each, life stage `st`, pre-sort phase `ph`).
+- Candidate photos per species (`data/fish-cand.json`: up to 30 observations each, life stage `st`, pre-sort phase `ph`).
 
 Gaps before species questions ship:
 

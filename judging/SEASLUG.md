@@ -2,19 +2,19 @@
 
 The sea slugs' rubric, adapted from the fish's ([FISH.md](FISH.md)) for the sea-slug subject (Pierre, 2026-11-15, Q369:
 one "sea slugs" subject, the Philippines as its area, scientific names only; Q377: circle 1 of 45 species, the photo
-target). It judges the candidate photos of `seaslug-cand.json` (`tools/fetch_seaslugs.py`), so the pass can be repeated
+target). It judges the candidate photos of `data/seaslug-cand.json` (`tools/fetch_seaslugs.py`), so the pass can be repeated
 by another agent or a person and give the same kind of result. The subject's game reads it through
 `tools/seaslug_game.py` (`seaslug-game.json`: the sure judgements are in play, as a fish candidate judged sure; run it
 again after a re-judge); its admin pages and auto-sort come later (ROADMAP "More subjects").
 
-Files: the judgements are `judging/seaslug/<taxon id>.json` (one per species, the key of `seaslug-cand.json`: its
+Files: the judgements are `judging/seaslug/<taxon id>.json` (one per species, the key of `data/seaslug-cand.json`: its
 iNaturalist taxon id); `python3 tools/judging_fish.py --subject seaslug` draws the sheets, checks the files and imports
-them into `suggest.json` `"seaslug"`; the code and its caps are `tools/fish_judge.py` `RUBRICS` `"seaslug"` (one tool for
+them into `data/suggest.json` `"seaslug"`; the code and its caps are `tools/fish_judge.py` `RUBRICS` `"seaslug"` (one tool for
 both subjects, `--subject` choosing). Tests: `tests/seaslugjudge.test.js`.
 
 ## Genus-level candidates and the species with no name yet
 
-Two more kinds of list in `seaslug-cand.json` (Pierre, 2026-11-17, Q389; `tools/fetch_seaslugs.py` `--genus-level`,
+Two more kinds of list in `data/seaslug-cand.json` (Pierre, 2026-11-17, Q389; `tools/fetch_seaslugs.py` `--genus-level`,
 `--informal`), judged **on this same rubric, the same way**, each list its own judging file:
 
 - **Genus-level candidates** (Q389 (1)): observations identified at the genus only, agreed there by 2 current
@@ -25,7 +25,7 @@ Two more kinds of list in `seaslug-cand.json` (Pierre, 2026-11-17, Q389; `tools/
 - **A species with no name yet** (Q389 (2), `tools/seaslug_informal.json`: *Goniobranchus* sp. 5 of Soong et al. 2020):
   observations carrying its label (the iNaturalist observation field its identifiers keep), at its genus and agreed
   there. Keyed by its **key** (`judging/seaslug/goniobranchus-sp5.json`; `... sheets "Goniobranchus sp. 5"`). The label
-  is taken as given, as a Research Grade identification is (rule C5: a doubt goes to `points.json`).
+  is taken as given, as a Research Grade identification is (rule C5: a doubt goes to `data/points.json`).
 
 `todo` lists them with the species (a genus-level list as "<genus> (genus level)").
 
@@ -46,7 +46,7 @@ Two more kinds of list in `seaslug-cand.json` (Pierre, 2026-11-17, Q389; `tools/
 The species is the iNaturalist identification (Research Grade, or Pierre's own observation identified to the species even
 when Needs ID, marked `ni`: the fish's rule, Q386; `tools/fetch_seaslugs.py`), taken as given: the judge does
 not say whether a photo shows the right species or whether its species is recognisable (rule C5 holds for the labels: a
-doubt goes to `points.json`, never settled here).
+doubt goes to `data/points.json`, never settled here).
 
 The code has the fish's shape: seven characters, then the flags, then the ease digit: `d1g0sl15`, `p1g0sm1j2`. The same
 positions read the same thing as a fish's code, so whatever reads a fish's tags reads a sea slug's. In order:
@@ -68,7 +68,7 @@ positions read the same thing as a fish's code, so whatever reads a fish's tags 
 | last | **ease** | 1 to 5, below |
 
 The flags are typed in that order (`j c a w f`). The fish's tool flags (`p` phase, `r` reference) are never added: no
-presentation names a sea slug phase, and `seaslug-cand.json` carries no `rep`.
+presentation names a sea slug phase, and `data/seaslug-cand.json` carries no `rep`.
 
 ## The views that matter
 
@@ -191,10 +191,10 @@ later species level to check; the cues are the sources', never shown to players 
 No `phase` (no presentation names a sea-slug phase; rule C2) and no `bb` (the fish's box is for the fish games' tiles).
 
 `python3 tools/judging_fish.py --subject seaslug --check [id ...]` until it passes, then `python3 tools/judging_fish.py
---subject seaslug [id ...]` imports every passing species into `suggest.json` `"seaslug"`: `{jt, e, k, c, u, n}` (`jt`
+--subject seaslug [id ...]` imports every passing species into `data/suggest.json` `"seaslug"`: `{jt, e, k, c, u, n}` (`jt`
 and `e` after the caps), or `{egg: 1, n}` for an egg-mass photo; `"by"` `{taxon id: {seaslug: {by, at, n}}}`.
 `... --subject seaslug codes` re-applies a re-judge of some photos (codes, keep, unsure, notes, the egg rule) to the ones
-already imported. Commit only `judging/seaslug/*.json` and `suggest.json` for species judged for the first time: the
+already imported. Commit only `judging/seaslug/*.json` and `data/suggest.json` for species judged for the first time: the
 Candidate photos workflow builds them into `seaslug-game.json` after the merge (`tools/seaslug_game.py --check` lets them
 wait). A re-judge of a species already in play also commits `python3 tools/seaslug_game.py`'s two files.
 

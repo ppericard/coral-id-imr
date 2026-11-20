@@ -44,13 +44,13 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   ledgers included); its last
   line ("searched: … — N hits") goes under the question.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
-  otherwise), `suggest.json` (re-import the PR's species over `main`'s file), the decisions index
+  otherwise), `data/suggest.json` (re-import the PR's species over `main`'s file), the decisions index
   (`python3 tools/decisions_index.py --fix`; it also deletes the retired OLDER.md of the split index, which a branch may carry).
 - **A doc past its size mark** (`MARK` in the docs test, the brief's last line) is a warning, never a block: read the
   doc against rule W19 (history, versions and duplicates out); if all of it belongs there, raise its mark in
   `tests/docs.test.js` in the same PR. Never move content out of its doc to fit a number
   ([decision](decisions/2026-11-19-doc-size-marks.md)).
-- **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`. A
+- **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `data/suggest.json`. A
   fish judging batch runs `python3 tools/judging_fish.py one` before committing (`one --check` fails CI).
 - **Wait on trains with `pgrep -f "python3 tools/train.py"`**, never `ps aux | grep` on a word: the waiter's own command
   line holds the word. A wait loop must end: check with `ps` that a queued train runs, and read its output.
