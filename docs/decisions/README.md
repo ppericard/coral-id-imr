@@ -67,6 +67,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [Fish slides, IMR tag and dive-sign mark: moved into the IMR instance's layer](2026-11-20-fish-slides-tag-split.md) | #1328 |
 | 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
 | 2026-11-20 | [A goatfish judged a juvenile against its own note loses the flag; the juvenile card's per-photo trigger waits for the integrator's design](2026-11-20-juvenile-card-follows-the-judged-phase.md) | #1323 |
+| 2026-11-20 | [The juvenile card shows the young beside an adult, only for species whose young are sourced as different](2026-11-20-juvenile-card-shows-young-beside-adult.md) | #1329 |
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
 | 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
 | 2026-11-20 | [The 86 Corals of the World screenshots are replaced by their originals, on R2](2026-11-20-lecture-originals.md) | #1292 |
