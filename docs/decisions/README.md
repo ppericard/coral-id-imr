@@ -59,6 +59,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
+| 2026-11-21 | [The answer feedback no longer says "(IMR)" as its line's source](2026-11-21-feedback-no-imr-label.md) | #1353 |
 | 2026-11-21 | [Rule W27: no fixed number of Codex rounds; a part whose findings keep coming back leaves the PR](2026-11-21-w27-no-round-count.md) | #1355 |
 | 2026-11-20 | [A level opens in a group: at least 4 close units together, no question before](2026-11-20-a-level-opens-in-a-group.md) | #1331 |
 | 2026-11-20 | [Admin opening on a phone: the scripts a visit to Activity does not need wait for their page](2026-11-20-admin-lazy-loads.md) | #1336 |

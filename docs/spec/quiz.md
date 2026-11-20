@@ -105,7 +105,11 @@ know"; `quiz.js` `fbBody`, `fbLine`, `pairText`, `pairLine`; styles `.fb.fbs`, `
   from `lk` (IMR's lines, with the editor's source `lksrc`) else `ap` (ours for the pairs IMR does not declare, with
   their sources); after a right answer, the same for the first look-alike among the choices whose line has a half on
   the unit shown (a one-sided line about the look-alike alone leaves the unit's first tip); else the shown unit's
-  **first ID tip or mark**, said "X: …", its source small after it (`tipsLabel`, `qsrc`); with none (a fish species, a
+  **first ID tip or mark**, said "X: …", its source small after it (`tipsLabel`, `qsrc`); **IMR's own name is never
+  said as the source on this line** (`noImr`, [decision](../decisions/2026-11-21-feedback-no-imr-label.md)): a line
+  whose only source is IMR carries none, and another source (the editor's, FishBase, …) stays; IMR stays named behind
+  More (the tips box's label "ID tips (IMR)", the pair's own line in a mix-up's panel) and on the Compare page, rule C2;
+  with none (a fish species, a
   starred coral genus with no tips, a sea slug with no marks), nothing: the sheet is the verdict and the species line.
   Never a line made by comparing trait tags, and no line is made from a coral pair's source label (`lsrc` is a
   citation). A mix-up within a mimicry pair (`model.js` `mimMix`) gives the pair's marks instead, the rest of them first
