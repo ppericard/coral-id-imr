@@ -1,6 +1,6 @@
 # Fish slides, IMR tag and dive-sign mark: moved into the IMR instance's layer
 
-Date: 2026-11-20. PR: #1323 (the index). Rules or docs touched: C1, C2, S1; docs/spec/data.md "The instance's layer"; ROADMAP
+Date: 2026-11-20. PR: #1328. Rules or docs touched: C1, C2, S1; docs/spec/data.md "The instance's layer"; ROADMAP
 "Separate IMR-owned content from the core app".
 
 ## Context
