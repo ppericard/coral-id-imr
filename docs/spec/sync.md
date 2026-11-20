@@ -203,7 +203,8 @@ header and would reach the app as a network failure. A save's hold, groups and r
 released.
 
 - `POST` the progress and the answer log (a save; below).
-- `GET ?name=&pin=` a load: the saved data, `hold` and `holdIds` (below), and, when the request's `rv` is below the
+- `GET ?name=&pin=` a load: the saved data, `hold` and `holdIds` (below; with `light`, every replayed subject's in
+  `holds` too), and, when the request's `rv` is below the
   script's rules version, `replay` (below).
 - `GET ?stats=1` the photo statistics: `photos`, `conf`, the photo memory offsets `mem` with their answers `memn`, the
   genus offsets `gd` of the hierarchical photo Elo (`{genus: [offset, weighed answers]}`, `photos` carrying each photo's
@@ -386,8 +387,15 @@ the player's last 500 answers counted and of every answer from the request's `pt
 2,000 a queue holds), so the app never adds again the answers of a send whose reply was lost. The reply to each
 successful save carries both too, computed over every answer then logged in time order, so a device that sent answers
 older than another device's takes the right value at once. `HOLD.SLACK` in `Code.gs` is `INTRO.SLACK` in `model.js`
-(`tests/sync.test.js` replays the app's own `holdStep` on the same answers). Cached per player (`hold:` and the name)
-until answers are logged or moved for that name. The app (`sync.js` `mergeSaved`, then `model.js` `holdSync`) adds the
+(`tests/sync.test.js` replays the app's own `holdStep` on the same answers). One path for every subject the sheet
+replays (`Code.gs` `holdSubjects_`, `holdsInto_`): a light request's reply (every app since the lighter saves) also
+carries `holds`, `{subject: {h, ids}}`, each subject's hold over its own answers since its own reset
+(`reefid-sync-fish-reset`…), as the device keeps one hold per subject (`model.js` `HOLDK`); the replay subject's is
+`hold` and `holdIds` too, and a request without `light` gets those two alone, as before. The app reads only `hold` and
+`holdIds` for now, as the corals' (`SUBJECTS` `hold`): each subject adopting its own from `holds` is the app's half of
+the one-engine audit's step 5 (ROADMAP "One engine for every subject, what is left"). Cached per player and subject
+(`hold:` and the name for the replay subject, `hold~<subject>:` and the name for another) until answers are logged or
+moved for that name. The app (`sync.js` `mergeSaved`, then `model.js` `holdSync`) adds the
 answers the sheet has not confirmed yet (`SYNC.log`, without the `|w` ones and those before the reset) and takes the
 result as its `reefid-hold`: the same sum over the same answers on every device. A reset made on this device and not
 sent yet ignores the reply's `hold`. A player not signed in keeps the device's hold only.
