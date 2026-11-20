@@ -1535,9 +1535,9 @@ const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || to
 // The card photo p brings, {p, k, q}, else null; sps: the subject's species by id (fish.json species), L: the photos of
 // its unit that may show (phasePair's pool). The juvenile card (k 'juvenile'; docs/decisions/
 // 2026-11-20-juvenile-card-shows-young-beside-adult.md) says nothing of its own on how the young look: it shows the
-// photo beside an adult of its species (q), so the learner sees the difference. A juvenile photo brings it only where a
-// source says the species' young look clearly different (sps[p.sp].jd.d: tools/fish_juv_differs.json), a sub-adult one
-// (the phase intermediate without the phase flag p) only where a source names a sub-adult stage of its own (jd.sub);
+// photo beside an adult of its species (q), so the learner sees the difference. One rule for every young photo, a
+// juvenile or a sub-adult (the phase intermediate without the phase flag p): it brings the card only where a source says
+// the species' young look clearly different (sps[p.sp].jd.d: tools/fish_juv_differs.json; jd.sub is information only);
 // false, or no source either way (no jd, as on a subject without them), and no adult of its species in L: no card. The
 // photo's phase is Pierre's in the admin when he set one (core.js phaseOf; rule A1). The sex or colour phase card (core.js
 // phaseKind 'phase', an entry marked dimorph) is as before.
@@ -1546,7 +1546,7 @@ function juvCard(p, sps, L) {
   if (phaseKind(p) === 'phase') return {p, k: 'phase', q: phasePair(p, L)};
   const w = phaseOf(p),
     d = (p.sp && sps && sps[p.sp] && sps[p.sp].jd) || {};
-  if (!(w === 'juvenile' ? d.d === true : w === 'intermediate' && d.sub === true)) return null;
+  if (!(w === 'juvenile' || w === 'intermediate') || d.d !== true) return null;
   const q = phasePair(p, L);
   return q ? {p, k: 'juvenile', q} : null;
 }

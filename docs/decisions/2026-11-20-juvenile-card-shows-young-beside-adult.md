@@ -22,19 +22,26 @@ The integrator's design (integrator's call, easy to correct):
   species' photos in play, its reference photos included; its title names the two ("Juvenile and adult", "Sub-adult and
   adult"); no IMR phase lines on it (the sex or colour phase card keeps them). The learner sees the difference (rule
   L14: side-by-side comparison).
-- **It fires only where a source says so.** A juvenile photo, only for a species whose young a source says look clearly
-  different (`differs: true`); a sub-adult photo (the phase intermediate, without the phase flag of a dimorph entry),
-  only where a source names a sub-adult stage with its own look (`sub: true`). Never for `false` or unknown, and never
-  without an adult of its species to show beside it.
+- **One rule, where a source says so.** A young photo, judged juvenile or sub-adult (the phase intermediate, without
+  the phase flag of a dimorph entry), brings the card whenever a source says its species' young look clearly different
+  (`differs: true`). Never for `false` or unknown, and never without an adult of its species to show beside it. The
+  first build also read a separate `sub` flag for sub-adults; Pierre, 2026-11-20 19:23: «Pourquoi tu fais une exception
+  pour une espèce … Diagramma Pictum … pour les sous-adultes … soit on décide de mettre la carte seulement sur des
+  juvéniles, soit on décide de le mettre aussi sur des formes qui ont des sous-adultes … Là, on a encore créé une
+  exception basée sur une remarque hyper spécifique de ma part.» So no species-level exception: juveniles and sub-adults
+  are one case (the integrator's call, easy to correct), all the more since very few photos are judged sub-adult at all
+  (7 in play). `sub` stays in the data as information only.
 - **Pierre's per-photo choice in the admin still wins** (rule A1): the photo's phase is his when he set one.
 - **The reading** (2026-11-20, 381 species with juvenile photos): 82 sourced as different, 25 as alike, 274 unknown; 8
-  with a sub-adult stage of its own. Each value with its sources and quote (rule C2), in `tools/fish_juv_differs.json`,
-  built into `fish.json` species `jd`. Three source conflicts are points (rule C5), none settled.
+  with a sub-adult stage of its own (information only). Each value with its sources and quote (rule C2), in
+  `tools/fish_juv_differs.json`, built into `fish.json` species `jd`. Three source conflicts are points (rule C5), none
+  settled.
 
 ## Consequences
 
 - On the photos in play as the judging gives them (with #1323's two corrections): 1,174 young photos bring the card
-  (1,167 juveniles and 7 sub-adults of *Diagramma pictum*), 1,948 juveniles do not; every photo sourced as different has
+  (1,167 juveniles and the 7 sub-adults in play, all *Diagramma pictum*, its young sourced as different), 1,948
+  juveniles do not (no sub-adult left without); every photo sourced as different has
   an adult of its species in play. The sweetlips Pierre named brings it; the goatfish does not (no source either way).
 - Only `quiz.js` reads `jd` (`juvCard`, `phaseCardFor`); the draw, the ease, the judging and the progress never do, so
   no rules version (rule D5). `core.js` is untouched: its `phaseKind` and `phaseCardOf` comments still describe the old

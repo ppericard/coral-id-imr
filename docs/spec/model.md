@@ -183,9 +183,9 @@ included (`core.js` `treeVarTable`, `replayProgress` `vars`, `replayedOf`, `Code
 the first sex or colour phase a player meets bring a card at Next (`quiz.js` `phaseArm`, `phaseCardFor`, `juvCard`,
 `phaseShow`: the photo beside one of its species in another phase, `core.js` `phasePair`; once per kind and subject,
 `TOLD` `phase:<subject>-<kind>`). The juvenile card has no words of its own (its title names the two photos, "Juvenile and
-adult"): a juvenile photo brings it only where a source says its species' young look clearly different (`fish.json`
-species `jd.d`), a sub-adult one (the phase intermediate, no phase flag) only where a source names a sub-adult stage of
-its own (`jd.sub`), and only with an adult of its species among its unit's photos; no flag, no card
+adult"): one rule for a young photo, juvenile or sub-adult (the phase intermediate, no phase flag), which brings it only
+where a source says its species' young look clearly different (`fish.json` species `jd.d`; `jd.sub` is information
+only), and only with an adult of its species among its unit's photos; no flag, no card
 ([fish-sheets.md](fish-sheets.md) "Juvenile card flags").
 LEARNING.md "Juveniles and colour phases on their unit's mastery".
 

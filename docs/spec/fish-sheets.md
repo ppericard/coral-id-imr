@@ -133,6 +133,7 @@ judging reads `jv` (`tests/fishjuv.test.js`). Why: the [decision](../decisions/2
 different from the adult (`differs`) and whether a source names a sub-adult stage with its own look (`sub`), each with
 its sources and their quote; `unknown` lists the species read with no source either way. `tools/build_fish.py`
 `juv_differs` checks it (every value true or false with an https source and its quote) and writes `fish.json` species
-`jd` {d, sub, src, ssrc}. Only the juvenile card reads it (`quiz.js` `juvCard`, [model.md](model.md)); the draw, the ease
+`jd` {d, sub, src, ssrc}. Only the juvenile card reads it, `d` alone (`quiz.js` `juvCard`, [model.md](model.md); `sub`
+is information only); the draw, the ease
 and the judging never do (`tests/fishjuvdiff.test.js`). Sources that disagree are points (`points.json`, rule C5). Why:
 the [decision](../decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md).

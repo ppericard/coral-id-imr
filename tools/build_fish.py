@@ -1006,7 +1006,7 @@ def juv_differs(o, path=None):
     2026-11-20), checked and written into fish.json species jd {d (true: a source says the juveniles look clearly
     different; false: like the adult), sub (true: a source names a sub-adult stage with its own look; false: not), src
     [{t, u}] (d's sources), ssrc [{t, u}] (sub's)}; a species with neither has no jd. Read only by the juvenile card
-    (quiz.js juvCard: a juvenile photo brings it where d is true, a sub-adult one where sub is true); the draw, the ease
+    (quiz.js juvCard: a juvenile or sub-adult photo brings it where d is true; sub is information only); the draw, the ease
     and the judging never read it (tests/fishjuvdiff.test.js). Stops on: a species not in fish.json or in both lists, a
     value not true or false, or a value without an https source and its quote (rule C2)."""
     p = Path(path) if path else JUVD

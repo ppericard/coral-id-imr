@@ -4,8 +4,10 @@ require('./slot.js').testGuard();
 // carte disait explicitement qu'il fallait vraiment se méfier parce que les juvéniles pouvaient être très différents des
 // adultes. C'était l'un des pires exemples pour ça»; «Comment faire pour que ça n'arrive plus?»). tools/fish_juv_differs.json,
 // built into fish.json species jd {d, sub, src, ssrc} by tools/build_fish.py (juv_differs), read by quiz.js juvCard
-// alone: a juvenile photo brings the card where jd.d is true, a sub-adult one (the phase intermediate, no phase flag)
-// where jd.sub is true, and only with an adult of its species to show beside it. The records are the ones
+// alone: one rule for every young photo, a juvenile or a sub-adult (the phase intermediate, no phase flag), the card
+// where jd.d is true (jd.sub is information only: Pierre, 2026-11-20 19:23, «soit on décide de mettre la carte seulement
+// sur des juvéniles, soit on décide de le mettre aussi sur des formes qui ont des sous-adultes»), and only with an adult
+// of its species to show beside it. The records are the ones
 // tools/fish_game.py builds from the judging today (tests/fishjuvdiff_rec.py), not fish-game.json.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -154,7 +156,7 @@ test('the gate on every photo in play: a card only where its source says so, alw
       continue;
     }
     if (w === 'juvenile' || w === 'intermediate') {
-      const due = w === 'juvenile' ? d.d === true : d.sub === true;
+      const due = d.d === true;
       if (c) {
         assert.ok(due, `${p.f}: a card with no source`);
         assert.strictEqual(c.k, 'juvenile');
@@ -168,19 +170,20 @@ test('the gate on every photo in play: a card only where its source says so, alw
   // The counts the PR states (the judging of 2026-11-20 with #1323's two photos): every photo sourced as different has
   // an adult of its species in play.
   assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1167, juvOff: 1948, subOn: 7, subOff: 0, noAdult: 0});
-  // the sub-adult Diagramma pictum (a spotted stage of its own between the striped juvenile and the adult)
+  // the 7 sub-adults in play, all Diagramma pictum (its young sourced as different), under the same rule
   const c = card('fish-s596-cand-552119382');
   assert.ok(c && c.k === 'juvenile' && gate.phaseWord(c.p, c.k) === 'Sub-adult', JSON.stringify(c));
 });
 
-test('a sub-adult photo brings the card only where a source names a sub-adult stage of its own', () => {
+test('one rule for juveniles and sub-adults: the card where the young are sourced as different, sub never read', () => {
   const sps = {a: {jd: {d: true, sub: false}}, b: {jd: {sub: true}}, c: {jd: {d: false}}},
     adult = sp => ({f: sp + '-ad', sp, jt: 'p1g0sl1'}),
     L = ['a', 'b', 'c'].map(adult);
   const sub = sp => ({f: sp + '-sub', sp, jt: 'p1g0sl1', ph: 'intermediate'}),
     juv = sp => ({f: sp + '-juv', sp, jt: 'p1g0sl1j'});
-  assert.strictEqual(gate.juvCard(sub('a'), sps, L), null, 'sub false');
-  assert.strictEqual(gate.juvCard(sub('b'), sps, L).k, 'juvenile', 'sub true');
+  assert.strictEqual(gate.juvCard(sub('a'), sps, L).k, 'juvenile', 'a sub-adult, differs true (sub false not read)');
+  assert.strictEqual(gate.juvCard(sub('b'), sps, L), null, 'a sub-adult, differs unknown (sub true not read)');
+  assert.strictEqual(gate.juvCard(sub('c'), sps, L), null, 'a sub-adult, differs false');
   assert.strictEqual(gate.juvCard(juv('a'), sps, L).k, 'juvenile', 'differs true');
   assert.strictEqual(gate.juvCard(juv('b'), sps, L), null, 'differs unknown');
   assert.strictEqual(gate.juvCard(juv('c'), sps, L), null, 'differs false');
