@@ -46,8 +46,9 @@ reserved ([LICENSE](LICENSE)).
 ## Review and merge
 
 - After each push, comment `@codex review`. Fix each finding with a test that fails first, or answer with the reason it
-  does not apply, then resolve the thread. Never re-run a failed job to get green; find why it failed (rule W23). After
-  two Codex rounds the scope is cut rather than a third round started (rule W27).
+  does not apply, then resolve the thread. Never re-run a failed job to get green; find why it failed (rule W23). Codex
+  findings are fixed while they are new and small; when they keep coming back on the same part, that part leaves the PR
+  and restarts from a short design note (rule W27).
 - The **integrator** merges; a subagent never does. A PR merges only when the merge contract holds
   (AGENTS.md "Working mode"): checks green on its head, every finding answered, every choice either decided with Pierre
   or small and easy to correct.
