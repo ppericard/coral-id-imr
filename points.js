@@ -1,6 +1,6 @@
 // The points to handle, settled in the admin rather than read as a text list (rule C5; docs/rules/content.md): pure
 // functions, no DOM, for the admin's Inbox › To do › Points (admin.js renderPoints) and the tests (tests/points.test.js).
-// Loaded by admin.html only. The points are points.json (written by agents); the admin's state per point is his curation,
+// Loaded by admin.html only. The points are data/points.json (written by agents); the admin's state per point is his curation,
 // curation.json "points" {id: {s, n, a}}: s 'wait' (stand-by), 'done' (resolved) or 'drop' (dismissed), absent = open;
 // n his notes; a the trainer's answers, one per photo (by photo id).
 (function (root) {
@@ -32,7 +32,7 @@
       d = Math.max(0, Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime() - t0) / 864e5));
     return d < 1 ? 'today' : d < 14 ? `${d} d` : d < 61 ? `${Math.floor(d / 7)} wk` : `${Math.floor(d / 30.44)} mo`;
   };
-  // What is wrong with points.json (a list of messages, empty when its shape is right): the admin leaves out a point
+  // What is wrong with data/points.json (a list of messages, empty when its shape is right): the admin leaves out a point
   // with a problem, the unit test fails on any. subjects: the subject ids a point may name (core.js SUBJECTS).
   const pointsProblems = (J, subjects) => {
     const bad = [];

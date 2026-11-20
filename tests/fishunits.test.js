@@ -513,7 +513,7 @@ test('real data: no candidate waiting is in play, and Coverage’s + total is fi
     C = require('../core.js'),
     rd = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')),
     FJ = rd('fish.json'),
-    cand = rd('fish-cand.json').cand || {},
+    cand = rd('data/fish-cand.json').cand || {},
     cu = rd('curation.json'),
     F = cu.fish || {},
     plays = Object.values(C.treeGameRead(rd('fish-game.json')).photos || {}).flat(),

@@ -56,7 +56,7 @@ wording, 2026-11-06.
 ### C5
 
 **Leave open discrepancies between sources to Pierre and the IMR trainers.** List them (questions for an IMR
-trainer, nomenclature points, content questions) in `points.json`, which Pierre settles in the admin (Inbox › To do ›
+trainer, nomenclature points, content questions) in `data/points.json`, which Pierre settles in the admin (Inbox › To do ›
 Points), in neutral wording (rule C1); don't settle them yourself. The slide text is not the whole course: some points are only said in class or
 only shown in an uncaptioned photo, so a criterion missing from the slides is "check with an IMR trainer", never "not
 taught".
@@ -96,7 +96,7 @@ its genus, the label sourced by an article (`tools/presence.py` `label_confirmed
 count, his Needs ID ones confirm nothing, here or near Dauin (his species-level photos stay usable, rule S2). Defined
 once in `tools/presence.py` and used everywhere presence is decided: `tools/build_fish.py` (`fish.json` `present`: in
 the game or out), `tools/fetch_fish.py` and `tools/fetch_local.py` (photos from abroad only of confirmed species),
-`tools/coral_presence.py` (`presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
+`tools/coral_presence.py` (`data/presence.json`: a coral photo taken abroad of a species not confirmed is flagged "out of
 rule" in the admin, never removed automatically: Pierre decides). Change the rule there, not in a tool.
 *Why:* one standard of evidence for every species and every observer, Pierre included. *Source:* Pierre, 2026-11-04;
 the species with no name yet, 2026-11-17 (this wording approved 17:40 Manila).

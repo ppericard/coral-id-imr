@@ -7,7 +7,7 @@ Decided with Pierre, 2026-11-05 (Q49, from docs/reviews/2026-11-05-coral-taxonom
   readers at the end of this file (second PR, docs/ROADMAP.md "Taxonomy reference"): tools/fetch_local.py,
   tools/cand_gaps.py and tools/coral_presence.py search the iNaturalist taxon it gives a genus (`inat_taxon`: no name
   search, no homonym guard), and tools/presence.py matches checklist names through its species rows (`aliases`). The
-  admin never loads it either: it reads names.json, the small extract this tool writes beside it (`names_extract`), to
+  admin never loads it either: it reads data/names.json, the small extract this tool writes beside it (`names_extract`), to
   flag a photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS writes
   otherwise (presence.js nameFlag).
 - **It never changes the IMR wording** (rule C1): `app` is copied verbatim from data.json (the family the app
@@ -52,7 +52,7 @@ an ancestor guard against homonyms; details 30 ids a call), sequential, about on
 C7). Every reply is cached in tools/.cache/taxonomy.json (git-ignored): a rerun is offline and writes the same file;
 --refresh asks again; --offline fails instead of asking.
 
-names.json (the admin's extract, written with the file, never edited by hand): {"v", "doc", "<subject>": {"date",
+data/names.json (the admin's extract, written with the file, never edited by hand): {"v", "doc", "<subject>": {"date",
   "sp": {species name: {now, iname?, inat?}}: the species rows; "gen": {former genus: the genus WoRMS (else iNaturalist)
   accepts now}: the `old` names that are no longer a genus of their own; "worms": {app genus: {id, fam}}: each genus's
   WoRMS AphiaID and the family WoRMS files it under (gen.<genus>.worms), for the WoRMS view of the admin's Photos › Tree
@@ -61,8 +61,8 @@ names.json (the admin's extract, written with the file, never edited by hand): {
 
 Usage: python3 tools/taxonomy.py [--offline | --refresh] [--dry] [--subject S...]   (--dry: print the report, leave the
        files as they are; --subject: refresh only that section, the others kept as they are)
-       python3 tools/taxonomy.py --names   (offline: write names.json again from taxonomy.json)
-       python3 tools/taxonomy.py --check   (offline, no cache needed: the layout, names.json in step, and every genus
+       python3 tools/taxonomy.py --names   (offline: write data/names.json again from taxonomy.json)
+       python3 tools/taxonomy.py --check   (offline, no cache needed: the layout, data/names.json in step, and every genus
        and its `app` and `role` as data.json and core.js say now; tests/taxonomy.test.js runs it)
 """
 import argparse
@@ -80,10 +80,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import genera  # noqa: E402  (the game genera, defined once in core.js)
 import inat  # noqa: E402  (the one paced, retried client, rule C7: WoRMS 0.3 s, iNaturalist 1 s between requests)
-from datajson import load_all  # noqa: E402  (data.json with the candidates of cand.json)
+from datajson import load_all  # noqa: E402  (data.json with the candidates of data/cand.json)
 
 OUT = ROOT / "tools" / "taxonomy.json"
-NAMES = ROOT / "names.json"  # the admin's extract (names_extract)
+NAMES = ROOT / "data/names.json"  # the admin's extract (names_extract)
 CACHE = ROOT / "tools" / ".cache" / "taxonomy.json"
 CHECKLISTS = ROOT / "tools" / "presence_checklists.json"
 V = 1
@@ -95,9 +95,9 @@ IMR_SAYS = re.compile(r"\bformerly\b|\bnow includes?\b", re.I)  # the IMR lectur
 
 def coral_inputs():
     """The coral subject's inputs: its genera (data.json gen + x.gen, role from core.js through tools/genera.py, `app`
-    verbatim), the photo names (data.json views and more, and every candidate, approved or waiting in cand.json: the
-    admin flags a candidate's name too, names.json), the checklist (Corals of the World's Philippine list)."""
-    d = load_all(str(ROOT / "data.json"), str(ROOT / "cand.json"))
+    verbatim), the photo names (data.json views and more, and every candidate, approved or waiting in data/cand.json: the
+    admin flags a candidate's name too, data/names.json), the checklist (Corals of the World's Philippine list)."""
+    d = load_all(str(ROOT / "data.json"), str(ROOT / "data/cand.json"))
     X = (d.get("x") or {}).get("gen") or {}
     benthic, bonus = genera.lists()
     gen, names = {}, set()
@@ -137,8 +137,8 @@ def fish_inputs():
     """The fish subject's inputs, from fish.json: its genera (`role` its circle, `app` the WoRMS family or families of
     its teaching family, fish.json families sci), its species (every one, in the game or out: `app` = fish.json's id,
     WoRMS AphiaID `ref`, iNaturalist taxon `inat` and WoRMS name `now` as tools/build_fish.py last wrote them; `game`
-    = in the game, for the report), the photo names (every candidate, fish-cand.json, and every photo in play,
-    fish-game.json: the admin flags their names, names.json) and the checklist (FishBase's Philippine Table 1)."""
+    = in the game, for the report), the photo names (every candidate, data/fish-cand.json, and every photo in play,
+    fish-game.json: the admin flags their names, data/names.json) and the checklist (FishBase's Philippine Table 1)."""
     F = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     sci = {f["id"]: f.get("sci") or [] for f in F.get("families") or []}
     rank = {r["name"]: r.get("rank") for r in (F.get("ref") or {}).values()}
@@ -156,7 +156,7 @@ def fish_inputs():
         species[s["name"]] = {"app": app, "game": bool(s.get("circle")) and not s.get("out")}
     c = json.loads(CHECKLISTS.read_text(encoding="utf-8"))["fishbase"]
     return {"genera": gen, "species": species,
-            "photos": photo_names([ROOT / "fish-cand.json", ROOT / "fish-game.json"]),
+            "photos": photo_names([ROOT / "data/fish-cand.json", ROOT / "fish-game.json"]),
             "checklist": {"names": {n: [] for n in c["names"]}, "decided": {}, "date": c.get("date")}}
 
 
@@ -179,7 +179,7 @@ SUBJECTS = {
         "phylum": "Chordata",
         # No bulk roots and no fixed guard: the species' iNaturalist taxa are those fish.json names, and the homonym
         # guard is their deepest common iNaturalist ancestor, read from their records (build_species).
-        "names_worms": False,  # its Tree reads fish.json ref, not names.json worms
+        "names_worms": False,  # its Tree reads fish.json ref, not data/names.json worms
     },
 }
 
@@ -986,7 +986,7 @@ def load(path=OUT):
 
 
 def check(path=OUT, names_path=NAMES):
-    """Offline: the layout, names.json in step, and every genus with the role and `app` data.json and core.js give it
+    """Offline: the layout, data/names.json in step, and every genus with the role and `app` data.json and core.js give it
     now."""
     errs = []
     text = Path(path).read_text(encoding="utf-8")
@@ -1025,7 +1025,7 @@ def check(path=OUT, names_path=NAMES):
     return errs
 
 
-# ---------------------------------------------------------------- names.json, the admin's extract
+# ---------------------------------------------------------------- data/names.json, the admin's extract
 
 NAMES_DOC = ("The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a "
              "photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS "
@@ -1034,7 +1034,7 @@ NAMES_DOC = ("The admin's extract of tools/taxonomy.json, written by tools/taxon
 
 
 def names_extract(o):
-    """names.json from taxonomy.json: per subject, its species rows ({now, iname?, inat?}) and its former genus names
+    """data/names.json from taxonomy.json: per subject, its species rows ({now, iname?, inat?}) and its former genus names
     that are no longer a genus of their own ({name: the genus accepted now}: WoRMS's, else iNaturalist's single current
     taxon; Favia or Montastraea, still accepted genera that lost species, are left out), and each genus's WoRMS AphiaID
     and family ({genus: {id, fam}}, the Tree's WoRMS view; a genus with no WoRMS record or family is left out, and the
