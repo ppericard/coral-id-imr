@@ -1317,8 +1317,7 @@
       "q": "WoRMS accepts Caloria indica in Caloria and Taringa halgerda in Taringa, as the game does. The Sea Slug Forum says Caloria indica's genus cannot be resolved at present, and the authors of Taringa halgerda placed it in Taringa only tentatively. The two genera's ID marks are written from these species (\"as C. indica\", \"as T. halgerda\"). Keep both genera as they are?",
       "ctx": [
         "Found by the sea slug genus marks' retry (2026-11-20). Nothing settled (rule C5); the game follows WoRMS meanwhile.",
-        "Gosliner and Behrens 1998, abstract: \"Neither Hoplodoris estrelyado, Taringa luteola nor Taringa halgerda are placed with certainty in the genera where they are here assigned.\" The species is named for its outward likeness to Halgerda (its etymology).",
-        "CIESM tells the Mediterranean C. elegans by a black spot near the tip of each ceras; its description of C. indica gives no such spot."
+        "Gosliner and Behrens 1998, abstract: \"Neither Hoplodoris estrelyado, Taringa luteola nor Taringa halgerda are placed with certainty in the genera where they are here assigned.\" The species is named for its outward likeness to Halgerda (its etymology)."
       ],
       "src": [
         {"t": "WoRMS, Caloria indica", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=181240"},

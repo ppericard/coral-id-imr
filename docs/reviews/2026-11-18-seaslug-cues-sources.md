@@ -39,12 +39,11 @@ Labels (rule W11): **[read]** = taken from the page or the PDF itself; **[not re
 Families with marks: Phyllidiidae, Plakobranchidae (the parapodia, which *Elysia* and *Thuridilla* share; Gosliner 1995
 tells the two genera apart by where they live and their rhinophores), and Pleurobranchidae.
 
-**Why the two left stay in `none`** (2026-11-19): *Ardeadoris* is defined by its DNA in Johnson & Gosliner 2012, and the
-external descriptions read are of *A. egretta*, whose white, yellow-rimmed pattern SEASLUG.WORLD says other genera share
-("internally it is clearly distinct"); Rudman 1984's diagnosis was not read. *Caloria*: the Sea Slug Forum's sheet for
-*Caloria indica* (as *Phidiana indica*) says its genus "cannot be resolved at present"; no source read gives a feature of
-the genus, and its type species is Mediterranean (rule C6). The circle-2 pass searched the Internet Archive's BioStor
-scans for both names once more: none for *Ardeadoris*; for *Caloria* only a paper on Mediterranean species (rule C6).
+**Why *Ardeadoris* stays in `none`**: it is defined by its DNA in Johnson & Gosliner 2012, and the external descriptions
+read are of *A. egretta*, whose white, yellow-rimmed pattern SEASLUG.WORLD says other genera share ("internally it is
+clearly distinct"); Rudman 1984's diagnosis was not read. *Caloria* has no feature of the genus in the sources read (the
+Sea Slug Forum's sheet for *Caloria indica*, as *Phidiana indica*, says its genus "cannot be resolved at present"); its
+marks come from its game species' own description (§7, tier B).
 
 **Circle 2: *Diversidoris* and *Mexichromis*** have no genus feature in the sources read (both defined by their DNA in
 Johnson & Gosliner 2012), so their marks name their game species: the mantle fold of *D. crocea* (the Sea Slug Forum's
@@ -194,8 +193,7 @@ applies it).
 | *Trapania* | processes beside the rhinophores and the gills (B, three game species); foot corners as tentacles (B) | Sea Slug Forum `trappalm`, `trapscur`; SEASLUG.WORLD *T. vitta* |
 | *Tyrannodoris* | large down-pointing oral tentacles (A for *Roboastra*, said of *T. luteolineata*); smooth tapering body (B) | Sea Slug Forum `robolute`; SEASLUG.WORLD *T. luteolineata* |
 
-**In `none`** (the reasons in `tools/seaslug_cues.json`): *Taringa* (its one game species looks like a *Halgerda*; only its anatomy places
-it); *Verconia* (placed by DNA, Johnson & Gosliner 2012; its game species share the Sea Slug Forum's Noumea purpurea
+**In `none`** (the reasons in `tools/seaslug_cues.json`): *Verconia* (placed by DNA, Johnson & Gosliner 2012; its game species share the Sea Slug Forum's Noumea purpurea
 colour group, `noumpur2`, which spans several genera).
 
 **Colour alone, left out**: *Bulbaeolidia alba*'s red line at the rhinophore base (`aeolalba`), *Philinopsis speciosa*'s
