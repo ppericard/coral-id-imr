@@ -152,9 +152,9 @@ test('the data in, the address sent elsewhere by route(): nothing restored', () 
   assert.strictEqual(A.scrollY, 0);
 });
 
-test('home.js viewHome without DATA: the corals doors, the band empty', () => {
-  const out = {};
-  const c = {
+// A context for home.js viewHome without DATA; `over` replaces what a case changes.
+const homeCtx = (out, over = {}) => ({
+  ...{
     window: {},
     document: {documentElement: {dataset: {}}},
     DATA: undefined,
@@ -166,10 +166,11 @@ test('home.js viewHome without DATA: the corals doors, the band empty', () => {
     store: {get: (k, d) => d},
     startKey: () => 'k',
     basicsDue: () => true,
-    basicsWords: () => ({ask: 'New to corals?'}), // app.js: the subject's basics words (UNITS basics)
+    basicsWords: () => ({ask: 'New to corals?'}),
     CHOICE: {ASK: 20},
     SUBJ: {id: 'coral', many: 'genera'},
     UNITS: {coral: {identify: 'idkey'}},
+    keyOf: S => ({coral: 'idkey'})[S.id] || '', // app.js keyOf: the subject's Identify tool, '' for none
     GX: () => {
       throw new Error('GX read before the data');
     },
@@ -182,7 +183,26 @@ test('home.js viewHome without DATA: the corals doors, the band empty', () => {
     photoUrl: u => u,
     saver: () => false,
     ORG: {short: 'IMR'}
-  };
+  },
+  ...over
+});
+
+test('home.js viewHome: a subject with no key built has the Learn door alone, no Identify door', () => {
+  const out = {};
+  const c = homeCtx(out, {SUBJ: {id: 'slug', many: 'genera'}, UNITS: {slug: {door: {before: 'your next dive'}}}});
+  vm.createContext(c);
+  vm.runInContext(home, c);
+  c.window.viewHome();
+  const h = out.innerHTML;
+  assert.match(h, /class="hdoors one"/, 'the one door takes the row');
+  assert.strictEqual((h.match(/class="hdoor /g) || []).length, 1, 'one door');
+  assert.match(h, /hdoor learn/);
+  assert.ok(!/identify|Identify|coming soon|not yet/i.test(h), 'no door to a page that is not there');
+});
+
+test('home.js viewHome without DATA: the corals doors, the band empty', () => {
+  const out = {};
+  const c = homeCtx(out);
   vm.createContext(c);
   vm.runInContext(home, c);
   c.window.viewHome();

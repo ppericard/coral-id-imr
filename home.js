@@ -107,16 +107,20 @@
     // Before the data (app.js beforeData) the Identify door's photo waits too, dark like the band: drawn at once, its 60 KB
     // shared the slow line with data.json and the curation and put the band ~5 s later at 86 kbit/s (tools/perf.js field).
     // Door 2, Identify: the current subject's tool only (docs/ARCHITECTURE.md): the Coral ID
-    // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
-    const key = UNITS[SUBJ.id].identify,
+    // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art. A
+    // subject with no key built (the sea slugs: UNITS identify unset, app.js keyOf) has no such door: Home is the Learn door
+    // alone (class `one`), never a door to a page that is not there.
+    const key = keyOf(SUBJ),
       // Its fish art, a landscape box too (home.css .hdart.rc.land, near 3:2 at every size, so the whole fish shows): the
       // same photo a tile would show (tilePhoto).
-      fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
+      fp = key && fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
       fishArt = fp
         ? `<img ${thumb(fp, land ? '(max-width:599.98px) 184px, 520px' : '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">`
         : '';
-    const idoor = fish
-      ? `
+    const idoor = !key
+      ? ''
+      : fish
+        ? `
         <section class="hdoor identify">
           <a class="hdart rc${land ? ' land' : ''}" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
           <div class="hdbody">
@@ -128,7 +132,7 @@
             </div>
           </div>
         </section>`
-      : `
+        : `
         <section class="hdoor identify">
           <a class="hdart rc" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${DATA ? `<img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy">` : ''}</a>
           <div class="hdbody">
@@ -140,8 +144,8 @@
             </div>
           </div>
         </section>`;
-    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.</p><div class="home-page">${subj}
-      <div class="hdoors">
+    $v.innerHTML = `<p class="lede">${key ? `Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.` : `Learn &amp; practise while you are learning the ${SUBJ.many}.`}</p><div class="home-page">${subj}
+      <div class="hdoors${key ? '' : ' one'}">
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
