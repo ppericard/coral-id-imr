@@ -27,7 +27,7 @@ corals' model (`phSpec`, `PH_FX`: the ease per point, juvenile and another phase
 / from above against a profile, part of the fish against the whole; no "one view alone", a question of theirs showing one
 photo; a feature no answer measured left out; the judged ease primary, `PRIMARY` photo), its tables by ease, phase, view
 and whole or part (`tabs`), its photo lists against "ease, phase and framing" (`of`), a photo's thumbnail from
-`FISHA.ph` (`anThumbs`, enlarged by `zoomOne`). The report's fingerprint reads `fph` too, so a changed judgement refits
+its registry's `ph` (`admin.js` `reg`; `anThumbs`, enlarged by `zoomOne`). The report's fingerprint reads `fph` too, so a changed judgement refits
 the milestones. Their mix-ups carry no view effect (`analysis.js` `confusions`: a view never shown is left out). For the
 fish, the views read live from the answer log (`admin.js` `LIVE_STATS`) read their answers there, not the report: Stops
 (`statsHealth`), Answer log (`statsPlayers`: the families and genera by name, an IMR sub-entry with its IMR name, its
