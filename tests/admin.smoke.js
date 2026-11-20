@@ -536,9 +536,11 @@ async function loadPart(b, base, fails) {
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
     // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     // FF[3]: a photo the auto-sort set aside earlier (log r), judged since a sure add with a crop: brought back (Q438, b).
+    // FF[4]: a photo the auto-sort put in earlier (log ate), judged since a sure rejection (other species one could take for
+    // it): taken out, set aside, logged r (the route out, rule A1).
     const FCAND = rd('fish-cand.json').cand,
       FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
-      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 4),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 5),
       FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
@@ -574,7 +576,14 @@ async function loadPart(b, base, fails) {
           body: JSON.stringify({
             ...CUR,
             auto: {[day]: LOG},
-            fish: {out: {[FF[2][1]]: 'x'}, seen: {[FF[3][1]]: 1}, auto: {'2026-10-30': {[FF[3][1]]: 'r'}}}
+            fish: {
+              out: {[FF[2][1]]: 'x'},
+              seen: {[FF[3][1]]: 1},
+              add: {[FF[4][1]]: FF[4][0]},
+              tags: {[FF[4][1]]: 'p1g0sl1'},
+              ease: {[FF[4][1]]: 3},
+              auto: {'2026-10-30': {[FF[3][1]]: 'r', [FF[4][1]]: 'ate'}}
+            }
           })
         })
     );
@@ -599,9 +608,10 @@ async function loadPart(b, base, fails) {
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
             [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
             [FF[3][1]]: {jt: 'p1g0sl1', e: 4, k: 'best', c: [0.2, 0.1, 0.8, 0.9]},
+            [FF[4][1]]: {jt: 'p1g0slk', e: 2, k: 'best'},
             [FC[1]]: {jt: 'o1g1sso', e: 3, k: 'best', n: 'Demo check'}
           },
-          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}}
+          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}, [FF[4][0]]: {fish: {by: 'claude', at: day, n: 1}}}
         })
       })
     );
@@ -9675,7 +9685,13 @@ async function loadPart(b, base, fails) {
         fa.fish.add[FF[3][1]] !== FF[3][0] ||
         FF[3][1] in fa.fish.seen ||
         JSON.stringify((fa.fish.crop || {})[FF[3][1]]) !== '[0.2,0.1,0.8,0.9]' ||
-        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec'
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec' ||
+        // taken out: no add, no tags, no ease, set aside, logged r (the earlier ate stays beside it)
+        FF[4][1] in fa.fish.add ||
+        FF[4][1] in fa.fish.tags ||
+        FF[4][1] in fa.fish.ease ||
+        fa.fish.seen[FF[4][1]] !== 1 ||
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[4][1]] !== 'r'
       )
         fails.push(
           `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto, crop: fa.fish.crop, tags: fa.fish.tags, phase: fa.fish.phase, sum: fa.sum})}`
