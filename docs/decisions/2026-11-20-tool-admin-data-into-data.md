@@ -1,6 +1,6 @@
 # Tool and admin data in `data/`, what players load stays at the root
 
-Date: 2026-11-20. PR: #1. Rules or docs touched: A1, W15, W16; docs/DATA.md, docs/ARCHITECTURE.md "Data files",
+Date: 2026-11-20. PR: #1298. Rules or docs touched: A1, W15, W16; docs/DATA.md, docs/ARCHITECTURE.md "Data files",
 docs/spec/deploy.md, docs/spec/data.md, docs/PAGES.md, tools/README.md, ROADMAP "Tool and admin data into `data/`"
 (row removed).
 
