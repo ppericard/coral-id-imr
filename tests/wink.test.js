@@ -145,7 +145,7 @@ test("winkPhoto: only the wink's chosen photos, those still in the game; none le
 test("fish.json: each wink's photos, 2 or 3 candidates of its own species with a game licence", () => {
   const root = path.join(__dirname, '..'),
     F = JSON.parse(fs.readFileSync(path.join(root, 'fish.json'), 'utf8')),
-    cand = JSON.parse(fs.readFileSync(path.join(root, 'fish-cand.json'), 'utf8')).cand,
+    cand = JSON.parse(fs.readFileSync(path.join(root, 'data/fish-cand.json'), 'utf8')).cand,
     winks = [...F.teach, ...F.families].filter(t => t.wink);
   assert.ok(winks.length >= 4, 'the winks and their families');
   for (const t of winks) {

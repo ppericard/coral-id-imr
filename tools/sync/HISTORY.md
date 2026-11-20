@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v208 (2026-11-20)
+
+The sheet script's copy of `core.js` follows the app: the fish and the sea slugs' candidate files (`SUBJECTS` `admin.files.cand`) are now `data/fish-cand.json` and `data/seaslug-cand.json`, the tools' and the admin's data having moved from the repository root into `data/` (the ROADMAP row "Tool and admin data into `data/`", Pierre, 2026-11-08: "Ok pour tes propositions"). Nothing the script computes changes: only the admin reads that path, and the script reads no candidate file, so players, progress and the sheet's tabs are untouched
+
 ## v207 (2026-11-20)
 
 Find the X gets its own format: `core.js` `fmtOf` reads a `|f` answer as `find` instead of `k4`, so each subject's pooled pass (`statsStep_`, `fmtPoint`) fits Find the X its own offset (`fmt.find`, served with the rest) and takes its answers out of the 4-choice one. No progress moves: the corals never play it (no tile), the fish and the sea slugs are replayed with no format offset, and every Find the X row carries its scoring record (ROADMAP "Find the X": "its own offset (`core.js` `fmtOf` and `analysis.js` `FORMATS` reading `|f` as `find`)"; Pierre, 2026-11-03, and Q321, 2026-11-09). The pooled snapshots rebuild on the new version, so their old `k4` points and the new `find` ones never mix
