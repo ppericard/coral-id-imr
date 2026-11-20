@@ -145,6 +145,12 @@ vectorised over the precomputed pairs.
 - Run 3 (exploratory, after a review) uses 2,000 sets per γ and prints the mean jackknife SE. It
   settles the fish pass rule, which differed between runs 1 and 2 within Monte Carlo noise. It also compares the
   planted world's jackknife SE with the real data's.
+- Run 4 (after Codex's review of #1352) puts each simulated outcome through the same Part A fit as the log. That means
+  the player intercepts and fixed terms, refitted in each jackknife sample without the player. It also uses 2,000 sets
+  per γ. Runs 1-3 had planted the residuals directly. The figures barely move (below).
+- Correction (Codex's review of #1352): the step 2 line above, z − ŝ(L)·TI_f, shrinks the photo term twice. TI_f is
+  already a shrunk estimate of the photo's contribution, so step 2 subtracts it with the answer's loading, z − λ(L)·TI_f
+  (λ = 1 while γ = 0). Section 4 uses the corrected form.
 - The actual compute was about 10 s per run, not minutes.
 
 ## 2. Results
@@ -264,17 +270,21 @@ Each planted world has the real design and the pooled variances. λ(L) = exp(γx
 - **Corals pass the declared rule.** False "clear" is 1%, the null mean is within 0.02, and the bias is within 25%.
   But **no planted value reaches 80% power under the jackknife**. Even the exploratory γ = 2 (Δs +0.48) is "clear" only
   20% of the time. The jackknife is very conservative here, with coverage 98-100%.
-- **Calibrated on the simulated null's spread** (exploratory, run 3, 2,000 sets): the power is 8%, 20%, 68% and 100%
-  at Δs +0.04, +0.09, +0.20 and +0.48 (null sd 0.077). So **the smallest rise these data could detect is a Δs of about
+- **Through the full pipeline** (run 4, 2,000 sets, the Part A fit and its jackknife refits included), the corals
+  still pass.
+  - Null mean 0.000, false "clear" 1%, coverage 99%.
+  - Δs +0.042, +0.089, +0.202 and +0.485 are estimated as +0.041, +0.083, +0.182 and +0.466, a bias of 10% or less.
+  - The jackknife "clear" rate at those values is 1%, 4%, 17% and 21%.
+- **Calibrated on the simulated null's spread** (exploratory, run 4): the power is 9%, 20%, 67% and 100% at Δs +0.04,
+  +0.09, +0.20 and +0.48 (null sd 0.076). So **the smallest rise these data could detect is a Δs of about
   0.2 to 0.25**: the photo share would have to go from about 0.09 at the 25th percentile of the level to about 0.3 at
   the 75th. Against that spread, the real corals Δs (+0.031) gives an approximate 95% range of [−0.12, +0.18].
 - **Caveat on these calibrated figures.** The planted world has identical players. Real players may differ in noise,
   and that noise may vary with L, so the figures are optimistic, a lower bound on the true uncertainty. One check fits
-  the planted world, though: its mean jackknife SE at γ = 0 is 0.116, and the real corals' is 0.115. The simulation also
-  skips the Part A refit, using simulated residuals directly.
-- **Fish fail the pass rule**, confirmed in run 3 (2,000 sets, Monte Carlo SE about 0.002): γ = 1 gives +0.050 against
-  +0.074 planted, beyond 25% and ±0.02, and γ = 2 gives +0.086 against +0.153. Runs 1 and 2 had differed within Monte
-  Carlo noise. There is no power at any planted value (≤ 11%). **The estimator is not reliable on the fish design
+  the planted world, though: its mean jackknife SE at γ = 0 is 0.116, and the real corals' is 0.115.
+- **Fish fail the pass rule**, confirmed in runs 3 and 4 (2,000 sets, Monte Carlo SE about 0.002). In run 4, γ = 1
+  gives +0.050 against +0.074 planted, beyond 25% and ±0.02, and γ = 2 gives +0.085 against +0.153. Runs 1 and 2 had
+  differed within Monte Carlo noise. There is no power at any planted value (≤ 11%). **The estimator is not reliable on the fish design
   today.** There are too few photos answered by two players (382 pairs for 1,822 photos), so the fish verdict is "Not
   enough data yet" rather than "Not clear".
 
@@ -329,8 +339,12 @@ Each planted world has the real design and the pooled variances. λ(L) = exp(γx
 2. **What Pierre's 1 − w means here.** At the level of one answer, the player's side (1 − s(L)) is about 90% today. It
    splits into the player's knowledge of the unit (about 10%, perhaps falling from about 15% for beginners to near 0
    for the strongest: point estimates, not clear) and noise.
-   - So step 2 (candidate C, the player's z net of the photo term) would change a player's z by a few percent only. It
-     stays second.
+   - Step 2 (candidate C) takes the photo term itself out of the player's z: z − λ(L)·TI_f, with λ = 1 while γ = 0. It
+     must not use s(L)·TI_f, because TI_f is already shrunk.
+   - Its effect is bounded by the photo's share of one answer's variance: about 10% for corals, i.e. a photo term's
+     spread about a third of one answer's z spread (√0.1 ≈ 0.32). It is smaller while a photo has few answers, since
+     TI_f is shrunk toward 0.
+   - So step 2 moves a player's z modestly, on well-answered photos only. It stays second.
    - The player-side signal that **is** clear is the knowledge of the unit (Part A's Δ, rt-study's player × unit),
      which `rtWeight` already reads.
 3. **A cheaper first step toward Pierre's point, to measure, not build.** The data's mechanism is V(L), and V can be
@@ -345,7 +359,7 @@ Each planted world has the real design and the pooled variances. λ(L) = exp(γx
      re-measure should therefore add a test calibrated by simulation on the real design, with **players who differ** in
      noise and loading (fitted per player), so the calibration is not optimistic. The jackknife is kept beside it.
    - **Threshold (rough, optimistic).** Detecting a Δs of 0.09 (planted γ = 0.5, the photo variance × 1.65 per sd of
-     level) at 80% power needs the null sd to fall from 0.077 to about 0.032. That is roughly 6 times the corals'
+     level) at 80% power needs the null sd to fall from 0.076 to about 0.032. That is roughly 6 times the corals'
      cross-player same-photo pairs: about 10,000 instead of 1,708, assuming sd ∝ 1/√pairs. More players would also
      help the jackknife; 12 is few.
    - Fish need photos answered by several players first. Their draw rarely repeats a photo across players: 382 pairs on
@@ -364,7 +378,8 @@ Each planted world has the real design and the pooled variances. λ(L) = exp(γx
   - P numbering is the same code as rt-study and rtchecks.
 - **The estimator.**
   - It reproduces the C1 anchor (+0.107 against +0.108) and the Q2 shares within a factor of 2.
-  - The planted simulation recovers the corals' slope with less than 10% bias, and attenuates the fish's.
+  - The planted simulation, through the full Part A fit (run 4), recovers the corals' slope with a bias of 10% or less,
+    and attenuates the fish's.
   - Pair weights are 1/(m − 1). dq enters the pair regression to control the adaptive draw; its coefficient is small,
     about +0.005 in C.
 - **Not done.**
@@ -372,7 +387,7 @@ Each planted world has the real design and the pooled variances. λ(L) = exp(γx
   - No replay of the global level: L is a proxy, the running mean of the logged unit ability over 30 answers.
   - The admin's exclusions were not applied.
   - The corals' comeback and restart rows (`|c`, `|w`) are left out.
-- **Compute**: about 10 s for each of runs 1 and 2 and for the run without simulation; 78 s for run 3 (2,000 sets).
+- **Compute**: about 10 s for each of runs 1 and 2 and for the run without simulation; 78 s for run 3 and 108 s for run 4 (2,000 sets each).
   Machine time (not an effort figure), well under L11's compute cap.
 - **Files**: the extract (which holds real names), the scripts and their outputs (P numbers only) stayed in the
   session's scratchpad; nothing of them is committed. The method above is enough to redo the study. At the re-measure,
