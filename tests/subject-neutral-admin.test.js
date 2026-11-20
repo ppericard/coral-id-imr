@@ -99,7 +99,7 @@ const PROXIES = [
 // The counts today: proxy -> file -> occurrences on non-comment lines.
 const COUNTS = {
   'ASUBJ.rank': {'admin-journey.js': 1, 'admin.js': 15, 'analysis.js': 1},
-  "rank: 'family' view option": {'admin.js': 4},
+  "rank: 'family' view option": {'admin.js': 2},
   '.sheets': {
     'admin-analyses.js': 1,
     'admin-content.js': 1,
@@ -107,7 +107,7 @@ const COUNTS = {
     'admin-heatmap.js': 3,
     'admin-journey.js': 2,
     'admin-visits.js': 4,
-    'admin.js': 32,
+    'admin.js': 30,
     'analysis.js': 2
   },
   '.admin.cur': {'admin-content.js': 8, 'admin-covers.js': 2, 'admin-demo.js': 1, 'admin-light.js': 2, 'admin.js': 24},
@@ -118,7 +118,7 @@ const COUNTS = {
     'admin-coraltree.js': 1,
     'admin-journey.js': 1,
     'admin-nodephotos.js': 2,
-    'admin.js': 46,
+    'admin.js': 45,
     'home.js': 2,
     'learn.js': 14,
     'progress.js': 1,
@@ -154,8 +154,6 @@ const WHOLE = ['admin-fish.js'],
     ],
     ['admin.js', 'Dup-2', 'FISHS FISHA fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
     ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo'],
-    ['admin.js', 'Dup-4', 'FREV frevRow renderFishReview renderQuality renderForm'],
-    ['admin.js', 'Dup-5', 'renderDiff FDIFF_MAX renderFishDiff'],
     ['admin.js', 'Dup-6', 'FMONT_T renderFishMont renderMont'],
     ['admin.js', 'Dup-7', 'FISHCOV renderFishCov fishTodoLines bindFishTodo FSCOPE renderCov'],
     ['admin.js', 'Dup-8', 'fishTile fuTile bindFishTiles repPhotoSubj coralRepTile fishRepTile'],
