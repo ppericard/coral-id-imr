@@ -1,6 +1,6 @@
 # The two compared photos after a wrong answer are stacked on phones
 
-Date: 2026-11-21. PR: #1350. Rules or docs touched: U2, U4, S1; docs/DESIGN.md "Quiz on desktop"; follows [2026-11-20-compare-photos-whole.md](2026-11-20-compare-photos-whole.md).
+Date: 2026-11-21. PR: #1351. Rules or docs touched: U2, U4, S1; docs/DESIGN.md "Quiz on desktop"; follows [2026-11-20-compare-photos-whole.md](2026-11-20-compare-photos-whole.md).
 
 ## Context
 

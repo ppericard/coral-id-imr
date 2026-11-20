@@ -1577,4 +1577,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   marcherait mieux.» On phones, after a wrong answer, the two compared photos are stacked, one above the other, each
   whole; tablets and desktop keep what they had and every subject gets it (the integrator's call, easy to correct).
   Applied: `app.css` (`.q .qstage.qvs`, phone block), docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`,
-  decisions/2026-11-21-compare-photos-stacked-on-phones.md, #1350.
+  decisions/2026-11-21-compare-photos-stacked-on-phones.md, #1351.
