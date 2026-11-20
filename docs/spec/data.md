@@ -15,7 +15,7 @@ Written only by `tools/datajson.py` `dump()` (rule W16): one top-level key per l
 `gen`, `course`, `cand`, `x` and `x.gen` (compact JSON within a line, key order kept, a trailing newline), so edits to
 different genera merge cleanly. `python3 tools/datajson.py` rewrites the file in that layout and `--check` (the PR
 check, run in CI) fails when it is not; the app only parses the file, so the layout does not matter to it. The IMR
-instance's fields (`imrg`, and each genus's `ig`, `imr` and `mn`) and its lecture's look-alike pairs (in `look` and
+instance's fields (`imrg`, and each genus's `n`, `ig`, `imr`, `mn`, `sl`, `rsl` and `qt`) and its lecture's look-alike pairs (in `look` and
 `lsrc`) are a copy of its coral layer, laid on by `dump()` and by the rewrite; `--check` also fails when `data.json`
 is not as its layers give it ("The instance's layer", below).
 
@@ -23,8 +23,8 @@ is not as its layers give it ("The instance's layer", below).
 
 The short names are glossed in [DATA.md › Formats that matter](../DATA.md#formats-that-matter); what they carry:
 
-- `n`, `fam`, `ig`, `imr`, `qt`, `sum`, `mn`, `crit` as DATA.md glosses them (`imr` verbatim; `ig`, `imr` and `mn` are
-  the instance's layer, below); `plain` the plain sentence (below; also on every `x.gen` record).
+- `n`, `fam`, `ig`, `imr`, `qt`, `sum`, `mn`, `crit` as DATA.md glosses them (`imr` verbatim; `n`, `ig`, `imr` and `mn`
+  are the instance's layer, and `qt` too except for the three genera whose tips come from the Coral Finder, below); `plain` the plain sentence (below; also on every `x.gen` record).
 - `tr` the trait ids, and `trs` the trait ids found in some species only (paliform lobes in some Favites, for
   instance). Every tool reads them through `proto/lab.js` `trHas` (1, 0.5 for some species, 0), `trAll`, `trLabel` and
   `trFits`, never by genus name: a trait of some species is half a match in the Coral ID Key, never eliminated on in the
@@ -32,7 +32,7 @@ The short names are glossed in [DATA.md › Formats that matter](../DATA.md#form
   (`tools/apply_some_species.py`, `tests/traits.test.js`).
 - `look` the look-alikes and `lsrc` the source of each pair (the IMR lecture's pairs are the instance's layer, the Coral
   Finder's the sources'; below); `pages` the Coral Finder pages; `sl` and `rsl` slide
-  numbers; `info` dated "Other sources" notes; `check` the points to check with a trainer; `levels` (2 or 3 views);
+  numbers (the instance's layer, below); `info` dated "Other sources" notes; `check` the points to check with a trainer; `levels` (2 or 3 views);
   `views{wide,medium,macro}` the photo lists, `more` extra photos, `cover`.
 - `cm`: how common the genus is near Dauin, a small integer, the geometric mean of its iNaturalist observations and
   observers within 40 km, written by `tools/commonness.py` (also on the `x.gen` records of Millepora and the bonus
@@ -403,7 +403,9 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   is (`relay`: cues, look and phase taken off and put back where the build writes them, `start`, then the families), so
   an edit of those needs no WoRMS call; a changed circle stops them (the species' circles and their presence test follow
   it: the full build).
-- **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `ig`, `imr`, `mn`} and `pairs`, the IMR
+- **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `n` (its number on the IMR slate, 0 for a starred
+  genus), `ig`, `imr`, `mn`, `sl` and `rsl` (its Lecture 6 slide numbers and review slide numbers, when it has them),
+  `qt` (its short ID tips, condensed from the lecture notes: `tools/id_tips.txt`)} and `pairs`, the IMR
   lecture's look-alike pairs {`"A|B"` (sorted): {`src`, `look`}}: `src` the pair's `lsrc` line, the same on both genera
   (`IMR Lecture 6: …`, the lecture's words, 6 pairs; `Same IMR lecture group: …`, its groups, 7 pairs), `look` {genus:
   the other genus's place in that genus's `look`}, a genus whose `look` does not list the other left out (a pair can be
@@ -417,12 +419,19 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   edit of the layer file. A pair taken out of the layer stays in `data.json` until it is taken out there too
   (`data.json` alone cannot tell it from a Coral Finder pair); `tests/instance.test.js` fails on a lecture line left in
   the sources. An edition without the layer (`coral_compose` of the sources with no layer) plays the Coral Finder's
-  pairs alone. The scripts that edit those fields (`tools/apply_imr_corrections.py`, `tools/apply_review_slides.py`)
-  write the layer file.
+  pairs alone, and has no slate number, no lecture slide and no lecture ID tips (only the Coral Finder's, below). A
+  genus's fields sit in its record where `CORAL_AFTER` puts them (`n` after `tr`, `sl` after `lsrc`, `qt` and `rsl`
+  after `sl`), so the record's key order, which the file's bytes follow, stays as it was. **`qt` is the layer's for the
+  genera without a `tl` heading** (36): the three whose tips come from the Coral Finder (Merulina, Cyphastrea,
+  Halomitra, `tl` set) keep theirs in `data.json`, and the layer giving `qt` to one of them stops the build. The
+  scripts that edit those fields (`tools/apply_imr_corrections.py`, `tools/apply_review_slides.py`,
+  `tools/apply_favites.py`, `tools/apply_id_tips.py`) write the layer file.
 - **Checks** (`tests/instance.test.js`): `fish.json` and `data.json` byte for byte as the two layers give them:
   `build_fish.py --regroup --check` (the layer's fish fields taken off `fish.json` and laid again), and `data.json` with
   the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
-- **Not in the layer yet** (easy to move later): the slide references (`sl`, `rsl`; fish `sl`); the IMR tag
-  (`src: imr`, `sign`, the teaching nodes' IMR names); the coral slate (`n`); and `deploy` (the key in force).
+- **Not in the layer yet** (easy to move later): the fish slide references (`sl`, laid by `build_fish.py`'s `relay`);
+  the IMR tag (`src: imr`, `sign`, the teaching nodes' IMR names); the references of the lecture photos
+  (`data.json` `course`, photos marked `imr`); the coral slate's structure beyond each genus's number (the starred
+  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`); and `deploy` (the key in force).
