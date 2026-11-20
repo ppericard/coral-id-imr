@@ -108,8 +108,9 @@ know"; `quiz.js` `fbBody`, `fbLine`, `pairText`, `pairLine`; styles `.fb.fbs`, `
   citation). A mix-up within a mimicry pair (`model.js` `mimMix`) gives the pair's marks instead, the rest of them first
   in More (`mimMarks`; LEARNING.md "The mimicry class").
 - **Our tell-apart lines** ([decision](../decisions/2026-11-18-tellapart-lines.md)) sit in `ap` / `apsrc`, never in
-  `lk` (which the line labels "IMR"): the coral slate pairs' in `data.json` `ap` and `apsrc` on each slate record
-  (Millepora's in `x.gen`), written by `tools/apply_coral_apart.py` from the hand-kept `tools/coral_apart.json` (its
+  `lk` (which the line labels "IMR"): the declared coral pairs' in `data.json` `ap` and `apsrc` on each coral record
+  (Millepora's, the bonus and the Key-only genera's in `x.gen`; a Key-only genus's line shows once a game asks it),
+  written by `tools/apply_coral_apart.py` from the hand-kept `tools/coral_apart.json` (its
   `none` holds the pairs left with the first tip, and why); the fish's in `fish.json` `apart` (the undeclared fish
   pairs, read by `app.js` `treeGenera`; never a look-alike: `look` and the draw do not read it); the sea slugs' declared
   genus pairs' in `tools/seaslug_cues.json` `apart` (`apartNone` the rest), laid by `tools/seaslug_cues.py` `apart_of`
