@@ -254,10 +254,11 @@ LAB.add({
                     )
                   : ''
               }`;
-              // A tip longer than the two lines kept for it pushes the grid down: refit it so it still fits the screen.
+              // A tip longer than the two lines kept for it pushes the grid down: refit it so it still fits the screen. The
+              // grid is fitted with 16 px to spare under it (quiz.js fitTiles), so it is refitted as soon as it eats into them.
               if (
                 window.fitTiles &&
-                root.querySelector('.pgrid').getBoundingClientRect().bottom > innerHeight - (typeof tabH === 'function' ? tabH() : 0)
+                root.querySelector('.pgrid').getBoundingClientRect().bottom > innerHeight - 16 - (typeof tabH === 'function' ? tabH() : 0)
               )
                 fitTiles(root.querySelector('.pgrid'));
               if (found === gens.length)
