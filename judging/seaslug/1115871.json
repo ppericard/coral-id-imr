@@ -4,7 +4,7 @@
   "seaslug-1115871-cand-568495347": {"code": "p0g0ml1w2"},
   "seaslug-1115871-cand-361226938": {"code": "o1g0mm1c1"},
   "seaslug-1115871-cand-104755994": {"code": "o1g0mm1c1"},
-  "seaslug-1115871-cand-391590008": {"code": "p1g0sl15"},
+  "seaslug-1115871-cand-391590008": {"code": "p1g0sl15", "bb": [0.1437, 0.2322, 0.8363, 0.756]},
   "seaslug-1115871-cand-452716793": {"code": "o1g0sm1c2"},
   "seaslug-1115871-cand-626713107": {"code": "o1g0mm1c1"},
   "seaslug-1115871-cand-177823270": {"code": "o1g0mm1cw1"},
@@ -15,7 +15,7 @@
   "seaslug-1115871-cand-515317442": {"code": "p0g0ml1c1"},
   "seaslug-1115871-cand-87811732": {"code": "o1g0mm1c1"},
   "seaslug-1115871-cand-266960373": {"code": "d1g0sm1cw2"},
-  "seaslug-1115871-cand-556778660": {"code": "o1g0sm14"},
+  "seaslug-1115871-cand-556778660": {"code": "o1g0sm14", "bb": [0.2933, 0.3437, 0.5817, 0.725]},
   "seaslug-1115871-cand-180245289": {"code": "o0g0mm1c1", "note": "a white spotted animal on a white sponge, findable at full size by its rhinophore"},
   "seaslug-1115871-cand-427769409": {"code": "p1g0ml14"},
   "seaslug-1115871-cand-626722531": {"code": "p1g0ml1c2"},
@@ -24,11 +24,11 @@
   "seaslug-1115871-cand-92692335": {"code": "d1g0sl1c3"},
   "seaslug-1115871-cand-79236138": {"code": "o1g0ml1cw2"},
   "seaslug-1115871-cand-704383597": {"code": "o1g0mm1cw1", "note": "the body twisted"},
-  "seaslug-1115871-cand-616824887": {"code": "p1g0sl14", "note": "a translucent pale body on a busy background"},
+  "seaslug-1115871-cand-616824887": {"code": "p1g0sl14", "bb": [0.2313, 0.1533, 0.8093, 0.7667], "note": "a translucent pale body on a busy background"},
   "seaslug-1115871-cand-238876265": {"code": "o1g0mlsc2", "note": "a second animal behind, out of focus"},
   "seaslug-1115871-cand-99577353": {"code": "d1g0ml1cw2"},
   "seaslug-1115871-cand-71745089": {"code": "o0g0ml1c1"},
   "seaslug-1115871-cand-704383368": {"code": "d1g0sm1cwf1"},
-  "seaslug-1115871-cand-704383663": {"code": "p1g0sl1w4", "note": "a translucent pale body among red algae"}
+  "seaslug-1115871-cand-704383663": {"code": "p1g0sl1w4", "bb": [0.2656, 0.3017, 0.6638, 0.6514], "note": "a translucent pale body among red algae"}
  }
 }

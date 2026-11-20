@@ -38,8 +38,16 @@ The model of the bulk pass is decided by a rule written before the data, not by 
   high's: also 97.5%). Sonnet 5.5 high: 92.5% and 4 serious errors (a gold member, not tested). Verdict under
   `THRESHOLD2.md`: **meets**. One photo (s31) was boxed by all five runs unlike the adjudicator's box.
 - **Then.** Opus 5.5 medium does the bulk (2,132 photos), with a random 10% of every batch redone blind by Opus 5.5 high and
-  any batch under 90% agreement looked at. No other reading of the figures is used. The bulk is under way (batches 1 to 10
-  done when this was written); its boxes are imported only after the drift check, in a later PR.
+  any batch under 90% agreement looked at. No other reading of the figures is used.
+- **The bulk result (2026-11-20).** All 22 batches (2,132 photos) were judged by Opus 5.5 medium, each passing
+  `check_out.py`. Merged: 2,078 boxed, 2,064 of them with `tile` true (imported as `bb`), 14 boxed but with another slug in
+  the tile's square (no `bb`), 53 no box (cut by the frame, two animals, hidden, outline not traceable), 1 photo never
+  fetched (`seaslug-325414-cand-2557629`, batch 21: no box, no tile). Drift redo (Opus 5.5 high, blind, 213 photos, 10% of
+  every batch, seeded): 205 of 213 agree (96.2%); batch 08 fell to 80% (8 of 10; in both disagreements medium said no box
+  where high boxed), so, under `THRESHOLD2.md`'s "any batch under 90% looked at", Opus high redid all of batch 08 (its
+  medium output is kept as `bulk-08-medium.json` in the bench); then 207 of 213 agree (97.2%) and no batch is flagged.
+  The boxes are imported by the data PR that carries this paragraph (judging files, `suggest.json`, `seaslug-game.json`),
+  and nowhere else (rule A1).
 
 A 10% agreement audit against the reference checks consistency, not accuracy, which is why the model is decided by the
 samples and the audit only catches drift. Only the photos judged `tile` true get a box in the game; a doubt is no box.
@@ -52,8 +60,9 @@ the photo, narrower or shorter than 2% of it, or cut by the proposed crop.
 
 - `judging/SEASLUG.md` has "The animal's box"; `tools/judging_fish.py` `--subject seaslug` takes `bb` and checks it (the
   2% floor holds for the fish too: their boxes are on a 0.05 grid, so none is affected).
-- No box is in this PR: the bulk comes later, from the bulk bench, through the judging files. Nothing changes for players
-  until boxes are imported (no record has a tile before).
+- The boxes are in the judging files (2,064 photos, 265 species, 232 with four or more) and in `seaslug-game.json` as
+  `bb`; the tiles (`xc`) are cut by the next R2 run (the Candidate photos workflow), and Find the X is drawn for the sea
+  slugs as they exist.
 - A doubt on the box alone (`unsure: ["bb"]`) withholds the tile only: `tools/seaslug_game.py` `sure()` uses the shared
   `fish_game.unsure()`, as the fish and `autosort.js` do, so the photo stays in the ordinary games.
 - A box only ever comes through a judging file and `suggest.json`, never `curation.json` (rule A1).
