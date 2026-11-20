@@ -914,6 +914,77 @@ function openPick(fresh, list = fresh, met = introduced, {first: firstCards = fa
     )[0];
   return u.length > 1 ? easyDraw(u) : u[0];
 }
+// A level opens in a group (rule L4; docs/LEARNING.md "A level opens in a group"; Pierre, 2026-11-20): a level below the
+// subject's base (its class, rankKind: a fish scientific genus, a species by its common or its scientific name, a sea
+// slug species) opens INTRO.START close units together, shown as first cards and asked first, so its first questions
+// are among units opened, never one unit among three never seen. The base keeps its own first cards (quiz.js introStart)
+// and opens one at a time after them; so does a level once it holds INTRO.START units met. One engine: no subject named.
+// - lvlNeed(k, list): how many units class k still needs before its questions stand among units opened: INTRO.START less
+//   those met, at most what the class has with a photo (a class of fewer opens them all, so none waits for good); 0 for
+//   the base. Its units: every unit of the class in the game (app.js rankUnits), else those of list.
+// - openFresh(fresh, list): the units of fresh (not met, may open now) the path may open now, each within the rank share
+//   (shareRoom), as before; a level short of INTRO.START units met only when it has as many of them ready to open as it
+//   needs (exposed: app.js spPlay, sciPlay), else none of it. The room is each unit's, as before, not room for the four
+//   at once: that wait cost more than twice the answers before the first species (the bound declared, LEARNING.md "A
+//   level opens in a group").
+// - openGroup(u, fresh, list): the cards for u, the unit openPick drew: u alone, or, for a level short, u and the units
+//   of its class nearest to it (the same parent, then the same grandparent, then any), each drawn as the first cards are.
+// - levelTop(list): a level holding units met but fewer than it needs (a group left half-way, a record from before the
+//   groups) gets the rest of its group at once, as the first cards are completed, with what is ready to open.
+const lvlAll = (k, list) => (typeof rankUnits === 'function' ? rankUnits(k) : list).filter(n => rankKind(n) === k && photoAny(n));
+const lvlNeed = (k, list) => {
+  if (!k) return 0;
+  const L = lvlAll(k, list);
+  return Math.max(0, Math.min(INTRO.START, L.length) - L.filter(introduced).length);
+};
+const openFresh = (fresh, list) => {
+  const by = new Map();
+  fresh.forEach(n => by.set(rankKind(n), [...(by.get(rankKind(n)) || []), n]));
+  return [...by].flatMap(([k, U]) => {
+    const w = lvlNeed(k, list),
+      ok = U.filter(n => shareRoom(n));
+    return !w || ok.length >= w ? ok : [];
+  });
+};
+// The units of fresh nearest to u, closest first: its parent's, then its grandparent's, then the rest.
+const lvlNear = (u, fresh) => {
+  const par = n => (GX(n) || {}).parent,
+    gp = n => (GX(par(n)) || {}).parent;
+  return [n => par(n) === par(u), n => !!gp(u) && gp(n) === gp(u), () => true].map(f => fresh.filter(f)).find(T => T.length) || [];
+};
+const lvlFill = (L, fresh, w) => {
+  const met = n => introduced(n) || L.includes(n);
+  for (let left = fresh.filter(n => !L.includes(n)); L.length < w && left.length; left = left.filter(n => !L.includes(n))) {
+    const T = lvlNear(L[0], left);
+    L.push(openPick(T, T, met, {first: true}));
+  }
+  return L;
+};
+const openGroup = (u, fresh, list) => {
+  const k = rankKind(u),
+    w = lvlNeed(k, list);
+  return w
+    ? lvlFill(
+        [u],
+        fresh.filter(n => rankKind(n) === k),
+        w
+      )
+    : [u];
+};
+const levelTop = list => {
+  const ks = [...new Set(list.filter(introduced).map(rankKind))].filter(Boolean);
+  for (const k of ks) {
+    const w = lvlNeed(k, list),
+      U = w ? list.filter(n => rankKind(n) === k && !introduced(n) && mayOpen(n)) : [];
+    if (!U.length) continue;
+    // Nearest to a unit of the class already met (its group's), the first drawn as the first cards are.
+    const m = list.find(n => rankKind(n) === k && introduced(n)),
+      T = lvlNear(m, U),
+      u = openPick(T, T, introduced, {first: true});
+    return lvlFill([u], U, Math.min(w, U.length));
+  }
+  return [];
+};
 // First meeting with a genus (Pierre's rule: docs/LEARNING.md "First meeting with a genus"): a player starting from zero
 // first meets INTRO.START genera on cards (name, cover photo, ID tips) and is asked about those; new genera then come one
 // at a time, each on its card, never as the answer of the question right after it: a genus met on a single card can be
