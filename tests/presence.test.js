@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The presence rule (rule C8: the same scientific rigour for everyone, the admin included),
 // defined once in tools/presence.py, applied by tools/build_fish.py (fish.json present), tools/fetch_local.py and
-// tools/coral_presence.py (presence.json), read by the admin through presence.js (the "out of rule" photo flag).
+// tools/coral_presence.py (data/presence.json), read by the admin through presence.js (the "out of rule" photo flag).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -90,13 +90,13 @@ test('outOfRule: a photo taken abroad of a species the rule does not confirm', (
   assert.strictEqual(outOfRule({loc: 'dauin', t: 'Astrea curta'}, sp), false);
   assert.strictEqual(outOfRule({loc: 'world', t: 'Favites pentagona'}, sp), false, 'confirmed');
   assert.strictEqual(outOfRule({loc: 'world', t: 'Astrea'}, sp), false, 'genus only');
-  assert.strictEqual(outOfRule({loc: 'world', t: 'Xus ignotus'}, sp), false, 'unknown to presence.json');
+  assert.strictEqual(outOfRule({loc: 'world', t: 'Xus ignotus'}, sp), false, 'unknown to data/presence.json');
   assert.strictEqual(outOfRule({loc: 'world', t: 'Astrea curta', imr: 1}, sp), false, 'IMR lecture photo');
-  assert.strictEqual(outOfRule({loc: 'world', t: 'Astrea curta'}, null), false, 'presence.json not loaded');
+  assert.strictEqual(outOfRule({loc: 'world', t: 'Astrea curta'}, null), false, 'data/presence.json not loaded');
 });
 
-test('presence.json: the rule per photo species, and the photos it flags in data.json', () => {
-  const P = read('presence.json'),
+test('data/presence.json: the rule per photo species, and the photos it flags in data.json', () => {
+  const P = read('data/presence.json'),
     D = read('data.json');
   Object.entries(P.sp).forEach(([n, v]) => {
     assert.strictEqual(v.ok, v.by.length > 0, n);
@@ -106,7 +106,7 @@ test('presence.json: the rule per photo species, and the photos it flags in data
   const gen = {...D.gen, ...((D.x || {}).gen || {})};
   const photos = Object.values(gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat());
   const named = photos.filter(p => /^\S+ [a-z]/.test(p.t || ''));
-  named.forEach(p => assert.ok(P.sp[p.t.split(' ').slice(0, 2).join(' ')], `${p.f}: ${p.t} missing from presence.json`));
+  named.forEach(p => assert.ok(P.sp[p.t.split(' ').slice(0, 2).join(' ')], `${p.f}: ${p.t} missing from data/presence.json`));
   const flagged = photos.filter(p => outOfRule(p, P.sp));
   assert.ok(flagged.length > 0, 'no photo out of the rule');
   flagged.forEach(p => assert.strictEqual(p.loc, 'world', p.f));

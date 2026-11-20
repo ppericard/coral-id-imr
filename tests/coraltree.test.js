@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // Photos › Tree for the corals (admin-coraltree.js; docs/ROADMAP.md "The Tree tab", its last step: one tree for every
 // subject): the corals' adapter of the generic tree (taxtree.js), on the real
-// data.json and names.json (as the admin holds them: the x genera merged into gen) and on made-up data.
+// data.json and data/names.json (as the admin holds them: the x genera merged into gen) and on made-up data.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -17,7 +17,7 @@ const adminData = () => {
   Object.assign(d.gen, d.x.gen);
   return d;
 };
-const W = read('names.json').coral.worms;
+const W = read('data/names.json').coral.worms;
 
 test('Key: the IMR lecture groups, each genus once, a leaf, under the group the app shows it in', () => {
   const d = adminData(),
@@ -77,7 +77,7 @@ test('Key: never the Coral Finder key of data.json key (growth forms, rule C4), 
   assert.strictEqual(N.filter(n => n.id === 'Montipora').length, 1);
 });
 
-test('WoRMS: each genus under the family WoRMS gives it (names.json), the same leaves as the Key', () => {
+test('WoRMS: each genus under the family WoRMS gives it (data/names.json), the same leaves as the Key', () => {
   const d = adminData(),
     {nodes, problems} = ctWormsOf(d, W),
     T = ttBuild(nodes),

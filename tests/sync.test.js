@@ -1539,7 +1539,7 @@ test('v23 hold: the sheet replays the opening hold of model.js over the answers 
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(0, 15)});
   assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, want);
   // Cached until the player's next answers; their next answer changes it.
-  assert.ok('hold:ana' in s.cache);
+  assert.ok('hold~coral:ana' in s.cache);
   s.post({
     name: 'Ana',
     pin: '1234',
@@ -1650,6 +1650,100 @@ test('v23 hold: answers moved to the name (sign-in) count at once', () => {
   s.post({anon: 'abc123xyz0', anonAnswers: [1, 2, 3].map(i => ans('m' + i, {t: `2026-11-01T08:00:0${i}Z`, ok: 0, a: 'Porites', e: 0.8}))});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], anon: 'abc123xyz0'});
   assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, 2.1);
+});
+
+// One-engine step 5, the sheet's half (docs/reviews/2026-11-19-one-engine-audit.md §3): one hold path for every subject
+// the sheet replays, each over its own answers since its own reset, as model.js holds it per subject; the replay
+// subject's hold and holdIds unchanged for the apps that read only them.
+test("one hold path: every replayed subject's hold, over its own answers since its own reset, is model.js's", () => {
+  const C = require('../core.js'),
+    R = C.replaySubject(),
+    others = C.replayedSubjects(),
+    at = i => `2026-11-01T08:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}Z`;
+  assert.ok(others.length >= 2, 'the fish and the sea slugs are replayed: ' + others);
+  const unit = {fish: 'f:Damselfishes', seaslug: 'g:Chromodoris'};
+  // Each subject its own run of answers, interleaved in time, with a gentle-restart answer (|w) and a surprise card's
+  // (wink) that never count; the expected success differs per subject so a mix-up shows.
+  const subjs = [R].concat(others),
+    L = [];
+  subjs.forEach((sid, k) => {
+    for (let i = 0; i < 14; i++) {
+      const u = unit[sid] || 'Acropora',
+        m = i === 5 ? 'quiz|w' : i === 9 ? 'wink' : 'quiz';
+      L.push(
+        ans(`${sid.slice(0, 2)}${i}`, {
+          s: sid === R ? undefined : sid,
+          ...(sid === 'fish' ? {rk: 'family'} : {}),
+          t: at(i * subjs.length + k),
+          g: u,
+          a: (i + k) % 3 ? 'other' : u,
+          ok: (i + k) % 3 ? 0 : 1,
+          m,
+          e: Math.round((0.6 + 0.1 * k + (i % 4) / 20) * 100) / 100
+        })
+      );
+    }
+  });
+  const want = (sid, since = '') => {
+    const m = modelHold();
+    L.filter(a => (a.s || R) === sid && a.t > since && !/\|w/.test(a.m) && a.m !== 'wink')
+      .sort((a, b) => (a.t < b.t ? -1 : 1))
+      .forEach(a => m.step(a.e, a.ok));
+    return m.now();
+  };
+  const s = loadCodeGs(),
+    P = Date.parse(at(0)),
+    get = () => s.get({name: 'Ana', pin: '1234', light: '1', pt: String(P)});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(20)});
+  const r = s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(0, 20), light: 1, pt: P});
+  const g = get();
+  // A request without light (an app from before the lighter saves) gets the replay subject's hold alone, as before.
+  const old = s.get({name: 'Ana', pin: '1234', pt: String(P)});
+  assert.ok(!('holds' in old));
+  assert.strictEqual(old.hold, want(R));
+  assert.strictEqual(old.holdIds.length, L.filter(a => (a.s || R) === R && a.m === 'quiz').length);
+  for (const x of [r, g]) {
+    assert.deepStrictEqual(Object.keys(x.holds).sort(), subjs.slice().sort());
+    for (const sid of subjs) assert.strictEqual(x.holds[sid].h, want(sid), sid);
+    assert.ok(
+      subjs.every(sid => want(sid) > 0) && new Set(subjs.map(sid => want(sid))).size === subjs.length,
+      'the holds differ: ' + subjs.map(sid => want(sid))
+    );
+    // The replay subject's, as before, in hold and holdIds too.
+    assert.strictEqual(x.hold, x.holds[R].h);
+    assert.deepStrictEqual(x.holdIds, x.holds[R].ids);
+  }
+  // Each subject's ids are its own answers' only, never a wink's.
+  for (const sid of subjs)
+    assert.deepStrictEqual(
+      g.holds[sid].ids.slice().sort(),
+      L.filter(a => (a.s || R) === sid && a.m !== 'wink' && !/\|w/.test(a.m))
+        .map(a => a.id)
+        .sort(),
+      sid
+    );
+  // A subject's reset starts its hold over and no other's.
+  const F = others[0],
+    cut = at(20),
+    d = {...prog(1), [C.subjKey(F, 'reset')]: JSON.stringify(cut)};
+  s.post({name: 'Ana', pin: '1234', data: d, summary: {}, answers: []});
+  const g2 = get();
+  assert.strictEqual(g2.holds[F].h, want(F, cut));
+  assert.notStrictEqual(want(F, cut), want(F));
+  for (const sid of subjs.filter(x => x !== F)) assert.strictEqual(g2.holds[sid].h, want(sid), sid);
+  // One cache key per subject, the same form for each.
+  const keys = Object.keys(s.cache)
+    .filter(k => /^hold/.test(k))
+    .sort();
+  assert.deepStrictEqual(keys, subjs.map(sid => `hold~${sid}:ana`).sort());
+  // Answers moved to the name (a sign-in: relabel_, the tab's row count unchanged) drop every subject's cached hold.
+  const B = [1, 2, 3].map(i => ({id: 'm' + i, s: F, t: at(90 + i), ok: 0, e: 0.8, m: 'quiz'}));
+  s.post({anon: 'abc123xyz0', anonAnswers: B.map(a => ans(a.id, {...a, g: unit[F], a: 'other', rk: 'family'}))});
+  get();
+  s.post({name: 'Ana', pin: '1234', data: d, summary: {}, answers: [], anon: 'abc123xyz0'});
+  L.push(...B);
+  assert.ok(want(F, cut) > g2.holds[F].h, 'the moved misses add to the hold');
+  assert.strictEqual(get().holds[F].h, want(F, cut));
 });
 
 test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns before them never move', () => {

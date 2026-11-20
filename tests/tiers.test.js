@@ -77,6 +77,15 @@ test('index.html: learn.js after the quiz, the Lab and its stylesheet last, ever
   assert.ok(!/<link\b[^>]*data-tier="\d+"[^>]*\.css/.test(HTML), 'no stylesheet in a data-tier link');
 });
 
+test('index.html loader: a script that failed 4 times offers Try again, never goes on without it', () => {
+  const src = (/<script>(\(function\(\)\{addEventListener[\s\S]*?)<\/script>/.exec(HTML) || [])[1];
+  assert.ok(src, 'the inline loader');
+  const onerr = (/s\.onerror=function\(\)\{([\s\S]*?)document\.body\.appendChild/.exec(src) || [])[1];
+  assert.ok(onerr && /giveUp\(L,i,ok\)/.test(onerr), 'after the last try the loader gives up to the offer');
+  assert.ok(!onerr.includes('i+1'), 'a failed script is never skipped');
+  assert.ok(/Try again/.test(src) && /onclick=function\(\)\{[^}]*go\(L,i,0,ok\)/.test(src), 'Try again runs the same script again');
+});
+
 test('a script of the quiz’s tier needs no name that only a later tier declares, unless it asks typeof first', () => {
   const {scripts} = tiers();
   const pre = ['core.js', 'app.js', 'sync.js', 'home-art.js', 'home.js', 'tour.js'];

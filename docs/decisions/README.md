@@ -58,18 +58,28 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-20 | [A photo the auto-sort put in has a route out, and the admin's pages read its proposals as the game does](2026-11-20-auto-route-out-pages-read-anew.md) | #1313 |
+| 2026-11-20 | [Cards per subject: the one-tap question's session is the subject's, and the sea slugs' all-met card before circle 3](2026-11-20-cards-per-subject.md) | #1318 |
+| 2026-11-20 | [The two compared photos after a wrong answer show whole](2026-11-20-compare-photos-whole.md) | #1316 |
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
+| 2026-11-20 | [Find the X's own offset: a format of its own, `find`, at 0 until its subject's format offsets are read](2026-11-20-find-the-x-own-offset.md) | #1299 |
 | 2026-11-20 | [The admin corrects the fish name index in a family's Names box; a species' own list waits for a format](2026-11-20-fish-names-admin.md) | #1311 |
 | 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
+| 2026-11-20 | [A goatfish judged a juvenile against its own note loses the flag; the juvenile card's per-photo trigger waits for the integrator's design](2026-11-20-juvenile-card-follows-the-judged-phase.md) | #1323 |
+| 2026-11-20 | [The juvenile card shows the young beside an adult, only for species whose young are sourced as different](2026-11-20-juvenile-card-shows-young-beside-adult.md) | #1329 |
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
 | 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
+| 2026-11-20 | [The 86 Corals of the World screenshots are replaced by their originals, on R2](2026-11-20-lecture-originals.md) | #1292 |
 | 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |
 | 2026-11-20 | [A name root that echoes another unit's ID tip shows with a warning, never held back](2026-11-20-name-root-warning.md) | #1308 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
+| 2026-11-20 | [One opening hold path on the sheet for every subject; the app still adopts the corals' only](2026-11-20-one-hold-path-sheet.md) | #1346 |
+| 2026-11-20 | [Report a problem: a line of its own on the answer's feedback, never behind More](2026-11-20-report-link-in-view.md) | #1319 |
 | 2026-11-20 | [Sea slug basics: the basics module for the sea slugs, and Basics open for them](2026-11-20-seaslug-basics.md) | #1286 |
 | 2026-11-20 | [The sea slug box pass: Opus 5.5 medium, decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
 | 2026-11-20 | [Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)](2026-11-20-slug-find-the-x.md) | #1284 |
 | 2026-11-20 | [The coral pairs with a bonus or Key-only genus: 24 tell-apart lines written, one kept without](2026-11-20-tellapart-bonus-pairs.md) | #1296 |
+| 2026-11-20 | [Tool and admin data in `data/`, what players load stays at the root](2026-11-20-tool-admin-data-into-data.md) | #1298 |
 | 2026-11-19 | [Photo stats › Difficulty for the fish: one page for every subject with ratings of its own](2026-11-19-admin-difficulty-every-subject.md) | #1270 |
 | 2026-11-19 | [Admin opening on a phone: curation.json read raw and kept by sha, suggest.json no longer holds a Players page back](2026-11-19-admin-opening.md) | #1271 |
 | 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
@@ -110,6 +120,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Load order: learn.js after the quiz's tier, the Lab's stylesheet with the last tier](2026-11-19-load-order-b-d.md) | #1175 |
 | 2026-11-19 | [The Look-alikes deck and Compare for every subject](2026-11-19-lookalikes-compare-every-subject.md) | #1278 |
 | 2026-11-19 | [Matrix: a Lab prototype, four photos and five names, two taps, a free retry, untimed, no effect on progress](2026-11-19-matrix-lab.md) | #1262 |
+| 2026-11-19 | [Memory for every subject](2026-11-19-memory-every-subject.md) | #1279 |
 | 2026-11-19 | [Mimicry pairs: their marks after a mix-up, as the feedback's line](2026-11-19-mimicry-marks-feedback.md) | #1247 |
 | 2026-11-19 | [The mimicry pairs drilled: a photo of the class makes its model's unit a trap, the pair duels on its two species](2026-11-19-mimicry-pairs-drilled.md) | #1162 |
 | 2026-11-19 | [Every game mode for every subject: the Duel tab first, a closed mode names its reason](2026-11-19-modes-every-subject.md) | #1265 |

@@ -1085,8 +1085,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
-// The answer's feedback, up to the report button: the verdict (step: the typed spelling step, typeStep), the photo's
-// taxon line (tx: app.js photoTaxon, taxonLine), the decisive line (fbLine), and behind More the ID tips, why the answer
+// The answer's feedback: the verdict (step: the typed spelling step, typeStep), the photo's taxon line (tx: app.js
+// photoTaxon, taxonLine), the decisive line (fbLine), the report button (rep: always in view, under the decisive line;
+// docs/decisions/2026-11-20-report-link-in-view.md), and behind More the ID tips, why the answer
 // is another unit (namesLine first), a genus's Coral ID Key criteria, a fish entry's sub-entries and phases. mim: the
 // entry of the mimicry pair the answer mixed up (model.js mimMix), whose marks make the line (fbLine); its other marks
 // and the units' own pair line, which they replace there, open the More panel.
@@ -1133,9 +1134,9 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
   // The short sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md): the verdict, the species line, a typed
   // reading and the decisive line; the rest in the More panel, More and Next on one row.
   return `<div class="fb fbs">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}${rep ? `<p class="fbrep">${rep}</p>` : ''}
     <div class="fbmore" id="fbmore" hidden>${mims}${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
-    ${more}${rep}</div>
+    ${more}</div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
 }
@@ -1525,48 +1526,78 @@ function allMetShow(r, brk) {
   return d;
 }
 // Juveniles and colour phases (docs/ARCHITECTURE.md "Juveniles and colour phases on their unit's mastery"): the first
-// photo-quiz question showing one (core.js phaseKind) brings a card at Next, before prompts and tips: the photo beside
-// another phase (phasePair), its taxon, the unit's phase lines. Once per kind on the account (TOLD 'phase:<subject>-<kind>',
-// marked when shown); never over an overlay or a card due (it waits for the next such photo).
+// photo-quiz question showing one (juvCard) brings a card at Next, before prompts and tips: the photo beside another phase
+// (phasePair), its taxon. Once per kind on the account (TOLD 'phase:<subject>-<kind>', marked when shown); never over an
+// overlay or a card due (it waits for the next such photo).
 const PHASEC = {KEY: 'phase-', WORD: {juvenile: 'Juvenile', male: 'Male', female: 'Female', intermediate: 'Intermediate'}};
 const phaseTok = k => `phase:${SUBJ.id}-${k}`;
 const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || toldHas(phaseTok(k));
+// The card photo p brings, {p, k, q}, else null; sps: the subject's species by id (fish.json species), L: the photos of
+// its unit that may show (phasePair's pool). The juvenile card (k 'juvenile'; docs/decisions/
+// 2026-11-20-juvenile-card-shows-young-beside-adult.md) says nothing of its own on how the young look: it shows the
+// photo beside an adult of its species (q), so the learner sees the difference. One rule for every young photo, a
+// juvenile or a sub-adult (the phase intermediate without the phase flag p): it brings the card only where a source says
+// the species' young look clearly different (sps[p.sp].jd.d: tools/fish_juv_differs.json; jd.sub is information only);
+// false, or no source either way (no jd, as on a subject without them), and no adult of its species in L: no card. The
+// photo's phase is Pierre's in the admin when he set one (core.js phaseOf; rule A1). The sex or colour phase card (core.js
+// phaseKind 'phase', an entry marked dimorph) is as before.
+function juvCard(p, sps, L) {
+  if (!p) return null;
+  if (phaseKind(p) === 'phase') return {p, k: 'phase', q: phasePair(p, L)};
+  const w = phaseOf(p),
+    d = (p.sp && sps && sps[p.sp] && sps[p.sp].jd) || {};
+  if (!(w === 'juvenile' || w === 'intermediate') || d.d !== true) return null;
+  const q = phasePair(p, L);
+  return q ? {p, k: 'juvenile', q} : null;
+}
+// A photo's own word on its card: its phase, 'Sub-adult' for the phase intermediate on the juvenile card, else 'Adult'.
+const phaseWord = (x, k) => (k === 'juvenile' && phaseOf(x) === 'intermediate' ? 'Sub-adult' : PHASEC.WORD[phaseOf(x)] || 'Adult');
+// The photos unit n's card may show beside a photo: its photos in play for this player.
+const phasePool = n => ((GX(n).views || {}).wide || []).filter(x => gamePhotoOk(n, x));
+// The first photo of L ({n, p}: the photos shown, each with its unit) whose card has not been shown yet (seen(kind)):
+// {p, k, q, n}, else null.
+function phaseCardFor(L, seen) {
+  const sps = (TREEU && TREEU.sps) || {};
+  for (const {n, p} of L || []) {
+    const c = n && p ? juvCard(p, sps, phasePool(n)) : null;
+    if (c && !seen(c.k)) return {...c, n};
+  }
+  return null;
+}
 // L: the photos shown, each with its unit ({n, p}).
 function phaseArm(nb, cur, L, hold) {
-  const ph = L.map(x => x.p).filter(Boolean);
-  if (!photoQuiz(cur) || hold || !phaseCardOf(ph, phaseSeen)) return false;
+  if (!photoQuiz(cur) || hold || !phaseCardFor(L, phaseSeen)) return false;
   return breakArm(nb, () => {
     if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
-    const c = phaseCardOf(ph, phaseSeen),
+    const c = phaseCardFor(L, phaseSeen),
       nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
     if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
     promptMark();
-    phaseShow(c, L.find(x => x.p === c.p).n, true);
+    phaseShow(c, c.n, true);
     return true;
   });
 }
-// c: {p, k} (core.js phaseCardOf); n: the unit asked; brk: shown at the break, so its close goes on to the next question.
-function phaseShow({p, k}, n, brk) {
+// c: {p, k, q} (phaseCardFor; q the photo beside it, else phasePair's from n's photos); n: the unit asked; brk: shown at
+// the break, so its close goes on to the next question.
+function phaseShow({p, k, q: q0}, n, brk) {
   const g = GX(n),
-    q = phasePair(
-      p,
-      ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
-    ),
+    q = q0 !== undefined ? q0 : phasePair(p, phasePool(n)),
     tx = photoTaxon([p], n),
-    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js treeGenera psrc,
-    // core.js contentApply esrc; rule C2), else IMR's, the presentation's own words.
-    lines = g.phase || [],
+    juv = k === 'juvenile',
+    // The sex or colour phase card's lines, under their source: the one the content editor gave with an edit of them
+    // (app.js treeGenera psrc, core.js contentApply esrc; rule C2), else IMR's, the presentation's own words. The juvenile
+    // card has none: the two photos say it.
+    lines = juv ? [] : g.phase || [],
     w = phaseOf(p),
-    word = x => PHASEC.WORD[phaseOf(x)] || 'Adult',
+    word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
     // Each photo's credit under them, its author and its observation (rule P5): the answer is out.
     credits = [p, q].filter(Boolean).map(credit).join('<br>'),
-    title =
-      k === 'juvenile'
-        ? 'Careful: this was a juvenile, it can look very different from the adult'
-        : w === 'intermediate'
-          ? 'Careful: this species’ colour phases can look very different'
-          : 'Careful: this species’ males and females can look very different';
+    title = juv
+      ? `${word(p)} and ${q ? word(q).toLowerCase() : 'adult'}`
+      : w === 'intermediate'
+        ? 'Careful: this species’ colour phases can look very different'
+        : 'Careful: this species’ males and females can look very different';
   const d = cardShow({
     kind: 'tip',
     cls: 'tipcard phasecard',
@@ -1785,8 +1816,9 @@ function tipShow(t, st, cur) {
 // lasted PULSE.SESS_MS (pulseSess; a session: answers under SESSION.GAP apart, as the admin's). Asked in every subject,
 // each with its own pacing (pulseSt, under sDev('pulse'): the answers it counts, answersSoFar, are the subject on
 // screen's): {at: answers when the last showed, q: its item, left: the round's items, x: 1 after "Not now"}. The
-// session is the device's, every answer of any subject in it: v {t0, t, n} in PULSEK (pulseV), which is the first
-// subject's own key too (its dev is ''), so its record stays as it was.
+// session is the subject's too (Pierre, 2026-11-20: «Attention à avoir des compteurs par matière»): the device's run of
+// answers in one subject, an answer in another subject starting a new one, v {t0, t, n, s: the subject} in PULSEK
+// (pulseV), which is the first subject's own key too (its dev is ''), so its record stays as it was.
 const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESS_N: 15, SESS_MS: 5 * 60000, WAIT: 600},
   PULSEK = 'reefid-pulse';
 const pulseObj = k => {
@@ -1795,15 +1827,16 @@ const pulseObj = k => {
 };
 const pulseSt = () => pulseObj(sDev('pulse')),
   pulseV = () => pulseObj(PULSEK).v;
-// The session an answer at time t belongs to: the same one when the last answer is less than SESSION.GAP before it, else
-// a new one. Every answer in a game counts (answer()), whatever the subject or the game, as the admin counts sessions.
-const pulseVisit = (v, t) =>
-  v && typeof v === 'object' && [v.t0, v.t, v.n].every(x => typeof x === 'number') && t >= v.t && t - v.t < SESSION.GAP
-    ? {t0: v.t0, t, n: v.n + 1}
-    : {t0: t, t, n: 1};
+// The session an answer at time t in subject s belongs to: the same one when the last answer was in s less than
+// SESSION.GAP before it, else a new one (a long session in one subject never brings the prompt at the first answer in
+// another). Every answer in a game counts (answer()), whatever the game, as the admin counts sessions.
+const pulseVisit = (v, t, s) =>
+  v && typeof v === 'object' && [v.t0, v.t, v.n].every(x => typeof x === 'number') && v.s === s && t >= v.t && t - v.t < SESSION.GAP
+    ? {t0: v.t0, t, n: v.n + 1, s}
+    : {t0: t, t, n: 1, s};
 const pulseNote = (t = Date.now()) => {
   const st = pulseObj(PULSEK);
-  store.set(PULSEK, {...st, v: pulseVisit(st.v, t)});
+  store.set(PULSEK, {...st, v: pulseVisit(st.v, t, SUBJ.id)});
 };
 // The session is far enough along for a prompt at time now: still going (its last answer less than SESSION.GAP ago),
 // PULSE.SESS_N answers or more, PULSE.SESS_MS or more since its first.
@@ -1819,7 +1852,8 @@ const pulseDue = (h = hashNow()) => {
   const a = answersSoFar(),
     st = pulseSt(),
     at = typeof st.at === 'number' ? st.at : -1e9;
-  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && pulseSess(pulseV());
+  const v = pulseV();
+  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && !!v && v.s === SUBJ.id && pulseSess(v);
 };
 // Response rate (Pierre's question: shown against answered): each prompt logs PULSE_SHOWN, then its answer's code,
 // PULSE_SKIP ("Not now", Escape) or PULSE_NONE (the page left with it up); every event carries what the game knew when it
@@ -1843,7 +1877,9 @@ function pulseAsk() {
     pk = pulsePick(st),
     it = pulseItem(pk.q),
     h = session.h;
-  store.set(sDev('pulse'), {at: answersSoFar(), q: pk.q, left: pk.left, v: pulseV()});
+  // the session kept where it lives (the first subject's record, PULSEK), never copied into another subject's
+  const k = sDev('pulse');
+  store.set(k, {at: answersSoFar(), q: pk.q, left: pk.left, ...(k === PULSEK ? {v: pulseV()} : {})});
   pulseOpen = {
     id: it.id,
     at: {
@@ -2395,7 +2431,7 @@ function introCard(n, o = {}) {
     photo: p ? img(p, 's') : '',
     kick: `${isBonus(n) ? setOf(n).tag : 'New ' + SUBJ.one}${o.pos ? ` · ${o.pos}` : ''}`,
     title: uname(n),
-    body: `${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
+    body: `${unitCname(n) ? `<p class="ulcn">${esc(unitCname(n))}</p>` : ''}${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
       ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : scard ? `<p class="ulnote">${scard}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
