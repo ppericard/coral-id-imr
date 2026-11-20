@@ -56,12 +56,8 @@ const FLAGS = [
     "the sheet's first replay path (Code.gs answerRows_, the reply's unprefixed replay, RVS) and the subject of an unlabelled row",
     ONE_ENGINE
   ],
-  // One-engine step 2 split these out of replay, at its values (the audit's step 2; core.js SUBJECTS says each).
-  [
-    'hold',
-    "the app adopts the sheet's opening hold for this subject alone (sync.js holdAdopt); the sheet computes every replayed subject's (Code.gs holdsInto_)",
-    ONE_ENGINE
-  ],
+  // One-engine step 2 split these out of replay, at its values (the audit's step 2; core.js SUBJECTS says each). hold went
+  // with step 5: the app adopts each subject's own opening hold (sync.js holdAdopt, holdOf).
   ['offsets', "the sheet's photo memory and format offsets, fitted on its answers alone (Code.gs stats_; model.js pmem, pfmt)", ONE_ENGINE],
   [
     'anonBase',
@@ -149,16 +145,19 @@ test('rule S1: a SUBJECTS field true for one subject only is a listed flag, with
 
 // One-engine step 2 (docs/reviews/2026-11-19-one-engine-audit.md §3): replay split into named fields at its own values, so
 // nobody's progress moves (no rules version, rule D5). offsets stays on replay's subject while the sheet computes it for
-// it alone (stats_ fits the photo memory on it); hold until the app adopts each subject's own (the sheet computes every
-// replayed subject's: Code.gs holdsInto_); the app-only ones are on the subjects replay was on until the audit's later
-// step that spreads each changes this test with it.
+// it alone (stats_ fits the photo memory on it); hold went with step 5 (each subject adopts its own: sync.js holdAdopt);
+// the app-only ones are on the subjects replay was on until the audit's later step that spreads each changes this test
+// with it.
 test('rule S1: the fields split out of replay keep its values (one-engine step 2)', () => {
   const {SUBJECTS: S, replaySubject} = require('../core.js'),
     on = k => S.filter(x => x[k] === true).map(x => x.id),
     rp = on('replay');
   assert.deepStrictEqual(rp, [replaySubject()]);
   assert.deepStrictEqual(on('offsets'), rp, "offsets: the sheet computes it for replay's subject only");
-  assert.deepStrictEqual(on('hold'), rp, "hold: the app adopts the sheet's for replay's subject only");
+  assert.ok(
+    S.every(x => !('hold' in x)),
+    'hold: no SUBJECTS field, every subject adopts its own opening hold (one-engine step 5)'
+  );
   assert.deepStrictEqual(on('anonBase'), rp, "anonBase: at replay's values");
   // the one-tap question, the apology and the notes are the engine's: no subject field switches them (Pierre, Q436)
   for (const k of ['pulse', 'sorry', 'recalcNote'])

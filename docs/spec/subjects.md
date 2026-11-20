@@ -51,11 +51,10 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
 - `replay` (the corals: the subject of the first replay, asked as `rv`; an answer row with no subject is theirs) and
   `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers,
   [Sync and replay per subject](#sync-and-replay-per-subject));
-- features of their own, the corals' (rule S1): `hold` (the app adopts the sheet's opening hold for it), `offsets` (the
-  sheet's photo memory and format offsets: `model.js` `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`);
-  `offsets` stays on `replay`'s subject while the sheet computes them for it alone, and `hold` until the app adopts each
-  subject's own (the sheet already computes every replayed subject's: [sync.md › The opening
-  hold](sync.md#the-opening-hold)) (`tests/subject-neutral.test.js`);
+- features of their own, the corals' (rule S1): `offsets` (the sheet's photo memory and format offsets: `model.js`
+  `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`); `offsets` stays on `replay`'s subject while the sheet
+  computes them for it alone (`tests/subject-neutral.test.js`). The opening hold is no such field: every subject adopts
+  its own from the sheet ([sync.md › The opening hold](sync.md#the-opening-hold));
 - `gate` (the fish and the sea slugs: `TREE_GATE`): circle 3 at circle 1's Entries component `c3.entries` (0.55), or
   with no global score its plain mean `c3.mean` (0.5) (`app.js` `treeC3`);
 - `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
@@ -212,8 +211,8 @@ device): the sync's summary and merge, sign-in, sign-out. While a visit runs (`S
   rules versions (`RVK`, `reefid-sync-coral-rv`) for it. The fish and the sea slugs
   are replayed from their own answers with their own rules versions and keys (`SUBJECTS` `replayed`, `FISH_RVS`,
   `SEASLUG_RVS`; `reefid-sync-fish-rv`): [sync.md › Other subjects' replays](sync.md#other-subjects-replays). The
-  sheet computes every replayed subject's opening hold (`holds`); the app adopts the corals' only (`SUBJECTS` `hold`;
-  `sync.js` `holdAdopt`, as that subject), the other subjects keeping the device's. The
+  sheet computes every replayed subject's opening hold (`holds`) and the app adopts each subject's own (`sync.js`
+  `holdOf`, `holdAdopt`, as that subject; from `HOLDS_SHEET`, before it the corals' alone). The
   one-tap question, the apology card and the update notes are the engine's, in every subject (a note about one subject
   names it, `RECALC.L` `subj`). At sign-in every subject takes the account's copy as its merge baseline, played on
   the device or not. A wink is decided before a question is taken or chosen (`quizPhoto`), so planned questions and

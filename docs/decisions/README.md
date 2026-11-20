@@ -76,6 +76,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |
 | 2026-11-20 | [A name root that echoes another unit's ID tip shows with a warning, never held back](2026-11-20-name-root-warning.md) | #1308 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
+| 2026-11-20 | [Each subject adopts its own opening hold from the sheet](2026-11-20-one-hold-path-app.md) | #1349 |
 | 2026-11-20 | [One opening hold path on the sheet for every subject; the app still adopts the corals' only](2026-11-20-one-hold-path-sheet.md) | #1346 |
 | 2026-11-20 | [Report a problem: a line of its own on the answer's feedback, never behind More](2026-11-20-report-link-in-view.md) | #1319 |
 | 2026-11-20 | [Sea slug basics: the basics module for the sea slugs, and Basics open for them](2026-11-20-seaslug-basics.md) | #1286 |
