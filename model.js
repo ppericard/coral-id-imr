@@ -75,8 +75,10 @@ const singleP = (n, shift = 0) => formatAt(ability(n) + shift)[1];
 // multiplies the targeting, never replaces it. CAL.RATE of the questions are calibration questions: the observation is
 // chosen on the targeting and that bonus alone, among those the player has never seen, a single view showing alone;
 // only on a unit the player holds (met, not shaky) and never in a comeback. CAL.U: the prior's variance for a photo
-// nobody has answered (difficulty units), so the targeting is wider for it, narrowing as U / (1 + answers / CAL.N).
-const CAL = {B: 2, N: 2, RATE: 0.3, U: 1};
+// nobody has answered (difficulty units), so the targeting is wider for it, narrowing as U / (1 + answers / CAL.N); the
+// prior is the photo's unit offset, so U is the spread of a photo's difficulty around it, sd 0.5 at most on the sheet's
+// ratings (docs/LEARNING.md "What a question shows"; docs/decisions/2026-11-20-cal-u.md).
+const CAL = {B: 2, N: 2, RATE: 0.3, U: 0.25};
 const nAnswers = p => {
   const o = PSTAT[p.f];
   return o ? (o[3] ?? o[1]) : 0;
