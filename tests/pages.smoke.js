@@ -3223,8 +3223,51 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
-    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged.
+    // The Custom quiz tip: a player with 100 questions, 3 photos enlarged (no zoom tip) and the Custom quiz never opened
+    // gets it at a break in the Quiz; the card says what the Custom quiz does, fits the screen; Show me opens the Custom
+    // quiz's picking page and counts as an open, so it never comes again (also not to one who opened it before).
+    {
+      const [c, p, errs] = await open(w, h, {q: 100, z: 3});
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p, {right: true});
+      if (!r.next) fails.push(`${W} custom tip: not shown to a player who never opened the Custom quiz`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Quiz yourself on just the genera you pick' ||
+          !/^The Custom quiz asks only the genera you choose\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} custom tip card: ${JSON.stringify(k)}`);
+        await p.click('.tipcard [data-b="1"]');
+        // The page is drawn (the open is counted when its route runs, after the address changes).
+        await p
+          .waitForFunction(() => location.hash === '#practice/custom' && JSON.parse(localStorage.getItem('reefid-tips')).u.c === 1, null, {
+            timeout: 5000
+          })
+          .catch(() => {});
+        const st = await tips(p);
+        if ((await p.evaluate(() => location.hash)) !== '#practice/custom' || st.u.c !== 1 || (st.s.custom || []).length !== 1)
+          fails.push(`${W} custom tip Show me: ${JSON.stringify({hash: await p.evaluate(() => location.hash), st})}`);
+      }
+      if (errs.length) fails.push(`${W} custom tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened.
     for (const u of [
+      {q: 100, z: 3, c: 1},
       {q: 5, z: 0},
       {q: 80, z: 3}
     ]) {
