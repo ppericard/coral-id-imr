@@ -35,3 +35,5 @@ The sheet is 130-280 px instead of 240-450 on a phone, the mix-up photos keep ab
 tiles. The line is read from record fields (`lk`, `ap`, `qt`), so a subject's later lines need no code (rule S1). Until the
 coral and sea-slug lines exist, their line is the first ID tip. How often More is opened is counted in the pages summary
 already sent (`fb`), so the next step can be chosen on numbers. Specified in ARCHITECTURE "The short feedback sheet".
+
+Changed by: [2026-11-20-report-link-in-view.md](2026-11-20-report-link-in-view.md) (the report link no longer sits behind More).

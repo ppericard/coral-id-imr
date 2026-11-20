@@ -10,10 +10,10 @@ const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const S = read('tools/imr_sources.json'),
   D = read('data.json'),
-  X = read('excluded.json');
+  X = read('data/excluded.json');
 const FOUND = new Set(['original', 'copy-only', 'none']);
 
-// Pierre's Publish can exclude a lecture photo (it leaves data.json course for excluded.json) or restore one: a record
+// Pierre's Publish can exclude a lecture photo (it leaves data.json course for data/excluded.json) or restore one: a record
 // stays valid either way, so the test only asks that each record names a lecture photo the data files know.
 test('every record names a known IMR lecture photo, and the 120 of the study are there', () => {
   const known = new Set([...Object.values(D.course).flatMap(L => L.map(p => p.f)), ...D.cmp.map(p => p.f), ...Object.keys(X.photos)]);
@@ -43,7 +43,7 @@ test('an author or a licence only comes with the page that states it', () => {
 // to its original carries on its course record its credit a ("<photographer> / <site>") and pg (the page that states it,
 // the credit's link), as tools/apply_imr_sources.py writes them; one not traced carries neither. Never o (the draw's
 // observation and the photo memory's key: two photos of one species page are two colonies) nor src (written by tools/apply_imr_originals.py).
-// The course records are data.json course and the ones Pierre's exclusions archived in excluded.json (tools/excluded.py:
+// The course records are data.json course and the ones Pierre's exclusions archived in data/excluded.json (tools/excluded.py:
 // a Publish may move one there at any time, so every traced photo is in one or the other).
 test('course records: a traced lecture photo credits its photographer and links its page; never o or src', () => {
   const C = require('../core.js'),
@@ -103,7 +103,7 @@ test('lecture originals: every traced photo is framed, recorded and off img/; th
   require('child_process').execFileSync('python3', ['tools/fetch_imr_originals.py', '--plan'], {cwd: ROOT});
 });
 
-// A traced photo Pierre excludes (its record archived in excluded.json by tools/excluded.py) keeps its credit, so a
+// A traced photo Pierre excludes (its record archived in data/excluded.json by tools/excluded.py) keeps its credit, so a
 // Restore brings it back credited; the tool credits it there and does not call it missing.
 test('apply_imr_sources: a traced photo archived by an exclusion is credited there, not missing', () => {
   const out = JSON.parse(
