@@ -1234,7 +1234,8 @@
       "ctx": [
         "Fishes of Australia 245: \"Juveniles are greenish-brown with a diagonal white bar behind the pectoral fin, before developing the pale anterior and dark posterior bicolor pattern.\"",
         "Reef Life Survey: \"Females and juveniles with a two tone body, head and fore body silver, divided by an oblique white bar from a black rear body with light vertical streaks on scales, dark patch behind eye and juveniles with a yellow tail.\"",
-        "Until it is settled, the species sheet gives both descriptions, each with its source. Found by the juvenile sourcing of 2026-11-19 (rule C5)."
+        "Until it is settled, the species sheet gives both descriptions, each with its source. Found by the juvenile sourcing of 2026-11-19 (rule C5).",
+        "The juvenile card's sourcing of 2026-11-20 also read Fishes of Australia's \"Changes colour dramatically from juvenile to adult.\" against Reef Life Survey's two-tone juveniles: until this is settled the species has no juvenile card (tools/fish_juv_differs.json lists it as unknown); 11 juvenile photos of it in play."
       ],
       "src": [
         {"t": "Fishes of Australia, Hemigymnus melapterus", "u": "https://fishesofaustralia.net.au/home/species/245"},
@@ -1306,6 +1307,46 @@
       "src": [
         {"t": "IMR fish presentation, slide 14"},
         {"t": "FAO species guide, Acanthuridae (Randall 2001), key to the species of Naso, p. 3661", "u": "https://www.fao.org/4/y0870e/y0870e29.pdf"}
+      ]
+    },
+    {
+      "id": "fish-juv-hologymnosus-annulatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Hologymnosus annulatus juveniles: barred, or black with a yellow stripe?",
+      "q": "Wikipedia gives juveniles brown bars, Fishes of Australia gives the same bars to the initial phase, and Reef Life Survey describes black juveniles with a pale yellow stripe. Which do the game's juvenile photos of Hologymnosus annulatus show?",
+      "ctx": [
+        "Wikipedia (read 2026-11-20): \"The juvelines are brown to olive brown and have 17-19 dark brown bars.\"",
+        "Fishes of Australia 246 (as read 2026-11-19): \"Initial phase brown to olive brown with 17-19 dark brown bars\" (the same pattern, given to the initial phase).",
+        "Reef Life Survey (read 2026-11-20): \"Juveniles black with a broad pale yellow stripe from snout along upper body to tail base, and a thin dark stripe from head along base of dorsal fin.\"",
+        "FishBase (as read 2026-11-19): \"Juvenile H. annulatus very closely resemble juvenile Malacanthus latovittatus\".",
+        "The game has 22 juvenile photos of it in play (2026-11-20). Until this is settled the species has no juvenile card (tools/fish_juv_differs.json lists it as unknown). Found by the juvenile card's sourcing of 2026-11-20; nothing settled (rule C5)."
+      ],
+      "src": [
+        {"t": "Wikipedia, Hologymnosus annulatus", "u": "https://en.wikipedia.org/wiki/Hologymnosus_annulatus"},
+        {"t": "Fishes of Australia, Hologymnosus annulatus", "u": "https://fishesofaustralia.net.au/home/species/246"},
+        {"t": "Reef Life Survey, Hologymnosus annulatus", "u": "https://reeflifesurvey.com/species/hologymnosus-annulatus/"},
+        {"t": "FishBase, Hologymnosus annulatus", "u": "https://www.fishbase.se/summary/Hologymnosus-annulatus.html"}
+      ]
+    },
+    {
+      "id": "fish-juv-plectorhinchus-lessonii",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Plectorhinchus lessonii: the sources describe the juvenile and the adult differently",
+      "q": "Three sources agree the young look different from the adult but describe the patterns differently. Which pattern do the game's juvenile and adult photos of Plectorhinchus lessonii show?",
+      "ctx": [
+        "Churaumi Aquarium (read 2026-11-20): \"Juveniles are black with white horizontal stripes.\" and \"They change appearance as they mature reaching 30 cm in length.\" The juvenile card's flag (tools/fish_juv_differs.json, differs) rests on this source.",
+        "Image du Monde, New Caledonia fishes: juvenile \"with three broad black stripes and narrower yellow white band between them\"; adult \"body white with four Irish dark brown strips on upper side\".",
+        "Reeflings (via a search summary, not fetched): juveniles black spots on a white body, adults silver-grey with black spots.",
+        "The game has 24 juvenile photos of it in play (2026-11-20). Found by the juvenile card's sourcing of 2026-11-20; nothing settled (rule C5)."
+      ],
+      "src": [
+        {"t": "Churaumi Aquarium fish encyclopedia (Okinawa)", "u": "https://churaumi.okinawa/en/fishbook/00000224"},
+        {"t": "Image du Monde, New Caledonia fishes, Plectorhinchus lessonii", "u": "https://picture-worl.org/actinopterygien-nouvelle-caledonie-4a-plectorhinchus-lessonii-cuvier-1830.html"},
+        {"t": "Reeflings, Plectorhinchus lessonii (via a search summary, not fetched)", "u": "https://reeflings.com/species/plectorhinchus-lessonii"}
       ]
     }
   ]

@@ -1520,6 +1520,46 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   formulation de A1, je valide» lets the light proposals over a tag he only let through go into play is the inventory's
   reading, written as a note for the integrator; which of the 152 are his hand tags is not checked. Applied: ROADMAP
   "Fish judging: a flash or lamp on a dark background is not a night shot" (a note, the status unchanged).
+- **13:59-14:06, the stop and the handover.** «stop everything. Prepare passation»; «Est-ce que mettre à jour STATUS
+  c'est suffisant pour la passation?»; then «ok» to merging the handover and moving the queue scripts into `tools/`;
+  «oui stp» to writing the quota lessons into INTEGRATOR.md; and on one of them: «Pas la session neuve. ça ne marche
+  pas. la session se compacte toute seule». Applied: #1314 (STATUS, INTEGRATOR), #1315 (`tools/queue/`, four quota
+  lessons, the fresh-session one dropped).
+- **16:43, too few agents.** «Ma question, c'est pourquoi il n'y avait que 2 agents qui tournaient?». Applied:
+  INTEGRATOR "Where open work sits" (#1321: the next task comes from the ROADMAP, gone through whenever agents finish).
+- **17:01-17:05, the juvenile card.** On the goatfish: «Je dis pas que c'était pas un juvénile. Mais la carte disait
+  explicitement qu'il fallait vraiment se méfier parce que les juvéniles pouvaient être très différents des adultes.
+  C'était l'un des pires exemples pour ça»; on the sweetlips: «Non c'était bien un sub-adulte»; on a goatfish's young
+  looking like the adult: «Pas en général !!!!!!!!! Sur celui là spécifiquement !»; on a design the integrator proposed:
+  «Tu me gonfles.... Je fais une remarque et tu le transforme en un chantier de 6h»; then «C'est une remarque qui
+  devrait entrainer une réflexion de ta part. Comment faire pour que ça n'arrive plus? Est-ce qu'on doit ne faire
+  apparaitre cette carte que sur certaines espèces/genres/familles? Est-ce qu'on peut imaginer quelque chose d'autre.
+  Je te demande de l'autonomie et de l'esprit critique. Pas du sycophantisme»; and on the integrator's unsourced claim
+  that goatfish may have different young: «Est-ce que c'est vrai? J'en sais rien»; on sub-adults: «Ben je suis pas sur.
+  On a dit juvenile, pas forcément sub-adulte. Même si effectivement pour certaines espèces on a plusieurs phases
+  graduelles». Applied: #1323 (that one photo has no card; the sweetlips stays sub-adult); the card's new design (the
+  young beside an adult, only for species whose young are sourced as different) waits on a sourcing pass, not built.
+- **17:32-17:33, response time.** «Ce que je dis, c'est que même pour des experts, qui n'ont donc quasiment jamais de
+  réponse fausse, le temps est corrélé à la difficulté. Et tu n'auras pas moyen de le vérifier parce que ya pas de
+  réponses fausses de leur part. C'est juste un fait, qu'il faut intégrer parce qu'il est juste. C'est pas une
+  corrélation à 100% mais c'est un signal très clair et confirmé auprès de plusieurs joueurs dont moi»; then, on the
+  integrator deciding the engine change at once: «Attention là. Tu prends une décision hyper rapide sur une évolution
+  du moteur sans même lancer d'étude et y réfléchir plus longtemps???». Applied: the fact is his; how the engine
+  integrates it goes through a design study first (INTEGRATOR "An engine change starts from a study"); ROADMAP
+  "Response time" rows.
+- **17:48, the queue order.** «Pense à prioriser les PR les plus anciennes pour qu'elles ne trainent pas trop
+  longtemps». Applied: INTEGRATOR "Order the queue".
+- **17:53, his decisions in the chat.** «Je croyais que tu notais mes décision?». Applied: this entry, which records the
+  chat's decisions of 13:59-17:53 that no PR had put in the ledger yet; INTEGRATOR "Every answer reaches the ledger
+  the same day".
+- **App comment, the opening card's common name.** On the fish practice quiz, about the Spadefishes family's photo
+  fish-s480-cand-324346931: «La carte d'ouverture des bannerfish devrait être plus claire sur le nom commun (et pas que
+  dans une section IMR), et le mettre en avant, juste après le nom scientifique». Applied: docs/spec/fish.md "Curated
+  common names" (the card shows a unit's common name right under its scientific name, for every subject).
+- **Wrong answer, the two compared photos are cropped (fish practice quiz, Abudefduf given for Chromis).** «Sur mauvaise
+  réponse, les 2 photos sont hyper croppées horizontalement et on ne voit plus que le milieu des poissons». The two
+  photos are shown whole at every size. Applied: `app.css` `.qstage.qvs .qph img`, docs/DESIGN.md "Quiz on desktop"
+  (the compared photos), `tests/qvswhole.test.js`.
 - **15:29-15:32, two juvenile cards in the fish practice quiz (reports under g:Pomacentrus and f:Sweetlips).** «J'ai eu
   une carte de warning de juvénile sur un goat fish qui ressemblait exactement à l'adulte...»; «Celui là c'est un
   juvénile qui aurait mérité la carte, pas le goatfish d'avant». Applied: the next entry (#1323).
@@ -1559,3 +1599,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
   de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
   window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
+- **19:23, the juvenile card's sub-adults (on #1329's first rule).** «Pourquoi tu fais une exception pour une espèce …
+  Diagramma Pictum … pour les sous-adultes … soit on décide de mettre la carte seulement sur des juvéniles, soit on
+  décide de le mettre aussi sur des formes qui ont des sous-adultes … Là, on a encore créé une exception basée sur une
+  remarque hyper spécifique de ma part.» One rule (the integrator's call, easy to correct): a young photo, juvenile or
+  sub-adult, brings the card whenever its species' young are sourced as different; the separate sub-adult flag is
+  information only. Applied: `quiz.js` `juvCard`, docs/spec/model.md,
+  decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md, #1329.
