@@ -1470,3 +1470,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   réponse, les 2 photos sont hyper croppées horizontalement et on ne voit plus que le milieu des poissons». The two
   photos are shown whole at every size. Applied: `app.css` `.qstage.qvs .qph img`, docs/DESIGN.md "Quiz on desktop"
   (the compared photos), `tests/qvswhole.test.js`.
+- **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
+  de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
+  window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
