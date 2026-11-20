@@ -1567,3 +1567,80 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sub-adult, brings the card whenever its species' young are sourced as different; the separate sub-adult flag is
   information only. Applied: `quiz.js` `juvCard`, docs/spec/model.md,
   decisions/2026-11-20-juvenile-card-shows-young-beside-adult.md, #1329.
+
+## 2026-11-21
+
+- **05:32, #1316 (the two compared photos after a wrong answer), fish: stacked, not side by side, on a phone.** «la PR
+  1316 avec les deux photos comparées qui s'affichent entières sur téléphone, pour les poissons, je me demande si au
+  lieu de les mettre côte à côte, c'est-à-dire droite et gauche, il ne vaut pas mieux les mettre au-dessus et en
+  dessous, parce que maintenant on a la place, on avait dégagé de la place pour le faire, donc en fait je pense que ça
+  s'afficherait beaucoup mieux en étant au-dessus, en dessous. Alors après sur ordinateur je sais pas, mais sur
+  téléphone je pense que ça marcherait mieux.» A wish for the phone layout (the desktop left open to the build). Applied:
+  built by a separate agent's PR, which adds its own entry; nothing here changes.
+- **05:40, rule L4 (#1331: a level opens in a group of at least 4 close units, no question before).** «pour la règle L4,
+  un niveau s'ouvre par un groupe d'au moins 4 unités proches, aucune question avant. Je pense que c'est une bonne idée.
+  Voilà, il faudra vérifier à l'usage, mais je pense que c'est une bonne idée, quel que soit l'impact que ça a pour
+  l'instant sur les simulations.» Yes, including the one breached guardrail (the lecture RA plateau); to be checked in
+  use. Applied: #1331 itself (it carries his words and the rule).
+- **05:40, Q445 (the bonus coral genera count: (A) one 45-genus scale for all, today's % kept as the "IMR slate"
+  score).** «Question 445, une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score
+  ardoise IMR. Oui, pourquoi pas, oui, ah oui, Slate, oui c'est ça, oui, Slate IMR, oui, pourquoi pas, donc avoir un
+  score séparé pour IMR.» Option A decided: one scale of 45 genera for the coral players, today's percentage kept as a
+  separate "IMR slate" score. Built next; it changes rule L6 (the bonus genera, now opt-in and not counted), which the
+  build PR rewrites with his words. Applied: ROADMAP "Bonus genera: more of them". The follow-up question, whether the
+  species order should change with it: «Avec ça, faut-il changer l'ordre des espèces? Je ne sais pas exactement ce dont
+  tu parles, sachant que pour les coraux, il n'y a pas vraiment d'espèces, mais... Donc, je ne sais pas.» Not answered:
+  he did not follow it; it stays open and is asked again with more context.
+- **05:40, Q446 (a screenshot attached to a report: (pCloud) stored on his pCloud, shrunk, no GPS, deleted with the
+  account and 90 days after the report is handled).** «Question 446. Ah oui, pour les captures d'écran, jointe au
+  rapport. Stocké sur mon P-Cloud. C'est trop compliqué, ça. On peut pas trouver une manière vraiment à la con que de
+  stocker temporairement les... là on prend trop de précautions en fait. Est-ce qu'on peut pas juste stocker
+  temporairement la photo qui nous est envoyée, juste le temps qu'un agent puisse le traiter et ensuite on dégage la
+  photo quoi. Mais il faut trouver une manière simple, sans prendre 50 000 précautions, en fait, de pouvoir stocker
+  cette photo.» Not decided as proposed: his direction is a simple temporary store, the photo deleted once an agent has
+  processed the report, no pCloud and no pile of precautions; the design comes back to him. Applied: ROADMAP "Attach a
+  photo or a screenshot to a report".
+- **05:40, Q447 (a group's scope in the existing Rights column, e.g. `content@subject:fish`, no new column).**
+  «Question 447, pour le périmètre d'un groupe, dans la colonne des droits existants, oui, pourquoi pas, oui, c'est pas
+  con.» Yes. Applied: ROADMAP "Roles, instances and cohorts".
+- **05:40, Q448 (each cohort's trainer list: (A) lines in the Groups tab).** «448, formateur d'une cohorte des lignes
+  dans l'onglet groupe. Je sais pas le détail, mais je soupçonne que ça doit être bon.» Yes, option A, without having
+  looked at the detail. Applied: ROADMAP "Roles, instances and cohorts".
+- **05:40, Q449-Q452 (response time as a difficulty signal).** «Alors, question 449 à 452. Le temps de réponse comme
+  signal de difficulté. Ok. Question 449. Un terme temps séparé pour chaque photo qui s'efface selon l'information des
+  réponses et non leur norme. Puisqu'une réponse juste expert apporte peu d'informations. Ok. Question 450, valider sans
+  réponse fausse. Ok. On regarde l'accord entre joueurs, la stabilité dans le temps, et si le temps des experts prédit
+  les erreurs. Ok. Question 451, l'engrandissement d'une photo compte comme un terme à part. Oui, je pense que c'est un
+  signal différent, c'est un signal faible, mais c'est un signal différent, qui pour le coup est probablement plus
+  indicatif de la difficulté d'une photo que de la difficulté du taxon pour le joueur, à mon avis. Même si ça peut être
+  une combinaison des deux. Question 452, en deuxième étape, on retire de la lenteur d'un joueur la part due à la photo
+  avec un recalcul silencieux. Ouais, je vais avoir besoin d'un peu plus de contexte en fait pour l'ensemble de ces
+  questions quand même. Parce que je suis pas sûr exactement de ce que tu cherches à implémenter, de ce que tu veux
+  implémenter.» Q449, Q450 and Q451 «Ok» (the enlargement a weak but different signal, about the photo more than the
+  taxon's difficulty for the player, perhaps a mix of both); Q452 and the whole set: he wants more context first, so
+  the build waits for the integrator's reply with it, and Q452 stays open. Applied: ROADMAP "Time in the photo rating".
+- **05:40, benthos (B1, Q442, Q443): not now.** «Pour le Bentos... non, on ne traite pas ça pour l'instant. Tu peux
+  mettre ça dans les, tu peux laisser ça dans les roadmaps long terme. Et je suis même pas sûr qu'on le traitera un
+  jour.» No work on benthos (the benthic slate and the benthos lecture of the IMR Drive folder, Q442 and Q443 with them);
+  it stays in the long-term ROADMAP, maybe never. Applied: ROADMAP "More subjects".
+- **05:40, Q444 (a species' own common-name list as a `curation.json` `fish` key).** «Question 444, la liste de noms
+  communs propres à chaque espèce dans la curation. C'est un détail d'implémentation. Si tu penses que c'est le
+  mieux, oui.» Yes; an implementation detail, the integrator's choice. Applied: ROADMAP "Fish common names: 1 to 3
+  curated per species".
+- **05:40, Remove vs × (the admin's remove actions: (A) one Remove with Undo and a list).** «Remove contre X, un seul
+  remove à un clic avec undo et une liste. Je sais pas ce dont tu parles, il me faut plus de contexte.» Not answered:
+  he needs context; the question stays open. Applied: no doc change (open in STATUS).
+- **05:40, R2: delete the files nothing uses; a read-only R2 token for the CI.** «R2, je peux supprimer les fichiers que
+  plus rien n'utilise. Oui, carrément, tout à fait. Et peux-tu créer un jeton R2 en lecture seule pour la CI? Ça sert à
+  quoi? Explique-moi à quoi ça sert, et pourquoi est-ce qu'on peut pas utiliser le jeton actuel.» Deleting the unused
+  files: yes (the integrator shows him the list before deleting, as offered). The read-only token: not answered; he
+  asks what it is for and why the current token cannot serve; the question stays open. Applied: nothing in a doc
+  (the deletion is an action, after the list).
+- **05:42, the inventory PR (#1326) never merged.** «Je suis en train de m'apercevoir que t'as jamais mergé la pull
+  request avec l'inventaire qui a été fait sur tous les points ouverts. À mon avis, il faut remettre à jour encore cet
+  inventaire et puis il faut le merger, quoi. Parce que sinon, tu n'utilises jamais la bonne info sur les points encore
+  en cours et ce qui doit être lancé. Donc là, c'est pas possible en fait d'avoir des choses qui sont aussi importantes
+  qui ne sont pas mergées.» The inventory is brought up to date and merged; a reference PR the work is chosen from goes
+  first. Applied: INTEGRATOR "The merge mechanics" (A reference doc PR goes first); #1326's update is the integrator's.
+- **05:40, Q439 (the Lab prototypes to graduate).** «Question 439, prototype du lab. J'ai pas testé encore, donc il faut
+  que je regarde.» Not answered: he has not tested the Lab yet; the question stays open. Applied: no doc change (open in STATUS).
