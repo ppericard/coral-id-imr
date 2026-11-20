@@ -338,6 +338,10 @@ For a player learning both names (a player learning one kind sees only that one)
   - 0.5 to 0.8: the share of "Latin + common underneath" rises from 0 to 1.
   - 0.8 to 0.95: the share of "Latin only" rises from 0 to 1.
   - Typed Latin: the `TYPED` curve on top (none below 0.5, 30% at 0.8, 50% at 0.95).
+- **Built** (two independent trees, the [species step 2 plan](reviews/2026-11-18-species-step2-plan.md) §2.4): step 1 is the
+  common-name unit's question; steps 2-4 are the scientific unit's, on its own bar (`app.js` `sciShow`): below 0.5 the
+  common name under each scientific name, from 0.5 to 0.8 the share of scientific names alone rising from 0 to 1, then
+  alone; typed, the usual `TYPED` share. Logged `|sc` or `|so`.
 - **Where the thresholds come from** (Pierre, 2026-11-04): the starting values are set by simulation (`tools/learnsim.js`). Later, once
   there are many fish answers, they are **computed automatically per species** from the measured difficulty of answering it with the common
   name against the Latin name (a species whose Latin name is hard moves to Latin later).
@@ -373,7 +377,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
 
 - **Built** (2026-11-04 night, PR #538, open for Pierre's OK): the coral question's code per subject (`core.js` `SUBJECTS`
   `start`, `startKey`: `reefid-sync-fish-start`), asked on the card before the first fish question, the coral values for
-  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim, the names choice. Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
+  now (docs/ARCHITECTURE.md "First-launch question"). Not yet: the fish values from learnsim (the names choice is the What I learn card's, Q396, Q400, Q404). Fish basics is built ("Fish basics" below): "new" offers it; the "lower" card that would offer it stays off with the other level-change cards (below).
 - **The question**, at the player's first fish visit (as the coral one at the first visit): "How well do you know reef fish?", three
   answers, a forced choice:
   1. *I'm new to reef fish*;
@@ -392,7 +396,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   the corals').
 - **"I'm at IMR" brings scientific names earlier** (Pierre, 2026-11-04): both names, scientific names early ("Which names a player
   learns"); the adaptive difficulty still holds them back, since they are hard.
-- **Open all in two steps** (Pierre, 2026-11-04, later; replaces Claude's one-step proposal), both always optional and declinable:
+- **Open all in two steps**, an idea, not decided (proposed 2026-11-04, paraphrase only, #458; the offer card it described went on 2026-11-12, Q337, and Open all now sits on the What I learn card, Q400-Q404: today it opens the families, the scientific genera being a separate opt-in), both steps always optional and declinable:
   1. **"Danger zone"**: all the families and all the scientific genera (for a player learning common names only: all the families).
   2. Later, **only if the results show it is still too easy** (e.g. a high success over all the open genera after enough answers):
      **"Super Hyper Mega Danger Zone"**, all the species at once.
@@ -728,13 +732,15 @@ on families only to an IMR RA with every species open:
     scientific genera), their timing simulated (docs/LEARNING.md "Fish achievements, simulated"); species named and Fish basics
     come with those features;
   - **redesigned around the global score** (2026-11-08, Pierre's Q259-Q264; the full list, its names and timings in docs/LEARNING.md
-    "Fish achievements, around the global score"): 33, of which 27 are built (the score every 10 points to 60%, fpct25
+    "Fish achievements, around the global score"): 33, of which 31 are built (the score every 10 points to 70%, fpct25
     retired; families; scientific genera at Open Water and at Advanced; the circles at Advanced; since the species level's
-    step 1, fsp1, fsp10 and fsp50) and 6 wait for the scientific species names or Fish basics. **At the species level**:
+    step 1, fsp1, fsp10 and fsp50; since step 2, fspsci1, fboth25, fdauin20 and fpct70) and 2 wait (fpct100 for the
+    ultimate exam, fbasics). **At the species level**:
     fsp1, fsp10, fsp50 (species named by a common name, at Advanced; built),
-    fspsci1 (a first species named in Latin: its scientific name's bar at Advanced, Q262), fboth25 (25 species with both
-    names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261: circle 1 only for
-    now, another top with circle 3 later), fpct70 and fpct100 ("Fish god": every name of every species), and Pierre's
+    fspsci1 (a first species named by its scientific name: its bar at Advanced, Q262), fboth25 (25 species with both
+    names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, `present.dauinU`, by their
+    scientific names, Q261: circle 1 only for now, another top with circle 3 later), fpct70 (built with step 2) and fpct100
+    ("Fish god": every name of every species, with the ultimate exam), and Pierre's
     frequency-based ones (Q261): "I know the X fish most often seen" (circle 1, and every circle) and, for fun, "the X
     least often seen at Dauin" (the rank by observers near Dauin, `present.dauinU`, as the score's weights), X and names
     chosen when the species level is built;
@@ -762,8 +768,8 @@ Every question here is answered (3: Q394 A; 5: Q395).
    kept by a hidden checklist (no threshold on the boxes) and an ultimate exam (100 to 200 questions, 95% to pass), the only way from 99%
    to 100% ([species step 2 plan](reviews/2026-11-18-species-step2-plan.md) §3).
 6. **The fish open-all card and the IMR answer.** **Answered (Pierre, 2026-11-04)**: "I'm at IMR" = both names, scientific names early
-   (the adaptive difficulty still holds them back); Open all in two steps, "Danger zone" (families and genera) then, only if still too
-   easy, "Super Hyper Mega Danger Zone" (all species) ("The fish welcome question and the IMR answer").
+   (the adaptive difficulty still holds them back). Open all in two steps ("Danger zone", then "Super Hyper Mega Danger Zone") is an
+   idea, not an answer ("The fish welcome question and the IMR answer").
 
 ## Checks before release
 

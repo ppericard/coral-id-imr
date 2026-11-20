@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-Verconia-cand-721706449": {"code": "o1d0sm13"},
-  "seaslug-Verconia-cand-181450290": {"code": "d1g0sl15"},
-  "seaslug-Verconia-cand-505873835": {"code": "p1g0sl15"},
-  "seaslug-Verconia-cand-443339030": {"code": "d1g0sl1w5"},
+  "seaslug-Verconia-cand-181450290": {"code": "d1g0sl15", "bb": [0.122, 0.0948, 0.868, 0.8854]},
+  "seaslug-Verconia-cand-505873835": {"code": "p1g0sl15", "bb": [0.21, 0.2048, 0.7957, 0.7358]},
+  "seaslug-Verconia-cand-443339030": {"code": "d1g0sl1w5", "bb": [0.3057, 0.016, 0.7086, 0.9218]},
   "seaslug-Verconia-cand-442928448": {"code": "o1g0sm1w4"},
-  "seaslug-Verconia-cand-638449679": {"code": "d1g0sl15"},
+  "seaslug-Verconia-cand-638449679": {"code": "d1g0sl15", "bb": [0.318, 0.3493, 0.71, 0.6667]},
   "seaslug-Verconia-cand-639451597": {"code": "o1g0ss12", "note": "a small animal on a busy reef"},
   "seaslug-Verconia-cand-264451906": {"code": "o1g0ss13"},
-  "seaslug-Verconia-cand-269230264": {"code": "o1g0sl14", "note": "rearing up, the body upright and foreshortened, a stalk in front"},
-  "seaslug-Verconia-cand-323529556": {"code": "p1g0sl15"},
+  "seaslug-Verconia-cand-269230264": {"code": "o1g0sl14", "bb": [0.3156, 0.0583, 0.6144, 0.935], "note": "rearing up, the body upright and foreshortened, a stalk in front"},
+  "seaslug-Verconia-cand-323529556": {"code": "p1g0sl15", "bb": [0.2237, 0.2858, 0.7657, 0.725]},
   "seaslug-Verconia-cand-4615093": {"code": "o1g0mm13", "note": "a ruler fills the top of the frame"},
-  "seaslug-Verconia-cand-631787999": {"code": "o1g0sl15"},
+  "seaslug-Verconia-cand-631787999": {"code": "o1g0sl15", "bb": [0.2843, 0.2333, 0.68, 0.7017]},
   "seaslug-Verconia-cand-721800828": {"code": "o1g0ss13"},
   "seaslug-Verconia-cand-505873595": {"code": "o0g0sls3", "note": "two animals overlapping, pink on a pink sponge"},
   "seaslug-Verconia-cand-181450280": {"code": "d1g0ml14"},
-  "seaslug-Verconia-cand-507631809": {"code": "p1g0sl15"},
-  "seaslug-Verconia-cand-173423739": {"code": "d1g0sl15"},
-  "seaslug-Verconia-cand-379547037": {"code": "p1g0sl15"},
+  "seaslug-Verconia-cand-507631809": {"code": "p1g0sl15", "bb": [0.1875, 0.1715, 0.8188, 0.7226]},
+  "seaslug-Verconia-cand-173423739": {"code": "d1g0sl15", "bb": [0.237, 0.0956, 0.797, 0.8908]},
+  "seaslug-Verconia-cand-379547037": {"code": "p1g0sl15", "bb": [0.2168, 0.336, 0.775, 0.6999]},
   "seaslug-Verconia-cand-510968754": {"code": "o0g0sl13", "note": "the front half behind a ledge of the sponge"},
-  "seaslug-Verconia-cand-514958518": {"code": "d1g0sl15"}
+  "seaslug-Verconia-cand-514958518": {"code": "d1g0sl15", "bb": [0.2697, 0.2346, 0.7241, 0.7463]}
  }
 }

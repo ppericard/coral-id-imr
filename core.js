@@ -234,6 +234,9 @@
   //           reads as its tree's
   //   unitRank  the rank of a tree subject's game units from level 1, when not its rank (unitRankOf): the sea slugs'
   //           'genus', its genera the units of its circles, its families structure only. Unset: rank
+  //   names   a tree subject's kinds of name its species are asked by (LEVELS kind: cn its common names, sci its
+  //           scientific name; app.js treeGenera): a kind not listed has no units (the sea slugs: no common-name branch).
+  //           Unset: none
   //   flat    its units are a flat list in data.json, not a tree (the corals): its content slots and structure apply to
   //           data.json (app.js build, structSeen); a tree subject reads its files through UNITS get instead. The engine
   //           asks this field, never a pool file's name
@@ -637,6 +640,9 @@
       optin: ['sci', 'beyond'],
       // family: a family of the book (f:Damselfishes); the IMR course is a tag.
       rank: 'family',
+      // Its species by their common names (step 1) and by their scientific names (step 2; docs/reviews/2026-11-18-species-
+      // step2-plan.md §2.2): two independent trees, each its own units (LEVELS cn, sci).
+      names: ['cn', 'sci'],
       renamed: FISH_RENAMED,
       replay: false,
       // Its progress replayed by the sheet from its own answers (docs/LEARNING.md "Fish: the progress replayed from the
@@ -859,6 +865,8 @@
       optin: [],
       rank: 'family',
       unitRank: 'genus',
+      // Its species by their scientific names only (Q369, 2026-11-15: the English names are information, never a choice).
+      names: ['sci'],
       // Its progress replayed by the sheet from its own answers, as the fish's (Code.gs replays_; rules D5, D8, D9): its
       // units from seaslug.json, the genera played from the start (treeReplayGen at its unitRank), its own rules versions
       // (SEASLUG_RVS), its records in the "Replayed Sea slugs" tab. sheet: the script version that replays it (rule D4).
@@ -2411,7 +2419,9 @@
   function sheetIdOf(S, id) {
     const s = String(id == null ? '' : id);
     if (!S || !S.sheets) return s;
-    const r = renamedId(S, s);
+    // a species by its scientific name (sci:s091, LEVELS sci) is its species sheet's: s:sci:s091 (treeSheets spOf)
+    const r0 = renamedId(S, s),
+      r = levelOf(r0) === 'sci' && S.sheets.species && r0.length > LEVELS.sci.pre.length ? S.sheets.species + r0 : r0;
     return Object.values(S.sheets).some(p => r.startsWith(p) && r.length > p.length) ? r : null;
   }
 
@@ -2863,20 +2873,25 @@
     const fam = {},
       gen = {},
       sp = {},
-      byName = {};
+      byName = {},
+      bySci = {};
     ((F && F.families) || []).forEach(f => (fam[f.id] = f));
     ((F && F.genera) || []).forEach(g => (gen[g.id] = g));
     ((F && F.species) || []).forEach(s => {
       if (!s.family || !fam[s.family]) return;
       sp[s.id] = s;
       byName[s.name] = s;
+      bySci[spUnitId('sci', s.id)] = s;
     });
     const order = Object.values(fam)
       .map((f, i) => [f, i])
       .sort((a, b) => (a[0].group || 99) - (b[0].group || 99) || a[1] - b[1])
       .map(x => x[0].id);
-    // a species by its id (s091), its sheet id (s:<name>) or its unit (s:s091, treeSpUnits)
-    const spOf = id => sp[id] || (String(id).startsWith('s:') ? sp[String(id).slice(2)] || byName[String(id).slice(2)] || null : null);
+    // a species by its id (s091), its sheet id (s:<name>) or its unit (s:s091, sci:s091: treeSpUnits)
+    const spOf = id => {
+      const x = String(id).startsWith('s:') ? String(id).slice(2) : null;
+      return sp[id] || bySci[id] || (x !== null ? sp[x] || byName[x] || bySci[x] || null : null);
+    };
     const go = id => {
       if (fam[id]) return id;
       const s = spOf(id);
@@ -4362,6 +4377,9 @@
     ['fpct40', 'Down the wall', '40% fish progress', 2, '📈', s => s.pct >= 40],
     ['fpct50', 'Family reunion', '50% fish progress: what knowing every family for sure is worth', 3, '📈', s => s.pct >= 50],
     ['fpct60', 'Blue water', '60% fish progress', 3, '📈', s => s.pct >= 60],
+    // 70% needs the species by their scientific names (families, genera and common names top out lower; Q259-Q264, the
+    // name Q299).
+    ['fpct70', 'Twilight zone', '70% fish progress', 3, '📈', s => s.pct >= 70],
     // The scientific genera (an opt-in set, SUBJECTS optin sci).
     [
       'fsci5',
@@ -4383,6 +4401,25 @@
       3,
       '🐟',
       s => ((s.setsAdv || {}).sp || 0) >= 50
+    ],
+    // The species named by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md §2.6): named once the
+    // scientific name's bar reaches Advanced (Q262); the names Q299's.
+    ['fspsci1', 'Binomial', 'A species at Advanced level (80%+) by its scientific name', 1, '🏷️', s => ((s.setsAdv || {}).ssp || 0) >= 1],
+    [
+      'fboth25',
+      'Bilingual',
+      '25 species at Advanced level or above by both their common and scientific names',
+      2,
+      '🐟',
+      s => (s.both || 0) >= 25
+    ],
+    [
+      'fdauin20',
+      'Local legend',
+      "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names",
+      3,
+      '🗺️',
+      s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The sea slug achievements, modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level,
@@ -6901,9 +6938,13 @@
     else if (b.startsWith('g-') && b.length > 2 && !a.length) {
       // A subject with sheets at several ranks (SUBJECTS sheets: fish families, genera, species) names the rank of the
       // sheet from its id's prefix (g-f:Damselfishes: #fish/learn/family/Damselfishes); any other sheet is its unit's.
+      // A species by its scientific name (sci:s091: LEVELS sci) opens its species' sheet, its unit id kept after the
+      // prefix (#fish/learn/species/sci:s091; treeSheets spOf reads it back).
       const id = b.slice(2),
-        w = Object.keys(S.sheets || {}).find(x => id.startsWith(S.sheets[x]) && id.length > S.sheets[x].length);
-      p = 'learn/' + (w || S.one) + '/' + routeEnc(w ? id.slice(S.sheets[w].length) : id);
+        w =
+          Object.keys(S.sheets || {}).find(x => id.startsWith(S.sheets[x]) && id.length > S.sheets[x].length) ||
+          (levelOf(id) === 'sci' && (S.sheets || {}).species ? 'species' : undefined);
+      p = 'learn/' + (w || S.one) + '/' + routeEnc(w && id.startsWith(S.sheets[w]) ? id.slice(S.sheets[w].length) : id);
     } else if (b.startsWith('cmp-') && b.length > 4 && a.length === 1) p = 'learn/compare/' + routeEnc(b.slice(4)) + '/' + routeEnc(a[0]);
     else if (b.startsWith('lab-') && b.length > 4) p = 'tools/' + [b.slice(4), ...a].map(routeEnc).join('/');
     else if ((b === 'idkey' || b === 'fishkey') && a.length <= 1) {

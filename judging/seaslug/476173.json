@@ -1,6 +1,6 @@
 {
  "photos": {
-  "seaslug-476173-cand-87583494": {"code": "o1g0sm14"},
+  "seaslug-476173-cand-87583494": {"code": "o1g0sm14", "bb": [0.2068, 0.1865, 0.5711, 0.5635]},
   "seaslug-476173-cand-511668708": {"code": "o1g0ms1c1"},
   "seaslug-476173-cand-463726996": {"code": "d1g0ms12"},
   "seaslug-476173-cand-713630690": {"code": "o1g0mm1c1"},
@@ -14,9 +14,9 @@
   "seaslug-476173-cand-507416986": {"code": "o1g0mm13"},
   "seaslug-476173-cand-427800039": {"code": "o1g0bl12"},
   "seaslug-476173-cand-106333689": {"code": "o1d0mm12"},
-  "seaslug-476173-cand-625544648": {"code": "p1g0sl15"},
+  "seaslug-476173-cand-625544648": {"code": "p1g0sl15", "bb": [0.2362, 0.2242, 0.8238, 0.7109]},
   "seaslug-476173-cand-507549642": {"code": "p1g0mm13"},
-  "seaslug-476173-cand-515175315": {"code": "o1g0sm14"},
+  "seaslug-476173-cand-515175315": {"code": "o1g0sm14", "bb": [0.2177, 0.2965, 0.7436, 0.6846]},
   "seaslug-476173-cand-392663155": {"code": "o0g0ml12"},
   "seaslug-476173-cand-511668665": {"code": "o1g0ml1c2"},
   "seaslug-476173-cand-508574580": {"code": "p1g0ml14"}

@@ -72,7 +72,14 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   the first Learn tab ("Basics" on phones): [basics.md](basics.md).
 - **Learn › Genera** (`#learn/genera`): the genera grid (lecture-group order by default, a slate order toggle), Photos
   or ID tips view; its first block is the basics card ([basics.md](basics.md#one-engine-one-content-per-subject)). Lecture group
-  titles are `.gtitle`. `#learn/genus/<Genus>` is the genus sheet: right under its photo, before the ID tips, the plain
+  titles are `.gtitle`. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
+  genera, `learn.js` `viewFishList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
+  name and its notes are its arguments), on the `.lcard` surface (DESIGN.md "Components"). The whole card opens the
+  unit's sheet (Pierre, 2026-11-20): one link, the unit's name (`a.tipsheet`), stretched over the card, a chevron, no
+  "Open the sheet" line; its cues without their heading or source (`tipsList` `bare`), which the sheet shows (rule C2);
+  its photo opens the sheet, never the photo viewer (the sheet's photos enlarge, with their credits: rule P5). Links in
+  the notes (the corals' Compare pairs) and glossary terms sit above the stretched link. The Photos view's cards
+  (`card()`) were whole-card links already. `#learn/genus/<Genus>` is the genus sheet: right under its photo, before the ID tips, the plain
   sentence (`plainLine()`); once the player has seen the genus, a line at the top gives their level on it and what it
   still needs (`myProg()`, the same text as the My progress tooltip).
 - **Learn › Look-alikes** (`#learn/look-alikes`, every subject): a deck of pair montages (`classics()`, `montage()`) over

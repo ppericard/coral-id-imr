@@ -1,14 +1,14 @@
 {
  "photos": {
-  "seaslug-Platydoris-cand-181548110": {"code": "d1g0sl15"},
-  "seaslug-Platydoris-cand-343827644": {"code": "p1g0sl1w5"},
+  "seaslug-Platydoris-cand-181548110": {"code": "d1g0sl15", "bb": [0.035, 0.0599, 0.905, 0.9626]},
+  "seaslug-Platydoris-cand-343827644": {"code": "p1g0sl1w5", "bb": [0.195, 0.259, 0.8675, 0.858]},
   "seaslug-Platydoris-cand-103472239": {"code": "p0g0sl1w3", "note": "the lower body hidden behind algae"},
-  "seaslug-Platydoris-cand-181546218": {"code": "p1g0sl15"},
-  "seaslug-Platydoris-cand-181566572": {"code": "o1g0sl15"},
-  "seaslug-Platydoris-cand-181546209": {"code": "o1g0sl15"},
-  "seaslug-Platydoris-cand-181548725": {"code": "d1g0sl15"},
+  "seaslug-Platydoris-cand-181546218": {"code": "p1g0sl15", "bb": [0.062, 0.1799, 0.932, 0.8246]},
+  "seaslug-Platydoris-cand-181566572": {"code": "o1g0sl15", "bb": [0.128, 0.108, 0.838, 0.8948]},
+  "seaslug-Platydoris-cand-181546209": {"code": "o1g0sl15", "bb": [0.158, 0.1745, 0.835, 0.8355]},
+  "seaslug-Platydoris-cand-181548725": {"code": "d1g0sl15", "bb": [0.105, 0.1562, 0.895, 0.8703]},
   "seaslug-Platydoris-cand-181546757": {"code": "d0g0sls3", "note": "two animals, one overlapping the other"},
-  "seaslug-Platydoris-cand-181543594": {"code": "d1g0sl15"},
+  "seaslug-Platydoris-cand-181543594": {"code": "d1g0sl15", "bb": [0.1, 0.1449, 0.905, 0.8081]},
   "seaslug-Platydoris-cand-181546216": {"code": "p0g0sl13", "note": "the front cut by the left edge, algae over the body"}
  }
 }

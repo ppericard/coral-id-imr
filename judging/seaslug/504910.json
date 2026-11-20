@@ -1,24 +1,24 @@
 {
  "photos": {
   "seaslug-504910-cand-568090296": {"code": "d1g0sl15"},
-  "seaslug-504910-cand-460511763": {"code": "o1g0sl15"},
-  "seaslug-504910-cand-615297017": {"code": "o1g0sl1w5"},
-  "seaslug-504910-cand-19685025": {"code": "o1g0sl1w5"},
-  "seaslug-504910-cand-389240514": {"code": "o1g0sl14", "note": "upside down under a sponge overhang, the gills hanging"},
+  "seaslug-504910-cand-460511763": {"code": "o1g0sl15", "bb": [0.1266, 0.1611, 0.815, 0.6556]},
+  "seaslug-504910-cand-615297017": {"code": "o1g0sl1w5", "bb": [0.1752, 0.1805, 0.8896, 0.801]},
+  "seaslug-504910-cand-19685025": {"code": "o1g0sl1w5", "bb": [0.2187, 0.1319, 0.8513, 0.6729]},
+  "seaslug-504910-cand-389240514": {"code": "o1g0sl14", "bb": [0.2375, 0.3678, 0.725, 0.7838], "note": "upside down under a sponge overhang, the gills hanging"},
   "seaslug-504910-cand-2603405": {"code": "h1g0sm12"},
   "seaslug-504910-cand-4550311": {"code": "o0g0sl13", "note": "the foot runs off the bottom edge"},
   "seaslug-504910-cand-599428552": {"code": "t1g0sl1w3"},
-  "seaslug-504910-cand-360995745": {"code": "o1g0sl15"},
+  "seaslug-504910-cand-360995745": {"code": "o1g0sl15", "bb": [0.2483, 0.181, 0.665, 0.7216]},
   "seaslug-504910-cand-507416132": {"code": "h1g0sl13"},
   "seaslug-504910-cand-507414625": {"code": "h1g0sl13"},
-  "seaslug-504910-cand-391590784": {"code": "o1g0sl15"},
-  "seaslug-504910-cand-688410829": {"code": "d1g0sl15"},
+  "seaslug-504910-cand-391590784": {"code": "o1g0sl15", "bb": [0.1487, 0.1933, 0.8782, 0.8303]},
+  "seaslug-504910-cand-688410829": {"code": "d1g0sl15", "bb": [0.2887, 0.0333, 0.7125, 0.9209]},
   "seaslug-504910-cand-2670661": {"code": "o0g0sls3"},
   "seaslug-504910-cand-436114349": {"code": "o0g0sls3"},
   "seaslug-504910-cand-498677455": {"code": "o1g1ml13"},
-  "seaslug-504910-cand-694481307": {"code": "o1g0sl14", "note": "the body twisted, the front raised over the back"},
+  "seaslug-504910-cand-694481307": {"code": "o1g0sl14", "bb": [0.2262, 0.2183, 0.6907, 0.7792], "note": "the body twisted, the front raised over the back"},
   "seaslug-504910-cand-611234699": {"code": "o0g0sls3"},
   "seaslug-504910-cand-160850624": {"code": "d0g0sl13", "note": "the rear under a mushroom coral"},
-  "seaslug-504910-cand-675226913": {"code": "o1g0sl1w5"}
+  "seaslug-504910-cand-675226913": {"code": "o1g0sl1w5", "bb": [0.2406, 0.2673, 0.875, 0.6989]}
  }
 }

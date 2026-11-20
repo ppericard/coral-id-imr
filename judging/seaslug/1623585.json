@@ -1,11 +1,11 @@
 {
  "photos": {
-  "seaslug-1623585-cand-505552164": {"code": "p1g0sl15"},
+  "seaslug-1623585-cand-505552164": {"code": "p1g0sl15", "bb": [0.125, 0.0466, 0.7219, 0.9356]},
   "seaslug-1623585-cand-180092250": {"code": "h1g0sl13"},
   "seaslug-1623585-cand-552257385": {"code": "o1g0sms4"},
   "seaslug-1623585-cand-683324573": {"code": "o1g0bs1c1"},
-  "seaslug-1623585-cand-568645109": {"code": "o1g0sl15"},
-  "seaslug-1623585-cand-626501347": {"code": "d1g0sm14"},
+  "seaslug-1623585-cand-568645109": {"code": "o1g0sl15", "bb": [0.07, 0.2375, 0.7482, 0.8917]},
+  "seaslug-1623585-cand-626501347": {"code": "d1g0sm14", "bb": [0.2, 0.2321, 0.7344, 0.8417]},
   "seaslug-1623585-cand-393107916": {"code": "h1g0ml12"},
   "seaslug-1623585-cand-86942234": {"code": "h1g0ml12"},
   "seaslug-1623585-cand-602880958": {"code": "h1g0sm12"},

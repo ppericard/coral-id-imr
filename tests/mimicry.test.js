@@ -85,7 +85,10 @@ test('the build refuses a mark with a digit or the word mimic, an unsourced mark
 });
 
 // app.js mimLay on fish.json, over a units' table holding its families.
-const mimLay = new Function(cut(rd('app.js'), 'function mimLay(X, f) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nreturn mimLay;')();
+const mimLay = new Function(
+  'spUnitId',
+  cut(rd('app.js'), 'function mimLay(X, f) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nreturn mimLay;'
+)(C.spUnitId);
 
 test('mimLay: each resembling species on its family, with the units of the species it resembles', () => {
   const X = {gen: Object.fromEntries(F.families.map(f => [f.id, {id: f.id}]))};
@@ -97,8 +100,8 @@ test('mimLay: each resembling species on its family, with the units of the speci
     {
       sp: 's035',
       st: 'juvenile',
-      u: ['s:s035', 'g:Acanthurus', 'f:Surgeonfishes'],
-      m: ['s:s027', 'g:Centropyge', 'f:Angelfishes'],
+      u: ['s:s035', 'sci:s035', 'g:Acanthurus', 'f:Surgeonfishes'],
+      m: ['s:s027', 'sci:s027', 'g:Centropyge', 'f:Angelfishes'],
       fb: 'f:Angelfishes',
       ra: true,
       rb: false,

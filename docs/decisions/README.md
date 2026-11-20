@@ -58,10 +58,15 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
+| 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
+| 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
 | 2026-11-20 | [Sea slug basics: the basics module for the sea slugs, and Basics open for them](2026-11-20-seaslug-basics.md) | #1286 |
+| 2026-11-20 | [The sea slug box pass: Opus 5.5 medium, decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
 | 2026-11-20 | [Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)](2026-11-20-slug-find-the-x.md) | #1284 |
+| 2026-11-20 | [The coral pairs with a bonus or Key-only genus: 24 tell-apart lines written, one kept without](2026-11-20-tellapart-bonus-pairs.md) | #1296 |
 | 2026-11-19 | [Photo stats › Difficulty for the fish: one page for every subject with ratings of its own](2026-11-19-admin-difficulty-every-subject.md) | #1270 |
 | 2026-11-19 | [Admin opening on a phone: curation.json read raw and kept by sha, suggest.json no longer holds a Players page back](2026-11-19-admin-opening.md) | #1271 |
 | 2026-11-19 | [The admin's Taxa view: the taxa out of play and why, one page for every subject, read from what the admin holds](2026-11-19-admin-taxa-view.md) | #1169 |
@@ -128,6 +133,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-19 | [Sea slug ID marks for circle 3: 30 of 32 genera, a line from one game species written "as X. y"](2026-11-19-seaslug-marks-circle3.md) | #1236 |
 | 2026-11-19 | [Sea slug species sheets: sourced ID marks, shown as drafts until Pierre validates them](2026-11-19-seaslug-species-marks.md) | #1263 |
 | 2026-11-19 | [The slow test tag: eight statistical tests out of the pre-push fast tier](2026-11-19-slow-test-tag.md) | #1239 |
+| 2026-11-19 | [Species by scientific name in the app: one set for both subjects, one gate, the kind beside the rank](2026-11-19-species-sci-app.md) | #1273 |
 | 2026-11-19 | [Merulina, Cyphastrea and Halomitra get ID tips from the Coral Finder, under their own heading](2026-11-19-starred-genera-tips.md) | #1242 |
 | 2026-11-19 | [The tell-apart pairs left without a line: four more written, five kept with their reason](2026-11-19-tellapart-none-pairs.md) | #1245 |
 | 2026-11-19 | [The fish build reports the genera a circle edit brings into circle 1 with no name root](2026-11-19-tree-tab-step.md) | #1181 |

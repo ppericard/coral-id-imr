@@ -1,7 +1,8 @@
 // Photos › Tree on the corals' side (#photos/tree/key/<node id>, #photos/tree/worms/<node id>; docs/ROADMAP.md "The Tree
 // tab": one tree for any subject, the corals included). The corals'
-// adapter of the generic tree (taxtree.js): the fish have theirs in admin.js (fuTreeOf, fuWormsOf); the node pages, the
-// tree at the left and its keys are the same (admin.js ttMount, fuTreeMount).
+// builder of the generic tree (taxtree.js): its trees, rows and tags, which admin.js TREE_BUILD flat reads (the tree
+// subjects' are in admin.js: fuTreeOf, fuWormsOf); the page, the tree at the left and its keys are the same for every
+// subject (admin.js renderTree, ttMount, treeMount).
 //
 // - Key: the IMR course's own grouping of the genera, the IMR lecture groups (data.json imrg, 1-11, the genus's ig), each
 //   genus under the group the app shows it in (core.js lectureGroup: a ★ genus the lecture does not group sits with most
@@ -17,8 +18,8 @@
 //   the featured photos, the views); a photo's species (its t) is only a name, never curated: so no species rank.
 //
 // The pure part (ctKeyOf, ctWormsOf, ctFilters) runs in Node too: tests/coraltree.test.js. admin.html loads this file
-// before admin.js (a Tree address opened cold finds renderCoralTree); its admin part reads admin.js's state and helpers
-// only when called.
+// before admin.js (a Tree address opened cold finds ctTree); its admin part reads admin.js's state and helpers only when
+// called.
 (function (root) {
   const inNode = typeof module !== 'undefined' && module.exports,
     {ttFromRef} = inNode ? require('./taxtree.js') : root,
@@ -171,125 +172,6 @@ function ctRow(T) {
     return `<span class="adm-g">${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
       <small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${ph(m)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${e.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${ch.has(m) ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
   };
-  return {row, nG, ph, gn};
-}
-// The tag the corals' Tree shows (ctFilters' k; '' none), in this browser, as its unfolding.
-const ctTagK = () => subjK('reefid-admin-tree-tag');
-// A node's page in the corals' Tree (#photos/tree/key/<node id>, #photos/tree/worms/<node id>; none or an unknown id:
-// the view's first root, the first IMR lecture group or the first family), as the fish's (admin.js renderFishUnits): the
-// tree at the left (the WAI-ARIA tree, admin.js ttMount), the sticky bar with the path from the root, the genera's
-// select, All | IMR (the slate's genera) and Tag… (ctFilters), and the select of the node's children (the phone's way
-// down). A group or a family: its children's cards, each as its tree row. A genus: its cover and why, what it needs and
-// every tool of the former Photos › Genera › Live page (admin-nodephotos.js coralLive: its photos per view, ★ Cover, Feature,
-// Remove, Not this, ×, Validated…), under its Structure and Sheet; a cover is a genus's (curation.json
-// genera[<genus>].cover); above the genera no cover is shown, the default rule of the fish (most seen near the centre)
-// needing observers per genus the coral data does not hold. Every node page ends with the shared Removed from the site and
-// Excluded lists of the genera under it (admin-nodephotos.js npLists).
-function renderCoralTree(id, view = TREE) {
-  status();
-  TT_VIEW = view;
-  const T = ctTree(TREE),
-    TV = ctTree(view);
-  if (!TV.node.size) {
-    $v.innerHTML = '<p class="note">No genera yet.</p>';
-    return;
-  }
-  const sel = TV.node.has(id) ? id : TV.roots[0],
-    n = TV.node.get(sel),
-    hadF = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.adm-tree')),
-    top = (o => (o ? o.scrollTop : null))($v.querySelector('.adm-tree') && $v.querySelector('.adm-list'));
-  const imrOn = FU_IMR === 'imr',
-    // the base's classic pairs and the draft's pair entries (ctFilters rows)
-    FL = ctFilters(DATA, {
-      pairs: classicPairs(),
-      rows: typeof pairRows === 'function' ? pairRows(ASUBJ, DATA, contentOf(DRAFT, ASUBJ)) : [],
-      needs,
-      waiting: m => pending(m).length,
-      draft: changed(),
-      removed: npCount.removed,
-      excluded: npCount.excluded
-    }),
-    tag = FL.find(x => x.k === store.get(ctTagK(), '')),
-    imrF = x => !!x.slate,
-    // the filters read in the Key through its leaves, shown in the view on screen with what leads to them (as the fish's)
-    pass = imrOn || tag ? ttPass(T, [imrOn && imrF, tag && tag.on].filter(Boolean)) : null,
-    vis = pass ? ttReach(TV, pass, [sel]) : null,
-    R = ctRow(TV),
-    kids = TV.kids.get(sel).filter(x => !vis || vis.has(x)),
-    G = TV.roots.flatMap(r => ttLeaves(TV, r)).filter(x => !vis || vis.has(x) || x === sel);
-  $('preview').href = n.genus ? `./?draft#${routeOut('g-' + sel)}` : './?draft';
-  const crumbs = ttCrumbs(TV, sel),
-    opts = `${n.genus ? '' : '<option value="" selected>Genus…</option>'}${G.map(x => `<option value="${esc(x)}"${x === sel ? ' selected' : ''}>${esc(x)}</option>`).join('')}`,
-    tagSel = ttTagSel(FL, tag, f => ttPass(T, [imrOn && imrF, f.on].filter(Boolean)).size, 'genera'),
-    imrSeg = `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Genera shown">${[
-      ['all', 'All'],
-      ['imr', 'IMR']
-    ]
-      .map(
-        ([k, t]) =>
-          `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}" title="${k === 'imr' ? 'The IMR slate' : 'Every genus'}">${t}</button>`
-      )
-      .join('')}</span>${tagSel}${typeof structBar === 'function' ? structBar(ASUBJ, DATA, tag && tag.k) : ''}`,
-    // The content editor's tools, as on the fish's Tree (admin-content.js; design note v2, step 8): the Look-alikes
-    // filter's + Pair box under the bar, the edits to check in the bar (sheetWarn), a genus page's Structure (its
-    // look-alike pairs: no circle, the slate is not the editor's) and Sheet boxes, over data.json as the admin holds it.
-    stAdd = typeof structAdd === 'function' ? structAdd(ASUBJ, DATA, x => x) : '',
-    cw = typeof sheetWarn === 'function' ? sheetWarn(ASUBJ, DATA, tvHref) : '',
-    kr = kids.length ? cap1(TV.node.get(kids[0]).rank || '') || 'Open' : '',
-    kidSel = kids.length
-      ? `<select class="adm-fgsel" data-ttkid aria-label="${esc(kr)}"><option value="">${esc(kr)} · ${kids.length}</option>${kids
-          .map(x => `<option value="${esc(x)}">${esc(TV.node.get(x).name)} · ${TV.node.get(x).genus ? R.ph(x) : R.gn(x)}</option>`)
-          .join('')}</select>`
-      : '',
-    probs = TV.problems.length
-      ? `<b class="warnc adm-ttprob" title="${esc(TV.problems.map(p => `${p.id}: ${p.why}`).join('\n'))}">${TV.problems.length} tree problem${TV.problems.length === 1 ? '' : 's'}</b>`
-      : '',
-    side = `<nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${opts}</select><div class="adm-list"><div class="adm-tree" role="tree" aria-label="${view === TREE_W ? 'WoRMS' : 'Key'}"></div></div></nav>`;
-  let bar, body, live;
-  if (!n.genus) {
-    bar = `${crumbs}<b class="adm-sname">${ttName(n)}<small>${ttRank(n)}${R.gn(sel)} · ${R.ph(sel)}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}${kidSel}${cw}${probs}`;
-    body = `${stAdd}<div class="adm-tcards">${kids.map(x => `<a class="adm-tcard" href="${esc(tvHref(x))}" data-ttc="${esc(x)}">${R.row(TV.node.get(x))}</a>`).join('')}</div>`;
-  } else {
-    const m = sel,
-      g = DATA.gen[m],
-      c = coverOf(m),
-      nc = pending(m).length,
-      why = c ? (c.picked ? 'Your ★ cover' : 'Default: no ★ cover picked (the genus page’s automatic one)') : 'No photo on the site';
-    // The genus's photos in play and their tools (the shared node-photos section's live part, admin-nodephotos.js: what
-    // Photos › Genera › Live was): the tools in the bar, the views' grids, Candidates and Not this genus in the body.
-    live = npOf().live(m);
-    bar = `${crumbs}${c ? `<button type="button" class="adm-sthumb${c.picked ? ' mine' : ''}" data-f="${esc(c.f)}" data-act="zoomcover" title="Cover"><img src="${img(c, 1)}" alt="${esc(m)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(m)}</i><small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${R.ph(m)}${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}${live.bar}${cw}${probs}<small class="adm-cvwhy">${esc(why)}</small>`;
-    // Its look-alike pairs and its sheet's text, above its photos (admin-content.js structBox, sheetBox).
-    const stbox = typeof structBox === 'function' ? structBox(ASUBJ, DATA, m, x => x, tvHref) : '',
-      sbox = typeof sheetBox === 'function' ? sheetBox(ASUBJ, DATA, m, x => x) : '';
-    body = stAdd + stbox + sbox + live.body;
-  }
-  // What was taken off the site and what was excluded under the node (the shared node-photos section, admin-nodephotos.js).
-  body += npLists(TV, sel, sel === TV.roots[0]);
-  $v.innerHTML = `<div class="adm adm-treep">${side}<section class="adm-main"><div class="adm-filter adm-sticky">${bar}</div>${body}</section></div>`;
-  npBind($v);
-  if (live) live.bind($v);
-  [$('gsel'), $v.querySelector('.adm-gsel2')].forEach(
-    el => el && (el.onchange = ev => ev.target.value && (location.hash = tvHref(ev.target.value)))
-  );
-  const ks = $v.querySelector('[data-ttkid]');
-  if (ks) ks.onchange = () => ks.value && (location.hash = tvHref(ks.value));
-  const ts = $v.querySelector('[data-tttag]');
-  if (ts)
-    ts.onchange = () => {
-      store.set(ctTagK(), ts.value);
-      render();
-    };
-  $v.querySelectorAll('[data-fuimr]').forEach(
-    b =>
-      (b.onclick = () => {
-        FU_IMR = b.dataset.fuimr;
-        store.set('reefid-admin-fu-imr', FU_IMR);
-        render();
-      })
-  );
-  // The content editor's tools (the bar's, the + Pair box, a genus page's Structure and Sheet).
-  if (typeof structBind === 'function') structBind($v, ASUBJ, DATA);
-  if (n.genus && typeof sheetBind === 'function') sheetBind($v, ASUBJ, DATA, sel);
-  fuTreeMount(TV, sel, R.row, vis, hadF, top);
+  // cnt: a node's genera in words, as the shared page counts a node above the leaves (admin.js renderTree)
+  return {row, nG, ph, gn, cnt: gn};
 }

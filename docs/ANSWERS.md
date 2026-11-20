@@ -1388,6 +1388,27 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   source IMR sans plus d'infos.» They stay in play, credited to IMR with no more information; nobody asks the IMR
   trainers; if they are never sourced, removing them may come later. Applied: ROADMAP "Trace IMR lecture photos to
   their original source", #1282.
+- **06:58, flags and the two removals.** «Si je supprime une photo, pourquoi je dois encore cliquer sur Done pour
+  évacuer le warning? D'ailleurs, je ne comprend toujours pas bien la différence entre cliquer sur la croix ou cliquer
+  sur Remove. ça me gonfle qu'il y ait 2 mécanismes pas bien différenciés» A flag clears itself when its photo leaves
+  play, and a flag on a photo that no longer exists is no task; the Remove / × question stays open (07:00: «Du coup 2
+  clics pour chaque photos? Tu me donnes du travail en plus. Réfléchis plus largement au problème et propose moi
+  d'autres solutions»). Applied: docs/spec/admin.md "Each subject's admin part", decision record
+  `2026-11-20-flags-clear-themselves`, #1294.
+- **06:02, the Learn lists' cards, every subject.** «l'accès en fait aux fiches il n'est pas hyper facile, et je pense
+  que ça doit être vrai partout dans toutes les matières. Parce qu'il faut qu'on voit du coup qu'il y a un lien qui est
+  open this sheet, et ensuite qu'on clique pour accéder. […] la photo doit être un lien. Vers la fiche. Et du coup, ça
+  serait une exception sur le fait que si on clique, on voit les crédits […] Et le titre du genre aussi devrait être un
+  lien. […] ID Marks, ben, en fait, on s'en fiche un peu, c'est redondant […] Les sources, c'est pas aussi utile que ça
+  soit affiché à cet endroit-là […] je me demande si peut-être toute la partie à gauche doit pas être cliquable,
+  c'est-à-dire la photo, le titre, tout ça, en dégageant le Open This Sheet qui sert à rien en fait et qui est pas
+  intuitif. Par contre, il faudrait rendre très clair le fait que bah, c'est cliquable et que du coup il y a une fiche à
+  ouvrir derrière […] il faut qu'il y ait une réflexion de design sur comment mieux présenter ça, et c'est vrai pour
+  toutes les matières du coup. Qu'est-ce qui est vraiment absolument utile d'avoir dans cette page, et comment est-ce
+  que on fait en sorte que l'utilisateur, ça soit très clair qu'il y a un truc à cliquer et qu'il peut ouvrir une fiche
+  sans forcément explicitement avoir un lien». A unit's card on a Learn list opens its sheet, photo and name included,
+  plainly tappable, with no "Open the sheet" line, no ID marks heading and no sources there (they stay on the sheet).
+  Applied: docs/decisions/2026-11-20-learn-cards-open-the-sheet.md, docs/spec/front-end.md, DESIGN.md, #1290.
 - **05:53, one admin for every subject.** «l'admin doit être le même ou presque le même pour l'ensemble des matières
   et des modes de jeu. Donc il y a un admin qui ensuite est adapté pour chacune des matières. Et donc du coup c'est
   aussi valable pour le nidibranche, c'est aussi valable pour quoi que ce soit qu'on veuille plugger derrière.» One
@@ -1401,3 +1422,47 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   problème qui revient souvent de devoir juger des photos». The pass goes ahead after the model measurement; a large
   judging pass is always measured first without asking him. Applied: INTEGRATOR "Working with Pierre" (A large
   judging or boxing pass is measured first), #1287.
+- **06:48-06:50, the reference of a measurement.** «Et tu as bien vu que ce n'est pas toujours le plus juste? On s'est
+  déjà apperçu que des fois c'est la calibration qui n'est pas bonne»; «Je pense que ça dépend des sujets/taches. Mais
+  parfois ya effectivement besoin d'une recalibration». The strong model is not the truth by itself; how the
+  reference is checked depends on the task, and a recalibration is made when the task needs one. Applied: INTEGRATOR
+  "Working with Pierre" (the same line), #1291.
+- **Correction of the 2026-11-08 entry that cites the activity item under Q265.** That entry ("Q265.", paraphrase) says
+  "Next (short term): activity outside the quiz …". The citation is wrong: PR #751's body lists "Q265's `data/` move"
+  beside that item, and Q265 is the question of the move of the tools' and the admin's data into `data/` (the ROADMAP
+  row of that move names it so: "Q265, Pierre, 2026-11-08: the proposals approved"; commit 577956f45). The activity
+  item has no question number; its source is his sentence in the next entry. His own words for Q265 are not in the
+  repo, so its approval stays a paraphrase. The old entry stays as it is. Applied: ROADMAP "Activity outside the quiz,
+  signed in or not" (it cites no Q265).
+- **2026-11-08, tracking activity outside the quiz (missing from the ledger).** «comment est-ce qu'on peut arriver à
+  traquer une activité en dehors du quiz, et que ce soit pour des gens connectés ou pas connectés» (Pierre, 2026-11-08,
+  as the ROADMAP row of #751 quoted it; the row slimming of #1140 dropped the quote). It started the read-only study of
+  that day (visits logged since sheet v30, #423) and the Players › Visits page (#777). It is the source the "Q265"
+  entry should have named. Applied: ROADMAP "Activity outside the quiz, signed in or not" (the quote is back in the
+  row).
+- **2026-11-08 afternoon, steps inside the Key and the Look-alikes (C3), a wish.** «ça serait bien de compter les
+  étapes dans la clé et les comparaisons» (Pierre, 2026-11-08, quoted in #752's Decisions). It is a wish, not a
+  schedule: #752 wrote "confirmed" and the ROADMAP row kept "(confirmed by Pierre)", but he asked for nothing to be
+  built, and the Visits page he chose (#777) lists "Steps inside the Key: later". It corrects that "confirmed" and
+  completes the entries "Q265." (its "later C3") and "Q301, Q304." Applied: ROADMAP "Activity outside the quiz,
+  signed in or not" (C3 an idea, his words quoted, "confirmed" gone).
+- **Correction of "Game modes" (2026-11-18, paraphrase).** That entry says "the seven modes are built, the most useful
+  first (Same or different?, Odd one out, Down the tree, Life stages matched, then Sort them, Virtual dive)". It
+  paraphrases STATUS 00f82557c ("seven modes built, most useful first"), with no words of his. What the repo records:
+  #1081 (the multi-photo study) says "the four formats Pierre approved on 2026-11-18 (Same or different?, Odd one out,
+  Life stages matched, Down the tree)", relayed by the integrator; his own words for it are not in the repo. So four
+  formats are approved. Sort them, Virtual dive and Trainer's set rest only on his request of 2026-11-08 (bring back
+  the ReefRecall modes and add other kinds, as #751 relays it in English) and are ideas. "Built" was wrong too: Same or
+  different? and Odd one out are in the Lab, the other two are not built. Applied: ROADMAP "Game modes" (its lead and
+  the source cells of the rows).
+- **Correction of "14:50-15:05, contrast" (2026-11-19): the Learn-sheets scope is not his.** That entry's Applied line
+  says "a ROADMAP row for a correction on the Learn sheets only", and the decision record
+  `2026-11-19-photo-measured-block` wrote that scope inside his decision. His words, in that entry: 15:01 «je ne suis
+  pas convaincu qu'il faille les corriger, ou alors dans un deuxième temps»; 15:07 «Plus tard ça veut juste dire qu'on
+  le met dans la ROADMAP». He never named the Learn sheets: that limit is the integrator's reading and decides
+  nothing. The decision as he made it: no correction now; the row stays in the ROADMAP as an idea. Applied: ROADMAP
+  "Contrast correction on the Learn sheets"; decisions/2026-11-19-photo-measured-block.md.
+- **Paraphrase-only entries, how to cite them.** The entries for Q316, Q322, Q330, Q342-Q349 and Q373 stay paraphrases:
+  no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
+  #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
+  relayed, never as his words. No doc change.

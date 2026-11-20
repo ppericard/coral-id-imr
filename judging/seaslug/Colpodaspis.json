@@ -1,6 +1,6 @@
 {
  "photos": {
-  "seaslug-Colpodaspis-cand-260317638": {"code": "p1g0sl15"},
-  "seaslug-Colpodaspis-cand-460845571": {"code": "o1g0sl15"}
+  "seaslug-Colpodaspis-cand-260317638": {"code": "p1g0sl15", "bb": [0.3069, 0.1606, 0.746, 0.8187]},
+  "seaslug-Colpodaspis-cand-460845571": {"code": "o1g0sl15", "bb": [0.1531, 0.3039, 0.7625, 0.7744]}
  }
 }
