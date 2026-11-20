@@ -404,4 +404,5 @@ back leaves the PR.** The integrator holds to these, each checked before it laun
 *Why:* on 2026-11-09 about a dozen agents ran at once with very large contexts, stacked PRs and parallel trains caused
 conflicts and red trains, one PR (#798) went through six Codex rounds in a day, a three-hour simulation read 10,000
 answers where the guardrails read 3,000, and misread requests were built twice; more than half of a week's quota went
-on a handful of PRs. *Source:* Pierre, 2026-11-09; the agent cap lifted and the ask-back, 2026-11-18 (rules audit decisions 1 and 2).
+on a handful of PRs. *Source:* Pierre, 2026-11-09; the agent cap lifted and the ask-back, 2026-11-18 (rules audit decisions 1 and 2); no
+fixed number of Codex rounds, reworded 2026-11-21 (#1355).
