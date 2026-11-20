@@ -68,6 +68,28 @@ const BASICS_AT = [
   [200, 212],
   [86, 212]
 ];
+// Sea slug basics' trail (proto/seaslugbasics.js steps), the same component: four stops, two along the top and two back
+// along the bottom (Flaps under Cerata), in the colours --bt1…--bt4.
+const BASICS_TRAIL_S = [
+  [
+    'dorid',
+    'A dorid',
+    '<path d="M3 18c0-4.5 4-7.5 9-7.5s9 3 9 7.5z"/><path d="M7 10.5V6M10 10V5.5M16 10.5l-2-3.5M16 10.5V6.5M16 10.5l2-3.5"/>'
+  ],
+  ['cerata', 'Cerata', '<path d="M3 18h18"/><path d="M6.5 18v-5M9.5 18v-7M12.5 18v-7.5M15.5 18v-7M18.5 18v-5"/>'],
+  ['others', 'Flaps / shields', '<path d="M3 17.5h18"/><path d="M5.5 17.5c2-7.5 10.5-9.5 13.5 0"/><path d="M5 9.5 3.5 6M7.5 9 7 5.5"/>'],
+  [
+    'groups',
+    'Groups',
+    '<rect x="3.5" y="4" width="7" height="7" rx="1.5"/><rect x="13.5" y="4" width="7" height="7" rx="1.5"/><rect x="3.5" y="13" width="7" height="7" rx="1.5"/><rect x="13.5" y="13" width="7" height="7" rx="1.5"/>'
+  ]
+];
+const BASICS_AT_S = [
+  [80, 76],
+  [320, 76],
+  [320, 212],
+  [80, 212]
+];
 // Fish basics' trail (proto/fishbasics.js steps), the same component: six stops, three along the top
 // and three back along the bottom (Tails under Fins), in the colours --bt1…--bt6.
 const BASICS_TRAIL_F = [
@@ -299,9 +321,18 @@ addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 // tell them apart, counted here (rule U8). '' for a genus without a sourced root. Fish genera (fish.json `root`, from
 // The ETYFish Project: tools/fish_genus_roots.json) pass their own genus names and words for where they are counted
 // (treeRoot); their parts may have no word, or be another genus the entry names ("genus") or the person it honours.
-const rootLine = (g, slate, where = 'on the slate') => {
+// `warn` (the name study's misleading root): the other units whose ID tip the name echoes, each with that tip verbatim,
+// never one of the genus's own (checked by the builds); `unit` writes a unit's name (a genus in italics; the fish pass
+// their families' plain names).
+const rootLine = (g, slate, where = 'on the slate', unit = n => `<i>${esc(n)}</i>`) => {
   const r = g && g.root;
   if (!r) return '';
+  const warn = (r.warn || []).map(([u, tip]) => `${unit(u)} (“${esc(tip)}”)`),
+    warnLine = warn.length
+      ? ` Careful: the name echoes ${warn.length > 1 ? 'the ID tips' : 'the ID tip'} of ${
+          warn.length > 1 ? `${warn.slice(0, -1).join(', ')} and ${warn[warn.length - 1]}` : warn[0]
+        }, ${warn.length > 1 ? 'none of them' : 'not one of'} its own.`
+      : '';
   const rootPart = x =>
     x[4] === 'genus'
       ? `the genus <i>${esc(x[1])}</i>`
@@ -318,6 +349,7 @@ const rootLine = (g, slate, where = 'on the slate') => {
       .map(rootPart)
       .join(' + ') +
     `.${r.fit ? ` It fits the ID tip “${esc(r.fit)}”.` : ''}` +
+    warnLine +
     `${shared >= 3 ? ` ${shared} genera ${esc(where)} end in -${esc(tail)}: the ending alone does not tell them apart.` : ''}` +
     ` <span class="rsrc">${r.src.map(srcA).join(' · ')}</span></p>`
   );
@@ -1043,13 +1075,14 @@ function viewFishSheet(id) {
 }
 // A fish genus's name roots (fish.json root, rootLine) on the one sheet the genus opens (treeSheets go,
 // `at`): its own page, its one species' sheet, or its family's when it is the only genus with several species; the
-// shared ending counted over every fish genus (rule U8). '' anywhere else.
+// shared ending counted over every fish genus (rule U8); a warning names families, in plain text. '' anywhere else.
 const treeRoot = (g, at) =>
   g && g.root && treeGo(g.id) === at
     ? rootLine(
         g,
         Object.values(ftree().gen).map(x => x.name),
-        'among the fish'
+        'among the fish',
+        esc
       )
     : '';
 // A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json), on the

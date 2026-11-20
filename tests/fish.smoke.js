@@ -1622,6 +1622,24 @@ async function freshSeed(b, base, errs, seed, fresh) {
       const gp = pool().filter(n => GX(n).rank);
       ok(gp.length === 1 && gp[0] === 'g:Heniochus' && Q.sci === undefined, "sci: I'm at IMR, Heniochus without the offer: " + gp);
       ok(!bonusOfferDue(), 'sci: no offer for it');
+      // The What I learn card: "I'm at IMR" means both, so its Scientific names row is on with no switch tapped; off there,
+      // the IMR genera stop too (Q404 A), and back on they return.
+      const sr = learnRows().find(r => r.k === 'sci');
+      ok(sr && rowState(sr) === 'part', "sci: I'm at IMR, the card's Scientific names row: the IMR genera alone");
+      // After a "Not now", a tap on the card's On turns every family's genera on (the offer never comes back).
+      Q.sci = false;
+      quizBoard();
+      const on = document.querySelector('#view #wil [data-wil="sci"][data-on="1"]');
+      ok(on && on.getAttribute('aria-pressed') === 'false', "sci: I'm at IMR after Not now, On not pressed");
+      if (on) on.click();
+      ok(Q.sci === true && !Q.sciH && rowState(sr) === 'on', "sci: I'm at IMR, On from the card: the set on, no sciH");
+      ['', 'T', 'V', 'H', 'O'].forEach(x => delete Q['sci' + x]);
+      route();
+      learnSet('sci', false);
+      ok(!rowOn(sr) && !pool().some(n => GX(n).rank) && !sciUp().has('g:Heniochus'), "sci: I'm at IMR, off on the card: Heniochus out too");
+      learnSet('sci', true);
+      ok(rowOn(sr) && pool().includes('g:Heniochus'), "sci: I'm at IMR, back on: Heniochus back");
+      ['', 'T', 'V', 'H', 'O'].forEach(x => delete Q['sci' + x]);
       // EventMeasure is named to an IMR player only: the others read what the names are.
       ok(/EventMeasure/.test(sci.body), 'sci: the offer names EventMeasure for an IMR player');
       pgAt('f:Surgeonfishes', 0.6);
@@ -1757,12 +1775,20 @@ async function freshSeed(b, base, errs, seed, fresh) {
     // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
     ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw: ' + pool().filter(n => GX(n).rank));
-    // Never locked by the offer: My progress turns them on while off, as ⚙ does.
+    // Never locked by the offer: the What I learn card on My progress turns them on while off (Q400 D, Q404 A), never by
+    // hand early (Q401 A: no sciH); ⚙ has no row for them.
     quizBoard();
-    const so = document.querySelector('#view [data-seton="sci"]');
-    ok(so && /Turn on scientific names/.test(so.textContent), 'sci: My progress offers to turn them on while off');
-    if (so) so.click();
-    ok(Q.sci === true && !document.querySelector('#view [data-seton="sci"]'), 'sci: on from My progress, the box gone');
+    const wr = () => document.querySelector('#view #wil [data-wil="sci"][data-on="1"]');
+    ok(
+      wr() && wr().getAttribute('aria-pressed') === 'false' && !document.querySelector('[data-optin="sci"]'),
+      'sci: the What I learn card shows Scientific names off, and no ⚙ row'
+    );
+    if (wr()) wr().click();
+    ok(Q.sci === true && !Q.sciO && !Q.sciH && wr() && wr().getAttribute('aria-pressed') === 'true', 'sci: on from the card, no sciH');
+    ok(document.getElementById('wil') && document.getElementById('wil').open, 'sci: the card stays open as the board redraws');
+    learnSet('sci', false);
+    ok(Q.sci === false && Q.sciO === true && !pool().some(n => GX(n).rank), 'sci: off from the card, out of the draw');
+    delete Q.sciO;
     bonusSet(false, 'sci');
     route();
     // The species level, step 1 (docs/reviews/2026-11-14-species-step1.md):
@@ -1777,11 +1803,21 @@ async function freshSeed(b, base, errs, seed, fresh) {
         !spOn() && !spS.auto().length && !pool().some(n => rankOf(n) === 'species') && UNITS.fish.tree() === TREEU.tree,
         'species: off below SPECIES_SHEET'
       );
+      ok(!learnRows().some(r => r.k === 'sp'), 'species: no Common names row below SPECIES_SHEET');
       store.set(SHEETV, SPECIES_SHEET);
       ok(spOn() && UNITS.fish.tree() === TREEU.treeSp, 'species: on from SPECIES_SHEET, the tree with the species units');
       const L = spS.auto(),
         t = own[0];
       ok(t && L.length === 1 && L[0] === t && pool().includes(t), 'species: the family at Advanced brings its first species: ' + L);
+      // The What I learn card's Common names row (Q404 A): no row below SPECIES_SHEET (rule D4); on with no switch tapped;
+      // off, the species stop being asked (their bars kept, Q402 A); on again, back.
+      const cr = () => learnRows().find(r => r.k === 'sp');
+      ok(cr() && rowOn(cr()), 'species: the card shows Common names, on');
+      learnSet('sp', false);
+      ok(!rowOn(cr()) && !pool().some(n => rankOf(n) === 'species'), 'species: Common names off on the card, none asked');
+      learnSet('sp', true);
+      ok(rowOn(cr()) && pool().includes(t), 'species: Common names back on, its species back');
+      ['', 'T', 'O'].forEach(x => delete Q['sp' + x]);
       const ch = distractors(t, pool(), 3);
       ok(ch.length === 3 && ch.every(n => rankOf(n) === 'species'), 'species: its wrong choices are species: ' + ch);
       ok(new Set([t, ...ch].map(choiceKey)).size === 4, 'species: four labels');
@@ -2471,6 +2507,21 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const mr = await nameRoot();
     if (!rootOk(mr, /^Name roots: Gymno·thorax: “bare or naked” \(gymnós\) \+ “breast or chest” \(thṓrax\)\./))
       ui.push(`${width}px Gymnothorax name roots: ${JSON.stringify(mr)}`);
+    // A root that echoes another family's IMR cue shows with its warning (fish.json root.warn), on Pomacentrus's page.
+    await q.evaluate(() => (location.hash = '#fish/learn/genus/Pomacentrus'));
+    await q
+      .waitForFunction(() => /Pomacentrus/.test((document.querySelector('#view .fsheet .fn-t') || {}).textContent || ''), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const wr = await nameRoot();
+    if (
+      !rootOk(
+        wr,
+        /^Name roots: Poma·centrus: .*\. Careful: the name echoes the ID tip of Angelfishes \(“Spine on the gill cover \(opercular spine\)”\), not one of its own\..* The ETYFish Project \(Pomacentrus\)$/
+      )
+    )
+      ui.push(`${width}px Pomacentrus name roots warning: ${JSON.stringify(wr)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
     await q
       .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})

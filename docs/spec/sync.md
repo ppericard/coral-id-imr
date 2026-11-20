@@ -60,8 +60,8 @@ record in a new tab.
 | `Replayed`, `Replayed Fish`, one per replayed subject | The full replays kept per player (below) |
 | `Stats`, `Stats Fish`, `Stats Sea slugs` | The pooled photo statistics' snapshot, one tab per subject with game photos (below) |
 | `Timings` | How long the script's operations take; no player data (below) |
-| `Roles`, `Audit` | The role grants and the log of privileged changes (below) |
-| `Group settings`, `Groups` | The player groups and their members (below) |
+| `Roles`, `Audit` | The admin list (and the record of the roles before the groups carried them), and the log of privileged changes (below) |
+| `Group settings`, `Groups` | The player groups, their settings and rights, and their members (below) |
 | `Alerts` | The script's alerts, read by the admin (SECURITY.md "The Alerts tab in the admin") |
 | `Deploy log` | Each self-update install or error, the one-shot migrations, the leaderboard's replays made ahead, the backup's lines |
 
@@ -226,7 +226,7 @@ released.
   last 3000; the per-name cap's `n:<name>` served as the name's admin id; a line that names an account or a device
   served only while its admin id is a live account's or a device's still not signed in (rule D7: a deleted, merged or
   archived account's left out; `alertId_`, `alertIds_`, `readAlerts_`).
-- The roles, live games and groups requests: below.
+- The rights, live games and groups requests: below.
 
 **Hardening**: user strings never become formulas (`safe_`), answer fields are pattern-checked, 5 wrong codes for a name
 block it for 10 minutes (`wait`), and answers are logged before the progress is written.
@@ -761,22 +761,32 @@ a request), `Ms`, `Rows` and `Cols` (what a whole-tab read read; for a request, 
   minutes a day against the 90 of a consumer account; the 20,000 URL fetches a day are not measured).
   `tests/timings.test.js`; the tab is off in `tests/gas.js` unless a test asks for it.
 
-## Roles and the Audit tab
+## Rights and the Audit tab
 
-See also SECURITY.md "Roles and the Audit tab" and ROADMAP "Roles, instances and cohorts". Two tabs: `Roles` (Account,
-Role, Scope, Since, Code hash: one row a grant; the roles `admin` at `platform`, and `owner`, `editor` and `trainer` at
-`instance:imr`; `Code.gs` `ROLES`) and `Audit` (Time, Admin id, Action, Scope, Result, Target id: one row per change,
-grant or revoke, and capped refusals; ids only, never a name; `AUDIT`). Every privileged endpoint calls `gate_`, then
-`can_(caller, right, scope)`: the admin token (`caller_`, the only caller today) passes every right, an account what its
-grants give in their scope. `POST {roles: 1, token}` lists the grants,
-`{roleGrant | roleRevoke: {account, role, scope}, token}` changes one (no page sends them yet). Pierre's grants are
-given once to the admin's account (`rolesSeed_`). A
-delete, merge or archive drops the account's grants (`rolesDrop_`, rule D7). `tests/roles.test.js`.
+See also SECURITY.md "Rights and the Audit tab", ROADMAP "Roles, instances and cohorts" and
+[the decision](../decisions/2026-11-19-groups-carry-rights.md). An account's rights are the union of two sources:
+
+- **Its groups** (below, "Player groups"): a group carries an instance's rights (`Code.gs` `RIGHTS`: `players`,
+  `settings`, `grant`, `content`, `live`, `cohorts`, each at `instance:imr`), and a member holds them while the
+  membership's code hash is the account's.
+- **The admin list**: the `admin` rows of the `Roles` tab (Account, Role, Scope, Since, Code hash; `admin` at
+  `platform`), kept apart from the groups. An admin holds `platform` and `grant` at every scope, never an instance's
+  players or content without a group that carries them. `POST {roles: 1, token}` lists it,
+  `{roleGrant | roleRevoke: {account, role: 'admin', scope: 'platform'}, token}` changes it (any other role or scope:
+  `input`; no page sends them yet).
+
+The `Audit` tab (Time, Admin id, Action, Scope, Result, Target id; `AUDIT`) gets one row per change and capped refusals,
+ids only, never a name. Every privileged endpoint calls `gate_`, then `can_(caller, right, scope)`: the admin token
+(`caller_`, the only caller today but a live game's start) passes every right. Pierre's rights are given once to the
+admin's account (`rolesSeed_`): the admin list, and the Managers and Curators groups. A delete, merge (its from) or
+archive drops the account's rights, never moves them (`rightsDrop_`, `rolesDrop_`, rule D7). The Roles tab's other rows
+(`owner`, `editor`, `trainer`) are the record of the roles before the groups carried them, read by nothing since the
+rights migration (below). `tests/roles.test.js`, `tests/accountrights.test.js`.
 
 ## Live games
 
 A trainer runs a quiz for a room ([design note](../reviews/2026-11-18-live-mode-design.md)). The trainer (`#live/host`,
-an account with the trainer role, checked by `Code.gs` `lvTrainer_`, then `can_(…, 'live')`) picks a subject open to
+an account in a group that carries `live`, such as Trainers, checked by `Code.gs` `lvTrainer_`, then `can_(…, 'live')`) picks a subject open to
 everyone, a set (every unit in play, or an IMR lecture group: `quiz.js` `cqGroups`), the number of questions (default
 10) and the time per question (default 20 s), and projects the code; students join at `#live` (`#live?code=123456`),
 signed in or with a nickname.
@@ -799,14 +809,18 @@ signed in or with a nickname.
 
 ## Player groups
 
-A player is in any number of groups ([decision: no "apart" setting](../decisions/2026-11-18-no-apart-groups.md)).
-"Staff" is a group, not a role.
+A player is in any number of groups ([decision: no "apart" setting](../decisions/2026-11-18-no-apart-groups.md)), and a
+group carries settings and an instance's rights ([decision: groups carry rights](../decisions/2026-11-19-groups-carry-rights.md)).
+"Staff" is a group, not a role. Every setting and right only adds: a player in several groups has each of their boards,
+betas and rights.
 
 - A **group** (`Code.gs` `groupState_`) is a row of the **Group settings** tab (Group: its id, Name, Board, Apart, Beta,
-  Added): Board, it has its own leaderboard; Apart, unused and written 0; Beta, `''` or the subject in beta that it opens
-  to its members (`core.js` `subjGroup`). The **Groups** tab keeps one row a membership (Group: the group's id, Name: the
-  player's, Added). Ids are `g:` and 8 random characters; a group the migration made keeps its old Group cell (a
-  subject's id, `cohort:<name>`, `staff`).
+  Added, Rights): Board, it has its own leaderboard; Apart, unused and written 0; Beta, `''` or the subject in beta that
+  it opens to its members (`core.js` `subjGroup`); Rights, the instance's rights its members hold, `right@scope` entries
+  separated by commas (`RIGHTS` at `instance:imr`; `rightsOf_`). The **Groups** tab keeps one row a membership (Group:
+  the group's id, Name: the player's, Added, Code hash: the account's when it joined a group that carries rights, blank
+  for the others). Ids are `g:` and 8 random characters; a group a migration made keeps its old Group cell (a subject's
+  id, `cohort:<name>`, `staff`) or `r:` and its role (`r:owner`, `r:editor`, `r:trainer`).
 - **Boards.** `board_` makes its one ranking (the global %, then Elo; rule D8's replays included) and splits it
   (`groupBoards_`): `rows`, the general board, everyone; `groups`, `[{id, n, rows}]`, every group with a board, the
   newest first (by Added), its members. Each keeps the ranking's order and its first 200, and the opt-out, an admin hide
@@ -815,14 +829,32 @@ A player is in any number of groups ([decision: no "apart" setting](../decisions
   `rows` is not split.
 - **The app** learns its groups from the load and save replies: `groups` (the subjects in beta the player's groups open)
   and `gids` (their groups' ids; `sync.js` `groupsSeen`).
-- **The admin** (`users_`, the `players` right, audited): `{userGroup: name | [names], group: id, on}`;
-  `{groupMake: {n, board, apart, beta}}`, `{groupEdit: id, n?, board?, apart?, beta?}`, `{groupDrop: id}` (an empty group only;
-  `groupDo_`); a name is 1 to 40 characters, unique case aside; the player list carries each player's `gids` and every
-  group (`groupDefs`).
-- Roles stay apart: no group grants a right, and a trainer grant puts nobody on a board (the trainer role still starts a
-  live game).
-- Rule D7: a merge joins every group of the merged name to the kept one's; a delete and an archive take the player out
-  of every group; a group itself holds no player data.
+- **The admin** (`users_`, audited): `{userGroup: name | [names], group: id, on}`;
+  `{groupMake: {n, board, apart, beta, rights}}`, `{groupEdit: id, n?, board?, apart?, beta?, rights?}`,
+  `{groupDrop: id}` (an empty group only; `groupDo_`); a name is 1 to 40 characters, unique case aside; `rights` is the
+  whole list, `["right@scope"]`. The player list carries each player's `gids` and `roff` (their groups with rights
+  whose membership's code hash is not the account's: rights off until they are added again; never a hash) and every
+  group (`groupDefs`, with its `rights`).
+- **Who changes what** (checked again under the script lock): a group's name, board or beta, the members of a group
+  without rights, and a delete need `players`; a group's rights and the members of a group that carries rights need
+  `grant`. A group that carries rights takes one name a call (a list: `input`), a live account (`user`, `archived`),
+  and its membership is written with the account's code hash (`joinPut_`; added again, it is bound to the code now). A
+  group's first right is refused while it has members (`members`: their memberships hold no code hash). A player's own
+  act never joins a group that carries rights.
+- **Audit rows** of the rights: `join <group id>` and `leave <group id>` (target the member's id; `(self)` for the
+  caller's own account, `(account removed)` for rule D7, `(migration)`); one `grant <right> (via <group id>)` or
+  `revoke …` row per member, then `right+ <right>@<scope>` or `right- …` (target the group's id). A membership written
+  without its `ok` row answers an error, and its retry writes that row (`joinAudited_`); so does a group's rights
+  change: the request that carries the rights compares them with the group's audited rights (`rightsAudited_`: per
+  right, its last `ok` `right+` / `right-` row, a role group's `r:` rights from the migration counted without one), so
+  its retry writes the rows of the change saved without them (a member's row may then be written twice). A failed
+  `groupMake` with rights answers an error, its retry `exists`, and its rows come with the group's next rights edit.
+- Settings and rights stay in separate groups in practice (Staff a board, Trainers `live`), never mixed by the admin
+  page.
+- Rule D7: a merge joins every group without rights of the merged name to the kept one's, and drops its groups with
+  rights and its place on the admin list, each audited (`mergePlan_`; the reply's `join`, `drop` and `admin`, which
+  `{mergePlan: {from, into}, token}` gives before, writing nothing, for the warning); a delete and an archive take the
+  player out of every group, its rights audited; a group itself holds no player data.
 - **The migration** (rule W3; `ONCE_` groups, `groupsMigrate_`): each distinct Group cell of the earlier layout becomes
   a group of that id (a subject's id, "<subject> beta" with that subject as beta; `cohort:<name>`, "<name>" with a
   board; any other cell a group of that name), and the trainers at `instance:imr`, under the code hash of their grant,
@@ -830,7 +862,16 @@ A player is in any number of groups ([decision: no "apart" setting](../decisions
   Until it has run, the readers read the data as it will make it (`groupsBefore_`), and the first change to a group or
   a membership runs it first, under the script lock (`groupsNow_`). Its code (between `groups-migration` markers) goes
   once the Deploy log shows "one-shot groups".
-- `tests/playergroups.test.js`.
+- **The rights migration** (rule W3; `ONCE_` rights, `rightsMigrate_`, after the groups one): each instance role of the
+  Roles tab held by a live account becomes a group with its rights, `r:owner` "Managers" (`players`, `settings`,
+  `grant`), `r:editor` "Curators" (`content`), `r:trainer` "Trainers" (`live`, `cohorts`), " (rights)" after a name a
+  group already has; each grant a membership of it, its code hash and Since kept (a grant whose hash is no longer its
+  account's gives nothing, as before), one `join … (migration)` Audit row each, by `script`. The admin rows stay: the
+  admin list. Nothing is deleted: the Roles tab keeps every row, and the grants of accounts no longer live stay there
+  only, counted in the Deploy log line. Until it has run, the readers and `can_` read the groups as it will make them
+  (`rightsBefore_`), and the first change to a group, a membership or an account runs it first (`rightsNow_`). Its code
+  (between `rights-migration` markers) goes once the Deploy log shows "one-shot rights".
+- `tests/playergroups.test.js`, `tests/accountrights.test.js`.
 
 ## Backup to pCloud
 

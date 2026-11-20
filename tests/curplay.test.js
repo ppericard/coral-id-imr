@@ -55,23 +55,32 @@ const slimC = c =>
       : {})
   };
 test('curation-play.json: curation.json without auto, fish tags and ease, and fish auto but its undone adds', () => {
-  const {auto, retest, flag, seen, fish, content, ...rest} = FULL,
-    {fish: pf, content: pc, seen: pseen, ...prest} = PLAY;
+  // Every tree subject's part (the fish's, the sea slugs'; curplay.py TREE_PARTS) is slimmed alike and compared here:
+  // a part Pierre's admin Publish writes with only a players' flag (the sea slugs', 2026-11-20) comes out empty.
+  const parts = C.SUBJECTS.map(S => S.admin.cur).filter(Boolean),
+    {auto, retest, flag, seen, content, ...rest} = FULL,
+    {content: pc, seen: pseen, ...prest} = PLAY;
+  for (const k of parts) {
+    delete rest[k];
+    delete prest[k];
+  }
   assert.deepStrictEqual(prest, rest);
   // The coral seen keeps its thanked reports, 'rep:<id>', and not the Candidates' reject marks, 'cand:<photo>'.
   assert.deepStrictEqual(pseen || {}, Object.fromEntries(Object.entries(seen || {}).filter(([k]) => k.startsWith('rep:'))));
   assert.deepStrictEqual(pc, slimC(content));
-  const {tags, ease, auto: fa, retest: fr, flag: ff, content: fc, ...frest} = fish || {},
-    {auto: pa, content: pfc, ...pfrest} = pf || {};
-  assert.deepStrictEqual(pfrest, frest);
-  assert.deepStrictEqual(pfc, slimC(fc));
-  // The fish auto-sort log keeps only its undone adds ('-a…', core.js treeGone), day by day.
-  const undone = Object.fromEntries(
-    Object.entries(fa || {})
-      .map(([d, L]) => [d, Object.fromEntries(Object.entries(L || {}).filter(([, c]) => /^-a/.test(String(c))))])
-      .filter(([, L]) => Object.keys(L).length)
-  );
-  assert.deepStrictEqual(pa || {}, undone);
+  for (const k of parts) {
+    const {tags, ease, kept, auto: fa, retest: fr, flag: ff, content: fc, ...frest} = FULL[k] || {},
+      {auto: pa, content: pfc, ...pfrest} = PLAY[k] || {};
+    assert.deepStrictEqual(pfrest, frest, k);
+    assert.deepStrictEqual(pfc, slimC(fc), k);
+    // The auto-sort log keeps only its undone adds ('-a…', core.js treeGone), day by day.
+    const undone = Object.fromEntries(
+      Object.entries(fa || {})
+        .map(([d, L]) => [d, Object.fromEntries(Object.entries(L || {}).filter(([, c]) => /^-a/.test(String(c))))])
+        .filter(([, L]) => Object.keys(L).length)
+    );
+    assert.deepStrictEqual(pa || {}, undone, k);
+  }
   // A third of the file or less.
   assert.ok(JSON.stringify(PLAY).length < 0.5 * JSON.stringify(FULL).length, `${JSON.stringify(PLAY).length} characters`);
   // An undone add is kept; a decision is not.

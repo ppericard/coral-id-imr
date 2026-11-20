@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 203 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 206 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 203;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 206;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -290,7 +290,7 @@ function doPost_(e){
     return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who}));
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // roles (roles_)
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop) return json_(users_(p));  // admin user management (see users_)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop || p.mergePlan) return json_(users_(p));  // admin user management (see users_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
@@ -1568,55 +1568,75 @@ function isAdmin_(token){
   return ok;
 }
 
-// Roles (docs/SECURITY.md "Roles and the Audit tab"; docs/ROADMAP.md "Roles, instances and cohorts"): scoped roles,
-// enforced here by one can_() check and an audit log, never by the page; rights are separate, and the platform admin may
-// grant himself a role, the grant logged.
-// A grant is one account, one role, one scope; one account may hold several. Kept in the Roles tab (one row a grant:
-// Account, Role, Scope, Since, Code hash), not in columns of the RAs tab: an account holds any number of grants, and the
-// RAs columns are read by position. A grant holds only for the account it was made for (its name and its code hash), and
-// a delete, a merge (its from) or an archive drops its grants (rolesDrop_, rule D7), never moves them.
-// The player role is every account's and is not stored. Scopes: 'platform', 'instance:<id>' (this sheet serves one
-// instance, INSTANCE_), later 'cohort:<id>'.
+// Rights (docs/SECURITY.md "Rights and the Audit tab"; docs/decisions/2026-11-19-groups-carry-rights.md): enforced here
+// by one can_() check and an audit log, never by the page. Two sources, and an account's rights are their union:
+// - the groups (Player groups below): a group carries an instance's rights (RIGHTS, each at the instance's scope), and a
+//   member has them while the membership's code hash is the account's. Only the grant right changes a group's rights or
+//   the members of a group that carries rights;
+// - the admin list: the platform admin's accounts, kept apart from the groups (Admin is the one role across instances),
+//   as the admin rows of the Roles tab (Account, Role 'admin', Scope 'platform', Since, Code hash), changed only by
+//   roleGrant / roleRevoke, each audited. An admin holds the platform and grant at every scope (he may give himself an
+//   instance's rights), never an instance's players or content without a group that carries them.
+// The Roles tab's other rows are the record of the roles before the groups (the rights migration below), read by nothing.
+// A delete, a merge (its from) or an archive drops an account's rights (rightsDrop_, rolesDrop_; rule D7), never moves
+// them. The player's rights are every account's and are not stored. Scopes: 'platform', 'instance:<id>' (this sheet
+// serves one instance, INSTANCE_).
 // The admin token (isAdmin_: a GitHub token that can push to the repository) is the platform admin and passes every
-// right: whoever can push to main can change this script. The separation of rights holds for an account's grants: an
-// account holding only the platform admin role is refused an instance's players or content until it holds that
-// instance's role. Every privileged endpoint is reached with the token only for now (caller_).
+// right: whoever can push to main can change this script. Every privileged endpoint is reached with the token only for
+// now (caller_), a live game's start with the trainer's account (lvTrainer_).
 const INSTANCE_ = 'imr', INST_SCOPE_ = 'instance:' + INSTANCE_;
 const ROLES = {TAB: 'Roles', HEAD: ['Account', 'Role', 'Scope', 'Since', 'Code hash'], SEED: 'ROLES_SEED',
-  // Each role, the scope kind it is granted at and the rights it gives there. The platform admin's grant right reaches
-  // every scope (he may grant himself a role); every other right is the grant's own scope only.
+  // Each role of the Roles tab, the scope kind it was granted at and the rights it gave there. Only admin is still
+  // granted; the others are what the rights migration turns into groups.
   DEF: {
     admin: {at: 'platform', rights: ['platform', 'grant']},  // the code, the base database, creating instances
-    owner: {at: 'instance', rights: ['players', 'settings', 'grant']},  // grants roles in the instance, its players and settings
+    owner: {at: 'instance', rights: ['players', 'settings', 'grant']},  // the instance's players, settings and rights
     editor: {at: 'instance', rights: ['content']},  // every right on the instance's content, no code, no players' data
-    // creates cohorts and follows them; hosts a live game (lvStart_); no content
-    trainer: {at: 'instance', rights: ['cohorts', 'live']}
+    trainer: {at: 'instance', rights: ['cohorts', 'live']}  // hosts a live game (lvStart_); cohorts: roles step 2's
   },
-  // Pierre's: platform admin, and owner and content editor of the IMR instance. Given once to the admin's account
+  // The group each instance role became (the rights migration; its id is 'r:' and the role).
+  GROUP: {owner: 'Managers', editor: 'Curators', trainer: 'Trainers'},
+  // Pierre's: the admin list, and the Managers and Curators groups of the IMR instance. Given once to the admin's account
   // (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
-  SEEDS: [['admin', 'platform'], ['owner', INST_SCOPE_], ['editor', INST_SCOPE_]]};
+  SEEDS: ['owner', 'editor']};
+// The rights a group may carry, each at the instance's scope only.
+const RIGHTS = ['players', 'settings', 'grant', 'content', 'live', 'cohorts'];
 // A role's definition, own entries only: a role named like Object.prototype's members (constructor, __proto__) is none.
 const roleDef_ = role => (Object.prototype.hasOwnProperty.call(ROLES.DEF, String(role)) ? ROLES.DEF[String(role)] : null);
-const scopeOk_ = (role, scope) => !!roleDef_(role) && (roleDef_(role).at === 'platform' ? scope === 'platform' : scope === INST_SCOPE_);
-// The grants the Roles tab holds, as {name (lower case), role, scope, h}.
+// The one role still granted in the Roles tab: the platform admin, at the platform.
+const scopeOk_ = (role, scope) => role === 'admin' && scope === 'platform';
+// A code hash as a cell holds it (a leading apostrophe, the text mark safe_ adds to a hash that starts with + or -, is
+// no part of it).
+const hcell_ = x => String(x == null ? '' : x).replace(/^'/, '');
+// The rows the Roles tab holds, as {name (lower case), role, scope, h, at (Since, ms)}.
 function grants_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB);
   if (!sh || sh.getLastRow() < 2) return [];
   return sh.getRange(2, 1, sh.getLastRow() - 1, ROLES.HEAD.length).getValues().filter(r => r[0])
-    .map(r => ({name: lc_(r[0]), role: String(r[1]), scope: String(r[2]), h: String(r[4])}));
+    .map(r => ({name: lc_(r[0]), role: String(r[1]), scope: String(r[2]), h: hcell_(r[4]), at: new Date(r[3]).getTime() || 0}));
 }
+// The admin list.
+const admins_ = () => grants_().filter(g => g.role === 'admin' && g.scope === 'platform');
+// A group's rights as its Rights cell holds them ("right@scope" entries, comma separated): the known ones only, each
+// once, in RIGHTS order.
+const rightsOf_ = x => { const s = new Set(String(x == null ? '' : x).split(/[\s,]+/)); return RIGHTS.map(r => r + '@' + INST_SCOPE_).filter(e => s.has(e)); };
+// The rights a request sends (an array of "right@scope" strings): the same list, or null when any entry is not one.
+const rightsIn_ = a => (Array.isArray(a) && a.length <= 20 && a.every(e => typeof e === 'string' && rightsOf_(e)[0] === e) ? rightsOf_(a.join(',')) : null);
 // can_(who, right, scope): may this caller use this right in this scope? who: {token: true, id} (the admin token), or
-// {name, h, id} (an account whose code was checked by the caller), or null (nobody: refused).
+// {name, h, id} (an account whose code was checked by the caller), or null (nobody: refused). An account: a live one
+// whose code hash is h, then the admin list's rights and the union of the rights of the groups it is in under that hash.
 function can_(who, right, scope){
   if (!who) return false;
   if (who.token) return true;
-  const k = lc_(who.name);
-  if (!k || !who.h) return false;
-  return grants_().some(g => {
-    const d = g.name === k && g.h === String(who.h) && roleDef_(g.role);
-    if (!d || d.rights.indexOf(right) < 0 || g.scope !== d.at && g.scope.indexOf(d.at + ':') !== 0) return false;
-    return g.role === 'admin' && right === 'grant' ? true : g.scope === scope;
-  });
+  const k = lc_(who.name), h = String(who.h || '');
+  if (!k || !h) return false;
+  const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, who.name) : 0, row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
+  if (!row || archived_(row) || String(row[6]) !== h) return false;
+  if ((right === 'grant' || right === 'platform' && scope === 'platform') && admins_().some(a => a.name === k && a.h === h)) return true;
+  if (RIGHTS.indexOf(right) < 0 || scope !== INST_SCOPE_) return false;
+  const gs = groupState_(), want = right + '@' + scope, mine = Object.create(null);
+  gs.rows.forEach(r => { if (lc_(r[1]) === k && r[2] === h) mine[r[0]] = 1; });
+  return gs.defs.some(d => mine[d.id] && d.rights.indexOf(want) >= 0);
 }
 // The caller of a privileged endpoint: today the admin token only (its id in the Audit tab: tokId_, never the token).
 const tokId_ = t => 'gh:' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, anonSalt_() + '|tok|' + t)).slice(0, 8);
@@ -1659,6 +1679,33 @@ function grantAudited_(role, scope, id){
   }
   return false;
 }
+// The same for a membership of a group that carries rights: the last 'ok' join or leave of that group for that id is a
+// join.
+function joinAudited_(gid, id){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB);
+  if (!sh || sh.getLastRow() < 2) return false;
+  const v = sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues();  // Action, Scope, Result, Target id
+  for (let i = v.length - 1; i >= 0; i--) {
+    const m = /^(join|leave) (\S+)/.exec(String(v[i][0]));
+    if (m && m[2] === gid && String(v[i][2]) === 'ok' && String(v[i][3]).replace(/^'/, '') === id) return m[1] === 'join';
+  }
+  return false;
+}
+// The same for a group's rights: the rights of this group id as its Audit rows give them, in the fixed order. The last
+// 'ok' 'right+' or 'right-' row of a right with the group as its target decides; a right with no row is the group's when
+// it is a role group's (r:<role>, made with its role's rights without rows: the rights migration, rightsGroup_) and in
+// that role's rights. A right the group holds without its row was saved by a try that failed before the row (groupDo_
+// writes it then).
+function rightsAudited_(gid){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB), last = Object.create(null);
+  if (sh && sh.getLastRow() >= 2) sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues().forEach(v => {  // Action, Scope, Result, Target id
+    const m = /^right([+-]) (\S+)$/.exec(String(v[0]));
+    if (m && String(v[2]) === 'ok' && String(v[3]).replace(/^'/, '') === gid) last[m[2]] = m[1];
+  });
+  const r = /^r:(.+)$/.exec(gid), role = r && Object.prototype.hasOwnProperty.call(ROLES.GROUP, r[1]) && roleDef_(r[1]) ? r[1] : '';
+  const base = role ? rightsDef_([], role, 0).rights : [];
+  return rightsOf_(base.filter(e => last[e] !== '-').concat(Object.keys(last).filter(e => last[e] === '+')).join(','));
+}
 const auditOf_ = out => (out && out.ok ? 'ok' : String(out && out.error || 'error'));
 // The one gate of every privileged endpoint: the caller if can_ lets them use this right in this scope, else null, the
 // refusal audited (capped). Not under the script lock: a flood of refusals never holds up the players' saves.
@@ -1668,8 +1715,10 @@ function gate_(token, right, action, scope){
   if (!over_('auditdeny', AUDIT.DENY)) audit_(who ? who.id : '', action, sc, 'denied', '');
   return null;
 }
-// Grants of an account removed from normal operation (deleteAccount_, a merge's from, an archive): dropped, never moved
-// to another account, one audit row each (by: the caller's id). Under the script lock (the caller holds it).
+// The Roles tab's rows of an account removed from normal operation (deleteAccount_, a merge's from, an archive):
+// dropped, never moved to another account (by: the caller's id). Its place on the admin list is a revoke, one audit row;
+// the record of a role before the groups gives nothing since the rights migration (the caller ran it: rightsNow_) and
+// goes without one. Under the script lock (the caller holds it).
 function rolesDrop_(name, by){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB);
   if (!sh || sh.getLastRow() < 2) return 0;
@@ -1677,7 +1726,7 @@ function rolesDrop_(name, by){
   let n = 0;
   for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) {
     sh.deleteRow(i + 2); n++;
-    audit_(by, 'revoke ' + (roleDef_(v[i][1]) ? v[i][1] : '?') + ' (account removed)', /^(platform|instance:[a-z0-9]+)$/.test(String(v[i][2])) ? String(v[i][2]) : '?', 'ok', id);
+    if (scopeOk_(String(v[i][1]), String(v[i][2]))) audit_(by, 'revoke admin (account removed)', 'platform', 'ok', id);
   }
   return n;
 }
@@ -1694,11 +1743,50 @@ function grantPut_(name, h, role, scope, by, self){
   if (!audit_(by, act, scope, out, id) && out === 'ok') throw new Error('grant ' + role + ': its Audit row was not written');
   return out;
 }
-// Pierre's grants (ROLES.SEEDS), given once to the admin's account the first time the admin page reads the answer log
-// with the token, signed in to it (answers_, its code checked): a property marks it done, so a revoke or a delete is
-// never silently granted again, and no other account ever gets it this way. Audited as self-grants by the token.
-// The property is set only once every grant has its Audit row (grantPut_); a try that failed is finished by the next
-// one, which writes 'ok' for a grant the failed try wrote without its row.
+// A membership of a group that carries rights, written (or found already held) for the live account (name, h) under its
+// code hash, and audited ('join <group id>', by: the caller's id, "(self)" for the caller's own account), as grantPut_:
+// a membership held without its 'ok' row gets that row now; a row that cannot be written throws. A member whose code
+// changed since is bound to the code now. Under the script lock (the caller holds it).
+function joinPut_(name, h, gid, by, self){
+  const sh = groupsTab_(), rows = groupRows_(), k = lc_(name), id = aid_(name), act = 'join ' + gid + (self ? ' (self)' : '');
+  const at = rows.findIndex(r => String(r[0]) === gid && lc_(r[1]) === k), held = at >= 0 && hcell_(rows[at][3]) === String(h);
+  const out = held && joinAudited_(gid, id) ? 'held' : 'ok';
+  if (at >= 0 && !held) sh.getRange(at + 2, 4).setValue(safe_(h));
+  else if (at < 0) sh.getRange(sh.getLastRow() + 1, 1, 1, GROUPS.HEAD.length).setValues([[gid, safe_(name), new Date(), safe_(h)]]);
+  if (!audit_(by, act, INST_SCOPE_, out, id) && out === 'ok') throw new Error('join ' + gid + ': its Audit row was not written');
+  return out;
+}
+// A member out of a group that carries rights, audited ('leave <group id>', why: '(self)' or '(account removed)').
+// Returns whether they were in it. Under the script lock (the caller holds it).
+function leavePut_(name, gid, by, why){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GROUPS.TAB), rows = groupRows_(), k = lc_(name);
+  let n = 0;
+  for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]) === gid && lc_(rows[i][1]) === k) { sh.deleteRow(i + 2); n++; }
+  audit_(by, 'leave ' + gid + (why ? ' (' + why + ')' : ''), INST_SCOPE_, n ? 'ok' : 'none', aid_(name));
+  return n > 0;
+}
+// Is this account row the caller's own? An account caller's own account, or, with the token, the admin's (ADMIN_ACCT).
+const selfOf_ = (who, row) => !!row && (who.token ? row[6] === adminAcct_() : lc_(who.name) === lc_(row[0]) && who.h === row[6]);
+// The group of an instance role (ROLES.GROUP), found or made with the role's rights. Under the script lock.
+function rightsGroup_(role){
+  const gs = groupState_(), id = 'r:' + role;
+  if (gs.defs.some(d => d.id === id)) return id;
+  const d = rightsDef_(gs.defs, role, Date.now()), sh = gdefTab_();
+  gdefPut_(sh, sh.getLastRow() + 1, d);
+  return id;
+}
+// The group an instance role becomes: its id 'r:' and the role, its name ROLES.GROUP's (followed by " (rights)" when a
+// group of that name exists), no board, no beta, the role's rights at the instance.
+function rightsDef_(defs, role, at){
+  const n = ROLES.GROUP[role], taken = defs.some(d => lc_(d.n) === lc_(n));
+  return {id: 'r:' + role, n: taken ? n + ' (rights)' : n, board: 0, beta: '', at: at, rights: rightsOf_(ROLES.DEF[role].rights.map(r => r + '@' + INST_SCOPE_).join(','))};
+}
+// Pierre's rights, given once to the admin's account the first time the admin page reads the answer log with the token,
+// signed in to it (answers_, its code checked): his place on the admin list (grantPut_) and in the instance's Managers
+// and Curators groups (ROLES.SEEDS: joinPut_). A property marks it done, so a revoke, a leave or a delete is never
+// silently undone, and no other account ever gets it this way. Audited as self-grants by the token.
+// The property is set only once every grant and membership has its Audit row; a try that failed is finished by the next
+// one, which writes 'ok' for what the failed try wrote without its row.
 function rolesSeed_(name, h, who){
   const pr = PropertiesService.getScriptProperties();
   if (pr.getProperty(ROLES.SEED)) return false;
@@ -1709,22 +1797,25 @@ function rolesSeed_(name, h, who){
     const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0,
       row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
     if (!row || row[6] !== h || archived_(row)) return false;
-    ROLES.SEEDS.forEach(([role, scope]) => grantPut_(String(row[0]), h, role, scope, who.id, true));
+    groupsNow_();  // groups-migration
+    rightsNow_();  // rights-migration
+    grantPut_(String(row[0]), h, 'admin', 'platform', who.id, true);
+    ROLES.SEEDS.forEach(role => joinPut_(String(row[0]), h, rightsGroup_(role), who.id, true));
     pr.setProperty(ROLES.SEED, String(Date.now()));
     return true;
   } finally { lock.releaseLock(); }
 }
-// POST {roles: 1, token} → {ok, grants: [{name, id, role, scope, since}]}: every grant (the token sees names already).
-// POST {roleGrant: {account, role, scope}, token} → {ok, result: 'ok' | 'held'}; {roleRevoke: {account, role, scope},
-// token} → {ok, result: 'ok' | 'none'}. Errors: token, input (an unknown role, or a scope it is not granted at), user (no
-// such account), archived. Each grant and revoke is audited, a self-grant marked "(self)": the account's own, or, with
-// the token, the admin's account's (ADMIN_ACCT). No page sends them yet (no granting UI).
+// The admin list. POST {roles: 1, token} → {ok, grants: [{name, id, role, scope, since}]}: every admin account (the
+// token sees names already). POST {roleGrant: {account, role: 'admin', scope: 'platform'}, token} → {ok, result: 'ok' |
+// 'held'}; {roleRevoke: {…}, token} → {ok, result: 'ok' | 'none'}. Errors: token, input (any other role or scope: an
+// instance's rights are its groups'), user (no such account), archived. Each grant and revoke is audited, a self-grant
+// marked "(self)": the account's own, or, with the token, the admin's account's (ADMIN_ACCT). No page sends them yet.
 function roles_(p){
   const g = p.roleGrant || p.roleRevoke, act = p.roleGrant ? 'grant' : 'revoke';
   if (!g) {
     if (!gate_(p.token, 'grant', 'roles')) return {ok: false, error: 'token'};
     const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), salt = anonSalt_();
-    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().filter(r => r[0]) : [];
+    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().filter(r => r[0] && scopeOk_(String(r[1]), String(r[2]))) : [];
     return {ok: true, grants: rows.map(r => ({name: String(r[0]), id: aid_(String(r[0]), salt), role: String(r[1]), scope: String(r[2]), since: new Date(r[3]).getTime() || 0}))};
   }
   if (typeof g !== 'object') return {ok: false, error: 'input'};
@@ -1735,7 +1826,7 @@ function roles_(p){
   const lock = lock_();
   try {
     const ra = sheet_('RAs', HEAD), r = find_(ra, name), row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null,
-      self = !!row && (who.token ? row[6] === adminAcct_() : lc_(who.name) === lc_(row[0]) && who.h === row[6]);
+      self = selfOf_(who, row);
     const fail = e => (audit_(who.id, act + ' ' + role + (self ? ' (self)' : ''), scope, e, aid_(name)), {ok: false, error: e});
     if (!row) return fail('user');
     if (archived_(row)) return fail('archived');
@@ -2724,7 +2815,9 @@ function achs_(){
 //     false ("delete, keep answers"): both stay without the name, "~deleted <id>" (pooled photo statistics only; the
 //     reports never verified).
 //   {userMerge: {from, into, data, at}, token} → into gets data (the merged progress; at = into's revision when the admin
-//     read it, else 'stale'), every answer and report of from is relabelled into, and from's rows are deleted.
+//     read it, else 'stale'), every answer and report of from is relabelled into, and from's rows are deleted. Its groups
+//     without rights join into's, its rights go (the reply's join, drop and admin: mergePlan_, which {mergePlan} gives
+//     before, for the warning).
 // Both leave a line in the "Removed" tab (name, code hash, into, time): a device still signed in with that name and code
 // gets error 'gone' (with into) instead of silently re-creating the account. Someone new may still pick the name with
 // another code. A delete keeps nothing else in normal operation (deleteAccount_).
@@ -2779,44 +2872,64 @@ function devBlank_(name){
   return c;
 }
 // Player groups (docs/ARCHITECTURE.md "Player groups"; docs/decisions/2026-11-18-no-apart-groups.md): a player is in any
-// number of groups; the staff are a group, not a role. A group has an id, a name and two settings: board (it has its
-// own leaderboard) and beta ('' or the subject it opens: core.js SUBJECTS open: 'group', subjGroup). The general board
-// shows everyone, a group's board its members. Two tabs: Group settings, one row a group (Group: its id, Name, Board,
-// Apart: unused, written 0, Beta, Added), and Groups, one row a membership (Group: the group's id, Name: the player's,
-// Added). Ids: 'g:' and 8 random characters; a group the migration made keeps the Group cell its rows had (a subject's
-// id, 'cohort:<name>', 'staff'), so the migration only adds rows (groups-migration below). The app learns its player's
-// groups from the load and save replies (groups: the subjects in beta they open; gids: their groups' ids); the admin's
-// player list carries each player's and every group (groupDefs). Roles stay apart: no group grants a right, and no
-// grant puts anyone in a group.
-const GROUPS = {TAB: 'Groups', HEAD: ['Group', 'Name', 'Added']};
-const GDEF = {TAB: 'Group settings', HEAD: ['Group', 'Name', 'Board', 'Apart', 'Beta', 'Added']}, GNAME_MAX = 40;
+// number of groups; the staff are a group, not a role. A group has an id, a name, two settings and its rights: board (it
+// has its own leaderboard), beta ('' or the subject it opens: core.js SUBJECTS open: 'group', subjGroup) and rights (the
+// instance's rights its members hold: RIGHTS, can_). Every setting and right only adds: a player in several groups has
+// each of their boards, betas and rights. The general board shows everyone, a group's board its members. Two tabs: Group
+// settings, one row a group (Group: its id, Name, Board, Apart: unused, written 0, Beta, Added, Rights: "right@scope"
+// entries, comma separated), and Groups, one row a membership (Group: the group's id, Name: the player's, Added, Code
+// hash: the account's when it joined a group that carries rights, blank for the others). Ids: 'g:' and 8 random
+// characters; a group the migrations made keeps the Group cell its rows had (a subject's id, 'cohort:<name>', 'staff')
+// or 'r:' and its role, so the migrations only add rows (groups-migration, rights-migration below). The app learns its
+// player's groups from the load and save replies (groups: the subjects in beta they open; gids: their groups' ids); the
+// admin's player list carries each player's and every group (groupDefs).
+// A group's rights and the members of a group that carries rights change only with the grant right (users_, usersDo_,
+// groupDo_), one player a call, each change audited; a group's first right only while it has no member (their
+// memberships hold no code hash); a player's own act never joins one.
+const GROUPS = {TAB: 'Groups', HEAD: ['Group', 'Name', 'Added', 'Code hash']};
+const GDEF = {TAB: 'Group settings', HEAD: ['Group', 'Name', 'Board', 'Apart', 'Beta', 'Added', 'Rights']}, GNAME_MAX = 40;
 const groupIds_ = () => CORE_.SUBJECTS.filter(CORE_.subjGroup).map(S => S.id);  // the subjects that open to a group
+// A tab whose header has columns added since it was made: sheet_ writes the header of an empty tab only, so the cells
+// that are missing are written here, the grid widened first when it is narrower.
+function headUp_(sh, head){
+  if (sh.getMaxColumns && sh.getMaxColumns() < head.length) sh.insertColumnsAfter(sh.getMaxColumns(), head.length - sh.getMaxColumns());
+  if (String(sh.getRange(1, head.length).getValue()) !== head[head.length - 1]) sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold');
+  return sh;
+}
+const groupsTab_ = () => headUp_(sheet_(GROUPS.TAB, GROUPS.HEAD), GROUPS.HEAD);
+const gdefTab_ = () => headUp_(sheet_(GDEF.TAB, GDEF.HEAD), GDEF.HEAD);
 function groupRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GROUPS.TAB);
-  return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues() : [];
+  return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, GROUPS.HEAD.length).getValues() : [];
 }
 function gdefRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GDEF.TAB);
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, GDEF.HEAD.length).getValues() : [];
 }
-const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0});  // r[3]: Apart, unused
-// Writes a group's settings at row r of the Group settings tab, its Name cell plain text first, so a name such as
-// "November 2026" or "TRUE" stays the text typed, never a date or a boolean.
+const gdefOf_ = r => ({id: String(r[0]), n: String(r[1]), board: Number(r[2]) ? 1 : 0, beta: String(r[4] || ''), at: new Date(r[5]).getTime() || 0, rights: rightsOf_(r[6])});  // r[3]: Apart, unused
+// Writes a group's settings and rights at row r of the Group settings tab, its Name cell plain text first, so a name such
+// as "November 2026" or "TRUE" stays the text typed, never a date or a boolean.
 function gdefPut_(sh, r, d){
   sh.getRange(r, 2).setNumberFormat('@');
-  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, 0, d.beta, new Date(d.at || Date.now())]]);  // Apart: unused, 0
+  sh.getRange(r, 1, 1, GDEF.HEAD.length).setValues([[safe_(d.id), safe_(d.n), d.board, 0, d.beta, new Date(d.at || Date.now()), (d.rights || []).join(', ')]]);  // Apart: unused, 0
 }
 // A group's name as typed, its spaces folded ('' for one that cannot be: empty, too long, a control character).
 const gname_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= GNAME_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? s : ''; };
-// Every group and membership, read once: {defs: [{id, n, board, beta, at}] in the tab's order, rows: [[group id,
-// player name]] of the groups that exist}. Until the one-shot migration ran, the groups as it will make them from the data
-// before (groupsBefore_), so a reader gives the same answer in the minutes between the install and the migration.
+// Every group and membership, read once: {defs: [{id, n, board, beta, at, rights}] in the tab's order, rows: [[group id,
+// player name, code hash]] of the groups that exist}. Until a one-shot migration ran, the groups as it will make them
+// from the data before (groupsBefore_, rightsBefore_), so a reader gives the same answer in the minutes between the
+// install and the migration. Never writes: can_ reads it outside the script lock.
 function groupState_(){
-  if (!groupsMigrated_()) return groupsBefore_();  // groups-migration
+  const gs = groupsMigrated_() ? groupsRead_() : groupsBefore_();  // groups-migration: groupsRead_() alone once it goes
+  return rightsMigrated_() ? gs : rightsBefore_(gs);  // rights-migration: gs alone once it goes
+}
+function groupsRead_(){
   const defs = gdefRows_().filter(r => r[0] !== '').map(gdefOf_), ids = Object.create(null);
   defs.forEach(d => (ids[d.id] = 1));
-  return {defs: defs, rows: groupRows_().filter(r => ids[String(r[0])] && lc_(r[1])).map(r => [String(r[0]), String(r[1])])};
+  return {defs: defs, rows: groupRows_().filter(r => ids[String(r[0])] && lc_(r[1])).map(r => [String(r[0]), String(r[1]), hcell_(r[3])])};
 }
+// The ids of the groups that carry rights (no prototype).
+const rightsIds_ = gs => { const R = Object.create(null); gs.defs.forEach(d => { if (d.rights.length) R[d.id] = 1; }); return R; };
 // id -> the lower-case names of its members (no prototype: a player named constructor is a member like any other).
 function groupMembers_(gs){
   const m = Object.create(null);
@@ -2847,14 +2960,14 @@ function groupBoards_(all, top){
 }
 // Every subject's board cache dropped (a membership or a group's setting changed who is on which board).
 const boardsDrop_ = () => CORE_.SUBJECTS.filter(S => S.board).forEach(S => { try { CacheService.getScriptCache().remove(boardCache_(S)); } catch (e) {} });
-// Adds (on) or removes players of a group: existing players only (RAs tab), each once. Returns how many changed. Under
-// the script lock (the caller holds it).
+// Adds (on) or removes players of a group that carries no right: existing players only (RAs tab), each once. Returns
+// how many changed. Under the script lock (the caller holds it).
 function groupSet_(ra, names, g, on){
-  const sh = sheet_(GROUPS.TAB, GROUPS.HEAD), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
+  const sh = groupsTab_(), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
   let n = 0;
   if (on) {
     const add = [], seen = Object.create(null);  // live players only, never an archive
-    names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date()]); });
+    names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date(), '']); });
     if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, GROUPS.HEAD.length).setValues(add);
     return add.length;
   }
@@ -2862,32 +2975,57 @@ function groupSet_(ra, names, g, on){
   for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]) === g && out[lc_(rows[i][1])]) { sh.deleteRow(i + 2); n++; }
   return n;
 }
-// The admin's changes to the groups themselves, under the script lock (users_, the players right, audited):
-// {groupMake: {n, board, beta}} makes a group (its name unique, case aside); {groupEdit: id, n, board, beta} renames it
-// or changes a setting (a field left out stays; apart is ignored); {groupDrop: id} deletes it, only when nobody is in it.
-// beta: '' or a subject that opens to a group (or the value it holds). Answers {ok, group: its settings} ({ok, group: id}
-// for a delete); errors 'name' (empty, over 40 characters, a control character), 'exists' (another group's name),
-// 'beta', 'group' (no such group), 'members' (a delete while it has members).
-function groupDo_(p){
-  const gs = groupState_(), sh = sheet_(GDEF.TAB, GDEF.HEAD), id = String(p.groupMake ? '' : p.groupEdit || p.groupDrop || '');
+// The admin's changes to the groups themselves, under the script lock (users_, audited): {groupMake: {n, board, beta,
+// rights}} makes a group (its name unique, case aside); {groupEdit: id, n, board, beta, rights} renames it or changes a
+// setting or its rights (a field left out stays; apart is ignored); {groupDrop: id} deletes it, only when nobody is in
+// it. beta: '' or a subject that opens to a group (or the value it holds); rights: the whole list, ["right@scope"]
+// (RIGHTS at the instance). A name or a setting asks the players right, the rights the grant right (who: the caller,
+// checked here under the lock). A right added or taken away is one Audit row per member ('grant' or 'revoke' and the
+// right "(via <group id>)", their id), then one for the group ('right+' or 'right-' and the right, its target the
+// group); a row that cannot be written answers an error, the change saved, and its retry writes the missing rows. Answers {ok,
+// group: its settings} ({ok, group: id} for a delete); errors 'token' (a right the caller lacks), 'input' (rights that
+// are not a list of RIGHTS at the instance), 'name' (empty, over 40 characters, a control character), 'exists' (another
+// group's name), 'beta', 'group' (no such group), 'members' (a delete while it has members, or a first right given to a
+// group that has members: make a new group, then add them one by one).
+function groupDo_(p, who){
+  const gs = groupState_(), sh = gdefTab_(), id = String(p.groupMake ? '' : p.groupEdit || p.groupDrop || '');
   const at = id ? gs.defs.map(d => d.id).indexOf(id) : -1, cur = at >= 0 ? gs.defs[at] : null, o = p.groupMake && typeof p.groupMake === 'object' ? p.groupMake : p;
   if (!p.groupMake && !cur) return {ok: false, error: 'group'};
   const row = () => gdefRows_().map(r => String(r[0])).indexOf(id) + 2;  // its row in the tab (the defs are its rows in order)
+  const members = cur ? gs.rows.filter(r => r[0] === id) : [];
   if (p.groupDrop) {
-    if (gs.rows.some(r => r[0] === id)) return {ok: false, error: 'members'};
+    if (!can_(who, 'players', INST_SCOPE_)) return {ok: false, error: 'token'};
+    if (members.length) return {ok: false, error: 'members'};
     sh.deleteRow(row());
     boardsDrop_();
     return {ok: true, group: id};
   }
+  const rights = o.rights === undefined ? (cur ? cur.rights : []) : rightsIn_(o.rights);
+  if (!rights) return {ok: false, error: 'input'};
+  // A call that carries rights audits them against the group's audited rights (rightsAudited_), so its retry after a
+  // failed Audit row writes the rows that try saved without; a setting changed alone audits none.
+  const was = cur ? cur.rights : [], base = o.rights === undefined || !cur ? was : rightsAudited_(cur.id);
+  const plus = rights.filter(e => base.indexOf(e) < 0), minus = base.filter(e => rights.indexOf(e) < 0);
+  const set = !cur || ['n', 'board', 'beta'].some(k => o[k] !== undefined);
+  if (set && !can_(who, 'players', INST_SCOPE_) || (plus.length || minus.length) && !can_(who, 'grant', INST_SCOPE_)) return {ok: false, error: 'token'};
+  if (!was.length && rights.length && members.length) return {ok: false, error: 'members'};
   const n = o.n === undefined && cur ? cur.n : gname_(o.n);
   if (!n) return {ok: false, error: 'name'};
   if (o.n !== undefined && gs.defs.some(d => d !== cur && lc_(d.n) === lc_(n))) return {ok: false, error: 'exists'};  // a setting changed alone never asks
   const beta = o.beta === undefined ? (cur ? cur.beta : '') : String(o.beta || '');
   if (beta && groupIds_().indexOf(beta) < 0 && !(cur && cur.beta === beta)) return {ok: false, error: 'beta'};
   const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0);
-  const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), beta: beta, at: cur ? cur.at : Date.now()};
+  const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), beta: beta, at: cur ? cur.at : Date.now(), rights: rights};
   gdefPut_(sh, cur ? row() : sh.getLastRow() + 1, d);
   boardsDrop_();
+  // Each right given or taken: its members' rows, then the group's row, which marks it audited (rightsAudited_). A row
+  // that cannot be written throws, after its Deploy log line (audit_): the request answers an error, and its retry
+  // writes what is missing (a member's row written before the failure may be written twice).
+  const put = (act, target, what) => { if (!audit_(who.id, act, INST_SCOPE_, 'ok', target)) throw new Error(what + ': its Audit row was not written'); };
+  [[plus, '+', 'grant'], [minus, '-', 'revoke']].forEach(([L, s, act]) => L.forEach(e => {
+    members.forEach(m => put(act + ' ' + e.split('@')[0] + ' (via ' + d.id + ')', aid_(m[1]), 'right' + s + ' ' + e));
+    put('right' + s + ' ' + e, d.id, 'right' + s + ' ' + e);
+  }));
   return {ok: true, group: d};
 }
 // groups-migration: begin
@@ -2910,7 +3048,7 @@ function groupsBefore_(){
     const g = String(r[0]); if (g === GSTAFF_ || seen[g]) return;
     seen[g] = 1;
     const S = CORE_.SUBJECTS.find(x => x.id === g), coh = g.indexOf('cohort:') === 0 && g.length > 7;
-    defs.push({id: g, n: S ? S.name + ' beta' : coh ? g.slice(7) : g, board: coh ? 1 : 0, beta: S ? g : '', at: new Date(r[2]).getTime() || 0});
+    defs.push({id: g, n: S ? S.name + ' beta' : coh ? g.slice(7) : g, board: coh ? 1 : 0, beta: S ? g : '', at: new Date(r[2]).getTime() || 0, rights: []});
   });
   // The staff: today's trainers whose account still has the code hash of their grant (archives and removed names left out).
   const rt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), live = Object.create(null), staff = [];
@@ -2922,14 +3060,14 @@ function groupsBefore_(){
     staff.push(String(a[0])); since.push(new Date(r[3]).getTime() || 0);
   });
   rows.forEach(r => { if (String(r[0]) === GSTAFF_ && !staff.some(x => lc_(x) === lc_(r[1]))) staff.push(String(r[1])); });  // a try that failed part way
-  if (staff.length) defs.unshift({id: GSTAFF_, n: 'Staff', board: 1, beta: '', at: since.length ? Math.min.apply(null, since) : 0});
+  if (staff.length) defs.unshift({id: GSTAFF_, n: 'Staff', board: 1, beta: '', at: since.length ? Math.min.apply(null, since) : 0, rights: []});
   const out = rows.filter(r => String(r[0]) !== GSTAFF_).map(r => [String(r[0]), String(r[1])]);
   return {defs: defs, rows: out.concat(staff.map(x => [GSTAFF_, x]))};
 }
 function groupsMigrate_(){
   const props = PropertiesService.getScriptProperties();
   if (groupsMigrated_()) return 'already made by a change to the groups';
-  const st = groupsBefore_(), sh = sheet_(GDEF.TAB, GDEF.HEAD), have = Object.create(null);
+  const st = groupsBefore_(), sh = gdefTab_(), have = Object.create(null);
   gdefRows_().forEach(r => (have[String(r[0])] = 1));
   const add = st.defs.filter(d => !have[d.id]);
   add.forEach(d => gdefPut_(sh, sh.getLastRow() + 1, d));
@@ -2941,6 +3079,80 @@ function groupsMigrate_(){
 // The first change to the groups before the migration ran makes it first (the caller holds the script lock).
 const groupsNow_ = () => { if (!groupsMigrated_()) groupsMigrate_(); };
 // groups-migration: end
+// rights-migration: begin
+// The instance's roles of the Roles tab made groups once (ONCE_ rights; rule W3), nothing lost: each role held at the
+// instance by a live account becomes the group of its role (rightsDef_: owner "Managers", editor "Curators", trainer
+// "Trainers"; its id 'r:' and the role, so a second try finds it; " (rights)" after a name a group already has), and
+// each of those grants a membership of it, under the grant's code hash and with its Since as Added (a grant whose hash is
+// no longer its account's gives nothing, as before, and keeps that hash), one Audit row each ('join <group id>
+// (migration)', by "script"). The admin's grants stay where they are: the admin list. The Roles tab keeps every row, the
+// record of the roles before, and grants of accounts no longer live (a delete, a merge or an archive dropped theirs)
+// stay there only, counted in the Deploy log line.
+// rightsBefore_ adds them to a group state without writing (groupState_ until the migration ran), rightsMigrate_ writes
+// them, under the script lock, from ONCE_ or from the first change to a group, a membership or an account before it
+// (rightsNow_, after the groups migration), and only once. Remove this block, and the lines marked rights-migration, once
+// the Deploy log shows "one-shot rights".
+const RMIG_ = ['owner', 'editor', 'trainer'];
+const rightsMigrated_ = () => !!PropertiesService.getScriptProperties().getProperty('ONCE_rights');
+function rightsBefore_(gs){
+  const out = {defs: gs.defs.slice(), rows: gs.rows.slice(), skip: 0}, live = Object.create(null), G = grants_();
+  liveRows_().forEach(r => (live[lc_(r[0])] = r));
+  RMIG_.forEach(role => {
+    const id = 'r:' + role, all = G.filter(g => g.role === role && g.scope === INST_SCOPE_);
+    // One grant an account, the one under its code hash first.
+    const mine = all.filter(g => live[g.name]).sort((a, b) => (b.h === String(live[b.name][6])) - (a.h === String(live[a.name][6])));
+    out.skip += all.length - mine.length;
+    if (!mine.length) return;
+    if (!out.defs.some(d => d.id === id)) out.defs.push(rightsDef_(out.defs, role, Math.min.apply(null, mine.map(g => g.at || Date.now()))));
+    mine.forEach(g => { if (!out.rows.some(r => r[0] === id && lc_(r[1]) === g.name)) out.rows.push([id, String(live[g.name][0]), g.h, g.at]); });
+  });
+  return out;
+}
+function rightsMigrate_(){
+  if (rightsMigrated_()) return 'already made by a change to the groups';
+  groupsNow_();  // groups-migration
+  const gs = groupsRead_(), st = rightsBefore_(gs), sh = gdefTab_(), gt = groupsTab_(), have = Object.create(null), had = Object.create(null);
+  gs.defs.forEach(d => (have[d.id] = 1));
+  gs.rows.forEach(r => (had[r[0] + '|' + lc_(r[1])] = 1));
+  const made = st.defs.filter(d => !have[d.id]);
+  made.forEach(d => gdefPut_(sh, sh.getLastRow() + 1, d));
+  const add = st.rows.filter(r => !had[r[0] + '|' + lc_(r[1])]);
+  if (add.length) gt.getRange(gt.getLastRow() + 1, 1, add.length, GROUPS.HEAD.length).setValues(add.map(r => [r[0], safe_(r[1]), new Date(r[3] || Date.now()), safe_(r[2])]));
+  // Each membership of these groups the migration made (now or in a try that failed part way) has its Audit row.
+  const live = Object.create(null); liveRows_().forEach(r => (live[lc_(r[0])] = String(r[6])));
+  const R = RMIG_.map(x => 'r:' + x), mem = st.rows.filter(r => R.indexOf(r[0]) >= 0);
+  mem.forEach(r => { const id = aid_(r[1]); if (!joinAudited_(r[0], id) && !audit_('script', 'join ' + r[0] + ' (migration)', INST_SCOPE_, 'ok', id)) throw new Error('join ' + r[0] + ': its Audit row was not written'); });
+  PropertiesService.getScriptProperties().setProperty('ONCE_rights', String(Date.now()));
+  const off = mem.filter(r => live[lc_(r[1])] !== r[2]).length;
+  return made.length + ' group' + (made.length === 1 ? '' : 's') + ' made from the roles (' + made.map(d => d.n).join(', ') + '), ' + add.length + ' membership' + (add.length === 1 ? '' : 's') + ' added' +
+    (off ? ', ' + off + ' with an old code hash (no right)' : '') + (st.skip ? ', ' + st.skip + ' grant' + (st.skip === 1 ? '' : 's') + ' of accounts no longer live left in the Roles tab' : '');
+}
+// The first change before the migration ran makes it first (the caller holds the script lock), its Deploy log line
+// written as once_ writes it (once_ then finds it done).
+function rightsNow_(){
+  if (rightsMigrated_()) return;
+  const m = rightsMigrate_();
+  try { sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), safe_(('one-shot rights (v' + VERSION + '): ' + m).slice(0, 500))]); } catch (e) {}
+}
+// rights-migration: end
+// The memberships of a removed account (deleteAccount_, a merge's from, an archive) in the groups that carry rights:
+// dropped, never moved, one Audit row each ('leave <group id> (account removed)', by: the caller's id). Returns the ids
+// of those groups. Under the script lock, after rightsNow_ (the caller holds and runs them).
+function rightsDrop_(name, by){
+  const R = rightsIds_(groupState_()), k = lc_(name), out = [];
+  groupRows_().forEach(r => { const g = String(r[0]); if (R[g] && lc_(r[1]) === k && out.indexOf(g) < 0) out.push(g); });
+  out.forEach(g => leavePut_(name, g, by, 'account removed'));
+  return out;
+}
+// What a merge of from into into changes to the groups and the rights (the admin's warning before it, and its reply):
+// join, the groups without rights of from that into joins (their boards and betas); drop, the groups with rights of from,
+// whose rights go with it, never to into; admin, 1 when from is on the admin list, which it leaves.
+function mergePlan_(from, into){
+  const gs = groupState_(), R = rightsIds_(gs), f = lc_(from), t = lc_(into), inTo = Object.create(null), join = [], drop = [];
+  gs.rows.forEach(r => { if (lc_(r[1]) === t) inTo[r[0]] = 1; });
+  gs.rows.forEach(r => { if (lc_(r[1]) !== f) return; const L = R[r[0]] ? drop : inTo[r[0]] ? null : join; if (L && L.indexOf(r[0]) < 0) L.push(r[0]); });
+  return {join: join, drop: drop, admin: admins_().some(a => a.name === f) ? 1 : 0};
+}
 // The players and devices the admin leaves out of the statistics (docs/SECURITY.md), by the
 // admin's anonymous id (aid_: a signed-in player's or a device
 // not signed in, "~anon <id>"), one row each in the tab "Stats excluded" (Id, Added). Their answers rate no photo, no
@@ -2974,8 +3186,10 @@ function sxMove_(from, into){ const had = sxPut_(aid_(from), false); if (had && 
 // open ones stay in the admin's Inbox as from a removed account, and nobody is ever thanked for them. Under the script
 // lock (the caller holds it). Returns {ok, answers, reports}: how many rows were deleted or relabelled.
 // by: the id of who deletes (the admin's caller id, or the player's own anonymous id for a
-// self-delete), written in the Audit tab beside each grant the account loses (rolesDrop_).
+// self-delete), written in the Audit tab beside each right the account loses (rightsDrop_, rolesDrop_).
 function deleteAccount_(name, all, by){
+  groupsNow_();  // groups-migration
+  rightsNow_();  // rights-migration: the account's roles are its groups' before anything of it goes
   const del = '~deleted ' + aid_(name);
   { const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0; if (r) adminDrop_(ra.getRange(r, 7).getValue()); }  // the admin's mark goes with it
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
@@ -2983,8 +3197,9 @@ function deleteAccount_(name, all, by){
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
+  rightsDrop_(name, by || '');  // its rights go (rule D7), each audited; the Audit tab keeps its rows, by anonymous id only
   dropRows_(GROUPS.TAB, name, 2);  // out of every group, the staff's too (a group itself holds no player data)
-  rolesDrop_(name, by || '');  // its roles go (rule D7); the Audit tab keeps its rows, by anonymous id only
+  rolesDrop_(name, by || '');  // off the admin list, and its record in the Roles tab
   sxMove_(name, all ? '' : del);  // out of the statistics stays out, under the id the answers keep
   // Names merged into it before point nowhere now: their devices are told the account was removed,
   // and their answers and reports never go under the deleted name (nor to someone who takes it later).
@@ -3050,17 +3265,20 @@ function redact_(name, into){
   });
   return n;
 }
-// The instance's players right (gate_), and one Audit row per change, its target by anonymous id
-// (never the name the request carries). The action is told as usersDo_ below picks its branch; the list and userData
-// are reads, not audited.
+// The instance's players right (gate_), or its grant right for the rights of a group and the members of a group that
+// carries rights (checked again under the script lock: usersDo_, groupDo_), and one Audit row per change, its target by
+// anonymous id (never the name the request carries). The action is told as usersDo_ below picks its branch; the list,
+// userData and mergePlan are reads, not audited.
 function users_(p){
   const act = p.userBoard ? 'userBoard' : p.userGroup ? 'userGroup' : p.groupMake ? 'groupMake' : p.groupEdit ? 'groupEdit' : p.groupDrop ? 'groupDrop'
     : p.userStart ? 'userStart' : p.statsExclude ? 'statsExclude'
     : p.userData ? 'userData' : Array.isArray(p.anonDelete) ? 'anonDelete' : p.userArchive ? 'userArchive' : p.userDelete ? 'userDelete'
-    : p.userMerge ? 'userMerge' : 'users';
-  const who = gate_(p.token, 'players', act);
+    : p.userMerge ? 'userMerge' : p.mergePlan ? 'mergePlan' : 'users';
+  const rights = act === 'userGroup' ? !!rightsIds_(groupState_())[String(p.group || '')]
+    : act === 'groupMake' ? !!(p.groupMake && Array.isArray(p.groupMake.rights) && p.groupMake.rights.length) : act === 'groupEdit' && p.rights !== undefined;
+  const who = gate_(p.token, rights ? 'grant' : 'players', act);
   if (!who) return {ok: false, error: 'token'};
-  if (act === 'users' || act === 'userData') return usersDo_(p, who);
+  if (act === 'users' || act === 'userData' || act === 'mergePlan') return usersDo_(p, who);
   const id = x => aid_(String(x || '')), m = p.userMerge || {};
   const target = act === 'userBoard' ? id(p.userBoard) : act === 'userStart' ? id(p.userStart) : act === 'userDelete' ? id(p.userDelete)
     : act === 'userGroup' ? (Array.isArray(p.userGroup) ? '' : id(p.userGroup)) : act === 'groupEdit' || act === 'groupDrop' ? String(p[act]).slice(0, 60) : act === 'statsExclude' ? (SX_ID.test(String(p.statsExclude)) ? String(p.statsExclude) : '')
@@ -3089,25 +3307,51 @@ function usersDo_(p, who){
     } finally { lock.releaseLock(); }
   }
   // {userGroup: name | [names], group, on: true|false, token} adds players to a group, or removes them (groupSet_);
-  // answers how many changed and the group's members. group is any group's id (groupState_). Under the script lock, as
-  // a rename or a merge could otherwise move a name
-  // between the read and the write; every board's cache is dropped (the groups' boards follow).
+  // answers how many changed and the group's members. group is any group's id (groupState_). A group that carries
+  // rights takes one name a call (a list: 'input'), the grant right (else 'token'), and a live account (else 'user' or
+  // 'archived'): its membership is bound to the account's code hash and audited (joinPut_, leavePut_). Under the script
+  // lock, as a rename or a merge could otherwise move a name between the read and the write; every board's cache is
+  // dropped (the groups' boards follow).
   if (p.userGroup) {
-    const g = String(p.group || ''), names = (Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
+    const g = String(p.group || ''), list = Array.isArray(p.userGroup), names = (list ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
     const lock = lock_();
     try {
       groupsNow_();  // groups-migration
-      if (!groupState_().defs.some(d => d.id === g)) return {ok: false, error: 'group'};
-      if (!Array.isArray(p.userGroup) && !row_(names[0])) return {ok: false, error: 'user'};
+      rightsNow_();  // rights-migration
+      const gs = groupState_(), d = gs.defs.find(x => x.id === g);
+      if (!d) return {ok: false, error: 'group'};
+      if (!can_(who, d.rights.length ? 'grant' : 'players', INST_SCOPE_)) return {ok: false, error: 'token'};
+      if (d.rights.length) {
+        if (list) return {ok: false, error: 'input'};
+        const u = row_(names[0]); if (!u) return {ok: false, error: 'user'};
+        if (archived_(u.v)) return {ok: false, error: 'archived'};
+        const name = String(u.v[0]), self = selfOf_(who, u.v);
+        const n = p.on ? (joinPut_(name, u.v[6], g, who.id, self) === 'ok' ? 1 : 0) : leavePut_(name, g, who.id, self ? 'self' : '') ? 1 : 0;
+        boardsDrop_();
+        return {ok: true, group: g, n: n, members: groupState_().rows.filter(r => r[0] === g).length};
+      }
+      if (!list && !row_(names[0])) return {ok: false, error: 'user'};
       const n = groupSet_(ra, names, g, !!p.on);
       boardsDrop_();
       return {ok: true, group: g, n: n, members: groupState_().rows.filter(r => r[0] === g).length};
     } finally { lock.releaseLock(); }
   }
-  // The groups themselves (groupDo_): make, rename or set, delete an empty one.
+  // The groups themselves (groupDo_): make, rename or set, give or take rights, delete an empty one.
   if (p.groupMake || p.groupEdit || p.groupDrop) {
     const lock = lock_();
-    try { groupsNow_(); return groupDo_(p); } finally { lock.releaseLock(); }  // groups-migration: groupsNow_
+    try {
+      groupsNow_();  // groups-migration
+      rightsNow_();  // rights-migration
+      return groupDo_(p, who);
+    } finally { lock.releaseLock(); }
+  }
+  // {mergePlan: {from, into}, token} → {ok, join, drop, admin} (mergePlan_): what a merge of from into into would change
+  // to the groups and the rights, for the warning before it. A read: nothing written. Errors: user, archived.
+  if (p.mergePlan) {
+    const m = p.mergePlan || {}, a = row_(String(m.from || '')), b = row_(String(m.into || ''));
+    if (!a || !b || a.r === b.r) return {ok: false, error: 'user'};
+    if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};
+    return Object.assign({ok: true}, mergePlan_(String(a.v[0]), String(b.v[0])));
   }
   // {userStart: name,
   // s: subject id, c: answer, token} changes the player's answer to the subject's first-launch question (core.js
@@ -3179,6 +3423,8 @@ function usersDo_(p, who){
   if (p.userDelete || p.userMerge || p.userArchive) {
     const lock = lock_();
     try {
+      groupsNow_();  // groups-migration
+      rightsNow_();  // rights-migration: the account's roles are its groups' before it changes
       // {userArchive: {from, into}, token} → the player's record moves to an archive name (to keep an account played
       // under old rules apart and start over under the name): RAs row, saved progress, By genus, answers and reports,
       // marked Board -2 (ARCHIVED). An archive is kept, never used in normal operation (liveRows_). The code hash is tied
@@ -3202,8 +3448,9 @@ function usersDo_(p, who){
         // them must not log into the new account under the old name.
         relabel_('Removed', 3, from, into);
         redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none
+        rightsDrop_(from, who.id);  // nor holds any right (rule D7): the name is free again at once, so a right kept by name would pass to whoever takes it
         dropRows_(GROUPS.TAB, from, 2);  // an archive is in no group
-        rolesDrop_(from, who.id);  // nor holds any role (rule D7): the name is free again at once, so a grant kept by name would pass to whoever takes it
+        rolesDrop_(from, who.id);  // nor on the admin list
         sxMove_(from, into);  // its answers stay out of the statistics if they were
         rplDrop_(from);  // the replays (every subject's) are made again under the new name when asked
         rosterChanged_();  // the caches and the Analyses report
@@ -3234,30 +3481,32 @@ function usersDo_(p, who){
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
       const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
       pagesMove_(from, into);
-      // The merged name's groups join the kept name's (each once); the kept name keeps its own too.
-      groupsNow_();  // groups-migration
-      groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
+      // The merged name's groups without rights join the kept name's (each once); the kept name keeps its own too. Its
+      // rights go, never to into (rule D7; a right is given, not merged): its groups with rights, and the admin list.
+      const plan = mergePlan_(from, into);
+      plan.join.forEach(g => groupSet_(ra, [into], g, true));
+      rightsDrop_(from, who.id);
       dropRows_(GROUPS.TAB, from, 2);
-      rolesDrop_(from, who.id);  // the merged-away account's roles go, never to into (rule D7; a grant is given, not merged)
+      rolesDrop_(from, who.id);
       sxMove_(from, '');  // the kept name's choice holds for the answers it takes
       ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, from));  // every subject's replay
       redact_(from, into);  // its name in the log tabs becomes the name it joined
       relabel_('Removed', 3, from, into);  // names merged into from earlier now point to into
       removed_(from, a.v[6], into);
       rosterChanged_();
-      return {ok: true, rev: cur.rev + 1, answers: answers, reports: reports};
+      return {ok: true, rev: cur.rev + 1, answers: answers, reports: reports, join: plan.join, drop: plan.drop, admin: plan.admin};
     } finally { lock.releaseLock(); }
   }
   // The list, with each player's numbers from the Answers and Reports tabs.
   // id: the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
   // Archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
   // Every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
-  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null);
+  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null), hh = Object.create(null);
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {
     const u = {name: String(r[0]), id: aid_(String(r[0]), salt), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
       review: String(r[5] || ''), board: r[9] === '' ? 1 : Number(r[9]), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
-    out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
+    out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || ''); hh[lc_(u.name)] = String(r[6]);
   });
   // The replayed subject's answers (the corals'): its mix-ups name its genera.
   const an = ss.getSheetByName('Answers'), days = Object.create(null), mixes = Object.create(null), last50 = Object.create(null), all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
@@ -3281,9 +3530,11 @@ function usersDo_(p, who){
   const rm = ss.getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
   // The subjects in beta each player's groups open; gids, the ids of their groups, and every group's settings
-  // (groupDefs: [{id, n, board, beta, at}], in the order they were made).
-  const gs = groupState_(), gm = groupMap_(gs);
-  out.users.forEach(u => { const g = gm[lc_(u.name)]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; });
+  // (groupDefs: [{id, n, board, beta, at, rights}], in the order they were made); roff, the ids of their groups with
+  // rights whose membership's code hash is not the account's (rights off until they are added again; never the hash).
+  const gs = groupState_(), gm = groupMap_(gs), R = rightsIds_(gs), off = Object.create(null);
+  gs.rows.forEach(r => { const k = lc_(r[1]); if (R[r[0]] && r[2] !== hh[k]) (off[k] = off[k] || []).push(r[0]); });
+  out.users.forEach(u => { const k = lc_(u.name), g = gm[k]; u.groups = g ? g.groups : []; u.gids = g ? g.gids : []; u.roff = off[k] || []; });
   out.groupDefs = gs.defs;
   replayedAll_(out.users, dcol);
   out.excluded = [...sxSet_()];  // the ids left out of the statistics
@@ -3631,8 +3882,12 @@ const ONCE_ = {
   // fishunits-migration: end
   // groups-migration: begin
   // The beta groups, the cohorts and the staff made groups (groupsMigrate_), unless a change to the groups made them first.
-  groups: () => groupsMigrate_()
+  groups: () => groupsMigrate_(),
   // groups-migration: end
+  // rights-migration: begin
+  // The instance's roles made groups that carry their rights (rightsMigrate_), unless a change made them first.
+  rights: () => rightsMigrate_()
+  // rights-migration: end
 };
 // The leaderboard's replays (boardWarm_, rule D8) at each run of the trigger that finds the script up to date (so by the
 // code installed), after the one-shot migrations, even when one fails (it is tried again at the next run); the Deploy log says how many were made, only when some were, and a failure.
@@ -4140,7 +4395,8 @@ const CORE_ = (function () { const module = {exports: {}};
   //   views   the views a question may show, [code, label] (one view: one photo per question)
   //   optin   the opt-in choices: Q[k] true = on, Q[k + 'T'] when chosen, and for a part of the slate opened by choice
   //           Q[k + 'N'] its "Not now" count, Q[k + 'A'] the answer count at the last one (app.js UNITS[id].sets: units
-  //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button)
+  //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button);
+  //           Q[k + 'O'] turned off on the What I learn card (app.js learnSet: the units the set brings by itself stop too)
   //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins), logged with every answer in the
   //           sheet's Answers tab under the subject's id. For a tree subject, its top rank (the family), which the admin
   //           reads as its tree's
@@ -4548,8 +4804,9 @@ const CORE_ = (function () { const module = {exports: {}};
       views: [['wide', 'Photo']],
       // sci: the scientific genera (app.js treeGenera, docs/FISH_PATH.md "Levels"). beyond: circle 3, the families beyond
       // the IMR course, on the path and in the % but opened by the player's choice (app.js UNITS fish opens). A stored
-      // c2 / c3 choice (the old opt-in sets) is never read: a "no" to that old offer is not taken for this one.
-      optin: ['sci', 'beyond'],
+      // c2 / c3 choice (the old opt-in sets) is never read: a "no" to that old offer is not taken for this one. sp: the
+      // species by their common names, on unless turned off on the What I learn card (app.js UNITS fish learn).
+      optin: ['sci', 'beyond', 'sp'],
       // family: a family of the book (f:Damselfishes); the IMR course is a tag.
       rank: 'family',
       // Its species by their common names (step 1) and by their scientific names (step 2; docs/reviews/2026-11-18-species-
@@ -4773,8 +5030,9 @@ const CORE_ = (function () { const module = {exports: {}};
       open: 'all',
       sheet: SEASLUG_SHEET,
       views: [['wide', 'Photo']],
-      // No opt-in set: its genera are its units from the start.
-      optin: [],
+      // Its genera are its units from the start. ssp: its species by their scientific names, on unless turned off on the
+      // What I learn card (app.js UNITS seaslug learn).
+      optin: ['ssp'],
       rank: 'family',
       unitRank: 'genus',
       // Its species by their scientific names only (Q369, 2026-11-15: the English names are information, never a choice).
@@ -4811,8 +5069,11 @@ const CORE_ = (function () { const module = {exports: {}};
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
-      closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
+      // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
+      // (reefid-seaslug-basics) and done feat.
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      closed: CLOSED_TREE,
+      basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
       // contentApply (app.js treeBuild and the sheet's replay alike): a family's and a genus's ID marks
@@ -7069,6 +7330,9 @@ const CORE_ = (function () { const module = {exports: {}};
         const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
         S.optin.forEach(k => {
           if ((qa || {})[k] || (qb || {})[k]) q[k] = true;
+          // A What I learn row turned off (k + 'O') stays off only where both accounts have it off (or only one played the
+          // subject): on either stays on, a row on by default included.
+          if (q[k] || (qa && qb && !(qa[k + 'O'] && qb[k + 'O']))) delete q[k + 'O'];
           // An offer declined on either account is not made more often for the merge: the larger "Not now" count.
           const n = Math.max((qa || {})[k + 'N'] || 0, (qb || {})[k + 'N'] || 0);
           if (n) q[k + 'N'] = n;
