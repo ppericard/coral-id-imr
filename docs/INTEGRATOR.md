@@ -266,11 +266,19 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   assigned again.
 - **Order the queue: Code.gs PRs first** (2026-11-20): ordinary PRs that keep arriving starve the PRs that wait for a
   version, which need a quiet main between the assignment and the train. Run the version PRs one at a time, then the
-  rest.
+  rest, and **the oldest PRs first** in each group, so that none lingers (Pierre, 2026-11-20 17:48).
+- **Think before building an engine change** (the integrator's lesson, not a rule of Pierre's; from his remark of
+  2026-11-20 17:33 on the response-time change, decided too fast): a fact he states (answer time carries difficulty) is
+  decided; how the engine integrates it was not, and the response-time design got a study first. For other engine work,
+  weigh the same way how much study the change needs.
+- **Every answer reaches the ledger the same day** (Pierre, 2026-11-20 17:53): a decision he gives in the chat that no
+  open PR records goes into `docs/ANSWERS.md` at the next check-in, in a small PR of its own, without waiting for the
+  work it decides.
 - **The queue glue lives in `tools/queue/`** (README there): a loop per PR (merge main, push, `@codex review`, wait for
   CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a wait so that only one
   wave runs. Its log and state go to `QUEUE_DIR` (default `~/.cache/reefid-queue`), never into the repo. A container
-  restart kills it and every agent: an hourly check-in (`send_later`) restarts them.
+  restart (an idle session's container is reclaimed) kills it and every agent: run the wave as a tracked background
+  task, and an hourly check-in (`send_later`) restarts whatever stopped.
 - **A "decided" backlog item is checked against Pierre's words before launch** (2026-11-20): three items launched from
   STATUS's list that morning were already built, the integrator's own prose, or a "plus tard". The agent's brief says
   to stop and report when his words, verbatim and dated, do not settle what players see.

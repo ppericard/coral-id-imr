@@ -678,6 +678,7 @@ const DOC_MARKS = {
   'tools/README.md': [13, 280],
   'tools/queue/README.md': [3, 300],
   'tools/queue/codex.md': [1, 80],
+  'tools/studies/q316/README.md': [15, 170], // new, 2026-11-20: the Q316 tool's model, declared rules and figures
   'tools/sync/changes/README.md': [2, 130]
 };
 // A record has no entry of its own (every decision PR would add one): the same mark for each. A sheet script change
