@@ -17,12 +17,15 @@ the PRs.
   exam, typed questions accepting the family's names, and the comeback after a break. Fish basics is step 0 of the Learn
   path.
 - **Learn** = the fish families page (`learn.js` `viewFishList`: by the groups of the identification key in force, in
-  its order, only those holding a family, the key credited in full under the list; cues, look-alike lines; each photo
-  enlarges in the shared viewer, `zoom`), and the sheets ([fish-sheets.md](fish-sheets.md)).
+  its order, only those holding a family, the key credited in full under the list; cues, look-alike lines; each family one
+  card that opens its sheet, `app.js` `listCard`: [front-end.md](front-end.md)), and the sheets ([fish-sheets.md](fish-sheets.md)).
 - **My progress**: the photo wall, levels, review, mix-ups, the headline % with its three bars
   ([the global score](#the-fish-global-score)), the fish's own leaderboard and achievements (`core.js` `FISH_ACH`).
 - **The Duel tab** (`#fish/practice/duels`), on the family look-alike pairs (`UNITS.fish.pairs`).
-- **Not for fish yet**: the Look-alikes page, the Custom quiz, the Memory tab (`SUBJECTS` `closed` says why; their
+- **Look-alikes** (`#fish/learn/look-alikes`) and **Compare** (`#fish/learn/compare/A/B`): the declared family pairs
+  (`UNITS.fish.deck`, each with its IMR presentation slide), one photo a side, the pair's tell-apart line from the
+  families' IMR lines ([front-end.md](front-end.md)).
+- **Not for fish yet**: the Custom quiz, the Memory tab (`SUBJECTS` `closed` says why; their
   addresses open the fish page of the section: `subjPage`); Identify is the Fish ID Key's "coming soon" page; timed
   mode and size estimation (video ID, EventMeasure) by design.
 
@@ -113,6 +116,46 @@ docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, ste
 - **Rest**: the first species card carries the milestone line (the set's `card`, a function of the unit). The
   achievements fsp1, fsp10 and fsp50 read `achSnap` `setsAdv.sp`. A species unit opens its species sheet (`treeSheets`
   `spOf` reads `s:s091`).
+
+## Species by scientific name (step 2)
+
+docs/reviews/2026-11-18-species-step2-plan.md, docs/LEARNING.md "Species by their scientific names (step 2)". Both tree
+subjects, one code path (rule S1): `core.js` `SUBJECTS` `names` says which kinds of name a subject's species are asked by
+(fish `['cn', 'sci']`, sea slugs `['sci']`).
+
+- **Units**: `core.js` `treeSpUnits(F, X, 'sci')` (`sci:` + the species id in letters and digits: `sci:s091`,
+  `sci:xgoniobranchussp5`; the other scientific species of its family as `look`; `from` its genus). `app.js`
+  `treeGenera` builds each record for a subject with `sci` in its names (`X.kinds`): `kind: 'sci'`, `rank: 'species'`,
+  `name` its scientific name, `parent` and `from` its genus, its genus's group and forms, `noex`, its genus's photos of
+  that species (never a genus-level `gl` photo), `cn` the player's first common name (a getter; '' for the sea slugs),
+  `names` its own and its WoRMS name. `TREEU.ssl` lists them. The common-name units carry `kind: 'cn'`; the app's units
+  equal the sheet's replay units, both subjects (`tests/fishreplay.test.js`).
+- **The class**: `app.js` `kindRank` (its rank and its kind) keeps a question's choices (`model.js` `distractors`,
+  `rankUnits`), its typed names (`quiz.js` `typeMatch`, `typeKind`), its groups and its mimicry traps (`model.js`
+  `rankKind`) in one class; the logged rank and the share's levels read `rankOf` alone.
+- **Opening**: the set `ssp` (`app.js` `SCI_SP`, in both subjects' `sets`; `auto` only: no offer, no switch). `app.js`
+  `sciPlay` gives each genus in play (`sciUp`: the slate and the other sets' units in play) at its threshold (`shareAt`,
+  else Advanced) its species met and the next one in the genus's order; a genus out of play brings none (Q402 A). Share:
+  the genus level (`model.js` `SHARE`, unchanged). Live answers on a locked one count, opening nothing (`model.js`
+  `introLive`).
+- **Display**: `app.js` `sciShow` on the unit's own bar: `sc` (the common name under each scientific name, upright,
+  `.csn small.cnu`) below Open Water, `so` (scientific only) from Advanced, a chance rising from 0 to 1 between
+  (`SCISHOW`); `so` always for a species with no common name and the sea slugs. Typed: the usual `TYPED` share. Logged
+  in the mode, `|sc` or `|so`, before `|kN` (`quiz.js` `answer`, `SCIQ`).
+- **Typed answers and Q394**: `app.js` `sciTypeNames` (its name and the WoRMS name). `app.js` `sciPart`, read by
+  `quiz.js` `typeBind` (`o.part`) before the nudges and the spelling step: the species' own common name (`cn`, `cnr`)
+  is `cn`, its genus alone or with a second word no game species has is `g`; the answer is a miss with that kind
+  (`TYPEDQ.z`, the scoring record's `z`, `core.js` `PART`); the feedback says what was typed (`quiz.js` `partRead`).
+  Another species' common name, a genus or a family is no answer: the nudge says which (`app.js` `sciSay`, `typeBind`
+  `say`). On the other questions their scientific names stay out of `quiz.js` `typeKind` (the name index says them).
+- **Sheet**: a unit opens its species' sheet (`core.js` `routeOut` `learn/species/sci:s091`, `treeSheets` `spOf`).
+- **Score and gate**: `TREEU.treeSci` (`treeScoreTree(X, F, true, true)`, equal to `core.js` `treeBoardTree`) and the
+  set's units only once `app.js` `sciSpOn` (`sync.js` `sciOn`: `SCI_SHEET`, rule D4), for both subjects.
+- **Rest**: the first species' card (`SCI_SP` `card`, `UNITS` `sciCard`, in each subject's words). My progress shows the
+  species met in their own section (`progress.js` `boardParts`, the set). The achievements fspsci1 (`achSnap`
+  `setsAdv.ssp`), fboth25 (`achSnap` `both`, `achBoth`), fdauin20 (`achSnap` `top`, `UNITS` fish `top`, `app.js` `sciTop`)
+  and fpct70. The admin's Pairs read them (`reports.js` `repReg` `spu`); the mimicry entries name them (`app.js`
+  `mimLay`); a species by its scientific name has its family's variants (`model.js` `varHome` walks up to the unit rank).
 
 ## The fish global score
 

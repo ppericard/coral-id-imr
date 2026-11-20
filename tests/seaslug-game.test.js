@@ -461,6 +461,55 @@ test('the R2 step takes at most --max a run, the rest remote until the next', {s
   );
 });
 
+// The tile (Q437: Find the X for the sea slugs): the fish's cut (tools/fish_game.py tile_crop, tile_write) on a photo whose
+// judgement carries the animal's box and whose tags pass the tile rule; no judgement carries one today, so none has a tile.
+test(
+  'the tiles: made with the download for a boxed photo that passes the rule, alone when the box changes, refused when too small',
+  {skip: !pil && 'Pillow missing'},
+  () => {
+    const box = b => ({
+        ...SUG,
+        'seaslug-1-cand-1': {...SUG['seaslug-1-cand-1'], bb: [0, 0, 1, 1]}, // a dorsal view: a tile photo (the sea slugs' rule)
+        'seaslug-1-cand-4': {...SUG['seaslug-1-cand-4'], bb: [0.05, 0.2, 0.95, 0.8]}, // a juvenile: never a tile photo
+        'seaslug-1-cand-2': {...SUG['seaslug-1-cand-2'], bb: b}
+      }),
+      dir = world(box([0.05, 0.2, 0.95, 0.8])),
+      by = () => Object.fromEntries(game(dir).photos['f:Afam'].map(p => [p.f.split('-').pop(), p]));
+    let r = r2run(dir, path.join(dir, 'up'));
+    assert.deepStrictEqual([r.done, r.failed], [3, []]);
+    let B = by();
+    assert.deepStrictEqual(B[1].bb, [0, 0, 1, 1], 'a dorsal photo keeps its box');
+    assert.strictEqual(B[1].xc.length, 4, 'and its tile');
+    assert.strictEqual(B[4].bb, undefined, 'a juvenile: no box kept');
+    assert.deepStrictEqual([B[2].bb, B[2].xn, B[2].xc.length], [[0.05, 0.2, 0.95, 0.8], undefined, 4]);
+    assert.ok(fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-2-x.webp')), 'the fifth file');
+    assert.ok(fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-1-x.webp')));
+    assert.ok(!fs.existsSync(path.join(dir, 'up', 'seaslug-1-cand-4-x.webp')));
+    // Offline (--check): the tile stays, nothing to do.
+    let [text, todo] = offline(dir);
+    assert.strictEqual(text, fs.readFileSync(path.join(dir, 'seaslug-game.json'), 'utf8'));
+    assert.strictEqual(todo, 0);
+    // A new box: the tile alone, the four files and their rewrite count as they are.
+    fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify({seaslug: box([0, 0.1, 1, 0.9])}));
+    [text, todo] = offline(dir);
+    assert.strictEqual(todo, 1);
+    r = r2run(dir, path.join(dir, 'up2'));
+    assert.deepStrictEqual([r.done, r.calls.length], [1, 1]);
+    assert.deepStrictEqual(fs.readdirSync(path.join(dir, 'up2')), ['seaslug-1-cand-2-x.webp']);
+    const was = B[2];
+    B = by();
+    assert.deepStrictEqual([B[2].bb, B[2].ar, B[2].iv, B[2].xc.length], [[0, 0.1, 1, 0.9], was.ar, was.iv, 4]);
+    // A box too small in the original (under 320 px wide): no tile, and why.
+    fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify({seaslug: box([0.4, 0.4, 0.5, 0.5])}));
+    r = r2run(dir, path.join(dir, 'up3'));
+    B = by();
+    assert.deepStrictEqual([B[2].xc, B[2].xn, fs.readdirSync(path.join(dir, 'up3'))], [undefined, 'res', []]);
+    // And nothing more to do afterwards.
+    [, todo] = offline(dir);
+    assert.strictEqual(todo, 0);
+  }
+);
+
 test('--plan prints what the R2 step would download, by circle, and writes nothing', () => {
   const r = spawnSync('python3', [path.join(TOOLS, 'seaslug_game.py'), '--plan'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, r.stderr);

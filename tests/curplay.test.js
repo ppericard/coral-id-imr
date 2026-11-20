@@ -169,6 +169,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
       treePid: C.treePid,
       treeScoreTree: C.treeScoreTree,
       treeSpUnits: C.treeSpUnits,
+      spUnitId: C.spUnitId,
       treeGenSets: C.treeGenSets,
       refLevel: C.refLevel,
       contentApply: C.contentApply,

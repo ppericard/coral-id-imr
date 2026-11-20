@@ -210,7 +210,10 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
             .map(x => x.rk)
         )
       ],
-      sets: SETS().length,
+      // no opt-in set: only its species by their scientific names (app.js SCI_SP, no switch), empty below SCI_SHEET
+      sets: SETS()
+        .map(S => S.k + ':' + (S.all ? S.all().length : 0))
+        .join(','),
       met: slateGenera().filter(n => introduced(n)).length,
       slate: slateGenera().length
     }));
@@ -218,7 +221,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     check(units.length && units.every(n => c1.has(n)), `2: the sea-slug progress: ${pr.s}`);
     check(!pr.f.some(n => gens.has(n) || fams.has(n)), `2: sea-slug units in the fish progress: ${pr.f}`);
     check(pr.rk.length === 1 && pr.rk[0] === 'genus', `2: the answers are not logged at the genus: ${pr.rk}`);
-    check(pr.sets === 0, `2: the sea slugs have an opt-in set: ${pr.sets}`);
+    check(pr.sets === 'ssp:0', `2: the sea slugs have an opt-in set, or their species open below SCI_SHEET: ${pr.sets}`);
     check(pr.slate === F.genera.length && pr.met > 3, `2: the slate ${pr.slate} (of ${F.genera.length} genera), ${pr.met} met`);
     // The genera page (its families as blocks), a family sheet, a genus sheet, Home and the key page.
     await p.goto(base + '#seaslug/learn/families');
@@ -732,6 +735,34 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     check(n >= 6, `7: ${n} sea slug genera with a photo`);
     if (n >= 6) await require('./customquiz.check.js')(p, base, fails, 'sea slug', w);
     check(!errs.length, '7: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 8. The Look-alikes deck and Compare (learn.js viewLookalikes, viewCompare, Q437) on the sea slugs' declared pairs, as the
+  // fish's run them: tests/lookalikes.check.js, at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s8')) return;
+        sessionStorage.setItem('s8', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./lookalikes.check.js')(p, w, fails, 'sea slugs');
+    }
+    check(!errs.length, '8: page errors: ' + errs.join('; '));
     await ctx.close();
   }
 

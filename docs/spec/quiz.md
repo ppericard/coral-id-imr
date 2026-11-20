@@ -227,7 +227,7 @@ Coral genera off the IMR list but common at Dauin, an opt-in set (`BONUS` in `co
   summary).
 - **Where they show.** My progress shows them after the slate genera in all three views once on (the photo wall: tiles
   tagged "Bonus"; Slate: a strip under the slate; Groups: a "+" row). Their ID tips are labelled "ID tips (Coral Finder
-  p. …)", never IMR. `#learn/compare/A/B` accepts them (`gameGenus()`). A two-level bonus genus counts its `medium`
+  p. …)", never IMR. `#learn/compare/A/B` accepts them (`UNITS` `inGame`, `gameGenus()`). A two-level bonus genus counts its `medium`
   photos as close-ups in games (Sandalolitha). Their game photos (Millepora's too): Research Grade only (`p.gid` = not
   Research Grade, set by `tools/apply_bonus.py`), Pierre's own always, never multi-coral. Memory (Lab `pairs`) does not
   use them.

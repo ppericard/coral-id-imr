@@ -71,14 +71,31 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   the first Learn tab ("Basics" on phones): [basics.md](basics.md).
 - **Learn › Genera** (`#learn/genera`): the genera grid (lecture-group order by default, a slate order toggle), Photos
   or ID tips view; its first block is the basics card ([basics.md](basics.md#one-engine-two-contents)). Lecture group
-  titles are `.gtitle`. `#learn/genus/<Genus>` is the genus sheet: right under its photo, before the ID tips, the plain
+  titles are `.gtitle`. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
+  genera, `learn.js` `viewFishList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
+  name and its notes are its arguments), on the `.lcard` surface (DESIGN.md "Components"). The whole card opens the
+  unit's sheet (Pierre, 2026-11-20): one link, the unit's name (`a.tipsheet`), stretched over the card, a chevron, no
+  "Open the sheet" line; its cues without their heading or source (`tipsList` `bare`), which the sheet shows (rule C2);
+  its photo opens the sheet, never the photo viewer (the sheet's photos enlarge, with their credits: rule P5). Links in
+  the notes (the corals' Compare pairs) and glossary terms sit above the stretched link. The Photos view's cards
+  (`card()`) were whole-card links already. `#learn/genus/<Genus>` is the genus sheet: right under its photo, before the ID tips, the plain
   sentence (`plainLine()`); once the player has seen the genus, a line at the top gives their level on it and what it
   still needs (`myProg()`, the same text as the My progress tooltip).
-- **Learn › Look-alikes** (`#learn/look-alikes`): a deck of about 20 classic pair montages (`classics()`, `montage()`);
-  `#learn/compare/A/B` is the pair comparison, which accepts Millepora and the bonus genera (`gameGenus()`). The two
-  photos come from `model.js` `photoPair`, which the quiz's mix-up montage ("Your answer, same view", `quiz.js`
-  `answer`) also uses: the same growth form first (searched in every photo of both lists; `x` matches nothing), then
-  nearest the front, then the nearest zoom level; with no same-form pair, the best pair among the first 6 of each list.
+- **Learn › Look-alikes** (`#learn/look-alikes`, every subject): a deck of pair montages (`classics()`, `montage()`) over
+  the pairs the subject's `UNITS` `deck` gives: the corals' classic pairs (about 20: `isClassic`), the fish's and the sea
+  slugs' declared pairs (each carries its source line, `lsrc`: the IMR presentation's slide, the Sea Slug Forum, Nudi
+  Pixel, a paper; `srcTag` names it as the data gives it). `#learn/compare/A/B` is the pair comparison, which accepts
+  Millepora and the bonus genera for the corals (`UNITS` `inGame`). The corals' two photos come from `model.js`
+  `photoPair`, which the quiz's mix-up montage ("Your answer, same view", `quiz.js` `answer`) also uses: the same growth
+  form first (searched in every photo of both lists; `x` matches nothing), then nearest the front, then the nearest zoom
+  level; with no same-form pair, the best pair among the first 6 of each list. A subject with one view (`SUBJECTS`
+  `views`: the fish, the sea slugs) shows one photo a side: the admin's pick (`curation.json` `<subject>.mont`: `a`, `b`,
+  its `v` a phase, adult by default; `hide` keeps the pair off the deck) else the first adult photo. Compare's columns
+  read each unit's own tips under their label (the IMR cues, the sea slugs' marks, each naming its source: `tipsLabel`);
+  a unit with none says so and shows no summary as tips. What a subject adds (`UNITS` `cmp`: the corals' tag, group line and
+  Coral ID Key criteria box; the tree subjects' own line) is declared there. Above the columns, the tell-apart line of the
+  pair with its source where a record has one (`quiz.js` `pairText`: a fish pair's IMR lines, a sea slug pair's lines,
+  the corals' lecture lines). The answer's "Compare them" link follows `SUBJECTS` `pages`.
 - **Practice › Quiz** (`#practice/quiz`, tab "Quiz"): the adaptive photo quiz, with typed answers and duels slipped
   in. Its page key and answer modes keep the name `quiz` (answer modes `quiz|…`, which the sheet parses):
   [model.md](model.md), [quiz.md](quiz.md).

@@ -61,8 +61,8 @@ The game is at the genus, the level the ID books and the experts work at, by the
 `unitRank: 'genus'` (read through `core.js` `unitRankOf`; unset, a subject's units are at its `rank`, the fish's
 families) makes `treeGen` (its `unit`, `treeGenUnits`) take every genus holding a species of the circles as a unit, in
 its best species' circle, with its family's photos of its species and its own genus-level photos (`gl`: `treeGlOf`).
-Its look-alikes: its sibling genera (the traps), the genera a specialist source names (the duels: `UNITS.seaslug`
-`pairs` from each genus's `decl`, each pair with its sources' line, `lsrc`), and the data look-alikes only iNaturalist's
+Its look-alikes: its sibling genera (the traps), the genera a specialist source names (the duels and the Look-alikes
+deck with Compare: `UNITS.seaslug` `pairs` from each genus's `decl`, each pair with its sources' line, `lsrc`), and the data look-alikes only iNaturalist's
 identifications show (`dlook`), which the players' answers can drop (`model.js` `dataSeed`). `app.js` `treeGenera`
 completes those records as it does the fish's scientific genera; there is no opt-in genus set (`sets: []`,
 `optin: []`). Their ID marks are their own, in our words from numbered sources (`tools/seaslug_cues.json`), shown on the
@@ -102,6 +102,15 @@ with no global score, its plain mean at 50%; circle 3 by itself, with no offer c
 **Their photos** are read from iNaturalist (`r: 1`) until the R2 step (`tools/seaslug_game.py --r2`) puts them on R2;
 that step is on in the Candidate photos workflow (`SEASLUG_R2`), so the photos in play that R2 lacks are uploaded with
 the fish's ([fish-photos.md](fish-photos.md)).
+
+**Find the X** (Q437) runs on the shared engine: `app.js` `UNITS` `tiles` is the fish's declaration (`unitTiles`), and
+`tools/seaslug_game.py` cuts the square tiles with the fish's code (`tools/fish_game.py` `tile_crop`, `tile_write`,
+`tile_only`, nothing copied) for a record that carries the animal's box (`bb`: a judgement's, read as
+`fish_game.py` `box_of` reads it) and whose tags pass the sea slugs' tile rule (`seaslug_game.py` `tile_tags`: the fish's `tile_tags` plus the dorsal view,
+the sea slugs' commonest good one; integrator's call, easy to correct; 2,132 of the 3,014 photos pass). **No sea slug photo carries a box** (2026-11-20: 0 of
+3,014 in play; 1 proposed crop among 5,163 judgements, on a photo not in play; Pierre's sea slug crops: none), and
+`judging/SEASLUG.md` gives none (no `bb`), so no record has a tile and the format is not drawn for them (`planFind` finds
+no tile) until a box pass puts boxes in.
 
 ## English names as information
 
