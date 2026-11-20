@@ -982,6 +982,52 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
+  // 10. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
+  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s10')) return;
+        sessionStorage.setItem('s10', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+      let s = 4141;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => new Set(gamePics(n, 'wide').map(x => x.o || x.f)).size >= 2)
+        .slice(0, 10);
+      introAdd(L, true);
+      return L.length;
+    });
+    check(n >= 6, `10: ${n} sea slug genera with two observations`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./memory.check.js')(p, w, fails, 'sea slugs', 3);
+    }
+    check(!errs.length, '10: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
   await b.close();
   server.close();
   if (fails.length) {
