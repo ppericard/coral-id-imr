@@ -722,6 +722,22 @@ function achRecheck() {
   return out;
 }
 const achList = () => slateGenera();
+// The species at Advanced or above (lvStep 3) by every kind of name in names (achSnap both), from the units of the sets
+// sets (each unit's kind and species: app.js treeGenera kind, sp); 0 unless names holds two kinds or more. Pure on its
+// inputs and lvStep.
+const achBoth = (sets, names) => {
+  if (names.length < 2) return 0;
+  const by = new Map();
+  sets
+    .flatMap(S => (S.all ? S.all() : S.units()))
+    .forEach(n => {
+      const g = (typeof GX === 'function' && GX(n)) || {};
+      if (!g.kind || !g.sp || lvStep(n) < 3) return;
+      if (!by.has(g.sp)) by.set(g.sp, new Set());
+      by.get(g.sp).add(g.kind);
+    });
+  return [...by.values()].filter(K => names.every(k => K.has(k))).length;
+};
 // The subject's core units (UNITS core: the IMR course's fish families), its circles (UNITS circles: the fish families of
 // circles 1, 2 and 3) and its opt-in sets (UNITS sets: the scientific genera), for the achievements that read them
 // (core.js FISH_ACH): met, at Advanced or above and learned in the core; at Advanced or above in each circle; units at
@@ -771,6 +787,12 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
       .map(n => ({n, total: byTax[n].length, met: at(byTax[n], 1), adv: at(byTax[n], 3)})),
     sets: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 2)])),
     setsAdv: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 3)])),
+    // The species named at Advanced or above by every kind of name the subject asks (SUBJECTS names: a fish species by
+    // its common and its scientific name, Q262), counted once each (their units' sp); 0 for a subject asking one kind.
+    both: achBoth(U.sets || [], SUBJ.names || []),
+    // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261), each by its
+    // scientific name: how many, how many at Advanced or above; null for a subject without.
+    top: U.top ? (L => ({total: L.length, adv: at(L, 3)}))(U.top()) : null,
     basics: !!A._basics,
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
