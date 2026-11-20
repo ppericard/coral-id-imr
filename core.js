@@ -418,6 +418,10 @@
   // asked, the reply naming its subject), and the app asks for them and keeps a reply only from a script reporting this
   // version or later, so one it has not seen answer, or an older one, changes nothing.
   const FISHST_SHEET = 189;
+  // The sync script version that serves the photos' time terms (rule D4; PTIME, ptimeInto: three more numbers in a photo's
+  // ?stats=1 entry): the app reads them only from a reply of this version or later (model.js ptmOf), so with an older
+  // script every photo's difficulty stays as it was.
+  const PTIME_SHEET = 212;
   // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.
@@ -3481,6 +3485,120 @@
   // moves anything, 0.2 and 0.4 both beat a photo-only Elo and the Easy / Medium / Hard prior, 0.8 moves too fast.
   // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd, the photos' ratings as totals.
   const GENUS_K = 0.4;
+  // The photo's time term (docs/LEARNING.md "The photo's time term"; docs/decisions/2026-11-21-photo-time-term.md): how much
+  // longer than their own habit trusted players take to answer a photo right, and how much more often than their own habit
+  // they enlarge it, each a shrunk mean per photo, served by the sheet with the photo ratings (ptimeInto) and added to
+  // the photo's difficulty in the app (model.js photoDiff), fading as the photo's answers bring information.
+  // - z: an answer's log seconds against the player's own median, exactly as rtWeight (rtTenths, rtMedian: their earlier
+  //   timed, non-typed answers in the subject, from the RTIME.MIN-th), less the mean z of the earlier right answers in the
+  //   same format (fmtCell: the game, fmtOf, the photos shown and the rank asked), then clipped at +-CLIP.
+  // - Which answers: right, timed, not typed, not enlarged, of a player who rates the photos (trusted, photo check passed).
+  // - Each answer's weight: its trust weight over V(L), the variance of z at the player's level L (the sheet's own rating
+  //   before the answer), fitted on the subject's answers so far: V(L) = Vbar exp(beta (L - Lbar)), beta the slope of z^2
+  //   on L relative to its mean, shrunk by its own uncertainty (players as clusters: max(0, 1 - se^2 / b^2)), 0 with fewer
+  //   than MIN_P players or MIN_N answers (an early fit swings and its weights stay in the photos' sums), the weights'
+  //   spread capped at BMAX either side. Steadier players' times weigh more; where the
+  //   data do not show a slope the weights are equal. One code path for every subject.
+  // - The time term: sum(w z / V) / (sum(w / V) + 1 / TAU2), TAU2 the photo's own share of the variance (the prior).
+  // - The enlargement term: enlarged (0/1) less the player's own rate so far ((enlarged + E0 EM) / (answers + EM)), any
+  //   trusted answer that logged it, right or wrong, weighed by trust, shrunk by NE answers.
+  // - I: the Fisher information the photo's rating has gathered, every rating answer, on the photo Elo's own expectation.
+  // C (the app): logits per unit of the two terms; the term fades as I0 / (I + I0), I0 = PDIFF.W answers at the game's
+  // target, so a photo answered only by players who never miss keeps it, and one whose rating has learned from misses
+  // lets it go.
+  const PTIME = {CLIP: 1, FN: 5, V0: 0.3, VN: 20, MIN_P: 5, MIN_N: 500, BMAX: Math.log(3), TAU2: 0.06, E0: 0.1, EM: 10, NE: 10, C: 0.5};
+  // The format cell of an answer for its time: the game (the mode before its first |), fmtOf, the photos shown (1, 2, 3+)
+  // and the rank asked (a fish genus question is slower than a family one).
+  const fmtCell = (m, nch, nph, rk) => String(m || '').split('|')[0] + ':' + fmtOf(m, nch) + ':' + Math.min(3, nph) + ':' + String(rk || '');
+  // An empty state: Z per player {r: their timed answers as rtAdd keeps them, e: [answers with Enlarged, enlarged]}, F per
+  // format cell [sum z, answers], A the fit's sums [n, sum L, sum L^2, sum y, sum L y] (y = z^2) and Q the same per player,
+  // P per photo [sum w z / V, sum w / V, sum w (enlarged - rate), sum w, information].
+  const ptimeNew = () => ({Z: Object.create(null), F: Object.create(null), A: [0, 0, 0, 0, 0], Q: Object.create(null), P: Object.create(null)});
+  // The slope of the variance on the level, relative to its mean, shrunk by its cluster-robust standard error.
+  function ptimeBeta(T) {
+    const [n, sl, sll, sy, sly] = T.A,
+      ks = Object.keys(T.Q),
+      det = n * sll - sl * sl;
+    if (ks.length < PTIME.MIN_P || n < PTIME.MIN_N || !(det > 1e-9) || !(sy > 0)) return 0;
+    const a = (sll * sy - sl * sly) / det,
+      b = (n * sly - sl * sy) / det,
+      i0 = -sl / det,
+      i1 = n / det;
+    let v = 0;
+    ks.forEach(k => {
+      const q = T.Q[k],
+        g = i0 * (q[3] - a * q[0] - b * q[1]) + i1 * (q[4] - a * q[1] - b * q[2]);
+      v += g * g;
+    });
+    v *= ks.length / (ks.length - 1);
+    return b === 0 ? 0 : (b * Math.max(0, 1 - v / (b * b))) / (sy / n);
+  }
+  // V(L), the variance of z at level L by the fit so far.
+  function ptimeVar(T, L) {
+    const [n, sl, , sy] = T.A,
+      vb = (sy + PTIME.V0 * PTIME.VN) / (n + PTIME.VN);
+    if (!n) return vb;
+    const x = ptimeBeta(T) * (L - sl / n);
+    return vb * Math.exp(Math.max(-PTIME.BMAX, Math.min(PTIME.BMAX, x)));
+  }
+  // One answer: w the player's key, fs its photos, m its mode, nch its number of choices, rk the rank asked, ok, sec its
+  // seconds (null when none), zm Enlarged (0, 1, null when not logged), L the player's rating before it, rt whether it
+  // rates the photos, wt its trust weight, inf its Fisher information ((1 - g) s (1 - s))^2 / (e (1 - e)). Code.gs
+  // statsStep_ and eloReplay.
+  function ptimeStep(T, {w, fs, m, nch, rk, ok, sec, zm, L, rt, wt, inf}) {
+    const Zp = (T.Z[w] = T.Z[w] || {r: {}, e: [0, 0]}),
+      len = fs.length,
+      ph = rt ? fs.map(f => (T.P[f] = T.P[f] || [0, 0, 0, 0, 0])) : [],
+      x = rtTenths(sec, TYPED_RE.test(String(m || '')) ? Infinity : 1),
+      md = x > 0 ? rtMedian(Zp.r) : null;
+    ph.forEach(p => (p[4] += (wt * inf) / (len * len)));
+    if (rt && ok && md !== null && zm !== 1) {
+      const z = Math.log(x / 10) - md,
+        c = fmtCell(m, nch, len, rk),
+        F = (T.F[c] = T.F[c] || [0, 0]),
+        zh = Math.max(-PTIME.CLIP, Math.min(PTIME.CLIP, z - F[0] / (F[1] + PTIME.FN))),
+        u = wt / ptimeVar(T, L) / len;
+      ph.forEach(p => ((p[0] += u * zh), (p[1] += u)));
+      const q = (T.Q[w] = T.Q[w] || [0, 0, 0, 0, 0]),
+        y = zh * zh;
+      [T.A, q].forEach(s => ((s[0] += 1), (s[1] += L), (s[2] += L * L), (s[3] += y), (s[4] += L * y)));
+      F[0] += z;
+      F[1]++;
+    }
+    if (zm === 0 || zm === 1) {
+      const r = (Zp.e[1] + PTIME.E0 * PTIME.EM) / (Zp.e[0] + PTIME.EM);
+      ph.forEach(p => ((p[2] += (wt * (zm - r)) / len), (p[3] += wt / len)));
+      Zp.e[0]++;
+      Zp.e[1] += zm;
+    }
+    if (x > 0) Zp.r[x] = (Zp.r[x] || 0) + 1;
+  }
+  // The terms per photo: {photo: [time term, enlargement term, information]}, for the photos with either term not 0 to two
+  // decimals (a photo left out counts 0). ?stats=1 serves them as the 6th to 8th elements of the photo's entry in photos
+  // (ptimeInto), so a photo with no term keeps its five and the reply grows by a few bytes a photo.
+  function ptimeOut(T) {
+    const out = {},
+      r2 = v => Math.round(v * 100) / 100 || 0;
+    Object.keys(T.P).forEach(f => {
+      const p = T.P[f],
+        a = r2(p[1] > 0 ? p[0] / (p[1] + 1 / PTIME.TAU2) : 0),
+        b = r2(p[3] > 0 ? p[2] / (p[3] + PTIME.NE) : 0);
+      if (a || b) out[f] = [a, b, r2(p[4])];
+    });
+    return out;
+  }
+  // The terms appended to the served photo entries (photos: {file: [difficulty, weighed answers, weighed right, answers,
+  // unit]}, changed in place).
+  function ptimeInto(photos, T) {
+    const o = ptimeOut(T);
+    Object.keys(o).forEach(f => {
+      if (Array.isArray(photos[f]) && photos[f].length === 5) photos[f].push(...o[f]);
+    });
+    return photos;
+  }
+  // A photo's time term in logits, as the app adds it to its difficulty (model.js photoDiff): C (time + enlargement) x
+  // I0 / (I + I0); o a tm entry (none: 0), W the photo prior's weight in answers (model.js PDIFF.W).
+  const ptimeOff = (o, W) => (Array.isArray(o) && o.length >= 3 && o.slice(0, 3).every(v => typeof v === 'number' && isFinite(v)) && o[2] >= 0 ? (PTIME.C * (o[0] + o[1]) * W * infoAt(1, 4)) / (o[2] + W * infoAt(1, 4)) : 0);
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf),
@@ -3501,6 +3619,7 @@
       I = [0, 0, 0, 0],
       N = [0, 0, 0, 0],
       tau = MEM.N * infoAt(1, 4),
+      TM = ptimeNew(),
       sig = x => 1 / (1 + Math.exp(-x));
     rows
       .slice()
@@ -3520,6 +3639,22 @@
           e = g + (1 - g) * s,
           d = ok - e,
           n = ra[1];
+        ptimeStep(TM, {
+          w: r[0],
+          fs,
+          m: r[5],
+          nch: String(r[10] || '')
+            .split(/\s+/)
+            .filter(Boolean).length,
+          rk: String(r[18] || ''),
+          ok,
+          sec: typeof r[12] === 'number' && isFinite(r[12]) ? r[12] : null,
+          zm: r[13] === 0 || r[13] === 1 ? r[13] : null,
+          L: ra[0],
+          rt: !!trust[r[0]],
+          wt: n / (n + PHOTO_W.N),
+          inf: ((1 - g) * s * (1 - s)) ** 2 / Math.max(1e-6, e * (1 - e))
+        });
         if (trust[r[0]]) {
           const w = n / (n + PHOTO_W.N),
             D = (1 - g) * s * (1 - s),
@@ -3551,8 +3686,10 @@
           h[1] += ok;
         });
       });
-    return {P, PG, G, R, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
+    return {P, PG, G, R, TM, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
   }
+  // The photos' time terms from the answer log (ptimeOut), as Code.gs ?stats=1 appends them to photos.
+  const photoTimeOf = rows => ptimeOut(eloReplay(rows).TM);
   // The photo memory offsets estimated from the answer log, as Code.gs ?stats=1 mem and memn.
   function photoMemOf(rows) {
     const {mem, memn} = eloReplay(rows);
@@ -3607,9 +3744,10 @@
     return true;
   }
   // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
-  // answers, the unit whose offset is in the difficulty (model.js photoDiff swaps it for the unit asked)].
+  // answers, the unit whose offset is in the difficulty (model.js photoDiff swaps it for the unit asked)], and a photo with
+  // a time term its three numbers after them (ptimeInto).
   function eloOf(rows) {
-    const {P, PG, G} = eloReplay(rows);
+    const {P, PG, G, TM} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
       f =>
@@ -3621,7 +3759,7 @@
           PG[f]
         ])
     );
-    return out;
+    return ptimeInto(out, TM);
   }
   // The genus offsets as Code.gs ?stats=1 gd: {genus: [offset, weighed answers]}.
   function genusOffsetsOf(rows) {
@@ -7526,6 +7664,7 @@
     SEASLUGST_SHEET,
     SEASLUGPAIRS_SHEET,
     FISHST_SHEET,
+    PTIME_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,
@@ -7650,6 +7789,17 @@
     memFam,
     memOf,
     photoMemOf,
+    PTIME,
+    infoAt,
+    fmtCell,
+    ptimeNew,
+    ptimeBeta,
+    ptimeVar,
+    ptimeStep,
+    ptimeOut,
+    ptimeInto,
+    ptimeOff,
+    photoTimeOf,
     memRecalc,
     confAdd,
     confusionOf,

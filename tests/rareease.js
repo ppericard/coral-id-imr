@@ -81,6 +81,8 @@ function engine(
     LEVEL: '_level',
     P: {...others, u: {ok, ko: 0, th, ps, ...(ex ? {ex} : {})}},
     PSTAT,
+    PTM: {},
+    ptimeOff: C.ptimeOff,
     PGD: {},
     PMEM,
     memOf: C.memOf,

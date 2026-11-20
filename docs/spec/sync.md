@@ -192,7 +192,8 @@ the sheet's replay (the device's own answers replayed on top of an adopted repla
 from the Seconds column (`rowOf_` index 12; LEARNING.md "Response time"). The player's times are kept in the global
 level's record, `P['~level'].rt` = {tenths of a second: answers} (an exact median, a few hundred keys at most), added up
 by `mergeProgress` and `mergeUsers`, rebuilt by the replay (`replayedOf` and `replayBase` take it with the level's
-answer count). The enlarged mark is logged only. The enlarge rates from before the enlarge mark and its one-time hint
+answer count). The seconds and the enlarged mark also make each photo's time term in the pooled statistics ("Pooled
+photo statistics"; LEARNING.md "The photo's time term"). The enlarge rates from before the enlarge mark and its one-time hint
 ([cards.md](cards.md#the-enlarge-hint)) are not comparable with those after.
 
 ## Requests
@@ -606,15 +607,23 @@ answers changes trust, the ids left out change, a game pool changes for a photo 
 is rewritten (`statsDirty_` from `relabel_`, `dropRows_`, `anonDelete`, a one-shot migration: a sign-in's anonymous
 answers, a merge, a delete), the script version changes, the snapshot is missing or unreadable, or its cursor disagrees
 with the Script Property `STATS_FOLD` or its row no longer holds the answer id it read. `stats_` and the fold run one
-step (`statsStep_`, `statsOut_`; `core.js` `fmtPoint` and `fmtFit` for the format offsets, `fmtOffsetsOf` their sum), so
-a change to the statistics changes both at once.
+step (`statsStep_`, `statsOut_`; `core.js` `fmtPoint` and `fmtFit` for the format offsets, `fmtOffsetsOf` their sum;
+`ptimeStep` and `ptimeInto` for the photos' time terms), so a change to the statistics changes both at once.
 
-**The `Stats` tab** (internal, versioned by `STATS.FMT`, 3: no other code reads it). Columns Part, Version, Updated,
+**The photos' time terms.** A photo with a time term carries three more numbers in its `photos` entry, after the five:
+the time term, the enlargement term and the information its rating has gathered (`core.js` `ptimeInto`, `ptimeOut`;
+LEARNING.md "The photo's time term"); a photo with neither term keeps its five. The app reads them from a reply of
+`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). On the real log of 2026-11-20 they add about 25% to the
+corals' `photos` (79 to 99 KB) and 19% to the fish's.
+
+**The `Stats` tab** (internal, versioned by `STATS.FMT`, 4: no other code reads it). Columns Part, Version, Updated,
 Rows, Roster, Note, then the JSON in cells of at most 45,000 characters from column G (`statsPut_` adds the columns a
 longer JSON needs; a new tab has 26). Row 2 is the reply served (what `?stats=1` sends, no player); row 3 the fold,
-which keeps by admin id (`aid_`, never a name) each player's trust counts, ability, photo memory buckets and the pending
-answers (unit, answer, mode, photos, choices, expectation), about 45 characters per answer row at 6,000 rows (270 KB, 7
-cells) and 22 at 50,000 (1.1 MB, 25 cells); row 4 the admin's part (below). A delete, merge or archive, a change to who
+which keeps by admin id (`aid_`, never a name) each player's trust counts, ability, photo memory buckets, timed answers
+and enlarging habit (the time terms' `tm`, `core.js` `ptimeNew`) and the pending answers (unit, answer, mode, photos,
+choices, expectation, seconds, enlarged, rank), about 45 characters per answer row at 6,000 rows (270 KB, 7 cells) and
+22 at 50,000 (1.1 MB, 25 cells) before the time terms, which add each player's timed answers (a few hundred keys) and
+five numbers per rated photo; row 4 the admin's part (below). A delete, merge or archive, a change to who
 is left out and `anonDelete` blank the fold and the reply at once (rule D7, SECURITY.md "Removed accounts"). Run times
 measured in node on the in-memory sheet (Apps Script adds the Sheets reads and writes): a first build 0.2 s at 6,000
 rows and 1.2 s at 50,000; a run with a quarter hour's new rows 0.06 s and 0.3 s.

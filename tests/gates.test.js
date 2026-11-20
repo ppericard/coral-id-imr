@@ -261,6 +261,14 @@ const GATES = {
     const plain = {id: 'a2', m: 'quiz'};
     assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
     return out.cv === 'c1x2y3z';
+  },
+  // The photos' time terms (core.js PTIME, ptimeInto: a photo's 6th to 8th numbers in ?stats=1; model.js ptmOf): read from
+  // a reply of the version that serves them; before, none, so every photo's difficulty stays as it was.
+  PTIME_SHEET: (v, N) => {
+    const ptmOf = fn('model.js', 'const ptmOf = ', '\nfunction statsJoin', 'ptmOf', {PTIME_SHEET: N}),
+      tm = ptmOf({a: [0.1, 4, 3, 4, 'Acropora', 0.2, 0, 1.1], b: [0.3, 2, 1, 2, 'Acropora']}, v);
+    assert.ok(!('b' in tm), 'a photo without a term has none');
+    return 'a' in tm && JSON.stringify(tm.a) === '[0.2,0,1.1]';
   }
 };
 

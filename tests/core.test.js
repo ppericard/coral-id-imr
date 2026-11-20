@@ -28,6 +28,7 @@ const {
   memFam,
   memOf,
   photoMemOf,
+  photoTimeOf,
   memRecalc,
   PHOTO_BASE,
   photoLocal,
@@ -167,7 +168,9 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
             m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3', 'quiz'][i % 5],
             // Every 5th: a plain "quiz" with 2 choices (an older log's "Again: A or B?"), rated 1 in 2.
             ch: i % 5 === 4 ? 'Acropora Porites' : 'Acropora Porites Favites Montipora',
-            ph: ph.join(' ')
+            ph: ph.join(' '),
+            // Seconds and the enlarged mark (the photos' time terms), some answers without either.
+            ...(i % 9 === 8 ? {} : {rt: 2 + ((i * 7 + (who === 'Ben' ? 3 : 0)) % 13) + (ph[0] === 'favia-1' ? 6 : 0), zm: i % 6 === 0 ? 1 : 0})
           }
         ]
       });
@@ -186,6 +189,12 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   // The photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
   assert.notDeepStrictEqual(st.mem, MEM.PRIOR, 'the answers moved the offsets');
+  // The photos' time terms, served after the five numbers of a photo's entry (eloOf above: the same in the sheet and the
+  // admin's replay); the slow photo comes out slower, and the enlargement term moved too.
+  const tm = photoTimeOf(rows);
+  Object.keys(tm).forEach(f => assert.deepStrictEqual(st.photos[f].slice(5), tm[f], f));
+  assert.ok(tm['favia-1'] && tm['favia-1'][0] > 0 && tm['favia-1'][2] > 0, JSON.stringify(tm));
+  assert.ok(Object.values(tm).some(o => o[1] !== 0), 'the enlargement term moved: ' + JSON.stringify(tm));
 });
 
 test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the direction', () => {

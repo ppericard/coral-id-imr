@@ -93,6 +93,12 @@ function session(R, w, t, day, subj) {
       ch: ch.join(' ')
     };
     if (R() < 0.85) a.e = Math.round((0.3 + R() * 0.6) * 100) / 100;
+    // Seconds and the enlarged mark (the photos' time terms): most answers carry both, some one, some none; drawn from a
+    // generator of the answer's own, so the fixture's other draws stay as they were.
+    const R2 = rng(ID * 7919 + 17),
+      x = R2();
+    if (x < 0.8) a.rt = Math.round((1 + R2() * 20) * 10) / 10;
+    if (x > 0.1 && x < 0.9) a.zm = R2() < 0.15 ? 1 : 0;
     if (fish) Object.assign(a, {s: 'fish', rk: U === SPE ? 'species' : 'family'});
     if (R() < 0.03) a.m = 'wink';
     out.push(a);
@@ -186,7 +192,10 @@ test('the fold serves what the whole log gives, after every run, at any number o
     for (const sid of SUBJ) {
       const F = full(s, sid);
       assert.ok(
-        Object.keys(F.fmt).length >= 3 && Object.keys(F.conf).length >= 3 && F.memn[3] > 0,
+        Object.keys(F.fmt).length >= 3 && Object.keys(F.conf).length >= 3 && F.memn[3] > 0 &&
+          // the photos' time terms (core.js ptimeInto), both kinds
+          Object.values(F.photos).some(o => o.length === 8 && o[5] !== 0) &&
+          Object.values(F.photos).some(o => o.length === 8 && o[6] !== 0),
         sid + ': every part of the stats in play'
       );
     }

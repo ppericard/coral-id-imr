@@ -820,7 +820,8 @@ function secOf(TW, seed, j, i, {ph, ok, typed, gap = 0}) {
 function sheetStats(log) {
   return {photos: C.eloOf(log), gd: C.genusOffsetsOf(log), mem: C.photoMemOf(log).mem};
 }
-// How far the served ratings are from the truth: over the photos answered, the root mean square of (rating - true d)
+// How far the served ratings are from the truth: over the photos answered, the root mean square of (rating - true d), the
+// rating with its time term as the app adds it (core.js ptimeOff, model.js PDIFF.W 5)
 // once their mean difference is taken out (the Elo's zero is not the world's), plain (err) and weighed by the photo's
 // answers (errW: what the draw meets), their correlation (corr); over the units answered, the same for the genus offsets
 // against mu (gdErr).
@@ -831,7 +832,7 @@ function rateErr(st, TW, W) {
         md = xs.reduce((a, x, i) => a + ws[i] * (x - ys[i]), 0) / tw;
       return Math.sqrt(xs.reduce((a, x, i) => a + ws[i] * (x - ys[i] - md) ** 2, 0) / tw);
     },
-    b = F.map(f => st.photos[f][0]),
+    b = F.map(f => st.photos[f][0] + C.ptimeOff(st.photos[f].slice(5, 8), 5)),
     d = F.map(f => TW.d[f]),
     mb = b.reduce((a, x) => a + x, 0) / b.length,
     md = d.reduce((a, x) => a + x, 0) / d.length,
@@ -870,7 +871,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
     const st = sheetStats(log);
     pls.forEach(pl => {
       pl.ctx.__st = st;
-      vm.runInContext('PSTAT = __st.photos; PGD = __st.gd; PMEM = memOf(__st.mem); GDIFF = {};', pl.ctx);
+      vm.runInContext('PSTAT = __st.photos; PTM = ptmOf(__st.photos, PTIME_SHEET); PGD = __st.gd; PMEM = memOf(__st.mem); GDIFF = {};', pl.ctx);
     });
   };
   for (let i = 0; i < N; i++) {
