@@ -224,9 +224,14 @@ const server = http.createServer((req, res) => {
     const {ctx, p, errs} = await ctxOf({failFull: true, dpr: 2}); // 2x: the 960 px file, not the 480 px one
     await p.goto(base + '#practice/quiz');
     await ready(p);
+    // A lecture photo kept only on R2 falls back to its online original (a Corals of the World file, stubbed): the
+    // failure injection never touches it, so it has no smaller version to fall back to; it only has to load.
     await p
       .waitForFunction(
-        () => [...document.querySelectorAll('#view .qstage img')].every(i => i.dataset.low && i.complete && i.naturalWidth > 0),
+        () =>
+          [...document.querySelectorAll('#view .qstage img')].every(
+            i => (i.dataset.low || /^https:\/\/www\.coralsoftheworld\.org\//.test(i.currentSrc)) && i.complete && i.naturalWidth > 0
+          ),
         null,
         {timeout: 15000}
       )
@@ -836,6 +841,33 @@ const server = http.createServer((req, res) => {
       .waitForFunction(() => document.querySelector('#view .card') && !document.querySelector('#view .boot'), null, {timeout: 20000})
       .catch(() => fails.push('learn.js held: the Genera page did not open once it came'));
     if (errs.length) fails.push('learn.js held: ' + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  // A script of a later tier that never comes (ROADMAP R192; index.html loader): learn.js fails (aborted) 4 times, the
+  // loader goes on without nothing: the page offers Try again, the tier waits (Learn's set-up has not run); once the
+  // line is back, Try again brings learn.js and the Genera page opens.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    let up = false,
+      seen = 0;
+    await ctx.route(/\/learn\.js\?v=/, r => (up ? r.fallback() : (seen++, r.abort())));
+    await p.goto(base + '#' + require('../core.js').routeOut('genera'), {waitUntil: 'commit'});
+    const shown = await p
+      .waitForSelector('#tierwarn:not([hidden]) button', {timeout: 30000})
+      .then(() => p.evaluate(() => ({late: typeof viewGenera, text: document.getElementById('tierwarn').textContent})))
+      .catch(() => null);
+    if (!shown) fails.push('learn.js failed: no Try again offered');
+    else {
+      if (seen < 4) fails.push(`learn.js failed: Try again offered after ${seen} tries, not 4`);
+      if (shown.late !== 'undefined') fails.push(`learn.js failed: it ran all the same (${shown.late})`);
+      up = true;
+      await p.click('#tierwarn button');
+      await p
+        .waitForFunction(() => document.querySelector('#view .card') && !document.querySelector('#view .boot'), null, {timeout: 20000})
+        .catch(() => fails.push('learn.js failed: the Genera page did not open after Try again'));
+      if (!(await p.evaluate(() => document.getElementById('tierwarn').hidden)))
+        fails.push('learn.js failed: the offer stays after it came');
+    }
     await ctx.close();
   }
   // Home's doors before the data (ROADMAP "Load order, further steps" (a); app.js beforeData): with data.json held, the

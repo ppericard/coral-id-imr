@@ -429,8 +429,19 @@ test('every Playwright launch in tests/ and tools/ takes the slot; the heavy too
   }
   assert.deepStrictEqual(bad, []);
   const guarded = {
-    js: ['analyses', 'abilityeval', 'fallbackeval', 'realcheck', 'memreplay'],
-    py: ['photo_metrics', 'photo_quality', 'find_dups', 'photos', 'judging_cand', 'judging_fish', 'fish_judge', 'fetch_approved']
+    js: ['analyses', 'abilityeval', 'fallbackeval', 'realcheck', 'memreplay', 'studies/q316/checks'],
+    py: [
+      'photo_metrics',
+      'photo_quality',
+      'find_dups',
+      'photos',
+      'judging_cand',
+      'judging_fish',
+      'fish_judge',
+      'fetch_approved',
+      'studies/q316/fit',
+      'studies/q316/run'
+    ]
   };
   for (const [ext, L] of Object.entries(guarded))
     for (const t of L)

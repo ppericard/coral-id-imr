@@ -1544,7 +1544,7 @@
   "s330": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-14",
+    "at": "2026-11-20",
     "n": 50
    }
   },
@@ -104385,10 +104385,10 @@
    "k": "best"
   },
   "fish-s330-cand-551266134": {
-   "jt": "p1g2bm1j",
+   "jt": "p1g2bm1",
    "e": 1,
    "k": "best",
-   "n": "Red body with a white saddle: likely night or resting colours, not a juvenile; tag kept as the harder value."
+   "n": "Red body with a white saddle: likely night or resting colours, not a juvenile; no annotation, so no j."
   },
   "fish-s330-cand-557918871": {
    "jt": "o1g1sm1",

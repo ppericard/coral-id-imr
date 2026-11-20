@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v210 (2026-11-20)
+
+One opening hold path for every subject the sheet replays (the one-engine audit's step 5, the sheet's half; Pierre, 2026-11-19 05:15: one engine for every subject, with only small per-subject parameters): `hold_` takes the subject and reads its own answers (`subjRows_`) since its own reset (`resetOf_` with its id), cached per player and subject (`hold~<subject>:<name>`, every subject's key dropped with `dropHold_`, so on a delete, merge or archive too; the corals' cached holds are read again once after the update). A light load or save reply (every app since the lighter saves) also carries `holds`, `{subject: {h, ids}}` for the corals, the fish and the sea slugs; `hold` and `holdIds` stay the corals' as before, and a request without `light` gets those two alone. No app reads `holds` yet (the app's half, each subject adopting its own, waits for its own PR, gated on this version), so nobody's hold or progress moves and no rules version is appended; the copy of `core.js` in this script changes only in comments
+
 ## v209 (2026-11-20)
 
 Memory opens to the fish and the sea slugs (core.js `SUBJECTS` `pages` gains `pairs` for both, and `CLOSED_TREE` no longer names it), Pierre, 2026-11-19 (Q437: every game mode opens to every subject, in shared code). The script's progress engine is unchanged: Memory records nothing for any subject (no answer, no progress, no log row), so no answer is scored, replayed or logged differently and no rules version is appended; the copy of `core.js` in this script carries only the new `pages`

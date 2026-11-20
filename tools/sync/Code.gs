@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 209 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 210 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 209;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 210;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -241,8 +241,8 @@ function load_(name, row, q){
   if (row[6] && row[6] === adminAcct_()) out.admin = 1;  // this is the admin's account (the app shows its 🌱)
   // The ids of the player's own verified reports (repsOf_), for "Your feedback helped". A failure leaves it out.
   try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
-  // The player's opening hold from their answers (hold_). A failure leaves it out (the app keeps its own).
-  try { const o = hold_(name, resetOf_(data), q.pt, q.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
+  // The player's opening hold of each subject from their answers (holdsInto_). A failure leaves it out (the app keeps its own).
+  try { holdsInto_(out, name, data, q.pt, q.light); } catch (err) {}
   // The full replay of the player's log, when their app applied an older rules version (replay_). A failure leaves
   // it out (the app keeps its own progress and asks again next time).
   if (q.rv !== undefined) {
@@ -406,7 +406,7 @@ function doPost_(e){
   // not keep the order it replayed them in): the app takes it after a send.
   try { const g = groupsOf_(name); out.groups = g.groups; out.gids = g.gids; } catch (err) {}  // as the load reply
   try { out.notes = notes_(); } catch (err) {}  // as the load reply
-  try { const o = hold_(name, resetOf_(p.data), p.pt, !!p.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
+  try { holdsInto_(out, name, p.data, p.pt, !!p.light); } catch (err) {}
   // The full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
@@ -509,12 +509,16 @@ const scoring_ = x => { const o = CORE_.scoreRec(x); return o ? JSON.stringify(o
 // rounded to 1/1000 at each step as the app does; no new genus card while h is 1.5 or more (the app decides that).
 // Answers of the gentle restart (mode with |w) do not count; only the answers since the player's last progress reset
 // count (reefid-sync-coral-reset, as the app starts the hold over then).
+// One path for every subject the sheet replays (holdSubjects_): each subject's hold over its own answers (subjRows_)
+// since its own reset (resetOf_ with its id), as the device keeps one hold per subject (model.js HOLDK).
 // HOLD.SLACK is model.js INTRO.SLACK: keep both in step (tests/sync.test.js replays model.js on the same answers).
-// The app takes it and adds its own answers the sheet has not confirmed yet (model.js holdSync). Cached per player
-// until their next answers are logged or moved (logAnswers_, relabel_, dropRows_).
+// The app takes it and adds its own answers the sheet has not confirmed yet (model.js holdSync). Cached per player and
+// subject until their next answers are logged or moved (logAnswers_, relabel_, dropRows_).
 const HOLD = {SLACK: 0.1, IDS: 500};
-const holdKey_ = name => 'hold:' + lc_(name);
-function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
+const holdSubjects_ = () => [CORE_.replaySubject()].concat(CORE_.replayedSubjects());
+// 'hold~<subject>:<name>': the subject first, so no name can read as another subject's key (the name follows the colon).
+const holdKey_ = (name, sid) => 'hold~' + (sid || CORE_.replaySubject()) + ':' + lc_(name);
+function dropHold_(name){ ROWS_ = null; holdSubjects_().forEach(id => { try { CacheService.getScriptCache().remove(holdKey_(name, id)); } catch (e) {} }); }
 // The first-launch answer in a player's saved data (reefid-sync-coral-start), null when there is none or it is broken.
 // sid: another subject's (core.js subjKey, startKey: reefid-sync-fish-start, -reset), under its new key name or
 // the one from before the rename (core.js keyLegacy).
@@ -534,15 +538,16 @@ const resetAt_ = t => typeof t === 'string' && t ? new Date(t).getTime() || 0 : 
 // light (a request of the lighter saves, sync.js): only the ids from pt on, the only ones such an app reads (every
 // answer it still queues is at pt or later; holdSync adds the queued answers not among them), not the last HOLD.IDS:
 // up to 500 ids, several KB, in every reply. The cache keeps their times (tt) for it; a cache without them is read again.
-function hold_(name, since, pt, light){
-  const c = CacheService.getScriptCache(), k = holdKey_(name), hit = c.get(k),
+// sid: the subject whose answers count (holdSubjects_), the replay subject's by default.
+function hold_(name, since, pt, light, sid){
+  const c = CacheService.getScriptCache(), k = holdKey_(name, sid), hit = c.get(k),
     from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity,
     mine = (ids, tt) => (light ? ids.filter((x, i) => tt[i] >= from) : ids);
   // The cached hold is used only while the Answers tab has as many rows as when it was read
   // (n): a request that read the tab before another logged answers must not keep its older hold in the cache.
   const tab = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), nAll = tab ? tab.getLastRow() : 0;
   if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids && typeof o.t === 'number' && from > o.t && o.n === nAll && (!light || Array.isArray(o.tt))) return {h: o.h, ids: mine(o.ids, o.tt || [])}; }
-  const who = lc_(name), all = answerRows_(), nRead = ROWS_LAST_ || nAll;  // the tab's rows as read, every subject's
+  const who = lc_(name), all = subjRows_(sid || CORE_.replaySubject()), nRead = ROWS_LAST_ || nAll;  // the tab's rows as read, every subject's
   let h = 0;
   const rows = all
     .filter(r => lc_(r[0]) === who && !/\|w(\||$)/.test(String(r[5])))
@@ -554,11 +559,22 @@ function hold_(name, since, pt, light){
   try { c.put(k, JSON.stringify({s: since, h: h, ids: last.map(r => r[3]), tt: last.map(r => r[0]), t: last.length ? last[0][0] : 0, n: nRead}), 21600); } catch (e) {}
   return {h: h, ids: ids};
 }
+// The holds a load or save reply carries (load_, doPost_): holds, {subject: {h, ids}} for every subject the sheet
+// replays, each since its own reset; a subject that fails is left out (the app keeps its own). The replay subject's is
+// also hold and holdIds, the only ones the app reads for now (sync.js holdAdopt). holds only for a light request
+// (every app since the lighter saves): an older app never reads it, and its non-light ids (the last HOLD.IDS of each
+// subject) would add several KB to each of its replies.
+function holdsInto_(out, name, data, pt, light){
+  const R = CORE_.replaySubject(), H = {};
+  (light ? holdSubjects_() : [R]).forEach(id => { try { H[id] = hold_(name, resetOf_(data, id), pt, light, id); } catch (err) {} });
+  if (H[R]) { out.hold = H[R].h; out.holdIds = H[R].ids; }
+  if (light) out.holds = H;
+}
 
 // The Answers tab read once per request (every LOG column): hold_, replay_, stats_ and the admin's replays go through
 // it. Only the rows of the subject the sheet replays (core.js SUBJECTS replay: the corals; a row with no subject is
-// one): another subject's answer rates no photo and counts in no confusion, hold or replay. Dropped whenever answers are
-// logged or moved (dropHold_), and at the start of each request.
+// one): another subject's answer rates no photo and counts in no confusion, hold or replay of this one (its own are read
+// from subjRows_). Dropped whenever answers are logged or moved (dropHold_), and at the start of each request.
 let ROWS_ = null, ROWS_LAST_ = 0;  // ROWS_LAST_: the tab's last row when ROWS_ was read (hold_ keys its cache by it)
 const SUBJ_COL = LOG.indexOf('Subject');  // 17, core.js LOG_SUBJ: the same index in readAnswers rows
 const replayed_ = r => CORE_.rowSubject(r) === CORE_.replaySubject() && !CORE_.winkRow(r);  // never a surprise card's
@@ -4413,12 +4429,14 @@ const CORE_ = (function () { const module = {exports: {}};
   //           subject of an unlabelled row (replaySubject); the others the sheet replays are SUBJECTS replayed
   //   The subject differences one-engine step 2 split out of replay (docs/reviews/2026-11-19-one-engine-audit.md;
   //   rule S1), each a feature switched on for the subjects that hold it, at the values replay gave:
-  //   hold    the sheet's opening hold counts its answers (Code.gs hold_), adopted as this subject (sync.js holdAdopt)
+  //   hold    the app adopts the sheet's opening hold for this subject (sync.js holdAdopt); the sheet computes every
+  //           replayed subject's from its own answers (Code.gs holdsInto_, the reply's holds)
   //   offsets  the sheet's photo memory and format offsets are fitted on its answers (Code.gs stats_): the app reads
   //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
   //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
   //           signIn); any other subject adds all the progress this device holds
-  //   hold and offsets follow the sheet, which computes them for replay's subject alone (tests/subject-neutral.test.js)
+  //   offsets follows the sheet, which computes it for replay's subject alone; hold stays on that subject until the app
+  //           adopts each subject's own (tests/subject-neutral.test.js)
   //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
   //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
   //   ach     it has achievements: achs() its list (ACH, FISH_ACH), all in the one synced record (progress.js ACHK)
@@ -5235,7 +5253,7 @@ const CORE_ = (function () { const module = {exports: {}};
     return {sid: s, L: n < 0 ? L : L.slice(0, n)};
   };
   // The subject of the sheet's first replay path (SUBJECTS replay: the corals): its replay, and the subject of an
-  // unlabelled row. The sheet's hold and photo memory follow it too (SUBJECTS hold, offsets).
+  // unlabelled row. The sheet's photo memory follows it too (SUBJECTS offsets), and the hold the app adopts (hold).
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
   // The other subjects whose progress the sheet replays from their own answers (SUBJECTS replayed: fish), by id.
   const replayedSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed).map(S => S.id);
