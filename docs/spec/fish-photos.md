@@ -330,9 +330,10 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
 
 ## The Fish Candidates page
 
-`#fish/photos/candidates`, `admin-fish.js` `renderFishCand`; the pure rules in `autosort.js` `fishQueue`, `fishPlay`,
-`fishAdd`, `fishReject`, `fishExclude`, tested in `tests/fishcand.test.js`. The coral swiper's twin, one candidate a
-screen.
+`#fish/photos/candidates`, `#seaslug/photos/candidates`: the swiper every subject has (`admin.js` `renderCand`), with this
+page's part the `tree` builder of `CAND_BUILD` in `admin-fish.js`; the pure rules in `autosort.js` `fishQueue`,
+`fishPlay`, `fishAdd`, `fishReject`, `fishExclude`, tested in `tests/fishcand.test.js`. One candidate a screen, as the
+corals'.
 
 - **One phone screen**: at 390 × 844 the photo, its species and the decision buttons without scrolling, the demo banner
   included. The swiper's height is the screen under where the page starts (`--sw-top`, measured in `admin.js` `start`

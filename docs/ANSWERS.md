@@ -1477,3 +1477,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   card: they get the fish's all-met card in their own words, which says what comes next before circle 3. Applied:
   `app.js` `UNITS.seaslug` `done`, `slugNextOf`, `CARD_KINDS`; docs/spec/seaslugs.md "Their circles",
   decisions/2026-11-20-cards-per-subject.md.
+- **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
+  de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
+  window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
