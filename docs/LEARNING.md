@@ -1148,6 +1148,9 @@ notebook: [docs/archive/learning-notebook.md](archive/learning-notebook.md) (the
   which are evidence about that answer, never a decay.
 - **Answer time compared within the same question format**: not used. One pooled median of the player's own timed
   answers (`RTIME`, `rtWeight`).
+- **A narrower targeting for the corals' unanswered photos** (`CAL.U` 0.25, the photo spread around the genus offset):
+  not adopted (2026-11-20). `CAL.U` stays 1: in the rated world the shown score lagged about a point at 1,000 answers
+  (a guardrail breached) and the sheet's photo ratings came out a little worse, true knowledge unchanged.
 
 ## Real-answer replay (`tools/abilityeval.js`): judging a paired difference
 
