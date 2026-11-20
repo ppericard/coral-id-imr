@@ -750,6 +750,7 @@ function treeGenera(X, F) {
         fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
         wfam: [],
         imrName: G.imr || '', // the IMR tag
+        cname: G.common || '', // its common name (fish.json common), under its name on its first-meeting card (unitCname)
         // that IMR sub-entry names this genus alone (Chromis; not Surgeonfish, which names three)
         imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
         fish: 1,
@@ -3187,6 +3188,14 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
+// The common name of a unit whose own label is a scientific name (a coral genus, a fish scientific genus, a sea slug
+// genus), for its first-meeting card, right under its name: its record's `cname` (fish.json common), else its first
+// English name (vernFirst); '' for a unit labelled by its common name already, or one with none. Any subject (rule S1).
+const unitCname = n => {
+  const g = GX(n) || {},
+    c = uplain(n) ? '' : g.cname || vernFirst(n);
+  return c && c.toLowerCase() !== unameT(n).toLowerCase() ? c.charAt(0).toUpperCase() + c.slice(1) : '';
+};
 // ID tips heading: the lecture for slate genera (a slate genus the lecture skips carries its own `tl`, naming the
 // Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
