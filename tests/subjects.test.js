@@ -84,6 +84,16 @@ test('pages and closed: every Learn and Practice mode is open to each subject or
   });
   // The Duel tab for every subject (its pairs: app.js UNITS pairs).
   C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('quiz-duel'), s.id));
+  // Memory for every subject (Pierre, 2026-11-19, Q437): the page is open to each, and each subject declares how a pair is
+  // made (app.js UNITS memory, a kind proto/pairs.js MEMORY holds) in its own entry or in the tree subjects' shared units.
+  C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('pairs') && !('pairs' in (s.closed || {})), s.id));
+  assert.ok(/memory: 'views'/.test(app) && (app.match(/memory: 'photos'/g) || []).length === 1, 'UNITS memory declared once per kind');
+  ['fish', 'seaslug', 'coral'].forEach(id => {
+    const S = C.subjectOf(id),
+      r = C.routeIn(C.routeOut('pairs', S));
+    assert.strictEqual(r.key, 'pairs', id);
+    assert.strictEqual(r.S, S, id);
+  });
   // The Look-alikes deck and Compare for every subject (Q437): open on each, none closed for the corals' data alone.
   C.SUBJECTS.forEach(s => assert.ok(s.pages.includes('cmp') && !('cmp' in (s.closed || {})), `${s.id}: cmp`));
   // The admin's look-alike picks (curation.json mont) sit at the top for the corals and under the subject's own key for

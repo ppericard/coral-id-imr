@@ -2437,6 +2437,9 @@ const TREE_UNITS = {
   circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : []),
   // Circle 2 once every circle-1 unit was asked, circle 3 at its gate (treeGate, treeC3).
   gate: treeGate,
+  // How a Memory pair is made (proto/pairs.js MEMORY): two photos of one unit that show it differently (one view per unit:
+  // a different species, else a juvenile and an adult, else another observation).
+  memory: 'photos',
   // The species a photo shows (its sp, by the name treeGenera spn gives it), for the answer log (speciesShown).
   species: p => (TREEU && TREEU.spn && p && p.sp && TREEU.spn[p.sp]) || '',
   // A photo by its name, for the admin's "Bad photo" flag (flag.js; treePhoto).
@@ -2483,6 +2486,8 @@ const UNITS = {
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
+    memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
     // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
     // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
@@ -3414,7 +3419,7 @@ const MODES = {
     ['quiz', 'Quiz', 'Name the genus'],
     ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
-    ['pairs', 'Memory', 'Match colony and corallites']
+    ['pairs', 'Memory', 'Match photos of the same genus']
   ],
   // Identify shows the current subject's tool only: each subject names its own (app.js UNITS
   // identify); the other subject's tool is reached through the subject switch.
