@@ -62,12 +62,29 @@ test('a coral mix-up reads both halves, the unit shown first, with the IMR lectu
   assert.match(coral.pairLine('Herpolitha', 'Halomitra').s, /^Corals of the World \(Veron et al\.\), Halomitra pileus factsheet/);
 });
 
-test('every declared slate pair has a line or a reason in none; the lines are ours, never labelled IMR alone', () => {
+test('a mix-up with a bonus genus in a game reads its line too, the bonus genus with its Coral Finder page', () => {
+  assert.ok(C.gameOf(D).includes('Pleuractis'));
+  assert.deepStrictEqual(plain(coral.pairText('Pleuractis', 'Lobactis')), {
+    t: 'Pleuractis: wavy septa, small teeth; less prominent tentacular lobes · Lobactis: tall tentacular lobes, often green, blue or white',
+    s: 'Coral Finder, p. 64; IMR Lecture 6, slide 53'
+  });
+});
+
+test('every declared coral pair (slate, bonus and Key-only genera) has a line or a reason in none; the lines are ours, never labelled IMR alone', () => {
   const slate = C.slateOf(D),
     G = n => D.gen[n] || D.x.gen[n],
-    seen = new Set();
-  slate.forEach(a => (G(a).look || []).filter(b => slate.includes(b)).forEach(b => seen.add([a, b].sort().join('|'))));
-  assert.deepStrictEqual([...seen].sort(), [...Object.keys(A.pairs), ...Object.keys(A.none)].sort());
+    all = [...new Set([...Object.keys(D.gen), ...Object.keys(D.x.gen)])],
+    pairsOf = L => {
+      const seen = new Set();
+      L.forEach(a => (G(a).look || []).filter(b => L.includes(b) && b !== a).forEach(b => seen.add([a, b].sort().join('|'))));
+      return [...seen].sort();
+    },
+    keys = [...Object.keys(A.pairs), ...Object.keys(A.none)].sort();
+  assert.deepStrictEqual(pairsOf(all), keys);
+  // the slate's 59 pairs, all among them, and the 25 with a bonus or Key-only genus (docs/decisions/2026-11-20-tellapart-bonus-pairs.md)
+  assert.strictEqual(pairsOf(slate).length, 59);
+  assert.ok(pairsOf(slate).every(k => keys.includes(k)));
+  assert.strictEqual(keys.length, 84);
   assert.ok(Object.keys(A.pairs).length >= 50, `${Object.keys(A.pairs).length} pairs with a line`);
   Object.keys(A.pairs).forEach(k => {
     const [a, b] = k.split('|'),
