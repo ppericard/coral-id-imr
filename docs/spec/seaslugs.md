@@ -109,8 +109,10 @@ the fish's ([fish-photos.md](fish-photos.md)).
 `fish_game.py` `box_of` reads it) and whose tags pass the sea slugs' tile rule (`seaslug_game.py` `tile_tags`: the fish's `tile_tags` plus the dorsal view,
 the sea slugs' commonest good one; integrator's call, easy to correct; 2,132 of the 3,014 photos pass). **No sea slug photo carries a box** (2026-11-20: 0 of
 3,014 in play; 1 proposed crop among 5,163 judgements, on a photo not in play; Pierre's sea slug crops: none), and
-`judging/SEASLUG.md` gives none (no `bb`), so no record has a tile and the format is not drawn for them (`planFind` finds
-no tile) until a box pass puts boxes in.
+the judging import now takes one (`bb` in a judging file, `judging/SEASLUG.md` "The animal's box"; checked by
+`tools/judging_fish.py --subject seaslug --check`, imported with the codes: `--subject seaslug codes`), but no box is
+imported yet, so no record has a tile and the format is not drawn for them (`planFind` finds no tile) until the bulk box
+pass's boxes go in (the pass's model and figures: `docs/decisions/2026-11-20-seaslug-box-model.md`).
 
 ## English names as information
 

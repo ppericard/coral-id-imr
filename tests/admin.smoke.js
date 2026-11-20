@@ -1968,6 +1968,8 @@ async function loadPart(b, base, fails) {
               probs: (document.querySelector('.adm-ttprob') || {}).textContent || '',
               wide: document.documentElement.scrollWidth - innerWidth
             }));
+          // The view alone opens on its first genus, as every subject's Tree opens on its first node of its broadest rank
+          // (admin.js renderTree: a fish family); the first group's page, its genera's cards
           await go('photos/tree/key');
           let c = await ct();
           const tabs = c.tabs.join();
@@ -1975,8 +1977,12 @@ async function loadPart(b, base, fails) {
             c.hash !== '#photos/tree/key' ||
             c.note ||
             !/^Tree,/.test(tabs) ||
-            c.cards.join() !== 'Acropora,Pocillopora,Stylophora,Anacropora'
+            c.crumbs.join(' › ') !== '1 · Small, raised, separate-walled corallites › Acropora'
           )
+            fails.push(`${w}px Coral Tree: the view alone, the first genus ${JSON.stringify(c)}`);
+          await go('photos/tree/key/' + encodeURIComponent('k:1'));
+          c = await ct();
+          if (c.note || c.cards.join() !== 'Acropora,Pocillopora,Stylophora,Anacropora')
             fails.push(`${w}px Coral Tree: the first group ${JSON.stringify(c)}`);
           if (w === 1280 && (c.roots.join() !== 'k:1,k:2,k:3,k:4,k:5,k:6,k:7,k:8,k:9,k:10,k:11,k:none' || c.rows < 60))
             fails.push(`${w}px Coral Tree: the IMR lecture groups ${JSON.stringify(c.roots)} ${c.rows}`);
@@ -2004,10 +2010,19 @@ async function loadPart(b, base, fails) {
           c = await ct();
           if (c.crumbs.join(' › ') !== 'Pachyseridae › Pachyseris' || c.keyView !== '#photos/tree/key/Pachyseris' || c.probs)
             fails.push(`${w}px Coral Tree: WoRMS ${JSON.stringify(c)}`);
+          // WoRMS alone: its first family's first genus, under WoRMS's families; the family's page, its genera's cards
           await go('photos/tree/worms');
           c = await ct();
-          if (c.hash !== '#photos/tree/worms' || !c.cards.length || (w === 1280 && !c.roots.every(r => r.startsWith('wf:'))))
-            fails.push(`${w}px Coral Tree: WoRMS's first family ${JSON.stringify(c)}`);
+          if (
+            c.hash !== '#photos/tree/worms' ||
+            c.crumbs.length !== 2 ||
+            !c.crumbs[0].endsWith('idae') ||
+            (w === 1280 && !c.roots.every(r => r.startsWith('wf:')))
+          )
+            fails.push(`${w}px Coral Tree: WoRMS's first genus ${JSON.stringify(c)}`);
+          await go('photos/tree/worms/' + encodeURIComponent(c.roots[0] || 'wf:Acroporidae'));
+          c = await ct();
+          if (!c.cards.length) fails.push(`${w}px Coral Tree: WoRMS's first family ${JSON.stringify(c)}`);
           // A genus card opens its Tree page, with the genus's tools on it
           await go('photos/tree/key/' + encodeURIComponent('k:1'));
           await p.click('.adm-tcard[data-ttc="Stylophora"]');
@@ -2632,10 +2647,11 @@ async function loadPart(b, base, fails) {
         if (hash !== to || strip(at.tab || at.menu) !== tab)
           fails.push(`${w}px #${from}: ${hash} on ${at.tab || at.menu}, not ${to} on ${tab}`);
       }
-      // #photos lands on the Tree's first group page (the Genera tab, which it opened on a genus, is folded into the Tree).
+      // #photos lands on the Tree's first genus with its tools, as every subject's Tree opens on its first node of its
+      // broadest rank (admin.js renderTree; the Genera tab, which also opened on a genus, is folded into the Tree).
       await go('photos');
-      if (!(await p.evaluate(() => !!document.querySelector('.adm-tcard') && !document.querySelector('[data-lv]'))))
-        fails.push(`${w}px #photos: not the Tree's first group page`);
+      if (!(await p.evaluate(() => !document.querySelector('.adm-tcard') && !!document.querySelector('[data-lv]'))))
+        fails.push(`${w}px #photos: not the Tree's first genus page`);
       // Deep links: a genus's node, and a journey whose name holds the separators (split before decoding).
       await go('photos/tree/key/' + encodeURIComponent('Porites'));
       if ((await p.evaluate(() => (document.querySelector('.adm-sname i') || {}).textContent)) !== 'Porites')
@@ -7676,10 +7692,10 @@ async function loadPart(b, base, fails) {
       if (!v0.fishPages.includes('Fish ID Key') || !v0.fishPages.includes('Families') || !/Coral ID Key/.test(v0.pages))
         fails.push(`${w}px Visits: the pages of each subject ${JSON.stringify(v0.fishPages)}`);
       if (v0.wide > 0) fails.push(`${w}px Visits: page ${v0.wide} px wider than the window`);
-      // The players' part's actions at 1280, when it ran before this (a whole run; not SMOKE_PART=main), leave one more
-      // visitor of the demo without an answer (a merge, the answers of devices deleted).
-      const never = once && run.has('players') ? 14 : 13;
-      if (v0.kpis !== `46of 75Visits without a game | 17Visitors | ${never}Never answered | 8 minMedian visit | 54%On a phone`)
+      // The same numbers whether or not the players' part ran before this (a whole run, or SMOKE_PART=main alone as on CI):
+      // its merge of "mara demo2" and delete of "Test Demo" touch players whose visits all include a game, so they are not
+      // among the 17 visitors without one, and none of those visitors loses its answers (checked on a whole run at 1280).
+      if (v0.kpis !== '46of 75Visits without a game | 17Visitors | 13Never answered | 8 minMedian visit | 54%On a phone')
         fails.push(`${w}px Visits: numbers ${v0.kpis}`);
       if (v0.rows !== 12 || v0.open || v0.legend || v0.stack) fails.push(`${w}px Visits: ${JSON.stringify({...v0, pages: ''})}`);
       if (!/Coral ID Key/.test(v0.pages) || !/Tools › anatomy/.test(v0.pages) || /Quiz|Duels/.test(v0.pages))
@@ -9409,9 +9425,11 @@ async function loadPart(b, base, fails) {
           const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
           undo();
           undo();
+          r.after = rejected(c.f) || !!(entry(g).add || {})[c.f]; // both Undos: neither mark left
           return r;
         }, g);
-        if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
+        // Remove of a candidate Pierre added himself: rejected as well (no return to Candidates, no new auto add); two Undos restore.
+        if (own && (!own.rej || own.added || own.after)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
       }
       // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
       await go('photos/candidates');
