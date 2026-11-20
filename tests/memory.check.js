@@ -74,6 +74,16 @@ module.exports = async function memoryCheck(p, w, fails, tag = '', games = 2) {
       cards.forEach(c => (by[c.name] = (by[c.name] || []).concat(c)));
       const bad = [];
       if (cards.length < 4 || cards.length % 2) bad.push(`${cards.length} cards`);
+      // No unit with its own family or genus on the board, no photo on two cards.
+      const ids = [...new Set(cards.map(c => c.n).filter(Boolean))],
+        up = u => {
+          const out = [];
+          for (let x = (GX(u) || {}).parent, i = 0; x && i < 10; x = (GX(x) || {}).parent, i++) out.push(x);
+          return out;
+        };
+      ids.forEach(a => ids.forEach(b => a !== b && up(a).includes(b) && bad.push(`${a} and its ${b} on one board`)));
+      const fs = cards.map(c => c.f && c.f.f).filter(Boolean);
+      if (new Set(fs).size !== fs.length) bad.push('one photo on two cards');
       Object.entries(by).forEach(([name, L]) => {
         if (L.length !== 2) bad.push(`${name}: ${L.length} cards`);
         if (!L[0].n) bad.push(`${name}: not an unlocked unit`);

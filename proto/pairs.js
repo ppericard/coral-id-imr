@@ -26,6 +26,15 @@ function memoryGenera(names, np, look, met, likes = lookAlikes, apart = () => tr
     }
   return gens;
 }
+// Whether one of units a and b lies under the other in the tree (a species under its genus under its family):
+// parentOf(u) gives u's parent unit or nothing. Pure (tests/pairs.test.js).
+function memoryKin(a, b, parentOf) {
+  const under = (x, y) => {
+    for (let u = parentOf(x), i = 0; u && i < 10; u = parentOf(u), i++) if (u === y) return true;
+    return false;
+  };
+  return under(a, b) || under(b, a);
+}
 // The two photos of unit n for a one-view subject (rule P4: two different observations, never one photo twice): photo(n,
 // want) gives a photo of n or null (lab.js labShots, the draw's own choice, want {not, fit}); juv(p): a juvenile photo
 // (app.js juvP). The first photo is the draw's; the second shows the unit differently from it, the first of these that
@@ -74,16 +83,22 @@ const MEMORY = {
     lede: () => `Flip two cards. A pair is two photos of the same ${SUBJ.one}.`,
     open: () => {
       const {photo, seen} = labShots(12);
-      let looks = [];
+      let looks = [],
+        used = new Set();
       return {
-        names: () => ((looks = UNITS[SUBJ.id].pairs()), unlocked()),
+        names: () => ((looks = UNITS[SUBJ.id].pairs()), (used = new Set()), unlocked()),
         // A unit plays only with two observations in play (gamePics: the draw's photos of it).
         met: n => new Set(gamePics(n, 'wide').map(labObs)).size >= 2,
         likes: n => looks.flatMap(([a, b]) => (a === n ? [b] : b === n ? [a] : [])),
-        apart: (n, gens) => gens.every(g => !choiceNames(g, n) && !choiceNames(n, g)),
+        // Never two of one label, nor a unit with its own family or genus (both unlocked with the scientific names: its
+        // photos are the other's, and a right pair would be refused).
+        apart: (n, gens) => gens.every(g => !choiceNames(g, n) && !choiceNames(n, g) && !memoryKin(g, n, u => (GX(u) || {}).parent)),
+        // Never one observation on two cards of a board.
         deal: n => {
           const L = memoryPhotos(n, photo, juvP);
-          return L && L.map(p => ({n, p}));
+          if (!L || L.some(p => used.has(labObs(p)))) return null;
+          L.forEach(p => used.add(labObs(p)));
+          return L.map(p => ({n, p}));
         },
         // The unit is named only once the pair is found (the name band is hidden until then, lab.css .pfront b), with the
         // photo's own species when it is finer than the unit (UNITS taxon).

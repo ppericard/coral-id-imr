@@ -25,7 +25,7 @@ function load() {
   vm.runInContext(
     'const labObs = p => p.o || p.f;\n' +
       block(src, 'function memoryGenera', 'const MEMORY') +
-      '\nthis.f = memoryGenera; this.photos = memoryPhotos;',
+      '\nthis.f = memoryGenera; this.photos = memoryPhotos; this.kin = memoryKin;',
     ctx
   );
   return ctx;
@@ -85,6 +85,24 @@ test('apart: two units one label names never share a game', () => {
       assert.strictEqual(g.length, 7, `${look}: every other unit still plays`);
     }
   assert.deepStrictEqual([...f([], 4, true, () => true)], [], 'no unit unlocked: none');
+});
+
+// A family and its genera (and species) all unlocked: the board never holds a unit with its ancestor or descendant.
+test('kin: a family and its genus never share a board', () => {
+  const ctx = load(),
+    parent = {Coris: 'Wrasses', 'Coris gaimard': 'Coris', Chromis: 'Damsels'},
+    parentOf = u => parent[u],
+    all = ['Wrasses', 'Coris', 'Coris gaimard', 'Damsels', 'Chromis', 'Other'];
+  assert.ok(ctx.kin('Wrasses', 'Coris', parentOf) && ctx.kin('Coris', 'Wrasses', parentOf));
+  assert.ok(ctx.kin('Wrasses', 'Coris gaimard', parentOf), 'a species and its family');
+  assert.ok(!ctx.kin('Coris', 'Chromis', parentOf) && !ctx.kin('Other', 'Wrasses', parentOf));
+  const apart = (n, gens) => gens.every(g => !ctx.kin(g, n, parentOf));
+  for (let k = 0; k < 200; k++)
+    for (const look of [false, true]) {
+      const g = [...ctx.f(all, 6, look, () => true, undefined, apart)];
+      for (const a of g) for (const b of g) assert.ok(a === b || !ctx.kin(a, b, parentOf), `${look}: ${g}`);
+      assert.ok(g.length >= 3, `${look}: ${g}`);
+    }
 });
 
 test('look-alike set from the subject own pairs: likes replaces the data look-alikes', () => {
