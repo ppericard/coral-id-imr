@@ -1,27 +1,27 @@
 {
  "photos": {
   "seaslug-142953-cand-650455187": {"code": "o0g0sm12"},
-  "seaslug-142953-cand-358651402": {"code": "p1g0sl1w5"},
+  "seaslug-142953-cand-358651402": {"code": "p1g0sl1w5", "bb": [0.221, 0.2656, 0.8424, 0.9044]},
   "seaslug-142953-cand-527403031": {"code": "p1g0sl1j2"},
   "seaslug-142953-cand-290235068": {"code": "o1g0smk2", "unsure": ["code"], "note": "A grey-green and a near-black nudibranch side by side, the same size: maybe two species (k), maybe a pair (s)."},
-  "seaslug-142953-cand-363346028": {"code": "o1g0sl14"},
-  "seaslug-142953-cand-489199428": {"code": "p1g0sl14"},
+  "seaslug-142953-cand-363346028": {"code": "o1g0sl14", "bb": [0.2812, 0.1, 0.8575, 0.8209]},
+  "seaslug-142953-cand-489199428": {"code": "p1g0sl14", "bb": [0.1062, 0.0675, 0.805, 0.865]},
   "seaslug-142953-cand-751841815": {"code": "o0g0sl13"},
   "seaslug-142953-cand-682617975": {"code": "o1g1sm13"},
-  "seaslug-142953-cand-630770464": {"code": "o1g0sl14"},
+  "seaslug-142953-cand-630770464": {"code": "o1g0sl14", "bb": [0.3781, 0.0611, 0.8532, 0.8612]},
   "seaslug-142953-cand-311569844": {"code": "o0g0sl13"},
   "seaslug-142953-cand-616024875": {"code": "p1g0sl1j2"},
-  "seaslug-142953-cand-460653418": {"code": "d1g1sl14"},
+  "seaslug-142953-cand-460653418": {"code": "d1g1sl14", "bb": [0.1125, 0.08, 0.7734, 0.8578]},
   "seaslug-142953-cand-442928183": {"code": "h0g0sl12"},
   "seaslug-142953-cand-579344344": {"code": "o0g0ml12"},
   "seaslug-142953-cand-631265949": {"code": "h1g0mm11"},
   "seaslug-142953-cand-362797238": {"code": "p0g1sl12"},
   "seaslug-142953-cand-276563673": {"code": "p1g1ml13"},
-  "seaslug-142953-cand-604391433": {"code": "d1g0sl14"},
+  "seaslug-142953-cand-604391433": {"code": "d1g0sl14", "bb": [0.2262, 0.2375, 0.7175, 0.985]},
   "seaslug-142953-cand-640696311": {"code": "h1g0sl13"},
   "seaslug-142953-cand-554576520": {"code": "o0d0sls2"},
   "seaslug-142953-cand-513854761": {"code": "h1g0sl13"},
   "seaslug-142953-cand-552029987": {"code": "h1g0sl13"},
-  "seaslug-142953-cand-486666126": {"code": "d1g1sl14"}
+  "seaslug-142953-cand-486666126": {"code": "d1g1sl14", "bb": [0.3125, 0.105, 0.729, 0.8644]}
  }
 }
