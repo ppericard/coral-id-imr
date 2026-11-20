@@ -2,23 +2,23 @@
  "photos": {
   "seaslug-Nembrotha-cand-505894926": {"code": "h1g0sl13"},
   "seaslug-Nembrotha-cand-514958424": {"code": "d1g0mm1j2"},
-  "seaslug-Nembrotha-cand-716568252": {"code": "p1g0sl15"},
+  "seaslug-Nembrotha-cand-716568252": {"code": "p1g0sl15", "bb": [0.2437, 0.15, 0.7313, 0.6417]},
   "seaslug-Nembrotha-cand-71210603": {"code": "p1g0mm1j2"},
   "seaslug-Nembrotha-cand-540578898": {"code": "d1g0mm13"},
   "seaslug-Nembrotha-cand-414531756": {"code": "o1g0mm13"},
   "seaslug-Nembrotha-cand-292860835": {"code": "o1g2bl11"},
   "seaslug-Nembrotha-cand-693782418": {"code": "p1g0ml1w4"},
-  "seaslug-Nembrotha-cand-181849947": {"code": "o1g0sl15"},
-  "seaslug-Nembrotha-cand-714930282": {"code": "p1g1sl14"},
+  "seaslug-Nembrotha-cand-181849947": {"code": "o1g0sl15", "bb": [0.145, 0.2616, 0.795, 0.7709]},
+  "seaslug-Nembrotha-cand-714930282": {"code": "p1g1sl14", "bb": [0.0341, 0.2799, 0.8204, 0.6576]},
   "seaslug-Nembrotha-cand-150369775": {"code": "p1g0ml14"},
   "seaslug-Nembrotha-cand-33530921": {"code": "o0g0sls3"},
-  "seaslug-Nembrotha-cand-363343616": {"code": "p1g0sm14"},
+  "seaslug-Nembrotha-cand-363343616": {"code": "p1g0sm14", "bb": [0.3012, 0.4983, 0.5563, 0.6834]},
   "seaslug-Nembrotha-cand-18925460": {"code": "o1g0ml14"},
   "seaslug-Nembrotha-cand-610716161": {"code": "o0g0sm1w2"},
-  "seaslug-Nembrotha-cand-84257660": {"code": "p1g0sl1w5"},
+  "seaslug-Nembrotha-cand-84257660": {"code": "p1g0sl1w5", "bb": [0.2468, 0.2166, 0.8219, 0.7125]},
   "seaslug-Nembrotha-cand-478610694": {"code": "p1g0bm12"},
   "seaslug-Nembrotha-cand-375448269": {"code": "o0g0ml1w2"},
   "seaslug-Nembrotha-cand-288144110": {"code": "d1g0ml1w4"},
-  "seaslug-Nembrotha-cand-63400535": {"code": "p1g0sl15"}
+  "seaslug-Nembrotha-cand-63400535": {"code": "p1g0sl15", "bb": [0.1656, 0.2, 0.8532, 0.7334]}
  }
 }

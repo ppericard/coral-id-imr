@@ -1,7 +1,7 @@
 {
  "photos": {
   "seaslug-50551-cand-183284264": {"code": "o0g0sl13"},
-  "seaslug-50551-cand-4657543": {"code": "p1g0sl15"},
+  "seaslug-50551-cand-4657543": {"code": "p1g0sl15", "bb": [0.1, 0.05, 0.9067, 0.89]},
   "seaslug-50551-cand-703250260": {"code": "p1g0sl1c3"},
   "seaslug-50551-cand-364353487": {"code": "o0d1ml1c1"},
   "seaslug-50551-cand-363071339": {"code": "d1d2ml1c1"},
