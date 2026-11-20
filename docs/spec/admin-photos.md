@@ -28,7 +28,8 @@ tools below are `coralLive` in `admin-nodephotos.js`.
   button.
 - **Needs**: per genus × view, why the game pool falls short (few colonies, few good ones, too easy for players' level,
   repeated photos, mix-ups), ranked (`needsOf()`, also Where to look's ranking).
-- **Remove** on the genus page of a photo the auto-sort added also marks it rejected (below).
+- **Remove** on the genus page of an added candidate (the auto-sort's or Pierre's own) also marks it rejected (below):
+  it does not come back in Candidates and the auto-sort never adds it again.
 - **Removed from the site** (`genera[g].hide`): the genus's photos taken off the site, each with **Put back**; the Tag…
   filter **Removed photos**.
 - **Excluded** (`exclude`): the genus's excluded photos, each with **Restore**; a restored photo comes back at its place
