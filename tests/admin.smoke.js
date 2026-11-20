@@ -2647,10 +2647,11 @@ async function loadPart(b, base, fails) {
         if (hash !== to || strip(at.tab || at.menu) !== tab)
           fails.push(`${w}px #${from}: ${hash} on ${at.tab || at.menu}, not ${to} on ${tab}`);
       }
-      // #photos lands on the Tree's first group page (the Genera tab, which it opened on a genus, is folded into the Tree).
+      // #photos lands on the Tree's first genus with its tools, as every subject's Tree opens on its first node of its
+      // broadest rank (admin.js renderTree; the Genera tab, which also opened on a genus, is folded into the Tree).
       await go('photos');
-      if (!(await p.evaluate(() => !!document.querySelector('.adm-tcard') && !document.querySelector('[data-lv]'))))
-        fails.push(`${w}px #photos: not the Tree's first group page`);
+      if (!(await p.evaluate(() => !document.querySelector('.adm-tcard') && !!document.querySelector('[data-lv]'))))
+        fails.push(`${w}px #photos: not the Tree's first genus page`);
       // Deep links: a genus's node, and a journey whose name holds the separators (split before decoding).
       await go('photos/tree/key/' + encodeURIComponent('Porites'));
       if ((await p.evaluate(() => (document.querySelector('.adm-sname i') || {}).textContent)) !== 'Porites')
