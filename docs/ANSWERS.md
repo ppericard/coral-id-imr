@@ -1427,3 +1427,42 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   parfois ya effectivement besoin d'une recalibration». The strong model is not the truth by itself; how the
   reference is checked depends on the task, and a recalibration is made when the task needs one. Applied: INTEGRATOR
   "Working with Pierre" (the same line), #1291.
+- **Correction of the 2026-11-08 entry that cites the activity item under Q265.** That entry ("Q265.", paraphrase) says
+  "Next (short term): activity outside the quiz …". The citation is wrong: PR #751's body lists "Q265's `data/` move"
+  beside that item, and Q265 is the question of the move of the tools' and the admin's data into `data/` (the ROADMAP
+  row of that move names it so: "Q265, Pierre, 2026-11-08: the proposals approved"; commit 577956f45). The activity
+  item has no question number; its source is his sentence in the next entry. His own words for Q265 are not in the
+  repo, so its approval stays a paraphrase. The old entry stays as it is. Applied: ROADMAP "Activity outside the quiz,
+  signed in or not" (it cites no Q265).
+- **2026-11-08, tracking activity outside the quiz (missing from the ledger).** «comment est-ce qu'on peut arriver à
+  traquer une activité en dehors du quiz, et que ce soit pour des gens connectés ou pas connectés» (Pierre, 2026-11-08,
+  as the ROADMAP row of #751 quoted it; the row slimming of #1140 dropped the quote). It started the read-only study of
+  that day (visits logged since sheet v30, #423) and the Players › Visits page (#777). It is the source the "Q265"
+  entry should have named. Applied: ROADMAP "Activity outside the quiz, signed in or not" (the quote is back in the
+  row).
+- **2026-11-08 afternoon, steps inside the Key and the Look-alikes (C3), a wish.** «ça serait bien de compter les
+  étapes dans la clé et les comparaisons» (Pierre, 2026-11-08, quoted in #752's Decisions). It is a wish, not a
+  schedule: #752 wrote "confirmed" and the ROADMAP row kept "(confirmed by Pierre)", but he asked for nothing to be
+  built, and the Visits page he chose (#777) lists "Steps inside the Key: later". It corrects that "confirmed" and
+  completes the entries "Q265." (its "later C3") and "Q301, Q304." Applied: ROADMAP "Activity outside the quiz,
+  signed in or not" (C3 an idea, his words quoted, "confirmed" gone).
+- **Correction of "Game modes" (2026-11-18, paraphrase).** That entry says "the seven modes are built, the most useful
+  first (Same or different?, Odd one out, Down the tree, Life stages matched, then Sort them, Virtual dive)". It
+  paraphrases STATUS 00f82557c ("seven modes built, most useful first"), with no words of his. What the repo records:
+  #1081 (the multi-photo study) says "the four formats Pierre approved on 2026-11-18 (Same or different?, Odd one out,
+  Life stages matched, Down the tree)", relayed by the integrator; his own words for it are not in the repo. So four
+  formats are approved. Sort them, Virtual dive and Trainer's set rest only on his request of 2026-11-08 (bring back
+  the ReefRecall modes and add other kinds, as #751 relays it in English) and are ideas. "Built" was wrong too: Same or
+  different? and Odd one out are in the Lab, the other two are not built. Applied: ROADMAP "Game modes" (its lead and
+  the source cells of the rows).
+- **Correction of "14:50-15:05, contrast" (2026-11-19): the Learn-sheets scope is not his.** That entry's Applied line
+  says "a ROADMAP row for a correction on the Learn sheets only", and the decision record
+  `2026-11-19-photo-measured-block` wrote that scope inside his decision. His words, in that entry: 15:01 «je ne suis
+  pas convaincu qu'il faille les corriger, ou alors dans un deuxième temps»; 15:07 «Plus tard ça veut juste dire qu'on
+  le met dans la ROADMAP». He never named the Learn sheets: that limit is the integrator's reading and decides
+  nothing. The decision as he made it: no correction now; the row stays in the ROADMAP as an idea. Applied: ROADMAP
+  "Contrast correction on the Learn sheets"; decisions/2026-11-19-photo-measured-block.md.
+- **Paraphrase-only entries, how to cite them.** The entries for Q316, Q322, Q330, Q342-Q349 and Q373 stay paraphrases:
+  no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
+  #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
+  relayed, never as his words. No doc change.

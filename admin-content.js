@@ -16,8 +16,8 @@
 // - Who may edit: mayContent, the one place the content right is asked (today the token that can publish, phase 0 of the
 //   design; roles step 1 puts can_(account, 'content', instance) there), for the controls and for every write.
 // The bar of every Tree page counts the edits to check (stale and orphaned: sheetWarn), linking to the first one's page.
-// The same code serves every subject's Tree (S: its SUBJECTS entry): the fish's (admin.js renderFishUnits, over fish.json)
-// and the corals' (admin-coraltree.js renderCoralTree, over data.json as the admin holds it; design note v2, step 8: a
+// The same code serves every subject's Tree (S: its SUBJECTS entry; admin.js renderTree, over its builder's data, TREE_BUILD
+// base): the fish's (over fish.json) and the corals' (over data.json as the admin holds it; design note v2, step 8: a
 // genus's sheet, its look-alike pairs and no circle, a withdrawal the ★ rule would hold turned off). admin.html loads it
 // before admin.js, as admin-coraltree.js: a Tree page opened cold can render before the later scripts are in (the
 // demo's data comes at once), and must find the editor.
@@ -262,7 +262,7 @@
     return;
   }
 
-  // ---- The page (admin.js renderFishUnits) ----
+  // ---- The page (admin.js renderTree) ----
   // The content right: today the token that can publish (phase 0); roles step 1 asks the sheet here.
   const mayContent = () => !!TOKEN;
   // SH_ED, this tab: the row open in the editor, {id, ck} (its node and row key), with what was typed in it so far (text,
