@@ -33,8 +33,9 @@ lines and "IMR names inside it" kept, without their sources.
 - The photo on a Learn list opens the sheet, not the photo viewer; the sheet's photos still enlarge with their credits
   (rule P5 holds there; Pierre named this exception: the list's photo shows its credits once on the sheet). Checked
   on 2026-11-20: every coral genus's list photo is the sheet's; 11 of 65 fish families and 38 of 78 sea slug genera
-  show another one on their sheet (ROADMAP "The Learn list's photo first on the sheet it opens"). The cues' heading
-  and sources leave the list and stay on the sheet (rule C2).
+  showed another one on their sheet, fixed next (learn.js `listPhoto`: the family sheet's hero and a new hero on a
+  list unit's genus sheet are the list card's own photo, first in the viewer; the integrator's call, easy to correct).
+  The cues' heading and sources leave the list and stay on the sheet (rule C2).
 - Not the admin one-engine study's step 9 (its acceptance is the same HTML as before); that refactor stays open.
 - The look-alike cards on the sheets (`learn.js` `viewLookalikes`' list, the fish family sheet's "Don't confuse with")
   keep their "Open the sheet →" / "Compare side by side →" lines: not a Learn list, not in this change.
