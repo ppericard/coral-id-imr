@@ -40,7 +40,7 @@ function run({imr = false, q = {}, sp = true} = {}) {
     fish: {
       learn: [
         {k: 'sp', name: 'Common names', when: () => sp, self: () => true, line: () => ''},
-        {k: 'sci', name: 'Scientific names', self: () => ctx.imr, line: () => ''}
+        {k: 'sci', name: 'Scientific names', self: () => ctx.imr, line: () => 'every genus', part: () => 'the IMR genera only'}
       ]
     }
   };
@@ -50,9 +50,10 @@ function run({imr = false, q = {}, sp = true} = {}) {
       block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const learnRows = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const rowOn = ', '\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const rowState = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'function learnSet(k, on) {', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const bonusList = ', '\n', {through: 1, file: 'app.js'}),
-      'this.autoOf = autoOf; this.learnRows = learnRows; this.rowOn = rowOn; this.learnSet = learnSet; this.bonusList = bonusList;'
+      'this.autoOf = autoOf; this.learnRows = learnRows; this.rowOn = rowOn; this.rowState = rowState; this.learnSet = learnSet; this.bonusList = bonusList;'
     ].join('\n'),
     ctx
   );
@@ -64,26 +65,32 @@ function run({imr = false, q = {}, sp = true} = {}) {
 test('a record no switch was tapped on: the rows read as it plays, its pool unchanged', () => {
   // [imr, Q.sci, Q.sciH] -> the Scientific names row, the units in play
   const cases = [
-    [false, undefined, undefined, false, ['s:one']],
-    [false, true, undefined, true, ['g:Acanthurus', 's:one']],
-    [false, true, true, true, ['g:Acanthurus', 's:one']],
-    [false, false, undefined, false, ['s:one']], // "Not now"
-    [true, undefined, undefined, true, ['g:Heniochus', 's:one']], // "I'm at IMR" means both
-    [true, true, undefined, true, ['g:Acanthurus', 'g:Heniochus', 's:one']],
-    [true, false, undefined, true, ['g:Heniochus', 's:one']] // "Not now" or "Close them for now": the IMR genera stay
+    [false, undefined, undefined, 'off', ['s:one']],
+    [false, true, undefined, 'on', ['g:Acanthurus', 's:one']],
+    [false, true, true, 'on', ['g:Acanthurus', 's:one']],
+    [false, false, undefined, 'off', ['s:one']], // "Not now"
+    [true, undefined, undefined, 'part', ['g:Heniochus', 's:one']], // "I'm at IMR": the IMR genera alone, by themselves
+    [true, true, undefined, 'on', ['g:Acanthurus', 'g:Heniochus', 's:one']],
+    [true, false, undefined, 'part', ['g:Heniochus', 's:one']] // "Not now" or "Close them for now": the IMR genera stay
   ];
-  cases.forEach(([imr, sci, sciH, on, pool]) => {
+  cases.forEach(([imr, sci, sciH, state, pool]) => {
     const q = {};
     if (sci !== undefined) q.sci = sci;
     if (sciH !== undefined) q.sciH = sciH;
     const X = run({imr, q});
-    assert.strictEqual(X.rowOn(X.row('sci')), on, JSON.stringify({imr, q}));
+    assert.strictEqual(X.rowState(X.row('sci')), state, JSON.stringify({imr, q}));
+    assert.strictEqual(X.rowOn(X.row('sci')), state !== 'off');
+    assert.strictEqual(X.rowState(X.row('sp')), 'on', 'Common names on by default');
     assert.strictEqual(X.rowOn(X.row('sp')), true, 'Common names on by default');
     assert.deepStrictEqual(X.pool().sort(), pool, JSON.stringify({imr, q}));
   });
 });
 
 test('the card: Off stops what the set brings by itself, On brings it back, never by hand early', () => {
+  // an IMR player after "Not now": the IMR genera alone (part); On turns every family's on
+  const P = run({imr: true, q: {sci: false}});
+  P.learnSet('sci', true);
+  assert.ok(P.Q.sci === true && P.rowState(P.row('sci')) === 'on' && P.pool().includes('g:Acanthurus'), 'part, then On: all');
   const X = run({imr: true});
   X.learnSet('sci', false);
   assert.ok(X.Q.sci === false && X.Q.sciO === true && !X.rowOn(X.row('sci')));
@@ -127,6 +134,7 @@ test('the card: a base row, one switch per names row, a phone summary line', () 
     WIL_OPEN: false,
     esc: s => String(s),
     rowOn: X.rowOn,
+    rowState: X.rowState,
     learnRows: X.learnRows,
     matchMedia: () => ({matches: false})
   };
@@ -147,6 +155,15 @@ test('the card: a base row, one switch per names row, a phone summary line', () 
   assert.match(ctx.learnCard(), /<span>Families only<\/span>/);
   assert.match(ctx.learnCard(), /wilrow off/);
   assert.strictEqual(ctx.learnCard([]), '', 'no card for a subject without a names row');
+  // an IMR player who never turned the set on: neither button pressed, the line says the IMR genera alone come
+  const I = run({imr: true});
+  Object.assign(ctx, {rowOn: I.rowOn, rowState: I.rowState, learnRows: I.learnRows});
+  const hi = ctx.learnCard();
+  assert.match(hi, /the IMR genera only/);
+  assert.match(
+    hi,
+    /data-wil="sci" data-on="1" aria-pressed="false">On<\/button><button type="button" data-wil="sci" data-on="0" aria-pressed="false">/
+  );
 });
 
 test('mergeUsers: a row turned off stays off only where both accounts have it off', () => {

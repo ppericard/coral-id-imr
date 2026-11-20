@@ -1625,7 +1625,16 @@ async function freshSeed(b, base, errs, seed, fresh) {
       // The What I learn card: "I'm at IMR" means both, so its Scientific names row is on with no switch tapped; off there,
       // the IMR genera stop too (Q404 A), and back on they return.
       const sr = learnRows().find(r => r.k === 'sci');
-      ok(sr && rowOn(sr), "sci: I'm at IMR, the card's Scientific names row on");
+      ok(sr && rowState(sr) === 'part', "sci: I'm at IMR, the card's Scientific names row: the IMR genera alone");
+      // After a "Not now", a tap on the card's On turns every family's genera on (the offer never comes back).
+      Q.sci = false;
+      quizBoard();
+      const on = document.querySelector('#view #wil [data-wil="sci"][data-on="1"]');
+      ok(on && on.getAttribute('aria-pressed') === 'false', "sci: I'm at IMR after Not now, On not pressed");
+      if (on) on.click();
+      ok(Q.sci === true && !Q.sciH && rowState(sr) === 'on', "sci: I'm at IMR, On from the card: the set on, no sciH");
+      ['', 'T', 'V', 'H', 'O'].forEach(x => delete Q['sci' + x]);
+      route();
       learnSet('sci', false);
       ok(!rowOn(sr) && !pool().some(n => GX(n).rank) && !sciUp().has('g:Heniochus'), "sci: I'm at IMR, off on the card: Heniochus out too");
       learnSet('sci', true);

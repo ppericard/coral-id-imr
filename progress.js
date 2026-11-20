@@ -53,13 +53,15 @@ function learnCard(rows = learnRows(), open = WIL_OPEN || (typeof matchMedia ===
   const base = SUBJ.many.charAt(0).toUpperCase() + SUBJ.many.slice(1),
     on = rows.filter(r => rowOn(r)),
     sum = on.length ? [base, ...on.map(r => r.name.toLowerCase())].join(', ') : `${base} only`;
+  // A row in part (app.js rowState: an IMR player's IMR genera alone) has neither button pressed and says what plays.
   const row = r => {
-    const o = rowOn(r);
-    return `<div class="wilrow${o ? '' : ' off'}"><div class="wiltxt"><b>${esc(r.name)}</b><small>${esc(o ? r.line() : 'Off. Your progress on them is kept.')}</small></div><div class="seg" role="group" aria-label="${esc(r.name)}">${[
-      ['1', 'On'],
-      ['0', 'Off']
+    const s = rowState(r),
+      line = s === 'off' ? 'Off. Your progress on them is kept.' : s === 'part' ? r.part() : r.line();
+    return `<div class="wilrow${s === 'off' ? ' off' : ''}"><div class="wiltxt"><b>${esc(r.name)}</b><small>${esc(line)}</small></div><div class="seg" role="group" aria-label="${esc(r.name)}">${[
+      ['1', 'On', 'on'],
+      ['0', 'Off', 'off']
     ]
-      .map(([v, t]) => `<button type="button" data-wil="${esc(r.k)}" data-on="${v}" aria-pressed="${(v === '1') === o}">${t}</button>`)
+      .map(([v, t, x]) => `<button type="button" data-wil="${esc(r.k)}" data-on="${v}" aria-pressed="${s === x}">${t}</button>`)
       .join('')}</div></div>`;
   };
   return `<details class="wil" id="wil"${open ? ' open' : ''}><summary><b>What I learn</b><span>${esc(sum)}</span></summary><div class="wilrows"><div class="wilrow base"><div class="wiltxt"><b>${esc(base)}</b><small>Always on</small></div></div>${rows.map(row).join('')}</div></details>`;
@@ -71,7 +73,7 @@ function learnBind() {
       (b.onclick = () => {
         const r = learnRows().find(x => x.k === b.dataset.wil),
           on = b.dataset.on === '1';
-        if (!r || rowOn(r) === on) return;
+        if (!r || rowState(r) === (on ? 'on' : 'off')) return;
         WIL_OPEN = true;
         NEXTQ = null;
         learnSet(r.k, on);

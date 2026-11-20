@@ -2842,6 +2842,8 @@ const UNITS = {
         self: () => imrNow(),
         line: () =>
           `${sciSpOn() ? 'Genera, then their species' : 'Genera'}, by their scientific names. A family’s genera come as you reach Advanced on it${imrNow() ? ', the IMR course’s from Open Water' : ''}.`,
+        // An IMR player who has not turned the set on: the IMR genera alone come (sciOpen auto).
+        part: () => 'The IMR course’s genera only, from Open Water. On: every family’s genera, as you reach Advanced on it.',
         k: 'sci'
       }
     ],
@@ -3017,11 +3019,14 @@ if (Q.bon === undefined && Q.bu > 1) {
 // "Close them for now" card (Q[k] false alone) keeps them, as before the card. Every reader of a set's auto goes through it.
 const autoOf = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? S.auto() : []);
 // The What I learn card (progress.js learnCard; docs/FISH_PATH.md "Which names a player learns"): the subject's names rows
-// (UNITS learn: {k, name, line, when, self}), those whose level is on now (when: rule D4, the sheet replays it). A row is
-// on while not turned off on the card (Q[k + 'O']) and either turned on (Q[k] true) or bringing its units by itself
-// (self: the species, an IMR player's scientific genera), so a record no switch was tapped on reads as it plays.
+// (UNITS learn: {k, name, line, part, when, self}), those whose level is on now (when: rule D4, the sheet replays it). A
+// row is on while not turned off on the card (Q[k + 'O']) and either turned on (Q[k] true) or bringing its units by
+// itself (self: the species, an IMR player's scientific genera), so a record no switch was tapped on reads as it plays.
+// rowState: 'part' for a row whose self brings only some of its units (part: its line then, an IMR player's IMR genera
+// alone) while the set itself is not on; its On turns the rest on.
 const learnRows = () => (UNITS[SUBJ.id].learn || []).filter(r => !r.when || r.when());
 const rowOn = (r, q = Q) => !q[r.k + 'O'] && (q[r.k] === true || !!(r.self && r.self()));
+const rowState = (r, q = Q) => (!rowOn(r, q) ? 'off' : r.part && q[r.k] !== true ? 'part' : 'on');
 // A row's switch: on, the set is on (Q[k] true) and its auto comes back; off, the set is off and its auto stops (Q[k + 'O']).
 // Never by hand early (bonusSet's hand, Q.sciH): a level turned on here comes as its parent reaches the usual threshold,
 // never sooner (Pierre, 2026-11-18, Q401 A). Synced with the choice (sync.js mergeSaved: the O suffix).

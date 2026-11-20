@@ -97,7 +97,10 @@ D4).
 
 - **A row's state** (`rowOn`): on while not turned off on the card (`Q[k + 'O']`) and either turned on (`Q[k]` true) or
   bringing its units by itself (`self()`: the species; an IMR player's scientific genera, "I'm at IMR" meaning both). A
-  record no switch was tapped on reads as it plays: its pool is unchanged.
+  record no switch was tapped on reads as it plays: its pool is unchanged. `rowState` adds `'part'`: a row with a
+  `part()` line whose set is not on while its `self()` brings some units (an IMR player who never turned the genera on,
+  or said "Not now": the IMR genera alone); neither button is pressed, the line says what plays, and On turns the rest
+  on.
 - **Off** (`learnSet(k, false)`): `Q[k]` false and `Q[k + 'O']` true; `autoOf(S)` then returns nothing, so the units the
   set brings by itself stop too (Q404 A), at every reader (`bonusList`, `setLater`, `shareFree`, `sciUp`, the back
   card). A card's "Not now" or "Close them for now" writes `Q[k]` false alone and keeps them, as before. The units keep
