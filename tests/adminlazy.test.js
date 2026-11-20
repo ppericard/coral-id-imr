@@ -247,17 +247,18 @@ test('no always-loaded script names what a lazy script defines, but behind a typ
   const eager = [...html.matchAll(/<script src="([^"?]+)\?v=\d+"><\/script>/g)].map(m => m[1]);
   assert.ok(eager.includes('admin.js') && eager.includes('admin-journey.js') && eager.includes('admin-heatmap.js'));
   const hits = [];
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const f of eager) {
     const t = fs.readFileSync(path.join(ROOT, f), 'utf8');
     for (const n of names) {
       if (alone.has(n)) continue;
-      const re = new RegExp(`(?<![\\w$.'"-])${n.replace(/\$/g, '\\$')}(?![\\w$'"-])`, 'g');
+      const re = new RegExp(`(?<![\\w$.'"-])${esc(n)}(?![\\w$'"-])`, 'g');
       for (const m of t.matchAll(re)) {
         const line = t.slice(t.lastIndexOf('\n', m.index) + 1, t.indexOf('\n', m.index));
-        if (/^\s*\/\//.test(line) || new RegExp(`typeof ${n} `).test(line) || /^\s*\/\//.test(line.slice(0, m.index))) continue;
+        if (/^\s*\/\//.test(line) || new RegExp(`typeof ${esc(n)} `).test(line) || /^\s*\/\//.test(line.slice(0, m.index))) continue;
         // a comment's mention, a declaration of its own (a local of the same name), a property
         const own = new RegExp(
-          `(?:function\\s+|const\\s+|let\\s+|var\\s+|,\\s*|\\(\\s*|\\{\\s*)${n.replace(/\$/g, '\\$')}\\s*(?:=|,|\\)|\\(|;|\\})`
+          `(?:function\\s+|const\\s+|let\\s+|var\\s+|,\\s*|\\(\\s*|\\{\\s*)${esc(n)}\\s*(?:=|,|\\)|\\(|;|\\})`
         ).test(t);
         if (!own && !t.slice(t.lastIndexOf('\n', m.index) + 1, m.index).includes('//'))
           hits.push(`${f}: ${n}: ${line.trim().slice(0, 100)}`);
