@@ -460,12 +460,13 @@ inferred answer, and never for a subject whose units say `startFb` false (the fi
 level is better calibrated).
 
 **The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md)):
-the fish use the corals' `CHOICE.opts`. On the fish profiles of `tools/learnprof.js` (assumptions, not fits) they fit
-as well as on the corals': the first 20 answers' surprise under the truthful answer is −0.01 for the beginner (corals
-0.08), 0.11 to 0.12 for the lecture RA, strong RA and expert (corals 0.09 to 0.14). The bands do not fit the fish
-levels: at answer 60 the beginner is at 1.13, the lecture RA at 1.98, so with today's bands the cards would offer
-"higher" to 7 of 10 truthful lecture RAs. Recommended (not built): keep the shared values and the fish's cards off;
-refit the bands on real fish players before turning the cards on.
+the fish use the corals' `CHOICE.opts`. On the fish profiles of `tools/learnprof.js` (assumptions, not fits), the first
+20 answers' surprise under the truthful answer: "new" holds (beginner −0.01; corals 0.08); "imr" and "know"
+under-predict the lecture RA, strong RA and expert (0.11 to 0.12), as much as on the corals (0.09 to 0.14). The bands
+do not fit the levels in either subject; on the fish, at answer 60 the beginner is at 1.13 (corals 0.76) and the
+lecture RA at 1.98, so with today's bands the cards would offer "higher" to 7 of 10 truthful lecture RAs. Recommended
+(not built): keep the shared values and the fish's cards off; refit the bands on real fish players before turning the
+cards on.
 
 ### Comeback after a break
 
