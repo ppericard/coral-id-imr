@@ -22,12 +22,18 @@ disagreements adjudicated), each configuration judged twice, box agreement = IoU
 | Sonnet 5.5 medium (runs 1, 2) | 88.8, 87.5% | 91.2, 87.5% | 10, 12 | 90.0 / 91.2% |
 | Haiku 5.5 medium (runs 1, 2) | 78.8, 80.0% | 83.8, 86.2% | 18, 16 | 90.0 / 92.5% |
 
-Integrator's call (the lightest configuration that does as well as the reference, easy to correct): the bulk box pass runs
-on **Opus 5.5 at medium effort**, as good as Opus high on every figure and the most repeatable. It does not meet the
-preset bar of at most 2 serious errors in 80, and neither does Opus high (7 and 6): the bar was not reachable by the
-reference itself. So a random 10% of every batch is redone blind by Opus 5.5 high, and a batch whose agreement falls under
-90% is looked at again (AGENTS.md "Model choice by measurement"). Only the photos judged `tile` true get a box in the game;
-a doubt is no box.
+Integrator's call (the lightest configuration that does as well as the reference): the bulk box pass runs on **Opus 5.5 at
+medium effort**, as good as Opus high on every figure and the most repeatable, with a random 10% of every batch redone
+blind by Opus 5.5 high, and a batch whose agreement falls under 90% looked at again (AGENTS.md "Model choice by
+measurement"). Only the photos judged `tile` true get a box in the game; a doubt is no box.
+
+**Open, said plainly:** the preset bar (`THRESHOLD.md`: at most 2 serious errors in 80) is met by no configuration, Opus 5.5
+medium (6 and 6) and the Opus high reference itself (7 and 6) included, so the bar as set cannot separate them, and the
+threshold file's own reading rules were not followed to the letter: Opus medium's 91.2% and 92.5% fall in its undecided
+88-93% band (a second sample of 40 photos was to be drawn), and "none of the lighter ones passes" would have sent the bulk
+to Opus high. A 10% agreement audit against the same reference checks consistency, not accuracy. This record therefore
+chooses a model for the pass; it does not wave the bar through: the bulk is run and its boxes imported only on the
+integrator's decision (the serious errors of the sample are the cases to read first), and nothing here imports a box.
 
 The judging import accepts the box as the fish's: `bb`, `[left, top, right, bottom]` fractions of the photo, in the judging
 file, imported into `suggest.json` `"seaslug"` (where `tools/seaslug_game.py` already reads it); refused when not inside
