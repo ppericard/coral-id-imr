@@ -62,6 +62,7 @@ const SHELL = [
     'fishkey',
     'basics',
     'fishbasics',
+    'seaslugbasics',
     'map',
     'anatomy',
     'zoom',
