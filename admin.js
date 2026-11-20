@@ -3855,8 +3855,8 @@ function render() {
   }
   if (modeKey() === 'stats') return renderStats();
   if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
-  // A subject with its own part of curation.json (fish) has its own swiper (admin-fish.js).
-  if (cur === 'photos/candidates') return ASUBJ.admin.cur && typeof renderFishCand === 'function' ? renderFishCand() : renderCand();
+  // Photos › Candidates: one swiper for every subject, its queue and card from the subject's builder (CAND_BUILD).
+  if (cur === 'photos/candidates') return renderCand(ASUBJ);
   // Photos › Tree: one page for every subject, its trees and node pages from the subject's builder (TREE_BUILD).
   if (treeOf(cur)) return renderTree(ASUBJ, cur.slice(treeOf(cur).length + 1), treeOf(cur));
 }
@@ -6512,9 +6512,6 @@ const CK = f => 'cand:' + f,
   rejected = f => !!(DRAFT.seen || {})[CK(f)];
 // Sources of the swiper: the subject's (core.js SUBJECTS admin csrc, FB.srcs), then All.
 let CSRC = store.get('reefid-admin-csrc2', 'dauin'),
-  CSKIP = new Set(),
-  CFULL = false, // this tab: also show the candidates waiting in full cells
-  CASIDE = false, // this tab: also show the candidates the pre-sort set aside
   CREPL = null; // {n, f, w}: adding f to a full cell, choosing the colony it replaces
 // Cap per genus x view: capOf (top of the file: CELL_MAX for a game genus, CAP.sheet for a Key-only one). A full
 // cell's candidates leave the swiper (counted, shown on demand) and come back when it drops below; adding one to a full cell asks which colony it replaces in the games (that
@@ -7217,7 +7214,7 @@ function renderRepl() {
     p = cands(n).find(x => x.f === f) || photos(n).find(x => x.f === f);
   const done = () => {
     CREPL = null;
-    CSKIP.delete(f);
+    cst().skip.delete(f);
   };
   if (!p) {
     done();
@@ -7268,153 +7265,267 @@ function renderRepl() {
     render();
   };
 }
-function renderCand() {
-  status();
-  if (CREPL) return renderRepl();
-  const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full) && (CASIDE || !x.aside);
-  // An empty source gives way to the first source, in priority order, that still has candidates to go through, rather
-  // than open on "No candidate left". Only a source with no candidate at all: one whose candidates are skipped or wait
-  // in full cells stays, so they can still be shown.
-  if (!candQueue(CSRC).length) {
-    const s = FB.srcs()
-      .map(([k]) => k)
-      .find(k => candQueue(k).filter(shown).length);
-    if (s) CSRC = s;
-  }
-  const Q0 = candQueue(CSRC),
-    nFull = Q0.filter(x => x.full).length,
-    nAside = Q0.filter(x => x.aside).length,
-    nJ = candQueue('all').filter(x => !x.p.j).length,
-    Q = CFULL ? Q0 : Q0.filter(x => !x.full),
-    live = Q0.filter(shown),
-    c = live[0],
-    nx = live[1];
-  const seg =
-    FB.sources(CSRC, s => (s === CSRC ? live.length : candQueue(s).filter(shown).length)) +
-    // What the queue leaves out, as one row of small toggles (lines of notes would take the photo's room on a phone);
-    // each chip's tooltip says what it is.
-    candFlags(
-      `${
-        nFull
-          ? `<button type="button" class="adm-chip adm-cfull" data-cfull aria-pressed="${CFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of cells already full (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies): ${CFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} full</button>`
-          : ''
-      }${
-        nAside
-          ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${CASIDE}" title="${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate): ${CASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
-          : ''
-      }${
-        // Reminder: the judging agent runs on demand.
-        nJ
-          ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/BRIEF.md)">${nJ} not judged yet</span>`
-          : ''
-      }`,
-      autoBlock(false, true)
-    ) +
-    autoBlock();
-  const rt = retestNext();
-  if (rt) return renderRetest(rt, seg);
-  if (!c) {
-    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>${autoBlock(true)}`;
-  } else {
-    const {p, n, chk} = c,
-      views = capViews(n),
-      // A Check is blind (the admin's answer is compared with the judgment): no judgment line, no dashed guesses, no
-      // suggested view or crop; a Check tag instead.
-      pb = chk ? {...p, j: null} : p,
-      sug = w => !chk && (p.vg || p.view) === w;
-    const link = /^https?:/.test(p.o || '')
-      ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="iNaturalist">iNat ↗</a>`
-      : p.pg
-        ? `<span class="adm-swlink">p. ${esc(p.pg)}</span>`
-        : '';
-    $v.innerHTML = `<section class="adm-sw${chk ? ' adm-blind' : ''}" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
-      <figure class="adm-swcard">
-        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(pb)} alt=""></button>
-        <a class="adm-swg" href="${esc(genusHref(n))}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
-        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
-        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
-      </figure>${chk ? '' : jLine(p)}
-      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOn(p.f) ? ' on' : ''}" data-crop aria-pressed="${crOn(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
-      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${sug(w) ? ' sug' : ''}" data-add="${w}" title="${sug(w) ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
-    </section>${autoBlock(true)}`;
-    if (nx) new Image().src = img(nx.p);
-    const S = $v.querySelector('.adm-sw'),
-      f = p.f,
-      go = () => {
-        CSKIP.delete(f);
-        CDONE++;
+// cand build: begin
+// Photos › Candidates, one swiper for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 5, Dup-3;
+// docs/spec/admin-photos.md). renderCand(S) draws the frame: the queue's switch, the row of toggles (what the queue leaves
+// out), the empty page, the card and its decision bar, the photo that does not load, the keys. What differs between subjects
+// is a builder in CAND_BUILD, picked by the data shape the subject declares (SUBJECTS flat: treeShape, as TREE_BUILD and
+// reg(S) are): `flat` here (the corals: candQueue over data.json and cand.json, a genus x view cell as the unit of the cap,
+// quality and growth form, the Retest cards) and `tree` in admin-fish.js, which loads after this file (the tree subjects:
+// autosort.js fishQueue, a species' target, the rubric's rows, the photos in play). A builder's members, the same in both:
+//   ready()           its files are read; load(): a promise of them (the page draws again when it comes)
+//   instead(S)        true when it drew a page of its own that replaces the swiper whatever the queue (the corals' choice of
+//                     the colony a new photo replaces in a full cell)
+//   queue(S, shown)   one render's queue Q: {S, rows: the queue in force, each row {p, chk, full, aside}, unjudged: the rows
+//                     the judging pass has not seen} (shown(row): the frame's filter: skipped, full, set aside)
+//   seg(Q, shown, live) the queue's switch (the corals' sources, the tree subjects' All | Checks), '' when it has none
+//   words(Q, shown)   the toggles' words: {lead: a chip before the others or '', full: [word, tail of its title], aside: tail
+//                     of its title, judge: its title}
+//   auto(det, chip)   the auto-sort's line: the Auto chip alone (chip), or its details (det)
+//   interlude(Q, seg) true when it drew a card of its own in the queue's place (the corals' Retest)
+//   card(Q, c)        the parts of row c's card: {cls, attrs, photo, head, caption, judge, strip, rows, not, tool, crop, adds:
+//                     [{v, t, sug}]}; a Check (c.chk) is blind: only the admin's own values
+//   add(Q, c, v), reject(Q, c), exclude(Q, c), zoom(Q, c), crop(Q, c)   what each button of the card does (one draft write,
+//                     one Undo step, then the answer to a Check)
+//   bind(Q, scope, c) the builder's own controls: the card's (c: rows, Not this, Tags, photos in play), the switch's and the
+//                     auto block's
+// Never a test on which subject: a builder knows only its data shape.
+const CAND_BUILD = {
+    // The corals: every genus's candidates (cand.json read by candQueue), the genus x view cell the unit of the cap.
+    flat: {
+      ready: () => true,
+      load: () => Promise.resolve(),
+      instead() {
+        if (!CREPL) return false;
+        renderRepl();
+        return true;
       },
-      // After the admin's answer to a Check, the agent's (once the action has drawn the next card).
-      told = () => chk && checkToast(f);
-    S.querySelectorAll('[data-add]').forEach(
+      queue(S, shown) {
+        // An empty source gives way to the first source, in priority order, that still has candidates to go through, rather
+        // than open on "No candidate left". Only a source with no candidate at all: one whose candidates are skipped or wait
+        // in full cells stays, so they can still be shown.
+        if (!candQueue(CSRC).length) {
+          const s = FB.srcs()
+            .map(([k]) => k)
+            .find(k => candQueue(k).filter(shown).length);
+          if (s) CSRC = s;
+        }
+        return {S, rows: candQueue(CSRC), unjudged: candQueue('all').filter(x => !x.p.j).length};
+      },
+      seg: (Q, shown, live) => FB.sources(CSRC, s => (s === CSRC ? live.length : candQueue(s).filter(shown).length)),
+      words: Q => ({
+        lead: '',
+        full: [
+          'full',
+          `of cells already full (${[...new Set(Q.rows.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies)`
+        ],
+        aside: 'set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate)',
+        // Reminder: the judging agent runs on demand.
+        judge: 'Ask your agent for the candidate pass (judging/BRIEF.md)'
+      }),
+      auto: (det, chip) => autoBlock(det, chip),
+      interlude(Q, seg) {
+        const rt = retestNext();
+        if (!rt) return false;
+        renderRetest(rt, seg);
+        return true;
+      },
+      card(Q, c) {
+        const {p, n, chk} = c,
+          // A Check is blind (the admin's answer is compared with the judgment): no judgment line, no dashed guesses, no
+          // suggested view or crop; a Check tag instead.
+          sug = w => !chk && (p.vg || p.view) === w,
+          link = /^https?:/.test(p.o || '')
+            ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="iNaturalist">iNat ↗</a>`
+            : p.pg
+              ? `<span class="adm-swlink">p. ${esc(p.pg)}</span>`
+              : '';
+        return {
+          cls: '',
+          attrs: ` data-g="${esc(n)}"`,
+          photo: crSrc(chk ? {...p, j: null} : p),
+          head: `<a class="adm-swg" href="${esc(genusHref(n))}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>`,
+          caption: `${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}`,
+          judge: chk ? '' : jLine(p),
+          strip: '',
+          rows: qSeg(p, chk) + fSeg(p, chk),
+          not: p.from ? '' : notThis(n),
+          tool: '',
+          crop: crOn(p.f),
+          adds: capViews(n).map(([w]) => ({v: w, t: label(n, w), sug: sug(w)}))
+        };
+      },
+      add(Q, c, w) {
+        const {p, n, chk} = c;
+        if (gameable(p) && cellFull(n, w, p.o)) {
+          CREPL = {n, f: p.f, w};
+          return render();
+        }
+        CDONE++;
+        ACT.addc(n, p.f, null, w);
+        toast(`Added: ${n}, ${label(n, w)}.`);
+        if (chk) checkToast(p.f); // after the admin's answer to a Check, the agent's
+      },
+      reject(Q, c) {
+        CDONE++;
+        DRAFT.seen = {...(DRAFT.seen || {}), [CK(c.p.f)]: 1};
+        saveDraft();
+        render();
+        if (c.chk) checkToast(c.p.f);
+      },
+      exclude(Q, c) {
+        CDONE++;
+        ACT.exclude(c.n, c.p.f);
+        if (c.chk) checkToast(c.p.f);
+      },
+      zoom: (Q, c) => zoomOne({...(c.chk ? {...c.p, j: null} : c.p), genus: c.n}),
+      // Blind on a Check too: the editor starts from the admin's own crop or the full photo, not the agent's.
+      crop: (Q, c) => cropEditor(c.chk ? {...c.p, j: null} : c.p),
+      bind(Q, scope, c) {
+        const sel = c && scope.querySelector('select[data-act="out"]');
+        if (sel)
+          sel.onchange = () => {
+            if (!sel.value) return;
+            const to = sel.value;
+            CDONE++;
+            ACT.out(c.n, c.p.f, null, to);
+            toast(to === 'cmp' ? 'Kept for the look-alike comparison.' : `Sent to ${to}.`);
+            if (c.chk) checkToast(c.p.f);
+          };
+        if (c) {
+          bindQ();
+          bindF(scope.querySelector('.adm-sw'));
+        }
+        bindBar(scope, {redraw: render, src: true});
+        bindAuto(scope);
+      }
+    }
+  },
+  // A subject's data shape (SUBJECTS flat), its builder (null while admin-fish.js, the tree builder's file, has not loaded).
+  candBuild = S => CAND_BUILD[treeShape(S)] || null,
+  // This tab's choices in a subject's swiper, one set each: the candidates skipped, those of full cells (or species at their
+  // target) and those the pass set aside shown too, and the card the admin is setting values or a crop on (pin: it stays on
+  // screen until he decides it, skips it or sends it elsewhere, every other render, an Undo included, shows the queue's first).
+  CST = {},
+  cst = (S = ASUBJ) => CST[S.id] || (CST[S.id] = {skip: new Set(), full: false, aside: false, pin: null});
+function renderCand(S) {
+  const B = candBuild(S);
+  status();
+  if (!B) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    return addEventListener('load', () => cur === 'photos/candidates' && render(), {once: true});
+  }
+  if (!B.ready()) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    B.load().then(() => cur === 'photos/candidates' && render());
+    return;
+  }
+  if (B.instead(S)) return;
+  const st = cst(S),
+    shown = x => !st.skip.has(x.p.f) && (st.full || !x.full) && (st.aside || !x.aside),
+    Q = B.queue(S, shown),
+    nFull = Q.rows.filter(x => x.full).length,
+    nAside = Q.rows.filter(x => x.aside).length,
+    live = Q.rows.filter(shown),
+    c = live.find(x => x.p.f === st.pin) || live[0],
+    nx = live.find(x => x !== c),
+    W = B.words(Q, shown),
+    seg =
+      B.seg(Q, shown, live) +
+      // What the queue leaves out, as one row of small toggles (lines of notes would take the photo's room on a phone);
+      // each chip's tooltip says what it is.
+      candFlags(
+        `${W.lead}${
+          nFull
+            ? `<button type="button" class="adm-chip adm-cfull" data-cfull aria-pressed="${st.full}" title="${nFull} candidate${nFull === 1 ? '' : 's'} ${W.full[1]}: ${st.full ? 'tap to hide them' : 'tap to show them'}">${nFull} ${W.full[0]}</button>`
+            : ''
+        }${
+          nAside
+            ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${st.aside}" title="${nAside} ${W.aside}: ${st.aside ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+            : ''
+        }${Q.unjudged ? `<span class="adm-chip adm-cjudge" title="${W.judge}">${Q.unjudged} not judged yet</span>` : ''}`,
+        B.auto(false, true)
+      ) +
+      B.auto();
+  if (B.interlude(Q, seg)) return;
+  if (!c) {
+    const sk = Q.rows.filter(x => st.skip.has(x.p.f)).length;
+    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${sk ? `${sk} skipped.` : 'No candidate left.'}</p>${sk ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>${B.auto(true)}`;
+  } else {
+    const {p, chk} = c,
+      f = p.f,
+      P = B.card(Q, c);
+    $v.innerHTML = `<section class="adm-sw${P.cls}${chk ? ' adm-blind' : ''}" data-f="${esc(f)}"${P.attrs}>${seg}
+      <figure class="adm-swcard">
+        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${P.photo} alt=""></button>
+        ${P.head}
+        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
+        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${P.caption}</figcaption>
+      </figure>${P.judge}${P.strip}
+      <div class="adm-acts adm-swacts">${P.rows}<div class="adm-swrow">${P.not}<button type="button" class="adm-swcrop${P.crop ? ' on' : ''}" data-crop aria-pressed="${!!P.crop}">Crop</button>${P.tool}<button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${P.adds.map(({v, t, sug}, i) => `<button type="button" class="add${sug ? ' sug' : ''}" data-add="${esc(v)}" title="${sug ? 'Suggested · ' : ''}Add (${i + 1})">+ ${t}</button>`).join('')}</div>
+    </section>${B.auto(true)}`;
+    if (nx && nx.p.src) new Image().src = img(nx.p);
+    // A remote photo that does not load (its host down, or the photo gone at the source): said on the card, with its link.
+    // Only on its own card: a photo of a card already gone (Skip, a click) that fails later says nothing.
+    const im = $v.querySelector('.adm-swph img'),
+      fc = $v.querySelector('.adm-swcard figcaption');
+    if (im && fc)
+      im.addEventListener('error', () => {
+        if (fc.isConnected && !fc.querySelector('.adm-fbad'))
+          fc.insertAdjacentHTML('afterbegin', '<span class="adm-src rej adm-fbad">Photo not loading</span>');
+      });
+    const sw = $v.querySelector('.adm-sw'),
+      // a decision: the card is no longer skipped or pinned
+      done = () => {
+        st.skip.delete(f);
+        st.pin = null;
+      };
+    sw.querySelectorAll('[data-add]').forEach(
       b =>
         (b.onclick = () => {
-          const w = b.dataset.add;
-          if (gameable(p) && cellFull(n, w, p.o)) {
-            CREPL = {n, f, w};
-            return render();
-          }
-          go();
-          ACT.addc(n, f, null, w);
-          toast(`Added: ${n}, ${label(n, w)}.`);
-          told();
+          done();
+          B.add(Q, c, b.dataset.add);
         })
     );
-    S.querySelector('[data-rej]').onclick = () => {
-      go();
-      DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
-      saveDraft();
-      render();
-      told();
+    sw.querySelector('[data-rej]').onclick = () => {
+      done();
+      B.reject(Q, c);
     };
-    S.querySelector('[data-skip]').onclick = () => {
-      CSKIP.add(f);
+    sw.querySelector('[data-skip]').onclick = () => {
+      st.pin = null;
+      st.skip.add(f);
       render();
     };
-    S.querySelector('[data-x]').onclick = () => {
-      go();
-      ACT.exclude(n, f);
-      told();
+    sw.querySelector('[data-x]').onclick = () => {
+      done();
+      B.exclude(Q, c);
     };
-    const sel = S.querySelector('select[data-act="out"]');
-    if (sel)
-      sel.onchange = () => {
-        if (!sel.value) return;
-        const to = sel.value;
-        CDONE++;
-        ACT.out(n, f, null, to);
-        toast(to === 'cmp' ? 'Kept for the look-alike comparison.' : `Sent to ${to}.`);
-        told();
-      };
-    S.querySelector('[data-zoom]').onclick = () => zoomOne({...pb, genus: n});
-    // Blind on a Check too: the editor starts from the admin's own crop or the full photo, not the agent's.
-    S.querySelector('[data-crop]').onclick = () => cropEditor(pb);
-    bindQ();
-    bindF(S);
+    sw.querySelector('[data-zoom]').onclick = () => B.zoom(Q, c);
+    sw.querySelector('[data-crop]').onclick = () => B.crop(Q, c);
   }
-  bindBar($v, {redraw: render, src: true});
-  const ca = $v.querySelector('[data-caside]');
-  if (ca)
-    ca.onclick = () => {
-      CASIDE = !CASIDE;
-      render();
-    };
-  bindAuto($v);
-  const cf = $v.querySelector('[data-cfull]');
-  if (cf)
-    cf.onclick = () => {
-      CFULL = !CFULL;
-      render();
-    };
+  B.bind(Q, $v, c);
+  [
+    ['[data-caside]', 'aside'],
+    ['[data-cfull]', 'full']
+  ].forEach(([sel, k]) => {
+    const b = $v.querySelector(sel);
+    if (b)
+      b.onclick = () => {
+        st[k] = !st[k];
+        render();
+      };
+  });
   const ag = $v.querySelector('[data-again]');
   if (ag)
     ag.onclick = () => {
-      CSKIP.clear();
+      st.skip.clear();
       render();
     };
   candKeys();
 }
-// The swipers' keys (the corals' and the fish's, admin-fish.js): ← Reject, → Skip, 1-3 the Add buttons.
+// cand build: end
+// The swiper's keys, every subject's (renderCand): ← Reject, → Skip, 1-3 the Add buttons.
 // Where the swiper starts on the page, under the header, the tab row and the demo banner (admin.css .adm-sw: its
 // height is the screen below it, so the decision bar stays on the first screen). Read after each
 // swiper render and when something above it changes size.

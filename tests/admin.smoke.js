@@ -8317,8 +8317,8 @@ async function loadPart(b, base, fails) {
         }
         // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
         await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
-        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
-        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-cfull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-cfull]');
         await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
         const cf = await sq.evaluate(() => {
           const S = document.querySelector('#view .adm-fsw');
@@ -9199,7 +9199,7 @@ async function loadPart(b, base, fails) {
       await p.click('#undo');
       await settle();
       // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
-      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over candQueue(CSRC)), and
+      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over the builder's queue), and
       // CF[2] is whichever undecided candidate the real curation leaves (Dauin, Philippines…: Pierre's Publish of
       // 2026-11-08 moved it from Dauin to Philippines while the page showed Dauin), so the page is put on CF[2]'s own
       // source first, All when that is not a source of the swiper; the source shown before is restored after.
@@ -9300,7 +9300,7 @@ async function loadPart(b, base, fails) {
       await go('photos/candidates');
       const ck = await p.evaluate(C => {
         CSRC = 'all';
-        candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
+        candQueue('all').forEach(x => x.p.f !== C && cst().skip.add(x.p.f));
         render();
         const S = document.querySelector('.adm-sw[data-f]');
         return {
@@ -9351,7 +9351,7 @@ async function loadPart(b, base, fails) {
       }
       // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
       await p.evaluate(() => {
-        CSKIP.clear();
+        cst().skip.clear();
         render();
       });
       // The line is folded behind the Auto chip (Pierre, 2026-11-06: one phone screen); the chip opens it.
@@ -9684,7 +9684,7 @@ async function loadPart(b, base, fails) {
         }
         await p.click('.adm-fsw [data-ft="2"][data-fv="n"]');
         await settle();
-        await p.click('.adm-fsw [data-fcrop]');
+        await p.click('.adm-fsw [data-crop]');
         await p.waitForSelector('#lightbox .adm-crop [data-c="save"]');
         await p.click('#lightbox [data-c="full"]');
         await p.click('#lightbox [data-c="save"]');
@@ -9833,9 +9833,9 @@ async function loadPart(b, base, fails) {
         }
         // The fish Candidates: the same editor writes fish.rot, a quarter left = 270, drawn on the card.
         await go('fish/photos/candidates');
-        if (await p.$('.adm-fsw [data-fcrop]')) {
+        if (await p.$('.adm-fsw [data-crop]')) {
           const ff = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
-          await p.click('.adm-fsw [data-fcrop]');
+          await p.click('.adm-fsw [data-crop]');
           await p.waitForSelector('#lightbox .adm-rotbar [data-r="-90"]');
           await p.click('#lightbox [data-r="-90"]');
           await p.click('#lightbox [data-c="save"]');
@@ -9845,7 +9845,7 @@ async function loadPart(b, base, fails) {
               rot: ((DRAFT.fish || {}).rot || {})[f],
               coral: (DRAFT.rot || {})[f],
               card: (document.querySelector('.adm-fsw .adm-swph img') || {}).dataset?.rot,
-              on: !!document.querySelector('.adm-fsw [data-fcrop].on'),
+              on: !!document.querySelector('.adm-fsw [data-crop].on'),
               sum: pubSummary(),
               out: ((output().fish || {}).rot || {})[f]
             }),
