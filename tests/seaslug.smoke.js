@@ -312,6 +312,20 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     );
     check(/^Sources: \[1\]/.test(gm.srcs), `2: ${F.genera[0].name}'s mark sources: "${gm.srcs}"`);
     check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(gm.words), `2: a fish word on a sea-slug genus sheet`);
+    // The photo its Learn list card shows is the first photo of the sheet, enlargeable (learn.js listPhoto; Pierre,
+    // 2026-11-20): by photo, not by address (a photo moves from R2 to its original when R2 fails mid-run).
+    const gh = await p.evaluate(id => {
+      const ph = listPhoto(id),
+        b = document.querySelector('#view .hero-ph.zoom'),
+        got = b && b.querySelector('img') ? b.querySelector('img').getAttribute('src') : '',
+        key = String((ph && ph.f) || '');
+      return {
+        has: !!ph,
+        z: b && b.dataset.z,
+        same: !!key && (got === img(ph, 's') || got.includes(key) || got.includes(key.replace(/^fi(\d+)$/, 'photos/$1/')))
+      };
+    }, F.genera[0].id);
+    check(!gh.has || (gh.z === '0' && gh.same), `2: ${F.genera[0].name}'s sheet does not lead with its list photo: ${JSON.stringify(gh)}`);
     // The genus look-alikes (seaslug.json genus look, dlook, lsrc): a declared pair across two
     // families is a duel pair, a pair only iNaturalist shows a data look-alike from the start (no answer pooled here), both
     // traps on the pooled score; the sheets say each with its source: a genus's own page, a one-genus family's sheet for
