@@ -116,4 +116,4 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **W24** Every heavy run takes the machine slot; keep 5 GB free and clean up behind you.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Every PR merges through a green merge train (`tools/train.py`), alone or with other ready PRs.
-- **W27** No two open PRs on the same sensitive file; two Codex rounds, then cut the scope.
+- **W27** No two open PRs on the same sensitive file; a part whose findings keep coming back leaves the PR.
