@@ -33,7 +33,9 @@ sea slug Basics and Find the X (boxes) left.
 - A container restart at ~07:40 stopped every agent: the work on disk was resumed; branches never pushed (the
   `data/` move, tell-apart lines for 25 bonus pairs) are relaunched from their worktrees.
 
-## Next: decided, not started (the backlog, in launch order)
+## Next
+
+Decided, not started (the backlog, in launch order):
 
 1. Rights: groups carry an instance's rights, PRs 2-4 after #1285; then cohorts joined with a code (roles step 2), the
    Curators' relay; the IMR content split's rest.
