@@ -370,7 +370,8 @@ while `OPEN.K` units met are shaky). Only units open now take a place: one close
 **Opening pace** (`model.js` `openRecent`, `openPace`): no new unit while one opened on a card in the last `OPEN.WIN`
 answers has not been asked since its card, nor once `OPEN.MAX` have opened in that window: about 3 new units per 15
 answers at most, whatever `openChance` says. A unit opened on its card and not asked since is asked as soon as it is
-ready (`openDue`). "Asked since its card" (`askedOpen`: an answer at or after the card's time) is what every reader
+ready (`openDue`). A level's group of `INTRO.START` (4, "A level opens in a group") counts as four cards: it fills the
+window, so no other card comes until its four are asked and it is out of the window (15 answers), as wanted. "Asked since its card" (`askedOpen`: an answer at or after the card's time) is what every reader
 waiting for a card's question reads (the pace, readiness, the fish circle 2, the bonus offer, the all-met card): answers
 given before the card (a live game's, those before a card that reopens a unit) are evidence, never its question.
 
@@ -421,7 +422,8 @@ it shows.
 - **Cards.** A player starting from zero first meets `INTRO.START` units on cards (name, cover photo, ID tips) and is
   asked about those (`quiz.js` `introStart`); then new units come one at a time, each on its card, never as the answer of
   the question right after it: a unit met on a single card can be asked from `INTRO.GAP` answers on (`model.js`
-  `introReady`). Its record: `reefid-sync-<subject>-intro`, synced, {unit: [answers then, ready at once, time, kind]}.
+  `introReady`). A level below the subject's own (species, scientific genera) starts the same way, with `INTRO.START`
+  close units on cards together ("A level opens in a group"). Its record: `reefid-sync-<subject>-intro`, synced, {unit: [answers then, ready at once, time, kind]}.
   `model.js` `INTRO`: START 4, GAP 2, HOLD 1.5, SLACK 0.1.
 - **Held while the player falls behind** (`model.js` `holdStep`, `introHold`): no new card while a CUSUM of how far the
   answers fall below the success the game expected (each answer's e), less `INTRO.SLACK` an answer and never below 0, is
@@ -856,8 +858,8 @@ and 9% of 1,001-2,000, mostly before the 5th family is at Advanced, and the arms
 
 One unit per species (`core.js` `treeSpUnits`), named by its common names: the main name shown (the IMR name for a
 player at IMR), any listed or regional name right when typed. For each family at Advanced, its species met and the next
-one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`), at the opening's usual pace and within
-the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
+one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`; the next four while the level opens its
+group: "A level opens in a group"), at the opening's usual pace and within the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
 tops out at 95%. On only once the sheet replays the species units (`sync.js` `SPECIES_SHEET`, rule D4).
 
 ### Species by their scientific names (step 2)
@@ -865,7 +867,8 @@ tops out at 95%. On only once the sheet replays the species units (`sync.js` `SP
 The fish and the sea slugs (`core.js` `SUBJECTS` `names`; docs/reviews/2026-11-18-species-step2-plan.md): one unit per
 species by its scientific name (`sci:s091`), a tree of its own beside the common names' (Pierre, 2026-11-18: "2 arbres
 pédagogiques indépendants"). It hangs from its genus (Q397): for each genus in play at Advanced, its species met and the
-next one in the genus's order open (`app.js` `sciPlay`), within the rank share at the genus level; a genus out of play
+next one in the genus's order open (`app.js` `sciPlay`; the next four while the level opens its group), within the rank
+share at the genus level; a genus out of play
 brings none, their bars kept (Q402 A). A species never answered starts from its genus's ability; no exam yet (`noex`, Q395
 comes later). A question's choices and typed names stay among the scientific names (`app.js` `kindRank`). The display
 schedule on the unit's own bar: the common name under each scientific name below Open Water, the share of scientific
@@ -882,6 +885,41 @@ threshold (`shareAt`, else `LV_AT[SHARE.AT]`, Advanced), and cap = m^`SHARE.POW`
 to the units hanging from the level, and one more of them opens only while their share is under it. `model.js`
 `SHARE = {AT: 1, POW: 2}`. Never capped: the slate, the coral bonus genera, a unit the subject frees (`app.js`
 `shareFree`), a unit whose parent is no unit of the game.
+
+### A level opens in a group
+
+Pierre, 2026-11-20 (sea slugs: «aucun intérêt de n'ouvrir qu'une seule espèce et puis demander de l'identifier parmis
+d'autres espèces pas ouvertes. Au minimum 4 espèces proches ouvertes»; fish: «il faut au moins 4 items ouverts avant de
+commencer à poser des questions. Sinon c'est juste trop facile»; rule L4). A level below the subject's own (its class,
+`model.js` `rankKind`: a fish scientific genus, a species by its common or by its scientific name, a sea slug species)
+starts as the subject does: `INTRO.START` (4) units on cards together, the question right after on one of them, the
+others asked next (`openDue`), so its first questions stand among units opened, never one unit among three never seen.
+One engine, no subject named (rule S1); the base (the families, the coral and sea slug genera, the coral bonus genera)
+is unchanged.
+
+- **Close units in play** (`app.js` `lvlNext`, in `spPlay` and `sciPlay`): while the level holds fewer than
+  `INTRO.START` units met, a parent at its threshold brings its next `INTRO.START` units in its order, not the next one
+  alone (a family's scientific genera all come at its Advanced already: `sciOpen`).
+- **None before the group can open** (`model.js` `lvlNeed`, `openFresh`): the level needs `INTRO.START` less those met,
+  never more than it has with a photo (a level of fewer opens them all: none waits for good). While fewer than that are
+  ready to open, each within the rank share as before (`shareRoom`), none of it opens. **The bound on the delay**
+  (integrator's call, declared before measuring): the first unit of a level asked no more than 2x later, in answers,
+  than before. Waiting also for the share's room for all four at once breached it (rated world, fish, one seed per
+  profile, 3,000 answers: the first species 1.2x to 6.9x later, the strong RA's 215 → 1,473 answers), so the declared
+  fallback holds: the four open together as soon as each would have had room alone.
+- **The group** (`openGroup`): the unit the opening draws (`openPick`), then the units of its class nearest to it, its
+  parent's first, then its grandparent's, then any, each drawn as the first cards are (easiest and most common first).
+  Shown as first cards (`quiz.js` `introShow`: "The next questions are about these 4", no Open all), recorded as first
+  cards (kind `s`, ready at once: no new stored value), and held as a card of the path (`q.lvl`: the opening hold, a right
+  answer first, the visit's floor). It fills the opening's window ("Opening pace"); the milestone card (the first species)
+  shows on its first card. Every other game sees the four at once through `unlocked()` (rule L4).
+- **The rest at once** (`model.js` `levelTop`, from `quiz.js` `introStart`): a level holding units met but fewer than it
+  needs (a group left half-way by a reload, a record from before the groups) gets the rest at once, as the subject's
+  first cards are completed, from what is ready to open.
+- Then the level goes on as before: one unit at a time, at the rank share; the wrong choices of its questions come from
+  the units met first (`distractors`), so from the group's.
+- Read per level, not per parent: a later parent's first unit is asked among units met of other parents. The other
+  reading (each parent opening four of its own) is in ROADMAP.
 
 ### Fish: species order, the commonness index
 
@@ -1630,7 +1668,9 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 photo exposure. The measures learncmp reads (`--list` prints them; any may be the primary): the ones above (`know`,
 `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`, `unitsOW`, `unitsAdv`, `plateau`, `c3`, `hardAns`,
 `perPhoto`, `right`, `prog`, `thErr`), `near` (repeats within 9 questions), `learned` (units whose exam was passed), the fish's `genShare`, `famAdv` and
-`spShare` (the shares of answers on the scientific genera and on the species, the families at Advanced), the phase
+`spShare` (the shares of answers on the scientific genera and on the species, the families at Advanced), `unopen`
+(the rated world's `uo`: the share of the questions below the base level, among choices, naming a unit never opened),
+`firstGen` and `firstSp` (the question that first asked a scientific genus, a species), the phase
 photos' shares (`phEarly`, `phLate`, `phEasy`, `phOther`, `phAns`), the measures after a break (`learnsim --breaks`:
 `cbLen`, `cbLong`, `cbRight`, `afterRight`, `held`, `holdAfter`, `open15`, read per break and per profile with their
 one-sided bounds, no margin) and the population measures of `--app sheet` (`rateErr`, `rateErrW`, `rateCorr`, `gdErr`:

@@ -277,17 +277,22 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
       return {auto, units};
     },
     // The species units in play (app.js spPlay, the species level on): each family at Advanced brings its species met and
-    // the next one not met in its order (one with a photo).
+    // the next one not met in its order (one with a photo); while the level holds fewer than INTRO.START units met, up to
+    // INTRO.START of them (app.js lvlNext: a level opens in a group), in an app that opens a level so (model.js openGroup;
+    // an app without it: the next one alone).
     spUnits = () => {
-      const by = new Map();
-      (U.sp || []).forEach(n => by.set(G[n].parent, [...(by.get(G[n].parent) || []), n]));
-      // and those by their scientific names, their genus in play (app.js sciPlay up)
-      const up = new Set([...slate, ...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto]);
-      (U.ssp || []).filter(n => up.has(G[n].parent)).forEach(n => by.set(G[n].parent, [...(by.get(G[n].parent) || []), n]));
-      return [...by].flatMap(([p, L]) => {
-        const next = ctx.genScore(p) >= ctx.LV_AT[1] && L.find(n => !ctx.introduced(n) && has(n));
-        return [...L.filter(ctx.introduced), ...(next ? [next] : [])];
-      });
+      // and those by their scientific names, their genus in play (app.js sciPlay up), each level apart (its own count met)
+      const up = new Set([...slate, ...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto]),
+        level = (all, keep) => {
+          const by = new Map(),
+            k = ctx.__groups && all.filter(ctx.introduced).length < ctx.__groups ? ctx.__groups : 1;
+          all.filter(keep).forEach(n => by.set(G[n].parent, [...(by.get(G[n].parent) || []), n]));
+          return [...by].flatMap(([p, L]) => [
+            ...L.filter(ctx.introduced),
+            ...(ctx.genScore(p) >= ctx.LV_AT[1] ? L.filter(n => !ctx.introduced(n) && has(n)).slice(0, k) : [])
+          ]);
+        };
+      return [...level(U.sp || [], () => true), ...level(U.ssp || [], n => up.has(G[n].parent))];
     },
     gate = n => {
       const c = (G[n] || {}).circle || 1;
@@ -351,6 +356,10 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
     "typeof openDue === 'function' ? openDue : (at, list) => openRecent(at).filter(n => !asked(n) && introReady(n) && list.includes(n))",
     ctx
   );
+  // A level opens in a group (model.js openFresh, openGroup, levelTop, lvlNeed; rule L4): an app without them opens one
+  // unit at a time, within the rank share (shareRoom), as before. __groups: INTRO.START where the app has them (spUnits).
+  ['openFresh', 'openGroup', 'levelTop', 'lvlNeed', 'rankKind'].forEach(k => (M[k] = vm.runInContext(`typeof ${k} === 'function' ? ${k} : null`, ctx)));
+  ctx.__groups = M.openGroup ? M.INTRO.START : 0;
   Object.assign(ctx, {introduced: M.introduced, asked: M.asked, askedOpen: M.askedOpen, introMap: M.introMap, imrSaid: M.imrSaid, genScore: M.genScore, LV_AT: M.LV_AT});
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
   // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
@@ -466,6 +475,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   M.startSet(choice, 'tour');
   const rows = [],
     expo = [],
+    uo = [],
     preOW = [],
     owAt = {},
     advAt = {},
@@ -476,7 +486,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     blk = {n: 0, ok: 0};
   // the questions of the exam, and those that showed a reserved photo (model.js examSet: an exam question on one)
   const qs = {exam: 0, held: 0, heldOk: 0};
-  // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
+  // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first; else
+  // the rest of a level's group (model.js levelTop), in an app that opens a level in a group.
   const introStart = list => {
     const sl = list.filter(n => !U.extra.includes(n) && !(U.sp || []).includes(n) && !(U.ssp || []).includes(n)),
       want = M.INTRO.START - sl.filter(M.introduced).length,
@@ -484,8 +495,16 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       met = n => M.introduced(n) || L.includes(n);
     for (let fresh = sl.filter(n => !M.introduced(n) && M.mayOpen(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
       L.push(M.openPick(fresh, fresh, met, {first: true}));
-    return L;
+    return L.length || !M.levelTop ? L : M.levelTop(list);
   };
+  // The units the path may open (quiz.js planPhoto): a level short of INTRO.START units met only as a group (model.js
+  // openFresh), else each within the rank share (shareRoom), as an app without groups has it.
+  const openable = list => {
+    const L = list.filter(n => !M.introduced(n) && M.mayOpen(n));
+    return M.openFresh ? M.openFresh(L, list) : L.filter(n => M.shareRoom(n));
+  };
+  // Below the subject's base level (a class of its own: app.js kindRank), for the measure of the choices (uo).
+  const below = n => !!ctx.kindRank(n);
   const P = () => ctx.P,
     tick = () => (ctx.CLOCK.t += 10000), // each question, quiz or live, 10 s after the one before (engine CLOCK)
     shown = () => (U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score).pct : M.progPct(slate));
@@ -509,12 +528,17 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     if (ctx.Q[U.setK] === undefined && (U.subject === 'fish' ? slate.some(n => M.genScore(n) >= M.LV_AT[1]) : slate.every(n => M.askedOpen(n) && M.introduced(n))))
       ctx.Q[U.setK] = prof.names !== 'common';
     // The first cards, else a card when the path allows one (quiz.js planPhoto).
-    let cards = introStart(list);
-    const start = cards.length > 0,
-      met = list.filter(M.introReady);
+    let cards = introStart(list),
+      start = cards.length > 0;
+    const met = list.filter(M.introReady);
     if (!start && met.length && !M.introHold() && M.openPace(at, []) && M.openRight(at)) {
-      const fresh = list.filter(n => !M.introduced(n) && M.mayOpen(n) && M.shareRoom(n)); // the rank share (model.js SHARE)
-      if (fresh.length && ctx.Math.random() < M.openChance(list)) cards = [M.openPick(fresh, list)];
+      const fresh = openable(list); // the rank share (model.js SHARE), a level's group (openFresh)
+      if (fresh.length && ctx.Math.random() < M.openChance(list)) {
+        const u = M.openPick(fresh, list);
+        cards = M.openGroup ? M.openGroup(u, fresh, list) : [u];
+        // a level's group: shown and asked as first cards are (quiz.js planPhoto lvl)
+        start = !!M.lvlNeed && M.lvlNeed(M.rankKind(u), list) > 0;
+      }
     }
     if (cards.length) M.introAdd(cards, start);
     cards.forEach(n => teach(n));
@@ -542,6 +566,9 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     const ok = c === t;
     if (ho && ok) qs.heldOk++;
     expo.push([t, ph[0].o || ph[0].f, ...ph.map(p => p.f)]);
+    // A question below the base level among choices (not typed): 1 when a wrong choice names a unit never opened (the
+    // cards shown with it are opened), else 0; null for the others (learncmp unopen).
+    uo.push(below(t) && chs.length ? (chs.some(x => x !== t && !M.introduced(x)) ? 1 : 0) : null);
     preOW.push([
       M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0,
       Math.min(...ph.map(p => p.e || 0)),
@@ -750,6 +777,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     kinds: Object.fromEntries(UA.map(n => [n, kindOf(n)])),
     c3,
     expo,
+    uo,
     preOW,
     knows: [...knows],
     spKnows: [...spK], // the species units at the profile's sp.hi (tools/learnprof.js sp)
