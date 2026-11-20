@@ -244,8 +244,93 @@
     }
     return MP.L;
   }
+  // ---- The name index's exceptions (Pierre, 2026-11-08, Q313: "Publie, je corrige à l'usage"): the shared names ----
+  // curation.json <part> names {name: {family id: 'on' | 'often' | 'off'}}, read by the game (core.js treeNameIndex): 'on'
+  // gives the name to the whole family (it is accepted when typed, whatever part of the family it named), 'often' the same
+  // with feedback that names the family gently, 'off' takes it away from that family. A shared name is one the built index
+  // gives to two families or more, or a kind word (razorfish, toby): the page of each family it reaches lists it with its
+  // own three choices. Only the built file's index (R.vn: a subject with no name index has none) and his exceptions.
+  const NM_V = ['on', 'often', 'off'],
+    NM_ROLE = {k: 'kind word', sp: 'species', ss: 'species, scientific', gs: 'genus, scientific', gc: 'genus', cur: 'added'};
+  // The shared names of the built file, by key (letters only): {k, x (as first written), owners: [{g, roles, n, of}]}; one
+  // computation per file.
+  let NM_BASE = null;
+  function namesBase(R) {
+    if (!R || !Array.isArray(R.vn)) return [];
+    if (NM_BASE && NM_BASE.R === R) return NM_BASE.rows;
+    const by = new Map();
+    C.treeNameIndex(R, {}).forEach(e => {
+      const k = e.g ? C.typeNormAll(e.x) : '';
+      if (!k) return;
+      if (!by.has(k)) by.set(k, {k, x: e.x, owners: new Map()});
+      const ow = by.get(k).owners;
+      if (!ow.has(e.g)) ow.set(e.g, {g: e.g, roles: [], n: 0, of: 0});
+      const o = ow.get(e.g);
+      if (!o.roles.includes(e.vr)) o.roles.push(e.vr);
+      if (e.vr === 'k') Object.assign(o, {n: e.n || 0, of: e.of || 0});
+    });
+    const rows = [...by.values()]
+      .filter(r => r.owners.size > 1 || [...r.owners.values()].some(o => o.roles.includes('k')))
+      .map(r => ({...r, owners: [...r.owners.values()]}))
+      .sort((a, b) => a.x.localeCompare(b.x));
+    NM_BASE = {R, rows};
+    return rows;
+  }
+  // His state for name x and family g in names map cur: 'on', 'often', 'off' or ''.
+  const namesGet = (cur, x, g) => {
+    const k = C.typeNormAll(x),
+      e = Object.entries(isObj(cur) ? cur : {}).find(([n]) => C.typeNormAll(n) === k);
+    return e && NM_V.includes((e[1] || {})[g]) ? e[1][g] : '';
+  };
+  // Every shared name with the families it reaches and his state for each, then the names he gave a family that the built
+  // index does not (his 'on' of a name no family carries): [{k, x, owners: [{g, name, roles, n, of, v}]}], by name.
+  function namesRows(R, cur) {
+    const fam = new Map(((R && R.families) || []).map(f => [f.id, f])),
+      rows = namesBase(R).map(r => ({...r, owners: r.owners.map(o => ({...o}))}));
+    Object.entries(isObj(cur) ? cur : {}).forEach(([x, m]) => {
+      const k = C.typeNormAll(x);
+      if (!k || !isObj(m)) return;
+      let r = rows.find(y => y.k === k);
+      Object.keys(m).forEach(g => {
+        if (!fam.has(g) || !NM_V.includes(m[g])) return;
+        if (!r) rows.push((r = {k, x, owners: []}));
+        if (!r.owners.some(o => o.g === g)) r.owners.push({g, roles: ['cur'], n: 0, of: 0});
+      });
+    });
+    const order = new Map([...fam.keys()].map((g, i) => [g, i]));
+    return rows
+      .map(r => ({
+        ...r,
+        owners: r.owners
+          .map(o => ({...o, name: (fam.get(o.g) || {}).name || o.g, v: namesGet(cur, r.x, o.g)}))
+          .sort((a, b) => order.get(a.g) - order.get(b.g))
+      }))
+      .sort((a, b) => a.x.localeCompare(b.x));
+  }
+  // The families some shared name reaches (the Tree's Shared names filter).
+  const namesFams = (R, cur) => new Set(namesRows(R, cur).flatMap(r => r.owners.map(o => o.g)));
+  // Names map cur with name x given state v for family g ('' brings the built reading back), a new map; an emptied name goes.
+  function namesPut(cur, x, g, v) {
+    const k = C.typeNormAll(x),
+      out = {};
+    let key = x;
+    Object.entries(isObj(cur) ? cur : {}).forEach(([n, m]) => {
+      if (C.typeNormAll(n) === k) key = n;
+      out[n] = isObj(m) ? {...m} : {};
+    });
+    const m = out[key] || {};
+    if (NM_V.includes(v)) m[g] = v;
+    else delete m[g];
+    if (Object.keys(m).length) out[key] = m;
+    else delete out[key];
+    return out;
+  }
   if (node) {
     module.exports = {
+      namesRows,
+      namesFams,
+      namesPut,
+      namesGet,
       sheetSlots,
       sheetOwn,
       sheetVal,
@@ -662,7 +747,68 @@
         })
     );
   }
+  // ---- The shared names on a family's page (Names): each name the page's family carries that another family carries too,
+  // or a kind word, with its three choices; the one in force pressed, a click on it brings the built reading back. One
+  // click is one draft step (rule A2, Undo steps back); Publish sends it (curation.json <part> names, rule A1). Folded
+  // unless he opened it (this browser), or the Shared names filter is on. ----
+  const NM_KEY = 'reefid-admin-cnames',
+    NM_LAB = {on: 'Accepted', often: 'Often', off: 'Off'};
+  const nmLine = (r, o) => {
+    const role = o.roles
+        .filter(x => x !== 'cur' || o.roles.length === 1)
+        .map(x => (x === 'k' && o.of ? `kind word, ${o.n} of ${o.of} species` : NM_ROLE[x] || x))
+        .join(', '),
+      also = r.owners.filter(x => x.g !== o.g).map(x => x.name);
+    return `${role}${also.length ? ` · also ${also.join(', ')}` : ''}`;
+  };
+  function namesBox(S, R, id, tag) {
+    // TK: the curation part of the tree subject on screen (admin.js), where the exceptions are written
+    if (!R || !TK || !Array.isArray(R.vn)) return '';
+    const rows = namesRows(R, (DRAFT[TK] || {}).names)
+      .map(r => ({r, o: r.owners.find(o => o.g === id)}))
+      .filter(x => x.o);
+    if (!rows.length) return '';
+    const can = mayContent(),
+      ne = rows.filter(x => x.o.v).length,
+      st = store.get(NM_KEY, null),
+      open = st == null ? tag === 'names' : st === true;
+    return `<details class="adm-row adm-csheet adm-cnames" data-nmid="${esc(id)}"${open ? ' open' : ''}><summary><h3>Names <small>${rows.length} shared${ne ? ` · ${ne} yours` : ''}</small></h3></summary><div class="adm-cslots">${rows
+      .map(
+        ({r, o}) =>
+          `<div class="adm-cslot${o.v ? ' is-fresh' : ''}" data-nmx="${esc(r.x)}"><div class="adm-cshd"><b>${esc(r.x)}</b><small class="note">${esc(nmLine(r, o))}</small><span class="adm-qseg adm-lvseg adm-stseg" role="group" aria-label="${esc(r.x)}">${NM_V.map(
+            v => `<button type="button" data-nmv="${v}" aria-pressed="${o.v === v}"${can ? '' : ' disabled'}>${NM_LAB[v]}</button>`
+          ).join('')}</span></div></div>`
+      )
+      .join('')}</div></details>`;
+  }
+  function namesBind(scope, S, R) {
+    const box = scope.querySelector('.adm-cnames');
+    if (!box || !R) return;
+    const sm = box.querySelector('summary');
+    if (sm) sm.addEventListener('click', () => store.set(NM_KEY, !box.open));
+    box.querySelectorAll('[data-nmv]').forEach(
+      b =>
+        (b.onclick = () => {
+          if (!mayContent()) return;
+          const k = TK,
+            x = b.closest('[data-nmx]').dataset.nmx,
+            g = box.dataset.nmid,
+            part = {...(DRAFT[k] || {})},
+            names = namesPut(part.names, x, g, namesGet(part.names, x, g) === b.dataset.nmv ? '' : b.dataset.nmv);
+          if (Object.keys(names).length) part.names = names;
+          else delete part.names;
+          DRAFT[k] = part;
+          saveDraft();
+          render();
+        })
+    );
+  }
   Object.assign(root, {
+    namesRows,
+    namesFams,
+    namesPut,
+    namesBox,
+    namesBind,
     sheetBox,
     sheetBind,
     sheetWarn,

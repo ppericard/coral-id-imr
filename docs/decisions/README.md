@@ -59,6 +59,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
+| 2026-11-20 | [The admin corrects the fish name index in a family's Names box; a species' own list waits for a format](2026-11-20-fish-names-admin.md) | #1311 |
 | 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
 | 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
@@ -66,6 +67,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-20 | [IMR lecture photos are never drawn larger than their own pixels](2026-11-20-lecture-photos-never-upscaled.md) | #1289 |
 | 2026-11-20 | [A name root that echoes another unit's ID tip shows with a warning, never held back](2026-11-20-name-root-warning.md) | #1308 |
 | 2026-11-20 | [One admin for every subject: the fish parity row becomes the one-engine plan](2026-11-20-one-admin-every-subject.md) | #1288 |
+| 2026-11-20 | [Sea slug basics: the basics module for the sea slugs, and Basics open for them](2026-11-20-seaslug-basics.md) | #1286 |
 | 2026-11-20 | [The sea slug box pass: Opus 5.5 medium, decided by a second sample, and the judging import takes the box](2026-11-20-seaslug-box-model.md) | #1295 |
 | 2026-11-20 | [Find the X for the sea slugs: the shared tile code in, no tile yet (no box on any photo)](2026-11-20-slug-find-the-x.md) | #1284 |
 | 2026-11-20 | [The coral pairs with a bonus or Key-only genus: 24 tell-apart lines written, one kept without](2026-11-20-tellapart-bonus-pairs.md) | #1296 |
@@ -163,6 +165,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-18 | [The coral and sea-slug pairs' tell-apart lines: ours, in `ap` / `apsrc`, never in IMR's `lk`](2026-11-18-tellapart-lines.md) | #1119 |
 | 2026-11-18 | [Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs](2026-11-18-typed-answers-rest.md) | #1116 |
 | 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
+| 2026-11-18 | [The names choice on the What I learn card: Common names and Scientific names rows, each on or off](2026-11-18-what-i-learn-names-rows.md) | #1301 |
 | 2026-11-04 | [Fish basics: the fish twin of Coral basics, on the same engine, from the IMR fish presentation](2026-11-04-fish-basics.md) | #1108 |
 
 Older decisions are still in the notebook's "Decision log"
