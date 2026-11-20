@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Every source disagreement the fish colour phases list records reaches the admin's Points (rule C5): a species with a
 // `conflict` verdict, or a note that says it found a conflict, has a point in data/points.json whose id names the species,
 // so Pierre can see it in the admin's Points list (admin.js renderPoints) and nothing stays in a file nobody reads.
