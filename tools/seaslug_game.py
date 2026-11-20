@@ -92,8 +92,8 @@ line:
     pass the sea slugs' tile rule (tile_tags here: the fish's plus the dorsal view) carries bb, and its download (or, on R2 already, a run for the
     tile alone) cuts {f}-x.webp with the fish's own cut (fish_game.py tile_crop, tile_write: nothing is copied), the
     record then carrying xc (the tile's square) or xn (why not). A judging file may carry bb (judging/SEASLUG.md "The
-    animal's box"; the box pass of the sea slugs' photos, then imported); until a box is imported no record has a tile
-    and the app's Find the X (app.js UNITS tiles) is not drawn for the sea slugs.
+    animal's box"; the bulk box pass of 2026-11-20 is imported); a record with a box has its tile (xc) from the next --r2
+    run, and the app's Find the X (app.js UNITS tiles) is drawn for the sea slugs as the tiles exist.
 
 The R2 step is off in the Candidate photos workflow until Pierre's go (.github/workflows/approved-photos.yml
 SEASLUG_R2): the workflow builds offline (every new photo remote, r: 1) while it is off.

@@ -1,9 +1,9 @@
 {
  "photos": {
-  "seaslug-Mexichromis-cand-524360283": {"code": "o1g0sm14"},
+  "seaslug-Mexichromis-cand-524360283": {"code": "o1g0sm14", "bb": [0.207, 0.3218, 0.8141, 0.6407]},
   "seaslug-Mexichromis-cand-277701766": {"code": "o1g0ss13"},
   "seaslug-Mexichromis-cand-352596886": {"code": "o0g0mls2"},
-  "seaslug-Mexichromis-cand-640488771": {"code": "p1g0sl15"},
+  "seaslug-Mexichromis-cand-640488771": {"code": "p1g0sl15", "bb": [0.1112, 0.074, 0.875, 0.8871]},
   "seaslug-Mexichromis-cand-650635276": {"code": "h0g0sls1"},
   "seaslug-Mexichromis-cand-650626763": {"code": "o1g0sls5"}
  }

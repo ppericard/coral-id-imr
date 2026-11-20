@@ -1,21 +1,21 @@
 {
  "photos": {
-  "seaslug-Atagema-cand-181591366": {"code": "p1g0sl15"},
+  "seaslug-Atagema-cand-181591366": {"code": "p1g0sl15", "bb": [0.078, 0.2284, 0.936, 0.8914]},
   "seaslug-Atagema-cand-391722365": {"code": "d0g0mlx1", "note": "a grey fuzzy mass on a sponge: where the animal is, is not obvious"},
   "seaslug-Atagema-cand-585638498": {"code": "o1g0ml1c2"},
-  "seaslug-Atagema-cand-731813950": {"code": "o1g0sm14"},
-  "seaslug-Atagema-cand-95702607": {"code": "p1g0sl15"},
-  "seaslug-Atagema-cand-393123507": {"code": "o1g0sl1f4", "note": "the front raised and folded, no rhinophores or gills seen"},
-  "seaslug-Atagema-cand-181458400": {"code": "p1g0sl15"},
+  "seaslug-Atagema-cand-731813950": {"code": "o1g0sm14", "bb": [0.4531, 0.2985, 0.7563, 0.7071]},
+  "seaslug-Atagema-cand-95702607": {"code": "p1g0sl15", "bb": [0.1281, 0.2233, 0.9657, 0.8]},
+  "seaslug-Atagema-cand-393123507": {"code": "o1g0sl1f4", "bb": [0.1375, 0.2, 0.8419, 0.8292], "note": "the front raised and folded, no rhinophores or gills seen"},
+  "seaslug-Atagema-cand-181458400": {"code": "p1g0sl15", "bb": [0.095, 0.1982, 0.9, 0.8738]},
   "seaslug-Atagema-cand-585246553": {"code": "o0g0ml1c1"},
   "seaslug-Atagema-cand-392907501": {"code": "o1g0sl1c1", "note": "a pale oval on a pale sponge of the same texture"},
-  "seaslug-Atagema-cand-244694406": {"code": "o1g0sl1f4", "note": "no rhinophores or gills seen"},
+  "seaslug-Atagema-cand-244694406": {"code": "o1g0sl1f4", "bb": [0.2887, 0.1233, 0.8313, 0.7959], "note": "no rhinophores or gills seen"},
   "seaslug-Atagema-cand-609165815": {"code": "o0g0mlx1", "note": "a pale shape inside a sponge of the same colour: where the animal is, is not obvious"},
   "seaslug-Atagema-cand-390531840": {"code": "d1g0ml14"},
   "seaslug-Atagema-cand-507947284": {"code": "o1g0ml14"},
   "seaslug-Atagema-cand-589193462": {"code": "d1g0ml1c2"},
   "seaslug-Atagema-cand-333318055": {"code": "o1g0sl1c3"},
-  "seaslug-Atagema-cand-505093497": {"code": "d1g0sl15"},
+  "seaslug-Atagema-cand-505093497": {"code": "d1g0sl15", "bb": [0.1362, 0.1596, 0.8688, 0.8362]},
   "seaslug-Atagema-cand-66745905": {"code": "o1g0ml1c2"}
  }
 }

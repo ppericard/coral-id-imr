@@ -2,23 +2,23 @@
  "photos": {
   "seaslug-548307-cand-282429310": {"code": "h1g0sl1w3"},
   "seaslug-548307-cand-19078701": {"code": "o0g0sl1f2"},
-  "seaslug-548307-cand-11338277": {"code": "o1g0sl15"},
-  "seaslug-548307-cand-638293195": {"code": "o1g0sl1f4"},
+  "seaslug-548307-cand-11338277": {"code": "o1g0sl15", "bb": [0.15, 0.2391, 0.8889, 0.8445]},
+  "seaslug-548307-cand-638293195": {"code": "o1g0sl1f4", "bb": [0.193, 0.064, 0.865, 0.8374]},
   "seaslug-548307-cand-195336552": {"code": "h0g0sl11"},
-  "seaslug-548307-cand-384486352": {"code": "d1g0sl15"},
-  "seaslug-548307-cand-171304223": {"code": "p1g0sl1w5"},
+  "seaslug-548307-cand-384486352": {"code": "d1g0sl15", "bb": [0.2187, 0.2079, 0.85, 0.802]},
+  "seaslug-548307-cand-171304223": {"code": "p1g0sl1w5", "bb": [0.1112, 0.1891, 0.8675, 0.7973]},
   "seaslug-548307-cand-331609064": {"code": "o1g0sms4"},
-  "seaslug-548307-cand-182118128": {"code": "o1g0sl15"},
+  "seaslug-548307-cand-182118128": {"code": "o1g0sl15", "bb": [0.178, 0.1939, 0.908, 0.8197]},
   "seaslug-548307-cand-4540305": {"code": "h1g0ml12"},
-  "seaslug-548307-cand-339413873": {"code": "d1g0sl15"},
-  "seaslug-548307-cand-280542907": {"code": "o1g0sl1w5"},
-  "seaslug-548307-cand-384486330": {"code": "p1g0sl15"},
+  "seaslug-548307-cand-339413873": {"code": "d1g0sl15", "bb": [0.0812, 0.323, 0.6813, 0.824]},
+  "seaslug-548307-cand-280542907": {"code": "o1g0sl1w5", "bb": [0.175, 0.1388, 0.9067, 0.9578]},
+  "seaslug-548307-cand-384486330": {"code": "p1g0sl15", "bb": [0.1812, 0.1089, 0.8925, 0.9038]},
   "seaslug-548307-cand-182118145": {"code": "o0g0sl13"},
   "seaslug-548307-cand-182118135": {"code": "o0g0sl13"},
   "seaslug-548307-cand-365081728": {"code": "o1g0sl1cw3"},
   "seaslug-548307-cand-118922726": {"code": "o0g0sl1w3"},
   "seaslug-548307-cand-158827261": {"code": "p1g1ml13"},
   "seaslug-548307-cand-160838051": {"code": "o1g0sl1c2", "note": "hard to pick out among the soft coral polyps it mimics"},
-  "seaslug-548307-cand-81564808": {"code": "o1g0sl15"}
+  "seaslug-548307-cand-81564808": {"code": "o1g0sl15", "bb": [0.2187, 0.1208, 0.6844, 0.7]}
  }
 }

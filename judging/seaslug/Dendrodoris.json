@@ -1,11 +1,11 @@
 {
  "photos": {
   "seaslug-Dendrodoris-cand-363329078": {"code": "d0g0sl1cf1", "note": "a grey mottled mantle on a grey reef, cut by the right edge, no rhinophores or gills seen"},
-  "seaslug-Dendrodoris-cand-173990388": {"code": "d1g0sl15"},
-  "seaslug-Dendrodoris-cand-63746522": {"code": "d1g0sl15"},
-  "seaslug-Dendrodoris-cand-103800767": {"code": "o1g0sl1f4", "note": "the rhinophores and gills out of sight among the tubercles"},
+  "seaslug-Dendrodoris-cand-173990388": {"code": "d1g0sl15", "bb": [0.115, 0.0887, 0.865, 0.9178]},
+  "seaslug-Dendrodoris-cand-63746522": {"code": "d1g0sl15", "bb": [0.205, 0.1669, 0.9207, 0.7393]},
+  "seaslug-Dendrodoris-cand-103800767": {"code": "o1g0sl1f4", "bb": [0.1281, 0.1916, 0.7938, 0.8125], "note": "the rhinophores and gills out of sight among the tubercles"},
   "seaslug-Dendrodoris-cand-507631702": {"code": "o0g0sl13", "note": "the rear runs off the top edge"},
   "seaslug-Dendrodoris-cand-364371426": {"code": "d1g0sl1c3", "note": "a grey mottled mantle on a grey reef"},
-  "seaslug-Dendrodoris-cand-181600057": {"code": "d1g0sl15"}
+  "seaslug-Dendrodoris-cand-181600057": {"code": "d1g0sl15", "bb": [0.105, 0.17, 0.895, 0.7688]}
  }
 }
