@@ -96,7 +96,7 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 
 - **Say what you checked and how**; a guess is labelled as a guess (rule W11).
 - **Never contradict or "correct" the IMR course** (rule C1). **Never invent categories or information**; every clue
-  carries its source (rule C2). Discrepancies between sources go to `points.json`; never settle them (rule C5).
+  carries its source (rule C2). Discrepancies between sources go to `data/points.json`; never settle them (rule C5).
 - **Shared and modular by default: one engine, no special case for one unit or one subject**; an exception is declared
   and named in one place with its reason, and a test lists them all (rule S1).
 - **Player names: real in chat, anonymous in the repo** (rule D2). **Tests never reach the real sheet** (rule D1).

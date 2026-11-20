@@ -13,7 +13,7 @@ changes the site by itself.
 ## Hard rules
 
 1. **Write only `judging/out/<Genus>.json`** (format: `judging/schema.json`). Never edit `curation.json` (Pierre's
-   own choices), `data.json`, the app code, or the files the import script writes (`suggest.json`, `forms.json`,
+   own choices), `data.json`, the app code, or the files the import script writes (`data/suggest.json`, `forms.json`,
    `quality.json`, `picks.json`). The import script is the only way in (one exception: the growth forms of game
    photos that have none, below).
 2. **Use only the categories defined below.** Never invent a category, a label or a grouping. If nothing fits,
@@ -209,7 +209,7 @@ photos are always used; others only fill gaps. So suggest iNaturalist candidates
 ## Candidate pass (`judging/cand/<Genus>.json`, `tools/judging_cand.py`)
 
 Run on demand when Pierre asks for it (the admin's Candidates tab counts the candidates not judged yet). It covers
-only the iNaturalist candidates waiting in `cand.json` (whole observations), so Pierre's swiper shows the most
+only the iNaturalist candidates waiting in `data/cand.json` (whole observations), so Pierre's swiper shows the most
 useful photo of each observation and view first. Since 2026-11-03 what you are sure of is decided without him (the
 auto-sort, below): he swipes only the doubtful photos and about 1 in 20 sure ones, as a check of your work. Pierre's
 aim: real diversity of colonies and views, so the players learn the genus, not the photos.
@@ -257,8 +257,8 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
    reaches; when that would cut the subject, Pierre can still crop it by hand: `exclude` with `unsure`). Never
    reasons to reject: watermarks, logos, date stamps, extended tentacles.
 3. `python3 tools/judging_cand.py --check <Genus>` until it passes, then `python3 tools/judging_cand.py` imports
-   every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
-   `judging/cand/*.json` and `suggest.json`.
+   every passing genus into `data/suggest.json` `"cand"` (admin only: players never download it). Commit only
+   `judging/cand/*.json` and `data/suggest.json`.
 
 ### What happens to a sure judgment (auto-sort)
 
@@ -281,14 +281,14 @@ its threshold (keep 90%, view 85%, quality 73%, form 80%, after 10 comparisons) 
 recovers: the photos then wait for him with your guess as usual. So `unsure` matters more than ever: a confident
 wrong answer now reaches the site; a marked doubt costs one swipe.
 
-Objective metrics (`tools/photo_metrics.py`, `metrics.json`: sharpness, size, colour cast) never decide; they only stop
+Objective metrics (`tools/photo_metrics.py`, `data/metrics.json`: sharpness, size, colour cast) never decide; they only stop
 a sure judgment they contradict (a Good photo under 1000 px or among the 5% softest candidates, a Poor photo among the
 5% sharpest), which then goes to Pierre with the reason, and they order the sure adds of a full cell (sharper first
 within a quality).
 
 ## Fish candidates
 
-The fish candidates (`fish-cand.json`) are judged on the fish rubric, visual criteria only:
+The fish candidates (`data/fish-cand.json`) are judged on the fish rubric, visual criteria only:
 [`judging/FISH.md`](FISH.md) "Candidates" (`tools/judging_fish.py`, `judging/fish/<species id>.json`). Since 2026-11-09 (rubric 7) a photo whose
 code passes the tile rule also gets the fish's box (`bb`, [`judging/FISH.md`](FISH.md) "The fish's box"), and the
 photos already judged get theirs from a box pass (`python3 tools/fish_judge.py --boxes`).
@@ -301,6 +301,6 @@ photos already judged get theirs from a box pass (`python3 tools/fish_judge.py -
    every ERROR. Read the warnings and change your answer or confirm it (mark `unsure` if in doubt).
 3. Save after each genus, so work can resume: a genus with a passing file is done.
 4. When the batch you were asked for is done, run `python3 tools/judging_import.py` (it imports every passing
-   genus). Commit only `judging/out/`, `suggest.json`, `forms.json`, `quality.json` and `picks.json`, on a new
+   genus). Commit only `judging/out/`, `data/suggest.json`, `forms.json`, `quality.json` and `picks.json`, on a new
    branch, and open a pull request. Do not merge it unless Pierre told you to.
 5. Report: genera done, number of photos judged, how many `unsure`, and anything that surprised you.

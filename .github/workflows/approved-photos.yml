@@ -8,13 +8,13 @@ on:
   push:
     branches: [main]
     # curation.json: Pierre's Publish; the judgements: a judged batch puts photos in play by themselves (Q180, Q199;
-    # tools/fish_game.py in_play: suggest.json for the candidates, tools/fish_judge.json and tools/fish_refs.json for the
+    # tools/fish_game.py in_play: data/suggest.json for the candidates, tools/fish_judge.json and tools/fish_refs.json for the
     # reference photos; Codex review #674); tools/fish_game.py itself: a change to what enters play (Q212: the reference
     # photos judged sure like a candidate, whatever their level) is downloaded and uploaded at its merge. A fish's box
-    # (tools/fish_judge.json boxes, suggest.json bb) makes its tile, {f}-x.webp, uploaded the same way (Q321 D4).
+    # (tools/fish_judge.json boxes, data/suggest.json bb) makes its tile, {f}-x.webp, uploaded the same way (Q321 D4).
     # fish-photos.json: a sheet-only photo tools/fish_photos.py found (remote, r: 1) is downloaded and uploaded the same
     # way (tools/fish_game.py sheet_of; 2026-11-15: no fish photo shown straight from iNaturalist or FishBase).
-    paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py, fish-photos.json]
+    paths: [curation.json, data/suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py, fish-photos.json]
   # Weekly, for the licence refresh (tools/licences.py: an author can change the licence of their photos at any time);
   # the other steps run too, as on a run by hand. Wednesday 03:47 Manila.
   schedule:
@@ -47,7 +47,7 @@ jobs:
     steps:
       # The latest main, not the commit that started the run: a run queued behind another (two Publishes in a row, the
       # concurrency group above) must start from that run's commit, or its own commit conflicts with it on data.json
-      # and is lost (2026-11-06: the second Publish's exclusions never reached data.json and cand.json).
+      # and is lost (2026-11-06: the second Publish's exclusions never reached data.json and data/cand.json).
       # The whole history without file contents (fetched on demand): tools/apply_excluded_archive.py --files takes a
       # restored lecture photo's file back from it.
       - uses: actions/checkout@v7
@@ -64,8 +64,8 @@ jobs:
       - run: pip install --require-hashes -r tools/requirements.txt
       # The licence refresh, on the weekly schedule and on a run by hand, never at a Publish (it asks iNaturalist about
       # every observation listed: about 140 requests at one a second, rule C7): the credit and the licence of every
-      # iNaturalist photo listed brought up to date at the source (fish-cand.json, tools/fish_refs.json, the sheet-only
-      # photos; data.json, cand.json, excluded.json; seaslug-cand.json) and in fish-game.json; a photo whose licence the rules no longer
+      # iNaturalist photo listed brought up to date at the source (data/fish-cand.json, tools/fish_refs.json, the sheet-only
+      # photos; data.json, data/cand.json, data/excluded.json; data/seaslug-cand.json) and in fish-game.json; a photo whose licence the rules no longer
       # accept leaves play, each one a warning on the run and listed in its summary. Before fetch_approved.py, so
       # tools/fish_game.py builds fish-game.json from the refreshed sources. A request that fails writes nothing.
       # --others: Pierre's own photos are left out (he does not change them weekly; Pierre, 2026-11-15).
@@ -77,7 +77,7 @@ jobs:
       # the sheet-only photos, downloaded like the others). The files go to r2-upload/ (gitignored), uploaded below before
       # anything is committed.
       - run: python tools/fetch_approved.py --games --fish --out r2-upload
-      # The sea slugs' game data (seaslug.json, seaslug-game.json) from the refreshed seaslug-cand.json and suggest.json:
+      # The sea slugs' game data (seaslug.json, seaslug-game.json) from the refreshed data/seaslug-cand.json and data/suggest.json:
       # a photo whose licence changed or that left the candidates leaves their game too (Codex review #987). Offline while
       # SEASLUG_R2 is off (above); on, the photos in play R2 lacks are downloaded into r2-upload/ (uploaded below).
       - if: env.SEASLUG_R2 != 'on'
@@ -104,9 +104,9 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
-      # Offline, last before the commit: the photos Pierre restored back from excluded.json, the ones he excluded out of
-      # every list (kept in excluded.json), no share-alike candidate waiting, and the candidates split (data.json keeps
-      # those curation.json uses, cand.json the others). fetch_local.py ends with the same step; this one also covers
+      # Offline, last before the commit: the photos Pierre restored back from data/excluded.json, the ones he excluded out of
+      # every list (kept in data/excluded.json), no share-alike candidate waiting, and the candidates split (data.json keeps
+      # those curation.json uses, data/cand.json the others). fetch_local.py ends with the same step; this one also covers
       # whatever ran after it (tests/coralcand.test.js, tests/photos.test.js).
       - run: python tools/fetch_local.py --tidy
       # The commit to make, for photos-push: this job's files staged as before, their diff (binary, renames off) and the
@@ -114,7 +114,7 @@ jobs:
       - name: Prepare the commit
         shell: bash
         run: |
-          git add data.json cand.json excluded.json fish-game.json fish-photos.json fish-cand.json tools/fish_refs.json seaslug-cand.json seaslug.json seaslug-game.json img
+          git add data.json data/cand.json data/excluded.json fish-game.json fish-photos.json data/fish-cand.json tools/fish_refs.json data/seaslug-cand.json seaslug.json seaslug-game.json img
           mkdir -p "$RUNNER_TEMP/change"
           git rev-parse HEAD > "$RUNNER_TEMP/change/base"
           git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
@@ -154,7 +154,7 @@ jobs:
         shell: bash
         env:
           CHANGE: ${{ runner.temp }}/change
-          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-photos\.json|fish-cand\.json|tools/fish_refs\.json|seaslug-cand\.json|seaslug\.json|seaslug-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
+          ALLOWED: '^(data\.json|data/cand\.json|data/excluded\.json|fish-game\.json|fish-photos\.json|data/fish-cand\.json|tools/fish_refs\.json|data/seaslug-cand\.json|seaslug\.json|seaslug-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
@@ -234,7 +234,7 @@ jobs:
       - name: Prepare the commit
         shell: bash
         run: |
-          git add fish-cand.json tools/fish_refill.json
+          git add data/fish-cand.json tools/fish_refill.json
           mkdir -p "$RUNNER_TEMP/change"
           git rev-parse HEAD > "$RUNNER_TEMP/change/base"
           git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
@@ -269,7 +269,7 @@ jobs:
         shell: bash
         env:
           CHANGE: ${{ runner.temp }}/change
-          ALLOWED: '^(fish-cand\.json|tools/fish_refill\.json)$'
+          ALLOWED: '^(data/fish-cand\.json|tools/fish_refill\.json)$'
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
