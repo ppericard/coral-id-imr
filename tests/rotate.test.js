@@ -484,6 +484,32 @@ test('the app fallback: the canvas cuts and turns the original as the workflow d
   assert.deepStrictEqual([turnPlan(W, H, null, 180).w, turnPlan(W, H, null, 180).h], [800, 600]);
 });
 
+// A turned lecture photo (imr-p12_i8, turned a quarter) shown from its Corals of the World original: for the time its
+// picture takes the element has no src at all (a check reading the page then sees an empty address: tests/pages.smoke.js
+// waits for the src), and once made it is a blob picture, never the original (#1292).
+test('a turned lecture photo from its Corals of the World original: no src while made, then its picture (turnSet)', async () => {
+  const T = appTurn(),
+    cw = 'https://www.coralsoftheworld.org/media/images/0345_C01_02.jpg';
+  T.idx(CORE.photoIndex({p: [{f: 'imr-p12_i8', imr: true, src: cw, cr: [0.1, 0.2, 0.9, 0.8], ro: 90}]}));
+  assert.strictEqual(T.turnRec(cw).f, 'imr-p12_i8');
+  const A = {src: cw, alt: 'x'},
+    i = {
+      getAttribute: k => (k in A ? A[k] : null),
+      setAttribute: (k, v) => (A[k] = String(v)),
+      removeAttribute: k => delete A[k],
+      hasAttribute: k => k in A,
+      dataset: {},
+      closest: () => null
+    };
+  let go;
+  const w = T.turnSet(i, () => new Promise(ok => (go = ok)));
+  assert.strictEqual(i.hasAttribute('src'), false, 'no src while the picture is made');
+  assert.strictEqual(i.getAttribute('src') || '', '');
+  go('blob:turned');
+  await w;
+  assert.strictEqual(A.src, 'blob:turned');
+});
+
 test('the app fallback: every use of a turned original on an element swapped for its picture, none shown meanwhile (turnSet)', async () => {
   const T = appTurn(),
     iN = (n, s) => `https://inaturalist-open-data.s3.amazonaws.com/photos/${n}/${s}.jpg`;

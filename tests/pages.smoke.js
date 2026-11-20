@@ -5227,6 +5227,12 @@ async function onePath(b, base) {
         if (start) await p.click(start).catch(() => {});
       } else await p.click(again).catch(() => {});
       await p.waitForSelector(sel, {timeout: 10000}).catch(() => {});
+      // A turned lecture photo (imr-p12_i8) shown from its original has no src while its picture is being made (app.js
+      // turnSet: "nothing shown meanwhile", tests/rotate.test.js): the photos are read once each has one. One that never
+      // gets one stays "" and fails below.
+      await p
+        .waitForFunction(sel => [...document.querySelectorAll('#view ' + sel)].every(i => i.getAttribute('src')), sel, {timeout: 5000})
+        .catch(() => {});
       // The genus of each photo shown, from the data (an IMR lecture photo's file name does not name it), by its file
       // name, or by its online original once R2 failed (core.js photoAway: R2 is cut off here).
       seen.push(
