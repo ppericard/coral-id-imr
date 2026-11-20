@@ -4,25 +4,27 @@
 #   p    the parts of the name, in order, that spell it exactly: [form, gloss, word, [source indexes]]; an ending with no
 #        meaning of its own (-ia, -ites, -a) has an empty gloss and no source
 #   fit  optional: one of the genus's own ID tips (gen[g].qt, verbatim) that the meaning points to
+#   warn optional, never with fit: the meaning points to another genus's ID tip (the name study's misleading root), each
+#        [genus, one of its ID tips (qt) verbatim], never one of the genus's own; shown as a warning beside the root
 #   src  the sources: [{t: label, u: https link}]
 # Shown on the genus sheet under the ID tips (learn.js rootLine), apart from the IMR tips and mnemonic: an addition with
 # its source, never a correction of the IMR course (rule C1).
 #
 # How a genus gets a line (rule C2: never an invented etymology):
 #   A. a dictionary names the genus itself and its parts: E. C. Jaeger, A Source-Book of Biological Names and Terms
-#      (1944, archive.org) gives Seriato-pora, Por-ites, Fungia, Lob-actis, Turbin-aria, Mille-pora, Sandalo-litha as
-#      examples of their root; Merriam-Webster gives Acropora (acr- + -pora), Porites, Fungia, Millepora, Tubipora
-#      (tubi- + -pora): 9 genera;
+#      (1944, archive.org) gives Seriato-pora, Por-ites, Fungia, Lob-actis, Turbin-aria, Mille-pora, Sandalo-litha,
+#      Pocillo-pora as examples of their root; Merriam-Webster gives Acropora (acr- + -pora), Porites, Fungia, Millepora,
+#      Tubipora (tubi- + -pora): 10 genera;
 #   B. or the name is made of dictionary roots with nothing left over but a Latin ending or a linking -o-/-i-, and the
 #      form of each root sits under one sense of the dictionary: Jaeger numbers the different words that share a
 #      spelling (gon- 1. gonia "angle", 2. gonos "seed"; Gonio- is under 1), and a Merriam-Webster combining form settles
-#      the rest (-pora "pore", where Jaeger's por- also has poros "soft stone", as in madrepore): 14 genera.
+#      the rest (-pora "pore", where Jaeger's por- also has poros "soft stone", as in madrepore): 15 genera.
 #   Every entry used was read on the page scans, not only in the OCR text.
 # Every other slate genus is in SKIP with the reason it gets no line (main() checks that each slate genus is in one of
 # the two), so a later pass knows where to look: a form under two senses of the dictionary, a split that is not clear,
-# a person honoured whose source we have not read, a root that points to another genus's IMR cue (the study's
-# misleading root: held back until the sheet can say so), or an IMR mnemonic that gives the name another meaning, so a
-# dictionary line beside it could read as a correction (rule C1: Platygyra). The skip reasons were read in the OCR text.
+# a person honoured whose source we have not read, a meaning shared with another genus's root (Pectinia: held back
+# until the sheet can say so), or an IMR mnemonic that gives the name another meaning, so a dictionary line beside it
+# could read as a correction (rule C1: Platygyra). The skip reasons were read in the OCR text.
 #
 # Acropora's old unsourced "Other sources" etymology (gen.info) moves here, with its sources. Re-runnable:
 # python3 tools/apply_name_roots.py
@@ -76,6 +78,11 @@ ROOTS = {
     'Goniastrea': {'p': [['Goni', 'angle', 'Greek gōnia', [0, 1]], ASTREA + [[2]]], 'fit': 'Shared walls, sub-angular corallites',
                    'src': [jaeger(98, 'gon'), mw('goni-'), jaeger(25, 'aster')]},
     'Astrea': {'p': [['Astr', 'star', 'Greek astēr', [0]], ['ea', '', '', []]], 'src': [jaeger(25, 'aster')]},
+    # Two whose root points to another genus's ID tip: shown with the warning (warn)
+    'Pocillopora': {'p': [['Pocillo', 'cup, bowl', 'Latin pocillum', [0]], PORA + [[1]]],
+                    'warn': [['Acropora', 'Cup-shaped radial corallites']], 'src': [jaeger(180, 'pocul'), mw('-pora')]},
+    'Favites': {'p': [['Fav', 'honeycomb', 'Latin favus', [0]], ['ites', '', '', []]], 'warn': [['Porites', 'Honeycomb pattern']],
+                'src': [jaeger(89, 'fav')]},
     # The starred look-alikes
     'Alveopora': {'p': [['Alveo', 'hollow', 'Latin alveus', [0]], PORA + [[1]]], 'src': [jaeger(12, 'alveol'), mw('-pora')]},
     'Cyphastrea': {'p': [['Cyph', 'humped, curved', 'Greek kyphos', [0]], ASTREA + [[1]]], 'src': [jaeger(66, 'cyph'), jaeger(25, 'aster')]},
@@ -88,7 +95,6 @@ ROOTS = {
 }
 PHORA = 'the ending -phora has two meanings in the dictionary (Greek phora "motion", phoros "bearing"; Jaeger p. 172)'
 SKIP = {
-    'Pocillopora': 'its root pocillum "small cup" (Jaeger p. 180) points to the cup that IMR teaches for Acropora ("A-cup-ora", "Cup-shaped radial corallites"): held back until the sheet can warn about it',
     'Stylophora': PHORA,
     'Anacropora': 'the split is not clear (an-, ana- or Acropora)',
     'Astreopora': 'astreo- is not a dictionary form (Jaeger p. 25 has aster-, astero-, astr-, astrae-)',
@@ -103,7 +109,6 @@ SKIP = {
     'Danafungia': 'honours a person (Dana): no source read yet',
     'Heliofungia': 'helio- has two meanings in the dictionary (helios "sun", helos "marsh"; Jaeger p. 102)',
     'Dipsastraea': 'dips- has two meanings in the dictionary ("thirst", a serpent; Jaeger p. 73)',
-    'Favites': 'its root favus "honeycomb" (Jaeger p. 89) is the IMR tip of Porites ("Honeycomb pattern"): held back until the sheet can warn about it',
     'Duncanopsammia': 'honours a person (Duncan): no source read yet',
     'Merulina': 'the only dictionary root, merula "blackbird" (Jaeger p. 135), is not sourced for this coral',
     'Halomitra': 'hal- has two meanings in the dictionary ("the sea", "to breathe"; Jaeger p. 101)',
@@ -112,7 +117,7 @@ SKIP = {
 OLD_INFO = {'Acropora': 'The name comes from Greek akros (tip) and poros (pore): the pore at the branch tip, i.e. the axial corallite.'}
 
 
-def check(n, r, g):
+def check(n, r, g, G):
     if ''.join(x[0] for x in r['p']).lower() != n.lower():
         return 'parts do not spell the name'
     for form, gloss, word, s in r['p']:
@@ -120,22 +125,29 @@ def check(n, r, g):
             return f'{form}: a meaning without its word or source'
     if 'fit' in r and r['fit'] not in (g.get('qt') or []):
         return 'fit is not one of its ID tips'
+    if 'warn' in r:
+        if 'fit' in r or not r['warn'] or len({w[0] for w in r['warn']}) != len(r['warn']):
+            return 'warn: one or more genera, each once, never with fit'
+        for o, tip in r['warn']:
+            if o == n or o not in G or tip not in (G[o].get('qt') or []) or tip in (g.get('qt') or []):
+                return f'warn {o}: another genus and one of its ID tips verbatim, not one of its own'
     return ''
 
 
 def main():
     d = json.load(open(P, encoding='utf-8'))
     G = {**d['gen'], **d['x']['gen']}
-    bad = [(n, check(n, r, G[n]) if n in G else 'unknown genus') for n, r in ROOTS.items()]
+    bad = [(n, check(n, r, G[n], G) if n in G else 'unknown genus') for n, r in ROOTS.items()]
     bad = [b for b in bad if b[1]]
     slate = [*d['gen'], 'Millepora']  # core.js slateOf: the gen records and Millepora
     bad += [(n, 'neither a root nor a reason to skip') for n in slate if (n in ROOTS) == (n in SKIP)]
     if bad:
         sys.exit(f'{bad}')
     for n, g in G.items():
-        g.pop('root', None)
         if n in ROOTS:
-            g['root'] = ROOTS[n]
+            g['root'] = ROOTS[n]  # in place when it is there, so a rerun moves no other key
+        else:
+            g.pop('root', None)
         if n in OLD_INFO and OLD_INFO[n] in (g.get('info') or []):
             g['info'] = [x for x in g['info'] if x != OLD_INFO[n]]
             if not g['info']:
