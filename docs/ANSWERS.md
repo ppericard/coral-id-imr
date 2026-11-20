@@ -1496,7 +1496,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   suggestion). Applied: ROADMAP "Roles, instances and cohorts" (rights PR 2).
 - **Recorded late: the beta's Remove all (2026-11-17 ~19:10).** «Dans le futur, pour les futurs bêta, il me faudra un
   bouton pour supprimer aussi ou enlever tous les gens de la bêta, de la même manière qu'il y a un bouton pour les
-  ajouter tous» (#1051's body). Not built. Applied: ROADMAP "Beta: remove everyone from a subject's beta".
+  ajouter tous» (#1051's body). Built by #1051 itself (`admin.js` "Remove all" on Players and Players › Groups,
+  covered by `tests/admin.smoke.js`). Applied: no ROADMAP row (done).
 - **Recorded late, verbatim: Q265 (2026-11-08).** «Ok pour tes propositions», as the ROADMAP row of #751 quoted it. It
   corrects this day's entry "Correction of the 2026-11-08 entry that cites the activity item under Q265", which says
   his words for Q265 are not in the repo. Its scope: the move of the files players never download into `data/`, the

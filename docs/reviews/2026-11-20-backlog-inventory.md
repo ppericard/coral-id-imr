@@ -60,7 +60,7 @@ the ledger lacked them, to [ANSWERS](../ANSWERS.md) under 2026-11-20.
 | 2   | Opening: four units before a level is asked (new row)       | Not recorded            | Decided, after #1318, #1319, #1322 (L4's sentence to his OK) | «Lorsqu'on ouvre un niveau taxonomique il faut au moins 4 items ouverts avant de commencer à poser des questions. Sinon c'est juste trop facile»; «Le mode espèce arrive bien trop tôt» (11-20, Reports tab)                                |
 | 3   | Bonus genera in the global progress (R202)                  | Parked                  | Decided in principle; one question (the scale)              | «Les genres bonus dans les coraux devraient définitivement compter dans le progres global» (11-20, Reports tab)                                                                                                                             |
 | 4   | Groups by scope (R220)                                      | Not in the row          | Decided, blocked by `Code.gs`                               | «Groups have to be either instance wide or subject specific…» (11-20, Reports tab)                                                                                                                                                          |
-| 5   | Beta: remove everyone (new row)                             | Not recorded            | Decided, after the `admin.js` holders                       | «il me faudra un bouton pour supprimer aussi ou enlever tous les gens de la bêta, de la même manière qu'il y a un bouton pour les ajouter tous» (11-17 ~19:10, #1051's body). `admin.js` has Add all only                                |
+| 5   | Beta: remove everyone (new row)                             | Not recorded            | Done: built by #1051 (`admin.js` `data-ugnone`, `data-gnone`) | «il me faudra un bouton pour supprimer aussi ou enlever tous les gens de la bêta, de la même manière qu'il y a un bouton pour les ajouter tous» (11-17 ~19:10, #1051's body). `admin.js` has Add all only                                |
 | 6   | Report a problem, again on one page; a screenshot attached  | Not recorded            | Decided; recorded by #1319 (in review), not repeated here   | «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page»; «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (11-20, Reports tab)                                                |
 | 7   | Fish "hunt" achievements (R76)                              | Idea ("proposed")       | Decided, designed later                                     | (paraphrase) his fish decisions of 11-04: "about 14 general fish achievements, plus a separate set of harder, specific 'hunt' achievements", his example *Centropyge vrolikii* against juvenile *Acanthurus pyroferus* (#467)          |
 | 8   | Data into `data/` (R121)                                    | "approval a paraphrase" | Verbatim, in review #1298 (its row left to that PR)         | Q265 «Ok pour tes propositions» (11-08, ROADMAP row of #751): the ledger said no words of his were in the repo                                                                                                                             |
@@ -110,8 +110,8 @@ In the integrator's order of work; files checked against the open PRs' file list
 8. **Fish sex and phase flags from FishBase** (R72): bulk work, measured first (INTEGRATOR "A large judging pass is
    measured first"); check #1298's moved files first.
 
-Next once their files are free: opening, four units before a level is asked (N1, after #1318, #1319, #1322); Beta:
-remove everyone (N5, after the `admin.js` holders).
+Next once their files are free: opening, four units before a level is asked (N1, after #1318, #1319, #1322).
+Beta: remove everyone (N5) was found built by #1051 after this sweep (Players and Players › Groups, "Remove all").
 
 ### 1.4 Questions still truly open
 
@@ -401,7 +401,7 @@ what its source shows it answered.
 | N2  | Species by common name before the scientific names?          | Waiting for Pierre | [i] «Pourquoi on commence à m'ouvrir des noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (Reports); opening study question B                    | Short   | S    |
 | N3  | Report a problem, again on the same page                     | Blocked           | [i] «Report a problem doit pouvoir être utilisé plusieurs fois sur la même page» (Reports); its ROADMAP row and ledger entry are on #1319 (in review)                     | Short   | S    |
 | N4  | A photo or screenshot attached to a report                   | Waiting for Pierre | [i] «Ajouter la possibilité de joindre une photo ou un screenshot au formulaire de feedback» (Reports); recorded on #1319; where the file is stored is his                | Medium  | M    |
-| N5  | Beta: remove everyone from a subject's beta                  | Blocked           | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1298, #1313, #1320                                       | Short   | S    |
+| N5  | Beta: remove everyone from a subject's beta                  | Done              | [i] «il me faudra un bouton pour … enlever tous les gens de la bêta» (11-17, #1051); `admin.js` held by #1298, #1313, #1320                                       | Short   | S    |
 
 ## 4. Outside the ROADMAP
 
