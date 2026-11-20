@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 204 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 205 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 204;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 205;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -5066,8 +5066,11 @@ const CORE_ = (function () { const module = {exports: {}};
       // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
-      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
-      closed: {...CLOSED_TREE, basics: 'No basics module written for this subject yet (ROADMAP "Every game mode for every subject")'},
+      // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
+      // (reefid-seaslug-basics) and done feat.
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      closed: CLOSED_TREE,
+      basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
       // The text slots its content editor may edit on each rank's sheets (as the fish's), laid over seaslug.json by
       // contentApply (app.js treeBuild and the sheet's replay alike): a family's and a genus's ID marks

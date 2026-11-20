@@ -4229,6 +4229,29 @@ body:has(.ikstart:not([hidden])) main {
   font-size: var(--fs-xs);
   line-height: 1.25;
 }
+/* Sea slug basics (proto/seaslugbasics.js): a few genera's photos under a drawing, three at most on one row, kept small so
+   the drawing, the photos and the sentence stay on one screen (rule U2); the gill plume's branches and the cerata's tips */
+.bx-gfam.bx-few {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 420px;
+  margin: 8px auto 0;
+  gap: 6px;
+}
+.bx-gfam.bx-few img {
+  aspect-ratio: 16 / 9;
+}
+.bxd .br {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 55%, var(--surface));
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.bxd .br.hl {
+  stroke: var(--hl);
+}
+.bxd .tp {
+  fill: color-mix(in srgb, var(--muted) 45%, var(--surface));
+}
 
 /* ---------- Cards and pop-ups (proto/cards.js, #lab-cards): every kind, opened live through app.js cardShow ---------- */
 .lckinds {
