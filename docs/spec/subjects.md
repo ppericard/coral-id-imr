@@ -34,7 +34,7 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   (runs, corallites, hard photos); `boardSheet`, the sync script from which a subject's board is served (the sea slugs');
 - `pages`, its Learn and Practice pages: the corals' `basics`, `genera`, `sheet` (a genus sheet), `cmp`, `quiz`,
   `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets),
-  `cmp`, `quiz`, `quiz-custom` and `quiz-duel`; the sea slugs' `genera`, `sheet`, `cmp`, `quiz`, `quiz-custom`, `quiz-duel`. `closed`: each `MODES` Learn or
+  `cmp`, `quiz`, `quiz-custom`, `quiz-duel` and `pairs`; the sea slugs' `genera`, `sheet`, `cmp`, `quiz`, `quiz-custom`, `quiz-duel`, `pairs`. `closed`: each `MODES` Learn or
   Practice page a subject lacks, with its reason (`tests/subjects.test.js`; ROADMAP "Every game mode for every
   subject"). `basics` names the basics module's feat (`_basics`, `_fbasics`, `_sbasics`);
 - `sheets` (the fish and the sea slugs): the address word of each rank of its sheets and the prefix of their ids,
@@ -127,7 +127,8 @@ beside its tips) from every subject ([front-end.md](front-end.md) › Learn › 
   name with the WoRMS name beside it (rule S2). The corals: `coralTaxon`, the photo's iNaturalist species, only inside
   the genus asked and only when Research Grade or Pierre's own, else nothing. The sea slugs: [seaslugs.md](seaslugs.md).
   Tests: `tests/answertaxon.test.js`, `tests/fish.smoke.js`. `species(p)` gives the species logged with an answer.
-- **Pages.** `pairs()` (the duels), `winks()` (the surprise cards), `tiles(n)` (Find the X), `list()` (the Learn page:
+- **Pages.** `memory` (how a Memory pair is made: `views` for the corals, `photos` for the tree subjects, in
+  `TREE_UNITS`; `proto/pairs.js` `MEMORY`), `pairs()` (the duels), `winks()` (the surprise cards), `tiles(n)` (Find the X), `list()` (the Learn page:
   `viewGenera` / `viewFishList`), `sheet(id)` (a sheet: `viewGenus` / `viewFishSheet`), `bar(id)` (a tree subject's page
   bar on its sheets, `learn.js` `treeBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
   `progHelp` and `achHelp` (the ? texts of the quiz, My progress and the achievements; the corals keep theirs inline),

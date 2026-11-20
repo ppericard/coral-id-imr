@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 208 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 209 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 208;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 209;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -4589,11 +4589,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // that score, the plain mean.
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
   // The Learn and Practice pages the tree subjects do not have yet, each with its reason (SUBJECTS closed): the plan that
-  // opens them is docs/reviews/2026-11-19-modes-every-subject.md. Memory pairs a colony with its corallites, two views of
-  // one unit, and these subjects have one view (SUBJECTS views).
-  const CLOSED_TREE = {
-    pairs: 'Memory matches two views of one unit (colony and corallites); this subject has one view (views)'
-  };
+  // opens them is docs/reviews/2026-11-19-modes-every-subject.md.
+  const CLOSED_TREE = {};
   // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
   // (SUBJECTS admin.tags) and read by the admin in one place (admin.js tagWords, tagRows, tagFlags). A photo's code is its
   // seven tags by position, 0-6, then its flags' letters; each position and the flags is a list of
@@ -4856,7 +4853,7 @@ const CORE_ = (function () { const module = {exports: {}};
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
-      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
@@ -5071,7 +5068,7 @@ const CORE_ = (function () { const module = {exports: {}};
       gate: TREE_GATE,
       // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
       // (reefid-seaslug-basics) and done feat.
-      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
