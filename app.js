@@ -957,9 +957,18 @@ function treeGenera(X, F) {
   X.treeSci = treeScoreTree(X, F, true, true);
   return X;
 }
+// The next units of a parent's list O (in its order) a level brings into play: those not met with a photo, the first one,
+// or, while the level (L, every unit of it) holds fewer than INTRO.START units met, up to INTRO.START of them, so it can
+// open close units together (model.js openFresh, openGroup: a level opens in a group).
+function lvlNext(O, L, met) {
+  const k = L.filter(met).length < INTRO.START ? INTRO.START : 1,
+    out = [];
+  for (const n of O) if (out.length < k && !met(n) && photoAny(n)) out.push(n);
+  return out;
+}
 // The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
-// met and the next in its commonness order (fish.json cmi); how often is the rank share's (model.js SHARE, shareRoom).
-// on: the species level is on (spOn); off, none.
+// met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
+// often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
 function spPlay(L, score, met, on) {
   if (!on) return [];
   const by = new Map();
@@ -968,15 +977,13 @@ function spPlay(L, score, met, on) {
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
-  return [...by].flatMap(([p, U]) => {
-    const next = score(p) >= LV_AT[1] && U.find(n => !met(n) && photoAny(n));
-    return [...U.filter(met), ...(next ? [next] : [])];
-  });
+  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, L, met) : [])]);
 }
 // The species by their scientific names in play (the ssp set; docs/reviews/2026-11-18-species-step2-plan.md §2.3): from L
 // (TREEU.ssl), for each parent (their genus) in play now (up: the slate and the other sets' units in play) and at its
 // threshold (its shareAt, else Advanced: LV_AT[1], C0), its species met and the next one in the parent's order (its
-// species list: the family's commonness order for a fish genus, the circles' popularity for a sea slug genus). A parent
+// species list: the family's commonness order for a fish genus, the circles' popularity for a sea slug genus; lvlNext:
+// the next ones while the level opens its group). A parent
 // out of play (its set turned off) brings none, its species met included: the level stops being asked, their bars kept
 // (Q402 A). How often is the rank share's (model.js SHARE, shareRoom), from the parent's level. on: the level is on
 // (sciSpOn, rule D4); off, none.
@@ -992,9 +999,8 @@ function sciPlay(L, score, met, up, on) {
     if (!up.has(p)) return [];
     const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1],
       ord = GX(p).species || [],
-      O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp)),
-      next = score(p) >= at && O.find(n => !met(n) && photoAny(n));
-    return [...O.filter(met), ...(next ? [next] : [])];
+      O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp));
+    return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, L, met) : [])];
   });
 }
 // A unit's kind of name (its record's kind: cn a species asked by its common name, sci by its scientific name; '' for a

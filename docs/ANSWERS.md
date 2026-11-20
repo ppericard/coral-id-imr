@@ -1466,6 +1466,60 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **17:12, the inventory of every open point.** «Sur le modèle de l'inventaire du 18, refait un point complet sur
+  l'ensemble des points ouverts, non terminé, laissé en vrac et backlog. Confirme bien dans les documents ce à quoi j'ai
+  déjà répondu ou permis de continuer (tu m'as affirmé "61 qui sont des idées ou du « plus tard »", ça n'est pas
+  cohérent avec ce que j'ai en tête)». Applied: docs/reviews/2026-11-20-backlog-inventory.md and the ROADMAP rows it
+  corrects (the entries below).
+- **Reports tab (no time recorded), opening: at least four units before a level is asked.** On a sea slug species
+  sheet: «Le mode espèce arrive bien trop tôt. Les switchs manquent pour les nudibranches»; «D'ailleurs, aucun intérêt
+  de n'ouvrir qu'une seule espèce et puis demander de l'identifier parmis d'autres espèces pas ouvertes. Au minimum 4
+  espèces proches ouvertes»; in the fish quiz: «Pas d'intérêt d'ouvrir un seul genre ou une seule espèce si on la
+  demande quelques cartes plus loin. Lorsqu'on ouvre un niveau taxonomique il faut au moins 4 items ouverts avant de
+  commencer à poser des questions. Sinon c'est juste trop facile». A level opens with at least four close units before
+  it is asked, every subject. Applied: ROADMAP "Opening: at least four units open before a level is asked".
+- **Reports tab (no time recorded), species names before the scientific names.** «Pourquoi on commence à m'ouvrir des
+  noms d'espèces alors que je n'ai même pas ouvert les noms scientifiques?» (fish My progress). A question back, not a
+  decision: whether species by common name wait for the scientific names goes back to him. Applied: ROADMAP "Opening:
+  at least four units open before a level is asked" (its last sentences).
+- **Reports tab (no time recorded), response time and the click.** «La vitesse de réponse est définitivement un signal
+  de difficulté (ainsi que le clic), quelque soit la matière, et même si la réponse est juste. Soit difficulté de la
+  photo, soit difficulté de la question pour le joueur» (coral practice quiz). The time and enlargement signals are
+  re-measured over every subject now. Applied: ROADMAP "Time in the photo rating", "Enlargement as a signal",
+  "Response time, genus term", "Response time, photo term".
+- **Reports tab (no time recorded), the bonus genera.** «Les genres bonus dans les coraux devraient définitivement
+  compter dans le progres global, mais on pourrait faire un score/succès dédié aux choix pédagogiques de l'instance (IMR
+  en l'occurence)» (a suggestion). The bonus genera count in the global progress (it changes Q101 and Q176); the scale
+  is asked first; the instance's own score is an idea. Applied: ROADMAP "Bonus genera: more of them".
+- **Reports tab (no time recorded), groups by scope.** «Groups have to be either instance wide or subject specific. For
+  example, student groups and staff are instance wide. Trainers and Curators could be subject specific» (a
+  suggestion). Applied: ROADMAP "Roles, instances and cohorts" (rights PR 2).
+- **Recorded late: the beta's Remove all (2026-11-17 ~19:10).** «Dans le futur, pour les futurs bêta, il me faudra un
+  bouton pour supprimer aussi ou enlever tous les gens de la bêta, de la même manière qu'il y a un bouton pour les
+  ajouter tous» (#1051's body). Built by #1051 itself (`admin.js` "Remove all" on Players and Players › Groups,
+  covered by `tests/admin.smoke.js`). Applied: no ROADMAP row (done).
+- **Recorded late, verbatim: Q265 (2026-11-08).** «Ok pour tes propositions», as the ROADMAP row of #751 quoted it. It
+  corrects this day's entry "Correction of the 2026-11-08 entry that cites the activity item under Q265", which says
+  his words for Q265 are not in the repo. Its scope: the move of the files players never download into `data/`, the
+  code into `js/` and `css/` with the domain move. Applied: #1298 (open, it builds that ROADMAP row and edits it; no
+  ROADMAP change here, to leave its row to it).
+- **Recorded late, verbatim: the IMR edition (2026-11-08).** «les droits, ils me sont à moi à 100 %» and «quitte si
+  besoin à licencier une version IMR à IMR ... ça me garde l'ensemble des droits pour moi.» (#737's body). Applied:
+  ROADMAP "Separate IMR-owned content from the core app".
+- **Recorded late, verbatim: no candidates outside the Philippines (2026-11-02).** «Non, pour l'instant, on va pas
+  élargir au-delà des Philippines.» (#337's body). Applied: ROADMAP "Candidate photos from outside the Philippines".
+- **Recorded late: the species marks (2026-11-19).** 15:37: «Est-ce qu'on a seulement fait le même travail pour les
+  adultes?» (#1232); 16:01: «On a fait le même travail de sourcing pour les coraux et les nudibranches?» (#1236); 16:02:
+  «Il faudra l'amener au niveau des espèces» (#1263). The adults' species marks and the sea slugs' circle-3 marks were
+  built. Applied: ROADMAP "Fish sheets at three levels".
+- **Recorded late: Q435 (a), the juvenile classes (2026-11-19 15:32).** «Je suis même pas sur, parce que ça peut les
+  rendre hyper remarquables et donc facile à apprendre... Je sens qu'on va devoir finir par voir ce que ça donne sur
+  les vrais données...» (#1228). The classes are read on the players' answers. Applied: ROADMAP "Remove the fish
+  easy-photos bootstrap once fish answers exist".
+- **Rule A1 and the Q308 light proposals, a reading.** No new answer: whether his 2026-11-20 05:39 «Pour la nouvelle
+  formulation de A1, je valide» lets the light proposals over a tag he only let through go into play is the inventory's
+  reading, written as a note for the integrator; which of the 152 are his hand tags is not checked. Applied: ROADMAP
+  "Fish judging: a flash or lamp on a dark background is not a night shot" (a note, the status unchanged).
 - **13:59-14:06, the stop and the handover.** «stop everything. Prepare passation»; «Est-ce que mettre à jour STATUS
   c'est suffisant pour la passation?»; then «ok» to merging the handover and moving the queue scripts into `tools/`;
   «oui stp» to writing the quota lessons into INTEGRATOR.md; and on one of them: «Pas la session neuve. ça ne marche
