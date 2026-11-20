@@ -20,7 +20,7 @@ const copy = () => {
     const p = path.join(ROOT, f);
     if (fs.statSync(p).isFile()) fs.copyFileSync(p, path.join(d, f));
   }
-  for (const dir of ['proto', 'fonts']) fs.cpSync(path.join(ROOT, dir), path.join(d, dir), {recursive: true});
+  for (const dir of ['proto', 'fonts', 'data']) fs.cpSync(path.join(ROOT, dir), path.join(d, dir), {recursive: true});
   // The players' curation, which the deploy writes before the stamps (pages.yml, tools/curplay.py).
   assert.strictEqual(spawnSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), d]).status, 0);
   return d;
