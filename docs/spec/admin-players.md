@@ -168,7 +168,8 @@ beta group's Add / Remove and the Cohort select. Its help: `HELP.groups`. What a
   players are read again, so no change is sent from a list the sheet no longer has.
 - **One rights change at a time on the whole page** (rule W27; `rPend`): from the request until the players are read
   again with the answer applied (a read dropped by a newer one is made again), every group's rights controls are off
-  (the rights of a group, a player in or out of a rights group); the group changed shows its pending list, greyed.
+  (the rights of a group, a player in or out of a rights group); the group changed shows its pending list, greyed, and stays locked for its memberships (Groups and a player's bar)
+  whatever that list is, so taking away its last right never opens it to an unasked join before the sheet confirms.
 - Before v204: the page as before, and no `roles` or `mergePlan` read. `tests/admin.smoke.js` (players part, both
   widths), `tests/gates.test.js`.
 

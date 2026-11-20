@@ -5370,6 +5370,44 @@ async function loadPart(b, base, fails) {
             fails.push(`${w}px rights groups: one at a time, then the other group ${JSON.stringify({L, T3, F2})}`);
           await q.click(`.adm-gcard[data-g="${tid}"] [data-grx][data-e="content@instance:imr"]`);
           await calm();
+          // Taking away a group's last right: while it is on its way the group is still locked for its memberships,
+          // although it shows no right (Players › List: its option is off; a change dispatched at it asks nothing and
+          // sends nothing), and the lock lifts with the applied read.
+          const nSaid = said.length;
+          await q.evaluate(() => {
+            const W = window.__w;
+            W.writeHold = new Promise(r => (W.release = r));
+          });
+          await q.click(`.adm-gcard[data-g="${fid}"] [data-grx][data-e="settings@instance:imr"]`);
+          await q.evaluate(() => (location.hash = '#players/list'));
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await q.click('[data-uopen="Ana Demo"]');
+          const optOff = () =>
+            q.evaluate(id => {
+              const o = [...document.querySelectorAll('[data-ugadd="Ana Demo"] option')].find(x => x.value === id);
+              return o ? o.disabled : 'none';
+            }, fid);
+          const nW = (await lockOf()).w.length;
+          if ((await optOff()) !== true) fails.push(`${w}px rights groups: last right on its way, the group's option is on in the list`);
+          await q.evaluate(id => {
+            const s = document.querySelector('[data-ugadd="Ana Demo"]');
+            s.value = id;
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+          }, fid);
+          L = await lockOf();
+          if (L.w.length !== nW || said.length !== nSaid)
+            fails.push(`${w}px rights groups: last right on its way, a join went out ${JSON.stringify({w: L.w, said: said.slice(nSaid)})}`);
+          await q.evaluate(() => window.__w.release());
+          await q
+            .waitForFunction(
+              id => [...document.querySelectorAll('[data-ugadd="Ana Demo"] option')].some(x => x.value === id && !x.disabled),
+              fid,
+              {timeout: 20000}
+            )
+            .catch(() => {});
+          await calm();
+          if ((await optOff()) !== false) fails.push(`${w}px rights groups: last right done, the group's option is still off in the list`);
+          await q.click('[data-uopen="Ana Demo"]'); // her bar closed again, for the check below
           // The player's bar: the rights group's chip carries the key, a line sums up the rights; a merge asks with the plan
           await q.goto(base + `admin.html?demo&v=${X}#players/list`);
           await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});

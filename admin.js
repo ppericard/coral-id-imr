@@ -10489,7 +10489,7 @@ const rightsLock = () => {
   gBusy(rPend.gid);
   $v.querySelectorAll('[data-gradd], [data-grx]').forEach(x => (x.disabled = true));
   $v.querySelectorAll('[data-gjoin], [data-ugout]').forEach(x => {
-    if (isRightsG(gdefOf(x.dataset.gjoin || x.dataset.gid))) x.disabled = true;
+    if (rightsSens(gdefOf(x.dataset.gjoin || x.dataset.gid))) x.disabled = true;
   });
 };
 const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -10533,7 +10533,11 @@ const rightsOff = (u, gid) => (u.roff || []).includes(gid);
 const KEY_SVG =
   '<svg class="adm-gkey" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Carries rights"><title>Carries rights</title><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3M18.5 4.5l2 2"/></svg>';
 // Adding a player to a group that carries rights asks first, naming its rights, as it is about access: true to go on.
-const giveOk = (name, d) => !isRightsG(d) || confirm(`Give ${name}: ${grights(d).map(rightWord).join(', ')}?`);
+// The group whose rights change is on its way counts as a rights group whatever its pending list is (taking away its last
+// right shows it with none before the sheet confirms): its memberships are locked and never given unasked (rPend).
+const pendG = d => !!(rPend && d && d.id === rPend.gid);
+const rightsSens = d => isRightsG(d) || pendG(d);
+const giveOk = (name, d) => !pendG(d) && (!isRightsG(d) || confirm(`Give ${name}: ${grights(d).map(rightWord).join(', ')}?`));
 // The last change to a group's rights or to a rights group's members that the sheet answered with an error: its words,
 // and for server (saved in part, its Audit row not written) the same request to send again, which finishes it.
 // {text, body, ok: the message once done, name: the player when the request is about one}.
@@ -10605,11 +10609,11 @@ function ugChips(u) {
       d =>
         `<span class="adm-gchip${isRightsG(d) ? ' adm-grights' : ''}">${isRightsG(d) ? KEY_SVG : ''}${esc(d.n)}${
           isRightsG(d) && rightsOff(u, d.id) ? ' <span class="adm-goff">rights off: the code changed</span>' : ''
-        }<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}"${rPend && isRightsG(d) ? ' disabled' : ''}>×</button></span>`
+        }<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}"${rPend && rightsSens(d) ? ' disabled' : ''}>×</button></span>`
     )
     .join(
       ''
-    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}"${rPend && isRightsG(d) ? ' disabled' : ''}>${esc(d.n)}</option>`).join('')}</select>` : ''}${
+    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}"${rPend && rightsSens(d) ? ' disabled' : ''}>${esc(d.n)}</option>`).join('')}</select>` : ''}${
     words.length ? `<span class="adm-urights">Rights: ${esc(words.join('; '))}</span>` : ''
   }${gNote && gNote.name === u.name ? gNoteHtml() : ''}</span>`;
 }
@@ -10618,6 +10622,7 @@ function ugChips(u) {
 function memberSet(names, gid, on) {
   const L = Array.isArray(names) ? names : [names],
     d = gdefOf(gid) || {n: gid};
+  if (pendG(d)) return render(); // its rights change is on its way: no membership change meanwhile
   if (isRightsG(d) && !Array.isArray(names))
     return rPend
       ? render()
