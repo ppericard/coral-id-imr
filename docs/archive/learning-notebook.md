@@ -7482,9 +7482,10 @@ photo's plain answer count.
 | sd of rating − genus offset | - | 0.31 | 0.37 | 0.42 | 0.47 | - |
 
 The raw sd is not the true spread: the Elo shrinks a photo with few answers toward its offset and adds noise as answers
-come; it was not calibrated against a world with a known spread. It agrees with the earlier measures (0.46, the rated
-world's `RATED.EPS`; 0.5, the 2026-11-03 study's residual): a photo's true spread around its offset is about 0.5 at
-most, so U 1 is about four times that variance. 86% of the coral game photos have fewer than 6 answers, so U acts on
+come; it was not calibrated against a world with a known spread, it still rises with the answers, and no photo has 20,
+so it gives no upper bound. It agrees with the earlier measures (0.46, the rated world's `RATED.EPS`; 0.5, the
+2026-11-03 study's residual): a spread of about 0.5, so U 1 is about four times that variance [guess: the raw figures
+cannot exclude a larger spread]. 86% of the coral game photos have fewer than 6 answers, so U acts on
 most of the draw. The genus offsets: 45 units, sd 0.45.
 
 **The value, fixed before any run**: U is the variance of a photo's difficulty around its unit offset; the largest
@@ -7511,10 +7512,14 @@ since the wide targeting is what sends an unrated photo to players of other leve
 - **The shown score lags about one point at 1,000 answers** for every profile (−0.9 to −1.4 pooled), breached for the
   strong RA on both halves and for all four on the fresh seeds; equal or nearly at 3,000; true knowledge unchanged.
   The bar sits a little further below true knowledge (E at 1,000, strong RA, −0.017).
-- **The photo ratings are a little worse** with the narrower targeting (pooled; the fresh seeds alone could not tell):
-  an unrated photo goes less often to players far from its prior, so its answers say less about where it really sits.
-  In this world the four simulated players rate photos poorly in absolute terms (rating error 0.66-0.75 against a
-  photo spread of 0.46), so read the direction, not the size.
+- **The measure cannot tell** (20 seeds, unclear, no third look): units met at 300 (beginner −1.1, lecture RA −0.8),
+  units at Open Water (expert at 300 −1.1, strong RA at 1,000 −1.3), the beginner's first Open Water (+6 answers), the
+  beginner's true knowledge at 300, and the shown score at 3,000 for three profiles.
+- **The photo ratings are a little worse** with the narrower targeting (pooled; the fresh seeds alone could not tell).
+  Why is a guess, not measured: an unrated photo goes less often to players far from its prior, so its answers may say
+  less about where it sits; both measures are over the photos answered, which may not be the same set in the two arms.
+  In this world the four simulated players rate photos poorly (rating error 0.66-0.75, above the truth's own spread of
+  about 0.54, √(0.286² + 0.46²); correlation 0.26-0.29), so read the direction, not the size.
 - **Not run**, as the result was already a breach: the heavy-tailed photos, and the app world (cold start, `--truth`
   from the genus offsets plus a residual of sd 0.5). They would be needed to say "safe to ship", not to say "not
   shipped". Compute: about 17 minutes, within rule L11's 40.
