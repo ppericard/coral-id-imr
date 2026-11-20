@@ -1760,3 +1760,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   capture is reduced on the device (about 800 px, light JPEG, a few tens of kB) and sent with the report; the sheet
   script stores it in a separate tab of the sheet; the agent reads it when processing the report, then it is deleted;
   no pCloud. Applied: ROADMAP "Attach a photo or a screenshot to a report" (Decided; build next).
+- **06:21, rule W27's "two Codex rounds" (on the integrator's «Ses deux tours de relecture sont épuisés»).** «Quels 2
+  tours????» He questions the round count. Applied: rules/ship.md W27 (#1355).
+- **06:22, rule W27's "two Codex rounds" (on «règle W27 dit : au maximum deux tours de relecture Codex par PR»).** «Je
+  suis à peu près sur de ne jamais avoir explicitement validé ça. Par contre, réduire les périmètres des PR pour
+  faciliter l'intégration, oui c'est une bonne idée. Est-ce que c'est une bonne pratique validée de faire ça?» He never
+  validated the number (it came from #843, not from his words); cutting PRs' scope to ease integration is a good idea.
+  His question was answered in the chat by the integrator (small focused PRs and stopping to patch a part that keeps
+  failing are recognised practice, a fixed round count less so). Applied: rules/ship.md W27, AGENTS.md,
+  rules/README.md, CONTRIBUTING.md, decisions/2026-11-21-w27-no-round-count.md (#1355).
+- **06:23, rule W27's structural problem (on «Quand les défauts reviennent sans cesse au même endroit, la règle dit
+  aussi que le problème vient de la conception, pas d'un cas à corriger de plus»).** «ça je suis effectivement
+  complètement d'accord» He agrees: findings that keep coming back on the same part point to its design, not to one
+  more case to fix. Applied: rules/ship.md W27 (the point kept; #1355).

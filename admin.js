@@ -394,7 +394,7 @@ function putDraft() {
     draftLost = !!r.err;
     if (r.took && r.took.changed) {
       render();
-      toast('Clicks made in another admin tab are in.');
+      toast('Clicks made in another admin tab are in.', 3500, true);
     }
   });
 }
@@ -4001,7 +4001,7 @@ function zoomSet(L, i0, cap) {
   show();
 }
 let toastT;
-function toast(msg, ms = 3500) {
+function toastShow(msg, ms) {
   let t = document.querySelector('.adm-toast');
   if (!t) {
     t = document.createElement('p');
@@ -4015,6 +4015,32 @@ function toast(msg, ms = 3500) {
   toastT = setTimeout(() => {
     t.hidden = true;
   }, ms);
+}
+// The result of the admin's own action (Published, Undone, Saved…) stays readable: a background toast (bg: the auto-sorts',
+// another tab's clicks) that comes within TOAST_HOLD ms of it waits, and shows once the hold is over (the newest waiting
+// one only; another action's toast in between moves it back again).
+const TOAST_HOLD = 4000;
+let toastHold = 0,
+  toastWait = null,
+  toastWaitT;
+function toast(msg, ms = 3500, bg = false) {
+  if (bg && Date.now() < toastHold) {
+    toastWait = [msg, ms];
+  } else {
+    if (!bg) toastHold = Date.now() + Math.max(ms, TOAST_HOLD);
+    else toastWait = null;
+    toastShow(msg, ms);
+  }
+  clearTimeout(toastWaitT);
+  if (toastWait)
+    toastWaitT = setTimeout(
+      () => {
+        const [m, s] = toastWait;
+        toastWait = null;
+        toast(m, s, true);
+      },
+      Math.max(0, toastHold - Date.now()) + 1
+    );
 }
 
 /* ---------- Choices that point to a photo no longer in data.json ---------- */
@@ -8599,7 +8625,7 @@ async function start() {
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const sugRun = () => {
     const ar = TOKEN && autoRun();
-    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar), 3500, true), keep ? 4000 : 0);
     // The fish auto-sort once the first page is drawn and the page is idle (an admin who opened on a Players page: once its
     // suggestions are in, sugLater): it reads data/fish-cand.json, 9 million characters, which would share the line and the
     // main thread with the first page. One Undo step. At every admin load (rule A1), whatever page the admin stays on; a
@@ -8610,7 +8636,8 @@ async function start() {
         fishAutoRun()
           .then(
             R => {
-              if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+              if (R && R.add + R.back + R.out + R.reject + R.check)
+                setTimeout(() => toast(fishToast(R), 3500, true), keep || ar ? 8000 : 0);
             },
             e => console.warn('fish auto-sort:', e.message)
           )
