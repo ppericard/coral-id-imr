@@ -1100,6 +1100,108 @@ async function overlays(b, base) {
       fails.push(`Two reports from one answer: ${JSON.stringify({again, sent})}`);
     await c.close();
   }
+  // A picture with a report (Pierre, 2026-11-21, Q446): the dialog offers the input only once the sheet script has the
+  // version that keeps it (rule D4); a big picture is reduced on the device to a JPEG of at most 800 px on its long side
+  // and about 100 kB, held in memory for its report (never in the queue); offline or not an image, the report goes
+  // without it and says so.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#about');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const png = Buffer.from(
+      (
+        await p.evaluate(() => {
+          const cv = document.createElement('canvas');
+          cv.width = 2400;
+          cv.height = 1200;
+          const g = cv.getContext('2d');
+          for (let i = 0; i < 400; i++) {
+            g.fillStyle = `hsl(${(i * 37) % 360} 70% ${30 + (i % 40)}%)`;
+            g.fillRect((i * 97) % 2400, (i * 53) % 1200, 300, 180);
+          }
+          return cv.toDataURL('image/png');
+        })
+      ).split(',')[1],
+      'base64'
+    );
+    const dlg = async sheetV => {
+      await p.evaluate(v => localStorage.setItem('reefid-sheet-v', v), String(sheetV));
+      await p.evaluate(() => {
+        const b = document.createElement('button');
+        document.body.append(b);
+        reportDialog({k: 'page'}, b);
+        window.__repbtn = b;
+      });
+    };
+    // an older script: no input, the dialog as before
+    await dlg(1);
+    if (await p.$('#repdlg input[name="img"]')) fails.push('Report picture: the input shows before the script keeps it (rule D4)');
+    await p.click('#repdlg [value="cancel"]');
+    // the script keeps it: pick a big picture
+    await dlg(99999);
+    await p.setInputFiles('#repdlg input[name="img"]', {name: 'shot.png', mimeType: 'image/png', buffer: png});
+    await p.waitForFunction(() => /Picture ready/.test(document.querySelector('#repdlg .repimgst').textContent), null, {timeout: 15000});
+    if (!(await p.isVisible('#repdlg .repimgbox img'))) fails.push('Report picture: no thumbnail after picking one');
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForSelector('#repdlg', {state: 'detached', timeout: 5000});
+    const got = await p.evaluate(async () => {
+      const q = JSON.parse(localStorage.getItem('reefid-reports') || '[]').pop(),
+        e = repImgPend[q.id];
+      if (!e) return {id: q.id, none: true, queue: localStorage.getItem('reefid-reports').length};
+      const im = new Image();
+      im.src = 'data:image/jpeg;base64,' + e.d;
+      await im.decode();
+      return {
+        t: e.t,
+        head: e.d.slice(0, 4),
+        bytes: Math.floor((e.d.length * 3) / 4),
+        w: im.naturalWidth,
+        h: im.naturalHeight,
+        queue: localStorage.getItem('reefid-reports').length,
+        inQueue: 'img' in q
+      };
+    });
+    if (
+      got.none ||
+      got.t !== 'image/jpeg' ||
+      got.head !== '/9j/' ||
+      got.w !== 800 ||
+      got.h !== 400 ||
+      got.bytes > 180000 ||
+      got.inQueue ||
+      got.queue > 2000
+    )
+      fails.push(`Report picture: ${JSON.stringify(got)}`);
+    // not an image: the report goes without it, and the dialog says so
+    await dlg(99999);
+    await p.setInputFiles('#repdlg input[name="img"]', {name: 'note.png', mimeType: 'image/png', buffer: Buffer.from('not an image')});
+    await p.waitForFunction(() => /could not be used/.test(document.querySelector('#repdlg .repimgst').textContent), null, {
+      timeout: 15000
+    });
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForSelector('#repdlg', {state: 'detached', timeout: 5000});
+    const bad = await p.evaluate(() => !!repImgPend[JSON.parse(localStorage.getItem('reefid-reports')).pop().id]);
+    if (bad) fails.push('Report picture: a file that is no image was kept');
+    // offline: queued without the picture, and the player is told
+    await dlg(99999);
+    await p.setInputFiles('#repdlg input[name="img"]', {name: 'shot.png', mimeType: 'image/png', buffer: png});
+    await p.waitForFunction(() => /Picture ready/.test(document.querySelector('#repdlg .repimgst').textContent), null, {timeout: 15000});
+    await c.setOffline(true);
+    await p.click('#repdlg button[type="submit"]');
+    await p.waitForSelector('#repdlg', {state: 'detached', timeout: 5000});
+    const off = await p.evaluate(() => ({
+      pend: !!repImgPend[JSON.parse(localStorage.getItem('reefid-reports')).pop().id],
+      said: window.__repbtn.textContent
+    }));
+    if (off.pend || !/without the picture/.test(off.said)) fails.push(`Report picture offline: ${JSON.stringify(off)}`);
+    await c.setOffline(false);
+    await c.close();
+  }
   // The Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
   // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
   {

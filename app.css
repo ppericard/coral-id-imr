@@ -5956,6 +5956,33 @@ button.setlink {
   padding: 7px 9px;
   resize: vertical;
 }
+.repimg label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.repimg input[type='file'] {
+  font-size: var(--fs-s);
+  max-width: 100%;
+}
+.repimgbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.repimgbox[hidden] {
+  display: none;
+}
+.repimgbox img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+}
+.repimgst:empty {
+  display: none;
+}
 .repbtns {
   display: flex;
   justify-content: flex-end;
