@@ -139,6 +139,19 @@ const spShare = (run, cp) => {
     E = (run.expo || []).slice(0, cp);
   return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'species').length / E.length : null;
 };
+// A level opens in a group (rule L4; the rated world's uo, per question: 1 when a question below the base level, among
+// choices, names a unit never opened as a wrong choice, 0 when not, null for the others): unopen, their share among the
+// questions 1..cp below the base (none for a file without uo or with no such question); firstGen, firstSp, the question
+// that first asked a fish scientific genus, a species (by its common or its scientific name).
+const unopen = (run, cp) => {
+  const U = (run.uo || []).slice(0, cp).filter(x => x !== null && x !== undefined);
+  return U.length ? U.filter(x => x).length / U.length : null;
+};
+const firstOf = (run, kinds) => {
+  const K = run.kinds || {},
+    i = Object.values(K).includes('family') ? (run.expo || []).findIndex(e => kinds.includes(K[e[0]])) : -1;
+  return i < 0 ? null : i + 1;
+};
 const hardShare = (run, cp) => {
   const P = (run.preOW || []).slice(0, cp);
   if (!P.length || !P.some(x => x[1] > 0)) return null;
@@ -195,6 +208,9 @@ const MEASURES = {
   spShare: {label: 'Share of answers on the species (fish)', kind: 'window', dg: 3, get: (r, cp) => spShare(r, cp)},
   genAdv: {label: 'Scientific genera at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => genAdv(r, cp)},
   sciShare: {label: 'Share of answers on the species by their scientific names (fish)', kind: 'window', dg: 3, get: (r, cp) => sciShare(r, cp)},
+  unopen: {label: 'Share of questions below the base naming a unit never opened', kind: 'window', dg: 3, get: (r, cp) => unopen(r, cp)},
+  firstGen: {label: 'Question that first asked a scientific genus (fish)', kind: 'run', dg: 1, get: r => firstOf(r, ['genus'])},
+  firstSp: {label: 'Question that first asked a species (fish)', kind: 'run', dg: 1, get: r => firstOf(r, ['species', 'species:sci'])},
   // The photo variants on their unit's mastery (phEarly, phLate, phEasy, phOther, phAns above).
   phEarly: {label: `Share of phase photos in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEarly},
   phLate: {label: `Share of phase photos once a unit has ${2 * PHN} answers`, kind: 'window', dg: 3, get: phLate},
@@ -615,6 +631,8 @@ module.exports = {
   genAdv,
   sciShare,
   spShare,
+  unopen,
+  firstOf,
   PHN,
   phEarly,
   phLate,

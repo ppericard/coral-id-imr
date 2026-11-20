@@ -73,6 +73,19 @@ const GATES = {
   // The species by their scientific names, fish and sea slugs (sync.js sciOn: they open and count once the sheet replays
   // them, a smaller fault included, core.js treeReplayGen, PART; its app PR reads it): from the version that replays them.
   SCI_SHEET: (v, N) => fn('sync.js', 'const sciOn = ', '\n', 'sciOn', {sheetV: () => v, SCI_SHEET: N})(),
+  // Each subject's own opening hold (sync.js holdOf, holdAdopt; Code.gs holdsInto_ holds): from the version whose light
+  // replies carry it; before, the replay subject's alone from hold and holdIds, the others keeping the device's.
+  HOLDS_SHEET: (v, N) => {
+    const holdOf = fn('sync.js', 'const holdsOn = ', "\n// The sheet's opening hold of subject S", 'holdOf', {HOLDS_SHEET: N}),
+      R = C.SUBJECTS.find(S => S.replay),
+      O = C.SUBJECTS.find(S => !S.replay),
+      j = {v, hold: 0.4, holdIds: ['a'], holds: {[R.id]: {h: 0.4, ids: ['a']}, [O.id]: {h: 2, ids: ['b']}}},
+      on = holdOf(j, O);
+    assert.strictEqual(holdOf(j, R).h, 0.4, "the replay subject's, either way");
+    assert.strictEqual(holdOf({...j, holds: undefined}, O), null, 'no holds in the reply: the device keeps its own');
+    if (on) assert.strictEqual(on.h, 2, "the subject's own");
+    return !!on;
+  },
   // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
   // serves it; before, an older script answers 'input' and the page names the version it waits for.
   ALERTS_SHEET: (v, N) =>
@@ -161,6 +174,11 @@ const GATES = {
   // The player groups in the admin (admin.js groupsOn: a player's groups as chips, Players › Groups; Code.gs userGroup,
   // groupMake, groupEdit, groupDrop): from the version that has them; before, the beta group and the cohort.
   GROUPADM_SHEET: (v, N) => fn('admin.js', 'const groupsOn = ', '\n', 'groupsOn', {USERS: v === undefined ? {} : {v}, GROUPADM_SHEET: N})(),
+  // Groups that carry rights in the admin (admin.js rightsOn: a group's Rights row, the key, the confirm, rights off, the
+  // merge warning from mergePlan, the admin list; Code.gs groupDo_ rights, roff, mergePlan_, roles_): from the version
+  // that serves them; before, the Groups page as it was.
+  RIGHTSADM_SHEET: (v, N) =>
+    fn('admin.js', 'const rightsOn = ', '\n', 'rightsOn', {USERS: v === undefined ? {} : {v}, RIGHTSADM_SHEET: N})(),
   // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
   // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
   // boardLive) from the script that has them; before, the plain merge and no board (an older script answers &s=seaslug

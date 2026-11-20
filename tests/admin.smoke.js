@@ -5195,6 +5195,456 @@ async function lazyPart(b, base, fails) {
         else if (shown.color === shown.muted || shown.italic === 'italic')
           fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
       }
+      // Groups that carry rights (sheet RIGHTSADM_SHEET; docs/decisions/2026-11-19-groups-carry-rights.md), at both widths: the
+      // rights group first with its key and its Rights row, no Add all or Remove all on it, "+ Add a player" asked first
+      // naming its rights, "rights off" on a member whose code changed, the admin list read-only, a right given and taken
+      // away, a group with members and no rights offered none, a change saved in part ("server") and its Try again
+      // sending the same request, the player's bar (key, Rights line), the merge warning read from mergePlan first. One
+      // version below: the page as before, and no roles or mergePlan read sent. No sideways scroll.
+      {
+        const q = await p.context().newPage(),
+          said = [];
+        q.on('pageerror', e => fails.push(`${w}px rights groups page error: ${e.message}`));
+        q.on('dialog', d => {
+          said.push(d.type() + ': ' + d.message());
+          return d.type() === 'confirm' && !/^Give Carla Demo/.test(d.message()) ? d.accept() : d.dismiss();
+        });
+        const calm = () =>
+          q
+            .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+              timeout: 20000
+            })
+            .then(() => q.waitForTimeout(300))
+            .catch(() => fails.push(`${w}px rights groups: never settled`));
+        const page = () =>
+          q.evaluate(() => ({
+            cards: [...document.querySelectorAll('.adm-gcard')].map(c => ({
+              n: c.querySelector('.adm-gname').textContent.replace('Carries rights', ''), // the key's title
+              key: !!c.querySelector('.adm-gname .adm-gkey'),
+              rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')),
+              add: !!c.querySelector('[data-gradd]'),
+              none: (c.querySelector('.adm-gnone') || {}).textContent || '',
+              bulk: !!c.querySelector('[data-gall], [data-gnone]'),
+              off: [...c.querySelectorAll('.adm-gmem .adm-gchip')]
+                .filter(x => x.querySelector('.adm-goff'))
+                .map(x => x.firstChild.textContent)
+            })),
+            admins: (document.querySelector('.adm-gadmins') || {}).textContent || '',
+            note: (document.querySelector('.adm-gnote') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          }));
+        const sent = k => q.evaluate(k => window.DEMO_CALLS.filter(c => c.k === k).length, k);
+        const posts = () => q.evaluate(() => window.__posts || []);
+        try {
+          const X = await p.evaluate(() => RIGHTSADM_SHEET);
+          // One version below: the page as before.
+          await q.goto(base + `admin.html?demo&v=${X - 1}#players/groups`);
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          let g = await page();
+          if (
+            g.cards.length !== 2 ||
+            g.cards.some(c => c.key || c.rights.length || c.add || c.none) ||
+            !g.cards.every(c => c.bulk) ||
+            g.admins ||
+            (await sent('roles'))
+          )
+            fails.push(`${w}px rights groups before v${X}: ${JSON.stringify(g)}`);
+          await q.goto(base + `admin.html?demo&v=${X}#players/groups`);
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          await calm();
+          // From the version: every group request the page sends, kept for the retry check.
+          await q.evaluate(() => {
+            window.__posts = [];
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              try {
+                const b = o && o.body && JSON.parse(o.body);
+                if (b && (b.groupEdit || b.userGroup)) window.__posts.push(JSON.stringify({...b, token: undefined}));
+              } catch (e) {}
+              return f(u, o);
+            };
+          });
+          g = await page();
+          const T = g.cards[0] || {};
+          if (
+            T.n !== 'Trainers' ||
+            !T.key ||
+            T.rights.join('|') !== 'Host live games|Cohorts' ||
+            !T.add ||
+            T.bulk ||
+            T.off.join('|') !== 'Ben Demo' ||
+            g.cards.slice(1).some(c => c.key || !c.bulk || c.add || !/make a new group/.test(c.none)) ||
+            !/^Admins \(outside the groups\): Ana Demo$/.test(g.admins) ||
+            (await q.$('.adm-gadmins button, .adm-gadmins select')) ||
+            g.wide
+          )
+            fails.push(`${w}px rights groups: the page ${JSON.stringify(g)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              await q.screenshot({path: require('path').join(process.env.SHOTS, `rights-groups-${w}-${th}.png`), fullPage: true});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          // + Add a player asks first, naming the rights; refused, nothing is sent
+          await q.selectOption('.adm-gcard:first-child [data-gjoin]', {label: 'Carla Demo'});
+          await calm();
+          g = await page();
+          if (!said.includes('confirm: Give Carla Demo: Host live games, Cohorts?') || (await posts()).length)
+            fails.push(`${w}px rights groups: + Add a player did not ask first ${JSON.stringify(said)} ${JSON.stringify(await posts())}`);
+          // accepted: Dio joins (rights on, no "rights off")
+          await q.selectOption('.adm-gcard:first-child [data-gjoin]', {label: 'Dio Demo'});
+          await calm();
+          g = await page();
+          if (!said.includes('confirm: Give Dio Demo: Host live games, Cohorts?') || g.cards[0].off.join('|') !== 'Ben Demo')
+            fails.push(`${w}px rights groups: + Add a player ${JSON.stringify(g.cards[0])}`);
+          // a right given: saved in part (its Audit row failed), then Try again sends the same request and finishes it
+          await q.evaluate(() => (window.DEMO_FAIL = 'server'));
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
+          await calm();
+          g = await page();
+          if (g.note.indexOf('Saved in part: its Audit record failed. Try again to finish it.') !== 0 || !(await q.$('[data-gretry]')))
+            fails.push(`${w}px rights groups: saved in part ${JSON.stringify(g.note)}`);
+          await q.click('[data-gretry]');
+          await calm();
+          g = await page();
+          const P = await posts();
+          if (
+            g.note ||
+            g.cards[0].rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            P.length < 2 ||
+            P[P.length - 1] !== P[P.length - 2] ||
+            !/"rights":\["live@instance:imr","cohorts@instance:imr","content@instance:imr"\]/.test(P[P.length - 1])
+          )
+            fails.push(`${w}px rights groups: Try again ${JSON.stringify({g: g.cards[0], note: g.note, P: P.slice(-2)})}`);
+          // × takes a right away
+          await q.click('.adm-gcard:first-child [data-grx][data-e="content@instance:imr"]');
+          await calm();
+          g = await page();
+          if (g.cards[0].rights.join('|') !== 'Host live games|Cohorts')
+            fails.push(`${w}px rights groups: × a right ${JSON.stringify(g.cards[0])}`);
+          // A change on its way survives the page being drawn again (the players list read again, away and back): its
+          // card shows the pending list and stays off, a second change dispatched at it is not sent, and when the sheet
+          // answers the group holds the first change (Content), not the second (Settings) built from the old list.
+          await q.evaluate(() => {
+            window.__sent = [];
+            window.__hold = new Promise(r => (window.__release = r));
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              try {
+                const b = o && o.body && JSON.parse(o.body);
+                if (b && b.groupEdit && b.rights) {
+                  window.__sent.push(b.rights.join(','));
+                  return window.__hold.then(() => f(u, o));
+                }
+              } catch (e) {}
+              return f(u, o);
+            };
+          });
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
+          await q.evaluate(() => (location.hash = '#players/list'));
+          await calm();
+          await q.evaluate(() => (location.hash = '#players/groups'));
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          const pend = () =>
+            q.evaluate(() => {
+              const c = document.querySelector('.adm-gcard');
+              return {
+                busy: c.getAttribute('aria-busy') === 'true',
+                off: [...c.querySelectorAll('button, select')].every(x => x.disabled),
+                rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')).join('|')
+              };
+            });
+          let pd = await pend();
+          if (!pd.busy || !pd.off || pd.rights !== 'Host live games|Cohorts|Content')
+            fails.push(`${w}px rights groups: a change on its way, page drawn again ${JSON.stringify(pd)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              await q.screenshot({path: require('path').join(process.env.SHOTS, `rights-pending-${w}-${th}.png`), fullPage: true});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          await q.evaluate(() => {
+            const s = document.querySelector('.adm-gcard [data-gradd]');
+            s.value = 'settings@instance:imr';
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+            render();
+          });
+          pd = await pend();
+          if (!pd.busy || !pd.off || pd.rights !== 'Host live games|Cohorts|Content')
+            fails.push(`${w}px rights groups: a second change meanwhile ${JSON.stringify(pd)}`);
+          await q.evaluate(() => window.__release());
+          await calm();
+          g = await page();
+          pd = await q.evaluate(() => ({sent: window.__sent, busy: !!document.querySelector('.adm-gcard[aria-busy]')}));
+          if (
+            g.cards[0].rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            pd.sent.length !== 1 ||
+            pd.sent[0] !== 'live@instance:imr,cohorts@instance:imr,content@instance:imr' ||
+            pd.busy
+          )
+            fails.push(`${w}px rights groups: change on its way, after ${JSON.stringify({g: g.cards[0], pd})}`);
+          // One rights change at a time on the whole page (rule W27): with a second group (Fieldwork, made here), Content
+          // is given to Trainers and its write held. Every rights control of both groups is off, a change dispatched at
+          // Fieldwork meanwhile sends nothing. The write answered, the players read is held, and another read forced meanwhile
+          // drops it: its answer is not applied, so the controls stay off and the page reads again; they come on only with
+          // a read that applied its answer. Then Fieldwork gets Settings from a list that holds Trainers' Content too:
+          // exactly one rights request at a time, no right lost.
+          await q.click('.adm-gcard:first-child [data-grx][data-e="content@instance:imr"]'); // Trainers: back to its two
+          await calm();
+          const tid = await q.evaluate(() => document.querySelector('.adm-gcard:first-child').dataset.g);
+          await q.evaluate(async () => {
+            await userPost({groupMake: {n: 'Fieldwork', board: 1}});
+            await loadUsers(true);
+            render();
+          });
+          await calm();
+          const fid = await q.evaluate(
+            () => [...document.querySelectorAll('.adm-gcard')].find(c => /Fieldwork/.test(c.textContent)).dataset.g
+          );
+          // The two groups' rights controls (a rights group's player controls too: the other's stay on), off or on
+          const lockOf = () =>
+            q.evaluate(
+              ids => {
+                const R = [...document.querySelectorAll('.adm-gcard')]
+                  .filter(c => ids.includes(c.dataset.g))
+                  .map(c => ({
+                    rights: [...c.querySelectorAll('[data-gjoin], [data-ugout]')].filter(() => c.querySelector('.adm-gkey')),
+                    add: [...c.querySelectorAll('[data-gradd], [data-grx]')]
+                  }));
+                return {
+                  allOff: R.length === 2 && R.every(c => c.add.length && c.add.every(x => x.disabled) && c.rights.every(x => x.disabled)),
+                  allOn: R.length === 2 && R.every(c => c.add.length && c.add.every(x => !x.disabled)),
+                  w: (window.__w || {}).writes || [],
+                  max: (window.__w || {}).max,
+                  users: (window.__w || {}).users
+                };
+              },
+              [tid, fid]
+            );
+          await q.evaluate(() => {
+            const W = (window.__w = {writes: [], users: 0, cur: 0, max: 0, gates: [], writeHold: null});
+            W.writeHold = new Promise(r => (W.release = r));
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              let b = null;
+              try {
+                b = o && o.body && JSON.parse(o.body);
+              } catch (e) {}
+              if (b && (b.groupEdit || b.userGroup)) {
+                W.writes.push(b.groupEdit + ':' + (b.rights || []).join(','));
+                W.max = Math.max(W.max, ++W.cur);
+                return W.writeHold.then(() => f(u, o)).finally(() => W.cur--);
+              }
+              if (b && b.users) {
+                W.users++;
+                const gt = W.gates.shift();
+                if (gt) return gt.then(() => f(u, o));
+              }
+              return f(u, o);
+            };
+          });
+          await q.selectOption(`.adm-gcard[data-g="${tid}"] [data-gradd]`, {label: 'Content'});
+          let L = await lockOf();
+          if (!L.allOff || L.w.length !== 1 || L.w[0] !== tid + ':live@instance:imr,cohorts@instance:imr,content@instance:imr')
+            fails.push(`${w}px rights groups: one at a time, write on its way ${JSON.stringify(L)}`);
+          await q.evaluate(
+            ([id, tid]) => {
+              // Fieldwork's control, dispatched although off, and a player into Trainers
+              const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+              s.value = 'settings@instance:imr';
+              s.dispatchEvent(new Event('change', {bubbles: true}));
+              const j = document.querySelector(`.adm-gcard[data-g="${tid}"] [data-gjoin]`);
+              if (j) {
+                j.value = j.options[1].value;
+                j.dispatchEvent(new Event('change', {bubbles: true}));
+              }
+            },
+            [fid, tid]
+          );
+          L = await lockOf();
+          if (L.w.length !== 1 || !L.allOff) fails.push(`${w}px rights groups: one at a time, a second sent ${JSON.stringify(L)}`);
+          // the write answered; its players read held, then dropped by another read, held too, and the retry held
+          await q.evaluate(() => {
+            const W = window.__w;
+            W.gates.length = 0;
+            W.rel = [];
+            for (let i = 0; i < 3; i++) W.gates.push(new Promise(r => W.rel.push(r)));
+            W.release();
+          });
+          await q
+            .waitForFunction(() => window.__w.users === 1, null, {timeout: 20000})
+            .catch(() => fails.push(`${w}px rights groups: the players read after the write never started`));
+          L = await lockOf();
+          if (!L.allOff) fails.push(`${w}px rights groups: one at a time, write done, read on its way ${JSON.stringify(L)}`);
+          await q.evaluate(() => void loadUsers(true)); // a newer read drops the first one
+          await q.waitForFunction(() => window.__w.users === 2, null, {timeout: 20000}).catch(() => {});
+          await q.evaluate(() => window.__w.rel[0]()); // the dropped read answers: not applied
+          await q
+            .waitForFunction(() => window.__w.users === 3, null, {timeout: 20000})
+            .catch(() => fails.push(`${w}px rights groups: the dropped read was not made again`));
+          L = await lockOf();
+          if (!L.allOff || L.w.length !== 1) fails.push(`${w}px rights groups: one at a time, the read dropped ${JSON.stringify(L)}`);
+          await q.evaluate(() => {
+            window.__w.rel[2]();
+            window.__w.rel[1]();
+          });
+          await q
+            .waitForFunction(() => [...document.querySelectorAll('[data-gradd]')].every(x => !x.disabled), null, {timeout: 20000})
+            .catch(() => {});
+          await calm();
+          L = await lockOf();
+          g = await page();
+          const T2 = g.cards.find(c => /^Trainers/.test(c.n)) || {rights: []};
+          if (!L.allOn || T2.rights.join('|') !== 'Content|Host live games|Cohorts' || L.w.length !== 1 || L.users !== 3)
+            fails.push(`${w}px rights groups: one at a time, the read applied ${JSON.stringify({L, T2})}`);
+          await q.selectOption(`.adm-gcard[data-g="${fid}"] [data-gradd]`, {label: 'Settings'});
+          await q.waitForFunction(() => window.__w.writes.length === 2, null, {timeout: 20000}).catch(() => {});
+          await calm();
+          L = await lockOf();
+          g = await page();
+          const F2 = g.cards.find(c => /^Fieldwork/.test(c.n)) || {rights: []},
+            T3 = g.cards.find(c => /^Trainers/.test(c.n)) || {rights: []};
+          if (
+            L.max !== 1 ||
+            L.w.length !== 2 ||
+            L.w[1] !== fid + ':settings@instance:imr' ||
+            !L.allOn ||
+            T3.rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            F2.rights.join('|') !== 'Settings'
+          )
+            fails.push(`${w}px rights groups: one at a time, then the other group ${JSON.stringify({L, T3, F2})}`);
+          await q.click(`.adm-gcard[data-g="${tid}"] [data-grx][data-e="content@instance:imr"]`);
+          await calm();
+          // Taking away a group's last right: while it is on its way the group is still locked for its memberships,
+          // although it shows no right (Players › List: its option is off; a change dispatched at it asks nothing and
+          // sends nothing), and the lock lifts with the applied read.
+          const nSaid = said.length;
+          await q.evaluate(() => {
+            const W = window.__w;
+            W.writeHold = new Promise(r => (W.release = r));
+          });
+          await q.click(`.adm-gcard[data-g="${fid}"] [data-grx][data-e="settings@instance:imr"]`);
+          await q.evaluate(() => (location.hash = '#players/list'));
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await q.click('[data-uopen="Ana Demo"]');
+          const optOff = () =>
+            q.evaluate(id => {
+              const s = document.querySelector('[data-ugadd="Ana Demo"]'),
+                o = s && [...s.options].find(x => x.value === id);
+              return o ? s.disabled || o.disabled : 'none';
+            }, fid);
+          const nW = (await lockOf()).w.length;
+          if ((await optOff()) !== true) fails.push(`${w}px rights groups: last right on its way, the group's option is on in the list`);
+          await q.evaluate(id => {
+            const s = document.querySelector('[data-ugadd="Ana Demo"]');
+            s.value = id;
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+          }, fid);
+          L = await lockOf();
+          if (L.w.length !== nW || said.length !== nSaid)
+            fails.push(`${w}px rights groups: last right on its way, a join went out ${JSON.stringify({w: L.w, said: said.slice(nSaid)})}`);
+          await q.evaluate(() => window.__w.release());
+          await q
+            .waitForFunction(
+              () => {
+                const s = document.querySelector('[data-ugadd="Ana Demo"]');
+                return s && !s.disabled;
+              },
+              fid,
+              {timeout: 20000}
+            )
+            .catch(() => {});
+          await calm();
+          if ((await optOff()) !== false) fails.push(`${w}px rights groups: last right done, the group's option is still off in the list`);
+          await q.click('[data-uopen="Ana Demo"]'); // her bar closed again, for the check below
+          // One Groups write at a time, of any kind: a player added to the empty group Fieldwork (no right, an ordinary
+          // write) on its way, then a first right offered: the control is off, a change dispatched at it sends nothing,
+          // so the player never joins a group that carries rights unasked. When the write and the applied read are in,
+          // the control is on again.
+          await q.evaluate(() => {
+            location.hash = '#players/groups';
+            const W = window.__w;
+            W.writeHold = new Promise(r => (W.release = r));
+          });
+          await q.waitForSelector(`.adm-gcard[data-g="${fid}"] [data-gjoin]`, {timeout: 20000}).catch(() => {});
+          await calm();
+          const nW2 = (await lockOf()).w.length;
+          await q.selectOption(`.adm-gcard[data-g="${fid}"] [data-gjoin]`, {label: 'Dio Demo'});
+          const addOff = () =>
+            q.evaluate(id => {
+              const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+              return s ? s.disabled : 'none';
+            }, fid);
+          if ((await addOff()) !== true) fails.push(`${w}px rights groups: a join on its way, the first right is offered`);
+          await q.evaluate(id => {
+            const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+            s.value = 'players@instance:imr';
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+          }, fid);
+          L = await lockOf();
+          if (L.w.length !== nW2 + 1 || L.max !== 1)
+            fails.push(`${w}px rights groups: a join on its way, a second request ${JSON.stringify({w: L.w.slice(nW2), max: L.max})}`);
+          await q.evaluate(() => window.__w.release());
+          // done: Dio is in, the group has members, so it offers no right (Code.gs 'members'), and its controls are on
+          const xOn = () =>
+            q.evaluate(id => (x => !!x && !x.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-ugout="Dio Demo"]`)), fid);
+          await q
+            .waitForFunction(id => (x => x && !x.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-ugout]`)), fid, {
+              timeout: 20000
+            })
+            .catch(() => {});
+          await calm();
+          g = await page();
+          const F3 = g.cards.find(c => /^Fieldwork/.test(c.n)) || {rights: ['?']};
+          if (!(await xOn()) || F3.rights.length || !/make a new group/.test(F3.none) || (await lockOf()).w.length !== nW2 + 1)
+            fails.push(`${w}px rights groups: a join done ${JSON.stringify({F3, w: (await lockOf()).w.slice(nW2)})}`);
+          await q.click(`.adm-gcard[data-g="${fid}"] [data-ugout="Dio Demo"]`); // Dio out again, for the checks below
+          await q
+            .waitForFunction(id => (s => s && !s.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`)), fid, {
+              timeout: 20000
+            })
+            .catch(() => fails.push(`${w}px rights groups: Dio out, the group never offered a right again`));
+          await calm();
+          // The player's bar: the rights group's chip carries the key, a line sums up the rights; a merge asks with the plan
+          await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ana Demo"]');
+          await calm();
+          const b = await q.evaluate(() => ({
+            keys: [...document.querySelectorAll('.adm-ubar .adm-gchip')]
+              .filter(c => c.querySelector('.adm-gkey'))
+              .map(c => c.textContent.replace('Carries rights', '').replace('×', '')),
+            line: (document.querySelector('.adm-ubar .adm-urights') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+          }));
+          if (b.keys.join('|') !== 'Trainers' || b.line !== 'Rights: host live games; cohorts' || b.wide)
+            fails.push(`${w}px rights groups: the player's bar ${JSON.stringify(b)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              const el = await q.$('.adm-ubar');
+              if (el) await el.screenshot({path: require('path').join(process.env.SHOTS, `rights-bar-${w}-${th}.png`)});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          await q.selectOption('.adm-ubar [data-umerge="Ana Demo"]', {label: 'Carla Demo'});
+          await calm();
+          const m = said.find(s => s.startsWith('confirm: Merge "Ana Demo" into "Carla Demo"?')) || '';
+          if (
+            !(await sent('mergePlan')) ||
+            !m.includes('"Carla Demo" joins: Staff.') ||
+            !m.includes('"Ana Demo" leaves, its rights not moved: Trainers (Host live games, Cohorts).') ||
+            !m.includes('"Ana Demo" leaves the admin list.')
+          )
+            fails.push(`${w}px rights groups: the merge warning ${JSON.stringify(m)}`);
+        } catch (e) {
+          fails.push(`${w}px rights groups: ${String(e.message).split('\n')[0]}`);
+        }
+        await q.close();
+      }
       // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
       // (admin.css --cut), the name ends in "…" and its title holds it whole.
       if (w === 390) {
