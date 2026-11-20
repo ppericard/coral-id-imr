@@ -178,6 +178,10 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
   `quiz.js` `duelPick` and `planDuel` never pair two units one label names (`choiceNames`: no duel "Brown damsel or
   Brown damsel?"). The genus questions' "common name" nudge (`typeOther`) and the family questions' name index read them
   too. Tests: `tests/fishcommon.test.js`.
+- A unit labelled by its scientific name (a fish genus, any subject's genus) shows its common name in bold right
+  after it on its first-meeting card, above the family line (`quiz.js` `introCard`, `app.js` `unitCname`: the
+  record's `cname`, a genus's fish.json `common`, else its first English name; Pierre, 2026-11-20). Tests:
+  `tests/scigenera.test.js`, `tests/fish.smoke.js`.
 
 ## The name index
 

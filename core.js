@@ -246,12 +246,14 @@
   //           subject of an unlabelled row (replaySubject); the others the sheet replays are SUBJECTS replayed
   //   The subject differences one-engine step 2 split out of replay (docs/reviews/2026-11-19-one-engine-audit.md;
   //   rule S1), each a feature switched on for the subjects that hold it, at the values replay gave:
-  //   hold    the sheet's opening hold counts its answers (Code.gs hold_), adopted as this subject (sync.js holdAdopt)
+  //   hold    the app adopts the sheet's opening hold for this subject (sync.js holdAdopt); the sheet computes every
+  //           replayed subject's from its own answers (Code.gs holdsInto_, the reply's holds)
   //   offsets  the sheet's photo memory and format offsets are fitted on its answers (Code.gs stats_): the app reads
   //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
   //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
   //           signIn); any other subject adds all the progress this device holds
-  //   hold and offsets follow the sheet, which computes them for replay's subject alone (tests/subject-neutral.test.js)
+  //   offsets follows the sheet, which computes it for replay's subject alone; hold stays on that subject until the app
+  //           adopts each subject's own (tests/subject-neutral.test.js)
   //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
   //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
   //   ach     it has achievements: achs() its list (ACH, FISH_ACH), all in the one synced record (progress.js ACHK)
@@ -422,11 +424,8 @@
   // that score, the plain mean.
   const TREE_GATE = {c3: {entries: 0.55, mean: 0.5}};
   // The Learn and Practice pages the tree subjects do not have yet, each with its reason (SUBJECTS closed): the plan that
-  // opens them is docs/reviews/2026-11-19-modes-every-subject.md. Memory pairs a colony with its corallites, two views of
-  // one unit, and these subjects have one view (SUBJECTS views).
-  const CLOSED_TREE = {
-    pairs: 'Memory matches two views of one unit (colony and corallites); this subject has one view (views)'
-  };
+  // opens them is docs/reviews/2026-11-19-modes-every-subject.md.
+  const CLOSED_TREE = {};
   // The rubric a tree subject's photos are judged on (judging/*.md "Tags"), declared by each subject in its admin part
   // (SUBJECTS admin.tags) and read by the admin in one place (admin.js tagWords, tagRows, tagFlags). A photo's code is its
   // seven tags by position, 0-6, then its flags' letters; each position and the flags is a list of
@@ -689,7 +688,7 @@
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
-      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
@@ -904,7 +903,7 @@
       gate: TREE_GATE,
       // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
       // (reefid-seaslug-basics) and done feat.
-      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel'],
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_sbasics'},
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
@@ -1071,7 +1070,7 @@
     return {sid: s, L: n < 0 ? L : L.slice(0, n)};
   };
   // The subject of the sheet's first replay path (SUBJECTS replay: the corals): its replay, and the subject of an
-  // unlabelled row. The sheet's hold and photo memory follow it too (SUBJECTS hold, offsets).
+  // unlabelled row. The sheet's photo memory follows it too (SUBJECTS offsets), and the hold the app adopts (hold).
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
   // The other subjects whose progress the sheet replays from their own answers (SUBJECTS replayed: fish), by id.
   const replayedSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed).map(S => S.id);
