@@ -8,62 +8,63 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
-Written 2026-11-20, about 08:20 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-20, about 11:25 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work.
 
 Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 2026-11-17).
 
 ## Now
 
-Main: sheet script **v202**. Merged since 03:55: #1280 (Lab tools on the subject on screen), #1282 (his morning
-answers: A1 for hand choices, the model/effort strategy, Rule 0's practice, no command for him, P2), #1277 (custom
-quiz, v201), #1283 (learncheck.yml under the cap), #1278 (Look-alikes and Compare, v202), #1287 (a large judging pass is
-measured first), #1284 (Find the X tile code for sea slugs), #1288 (admin one engine step 3: `reg(S)`). Q437: only
-sea slug Basics and Find the X (boxes) left.
+Main: sheet script **v203**. Merged since 08:20: #1290 (Learn cards: the whole card opens the sheet), #1289 (lecture
+photos never upscaled), #1296 (tell-apart lines, 24 bonus coral pairs), #1297 (a hand-added candidate removed stays
+rejected), #1295 (sea slug `bb` import and the box model record), #1300 (admin one engine step 4: one Tree), #1302
+(Visits smoke), #1303 (backlog audit docs fixes), #1305 (no-upscale smoke pinned to one player id).
 
-- **Queue**: #1291 (calibration note, rewritten to his scope after Codex), #1273 (species by scientific name, app;
-  Q440 accepted; L12 passed; v203), #1279 (Memory for fish and sea slugs; re-assign after #1273), #1285 (rights PR 1;
-  assign after), #1286 (sea slug Basics; being brought up to date).
-- **Fixing**: #1290 (Learn cards: the whole card opens the sheet; red, being fixed; variants for Pierre to pick),
-  #1289 and #1292 (lecture photos never upscaled; Corals of the World originals), the admin flags (a flag clears
-  itself when its photo leaves play; "missing" flags clear themselves).
-- **Sea slug boxes** (Find the X): the bench (scratchpad `slugbox/`, 80 photos) after a tightened box definition:
-  14 of 80 disputed (31 before); an adjudicator is deciding them; the lighter candidates (Opus and Sonnet medium,
-  Haiku, two runs each) are judging. Then the cheapest passing configuration does the 2,132 photos the tile rule keeps.
-- A container restart at ~07:40 stopped every agent: the work on disk was resumed; branches never pushed (the
-  `data/` move, tell-apart lines for 25 bonus pairs) are relaunched from their worktrees.
+- **Queue, ordinary**: #1306 (sea slug boxes: 2,064 `bb` on 265 species; tiles cut by the next R2 run), #1304 (`CAL.U`
+  stays 1: the level-2 check breached a guardrail), then #1294 (admin flags clear themselves; settling an `admin.js`
+  conflict) and #1292 (Corals of the World originals; pages smoke red, 3 threads, being looked at).
+- **Queue, sheet versions, one at a time** (`afterver.sh`): #1285 (rights PR 1, holds v204), #1286 (sea slug Basics),
+  #1279 (Memory, fish and sea slugs; holds a stale v204: re-assign), #1298 (tool and admin data into `data/`), #1299
+  (Find the X's own offset; moves nothing today), #1301 (the "What I learn" card: names rows for fish and sea slugs).
+- **Agents**: the Q316 offline-fit tool (estimator tested on simulated data first; the real log comes from the
+  integrator, never committed); the name roots' IMR-cue warning; #1294's conflict; #1292's pages smoke.
+- **Sea slug boxes** (Find the X), measured as Pierre asked (06:42-06:50): sample 1 (80) left Opus medium undecided;
+  sample 2 (40, THRESHOLD2 written first): Opus medium meets (100/100 and 97.5/97.5, serious 1 and 3, cap 3). Bulk: 22
+  batches on Opus medium; a blind Opus high redo of 213 photos agreed 96.2%, batch 08 (80%) redone on Opus high, then
+  97.2%. Record: docs/decisions/2026-11-20-seaslug-box-model.md.
+- **Backlog audited** (58 items against Pierre's own words, scratchpad `backlog-audit.md`): 9 were built, 13 were wishes
+  or the integrator's prose (contrast on the Learn sheets, C3, Sort them, Virtual dive…), 3 "later"; #1303 fixed the
+  docs. The list below holds only what his words decide.
 
 ## Next
 
-Decided, not started (the backlog, in launch order):
+Decided and ready, launched at once unless a real dependency holds one back (rule W27: no two open PRs on the same
+sensitive file, `Code.gs`, `core.js`, `sync.js`, `model.js`; heavy runs share the machine through `tests/slot.js`):
 
-1. Rights: groups carry an instance's rights, PRs 2-4 after #1285; then cohorts joined with a code (roles step 2), the
-   Curators' relay; the IMR content split's rest.
-2. Engine, one `core.js` holder at a time: Find the X's own offset (Q371); the level's answer count from the log (Q322,
-   Q330); one engine, what is left; Q316's offline fit; `CAL.U` after the hierarchical photo Elo.
-3. One admin for every subject (Pierre, 05:53): the study's steps 4-13 (one Tree, one Candidates swiper, one band
-   review, one montage and coverage, one tile, Learn's one list and one sheet).
-4. Fish: common names (admin correction, species level); the fish welcome question; fish basics, the rest; where the
-   reference route is still read.
-5. Content and photos: tell-apart lines for 25 bonus pairs (relaunched); About and credits, a calmer text (after the
-   C12 PRs); contrast correction on the Learn sheets; name roots' IMR-cue warning and epithets; the watermark pass
-   after each refill; the measured block's full run on a runner.
-6. Admin and tools: the Tree tab's steps 6-7; the admin opening, what is left; activity outside the quiz C1-C3; tool
-   and admin data into `data/` (relaunched); CI speed, what is left; the monthly taxonomy refresh; the auto-sort
-   follow-ups and #1259's two follow-ups.
-7. New formats: Sort them, Down the tree (with the species level), Life stages matched, Virtual dive.
-8. Subjects: the species level everywhere; then benthos.
+1. Watermark pass 5, then the measured block's full run on a runner (after #1298).
+2. #1259's two follow-ups (after #1294, #1298); then one admin step 5 (Candidates swiper), 6, 7, 8, 13; Learn steps 9-11
+   after #1286.
+3. The level's answer count from the log (first `core.js` holder once the version queue is in); then the "Fish basics"
+   achievement (its name and tier: integrator's call); one engine steps 3, 4, 6, then 5 and 9; #892 (a wrong pick
+   counts against both families, fish rules version); the species exams (Q395).
+4. Fish common names: the admin correction (`admin.js`); the admin opening's lazy loads, then the leaner log reply.
+5. The IMR content split, the rest; About and credits, a calmer text (after #1292).
+6. Down the tree, then Life stages matched, as Lab prototypes; the benthos study (read-only).
+7. Rights PRs 2-4 after #1285 (Groups page first); then the Curators' relay (its token: Pierre's hands, ask first).
+8. Activity outside the quiz C2 (the page tally kept across a killed page: integrator's call, design first).
 
 ## Questions for Pierre
 
 - **Q439**: the Lab prototypes Same or different?, Odd one out, Matrix and the fish ID key: which graduate (U13)?
   Rec. he plays each on his phone first; those he likes go to Practice for every subject.
-- **Remove vs ×** (06:58-07:00, the admin's two removals): options A-D sent at 07:00. Rec. A: one Remove, one click,
-  never proposed again, Undo and a list of removed photos to restore.
-- The Learn card variants (#1290): screenshots to send once its agent reports.
+- **Remove vs ×** (06:58-07:00): options A-D sent at 07:00, with the measure since (85 × against 1 Remove since
+  2026-11-01). Rec. A: one Remove, one click, never proposed again, Undo and a list of removed photos to restore.
+- **With rights PR 2**: where each cohort's trainer list is stored. Rec. A, lines in the Groups tab marked trainer
+  (check against roles step 2's design and #1050 first).
 - Still open from earlier: Q351 (b), the fish ease weight; the species photos' 8 unsure candidates; the fish key's
-  points; species-level look-alike pairs (Q390); one engine §6 formats (a)-(d); where each cohort's trainer list is
-  stored (a format: before roles step 2); the ROADMAP "Open question" rows.
+  points; species-level look-alike pairs (Q390); one engine §6 formats (a)-(d); the ROADMAP "Open question" rows.
+- Not asked, on purpose: the contrast correction (his "plus tard", 2026-11-19 15:07); the fish starting values (the log
+  is too small to fit them); `CAL.U` (kept at 1, nothing changes).
 
 Last question number: Q441
 
@@ -82,7 +83,8 @@ Last question number: Q441
 
 ## Last stop
 
-2026-11-20 ~08:20 Manila: handover. Scratchpad: `nightq.sh`, `chainq.sh` (the queue; log `nightq.log`; a restart
-stops it), `assignver.sh` (a Code.gs PR's version at merge), `uptodate.sh`, `prstate.sh`, `failjobs.sh`, `thr.py`,
-`rowdiff.py`, `bothsides.py`, `findmsg.py`, `slugbox/` (the box bench), `l12/` (real-log export: real names, never
-committed), `gold2/`, `q438/`, `k159/`, `tagdoubts/`. No real names.
+2026-11-20 ~11:25 Manila: handover. Scratchpad: `nightq.sh`, `chainq.sh` (the queue; log `nightq.log`; a restart
+stops it), `afterver.sh` → `seqver.sh` → `assignver.sh` (Code.gs PRs one at a time; assignver keeps the branch's
+`Code.gs` and takes only main's line 1 and `VERSION` since it wiped #1285's code once), `uptodate.sh`, `prstate.sh`,
+`failjobs.sh`, `thr.py`, `resolve_block.py`, `slugbox/` (bench, `s2/`, `bulk/`), `backlog-audit.md`, `q316-study.md`,
+`l12/` (real-log export: real names, never committed). No real names.
