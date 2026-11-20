@@ -17,8 +17,7 @@ fish photos of the first pass (`judging/FISH.md` "Agreement with other sources")
 - Pierre, 2026-11-19 15:01 Manila, on the series: «je ne suis pas convaincu qu'il faille les corriger, ou alors dans un
   deuxième temps», because contrast is information about difficulty: «on ne peut plus s'entrainer sur des photos
   réalistes avec peu de contraste». At 15:07, on "plus tard": «Plus tard ça veut juste dire qu'on le met dans la
-  ROADMAP». So no correction now: the ROADMAP row "Contrast correction on the Learn sheets" waits until he asks for it
-  (an idea). The Learn-sheets-only scope in that row is the integrator's reading, not Pierre's words, and it decides
+  ROADMAP». So no correction now: the ROADMAP row "Contrast correction on the Learn sheets" stays as an idea. The Learn-sheets-only scope in that row is the integrator's reading, not Pierre's words, and it decides
   nothing. The filter of the before/after series was one linear map shared by R, G and
   B, from the 1st and 99th percentiles, at 60% of the full stretch. Its gain was at most 1.5, with none under 1.1, and
   the midtone moved at most 0.1. It was written as CSS `brightness()` `contrast()`.

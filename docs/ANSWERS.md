@@ -1453,7 +1453,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   `2026-11-19-photo-measured-block` wrote that scope inside his decision. His words, in that entry: 15:01 «je ne suis
   pas convaincu qu'il faille les corriger, ou alors dans un deuxième temps»; 15:07 «Plus tard ça veut juste dire qu'on
   le met dans la ROADMAP». He never named the Learn sheets: that limit is the integrator's reading and decides
-  nothing. The decision as he made it: no correction now; the row waits until he asks for it. Applied: ROADMAP
+  nothing. The decision as he made it: no correction now; the row stays in the ROADMAP as an idea. Applied: ROADMAP
   "Contrast correction on the Learn sheets"; decisions/2026-11-19-photo-measured-block.md.
 - **Paraphrase-only entries, how to cite them.** The entries for Q316, Q322, Q330, Q342-Q349 and Q373 stay paraphrases:
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
