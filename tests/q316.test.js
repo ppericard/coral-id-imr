@@ -148,8 +148,10 @@ test('prep.js: readAnswers form, left-out ids, offsets, practice counts and the 
   assert.ok(Math.abs(first.off - (-0.5 + 0.1 - 0.2 + 0.5)) < 1e-9, 'memory + mix-ups - format + one photo alone');
   const second = by('P1')[1];
   assert.strictEqual(second.mem, 0, 'a photo never shown: memory 0');
-  const fourth = by('P1')[3]; // p0 shown once before (right? i=0 was a miss), so bucket 1
-  assert.strictEqual(fourth.mem, -0.5);
+  const fourth = by('P1')[3]; // p0 shown before only on the other unit (Porites, i=0): no memory on this one
+  assert.strictEqual(fourth.mem, 0);
+  const seventh = by('P1')[6]; // p0 on Porites again (i=0 was a miss there), so bucket 1
+  assert.strictEqual(seventh.mem, -0.5);
   assert.deepStrictEqual([fourth.np, fourth.nu], [3, 1]);
   assert.ok(by('P1')[0].tr && !by('P4')[0].tr, 'trust: core.js trustOf');
   assert.strictEqual(X.rows.filter(r => r.use).length, X.rows.filter(r => r.tr).length);
@@ -290,6 +292,7 @@ test(
     assert.ok(est > 0.7 && est < 1.5 && lo < 1 && hi > 1, JSON.stringify(o.gen));
     const CT = 'the measure cannot tell';
     assert.deepStrictEqual(o.rule, {pass: 'pass', bias: 'fail', cover: 'fail', short: CT, reps40: CT, reps10: CT});
+    assert.deepStrictEqual(o.shared, [true, false, false], 'the shared-SD fallback only where both levels exist and one fails');
     assert.ok(o.deadline && o.finite);
     assert.deepStrictEqual(o.cap, {fit: true, short: true, run: [40, 10, 40]}, 'never past 40 minutes (rule L11)');
   }

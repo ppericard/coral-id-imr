@@ -537,6 +537,12 @@ def shares(F, keys, rng, draws=2000):
     return {k: [float(pt[i]), [float(np.quantile(sh[:, i], 0.025)), float(np.quantile(sh[:, i], 0.975))]] for i, k in enumerate(keys)}
 
 
+def needs_shared(par, rep):
+    """The shared genus + species SD fallback: only on a design with both levels (the corals have no species level: the
+    fallback would repeat the same fit) and when either fails its acceptance."""
+    return 'gen' in par and 'sp' in par and any(rep[k]['verdict'] != 'pass' for k in ('gen', 'sp'))
+
+
 def run_real(ex, args, clock, log):
     subject = ex['subject']
     rows = [r for r in ex['rows'] if r.get('use')]  # trusted answers with photos and a known taxon (prep.js)
@@ -566,8 +572,7 @@ def run_real(ex, args, clock, log):
         out['accept_own'] = A2
         out['steps'].append('accept_own')
         out['report'] = report(F, A1, A2)
-        fails = [k for k in ('gen', 'sp') if k in D['par'] and out['report'][k]['verdict'] != 'pass']
-        if fails:
+        if needs_shared(D['par'], out['report']):
             log('  genus or species not estimable: the shared genus + species SD (the fallback)')
             D2 = build(rows, sibling=args.get('sibling'), coral_family=args.get('coral_family'), shared=True)
             F2 = fit(D2, clock)

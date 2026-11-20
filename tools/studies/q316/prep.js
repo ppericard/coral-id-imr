@@ -192,7 +192,8 @@ function prepare(all, subject, opts = {}) {
       sc = r[22] || null,
       g = C.guessOf(r[5], r[10]),
       k = C.kOf(r[5], r[10]),
-      hs = ph.map(f => (H[w + '|' + f] = H[w + '|' + f] || [0, 0]));
+      // the photo's history on the unit asked, as the replay reads it (core.js replayProgress: the asked unit's s.ps)
+      hs = ph.map(f => (H[w + '|' + u + '|' + f] = H[w + '|' + u + '|' + f] || [0, 0]));
     let tax = null;
     if (fish) {
       const ids = ph.map(f => FT.photo[f]).filter(Boolean),
