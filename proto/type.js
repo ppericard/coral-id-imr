@@ -87,7 +87,8 @@ LAB.add({
           if (over > 0) scrollBy({top: over, behavior: 'smooth'});
         }
       };
-      typeBind(body.querySelector('.tyform'), (m, text, sp) => finish(m, text, sp), SUBJ, rankOf(t), one, {
+      // the class of t (app.js kindRank: its rank and its kind of name), as the quiz reads a typed answer
+      typeBind(body.querySelector('.tyform'), (m, text, sp) => finish(m, text, sp), SUBJ, kindRank(t), one, {
         t, // the spelling step, as in the quiz (a close typo of t is retyped once)
         sp: typeSp
       });

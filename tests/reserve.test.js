@@ -368,6 +368,7 @@ test('quiz.js: a reserved photo (the exam’s) logged |h before |kN, |t and |x; 
           k: 4,
           nc: 4,
           tq: null,
+          sci: null, // no species by its scientific name (quiz.js answer SCIQ)
           exq: false,
           cur: 'quiz',
           ph: [{f: 'h0', ho: 1}],
@@ -469,7 +470,10 @@ test('the app splits every subject’s units for the player (no file, no subject
     sw = read('sw.js');
   assert.ok(!fs.existsSync(path.join(ROOT, 'fish-holdout.json')) && !fs.existsSync(path.join(ROOT, 'tools/holdout.py')));
   assert.ok(!/holdout\.json\?|\bho: \(\) =>|treeHeld/.test(app + sw + read('core.js') + read('model.js')), 'no held-out file read');
-  assert.match(app, /TREEU = reserveOn\(treeCurate\(treeGenera\(treeGen\(f, treePhotos\(ph\.photos, gm\.photos, C\)/);
+  assert.match(
+    app,
+    /const X = Object\.assign\(treeGen\(f, treePhotos\(ph\.photos, gm\.photos, C\)[^\n]*\n\s+TREEU = reserveOn\(treeCurate\(treeGenera\(X, f\)/
+  );
   assert.match(app, /applySlots\(d, CUR, \{picks: PICKS, autoq: AUTOQ\}\);\n  reserveOn\(d\);/);
   assert.match(app, /const reserveOn = X => reserveSplit\(X, reserveOf\(X, \(RESID = resId\(\)\)\)\);/);
   assert.match(read('sync.js'), /if \(typeof resSeen === 'function'\) resSeen\(\);/);

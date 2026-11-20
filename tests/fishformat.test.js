@@ -85,6 +85,7 @@ function question(subject, F, {mode, chs, k}) {
     recallAt: () => 1,
     startP: () => 0,
     mq: mode,
+    tq: null, // no typed question's smaller fault (recordAnswer tq)
     fmtOf: C.fmtOf,
     fmtOff: C.fmtOff,
     pfmt,

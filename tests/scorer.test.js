@@ -107,6 +107,7 @@ function session(seed, n) {
       recallAt: () => Math.round((0.5 + r() * 0.5) * 1000) / 1000,
       startP: () => 0,
       mq: mode,
+      tq: null, // no typed question's smaller fault (recordAnswer tq)
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => pfmt, // model.js pfmt: the device's offsets (this session plays a subject the sheet rates)
