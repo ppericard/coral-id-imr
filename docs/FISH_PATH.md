@@ -92,7 +92,10 @@ is the design's shorthand, and internal identifiers may keep it.
 - The player chooses, at the fish welcome and any time on the fish's **"What I learn"** card (My progress; a Home line opens it), not
   in ⚙ (Pierre, 2026-11-18, Q396, Q400 D): **common names**, **scientific names**, or **both**. Each names row is on or off, a
   families-only player allowed (Q404 A); a row turned on comes as its parent reaches the usual threshold (Q401 A); a row turned off
-  stops being asked and its units keep their bars (Q402 A).
+  stops being asked and its units keep their bars (Q402 A). **Built** (the card's names rows,
+  [spec](spec/fish-game.md#the-what-i-learn-card-names-rows)): the card on My progress with its Common names and Scientific
+  names rows (the sea slugs: their Species row), "What I learn ›" on Home's Learn door, ⚙'s Scientific names row gone.
+  Not yet: the names step at the fish welcome, and the card's other levels (Bonus genera, Beyond the IMR course, Open all).
 - **"I'm at IMR (Research Assistant programme)"** = both, with scientific names early (EventMeasure takes scientific names).
 - **One score scale for everyone**, whatever the choice, so the leaderboards stay comparable ("My progress (fish)").
 

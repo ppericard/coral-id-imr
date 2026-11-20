@@ -91,12 +91,19 @@ test('bonusList: a set’s auto units play whatever the set’s state, each once
   const run = (Q, sets) => {
     const c = {Q, SETS: () => sets};
     vm.createContext(c);
-    vm.runInContext(block(APP, 'const bonusList = ', '\n', {through: 1, file: 'app.js'}) + '\nthis.r = bonusList();', c);
+    vm.runInContext(
+      block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}) +
+        block(APP, 'const bonusList = ', '\n', {through: 1, file: 'app.js'}) +
+        '\nthis.r = bonusList();',
+      c
+    );
     return plain(c.r);
   };
   const S = {k: 'sci', units: () => ['g:A', 'g:B'], auto: () => ['g:B', 'g:N']};
   assert.deepStrictEqual(run({}, [S]), ['g:B', 'g:N']);
   assert.deepStrictEqual(run({sci: false}, [S]), ['g:B', 'g:N']);
+  // turned off on the What I learn card (sciO, Q404 A): its auto units stop too
+  assert.deepStrictEqual(run({sci: false, sciO: true}, [S]), []);
   assert.deepStrictEqual(run({sci: true}, [S]), ['g:A', 'g:B', 'g:N']);
   assert.deepStrictEqual(run({bon: true}, [{k: 'bon', units: () => ['X']}]), ['X']);
 });
@@ -125,7 +132,7 @@ test('the back card: once, to a player who turned the set on under its earlier r
   assert.strictEqual(due({bon: true}), null, 'a set with no back card');
   // either answer records the rules it was made under, and the merge carries it with the choice
   assert.ok(block(APP, 'function bonusSet(', '\n}\n', {file: 'app.js'}).includes("(Q[k + 'V'] = S.rv)"));
-  assert.ok(src('sync.js').includes("['N', 'A', 'V', 'H'].forEach("), 'synced with the choice');
+  assert.ok(src('sync.js').includes("['N', 'A', 'V', 'H', 'O'].forEach("), 'synced with the choice');
 });
 
 test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q227), the history or the fallback trail', () => {
@@ -194,11 +201,13 @@ test('Q240: turned on by hand before Advanced, a family’s genera from its Open
     vm.runInContext(block(APP, 'function bonusSet(', '\n}\n', {through: 1, file: 'app.js'}) + `\nbonusSet(${on}, 'sci', ${hand});`, c);
     return c.Q.sciH;
   };
-  assert.strictEqual(set(true, true, false), true, '⚙ or My progress before Advanced');
+  assert.strictEqual(set(true, true, false), true, 'by hand before Advanced (a record that has it keeps it)');
   assert.strictEqual(set(true, true, true), false, 'by hand once a family is at Advanced: the offer’s rule');
-  assert.strictEqual(set(true, undefined, false), false, 'the offer card or the back card');
+  assert.strictEqual(set(true, undefined, false), false, 'the offer card, the back card or the What I learn card (Q401 A)');
   assert.strictEqual(set(false, true, false), false, 'off');
-  assert.ok(src('sync.js').includes("['N', 'A', 'V', 'H'].forEach("), 'synced with the choice');
+  assert.ok(src('sync.js').includes("['N', 'A', 'V', 'H', 'O'].forEach("), 'synced with the choice');
+  // the What I learn card never passes hand (Q401 A: the usual threshold, never sooner)
+  assert.ok(/\n {2}bonusSet\(!!on, k\);\n/.test(block(APP, 'function learnSet(k, on) {', '\n}\n', {through: 1, file: 'app.js'})));
 });
 
 test('Q238: the IMR families first for anyone who ever answered imr (openPick reads imrSaid)', () => {

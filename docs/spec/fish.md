@@ -213,25 +213,31 @@ as the index gives it). Method and biases: [FISH_PATH.md](../FISH_PATH.md) "Spec
 
 ## Name roots of the fish genera
 
-`fish.json` genera carry the same `root` as the coral genera (`p`, `fit`, `src`:
+`fish.json` genera carry the same `root` as the coral genera (`p`, `fit`, `warn`, `src`:
 [data.md › Name roots](data.md#name-roots)), read from The ETYFish Project (etyfish.org, C. Scharpf) into
-`tools/fish_genus_roots.json` (`genera` {name: {page, ety (the start of its entry, verbatim), p, fit}}, `skip` {name:
-why}).
+`tools/fish_genus_roots.json` (`genera` {name: {page, ety (the start of its entry, verbatim), p, fit, warn}}, `skip`
+{name: why}). `warn` (the name study's misleading root): the other families whose IMR cue the root names (a gill-cover
+spine, barbels, a line or band, bone, blue, yellow, no visible teeth), each `[family name, one of its IMR cues
+verbatim]`; 10 genera (Pomacentrus and Plectropomus: the Angelfishes' "Spine on the gill cover (opercular spine)").
 
 - `tools/build_fish.py` `add_families` (`genus_root`) builds it on every rebuild (`--regroup` applies an edit offline)
-  and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, or a genus of any circle
-  (1-3, all of `fish.json`'s) has neither a root nor a reason in `skip`. A fish part may have no word, or be another
+  and stops when a meaning or word is not verbatim in `ety`, the parts do not spell the name, a warning names the
+  genus's own family, a cue not verbatim in that family's or one of the genus's own (or comes with a `fit`; a family
+  the key in force does not have is left aside, as another key's genus marks are, and `tests/roots.test.js` checks that
+  every warning reaches `fish.json`), or a genus of any circle (1-3, all of `fish.json`'s) has neither a root nor a reason in `skip`. A fish part may have no word, or be another
   genus the entry names (fifth item `genus`: "the genus *Pomacentrus*") or the person it says the name honours
   (`honours`). A genus with no root is never an omission: its `skip` line says why (the root is a guess or unknown, has
-  two meanings, names an old genus, points to another unit's IMR cue or reads against its own: rules C1, C2). The genera
+  two meanings, names an old genus or reads against its own family's IMR cue: rules C1, C2). The genera
   a content editor's circle edit brings into circle 1 that have no root are listed by the build with that reason
   (`show_rootless`: after its reports, after `--regroup`, alone with `--rootless`;
   [content.md › Structure](content.md#structure-circles-and-look-alike-pairs)).
 - Shown by the same `rootLine` (counting the shared ending among every fish genus, "among the fish") through `learn.js`
   `treeRoot`, on the one sheet the genus opens (`treeSheets` `go`): its genus page, its one species' sheet, or its
-  family's sheet when it is that family's only genus.
-- `tests/roots.test.js` (every meaning and word in the ETYFish entry, every genus rooted or skipped),
-  `tests/fish.smoke.js` (Zanclus's species sheet, Amphiprion's genus page).
+  family's sheet when it is that family's only genus; a warning names the families in plain text ("Careful: the name
+  echoes the ID tip of Angelfishes (“Spine on the gill cover (opercular spine)”), not one of its own.").
+- `tests/roots.test.js` (every meaning and word in the ETYFish entry, every genus rooted or skipped, every warning
+  another family's cue verbatim, the build's refusals), `tests/fish.smoke.js` (Zanclus's species sheet, Amphiprion's and
+  Pomacentrus's genus pages).
 
 ## Identification groups: the regional key
 

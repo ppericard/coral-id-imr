@@ -1,7 +1,7 @@
 # The Lab and the basics modules
 
-The Tools section (the Lab of prototypes, `proto/`) and the two basics modules that graduated from it into Learn, Coral
-basics and Fish basics. Why each part was decided: [docs/decisions/](../decisions/README.md). The pages and addresses
+The Tools section (the Lab of prototypes, `proto/`) and the basics modules that graduated from it into Learn, Coral
+basics, Fish basics and Sea slug basics. Why each part was decided: [docs/decisions/](../decisions/README.md). The pages and addresses
 around them: [front-end.md](front-end.md); the look of the Lab drawings: [DESIGN.md](../DESIGN.md) "Lab drawings"; the
 fish module's place on the fish path: [FISH_PATH.md](../FISH_PATH.md) "Fish basics".
 
@@ -9,12 +9,13 @@ fish module's place on the fish path: [FISH_PATH.md](../FISH_PATH.md) "Fish basi
 
 `proto/lab.js` holds the hub (`#tools`, `#tools/<id>`), `LAB.files` (the tools, in their order, each in its own
 `proto/<id>.js` registering itself with `LAB.add()`), `LAB_V` (the Lab files' cache version, stamped at deploy) and
-`GRADUATED`, the tools promoted into a section: `idkey` (Identify), `pairs` (Practice), `basics` and `fishbasics`
-(Learn). A graduated tool's page key keeps its id and gets its address in its section (`core.js` `routeOut`); the Tools
-page lists it under "Now in the main sections", except `fishbasics`, which has no address of its own (`hub: false`). The
-section each remaining prototype is meant for is in ROADMAP, the module registry row.
+`GRADUATED`, the tools promoted into a section: `idkey` (Identify), `pairs` (Practice), `basics`, `fishbasics` and
+`seaslugbasics` (Learn). A graduated tool's page key keeps its id and gets its address in its section (`core.js`
+`routeOut`); the Tools page lists it under "Now in the main sections", except `fishbasics` and `seaslugbasics`, which have
+no address of their own (`hub: false`). The section each remaining prototype is meant for is in ROADMAP, the module
+registry row.
 
-The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
+The tools: `basics` (Coral basics), `fishbasics` (Fish basics), `seaslugbasics` (Sea slug basics), `anatomy` (Corallite anatomy), `map` (mind map), `web`
 (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `type` (Type the genus), `gallery`,
 `pairs` (Memory), `samediff` (Same or different?), `oddone` (Odd one out), `matrixgame` (Matrix), `idkey` (the Coral
 ID Key) and `fishkey` ([the Fish ID Key](fish.md#the-fish-id-key-lab)). `cards` is not a tool but the live gallery of the
@@ -64,22 +65,31 @@ from `proto/`) for the tokens and fonts.
 [the fish sheets study](../reviews/2026-11-05-fish-sheets-study.md)); it is removed once he has chosen and the real
 sheet is built.
 
-## One engine, two contents
+## One engine, one content per subject
 
 `proto/basics.js` draws any basics module from its content object C (`id`, `name`, `steps`, `words`, `route(term)`,
 `official(term)`, `key()`, `drawOpt(option, check)`, `hub`, `blurb`, `lede`); Coral basics' is `CORAL` there. It exposes
-`BASICS.add(C)`, which `proto/fishbasics.js` calls (both files in `LAB.files` and in `sw.js`, in that order). The engine
-never names a subject (rule S1): the page key is `basics` for both (`#learn/basics`, `#fish/learn/basics`), and
-`proto/lab.js` `labTool` opens the module of the subject on screen, `UNITS` `basics` `mod` (`basics`, `fishbasics`).
-Styles: `.bx-*` and `.bxd` in `proto/lab.css`, plus `.bx-picks`, `.bx-vfig`, `.bx-gfam` and `.bxf` for the fish.
+`BASICS.add(C)`, which `proto/fishbasics.js` and `proto/seaslugbasics.js` call (the three files in `LAB.files` and in
+`sw.js`, in that order). The engine never names a subject (rule S1): the page key is `basics` for all
+(`#learn/basics`, `#fish/learn/basics`, `#seaslug/learn/basics`), and `proto/lab.js` `labTool` opens the module of the
+subject on screen, `UNITS` `basics` `mod` (`basics`, `fishbasics`, `seaslugbasics`). Styles: `.bx-*` and `.bxd` in
+`proto/lab.css`, plus `.bx-picks`, `.bx-vfig`, `.bx-gfam` and `.bxf` for the drawn modules, `.bx-few`, `.br` and `.tp` for
+the sea slugs'.
+
+**The kit** (`proto/basics.js` `BASICS_KIT`, before the engine in the same file): the pieces the subjects' own modules
+share, read at render time: `drawCheck` (a check whose options are drawings, in a new order each time), `unitFigs` (a few
+units' covers, the Learn tiles' photo `app.js` `cover`, each enlarging with its credit), `groupView` and `groupCheck` (a
+groups step's view, one group and its units' covers, and its check, a unit's cover to place among three groups, blind
+until answered), each module giving its own words (a group's name, the question, the answer's line).
 
 Per subject:
 
-- the record on the device, `basicsKey()` = `subjDev(S.id, 'basics')`: `reefid-basics`, `reefid-fish-basics`, holding
+- the record on the device, `basicsKey()` = `subjDev(S.id, 'basics')`: `reefid-basics`, `reefid-fish-basics`,
+  `reefid-seaslug-basics`, holding
   `last` (the step to resume at), `done` (the checks passed), `walls` or `views` (the views seen), `seen` (the steps
   seen) and `fin` (when it was done). Browser only, never synced, cleared at sign-out with the progress (`sync.js`
   `signOutClear`): on a shared device the next player does not inherit it;
-- `SUBJECTS` `basics: {feat}`: the done feat, `_basics` or `_fbasics`, in the synced achievements record (`progress.js`
+- `SUBJECTS` `basics: {feat}`: the done feat, `_basics`, `_fbasics` or `_sbasics`, in the synced achievements record (`progress.js`
   `achBasics(feat)`), so `app.js` `basicsDone()` (the local `fin` or the synced feat) is true on every device of the
   player; it and `basicsDue()` read the subject on screen's own record and feat, so finishing one never hides the
   other's offers. For the corals the feat also earns the achievement "Coral basics" ([achievements.md](achievements.md));
@@ -92,9 +102,10 @@ Per subject:
 stepper jumps anywhere and Next never waits for a check.
 
 **The Learn card** (`learn.js` `basicsCard`, `basicsArt`) is step 0 of the Learn path, the first block of the Genera
-page ("0 · Coral basics") or of the fish families page (`viewFishList`, "0 · Fish basics"): in the photo's place, the
-steps as a trail of soft discs with line drawings (`BASICS_TRAIL` for the corals; `BASICS_TRAIL_F` and its places
-`BASICS_AT_F` for the fish), one colour per step (`--bt1`…`--bt7`). A step seen is tinted with a ✓, the next one has a
+page ("0 · Coral basics") or of the fish families page and the sea slug genera page (`viewFishList`, "0 · Fish basics",
+"0 · Sea slug basics"): in the photo's place, the steps as a trail of soft discs with line drawings (`BASICS_TRAIL` for
+the corals; `BASICS_TRAIL_F` and its places `BASICS_AT_F` for the fish; `BASICS_TRAIL_S` and `BASICS_AT_S` for the sea
+slugs), one colour per step (`--bt1`…`--bt7`). A step seen is tinted with a ✓, the next one has a
 deeper tint, a ring and "Next: …" ("Start: …" while none is seen), a step not reached is desaturated on a dotted path;
 all are seen once `basicsDone()`. A narrow card (a container query) names only the next stop. The card's line reads
 "7 short steps · about 5 min", then "n of 7 steps seen", then "✓ Done". The coral card always opens step 1
@@ -193,3 +204,38 @@ Photos are never fetched ahead: the covers are the families page's, at render.
 **Tests**: `tests/fishbasics.test.js` (content, wiring, rules) and `tests/pages.smoke.js` `fishBasicsCheck` (390, 768
 and 1280 px: the card, the Home line, every view drawn within 45% of the screen height, the groups from the key, done
 and the corals' record untouched, the offer for "new").
+
+## Sea slug basics (`proto/seaslugbasics.js`)
+
+The sea slugs' twin of Fish basics, on the same engine (`#seaslug/learn/basics`;
+[decision](../decisions/2026-11-20-seaslug-basics.md)): the few body parts that tell the sea slug groups apart on a photo.
+
+**The four steps**, each a step of views:
+
+- `dorid`: a dorid part by part: the parts named, the rhinophores (in their sheaths), the gill circlet, Phyllidia's gills
+  along the sides, the mantle and its skirt, the oral tentacles;
+- `cerata`: an aeolid's parts, its cerata, the cnidosac at their tips;
+- `others`: a sea hare's parapodia, a sacoglossan's, Chelidonura's headshield, a side-gilled slug's gill (drawn facing
+  right: the side seen is its right side, where its gill is);
+- `groups`: the groups of the Learn page (`seaslug.json` `taxa`, WoRMS; `TREEU.taxa`) that hold genera of the slate, in
+  their order, each by its name (no number), its icon one of the drawings, up to six of its genera's covers (the slate's
+  order) and a sourced line matched on its name (`GROUP`), the classification cited under it.
+
+**Figures.** Every view is a drawing of ours (theme tokens only, the part taught in `--hl`, a text alternative) and, under
+it, the covers of up to three genera of the game that show the part (`gen`, by their names; a genus the game does not
+hold drops out), each enlarging with its credit (`BASICS_KIT.unitFigs`, `.bx-few`).
+
+**Checks**: `draw` (a dorid with one part highlighted; a whole aeolid, dorid or sea hare; the other sea slugs) and the
+groups' photo check (`BASICS_KIT.groupCheck`).
+
+**Sources** (`REF`): the Sea Slug Forum's fact sheets (Rudman, Australian Museum) and Wikipedia's "Nudibranch" at a fixed
+revision, each line naming those it rests on; `official` gives a source's own line, verbatim, for a few words. The
+sources' old group names (Notaspidea, Anaspidea) are said as theirs; the groups' names are WoRMS's (rule C5). The genera
+named are the game's; no species is in a cue line, the only species on screen being in the source lines, the titles of
+the fact sheets read, each a species of the game (rule C6).
+
+**Tests**: `tests/seaslugbasics.test.js` (content, sources, line lengths, the genera, wiring, Basics open) and
+`tests/seaslug.smoke.js` part 7 (390 and 1280 px: the card, the Home line, every view's drawing within 45% of a phone's
+height, and on a phone the picker, figure and sentence with its source, and the answered check, each within the room
+between the header and the tab bar; the groups from `taxa`, the checks, done, the corals' and the fish's records
+untouched, the Tools page's line).

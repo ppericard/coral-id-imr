@@ -364,7 +364,8 @@ tests (AGENTS.md "Working mode").
   groups, as the token plus a short list of admin accounts kept apart, not editable from the Groups page and shown in
   the Audit. So the stored ids `editor` and `owner` are not renamed `curator` and `manager`: the migration creates
   groups of those names instead (the migration's detail is the groups-carry-rights study's: as its question 6 proposes,
-  the Roles tab is kept read-only as the record). Section 8's "Stored ids" bullet above is superseded by that.
+  the Roles tab is kept as the record, its `admin` rows still the admin list). Section 8's "Stored ids" bullet above is
+  superseded by that.
 
 - **(a) The entry's name.** A briefcase icon in the header for role holders, where the Sign in pill sits for a
   signed-out player. "My tools" would clash with **Tools** (the Lab). *Recommendation: "Workspace".* Others: "Teach &

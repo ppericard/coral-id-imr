@@ -1308,7 +1308,7 @@ test("groups (v48): the admin adds and removes players of a beta subject's group
     {Ana: ['fish'], 'Ana B': ['fish'], Ben: ['fish']},
     'the admin list'
   );
-  assert.deepStrictEqual([...s.sheets.Groups.rows[0]], ['Group', 'Name', 'Added']);
+  assert.deepStrictEqual([...s.sheets.Groups.rows[0]], ['Group', 'Name', 'Added', 'Code hash']);
   // Out again.
   assert.strictEqual(s.post({userGroup: 'Ben', group: g, on: false, token: TOK}).n, 1);
   assert.deepStrictEqual(groups('Ben', '1111'), []);

@@ -480,8 +480,9 @@ test('fish circles on the path (Pierre, 2026-11-06, Q175): no circle opt-in set,
   const S = C.SUBJECTS.find(x => x.id === 'fish'),
     html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
     app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  // beyond: circle 3 opened by choice, offered by a card and My progress, never a ⚙ row.
-  assert.deepStrictEqual(S.optin, ['sci', 'beyond']);
+  // beyond: circle 3 opened by choice, offered by a card and My progress, never a ⚙ row; sp: the What I learn card's
+  // Common names row.
+  assert.deepStrictEqual(S.optin, ['sci', 'beyond', 'sp']);
   assert.ok(!/data-optin="(c[23]|beyond)"/.test(html) && !/SVS video extras|Beyond IMR/.test(html), 'no circle row in ⚙');
   assert.ok(app.includes('slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : [])'), 'the fish slate holds every circle');
   // A stored c3 choice is not an opt-in: a merge does not force it on.
