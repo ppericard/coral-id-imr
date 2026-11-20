@@ -63,7 +63,9 @@ not estimable on that much data.
 
 **2B** (`checks.js` `RULES`). Each answer scored before it moves anything, the same person term (the app's unit
 ability, replayed per player as the sheet's replay does it: the unit given in a miss, a fish species' starting unit,
-a smaller fault's weight), memory, mix-ups and format terms in every arm; an answer without photos is scored by no arm; the SDs of arms 2-4 from `fit.py --half`
+a smaller fault's weight), memory, mix-ups and format terms in every arm, and the same trust (each prediction on the
+answers before it, each player trusted on those answers alone, as the sheet's pass); an answer without photos is scored
+by no arm; the SDs of arms 2-4 from `fit.py --half`
 on the other half of the players (P1 A, P2 B, P3 B, P4 A, ...).
 
 - **Primary**: next-answer log-loss on fish answers whose photos each had fewer than 3 earlier trusted answers, arm 2

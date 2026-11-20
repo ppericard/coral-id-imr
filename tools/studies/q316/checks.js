@@ -168,13 +168,51 @@ function liveArm(rows, tick) {
 
 // ---- Arms 2-4: the shared chain with a Kalman split. sd: the level SDs; fx: the rank offsets and the ease weight;
 // person: 'chain' (2, 3), 'delta' (4b), 'centred' (4c); sib: the sibling term (3).
+// Trust as the live arm has it: each prediction on the answers before it, every one of them weighed by the players'
+// trust on those answers alone (core.js trustOf, as eloOf(before) applies it), so a player trusted later moves no rating
+// before; when the set of trusted players changes, the arm is replayed from the start under the new set. opt.trust
+// 'given': each row's own tr instead (the test's reference).
 function sharedArm(rows, sd, fx, opt = {}) {
+  const out = new Array(rows.length).fill(null),
+    given = opt.trust === 'given',
+    cnt = {};
+  let S = null,
+    key = null;
+  const trusted = p => {
+    const t = cnt[p];
+    return !!t && t[0] >= C.TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= C.TRUST.Z;
+  };
+  const trustKey = () =>
+    Object.keys(cnt)
+      .filter(trusted)
+      .sort()
+      .join('\u0000');
+  for (let i = 0; i <= rows.length; i++) {
+    const k = given ? '' : trustKey();
+    if (S === null || k !== key) {
+      S = sharedState(sd, fx, opt);
+      for (let j = 0; j < i; j++) S.apply(rows[j], j, given ? rows[j].tr : trusted(rows[j].p));
+      key = k;
+    } else S.apply(rows[i - 1], i - 1, given ? rows[i - 1].tr : trusted(rows[i - 1].p));
+    if (i === rows.length) break;
+    out[i] = S.predict(rows[i]);
+    const r = rows[i],
+      t = (cnt[r.p] = cnt[r.p] || [0, 0, 0, 0]);
+    t[0]++;
+    t[1] += r.y ? 1 : 0;
+    t[2] += r.g;
+    t[3] += r.g * (1 - r.g);
+  }
+  return {d: out, m: S.m};
+}
+
+// One shared arm's state: apply(r, i, trusted) one answer's steps, predict(r) the question's difficulty before it.
+function sharedState(sd, fx, opt) {
   const m = {},
     v = {},
     R = {},
     n = {},
     dl = {},
-    out = new Array(rows.length).fill(null),
     who = opt.person || 'chain';
   const comps = r => {
     const L = [];
@@ -186,7 +224,9 @@ function sharedArm(rows, sd, fx, opt = {}) {
     return L;
   };
   const rank = r => (r.rk === 'genus' ? fx.r_genus || 0 : r.rk === 'species' ? fx.r_species || 0 : 0);
-  rows.forEach((r, i) => {
+  const diff = (r, L) => rank(r) + L.reduce((t, [c, , a, m0]) => t + a * (c in m ? m[c] : m0), 0) + r.solo;
+  const predict = r => diff(r, comps(r));
+  const apply = (r, i, isTrusted) => {
     const L = comps(r);
     L.forEach(([c, s, , m0]) => {
       if (!(c in m)) {
@@ -194,8 +234,7 @@ function sharedArm(rows, sd, fx, opt = {}) {
         v[c] = s * s;
       }
     });
-    const b = rank(r) + L.reduce((t, [c, , a]) => t + a * m[c], 0) + r.solo;
-    out[i] = b;
+    const b = diff(r, L);
     const ra = (R[r.p] = R[r.p] == null ? C.PLAYER0 : R[r.p]),
       nn = n[r.p] || 0;
     let theta = ra;
@@ -213,7 +252,7 @@ function sharedArm(rows, sd, fx, opt = {}) {
       e = r.g + (1 - r.g) * s,
       d = r.y - e,
       ee = Math.max(1e-6, e * (1 - e));
-    if (r.tr) {
+    if (isTrusted) {
       const w = nn / (nn + C.PHOTO_W.N),
         a = ((1 - r.g) * s * (1 - s)) / ee,
         h = ((1 - r.g) * s * (1 - s)) ** 2 / ee,
@@ -227,8 +266,8 @@ function sharedArm(rows, sd, fx, opt = {}) {
     // the sheet's chain: every answer moves it (eloReplay's rule), against this arm's expectation
     R[r.p] = ra + (0.6 / (1 + nn / 40)) * (r.y - (r.g + (1 - r.g) * sig(ra - b - r.mem - r.cf + r.df)));
     n[r.p] = nn + 1;
-  });
-  return {d: out, m};
+  };
+  return {m, apply, predict};
 }
 
 // A unit's difficulty from component means (fish: rank offset + family + genus + species down to the unit; corals: the

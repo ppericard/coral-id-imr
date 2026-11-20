@@ -218,6 +218,49 @@ test('checks.js: the paired test over players and its declared floor; the Kalman
   );
 });
 
+test('checks.js: the shared arm trusts a player as the live arm does, on the answers before each prediction only', () => {
+  const C = require(path.join(ROOT, 'core.js'));
+  // P2 is trusted on the whole log but not on its first answers (a slow start); P1 always
+  const rows = [];
+  for (let i = 0; i < 60; i++) {
+    const p = i % 2 ? 'P2' : 'P1',
+      j = Math.floor(i / 2);
+    rows.push({
+      p,
+      u: 'G' + (i % 3),
+      rk: 'genus',
+      F: null,
+      G: 'G' + (i % 3),
+      S: null,
+      ph: ['ph' + (i % 5)],
+      ez: [0],
+      g: 0.25,
+      y: p === 'P1' ? (i % 7 ? 1 : 0) : j < 12 ? (j % 3 ? 0 : 1) : 1,
+      mem: 0,
+      cf: 0,
+      df: 0,
+      solo: 0.5
+    });
+  }
+  const sd = {gen: 0.3, photo: 0.46},
+    eloRow = r => [r.p, 0, r.u, r.u, r.y, 'quiz', r.ph.join(' '), null, null, null, 'a b c d', 0];
+  // the reference: for each answer, the arm run afresh on the answers before it, each trusted as core.js trustOf says on
+  // those answers alone (what eloOf(before) does for the live arm)
+  const want = rows.map((r, i) => {
+    const before = rows.slice(0, i),
+      T = C.trustOf(before.map(eloRow));
+    return K.sharedArm([...before.map(x => ({...x, tr: !!T[x.p]})), r], sd, {}, {trust: 'given'}).d[i];
+  });
+  const whole = C.trustOf(rows.map(eloRow));
+  assert.ok(whole.P2 && !C.trustOf(rows.slice(0, 20).map(eloRow)).P2, 'the planted log: P2 trusted late');
+  const got = K.sharedArm(
+    rows.map(r => ({...r, tr: !!whole[r.p]})),
+    sd,
+    {}
+  ).d;
+  got.forEach((x, i) => assert.ok(Math.abs(x - want[i]) < 1e-12, `answer ${i}: ${x} against ${want[i]}`));
+});
+
 test('checks.js: Q136 centring, its declared rule on planted logs (not centred, centred, too few units)', () => {
   const plant = (slopeOnGd, units = 12) => {
     const rows = [],
@@ -367,7 +410,8 @@ test(
     assert.ok(o.laplace < 1e-4, 'sparse against dense: ' + o.laplace);
     const [est, [lo, hi]] = o.gen;
     assert.ok(est > 0.7 && est < 1.5 && lo < 1 && hi > 1, JSON.stringify(o.gen));
-    assert.deepStrictEqual(o.rule, {pass: 'pass', bias: 'fail', cover: 'fail', short: 'the measure cannot tell'});
+    const CT = 'the measure cannot tell';
+    assert.deepStrictEqual(o.rule, {pass: 'pass', bias: 'fail', cover: 'fail', short: CT, reps40: CT, reps10: CT});
     assert.ok(o.deadline && o.finite);
     assert.deepStrictEqual(o.cap, {fit: true, short: true, run: [40, 10, 40]}, 'never past 40 minutes (rule L11)');
   }

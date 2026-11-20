@@ -88,6 +88,9 @@ def main():
         'bias': Q.verdict([0.45] * 20, 0.3, 20, 20, 20)['verdict'],
         'cover': Q.verdict([0.3] * 20, 0.3, 14, 20, 20)['verdict'],
         'short': Q.verdict([0.3] * 12, 0.3, 12, 12, 20)['verdict'],
+        # another replicate count is not the declared test: no pass at 15 of 40, none at 10 of 10
+        'reps40': Q.verdict([0.3] * 40, 0.3, 15, 40, 40)['verdict'],
+        'reps10': Q.verdict([0.3] * 10, 0.3, 10, 10, 10)['verdict'],
     }
     clock = Q.Clock(deadline=1.0)
     try:

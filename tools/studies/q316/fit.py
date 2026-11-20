@@ -37,6 +37,7 @@ fit: the export tools/studies/q316/prep.js writes (kept outside the repository).
 (prep.js's split) only, for the replay's held-out SDs. --no-accept: the fit alone (the halves, the replay's reference). --sibling (fish, exploratory): the "tell it from its
 siblings" genus term. --coral-family (corals, exploratory): the coral families of tools/taxonomy.json as a level.
 synth: the study's synthetic designs (no player), the estimator's own check; its figures are in the README.
+--reps other than 20 runs the refits for a look (timing, a quick trial) but gives no verdict ("the measure cannot tell").
 The clock: one deadline (--deadline, epoch seconds, from tools/studies/q316/run.py) or --budget minutes from the start
 (default 40, rule L11); past it the run stops, writes what it has and marks the rest "the measure cannot tell".
 Read-only: reads its input, writes only its output file, prints aggregates and P1, P2... labels, never a name.
@@ -457,8 +458,9 @@ def accept(D, truth, reps, rng, clock=None, log=None):
 
 def verdict(est, true, covered, done, reps):
     """ACCEPT's rule on one value: passes when |mean bias| <= bias and the 90% interval covered the truth in >= cover of
-    the reps; fewer replicates than reps finished (the deadline): the measure cannot tell."""
-    if done < reps:
+    the declared reps; fewer replicates finished (the deadline), or another count asked (--reps): the measure cannot
+    tell, as the coverage threshold is declared for 20 only."""
+    if done < reps or reps != ACCEPT['reps']:
         return {'truth': true, 'done': done, 'verdict': CANNOT_TELL}
     bias = float(np.mean(est) - true)
     ok = abs(bias) <= ACCEPT['bias'] and covered >= ACCEPT['cover']
