@@ -10,10 +10,14 @@ here (rule A1).
 tools/instance.json names the instance (id, name), its centre (presence near it: tools/presence.py, rule C8) and its
 layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance's, in tools/instances/imr/:
 
-- fish: start (the starter core), look (the declared look-alike groups of families) and nodes {teaching node id:
-  {circle, cues, look, phase}} (a sub-entry: cues, look, phase). fish_source() lays them on tools/fish_source.json, and
-  tools/build_fish.py reads the result, the same source it read before step 5. The base never carries them: a node of
-  the base with one of them, or a layer node the base does not hold, stops the build.
+- fish: start (the starter core), look (the declared look-alike groups of families), nodes {teaching node id:
+  {circle, src, sign, sl, cues, look, phase}} (a sub-entry: sl, cues, look, phase) and species {species id: {sl}}.
+  src is the IMR tag ("imr": the entries of the IMR fish presentation), sign: false marks an entry off the
+  presentation's dive-sign list, sl the presentation's slides. fish_source() lays them on tools/fish_source.json, and
+  tools/build_fish.py reads the result. The base never carries them (its src is the other sources': pdf, diver,
+  wink): a node or species of the base with one of them, or a layer node or species the base does not hold, stops the
+  build. A teaching node's names (name, fam), ref and species stay in the base: the IMR names are the entries the tag
+  marks, and an edition without the layer has no IMR tag, slide or cue on its entries.
 - coral: imrg (the IMR lecture's groups), gen {genus: {n, ig, imr, mn, sl, rsl, qt}} (its slate number, its lecture
   group, its lecture notes verbatim, its mnemonic, its lecture slides and review slides, its ID tips: the tips of a
   genus with a Coral Finder heading, tl, stay in data.json, condensed from the book) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
@@ -43,8 +47,13 @@ INSTANCE_PATH = ROOT / "tools" / "instance.json"
 FISH_SOURCE = ROOT / "tools" / "fish_source.json"
 DATA = ROOT / "data.json"
 
-FISH_NODE = ("circle", "cues", "look", "phase")  # a teaching node's fields that are the instance's
-FISH_SUB = ("cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle)
+# A teaching node's fields that are the instance's. src is the IMR tag only ("imr", the presentation's entries): the
+# other sources (pdf, diver, wink) are the sources' and stay in tools/fish_source.json. sign: false marks an entry the
+# presentation's dive-sign list lacks.
+FISH_NODE = ("circle", "src", "sign", "sl", "cues", "look", "phase")
+FISH_SUB = ("sl", "cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle)
+FISH_SPECIES = ("sl",)  # a species' fields that are the instance's: the slide of the presentation that names it
+FISH_TAG = "imr"  # the one value of src the layer holds
 FISH_TOP = ("start", "look")
 # A genus's fields that are the instance's, and where they sit in data.json's record: n (its slate number, 0 for a starred
 # genus) after tr, then ig, imr and mn after it; sl (its lecture slides) after lsrc, then qt (its ID tips) and rsl (its
@@ -52,7 +61,7 @@ FISH_TOP = ("start", "look")
 CORAL_AFTER = {"n": "tr", "ig": "n", "imr": "ig", "mn": "imr", "sl": "lsrc", "qt": "sl", "rsl": "sl"}
 CORAL_TOP_AFTER = {"imrg": "key"}
 CORAL_PAIR_AFTER = {"look": "crit", "lsrc": "levels"}  # where a genus's look and lsrc sit, should a record lack them
-SPLIT = ("nodes", "gen", "pairs")  # a layer file's maps written one entry per line
+SPLIT = ("nodes", "species", "gen", "pairs")  # a layer file's maps written one entry per line
 
 
 def instance(path=INSTANCE_PATH):
@@ -106,8 +115,8 @@ def write_layer(subject, lay, path=None):
 
 def fish_compose(base, lay):
     """tools/fish_source.json (base) with the instance's layer laid on: the source tools/build_fish.py reads. Stops when
-    the base still carries a field of the layer (an edit made in the old place, say by a merge) or the layer names a
-    node the base does not hold."""
+    the base still carries a field of the layer (an edit made in the old place, say by a merge; a src other than the
+    layer's tag is the base's) or the layer names a node or species the base does not hold."""
     src, bad = copy.deepcopy(base), []
     for k in FISH_TOP:
         if k in src:
@@ -117,9 +126,14 @@ def fish_compose(base, lay):
         by[t["id"]] = (t, FISH_NODE)
         for u in t.get("sub", []):
             by[u["id"]] = (u, FISH_SUB)
+    sp = {s["id"]: s for s in src.get("species", [])}
     for n, (rec, keys) in by.items():
         for k in keys:
-            if k in rec:
+            if k in rec and not (k == "src" and rec[k] != FISH_TAG):
+                bad.append(f"tools/fish_source.json {n} {k}: the instance's (its layer file)")
+    for n, s in sp.items():
+        for k in FISH_SPECIES:
+            if k in s:
                 bad.append(f"tools/fish_source.json {n} {k}: the instance's (its layer file)")
     for n, x in (lay.get("nodes") or {}).items():
         if n not in by:
@@ -129,8 +143,19 @@ def fish_compose(base, lay):
         for k, v in x.items():
             if k not in keys:
                 bad.append(f"layer node {n} {k}: not a field of the layer ({', '.join(keys)})")
+            elif k == "src" and (v != FISH_TAG or "src" in rec):
+                bad.append(f"layer node {n} src: only the tag {FISH_TAG!r}, on a node whose source the base does not name")
             else:
                 rec[k] = copy.deepcopy(v)
+    for n, x in (lay.get("species") or {}).items():
+        if n not in sp:
+            bad.append(f"layer species {n}: no species of tools/fish_source.json")
+            continue
+        for k, v in x.items():
+            if k not in FISH_SPECIES:
+                bad.append(f"layer species {n} {k}: not a field of the layer ({', '.join(FISH_SPECIES)})")
+            else:
+                sp[n][k] = copy.deepcopy(v)
     if bad:
         sys.exit("the instance's layer (tools/instance.py):\n  " + "\n  ".join(bad))
     for k in FISH_TOP:

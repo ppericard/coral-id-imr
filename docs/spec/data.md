@@ -400,14 +400,19 @@ and step 5); the content editor's edits are the third layer, in `curation.json` 
 ([content.md](content.md)), never at build. `tools/instance.json` names the instance (`id` `imr`, `name`), its `centre`
 and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR instance's, in `tools/instances/imr/`:
 
-- **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families) and `nodes` {teaching
-  node or sub-entry id: `circle` (nodes only), `cues`, `look`, `phase`}. `tools/instance.py` `fish_source` lays them on
+- **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families), `nodes` {teaching
+  node or sub-entry id: `circle`, `src` and `sign` (nodes only), `sl`, `cues`, `look`, `phase`} and `species` {species id:
+  `sl`}. `src` is the IMR tag (`"imr"`, the 27 entries of the IMR fish presentation: `fish.json` `families[].imr` is
+  the entry's name as IMR writes it), `sign: false` an entry off the presentation's dive-sign list, `sl` the
+  presentation's slide numbers (a species': the slide that names it). `tools/instance.py` `fish_source` lays them on
   `tools/fish_source.json` (the sources' part), and `tools/build_fish.py` reads the result in every mode. It stops when
-  the base still carries one of those fields (an edit made in the old place, a merge) or when the layer names a node the
-  base does not hold. The offline modes (`--regroup`, `--commonness`, `--near`) lay the layer again on `fish.json` as it
-  is (`relay`: cues, look and phase taken off and put back where the build writes them, `start`, then the families), so
-  an edit of those needs no WoRMS call; a changed circle stops them (the species' circles and their presence test follow
-  it: the full build).
+  the base still carries one of those fields (an edit made in the old place, a merge; the base's own `src`, `pdf`,
+  `diver` or `wink`, is not the layer's) or when the layer names a node or species the base does not hold. The offline
+  modes (`--regroup`, `--commonness`, `--near`) lay the layer again on `fish.json` as it is (`relay`: slides, cues,
+  look and phase, the tag and the mark, the species' slides, taken off and put back where the build writes them,
+  `start`, then the families), so an edit of those needs no WoRMS call; a changed circle stops them (the species'
+  circles and their presence test follow it: the full build). An edition without the layer has no IMR tag, slide or
+  mark on its entries, and the families then carry no `imr` name.
 - **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `n` (its number on the IMR slate, 0 for a starred
   genus), `ig`, `imr`, `mn`, `sl` and `rsl` (its Lecture 6 slide numbers and review slide numbers, when it has them),
   `qt` (its short ID tips, condensed from the lecture notes: `tools/id_tips.txt`)} and `pairs`, the IMR
@@ -436,7 +441,9 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
-- **Not in the layer yet** (easy to move later): the fish slide references (`sl`, laid by `build_fish.py`'s `relay`);
-  the IMR tag (`src: imr`, `sign`, the teaching nodes' IMR names); the references of the lecture photos
+- **Not in the layer yet** (easy to move later): the fish teaching nodes' names, `fam`, references (`ref`, `pdf`) and
+  tree (they identify the entries, and the layer holds fields of an entry the base names, never an entry); the IMR PDF's
+  common names and sections (`common`, `pdf`, `sec`, `cs`) and the species' `src` of the species the slides name; the
+  references of the lecture photos
   (`data.json` `course`, photos marked `imr`); the coral slate's structure beyond each genus's number (the starred
   genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`); and `deploy` (the key in force).
