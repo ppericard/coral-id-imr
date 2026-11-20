@@ -73,7 +73,7 @@ from the sources each family lists (the FishBase family summaries for circle 1) 
 them, is built into `fish.json` families by `tools/build_fish.py` `add_families` (`marks`, `life`, `apart`, `msrc`;
 `--regroup` applies an edit offline). The sheet shows them under the IMR tips with their sources and a "Report or correct
 a line" link (`learn.js` `fishMarks`), and the `apart` lines on the look-alike cards for the pairs IMR gives no words
-for. Where a source differs from IMR, a point goes to `points.json` (rule C5).
+for. Where a source differs from IMR, a point goes to `data/points.json` (rule C5).
 
 **A family IMR gives no cue for** (circles 2 and 3, the Soapfishes) has 1 to 3 ID marks of its own, what to look at on a
 photo, each checked against two sources at least (its `src`: FishBase, Fishes of Australia, Reef Life Survey,

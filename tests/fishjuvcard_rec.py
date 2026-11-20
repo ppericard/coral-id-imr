@@ -1,7 +1,6 @@
 """The fish game's record of each photo in play, as tools/fish_game.py would build it from the judging today
 (tests/fishjuvcard.test.js runs it): prints one JSON line {photo: {jt, ph}} for every photo in play whose judging note or
-code concerns a juvenile, and the two photos Pierre reported on 2026-11-20 (fish-s597-cand-254656964, a juvenile
-sweetlips judged a sub-adult; fish-s330-cand-551266134, whose own note says it is no juvenile)."""
+code concerns a juvenile, and fish-s330-cand-551266134 (a goatfish whose own note says it is no juvenile)."""
 import json
 import os
 import re
@@ -19,6 +18,6 @@ for sid, p, orig, route in G.in_play(cur, cand, sug, fish, refs, codes, keep):
     r = G.record(sid, p, F, sug, orig, species, route)
     f = r['f']
     note = ((sug or {}).get(f) or {}).get('n') or ''
-    if re.search(r'juvenile', note, re.I) or 'j' in (r.get('jt') or '')[7:] or f in ('fish-s597-cand-254656964', 'fish-s330-cand-551266134'):
+    if re.search(r'juvenile', note, re.I) or 'j' in (r.get('jt') or '')[7:] or f == 'fish-s330-cand-551266134':
         out[f] = {'jt': r.get('jt'), 'ph': r.get('ph'), 'note': note}
 print(json.dumps(out, sort_keys=True))

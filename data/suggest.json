@@ -4911,7 +4911,7 @@
   "s597": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-14",
     "n": 48
    }
   },
@@ -172452,10 +172452,10 @@
    "k": "dup"
   },
   "fish-s597-cand-254656964": {
-   "jt": "p1g0sm1j",
+   "jt": "p1g0sm1",
    "e": 3,
    "k": "best",
-   "n": "A juvenile, not a sub-adult (Pierre, 2026-11-20): j and no phase."
+   "ph": "subadult"
   },
   "fish-s597-cand-258269683": {
    "jt": "o1g1sls",
