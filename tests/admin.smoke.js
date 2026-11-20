@@ -9845,7 +9845,27 @@ async function loadPart(b, base, fails) {
       // (fish.rot), and both left in the draft for the Publish below.
       {
         await go('photos/candidates');
-        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        const G = await p.evaluate(() =>
+          Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.imr && !x.r && !crOf(x.f) && !roOf(x.f)))
+        );
+        // An IMR lecture photo traced to its original has no Crop tool: its framing is the lecture's, and a crop saved for it
+        // would never reach its R2 file (Codex review of #1292).
+        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r)));
+        if (L) {
+          await goGenus(L);
+          const lc = await p.evaluate(n => {
+            const imr = new Set(
+              photos(n)
+                .filter(x => x.imr && x.src)
+                .map(x => x.f)
+            );
+            return [...document.querySelectorAll('#view .adm-tile[data-f]')]
+              .filter(t => imr.has(t.dataset.f))
+              .map(t => !!t.querySelector('[data-act="crop"]'));
+          }, L);
+          if (!lc.length || lc.some(Boolean))
+            fails.push(`${w}px Rotate: a lecture photo's tile on ${L} has the Crop tool: ${JSON.stringify(lc)}`);
+        } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
         const f = await p.evaluate(() => {
           const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
