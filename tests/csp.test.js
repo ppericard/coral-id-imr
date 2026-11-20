@@ -23,7 +23,7 @@ for (const page of ['index.html', 'admin.html'])
     }
   });
 
-// Every remote photo the admin shows (the fish candidates in fish-cand.json: iNaturalist and FishBase; the fish auto
+// Every remote photo the admin shows (the fish candidates in data/fish-cand.json: iNaturalist and FishBase; the fish auto
 // decisions panel draws them) comes from a host the admin's img-src allows.
 test('admin.html: img-src allows every host of the fish candidates', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8'),
@@ -33,7 +33,7 @@ test('admin.html: img-src allows every host of the fish candidates', () => {
       .map(x => x.trim())
       .find(x => x.startsWith('img-src'))
       .split(/\s+/),
-    cand = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-cand.json'), 'utf8')).cand,
+    cand = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/fish-cand.json'), 'utf8')).cand,
     hosts = new Set(
       Object.values(cand)
         .flat()
@@ -43,7 +43,7 @@ test('admin.html: img-src allows every host of the fish candidates', () => {
 });
 
 // When R2 fails, a photo with an online original is read from it (core.js photoAway): every host of those originals
-// (data.json, cand.json, fish-photos.json and fish-game.json src: iNaturalist, FishBase) must be allowed by the app's
+// (data.json, data/cand.json, fish-photos.json and fish-game.json src: iNaturalist, FishBase) must be allowed by the app's
 // img-src, or the fallback would be blocked.
 test('index.html: img-src allows every host of the photos’ online originals', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'),
@@ -60,7 +60,7 @@ test('index.html: img-src allows every host of the photos’ online originals', 
       if (typeof o.f === 'string' && typeof o.src === 'string' && /^https:/.test(o.src)) hosts.add(new URL(o.src).origin);
       Object.values(o).forEach(walk);
     };
-  for (const f of ['data.json', 'cand.json', 'fish-photos.json', 'fish-game.json'])
+  for (const f of ['data.json', 'data/cand.json', 'fish-photos.json', 'fish-game.json'])
     walk(require('../core.js').treeGameRead(JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')))); // records whole
   assert.ok(hosts.size >= 2, 'online originals found');
   hosts.forEach(h => assert.ok(img.includes(h), `${h} missing from index.html img-src`));

@@ -9,7 +9,7 @@ and give the same kind of result.
 
 Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `tools/fish_source.json`);
 `tools/fish_game.py` reads them for the reference photos it puts in play, `tools/judging_fish.py` writes the candidates'
-into `suggest.json`, and `python3 tools/fish_judge.py` prints the summary of the photos in play (`fish-game.json`).
+into `data/suggest.json`, and `python3 tools/fish_judge.py` prints the summary of the photos in play (`fish-game.json`).
 Until 2026-11-15 it also wrote them into the stopgap list of `fish-photos.json` (remote iNaturalist photos, retired).
 `tests/fish.test.js` checks that every code is valid, that the caps below hold and that every circle-1 entry has 5 very
 easy photos in play. The sea slugs' rubric, [SEASLUG.md](SEASLUG.md), adapts this one on the same tools (`--subject
@@ -86,7 +86,7 @@ the fish itself is poorly lit).
 
 ## The observer's life stage (2026-11-19)
 
-The life stage the observer recorded, or FishBase gives (`fish-cand.json` `st`; "iNat: juvenile" on the sheets), is the
+The life stage the observer recorded, or FishBase gives (`data/fish-cand.json` `st`; "iNat: juvenile" on the sheets), is the
 photo's: `j` when it says juvenile, no `j` when it says adult. The judge compares images, it does not settle biology
 (Pierre, 11:43: "Il peut émettre un avis, mais son avis pèse beaucoup moins qu'un observateur humain, sauf s'il a des
 preuves solides").
@@ -139,7 +139,7 @@ re-rated blind (the decision's "The re-rate"; `judging/fish-juvenile-rerate.json
 A photo that a reference source uses to represent the species (FishBase's main picture of the species, iNaturalist's
 taxon cover) is a strong hint of a good photo, and enters the base first; once in, it is judged and placed on what it
 shows, like any other photo (rule P1; [the decision](../docs/decisions/2026-11-19-fish-reference-from-photo.md)). The
-data tags them (`rep`: `"fishbase"` or `"inaturalist"`, on `fish-cand.json` candidates and `fish-photos.json` sheet
+data tags them (`rep`: `"fishbase"` or `"inaturalist"`, on `data/fish-cand.json` candidates and `fish-photos.json` sheet
 photos; `tools/fetch_fishbase.py`, `tools/fetch_fish.py --rep`). The judge never types anything for it and judges the
 photo on what it shows; the tool adds the flag `r`, which **never changes the ease** (`tools/fish_judge.py` `cap`): one
 judgement per photo, whatever its route in. The flag weighs nothing in the order (`core.js` `refScore`) nor in the
@@ -178,7 +178,7 @@ never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `mo
 ## One judgement per photo (2026-11-15)
 
 Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: as a reference photo (`tools/fish_refs.json`
-`fi<id>` or `fb<stem>`, its code in `tools/fish_judge.json`) and as a candidate (`fish-cand.json`
+`fi<id>` or `fb<stem>`, its code in `tools/fish_judge.json`) and as a candidate (`data/fish-cand.json`
 `fish-<species>-cand-<id>`, judged in `judging/fish/<species>.json`). They are one photo (`tools/fish_game.py` `pid`), so:
 
 - **The candidate's judging file is the single source** of such a photo: its code, its `keep` within the observation, its
@@ -195,7 +195,7 @@ Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: 
   juvenile flag 85, the ease by two points or more 105, whether the photo may play 32, the legacy count `m` 2, a reference
   copy in play while its candidate judgement was unsure 2; a photo may count twice). Those 183 were judged again once,
   blind to both earlier codes, on sheets of 6 at 480 x 360 px and at 1,024 px for the close calls (the juveniles); then,
-  where the observer's or FishBase's life stage (`fish-cand.json` `st`) said juvenile and the look said adult, the `j` flag
+  where the observer's or FishBase's life stage (`data/fish-cand.json` `st`) said juvenile and the look said adult, the `j` flag
   was taken (36 photos: nothing on the photo against it, and the harder value is the rubric's when a tag cannot be
   settled; the build reads `st` as the phase of a photo whose code has no `j` anyway, `tools/fish_game.py` `phase`). The
   new code is the single judgement.
@@ -206,7 +206,7 @@ Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: 
   flag or whether the photo may play, it is proposed to him in the admin's Photo review › Light proposals, "One judgement
   per photo" (`judging/fish-one-judgement.json`, 38 photos; `admin-light.js` `LIGHT_SETS`).
 - **The same ease on every route**: the reference flag `r` comes from the record's `rep`, which only the reference
-  record carries for 423 of these photos (`fish-cand.json` tags only the taxon's cover; `tools/fish_refs.json` every
+  record carries for 423 of these photos (`data/fish-cand.json` tags only the taxon's cover; `tools/fish_refs.json` every
   photo of the taxon page); it adds nothing to the ease, so the same code gives the same ease whichever way the photo
   came in ("Reference photos" above).
 
@@ -340,7 +340,7 @@ so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` c
   a 10 x 10 grid to half a tenth (0.05), rounded outward, never cutting the fish. When the photo does not settle it (the
   fish runs out of the frame after all, the subject is unclear, a thread may or may not be the fish's), leave the box out:
   a photo without a box simply has no tile.
-- **Where it goes**: a candidate's box is its judging file's `bb` (imported into `suggest.json` `"fish"` `bb`; `unsure`
+- **Where it goes**: a candidate's box is its judging file's `bb` (imported into `data/suggest.json` `"fish"` `bb`; `unsure`
   may name `bb`, which withholds its tile only: a candidate with no other doubt still enters play); a photo already judged (a game, reference or stopgap photo, or a candidate judged
   before rubric 7) gets it from a **box pass**: `python3 tools/fish_judge.py --boxes <dir> [--only t01,t02] [--n 3]` draws
   the photos in play that pass the tile rule and have no box yet (the easiest first, one per observation), 9 to a sheet at
@@ -380,9 +380,9 @@ crop, `fill`). Pierre checks the first tiles on one contact sheet (Q321 D4); aft
   most common first (`openPick`): an entry's difficulty is the mean of its photos' difficulty, so the judged ease
   orders it too.
 
-## Candidates (`fish-cand.json`): the same code, plus three fields
+## Candidates (`data/fish-cand.json`): the same code, plus three fields
 
-One fish judging vocabulary (Pierre, 2026-11-04): the candidate photos waiting in `fish-cand.json` (`tools/fetch_fish.py`)
+One fish judging vocabulary (Pierre, 2026-11-04): the candidate photos waiting in `data/fish-cand.json` (`tools/fetch_fish.py`)
 are judged with the code above, its caps and its crop rule, **visual criteria only**, so a photo keeps its tags when it
 moves from the candidates to the game. The species is the iNaturalist identification by human experts (Research Grade,
 or Pierre's own), taken as given: no field says whether a photo shows the right species.
@@ -412,8 +412,8 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`, `bb`) and `note` (140 characters at most; required with
      `unsure`).
 3. `python3 tools/judging_fish.py --check <id>` until it passes, then `python3 tools/judging_fish.py` imports every
-   passing species into `suggest.json` `"fish"`: `{jt, e, k, ph, c, bb, u, n}`, `jt` and `e` after the caps as in
-   `fish-photos.json`. Commit only `judging/fish/*.json` and `suggest.json`.
+   passing species into `data/suggest.json` `"fish"`: `{jt, e, k, ph, c, bb, u, n}`, `jt` and `e` after the caps as in
+   `fish-photos.json`. Commit only `judging/fish/*.json` and `data/suggest.json`.
 
 **What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`): `best` or `alt` → **in play at once**, with its
 tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
@@ -450,7 +450,7 @@ The pass of 2026-11-09 sorted every photo that carried `m` and was in play or wa
 main species and its family named on each tile): Pierre's adds (the auto-sort's: 166), the candidates still waiting
 (760), the stopgap game photos (87) and the reference photos (34), 1,047 in all (and one stale code). Pierre's adds keep
 his tags in `curation.json` (rule A1): their sorted count is the pass's, in `judging/fish/<species>.json`, which
-`python3 tools/judging_fish.py codes` copies into `suggest.json` (codes, `unsure` and notes of the photos already judged,
+`python3 tools/judging_fish.py codes` copies into `data/suggest.json` (codes, `unsure` and notes of the photos already judged,
 without a whole species' `--check`), and `tools/fish_game.py` reads it over his legacy `m` (`count_of`); the stopgap and
 reference codes are `tools/fish_judge.json`'s. Result: no risk 615 (Pierre's adds 100, candidates 422, stopgap 63,
 reference 30), confusion possible 405 (52, 331, 20, 2), doubtful 27 (14, 7, 4, 2), kept out as `k` and listed for Pierre
