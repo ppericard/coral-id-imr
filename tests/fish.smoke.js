@@ -1808,7 +1808,31 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(spOn() && UNITS.fish.tree() === TREEU.treeSp, 'species: on from SPECIES_SHEET, the tree with the species units');
       const L = spS.auto(),
         t = own[0];
-      ok(t && L.length === 1 && L[0] === t && pool().includes(t), 'species: the family at Advanced brings its first species: ' + L);
+      ok(
+        t && L.join() === own.slice(0, 4).join() && pool().includes(t),
+        'species: the family at Advanced brings its first four species while the level opens its group: ' + L
+      );
+      // A level opens in a group (rule L4; model.js openFresh, openGroup): none met yet, the four ready to open together;
+      // the path's group is them, shown as first cards with the level's note and no Open all; taken back after.
+      {
+        const fresh = openFresh(
+            pool().filter(n => !introduced(n) && mayOpen(n)),
+            pool()
+          ),
+          G = openGroup(t, fresh, pool());
+        ok(lvlNeed(kindRank(t), pool()) === 4 && G.length === 4 && G.every(n => L.includes(n)), 'species: a group of four: ' + G);
+        introShow(G, true);
+        const card = document.querySelector('.unlock.intro');
+        ok(
+          !!card && /The next questions are about these 4\./.test(card.textContent) && !card.querySelector('[data-all]'),
+          'species: the group shows as first cards, its note, no Open all'
+        );
+        closeCards();
+        const m = introMap();
+        G.forEach(n => delete m[n]);
+        store.set(INTRO.KEY, m);
+        ok(!G.some(introduced), 'species: the group taken back for the checks below');
+      }
       // The What I learn card's Common names row (Q404 A): no row below SPECIES_SHEET (rule D4); on with no switch tapped;
       // off, the species stop being asked (their bars kept, Q402 A); on again, back.
       const cr = () => learnRows().find(r => r.k === 'sp');
@@ -1875,8 +1899,13 @@ async function freshSeed(b, base, errs, seed, fresh) {
         const L = S2.auto(),
           t = L[0];
         ok(
-          sciSpOn() && UNITS.fish.tree() === TREEU.treeSci && L.length === 1 && GX(t).parent === g && pool().includes(t),
-          'sci species: its genus at Advanced brings its first species: ' + L
+          sciSpOn() &&
+            UNITS.fish.tree() === TREEU.treeSci &&
+            L.length >= 1 &&
+            L.length <= 4 &&
+            L.every(n => GX(n).parent === g) &&
+            pool().includes(t),
+          'sci species: its genus at Advanced brings its first species, four while the level opens its group: ' + L
         );
         ok(/unlocked scientific names/.test(introCard(t).body), 'sci species: its card marks the milestone');
         const ch = distractors(t, pool(), 3);
