@@ -1,6 +1,6 @@
 # Sea slug ID marks: Caloria and Taringa from a game species' own description, Ardeadoris and Verconia left
 
-Date: 2026-11-20. PR: see the decisions index. Rules or docs touched: tools/seaslug_cues.json, seaslug.json, points.json,
+Date: 2026-11-20. PR: #1325. Rules or docs touched: tools/seaslug_cues.json, seaslug.json, points.json,
 docs/reviews/2026-11-18-seaslug-cues-sources.md, docs/ROADMAP.md.
 
 ## Context
