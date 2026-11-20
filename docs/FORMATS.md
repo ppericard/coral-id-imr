@@ -26,7 +26,7 @@ or evaluated, and why. It does not describe the earlier design itself. The decis
   - branch A: the species by common name;
   - branch B: the scientific genus names, then the species scientific names.
 
-  The player chooses common names, scientific names or both (at the fish welcome or in ⚙); "I'm at IMR" means both, with scientific
+  The player chooses common names, scientific names or both (at the fish welcome or on the fish's What I learn card, Q396); "I'm at IMR" means both, with scientific
   names early. For a player learning both, the species scientific name is still a display whose share rises with progress, as above.
 
 - **The genus is not a prerequisite, and has no level of its own.** One IMR entry spans up to 22 genera (98 in circle 1). A genus level

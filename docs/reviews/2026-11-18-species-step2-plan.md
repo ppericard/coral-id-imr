@@ -3,8 +3,8 @@
 **Status: every question answered (Q394-Q398); the sheet PR of section 5 built (`claude/sci-sheet`, sheet script
 v198: the `sci:` units of both subjects in the replay and the board's tree, Q394's smaller faults, the gate `SCI_SHEET`);
 the app PR built (#1273: the units of both subjects, their opening, choices, display, typed answers and
-faults, the milestone card, fspsci1-fpct70, the species tiles of My progress, behind `SCI_SHEET`); the names rows, the
-exams and the ultimate exam next.** Written on 2026-11-17 in the
+faults, the milestone card, fspsci1-fpct70, the species tiles of My progress, behind `SCI_SHEET`); the names rows built
+(`claude/names-choice`); the exams and the ultimate exam next.** Written on 2026-11-17 in the
 evening, Manila time, on `origin/main` at 444d4e61, the day #975 (step 1, sheet script v161) was merged. Pierre answered
 on 2026-11-17 in the evening and on 2026-11-18 in the morning; the answers are recorded where each question stood
 (section 3) and folded into the design (section 2), the check (section 4) and the order of PRs (section 5). No
@@ -437,6 +437,8 @@ runs on top: about 41 minutes of machine time, outside these figures.
    questions. **Size feature M for the names rows, about 20 minutes**: comparable to #832, #899, #911, #986 and #1056,
    median 18 min (range 5 min to 30 min); the card as a whole is the #1071 plan's to size, feature L, comparable to
    #823, #826, #829, #858 and #1058, median 53 min (range 47 min to 60 min).
+   **Built** (`claude/names-choice`): the card with its names rows only (its other levels stay in ROADMAP "Fish welcome
+   question"), the welcome's names step not yet; a row turned on never sets `Q.sciH` (Q401 A).
 5. **Exams PR** (Q395): the species checklist and its hidden family exam, with Q391 (b)'s variant photo, after the #953
    rebuild. **Size engine L, about 3 hours**: comparable to #861, #885, #957, #1047 and #1075, median 2.9 h (range 1.6 h to
    3.2 h).
