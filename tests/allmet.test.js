@@ -18,10 +18,10 @@ vm.createContext(ctx);
 vm.runInContext(
   block(app, 'const fishNextOf = ', "// The tree subjects' shared units", {file: 'app.js'}) +
     block(quiz, 'const allMetNone = ', 'const allMetTok', {file: 'quiz.js'}) +
-    '\nthis.next = fishNextOf; this.none = allMetNone;',
+    '\nthis.next = fishNextOf; this.slug = slugNextOf; this.none = allMetNone;',
   ctx
 );
-const {next, none} = ctx;
+const {next, slug, none} = ctx;
 
 test('allMetNone: nothing left to open, every unit met already asked', () => {
   const met = new Set(['a', 'b']),
@@ -70,11 +70,59 @@ test('fishNextOf: every family met: the families on their way, then the scientif
     ]
   );
   assert.match(next({...base, wait: 1}).lines[1], /^1 more family joins the game as soon as its photos are in\.$/);
-  assert.match(next({...base, sci: false}).lines[1], /scientific genus names\. Turn them on in My progress or ⚙ Settings/);
+  assert.match(next({...base, sci: false}).lines[1], /scientific genus names\. Turn them on in What I learn, on My progress/);
   assert.match(next({...base, sci: false, sciDue: false}).lines[1], /once a family is at Advanced, its scientific genus names are offered/);
   assert.deepStrictEqual([...next(base).lines.slice(1)], ['What’s left: take each family to Instructor, through its mastery exam.']);
   // Circle 3 on but still due and left with photos (its families may open: allMetNone keeps the card away): read as all.
   assert.strictEqual(next({...base, c3: 3}).k, 'all');
+});
+
+// The sea slugs' circle 3 opens by itself, with no offer card: before it, the all-met card says what comes next (Pierre,
+// 2026-11-20: «Ya pas de carte avant de passer au cercle suivant pour les nudibranches?»), in their words.
+test('slugNextOf: before circle 3, what comes next; then the genera on their way, else the exams', () => {
+  const r = slug({c3: 32, c3due: false, wait: 4});
+  assert.strictEqual(r.k, 'c3');
+  assert.strictEqual(r.kick, 'Every genus met');
+  assert.match(r.title, /seen them all, for now/);
+  assert.deepStrictEqual(
+    [...r.lines],
+    [
+      'Every sea slug genus open to you is in your game: no new one comes for a while.',
+      'Next: 32 more genera. They come once you know the genera you have well, about Open Water on average: keep practising them!'
+    ]
+  );
+  assert.match(slug({c3: 1, c3due: false, wait: 0}).lines[1], /^Next: 1 more genus\. /);
+  const w = slug({c3: 0, c3due: true, wait: 3});
+  assert.strictEqual(w.k, 'all');
+  assert.deepStrictEqual([...w.lines.slice(1)], ['3 more genera join the game as soon as their photos are in.']);
+  assert.match(slug({c3: 0, c3due: true, wait: 1}).lines[1], /^1 more genus joins the game as soon as its photos are in\.$/);
+  assert.deepStrictEqual(
+    [...slug({c3: 0, c3due: true, wait: 0}).lines.slice(1)],
+    ['What’s left: take each genus to Instructor, through its mastery exam.']
+  );
+  // No fish word, and no word of the IMR course, on a sea slug card.
+  for (const o of [r, w]) assert.ok(!/fish|famil|IMR/i.test(JSON.stringify(o)), JSON.stringify(o));
+  // Circle 3 due, its genera opening by themselves (allMetNone keeps the card away): read as all.
+  assert.strictEqual(slug({c3: 3, c3due: true, wait: 0}).k, 'all');
+});
+
+// The subject's cards (the all-met card, its genus cards: kind SUBJECTS card) draw their medallion from app.js
+// CARD_KINDS: every subject's kind has one, else the card shows an empty circle (the sea slugs' did).
+test("every subject's card kind has its medallion (app.js CARD_KINDS)", () => {
+  const c = {};
+  vm.createContext(c);
+  vm.runInContext(block(app, 'const CARD_KINDS = ', 'let cardN', {file: 'app.js'}) + '\nthis.K = CARD_KINDS;', c);
+  for (const S of require('../core.js').SUBJECTS) assert.ok(S.card && c.K[S.card], `${S.id}: card kind ${S.card}`);
+});
+
+test('every tree subject has its all-met card (UNITS done): the fish and the sea slugs', () => {
+  const unit = id => {
+    const at = app.indexOf(`\n  ${id}: {`);
+    assert.ok(at > 0, id);
+    return app.slice(at, app.indexOf('\n  },', at));
+  };
+  assert.match(unit('fish'), /\n {4}done: \(\) => \{[\s\S]*fishNextOf\(/);
+  assert.match(unit('seaslug'), /\n {4}done: \(\) => \{[\s\S]*slugNextOf\(/);
 });
 
 // Rule D7: the card's device marks are the player's: signing out (and deleting one's own account,

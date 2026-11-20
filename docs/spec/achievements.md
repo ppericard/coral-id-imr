@@ -70,7 +70,7 @@ card (`achDot`) and a "New" tag on `#leaderboard/achievements`, which clears the
 `achHold`). A device with progress but no record yet gets what is already met in one recap pop-up.
 
 **The record** (`reefid-sync-ach`, a `reefid-sync` key, so synced): `{id: time, _run, _best, _cor, _hard, _gone,
-_basics, _fb, _rep, _thx, _thxAt}` (the fish's done feat `_fbasics` too). `achSnap()` builds the snapshot; `achAfter()`
+_basics, _fb, _rep, _thx, _thxAt}` (the fish's and the sea slugs' done feats `_fbasics` and `_sbasics` too). `achSnap()` builds the snapshot; `achAfter()`
 runs after each answer (the run of right answers, one-off feats; `quiz.js` `recordAnswer` passes the game, `cur`);
 `mergeSaved()` unions two devices' records with `achMerge` / `core.js` `mergeAch` (each achievement with its earliest
 date, the best run kept, the current run this device's).

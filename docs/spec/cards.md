@@ -107,8 +107,8 @@ Each subject asks its own, in its own words (`core.js` `SUBJECTS` `start`: the q
 (`core.js` `startKey`: `reefid-sync-<subject>-start`, so the corals' answer stays the corals'), asked on the card before
 that subject's first quiz question, its fallback window counting that subject's answers. Everything in this section
 holds per subject. A subject offers its own basics module after "new" and on its "lower" card (Coral basics, Fish basics:
-`SUBJECTS` `pages` 'basics', `app.js` `basicsDue`, its words `UNITS` `basics`); a subject without one, the sea slugs,
-offers none and has no "lower" card. The fish's level-change cards, that one included, stay off
+`SUBJECTS` `pages` 'basics', `app.js` `basicsDue`, its words `UNITS` `basics`); the sea slugs have one (Sea slug basics)
+but no first-launch question and no level-change card, so they offer it only on Home's line and the Learn page. The fish's level-change cards, that one included, stay off
 (`UNITS` `startFb: false`). The fish answers are logged but not replayed, so the fish prior applies at once (`model.js` `startP`: no replay
 to wait for). The admin's player journey shows the corals' record only.
 
@@ -230,8 +230,10 @@ A short question about how the game feels, asked now and then (`quiz.js` `PULSE`
 `core.js` `PULSEQ`, `pulsePick`, `pulseScore`, shared with the admin; LEARNING.md "What the players say about the
 difficulty"), in every subject. Each subject paces its own (`sDev('pulse')`, `reefid-<dev>pulse`) = {at: its answers
 when the last one showed, q: its item, left: the round's items still to ask, x: 1 after "Not now"}; the session is the
-device's, every answer of any subject in it: `reefid-pulse` `v` = {t0: its first answer's time, t: its last, n: its
-answers} (the first subject's own record too).
+subject's too (Pierre, 2026-11-20: «Attention à avoir des compteurs par matière»), the device's run of answers in one
+subject: `reefid-pulse` `v` = {t0: its first answer's time, t: its last, n: its answers, s: its subject} (the first
+subject's own record too, where it always was); an answer in another subject starts a new one, so a long session in one
+subject never brings the question at the first answer in another.
 
 - **When**: after an answer in the photo quiz (the custom quiz too, `photoQuiz`) and the duels, as a card at Next,
   before the next question is drawn (in a flow of answers, a prompt inside the feedback is missed). The answer arms Next
@@ -244,9 +246,10 @@ answers} (the first subject's own record too).
 - **How often**: first at `PULSE.FIRST` (35) answers, then every `PULSE.EVERY` (40; a target that depends on the level
   needs a few answers per level band from each player), `PULSE.AFTERX` (2) times that after a "Not now", always within
   the prompt spacing.
-- **Never early in a session**: only once the current session has `PULSE.SESS_N` (15) answers and has lasted
-  `PULSE.SESS_MS` (5 min) (`pulseSess`; still going: its last answer less than 30 min ago). A session is answers less
-  than `model.js` `SESSION.GAP` (30 min) apart, as the admin's sessions (`admin.js` `HEALTH.GAP`) and the tips' visits;
+- **Never early in a session**: only once the current session, in the subject on screen, has `PULSE.SESS_N` (15)
+  answers and has lasted `PULSE.SESS_MS` (5 min) (`pulseSess`; still going: its last answer less than 30 min ago). A
+  session is answers in one subject less than `model.js` `SESSION.GAP` (30 min) apart, as the admin's sessions
+  (`admin.js` `HEALTH.GAP`) and the tips' visits;
   every answer in a game counts (`answer()` calls `pulseNote`, which keeps it in `reefid-pulse` `v` on the device: a
   reload is no new session). A prompt due sooner (the answers counter met in a previous session) waits for that, so no
   session opens on one; the spacing in answers is unchanged (in a long session, one every 40 answers). The same rule for

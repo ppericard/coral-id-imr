@@ -1085,8 +1085,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
-// The answer's feedback, up to the report button: the verdict (step: the typed spelling step, typeStep), the photo's
-// taxon line (tx: app.js photoTaxon, taxonLine), the decisive line (fbLine), and behind More the ID tips, why the answer
+// The answer's feedback: the verdict (step: the typed spelling step, typeStep), the photo's taxon line (tx: app.js
+// photoTaxon, taxonLine), the decisive line (fbLine), the report button (rep: always in view, under the decisive line;
+// docs/decisions/2026-11-20-report-link-in-view.md), and behind More the ID tips, why the answer
 // is another unit (namesLine first), a genus's Coral ID Key criteria, a fish entry's sub-entries and phases. mim: the
 // entry of the mimicry pair the answer mixed up (model.js mimMix), whose marks make the line (fbLine); its other marks
 // and the units' own pair line, which they replace there, open the More panel.
@@ -1133,9 +1134,9 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
   // The short sheet (rule C3; docs/decisions/2026-11-18-feedback-sheet.md): the verdict, the species line, a typed
   // reading and the decisive line; the rest in the More panel, More and Next on one row.
   return `<div class="fb fbs">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}${fbLine(target, c, good, chs, mim)}${rep ? `<p class="fbrep">${rep}</p>` : ''}
     <div class="fbmore" id="fbmore" hidden>${mims}${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcTag(g, 'mn')}</p>` : ''}</div>` : ''}${vs}
-    ${more}${rep}</div>
+    ${more}</div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;
 }
@@ -1785,8 +1786,9 @@ function tipShow(t, st, cur) {
 // lasted PULSE.SESS_MS (pulseSess; a session: answers under SESSION.GAP apart, as the admin's). Asked in every subject,
 // each with its own pacing (pulseSt, under sDev('pulse'): the answers it counts, answersSoFar, are the subject on
 // screen's): {at: answers when the last showed, q: its item, left: the round's items, x: 1 after "Not now"}. The
-// session is the device's, every answer of any subject in it: v {t0, t, n} in PULSEK (pulseV), which is the first
-// subject's own key too (its dev is ''), so its record stays as it was.
+// session is the subject's too (Pierre, 2026-11-20: «Attention à avoir des compteurs par matière»): the device's run of
+// answers in one subject, an answer in another subject starting a new one, v {t0, t, n, s: the subject} in PULSEK
+// (pulseV), which is the first subject's own key too (its dev is ''), so its record stays as it was.
 const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESS_N: 15, SESS_MS: 5 * 60000, WAIT: 600},
   PULSEK = 'reefid-pulse';
 const pulseObj = k => {
@@ -1795,15 +1797,16 @@ const pulseObj = k => {
 };
 const pulseSt = () => pulseObj(sDev('pulse')),
   pulseV = () => pulseObj(PULSEK).v;
-// The session an answer at time t belongs to: the same one when the last answer is less than SESSION.GAP before it, else
-// a new one. Every answer in a game counts (answer()), whatever the subject or the game, as the admin counts sessions.
-const pulseVisit = (v, t) =>
-  v && typeof v === 'object' && [v.t0, v.t, v.n].every(x => typeof x === 'number') && t >= v.t && t - v.t < SESSION.GAP
-    ? {t0: v.t0, t, n: v.n + 1}
-    : {t0: t, t, n: 1};
+// The session an answer at time t in subject s belongs to: the same one when the last answer was in s less than
+// SESSION.GAP before it, else a new one (a long session in one subject never brings the prompt at the first answer in
+// another). Every answer in a game counts (answer()), whatever the game, as the admin counts sessions.
+const pulseVisit = (v, t, s) =>
+  v && typeof v === 'object' && [v.t0, v.t, v.n].every(x => typeof x === 'number') && v.s === s && t >= v.t && t - v.t < SESSION.GAP
+    ? {t0: v.t0, t, n: v.n + 1, s}
+    : {t0: t, t, n: 1, s};
 const pulseNote = (t = Date.now()) => {
   const st = pulseObj(PULSEK);
-  store.set(PULSEK, {...st, v: pulseVisit(st.v, t)});
+  store.set(PULSEK, {...st, v: pulseVisit(st.v, t, SUBJ.id)});
 };
 // The session is far enough along for a prompt at time now: still going (its last answer less than SESSION.GAP ago),
 // PULSE.SESS_N answers or more, PULSE.SESS_MS or more since its first.
@@ -1819,7 +1822,8 @@ const pulseDue = (h = hashNow()) => {
   const a = answersSoFar(),
     st = pulseSt(),
     at = typeof st.at === 'number' ? st.at : -1e9;
-  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && pulseSess(pulseV());
+  const v = pulseV();
+  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && !!v && v.s === SUBJ.id && pulseSess(v);
 };
 // Response rate (Pierre's question: shown against answered): each prompt logs PULSE_SHOWN, then its answer's code,
 // PULSE_SKIP ("Not now", Escape) or PULSE_NONE (the page left with it up); every event carries what the game knew when it
@@ -1843,7 +1847,9 @@ function pulseAsk() {
     pk = pulsePick(st),
     it = pulseItem(pk.q),
     h = session.h;
-  store.set(sDev('pulse'), {at: answersSoFar(), q: pk.q, left: pk.left, v: pulseV()});
+  // the session kept where it lives (the first subject's record, PULSEK), never copied into another subject's
+  const k = sDev('pulse');
+  store.set(k, {at: answersSoFar(), q: pk.q, left: pk.left, ...(k === PULSEK ? {v: pulseV()} : {})});
   pulseOpen = {
     id: it.id,
     at: {
@@ -2276,7 +2282,7 @@ const bonusBackDue = () => SETS().find(S => S.back && S.rv && Q[S.k] === true &&
 function bonusBackShow(S = bonusBackDue()) {
   if (!S) return;
   const B = S.back,
-    keep = S.auto ? S.auto() : [];
+    keep = autoOf(S);
   cardShow({
     kind: 'bonus',
     cls: 'intro',

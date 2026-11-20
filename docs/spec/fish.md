@@ -194,7 +194,9 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
   `add_families` (every build path, `--commonness` included).
 - The app completes it from `fish.json` itself (`core.js` `treeNameIndex`: `sp` a listed species name, `ss` a species'
   scientific name, `gs` a genus's, `gc` a genus's common name, each with `sc`, the species it designates) and Pierre's
-  exceptions (`curation.json` `fish` `names`); `treeGen` `scopes` gives the IMR genera and sub-entries their species.
+  exceptions (`curation.json` `fish` `names`, set in the admin's Names box on a family's Tree page:
+  [admin-tree.md › Names](admin-tree.md#names-the-shared-names-of-the-name-index)); `treeGen` `scopes` gives the IMR genera
+  and sub-entries their species.
 - `treeTypeNames` reads every name as the family it lifts to, with `sc` when it names part of it only (one key of a
   family read by two names takes the wider); `typeFits(m, t, sp)` says whether a reading names unit t as the photo shows
   it (sp: the photo's species, `quiz.js` from `app.js` `photoTaxon`; unknown: read as before). A name of part of the
