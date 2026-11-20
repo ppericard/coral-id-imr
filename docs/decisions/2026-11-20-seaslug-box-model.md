@@ -1,6 +1,6 @@
 # The sea slug box pass: Opus 5.5 at medium effort, and the judging import takes the box
 
-Date: 2026-11-20. PR: #1294. Rules or docs touched: S1, A1; judging/SEASLUG.md "The animal's box", tools/judging_fish.py, tests/seaslugjudge.test.js.
+Date: 2026-11-20. PR: #1295. Rules or docs touched: S1, A1; judging/SEASLUG.md "The animal's box", tools/judging_fish.py, tests/seaslugjudge.test.js.
 
 ## Context
 
