@@ -245,3 +245,24 @@ test('sortView: the same part with the fields read anew left out; the draft itse
   const none = {add: {f1: 's1'}, tags: {f1: 'p1d1sl1'}};
   assert.strictEqual(A.sortView(none, sug), none, 'nothing of the auto-sort: the draft itself');
 });
+
+test('sortView with the candidates: the source juvenile flag stays, as the build copies it (review #1313)', () => {
+  const pass = {jt: 'p1g0sl1', e: 4, k: 'best'},
+    F = {
+      add: {f1: 's1', fj: 's1'},
+      tags: {f1: 'p1d0sl1', fj: 'p1d0sl1'},
+      ease: {f1: 2, fj: 2},
+      auto: {[old]: {f1: 'ate', fj: 'ate'}}
+    },
+    sug = {f1: pass, fj: pass},
+    recs = {f1: rec('f1'), fj: rec('fj', 'juvenile')},
+    built = readCur({fish: F}, cand, sug, by('2026-11-19')).fish,
+    V = A.sortView(F, sug, recs);
+  assert.strictEqual(built.tags.fj, 'p1g0sl1j', 'the build keeps the juvenile flag');
+  // What the pages show: the stored tags when left out fall back to the pass's, the juvenile one is the build's copy.
+  assert.strictEqual(V.tags.fj, built.tags.fj);
+  assert.strictEqual('f1' in V.tags, false, 'no source stage: the pass value shows');
+  assert.strictEqual(A.sortView(F, sug, recs), V, 'one view per draft, pass and candidates');
+  assert.notStrictEqual(A.sortView(F, sug, {}), V, 'other candidates, other view');
+  assert.strictEqual(F.tags.fj, 'p1d0sl1', 'the draft is untouched');
+});

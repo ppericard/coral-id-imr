@@ -230,25 +230,14 @@
   // never numbered here), each family with its cover photo, the way the families page shows them (learn.js viewFishList).
   const groupsShown = () =>
     ((TREEU && TREEU.groups) || []).map(gr => ({gr, units: slateGenera().filter(n => GX(n).group === gr.n)})).filter(x => x.units.length);
-  const groupView = ({gr, units}) => {
-    const flat = [];
-    return {
-      id: 'g' + gr.n,
+  // A group's view and check are the engine's (proto/basics.js BASICS_KIT), in the fish's words.
+  const groupView = g =>
+    BASICS_KIT.groupView(g, ({gr}) => ({
       name: `${gr.n}. ${gr.title}`,
       short: '',
       icon: `<span class="bx-gn" style="--g:${groupHue(gr.n)}">${gr.n}</span>`,
-      fig: () =>
-        `<div class="bx-gfam">${units
-          .map(n => {
-            const p = cover(GX(n));
-            if (p) flat.push({...p, genus: n});
-            return `<figure>${p ? `<button type="button" class="zoom bx-fx" data-x="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '(max-width: 599.98px) 30vw, 150px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<figcaption>${esc(unameT(n))}</figcaption></figure>`;
-          })
-          .join('')}</div>`,
-      say: 'The families the app teaches in this group.',
-      bind: fig => fig.querySelectorAll('[data-x]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.x))))
-    };
-  };
+      say: 'The families the app teaches in this group.'
+    }));
 
   const DECK = 'IMR fish presentation (Lecture 10)';
   // The public references that fill what the slides' text does not define, named on screen (rules C1, C2).
@@ -587,55 +576,19 @@
     }
   ];
 
-  // A check whose options are drawings (the engine's 'draw' type): kind says which drawing (C.drawOpt), the options in a new
-  // order each time it is drawn, a the right one's place.
-  function drawCheck(kind, q, opts, key, why) {
-    const o = shuffle(opts);
-    return {type: 'draw', kind, q, opts: o, a: o.indexOf(key), why};
-  }
+  // A check whose options are drawings (the engine's 'draw' type, BASICS_KIT.drawCheck): kind says which drawing
+  // (C.drawOpt), the options in a new order each time it is drawn.
+  const drawCheck = (...a) => BASICS_KIT.drawCheck(...a);
 
   /* ---------- the optional check of the groups: a family photo to place in its group ---------- */
-  function groupCheck(box, E) {
-    const gs = groupsShown();
-    // A family with a photo, in one of the groups shown; two other groups as the wrong answers.
-    let t = null;
-    for (let k = 0; k < 20 && !t && gs.length > 1; k++) {
-      const {gr, units} = pick(gs),
-        u = pick(units),
-        p = cover(GX(u));
-      if (p) t = {gr, u, p};
-    }
-    if (!t) {
-      box.innerHTML = '<p class="note">No photo to place right now.</p>';
-      return;
-    }
-    const opts = shuffle([t.gr, ...shuffle(gs.map(x => x.gr).filter(g => g.n !== t.gr.n)).slice(0, 2)]),
-      one = {...t.p, genus: t.u};
-    box.innerHTML = `<p class="bx-qt">Which identification group is this fish in?</p><div class="bx-cphw"><button type="button" class="bx-cph" aria-label="Enlarge photo"><img ${thumb(t.p, '(max-width: 599.98px) 90vw, 460px')} alt="A reef fish to place in its group" loading="lazy"></button></div><div class="choices col">${opts
-      .map(g => `<button type="button" class="choice" data-j="${g.n}">${g.n}. ${esc(g.title)}</button>`)
-      .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
-    box.querySelector('.bx-cph').onclick = () => zoom([one], 0, {blind: () => !box.querySelector('.choice.right')});
-    box.querySelectorAll('[data-j]').forEach(
-      b =>
-        (b.onclick = () => {
-          if (box.querySelector('.choice.right')) return;
-          const j = Number(b.dataset.j),
-            ok = j === t.gr.n;
-          box
-            .querySelectorAll('[data-j]')
-            .forEach(x => x.classList.add(Number(x.dataset.j) === t.gr.n ? 'right' : x === b ? 'wrong' : 'off'));
-          E.src(box.querySelector('.bx-cphw'), one);
-          E.fb(box, ok, `${esc(unameT(t.u))}: group ${t.gr.n}, ${esc(t.gr.title)}. ${E.again}`, {
-            g: t.u,
-            a: opts.find(g => g.n === j).title,
-            ph: [t.p.f],
-            m: E.m
-          });
-          box.querySelector('.bx-again').onclick = () => groupCheck(box, E);
-          if (ok) E.markDone();
-        })
-    );
-  }
+  const groupCheck = (box, E) =>
+    BASICS_KIT.groupCheck(box, E, {
+      groups: groupsShown,
+      name: g => `${g.n}. ${g.title}`,
+      q: 'Which identification group is this fish in?',
+      alt: 'A reef fish to place in its group',
+      line: (u, gr) => `${unameT(u)}: group ${gr.n}, ${gr.title}.`
+    });
 
   /* ---------- the words: [term, step or 'step|view', plain line]; the deck's own line where it has one ---------- */
   const WORDS = [

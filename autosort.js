@@ -380,23 +380,40 @@
   // Curation F as the pages read it: the same part with each field sortReads lists left out, so a reader that falls back to
   // the pass's value when the curation has none (every display reader does) shows the one the game plays. Never given to a
   // writer (rule A1: Publish would send the pass's values as his and lose the log's letters); one object per (F, sug),
-  // F itself when nothing reads differently.
+  // F itself when nothing reads differently. recs: the candidates' records by photo (the source's life stage p.st): the
+  // build's copy of the judgement adds the source's juvenile flag, or its phase when the pass gives none (fishCopy, as
+  // read_cur's copy_of), so those two fields read that copy, not the bare pass value the readers fall back to.
   const VIEWC = new WeakMap();
-  function sortView(F, sug) {
+  function sortView(F, sug, recs) {
     if (!F || !sug || typeof sug !== 'object') return F;
     if (!VIEWC.has(F)) VIEWC.set(F, new WeakMap());
-    const memo = VIEWC.get(F);
-    if (memo.has(sug)) return memo.get(sug);
+    const m1 = VIEWC.get(F);
+    if (!m1.has(sug)) m1.set(sug, new WeakMap());
+    const m2 = m1.get(sug),
+      key = recs && typeof recs === 'object' ? recs : m2;
+    if (m2.has(key)) return m2.get(key);
     let N = F;
-    Object.keys(idxOf(F)).forEach(f =>
-      sortReads(F, f, sug[f]).forEach(k => {
+    const put = (k, f, v) => {
+      if (N === F) N = {...F};
+      if (N[k] === F[k]) N[k] = {...F[k]};
+      if (v === undefined) delete N[k][f];
+      else N[k][f] = v;
+    };
+    Object.keys(idxOf(F)).forEach(f => {
+      const j = sug[f],
+        w = sortReads(F, f, j);
+      if (!w.length) return;
+      // His own phase choice (one the run did not write) stops the source's juvenile flag, as the build.
+      const c = fishCopy({...((recs || {})[f] || {}), f}, j, f in (F.phase || {}) && !w.includes('phase') ? {phase: {[f]: 1}} : null);
+      w.forEach(k => {
         if (!(f in (F[k] || {}))) return;
-        if (N === F) N = {...F};
-        if (N[k] === F[k]) N[k] = {...F[k]};
-        delete N[k][f];
-      })
-    );
-    memo.set(sug, N);
+        // The build leaves tags alone when the copy has none; a phase or crop the pass no longer gives goes.
+        if (k === 'tags' && c.tags == null) return;
+        const v = k === 'tags' ? c.tags : k === 'phase' ? c.phase : null;
+        put(k, f, v == null || v === (k === 'tags' ? j.jt : j.ph) ? undefined : v);
+      });
+    });
+    m2.set(key, N);
     return N;
   }
   // When the admin answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the
