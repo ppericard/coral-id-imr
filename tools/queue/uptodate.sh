@@ -28,17 +28,20 @@ for f in $(git diff --name-only --diff-filter=U); do
   esac
   git add "$f"
 done
+# Every tool below is origin/main's reviewed copy, run on this checkout's data (trusted_root, lib.sh): the PR's own
+# tools/*.py never run with the queue's credentials (security review of #1315).
+need_trusted
 # Generated data files are rebuilt from the merged sources, never hand-merged (INTEGRATOR "Generated files").
-if [ -n "${REBUILD_FISH:-}" ]; then python3 tools/build_fish.py --regroup >/dev/null 2>&1 && git add fish.json || { echo "#$n: fish.json rebuild failed, needs a hand"; git merge --abort; exit 2; }; fi
-if [ -n "${REBUILD_SLUG:-}" ]; then python3 tools/seaslug_game.py >/dev/null 2>&1 && git add seaslug.json seaslug-game.json || { echo "#$n: seaslug rebuild failed, needs a hand"; git merge --abort; exit 2; }; fi
-if [ -f tools/decisions_index.py ]; then [ -e docs/decisions/OLDER.md ] && ! git cat-file -e origin/main:docs/decisions/OLDER.md 2>/dev/null && git rm -q -f docs/decisions/OLDER.md; python3 tools/decisions_index.py --fix >/dev/null && git add -A docs/decisions/; fi
+if [ -n "${REBUILD_FISH:-}" ]; then python3 -E "$T/tools/build_fish.py" --regroup >/dev/null 2>&1 && git add fish.json || { echo "#$n: fish.json rebuild failed, needs a hand"; git merge --abort; exit 2; }; fi
+if [ -n "${REBUILD_SLUG:-}" ]; then python3 -E "$T/tools/seaslug_game.py" >/dev/null 2>&1 && git add seaslug.json seaslug-game.json || { echo "#$n: seaslug rebuild failed, needs a hand"; git merge --abort; exit 2; }; fi
+if [ -f "$T/tools/decisions_index.py" ]; then [ -e docs/decisions/OLDER.md ] && ! git cat-file -e origin/main:docs/decisions/OLDER.md 2>/dev/null && git rm -q -f docs/decisions/OLDER.md; python3 -E "$T/tools/decisions_index.py" --root "$PWD" --fix >/dev/null && git add -A docs/decisions/; fi
 staged=$(git diff --cached --name-only)
 if [ -n "$staged" ] && grep -l '^<<<<<<<\|^>>>>>>>' $staged </dev/null 2>/dev/null; then echo "#$n: markers left"; git merge --abort; exit 2; fi
 if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]; then git commit -q --no-edit || exit 1
 elif [ -n "$(git status --porcelain --untracked-files=no)" ]; then git commit -q -m "Decisions index regenerated after merging main" || exit 1; fi
 # The version checks read the merge-base, so they run on the committed merge; a failure leaves it unpushed.
-python3 tools/check_versions.py >/dev/null || { echo "#$n: check_versions failed, merge committed locally, not pushed"; exit 2; }
-python3 tools/sync_core.py --check >/dev/null || { echo "#$n: sync_core failed, merge committed locally, not pushed"; exit 2; }
+python3 -E "$T/tools/check_versions.py" >/dev/null || { echo "#$n: check_versions failed, merge committed locally, not pushed"; exit 2; }
+python3 -E "$T/tools/sync_core.py" --check >/dev/null || { echo "#$n: sync_core failed, merge committed locally, not pushed"; exit 2; }
 git push -q origin "HEAD:$ref" || exit 1
 gh api -X POST $R/issues/$n/comments -f body="@codex review
 

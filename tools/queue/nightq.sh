@@ -32,12 +32,15 @@ for n in "$@"; do
   failed=$(echo "$line" | sed -n 's/.*pending, \([^|]*\) failed.*/\1/p' | tr -d ' ')
   if [ -n "$failed" ]; then log "#$n: SKIPPED (red on head: $failed)"; continue; fi
   case "$line" in *"Didn't find any major issues"*) ;; *) log "#$n: SKIPPED (Codex not clean on head)"; continue;; esac
-  case "$line" in *"open threads: 0"*) ;; *) log "#$n: SKIPPED (open threads)"; continue;; esac
+  case "$line" in *"open threads: 0 |"*) ;; *) log "#$n: SKIPPED (open threads)"; continue;; esac
+  # a finding on the head can exist before its thread does, and a security bot's comment is no thread: both count
+  # like a Codex finding (merge contract); "?" (unreadable) skips too
+  case "$line" in *"unanswered@head: 0 |"*) ;; *) log "#$n: SKIPPED (findings or security comments on the head, not answered)"; continue;; esac
   if grep -q "^+++ .*tools/sync/changes/" <(git -C "$REPO_DIR" diff origin/main...origin/$(gh api $R/pulls/$n --jq .head.ref) 2>/dev/null); then
     log "#$n: SKIPPED (needs a VERSION assign)"; continue
   fi
   git pull -q
-  out=$(python3 tools/train.py "$n" 2>&1 | tail -4)
+  out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py "$n" 2>&1 | tail -4)
   log "#$n train: $(echo "$out" | tr '\n' ' ')"
 done
 log "queue done"

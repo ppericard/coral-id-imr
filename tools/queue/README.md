@@ -11,16 +11,24 @@ Update worktrees go to `.claude/worktrees/` (rule W22, git-ignored).
 
 | Script | What it does |
 |---|---|
-| `nightq.sh N…` | One PR at a time: merge `origin/main` into it (`uptodate.sh`), wait for every check and Codex's receipt on the head, then `tools/train.py N`. A PR that is red, has a Codex finding, an open thread or a pending VERSION assign is skipped and logged. |
+| `nightq.sh N…` | One PR at a time: merge `origin/main` into it (`uptodate.sh`), wait for every check and Codex's receipt on the head, then `TRAIN_REPO=$QUEUE_REPO tools/train.py N`. A PR that is red, has a Codex finding, an open thread, a finding or security-bot comment on the head nobody answered (`headfind.py`) or a pending VERSION assign is skipped and logged. |
 | `uptodate.sh N` | Merge `origin/main` into the PR's branch, settling only the decisions index, append-only files and generated data; anything else aborts ("needs a hand"). Pushes and asks `@codex review`. |
-| `assignver.sh N` | Code.gs PR: update it, then assign the sheet VERSION (rule D3). Takes only main's line 1 and `VERSION`, keeps the branch's own `Code.gs`. Pushes and asks Codex (`codex.md`). |
+| `assignver.sh N` | Code.gs PR: update it, then assign the sheet VERSION (rule D3). Takes only main's line 1 and `VERSION`, keeps the branch's own `Code.gs`; a `Code.gs` conflict outside the version lines and the core.js block (`resolve_gs.py`) is "needs a hand". Pushes and asks Codex (`codex.md`). |
 | `seqver.sh N…` | Code.gs PRs one after another: `assignver.sh`, then `nightq.sh`, for each. |
 | `chainq.sh`, `afterver.sh`, `afterall.sh` | The same queues, started once the others have finished (`afterall.sh` waits for everything, the version queue first). |
 | `prstate.sh N…`, `wait_ready.sh N…` | The PR state line; wait for the checks, then print it. |
 | `pushwait.sh DIR BRANCH` | Push once no train runs. |
 | `failjobs.sh REF` | The failing jobs of a commit or train branch, with their error lines. |
-| `thr.py`, `resolve_block.py`, `resolve_append.py`, `mainver.py` | Helpers: unresolved threads, conflict-block and append-only resolution, main's version line. |
+| `thr.py`, `resolve_block.py`, `resolve_append.py`, `resolve_gs.py`, `mainver.py`, `headfind.py` | Helpers: unresolved threads, conflict-block, append-only and `Code.gs` metadata resolution, main's version line, unanswered findings on the head. |
 | `codex.md` | The `@codex review` comment with its footer. |
+
+## Trusted tools
+
+The queue runs with the integrator's credentials, so a PR's own `tools/*.py` never run in it. `uptodate.sh` and
+`assignver.sh` run `check_versions.py`, `sync_core.py`, `sheet_version.py`, `decisions_index.py` and the generated-data
+builders from `origin/main`'s reviewed copy over the PR's data (`trusted_root` in `lib.sh`: a throwaway shadow root, `python3 -E`),
+the way the session hooks run main's `tools/brief.py`. A PR that changes one of these tools is checked by main's copy
+until it merges.
 
 ## Order
 

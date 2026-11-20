@@ -18,15 +18,18 @@ if ! git merge-base --is-ancestor origin/main HEAD; then
   git merge -q --no-edit origin/main >/dev/null 2>&1
   for f in $(git diff --name-only --diff-filter=U); do
     case "$f" in
-      tools/sync/Code.gs|tools/sync/HISTORY.md) git checkout -q --theirs "$f" ;;
-      docs/decisions/README.md) git checkout -q --theirs "$f" ;;
+      # Code.gs: only metadata (line 1, VERSION, the core.js block) is settled, to the branch's side; the PR's own code
+      # against main's is "needs a hand", never main's whole file (that dropped the PR's code: #1315 review, P1).
+      tools/sync/Code.gs) python3 -I "$Q/resolve_gs.py" "$f" >/dev/null || { echo "#$n: conflict in $f outside the version lines: needs a hand"; git merge --abort; exit 2; } ;;
+      tools/sync/HISTORY.md|docs/decisions/README.md) git checkout -q --theirs "$f" ;;
       docs/ANSWERS.md) python3 -I "$Q/resolve_append.py" "$f" >/dev/null ;;
       *) echo "#$n: conflict in $f: needs a hand"; git merge --abort; exit 2 ;;
     esac
     git add "$f"
   done
-  python3 tools/sync_core.py --fix >/dev/null && git add tools/sync/Code.gs
-  [ -f tools/decisions_index.py ] && python3 tools/decisions_index.py --fix >/dev/null && git add -A docs/decisions/
+  need_trusted
+  python3 -E "$T/tools/sync_core.py" --fix >/dev/null && git add tools/sync/Code.gs
+  [ -f "$T/tools/decisions_index.py" ] && python3 -E "$T/tools/decisions_index.py" --root "$PWD" --fix >/dev/null && git add -A docs/decisions/
   if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]; then git commit -q --no-edit || exit 1
   elif [ -n "$(git status --porcelain --untracked-files=no)" ]; then git commit -q -m "Code.gs: core.js copied after merging main" || exit 1; fi
 fi
@@ -40,8 +43,9 @@ if ! ls tools/sync/changes/*.md 2>/dev/null | grep -v README >/dev/null; then ec
 git checkout origin/main -- tools/sync/HISTORY.md
 git show origin/main:tools/sync/Code.gs > "$QUEUE_DIR/main_Code.gs"
 python3 -I "$Q/mainver.py" "$QUEUE_DIR/main_Code.gs" tools/sync/Code.gs >/dev/null || exit 1
-python3 tools/sync_core.py --fix >/dev/null
-out=$(python3 tools/sheet_version.py --assign 2>&1 | tail -1)
+need_trusted
+python3 -E "$T/tools/sync_core.py" --fix >/dev/null
+out=$(python3 -E "$T/tools/sheet_version.py" --assign 2>&1 | tail -1)
 v=$(grep -o "^const VERSION = [0-9]*" tools/sync/Code.gs | grep -o "[0-9]*$")
 git add -A tools/sync/Code.gs tools/sync/HISTORY.md tools/sync/changes
 git add -u
@@ -52,8 +56,8 @@ if [ -n "$(git diff --cached --name-only)" ]; then
     git commit -q -m "Sheet script v$v assigned at merge" || exit 1
   fi
 fi
-python3 tools/check_versions.py >/dev/null || { echo "#$n: check_versions failed after v$v, not pushed"; exit 2; }
-python3 tools/sync_core.py --check >/dev/null || { echo "#$n: sync_core failed, not pushed"; exit 2; }
+python3 -E "$T/tools/check_versions.py" >/dev/null || { echo "#$n: check_versions failed after v$v, not pushed"; exit 2; }
+python3 -E "$T/tools/sync_core.py" --check >/dev/null || { echo "#$n: sync_core failed, not pushed"; exit 2; }
 while train_running; do sleep 20; done
 git push -q origin "HEAD:$ref" || exit 1
 gh api -X POST $R/issues/$n/comments -F body=@"$Q/codex.md" >/dev/null
