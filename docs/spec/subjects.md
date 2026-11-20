@@ -156,8 +156,11 @@ Serranidae, is "which one?") and `wink`. The ranks below the family add their ow
 ## Identify per subject
 
 Identify shows the current subject's tool only, `UNITS[id].identify`: the corals' `idkey` (the Coral ID Key), the fish's
-`fishkey` (the Fish ID Key, coming soon: `home.js` `viewFishKey`), the sea slugs' the same page in their own words; each
-is one entry of `MODES` `identify`. `subjPage` sends a bare Identify address to the subject's own tool (a subject
+`fishkey` (the Fish ID Key, coming soon: `home.js` `viewFishKey`; Pierre's call of 2026-11-04); each is one entry of
+`MODES` `identify`. **A subject with no key built declares none** (the sea slugs: no `identify`; `app.js` `keyOf` reads
+it, `''` for none): Home is the Learn door alone (`.hdoors.one`), it has no Identify tab (`showSubj` hides
+`[data-tab=identify]`), and an Identify address opens its Home, so a player never meets a page that says "coming soon"
+or "not yet" ([decision](../decisions/2026-11-20-no-key-no-door.md)). `subjPage` sends a bare Identify address to the subject's own tool (a subject
 switched on Identify shows its own), and `route` hands a link into another subject's tool with its clues
 (`#identify/key?form=…`) to that subject, as it does a genus sheet. Home's Identify door follows the subject (for the
 fish a fish photo, "Identify a fish", the Fish ID Key). `tests/fish.smoke.js` checks both ways. The Tools that ask about

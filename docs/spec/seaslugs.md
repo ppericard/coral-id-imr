@@ -94,9 +94,9 @@ family name on a genus question gets the "that's a family" nudge (`quiz.js` `typ
 name (rhinophores, gills, mantle, cerata, parapodia, headshield, side gill) on drawings and their genera's photos, then
 their groups ([basics.md › Sea slug basics](basics.md#sea-slug-basics-protoseaslugbasicsjs)).
 
-The species have their sheets but no game unit yet; no key (rule S3: the Identify page says there is none yet), no
+The species have their sheets but no game unit yet; no key (rule S3: so no Identify door on Home and no Identify tab, `UNITS.seaslug` has no `identify`), no
 first-launch "I'm at IMR" answer, no level-change card (`startFb: false`, as the fish). Their words where the fish's are
-written into shared pages are `UNITS` fields (`door`: Home's doors and the key page; `lede`: the genera page; `words`:
+written into shared pages are `UNITS` fields (`door`: Home's Learn door and, for a subject with a key, the Identify door and the key page; `lede`: the genera page; `words`:
 each sheet's ? text, a species' rank by its observers in the Philippines, the links, the "No photo yet" drawing).
 
 **Their circles**: 1 to 3 of `tools/seaslugs.json` (45, 60 and 100 species), all on the path and in the progress as the
