@@ -8,7 +8,8 @@
 // State, on this device only (localStorage reefid-tips, outside the reefid-sync-* progress keys, kept on sign-out like
 // reefid-zoomhint): what a tip targets is how this person uses this device, and a tip shown twice on two devices is no harm.
 //   u  usage counters: q game questions answered here (photo quiz, custom quiz, duels), z quiz photos enlarged here (on
-//      a question or its mix-up montage; a tip's own "Show me" is not counted). Seeded once, when the state is first made,
+//      a question or its mix-up montage; a tip's own "Show me" is not counted), c times the Custom quiz was opened here
+//      (its picking page or its quiz, quiz.js quizCustom; the log cannot tell its answers from the Quiz's). Seeded once, when the state is first made,
 //      from the answers the device still holds (LOG0 / SYNC.log: their count and their zm flags), so a player who has
 //      played here before is not counted from zero; a signed-in device holds only its unsent answers, so it starts low.
 //   s  per tip, the value of u.q at each showing: {zoom: [212, 318]}
@@ -45,6 +46,28 @@
         body: o => `It opens full screen: zoom in on ${(o && o.subj && o.subj.zoom) || 'the details'}.`
       },
       act: 'zoom'
+    },
+    {
+      // Custom quiz (a): the Quiz that asks only the genera the player picks. For a player with 100 questions or more
+      // here who never opened it (c counts its opens; a saved selection counts as one, quiz.js tipsLoad). Shown in the
+      // Quiz only, at any break from 100 questions (no better moment); twice at most, the second 150 questions after
+      // the first. Show me opens the Custom quiz's picking page.
+      id: 'custom',
+      ctx: ['quiz'],
+      target: u => u.c < 1,
+      from: 100,
+      now: () => true,
+      wait: 0,
+      max: 2,
+      every: 150,
+      card: {
+        kick: 'Did you know?',
+        // The words of the subject (o.subj: its many field), as the Custom quiz page says them.
+        title: o => `Quiz yourself on just the ${(o && o.subj && o.subj.many) || 'genera'} you pick`,
+        body: o =>
+          `The Custom quiz asks only the ${(o && o.subj && o.subj.many) || 'genera'} you choose. Quick picks choose for you: your weakest, or those you missed lately.`
+      },
+      act: 'custom'
     }
   ];
   const num = x => (typeof x === 'number' && isFinite(x) && x >= 0 ? Math.floor(x) : 0);
@@ -57,7 +80,7 @@
       s = o && o.s && typeof o.s === 'object' ? o.s : {},
       v = o && o.v && typeof o.v === 'object' ? o.v : {};
     return {
-      u: Object.fromEntries(Object.entries({q: 0, z: 0, ...u}).map(([k, x]) => [k, num(x)])),
+      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, ...u}).map(([k, x]) => [k, num(x)])),
       s: Object.fromEntries(Object.entries(s).map(([k, L]) => [k, Array.isArray(L) ? L.map(num) : []])),
       v: {t: num(v.t), n: num(v.n), tip: v.tip ? 1 : 0}
     };
