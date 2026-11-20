@@ -1466,3 +1466,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   no words of his are in the repo. PRs relay some in English, as STATUS worded them (#840: Q330 "D9 as worded is OK";
   #956, #961 and #972: Q373 "a 'watermark' tag for fish photos, Home skips them (games unchanged)"): cite them as
   relayed, never as his words. No doc change.
+- **Admin help page overflows and does not scroll** (reported from the app, on the leaderboard page). «La page d'aide
+  de l'admin déborde en bas et ne déroule pas». A bug report, no choice: the admin's "?" help panel keeps inside the
+  window and scrolls. Applied: this fix (admin.css `.adm-help`, admin.js `toggleHelp`).
