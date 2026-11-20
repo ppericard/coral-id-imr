@@ -2,7 +2,7 @@
 
 Date: 2026-11-20. PR: #1292. Rules or docs touched: `docs/spec/photos.md`, `docs/PAGES.md`, `docs/ROADMAP.md`,
 `tools/imr_frames.json`, `tools/fetch_imr_originals.py`, `tools/apply_imr_originals.py`,
-`.github/workflows/imr-originals.yml`, `index.html` and `admin.html` (CSP), `tests/imrsources.test.js`.
+`.github/workflows/reefid-originals.yml`, `index.html` and `admin.html` (CSP), `tests/imrsources.test.js`.
 
 ## Context
 
@@ -28,5 +28,5 @@ lecture photos with no source in play as "IMR", untouched.
   border). They are replaced like the others: the original is the true picture.
 - **How it is fetched.** `tools/fetch_imr_originals.py`: public pages, one request every 2 s, a generic User-Agent, each
   picture once, host fixed to www.coralsoftheworld.org, size checked against the recorded cut. It runs in
-  `imr-originals.yml` (read only, R2 secrets only), which uploads with `tools/r2_sync.sh`.
+  `reefid-originals.yml` (read only, R2 secrets only), which uploads with `tools/r2_sync.sh`.
 - **Not touched.** The 34 untraced lecture photos, `curation.json`, the credits, `imr: true`, the rights class.

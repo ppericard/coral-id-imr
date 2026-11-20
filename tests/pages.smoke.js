@@ -5905,6 +5905,25 @@ const PARTS = [
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
+    // An IMR lecture photo traced to its original lives on R2 only (no file in img/: tools/apply_imr_originals.py) and
+    // its element falls back to that original on www.coralsoftheworld.org once R2 is cut off. Every address outside the
+    // site is cut off in these checks, so a stand-in picture answers for that one host (4:3, the size of no real photo)
+    // and the pages that show a lecture photo keep one on screen, as when img/ held the screenshots. A context's own
+    // "cut off everything outside the site" route (registered later, so it wins) is made to leave that host alone; the
+    // net smoke checks the real fallback chain.
+    const CW = 'www.coralsoftheworld.org',
+      route = c.route.bind(c);
+    await route(
+      u => u.hostname === CW,
+      r =>
+        r.fulfill({
+          status: 200,
+          contentType: 'image/svg+xml',
+          headers: {'access-control-allow-origin': '*'},
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900"><rect width="1200" height="900" fill="#789"/></svg>'
+        })
+    );
+    c.route = (m, h, op) => route(typeof m === 'function' ? u => m(u) && u.hostname !== CW : m, h, op);
     // Fetches in flight, for drawn().
     await c.addInitScript(() => {
       const f = window.fetch;

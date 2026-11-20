@@ -6,7 +6,7 @@ site's pictures. Each original is downloaded once from the species page's pictur
 lecture framed it (tools/imr_frames.json: cr, ro; rule: the crop first, then the turn, tools/photos.py turn), and written in
 the four sizes (tools/photos.py save) under the same file name, so curation and the players' records keep their key.
 The files go to --out DIR (default r2-upload/, gitignored), never to img/: the photo has an online original, so it lives
-on R2 only; .github/workflows/imr-originals.yml uploads that folder (tools/r2_sync.sh DIR).
+on R2 only; .github/workflows/reefid-originals.yml uploads that folder (tools/r2_sync.sh DIR).
 
 One request every 2 seconds, a generic User-Agent, public pages only (rule C7's spirit; the site's terms allow
 non-commercial use with the citation the credit gives). A download is kept in --cache DIR (default tools/.cache/cotw,

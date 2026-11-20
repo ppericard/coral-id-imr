@@ -426,7 +426,8 @@ const server = http.createServer((req, res) => {
       await p.waitForTimeout(1500);
       const t = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
       const kb = await p.evaluate(() => Math.round(linkMeasure() / 1000));
-      if (!(kb > 0 && kb < 500) || t.some(u => tier(u) !== 's'))
+      // A photo shown from its online original (R2 is cut off here) has no size tier: only the site's and R2's files count.
+      if (!(kb > 0 && kb < 500) || t.some(u => /\bimg\//.test(u) && tier(u) !== 's'))
         fails.push(`Auto on a line measured at ${kb} kbit/s did not take the 480 px files: ${t}`);
       await ctx.close();
     }
@@ -938,7 +939,12 @@ const server = http.createServer((req, res) => {
         [...document.querySelectorAll('#view .qstage img')]
           .map(i => [i.dataset.f, i.getAttribute('src'), photoLook(i.dataset.f)])
           .filter(([f, u, r]) =>
-            r && r.src ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\./.test(u) : !u.startsWith('img/')
+            // An online original is iNaturalist's file or, for an IMR lecture photo traced to its original, Corals of the World's.
+            r && r.src
+              ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\.|^https:\/\/www\.coralsoftheworld\.org\/media\/images\//.test(
+                  u
+                )
+              : !u.startsWith('img/')
           )
           .map(([f, u]) => `${f} ${u}`)
       );
@@ -974,7 +980,10 @@ const server = http.createServer((req, res) => {
       const cr = await p.evaluate(async () => {
         const idx = photoIdx(),
           c = [...idx.f.values()].find(x => x.cr && !x.r),
-          imr = Object.values(DATA.course).flat()[0],
+          // One with no original online: its file is the site's img/ (the traced ones live on R2 only).
+          imr = Object.values(DATA.course)
+            .flat()
+            .find(x => !x.src),
           box = document.createElement('figure');
         box.className = 'qph';
         box.innerHTML = [c, imr]

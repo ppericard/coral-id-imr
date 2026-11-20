@@ -94,7 +94,7 @@ The CSP of `index.html` allows the originals' hosts (`tests/csp.test.js` checks 
   on R2 only, under the screenshot's own file name (curation and the players' records keep their key), cut and turned as
   the lecture framed the picture (`tools/imr_frames.json`, found by matching the screenshot to the original: `cr`, `ro`,
   and the cut's pixel size, which `tools/fetch_imr_originals.py` checks). `tools/apply_imr_originals.py` writes `src`,
-  `cr`, `ro`, `ar` and `iv` on their `course` records (credit `a`, `pg` unchanged); `imr-originals.yml` runs the fetch tool
+  `cr`, `ro`, `ar` and `iv` on their `course` records (credit `a`, `pg` unchanged); `reefid-originals.yml` runs the fetch tool
   (one request every 2 s, `www.coralsoftheworld.org` only) and uploads. The credit stays "<photographer> / Corals of the
   World" with the species page (rule P5); `imr: true` and their `nc` rights class are unchanged. The 34 lecture photos with no
   source found stay in play as "IMR", untouched (Pierre, 2026-11-20).
