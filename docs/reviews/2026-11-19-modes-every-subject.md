@@ -99,7 +99,9 @@ answers that are scored exactly like those of the same page for the corals.
    is (`proto/fishbasics.js`). Built: [decision](../decisions/2026-11-20-seaslug-basics.md). Content, M: comparable to #961, #972, #985, #1223, #1245: median 18 min (range 14
    min-18 min); the sourcing makes it longer (a guess).
 6. **Sea slug Find the X**: the square tiles (`xc`) cut in `tools/seaslug_game.py` as `tools/fish_game.py` does, then
-   `UNITS` `tiles` as the fish's. Whether the sea slug photos carry the animal's box is not checked. Content, M:
+   `UNITS` `tiles` as the fish's. Checked 2026-11-20 (decision record `2026-11-20-slug-find-the-x.md`): no sea slug photo carries the animal's box
+(0 of 3,014 in play; the rubric gives none) nor a usable crop, so the tool and `UNITS` are built on the fish's shared code
+and no tile exists yet; the box pass is left. Content, M:
    comparable to #961, #972, #985, #1223, #1245: median 18 min (range 14 min-18 min).
 7. **Memory for one-view subjects**: not planned until the game is defined (below).
 

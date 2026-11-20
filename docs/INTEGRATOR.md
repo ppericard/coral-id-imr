@@ -139,6 +139,11 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
 - **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
   runs out, take the next decided ROADMAP rows the agents can move alone; never invent a study to fill the time.
+- **A large judging or boxing pass is measured first, without asking him** (Pierre, 2026-11-20 06:42-06:44: «Il faut
+  faire des tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; «Je ne devrais pas
+  devoir te le suggérer»): a bench of 50-100 items, the strongest configuration as reference and lighter ones beside,
+  the threshold written before, the cheapest that passes does the bulk, a random sample redone by the strong one
+  (AGENTS.md "Model choice by measurement"); the figures go in the PR, never a cost question to him first.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
 - **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question.
