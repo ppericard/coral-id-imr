@@ -490,14 +490,15 @@
     return n >= 2 && n < 4 ? 1 / n : 0.25;
   };
   // Question formats (quiz.js logs them in the mode): typed (|t), the Duel tab (quiz-duel…), a look-alike duel in the
-  // quiz (|d), an exam question (|x), "Again: A or B?" after a mix-up (2 choices, plain quiz), 4 choices of which N
-  // plausible (|kN), 4 plausible choices.
+  // quiz (|d), a Find the X (|f: one name, four photos), an exam question (|x), "Again: A or B?" after a mix-up (2
+  // choices, plain quiz), 4 choices of which N plausible (|kN), 4 plausible choices.
   const FORMATS = [
     ['k4', '4 choices'],
     ['k3', '4 shown, 3 plausible'],
     ['k2', '4 shown, 2 plausible'],
     ['again', 'Again (2)'],
     ['qduel', 'Duel in quiz'],
+    ['find', 'Find the X'],
     ['duel', 'Duel tab'],
     ['exam', 'Exam'],
     ['typed', 'Typed']
@@ -506,6 +507,7 @@
     if (TYPED_RE.test(m)) return 'typed';
     if (m.indexOf('quiz-duel') === 0) return 'duel';
     if (/\|d(\||$)/.test(m)) return 'qduel';
+    if (/\|f(\||$)/.test(m)) return 'find';
     if (/\|x(\||$)/.test(m)) return 'exam';
     if (nch === 2) return 'again';
     const k = /\|k(\d)/.exec(m);
@@ -3851,6 +3853,7 @@
     k2: '4 choices, two easy to rule out',
     again: '“Again” after a miss (2 choices)',
     qduel: 'Duel inside the quiz (2 choices)',
+    find: 'Find the X (one name, 4 photos)',
     duel: 'Duel tab (2 choices)',
     exam: 'Mastery exam question',
     typed: 'Typed answer (no choices)'

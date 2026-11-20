@@ -7,7 +7,7 @@ species page) gets, on its course record:
       core.js licOf reads none);
   pg  the page that states the credit (the species page), the link of the credit.
 Never `o` (the engine's observation, the colony a question's photos come from and the photo memory's key: two lecture
-photos of one species page are two colonies) nor `src` (an online original the app would read once R2 fails).
+photos of one species page are two colonies) nor `src` (the online original, written by tools/apply_imr_originals.py).
 `imr: true` stays (rule P1's order and the IMR origin are unchanged). A photo found only as copies, or not found, is left
 as it is: the admin marks it "source unknown".
 

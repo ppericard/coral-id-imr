@@ -102,7 +102,13 @@ each sheet's ? text, a species' rank by its observers in the Philippines, the li
 **Their circles**: 1 to 3 of `tools/seaslugs.json` (45, 60 and 100 species), all on the path and in the progress as the
 fish's, circles 2 and 3 opening at the fish's thresholds, counted on genera (`UNITS.seaslug` `gate`: `treeGate`: circle
 2 once every circle-1 genus has been asked, circle 3 once circle 1 reaches its `SUBJECTS` `gate` (the fish's values):
-with no global score, its plain mean at 50%; circle 3 by itself, with no offer card).
+with no global score, its plain mean at 50%; circle 3 by itself, with no offer card). **Before circle 3** (Pierre,
+2026-11-20: «Ya pas de carte avant de passer au cercle suivant pour les nudibranches?»): once every genus in play is met
+and asked and none may open now, the all-met card at the break at Next ("Every genus met", "You’ve seen them all, for
+now", 🐌, `app.js` `CARD_KINDS` `'sea slug'`) says what comes next, once per reason, as the fish's
+([fish-game.md](fish-game.md)): `c3`, the N genera of circle 3 still to come, at about Open Water on average; `all`,
+else: the genera still without a game photo, else the mastery exams (`UNITS.seaslug` `done`, `slugNextOf`; tests:
+`tests/allmet.test.js`, `tests/seaslug.smoke.js`).
 
 **Their photos** are read from iNaturalist (`r: 1`) until the R2 step (`tools/seaslug_game.py --r2`) puts them on R2;
 that step is on in the Candidate photos workflow (`SEASLUG_R2`), so the photos in play that R2 lacks are uploaded with

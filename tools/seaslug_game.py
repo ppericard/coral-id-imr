@@ -88,7 +88,7 @@ line:
     A photo already on R2 (the committed file) keeps its files; one whose crop or rotation changed is listed with its
     old files until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
   - the tile (Pierre, 2026-11-19, Q437: every game mode for every subject; Find the X, one name and four photos): a photo
-    whose judgement carries the animal's box (suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
+    whose judgement carries the animal's box (data/suggest.json "seaslug" bb, as fish_game.py box_of reads it) and whose tags
     pass the sea slugs' tile rule (tile_tags here: the fish's plus the dorsal view) carries bb, and its download (or, on R2 already, a run for the
     tile alone) cuts {f}-x.webp with the fish's own cut (fish_game.py tile_crop, tile_write: nothing is copied), the
     record then carrying xc (the tile's square) or xn (why not). A judging file may carry bb (judging/SEASLUG.md "The

@@ -2,8 +2,9 @@
 // it uses (DRAFT, saveDraft, render, toast, esc, img, srcTag, fishLoad, FISHC...), as admin-journey.js does. Admin only:
 // players never download it.
 //
-// The fish Candidates swiper (#fish/photos/candidates): the candidates of data/fish-cand.json one at a time, as the coral
-// swiper, with what the fish curation needs: the thinnest species first, stopping at each species' target, the pass's
+// The tree subjects' Candidates builder (CAND_BUILD.tree, at the end of this file; the swiper itself is admin.js renderCand,
+// the same for every subject: #fish/photos/candidates, #seaslug/photos/candidates): the candidates of the subject's
+// candidate file one at a time, with what the tree subjects' curation needs: the thinnest species first, stopping at each species' target, the pass's
 // judgment (data/suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species'
 // photos in play beside the card (most of them the auto-sort's proposals, which the admin can take out of play), the
 // auto-sort's agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd,
@@ -15,18 +16,10 @@
 // are pressed; the pass's show dashed until he confirms or changes them (never on a Check: blind).
 
 let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the queue shown: every candidate, or the Checks only
-  FTAGS_OPEN = store.get('reefid-admin-ftags', false) === true, // the tag rows unfolded (this browser)
-  FFULL = false, // this tab: also show the candidates of species at their target
-  FASIDE = false; // this tab: also show the ones the pass is sure go, not applied (the fish auto-sort's keep off)
-const FSKIP = new Set();
+  FTAGS_OPEN = store.get('reefid-admin-ftags', false) === true; // the tag rows unfolded (this browser)
 // The species records the default covers read their presence around the instance's centre from (autosort.js
 // fishCoverOf, fishSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
 fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
-// The card the admin is setting rows or a crop on stays on screen (his values move it in the order: a phase he clears is no
-// longer a missing one) until he decides it, skips it or sends it elsewhere (Not this); every other render, an Undo
-// included, shows the queue's first.
-let FPIN = null;
-
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
 // its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
@@ -262,183 +255,154 @@ function bindFishAuto(scope) {
     if (z) z.onclick = () => FISHC.byF[f] && fishZoom(FISHC.byF[f], FISHC.byF[f].sid, false, true);
   });
 }
-function renderFishCand() {
-  status();
-  if (!FISHC || !FISHC.plays) {
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad(true).then(() => cur === 'photos/candidates' && ASUBJ.admin.cur && render());
-    return;
-  }
-  const F = DRAFT[TK] || {},
-    SF = (SUG && SUG[TK]) || {},
-    Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
-    chks = Q0.filter(x => x.chk),
-    // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
-    // (Checks chosen on one subject must not leave another an empty queue with no switch)
-    aqOn = !!FISHS.admin.autosort || chks.length > 0,
-    Q1 = aqOn && FQ === 'chk' ? chks : Q0,
-    shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),
-    nFull = Q1.filter(x => x.full).length,
-    nAside = Q1.filter(x => x.aside).length,
-    nJ = Q0.filter(x => !x.j).length,
-    live = Q1.filter(shown),
-    c = live.find(x => x.p.f === FPIN) || live[0],
-    nx = live.find(x => x !== c);
-  const cnt = L => L.filter(shown).length;
-  const seg =
-    // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count, a
-    // chip beside the others
-    (aqOn
-      ? `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>`
-      : '') +
-    candFlags(
-      `${aqOn ? '' : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} to sort</span>`}${
-        nFull
-          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHS.admin.target > 0 ? `${FISHS.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`}): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
-          : ''
-      }${
-        nAside
-          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water or a screen, an egg mass), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
-          : ''
-      }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the ${esc(FISHS.what.toLowerCase())} candidate pass (judging/)">${nJ} not judged yet</span>` : ''}`,
-      fishAutoBlock(false, true)
-    ) +
-    fishAutoBlock();
-  if (!c) {
-    const sk = Q1.filter(x => FSKIP.has(x.p.f)).length;
-    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${sk ? `${sk} skipped.` : 'No candidate left.'}</p>${sk ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>${fishAutoBlock(true)}`;
-  } else {
-    const {p, sid, chk, j, from, ph, nph} = c,
-      pb = {...p, j: chk ? null : j},
-      n = fishName(sid),
-      play = fishInPlay(F, sid),
-      inObs = new Set(play.map(q => q.o || q.f)).size,
-      s = chk ? null : fishSure(j),
-      link = /^https?:/.test(p.o || '')
-        ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="${p.via === 'fishbase' ? 'FishBase' : 'iNaturalist'}">${p.via === 'fishbase' ? 'FishBase' : 'iNat'} ↗</a>`
-        : '';
-    $v.innerHTML = `<section class="adm-sw adm-fsw${chk ? ' adm-blind' : ''}${FTAGS_OPEN ? ' adm-ftopen' : ''}" data-f="${esc(p.f)}" data-s="${esc(sid)}">${seg}
-      <figure class="adm-swcard">
-        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${fishSrc(pb, 0, chk)} alt=""></button>
-        <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}${fishPtx(FISHC.species[sid])}</span>
-        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
-        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${fishSrcTag(p)}${!chk && ph ? `<span class="adm-src${nph ? ' adm-fnew' : ''}" title="${nph ? 'A phase none of its photos in play shows' : 'Its phase'}">${esc(ph)}${nph ? ' · new' : ''}</span>` : ''}${p.st ? `<span class="adm-src" title="iNaturalist / FishBase life stage or sex">${esc(p.st)}</span>` : ''}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
-      </figure>${chk ? '' : fishJudged(j)}
+// cand tree: begin
+// The tree subjects' builder of the Candidates swiper (admin.js renderCand, CAND_BUILD: its members are listed there): the
+// subject's candidates through autosort.js fishQueue, a species' (or a genus-level list's) target the unit of the cap, the
+// pass's judgment and the rubric's rows, the species' photos in play beside the card, Not this → another species.
+CAND_BUILD.tree = (() => {
+  // After his answer to a Check: what the auto-sort had said.
+  const told = c => {
+      if (!c.chk) return;
+      const x = fishIdx(DRAFT[TK])[c.p.f];
+      if (x)
+        toast(
+          `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
+        );
+    },
+    // The photo as the card shows it: the pass's judgment, never on a Check (blind).
+    shownPhoto = c => ({...c.p, j: c.chk ? null : c.j}),
+    // The rows' and the crop's clicks pin the card (cst: his values move it in the queue's order: a phase he clears is no
+    // longer a missing one).
+    pin = (Q, c) => fn => {
+      cst(Q.S).pin = c.p.f;
+      fishEdit(fn);
+    };
+  return {
+    ready: () => !!(FISHC && FISHC.plays),
+    load: () => fishLoad(true),
+    instead: () => false,
+    queue(S) {
+      const F = DRAFT[TK] || {},
+        SF = (SUG && SUG[TK]) || {},
+        Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+        chks = Q0.filter(x => x.chk),
+        // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
+        // (Checks chosen on one subject must not leave another an empty queue with no switch)
+        aqOn = !!S.admin.autosort || chks.length > 0;
+      return {S, F, Q0, chks, aqOn, rows: aqOn && FQ === 'chk' ? chks : Q0, unjudged: Q0.filter(x => !x.j).length};
+    },
+    // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count, a chip
+    // beside the others (words.lead)
+    seg: (Q, shown) =>
+      Q.aqOn
+        ? `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${Q.Q0.filter(shown).length}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The auto-sort's Checks, blind">Checks <b>${Q.chks.filter(shown).length}</b></button></span>`
+        : '',
+    words: (Q, shown) => ({
+      lead: Q.aqOn
+        ? ''
+        : `<span class="adm-chip" title="Every candidate, the thinnest species first">${Q.Q0.filter(shown).length} to sort</span>`,
+      full: [
+        'at target',
+        `of species at their target (${Q.S.admin.target > 0 ? `${Q.S.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`})`
+      ],
+      aside: 'the pass is sure go (near-duplicate, subject not obvious, out of the water or a screen, an egg mass), not applied',
+      judge: `Ask your agent for the ${esc(Q.S.what.toLowerCase())} candidate pass (judging/)`
+    }),
+    auto: (det, chip) => fishAutoBlock(det, chip),
+    interlude: () => false,
+    card(Q, c) {
+      const {p, sid, chk, j, from, ph, nph} = c,
+        F = Q.F,
+        n = fishName(sid),
+        play = fishInPlay(F, sid),
+        inObs = new Set(play.map(q => q.o || q.f)).size,
+        s = chk ? null : fishSure(j),
+        link = /^https?:/.test(p.o || '')
+          ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="${p.via === 'fishbase' ? 'FishBase' : 'iNaturalist'}">${p.via === 'fishbase' ? 'FishBase' : 'iNat'} ↗</a>`
+          : '';
+      return {
+        cls: ` adm-fsw${FTAGS_OPEN ? ' adm-ftopen' : ''}`,
+        attrs: ` data-s="${esc(sid)}"`,
+        photo: fishSrc(shownPhoto(c), 0, chk),
+        head: `<span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}${fishPtx(FISHC.species[sid])}</span>`,
+        caption: `${fishSrcTag(p)}${!chk && ph ? `<span class="adm-src${nph ? ' adm-fnew' : ''}" title="${nph ? 'A phase none of its photos in play shows' : 'Its phase'}">${esc(ph)}${nph ? ' · new' : ''}</span>` : ''}${p.st ? `<span class="adm-src" title="iNaturalist / FishBase life stage or sex">${esc(p.st)}</span>` : ''}<span class="adm-t">${esc(p.t || '')}</span>${link}`,
+        judge: chk ? '' : fishJudged(j),
+        strip: `
       <div class="adm-fplay" title="Observations in play for this species / its target"><span class="adm-fplayn${inObs >= c.target ? ' full' : ''}">In play <b>${inObs}/${c.target}</b></span>${play
         .map(
           q =>
             `<button type="button" class="adm-fth" data-fp="${esc(q.f)}" aria-label="Enlarge a photo in play">${q.src ? `<img ${fishSrc(q, 1)} alt="" loading="lazy">` : ''}</button>`
         )
-        .join('')}</div>
-      <div class="adm-acts adm-swacts">${fishRows(F, p, j, chk, FISHC.entry[sid])}<div class="adm-swrow">${fishNotThisSel(sid, from)}<button type="button" class="adm-swcrop${(F.crop || {})[p.f] || fishRot(p.f) ? ' on' : ''}" data-fcrop aria-pressed="${!!((F.crop || {})[p.f] || fishRot(p.f))}">Crop</button><button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button><button type="button" data-skip>Skip</button></div></div>
-      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button><button type="button" class="add${s && s.keep === 'add' ? ' sug' : ''}" data-add title="${s && s.keep === 'add' ? 'Suggested · ' : ''}Add (1)">+ Add</button></div>
-    </section>${fishAutoBlock(true)}`;
-    if (nx && nx.p.src) new Image().src = img(nx.p);
-    // A remote photo that does not load (its host down, or the photo gone at the source): said on the card, with its link.
-    // Only on its own card: a photo of a card already gone (Skip, a click) that fails later says nothing.
-    const im = $v.querySelector('.adm-swph img'),
-      fc = $v.querySelector('.adm-swcard figcaption');
-    if (im && fc)
-      im.addEventListener('error', () => {
-        if (fc.isConnected && !fc.querySelector('.adm-fbad'))
-          fc.insertAdjacentHTML('afterbegin', '<span class="adm-src rej adm-fbad">Photo not loading</span>');
-      });
-    const S = $v.querySelector('.adm-sw'),
-      f = p.f,
-      // After his answer to a Check: what the auto-sort had said.
-      told = () => {
-        if (!chk) return;
-        const x = fishIdx(DRAFT[TK])[f];
-        if (x)
-          toast(
-            `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], f) === 'add') ? ' (same)' : ' (differs)'}.`
-          );
+        .join('')}</div>`,
+        rows: fishRows(F, p, j, chk, FISHC.entry[sid]),
+        not: fishNotThisSel(sid, from),
+        tool: `<button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button>`,
+        crop: !!((F.crop || {})[p.f] || fishRot(p.f)),
+        adds: [{v: '', t: 'Add', sug: !!(s && s.keep === 'add')}]
       };
-    S.querySelector('[data-add]').onclick = () => {
-      FSKIP.delete(f);
-      FPIN = null;
-      fishEdit(G => fishAdd(G, f, sid, j, p));
-      if (!chk) toast(`Added: ${n.sci} (${new Set(fishInPlay(DRAFT[TK], sid).map(q => q.o || q.f)).size}/${c.target}).`);
-      told();
-    };
-    S.querySelector('[data-rej]').onclick = () => {
-      FSKIP.delete(f);
-      FPIN = null;
-      fishEdit(G => fishReject(fishDrop(G, fishFamOf(sid), f), f));
-      told();
-    };
-    S.querySelector('[data-x]').onclick = () => {
-      FSKIP.delete(f);
-      FPIN = null;
-      fishEdit(G => fishExclude(fishDrop(G, fishFamOf(sid), f), f));
-      if (!chk) toast('Excluded. Undo (Ctrl+Z) brings it back.');
-      told();
-    };
-    S.querySelector('[data-skip]').onclick = () => {
-      FPIN = null;
-      FSKIP.add(f);
-      render();
-    };
-    S.querySelector('[data-zoom]').onclick = () => fishZoom(pb, sid, false, chk);
-    // The rows: each click the admin's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
-    const fishPin = fn => {
-      FPIN = f;
-      fishEdit(fn);
-    };
-    bindFishRows(S, f, () => fishTagsMine(DRAFT[TK], f, j && j.jt) || (!chk && j && j.jt) || '', fishPin);
-    S.querySelector('[data-ftags]').onclick = () => {
-      FTAGS_OPEN = !FTAGS_OPEN;
-      store.set('reefid-admin-ftags', FTAGS_OPEN);
-      render();
-    };
+    },
+    add(Q, c) {
+      const {p, sid, chk, j} = c;
+      fishEdit(G => fishAdd(G, p.f, sid, j, p));
+      if (!chk) toast(`Added: ${fishName(sid).sci} (${new Set(fishInPlay(DRAFT[TK], sid).map(q => q.o || q.f)).size}/${c.target}).`);
+      told(c);
+    },
+    reject(Q, c) {
+      fishEdit(G => fishReject(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
+      told(c);
+    },
+    exclude(Q, c) {
+      fishEdit(G => fishExclude(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
+      if (!c.chk) toast('Excluded. Undo (Ctrl+Z) brings it back.');
+      told(c);
+    },
+    zoom: (Q, c) => fishZoom(shownPhoto(c), c.sid, false, c.chk),
     // The crop (fishCrop): the admin's, else the pass's (never on a Check).
-    S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG[TK] || {})[f] || {}).c, fishPin);
-    S.querySelector('[data-fnot]').onchange = e => {
-      const to = e.target.value;
-      if (!to) return;
-      FSKIP.delete(f);
-      FPIN = null;
-      fishEdit(G => fishNotThis(fishDrop(G, fishFamOf(sid), f), f, to, from || sid));
-      toast(
-        to === 'x'
-          ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.'
-          : to === from
-            ? `Back to ${fishName(to).sci}.`
-            : `Not this: sent to ${fishName(to).sci} as its candidate.`
+    crop: (Q, c) => fishCrop(shownPhoto(c), !c.chk && c.j && c.j.c, ((SUG[TK] || {})[c.p.f] || {}).c, pin(Q, c)),
+    bind(Q, scope, c) {
+      if (c) {
+        const {p, sid, chk, j, from} = c,
+          f = p.f,
+          sw = scope.querySelector('.adm-sw'),
+          st = cst(Q.S),
+          play = fishInPlay(Q.F, sid);
+        // The rows: each click the admin's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
+        bindFishRows(sw, f, () => fishTagsMine(DRAFT[TK], f, j && j.jt) || (!chk && j && j.jt) || '', pin(Q, c));
+        sw.querySelector('[data-ftags]').onclick = () => {
+          FTAGS_OPEN = !FTAGS_OPEN;
+          store.set('reefid-admin-ftags', FTAGS_OPEN);
+          render();
+        };
+        sw.querySelector('[data-fnot]').onchange = e => {
+          const to = e.target.value;
+          if (!to) return;
+          st.skip.delete(f);
+          st.pin = null;
+          fishEdit(G => fishNotThis(fishDrop(G, fishFamOf(sid), f), f, to, from || sid));
+          toast(
+            to === 'x'
+              ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.'
+              : to === from
+                ? `Back to ${fishName(to).sci}.`
+                : `Not this: sent to ${fishName(to).sci} as its candidate.`
+          );
+          told(c);
+        };
+        sw.querySelectorAll('[data-fp]').forEach(b => {
+          const q = play.find(x => x.f === b.dataset.fp);
+          b.onclick = () => q && q.src && fishZoom(q, sid, true);
+        });
+      }
+      scope.querySelectorAll('[data-fq]').forEach(
+        b =>
+          (b.onclick = () => {
+            FQ = b.dataset.fq;
+            store.set('reefid-admin-fq', FQ);
+            render();
+          })
       );
-      told();
-    };
-    S.querySelectorAll('[data-fp]').forEach(b => {
-      const q = play.find(x => x.f === b.dataset.fp);
-      b.onclick = () => q && q.src && fishZoom(q, sid, true);
-    });
-  }
-  $v.querySelectorAll('[data-fq]').forEach(
-    b =>
-      (b.onclick = () => {
-        FQ = b.dataset.fq;
-        store.set('reefid-admin-fq', FQ);
-        render();
-      })
-  );
-  const ff = $v.querySelector('[data-ffull]');
-  if (ff)
-    ff.onclick = () => {
-      FFULL = !FFULL;
-      render();
-    };
-  const fa = $v.querySelector('[data-faside]');
-  if (fa)
-    fa.onclick = () => {
-      FASIDE = !FASIDE;
-      render();
-    };
-  const ag = $v.querySelector('[data-again]');
-  if (ag)
-    ag.onclick = () => {
-      FSKIP.clear();
-      render();
-    };
-  bindFishAuto($v);
-  candKeys();
-}
+      bindFishAuto(scope);
+    }
+  };
+})();
+// cand tree: end

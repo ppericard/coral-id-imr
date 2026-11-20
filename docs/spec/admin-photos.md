@@ -38,10 +38,14 @@ tools below are `coralLive` in `admin-nodephotos.js`.
 
 ## Candidates (the corals)
 
-`#photos/candidates` (the default view on phones, `renderCand`): one pending candidate per screen (iNaturalist candidates
+`#photos/candidates` (the default view on phones): one pending candidate per screen (iNaturalist candidates
 from `data.json` `cand`), with a source filter Pierre / Dauin / PH / All (default Dauin; a source with nothing left gives
-way to the first one, in that order, that still has candidates). The fish's and the sea slugs' Candidates are
-[fish-photos.md › The Fish Candidates page](fish-photos.md#the-fish-candidates-page).
+way to the first one, in that order, that still has candidates). **One swiper for every subject**: `admin.js`
+`renderCand(S)` draws the frame (the queue's switch, the row of toggles, the card and its decision bar, the empty page,
+the keys), and what differs between subjects is the builder `CAND_BUILD` gives for the data shape the subject declares
+(`SUBJECTS` `flat`: `candBuild`, as `TREE_BUILD`); this page is the `flat` builder's (the corals), the fish's and the sea
+slugs' the `tree` builder's, in `admin-fish.js`:
+[fish-photos.md › The Fish Candidates page](fish-photos.md#the-fish-candidates-page) (`tests/candbuild.test.js`).
 
 - **Game genera first** (`isGame`, `GAME` = `core.js` `gameOf`: the slate, Millepora, the bonus genera): every candidate
   of a game genus of the source comes before any candidate of a Key-only genus, which come after in their own weighted
@@ -147,7 +151,7 @@ ranking as the full list, `needsOf()`); "All N" opens the full list there (`#inb
   Key-only genus's cells over its cap are counted on the Sheets & ID Key view and outlined there.
 - The swiper's full test (`cellFull`, `candQueue`) uses each genus's own cap: `candQueue` marks a candidate `full` when
   its guessed view (`cellView`: `vg`, else its view) has `CELL_MAX` colonies and its colony is not one of them; full ones
-  leave the queue (a line counts them, "Show them" brings them in for the tab, `CFULL`) and come back when the cell drops
+  leave the queue (a line counts them, "Show them" brings them in for the tab, the subject's `cst()` `full`) and come back when the cell drops
   below.
 - **Adding to a full view** (`cellFull`) opens `renderRepl()`, semi-automatic for the most variety: one tile per colony
   of the cell, in `retireOrder()`: the suggested colony first, outlined, with its reasons (Poor quality; a difficulty the

@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 206 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 207 (2026-11-20). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 206;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 207;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -7474,12 +7474,14 @@ const CORE_ = (function () { const module = {exports: {}};
   };
   // Question formats (analysis.js FORMATS, whose fmtOf this is: tests/analysis.test.js checks both agree), from the mode
   // quiz.js logs and the number of choices shown: typed (|t), the Duel tab (quiz-duel…), a look-alike duel in the quiz
-  // (|d), an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
+  // (|d), a Find the X (|f: one name, four photos; its own offset, the one its photo is aimed with, quiz.js planFind),
+  // an exam question (|x), "Again: A or B?" (2 choices), 4 shown of which 3 or 2 plausible (|k3, |k2), 4 plausible.
   function fmtOf(m, nch) {
     m = String(m || '');
     if (TYPED_RE.test(m)) return 'typed';
     if (m.indexOf('quiz-duel') === 0) return 'duel';
     if (/\|d(\||$)/.test(m)) return 'qduel';
+    if (/\|f(\||$)/.test(m)) return 'find';
     if (/\|x(\||$)/.test(m)) return 'exam';
     if (nch === 2) return 'again';
     const k = /\|k(\d)/.exec(m);
