@@ -7676,10 +7676,10 @@ async function loadPart(b, base, fails) {
       if (!v0.fishPages.includes('Fish ID Key') || !v0.fishPages.includes('Families') || !/Coral ID Key/.test(v0.pages))
         fails.push(`${w}px Visits: the pages of each subject ${JSON.stringify(v0.fishPages)}`);
       if (v0.wide > 0) fails.push(`${w}px Visits: page ${v0.wide} px wider than the window`);
-      // The players' part's actions at 1280, when it ran before this (a whole run; not SMOKE_PART=main), leave one more
-      // visitor of the demo without an answer (a merge, the answers of devices deleted).
-      const never = once && run.has('players') ? 14 : 13;
-      if (v0.kpis !== `46of 75Visits without a game | 17Visitors | ${never}Never answered | 8 minMedian visit | 54%On a phone`)
+      // The same numbers whether or not the players' part ran before this (a whole run, or SMOKE_PART=main alone as on CI):
+      // its merge of "mara demo2" and delete of "Test Demo" touch players whose visits all include a game, so they are not
+      // among the 17 visitors without one, and none of those visitors loses its answers (checked on a whole run at 1280).
+      if (v0.kpis !== '46of 75Visits without a game | 17Visitors | 13Never answered | 8 minMedian visit | 54%On a phone')
         fails.push(`${w}px Visits: numbers ${v0.kpis}`);
       if (v0.rows !== 12 || v0.open || v0.legend || v0.stack) fails.push(`${w}px Visits: ${JSON.stringify({...v0, pages: ''})}`);
       if (!/Coral ID Key/.test(v0.pages) || !/Tools › anatomy/.test(v0.pages) || /Quiz|Duels/.test(v0.pages))
