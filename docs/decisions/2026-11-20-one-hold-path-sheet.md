@@ -1,6 +1,6 @@
 # One opening hold path on the sheet for every subject; the app still adopts the corals' only
 
-Date: 2026-11-20. PR: #PRNUM. Rules or docs touched: S1; docs/spec/sync.md "The opening hold"; docs/spec/subjects.md
+Date: 2026-11-20. PR: #1346. Rules or docs touched: S1; docs/spec/sync.md "The opening hold"; docs/spec/subjects.md
 "The registry", "Sync and replay per subject"; ROADMAP "One engine for every subject, what is left".
 
 ## Context
