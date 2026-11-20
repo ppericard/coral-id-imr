@@ -1644,3 +1644,48 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   first. Applied: INTEGRATOR "The merge mechanics" (A reference doc PR goes first); #1326's update is the integrator's.
 - **05:40, Q439 (the Lab prototypes to graduate).** «Question 439, prototype du lab. J'ai pas testé encore, donc il faut
   que je regarde.» Not answered: he has not tested the Lab yet; the question stays open. Applied: no doc change (open in STATUS).
+- **05:48, Q449-Q451 (response time), with the context he asked for: step 1, and his addition.** «Ok, étape 1, d'accord,
+  ça y est, je comprends mieux. Alors le problème c'est qu'en fait tu mets tous les joueurs dans le même panier et je me
+  demande dans quelle mesure il faudrait pas arriver à différencier d'une certaine manière, mais de manière continue,
+  hein, sans forcément faire des catégories. Des réponses qui viennent de joueurs qui sont très forts, et ça on sait
+  qu'ils sont très forts parce que leur elo est très élevé, et parce qu'ils font très peu d'erreurs, leur taux de
+  réussite est très haut, leur elo est très haut, et donc ça ce sont des joueurs qui apportent un signal qui est
+  forcément différent des joueurs débutants. C'est-à-dire que quand un joueur débutant met du temps ou se trompe, bah, y
+  a quand même beaucoup de chances que ça soit parce qu'il connaît pas bien les genres. Pas forcément, alors peut-être
+  qu'il y a une petite partie qui est liée à la difficulté de la photo, mais le plus probable c'est quand même que ce
+  soit plutôt sa propre connaissance qui soit affectée. Alors que quand un joueur qui est très fort hésite, y a moins
+  de chances que ça soit sa connaissance propre qui soit affectée, mais plutôt la difficulté propre de la photo. Je ne
+  sais pas si tu vois ce que je veux dire. Et du coup, c'est mon intuition, mais du coup, je pense qu'il y a un signal
+  qui est intéressant à aller chercher, qui n'est pas un signal qu'on doit catégoriser, mais qui doit être probablement
+  un signal à analyser de manière continue. Mais je pense qu'il y a un biais multifactoriel sur cette question-là. Et
+  d'ailleurs, il faudrait qu'on utilise, enfin j'utilise, on fait des analyses multifactorielles sur nos données, et à
+  mon avis, c'est un sujet qui est vraiment à creuser, quoi. C'est typiquement comparer les temps de réponse par rapport
+  au niveau au niveau des joueurs et la difficulté des photos.» The direction of the 05:40 «Ok» stands, with his
+  addition: the time signal is weighed continuously by the player's strength (Elo, success rate), never in categories (a
+  strong player's hesitation points to the photo, a beginner's to the player); a multifactor analysis of response time
+  against player level and photo difficulty comes first, as a study, then the build. Applied: ROADMAP "Time in the photo
+  rating".
+- **05:48, Q452 (step 2: the player's time net of the photo's, a silent replay).** «Alors, pour l'étape 2, alors c'est
+  rigolo, je ne savais pas, j'avais pas retenu qu'une bonne réponse lente ne comptait qu'à moitié pour le niveau du
+  joueur. Ok, c'est pas, je dis pas que c'est déconnant, mais je dis juste que j'avais pas forcément retenu ça. Et
+  donc, ça fait effectivement peut-être un peu sens. Mais c'est là où je te rejoins, si la lenteur vient d'une photo
+  dure pour tout le monde, c'est injuste pour lui. Du coup, oui, effectivement. Ok, là maintenant je comprends mieux. Et
+  oui, il faut recalculer la progression de tous. On peut le faire en silence, c'est pas grave. Mais du coup, oui, je
+  suis assez d'accord.» Yes: a step 2 after step 1, and everyone's progress recalculated silently. Applied: ROADMAP
+  "Time in the photo rating".
+- **05:48, Remove vs × (answers the 05:40 entry).** «Alors, ah ça y est, j'ai compris. Le remove contre la croix, c'est
+  pour supprimer les photos du jeu. Donc... il faut un bouton remove, là en un clic la photo ne revient jamais, avec un
+  undo juste après, une liste des photos retirées pour en remettre si j'ai besoin. Oui, ça me va, ta proposition A me
+  va.» Option A decided: one Remove, one click, the photo never comes back, an Undo just after, a list of the removed
+  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph).
+- **05:48, the read-only R2 token for the CI (answers the 05:40 entry): withdrawn.** «Pour le jeton R2 en lecture seule,
+  ouais, ok, bon, tu retires la demande, très bien.» The integrator withdraws the request; he agreed. Applied: no doc
+  change (the question only sits in STATUS, the integrator's).
+- **05:48, Q446 (a screenshot attached to a report), decided (answers the 05:40 entry).** «question 446, capture d'écran
+  en simple. Là, réduit la capture. Ok. Environ 800 pixels en JPEG léger. Oui, quelques dizaines de kilos, moi ça me va.
+  Elle envoie avec le rapport et le script la range directement dans la feuille, dans un onglet à part. Là, j'en la lis
+  quand il traite le rapport, puis on l'efface. Oui, ça me va, c'est très bien. On va pas se faire pourrir de toute
+  façon, et on va pas stocker éternellement des trucs dans la feuille, donc ça me va. C'est pas lourd et ça me va.» The
+  capture is reduced on the device (about 800 px, light JPEG, a few tens of kB) and sent with the report; the sheet
+  script stores it in a separate tab of the sheet; the agent reads it when processing the report, then it is deleted;
+  no pCloud. Applied: ROADMAP "Attach a photo or a screenshot to a report" (Decided; build next).
