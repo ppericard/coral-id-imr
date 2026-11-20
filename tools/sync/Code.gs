@@ -561,7 +561,8 @@ function hold_(name, since, pt, light, sid){
 }
 // The holds a load or save reply carries (load_, doPost_): holds, {subject: {h, ids}} for every subject the sheet
 // replays, each since its own reset; a subject that fails is left out (the app keeps its own). The replay subject's is
-// also hold and holdIds, the only ones the app reads for now (sync.js holdAdopt). holds only for a light request
+// also hold and holdIds, which an app before HOLDS_SHEET reads alone (sync.js holdOf, holdAdopt: each subject adopts
+// its own from holds). holds only for a light request
 // (every app since the lighter saves): an older app never reads it, and its non-light ids (the last HOLD.IDS of each
 // subject) would add several KB to each of its replies.
 function holdsInto_(out, name, data, pt, light){
@@ -4429,14 +4430,13 @@ const CORE_ = (function () { const module = {exports: {}};
   //           subject of an unlabelled row (replaySubject); the others the sheet replays are SUBJECTS replayed
   //   The subject differences one-engine step 2 split out of replay (docs/reviews/2026-11-19-one-engine-audit.md;
   //   rule S1), each a feature switched on for the subjects that hold it, at the values replay gave:
-  //   hold    the app adopts the sheet's opening hold for this subject (sync.js holdAdopt); the sheet computes every
-  //           replayed subject's from its own answers (Code.gs holdsInto_, the reply's holds)
   //   offsets  the sheet's photo memory and format offsets are fitted on its answers (Code.gs stats_): the app reads
   //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
   //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
   //           signIn); any other subject adds all the progress this device holds
-  //   offsets follows the sheet, which computes it for replay's subject alone; hold stays on that subject until the app
-  //           adopts each subject's own (tests/subject-neutral.test.js)
+  //   offsets follows the sheet, which computes it for replay's subject alone (tests/subject-neutral.test.js). The
+  //           opening hold is no feature: the app adopts each subject's own from the sheet (sync.js holdAdopt; one-engine
+  //           step 5)
   //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
   //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
   //   ach     it has achievements: achs() its list (ACH, FISH_ACH), all in the one synced record (progress.js ACHK)
@@ -4711,7 +4711,6 @@ const CORE_ = (function () { const module = {exports: {}};
       rank: 'genus',
       flat: true,
       replay: true,
-      hold: true,
       offsets: true,
       anonBase: true,
       pool: {files: ['data.json', 'curation.json'], of: 'slots'},
@@ -4831,8 +4830,8 @@ const CORE_ = (function () { const module = {exports: {}};
       replay: false,
       // Its progress replayed by the sheet from its own answers (docs/LEARNING.md "Fish: the progress replayed from the
       // answer log"; Code.gs replay_ per subject), served beside the corals' replay (replays: {fish: ...}) to an app that
-      // asks for it. replay stays the corals': the subject the sheet rates photos, counts confusions and holds the opening
-      // from. gen: the replay's units, from fish.json. rvs: its own rules versions (FISH_RVS, rvsOf), so a change to its
+      // asks for it. replay stays the corals': the subject the sheet rates photos and counts confusions from (each
+      // subject's opening hold is its own: sync.js holdAdopt). gen: the replay's units, from fish.json. rvs: its own rules versions (FISH_RVS, rvsOf), so a change to its
       // replay never replays the corals. No floor: the log is the only reference, a fish bar may go down.
       // tree: its leaderboard's tree as the sheet makes it (treeBoardTree; Code.gs subjRpl_, board_). vars: the variant
       // table its replay reads (treeVarTable; Code.gs subjVar_), so the sheet takes a learned mark away when a variant
@@ -5253,7 +5252,7 @@ const CORE_ = (function () { const module = {exports: {}};
     return {sid: s, L: n < 0 ? L : L.slice(0, n)};
   };
   // The subject of the sheet's first replay path (SUBJECTS replay: the corals): its replay, and the subject of an
-  // unlabelled row. The sheet's photo memory follows it too (SUBJECTS offsets), and the hold the app adopts (hold).
+  // unlabelled row. The sheet's photo memory follows it too (SUBJECTS offsets).
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
   // The other subjects whose progress the sheet replays from their own answers (SUBJECTS replayed: fish), by id.
   const replayedSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed).map(S => S.id);

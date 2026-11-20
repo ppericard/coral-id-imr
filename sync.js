@@ -305,12 +305,24 @@ function pendingFrom(q) {
 const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // cut: the reset time the request was sent with ('' for none). A reset made here meanwhile: the replay is not adopted
 // (nor its version marked); the next reply brings it from the new reset. A load needs none (mergeSaved returns first).
-// The sheet's opening hold (model.js holdSync) counts the answers of one subject (SUBJECTS hold: the corals): taken as
-// that subject (inSubject), with this device's queued answers of that subject only (subjEntries).
-function holdAdopt(h, log, ids) {
-  const LS = SUBJECTS.find(x => x.hold);
-  if (LS && LS !== SUBJ) return inSubject(LS.id, () => holdAdopt(h, log, ids));
-  if (typeof holdSync === 'function') holdSync(h, subjEntries(log, SUBJ.id), ids);
+// Each subject's own opening hold in a reply (holds, {subject: {h, ids}}: Code.gs holdsInto_, each over that subject's
+// answers since its own reset), from HOLDS_SHEET (rule D4: the script carries holds from v210; the gate is the version of
+// this app's own change, set at merge). Before it, or in a reply without holds, the replay subject's alone (hold,
+// holdIds), the other subjects keeping this device's. A subject the reply leaves out keeps this device's.
+const HOLDS_SHEET = 211;
+const holdsOn = v => Number(v) >= HOLDS_SHEET;
+const holdOf = (j, S) => {
+  const H = j && holdsOn(j.v) && j.holds && typeof j.holds === 'object' ? j.holds : null,
+    x = H ? H[S.id] : j && S.replay ? {h: j.hold, ids: j.holdIds} : null;
+  return x && typeof x === 'object' && typeof x.h === 'number' ? x : null;
+};
+// The sheet's opening hold of subject S (model.js holdSync), taken as that subject (inSubject), with this device's queued
+// answers of that subject only (subjEntries). Nothing for a subject the reply has no hold of (holdOf).
+function holdAdopt(S, j, log) {
+  const x = holdOf(j, S);
+  if (!x) return;
+  if (S !== SUBJ) return inSubject(S.id, () => holdAdopt(S, j, log));
+  if (typeof holdSync === 'function') holdSync(x.h, subjEntries(log, S.id), x.ids);
 }
 // The corals' replay (SUBJECTS replay), adopted as that subject whatever is on screen; the others' by replaysAdopt.
 function replayAdopt(rp, pending, v, cut, pre) {
@@ -559,9 +571,9 @@ function mergeSubject(j, d, S, mine) {
       }
     });
   } catch (e) {}
-  // The opening hold from every answer the sheet has (model.js holdSync), with this device's unconfirmed ones added: the
-  // hold of the subject it counts (SUBJECTS hold), never another's.
-  const holdIn = () => S.hold && holdAdopt(j.hold, SYNC.log, j.holdIds);
+  // The opening hold from every answer the sheet has (model.js holdSync), with this device's unconfirmed ones added: this
+  // subject's own (holdOf), never another's.
+  const holdIn = () => holdAdopt(S, j, SYNC.log);
   if (rr > lr) {
     introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
@@ -856,9 +868,9 @@ function syncOnce(tries = 0, pulled = null) {
         groupsSeen(j, me.name); // the beta groups, as the load's reply
         treesSeen(j, trees); // the leaderboard trees the sheet now holds (TREE_SHEET)
         saveOk(me); // a run of failed tries ends here
-        // The sheet's hold over every answer now logged, in time order, plus any answer given while this send was on its
-        // way.
-        holdAdopt(j.hold, me.log, j.holdIds);
+        // Each subject's hold on the sheet over every answer now logged, in time order, plus any answer given while this
+        // send was on its way.
+        SUBJECTS.forEach(S => holdAdopt(S, j, me.log));
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged, plus any answer given while this send was on its way.
         notesSeen(j);

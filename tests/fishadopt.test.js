@@ -140,8 +140,12 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
     Q: {},
     saveQ: () => {},
     showBon: () => {},
-    prog: () => {}
+    prog: () => {},
+    // The opening hold each sync hands model.js holdSync: the subject on screen then, the sheet's sum, the queued
+    // answers added (all of that subject) and the ids the sheet counted.
+    holdSync: (h, log, ids) => holds.push({s: ctx.SUBJ.id, h, log: (log || []).map(a => a.s || 'coral'), ids: (ids || []).length})
   };
+  const holds = [];
   vm.createContext(ctx);
   vm.runInContext(
     `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
@@ -157,6 +161,7 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
   A.ctx = ctx;
   A.sent = sent;
   A.cards = cards;
+  A.holds = holds;
   // Out of the vm's realm (plain objects), for deepStrictEqual.
   A.fish = () => JSON.parse(JSON.stringify(ctx.SUBJ === FS ? ctx.P : get(C.subjKey('fish', 'progress'), {})));
   A.base = () => JSON.parse(JSON.stringify(ctx.SYNC.fbase || {}));
@@ -743,4 +748,47 @@ test('a structure Publish: the replay made under the new stamp adopted at the sa
     a.sent.some(b => b.rvs && b.rvs.fish === 0),
     'the replay asked for again'
   );
+});
+
+// One-engine step 5, the app's half (docs/decisions/2026-11-20-one-hold-path-app.md): each subject adopts its own opening
+// hold from the reply's holds (sync.js holdOf, holdAdopt; Code.gs holdsInto_), at the load and after the save, from the
+// script that serves them (HOLDS_SHEET, rule D4); before it, the corals' alone from hold and holdIds, exactly as before,
+// the fish keeping the device's. Each with this device's queued answers of its own subject only.
+const HOLDS_SHEET = Number(/\bconst HOLDS_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'))[1]);
+test("each subject's own opening hold from the sheet, from HOLDS_SHEET; before it, the corals' alone", async () => {
+  // The fish's sum over F as Code.gs hold_ makes it (model.js holdNext: e - ok - INTRO.SLACK an answer, never below 0).
+  const want = F.reduce((h, a) => Math.max(0, Math.round((h + a.e - a.ok - 0.1) * 1000) / 1000), 0);
+  assert.ok(want > 0, String(want));
+  for (const v of [HOLDS_SHEET - 1, HOLDS_SHEET]) {
+    const s = loadCodeGs(withFiles());
+    seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
+    // A coral answer queued here, not on the sheet yet: the corals' hold only.
+    const coral = {id: 'c1', t: T(30), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-1', e: 0.7, th: 0};
+    const a = app({
+      sheet: atv(s, v),
+      ls: {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-coral-rv': String(C.RV)},
+      SYNC: {name: 'Ana', pin: '1234', log: [coral], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1}
+    });
+    await a.syncPush();
+    const by = id => a.holds.filter(x => x.s === id),
+      on = v >= HOLDS_SHEET;
+    assert.ok(by('coral').length, `v${v}: the corals' hold adopted`);
+    for (const x of by('coral')) assert.deepStrictEqual([x.h, x.log.every(s => s === 'coral')], [0, true], `v${v} corals`);
+    assert.ok(
+      by('coral').some(x => x.log.length === 1),
+      `v${v}: the corals' queued answer on top at the load`
+    );
+    if (!on)
+      assert.deepStrictEqual(
+        a.holds.map(x => x.s).filter(s => s !== 'coral'),
+        [],
+        `v${v}: the fish keep the device's`
+      );
+    else {
+      assert.ok(by('fish').length >= 2, 'the fish hold adopted at the load and after the save');
+      for (const x of by('fish')) assert.deepStrictEqual([x.h, x.log], [want, []], "the fish's own, none of the corals' answers");
+      // A subject with no answers gets its sheet's 0 after the save (its copy has no progress: no merge at the load).
+      for (const x of by('seaslug')) assert.strictEqual(x.h, 0);
+    }
+  }
 });

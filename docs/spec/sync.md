@@ -391,14 +391,16 @@ older than another device's takes the right value at once. `HOLD.SLACK` in `Code
 replays (`Code.gs` `holdSubjects_`, `holdsInto_`): a light request's reply (every app since the lighter saves) also
 carries `holds`, `{subject: {h, ids}}`, each subject's hold over its own answers since its own reset
 (`reefid-sync-fish-reset`…), as the device keeps one hold per subject (`model.js` `HOLDK`); the replay subject's is
-`hold` and `holdIds` too, and a request without `light` gets those two alone, as before. The app reads only `hold` and
-`holdIds` for now, as the corals' (`SUBJECTS` `hold`): each subject adopting its own from `holds` is the app's half of
-the one-engine audit's step 5 (ROADMAP "One engine for every subject, what is left"). Cached per player and subject
-(`hold~<subject>:` and the name) until answers are logged or
-moved for that name. The app (`sync.js` `mergeSaved`, then `model.js` `holdSync`) adds the
-answers the sheet has not confirmed yet (`SYNC.log`, without the `|w` ones and those before the reset) and takes the
-result as its `reefid-hold`: the same sum over the same answers on every device. A reset made on this device and not
-sent yet ignores the reply's `hold`. A player not signed in keeps the device's hold only.
+`hold` and `holdIds` too, and a request without `light` gets those two alone, as before. Cached per player and subject
+(`hold~<subject>:` and the name) until answers are logged or moved for that name. The app adopts each subject's own
+(`sync.js` `holdOf`, `holdAdopt`, as that subject, [record](../decisions/2026-11-20-one-hold-path-app.md)) from `holds`
+once the reply's script is at `HOLDS_SHEET` (rule D4); before it, or in a reply without `holds`, the replay subject's
+alone from `hold` and `holdIds`, the other subjects keeping the device's; a subject the reply leaves out keeps the
+device's too. The app (`sync.js` `mergeSaved` for each subject it merges, every subject after a save, then `model.js`
+`holdSync`) adds the answers of that subject the sheet has not confirmed yet (`SYNC.log`, without the `|w` ones and
+those before its reset) and takes the result as that subject's hold (`reefid-hold`, `reefid-fish-hold`…): the same sum
+over the same answers on every device. A reset made on this device and not sent yet ignores the reply's hold of that
+subject. A player not signed in keeps the device's hold only.
 
 ## Full replay
 
