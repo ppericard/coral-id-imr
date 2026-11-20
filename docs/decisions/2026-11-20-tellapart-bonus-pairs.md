@@ -1,6 +1,6 @@
 # The coral pairs with a bonus or Key-only genus: 24 tell-apart lines written, one kept without
 
-Date: 2026-11-20. PR: #0. Builds on [2026-11-18-tellapart-lines](2026-11-18-tellapart-lines.md) (#1119) and
+Date: 2026-11-20. PR: #1296. Builds on [2026-11-18-tellapart-lines](2026-11-18-tellapart-lines.md) (#1119) and
 [2026-11-19-tellapart-none-pairs](2026-11-19-tellapart-none-pairs.md) (#1245). Rules or docs touched: C1, C2, C3, C6;
 ROADMAP "The feedback sheet's decisive lines"; spec/tools.md, spec/quiz.md.
 
