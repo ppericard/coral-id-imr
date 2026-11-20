@@ -1,6 +1,6 @@
 # A subject with no ID key built shows no Identify door and no Identify tab
 
-Date: 2026-11-20. PR: #1333. Rules or docs touched: S1, U12, docs/spec/subjects.md "Identify per subject", docs/spec/seaslugs.md, docs/spec/front-end.md "Home", DESIGN.md "Subject switch", ROADMAP rows "Fish ID Key for EventMeasure" and "More subjects".
+Date: 2026-11-20. PR: #1340. Rules or docs touched: S1, U12, docs/spec/subjects.md "Identify per subject", docs/spec/seaslugs.md, docs/spec/front-end.md "Home", DESIGN.md "Subject switch", ROADMAP rows "Fish ID Key for EventMeasure" and "More subjects".
 
 ## Context
 
