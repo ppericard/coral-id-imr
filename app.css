@@ -3135,19 +3135,16 @@ body {
   gap: 4px;
   overflow: hidden;
 }
+/* The two compared photos (a wrong answer) are always shown whole, on the blurred background, at every size: side by side
+   on a phone each box is portrait, and filling it (cover) cut a wide photo, a fish, to its middle (Pierre, 2026-11-20).
+   Never drawn past its own pixels either (an IMR lecture photo, quiz.js upMax). */
 .q .qstage.qvs .qph img {
-  object-fit: cover;
-  background-size: cover;
+  object-fit: scale-down;
+  background-size: contain;
 }
 .qstage .qph.cov img {
   object-fit: cover;
   background-size: cover;
-}
-/* An IMR lecture photo is never drawn past its own pixels (quiz.js upMax): side by side on a phone it stays whole, at
-   most its own size, on the blurred background. */
-.q .qstage.qvs .qph[data-imr] img {
-  object-fit: scale-down;
-  background-size: contain;
 }
 .wide {
   display: none;
@@ -3245,10 +3242,6 @@ body {
   .q .qstage.qvs {
     gap: 8px;
     overflow: revert;
-  }
-  .q .qstage.qvs .qph img {
-    object-fit: scale-down;
-    background-size: contain;
   }
   .wide {
     display: revert;
