@@ -38,7 +38,8 @@ rejected), #1295 (sea slug `bb` import and the box model record), #1300 (admin o
 
 ## Next
 
-Decided and ready, in launch order (one `core.js` holder and one `admin.js` holder at a time; at most four code agents):
+Decided and ready, launched at once unless a real dependency holds one back (rule W27: no two open PRs on the same
+sensitive file, `Code.gs`, `core.js`, `sync.js`, `model.js`; heavy runs share the machine through `tests/slot.js`):
 
 1. Watermark pass 5, then the measured block's full run on a runner (after #1298).
 2. #1259's two follow-ups (after #1294, #1298); then one admin step 5 (Candidates swiper), 6, 7, 8, 13; Learn steps 9-11
