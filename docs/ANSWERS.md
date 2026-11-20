@@ -1394,7 +1394,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   play, and a flag on a photo that no longer exists is no task; the Remove / × question stays open (07:00: «Du coup 2
   clics pour chaque photos? Tu me donnes du travail en plus. Réfléchis plus largement au problème et propose moi
   d'autres solutions»). Applied: docs/spec/admin.md "Each subject's admin part", decision record
-  `2026-11-20-flags-clear-themselves`, #1291.
+  `2026-11-20-flags-clear-themselves`, #1294.
 - **06:42-06:44, Q441 (a box pass on the sea slug photos so Find the X opens to them; the cost).** «Il faut faire des
   tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; then «Je ne devrais pas
   devoir te le suggérer. Tu devrais identifier que c'est ce que tu dois faire tout seul pour le coup. C'est un

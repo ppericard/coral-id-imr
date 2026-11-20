@@ -1,6 +1,6 @@
 # A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task
 
-Date: 2026-11-20. PR: #1291. Rules or docs touched: A2, S1; docs/spec/admin.md "Each subject's admin part", the admin's
+Date: 2026-11-20. PR: #1294. Rules or docs touched: A2, S1; docs/spec/admin.md "Each subject's admin part", the admin's
 `triage` help.
 
 ## Context
