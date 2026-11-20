@@ -1533,8 +1533,12 @@ const repImgBytes_ = d => {
 // The one row of an image (the report's id, who, the base64 text), written under the script lock.
 function repImgPut_(id, who, d, bytes){
   const sh = sheet_(REPIMG.TAB, REPIMG.HEAD), parts = [];
-  for (let i = 0; i < d.length; i += CHUNK) parts.push(d.slice(i, i + CHUNK));
-  const row = [id, new Date(), who ? aid_(who) : '', 'image/jpeg', bytes].concat(parts), at = sh.getLastRow() + 1;
+  for (let i = 0; i < d.length; i += CHUNK) parts.push(safe_(d.slice(i, i + CHUNK)));  // a chunk starting with + must not become a formula
+  const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [], k = ids.indexOf(String(id));
+  const row = [id, new Date(), who ? aid_(who) : '', 'image/jpeg', bytes].concat(parts), at = k >= 0 ? k + 2 : sh.getLastRow() + 1;
+  if (k >= 0) while (row.length < sh.getLastColumn()) row.push('');  // the chunks of the row replaced
+  const extra = at - sh.getMaxRows();
+  if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
   sh.getRange(at, 1, 1, row.length).setValues([row]);
 }
 // Every image whose report is gone is deleted (a deleted account's reports, the sweep of reports of removed accounts):
@@ -1594,7 +1598,9 @@ function logReports_(p){
       const d = r.img.d, size = r.img.t === 'image/jpeg' ? repImgBytes_(d) : null;
       imgs[r.id] = 0;
       if (!size || over_('repimg', REPIMG.ALL) || over_('ri:' + (who ? aid_(who) : '~'), REPIMG.PER)) return;
-      keep[r.id] = [d, size]; imgs[r.id] = 1; });
+      // Written before the report's row, and refused (not thrown) when the tab cannot take it: a report is never lost nor
+      // its retry made to skip the image (an image row left by a failed report is replaced by the retry, same id).
+      try { repImgPut_(r.id, who, d, size); keep[r.id] = 1; imgs[r.id] = 1; } catch (e) {} });
     // A unit is a genus name, a scientific genus (g:Platax) or a family (f:Damselfishes; an old entry id renamed to
     // it): letters first, then letters, digits, spaces or dashes.
     const G = /^([fg]:)?[A-Za-z][A-Za-z0-9 -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
@@ -1605,7 +1611,6 @@ function logReports_(p){
       if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
       if (Object.keys(keep).length && sh.getLastColumn() < REP.length) sh.getRange(1, REP.length).setValue(REP[REP_IMG]).setFontWeight('bold');  // a tab from before the Image column
       sh.getRange(at, 1, rows.length, REP.length).setValues(rows); }
-    Object.keys(keep).forEach(id => repImgPut_(id, who, keep[id][0], keep[id][1]));
     return Object.keys(imgs).length ? {ok: true, rep: true, img: imgs} : {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }

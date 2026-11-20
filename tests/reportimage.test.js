@@ -59,6 +59,48 @@ test('Code.gs: an image is kept in its own tab, in chunks under the cell limit, 
   assert.deepStrictEqual(tool.decode(I.getRange(1, 1, 2, 9).getValues(), 'r1'), jpeg(size));
 });
 
+test('Code.gs: a chunk that starts with + is kept as text, never a formula (Codex review)', () => {
+  const s = signedIn(),
+    b = jpeg(60000);
+  b[45000 * 0.75] = 0xfa; // the second chunk's first base64 character is '+'
+  const d = b.toString('base64');
+  assert.strictEqual(d[45000], '+');
+  assert.deepStrictEqual(post(s, [rep('p1', {img: {t: 'image/jpeg', d}})]).img, {p1: 1});
+  const I = s.sheets['Report images'];
+  assert.deepStrictEqual(tool.decode(I.getRange(1, 1, 2, 8).getValues(), 'p1'), b);
+});
+
+test('Code.gs: the image tab grows before a row past its grid; a retried image replaces its row (Codex review)', () => {
+  const s = signedIn(),
+    I = makeSheet('Report images'),
+    grown = [];
+  s.sheets['Report images'] = I;
+  I.appendRow(['Id', 'Time', 'Player', 'Type', 'Bytes']);
+  I.getMaxRows = () => 1; // a grid with no room for a row
+  I.insertRowsAfter = (r, n) => grown.push([r, n]);
+  assert.deepStrictEqual(post(s, [rep('g1', {img: img(40)})]).img, {g1: 1});
+  assert.deepStrictEqual(grown, [[1, 1]]);
+  // the same id again (its report was not written the first time): one row, no leftover chunk
+  const run = code => require('vm').runInContext(code, s.ctx);
+  const big = jpeg(100000).toString('base64'),
+    small = jpeg(40).toString('base64');
+  run(`repImgPut_('g2', 'Ana', ${JSON.stringify(big)}, 100004)`);
+  run(`repImgPut_('g2', 'Ana', ${JSON.stringify(small)}, 44)`);
+  const ids = I.getRange(2, 1, I.getLastRow() - 1, 1)
+    .getValues()
+    .map(r => r[0]);
+  assert.deepStrictEqual(ids, ['g1', 'g2']);
+  assert.deepStrictEqual(tool.decode(I.getRange(1, 1, 3, 9).getValues(), 'g2'), jpeg(40));
+  // a tab that cannot take it: the image is refused, the report is logged, no error
+  I.getRange = () => {
+    throw new Error('Exception: out of bounds');
+  };
+  const r = post(s, [rep('g3', {img: img(40)})]);
+  assert.deepStrictEqual([r.rep, r.img], [true, {g3: 0}]);
+  assert.strictEqual(s.sheets.Reports.getRange(3, 12, 1, 2).getValues()[0][0], 'g3');
+  assert.strictEqual(s.sheets.Reports.getRange(3, 13, 1, 1).getValues()[0][0], '', 'no mark of a picture not kept');
+});
+
 test('Code.gs: the report is logged, whatever happens to the image', () => {
   const s = signedIn();
   const cases = {
