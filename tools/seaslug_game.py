@@ -198,8 +198,10 @@ def genus_looks(cand, genera):
 
 
 def sure(j):
-    """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric)."""
-    if not j or j.get('egg') or j.get('u') or j.get('k', 'best') not in ('best', 'alt'):
+    """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric): no
+    unsure field but the box, whose doubt only withholds the photo's tile (fish_game.unsure; box_of)."""
+    import fish_game as FG
+    if not j or j.get('egg') or FG.unsure(j) or j.get('k', 'best') not in ('best', 'alt'):
         return False
     jt, e = j.get('jt') or '', j.get('e')
     return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
