@@ -5032,7 +5032,7 @@ async function loadPart(b, base, fails) {
         const page = () =>
           q.evaluate(() => ({
             cards: [...document.querySelectorAll('.adm-gcard')].map(c => ({
-              n: c.querySelector('.adm-gname').textContent,
+              n: c.querySelector('.adm-gname').textContent.replace('Carries rights', ''), // the key's title
               key: !!c.querySelector('.adm-gname .adm-gkey'),
               rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')),
               add: !!c.querySelector('[data-gradd]'),
@@ -5146,7 +5146,7 @@ async function loadPart(b, base, fails) {
           const b = await q.evaluate(() => ({
             keys: [...document.querySelectorAll('.adm-ubar .adm-gchip')]
               .filter(c => c.querySelector('.adm-gkey'))
-              .map(c => c.textContent.replace('×', '')),
+              .map(c => c.textContent.replace('Carries rights', '').replace('×', '')),
             line: (document.querySelector('.adm-ubar .adm-urights') || {}).textContent || '',
             wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
           }));
