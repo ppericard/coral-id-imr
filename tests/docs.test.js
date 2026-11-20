@@ -676,6 +676,8 @@ const DOC_MARKS = {
   'judging/PROMPT.md': [3, 160],
   'judging/SEASLUG.md': [17, 500],
   'tools/README.md': [13, 280],
+  'tools/queue/README.md': [3, 300],
+  'tools/queue/codex.md': [1, 80],
   'tools/studies/q316/README.md': [15, 170], // new, 2026-11-20: the Q316 tool's model, declared rules and figures
   'tools/sync/changes/README.md': [2, 130]
 };
