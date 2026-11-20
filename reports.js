@@ -145,7 +145,8 @@
   // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
   // its identification key in force, {n, title} (core.js treeGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
   // where its tree has them, the taxonomic groups its families sit in (core.js treeGen taxa, each family's tg; the
-  // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js treeSpUnits, s:s091) to
+  // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js treeSpUnits: by its common
+  // name s:s091, by its scientific name sci:s091) to
   // {family, look: the other species units of its family (admin.js fishUnitRec: as the game starts its pairs), name: its
   // scientific name, genus: its genus unit (the Heatmap's block, admin-heatmap.js heatUp)}}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
@@ -193,7 +194,10 @@
       imr,
       groups: F.groups || [],
       spu: Object.fromEntries(
-        C.treeSpUnits(f, F).map(u => [u.id, {family: u.family, look: u.look, name: u.s.name, genus: u.s.genus || ''}])
+        [...C.treeSpUnits(f, F), ...C.treeSpUnits(f, F, 'sci')].map(u => [
+          u.id,
+          {family: u.family, look: u.look, name: u.s.name, genus: u.s.genus || ''}
+        ])
       ),
       ...(F.taxa ? {taxa: F.taxa} : {})
     };

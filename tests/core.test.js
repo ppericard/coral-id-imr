@@ -507,9 +507,9 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
 // an empty one (nothing for time or for opening the app).
 test('fish achievements: ids apart from the corals, each reachable, none for nothing', () => {
   const {ACH, FISH_ACH, SEASLUG_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
-  // the fish set's 33 less the 6 that wait for the scientific species names or Fish basics (fsp1, fsp10 and fsp50 are
-  // in: the species level's step 1)
-  assert.strictEqual(FISH_ACH.length, 27, String(FISH_ACH.length));
+  // the fish set's 33 less the 2 that wait for the ultimate exam or Fish basics (fpct100, fbasics): fsp1, fsp10 and fsp50
+  // came with the species level's step 1, fspsci1, fboth25, fdauin20 and fpct70 with step 2
+  assert.strictEqual(FISH_ACH.length, 31, String(FISH_ACH.length));
   const ids = [...ACH, ...FISH_ACH, ...SEASLUG_ACH].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
   assert.ok(FISH_ACH.every(a => a.kind === 'learn' && [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
@@ -555,8 +555,10 @@ test('fish achievements: ids apart from the corals, each reachable, none for not
       {total: 4, adv: 4},
       {total: 35, adv: 35}
     ],
-    sets: {sci: 130, sp: 659},
-    setsAdv: {sci: 130, sp: 659},
+    sets: {sci: 130, sp: 659, ssp: 662},
+    setsAdv: {sci: 130, sp: 659, ssp: 662},
+    both: 659,
+    top: {total: 20, adv: 20},
     fb: 0
   };
   assert.strictEqual(newAch(all, {}, FISH_ACH).length, FISH_ACH.length, 'every fish achievement is reachable');
@@ -592,15 +594,15 @@ test('fish achievements around the global score: the 10-point ladder, fpct25 ret
   assert.strictEqual(achFind('fpct25'), null, 'fpct25 retired (Q259)');
   assert.deepStrictEqual(
     FISH_ACH.filter(a => a.id.startsWith('fpct')).map(a => a.id),
-    ['fpct10', 'fpct20', 'fpct30', 'fpct40', 'fpct50', 'fpct60']
+    ['fpct10', 'fpct20', 'fpct30', 'fpct40', 'fpct50', 'fpct60', 'fpct70']
   );
-  [10, 20, 30, 40, 50, 60].forEach(p => {
+  [10, 20, 30, 40, 50, 60, 70].forEach(p => {
     assert.ok(got({pct: p}).includes('fpct' + p), p + '%');
     assert.ok(!got({pct: p - 1}).includes('fpct' + p), 'not at ' + (p - 1) + '%');
   });
   assert.deepStrictEqual(got({pct: 59}), ['fpct10', 'fpct20', 'fpct30', 'fpct40', 'fpct50'], 'the ladder only');
-  // fpct70 and fpct100 wait for the species level (today's score tops out at 67%: families and every genus).
-  assert.ok(!achFind('fpct70') && !achFind('fpct100'));
+  // fpct70 came with the species by their scientific names; fpct100 waits for the ultimate exam (Q395).
+  assert.ok(achFind('fpct70') && !achFind('fpct100'));
   // Families: flearn30 (and it is taken back with a learned mark, ACH_LEARN).
   assert.ok(got({learned: 30}).includes('flearn30') && !got({learned: 29}).includes('flearn30'));
   assert.ok(ACH_LEARN.includes('flearn30'));
