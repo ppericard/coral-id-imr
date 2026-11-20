@@ -7686,9 +7686,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // longer than their own habit trusted players take to answer a photo right, and how much more often than their own habit
   // they enlarge it, each a shrunk mean per photo, served by the sheet with the photo ratings (ptimeInto) and added to
   // the photo's difficulty in the app (model.js photoDiff), fading as the photo's answers bring information.
-  // - z: an answer's log seconds against the player's own median, exactly as rtWeight (rtTenths, rtMedian: their earlier
-  //   timed, non-typed answers in the subject, from the RTIME.MIN-th), less the mean z of the earlier right answers in the
-  //   same format (fmtCell: the game, fmtOf, the photos shown and the rank asked), then clipped at +-CLIP.
+  // - z: an answer's log seconds against the player's own median as rtWeight takes it (rtTenths, rtMedian), over their
+  //   earlier timed, non-typed right answers in the subject, from the RTIME.MIN-th (a player who misses often has slow
+  //   misses in an all-answer median, which would make every right answer of theirs look fast), less the mean z of the
+  //   earlier right answers in the same format (fmtCell: the game, fmtOf, the photos shown and the rank asked), then
+  //   clipped at +-CLIP.
   // - Which answers: right, timed, not typed, not enlarged, of a player who rates the photos (trusted, photo check passed).
   // - Each answer's weight: its trust weight over V(L), the variance of z at the player's level L (the sheet's own rating
   //   before the answer), fitted on the subject's answers so far: V(L) = Vbar exp(beta (L - Lbar)), beta the slope of z^2
@@ -7708,7 +7710,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // and the rank asked (a fish genus question is slower than a family one).
   const fmtCell = (m, nch, nph, rk) =>
     String(m || '').split('|')[0] + ':' + fmtOf(m, nch) + ':' + Math.min(3, nph) + ':' + String(rk || '');
-  // An empty state: Z per player {r: their timed answers as rtAdd keeps them, e: [answers with Enlarged, enlarged]}, F per
+  // An empty state: Z per player {r: their timed right answers as rtAdd keeps times, e: [answers with Enlarged, enlarged]}, F per
   // format cell [sum z, answers], A the fit's sums [n, sum L, sum L^2, sum y, sum L y] (y = z^2) and Q the same per player,
   // P per photo [sum w z / V, sum w / V, sum w (enlarged - rate), sum w, information].
   const ptimeNew = () => ({
@@ -7775,7 +7777,7 @@ const CORE_ = (function () { const module = {exports: {}};
       Zp.e[0]++;
       Zp.e[1] += zm;
     }
-    if (x > 0) Zp.r[x] = (Zp.r[x] || 0) + 1;
+    if (x > 0 && ok && zm !== 1) Zp.r[x] = (Zp.r[x] || 0) + 1;
   }
   // The terms per photo: {photo: [time term, enlargement term, information]}, for the photos with either term not 0 to two
   // decimals (a photo left out counts 0). ?stats=1 serves them as the 6th to 8th elements of the photo's entry in photos

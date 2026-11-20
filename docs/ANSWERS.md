@@ -1760,3 +1760,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   capture is reduced on the device (about 800 px, light JPEG, a few tens of kB) and sent with the report; the sheet
   script stores it in a separate tab of the sheet; the agent reads it when processing the report, then it is deleted;
   no pCloud. Applied: ROADMAP "Attach a photo or a screenshot to a report" (Decided; build next).
+- **06:20, the weighting of the photo's time term (Q449-Q451's continuous weighting by the player's strength): option
+  A.** The integrator's option A, after the multifactor study: «chaque réponse pèse selon la régularité des temps des
+  joueurs de ce niveau. Ça se mesure dès aujourd'hui sur chaque joueur, sans avoir besoin de plusieurs joueurs sur la
+  même photo. Comme les forts sont plus réguliers, leur hésitation compte plus». Pierre: «ok». Each right answer's time
+  enters the photo's term weighed by 1 / V(L), the variance of right-answer times at the player's level, fitted
+  continuously on the players' own answers. Applied: docs/LEARNING.md "The photo's time term", ROADMAP "Time in the
+  photo rating", docs/decisions/2026-11-21-photo-time-term.md.
