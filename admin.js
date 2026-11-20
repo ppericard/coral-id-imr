@@ -10464,7 +10464,22 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // the beta group and the cohort (no Staff toggle at any version).
 const GROUPADM_SHEET = 179;
 const groupsOn = () => (USERS.v || 0) >= GROUPADM_SHEET;
-const gdefs = () => (USERS && USERS.groupDefs) || [];
+// A rights change on its way, kept outside the page and the players list: {group id: the rights list sent}. From the
+// request until the players are read again, the group shows (gdefs) and builds its next change from that list, and its
+// card stays off, however often the page is drawn again meanwhile (rightsPost).
+const gPend = Object.create(null);
+const gdefs = () => {
+  const L = (USERS && USERS.groupDefs) || [];
+  return Object.keys(gPend).length ? L.map(d => (gPend[d.id] ? {...d, rights: gPend[d.id]} : d)) : L;
+};
+// A group's card greyed, its controls off.
+const gBusy = id => {
+  const c = [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
+  if (c) {
+    c.setAttribute('aria-busy', 'true');
+    c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
+  }
+};
 const gdefOf = id => gdefs().find(d => d.id === id);
 const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
@@ -10532,7 +10547,10 @@ const rightsErr = e =>
 function rightsPost(body, ok, name) {
   toast('Saving…');
   gNote = null;
-  const after = () => loadUsers(true).then(() => render());
+  const gid = body.groupEdit || body.group;
+  if (gid) gPend[gid] = body.rights || grights(gdefOf(gid));
+  const done = () => (gid && delete gPend[gid], render()),
+    after = () => loadUsers(true).then(done, done);
   return userPost(body)
     .then(j => {
       if (j && j.ok) return (toast(ok), after());
@@ -10583,7 +10601,9 @@ function memberSet(names, gid, on) {
   const L = Array.isArray(names) ? names : [names],
     d = gdefOf(gid) || {n: gid};
   if (isRightsG(d) && !Array.isArray(names))
-    return rightsPost({userGroup: names, group: gid, on}, `"${names}" ${on ? 'added to' : 'removed from'} ${d.n}.`, names);
+    return gPend[gid]
+      ? render()
+      : rightsPost({userGroup: names, group: gid, on}, `"${names}" ${on ? 'added to' : 'removed from'} ${d.n}.`, names);
   toast('Saving…'); // the sheet can take a minute or two (its script lock)
   return userPost({userGroup: names, group: gid, on})
     .then(j => {
@@ -10695,6 +10715,7 @@ function renderGroups() {
     gNoteHtml() +
     (D.length ? `<div class="adm-groups">${D.map(card).join('')}</div>` : '<p class="note">No group yet.</p>') +
     adminsLine();
+  Object.keys(gPend).forEach(gBusy);
   bindGroups();
 }
 // The admin list (Code.gs roles_ {roles: 1}), outside the groups and read-only here (never edited from this page): read once per players
@@ -10730,11 +10751,7 @@ function bindGroups() {
   // group's card (id) greyed and its controls off until the answer.
   const gpost = (body, msg, id) => {
     toast('Saving…');
-    const c = id && [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === id);
-    if (c) {
-      c.setAttribute('aria-busy', 'true');
-      c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
-    }
+    if (id) gBusy(id);
     return userPost(body)
       .then(j => {
         if (!j || !j.ok)
@@ -10815,12 +10832,11 @@ function bindGroups() {
   );
   // A group's rights (RIGHTSADM_SHEET): the whole list sent, built from the one the page read (Code.gs groupEdit rights),
   // the card greyed until the sheet answers, then everything read again (rightsPost).
+  // One change at a time per group: while one is on its way (gPend) another is not sent, so it never goes out built
+  // from a list that lacks it.
   const rightsSet = (d, R, msg) => {
-    const c = [...$v.querySelectorAll('.adm-gcard')].find(x => x.dataset.g === d.id);
-    if (c) {
-      c.setAttribute('aria-busy', 'true');
-      c.querySelectorAll('button, select').forEach(x => (x.disabled = true));
-    }
+    if (gPend[d.id]) return;
+    gBusy(d.id);
     rightsPost({groupEdit: d.id, rights: R}, msg);
   };
   $v.querySelectorAll('[data-gradd]').forEach(

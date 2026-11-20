@@ -5176,6 +5176,70 @@ async function loadPart(b, base, fails) {
           g = await page();
           if (g.cards[0].rights.join('|') !== 'Host live games|Cohorts')
             fails.push(`${w}px rights groups: × a right ${JSON.stringify(g.cards[0])}`);
+          // A change on its way survives the page being drawn again (the players list read again, away and back): its
+          // card shows the pending list and stays off, a second change dispatched at it is not sent, and when the sheet
+          // answers the group holds the first change (Content), not the second (Settings) built from the old list.
+          await q.evaluate(() => {
+            window.__sent = [];
+            window.__hold = new Promise(r => (window.__release = r));
+            const f = window.fetch;
+            window.fetch = (u, o) => {
+              try {
+                const b = o && o.body && JSON.parse(o.body);
+                if (b && b.groupEdit && b.rights) {
+                  window.__sent.push(b.rights.join(','));
+                  return window.__hold.then(() => f(u, o));
+                }
+              } catch (e) {}
+              return f(u, o);
+            };
+          });
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
+          await q.evaluate(() => (location.hash = '#players/list'));
+          await calm();
+          await q.evaluate(() => (location.hash = '#players/groups'));
+          await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
+          await calm();
+          const pend = () =>
+            q.evaluate(() => {
+              const c = document.querySelector('.adm-gcard');
+              return {
+                busy: c.getAttribute('aria-busy') === 'true',
+                off: [...c.querySelectorAll('button, select')].every(x => x.disabled),
+                rights: [...c.querySelectorAll('.adm-grow .adm-gchip')].map(x => x.textContent.replace('×', '')).join('|')
+              };
+            });
+          let pd = await pend();
+          if (!pd.busy || !pd.off || pd.rights !== 'Host live games|Cohorts|Content')
+            fails.push(`${w}px rights groups: a change on its way, page drawn again ${JSON.stringify(pd)}`);
+          if (process.env.SHOTS)
+            for (const th of ['light', 'dark']) {
+              await q.evaluate(t => (document.documentElement.dataset.theme = t), th);
+              await q.screenshot({path: require('path').join(process.env.SHOTS, `rights-pending-${w}-${th}.png`), fullPage: true});
+            }
+          await q.evaluate(() => (document.documentElement.dataset.theme = 'light'));
+          await q.evaluate(() => {
+            const s = document.querySelector('.adm-gcard [data-gradd]');
+            s.value = 'settings@instance:imr';
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+            render();
+          });
+          pd = await pend();
+          if (!pd.busy || !pd.off || pd.rights !== 'Host live games|Cohorts|Content')
+            fails.push(`${w}px rights groups: a second change meanwhile ${JSON.stringify(pd)}`);
+          await q.evaluate(() => window.__release());
+          await calm();
+          g = await page();
+          pd = await q.evaluate(() => ({sent: window.__sent, busy: !!document.querySelector('.adm-gcard[aria-busy]')}));
+          if (
+            g.cards[0].rights.join('|') !== 'Content|Host live games|Cohorts' ||
+            pd.sent.length !== 1 ||
+            pd.sent[0] !== 'live@instance:imr,cohorts@instance:imr,content@instance:imr' ||
+            pd.busy
+          )
+            fails.push(`${w}px rights groups: change on its way, after ${JSON.stringify({g: g.cards[0], pd})}`);
+          await q.click('.adm-gcard:first-child [data-grx][data-e="content@instance:imr"]');
+          await calm();
           // The player's bar: the rights group's chip carries the key, a line sums up the rights; a merge asks with the plan
           await q.goto(base + `admin.html?demo&v=${X}#players/list`);
           await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
