@@ -53,8 +53,11 @@ const qNow = () => (QREP && QREP.el && QREP.el.isConnected ? {g: QREP.g, ph: QRE
 // Typed questions (model.js TYPED): the player types the name. Matching: core.js typeMatchIn (spelling tolerance, old
 // names); the form and the phone keyboard's behaviour are the Lab prototype's (proto/type.js).
 // TYPEDQ: the typed question on screen and what was typed ({t: genus asked, m: the match or null, text}), read by answer.
+// SCIQ: a question on a species by its scientific name with choices ({t: the unit asked, v: its display, app.js sciShow}),
+// read by answer for the mode's suffix.
 let TYPEDQ = null,
-  TYPEN = null;
+  TYPEN = null,
+  SCIQ = null;
 const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind rj)
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
 // For fish, every teaching entry and the other names it goes by (core.js treeTypeNames), read as whole names.
@@ -67,26 +70,40 @@ const typeNames = () => {
     TYPEN = {d: DATA, s: SUBJ, c, k, L: UNITS[SUBJ.id].names()};
   return TYPEN.L;
 };
-// rk: the rank of the unit asked (app.js rankOf): a typed answer is read among the names of that rank only (a fish
-// scientific genus, Chromis, against the genera; the IMR sub-entry Chromis names the Damselfish entry on an entry question).
-const typeMatch = (text, rk = '') =>
-  typeMatchIn(
-    typeNames().filter(o => rankOf(o.g) === rk),
+// rk: the class of the unit asked (app.js kindRank: its rank and its kind of name): a typed answer is read among the
+// names of that class only (a fish scientific genus, Chromis, against the genera; the IMR sub-entry Chromis names the
+// Damselfish entry on an entry question; a species' scientific name against the scientific names, never a common name).
+const typeMatch = (text, rk = '') => {
+  const m = typeMatchIn(
+    typeNames().filter(o => kindRank(o.g) === rk),
     text,
     UNITS[SUBJ.id].norm
   );
+  return typeDigits(m, text) ? m : null;
+};
+// A name told apart by its number (a species with no name yet, Goniobranchus sp. 5): the norm keeps letters only, so a
+// reading of such a unit holds only when the text carries the same digits as its name (Goniobranchus sp. 6 or sp. reads as
+// nothing). True for any other reading.
+const typeDigits = (m, text) => {
+  if (!m || !m.g || m.shared || m.near) return true;
+  const d = s => String(s || '').replace(/\D/g, ''),
+    n = d(m.old || (GX(m.g) || {}).name);
+  return !n || d(text) === n;
+};
 // What a typed text that is no unit of rank rk names instead (core.js typeElse): the rank word of another unit it names
 // ('family'), 'common' for a common name, '' for nothing. Only on a question below the subject's rank (a fish scientific
 // genus, a sea slugs' genus: its tree's top rank is the family), from the subject's own lists (UNITS typeOther); none for
 // a subject without them.
 const typeKind = (text, rk) => {
   const U = UNITS[SUBJ.id],
-    at = rk || unitRankOf(SUBJ),
+    at = String(rk || '').split(':')[0] || unitRankOf(SUBJ), // the rank of the class asked (kindRank)
     x = at !== SUBJ.rank && U.typeOther ? U.typeOther(at) : null;
   if (!x) return '';
+  // The species by their scientific names stay out: the name index already says what a species' name is (identical
+  // nudges whether their level is on or off).
   return typeElse(
     text,
-    typeNames().filter(o => rankOf(o.g) !== rk),
+    typeNames().filter(o => kindRank(o.g) !== rk && kindOf(o.g) !== 'sci'),
     {...x, rank: g => rankOf(g) || unitRankOf(SUBJ), own: g => (GX(g) || {}).imrName},
     U.norm
   );
@@ -103,7 +120,8 @@ const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <p class="tymsg" aria-live="polite"></p></form>`;
 // Binds a typed form (docs/ARCHITECTURE.md "Typed questions"): done(m, text, sp, rj) once answered, m the unit read
 // ({g, old, exact}) or null for "I don't know". A text read as no unit, or as two, is no answer but a nudge to check it
-// (typeKind); rj: those texts in order (TYPEDQ_RJ, 40 characters each). rk, one: the rank asked and its word (typeMatch).
+// (typeKind); rj: those texts in order (TYPEDQ_RJ, 40 characters each); z: a smaller fault's kind (o.part). rk, one: the
+// class asked (app.js kindRank) and its word (typeMatch).
 // o.t, the unit asked: the spelling step (core.js typeVerdict): its name typed close is right but retyped once after a
 // warm "So close!" (never a cold no: docs/decisions/2026-11-18-decisions-from-app-comments.md; Show me skips it); sp = {r: 1 when retyped exactly, else 0; text: the retype}. o.close(): the retype is asked
 // (the quiz stops its clock: the seconds logged are the recognition's, not the spelling's).
@@ -114,15 +132,15 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
   let over = false,
     first = null; // {m, text}: the close reading, while the player retypes it
   const rj = []; // the texts refused, in order (done's rj)
-  const end = (m, text, sp) => {
+  const end = (m, text, sp, z) => {
     over = true;
     msg.textContent = '';
     form.classList.remove('retry');
-    if (!m) inp.value = '';
+    if (!m && !z) inp.value = '';
     inp.disabled = true;
     form.querySelectorAll('button').forEach(b => (b.disabled = true));
     inp.blur(); // the phone's keyboard closes, so the feedback is in view
-    done(m, text, sp, rj.slice());
+    done(m, text, sp, rj.slice(), z);
   };
   const read = text => (S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk)));
   form.onsubmit = e => {
@@ -133,8 +151,13 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
     if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t, o.sp) === 'exact' ? 1 : 0, text});
     const m = read(text);
+    // A smaller fault (o.part: a species' common name or its genus alone where its scientific name is asked, Q394), read
+    // before the nudges and the spelling step: it is the answer, a miss, with its kind (z).
+    const z = o.part && (!m || m.near || m.known) ? o.part(text) : '';
+    if (z) return end(null, text, undefined, z);
     if (!m || m.near || m.known) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
-    const kind = !m && S === SUBJ ? typeKind(text, rk) : '';
+    // o.say: what else a text is on a question with no typeKind of its own (a species by its scientific name: app.js sciSay)
+    const kind = !m && S === SUBJ ? typeKind(text, rk) || (o.say ? o.say(text) : '') : '';
     if (kind) msg.textContent = typeKindMsg(text, kind, one);
     else if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     // A name the game knows that is no unit's (core.js typeMatchIn known: a species' name, or a word of one): said so,
@@ -266,6 +289,12 @@ const typeRead = (m, text, sp, t, ps) => {
         : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
       : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
 };
+// A smaller fault said after the answer (typeBind z, Q394): what the text typed was, and what the question needs (the
+// feedback then gives the scientific name).
+const partRead = (z, text) =>
+  z === 'cn'
+    ? `“${esc(text)}” is its common name: this question needs its scientific name.`
+    : `“${esc(text)}” names its genus only: this question needs the species' scientific name.`;
 // The spelling step's outcome (typeBind sp) for the verdict's line ("✓ Yes, but not quite: it's spelled Galaxea"): null
 // when none was asked or the retype was exact; else {spelled: the name, the letters got wrong marked (typeSpell), old,
 // alt} (an old name: the line names the unit after it). A common name typed (m.oft, core.js fishOften): {oft}.
@@ -312,6 +341,11 @@ function question(cur, target, choices, prompt, set, kq) {
   TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
   const ph = set.shown,
     lab = SUBJ.views.length > 1 ? VIEW_LABEL : {}; // one view (fish): no caption
+  // A species asked by its scientific name with choices: how its names show (app.js sciShow, the display schedule), the
+  // same for its four choices, logged in the mode (answer: |sc, |so). sub: a choice's small line, the scientific name of
+  // a species by its common name, the common name of one by its scientific name while shown.
+  SCIQ = !set.typed && !set.find && kindOf(target) === 'sci' ? {t: target, v: sciShow(target)} : null;
+  const sub = c => (SCIQ ? (SCIQ.v === 'sc' ? (GX(c) || {}).cn || '' : '') : (GX(c) || {}).sci || '');
   let answered = false,
     hintShown = false;
   // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
@@ -328,7 +362,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <div class="qstage${fx ? ' qfx' : ''}">${fx ? fx.map(tile).join('') : ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${GX(c) && GX(c).sci ? `<span class="csn">${esc(unameT(c))}<small>${esc(GX(c).sci)}</small></span>` : esc(unameT(c))}</button>`).join('')}</div>`}
+      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${sub(c) ? `<span class="csn">${esc(unameT(c))}<small${SCIQ ? ' class="cnu"' : ''}>${esc(sub(c))}</small></span>` : esc(unameT(c))}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -446,16 +480,20 @@ function question(cur, target, choices, prompt, set, kq) {
   if (tf)
     typeBind(
       tf,
-      (m, text, sp, rj) => {
-        Object.assign(TYPEDQ || {}, {m, text, sp, rj, ps: typeSp});
+      (m, text, sp, rj, z) => {
+        Object.assign(TYPEDQ || {}, {m, text, sp, rj, ps: typeSp, z});
         go(typeUnit(m, target, typeSp));
       },
       SUBJ,
-      rankOf(target),
+      kindRank(target),
       GX(target).one || SUBJ.one,
       {
         t: target,
         sp: typeSp,
+        // A smaller fault (Q394 A): on a species asked by its scientific name, its common name or its genus alone typed
+        // (app.js sciPart) is the answer, a miss weighed down (core.js PART), never a gain.
+        // Another species' common name or another genus: the nudge says what it is (app.js sciSay), never an answer.
+        ...(kindOf(target) === 'sci' ? {part: text => sciPart(text, target), say: text => sciSay(text)} : {}),
         // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was. The nudge
         // makes the answer column taller: the stage gives up that room so it stays on one screen.
         close: () => {
@@ -703,6 +741,9 @@ function recordAnswer({
     timed: true,
     // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
     df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
+    // A smaller fault's kind (Q394 A: typeBind z, a species' common name or its genus alone typed for its scientific
+    // name): the miss weighed by core.js PART, logged in sc (z), never a gain.
+    ...(!good && tq && tq.z ? {z: tq.z} : {}),
     // The typed format's offset (core.js domF dt): the domain score is the share of photos named typed and alone, so the
     // bar measures against the typed format's calibrated difficulty; logged t.
     dt: fmtOff(pfmt(), 'typed'),
@@ -846,8 +887,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
   // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
   // against it as a wrong pick does, and the mix-up is counted.
-  const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null;
+  const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null,
+    sci = SCIQ && SCIQ.t === target ? SCIQ : null; // its display, for the mode (|sc, |so)
   TYPEDQ = null;
+  SCIQ = null;
   const good = c === target,
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
@@ -887,6 +930,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // transfer can be measured at the exam from the log, which keeps which answers were on reserved photos whatever the
     // photos in play later; before |kN, which the sheet reads at the end. Counted like any answer.
     (ph.some(p => p && p.ho) ? '|h' : '') +
+    // |sc, |so: a species asked by its scientific name with choices, shown with its common name underneath (sc) or alone
+    // (so) (SCIQ, app.js sciShow); information only, before |kN.
+    (sci ? '|' + sci.v : '') +
     (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
     // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_). Its
     // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
@@ -970,10 +1016,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
   // A name read but no unit given (a name several units share, or of part of the unit and not of this photo: typeUnit)
   // is a wrong answer, not "I don't know".
-  const shw = !!(tq && tq.m && !c);
+  // A smaller fault (tq.z, Q394) is a wrong answer too, said for what it is (partRead).
+  const shw = !!(tq && (tq.m || tq.z) && !c);
   if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c || shw ? 'ko' : 'idk');
   const idk = !!tq && !c && !shw,
-    read = tq ? typeRead(tq.m, tq.text, tq.sp, target, tq.ps) : '',
+    read = tq ? (tq.z ? partRead(tq.z, tq.text) : typeRead(tq.m, tq.text, tq.sp, target, tq.ps)) : '',
     step = tq && good ? typeStep(tq.m, tq.text, tq.sp, target) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody). A mix-up between the two species of a
