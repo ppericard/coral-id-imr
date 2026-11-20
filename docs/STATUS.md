@@ -8,70 +8,70 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
-Written 2026-11-20, about 03:55 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-20, about 08:20 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md).** Handovers about every 90 minutes of work.
 
-Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 2026-11-17; events since 2026-11-19
-14:25 summarised in the chat).
+Last checked: reports and events: 2026-11-20 ~03:50 Manila (no new report since 2026-11-17).
 
 ## Now
 
-Main: sheet script **v200** (live v200). The night's merge queue ran one PR per train (scratchpad `nightq.sh`,
-`chainq.sh`; a session restart stops it: restart `chainq.sh`). Merged since 01:10: #1272 (85 set-aside fish photos
-back in play, cropped), #1258 (fish ID key, Lab), #1276, #1238 (sea slug genus marks, circle 2), #1274 (L11 check
-tools stop at 40 minutes; level 3 waits for Pierre's go; the workflow part cut to a ROADMAP row), #1263 (sea slug
-species marks, 165 of 206). Before 01:10: see #1276's STATUS (the night's first 17 merges, Q437's Duel tab, Q438).
+Main: sheet script **v202**. Merged since 03:55: #1280 (Lab tools on the subject on screen), #1282 (his morning
+answers: A1 for hand choices, the model/effort strategy, Rule 0's practice, no command for him, P2), #1277 (custom
+quiz, v201), #1283 (learncheck.yml under the cap), #1278 (Look-alikes and Compare, v202), #1287 (a large judging pass is
+measured first), #1284 (Find the X tile code for sea slugs), #1288 (admin one engine step 3: `reg(S)`). Q437: only
+sea slug Basics and Find the X (boxes) left.
 
-- **In the queue**: #1278 (Look-alikes and Compare for every subject, v201 assigned). Then #1277 (custom quiz for
-  every subject: a fix for its fish smoke, two choices only, is being made; its VERSION is re-assigned after #1278),
-  #1280 (Lab tools on the subject on screen: Blur reveal overflows 6 px at 390 px, being fixed), #1279 (Memory for
-  fish and sea slugs: two photos of one unit; VERSION at merge).
-- **Held for Pierre**: #1273 (species by scientific name, the app part, gated on v198): Q440 below.
-- **Agents working**: the fixes of #1277 and #1280.
+- **Queue**: #1291 (calibration note, rewritten to his scope after Codex), #1273 (species by scientific name, app;
+  Q440 accepted; L12 passed; v203), #1279 (Memory for fish and sea slugs; re-assign after #1273), #1285 (rights PR 1;
+  assign after), #1286 (sea slug Basics; being brought up to date).
+- **Fixing**: #1290 (Learn cards: the whole card opens the sheet; red, being fixed; variants for Pierre to pick),
+  #1289 and #1292 (lecture photos never upscaled; Corals of the World originals), the admin flags (a flag clears
+  itself when its photo leaves play; "missing" flags clear themselves).
+- **Sea slug boxes** (Find the X): the bench (scratchpad `slugbox/`, 80 photos) after a tightened box definition:
+  14 of 80 disputed (31 before); an adjudicator is deciding them; the lighter candidates (Opus and Sonnet medium,
+  Haiku, two runs each) are judging. Then the cheapest passing configuration does the 2,132 photos the tile rule keeps.
+- A container restart at ~07:40 stopped every agent: the work on disk was resumed; branches never pushed (the
+  `data/` move, tell-apart lines for 25 bonus pairs) are relaunched from their worktrees.
 
-## Next
+## Next: decided, not started (the backlog, in launch order)
 
-1. Train the queue; each `core.js` PR gets its VERSION right before its train (`tools/sheet_version.py --assign`).
-2. Q437's last PRs from `docs/reviews/2026-11-19-modes-every-subject.md`: sea slug basics (sourced), sea slug Find the X.
-3. #1273 on Pierre's Q440; the real-log check (rule L12) before its merge.
-4. Find the X's own offset (Q371); the level's answer count from the log (Q322, Q330); `core.js` one holder at a time.
+1. Rights: groups carry an instance's rights, PRs 2-4 after #1285; then cohorts joined with a code (roles step 2), the
+   Curators' relay; the IMR content split's rest.
+2. Engine, one `core.js` holder at a time: Find the X's own offset (Q371); the level's answer count from the log (Q322,
+   Q330); one engine, what is left; Q316's offline fit; `CAL.U` after the hierarchical photo Elo.
+3. One admin for every subject (Pierre, 05:53): the study's steps 4-13 (one Tree, one Candidates swiper, one band
+   review, one montage and coverage, one tile, Learn's one list and one sheet).
+4. Fish: common names (admin correction, species level); the fish welcome question; fish basics, the rest; where the
+   reference route is still read.
+5. Content and photos: tell-apart lines for 25 bonus pairs (relaunched); About and credits, a calmer text (after the
+   C12 PRs); contrast correction on the Learn sheets; name roots' IMR-cue warning and epithets; the watermark pass
+   after each refill; the measured block's full run on a runner.
+6. Admin and tools: the Tree tab's steps 6-7; the admin opening, what is left; activity outside the quiz C1-C3; tool
+   and admin data into `data/` (relaunched); CI speed, what is left; the monthly taxonomy refresh; the auto-sort
+   follow-ups and #1259's two follow-ups.
+7. New formats: Sort them, Down the tree (with the species level), Life stages matched, Virtual dive.
+8. Subjects: the species level everywhere; then benthos.
 
 ## Questions for Pierre
 
-For the morning (after his first message after 04:00; each checked against ANSWERS.md):
 - **Q439**: the Lab prototypes Same or different?, Odd one out, Matrix and the fish ID key: which graduate (U13)?
-  Rec. he plays each on his phone first (rule W4: he judges by taps); those he likes go to Practice for every subject.
-- **Q440**: #1273, the species by their scientific names, costs about 1.3 scientific genera at Advanced after 3,000
-  answers (about 6% of 21), the same in two independent runs (8 and 7 seeds, strong RA and expert); every guardrail
-  held; the new species take about 1% of the questions, as designed. Accept this cost? Rec. accept.
-- The wording of rule A1 (20:57, 20:59: A1 protects his hand decisions, one by one; accepted agent proposals can be
-  replaced by a better proposal that goes into the game). The counts (#1259): 831 values set by his hand (an upper
-  bound; fish: 28), 31,362 agent proposals let through, 44 that cannot be told. Not numbered (a rule's wording).
-- The AGENTS.md bullet on models and effort, from #1257's table. Not numbered (a rule's wording).
-- The admin's opening: the answer log is now its biggest wait; reading only the rows since his last visit needs a
-  browser copy of players' data, which he declined on 2026-11-04. Rec. measure on his phone after #1271 first.
-- #1273's two built readings, easy to change: Q394's smaller faults count only the species' own common name (half) and
-  its own genus (a quarter); `fdauin20` counts scientific names only, as the plan says (rec. accept either name).
-- P2: what "B for now" (2026-11-18) meant for the 34 untraced lecture photos. A fact, not numbered.
-- The trainer's set: his 11-18 answer says "seven modes" and names six. A fact, not numbered.
-- Gold set 2 (42 photos, sent 2026-11-19 15:36): his answers, then `gold2/score2.py`.
+  Rec. he plays each on his phone first; those he likes go to Practice for every subject.
+- **Remove vs ×** (06:58-07:00, the admin's two removals): options A-D sent at 07:00. Rec. A: one Remove, one click,
+  never proposed again, Undo and a list of removed photos to restore.
+- The Learn card variants (#1290): screenshots to send once its agent reports.
 - Still open from earlier: Q351 (b), the fish ease weight; the species photos' 8 unsure candidates; the fish key's
-  points; species-level look-alike pairs (Q390); one engine §6 formats (a)-(d); the ROADMAP "Open question" rows; the
-  architecture review (a)-(g), (i); the app-gaps review (a)-(j); #1041 §6.
+  points; species-level look-alike pairs (Q390); one engine §6 formats (a)-(d); where each cohort's trainer list is
+  stored (a format: before roles step 2); the ROADMAP "Open question" rows.
 
-Last question number: Q440
+Last question number: Q441
 
 ## Pierre's hands
 
 - **Gold set 2**: 42 photos to review (sent 2026-11-19 15:36).
-- **The main checkout**: an agent's tool rewrote 653 `at` dates in `suggest.json` there by mistake (no PR carries
-  it; trains build from GitHub); restoring it was refused to the agent and left to him:
-  `git -C /home/user/coral-id-imr checkout -- suggest.json`.
 - **GitHub**: a `release` ruleset (Restrict deletions + Block force pushes, as `main`).
 - **Roles**: grant himself the trainer role to host a live game.
 - **In the admin**: "Juvenile: confirm as cover?" on Boxfishes (#1275); Light and Cover proposals, then Publish;
-  Points (*H. infucata* / *H. obscura*, *Phyllidia polkadotsa*'s range, Naso's single plate, the juvenile and species
-  source disagreements); 5 likely aquarium photos marked unsure (#1269); the unsure fish candidates.
+  Points; 5 likely aquarium photos marked unsure (#1269); the unsure fish candidates.
 - Check the analyses token's type and the R2 token's scope; renew the admin GitHub token before late January 2027.
 
 ## Parked after hours
@@ -80,6 +80,7 @@ Last question number: Q440
 
 ## Last stop
 
-2026-11-20 ~03:55 Manila: handover. Scratchpad: `nightq.sh`, `chainq.sh` (the queue; log `nightq.log`), `uptodate.sh`,
-`prstate.sh`, `failjobs.sh`, `thr.py` (open threads), `rowdiff.py` and `bothsides.py` (conflict helpers), `m5/`
-(`rowmerge.py`), `findmsg.py`, `gold2/`, `recount/`, `q438/`, `k159/`, `tagdoubts/`. No real names.
+2026-11-20 ~08:20 Manila: handover. Scratchpad: `nightq.sh`, `chainq.sh` (the queue; log `nightq.log`; a restart
+stops it), `assignver.sh` (a Code.gs PR's version at merge), `uptodate.sh`, `prstate.sh`, `failjobs.sh`, `thr.py`,
+`rowdiff.py`, `bothsides.py`, `findmsg.py`, `slugbox/` (the box bench), `l12/` (real-log export: real names, never
+committed), `gold2/`, `q438/`, `k159/`, `tagdoubts/`. No real names.
