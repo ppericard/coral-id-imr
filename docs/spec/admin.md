@@ -133,8 +133,11 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   from `data.json` and its genus pages' photos under the draft (`reports.js` `flatReg`, built again when the draft
   changes; no file of its own, no format change), its `extra` the bonus genera of `data.json` `x`. Analyses (the mix-up
   map, the units' names, the photo thumbnails), Pairs, the Heatmap, Photo stats › Taxa (the corals' half) and the
-  Journey read it (`tests/registry.test.js`); the Tree, Candidates, the photo review pages and the tiles still read each
-  side's own state (the study's steps 4-8);
+  Journey read it (`tests/registry.test.js`). **One Tree page for every subject** (`admin.js` `renderTree`): its trees,
+  rows, tags and node pages come from the subject's builder in `TREE_BUILD`, picked by the same declared shape
+  (`treeShape`, `treeBuild`; the shared node-photo lists' adapters, `admin-nodephotos.js` `NODE_PHOTOS`, too;
+  `tests/treebuild.test.js`; [admin-tree.md](admin-tree.md)). Candidates, the photo review pages and the tiles still read
+  each side's own state (the study's steps 5-8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its

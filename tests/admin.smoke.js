@@ -1968,6 +1968,8 @@ async function loadPart(b, base, fails) {
               probs: (document.querySelector('.adm-ttprob') || {}).textContent || '',
               wide: document.documentElement.scrollWidth - innerWidth
             }));
+          // The view alone opens on its first genus, as every subject's Tree opens on its first node of its broadest rank
+          // (admin.js renderTree: a fish family); the first group's page, its genera's cards
           await go('photos/tree/key');
           let c = await ct();
           const tabs = c.tabs.join();
@@ -1975,8 +1977,12 @@ async function loadPart(b, base, fails) {
             c.hash !== '#photos/tree/key' ||
             c.note ||
             !/^Tree,/.test(tabs) ||
-            c.cards.join() !== 'Acropora,Pocillopora,Stylophora,Anacropora'
+            c.crumbs.join(' › ') !== '1 · Small, raised, separate-walled corallites › Acropora'
           )
+            fails.push(`${w}px Coral Tree: the view alone, the first genus ${JSON.stringify(c)}`);
+          await go('photos/tree/key/' + encodeURIComponent('k:1'));
+          c = await ct();
+          if (c.note || c.cards.join() !== 'Acropora,Pocillopora,Stylophora,Anacropora')
             fails.push(`${w}px Coral Tree: the first group ${JSON.stringify(c)}`);
           if (w === 1280 && (c.roots.join() !== 'k:1,k:2,k:3,k:4,k:5,k:6,k:7,k:8,k:9,k:10,k:11,k:none' || c.rows < 60))
             fails.push(`${w}px Coral Tree: the IMR lecture groups ${JSON.stringify(c.roots)} ${c.rows}`);
@@ -2004,10 +2010,19 @@ async function loadPart(b, base, fails) {
           c = await ct();
           if (c.crumbs.join(' › ') !== 'Pachyseridae › Pachyseris' || c.keyView !== '#photos/tree/key/Pachyseris' || c.probs)
             fails.push(`${w}px Coral Tree: WoRMS ${JSON.stringify(c)}`);
+          // WoRMS alone: its first family's first genus, under WoRMS's families; the family's page, its genera's cards
           await go('photos/tree/worms');
           c = await ct();
-          if (c.hash !== '#photos/tree/worms' || !c.cards.length || (w === 1280 && !c.roots.every(r => r.startsWith('wf:'))))
-            fails.push(`${w}px Coral Tree: WoRMS's first family ${JSON.stringify(c)}`);
+          if (
+            c.hash !== '#photos/tree/worms' ||
+            c.crumbs.length !== 2 ||
+            !c.crumbs[0].endsWith('idae') ||
+            (w === 1280 && !c.roots.every(r => r.startsWith('wf:')))
+          )
+            fails.push(`${w}px Coral Tree: WoRMS's first genus ${JSON.stringify(c)}`);
+          await go('photos/tree/worms/' + encodeURIComponent(c.roots[0] || 'wf:Acroporidae'));
+          c = await ct();
+          if (!c.cards.length) fails.push(`${w}px Coral Tree: WoRMS's first family ${JSON.stringify(c)}`);
           // A genus card opens its Tree page, with the genus's tools on it
           await go('photos/tree/key/' + encodeURIComponent('k:1'));
           await p.click('.adm-tcard[data-ttc="Stylophora"]');
@@ -2632,10 +2647,11 @@ async function loadPart(b, base, fails) {
         if (hash !== to || strip(at.tab || at.menu) !== tab)
           fails.push(`${w}px #${from}: ${hash} on ${at.tab || at.menu}, not ${to} on ${tab}`);
       }
-      // #photos lands on the Tree's first group page (the Genera tab, which it opened on a genus, is folded into the Tree).
+      // #photos lands on the Tree's first genus with its tools, as every subject's Tree opens on its first node of its
+      // broadest rank (admin.js renderTree; the Genera tab, which also opened on a genus, is folded into the Tree).
       await go('photos');
-      if (!(await p.evaluate(() => !!document.querySelector('.adm-tcard') && !document.querySelector('[data-lv]'))))
-        fails.push(`${w}px #photos: not the Tree's first group page`);
+      if (!(await p.evaluate(() => !document.querySelector('.adm-tcard') && !!document.querySelector('[data-lv]'))))
+        fails.push(`${w}px #photos: not the Tree's first genus page`);
       // Deep links: a genus's node, and a journey whose name holds the separators (split before decoding).
       await go('photos/tree/key/' + encodeURIComponent('Porites'));
       if ((await p.evaluate(() => (document.querySelector('.adm-sname i') || {}).textContent)) !== 'Porites')
