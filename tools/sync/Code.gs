@@ -1691,6 +1691,21 @@ function joinAudited_(gid, id){
   }
   return false;
 }
+// The same for a group's rights: the rights of this group id as its Audit rows give them, in the fixed order. The last
+// 'ok' 'right+' or 'right-' row of a right with the group as its target decides; a right with no row is the group's when
+// it is a role group's (r:<role>, made with its role's rights without rows: the rights migration, rightsGroup_) and in
+// that role's rights. A right the group holds without its row was saved by a try that failed before the row (groupDo_
+// writes it then).
+function rightsAudited_(gid){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB), last = Object.create(null);
+  if (sh && sh.getLastRow() >= 2) sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues().forEach(v => {  // Action, Scope, Result, Target id
+    const m = /^right([+-]) (\S+)$/.exec(String(v[0]));
+    if (m && String(v[2]) === 'ok' && String(v[3]).replace(/^'/, '') === gid) last[m[2]] = m[1];
+  });
+  const r = /^r:(.+)$/.exec(gid), role = r && Object.prototype.hasOwnProperty.call(ROLES.GROUP, r[1]) && roleDef_(r[1]) ? r[1] : '';
+  const base = role ? rightsDef_([], role, 0).rights : [];
+  return rightsOf_(base.filter(e => last[e] !== '-').concat(Object.keys(last).filter(e => last[e] === '+')).join(','));
+}
 const auditOf_ = out => (out && out.ok ? 'ok' : String(out && out.error || 'error'));
 // The one gate of every privileged endpoint: the caller if can_ lets them use this right in this scope, else null, the
 // refusal audited (capped). Not under the script lock: a flood of refusals never holds up the players' saves.
@@ -2965,8 +2980,9 @@ function groupSet_(ra, names, g, on){
 // setting or its rights (a field left out stays; apart is ignored); {groupDrop: id} deletes it, only when nobody is in
 // it. beta: '' or a subject that opens to a group (or the value it holds); rights: the whole list, ["right@scope"]
 // (RIGHTS at the instance). A name or a setting asks the players right, the rights the grant right (who: the caller,
-// checked here under the lock). A right added or taken away is one Audit row ('right+' or 'right-' and the right, its
-// target the group), then one per member ('grant' or 'revoke' and the right "(via <group id>)", their id). Answers {ok,
+// checked here under the lock). A right added or taken away is one Audit row per member ('grant' or 'revoke' and the
+// right "(via <group id>)", their id), then one for the group ('right+' or 'right-' and the right, its target the
+// group); a row that cannot be written answers an error, the change saved, and its retry writes the missing rows. Answers {ok,
 // group: its settings} ({ok, group: id} for a delete); errors 'token' (a right the caller lacks), 'input' (rights that
 // are not a list of RIGHTS at the instance), 'name' (empty, over 40 characters, a control character), 'exists' (another
 // group's name), 'beta', 'group' (no such group), 'members' (a delete while it has members, or a first right given to a
@@ -2986,7 +3002,10 @@ function groupDo_(p, who){
   }
   const rights = o.rights === undefined ? (cur ? cur.rights : []) : rightsIn_(o.rights);
   if (!rights) return {ok: false, error: 'input'};
-  const was = cur ? cur.rights : [], plus = rights.filter(e => was.indexOf(e) < 0), minus = was.filter(e => rights.indexOf(e) < 0);
+  // A call that carries rights audits them against the group's audited rights (rightsAudited_), so its retry after a
+  // failed Audit row writes the rows that try saved without; a setting changed alone audits none.
+  const was = cur ? cur.rights : [], base = o.rights === undefined || !cur ? was : rightsAudited_(cur.id);
+  const plus = rights.filter(e => base.indexOf(e) < 0), minus = base.filter(e => rights.indexOf(e) < 0);
   const set = !cur || ['n', 'board', 'beta'].some(k => o[k] !== undefined);
   if (set && !can_(who, 'players', INST_SCOPE_) || (plus.length || minus.length) && !can_(who, 'grant', INST_SCOPE_)) return {ok: false, error: 'token'};
   if (!was.length && rights.length && members.length) return {ok: false, error: 'members'};
@@ -2998,11 +3017,15 @@ function groupDo_(p, who){
   const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0);
   const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), beta: beta, at: cur ? cur.at : Date.now(), rights: rights};
   gdefPut_(sh, cur ? row() : sh.getLastRow() + 1, d);
-  [[plus, '+', 'grant'], [minus, '-', 'revoke']].forEach(([L, s, act]) => L.forEach(e => {
-    audit_(who.id, 'right' + s + ' ' + e, INST_SCOPE_, 'ok', d.id);
-    members.forEach(m => audit_(who.id, act + ' ' + e.split('@')[0] + ' (via ' + d.id + ')', INST_SCOPE_, 'ok', aid_(m[1])));
-  }));
   boardsDrop_();
+  // Each right given or taken: its members' rows, then the group's row, which marks it audited (rightsAudited_). A row
+  // that cannot be written throws, after its Deploy log line (audit_): the request answers an error, and its retry
+  // writes what is missing (a member's row written before the failure may be written twice).
+  const put = (act, target, what) => { if (!audit_(who.id, act, INST_SCOPE_, 'ok', target)) throw new Error(what + ': its Audit row was not written'); };
+  [[plus, '+', 'grant'], [minus, '-', 'revoke']].forEach(([L, s, act]) => L.forEach(e => {
+    members.forEach(m => put(act + ' ' + e.split('@')[0] + ' (via ' + d.id + ')', aid_(m[1]), 'right' + s + ' ' + e));
+    put('right' + s + ' ' + e, d.id, 'right' + s + ' ' + e);
+  }));
   return {ok: true, group: d};
 }
 // groups-migration: begin

@@ -289,7 +289,7 @@ function before() {
   grant(s, 'Dee');
   grant(s, 'Fay');
   s.sheets.Roles.rows.slice(1).forEach(r => r[0] === 'Fay' && (r[4] = 'another-hash'));
-  // The rights migration, which comes after this one, has its own tests (tests/rights.test.js): marked done here.
+  // The rights migration, which comes after this one, has its own tests (tests/accountrights.test.js): marked done here.
   s.props.ONCE_rights = '1';
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   return s;

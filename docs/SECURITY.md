@@ -217,15 +217,17 @@ rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q40
   line, and the admin page's next read finishes it.
 - **The Audit tab**: Time, Admin id, Action, Scope, Result, Target id. One row per change (the players' management, the
   Analyses report's put, the admin list's grants and revokes, `join` and `leave` of a group that carries rights, a
-  group's right given or taken, `right+` / `right-`, then one `grant` / `revoke … (via <group id>)` row per member; a
+  group's right given or taken, one `grant` / `revoke … (via <group id>)` row per member, then `right+` / `right-`; a
   self-change marked `(self)`), and per refusal at most 20 every 6 hours (`over_`: anyone can send one; refusals take no
   script lock). Reads are not written: the admin page reads every minute. Every id is an anonymous id: `aid_` for an
   account, `gh:` and 8 characters for a token (a salted hash, never the token; blank for a refusal, whose caller is
   nobody known), `script` for the migration, never a name; the target of a request is written as its id, never the name
   it carries.
-  A grant on the admin list and a membership of a group that carries rights are never without their row (`grantPut_`,
-  `joinPut_`): a row that cannot be written fails the request (an error), and its next try writes that `ok` row
-  instead of `held` (`grantAudited_`, `joinAudited_`). Any other row that cannot be written is a line in the Deploy log
+  A grant on the admin list, a membership of a group that carries rights and a group's right given or taken are never
+  without their row (`grantPut_`, `joinPut_`, `groupDo_`): a row that cannot be written fails the request (an error),
+  and its next try writes that `ok` row instead of `held`, or, for a group's rights, the rows its change was saved
+  without (`grantAudited_`, `joinAudited_`, `rightsAudited_`: the group's last `right+` / `right-` row per right, a role
+  group's rights from the migration counted without one). Any other row that cannot be written is a line in the Deploy log
   (`roleLog_`, the same line at most once an hour), never silent.
 - **No editor or trainer ever gets a GitHub token that can push** (Q342): their later steps go through this script.
 

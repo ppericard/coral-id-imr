@@ -3,7 +3,7 @@ require('./slot.js').testGuard();
 // separate, the platform admin may give himself an instance's rights and it is logged): Code.gs can_, gate_, the admin
 // list (the Roles tab's admin rows), the groups that carry an instance's rights, the Audit tab, Pierre's rights, and what
 // a delete, a merge or an archive does to an account's rights (rule D7). The groups' own rules (gates, code hash,
-// migration) are in tests/rights.test.js. Against the in-memory sheet only (rule D1).
+// migration) are in tests/accountrights.test.js. Against the in-memory sheet only (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -66,7 +66,7 @@ const ENDPOINTS = [
   ['userData', () => ({userData: 'Ana'})],
   ['userBoard', () => ({userBoard: 'Ana', hide: true})],
   ['userGroup', () => ({userGroup: 'Ana', group: 'g:00000000', on: true})],
-  // the groups themselves (tests/playergroups.test.js, tests/rights.test.js)
+  // the groups themselves (tests/playergroups.test.js, tests/accountrights.test.js)
   ['groupMake', () => ({groupMake: {n: 'RA Test', board: 1}})],
   ['groupEdit', () => ({groupEdit: 'g:00000000', n: 'RA Test 2'})],
   ['groupDrop', () => ({groupDrop: 'g:00000000'})],

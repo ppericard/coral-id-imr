@@ -781,7 +781,7 @@ ids only, never a name. Every privileged endpoint calls `gate_`, then `can_(call
 admin's account (`rolesSeed_`): the admin list, and the Managers and Curators groups. A delete, merge (its from) or
 archive drops the account's rights, never moves them (`rightsDrop_`, `rolesDrop_`, rule D7). The Roles tab's other rows
 (`owner`, `editor`, `trainer`) are the record of the roles before the groups carried them, read by nothing since the
-rights migration (below). `tests/roles.test.js`, `tests/rights.test.js`.
+rights migration (below). `tests/roles.test.js`, `tests/accountrights.test.js`.
 
 ## Live games
 
@@ -842,9 +842,13 @@ betas and rights.
   group's first right is refused while it has members (`members`: their memberships hold no code hash). A player's own
   act never joins a group that carries rights.
 - **Audit rows** of the rights: `join <group id>` and `leave <group id>` (target the member's id; `(self)` for the
-  caller's own account, `(account removed)` for rule D7, `(migration)`); `right+ <right>@<scope>` and `right- …`
-  (target the group's id), then one `grant <right> (via <group id>)` or `revoke …` row per member. A membership written
-  without its `ok` row answers an error, and its retry writes that row (`joinAudited_`).
+  caller's own account, `(account removed)` for rule D7, `(migration)`); one `grant <right> (via <group id>)` or
+  `revoke …` row per member, then `right+ <right>@<scope>` or `right- …` (target the group's id). A membership written
+  without its `ok` row answers an error, and its retry writes that row (`joinAudited_`); so does a group's rights
+  change: the request that carries the rights compares them with the group's audited rights (`rightsAudited_`: per
+  right, its last `ok` `right+` / `right-` row, a role group's `r:` rights from the migration counted without one), so
+  its retry writes the rows of the change saved without them (a member's row may then be written twice). A failed
+  `groupMake` with rights answers an error, its retry `exists`, and its rows come with the group's next rights edit.
 - Settings and rights stay in separate groups in practice (Staff a board, Trainers `live`), never mixed by the admin
   page.
 - Rule D7: a merge joins every group without rights of the merged name to the kept one's, and drops its groups with
@@ -867,7 +871,7 @@ betas and rights.
   only, counted in the Deploy log line. Until it has run, the readers and `can_` read the groups as it will make them
   (`rightsBefore_`), and the first change to a group, a membership or an account runs it first (`rightsNow_`). Its code
   (between `rights-migration` markers) goes once the Deploy log shows "one-shot rights".
-- `tests/playergroups.test.js`, `tests/rights.test.js`.
+- `tests/playergroups.test.js`, `tests/accountrights.test.js`.
 
 ## Backup to pCloud
 
