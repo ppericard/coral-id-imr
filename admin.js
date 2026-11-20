@@ -300,7 +300,8 @@ let draftAt = null;
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [],
   FUT = [],
-  snap = null;
+  snap = null,
+  ACTED = false; // the admin clicked, undid or redid in this visit: a background run then lands under his steps (saveDraft)
 // The Undo steps survive a reload of this tab: kept in sessionStorage (this tab only, gone when it closes; the last 60
 // steps), with the draft they lead to, so another tab's draft never picks them up. As many of the latest steps as fit in
 // HIST_ROOM characters, under the ~5 million a tab's sessionStorage takes (60 steps of a 1.3-million-character curation
@@ -346,15 +347,34 @@ const keepHist = () => {
 addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
-function saveDraft() {
+// What a background run changed (the draft now against snap, the draft before it), laid onto the step Undo leads to and the
+// one Redo leads to; a value the admin changed in that step stays his (merge3: mine wins).
+function bgSink() {
+  const before = JSON.parse(snap),
+    onto = L => {
+      if (!L.length) return;
+      const m = merge3(before, JSON.parse(L[L.length - 1]), DRAFT);
+      m.genera = m.genera || {};
+      L[L.length - 1] = JSON.stringify(m);
+    };
+  onto(HIST);
+  onto(FUT);
+}
+// bg: the save of a background run (the auto-sorts). Run before the admin's first click, it is one Undo step; once he has
+// clicked, it is no step of his stack: Undo and Redo always take back his own action, never the run, and the redo steps
+// stay. The run goes into the step Undo or Redo leads to instead (bgSink), so taking his click back leaves what it proposed.
+function saveDraft(bg = false) {
   memoReset();
   sweepFlags();
+  const sink = bg && ACTED && snap !== null;
   if (snap !== null) {
     autoWhen();
-    HIST.push(snap);
+    if (sink) bgSink();
+    else HIST.push(snap);
   }
   if (HIST.length > 300) HIST.shift();
-  FUT = [];
+  if (!sink) FUT = [];
+  if (!bg) ACTED = true;
   snap = JSON.stringify(DRAFT);
   if (ASIG) ASIG_OF = snap;
   if (!TOKEN) return;
@@ -393,13 +413,14 @@ function putDraft() {
     draftLost = !!r.err;
     if (r.took && r.took.changed) {
       render();
-      toast('Clicks made in another admin tab are in.');
+      toast('Clicks made in another admin tab are in.', 3500, true);
     }
   });
 }
 const draftBusy = () => draftLost || !!(DW && (DW.busy || DW.lost));
 function step(from, to, msg) {
   if (!from.length) return toast(msg[0]);
+  ACTED = true;
   to.push(snap);
   snap = from.pop();
   DRAFT = JSON.parse(snap);
@@ -3930,7 +3951,7 @@ function zoomSet(L, i0, cap) {
   show();
 }
 let toastT;
-function toast(msg, ms = 3500) {
+function toastShow(msg, ms) {
   let t = document.querySelector('.adm-toast');
   if (!t) {
     t = document.createElement('p');
@@ -3944,6 +3965,32 @@ function toast(msg, ms = 3500) {
   toastT = setTimeout(() => {
     t.hidden = true;
   }, ms);
+}
+// The result of the admin's own action (Published, Undone, Saved…) stays readable: a background toast (bg: the auto-sorts',
+// another tab's clicks) that comes within TOAST_HOLD ms of it waits, and shows once the hold is over (the newest waiting
+// one only; another action's toast in between moves it back again).
+const TOAST_HOLD = 4000;
+let toastHold = 0,
+  toastWait = null,
+  toastWaitT;
+function toast(msg, ms = 3500, bg = false) {
+  if (bg && Date.now() < toastHold) {
+    toastWait = [msg, ms];
+  } else {
+    if (!bg) toastHold = Date.now() + Math.max(ms, TOAST_HOLD);
+    else toastWait = null;
+    toastShow(msg, ms);
+  }
+  clearTimeout(toastWaitT);
+  if (toastWait)
+    toastWaitT = setTimeout(
+      () => {
+        const [m, s] = toastWait;
+        toastWait = null;
+        toast(m, s, true);
+      },
+      Math.max(0, toastHold - Date.now()) + 1
+    );
 }
 
 /* ---------- Choices that point to a photo no longer in data.json ---------- */
@@ -6912,7 +6959,7 @@ function autoRun() {
   });
   if (!(R.add + R.reject + R.exclude + R.check)) return R;
   DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
-  saveDraft();
+  saveDraft(true);
   return R;
 }
 // The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (data/fish-cand.json, judged in
@@ -7012,7 +7059,7 @@ async function fishAutoRun() {
     {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => passAt(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
-  saveDraft();
+  saveDraft(true);
   render();
   return R;
 }
@@ -8516,12 +8563,12 @@ async function start() {
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const sugRun = () => {
     const ar = TOKEN && autoRun();
-    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+    if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar), 3500, true), keep ? 4000 : 0);
     // The fish auto-sort once the first page is drawn and the page is idle: it reads data/fish-cand.json, 9 million characters,
     // which would share the line and the main thread with the first page. One Undo step.
     const fishLater = () =>
       fishAutoRun().then(R => {
-        if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+        if (R && R.add + R.back + R.out + R.reject + R.check) setTimeout(() => toast(fishToast(R), 3500, true), keep || ar ? 8000 : 0);
       });
     'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
   };

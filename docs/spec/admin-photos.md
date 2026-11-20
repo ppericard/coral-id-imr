@@ -77,7 +77,10 @@ slugs' the `tree` builder's, in `admin-fish.js`:
   decisions", Undo), one implementation that both decides and shows the agreement, and no PR that changes
   `curation.json` (rule A1); nothing reaches the site before his Publish. A value Pierre already gave (rating, form,
   crop) is never replaced; a photo he decided (added, rejected, excluded, sent elsewhere) or that is already logged is
-  never touched. The whole run at load is one Undo step.
+  never touched. The whole run at load is one Undo step; once Pierre has clicked in the visit, a run that lands
+  (the fish auto-sort comes later) is no step of his: Undo and Redo take back his own click, and the run stays in the
+  step they lead to (`saveDraft(true)`, `bgSink`). Its toast (a background toast) waits behind the result of his own
+  action, such as "Published", for 4 s (`toast`).
 - **Sure rule** (`autoSure`, from the pass's fields, no `unsure` at all): best of its observation in its view, Fair or
   Good, view and form given → added to that view (`cellView`, only the views `capViews` allows) with quality, form and
   suggested crop; `dup`, several corals or Poor → rejected; `exclude` → excluded; `alt`, another genus, `cmp` → left to
