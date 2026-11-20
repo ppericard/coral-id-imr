@@ -107,7 +107,7 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
   minutes of compute, level 3 never on this machine (rule L11). **Check algorithm changes on the real log too** (L12).
 - **Never edit `?v=`, `LAB_V` or `sw.js` `V`** (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 - **A test with the logic you change** (rule W12); the fast tier before each push, the one smoke part you touch (rule
-  W14); UI: look at it, light and dark, phone and desktop (rule W17).
+  W14); UI: look at it, light and dark (dark is the app's ⚙ Theme, never `colorScheme`), phone and desktop (rule W17).
 - **A worktree of your own from a fresh `origin/main`**, files staged by name, one open PR per agent (rule W22); to
   bring a PR up to date, merge `origin/main` into it, never rebase or force-push (rule W18). **Heavy runs take the
   machine slot** (`tests/slot.js`, rule W24).
