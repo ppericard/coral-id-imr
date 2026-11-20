@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The sea-slug subject's game data (tools/seaslug_game.py; study docs/reviews/2026-11-15-nudibranch-mode-study.md §9,
 // step 5): the tree in fish.json's shape, scientific names only, its commonness over the Philippines, the photos in
 // play from the judged candidates under the photo target, and the committed files as the tool
-// writes them from tools/seaslugs.json, seaslug-cand.json and suggest.json "seaslug" (a re-judge must rebuild them).
+// writes them from tools/seaslugs.json, data/seaslug-cand.json and data/suggest.json "seaslug" (a re-judge must rebuild them).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -327,7 +327,7 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
   assert.strictEqual(pr.stdout.trim(), '[False, False, True, True]', pr.stderr);
 });
 
-// A species judged later (as circle 3's last part) enters by itself: its judgements in suggest.json "seaslug" are all
+// A species judged later (as circle 3's last part) enters by itself: its judgements in data/suggest.json "seaslug" are all
 // the build needs.
 test('a species judged later enters at the next build, by the same rule as circle 1', () => {
   const C3 = {...CAND, cand: {...CAND.cand, 5: [20, 21, 22].map(n => cand(5, n))}},
@@ -360,17 +360,17 @@ print(json.dumps(g.check(t, gm, g.dump(t0), g.dump_game(g0))))`);
 // (tools/fish_game.py download: four sizes, the crop), the records then read from R2, the original kept as the fallback.
 const pil = spawnSync('python3', ['-c', 'import PIL'], {encoding: 'utf8'}).status === 0;
 function world(sug = SUG) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'seaslug-r2-')),
+  const dir = mkTmp('seaslug-r2-'),
     w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o));
   fs.mkdirSync(path.join(dir, 'tools'));
   w('tools/seaslugs.json', LIST);
-  w('seaslug-cand.json', {
+  w('data/seaslug-cand.json', {
     cand: {
       ...CAND.cand,
       1: CAND.cand[1].map(p => ({...p, src: `https://inaturalist-open-data.s3.amazonaws.com/photos/${p.f.split('-').pop()}/original.jpg`}))
     }
   });
-  w('suggest.json', {seaslug: sug});
+  w('data/suggest.json', {seaslug: sug});
   return dir;
 }
 const STUB = `
@@ -433,7 +433,7 @@ test(
     assert.deepStrictEqual([r.done, r.failed, r.calls.length], [1, [], 1]);
     // A new crop: listed with its files on R2 until the run makes them again, its rewrite count bumped.
     fs.writeFileSync(
-      path.join(dir, 'suggest.json'),
+      path.join(dir, 'data/suggest.json'),
       JSON.stringify({seaslug: {...sug, 'seaslug-1-cand-1': {...sug['seaslug-1-cand-1'], c: [0, 0, 0.5, 1]}}})
     );
     [text, todo] = offline(dir);
@@ -490,7 +490,7 @@ test(
     assert.strictEqual(text, fs.readFileSync(path.join(dir, 'seaslug-game.json'), 'utf8'));
     assert.strictEqual(todo, 0);
     // A new box: the tile alone, the four files and their rewrite count as they are.
-    fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify({seaslug: box([0, 0.1, 1, 0.9])}));
+    fs.writeFileSync(path.join(dir, 'data/suggest.json'), JSON.stringify({seaslug: box([0, 0.1, 1, 0.9])}));
     [text, todo] = offline(dir);
     assert.strictEqual(todo, 1);
     r = r2run(dir, path.join(dir, 'up2'));
@@ -500,7 +500,7 @@ test(
     B = by();
     assert.deepStrictEqual([B[2].bb, B[2].ar, B[2].iv, B[2].xc.length], [[0, 0.1, 1, 0.9], was.ar, was.iv, 4]);
     // A box too small in the original (under 320 px wide): no tile, and why.
-    fs.writeFileSync(path.join(dir, 'suggest.json'), JSON.stringify({seaslug: box([0.4, 0.4, 0.5, 0.5])}));
+    fs.writeFileSync(path.join(dir, 'data/suggest.json'), JSON.stringify({seaslug: box([0.4, 0.4, 0.5, 0.5])}));
     r = r2run(dir, path.join(dir, 'up3'));
     B = by();
     assert.deepStrictEqual([B[2].xc, B[2].xn, fs.readdirSync(path.join(dir, 'up3'))], [undefined, 'res', []]);
@@ -638,19 +638,19 @@ print(json.dumps([[a.sure_add({'jt': x, 'e': 3, 'k': 'best'}), b.cand_sure({'jt'
     ]
   );
   // Every fish judgement: the fish rubric's views and flags only, so the wider pattern changes no fish decision.
-  const fish = Object.values(json('suggest.json').fish || {}).filter(j => j && j.jt);
+  const fish = Object.values(json('data/suggest.json').fish || {}).filter(j => j && j.jt);
   assert.ok(fish.length > 1000, String(fish.length));
   const bad = fish.filter(j => j.jt[0] === 'v' || j.jt.slice(7).includes('f')).map(j => j.jt);
   assert.deepStrictEqual(bad, []);
 });
 
-// The licence refresh and each Publish rewrite seaslug-cand.json and suggest.json: the photos workflow builds the game
+// The licence refresh and each Publish rewrite data/seaslug-cand.json and data/suggest.json: the photos workflow builds the game
 // data again after them and commits it, so a photo whose licence changed leaves the game too.
 test('the photos workflow builds the sea-slug game data again and commits it', () => {
   const W = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'approved-photos.yml'), 'utf8'),
     at = s => W.indexOf(s);
   assert.ok(at('python tools/seaslug_game.py') > at('python tools/licences.py --others'), 'after the licence refresh');
-  assert.ok(/git add [^\n]*seaslug-cand\.json seaslug\.json seaslug-game\.json/.test(W), 'staged');
+  assert.ok(/git add [^\n]*data\/seaslug-cand\.json seaslug\.json seaslug-game\.json/.test(W), 'staged');
   assert.ok(W.includes('seaslug\\.json|seaslug-game\\.json'), 'allowed in the commit job');
 });
 
@@ -665,3 +665,10 @@ test('the photos workflow: the sea slugs R2 step on, wired before the upload', (
   assert.ok(at('seaslug_game.py --r2 --out r2-upload') < at('run: tools/r2_sync.sh r2-upload'), 'uploaded by the same step');
   assert.ok(at('run: tools/r2_sync.sh r2-upload') < at('name: Prepare the commit'), 'before the commit');
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

@@ -9,10 +9,10 @@
 #   python3 tools/photo_metrics.py --live      live photos only (no iNaturalist download)
 #   python3 tools/photo_metrics.py --cand      candidates only
 #   python3 tools/photo_metrics.py --calib     how each metric ranks the photos the admin rated (curation.json quality)
-#   python3 tools/photo_metrics.py --prune     measures nothing: rewrites metrics.json without the photos gone for good
+#   python3 tools/photo_metrics.py --prune     measures nothing: rewrites data/metrics.json without the photos gone for good
 #                                              (GONE: the Coral Finder book crops)
 #
-# Writes metrics.json {"m": {f: [sharp, peak, px, cast]}} (admin only: players never download it); an existing entry is
+# Writes data/metrics.json {"m": {f: [sharp, peak, px, cast]}} (admin only: players never download it); an existing entry is
 # kept unless the photo is measured again, so a partial run adds to the file.
 #   sharp  variance of the Laplacian of the grey image at 960 px on the long side, x 10^4 (the classic focus measure;
 #          the whole frame, so blue water or a soft background lowers it)
@@ -32,7 +32,7 @@ from PIL import Image, ImageOps
 from datajson import load_all
 import photos
 
-OUT = os.path.join(ROOT, 'metrics.json')
+OUT = os.path.join(ROOT, 'data/metrics.json')
 CACHE = os.path.join(os.path.expanduser('~'), '.cache', 'coral-id-imr', 'metrics')
 W = 960
 # Photos that never come back, dropped at every write: the Coral Finder book crops (<genus>-cf-<page>-<tag>), kept out
@@ -133,4 +133,4 @@ if __name__ == '__main__':
         fh.write('{"v":1,"note":' + json.dumps(S['note']) + ',"m":{\n')
         fh.write(',\n'.join(json.dumps(f) + ':' + json.dumps(m, separators=(',', ':')) for f, m in S['m'].items()))
         fh.write('\n}}\n')
-    print(f'metrics.json: {len(S["m"])} photos')
+    print(f'data/metrics.json: {len(S["m"])} photos')

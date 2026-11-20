@@ -3165,8 +3165,8 @@ async function tipsCheck(b, base) {
       await p.evaluate(() => {
         const t = Date.now();
         localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
-        // The one-tap question's session: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
-        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7}}));
+        // The one-tap question's session in the corals: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
+        localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7, s: 'coral'}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
       });
       await p.reload();
@@ -5455,7 +5455,12 @@ async function namesCheck(b, base) {
             line: (q('#after .fbline') || {}).textContent || '',
             visible: q('#after .fb').innerText,
             h: box(mb).height,
-            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1
+            row: Math.abs(box(mb).top - box(nx).top) < 4 && box(mb).right <= box(nx).left + 1,
+            // ⚑ Report a problem (rule U14): on the sheet itself, never inside the More panel, in view and enabled with More closed
+            rep: (e =>
+              !!e && !!e.offsetParent && !e.disabled && box(e).top >= 0 && box(e).bottom <= innerHeight && !q('#fbmore [data-rep]'))(
+              q('#after .fb > .fbrep [data-rep]')
+            )
           };
         mb.click();
         const open = st();
@@ -5470,6 +5475,7 @@ async function namesCheck(b, base) {
       if (!m.before.line || /ID tips|Your answer|Similar names/.test(m.before.visible))
         bad.push('the short sheet holds more than one line');
       if (m.before.h < 44 || !m.before.row) bad.push('More is not a 44 px target on the row of Next');
+      if (!m.before.rep) bad.push('Report a problem is not on the sheet in view, behind More or disabled');
       if (m.open.hidden || !m.open.tips || m.open.exp !== 'true' || m.open.label !== 'Less' || !m.open.next) bad.push('More does not open');
       if (!m.shut.hidden || m.shut.tips || m.shut.label !== 'More') bad.push('Less does not close');
       if (m.open.fb[1] - m.before.fb[1] !== 1 || m.again.fb[1] !== m.open.fb[1] || m.before.fb[0] < 1)
