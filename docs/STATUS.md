@@ -69,6 +69,7 @@ Asked in French, after 04:00 (Rule 0).
 - **Q439** Lab prototypes to graduate (U13), now with the Fish ID Key into Identify (rec. graduate it; #1340 hides the
   sea slugs' empty Identify). RA review (#1332): My progress, a "Next step" line above the slate; the quiz photo, a
   visible Colony / Close-up switch. Earlier still open: Q351 (b), Q390, one engine §6 (a)-(d).
+- Reminded once (W10), not asked again: review the tell-apart lines; validate the draft species marks (fish, sea slugs).
 - Not asked, on purpose: contrast on the Learn sheets (his "plus tard"), the fish starting values (log too small).
 
 Last question number: Q452
