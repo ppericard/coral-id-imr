@@ -493,14 +493,14 @@ function flagStale(C, S, key, fl) {
 }
 // The flags of subject S that are tasks: [key, flag].
 const flagsOpen = (C, S = ASUBJ) => Object.entries(flagsOf(C, S)).filter(([k, fl]) => !flagStale(C, S, k, fl));
-// Every click's save drops the stale flags of every subject (one Undo step with the click: the snapshot taken after).
+// Every click's save drops the stale flags of the subject on screen only (one Undo step with the click: the snapshot taken
+// after); another subject's part of the draft never moves with this one's tools.
 function sweepFlags() {
   try {
-    SUBJECTS.forEach(S => {
-      const F = flagsOf(DRAFT, S),
-        keep = flagsOpen(DRAFT, S);
-      if (keep.length < Object.keys(F).length) flagsSet(DRAFT, S, Object.fromEntries(keep));
-    });
+    const S = ASUBJ,
+      F = flagsOf(DRAFT, S),
+      keep = flagsOpen(DRAFT, S);
+    if (keep.length < Object.keys(F).length) flagsSet(DRAFT, S, Object.fromEntries(keep));
   } catch (e) {
     // the data are not read yet (a save before the page is drawn): nothing to judge
   }

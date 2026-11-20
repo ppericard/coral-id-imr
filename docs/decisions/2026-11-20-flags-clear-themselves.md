@@ -18,7 +18,7 @@ gonfle qu'il y ait 2 mécanismes pas bien différenciés» (the second part, one
 
 - One predicate, `autosort.js` `flagGone` (the photo left play: hide, exclude, Not this; a subject's out, exclude, seen),
   plus "no longer in the subject's data" once read (`admin.js` `flagStale`). The list, the counts and the draft all use it.
-- `saveDraft` sweeps the stale flags in the same step as the click, so every tool of every page clears the flag, Undo
+- `saveDraft` sweeps the stale flags of the subject on screen in the same step as the click, so every tool of every page clears the flag, Undo
   brings both back, and nothing is written outside a click (A1: no automatic write of a choice; a flag is a task marker).
 - Not built: an automatic Done for a report that carries a photo (Done thanks the player, a decision for Pierre).
 

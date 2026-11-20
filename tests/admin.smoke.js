@@ -5829,7 +5829,8 @@ async function loadPart(b, base, fails) {
         });
         const st = () =>
           p.evaluate(() => ({
-            tiles: [...document.querySelectorAll('#view .adm-flagged [data-f]')].map(t => t.dataset.f),
+            // the flag tiles only (a report's own photos sit in the same kind of grid)
+            tiles: [...document.querySelectorAll('#view .adm-flagged [data-f]')].filter(t => !t.closest('.adm-rep')).map(t => t.dataset.f),
             open: flagsOpen(DRAFT, ADM0).map(x => x[0]),
             kept: Object.keys(flagsOf(DRAFT, ADM0))
           }));
