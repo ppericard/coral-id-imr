@@ -676,6 +676,8 @@ const DOC_MARKS = {
   'judging/PROMPT.md': [3, 160],
   'judging/SEASLUG.md': [17, 500],
   'tools/README.md': [13, 280],
+  'tools/queue/README.md': [3, 300],
+  'tools/queue/codex.md': [1, 80],
   'tools/sync/changes/README.md': [2, 130]
 };
 // A record has no entry of its own (every decision PR would add one): the same mark for each. A sheet script change
