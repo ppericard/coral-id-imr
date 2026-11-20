@@ -100,8 +100,9 @@ Advanced, median of the 5 seeds, accepted / declined, and the paired difference 
 
 Families at Advanced at answers 1,000, 3,000 and 5,000 (median): beginner 4 / 3, 31 / 30, 32 / 32 accepted / declined;
 lecture RA 11 / 7, 30 / 29, 32 / 32. With 5 pairs and sd about 100, the 95% interval on the mean difference is about
-±125 answers from the 5th to the 25th family: it excludes a delay of the row's size (about 900) or #822's (2,300-3,300)
-and not one under about 125-150 answers; the 30th is too noisy. Exploratory, no primary declared, no correction. The arms
+±125 answers from the 5th to the 25th family (±1.24 sd per row, so ±55 to ±170; the widest, the beginner's 25th, runs
+from −59 to +237): the intervals exclude a delay of the row's size (about 900) or #822's (2,300-3,300) and leave open a
+smaller one, up to about 250 answers (an interval's half-width is not a bound on the delay); the 30th is too noisy. Exploratory, no primary declared, no correction. The arms
 split before any genus question (the offer's answer changes the planner's lists), so seed-by-seed differences are mostly
 noise from the split.
 

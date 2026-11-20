@@ -830,8 +830,10 @@ still open, the genera wait (`model.js` `laterWaits`). Their share of the questi
 
 **Do the genera delay the families?** Measured read-only on 2026-11-20 (rated world, fish, `--app truth`, learner
 `count`, 5,000 answers; the offer accepted against declined, paired by seed; docs/reviews/2026-11-20-fish-remeasures.md
-"The family levels and the genera"). No: from the 5th family at Advanced to the 25th, accepting the genera moves it by no more than about
-125-150 answers (5 paired seeds; the 95% interval is about ±125). The paired differences, in answers, mean (sd):
+"The family levels and the genera"). The old delay of about 900 answers is excluded: from the 5th family at Advanced to the
+25th, the mean paired differences run from −67 to +89 answers, and no row's 95% interval (5 paired seeds, about ±1.24 sd, so ±55
+to ±170) reaches past +240. A smaller delay, up to about 250 answers, is not excluded: an interval's half-width is not a bound on
+the delay. The paired differences, in answers, mean (sd):
 
 | nth family at Advanced | beginner | lecture RA |
 | --- | --- | --- |
