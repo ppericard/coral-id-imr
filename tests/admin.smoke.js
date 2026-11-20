@@ -485,7 +485,7 @@ async function lazyPart(b, base, fails) {
       await p.addInitScript(() => {
         new MutationObserver(() => {
           const v = document.getElementById('view');
-          if (v && !window.DRAWN_AT && /ANSWERS/.test(v.textContent)) window.DRAWN_AT = performance.now();
+          if (v && !window.DRAWN_AT && /ANSWERS/.test(v.innerText)) window.DRAWN_AT = performance.now();
         }).observe(document, {childList: true, subtree: true, characterData: true});
       });
       // scripts and fetches only: the Analyses worker asks for analysis.js again, as a worker
