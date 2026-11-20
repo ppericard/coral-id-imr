@@ -1575,6 +1575,15 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   droite et gauche, il ne vaut pas mieux les mettre au-dessus et en dessous, parce que maintenant on a la place, on avait
   dégagé de la place pour le faire […] Alors après sur ordinateur je sais pas, mais sur téléphone je pense que ça
   marcherait mieux.» On phones, after a wrong answer, the two compared photos are stacked, one above the other, each
-  whole; tablets and desktop keep what they had and every subject gets it (the integrator's call, easy to correct).
-  Applied: `app.css` (`.q .qstage.qvs`, phone block), docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`,
+  whole; every subject gets it (the integrator's call, easy to correct). Refined by the next entry. Applied:
+  docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`,
   decisions/2026-11-21-compare-photos-stacked-on-phones.md, #1351.
+- **05:55, small phones: the layout is dynamic (on #1351; the 05:32 entry above).** «Après, petit téléphone, je veux dire,
+  à un moment donné, il faut être un peu logique sur l'espace qui nous reste, quoi. Mais bon, si en même temps la réponse,
+  ça prend toute la place de l'écran, c'est un problème en soi, en fait, si on ne peut plus afficher les photos. Mais
+  peut-être qu'il faut que ça soit dynamique, il faut que l'espace, en fonction de l'espace qu'on a, on a une présentation
+  qui est différente, je ne sais pas.» The compared photos are stacked or side by side, whichever shows both larger in the
+  room left: stacked on a normal phone, side by side on a small phone under a tall feedback sheet (the integrator's call,
+  easy to correct, the same pick at every size class). Applied: `quiz.js` `fitStage`, `app.css` (no forced grid),
+  docs/DESIGN.md "Quiz on desktop", `tests/qvswhole.test.js`, `tests/pages.smoke.js` (`comparedLayoutCheck`), the
+  decision record above, #1351.

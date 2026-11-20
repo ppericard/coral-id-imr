@@ -6135,6 +6135,82 @@ async function noUpscaleCheck(b, base) {
     }
     await c.close();
   }
+  for (const f of await comparedLayoutCheck(b, base)) fails.push(f);
+  return fails;
+}
+// The two compared photos after a wrong answer pick their layout from the room left (Pierre, 2026-11-21, «il faut que ça
+// soit dynamique»): quiz.js fitStage takes, at every size, the grid that shows both photos larger by their known shapes
+// (data-r), stacked on a tie. A phone stage as the quiz draws it, the feedback sheet standing in as a `.qside` of a given
+// height: a normal phone (390x844, a short sheet) stacks; a small one (360x640) with a tall sheet leaves a small stage and
+// goes side by side; at every case the layout chosen shows both at least as large as the other (within 3%), whole.
+async function comparedLayoutCheck(b, base) {
+  const fails = [],
+    F = 'imr-p27_i9',
+    stub = require('./photostub.js')(ROOT);
+  const cases = [
+    {w: 390, h: 844, side: 110, r: 4 / 3, want: 'stacked'},
+    {w: 390, h: 844, side: 110, r: 0.75, want: 'stacked'},
+    {w: 390, h: 844, side: 300, r: 4 / 3},
+    {w: 360, h: 640, side: 110, r: 4 / 3, want: 'stacked'},
+    {w: 360, h: 640, side: 330, r: 4 / 3, want: 'side by side'},
+    {w: 360, h: 640, side: 330, r: 0.75}
+  ];
+  for (const k of cases) {
+    const c = await b.newContext({viewport: {width: k.w, height: k.h}, serviceWorkers: 'block'});
+    await stub.r2(c);
+    await c.route(
+      u => !u.href.startsWith(base) && !u.href.startsWith(require('../core.js').PHOTO_BASE),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+    });
+    const p = await c.newPage();
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const seen = await p.evaluate(
+      async ([f, side, r]) => {
+        const q = document.createElement('div');
+        q.className = 'q';
+        const fig = cls =>
+          `<figure class="qph ${cls}" data-r="${r}" data-imr style="--qbg:url('img/${f}-s.webp')"><button type="button" class="zoom"><img src="img/${f}.webp" alt=""></button></figure>`;
+        q.innerHTML = `<div class="qstage qvs">${fig('qok') + fig('qko')}</div><div class="qside" style="height:${side}px"></div>`;
+        $v.innerHTML = '';
+        $v.appendChild(q);
+        const ims = [...q.querySelectorAll('img')];
+        await Promise.all(ims.map(i => i.complete || new Promise(ok => ((i.onload = i.onerror = ok), setTimeout(ok, 3000)))));
+        fitStage();
+        await new Promise(ok => setTimeout(ok, 100));
+        const st = q.querySelector('.qstage'),
+          s = st.getBoundingClientRect(),
+          g = parseFloat(getComputedStyle(st).columnGap) || 0,
+          bx = [...q.querySelectorAll('.qph')].map(e => e.getBoundingClientRect()),
+          a = (w, h) => Math.min(w, h * r) ** 2 / r; // one photo's area in a w x h box
+        return {
+          stage: [s.width, s.height],
+          boxes: bx.map(x => [x.x, x.y, x.right, x.bottom]),
+          stacked: bx[1].y >= bx[0].bottom - 1,
+          fit: ims.map(i => getComputedStyle(i).objectFit),
+          areaStacked: 2 * a(s.width, (s.height - g) / 2),
+          areaSide: 2 * a((s.width - g) / 2, s.height),
+          inside: bx.every(x => x.x >= s.x - 1 && x.right <= s.right + 1 && x.y >= s.y - 1 && x.bottom <= s.bottom + 1)
+        };
+      },
+      [F, k.side, k.r]
+    );
+    const at = `compared layout ${k.w}x${k.h}, sheet ${k.side}, shape ${k.r.toFixed(2)}`,
+      got = seen.stacked ? 'stacked' : 'side by side',
+      chosen = seen.stacked ? seen.areaStacked : seen.areaSide,
+      other = seen.stacked ? seen.areaSide : seen.areaStacked;
+    if (k.want && got !== k.want) fails.push(`${at}: ${got}, wanted ${k.want} ${JSON.stringify(seen)}`);
+    if (chosen < other * 0.97) fails.push(`${at}: ${got} shows less than the other layout (${Math.round(chosen)} < ${Math.round(other)})`);
+    if (seen.fit.some(f => f === 'cover')) fails.push(`${at}: a photo is cropped (object-fit cover)`);
+    if (!seen.inside) fails.push(`${at}: a box leaves the stage ${JSON.stringify(seen)}`);
+    await c.close();
+  }
   return fails;
 }
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|overlays|
