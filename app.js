@@ -1223,10 +1223,7 @@ const sciTop = (L, n) =>
 // The units in play a species by its scientific name may hang from (sciPlay up): the slate and the units the other
 // sets have in play (the fish's scientific genera; a sea slug genus is on the slate).
 const sciUp = () =>
-  new Set([
-    ...slateGenera(),
-    ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...(S.auto ? S.auto() : [])]))
-  ]);
+  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
 // The species by their scientific names, for every subject that asks them (SUBJECTS names 'sci'; UNITS sets: the
 // fish's, the sea slugs'): no offer and no switch of its own (the fish's come with their scientific genera, Q404 A's
 // names row; every sea slug player's); auto: sciPlay, once the level is on (sciSpOn, rule D4); all: every such unit
@@ -2333,7 +2330,7 @@ const fishNextOf = o => {
     if (!o.sci)
       L.push(
         o.sciDue
-          ? 'Next step: scientific genus names. Turn them on in My progress or ⚙ Settings, any time.'
+          ? 'Next step: scientific genus names. Turn them on in What I learn, on My progress, any time.'
           : 'Next step: once a family is at Advanced, its scientific genus names are offered to you.'
       );
     else if (o.sciLeft) L.push('The scientific genus names of each family come as you reach Advanced on it.');
@@ -2795,18 +2792,17 @@ const UNITS = {
             ? 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.'
             : 'For the families you know well: a photo and four scientific genus names, the Latin names scientists and survey teams use. A family’s genera come as you reach Advanced on it.';
         },
-        note: '⚙ Settings, Scientific names, any time. They count in your fish %.',
+        note: 'What I learn, on My progress, any time. They count in your fish %.',
         tag: 'Scientific genus',
         name: 'Scientific names',
-        // My progress's switch while off (progress.js: the offer at Advanced never locks the setting),
-        // and what it says once on.
-        row: 'Turn on scientific names',
+        // What it says once turned on (the What I learn card, progress.js: the offer at Advanced never locks the setting).
         onToast: () => `Scientific names on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
         card: ''
       },
-      // The species by their common names (docs/FISH_PATH.md "Unlock rules", branch A): no offer, no switch; auto: spPlay,
-      // once the species level is on (spOn, rule D4); all: every species unit (setOf, rankUnits). They count in the
-      // fish % (the common names, core.js treeScore C).
+      // The species by their common names (docs/FISH_PATH.md "Unlock rules", branch A): no offer; its switch is the What I
+      // learn card's Common names row (learn, below), on unless turned off there; auto: spPlay, once the species level is
+      // on (spOn, rule D4); all: every species unit (setOf, rankUnits). They count in the fish % (the common names,
+      // core.js treeScore C).
       {
         k: 'sp',
         all: () => (TREEU ? TREEU.spl || [] : []),
@@ -2827,8 +2823,29 @@ const UNITS = {
             ? ''
             : '<b>Your first species name.</b> A family you know well (Advanced) now brings its species, the most met around Dauin first, more of them as you master more families.'
       },
-      // The species by their scientific names (SCI_SP, shared with the sea slugs).
+      // The species by their scientific names (SCI_SP, shared with the sea slugs): no row of their own, they come with the
+      // scientific genera in play (sciUp), so the Scientific names row turns both.
       SCI_SP
+    ],
+    // The What I learn card's names rows (learnRows; Pierre, 2026-11-18, Q396, Q400 D, Q404 A): common names, scientific
+    // names, each on or off, both off leaving the families; "I'm at IMR" has both (its IMR genera come by themselves).
+    learn: [
+      {
+        name: 'Common names',
+        when: () => spOn(),
+        self: () => true,
+        line: () => 'Species by their common names. A family’s come as you reach Advanced on it.',
+        k: 'sp'
+      },
+      {
+        name: 'Scientific names',
+        self: () => imrNow(),
+        line: () =>
+          `${sciSpOn() ? 'Genera, then their species' : 'Genera'}, by their scientific names. A family’s genera come as you reach Advanced on it${imrNow() ? ', the IMR course’s from Open Water' : ''}.`,
+        // An IMR player who has not turned the set on: the IMR genera alone come (sciOpen auto).
+        part: () => 'The IMR course’s genera only, from Open Water. On: every family’s genera, as you reach Advanced on it.',
+        k: 'sci'
+      }
     ],
     // The milestone of the first species met by its scientific name (SCI_SP card; docs/FISH_PATH.md "Name-display
     // schedule", milestones: "You've unlocked scientific names: questions of this kind start coming", 2026-11-04).
@@ -2985,6 +3002,16 @@ const UNITS = {
     // names (SCI_SP, the fish's own set), and their first one's card in its words: a sea slug player always had scientific
     // names, so the milestone is the first species, not the names.
     sets: [SCI_SP],
+    // The What I learn card's one names row: its species, by their scientific names (its genera are the base, always on).
+    learn: [
+      {
+        name: 'Species',
+        when: () => sciSpOn(),
+        self: () => true,
+        line: () => 'Species by their scientific names. A genus’s come as you reach Advanced on it.',
+        k: 'ssp'
+      }
+    ],
     sciCard:
       '<b>Your first species.</b> A genus you know well (Advanced) now brings its species, by their scientific names, the most seen in the Philippines first.'
   }
@@ -3002,22 +3029,42 @@ if (Q.bon === undefined && Q.bu > 1) {
   Q.bon = true;
   saveQ();
 }
-// The units of the opt-in sets the player has on, and those a set brings without asking (its auto: an IMR player's IMR
-// genera), each once.
-const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...(S.auto ? S.auto() : [])]))];
+// The units a set brings without asking (its auto: an IMR player's IMR genera, the species), none once its What I learn
+// row is turned off (Q[k + 'O']: that level stops being asked, Q404 A; its units keep their bars, Q402 A). A "Not now" or
+// "Close them for now" card (Q[k] false alone) keeps them, as before the card. Every reader of a set's auto goes through it.
+const autoOf = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? S.auto() : []);
+// The What I learn card (progress.js learnCard; docs/FISH_PATH.md "Which names a player learns"): the subject's names rows
+// (UNITS learn: {k, name, line, part, when, self}), those whose level is on now (when: rule D4, the sheet replays it). A
+// row is on while not turned off on the card (Q[k + 'O']) and either turned on (Q[k] true) or bringing its units by
+// itself (self: the species, an IMR player's scientific genera), so a record no switch was tapped on reads as it plays.
+// rowState: 'part' for a row whose self brings only some of its units (part: its line then, an IMR player's IMR genera
+// alone) while the set itself is not on; its On turns the rest on.
+const learnRows = () => (UNITS[SUBJ.id].learn || []).filter(r => !r.when || r.when());
+const rowOn = (r, q = Q) => !q[r.k + 'O'] && (q[r.k] === true || !!(r.self && r.self()));
+const rowState = (r, q = Q) => (!rowOn(r, q) ? 'off' : r.part && q[r.k] !== true ? 'part' : 'on');
+// A row's switch: on, the set is on (Q[k] true) and its auto comes back; off, the set is off and its auto stops (Q[k + 'O']).
+// Never by hand early (bonusSet's hand, Q.sciH): a level turned on here comes as its parent reaches the usual threshold,
+// never sooner (Pierre, 2026-11-18, Q401 A). Synced with the choice (sync.js mergeSaved: the O suffix).
+function learnSet(k, on) {
+  if (on) delete Q[k + 'O'];
+  else Q[k + 'O'] = true;
+  bonusSet(!!on, k);
+}
+// The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once.
+const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
 // waits while a slate unit in play is still to open (model.js openPick), unless its set brings it by itself (auto: an
 // IMR player's IMR genera) or the player turned the set on by hand before it was due (Q[k + 'H']). Open all is
 // model.js's (openedAll).
 const setLater = n => {
   const S = setOf(n);
-  return !!(S && S.after) && !Q[S.k + 'H'] && !(S.auto && S.auto().includes(n));
+  return !!(S && S.after) && !Q[S.k + 'H'] && !autoOf(S).includes(n);
 };
 // The units the rank share leaves alone (model.js SHARE): those of a set that opens after the slate (its after) that
 // come in the slate's phase: the ones it brings by itself (auto: an IMR player's IMR genera from their family's Open
 // Water) and all of them once the player turned it on by hand before it was due (Q[k + 'H']). Read once per answer
 // (model.js sharesNow).
-const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...(S.auto ? S.auto() : [])] : []));
+const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
 // answered in a live game before the path opened it, model.js introLive) opens nothing (rule L4). A unit of a part that
@@ -3046,8 +3093,8 @@ function openNo(k) {
   Q[k + 'A'] = answersSoFar();
   bonusSet(false, k);
 }
-// ⚙ Bonus genera On / Off (fish: Scientific names), and the offer card (quiz.js bonusOfferShow): saved in the
-// quiz settings, synced with them. Off takes them out of the photo quiz and the duels; their progress is kept. Questions
+// ⚙ Bonus genera On / Off, the What I learn card's rows (learnSet) and the offer card (quiz.js bonusOfferShow): saved in
+// the quiz settings, synced with them. Off takes them out of the photo quiz and the duels; their progress is kept. Questions
 // planned ahead with the old units are dropped by themselves (planKey names the units in play).
 const showBon = () =>
   document
@@ -3055,8 +3102,9 @@ const showBon = () =>
     .forEach(b => b.setAttribute('aria-pressed', String((b.dataset.on === '1') === !!Q[b.closest('[data-optin]').dataset.optin])));
 // Q[k + 'T']: when the choice was made, so the latest choice wins across devices (sync.js mergeSaved).
 // Q[k + 'V']: the set's rules version (rv) the choice was made under (the back card, quiz.js bonusBackDue). hand: turned
-// on or off by the player's own switch (⚙, My progress), not a card; Q[k + 'H']: on by hand while not due yet (no family
-// at Advanced: the fish genera then come by their family's Open Water, app.js sciOpen).
+// on or off by the player's own ⚙ switch, not a card; Q[k + 'H']: on by hand while not due yet (no family at Advanced:
+// the fish genera then come by their family's Open Water, app.js sciOpen). Since the What I learn card (Q401 A) nothing
+// sets it for the genera any more; a record that has it keeps it until the row is switched again.
 function bonusSet(on, k = SETS()[0].k, hand) {
   const S = SETS().find(x => x.k === k);
   Q[k] = !!on;
@@ -3869,8 +3917,9 @@ document.getElementById('signb').onclick = e => {
         P = {};
         delete Q.bu;
         delete Q.ba;
-        // the bonus genera (fish: the scientific genera, circle 3) are offered again once due
-        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H'].forEach(x => delete Q[k + x]));
+        // the bonus genera (fish: the scientific genera, circle 3) are offered again once due, the What I learn rows back
+        // to their defaults
+        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();

@@ -60,6 +60,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 |---|---|---|
 | 2026-11-20 | [Admin opening on a phone: the scripts a visit to Activity does not need, and the fish auto-sort, wait for their page](2026-11-20-admin-lazy-loads.md) | #1313 |
 | 2026-11-20 | [Coral slate numbers, lecture slides and lecture ID tips: moved into the IMR instance's layer](2026-11-20-coral-slate-slides-tips-split.md) | #1309 |
+| 2026-11-20 | [The admin corrects the fish name index in a family's Names box; a species' own list waits for a format](2026-11-20-fish-names-admin.md) | #1311 |
 | 2026-11-20 | [A flag clears itself when its photo leaves play, and a flag on a photo that no longer exists is no task](2026-11-20-flags-clear-themselves.md) | #1294 |
 | 2026-11-20 | [The Lab tools that ask a unit run on the subject on screen: Type the genus, Blur reveal, the Look-alike web](2026-11-20-lab-tools-every-subject.md) | #1280 |
 | 2026-11-20 | [A unit's card on a Learn list opens its sheet, whole: no "Open the sheet", no marks heading or sources there](2026-11-20-learn-cards-open-the-sheet.md) | #1290 |
@@ -164,6 +165,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-18 | [The coral and sea-slug pairs' tell-apart lines: ours, in `ap` / `apsrc`, never in IMR's `lk`](2026-11-18-tellapart-lines.md) | #1119 |
 | 2026-11-18 | [Typed answers, the rest: typed mix-ups in the pooled pairs, the typed text in admin Pairs](2026-11-18-typed-answers-rest.md) | #1116 |
 | 2026-11-18 | [The mimicry class: look-alike species come in once their model is met, with a card](2026-11-18-variant-classes.md) | #1133 |
+| 2026-11-18 | [The names choice on the What I learn card: Common names and Scientific names rows, each on or off](2026-11-18-what-i-learn-names-rows.md) | #1301 |
 | 2026-11-04 | [Fish basics: the fish twin of Coral basics, on the same engine, from the IMR fish presentation](2026-11-04-fish-basics.md) | #1108 |
 
 Older decisions are still in the notebook's "Decision log"

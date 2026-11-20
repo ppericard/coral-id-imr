@@ -163,6 +163,24 @@ every player's path and progress (`ST_PUBLISH`, in the one Publish dialog), and 
 "N fish look-alike pair edits" apart from the sheet edits (`contentSummary`). What the structure does to the game:
 [content.md › Structure](content.md#structure-circles-and-look-alike-pairs).
 
+## Names: the shared names of the name index
+
+Under the Sheet on a family's page, where the built file has a name index (`fish.json` `vn`; a subject without one has no
+box; `admin-content.js` `namesBox`), folded until opened (remembered in this browser, `reefid-admin-cnames`; open on its
+own under the Shared names filter before he chose). It lists the **shared names** the family carries: a name the built
+index (`core.js` `treeNameIndex`, without his exceptions) gives to two families or more, and every kind word (razorfish,
+toby), each saying its role (kind word, N of M species; species; genus) and the other families that carry it. Each has
+three choices, **Accepted** | **Often** | **Off**, the one in force pressed; a click on the pressed one brings the built
+reading back. They write `curation.json` `fish` `names` (`{name: {family id: 'on' | 'often' | 'off'}}`, the format the
+game already reads: `treeNameIndex`, `typeOff`; [fish.md › The name index](fish.md#the-name-index)) in the draft, one step
+each (`namesPut`, `namesBind`), Undo and Publish as every curation (rule A1); the key is kept per name in its first
+spelling, an emptied name goes, and Publish counts "N fish name exceptions" (`treeSummary`). **Accepted** gives the name to
+the whole family whatever part of it the name designates, **Often** the same with the feedback naming the family gently,
+**Off** takes it away from that family; a name he adds is shown as his. The **Shared names** filter (Tag…, group Names,
+`fuFilters`) shows the families with at least one such name. What the editor does not do: a species' own list of names
+(`fish.json` `cn`: remove, reorder, add) is read by the game from the build alone, so correcting it waits for a stored
+format ([ROADMAP "Fish common names"](../ROADMAP.md)).
+
 ## The node pages' photo curation, shared by every subject
 
 One implementation for every tree (`admin-nodephotos.js`; Pierre, 2026-11-19: "un code commun entre les matières",

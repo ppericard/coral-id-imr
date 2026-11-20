@@ -144,8 +144,15 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   Journey read it (`tests/registry.test.js`). **One Tree page for every subject** (`admin.js` `renderTree`): its trees,
   rows, tags and node pages come from the subject's builder in `TREE_BUILD`, picked by the same declared shape
   (`treeShape`, `treeBuild`; the shared node-photo lists' adapters, `admin-nodephotos.js` `NODE_PHOTOS`, too;
-  `tests/treebuild.test.js`; [admin-tree.md](admin-tree.md)). Candidates, the photo review pages and the tiles still read
-  each side's own state (the study's steps 5-8);
+  `tests/treebuild.test.js`; [admin-tree.md](admin-tree.md)). **One Candidates swiper for every subject**
+  (`admin.js` `renderCand`): the frame (the queue's switch, the row of toggles, the card and its bar, the empty page, the
+  keys, the photo that does not load) is one; the queue, the card's parts and what each button writes come from the
+  subject's builder in `CAND_BUILD`, picked by the same declared shape (`candBuild`): `flat` in `admin.js` (the corals'
+  `candQueue`, quality and growth form, the cells' cap and the colony a photo replaces, Retest), `tree` in `admin-fish.js`
+  (`fishQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
+  listed above `CAND_BUILD`; the draft writes stay where they were (the corals' top level, a tree subject's part) and so
+  do `cand.json` and every browser key (`tests/candbuild.test.js`; [admin-photos.md](admin-photos.md)). The photo review
+  pages and the tiles still read each side's own state (the study's steps 6-8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
