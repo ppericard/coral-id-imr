@@ -10464,13 +10464,14 @@ const cohortOn = () => (USERS.v || 0) >= COHORT_SHEET && !groupsOn();
 // the beta group and the cohort (no Staff toggle at any version).
 const GROUPADM_SHEET = 179;
 const groupsOn = () => (USERS.v || 0) >= GROUPADM_SHEET;
-// A rights change on its way, kept outside the page and the players list: {group id: the rights list sent}. From the
-// request until the players are read again, the group shows (gdefs) and builds its next change from that list, and its
-// card stays off, however often the page is drawn again meanwhile (rightsPost).
-const gPend = Object.create(null);
+// The one rights change on its way (rule W27: one at a time on the whole page), kept outside the page and the players
+// list: {gid: its group, rights: the list sent}, or null. From the request until the players are read again with the
+// answer applied, the group shows (gdefs) that list, every rights control stays off (rightsLock), however often the
+// page is drawn again meanwhile (rightsPost).
+let rPend = null;
 const gdefs = () => {
   const L = (USERS && USERS.groupDefs) || [];
-  return Object.keys(gPend).length ? L.map(d => (gPend[d.id] ? {...d, rights: gPend[d.id]} : d)) : L;
+  return rPend ? L.map(d => (d.id === rPend.gid ? {...d, rights: rPend.rights} : d)) : L;
 };
 // A group's card greyed, its controls off.
 const gBusy = id => {
@@ -10481,6 +10482,16 @@ const gBusy = id => {
   }
 };
 const gdefOf = id => gdefs().find(d => d.id === id);
+// While a rights change is on its way: the pending group's card greyed, and every group's rights controls off (a right
+// to add or take away, a player to add to or take out of a rights group).
+const rightsLock = () => {
+  if (!rPend) return;
+  gBusy(rPend.gid);
+  $v.querySelectorAll('[data-gradd], [data-grx]').forEach(x => (x.disabled = true));
+  $v.querySelectorAll('[data-gjoin], [data-ugout]').forEach(x => {
+    if (isRightsG(gdefOf(x.dataset.gjoin || x.dataset.gid))) x.disabled = true;
+  });
+};
 const cohortsOf = () => [...new Set((USERS.users || []).map(u => u.cohort).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
 const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= (S.sheet || 0) && !groupsOn();
@@ -10542,15 +10553,22 @@ const rightsErr = e =>
         : e === 'input'
           ? 'Not done: the sheet refused the request (one player at a time, known rights only).'
           : `Not done (${e || 'offline'}).`;
-// Sends a rights request (a group's rights, or one player in or out of a rights group). Whatever the answer, the players
-// and groups are read again before the next change, so no change is sent from a list the sheet no longer has.
+// Sends a rights request (a group's rights, or one player in or out of a rights group), the only one on its way (rule
+// W27): another is not sent. Whatever the answer, the players are read again, and the next change waits until that read
+// is in (a read dropped by a newer one, whose answer was not applied, is made again), so no change is sent from a list
+// the sheet no longer has.
 function rightsPost(body, ok, name) {
+  if (rPend) return Promise.resolve();
   toast('Saving…');
   gNote = null;
   const gid = body.groupEdit || body.group;
-  if (gid) gPend[gid] = body.rights || grights(gdefOf(gid));
-  const done = () => (gid && delete gPend[gid], render()),
-    after = () => loadUsers(true).then(done, done);
+  rPend = {gid, rights: body.rights || grights(gdefOf(gid))};
+  rightsLock();
+  const done = () => ((rPend = null), render()),
+    after = () => {
+      const was = USERS;
+      return loadUsers(true).then(() => (USERS && USERS !== was ? done() : after()), done);
+    };
   return userPost(body)
     .then(j => {
       if (j && j.ok) return (toast(ok), after());
@@ -10587,11 +10605,11 @@ function ugChips(u) {
       d =>
         `<span class="adm-gchip${isRightsG(d) ? ' adm-grights' : ''}">${isRightsG(d) ? KEY_SVG : ''}${esc(d.n)}${
           isRightsG(d) && rightsOff(u, d.id) ? ' <span class="adm-goff">rights off: the code changed</span>' : ''
-        }<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}">×</button></span>`
+        }<button type="button" class="adm-gx" data-ugout="${esc(u.name)}" data-gid="${esc(d.id)}" title="Remove from ${esc(d.n)}" aria-label="Remove from ${esc(d.n)}"${rPend && isRightsG(d) ? ' disabled' : ''}>×</button></span>`
     )
     .join(
       ''
-    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}">${esc(d.n)}</option>`).join('')}</select>` : ''}${
+    )}${rest.length ? `<select class="adm-gadd" data-ugadd="${esc(u.name)}" aria-label="Add to a group"><option value="">+ Add to a group</option>${rest.map(d => `<option value="${esc(d.id)}"${rPend && isRightsG(d) ? ' disabled' : ''}>${esc(d.n)}</option>`).join('')}</select>` : ''}${
     words.length ? `<span class="adm-urights">Rights: ${esc(words.join('; '))}</span>` : ''
   }${gNote && gNote.name === u.name ? gNoteHtml() : ''}</span>`;
 }
@@ -10601,7 +10619,7 @@ function memberSet(names, gid, on) {
   const L = Array.isArray(names) ? names : [names],
     d = gdefOf(gid) || {n: gid};
   if (isRightsG(d) && !Array.isArray(names))
-    return gPend[gid]
+    return rPend
       ? render()
       : rightsPost({userGroup: names, group: gid, on}, `"${names}" ${on ? 'added to' : 'removed from'} ${d.n}.`, names);
   toast('Saving…'); // the sheet can take a minute or two (its script lock)
@@ -10715,7 +10733,7 @@ function renderGroups() {
     gNoteHtml() +
     (D.length ? `<div class="adm-groups">${D.map(card).join('')}</div>` : '<p class="note">No group yet.</p>') +
     adminsLine();
-  Object.keys(gPend).forEach(gBusy);
+  rightsLock();
   bindGroups();
 }
 // The admin list (Code.gs roles_ {roles: 1}), outside the groups and read-only here (never edited from this page): read once per players
@@ -10832,11 +10850,10 @@ function bindGroups() {
   );
   // A group's rights (RIGHTSADM_SHEET): the whole list sent, built from the one the page read (Code.gs groupEdit rights),
   // the card greyed until the sheet answers, then everything read again (rightsPost).
-  // One change at a time per group: while one is on its way (gPend) another is not sent, so it never goes out built
-  // from a list that lacks it.
+  // One rights change at a time on the whole page (rule W27): while one is on its way (rPend) no other is sent, so none
+  // goes out built from a list that lacks it.
   const rightsSet = (d, R, msg) => {
-    if (gPend[d.id]) return;
-    gBusy(d.id);
+    if (rPend) return;
     rightsPost({groupEdit: d.id, rights: R}, msg);
   };
   $v.querySelectorAll('[data-gradd]').forEach(

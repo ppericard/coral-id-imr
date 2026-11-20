@@ -166,6 +166,9 @@ beta group's Add / Remove and the Cohort select. Its help: `HELP.groups`. What a
 - A rights change's errors in words (`rightsErr`: `token`, `members`, `input`, `server`); for `server` ("Saved in part:
   its Audit record failed. Try again to finish it.") **Try again** sends the same request again. After any answer the
   players are read again, so no change is sent from a list the sheet no longer has.
+- **One rights change at a time on the whole page** (rule W27; `rPend`): from the request until the players are read
+  again with the answer applied (a read dropped by a newer one is made again), every group's rights controls are off
+  (the rights of a group, a player in or out of a rights group); the group changed shows its pending list, greyed.
 - Before v204: the page as before, and no `roles` or `mergePlan` read. `tests/admin.smoke.js` (players part, both
   widths), `tests/gates.test.js`.
 
