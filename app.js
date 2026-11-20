@@ -754,6 +754,7 @@ function treeGenera(X, F) {
         fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
         wfam: [],
         imrName: G.imr || '', // the IMR tag
+        cname: G.common || '', // its common name (fish.json common), under its name on its first-meeting card (unitCname)
         // that IMR sub-entry names this genus alone (Chromis; not Surgeonfish, which names three)
         imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
         fish: 1,
@@ -2443,6 +2444,9 @@ const TREE_UNITS = {
   circles: () => (TREEU ? [TREEU.c1, TREEU.c2, TREEU.c3] : []),
   // Circle 2 once every circle-1 unit was asked, circle 3 at its gate (treeGate, treeC3).
   gate: treeGate,
+  // How a Memory pair is made (proto/pairs.js MEMORY): two photos of one unit that show it differently (one view per unit:
+  // a different species, else a juvenile and an adult, else another observation).
+  memory: 'photos',
   // The species a photo shows (its sp, by the name treeGenera spn gives it), for the answer log (speciesShown).
   species: p => (TREEU && TREEU.spn && p && p.sp && TREEU.spn[p.sp]) || '',
   // A photo by its name, for the admin's "Bad photo" flag (flag.js; treePhoto).
@@ -2489,6 +2493,8 @@ const UNITS = {
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
+    memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
     // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
     // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
@@ -3181,6 +3187,14 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
+// The common name of a unit whose own label is a scientific name (a coral genus, a fish scientific genus, a sea slug
+// genus), for its first-meeting card, right under its name: its record's `cname` (fish.json common), else its first
+// English name (vernFirst); '' for a unit labelled by its common name already, or one with none. Any subject (rule S1).
+const unitCname = n => {
+  const g = GX(n) || {},
+    c = uplain(n) ? '' : g.cname || vernFirst(n);
+  return c && c.toLowerCase() !== unameT(n).toLowerCase() ? c.charAt(0).toUpperCase() + c.slice(1) : '';
+};
 // ID tips heading: the lecture for slate genera (a slate genus the lecture skips carries its own `tl`, naming the
 // Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
@@ -3413,7 +3427,7 @@ const MODES = {
     ['quiz', 'Quiz', 'Name the genus'],
     ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
-    ['pairs', 'Memory', 'Match colony and corallites']
+    ['pairs', 'Memory', 'Match photos of the same genus']
   ],
   // Identify shows the current subject's tool only: each subject names its own (app.js UNITS
   // identify); the other subject's tool is reached through the subject switch.
@@ -4278,11 +4292,11 @@ const json = u =>
 // index.html runs the scripts through its loader (retries on an unstable line): window.BOOT says they have all run.
 const domReady =
   window.BOOT || new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
-// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in cand.json, out of data.json
+// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in data/cand.json, out of data.json
 // (tools/datajson.py; the players never need them), so the preview fetches them too.
 const draftCand = () =>
   /[?&]draft\b/.test(location.search)
-    ? fetch('cand.json', {cache: 'no-cache'})
+    ? fetch('data/cand.json', {cache: 'no-cache'})
         .then(okJson)
         .then(j => j.cand || {})
         .catch(() => ({}))

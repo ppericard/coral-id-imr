@@ -105,9 +105,18 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   [quiz.md › Custom quiz](quiz.md#custom-quiz).
 - **Practice › Look-alike duels** (`#practice/duels`; "Duels" on phones; every subject): its answers neither extend nor
   break the run of right answers and never earn Sharp eye (`progress.js` `achRunIn`).
-- **Practice › Memory** (`#practice/memory`, colony ↔ corallites, from `proto/pairs.js`): its genera (`memoryGenera`)
-  are those the player has met (`introduced`) first, genera not met only filling the grid (`tests/pairs.test.js`). It
-  does not use the bonus genera.
+- **Practice › Memory** (`#practice/memory`, every subject, from `proto/pairs.js`; [decision](../decisions/2026-11-19-memory-every-subject.md)):
+  flip two cards, a pair is two photos of one unit. Its units (`memoryGenera`) are only those the player has unlocked
+  (`unlocked()`, rule L4), fewer than the grid holds when fewer are, never two of one label (`choiceNames`); "Look-alikes"
+  seeds the set with a unit and the units that look like it (the corals' data look-alikes, the other subjects' declared
+  pairs, `UNITS` `pairs`). How a pair is made is declared by the subject (`UNITS` `memory`, a kind `MEMORY` holds in
+  `proto/pairs.js`): the corals' `views` (a colony photo and a corallite photo of the genus, the bonus genera not used),
+  the fish's and the sea slugs' `photos` (one view per unit: `memoryPhotos`, two different observations, rule P4, the
+  second photo showing the unit differently from the first, by this order: another species, a juvenile beside an adult,
+  any other observation; the photos the draw's own, `labShots`). A unit with fewer than two observations in play is left
+  out. Nothing is named before the pair is found; then its name, the photo's species, one ID tip with its source and the
+  report button. Memory records nothing for any subject: no answer, no progress, no log row, no rules version
+  (`tests/pairs.test.js`, `tests/memory.check.js`).
 - **Identify › Coral ID Key** (`#identify/key`; `proto/idkey.js`): a tolerant ranking by clues, its state in the
   address (`#identify/key?form=…&box=…&not=wall.plo`). The results page shows one suggested question (two on tablets
   and desktops, `nextChecks()`) with big Yes / No buttons showing the count and photos of the genera on each side: Yes

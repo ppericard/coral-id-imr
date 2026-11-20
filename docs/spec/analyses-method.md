@@ -108,7 +108,7 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    question with several photos takes each feature's share. On the corals (`photoMeta`, from the public files, the same
    for the Action and the admin): the view as the games show it (close-up, corallites, against a colony: `core.js`
    `applyCuration` then `applySlots`), quality (fair, poor, against good: the admin's rating, else the automatic one, an
-   IMR lecture photo never automatically Poor), sharpness (per SD of log sharpness, from `metrics.json`), source (the
+   IMR lecture photo never automatically Poor), sharpness (per SD of log sharpness, from `data/metrics.json`), source (the
    admin's own, other iNaturalist, against the IMR lecture) and one view alone. **On the fish**, and every subject whose
    photos are judged (`SUBJECTS` `analyses` `photos: 'judged'`; `photoMetaFish`, from the photos its game plays: the
    admin's ease and tags where he set them, else the judging pass's): judged ease per point (centred on 3), juvenile,

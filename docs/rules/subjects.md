@@ -27,7 +27,7 @@ no unit-specific code, 2026-11-06 (Q169); shared and modular by default, with ru
 species expected at Dauin, which may hold errors or names changed since; EventMeasure's fixed pick list may lag WoRMS).
 For a species it lists, show its name with the WoRMS accepted name beside it, both accepted when typed; a species it does
 not list uses the WoRMS name. A likely slip or an outdated name is flagged to Pierre (the admin's points list,
-`points.json`, rule C5), never silently corrected (rule C1). **Pierre's own iNaturalist observations
+`data/points.json`, rule C5), never silently corrected (rule C1). **Pierre's own iNaturalist observations
 (`ppericard`), two halves**: *photos*: his photos identified to the species stay usable as photos of that species even
 when Needs ID (his only: he names a species only when nearly sure, otherwise he stops at the genus or the family);
 *presence*: they no longer confirm on their own that a species is present, in the Philippines or near Dauin (rule C8:

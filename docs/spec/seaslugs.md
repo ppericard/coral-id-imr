@@ -81,7 +81,7 @@ of each family (rule C2), hand-kept in `tools/seaslug_groups.json` (AphiaIDs), w
 `seaslug.json` `taxa` `{cite, short, groups [{n, title}]}` and each family's `tgroup` (a family of the game in no group
 fails the build), read by `treeGen` (a family's `tg`, `X.taxa`; display only), cited under the list as the fish's key is;
 the list takes as many columns as fit (`.tiplist.gtaxa`). iNaturalist splits Cladobranchia into five suborders: WoRMS is
-followed, the difference a point (`points.json` `seaslug-cladobranchia-inat`, rule C5).
+followed, the difference a point (`data/points.json` `seaslug-cladobranchia-inat`, rule C5).
 
 `rankOf` is '' for the rank a subject's units are at, so the draw's own-rank rule (`model.js` `rareOn`), the choices,
 the typed names and the logged rank (`quiz.js` `rk`: `genus`) read the sea slugs' genera as the fish's families; a typed

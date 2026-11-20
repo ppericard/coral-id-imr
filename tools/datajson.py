@@ -6,8 +6,8 @@ different genera no longer conflict, and writing an unchanged file gives the sam
 
     from datajson import load, dump       # scripts in tools/ (python3 tools/x.py puts tools/ on sys.path)
     python3 tools/datajson.py             # rewrite data.json in this layout
-    python3 tools/datajson.py --check     # exit 1 when data.json or cand.json is not in this layout (checks.yml)
-    python3 tools/datajson.py --split     # move the candidates curation.json doesn't name from data.json to cand.json
+    python3 tools/datajson.py --check     # exit 1 when data.json or data/cand.json is not in this layout (checks.yml)
+    python3 tools/datajson.py --split     # move the candidates curation.json doesn't name from data.json to data/cand.json
 
 The instance's layer (tools/instance.py; design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5): the
 IMR instance's coral fields (imrg, and each genus's ig, imr and mn) and its lecture's look-alike pairs (their look and
@@ -25,7 +25,7 @@ import instance  # noqa: E402  (the instance's coral layer)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH = os.path.join(ROOT, 'data.json')
 # Dicts written one entry per line, as key paths from the top (the top level itself always is).
-SPLIT = {('gen',), ('course',), ('cand',), ('x',), ('x', 'gen'), ('photos',)}  # photos: excluded.json
+SPLIT = {('gen',), ('course',), ('cand',), ('x',), ('x', 'gen'), ('photos',)}  # photos: data/excluded.json
 
 
 def _c(v):
@@ -42,17 +42,17 @@ def dumps(d):
     return _render(d) + '\n'
 
 
-# Candidates waiting for the admin live in cand.json (same layout, top key "cand"), out of data.json, which every player
+# Candidates waiting for the admin live in data/cand.json (same layout, top key "cand"), out of data.json, which every player
 # downloads (a big backlog of candidates must not weigh on the app). data.json keeps the candidates
 # curation.json names (added, moved, sent to another genus...): the app needs those to apply the curation.
-CAND_PATH = os.path.join(ROOT, 'cand.json')
+CAND_PATH = os.path.join(ROOT, 'data/cand.json')
 CUR_PATH = os.path.join(ROOT, 'curation.json')
 
 
 def curated(cur_path=CUR_PATH):
     """Every photo id curation.json names under its genera (add, move, out, hide, feat, cover...), except the excluded
     ones (curation.json "exclude"): an excluded photo is used nowhere, so it is not kept. Pierre's own exclusion takes
-    the candidate out of every list (tools/excluded.py drop_excluded); the auto-sort's stays in cand.json, for its Undo."""
+    the candidate out of every list (tools/excluded.py drop_excluded); the auto-sort's stays in data/cand.json, for its Undo."""
     out = set()
     def walk(v):
         if isinstance(v, dict):
@@ -71,7 +71,7 @@ def curated(cur_path=CUR_PATH):
 
 
 def load_all(path=PATH, cand_path=CAND_PATH):
-    """data.json with every candidate (its own and cand.json's) in d['cand'], as before the split."""
+    """data.json with every candidate (its own and data/cand.json's) in d['cand'], as before the split."""
     d = load(path)
     if os.path.exists(cand_path):
         c = load(cand_path).get('cand') or {}
@@ -83,7 +83,7 @@ def load_all(path=PATH, cand_path=CAND_PATH):
 
 
 def dump_all(d, path=PATH, cand_path=CAND_PATH, keep=None):
-    """Writes d back split: candidates curation.json names stay in data.json, the others go to cand.json."""
+    """Writes d back split: candidates curation.json names stay in data.json, the others go to data/cand.json."""
     keep = curated() if keep is None else keep
     inside, waiting = {}, {}
     for g, L in (d.get('cand') or {}).items():
@@ -118,7 +118,7 @@ def dump(d, path=PATH):
 if __name__ == '__main__':
     if '--split' in sys.argv[1:]:
         dump_all(load_all())
-        print('candidates split: data.json keeps the curated ones, cand.json the others')
+        print('candidates split: data.json keeps the curated ones, data/cand.json the others')
         sys.exit(0)
     bad = []
     for path in (PATH, CAND_PATH):

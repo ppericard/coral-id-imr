@@ -1,7 +1,11 @@
 # Data files
 
 What each data file holds, who writes it and who reads it. The root of the repository serves the app as it is, so its
-JSON files are the data the site loads. This is the short table; the details behind each row, field by field, are in
+JSON files are the data players' pages load; the files only the tools and the admin read live in **`data/`** (Pierre,
+2026-11-08, Q265: "Ok pour tes propositions"). `data/` is published with the site, because the admin reads those files
+from it (`fetch('data/…')`), but no player's page, no `sw.js` shell entry and no `?v=` of `index.html` names one. A new
+tool or admin file goes into `data/`; a file a player's page loads stays at the root until the domain change (ROADMAP).
+`curation.json` stays at the root path the admin's Publish writes. This is the short table; the details behind each row, field by field, are in
 [spec/data.md](spec/data.md) (the corals, `curation.json`, the suggestion files, presence, rights and licences, the
 instance), [spec/fish.md](spec/fish.md) (`fish.json`), [spec/fish-photos.md](spec/fish-photos.md) (the fish photo
 files) and [spec/content.md](spec/content.md) (the content editor's edits), mapped in [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -11,39 +15,39 @@ Three writers exist besides a pull request:
 
 - **The admin's Publish** (Pierre, through `admin.html`) commits `curation.json` and nothing else (rule A1).
 - **The Candidate photos workflow** ([approved-photos.yml](../.github/workflows/approved-photos.yml)) runs after a
-  Publish and on demand. It commits `data.json`, `cand.json`, `excluded.json`, the fish and sea-slug photo files,
+  Publish and on demand. It commits `data.json`, `data/cand.json`, `data/excluded.json`, the fish and sea-slug photo files,
   `tools/fish_refs.json`, `tools/fish_refill.json` and `img/`.
 - **The merge train** moves the `release` branch (the sheet script's source); it writes no data.
 
 Everything else is written by a tool that a pull request runs and commits. A tool never writes `curation.json`.
 
-## Root data files
+## The data files (root and `data/`)
 
 | File | Holds | Written by | Read by |
 |---|---|---|---|
 | `curation.json` | Pierre's choices: cover and featured photos, hidden, moved and excluded photos, crops, rotations, growth forms, ratings, look-alike overrides, the fish and sea-slug parts, the content editor's edits, the state of each point and report | The admin's Publish only | The app (through `curation-play.json`), the admin, the sheet script |
 | `curation-play.json` | `curation.json` without what the app never reads, its fish part read as the fish game's build reads it (the auto-sort's proposals read the newer judgement: `tools/fish_game.py` `read_cur`). Not in git | `tools/curplay.py`, at deploy | The app, the service worker |
 | `data.json` | The coral content: one record per genus (`gen`), the lecture photos (`course`), the Coral ID Key (`key`), glossary, traits, the extra Dauin genera (`x`) and the few candidates `curation.json` names | `tools/datajson.py` (the one writer, rule W16), through the `tools/apply_*.py` scripts and the fetch scripts | The app, the admin, the sheet script, the service worker |
-| `cand.json` | The coral candidate photos still waiting (same layout, top key `cand`) | The fetch scripts (`tools/fetch_local.py`, `tools/fetch_approved.py`), through `datajson.dump_all()` | The admin, the app's `?draft` preview |
-| `excluded.json` | Photos Pierre excluded, kept so Restore can put them back | `tools/excluded.py` | The admin, the fetch scripts |
+| `data/cand.json` | The coral candidate photos still waiting (same layout, top key `cand`) | The fetch scripts (`tools/fetch_local.py`, `tools/fetch_approved.py`), through `datajson.dump_all()` | The admin, the app's `?draft` preview |
+| `data/excluded.json` | Photos Pierre excluded, kept so Restore can put them back | `tools/excluded.py` | The admin, the fetch scripts |
 | `forms.json` | The growth-form definitions and a first guess of each photo's form | `tools/judging_import.py`, `tools/game_forms.js`, `tools/apply_imr_forms.py` | The app, the admin |
 | `quality.json` | The automatic quality rating of each photo | `tools/photo_quality.py`, `tools/judging_import.py` | The app, the admin |
 | `picks.json` | Suggested featured photos per genus and view | `tools/judging_import.py` | The app, the admin |
-| `dups.json` | Near-duplicate photos | `tools/find_dups.py` | The admin |
-| `metrics.json` | Objective photo metrics (sharpness, size, colour cast) | `tools/photo_metrics.py` | The admin |
-| `measured.json` | The measured block of each game photo, every subject: contrast, brightness, saturation, warm share, sharpness, on the whole frame and the fish's box | `tools/photo_measure.py` | `tools/photo_measure.py --judges`; the analyses join it by hand for now |
-| `suggest.json` | The outside judging agent's results, per subject, imported as suggestions | `tools/judging_import.py`, `tools/judging_cand.py`, `tools/judging_fish.py` | The admin; `tools/fish_game.py` |
-| `presence.json` | Per coral photo species, whether the presence rule (C8) holds | `tools/coral_presence.py` | The admin |
-| `names.json` | Former names and spellings, one section per subject: an extract of `tools/taxonomy.json` | `tools/taxonomy.py` | The admin |
-| `points.json` | Points to settle: disagreements between sources, questions for the trainers (rule C5) | By hand, in a pull request | The admin (Pierre's state of each point is in `curation.json`) |
+| `data/dups.json` | Near-duplicate photos | `tools/find_dups.py` | The admin |
+| `data/metrics.json` | Objective photo metrics (sharpness, size, colour cast) | `tools/photo_metrics.py` | The admin |
+| `data/measured.json` | The measured block of each game photo, every subject: contrast, brightness, saturation, warm share, sharpness, on the whole frame and the fish's box | `tools/photo_measure.py` | `tools/photo_measure.py --judges`; the analyses join it by hand for now |
+| `data/suggest.json` | The outside judging agent's results, per subject, imported as suggestions | `tools/judging_import.py`, `tools/judging_cand.py`, `tools/judging_fish.py` | The admin; `tools/fish_game.py` |
+| `data/presence.json` | Per coral photo species, whether the presence rule (C8) holds | `tools/coral_presence.py` | The admin |
+| `data/names.json` | Former names and spellings, one section per subject: an extract of `tools/taxonomy.json` | `tools/taxonomy.py` | The admin |
+| `data/points.json` | Points to settle: disagreements between sources, questions for the trainers (rule C5) | By hand, in a pull request | The admin (Pierre's state of each point is in `curation.json`) |
 | `reports-handled.json` | Players' reports fixed in a pull request, by report id | By hand, by the integrator | The app, the admin |
 | `fish.json` | The fish content: families, genera, species, circles, look-alikes, names | `tools/build_fish.py`, from `tools/fish_source.json` and the instance's layer | The app, the admin, the sheet script, the service worker |
-| `fish-cand.json` | Fish candidate photos | `tools/fetch_fish.py`, `tools/fetch_fishbase.py` | The admin |
+| `data/fish-cand.json` | Fish candidate photos | `tools/fetch_fish.py`, `tools/fetch_fishbase.py` | The admin |
 | `fish-game.json` | The fish photos in play, hosted on R2 | `tools/fish_game.py` | The app, the admin, the sheet script, the service worker |
 | `fish-photos.json` | A few photos per fish entry, and the photos used on a sheet only | `tools/fish_game.py`, `tools/fish_photos.py` | The app, the admin, the sheet script, the service worker |
 | `seaslug.json` | The sea-slug content: tree, genera, species, names | `tools/seaslug_game.py`, from `tools/seaslugs.json` | The app, the admin, the sheet script |
 | `seaslug-game.json` | The sea-slug photos in play | `tools/seaslug_game.py` | The app, the admin, the sheet script |
-| `seaslug-cand.json` | Sea-slug candidate photos | `tools/fetch_seaslugs.py` | The admin |
+| `data/seaslug-cand.json` | Sea-slug candidate photos | `tools/fetch_seaslugs.py` | The admin |
 
 The sheet script (`tools/sync/Code.gs`) reads the data files from `main` on GitHub, never from a branch. The app and
 the admin read the same files from the site. `core.js` `SUBJECTS` lists, per subject, the files its pool and its admin
@@ -51,7 +55,7 @@ read (`pool`, `files`).
 
 ## Formats that matter
 
-- **One record per line.** `data.json` and `cand.json` keep one genus per line so that two edits to different genera
+- **One record per line.** `data.json` and `data/cand.json` keep one genus per line so that two edits to different genera
   merge. Write them only through `tools/datajson.py`; `python3 tools/datajson.py --check` is the PR check.
 - **`curation.json` is merged key by key** by Publish. A pull request never edits it.
 - **Names are short.** The fields most often met:

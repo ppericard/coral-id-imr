@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // The photo's own species under the verdict, after every answer, right or wrong: "This photo: Zigzag wrasse ·
 // Halichoeres scapularis". app.js photoTaxon (the one taxon of the photos shown,
 // finer than the unit asked), taxonLine (the line), treeTaxon and coralTaxon (UNITS taxon), run in a vm on the real
-// fish.json, fish-game.json, data.json and cand.json. The line in the real quiz, after the answer and not before:
+// fish.json, fish-game.json, data.json and data/cand.json. The line in the real quiz, after the answer and not before:
 // tests/fish.smoke.js.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -17,7 +17,7 @@ const ROOT = path.join(__dirname, '..'),
   F = read('fish.json'),
   GAME = read('fish-game.json').photos,
   D = read('data.json'),
-  CAND = read('cand.json').cand,
+  CAND = read('data/cand.json').cand,
   R = Object.fromEntries(F.species.map(s => [s.id, s]));
 
 const ctx = {esc: s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c])};

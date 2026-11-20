@@ -796,6 +796,12 @@ function viewCompare(a, b) {
 // and title as the key prints them; each family with a photo, its IMR cues and how IMR tells its look-alikes apart. The
 // key is credited in full under the list. A region with no key: the entries in one block. The winks stay a surprise.
 // Each entry opens its family's sheet (viewFishSheet; an IMR entry by the family it was renamed into).
+// The photo a unit's Learn list card shows (app.js cover), null for a sheet that is not a list unit: the first photo of
+// the sheet the card opens (Pierre, 2026-11-20), enlargeable there with its credits.
+const listPhoto = id => {
+  const g = GX(id);
+  return g ? cover(g) : null;
+};
 function viewFishList() {
   // Each entry is one card that opens its sheet (app.js listCard, shared with the corals' ID tips view; Pierre,
   // 2026-11-20): the photo opens the sheet too, where the photos enlarge with their credits.
@@ -1332,9 +1338,9 @@ function treeFamily(f) {
     G = (f.genera || []).map(id => T.gen[id]).filter(g => g && genSpecies(g).length),
     flat = [],
     all = easyRank(A.flatMap(s => treeSpPhotos()[s.id] || [])),
-    // The admin's ★ Cover while in play (app.js treeCurate), else the default (nodeCover: its most seen species'
-    // easiest photo that is not a juvenile).
-    hero = (GX(f.id) || {}).coverP || nodeCover(A),
+    // The photo its Learn list card shows (listPhoto: the admin's ★ Cover while in play, app.js treeCurate), else the
+    // default (nodeCover: its most seen species' easiest photo that is not a juvenile).
+    hero = listPhoto(f.id) || nodeCover(A),
     juv = all.filter(juvP).slice(0, 4),
     u = GX(f.id) ? f.id : '';
   if (hero) flat.push(hero);
@@ -1472,8 +1478,11 @@ function treeGenus(g) {
     now = L.filter(s => s.now && s.now.split(/\s+/)[0] !== g.name),
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
     sib = treeGenusSibs(g, T),
+    // the photo its Learn list card shows, first on the sheet (none when the genus is not a list unit)
+    hero = listPhoto(g.id),
     // A sibling genus's card: its picked genus cover, else the default (nodeCover).
     cover = x => genCover(x) || nodeCover(genSpecies(x));
+  if (hero) flat.push(hero);
   const card = x => {
     const p = cover(x);
     return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}${esc(esrcT(x, 'cues'))}</small><b class="cmpgo">Open →</b></span></a>`;
@@ -1484,7 +1493,16 @@ function treeGenus(g) {
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
-    ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'cues')}</div></div>` : ''}
+    ${(() => {
+      const tips = (g.cues || []).length
+        ? `<div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'cues')}</div>`
+        : '';
+      return hero
+        ? `<div class="hero"><button type="button" class="zoom hero-ph" data-z="0" aria-label="Enlarge photo: ${esc(g.name)}"><img src="${img(hero, 's')}" srcset="${srcset(hero)}" sizes="(max-width: 599.98px) 100vw, 45vw" alt="${esc(g.name)}">${ZOOMI}</button><div class="idbox">${tips}</div></div>`
+        : tips
+          ? `<div class="idbox">${tips}</div>`
+          : '';
+    })()}
     ${genMarks(g, g.id)}
     ${treeNote(g)}
     ${treeRoot(g, g.id)}

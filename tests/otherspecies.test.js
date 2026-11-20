@@ -158,7 +158,7 @@ print(json.dumps([G.record(s, p, cur['fish'], sug, o, None, r) for s, p, o, r in
 test('the re-judge of 2026-11-09: every photo with other species is sorted, and lands where it was classified', () => {
   const CUR = read('curation.json'),
     FC = CUR.fish || {},
-    S = read('suggest.json').fish || {},
+    S = read('data/suggest.json').fish || {},
     J = read('tools/fish_judge.json');
   // The admin's adds with the legacy m: every one sorted by the pass (o or k).
   const legacy = Object.keys(FC.tags || {}).filter(x => FC.tags[x][6] === 'm' && C.treePhotoOn(FC, x, (FC.add || {})[x]));
@@ -186,7 +186,7 @@ print(json.dumps({r['f']: r.get('jt') for r in [r for r, _, _ in todo] + list(ke
   Object.values(J.photos).forEach(m => Object.entries(m).forEach(([x, c]) => assert.notStrictEqual(c[6], 'm', `${x}: ${c}`)));
   // No candidate still waiting with the legacy m (a new judgement never types it: tools/judging_fish.py --check).
   const done = new Set(['add', 'seen', 'exclude', 'out'].flatMap(k => Object.keys(FC[k] || {})));
-  const cand = read('fish-cand.json').cand;
+  const cand = read('data/fish-cand.json').cand;
   Object.values(cand).forEach(L =>
     L.forEach(p => {
       const j = S[p.f];

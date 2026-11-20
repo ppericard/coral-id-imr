@@ -312,6 +312,20 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     );
     check(/^Sources: \[1\]/.test(gm.srcs), `2: ${F.genera[0].name}'s mark sources: "${gm.srcs}"`);
     check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(gm.words), `2: a fish word on a sea-slug genus sheet`);
+    // The photo its Learn list card shows is the first photo of the sheet, enlargeable (learn.js listPhoto; Pierre,
+    // 2026-11-20): by photo, not by address (a photo moves from R2 to its original when R2 fails mid-run).
+    const gh = await p.evaluate(id => {
+      const ph = listPhoto(id),
+        b = document.querySelector('#view .hero-ph.zoom'),
+        got = b && b.querySelector('img') ? b.querySelector('img').getAttribute('src') : '',
+        key = String((ph && ph.f) || '');
+      return {
+        has: !!ph,
+        z: b && b.dataset.z,
+        same: !!key && (got === img(ph, 's') || got.includes(key) || got.includes(key.replace(/^fi(\d+)$/, 'photos/$1/')))
+      };
+    }, F.genera[0].id);
+    check(!gh.has || (gh.z === '0' && gh.same), `2: ${F.genera[0].name}'s sheet does not lead with its list photo: ${JSON.stringify(gh)}`);
     // The genus look-alikes (seaslug.json genus look, dlook, lsrc): a declared pair across two
     // families is a duel pair, a pair only iNaturalist shows a data look-alike from the start (no answer pooled here), both
     // traps on the pooled score; the sheets say each with its source: a genus's own page, a one-genus family's sheet for
@@ -993,6 +1007,52 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       `${W} the Tools page: ${tools}`
     );
     check(!errs.length, `${W} page errors: ` + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 10. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
+  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s10')) return;
+        sessionStorage.setItem('s10', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+      let s = 4141;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => new Set(gamePics(n, 'wide').map(x => x.o || x.f)).size >= 2)
+        .slice(0, 10);
+      introAdd(L, true);
+      return L.length;
+    });
+    check(n >= 6, `10: ${n} sea slug genera with two observations`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./memory.check.js')(p, w, fails, 'sea slugs', 3);
+    }
+    check(!errs.length, '10: page errors: ' + errs.join('; '));
     await ctx.close();
   }
 
