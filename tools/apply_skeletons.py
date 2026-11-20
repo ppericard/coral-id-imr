@@ -2,7 +2,7 @@
 """Marks the coral skeleton photos (rule P6, Pierre, 2026-11-09: never shown, the features cannot be seen properly).
 
     python3 tools/apply_skeletons.py           # skel: 1 on every photo judging/skeletons.json lists, none on the others
-    python3 tools/apply_skeletons.py --check   # exit 1 when data.json / cand.json disagree with the list
+    python3 tools/apply_skeletons.py --check   # exit 1 when data.json / data/cand.json disagree with the list
 
 The list is the judgment of a pass that looked at each photo (judging/skeletons.json). The flag sits on the photo record
 wherever it is (genus views and more, IMR lecture photos, comparison images, candidates, the extra genera), so every
@@ -13,7 +13,7 @@ that left the data) is reported, never an error.
 import json, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from datajson import load_all, dump_all  # the one data.json / cand.json layout
+from datajson import load_all, dump_all  # the one data.json / data/cand.json layout
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIST = os.path.join(ROOT, 'judging', 'skeletons.json')

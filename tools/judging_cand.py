@@ -1,6 +1,6 @@
 # Candidate pass of the judging agent: it pre-sorts the candidates waiting by view, quality and diversity, run on
 # demand, never automatically.
-# The agent looks at every candidate photo of a genus (iNaturalist photos waiting in cand.json, whole observations) and
+# The agent looks at every candidate photo of a genus (iNaturalist photos waiting in data/cand.json, whole observations) and
 # writes judging/cand/<Genus>.json (rules: judging/BRIEF.md, "Candidate pass"). Suggestions only: the admin swiper
 # shows the best photo of each view of each observation first, then the other angles, and near-duplicates, poor photos
 # and other genera last. Nothing is deleted or added: the admin still swipes every photo.
@@ -17,9 +17,9 @@
 #                                                      box off (judging/cand/detail/)
 #   python3 tools/judging_cand.py todo                 genera with candidates not judged yet (also shown in the admin)
 #   python3 tools/judging_cand.py --check [Genus ...]  check judging/cand/<Genus>.json, write nothing (exit 1 on error)
-#   python3 tools/judging_cand.py [Genus ...]          check, then import every genus that passes into suggest.json "cand"
+#   python3 tools/judging_cand.py [Genus ...]          check, then import every genus that passes into data/suggest.json "cand"
 #
-# suggest.json "cand" {photo: {v view, q quality 1-3, k best|alt|dup, g other genus|cmp|exclude, m several corals,
+# data/suggest.json "cand" {photo: {v view, q quality 1-3, k best|alt|dup, g other genus|cmp|exclude, m several corals,
 # fm IMR growth form (+ "p" polyps extended), u unsure fields, n note, c suggested crop [l, t, r, b]}}; "by" {genus: {cand: {by, at, n}}}. Read only by
 # admin.html (players never download it). Re-importing a genus replaces its candidates' entries; the rest is kept.
 import json, os, sys, datetime, urllib.request, io
@@ -52,7 +52,7 @@ X = C.get('exclude', {})
 def views(n): return ['wide', 'macro'] if (D['gen'].get(n) or {}).get('levels') == 2 else list(VIEWS)
 
 def cands(n):
-    """Candidates still waiting for genus n: iNaturalist photos in cand.json/data.json not added, rejected or excluded."""
+    """Candidates still waiting for genus n: iNaturalist photos in data/cand.json/data.json not added, rejected or excluded."""
     k = (C.get('genera') or {}).get(n, {})
     add, seen = k.get('add') or {}, C.get('seen') or {}
     return [p for p in (D.get('cand') or {}).get(n, []) if p['f'] not in add and p['f'] not in X and f'cand:{p["f"]}' not in seen]
@@ -210,7 +210,7 @@ def cmd_import(names, only_check):
         (bad.append(n) if E else ok.__setitem__(n, j))
     print(f'{len(ok)} genus file(s) pass, {len(bad)} fail{": " + ", ".join(bad) if bad else ""}.')
     if only_check or not ok: sys.exit(1 if bad else 0)
-    S = load('suggest.json', {}) or {}
+    S = load('data/suggest.json', {}) or {}
     S.setdefault('v', 1); S.setdefault('by', {})
     for k in ('photo', 'quality', 'add'): S.setdefault(k, {})
     S.setdefault('dup', [])
@@ -236,8 +236,8 @@ def cmd_import(names, only_check):
             Sc[f] = e
         S['by'].setdefault(n, {})['cand'] = {'by': BY, 'at': stamp, 'n': len(j['photos'])}
     S['cand'] = dict(sorted(Sc.items()))
-    with open(P('suggest.json'), 'w') as fh: json.dump(S, fh, indent=1, ensure_ascii=False); fh.write('\n')
-    print(f'Imported {len(ok)} genus file(s): {len(S["cand"])} candidates judged in suggest.json "cand".')
+    with open(P('data/suggest.json'), 'w') as fh: json.dump(S, fh, indent=1, ensure_ascii=False); fh.write('\n')
+    print(f'Imported {len(ok)} genus file(s): {len(S["cand"])} candidates judged in data/suggest.json "cand".')
     sys.exit(1 if bad else 0)
 
 def cmd_detail(fs):
@@ -275,7 +275,7 @@ def cmd_detail(fs):
         print(os.path.relpath(out, ROOT), f'{W}x{H}')
 
 def cmd_todo():
-    Sc = (load('suggest.json', {}) or {}).get('cand', {})
+    Sc = (load('data/suggest.json', {}) or {}).get('cand', {})
     T = [(n, sum(1 for p in cands(n) if p['f'] not in Sc), len(cands(n))) for n in D['gen']]
     T = [t for t in T if t[1]]
     for n, a, b in T: print(f'{n}: {a} of {b} not judged')

@@ -95,7 +95,7 @@ print(json.dumps([[r['n'] for r in L], FB.record(s, 123, L[0]), FB.record(s, 123
 });
 
 test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice, --plan writes nothing', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishbase-'));
+  const dir = mkTmp('fishbase-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
@@ -141,7 +141,7 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('fish.json', fish);
   w('src.json', src);
-  w('fish-cand.json', cand);
+  w('data/fish-cand.json', cand);
   w('cur.json', {fish: {seen: {'fish-s1-cand-22': 1}}});
   const args = [
     '--fish',
@@ -149,7 +149,7 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
     '--src',
     'src.json',
     '--cand',
-    'fish-cand.json',
+    'data/fish-cand.json',
     '--cur',
     'cur.json',
     '--suggest',
@@ -174,9 +174,9 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
     loc: {world: 1},
     phase_add: {}
   });
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), cand, '--plan writes nothing');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')), cand, '--plan writes nothing');
   run();
-  const out = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const out = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
   assert.deepStrictEqual(
     out.s1.map(p => p.f),
     ['fish-s1-cand-11', 'fish-s1-cand-22', 'fish-s1-cand-fb-Fiu_m0'],
@@ -185,7 +185,7 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
   assert.deepStrictEqual(out.s2, cand.cand.s2, 'a full species gets nothing');
   assert.ok(!out.s3, 'a species out of the game gets nothing');
   run('--cap', '3');
-  const again = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const again = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
   assert.deepStrictEqual(
     again.s1.map(p => p.f).slice(3),
     ['fish-s1-cand-fb-Fiu_u0'],
@@ -194,8 +194,8 @@ test('fetch_fishbase.py on fixtures: fills the room the cap leaves, never twice,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test('fish-cand.json: every FishBase candidate passes the rules on tools/fishbase_src.json, tagged rep when main', () => {
-  const cand = read('fish-cand.json').cand,
+test('data/fish-cand.json: every FishBase candidate passes the rules on tools/fishbase_src.json, tagged rep when main', () => {
+  const cand = read('data/fish-cand.json').cand,
     src = read('tools/fishbase_src.json').species,
     F = read('fish.json'),
     SP = new Map(F.species.map(s => [s.id, s])),
@@ -232,7 +232,7 @@ test('fish-cand.json: every FishBase candidate passes the rules on tools/fishbas
 });
 
 test('fetch_fishbase.py with phases (Q36): a phase room takes the photos FishBase labels with it first, and stays open otherwise', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishbase-phase-'));
+  const dir = mkTmp('fishbase-phase-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
@@ -272,14 +272,14 @@ test('fetch_fishbase.py with phases (Q36): a phase room takes the photos FishBas
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('fish.json', fish);
   w('src.json', src);
-  w('fish-cand.json', {v: 1, cand: {s1: cand('s1', 38), s2: cand('s2', 25)}});
+  w('data/fish-cand.json', {v: 1, cand: {s1: cand('s1', 38), s2: cand('s2', 25)}});
   const argv = [
     '--fish',
     'fish.json',
     '--src',
     'src.json',
     '--cand',
-    'fish-cand.json',
+    'data/fish-cand.json',
     '--cur',
     'none.json',
     '--suggest',
@@ -292,7 +292,7 @@ test('fetch_fishbase.py with phases (Q36): a phase room takes the photos FishBas
   assert.deepStrictEqual([plan.s1.cap, plan.s1.room, plan.s1.rooms, plan.s1.phase_add], [40, 2, {juvenile: 2}, {juvenile: 2}]);
   assert.deepStrictEqual([plan.s2.cap, plan.s2.room, plan.s2.rooms, plan.s2.add], [40, 15, {juvenile: 10}, 2]);
   run();
-  const out = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const out = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
   assert.deepStrictEqual(
     out.s1.slice(38).map(p => [p.f, p.st]),
     [
@@ -335,14 +335,14 @@ print(json.dumps([0, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbas
   assert.strictEqual(out[7], 1);
   assert.deepStrictEqual(out[8], ['inaturalist', null, 'fishbase'], 'the cover tagged, a stale tag removed, FishBase keeps its own');
   assert.deepStrictEqual(out[9], {jt: 'p1g0sm1r', e: 3, k: 'best'});
-  // autosort.js fishSure takes the flag (the fish auto-sort reads suggest.json "fish").
+  // autosort.js fishSure takes the flag (the fish auto-sort reads data/suggest.json "fish").
   const {fishSure} = require('../autosort.js');
   assert.deepStrictEqual(fishSure({jt: 'p1g0sm1r', e: 4, k: 'best'}), {keep: 'add', tags: 'p1g0sm1r', ease: 4, phase: null, crop: null});
 });
 
-test('suggest.json: every tagged judged candidate carries the flag r, and only those', () => {
-  const cand = read('fish-cand.json').cand,
-    S = read('suggest.json').fish || {},
+test('data/suggest.json: every tagged judged candidate carries the flag r, and only those', () => {
+  const cand = read('data/fish-cand.json').cand,
+    S = read('data/suggest.json').fish || {},
     rep = new Set(Object.values(cand).flatMap(L => L.filter(p => p.rep).map(p => p.f)));
   Object.values(cand)
     .flat()
@@ -421,7 +421,7 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
 });
 
 test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps the tag (Codex review #562)', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrep-'));
+  const dir = mkTmp('fishrep-');
   const fish = {
     species: [
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
@@ -438,7 +438,7 @@ test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps th
   };
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
   const before = JSON.stringify(cand);
-  fs.writeFileSync(path.join(dir, 'fish-cand.json'), before);
+  fs.writeFileSync(path.join(dir, 'data/fish-cand.json'), before);
   // The cache knows the taxa reply of s1 only as "no taxa answered": s2's cover is unknown.
   const url = 'https://api.inaturalist.org/v2/taxa/501,502?fields=id,default_photo.id&per_page=30';
   fs.writeFileSync(path.join(dir, 'cache.json'), JSON.stringify({}));
@@ -450,7 +450,7 @@ test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps th
         '--fish',
         path.join(dir, 'fish.json'),
         '--cand',
-        path.join(dir, 'fish-cand.json'),
+        path.join(dir, 'data/fish-cand.json'),
         '--cur',
         path.join(dir, 'none.json'),
         '--suggest',
@@ -463,11 +463,11 @@ test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps th
       {cwd: ROOT, encoding: 'utf8'}
     );
   run('--plan');
-  assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'), before, '--rep --plan writes nothing');
+  assert.strictEqual(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8'), before, '--rep --plan writes nothing');
   // A reply that answers s1 only (its cover is another photo): s1 loses its stale tag, s2 (not answered) keeps its own.
   fs.writeFileSync(path.join(dir, 'cache.json'), JSON.stringify({[url]: {501: 8}}));
   run('--offline');
-  const out = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const out = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
   assert.strictEqual(out.s1[0].rep, undefined);
   assert.strictEqual(out.s2[0].rep, 'inaturalist');
   fs.rmSync(dir, {recursive: true, force: true});
@@ -521,6 +521,14 @@ test('FishBase links use the www.fishbase.se mirror, never www.fishbase.de', () 
     }
     Object.values(o).forEach(x => walk(x, file));
   };
-  for (const f of ['fish-cand.json', 'fish-photos.json', 'data.json', 'cand.json']) if (fs.existsSync(path.join(ROOT, f))) walk(read(f), f);
+  for (const f of ['data/fish-cand.json', 'fish-photos.json', 'data.json', 'data/cand.json'])
+    if (fs.existsSync(path.join(ROOT, f))) walk(read(f), f);
   assert.ok(n > 100, `FishBase photos found: ${n}`);
 });
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

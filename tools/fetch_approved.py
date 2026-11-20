@@ -12,7 +12,7 @@
 # curation.json publish (with --games, below). Option --all-remote-unused makes the candidates nobody added remote again
 # (r: 1; their files stay on R2, unused: nothing is deleted from the bucket).
 import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
-from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
+from datajson import load_all, dump_all  # data.json + data/cand.json (candidates waiting live in data/cand.json)
 from PIL import Image
 import photos  # the four photo sizes
 import slot

@@ -223,6 +223,40 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     check(pr.rk.length === 1 && pr.rk[0] === 'genus', `2: the answers are not logged at the genus: ${pr.rk}`);
     check(pr.sets === 'ssp:0', `2: the sea slugs have an opt-in set, or their species open below SCI_SHEET: ${pr.sets}`);
     check(pr.slate === F.genera.length && pr.met > 3, `2: the slate ${pr.slate} (of ${F.genera.length} genera), ${pr.met} met`);
+    // Before circle 3 (Pierre, 2026-11-20: «Ya pas de carte avant de passer au cercle suivant pour les nudibranches?»):
+    // every genus of circles 1 and 2 met and asked, circle 3 under its gate, the all-met card says what comes next in the
+    // sea slugs' words (quiz.js allMetDue, app.js UNITS seaslug done, slugNextOf); the record put back after.
+    const am = await p.evaluate(() => {
+      const keep = [JSON.stringify(P), JSON.stringify(introMap()), JSON.stringify(CB)];
+      CB.r = 0;
+      CB.f = 0;
+      const t = Date.now();
+      [...TREEU.c1, ...TREEU.c2].forEach(n => {
+        if (!introduced(n)) introAdd([n], true);
+        const s = st(n);
+        s.ok = s.ok || 1;
+        s.at = t + 1000;
+      });
+      const r = allMetDue(),
+        offer = !!openOfferDue(),
+        d = r && allMetShow(r),
+        out = {r, offer, c3: treeC3(), card: d ? d.textContent : '', kind: d ? d.className : ''};
+      if (d) d.ulClose(); // left unseen: not marked
+      Object.keys(P).forEach(n => delete P[n]);
+      Object.assign(P, JSON.parse(keep[0]));
+      store.set(INTRO.KEY, JSON.parse(keep[1]));
+      INTROS = null;
+      Object.assign(CB, JSON.parse(keep[2]));
+      return out;
+    });
+    check(
+      am.r && am.r.k === 'c3' && !am.c3 && !am.offer && /^Next: \d+ more genera\. .*about Open Water on average/.test(am.r.lines[1]),
+      `2: before circle 3, no all-met card or not its words: ${JSON.stringify(am)}`
+    );
+    check(
+      /seen them all, for now/.test(am.card) && am.card.includes(am.r.lines[1]) && !/fish|famil|IMR/i.test(am.card),
+      `2: the all-met card on screen: ${JSON.stringify(am)}`
+    );
     // The genera page (its families as blocks), a family sheet, a genus sheet, Home and the key page.
     await p.goto(base + '#seaslug/learn/families');
     await p.waitForFunction(
@@ -945,6 +979,52 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       `${W} the Tools page: ${tools}`
     );
     check(!errs.length, `${W} page errors: ` + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 10. Memory (proto/pairs.js, Practice › Memory) on the sea slugs, as tests/fish.smoke.js memoryGame plays it on the fish: ten
+  // genera with two observations unlocked, the photos stubbed; tests/memory.check.js plays the games at 390 and 1280 px.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s10')) return;
+        sessionStorage.setItem('s10', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+      let s = 4141;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const L = pool()
+        .filter(n => new Set(gamePics(n, 'wide').map(x => x.o || x.f)).size >= 2)
+        .slice(0, 10);
+      introAdd(L, true);
+      return L.length;
+    });
+    check(n >= 6, `10: ${n} sea slug genera with two observations`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./memory.check.js')(p, w, fails, 'sea slugs', 3);
+    }
+    check(!errs.length, '10: page errors: ' + errs.join('; '));
     await ctx.close();
   }
 

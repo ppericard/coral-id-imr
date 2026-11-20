@@ -105,7 +105,7 @@ def load_src():
 
 # One judgement per photo. A photo can be met twice:
 # as a reference photo (tools/fish_refs.json fi<id> / fb<stem>, its code here in tools/fish_judge.json photos and keep)
-# and as a candidate (fish-cand.json fish-<species>-cand-<id>, judged in judging/fish/<species>.json). They are one
+# and as a candidate (data/fish-cand.json fish-<species>-cand-<id>, judged in judging/fish/<species>.json). They are one
 # photo (tools/fish_game.py pid), so they get one judgement: the candidate's judging file is its single source (it holds
 # the whole judgement: code, keep within the observation, phase, unsure), and the reference copy is never read for such
 # a photo (one_judgement, tools/fish_game.py inputs). tools/judging_fish.py one copies it onto the reference copies, and
@@ -298,12 +298,12 @@ def sheets(out, only=(), todo=False, refs=False):
 
 def box_todo(only=(), n=None):
     """{teaching id: [records]} of the box pass: the photos in play (fish-game.json) whose tags pass the tile rule and that
-    have no box yet (tools/fish_judge.json boxes, a candidate's suggest.json bb), the easiest first, then by name, one per
+    have no box yet (tools/fish_judge.json boxes, a candidate's data/suggest.json bb), the easiest first, then by name, one per
     observation, at most n per entry, in fish.json order."""
     import fish_game as G
     game = G.load(str(ROOT), G.OUT_FILE, {}).get("photos") or {}  # its records whole (tools/fish_short.py)
     boxes = G.boxes_in(str(ROOT))
-    sug = (json.loads((ROOT / "suggest.json").read_text(encoding="utf-8")) or {}).get("fish") or {}
+    sug = (json.loads((ROOT / "data/suggest.json").read_text(encoding="utf-8")) or {}).get("fish") or {}
     out = {}
     for tid, L in game.items():
         if only and tid not in only:

@@ -104,18 +104,18 @@ const CUR = {
     crop: {'fish-s001-cand-101': [0, 0, 0.5, 1], 'fish-s003-cand-fb-Fiwra_u0': [0, 0, 1, 1]}
   }
 };
-// The pass's judgment for the photos Pierre has no value for (suggest.json fish).
+// The pass's judgment for the photos Pierre has no value for (data/suggest.json fish).
 const SUG = {
   fish: {'fish-s001-cand-105': {jt: 'o1g1sm1', e: 3, k: 'best'}, 'fish-s003-cand-fb-Fiwra_u0': {jt: 'p1g0sl1r', e: 5, ph: 'male'}}
 };
 
 function world() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishgame-'));
+  const dir = mkTmp('fishgame-');
   const w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o));
   w('fish.json', FISH);
-  w('fish-cand.json', CAND);
+  w('data/fish-cand.json', CAND);
   w('curation.json', CUR);
-  w('suggest.json', SUG);
+  w('data/suggest.json', SUG);
   return dir;
 }
 // The stub of the hosts: a 400 x 300 image for any photo; FishBase answers 500 twice first (it does at times).
@@ -299,9 +299,9 @@ function autoWorld() {
     cur = structuredClone(CUR);
   c.cand.s003.push(...[302, 303, 304, 305, 306, 307].map(id => cand('s003', id)));
   cur.fish.seen['fish-s003-cand-306'] = 1; // judged sure, but Pierre rejected it
-  w('fish-cand.json', c);
+  w('data/fish-cand.json', c);
   w('curation.json', cur);
-  w('suggest.json', AUTO_SUG);
+  w('data/suggest.json', AUTO_SUG);
   fs.mkdirSync(path.join(dir, 'tools'));
   // 308: a cover judged 4, no point more for being one, reference level by its look and ease, as 309: judged 4 with the
   // look and no rep, in like a candidate and reference level the same: the route weighs nothing; 310, 314, 315: on
@@ -645,7 +645,7 @@ test(
       size = f => py(`from PIL import Image; print(Image.open(${JSON.stringify(f)}).size)`).trim();
     fs.mkdirSync(path.join(dir, 'tools'));
     // The stub's originals are 400 x 300. 102: 340 px long (the photo 300 high: its square passes the edges); 101: past
-    // Pierre's crop (the left half); 201: a juvenile (no tile, whatever its box); 105 (the pass's box, suggest.json bb):
+    // Pierre's crop (the left half); 201: a juvenile (no tile, whatever its box); 105 (the pass's box, data/suggest.json bb):
     // 160 px wide.
     const judge = boxes => w('tools/fish_judge.json', {photos: {}, boxes});
     judge({
@@ -653,7 +653,7 @@ test(
       'fish-s001-cand-101': [0.1, 0.1, 0.7, 0.9],
       'fish-s002-cand-201': [0.05, 0.1, 0.9, 0.8]
     });
-    w('suggest.json', {fish: {...SUG.fish, 'fish-s001-cand-105': {...SUG.fish['fish-s001-cand-105'], bb: [0.1, 0.1, 0.5, 0.5]}}});
+    w('data/suggest.json', {fish: {...SUG.fish, 'fish-s001-cand-105': {...SUG.fish['fish-s001-cand-105'], bb: [0.1, 0.1, 0.5, 0.5]}}});
     const out = path.join(dir, 'up'),
       r = run(dir, out),
       by = () =>
@@ -771,7 +771,7 @@ print(json.dumps([[G.cand_sure(c), G.box_of('f', {}, {'f': c})] for c in cases])
 // The R2 lists print nothing for none (tools/r2_sync.sh would read an empty line as a file), and the
 // script skips an empty name anyway.
 test('the R2 lists: no line for no photo or tile; r2_sync.sh skips an empty name', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2list-'));
+  const dir = mkTmp('r2list-');
   fs.mkdirSync(path.join(dir, 'tools'));
   // tools/photos.py and every tools module it imports at its top (tools/fish_short.py), so it runs from the copy.
   const src = fs.readFileSync(path.join(ROOT, 'tools/photos.py'), 'utf8'),
@@ -810,7 +810,7 @@ test('fish_game.py: the tile-only pass asks FishBase one photo at a time', {skip
     cur.fish.add[`fish-s003-cand-fb-Fi${id}_u0`] = 's003';
     cur.fish.tags = {...cur.fish.tags, [`fish-s003-cand-fb-Fi${id}_u0`]: 'p1g0sl1'};
   });
-  w('fish-cand.json', c);
+  w('data/fish-cand.json', c);
   w('curation.json', cur);
   fs.mkdirSync(path.join(dir, 'tools'));
   w('tools/fish_judge.json', {photos: {}});
@@ -1016,3 +1016,10 @@ test(
     fs.rmSync(dir, {recursive: true, force: true});
   }
 );
+
+// A temporary tree as the repository has it: the tools' and the admin's data live in data/.
+function mkTmp(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  fs.mkdirSync(path.join(d, 'data'));
+  return d;
+}

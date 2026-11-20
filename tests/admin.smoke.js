@@ -53,7 +53,7 @@ const server = http.createServer((req, res) => {
 // the Tree's Removed list, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
 // errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
 // 1280); seal, Sign out sealing the draft with two tabs (once, at 1280: sealPart) and, in the same part, the admin opened
-// with suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
+// with data/suggest.json still on its way (loadPart, ?demo&late: every other step opens the demo with the suggestions in
 // first, as before); main, everything else.
 // SMOKE_PART=main|photos|rest is the group CI runs on one runner at 1280 (rest: actions, players and seal; the 390 px job
 // runs them all); SMOKE_ONLY=players runs one part. The groups are balanced by each part's time, which the run prints
@@ -366,7 +366,7 @@ async function sealPart(b, base, fails) {
   if (errs.length) fails.push(F + 'page errors: ' + errs.slice(0, 3).join(' | '));
   await sc.close();
 }
-// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): suggest.json, the largest file a Players
+// What the admin waits for when it opens (the phone's load time, Pierre 2026-11-19): data/suggest.json, the largest file a Players
 // page would wait for, is held back by the test. Opened on Players › Activity (the default), the page draws without it and
 // the suggestions follow (admin.js sugLater: laid over the candidates, the auto-sort run), and a page that needs them, asked
 // for before they are in, shows Loading… and then draws; opened on a page that needs them, it waits for them as it always did.
@@ -378,19 +378,19 @@ async function loadPart(b, base, fails) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  // One made-up judgment, for a candidate of cand.json (the real suggest.json may name none of them: 2026-11-03).
-  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand || {}).flat()[0].f;
+  // One made-up judgment, for a candidate of data/cand.json (the real data/suggest.json may name none of them: 2026-11-03).
+  const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/cand.json'))).cand || {}).flat()[0].f;
   let held = null,
     asked = 0;
   await lc.route(
-    u => u.href.startsWith(base) && u.pathname === '/suggest.json',
+    u => u.href.startsWith(base) && u.pathname === '/data/suggest.json',
     async r => {
       asked++;
       if (held) await held.p;
       r.fulfill({contentType: 'application/json', body: JSON.stringify({v: 1, cand: {[CF]: {v: 'wide', q: 3, k: 'best', fm: 'M'}}})});
     }
   );
-  // waits for the page to ask for suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
+  // waits for the page to ask for data/suggest.json (up to 20 s: the late read starts when the sheet's reads are in and the page is idle)
   const askedOnce = async () => {
     for (let i = 0; i < 200 && !asked; i++) await new Promise(ok => setTimeout(ok, 100));
     return asked > 0;
@@ -428,7 +428,7 @@ async function loadPart(b, base, fails) {
   // 1. Activity (the default) draws while the suggestions are held; they are laid when they come
   let h = hold(),
     p = await open('');
-  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while suggest.json was held back');
+  if (!(await shown(p, /ANSWERS/))) fails.push(F + 'Activity did not draw while data/suggest.json was held back');
   if (!(await late(p)) || (await p.evaluate(() => Object.keys(SUG).length)))
     fails.push(F + 'Activity waited for the suggestions (nothing left to lay)');
   if (!(await askedOnce())) fails.push(F + 'the suggestions were not asked for once the sheet reads were in');
@@ -501,13 +501,13 @@ async function loadPart(b, base, fails) {
         r.abort();
       }
     );
-    // Candidate pass of the judging agent (suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
+    // Candidate pass of the judging agent (data/suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
     // (autosort.js) decides the sure ones at load: CF[0] a sure add (Good, Corallites), CF[1] a sure near-duplicate
     // (rejected), CF[2] a comparison image (left set aside, Pierre's), CF[3] unsure (his); CHK, a sure add that the
     // 1-in-20 draw makes a Check (shown to him blind).
     // The auto-sort only decides photos nobody decided, so these are taken among the candidates of a game genus that
     // Pierre's real curation.json never names (no add, move, hide, Not this genus, reject mark, exclusion, rating, form,
-    // crop or auto-log entry): the first entries of cand.json were often ones he had already decided, and every publish
+    // crop or auto-log entry): the first entries of data/cand.json were often ones he had already decided, and every publish
     // of his and every candidate refill changed the result (2026-11-03). CF[0] also has metrics that cannot stop a sure
     // Good add (autosort.js metFlag, with the admin's percentiles).
     const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f))),
@@ -515,8 +515,8 @@ async function loadPart(b, base, fails) {
       CUR_S = JSON.stringify(CUR),
       named = f => CUR_S.includes(JSON.stringify(f)) || CUR_S.includes(JSON.stringify('cand:' + f)),
       DJ = rd('data.json'),
-      CJ = rd('cand.json').cand || {},
-      MET = rd('metrics.json').m || {},
+      CJ = rd('data/cand.json').cand || {},
+      MET = rd('data/metrics.json').m || {},
       {autoCheck, metFlag, curIdx, pierreOf} = require('../autosort.js'),
       GAME = new Set(require('../core.js').gameOf(DJ)),
       FREE = Object.entries(CJ)
@@ -536,9 +536,11 @@ async function loadPart(b, base, fails) {
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
     // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     // FF[3]: a photo the auto-sort set aside earlier (log r), judged since a sure add with a crop: brought back (Q438, b).
-    const FCAND = rd('fish-cand.json').cand,
+    // FF[4]: a photo the auto-sort put in earlier (log ate), judged since a sure rejection (other species one could take for
+    // it): taken out, set aside, logged r (the route out, rule A1).
+    const FCAND = rd('data/fish-cand.json').cand,
       FALL = Object.entries(FCAND).flatMap(([sid, L]) => L.map(x => [sid, x.f])),
-      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 4),
+      FF = FALL.filter(([, f]) => !autoCheck(f)).slice(0, 5),
       FC = FALL.find(([, f]) => autoCheck(f));
     // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
     // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
@@ -574,7 +576,14 @@ async function loadPart(b, base, fails) {
           body: JSON.stringify({
             ...CUR,
             auto: {[day]: LOG},
-            fish: {out: {[FF[2][1]]: 'x'}, seen: {[FF[3][1]]: 1}, auto: {'2026-10-30': {[FF[3][1]]: 'r'}}}
+            fish: {
+              out: {[FF[2][1]]: 'x'},
+              seen: {[FF[3][1]]: 1},
+              add: {[FF[4][1]]: FF[4][0]},
+              tags: {[FF[4][1]]: 'p1g0sl1'},
+              ease: {[FF[4][1]]: 3},
+              auto: {'2026-10-30': {[FF[3][1]]: 'r', [FF[4][1]]: 'ate'}}
+            }
           })
         })
     );
@@ -582,7 +591,7 @@ async function loadPart(b, base, fails) {
     await ctx.route(base + 'reports-handled.json', r =>
       r.fulfill({contentType: 'application/json', body: JSON.stringify({demorep1: {pr: 577, at: '2026-11-05'}})})
     );
-    await ctx.route(base + 'suggest.json', r =>
+    await ctx.route(base + 'data/suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({
@@ -599,9 +608,10 @@ async function loadPart(b, base, fails) {
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
             [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
             [FF[3][1]]: {jt: 'p1g0sl1', e: 4, k: 'best', c: [0.2, 0.1, 0.8, 0.9]},
+            [FF[4][1]]: {jt: 'p1g0slk', e: 2, k: 'best'},
             [FC[1]]: {jt: 'o1g1sso', e: 3, k: 'best', n: 'Demo check'}
           },
-          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}}
+          by: {[FF[3][0]]: {fish: {by: 'claude', at: day, n: 1}}, [FF[4][0]]: {fish: {by: 'claude', at: day, n: 1}}}
         })
       })
     );
@@ -820,6 +830,35 @@ async function loadPart(b, base, fails) {
         await q.click('.cov-t [data-cs="macro"]');
         const x = await wide(h);
         if (x > 0) fails.push(`360px #${h}, sorted on a view: page ${x} px wider than the window`);
+      }
+      // The ? help hangs from the sticky header: it must stay inside the window and scroll to its last line (the
+      // panel once ran off the bottom, with nothing to scroll). 360x640 through the ⋯ menu, then a short desktop window.
+      for (const [vw, vh] of [
+        [360, 640],
+        [1280, 500]
+      ]) {
+        await q.setViewportSize({width: vw, height: vh});
+        await q.evaluate(() => (location.hash = '#players/activity'));
+        await q.waitForSelector('#tools:not([hidden])', {timeout: 15000});
+        if (vw < 600) {
+          await q.click('.adm-more summary');
+          await q.click('#help2');
+        } else await q.click('#help');
+        const hf = await q.evaluate(() => {
+          const e = document.getElementById('admhelp'),
+            r = e.getBoundingClientRect();
+          e.scrollTop = e.scrollHeight;
+          const last = e.lastElementChild.getBoundingClientRect();
+          return {
+            bottom: Math.round(r.bottom),
+            vh: innerHeight,
+            scrolls: e.scrollHeight > e.clientHeight,
+            reach: Math.round(last.bottom) <= Math.round(e.getBoundingClientRect().bottom)
+          };
+        });
+        if (hf.bottom > hf.vh || !hf.scrolls || !hf.reach) fails.push(`${vw}x${vh} admin ? help: ${JSON.stringify(hf)}`);
+        await q.evaluate(() => document.getElementById('admhelp').remove());
+        await q.evaluate(() => (document.querySelector('.adm-more') || {}).open && (document.querySelector('.adm-more').open = false));
       }
       await c3.close();
     }
@@ -1411,7 +1450,7 @@ async function loadPart(b, base, fails) {
           x = await wp();
           if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
             fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
-          // A photo named as iNaturalist writes a species WoRMS writes otherwise (names.json fish, tools/taxonomy.py):
+          // A photo named as iNaturalist writes a species WoRMS writes otherwise (data/names.json fish, tools/taxonomy.py):
           // the WoRMS tag on its tile (admin.js nameTag; s213 Cheilinus fasciatus, iNaturalist's Concholabrus fasciatus).
           if (w === 1280) {
             await go(other.hash + 'photos/tree/key/s213');
@@ -1607,7 +1646,7 @@ async function loadPart(b, base, fails) {
             loaded: !!FISHC.plays
           };
         });
-        // A reference photo only the game holds has no Not this (the publish rebuild resolves a correction against fish-cand.json
+        // A reference photo only the game holds has no Not this (the publish rebuild resolves a correction against data/fish-cand.json
         // alone), but can be removed or excluded.
         const rf = await p.evaluate(() => {
           const r = FISHC.plays.find(q => q.auto === 'ref' && FISHC.units.some(u => u.id === 'f:Damselfishes' && u.species.includes(q.sp))),
@@ -3883,7 +3922,7 @@ async function loadPart(b, base, fails) {
     }
     if (once && run.has('actions')) await timed('actions', actionsPart);
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
-    // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
+    // data/points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.
     // Once: Stand-by moves it below the open ones (in the draft only, curation.json points), Undo brings it back first,
     // Resolved folds it, a note and an answer reach the draft, Reopen; nothing published, nothing sent.
@@ -4031,7 +4070,7 @@ async function loadPart(b, base, fails) {
         await go('inbox/todo/points/no-such-point');
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
       }
-      // Each side lists its own points (fish admin at parity; points.json subj, the Corals | Fish switch): the corals' none of
+      // Each side lists its own points (fish admin at parity; data/points.json subj, the Corals | Fish switch): the corals' none of
       // the fish ones, the fish side its own with their open count, a point's page and its way back under its prefix.
       {
         const want = await p.evaluate(() => {
@@ -4674,7 +4713,7 @@ async function loadPart(b, base, fails) {
         // Sheet reads (Pierre, 2026-11-04: admin pages load slowly). (1) One read of a kind at a time: To do draws itself
         // again as its reads come in, and each draw before the answer log was in asked for it again (3 answer logs, 3
         // photo ratings, 2 event reads at once). (2) The landing page's reads leave with the token, not after start()'s data
-        // files (cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
+        // files (data/cand.json held here for 2 s: they used to leave after it). (3) A page that needs the answer log and the
         // pages opened (Analyses › Stops) asks for both at once, not one after the other. admin-demo.js DEMO_CALLS lists the calls.
         {
           const q = await p.context().newPage();
@@ -4708,7 +4747,7 @@ async function loadPart(b, base, fails) {
               () => (performance.getEntriesByType('resource').find(e => /\/cand\.json$/.test(e.name)) || {}).responseStart
             );
           if (!a || !(cj > 0) || !(a.t0 < cj))
-            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, cand.json in at ${Math.round(cj)} ms`);
+            fails.push(`sheet reads: Players' answer log asked at ${a && Math.round(a.t0)} ms, data/cand.json in at ${Math.round(cj)} ms`);
           await q.unroute(/\/cand\.json$/);
           await q.goto(base + 'admin.html?demo&load=3#photos/candidates');
           await quiet();
@@ -7470,7 +7509,7 @@ async function loadPart(b, base, fails) {
       }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
       // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
-      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health. With 25
+      // at load, is kept out (data/suggest.json without its fish part), so nothing else has read them before Health. With 25
       // photos everyone misses (24 shown: statsHealth MAXPH), one Removed leaves the list and the 25th comes in.
       {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
@@ -7480,7 +7519,7 @@ async function loadPart(b, base, fails) {
           r => r.abort()
         );
         await fc.route(
-          u => u.pathname === '/suggest.json',
+          u => u.pathname === '/data/suggest.json',
           async r => {
             const j = await (await r.fetch()).json();
             delete j.fish;
@@ -7500,11 +7539,11 @@ async function loadPart(b, base, fails) {
             }
           )
           .catch(() => fe.push('Health not drawn'));
-        // three players miss a candidate photo in play (fish-cand.json and the fish photos) three times each, first in the
+        // three players miss a candidate photo in play (data/fish-cand.json and the fish photos) three times each, first in the
         // list, and 24 other fish photos twice each
         const pre = await fq.evaluate(async () => {
           const was = !!FISHC,
-            C = await fetch('fish-cand.json').then(r => r.json()),
+            C = await fetch('data/fish-cand.json').then(r => r.json()),
             cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
             D = DRAFT.fish || {},
             // photos the demo's players never answered (its fish answers draw from fish-photos.json's first photos, the
@@ -8317,8 +8356,8 @@ async function loadPart(b, base, fails) {
         }
         // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
         await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
-        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
-        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-cfull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-cfull]');
         await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
         const cf = await sq.evaluate(() => {
           const S = document.querySelector('#view .adm-fsw');
@@ -8630,6 +8669,110 @@ async function loadPart(b, base, fails) {
         if (!dlg.some(d => /sheet edits/.test(d))) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
         if (dlg.some(d => /every player's path and progress/.test(d))) se.push('a text Publish confirmed the structure');
         if (se.length) fails.push(`Sheet text: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
+      // Photos › Tree, a family's shared names (admin-content.js namesBox; Pierre, 2026-11-08, Q313: "Publie, je corrige à
+      // l'usage"), in a context of its own, on a family a name shared with another family reaches. The Names box is folded
+      // until opened (remembered), lists the name with Accepted | Often | Off and none pressed; a click sets the exception in
+      // the draft (curation.json fish names: {name: {family id: state}}), one step each, Undo and Redo, the pressed one again
+      // brings the built reading back and an emptied name goes; the other family's page names the first as also carrying it;
+      // a family no shared name reaches has no box; the Tag… filter offers Shared names; Publish counts the exceptions and
+      // the published fish part carries them; dark theme; no overflow at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => d.accept());
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const R = namesRows(FISHC.raw, {}),
+            r = R.find(x => x.owners.length > 1),
+            has = namesFams(FISHC.raw, {}),
+            none = FISHC.raw.families.find(f => !f.wink && !has.has(f.id));
+          return {x: r.x, a: r.owners[0].g, b: r.owners[1].g, an: r.owners[0].name, none: none && none.id};
+        });
+        const nm = () => sq.evaluate(() => (DRAFT.fish || {}).names || null),
+          rowS = `#view .adm-cnames [data-nmx="${ids.x}"]`,
+          press = () =>
+            sq.evaluate(s => [...document.querySelectorAll(s + ' [data-nmv]')].map(x => x.getAttribute('aria-pressed')).join(), rowS);
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.a));
+        await swait(() => document.querySelector('#view .adm-cnames'));
+        if (await sq.evaluate(() => document.querySelector('#view .adm-cnames').open)) se.push('the Names box is open on its own');
+        await sq.click('#view .adm-cnames > summary');
+        await swait(() => document.querySelector('#view .adm-cnames').open);
+        const labs = await sq.evaluate(s => [...document.querySelectorAll(s + ' [data-nmv]')].map(x => x.textContent).join(), rowS);
+        if (labs !== 'Accepted,Often,Off' || (await press()) !== 'false,false,false') se.push(`the choices ${labs} ${await press()}`);
+        // Off: one draft entry, Undo and Redo; the pressed one again brings the built reading back, the name goes.
+        await sq.click(`${rowS} [data-nmv="off"]`);
+        await swait(() => document.querySelector('#view .adm-cnames .is-fresh'));
+        let x = await nm();
+        if (JSON.stringify(x) !== JSON.stringify({[ids.x]: {[ids.a]: 'off'}})) se.push(`Off ${JSON.stringify(x)}`);
+        if ((await press()) !== 'false,false,true') se.push(`Off pressed ${await press()}`);
+        if (!(await sq.evaluate(() => /name exception/.test(pubSummary())))) se.push('Publish does not count it');
+        await sq.click('#undo');
+        await swait(() => !document.querySelector('#view .adm-cnames .is-fresh'));
+        if (await nm()) se.push(`Undo left ${JSON.stringify(await nm())}`);
+        await sq.click('#redo');
+        await swait(() => document.querySelector('#view .adm-cnames .is-fresh'));
+        await sq.click(`${rowS} [data-nmv="off"]`);
+        await swait(() => !document.querySelector('#view .adm-cnames .is-fresh'));
+        if (await nm()) se.push(`the pressed one again left ${JSON.stringify(await nm())}`);
+        // Accepted, then Often replaces it; the draft says it changed.
+        await sq.click(`${rowS} [data-nmv="on"]`);
+        await swait(() => document.querySelector('#view .adm-cnames .is-fresh'));
+        await sq.click(`${rowS} [data-nmv="often"]`);
+        await sq
+          .waitForFunction(s => document.querySelector(`${s} [data-nmv="often"][aria-pressed="true"]`), rowS, {timeout: 90000})
+          .catch(() => se.push('timed out: Often pressed'));
+        x = await nm();
+        if (JSON.stringify(x) !== JSON.stringify({[ids.x]: {[ids.a]: 'often'}})) se.push(`Often ${JSON.stringify(x)}`);
+        if (!(await sq.evaluate(() => /name exception/.test(document.querySelector('#save').title)))) {
+          if (!(await sq.evaluate(() => status0().parts.some(p => /fish curation/.test(p))))) se.push('the draft does not say it changed');
+        }
+        // The Tag… filter offers Shared names, and the families it shows carry a shared name.
+        const tag = await sq.evaluate(() =>
+          [...document.querySelectorAll('[data-tttag] option')].some(o => /Shared names/.test(o.textContent))
+        );
+        if (!tag) se.push('no Shared names in Tag…');
+        // The other family: the first named as also carrying the name; a family no shared name reaches: no box.
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.b));
+        await swait(() => document.querySelector('#view .adm-cnames'));
+        const also = await sq.evaluate(s => (document.querySelector(s + ' small') || {}).textContent || '', rowS);
+        if (!also.includes('also ') || !also.includes(ids.an)) se.push(`the other family's line ${JSON.stringify(also)}`);
+        if (ids.none) {
+          await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.none));
+          await swait(() => document.querySelector('#view .adm-sname'));
+          if (await sq.evaluate(() => !!document.querySelector('#view .adm-cnames'))) se.push(`a Names box on ${ids.none}`);
+        }
+        // Dark theme and no overflow at 1280 and 390, the box open.
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.a));
+        await swait(() => document.querySelector('#view .adm-cnames'));
+        if (!(await sq.evaluate(() => document.querySelector('#view .adm-cnames').open))) await sq.click('#view .adm-cnames > summary');
+        const dk = await darkCards(sq, '#view .adm-cnames .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        for (const w of [1280, 390]) {
+          await sq.setViewportSize({width: w, height: 900});
+          const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+          if (wide > 0) se.push(`${w}px: ${wide}px too wide`);
+        }
+        await sq.setViewportSize({width: 1280, height: 900});
+        // Publish: counted, and the published fish part carries the exception and no empty map.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 fish name exception$/m.test(sum)) se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).names);
+        if (JSON.stringify(pub) !== JSON.stringify({[ids.x]: {[ids.a]: 'often'}})) se.push(`published ${JSON.stringify(pub)}`);
+        if (se.length) fails.push(`Shared names: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
       // Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, structBar; the structure editor,
@@ -9183,7 +9326,7 @@ async function loadPart(b, base, fails) {
       if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
       await go('photos/candidates');
       if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
-      // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
+      // A suggested crop (data/suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
       const sc = await p.evaluate(F => {
         const n = Object.keys(DATA.cand).find(g => DATA.cand[g].some(x => x.f === F[0])),
           q = DATA.cand[n].find(x => x.f === F[0]),
@@ -9199,7 +9342,7 @@ async function loadPart(b, base, fails) {
       await p.click('#undo');
       await settle();
       // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
-      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over candQueue(CSRC)), and
+      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over the builder's queue), and
       // CF[2] is whichever undecided candidate the real curation leaves (Dauin, Philippines…: Pierre's Publish of
       // 2026-11-08 moved it from Dauin to Philippines while the page showed Dauin), so the page is put on CF[2]'s own
       // source first, All when that is not a source of the swiper; the source shown before is restored after.
@@ -9300,7 +9443,7 @@ async function loadPart(b, base, fails) {
       await go('photos/candidates');
       const ck = await p.evaluate(C => {
         CSRC = 'all';
-        candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
+        candQueue('all').forEach(x => x.p.f !== C && cst().skip.add(x.p.f));
         render();
         const S = document.querySelector('.adm-sw[data-f]');
         return {
@@ -9351,7 +9494,7 @@ async function loadPart(b, base, fails) {
       }
       // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
       await p.evaluate(() => {
-        CSKIP.clear();
+        cst().skip.clear();
         render();
       });
       // The line is folded behind the Auto chip (Pierre, 2026-11-06: one phone screen); the chip opens it.
@@ -9542,7 +9685,13 @@ async function loadPart(b, base, fails) {
         fa.fish.add[FF[3][1]] !== FF[3][0] ||
         FF[3][1] in fa.fish.seen ||
         JSON.stringify((fa.fish.crop || {})[FF[3][1]]) !== '[0.2,0.1,0.8,0.9]' ||
-        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec'
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[3][1]] !== 'btec' ||
+        // taken out: no add, no tags, no ease, set aside, logged r (the earlier ate stays beside it)
+        FF[4][1] in fa.fish.add ||
+        FF[4][1] in fa.fish.tags ||
+        FF[4][1] in fa.fish.ease ||
+        fa.fish.seen[FF[4][1]] !== 1 ||
+        fa.fish.auto[Object.keys(fa.fish.auto).sort().pop()][FF[4][1]] !== 'r'
       )
         fails.push(
           `${w}px Fish auto-sort: ${JSON.stringify(fa && {add: fa.fish.add, seen: fa.fish.seen, out: fa.fish.out, coral: fa.coral, alone: fa.alone, auto: fa.fish.auto, crop: fa.fish.crop, tags: fa.fish.tags, phase: fa.fish.phase, sum: fa.sum})}`
@@ -9684,7 +9833,7 @@ async function loadPart(b, base, fails) {
         }
         await p.click('.adm-fsw [data-ft="2"][data-fv="n"]');
         await settle();
-        await p.click('.adm-fsw [data-fcrop]');
+        await p.click('.adm-fsw [data-crop]');
         await p.waitForSelector('#lightbox .adm-crop [data-c="save"]');
         await p.click('#lightbox [data-c="full"]');
         await p.click('#lightbox [data-c="save"]');
@@ -9741,7 +9890,27 @@ async function loadPart(b, base, fails) {
       // (fish.rot), and both left in the draft for the Publish below.
       {
         await go('photos/candidates');
-        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        const G = await p.evaluate(() =>
+          Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.imr && !x.r && !crOf(x.f) && !roOf(x.f)))
+        );
+        // An IMR lecture photo traced to its original has no Crop tool: its framing is the lecture's, and a crop saved for it
+        // would never reach its R2 file (Codex review of #1292).
+        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r)));
+        if (L) {
+          await goGenus(L);
+          const lc = await p.evaluate(n => {
+            const imr = new Set(
+              photos(n)
+                .filter(x => x.imr && x.src)
+                .map(x => x.f)
+            );
+            return [...document.querySelectorAll('#view .adm-tile[data-f]')]
+              .filter(t => imr.has(t.dataset.f))
+              .map(t => !!t.querySelector('[data-act="crop"]'));
+          }, L);
+          if (!lc.length || lc.some(Boolean))
+            fails.push(`${w}px Rotate: a lecture photo's tile on ${L} has the Crop tool: ${JSON.stringify(lc)}`);
+        } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
         const f = await p.evaluate(() => {
           const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
@@ -9833,9 +10002,9 @@ async function loadPart(b, base, fails) {
         }
         // The fish Candidates: the same editor writes fish.rot, a quarter left = 270, drawn on the card.
         await go('fish/photos/candidates');
-        if (await p.$('.adm-fsw [data-fcrop]')) {
+        if (await p.$('.adm-fsw [data-crop]')) {
           const ff = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
-          await p.click('.adm-fsw [data-fcrop]');
+          await p.click('.adm-fsw [data-crop]');
           await p.waitForSelector('#lightbox .adm-rotbar [data-r="-90"]');
           await p.click('#lightbox [data-r="-90"]');
           await p.click('#lightbox [data-c="save"]');
@@ -9845,7 +10014,7 @@ async function loadPart(b, base, fails) {
               rot: ((DRAFT.fish || {}).rot || {})[f],
               coral: (DRAFT.rot || {})[f],
               card: (document.querySelector('.adm-fsw .adm-swph img') || {}).dataset?.rot,
-              on: !!document.querySelector('.adm-fsw [data-fcrop].on'),
+              on: !!document.querySelector('.adm-fsw [data-crop].on'),
               sum: pubSummary(),
               out: ((output().fish || {}).rot || {})[f]
             }),

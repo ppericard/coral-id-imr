@@ -25,7 +25,8 @@ const {
   fishStamp,
   fishSigs,
   autoCheck,
-  autoState
+  autoState,
+  treePhotoOn
 } = require('../autosort.js');
 const {merge3} = require('../core.js');
 
@@ -75,7 +76,7 @@ test('fishRun: sure adds up to the target, the easiest first whoever took them; 
   sug[ids[22]] = sure(4, 'dup');
   sug[chk] = sure(5);
   const {F, R} = fishRun(cands, sug, {s1: {cs: 1}, s2: {}}, {}, '2026-11-04');
-  assert.deepStrictEqual(R, {add: 10, back: 0, reject: 1, check: 1, full: 4, off: 0});
+  assert.deepStrictEqual(R, {add: 10, back: 0, out: 0, reject: 1, check: 1, full: 4, off: 0});
   const in2 = Object.keys(F.add).filter(f => F.add[f] === 's2');
   assert.strictEqual(in2.length, 8, 'species s2 filled to its target of 8 observations');
   // The admin's own photo (ease 2) has no priority: it waits behind easier ones.
@@ -91,7 +92,7 @@ test('fishRun: sure adds up to the target, the easiest first whoever took them; 
   // A second run decides nothing more (all logged), and the full species still waits.
   const again = fishRun(cands, sug, {s1: {cs: 1}, s2: {}}, F, '2026-11-04');
   assert.strictEqual(again.F, F);
-  assert.deepStrictEqual(again.R, {add: 0, back: 0, reject: 0, check: 0, full: 4, off: 0});
+  assert.deepStrictEqual(again.R, {add: 0, back: 0, out: 0, reject: 0, check: 0, full: 4, off: 0});
 });
 
 test('fishRun never touches what Pierre decided: his Not this above all, his rejects, exclusions, adds and tags', () => {
@@ -134,7 +135,7 @@ test('fish agreement: answered Checks and corrections count; under 90% the fish 
     },
     sug = {[ids[30]]: sure(5), [chk]: sure(5)},
     r = fishRun(cands, sug, {}, F, day, S.on);
-  assert.deepStrictEqual(r.R, {add: 0, back: 0, reject: 0, check: 1, full: 0, off: 1});
+  assert.deepStrictEqual(r.R, {add: 0, back: 0, out: 0, reject: 0, check: 1, full: 0, off: 1});
 });
 
 test('fish edits never touch coral keys: the Publish merge and the published file', () => {
@@ -247,7 +248,7 @@ test('fishRun brings back a photo it set aside once a newer judgement is a sure 
   const [a] = ids,
     cands = {s1: [{f: a, o: 'oa'}]},
     {F, R} = fishRun(cands, {[a]: saved}, {}, aside(a), today, true, judged('2026-11-19'));
-  assert.deepStrictEqual(R, {add: 0, back: 1, reject: 0, check: 0, full: 0, off: 0});
+  assert.deepStrictEqual(R, {add: 0, back: 1, out: 0, reject: 0, check: 0, full: 0, off: 0});
   assert.deepStrictEqual([F.add[a], a in F.seen, F.tags[a], F.ease[a], F.crop[a]], ['s1', false, 'p1g0sl1', 4, saved.c]);
   assert.strictEqual(F.auto[today][a], 'btec');
   assert.strictEqual(F.auto[old][a], 'r', 'the earlier reject stays in the log');
@@ -340,4 +341,90 @@ test('fishRun brings back at target as a candidate; Undo sets aside again; b cou
   // He changes the crop it wrote: his own, so an Undo leaves it.
   const O = {...fishOwn(G, c, 'crop'), crop: {...G.crop, [c]: [0, 0, 1, 1]}};
   assert.deepStrictEqual(fishUndo(O, c, 's1').crop[c], [0, 0, 1, 1]);
+});
+
+// The route out (Pierre, 2026-11-19 20:57; rule A1: a newer, better proposal replaces one he only let through): a photo the
+// run put in leaves play, in his draft, when a judgement made since is a sure rejection; the mirror of the route back, with
+// no new log letter. The cut part of #1259 (Codex's third round, W27).
+const taken = f => ({
+    add: {[f]: 's1'},
+    tags: {[f]: 'p1g1sl1'},
+    ease: {[f]: 3},
+    auto: {[old]: {[f]: 'ate'}}
+  }),
+  other = {jt: 'p1g1slk', e: 2, k: 'best'}; // other species one could take for it: a sure rejection
+
+test('fishRun takes a photo it put in out when a newer judgement is a sure rejection: set aside, logged r, one Undo', () => {
+  const [a, b] = ids,
+    cands = {s1: [{f: a, o: 'oa'}]},
+    at = judged('2026-11-19'),
+    {F, R} = fishRun(cands, {[a]: other}, {}, taken(a), today, true, at);
+  assert.deepStrictEqual(R, {add: 0, back: 0, out: 1, reject: 0, check: 0, full: 0, off: 0});
+  // The add and the fields its code lists leave (the maps stay as {}: the Publish merge removes these entries only), the
+  // photo is set aside, its code the run's plain reject; the earlier log stays beside it.
+  assert.deepStrictEqual([F.add, F.tags, F.ease, F.seen[a]], [{}, {}, {}, 1]);
+  assert.deepStrictEqual([F.auto[today][a], F.auto[old][a]], ['r', 'ate']);
+  assert.deepStrictEqual([fishMine(F, a), treePhotoOn(F, a, 's1')], ['reject', false]);
+  assert.strictEqual(fishIdx(F)[a].code, 'r');
+  // Logged: a second run does nothing; the auto-sort off (his keep agreement): nothing applied.
+  assert.strictEqual(fishRun(cands, {[a]: other}, {}, F, today, true, at).F, F);
+  const off = fishRun(cands, {[a]: other}, {}, taken(a), today, false, at);
+  assert.deepStrictEqual([off.R.off, off.R.out, off.F.add[a]], [1, 0, 's1']);
+  // Another photo of Pierre's in the same maps is untouched, and the Publish merge keeps what another device added.
+  const two = {...taken(a), add: {...taken(a).add, [b]: 's1'}, tags: {...taken(a).tags, [b]: 'p1g1sl1'}},
+    r2 = fishRun(cands, {[a]: other}, {}, two, today, true, at).F;
+  assert.deepStrictEqual([r2.add, r2.tags], [{[b]: 's1'}, {[b]: 'p1g1sl1'}]);
+  const theirs = {...taken(a), add: {...taken(a).add, x: 's9'}},
+    m = merge3({fish: taken(a)}, {fish: F}, {fish: theirs}).fish;
+  assert.deepStrictEqual([a in m.add, m.add.x, a in (m.tags || {}), m.seen[a]], [false, 's9', false, 1]);
+  // Undo (Auto details): the photo waits for him as a candidate, never taken out again; a later sure add brings it back.
+  const U = fishUndo(F, a, 's1');
+  assert.deepStrictEqual([a in U.seen, U.auto[today][a]], [false, '-r']);
+  assert.strictEqual(fishRun(cands, {[a]: other}, {}, U, today, true, at).F, U);
+  assert.strictEqual(
+    fishRun(cands, {[a]: saved}, {}, U, today, true, judged(today)).F,
+    U,
+    'an undone reject is never taken back by the run'
+  );
+  const back = fishRun(cands, {[a]: saved}, {}, F, today, true, judged(today));
+  assert.deepStrictEqual([back.R.back, back.F.add[a], a in back.F.seen, back.F.auto[today][a]], [1, 's1', false, 'btec']);
+});
+
+test('fishRun never takes out an add of his, one he corrected or kept, nor on a judgement older than the add or unsure', () => {
+  const [a] = ids,
+    cands = {s1: [{f: a, o: 'oa'}]},
+    run = (F, sug = {[a]: other}, at = judged('2026-11-19')) => fishRun(cands, sug, {}, F, today, true, at),
+    stays = (F, why, sug, at) => {
+      const r = run(F, sug, at);
+      assert.strictEqual(r.F, F, why);
+      assert.strictEqual(r.R.out, 0, why);
+    },
+    log = c => ({...taken(a), auto: {[old]: {[a]: c}}});
+  assert.strictEqual(run(taken(a)).R.out, 1);
+  assert.strictEqual(run(log('btec')).R.out, 1, 'a brought-back add with its tags');
+  assert.strictEqual(run(log('at')).R.out, 1, 'the tags are enough');
+  stays({add: {[a]: 's1'}, tags: {[a]: 'p1g1sl1'}}, 'his own add: no log');
+  stays(log('ae'), 'the tags are his (the code lists no t): his own');
+  stays(log('?a'), 'a Check');
+  stays(log('-ate'), 'an add he undid');
+  stays(log('ate@t5a1kq'), 'an add he corrected');
+  stays(log('b'), 'a brought-back photo that waits as a candidate holds no add');
+  stays({...taken(a), kept: {[a]: 'q308'}}, 'Keep mine on its re-judge proposal');
+  stays({...taken(a), seen: {[a]: 1}}, 'rejected');
+  stays({...taken(a), exclude: {[a]: 'blurred'}}, 'excluded');
+  stays({...taken(a), out: {[a]: 's2'}}, 'Not this');
+  stays({...taken(a), add: {[a]: 's2'}}, 'added to another species');
+  stays(taken(a), 'judged before the add', undefined, judged('2026-11-10'));
+  stays(taken(a), 'no judgement date', undefined, null);
+  stays(taken(a), 'unsure', {[a]: {...other, u: ['jt']}});
+  stays(taken(a), 'still a sure add', {[a]: saved});
+  stays(taken(a), 'not sure yet', {[a]: {jt: 'p1g1slm', e: 2, k: 'best'}});
+  // Every kind of sure rejection of the run's rules: a near-duplicate, the subject unclear, out of the water.
+  ['dup', 'x', 'a'].forEach(w =>
+    assert.strictEqual(
+      run(taken(a), {[a]: w === 'dup' ? {...saved, k: 'dup'} : {jt: w === 'x' ? 'p1g1slx' : 'p1g1sl1a', e: 2, k: 'best'}}).R.out,
+      1,
+      w
+    )
+  );
 });
