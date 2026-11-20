@@ -95,6 +95,29 @@ const darkCards = (p, sel) =>
     else delete H.dataset.theme;
     return C.length < 2 ? `no ${sel}` : light.map(([k, c]) => `${k} ${c}`).join(', ');
   }, sel);
+// Every text the admin's toast (.adm-toast) shows from now on, kept in the page (window.__toasts, read with toastsOf): a
+// check reads what was shown, not only what is on screen when it polls. A toast scheduled earlier can replace another
+// (the fish auto-sort's comes 8 s after its run: admin.js sugRun; in the demo it has decisions to make since #1313), and a
+// check that missed one says every text shown, not only the last.
+const toastLog = p =>
+  p.evaluate(() => {
+    // each text node the toast was given (toast sets textContent), so two toasts in one task are both kept
+    const T = (window.__toasts = []),
+      add = s => s && T.push(s),
+      watch = t =>
+        new MutationObserver(R =>
+          R.forEach(r => (r.type === 'characterData' ? add(r.target.data) : r.addedNodes.forEach(n => add(n.textContent))))
+        ).observe(t, {childList: true, characterData: true, subtree: true});
+    const t = document.querySelector('.adm-toast');
+    if (t) return watch(t);
+    // the first toast of the page creates the element (its text set before it is added): watch it once it is there
+    const mo = new MutationObserver(() => {
+      const e = document.querySelector('.adm-toast');
+      if (e) (mo.disconnect(), add(e.textContent), watch(e));
+    });
+    mo.observe(document.body, {childList: true});
+  });
+const toastsOf = p => p.evaluate(() => window.__toasts || []);
 // Sign out on a shared device (model B of the seal, Pierre, 2026-11-18; admin-draft.js): two admin tabs of one token (the
 // demo's) in one browser, with the real IndexedDB. A rates a photo, B takes it in at once and rates another, A takes that
 // in. B then stops hearing the other tabs (a frozen tab) and A signs out: the store keeps no plain draft and no base, only
@@ -725,7 +748,8 @@ async function loadPart(b, base, fails) {
     const ROUTES = await p.evaluate(() => {
       // The corals' tabs (a tab for one unit rank only, Families, is checked on the fish side below).
       const L = TABS.filter(t => !t[4].rank).flatMap(t => {
-        const V = t[2].filter(([, , o]) => !o.rank); // a view for one unit rank only (fish Photo review) is checked below
+        // a view for one unit rank only, or a review axis of the tree builder (fish Photo review), is checked below
+        const V = t[2].filter(([, , o]) => !o.rank && (!o.axis || reviewBuild(ASUBJ).axes.includes(o.axis)));
         return V.map(([h, v]) => ({h, tab: t[1], view: V.length > 1 ? h : null, n: V.length, name: v}));
       });
       // Deep links under a view: a genus page, Where to look open in full (a filter after '?'), a player's journey.
@@ -1189,13 +1213,36 @@ async function loadPart(b, base, fails) {
             await q.screenshot({path: require('path').join(process.env.SHOTS, 'tree-species-pick-390.png')});
           const sum = await q.evaluate(() => pubSummary());
           if (!/1 fish genus cover/.test(sum) || !/1 fish species cover/.test(sum)) ne.push(`Publish summary ${JSON.stringify(sum)}`);
+          // Publish has ended when the published curation (SAVED, set just before its toast) carries both picks; its toast is
+          // then read from every text the toast showed (toastLog), not polled on screen, where another toast can replace it.
+          await toastLog(q);
+          const t0 = Date.now();
           await q.click('#save');
           await q
-            .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
-            .catch(() => ne.push('Publish: no "Published" toast'));
+            .waitForFunction(
+              ([g, s]) => {
+                const P = (SAVED.fish || {}).genera || {};
+                return (P['g:Chromis'] || {}).cover === g && (P.s091 || {}).cover === s;
+              },
+              [gf, sf],
+              {timeout: 30000}
+            )
+            .catch(() => {});
+          const shown = await toastsOf(q);
+          if (!shown.some(s => /^Published/.test(s))) {
+            const sv = await q.evaluate(() => ({text: $('save').textContent, disabled: $('save').disabled}));
+            ne.push(
+              `Publish: no "Published" toast (${Date.now() - t0} ms after the click; the toasts since the click: ${JSON.stringify(shown)}; the button ${JSON.stringify(sv)})`
+            );
+          }
           const pub = await q.evaluate(() => (SAVED.fish || {}).genera || {});
           if ((pub['g:Chromis'] || {}).cover !== gf || (pub.s091 || {}).cover !== sf)
             ne.push(`published ${JSON.stringify({g: pub['g:Chromis'], s: pub.s091, gf, sf})}`);
+          // the log keeps a toast replaced before any frame came (two in one task)
+          await toastLog(q);
+          await q.evaluate(() => (toast('Smoke: first'), toast('Smoke: second')));
+          const two = await toastsOf(q);
+          if (two.join(' | ') !== 'Smoke: first | Smoke: second') ne.push(`the toast log ${JSON.stringify(two)}`);
           // A node he covered whose rule picks another photo, still open: its page links to Cover proposals, which shows it.
           const pn = await q.evaluate(() => (coverOpen(coverList(), DRAFT.fish)[0] || {}).id || null);
           if (pn) {
