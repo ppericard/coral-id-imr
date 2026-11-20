@@ -111,7 +111,7 @@ test('the three tools run on the subject on screen: its units, its names, its pa
   assert.match(web, /UNITS\[SUBJ\.id\]\s*\.pairs\(\)/, "the subject's declared pairs");
   assert.match(web, /UNITS\[SUBJ\.id\]\.webBy\(\)/, "the subject's own colourings");
   assert.match(strip(FILES['proto/type.js']), /typeUnit\(m, t, typeSp\)/, "the quiz's own reading of a typed answer");
-  assert.match(strip(FILES['proto/type.js']), /rankOf\(t\)/, 'the rank of the unit asked');
+  assert.match(strip(FILES['proto/type.js']), /kindRank\(t\)/, 'the class of the unit asked (its rank and kind of name, as the quiz)');
   assert.match(strip(FILES['proto/reveal.js']), /distractors\(t, pool\(\)/, "the quiz's own wrong choices");
 });
 

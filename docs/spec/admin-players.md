@@ -462,9 +462,9 @@ met).
 - **A subject with units at several ranks** (`SUBJECTS` `sheets`: the fish): one map per rank its questions asked
   (`heatRanks`: a rank switch, `SF.hr`, Families / Genera / Species, a rank on it once one of its questions is logged; a
   question's choices are of its rank, so `heatRank` keeps a rank's pairs and typed mix-ups out of the one `confusionOf`
-  over the subject's whole log, its trust included), its units named from its registry (`unitAdmin`, `unitRegOf`:
-  `fishAdmin` for the fish), with Pairs' starts (`fishUnitRec`: a family's declared look-alikes, two genera of one
-  family). Its top rank in blocks of its group in the identification key in force (the record's `ig` and the key's
+  over the subject's whole log, its trust included), its units named from its registry (`reg`, read by `regLoad`;
+  [admin.md › Each subject's admin part](admin.md#each-subjects-admin-part-subjects-admin)), with Pairs' starts
+  (`regRec`: `fishUnitRec`, a family's declared look-alikes, two genera of one family). Its top rank in blocks of its group in the identification key in force (the record's `ig` and the key's
   titles, `repReg` `groups`; rule S3; one block where it has no key), every unit of its slate on the map; a lower rank in
   blocks of the rank above (`heatMatrix` `blockOf` over `heatUp`: a genus in its family's, a species unit, `s:s091`, in
   its genus's, from `repReg` `spu`), its units as met, named by `heatLab` (a fish species unit by its scientific name,

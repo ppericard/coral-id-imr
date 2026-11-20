@@ -66,8 +66,10 @@ test('every pair of fish families starts on Pairs as in the game, the key group 
 });
 
 test('every pair of fish genera and of fish species starts on Pairs as in the game', () => {
-  ['genus', 'species'].forEach(r => {
-    const L = rank(r),
+  // the species of each kind of name apart (a question's choices stay in one kind: app.js kindRank)
+  ['genus', 'species:cn', 'species:sci'].forEach(r => {
+    const [rk, kind] = r.split(':'),
+      L = rank(rk).filter(n => !kind || X.gen[n].kind === kind),
       bad = pairs(L).filter(([a, b]) => admin(a, b) !== game(a, b));
     assert.ok(L.length > 20, r);
     assert.deepStrictEqual(bad.slice(0, 5), [], r);

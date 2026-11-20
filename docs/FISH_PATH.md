@@ -338,6 +338,10 @@ For a player learning both names (a player learning one kind sees only that one)
   - 0.5 to 0.8: the share of "Latin + common underneath" rises from 0 to 1.
   - 0.8 to 0.95: the share of "Latin only" rises from 0 to 1.
   - Typed Latin: the `TYPED` curve on top (none below 0.5, 30% at 0.8, 50% at 0.95).
+- **Built** (two independent trees, the [species step 2 plan](reviews/2026-11-18-species-step2-plan.md) §2.4): step 1 is the
+  common-name unit's question; steps 2-4 are the scientific unit's, on its own bar (`app.js` `sciShow`): below 0.5 the
+  common name under each scientific name, from 0.5 to 0.8 the share of scientific names alone rising from 0 to 1, then
+  alone; typed, the usual `TYPED` share. Logged `|sc` or `|so`.
 - **Where the thresholds come from** (Pierre, 2026-11-04): the starting values are set by simulation (`tools/learnsim.js`). Later, once
   there are many fish answers, they are **computed automatically per species** from the measured difficulty of answering it with the common
   name against the Latin name (a species whose Latin name is hard moves to Latin later).
@@ -728,13 +732,15 @@ on families only to an IMR RA with every species open:
     scientific genera), their timing simulated (docs/LEARNING.md "Fish achievements, simulated"); species named and Fish basics
     come with those features;
   - **redesigned around the global score** (2026-11-08, Pierre's Q259-Q264; the full list, its names and timings in docs/LEARNING.md
-    "Fish achievements, around the global score"): 33, of which 27 are built (the score every 10 points to 60%, fpct25
+    "Fish achievements, around the global score"): 33, of which 31 are built (the score every 10 points to 70%, fpct25
     retired; families; scientific genera at Open Water and at Advanced; the circles at Advanced; since the species level's
-    step 1, fsp1, fsp10 and fsp50) and 6 wait for the scientific species names or Fish basics. **At the species level**:
+    step 1, fsp1, fsp10 and fsp50; since step 2, fspsci1, fboth25, fdauin20 and fpct70) and 2 wait (fpct100 for the
+    ultimate exam, fbasics). **At the species level**:
     fsp1, fsp10, fsp50 (species named by a common name, at Advanced; built),
-    fspsci1 (a first species named in Latin: its scientific name's bar at Advanced, Q262), fboth25 (25 species with both
-    names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261: circle 1 only for
-    now, another top with circle 3 later), fpct70 and fpct100 ("Fish god": every name of every species), and Pierre's
+    fspsci1 (a first species named by its scientific name: its bar at Advanced, Q262), fboth25 (25 species with both
+    names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, `present.dauinU`, by their
+    scientific names, Q261: circle 1 only for now, another top with circle 3 later), fpct70 (built with step 2) and fpct100
+    ("Fish god": every name of every species, with the ultimate exam), and Pierre's
     frequency-based ones (Q261): "I know the X fish most often seen" (circle 1, and every circle) and, for fun, "the X
     least often seen at Dauin" (the rank by observers near Dauin, `present.dauinU`, as the score's weights), X and names
     chosen when the species level is built;

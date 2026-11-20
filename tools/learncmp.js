@@ -122,6 +122,18 @@ const famAdv = (run, cp) => {
   const K = (rowAt(run, cp) || {}).kinds;
   return K && K.family ? (K.family.adv ?? null) : null;
 };
+// The fish scientific genera at Advanced (kind genus), the level the species by their scientific names take their
+// questions from (docs/reviews/2026-11-18-species-step2-plan.md §4); the share of answers 1..cp on those species (kind
+// species:sci, learnsim kinds). None for the corals.
+const genAdv = (run, cp) => {
+  const K = (rowAt(run, cp) || {}).kinds;
+  return K && K.family ? ((K.genus || {}).adv ?? 0) : null;
+};
+const sciShare = (run, cp) => {
+  const K = run.kinds || {},
+    E = (run.expo || []).slice(0, cp);
+  return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'species:sci').length / E.length : null;
+};
 const spShare = (run, cp) => {
   const K = run.kinds || {},
     E = (run.expo || []).slice(0, cp);
@@ -181,6 +193,8 @@ const MEASURES = {
   genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
   famAdv: {label: 'Families at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => famAdv(r, cp)},
   spShare: {label: 'Share of answers on the species (fish)', kind: 'window', dg: 3, get: (r, cp) => spShare(r, cp)},
+  genAdv: {label: 'Scientific genera at Advanced (fish)', kind: 'row', dg: 1, get: (r, cp) => genAdv(r, cp)},
+  sciShare: {label: 'Share of answers on the species by their scientific names (fish)', kind: 'window', dg: 3, get: (r, cp) => sciShare(r, cp)},
   // The photo variants on their unit's mastery (phEarly, phLate, phEasy, phOther, phAns above).
   phEarly: {label: `Share of phase photos in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEarly},
   phLate: {label: `Share of phase photos once a unit has ${2 * PHN} answers`, kind: 'window', dg: 3, get: phLate},
@@ -230,9 +244,10 @@ const GUARDRAILS = [
   {m: 'famAdv', cps: [300, 600, 1000, 3000, 10000], harm: -1, abs: 2, rel: 0.05}
 ];
 // Also measured, no margin (exploratory unless a PR declares bounds for them before running): the right rate, the shares
-// of answers on the fish scientific genera and on the species, at each checkpoint both files reach, with the one-sided
-// bounds either side.
-const WATCH = {ms: ['right', 'genShare', 'spShare'], cps: [300, 600, 1000, 3000, 10000]};
+// of answers on the fish scientific genera and on the species, the scientific genera at Advanced (the species step 2
+// plan's primary, read with the families' margin in its PR, #1273: too spread out over seeds to stand as a guardrail),
+// at each checkpoint both files reach, with the one-sided bounds either side.
+const WATCH = {ms: ['right', 'genShare', 'spShare', 'genAdv', 'sciShare'], cps: [300, 600, 1000, 3000, 10000]};
 // The margin's size for a guardrail on the before mean b (the larger of abs and rel x |b|).
 function marginOf(g, b, subject) {
   const rel = subject === 'coral' && 'coralRel' in g ? g.coralRel : g.rel || 0;
@@ -355,7 +370,16 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
             return {cp, ...p, p: signFlip(d).p};
           });
       });
-  let prim = null;
+  let prim = null,
+    primarySkipped = null;
+  // An arm cut by the budget before any run finished (`cut`, no runs, no seeds: the file learnsim writes, or the
+  // workflow's stub for a run killed at its limit) leaves no pair for any primary, population ones included: the
+  // primary is not read, and the report says why. An arm with no `cut` mark and no shared seed still throws below.
+  const emptyCut = [['before', B], ['after', A]].filter(([, F]) => F.cut && !(F.runs || []).length && !(F.pop || []).length).map(([side]) => side);
+  if (primary && emptyCut.length) {
+    primarySkipped = {m: primary.at[0], cp: primary.at[1], dir: primary.dir, sides: emptyCut};
+    primary = null;
+  }
   if (primary && MEASURES[primary.at[0]].kind === 'pop') {
     const [m, cp] = primary.at,
       dir = primary.dir === 'up' ? 1 : -1,
@@ -432,7 +456,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
   );
   // A file stopped by the 40-minute budget (tools/checkbudget.js, rule L11): its `cut`, kept to say so in the report.
   const cut = [['before', B.cut], ['after', A.cut]].filter(([, c]) => c).map(([side, c]) => ({side, ...c}));
-  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks, watch, cut};
+  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, primarySkipped, pops, seeds, breaks, watch, cut};
 }
 
 // The report, Markdown ready for a PR.
@@ -448,6 +472,12 @@ function report(R, nameB = 'before', nameA = 'after') {
       `**CUT (${c.side}): the run stopped at its ${c.budgetMin}-minute budget with ${c.done} of ${c.planned} runs.** Only the ${R.pairs} complete pairs are compared: a clear result stands, but a result short of the level's seeds is "the measure cannot tell", never read as no effect (rule L11).`
     )
   );
+  if (R.primarySkipped) {
+    const S = R.primarySkipped;
+    L.push(
+      `**Primary ${key(S.m, S.cp)}, ${S.dir}, not read: the ${S.sides.join(' and ')} arm was cut before any run finished, so no pair exists.** The measure cannot tell (rule L11): never read as no effect.`
+    );
+  }
   if (R.differ.length) L.push(`Settings that differ: ${R.differ.join('; ')}`);
   if (R.only.length) L.push(`Runs in one file only, left out: ${R.only.join(', ')}`);
   if (R.primary && R.primary.pop) {
@@ -582,6 +612,8 @@ module.exports = {
   nearRep,
   genShare,
   famAdv,
+  genAdv,
+  sciShare,
   spShare,
   PHN,
   phEarly,

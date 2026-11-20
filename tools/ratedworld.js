@@ -163,13 +163,16 @@ function unitsOf(subject) {
       // the species units (app.js treeGenera X.spl), in play as the app has them with the species level on (sheetV 1000):
       // a family's from its Advanced, one at a time in its order (app.js spPlay); the score's tree with them
       sp: X.spl || [],
+      // the species by their scientific names (app.js treeGenera X.ssl, sciPlay): a genus's from its Advanced, one at a
+      // time in its order, its genus in play; the score's tree with them (treeSci), as the app has it with SCI_SHEET
+      ssp: X.ssl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
       covers: X.picks || {},
       core: X.c1,
       c3: X.c3,
-      tree: X.treeSp || X.tree,
-      kind: n => X.gen[n].rank || 'family',
+      tree: X.treeSci || X.treeSp || X.tree,
+      kind: n => (X.gen[n].rank ? X.gen[n].rank + (X.gen[n].kind === 'sci' ? ':sci' : '') : 'family'),
       imrFormsOf: n => X.gen[n].forms || ['a']
     };
   }
@@ -182,6 +185,7 @@ function unitsOf(subject) {
     slate,
     extra,
     sp: [],
+    ssp: [],
     setK: 'bon',
     rec: GX,
     views: n => Object.fromEntries(VIEWN.map(v => [v, ((GX(n).sl || {})[v] ? GX(n).sl[v].game : GX(n).views[v]) || []])),
@@ -224,6 +228,8 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
   // The genera and the species (their photos are their family's), each on its own stream (below).
   if (U.subject === 'fish') U.extra.forEach(below);
   (U.sp || []).forEach(below);
+  // from their genus's mu, on their own streams; none whose genus is not in this world
+  (U.ssp || []).filter(n => U.rec(n).parent in mu).forEach(below);
   return {mu, eps, ease, pi: piOf(seed)};
 }
 // The player's offset of a seed's world, on a stream of its own (so a test reads it for many seeds without their worlds).
@@ -239,7 +245,7 @@ const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'intr
 function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = ''} = {}) {
   if (!U.slate) U = unitsOfX(U);
   const subject = U.subject,
-    all = [...U.slate, ...U.extra, ...(U.sp || [])],
+    all = [...U.slate, ...U.extra, ...(U.sp || []), ...(U.ssp || [])],
     // Every unit's record with its game photos per view, each with the world's judged ease (p.e) where the subject has
     // one (the fish; no coral photo is judged).
     G = {},
@@ -275,6 +281,9 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
     spUnits = () => {
       const by = new Map();
       (U.sp || []).forEach(n => by.set(G[n].parent, [...(by.get(G[n].parent) || []), n]));
+      // and those by their scientific names, their genus in play (app.js sciPlay up)
+      const up = new Set([...slate, ...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto]);
+      (U.ssp || []).filter(n => up.has(G[n].parent)).forEach(n => by.set(G[n].parent, [...(by.get(G[n].parent) || []), n]));
       return [...by].flatMap(([p, L]) => {
         const next = ctx.genScore(p) >= ctx.LV_AT[1] && L.find(n => !ctx.introduced(n) && has(n));
         return [...L.filter(ctx.introduced), ...(next ? [next] : [])];
@@ -296,7 +305,9 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
     gamePhotoOk: (n, p) => !G[n].x || p.own || !p.gid, // app.js gamePhotoOk
     imrFormsOf: n => U.imrFormsOf(n),
     rankOf: n => (G[n] || {}).rank || '',
-    rankUnits: rk => [...U.extra, ...(U.sp || [])].filter(n => (G[n].rank || '') === rk),
+    // app.js kindRank: the class a question's choices stay in (a species by its scientific name apart)
+    kindRank: n => ((G[n] || {}).rank || '') + ((G[n] || {}).kind ? ':' + G[n].kind : ''),
+    rankUnits: rk => [...U.extra, ...(U.sp || []), ...(U.ssp || [])].filter(n => ctx.kindRank(n) === rk),
     slateGenera: () => slate,
     UNITS: {[subject]: tree ? {core: () => U.core, slate: () => slate, tree: () => tree, gate, opens: []} : {slate: () => slate, opens: []}},
     bonusList: () => [...new Set([...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto, ...spUnits()])],
@@ -392,7 +403,8 @@ const noteRecent = (s, ph) => {
 const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...C.heldOf(G[n])])].filter(p => ctx.gamePhotoOk(n, p));
 // The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
 // a slate genus alike), not of its reporting kind.
-const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || ''));
+const typedOthers = (G, list, t, met) =>
+  list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || '') && (G[n].kind || '') === (G[t].kind || ''));
 // One run: profile (learnprof name) x seed, N answers, checkpoints cps; learner 'count' (by the number of answers) or
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
@@ -431,6 +443,12 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   const spL = (U.sp || []).map(n => ({id: n, family: G[n].parent, cs: (((U.X || {}).sps || {})[G[n].sp] || {}).cs || 0})),
     spK = LP.knownSpecies(prof, knows, spL);
   spL.forEach(s => (know[s.id] = LP.spKnow(prof, spK, s.id)));
+  // the species by their scientific names: known (sp.hi) where the profile knows both its genus and the species by its
+  // common name, else its low start (the check's assumption: no profile says more of the scientific species)
+  (U.ssp || []).forEach(n => {
+    const g = G[G[n].parent] || {};
+    know[n] = LP.genKnown(prof, knows, g.parent, g.imrg) && spK.has(C.spUnitId('cn', G[n].sp)) ? LP.spKnow(prof, spK, C.spUnitId('cn', G[n].sp)) : prof.lo;
+  });
   const teach = (n, x = 1) => n in know && (know[n] += Math.min(1, prof.rate * x) * (1 - know[n])),
     trueD = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0),
     pRec = (n, d, single = true) => sig(logit(know[n]) + pi - d - (single ? RATED.SINGLE : 0)),
@@ -438,7 +456,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       const L = judgePhotos(ctx, G, n);
       return L.length ? L.reduce((t, p) => t + pRec(n, trueD(n, p)), 0) / L.length : null;
     },
-    UA = [...slate, ...U.extra, ...(U.sp || [])],
+    UA = [...slate, ...U.extra, ...(U.sp || []), ...(U.ssp || [])],
     kindOf = U.kind,
     KINDS = [...new Set(UA.map(kindOf))],
     mean = A => (A.length ? A.reduce((a, x) => a + x, 0) / A.length : null);
@@ -460,7 +478,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   const qs = {exam: 0, held: 0, heldOk: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
-    const sl = list.filter(n => !U.extra.includes(n) && !(U.sp || []).includes(n)),
+    const sl = list.filter(n => !U.extra.includes(n) && !(U.sp || []).includes(n) && !(U.ssp || []).includes(n)),
       want = M.INTRO.START - sl.filter(M.introduced).length,
       L = [],
       met = n => M.introduced(n) || L.includes(n);

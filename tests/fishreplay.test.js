@@ -34,13 +34,12 @@ test("treeReplayGen: the app's fish units, their look-alikes and family lines, f
   const X = ctx.treeGenera(C.treeGen(F, C.treePhotos(PH.photos, GM.photos, CUR), PH.sheet), F),
     // a species unit with the unit it starts from (its family: core.js abilityOf from)
     want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam, ...(g.from ? {from: g.from} : {})}])),
-    all = C.treeReplayGen(F),
-    // the species by their scientific names (sci:) are the sheet's ahead of the app's units (SCI_SHEET; their app PR
-    // makes the app's and compares the whole list again): tests/scisheet.test.js checks them
-    got = Object.fromEntries(Object.entries(all).filter(([id]) => C.levelOf(id) !== 'sci'));
+    // the species by their scientific names (sci:) too: the app's units (app.js treeGenera X.ssl) are the sheet's
+    got = C.treeReplayGen(F);
+  assert.deepStrictEqual(Object.keys(got).sort(), Object.keys(want).sort());
   assert.deepStrictEqual(JSON.parse(JSON.stringify(got)), JSON.parse(JSON.stringify(want)));
-  assert.ok(Object.keys(all).some(id => C.levelOf(id) === 'sci'));
-  assert.ok(['g:', 'f:', 's:'].every(p => Object.keys(got).some(id => id.startsWith(p))));
+  assert.ok(Object.keys(got).some(id => C.levelOf(id) === 'sci'));
+  assert.ok(['g:', 'f:', 's:', 'sci:'].every(p => Object.keys(got).some(id => id.startsWith(p))));
   assert.strictEqual(got['s:s091'].from, 'f:Damselfishes');
 });
 
@@ -88,16 +87,22 @@ test("treeReplayGen at the genus: the app's sea slug units, from seaslug.json al
   const S = C.subjectOf('seaslug'),
     SF = json('seaslug.json'),
     SG = C.treeGameRead(json('seaslug-game.json')),
-    X = ctx.treeGenera(C.treeGen(SF, C.treePhotos(undefined, SG.photos, CUR.seaslug), undefined, C.unitRankOf(S)), SF),
-    want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam}])),
-    all = S.replayed.gen(SF),
-    // the species by their scientific names (sci:), ahead of the app's units (SCI_SHEET; tests/scisheet.test.js)
-    got = Object.fromEntries(Object.entries(all).filter(([id]) => C.levelOf(id) !== 'sci'));
+    // its own name kinds (SUBJECTS names: scientific names only)
+    X = ctx.treeGenera(
+      Object.assign(C.treeGen(SF, C.treePhotos(undefined, SG.photos, CUR.seaslug), undefined, C.unitRankOf(S)), {kinds: S.names}),
+      SF
+    ),
+    want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam, ...(g.from ? {from: g.from} : {})}])),
+    // the species by their scientific names (sci:) too: the app's (X.ssl) are the sheet's
+    got = S.replayed.gen(SF);
+  assert.deepStrictEqual(Object.keys(got).sort(), Object.keys(want).sort());
   assert.deepStrictEqual(JSON.parse(JSON.stringify(got)), JSON.parse(JSON.stringify(want)));
   const genera = Object.keys(got).filter(id => id.startsWith('g:'));
   assert.strictEqual(genera.length, SF.genera.length);
   assert.ok(got['g:Chromodoris'].look.includes('g:Hypselodoris'), 'a sibling genus is a look-alike');
-  assert.ok(!Object.keys(got).some(id => id.startsWith('s:')), 'no species unit');
+  assert.ok(!Object.keys(got).some(id => id.startsWith('s:')), 'no common-name species unit');
+  assert.strictEqual(X.ssl.length, SF.species.length, 'every sea slug species by its scientific name');
+  assert.ok(X.gen['sci:xgoniobranchussp5'] && X.gen['sci:xgoniobranchussp5'].parent === 'g:Goniobranchus');
   // its file named, its pool's first too (Code.gs subjFile_), its board from the version that replays it
   assert.strictEqual(S.replayed.file, 'seaslug.json');
   assert.strictEqual(S.pool.files[0], S.replayed.file);

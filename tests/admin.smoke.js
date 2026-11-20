@@ -7009,7 +7009,7 @@ async function loadPart(b, base, fails) {
           !hf.fams.every(t => /^\d+\. \S/.test(t)) ||
           String(hf.sum) !== hf.mix ||
           !hf.sum ||
-          hf.links ||
+          !hf.links || // a cell links to the pair's Compare page on the site, now that the fish have it (Q437)
           hf.ids.length ||
           hf.wide > 0
         )

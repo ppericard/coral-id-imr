@@ -510,7 +510,8 @@ achievement as one in the Duel tab or a right Again does (`core.js` `contrastQ`)
 ### Find the X slipped into the fish quiz
 
 One name, four photos: the player taps the one that shows it. Only for a subject whose units have tiles (the fish's
-square crops around the fish, `UNITS` tiles; none for the corals) and only on units of the subject's own rank
+square crops around the fish, `UNITS` tiles; none for the corals; the sea slugs declare the same `tiles` and will play it
+once their photos carry the animal's box, Q437) and only on units of the subject's own rank
 (`quiz.js` `planFind`). It takes the contrast slot: the chance `FIND.P` (0.05), spaced as the contrast questions,
 never with a card, in a comeback or with a mix-up queued. The unit and its three others are met and ready, the
 look-alikes first (`model.js` `distractors` with every trap); each photo drawn as the quiz draws a unit's, among its
@@ -806,6 +807,19 @@ one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`), 
 the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
 tops out at 95%. On only once the sheet replays the species units (`sync.js` `SPECIES_SHEET`, rule D4).
 
+### Species by their scientific names (step 2)
+
+The fish and the sea slugs (`core.js` `SUBJECTS` `names`; docs/reviews/2026-11-18-species-step2-plan.md): one unit per
+species by its scientific name (`sci:s091`), a tree of its own beside the common names' (Pierre, 2026-11-18: "2 arbres
+pédagogiques indépendants"). It hangs from its genus (Q397): for each genus in play at Advanced, its species met and the
+next one in the genus's order open (`app.js` `sciPlay`), within the rank share at the genus level; a genus out of play
+brings none, their bars kept (Q402 A). A species never answered starts from its genus's ability; no exam yet (`noex`, Q395
+comes later). A question's choices and typed names stay among the scientific names (`app.js` `kindRank`). The display
+schedule on the unit's own bar: the common name under each scientific name below Open Water, the share of scientific
+names alone rising from 0 to 1 up to Advanced, then alone; typed, the usual typed share (`app.js` `sciShow`; starting
+values). Typed, the species' own common name or its genus alone is a smaller fault (Q394 A: `app.js` `sciPart`, `core.js`
+`PART`), never a gain. On only once the sheet replays them (`sync.js` `SCI_SHEET`, rule D4), both subjects.
+
 ### The rank share
 
 A unit that hangs from another (its record's `parent`: a fish genus or species from its family) may open and be asked,
@@ -846,8 +860,10 @@ own rules versions (`core.js` `FISH_RVS`), so a fish change never replays the co
 ### Fish achievements, around the global score
 
 Learning milestones only, never time (rule L8), in each subject's own list (`core.js` `FISH_ACH`, `SEASLUG_ACH`; the
-corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 60%,
-the scientific genera, the species named by their common names. Only those that rest on learned marks (`core.js`
+corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 70%,
+the scientific genera, the species named by their common names, and by their scientific names (fspsci1 "Binomial";
+fboth25 "Bilingual", 25 species by both names; fdauin20 "Local legend", Dauin's top 20 of circle 1, Q261; at Advanced,
+Q262). Still to come: fpct100 (with the ultimate exam, Q395) and fbasics. Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
 their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
 
@@ -1213,7 +1229,7 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
   split into several checks, or Pierre decides otherwise (a constant, `MAX_MIN`).
 - **A budget is per run; a paired check is two runs.** Before and after each get their own 40 minutes: on this machine
   an agent running both arms for one check gives each `--budget 20` so that the check's total stays within the cap. The
-  workflow does not yet (ROADMAP "learncheck.yml under the 40-minute cap").
+  workflow does it itself: one deadline for the whole check ("On a GitHub runner").
 
 **Progressive, with valid statistics.** A large expected effect needs no high sensitivity: a check starts with the
 level's fewest seeds and adds seeds only when a result lands near a margin (unclear), by the rule declared before
@@ -1253,7 +1269,7 @@ looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (
 - Not in the rated world: the Again after a miss, the duels slipped into the quiz, the comeback and breaks, the
   surprise cards.
 - `tools/learncmp.js` has the primary's sign-flip test, the guardrails' paired bounds and Holm over the profiles; the
-  level 3 tests (Dunnett, TOST) are not in it. It reads a file cut by the budget and says so ("The cap" above).
+  level 3 tests (Dunnett, TOST) are not in it. It reads a file cut by the budget and says so ("The cap" above); for an arm cut before any run finished (no run, only `cut`: the file the tool writes, or the workflow's stub) it reads no primary, whatever its kind (population ones included), and says it was not read.
 
 **The two worlds.**
 
@@ -1434,16 +1450,26 @@ right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the one
 
 **On a GitHub runner** (the checks too long for the shared machine, level 3 among them, which also needs Pierre's go):
 Actions › "Learning check (tier 2)" › Run workflow (`.github/workflows/learncheck.yml`, manual dispatch only; the job's
-limit is 6 hours). **The workflow does not yet carry the cap or the go** (ROADMAP "learncheck.yml under the 40-minute
-cap"): it passes no `--budget` and checks no go, so each learnsim run keeps the tool's own 40-minute budget (a paired check
-is two to four runs), and `--pierre-go` can only come through `args`, to each arm alike; until it is aligned, start a
-level-3 check only with Pierre's go. With the version with the change (`after`: its branch), the one to compare it with (`before`, `main`
-by default), the subject, the world (`both`, `app` or `rated`), the seeds, the questions (app world) and
-answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only) and the world it is read in when both run
-(`primary_world`; the other world reports its guardrails), the looks and
-any other learnsim option (`--profiles beginner,expert --dist tail`; `--budget MIN` can go here). It runs learnsim on both versions with the same
-seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its report in the run's summary;
-it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
+limit is 90 minutes: the setup, the 40 of compute, the report). **The workflow carries the cap and the go itself**, not
+left to the compared checkouts (rule L11; Pierre, Q405 and Q415): a check is 40 minutes of compute **in total**, however
+many runs (two arms, one or both worlds: two or four runs). One deadline is set before the first run; each run gets
+the equal share of it (10 minutes a run with both worlds, 20 with one) or the `budget` input (minutes per run, `runs x
+budget` at most 40, refused otherwise), less where the deadline is nearer; learnsim's `--budget` stops a minute before
+the hard limit, and `timeout` ends the run at that limit whatever its checkout does (an older `before` ignores
+`--budget`), never past the deadline. A run that leaves no file (killed, or cut before its first job) gets a stub marked
+cut with no runs, which `tools/learncmp.js` reads: it compares what exists and says the primary was not read, never
+reading the cut as no effect. A run that overruns takes the next one's time, never the cap. Under 2 minutes left, the
+run is not started. A check that does not fit (the defaults, fish in both worlds, are an hour) is split, one world at a
+time, or narrowed, never lowered below the figures above. **Level 3** (over 20 seeds, or over 10,000 answers when the
+rated world runs) needs `pierre_go`, the reference of Pierre's go (a Q number or message, and the date): the first step
+refuses without it, before either checkout is read, and `args` cannot carry `--seeds`, `--questions`, `--budget`,
+`--per-job`, `--pierre-go`, `--world`, `--subject` or `--out`. With the version with the change (`after`: its branch),
+the one to compare it with (`before`, `main` by default), the subject, the world (`both`, `app` or `rated`), the seeds,
+the questions (app world) and answers (rated world), the primary declared before running (`hard@300:down`, empty for
+guardrails only) and the world it is read in when both run (`primary_world`; the other world reports its guardrails),
+the looks, the budget, the go and any other learnsim option (`--profiles beginner,expert --dist tail`). It runs learnsim
+on both versions with the same seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its
+report in the run's summary; it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
 -f primary=hard@300:down`. Inputs are checked against narrow patterns before any command reads them.
 
 **Figures.** The anchor's figures and the speeds measured, **The score's shape** (the fish global score in the rated

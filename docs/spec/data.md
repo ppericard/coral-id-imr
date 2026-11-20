@@ -235,7 +235,7 @@ pass judges quality and crop from.
   is not drawn until the tool is run again (`--check` says when).
 - The quiz tier loads it (`app.js` `tier2json` → `model.js` `CALSET`, `setBonus`; `tests/calibset.test.js`).
 
-## Presence of coral species (`presence.json`)
+## Presence of coral species (`data/presence.json`)
 
 The presence rule (rule C8, `tools/presence.py`) applied to every coral species named on a photo (game, sheet and Key
 photos, candidates): `python3 tools/coral_presence.py [--offline | --refresh]` writes `data/presence.json` =
