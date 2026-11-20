@@ -30,8 +30,8 @@ decided, item 6b):
 - The fish auto-sort of an admin who opened on a Players page waits for the first page that is not a Players one (the
   same line `suggest.json` already follows, `sugOwn`); opened on any other page it runs at idle as before. Its output
   is the same. As a fact of behaviour: a visit that stays on Players never reads `fish-cand.json`, and its Publish sends
-  the fish proposals only once a page past Players has run the auto-sort (rule A1's "at each admin load" is not edited;
-  how it reads this is the integrator's).
+  the fish proposals only once a page past Players has run the auto-sort. Rule A1 says the auto-sort runs "at each admin
+  load"; its text is not edited here, and this record states the timing without reading A1's words against it.
 - **Not built: the data files' revalidation in one call.** Measured on a repeat visit with the HTTP cache on (the harness
   without Playwright's interception, which turns the cache off; one run per tree), the server answered 304 to the 10 data
   files and `admin.html` (300 bytes each on the wire), all done within 0.64 s of their start (the harness's HTTP/1.1
@@ -43,7 +43,8 @@ decided, item 6b):
 
 Measured as in the earlier record (Chromium, phone profile 390 px, CPU x4, 1.6 Mbps, 150 ms, gzip, cold, the real admin in
 its token mode with GitHub and the sheet served by the harness from the demo's replies, a made-up log of 38,712 answers),
-`origin/main` at a3e7310ae and this branch merged with it, two batches of 3 runs in opposite orders (medians; the two
+`origin/main` at a3e7310ae and this branch merged with it (main's later commits, to 15460f6ff, touch no admin file nor
+`core.js`, so the figures stand), two batches of 3 runs in opposite orders (medians; the two
 batches' figures). Read them as an order of magnitude, not the phone's.
 
 | Opening on Activity, cold | before | after |
