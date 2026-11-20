@@ -25,7 +25,7 @@ Sheets connector with `tools/report_image.js`.
 
 ## Consequences
 
-- `sync.js`: `reportDialog` offers the input from script vNEXT (`REPIMG_SHEET`, rule D4); `repImgReduce` re-encodes
+- `sync.js`: `reportDialog` offers the input from script v212 (`REPIMG_SHEET`, rule D4); `repImgReduce` re-encodes
   on a canvas (EXIF and GPS dropped); `repBatch` sends a report with a picture alone in its request.
 - `Code.gs`: `logReports_` keeps an `img` in the `Report images` tab, the Reports tab gets a last `Image` column (a new
   column at the end, the tab's layout rule), refusals leave the report logged; an image never outlives its report

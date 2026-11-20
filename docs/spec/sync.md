@@ -54,7 +54,7 @@ record in a new tab.
 | `By genus` | The corals' progress per player and genus, written from each save's summary; its header row is the list of genera the corals' leaderboard counts |
 | `Answers` | One row per answer (below) |
 | `Activity` | A QUERY per player over the Answers tab; it counts every subject's answers |
-| `Reports` | One row per report or feedback: time, reporter, verified, reason, expected, answered, suggested genus, note, mode (game, photo, sheet or page), photos, where, id, image (the report's id when a picture is attached, else empty; from vNEXT) |
+| `Reports` | One row per report or feedback: time, reporter, verified, reason, expected, answered, suggested genus, note, mode (game, photo, sheet or page), photos, where, id, image (the report's id when a picture is attached, else empty; from v212) |
 | `Report images` | One row per picture a player attached to a report (below): id, time, player, type, bytes, the image in base64 chunks |
 | `Events` | The app's events (below) |
 | `Pages` | The pages-opened summaries, same columns as Events (below) |
@@ -238,7 +238,7 @@ block it for 10 minutes (`wait`), and answers are logged before the progress is 
 ## Report images
 
 A screenshot or photo attached to a report (Pierre, 2026-11-21, Q446; [decision](../decisions/2026-11-21-report-image.md)).
-Gate: the app offers it from script vNEXT (`sync.js` `REPIMG_SHEET`, rule D4).
+Gate: the app offers it from script v212 (`sync.js` `REPIMG_SHEET`, rule D4).
 
 - **The app** (`sync.js` `repImgReduce`): the player picks a file in the report dialog; a canvas re-encodes it to a JPEG
   of at most 800 px on the long side, quality 0.6 (smaller steps if it is still over 180 kB), which drops the EXIF and

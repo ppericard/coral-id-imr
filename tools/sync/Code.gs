@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 211 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 212 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 211;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 212;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -1511,7 +1511,7 @@ function statsFoldRun_(log){
 // from an enlarged photo, a genus sheet or any page (Mode = game, photo, sheet or page; Where = the page).
 // One row per report in the "Reports" tab. The reporter is the sync name when its code matches ("Verified" 1),
 // else the name typed or nothing ("Verified" 0). Nothing here changes the photos: Pierre decides in the admin Triage.
-// The last column, Image (from vNEXT), holds the report's image key (its id) when a screenshot or photo is attached
+// The last column, Image (from v212), holds the report's image key (its id) when a screenshot or photo is attached
 // in the "Report images" tab (repImgPut_), else nothing; a Reports tab made before it gets the header at the first image.
 const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Where', 'Id', 'Image'];
 const REP_ID = REP.indexOf('Id'), REP_IMG = REP.indexOf('Image');
