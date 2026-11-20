@@ -766,6 +766,53 @@ async function lookAlikes(b, base, errs) {
   await c.close();
   return fails.map(m => `look-alikes: ${m}`);
 }
+// (19) Memory (proto/pairs.js, Practice › Memory) on the fish: ten families with two observations unlocked, the photos stubbed;
+// tests/memory.check.js plays the games at 390 and 1280 px (each family twice on the board as two photos of two observations,
+// nothing named before the pair, a wrong pair turned back, the end, one screen, no progress, log or answer count changes).
+async function memoryGame(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-mem')) {
+        sessionStorage.setItem('fish-mem', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 777;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`memory: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  const n = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => new Set(gamePics(n, 'wide').map(p => p.o || p.f)).size >= 2)
+      .slice(0, 10);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (n < 6) return [`memory: ${n} fish families with two observations`];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./memory.check.js')(q, w, fails, 'fish', 3);
+  }
+  await c.close();
+  return fails.map(m => `memory: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -3791,6 +3838,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
   // (18) The Look-alikes deck and Compare: lookAlikes, above.
   const la = run.has('main') ? await lookAlikes(b, base, errs) : [];
+  // (19) Memory: memoryGame, above.
+  const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
@@ -4135,6 +4184,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...lg,
     ...cqz,
     ...la,
+    ...mem,
     ...cold,
     ...grp,
     ...all,

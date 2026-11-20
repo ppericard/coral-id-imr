@@ -1,7 +1,7 @@
 # Corals: no Coral Finder book crop (the crops of the Coral Finder 2022 book, (c) R. Kelley / BYOGUIDES, stay out of
 # the app and the repository; rule in docs/rules/photos.md). Takes out of data.json every genus's "book" list (the
 # crops, extracted by tools/archive/coral_finder_book/) and the Coral ID Key boxes' "ph" (the crops picked as box
-# pictures, drawings instead: proto/idkey.js BOXART), and any book crop left among the candidates (data.json and cand.json).
+# pictures, drawings instead: proto/idkey.js BOXART), and any book crop left among the candidates (data.json and data/cand.json).
 # The page citations ("Coral Finder p. N": key leaves "a"/"b", gen "pages"), facts and look-alike sources stay.
 # curation.json is never touched (rule A1): its references to crops match no photo and are dropped by the code.
 # Re-runnable: a second run changes nothing. tests/nobook.test.js guards that nothing comes back.

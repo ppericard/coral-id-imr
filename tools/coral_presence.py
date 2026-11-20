@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""presence.json: whether each coral species named on a photo (game photos, Key photos, candidates) is confirmed in the
+"""data/presence.json: whether each coral species named on a photo (game photos, Key photos, candidates) is confirmed in the
 Philippines by the presence rule (tools/presence.py, rule C8; Pierre, 2026-11-04). The admin reads it to flag
 a photo taken abroad (loc world) of a species not confirmed here as "out of rule" (core.js outOfRule): flagged, never
 removed automatically; Pierre decides. Computed once here, not in each admin session (rule L12).
 
-presence.json = {v, date, sp: {species name (as iNaturalist writes it on the photo, t): {ok, by, rg, chk}}}: ok =
+data/presence.json = {v, date, sp: {species name (as iNaturalist writes it on the photo, t): {ok, by, rg, chk}}}: ok =
 confirmed, by = the rule's reasons (observers, checklist, near), rg = Research Grade observations in the Philippines, chk =
 Corals of the World lists it for a Philippine ecoregion. One species per line.
 
@@ -28,7 +28,7 @@ import inat  # noqa: E402  (the one paced, retried iNaturalist client)
 from presence import listed, species_presence_many  # noqa: E402
 from taxonomy import inat_taxon  # noqa: E402  (the iNaturalist taxon of each genus, tools/taxonomy.json)
 
-OUT = ROOT / "presence.json"
+OUT = ROOT / "data/presence.json"
 CACHE = ROOT / "tools" / ".cache" / "presence.json"
 
 

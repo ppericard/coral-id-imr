@@ -1,8 +1,8 @@
-"""excluded.json (tools/excluded.py), from git history. Needs the history (in a shallow clone:
+"""data/excluded.json (tools/excluded.py), from git history. Needs the history (in a shallow clone:
 git fetch --filter=blob:none --unshallow origin; the Candidate photos workflow checks out with fetch-depth 0, blob:none).
 
     python3 tools/apply_excluded_archive.py           # seed: every photo curation.json excludes that data.json and
-                                                       # cand.json no longer hold gets its last record in history, with its
+                                                       # data/cand.json no longer hold gets its last record in history, with its
                                                        # place, so that Pierre's Restore brings it back (fetch_local.py tidy)
     python3 tools/apply_excluded_archive.py --files   # the image file of every archived photo Pierre restored that has no
                                                        # online original (an IMR lecture photo: git is its only backup, and its
@@ -35,11 +35,12 @@ def seed():
     gone = load_gone()
     have = {p.get('f') for _, L in _lists(load_all()) for p in L}
     want = {f for f in EX if f not in have and f not in gone}
-    revs = git('log', '--format=%H', '--', 'data.json', 'cand.json').stdout.split()
+    # cand.json lived at the root until it moved into data/: older revisions hold it there
+    revs = git('log', '--format=%H', '--', 'data.json', 'cand.json', 'data/cand.json').stdout.split()
     for rev in revs:  # newest first: each photo's last record
         if not want: break
         d = show(rev, 'data.json') or {}
-        c = (show(rev, 'cand.json') or {}).get('cand') or {}
+        c = (show(rev, 'data/cand.json') or show(rev, 'cand.json') or {}).get('cand') or {}
         for g, L in c.items():
             d.setdefault('cand', {}).setdefault(g, []).extend(L)
         for at, L in _lists(d):
@@ -48,7 +49,7 @@ def seed():
                     gone[p['f']] = {**at, 'i': i, 'p': p}
                     want.discard(p['f'])
     save_gone(gone)
-    print(f'excluded.json: {len(gone)} photos kept; not found in the history: {sorted(want) or "none"}')
+    print(f'data/excluded.json: {len(gone)} photos kept; not found in the history: {sorted(want) or "none"}')
 
 
 def files():
@@ -64,7 +65,7 @@ def files():
                 with open(os.path.join(IMG, f + suf + '.webp'), 'wb') as fh: fh.write(blob.stdout)
                 print('back from git history:', path)
         if not files_ok(r['p']):
-            print(f'{f}: restored, but its file is not in the history: it stays in excluded.json', file=sys.stderr)
+            print(f'{f}: restored, but its file is not in the history: it stays in data/excluded.json', file=sys.stderr)
 
 
 if __name__ == '__main__':
