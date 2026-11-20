@@ -120,7 +120,13 @@ test('headfind: a bot finding on the head with no reply and no resolved thread, 
   const iss = [
     {id: 10, user: bot, body: "Codex Review: Didn't find any major issues (security ok)", created_at: '2026-11-20T10:00:00Z'},
     {id: 11, user: bot, body: 'A security alert: secret found', created_at: '2026-11-20T10:05:00Z'},
-    {id: 12, user: bot, body: 'secret scanning alert, old head', created_at: '2026-11-20T08:00:00Z'}
+    {id: 12, user: bot, body: 'secret scanning alert, old head', created_at: '2026-11-20T08:00:00Z'},
+    {
+      id: 14,
+      user: bot,
+      body: '<!-- codex-pull-request-review-summary -->\n| Security Review | Completed |',
+      created_at: '2026-11-20T10:06:00Z'
+    }
   ];
   tmp(d => {
     const w = (n, pages) => {
@@ -163,6 +169,9 @@ test('nightq skips a PR with unanswered head findings and passes the queue repos
   assert.match(p, /gh api --paginate "\$R\/issues\/\$n\/comments\?per_page=100"/);
   assert.match(p, /gh api --paginate "\$R\/pulls\/\$n\/comments\?per_page=100"/);
   assert.match(p, /unanswered@head: \$\{un:-\?\}/);
+  // fails closed: a page, the threads or the head's date that could not be read leaves "?", which nightq.sh skips
+  assert.strictEqual((p.match(/\|\| ok=0/g) || []).length, 5);
+  assert.match(p, /un="\?"\n\s*if \[ \$ok = 1 \]/);
 });
 
 test("no queue script runs the PR's own tools: main's copy through trusted_root (P1 security)", () => {
@@ -202,15 +211,17 @@ test("trusted_root: main's code runs on the PR's data, and its writes land in th
     w('tools/probe.py', probe('PR'));
     w('tools/data.txt', 'PR data');
     w('extra.txt', 'new');
+    w('tools/sneaky.so', 'x'); // anything Python could import is never linked as data
+    w('tools/sneaky.pyc', 'x');
     g('add', '-A');
     const script = path.join(d, 'run.sh');
     fs.writeFileSync(
       script,
-      `. "${path.join(DIR, 'lib.sh')}"\ncd "${d}" || exit 1\nneed_trusted\npython3 -E "$T/tools/probe.py"\ncat "$T/extra.txt"\n`
+      `. "${path.join(DIR, 'lib.sh')}"\ncd "${d}" || exit 1\nneed_trusted\npython3 -E "$T/tools/probe.py"\ncat "$T/extra.txt"\nls "$T/tools" | tr '\\n' ' '\n`
     );
     const r = spawnSync('bash', [script], {encoding: 'utf8', env: {...process.env, QUEUE_DIR: path.join(d, 'qd'), REPO_DIR: d}});
     assert.strictEqual(r.status, 0, r.stderr);
-    assert.strictEqual(r.stdout, 'main\nPR data\nnew');
+    assert.strictEqual(r.stdout, 'main\nPR data\nnewdata.txt probe.py ');
     assert.strictEqual(fs.readFileSync(path.join(d, 'out.txt'), 'utf8'), 'written by main');
     assert.deepStrictEqual(fs.readdirSync(path.join(d, 'qd')), [], 'the shadow root is removed on exit');
   });

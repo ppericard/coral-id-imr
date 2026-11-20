@@ -11,7 +11,9 @@ import re
 import sys
 
 SECURITY = re.compile(r'security|secret|vulnerab|codeql|alert', re.I)
-RECEIPT = re.compile(r'Codex Review:')
+# Codex's own receipt and its review summary table (which always says "Security Review"): its findings are inline
+# review comments, counted above
+RECEIPT = re.compile(r'Codex Review:|codex-pull-request-review-summary|codex-review-receipt')
 
 
 def pages(path):

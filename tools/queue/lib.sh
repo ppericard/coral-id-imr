@@ -17,7 +17,8 @@ fi
 # trusted_root WT: print a shadow root on which to run origin/main's reviewed tools over the PR checkout WT (an absolute
 # path). A PR's own tools/*.py must never run with the queue's credentials (security review of #1315), the way the
 # session hooks run main's tools/brief.py. tools/ is main's tree; every other top-level entry, and every data file
-# under tools/ (not .py, .sh, .js), is a link to WT's, so a tool reads and writes the PR's data, never its code.
+# under tools/ (.json .md .gs .txt .tsv only: a new kind of data is not linked until added here), is a link to WT's, so a
+# tool reads and writes the PR's data, never its code.
 # Run its scripts as python3 -E "$T/tools/X.py" (a script run by path puts only its own folder on sys.path, never the
 # cwd; -I would drop that folder too). Remove it with rm -rf (links are unlinked, never followed).
 trusted_root() {
@@ -31,10 +32,11 @@ trusted_root() {
     [ "$p" = tools ] || ln -sfn "$wt/$p" "$t/$p"
   done < <(git -C "$wt" ls-files | cut -d/ -f1 | sort -u)
   while IFS= read -r -d '' p; do
-    case "$p" in *.py|*.sh|*.js|*.mjs|*.cjs) continue;; esac
+    case "$p" in *.json|*.md|*.gs|*.txt|*.tsv) ;; *) continue;; esac  # data only: never anything Python can import (.pyc, .so)
     mkdir -p "$t/$(dirname "$p")"
     ln -sfn "$wt/$p" "$t/$p"
   done < <(git -C "$wt" ls-files -z -- tools)
+  [ -d "$wt/tools/.cache" ] && ln -sfn "$wt/tools/.cache" "$t/tools/.cache"  # build_fish's cache of fetched pages (untracked)
   echo "$t"
 }
 # need_trusted: set T to the trusted root of the current directory (a PR checkout) once, removed when the script exits.
