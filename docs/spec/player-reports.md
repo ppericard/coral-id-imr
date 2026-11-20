@@ -10,8 +10,8 @@ report. The admin's To do, where reports are listed with the other items, is
 ## Sending a report (`sync.js`)
 
 - **In every game** (the Quiz, the Custom quiz, the Look-alike duels, Memory, Reveal), once the answer is out, the
-  feedback shows a discreet "⚑ Report a problem" (`repBtn()`; Lab games call it if present; in the quiz it sits at the
-  end of the More panel of the short feedback sheet, one tap after the answer).
+  feedback shows a discreet "⚑ Report a problem" (`repBtn()`; Lab games call it if present; in the quiz and the Lab's
+  photo games it is a line of its own on the short feedback sheet, under the decisive line, never behind More).
 - **Elsewhere**: "⚑ Report" in the caption of any enlarged photo (the lightbox, not while a game hides the answer),
   "⚑ Report a problem with this sheet" at the bottom of a sheet, and "Send feedback" at the end of the ? help of every
   page and on About and credits.

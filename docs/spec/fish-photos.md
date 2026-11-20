@@ -313,6 +313,15 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   while its species has room, else it waits as a candidate (code `b` alone). Undo sets it aside again (`-b`). His own
   Reject of a photo the run had set aside (left waiting by a Not this taken back) marks its code `-r`, so it is never
   taken for the run's (`fishReject`).
+- **The route out** (Pierre, 2026-11-19 20:57; rule A1; `sortOut`): a photo the run put in leaves play, in his draft, when
+  a judgement made since is a sure rejection (a near-duplicate, the subject unclear, other species one could take for it,
+  out of the water: `fishSure`). Only the run's own add or brought-back add (`a`, `b`: not a Check, not undone, no `@t`)
+  whose code lists the tags (`t`: still the run's copy), still its add in that species, not rejected, excluded or moved
+  with Not this, never one he answered Keep mine (`kept`), judged on or after the add's day (`passAt`). No new log letter:
+  the add and the fields its code lists leave (as `fishUndo` does; maps stay `{}` for the Publish merge), the photo is
+  set aside and its code becomes the run's plain reject `r`, so one Undo (`-r`) leaves it waiting as a candidate and a
+  later sure add brings it back by the route back. The room it frees is filled at the next load. Toast: "taken out by a
+  newer judgement". The build does not read it: until Publish the photo stays in play as it was.
 - **Proposals and his own decisions** (Pierre, 2026-11-19 20:57 and 20:59): what the log marks as the auto-sort's is a
   proposal he let through, and a newer judgement replaces it in the game, his own decisions keeping priority. The build
   reads the curation that way (`tools/fish_game.py` `read_cur`, from `inputs`; the players' copy too, `tools/curplay.py`),
@@ -320,13 +329,17 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   is a sure add (tags and phase as the auto-sort copies them, `copy_of`; a crop the pass no longer gives leaves), unless
   he answered its re-judge proposal Keep mine (`kept`); and, while he never corrected it (no `@t`), on a sure judgement
   made on or after its day, a photo it set aside is in play again (as the route back). A newer sure rejection of a photo
-  it put in stays a proposal: in play, its copy as it was. Tags read anew bring the judge's crop when the photo has
+  it put in stays a proposal: in play, its copy as it was, until the admin's route out puts it in his draft. Tags read anew bring the judge's crop when the photo has
   none (the crop goes with the code); his phase choice (No phase included) stops the source's juvenile flag; a photo he
   moved with Not this is his, skipped whole; an Undo of `b` on such a photo leaves it where he put it. A value with no log is his, or cannot be told from his,
-  and stands. The admin's own pages still show the draft's copies (ROADMAP "Fish photo judging, next"), but for whether
-  a photo is a juvenile (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy
-  (`autosort.js` `fishJuv`), as the app does: his ★ cover on a photo a newer judgement calls a juvenile waits for his
-  confirmation in both.
+  and stands. **The admin's pages read the same way** (`autosort.js` `sortReads`, `sortView`, held to `read_cur` by
+  `tests/readcur.test.js`, on the same photos and fields): the tile, the family, coverage and pairs pages and the review
+  and Candidates rows read a photo's tags, ease, phase and crop from a view of the draft where the fields read anew are
+  left out, so the pass's value shows (dashed, as the pass's guess); the writers, the agreement, the Light proposals (made
+  against the stored copy) and Publish read the draft itself, never the view (rule A1). For whether a photo is a juvenile
+  (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy (`autosort.js` `fishJuv`), as
+  the app does: his ★ cover on a photo a newer judgement calls a juvenile waits for his confirmation in both. The
+  corals' proposals are not read anew, by the game or by the admin (ROADMAP "Fish photo judging, next").
 
 ## The Fish Candidates page
 

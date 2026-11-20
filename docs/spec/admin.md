@@ -155,8 +155,12 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   pages and the tiles still read each side's own state (the study's steps 6-8);
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
-  set aside reading the pass's date of each candidate (`passAt`: `suggest.json` `by`, through the key of its
-  candidate list, `fishLoad` `key`); its Auto details label each decision in, back in (log `b`) or set aside;
+  set aside and its route out of one it put in (`sortBack`, `sortOut`) reading the pass's date of each candidate
+  (`passAt`: `suggest.json` `by`, through the key of its candidate list, `fishLoad` `key`); its Auto details label each
+  decision in, back in (log `b`) or set aside (a photo taken out is logged as a plain reject); the tile, family, coverage,
+  pairs and review pages and the Candidates rows read a photo's tags, ease, phase and crop through `readView` (`autosort.js`
+  `sortView`: what the auto-sort wrote that the pass has judged anew since is left out, so the pass's value shows, as the
+  game plays it), the writers never (rule A1);
 - `tags`, for every tree subject (the fish, the sea slugs), its whole rubric, declared and never defaulted: the seven
   positions of a photo's tag code (`names` and, by position, `[value, label, words, more]`), the flags and the phase row;
   `core.js` `treeRubric` writes down what the tree subjects share once (the whole, colour loss, clarity, size and count
