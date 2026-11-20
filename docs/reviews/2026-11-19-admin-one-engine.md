@@ -248,6 +248,28 @@ green checks; refactors of this size probably run longer.
    included); the fish's and the sea slugs' toggles and skipped candidates, one set for both before, are one set each.
 6. **One band review** (Dup-4 + Dup-5; admin L). Adds `admin.review` (the axes); the growth-form axis is the corals'
    named hook.
+   **Done** (spec/admin-photos.md "Photo review", spec/admin.md "Each subject's admin part", `tests/reviewbuild.test.js`):
+   `admin.js` `renderReview(S, id)` draws every subject's band page (the loading gate, the bar, the bands and their
+   tiles, the zoom and the ×, the drag to another band, the keys) and `renderDiff(S)` draws By difficulty (the minimum
+   of answers, Hardest | Easiest, "No answers yet"); `REVIEW_BUILD` (`// review build: begin/end`) holds the two
+   builders, picked by the declared shape (`SUBJECTS` `flat`: `treeShape`, `reviewBuild`, as `TREE_BUILD`,
+   `CAND_BUILD`, `reg(S)`), each with the same members (`axes`, `ready`, `load`, `page`, `diff`, listed above it):
+   `flat` (the corals' Quality and Growth form; the sheet's photo ratings) and `tree` (the fish's and the sea slugs'
+   Ease and Phase & framing; the answers alone). **No `admin.review` field in `core.js`** (a sensitive file, rule W27):
+   the axes are the builder's, as step 5's `admin.files.cand` became the shape: the `GROUPS` review views carry an
+   `axis` option and `hasPage` gives a subject the axes of its builder, which also replaces the two `{rank: 'family'}`
+   options of Ease and Phase & framing. The growth-form axis (agreement block, pins, Validate, To classify rows) is the
+   flat builder's named hook, with rule C4 as its reason; the quality and ease scales stay two (§6 c, Pierre's call). No
+   stored key, draft write or browser key changed. Gone: `renderFishReview`, `renderQuality`, `renderForm`,
+   `renderFishDiff`, `FREV`, `frevRow`, `FDIFF_MAX` (7 names; `renderDiff` is now the shared frame), the dispatch's
+   `ASUBJ.sheets` proxy and the help map's. The ratchet: `.sheets` 32 to 30, `rank: 'family'` view option 4 to 2 (the
+   two proposal views keep it) and `DATA.gen` 46 to 45 in `admin.js`. Checked: the demo admin's `#view` HTML of 86
+   states (Quality, Growth form and By difficulty of the corals; Ease, Phase & framing and By difficulty of the fish; the
+   sea slugs' pages; the filters stored, then one or two clicks on a tile) at 390 and 1280 px, before and after:
+   identical but for the shared wrapper section of the fish's pages, the zoom attribute (`data-act="zoom"`) and the drop
+   attribute (`data-drop`, none on a To classify row), which no style or script reads, and the photo's address, which
+   flips between R2 and its online original with the order of the failed image requests of the test (the same
+   in both). Nothing visible changed.
 7. **One montage and one coverage page** (Dup-6, Dup-7; admin M each). The montage also does the Tree tab row's "coral
    Look-alikes page reading the pairs in force".
 8. **One tile** (Dup-8; admin M). It falls out of 3-5.
