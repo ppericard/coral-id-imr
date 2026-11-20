@@ -103,9 +103,10 @@ function simTables(R) {
           const A = r.tr.slice(0, 20).filter(a => typeof a.e === 'number');
           return A.length ? mean(A.map(a => a.ok - a.e)) : 0;
         }),
-        lv = n => X.map(r => (r.tr[n - 1] || r.tr[r.tr.length - 1] || {}).lv).filter(x => typeof x === 'number'),
+        // The level at answer n, over the runs that reached it (a shorter run is left out there, never carried forward).
+        lv = n => X.map(r => (r.tr[n - 1] || {}).lv).filter(x => typeof x === 'number'),
         ms = v => (v.length ? `${mean(v).toFixed(2)} ± ${sd(v).toFixed(2)}` : '-'),
-        inb = n => `${lv(n).filter(x => x >= f && x < ceil).length}/${lv(n).length}`;
+        inb = n => (lv(n).length ? `${lv(n).filter(x => x >= f && x < ceil).length}/${lv(n).length}` : '-');
       out.push(
         `| ${prof} (${truthOf(prof)}) | ${c}${c === truthOf(prof) ? ' (truthful)' : ''} (${fmt('−∞', f)} to ${fmt('∞', ceil)}) | ${ms(s)} | ${AT.map(n => ms(lv(n))).join(' | ')} | ${AT.map(inb).join(' / ')} |`
       );

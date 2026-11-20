@@ -67,3 +67,14 @@ test('the tables: every profile of the runs, the verdict and the prior fit again
   assert.match(row('| casualDiver (new) | know (0.875 to ∞) |'), /2\/2 \/ 2\/2 \/ 2\/2 \|$/);
   assert.ok(L.includes('Wrong answers caught in the right direction: 1/3; cards to truthful answers: 0/2'));
 });
+
+test('a checkpoint a run never reached is left out, never filled with its last level', () => {
+  const short = run('beginner', 0.1);
+  short.early.tr = short.early.tr.slice(0, 20); // a 20-answer run
+  const L = F.simTables([...F.simRuns({runs: [short, run('beginner', 0.1)]}, 'new')]),
+    r = L.find(l => l.startsWith('| beginner (new) | new (truthful) (−∞ to 0.25) |'));
+  // Answer 20: both runs; 40 and 60: the long run only.
+  assert.match(r, /\| 2\/2 \/ 1\/1 \/ 1\/1 \|$/);
+  const only = F.simTables(F.simRuns({runs: [short]}, 'new')).find(l => l.startsWith('| beginner (new) | new (truthful) (−∞ to 0.25) |'));
+  assert.match(only, /\| - \| - \| 1\/1 \/ - \/ - \|$/);
+});
