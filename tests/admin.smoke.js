@@ -5431,8 +5431,9 @@ async function loadPart(b, base, fails) {
           await q.click('[data-uopen="Ana Demo"]');
           const optOff = () =>
             q.evaluate(id => {
-              const o = [...document.querySelectorAll('[data-ugadd="Ana Demo"] option')].find(x => x.value === id);
-              return o ? o.disabled : 'none';
+              const s = document.querySelector('[data-ugadd="Ana Demo"]'),
+                o = s && [...s.options].find(x => x.value === id);
+              return o ? s.disabled || o.disabled : 'none';
             }, fid);
           const nW = (await lockOf()).w.length;
           if ((await optOff()) !== true) fails.push(`${w}px rights groups: last right on its way, the group's option is on in the list`);
@@ -5447,7 +5448,10 @@ async function loadPart(b, base, fails) {
           await q.evaluate(() => window.__w.release());
           await q
             .waitForFunction(
-              id => [...document.querySelectorAll('[data-ugadd="Ana Demo"] option')].some(x => x.value === id && !x.disabled),
+              () => {
+                const s = document.querySelector('[data-ugadd="Ana Demo"]');
+                return s && !s.disabled;
+              },
               fid,
               {timeout: 20000}
             )
@@ -5455,6 +5459,54 @@ async function loadPart(b, base, fails) {
           await calm();
           if ((await optOff()) !== false) fails.push(`${w}px rights groups: last right done, the group's option is still off in the list`);
           await q.click('[data-uopen="Ana Demo"]'); // her bar closed again, for the check below
+          // One Groups write at a time, of any kind: a player added to the empty group Fieldwork (no right, an ordinary
+          // write) on its way, then a first right offered: the control is off, a change dispatched at it sends nothing,
+          // so the player never joins a group that carries rights unasked. When the write and the applied read are in,
+          // the control is on again.
+          await q.evaluate(() => {
+            location.hash = '#players/groups';
+            const W = window.__w;
+            W.writeHold = new Promise(r => (W.release = r));
+          });
+          await q.waitForSelector(`.adm-gcard[data-g="${fid}"] [data-gjoin]`, {timeout: 20000}).catch(() => {});
+          await calm();
+          const nW2 = (await lockOf()).w.length;
+          await q.selectOption(`.adm-gcard[data-g="${fid}"] [data-gjoin]`, {label: 'Dio Demo'});
+          const addOff = () =>
+            q.evaluate(id => {
+              const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+              return s ? s.disabled : 'none';
+            }, fid);
+          if ((await addOff()) !== true) fails.push(`${w}px rights groups: a join on its way, the first right is offered`);
+          await q.evaluate(id => {
+            const s = document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`);
+            s.value = 'players@instance:imr';
+            s.dispatchEvent(new Event('change', {bubbles: true}));
+          }, fid);
+          L = await lockOf();
+          if (L.w.length !== nW2 + 1 || L.max !== 1)
+            fails.push(`${w}px rights groups: a join on its way, a second request ${JSON.stringify({w: L.w.slice(nW2), max: L.max})}`);
+          await q.evaluate(() => window.__w.release());
+          // done: Dio is in, the group has members, so it offers no right (Code.gs 'members'), and its controls are on
+          const xOn = () =>
+            q.evaluate(id => (x => !!x && !x.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-ugout="Dio Demo"]`)), fid);
+          await q
+            .waitForFunction(id => (x => x && !x.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-ugout]`)), fid, {
+              timeout: 20000
+            })
+            .catch(() => {});
+          await calm();
+          g = await page();
+          const F3 = g.cards.find(c => /^Fieldwork/.test(c.n)) || {rights: ['?']};
+          if (!(await xOn()) || F3.rights.length || !/make a new group/.test(F3.none) || (await lockOf()).w.length !== nW2 + 1)
+            fails.push(`${w}px rights groups: a join done ${JSON.stringify({F3, w: (await lockOf()).w.slice(nW2)})}`);
+          await q.click(`.adm-gcard[data-g="${fid}"] [data-ugout="Dio Demo"]`); // Dio out again, for the checks below
+          await q
+            .waitForFunction(id => (s => s && !s.disabled)(document.querySelector(`.adm-gcard[data-g="${id}"] [data-gradd]`)), fid, {
+              timeout: 20000
+            })
+            .catch(() => fails.push(`${w}px rights groups: Dio out, the group never offered a right again`));
+          await calm();
           // The player's bar: the rights group's chip carries the key, a line sums up the rights; a merge asks with the plan
           await q.goto(base + `admin.html?demo&v=${X}#players/list`);
           await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
