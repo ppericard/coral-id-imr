@@ -52,7 +52,7 @@ def world():
               rec("acropora-wide-3", 103, t="Acropora"), rec("acropora-wide-4", 104, t="Acropora"),
               rec("acropora-wide-5", 105, t="Acropora"), rec("acropora-wide-6", 106, t="Acropora"),
               rec("acropora-wide-7", 107, t="Acropora", loc="world"), rec("acropora-wide-8", 108, t="Acropora", skel=1),
-              rec("acropora-wide-9", 109, t="Acropora"), {"f": "imr-lecture-1", "t": "Acropora"}]
+              rec("acropora-wide-9", 109, t="Acropora"), {"f": "lecture-1", "t": "Acropora"}]  # a lecture photo: no observation
     C = {
         101: obs(101, A1),  # Research Grade, species of the genus: passes
         102: obs(102, A, "needs_id", community_taxon_id=acro, identifications_most_agree=True),  # genus-level community ID
