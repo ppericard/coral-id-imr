@@ -14,6 +14,11 @@ const SHEETS_ALL = [
   'Over 300 answers 1 0% 1 0%',
   'All 23 48% 82 48%'
 ].join(' | ');
+// The Analyses views the fish and the sea slugs do not list yet (core.js SUBJECTS admin), the one exception to "no line on
+// what is not there" on their side: Learning › Trajectories (REE-23) waits for the PR that holds core.js (rule W27); the
+// follow-up that lists it there empties this list.
+const NOT_YET = ['Learning › Trajectories'];
+const notYet = (subject, text) => !text || text === `Not for ${subject} yet: ${NOT_YET.join(', ')}.`;
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -3163,7 +3168,8 @@ async function lazyPart(b, base, fails) {
       'analyses/learning/practice',
       'analyses/learning/after-a-break',
       'analyses/learning/sessions',
-      'analyses/learning/profiles'
+      'analyses/learning/profiles',
+      'analyses/learning/trajectories'
     ]) {
       await go(h);
       const v = await p.evaluate(() => ({
@@ -3176,9 +3182,50 @@ async function lazyPart(b, base, fails) {
         ).length
       }));
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+      // The app's forgetting, genus by genus (ROADMAP "Analyses: next views"): the demo's players have no rusty comeback
+      // question, so its card is there, folded, and says what it waits for (rule A5)
+      if (h === 'analyses/learning/after-a-break') {
+        const cb = await p.evaluate(() => {
+          const c = document.getElementById('anc-the-app-s-forgetting-genus-by-genus');
+          return c && {folded: c.classList.contains('folded'), text: c.textContent.replace(/\s+/g, ' ').slice(0, 200)};
+        });
+        if (!cb || !cb.folded || !/Not enough data yet\. \d/.test(cb.text) || !/about 200 from 20 players/.test(cb.text))
+          fails.push(`${w}px Analyses #${h} forgetting by genus: ${JSON.stringify(cb)}`);
+        // The same card with a fit put into the report (the demo's players have too few to make one): what it says when the
+        // range is narrow already but the players are too few (need 0: more players, not more precision), and when the range
+        // has no end (no count to give); the table scrolls inside its card, never the page (Codex review, #1398)
+        const fit = await p.evaluate(() => {
+          const rep = (typeof ANLOC !== 'undefined' && ANLOC && ANLOC.rep) || (ANREPS[ASUBJ.id] && ANREPS[ASUBJ.id].rep),
+            A = rep && rep.R[rep.M[rep.M.length - 1]].A.back;
+          if (!A) return null;
+          const keep = A.stab,
+            base = {n: 250, players: 12, min: 200, minPlayers: 20, right: 0.74, E: 0.7, est: 1.35, lo: 1.2, hi: 1.5, other: 0, g: []},
+            words = s => {
+              A.stab = s;
+              render();
+              return document.getElementById('anc-the-app-s-forgetting-genus-by-genus').textContent.replace(/\s+/g, ' ');
+            },
+            out = {
+              narrow: words({...base, need: 0}),
+              none: words({...base, open: ['hi']}),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          A.stab = keep;
+          render();
+          return out;
+        });
+        if (
+          !fit ||
+          !/already within ±30% of the stability/.test(fit.narrow) ||
+          /open-ended/.test(fit.narrow) ||
+          !/open-ended/.test(fit.none) ||
+          fit.wide > 0
+        )
+          fails.push(`${w}px Analyses #${h} forgetting by genus with a fit: ${JSON.stringify(fit)}`);
+      }
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
-      if (h !== 'analyses/learning/after-a-break' && h !== 'analyses/learning/profiles') {
+      if (!['analyses/learning/after-a-break', 'analyses/learning/profiles', 'analyses/learning/trajectories'].includes(h)) {
         const ent = await p.evaluate(() => {
           const c = document.getElementById('anc-effects-hard-to-tell-apart');
           if (!c) return null;
@@ -3227,6 +3274,33 @@ async function lazyPart(b, base, fails) {
       const greyLast = pr && pr.dim.every((d, i) => !d || pr.dim.slice(i).every(Boolean));
       if (!pr || pr.rows < 7 || pr.cells < 7 * pr.rows || !pr.links || !pr.tree || !pr.stab || !pr.map || pr.wide > 0 || !greyLast)
         fails.push(`${w}px Analyses player profiles: ${JSON.stringify(pr)}`);
+    }
+    // Player trajectories (Pierre, 2026-11-05, Q78): one small chart a behaviour (seven), a thin line a made-up player and
+    // the typical player over them, the words and the table of the typical player by window; no sideways scroll
+    {
+      await go('analyses/learning/trajectories');
+      const tr = await p.evaluate(() => {
+        const c = document.getElementById('anc-along-each-player-s-history'),
+          T = document.getElementById('anc-the-typical-player-window-by-window');
+        if (T && T.classList.contains('folded')) T.querySelector('[data-anfold]').click();
+        return {
+          charts: c ? c.querySelectorAll('figure svg').length : 0,
+          players: c ? c.querySelectorAll('figure:first-child path.an-line.pl').length : 0,
+          typical: c ? c.querySelectorAll('figure svg path.an-line.med').length : 0,
+          words: c ? c.querySelectorAll('.adm-an-says-l li').length : 0,
+          rows: T ? T.querySelectorAll('tbody tr').length : 0,
+          small: c ? [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length : 0,
+          wide: document.documentElement.scrollWidth - innerWidth,
+          // the table is wider than a phone's card: it scrolls inside its box and the box shows the edge (admin.css .adm-an
+          // .adm-tscroll), never a column cut off with no sign of it
+          cue: (() => {
+            const s = T && T.querySelector('.adm-tscroll');
+            return !s || s.scrollWidth <= s.clientWidth || getComputedStyle(s).backgroundImage.includes('radial-gradient');
+          })()
+        };
+      });
+      if (tr.charts !== 7 || tr.players < 3 || tr.typical < 5 || tr.words < 3 || tr.rows < 2 || tr.small || tr.wide > 0 || !tr.cue)
+        fails.push(`${w}px Analyses player trajectories: ${JSON.stringify(tr)}`);
     }
     // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their
     // names, the second-skill biplot with its words; no sideways scroll
@@ -3653,7 +3727,7 @@ async function lazyPart(b, base, fails) {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
             // every Analyses view on the fish side since the Heatmap (Q123 m, 2026-11-16): no line on what is not there
-            if (at.not) fe.push(`the line on what is not there: "${at.not}"`);
+            if (!notYet('fish', at.not)) fe.push(`the line on what is not there: "${at.not}"`);
             // every view the fish side has: the live ones (Stops, Pairs, Heatmap, Answer log) and the others, each drawn
             // from the fish report
             const [H, LV] = await fq.evaluate(() => [
@@ -3714,6 +3788,32 @@ async function lazyPart(b, base, fails) {
                 rt: rk.rt === 'Family questions,Genus questions,Species questions'
               };
               if (Object.values(ok).some(v => !v)) fe.push(`the rank asked: ${JSON.stringify({...ok, sub: rk.rt})}`);
+              // the common-name modifier (REE-24): the demo's fish report carries the shared-word effect, so its row is on the
+              // Mix-ups page (behind the results with no clear verdict when it has none) and fits its chart at any width
+              await look('fish/analyses/difficulty/mix-ups');
+              const nm = await fq.evaluate(() => {
+                const R = ANREPS[ASUBJ.id],
+                  rep = R && R.rep,
+                  A = rep && rep.R[rep.M[rep.M.length - 1]].A.conf,
+                  e = A && (A.effects || []).find(x => x.k === 'mod');
+                // each button toggles ("Show the 3 with no clear verdict" / "Hide…") and redraws the page: open the closed ones
+                for (
+                  let i = 0, b;
+                  i < 12 && (b = [...document.querySelectorAll('#view [data-anmore]')].find(x => /^Show/.test(x.textContent)));
+                  i++
+                )
+                  b.click();
+                // the row's name, a text of the chart (a tspan when it wraps) or a cell of the words (the innermost elements)
+                const lab = [...document.querySelectorAll('#view .adm-an-card *')].filter(
+                  x => /sharing a common-name word/.test(x.textContent) && !x.children.length
+                );
+                return {
+                  eff: !!e && e.est != null && e.rows > 0,
+                  label: lab.length,
+                  wide: document.documentElement.scrollWidth - innerWidth
+                };
+              });
+              if (!nm.eff || !nm.label || nm.wide > 0) fe.push(`the common-name modifier on the fish Mix-ups: ${JSON.stringify(nm)}`);
               // the corals' views: no rank
               await look('analyses/speed/answer-time');
               if (
@@ -3732,7 +3832,11 @@ async function lazyPart(b, base, fails) {
           // words stay. At 1280 from the script that stores one report per subject.
           if (v >= GATE && vw === 1280) {
             at = await look('seaslug/analyses/overview');
-            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || at.not)
+            if (
+              !/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) ||
+              !at.cards ||
+              !notYet('sea slugs', at.not)
+            )
               fe.push(`sea slug Overview ${JSON.stringify(at)}`);
             const [H, LV] = await fq.evaluate(() => [
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(subjectOf('seaslug'), h))),

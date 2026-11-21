@@ -2619,6 +2619,23 @@ td.cov-c .cov-off {
 .adm-tscroll {
   overflow-x: auto;
 }
+/* Analyses tables wider than a phone's card (the forgetting card's genus table, the trajectories' window table, Confusions' tables): the box scrolls
+   sideways and shows it does. A shadow on the edge that has more beyond it (the card's colour fades the shadow out at the
+   end of the scroll, `local`; the shadow itself stays with the box), in the ink colour so it reads in light and dark. The
+   header of a table that does not scroll up and down carries no background of its own, which would hide it; a `tall`
+   table's sticky header keeps one. */
+.adm-an .adm-tscroll {
+  --adm-tcard: var(--surface);
+  --adm-tsh: color-mix(in srgb, var(--ink) 42%, transparent);
+  background:
+    linear-gradient(to right, var(--adm-tcard) 30%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--adm-tcard) 30%, transparent) right center / 32px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--adm-tsh), transparent) left center / 16px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--adm-tsh), transparent) right center / 16px 100% no-repeat scroll;
+}
+.adm-an .adm-tscroll:not(.tall) .adm-tbl th {
+  background: transparent;
+}
 /* Errors & feedback, one-tap questions (admin.js pulseView): compact tables, numbers under right-aligned headers, each
    item's wording as written heading its answers, the share beside a count quiet. */
 .adm-pulse .adm-tbl {
@@ -4472,6 +4489,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 }
 .adm-an-svg .an-line.dash {
   stroke-dasharray: 5 4;
+}
+/* Player trajectories: each player a thin line, the typical one over them in the accent */
+.adm-an-svg .an-line.pl {
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+.adm-an-svg .an-line.med {
+  stroke-width: 3;
 }
 .adm-an-svg .an-band {
   fill: color-mix(in srgb, var(--accent) 18%, transparent);
