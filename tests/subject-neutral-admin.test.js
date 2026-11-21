@@ -163,7 +163,7 @@ const WHOLE = ['admin-fish.js'],
     [
       'learn.js',
       'Dup-14',
-      'viewGenus FTREE FTREE_OF NOFISH noFish famUnit fishMine fishIsWink famSci famIMR famGroup famSpecies fishFamOf viewFishSheet fishTile famSizes fishMarks treeFamily treeGenus fishSpecies'
+      'viewGenus FTREE FTREE_OF NOFISH noFish famUnit fishIsWink famSci famIMR famGroup famSpecies famSizes treeFamily treeGenus'
     ],
     ['learn.js', 'Dup-15', 'classics viewLookalikes viewCompare treeGenusLooks']
   ],

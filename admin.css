@@ -6277,7 +6277,23 @@ ul.adm-csv {
 /* Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, design note v2 step 4), and the
    Look-alikes filter's pair tools in the bar (structBar, structAdd). */
 .adm-cstruct .adm-stseg {
-  flex: none;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+/* A circle's number with the subject's words under it (admin-content.js circleWord), the words wrapping on a phone. */
+.adm-cstruct .adm-stseg button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+  padding-block: 3px;
+}
+.adm-cstruct .adm-stseg button small {
+  font-size: 0.68rem;
+  font-weight: 400;
+  white-space: normal;
+  text-align: center;
 }
 .adm-cstruct .adm-stseg button:disabled {
   cursor: default;
