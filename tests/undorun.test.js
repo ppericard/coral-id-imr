@@ -95,3 +95,30 @@ test('a value the admin set in a step stays his: the run never writes over it in
   M.redo();
   assert.strictEqual(M.draft().fish.add.a, 'colony', "his click's value, not the run's");
 });
+
+test('a whole photo decision: an Add undone, then the run rejects that photo; Redo brings his Add back alone (Codex #1408)', () => {
+  const M = page({genera: {}, fish: {add: {}}});
+  M.click(D => (D.fish.add.f = 'colony'));
+  M.undo(); // his Add waits as a Redo step
+  M.run(D => {
+    seen(D).f = 1; // the run rejects f in the draft without his Add
+    D.fish.auto = {d1: {f: 'r1'}};
+    D.fish.add.g = 'colony'; // and decides another photo
+  });
+  M.redo();
+  const D = M.draft();
+  assert.strictEqual(D.fish.add.f, 'colony', 'his Add');
+  assert.ok(!(D.fish.seen || {}).f, "not the run's rejection beside it (a rejection would win over the Add)");
+  assert.ok(!((D.fish.auto || {}).d1 || {}).f, 'nor its log line for f');
+  assert.strictEqual(D.fish.add.g, 'colony', "the run's other photo is laid as usual");
+  // A coral rejection under its check key (CK: 'cand:' + photo) counts as the same photo.
+  const C = page({genera: {G: {add: {}}}});
+  C.click(D => (D.genera.G.add.p = 'colony'));
+  C.undo();
+  C.run(D => {
+    D.seen = {'cand:p': 1};
+    D.auto = {d1: {p: 'r1'}}; // the run's log line for p (autoRun)
+  });
+  C.redo();
+  assert.ok(!(C.draft().seen || {})['cand:p'], 'his Add of p stays alone');
+});

@@ -369,24 +369,84 @@ function saveDraft(auto = false) {
   keepHist();
 }
 // What a background run changed (run: the draft now, against before: the draft it started from), laid onto one Undo or
-// Redo step (onto), key by key down the maps: a value the step holds other than before stays the step's (the admin's
-// click there wins), a map the step lacks is made for the run's entries (so undoing the click that made it keeps them),
-// and a map the run empties stays {} (merge3 reads a missing map as removed).
-const layRun = (before, run, onto) => {
+// Redo step (onto), photo by photo. A run decides whole photos: its entries for one photo (an add, a rejection `seen`
+// under the photo's own name or its check key CK, an exclusion, a rating, its log line) are its decision on that photo.
+// They are laid onto the step only when the step holds exactly what before held for that photo, in every map the run
+// touched; else the step keeps the admin's own decision on it (an Add he made, then undid, stays an Add when redone).
+// A map the step lacks is made for the run's entries (undoing the click that made it keeps them), and a map the run
+// empties stays {} (merge3 reads a missing map as removed).
+const photoOfKey = k => String(k).replace(/^cand:/, ''); // CK's inverse
+const layDiff = (B, R, path = [], out = []) => {
   const O = o => !!o && typeof o === 'object' && !Array.isArray(o),
-    J = v => JSON.stringify(v === undefined ? null : v),
-    B = before || {},
-    R = run || {},
-    T = onto || {},
-    out = {...T};
-  new Set([...Object.keys(B), ...Object.keys(R)]).forEach(k => {
-    if (J(R[k]) === J(B[k])) return;
-    if (O(R[k]) && (O(B[k]) || B[k] === undefined) && (O(T[k]) || T[k] === undefined)) out[k] = layRun(B[k], R[k], T[k]);
-    else if (J(T[k]) === J(B[k])) {
-      if (R[k] === undefined) delete out[k];
-      else out[k] = R[k];
-    }
+    J = v => JSON.stringify(v === undefined ? null : v);
+  new Set([...Object.keys(B || {}), ...Object.keys(R || {})]).forEach(k => {
+    const b = (B || {})[k],
+      r = (R || {})[k];
+    if (J(r) === J(b)) return;
+    if (O(r) && (O(b) || b === undefined)) layDiff(b, r, [...path, k], out);
+    else out.push({path: [...path, k], v: r});
   });
+  return out;
+};
+// Everything the draft D holds under a key naming one of the photos P, whatever map it sits in: {photo: {path: value}}.
+const layLeaves = (D, P) => {
+  const out = {},
+    walk = (o, path) =>
+      Object.keys(o).forEach(k => {
+        const v = o[k],
+          p = [...path, k],
+          f = photoOfKey(k);
+        if (P.has(f)) (out[f] = out[f] || {})[JSON.stringify(p)] = v;
+        else if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, p);
+      });
+  if (D && typeof D === 'object') walk(D, []);
+  return out;
+};
+// The photo a change is about: the last key of its path naming one of the photos P, else none.
+const layPhoto = (path, P) => {
+  for (let i = path.length - 1; i >= 0; i--) if (P.has(photoOfKey(path[i]))) return photoOfKey(path[i]);
+  return null;
+};
+const layPut = (T, path, v) => {
+  let o = T;
+  for (let i = 0; i < path.length - 1; i++) {
+    const k = path[i];
+    o[k] = o[k] && typeof o[k] === 'object' && !Array.isArray(o[k]) ? {...o[k]} : {};
+    o = o[k];
+  }
+  if (v === undefined) delete o[path[path.length - 1]];
+  else o[path[path.length - 1]] = v;
+};
+// The run's change (layPlan, once per run), laid onto each step (layRun). The photos it decided are those of its log
+// lines (an auto map's day: {photo: code}, autosort.js: the corals' auto, the tree subject's part's auto); a change about
+// none of them (a counter, a stamp) is laid key by key: only where the step holds what before held.
+const layPlan = (before, run) => {
+  const D = layDiff(before, run),
+    P = new Set();
+  D.forEach(d => {
+    const i = d.path.lastIndexOf('auto');
+    if (i >= 0 && d.path.length > i + 2) P.add(photoOfKey(d.path[i + 2]));
+  });
+  const by = {},
+    rest = [];
+  D.forEach(d => {
+    const f = layPhoto(d.path, P);
+    if (f) (by[f] = by[f] || []).push(d);
+    else rest.push(d);
+  });
+  return {by, rest, P, was: layLeaves(before, P), before};
+};
+const layAt = (o, path) => path.reduce((x, k) => (x && typeof x === 'object' ? x[k] : undefined), o);
+const layRun = (plan, onto) => {
+  const out = {...(onto || {})},
+    has = layLeaves(out, plan.P),
+    J = o => JSON.stringify(Object.entries(o || {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))),
+    V = v => JSON.stringify(v === undefined ? null : v);
+  Object.entries(plan.by).forEach(([f, L]) => {
+    if (J(has[f]) !== J(plan.was[f])) return; // the step's own decision on this photo stays
+    L.forEach(d => layPut(out, d.path, d.v));
+  });
+  plan.rest.forEach(d => V(layAt(out, d.path)) === V(layAt(plan.before, d.path)) && layPut(out, d.path, d.v));
   return out;
 };
 // An auto-sort's run saved (autoRun, fishAutoRun). Before the admin's first action of this visit (ACTED): one Undo step,
@@ -396,10 +456,10 @@ const layRun = (before, run, onto) => {
 function saveRun() {
   if (!ACTED || snap === null) return saveDraft(true);
   memoReset();
-  const before = JSON.parse(snap),
+  const plan = layPlan(JSON.parse(snap), DRAFT),
     lay = L =>
       L.map(x => {
-        const m = layRun(before, DRAFT, JSON.parse(x));
+        const m = layRun(plan, JSON.parse(x));
         m.genera = m.genera || {};
         return JSON.stringify(m);
       });

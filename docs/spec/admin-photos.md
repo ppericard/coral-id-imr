@@ -79,7 +79,8 @@ slugs' the `tree` builder's, in `admin-fish.js`:
   crop) is never replaced; a photo he decided (added, rejected, excluded, sent elsewhere) or that is already logged is
   never touched. The whole run at load is one Undo step, when it lands before Pierre's first action of the visit (the
   startup import of the site's flags is not one). A run that lands after his clicks is laid onto every Undo and Redo step
-  instead (`saveRun`, `layRun`): Undo and Redo then move his clicks only, and its decisions are taken back one by one in
+  instead, photo by photo, never over a step's own decision on a photo (`saveRun`, `layRun`): Undo and Redo then move
+  his clicks only, and its decisions are taken back one by one in
   Auto (decision record 2026-11-21-undo-background-run). Its toast (a background toast) waits behind the result of his own
   action, such as "Published", for 4 s (`toast`).
 - **Sure rule** (`autoSure`, from the pass's fields, no `unsure` at all): best of its observation in its view, Fair or
