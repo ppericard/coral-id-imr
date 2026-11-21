@@ -303,7 +303,9 @@ choices per family in the app" has the details.
   pools, or new code that lets Home show other photos.
 - **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
   `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
-  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. A photo a later pass
+  already looked at whole at full size (the tag-doubt pass, `judging/fish-tag-doubts.json`) is left out, and so is an
+  ease-only change that does not make the photo reference-level (`core.js` `refLevel`). Look as the second pass
   did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
   photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
   (nothing to download: the flag is its only change).
