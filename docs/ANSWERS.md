@@ -1811,12 +1811,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   faut, à un moment donné, il faut quand même noter ce qu'on vient de dire et la discussion qu'on vient d'avoir, parce
   que sinon, on va juste re-avoir la même discussion dans 2 heures ou dans 2 jours.» Applied: #1357 merged;
   reviews/2026-11-21-simulation-scope.md (#1359).
-- **15:44, answers as evidence.** «ok», to the integrator's proposal (15:43) to carry out the continuity study's
-  appendix B: «un passage retrouvé est une preuve, pas une consigne : on vérifie sa portée, ce qui l'a corrigé ensuite,
-  et s'il s'applique encore ; une correction ponctuelle ne devient pas une règle générale ; l'agacement ou l'insistance
-  n'élargit pas une consigne ; un « stop » clair reste un stop» («Tu es d'accord pour que je lance la PR du point 1 ?»).
-  Decides: the PR is launched; its new AGENTS.md sentences wait for his OK there. Applied: AGENTS.md, rule W7,
-  INTEGRATOR.md, this file's header, tools/asked.py, decisions/2026-11-21-answers-as-evidence.md (#1361); REE-178.
 - **14:41, Linear as the tracking location.** (his request, written in English, with the integrator continuity study;
   extract) «Make Linear the current tracking location for transferred subjects. Replace their old tracking entries with
   pointers and keep the location of unmigrated subjects visible. Apply necessary repository changes through our
@@ -1828,3 +1822,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   before subscribing.» Open work is tracked in Linear (team REE); ROADMAP.md keeps pointers and the subjects not transferred yet.
   Applied: AGENTS.md, rules W6 and W19, INTEGRATOR.md "Linear", STATUS.md, tools/brief.py,
   decisions/2026-11-21-linear-tracking.md (#1360).
+- **15:44, answers as evidence.** «ok», to the integrator's proposal (15:43) to carry out the continuity study's
+  appendix B: «un passage retrouvé est une preuve, pas une consigne : on vérifie sa portée, ce qui l'a corrigé ensuite,
+  et s'il s'applique encore ; une correction ponctuelle ne devient pas une règle générale ; l'agacement ou l'insistance
+  n'élargit pas une consigne ; un « stop » clair reste un stop» («Tu es d'accord pour que je lance la PR du point 1 ?»).
+  Decides: the PR is launched; its new AGENTS.md sentences wait for his OK there. Applied: AGENTS.md, rule W7,
+  INTEGRATOR.md, this file's header, tools/asked.py, decisions/2026-11-21-answers-as-evidence.md (#1361); REE-178.
