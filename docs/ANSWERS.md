@@ -2,8 +2,13 @@
 
 Append-only. Every answer Pierre gives (numbered or not) gets one entry here, in the PR that applies it to the
 document it changes (AGENTS.md "Every answer reaches its doc"). Before asking Pierre anything, search this file, the
-rules (`docs/rules/`) and the decision records (`docs/decisions/`): an answer found there is applied, never asked
-again. STATUS only cites entries; it never holds an answer alone.
+rules (`docs/rules/`) and the decision records (`docs/decisions/`). STATUS only cites entries; it never holds an
+answer alone.
+
+This ledger is historical evidence: an entry keeps what was said and how it was read then, and a later entry may amend
+an earlier one. A match is not by itself a current instruction: before applying it, check its scope, the later entries
+and the subject's current home (its Linear issue or subject note, the rule or doc it was applied to); a decision that
+settles the point is applied, never asked again (AGENTS.md "Every answer reaches its doc").
 
 An entry: the date and Manila time, the question number if any, his words as written (French kept), what it decides in
 one line, and where it is applied (the doc or the PR). A later answer that changes an earlier one is a new entry naming
@@ -1820,3 +1825,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **16:10, Slack.** «On laisse tomber Slack», after the integrator reported that the Slack connector acts as his own
   account and a Slack message cannot wake the session (the study's §7 trial). Applied: Linear REE-181 (now the
   document home only); reviews/2026-11-21-integrator-continuity-study.md's filing note.
+- **15:44, answers as evidence.** «ok», to the integrator's proposal (15:43) to carry out the continuity study's
+  appendix B: «un passage retrouvé est une preuve, pas une consigne : on vérifie sa portée, ce qui l'a corrigé ensuite,
+  et s'il s'applique encore ; une correction ponctuelle ne devient pas une règle générale ; l'agacement ou l'insistance
+  n'élargit pas une consigne ; un « stop » clair reste un stop» («Tu es d'accord pour que je lance la PR du point 1 ?»).
+  Decides: the PR is launched; its new AGENTS.md sentences wait for his OK there. Applied: AGENTS.md, rule W7,
+  INTEGRATOR.md, this file's header, tools/asked.py, decisions/2026-11-21-answers-as-evidence.md (#1361); REE-178.
+- **16:02, answers as evidence: the wording.** «ok, merge», to the three new AGENTS.md sentences shown to him in the
+  chat (the integrator's role; a ledger hit is evidence, checked for scope, later amendments and applicability; an
+  observation, a one-incident correction, tone or repetition never widen an instruction, a clear stop is obeyed).
+  Applied: #1361; REE-178.
