@@ -1670,7 +1670,7 @@ function anBackGenus(a) {
           ),
           ...(S.other
             ? [
-                `<tr><td class="an-w">Other genera (under 5 questions each)</td><td class="n">${anInt(S.other)}</td><td></td><td></td><td></td><td></td><td></td></tr>`
+                `<tr><td title="Genera with under 5 questions each, left out of the rows above">Other genera</td><td class="n">${anInt(S.other)}</td><td></td><td></td><td></td><td></td><td></td></tr>`
               ]
             : [])
         ],
