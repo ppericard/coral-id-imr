@@ -55,7 +55,7 @@ import urllib.request
 from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fish_judge import RUBRICS, cap  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
+from fish_judge import RUBRICS, cap, phase_flag  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
 from fish_game import box_in, box_ok  # noqa: E402  the fish's box, as the tile tool reads it
 # A box narrower or shorter than this share of the photo is a mistake, not an animal (the tile needs 320 px of the original).
 MIN_BB = 0.02
@@ -92,7 +92,8 @@ SP = {s["id"]: s for s in FISH["species"]}
 CAND = (load("data/fish-cand.json", {}) or {}).get("cand", {})
 CUR = (load("curation.json", {}) or {}).get("fish") or {}
 TEACH = {t["id"]: t for t in FISH["teach"]}
-# The teaching entry of each species (its first level-1 entry): its dimorph flag, which adds the phase flag.
+# The teaching entry of each species (its first level-1 entry): its dimorph flag, which adds the phase flag (as the cited
+# phase list does: tools/fish_judge.py phase_flag).
 ENTRY = {}
 for _t in FISH["teach"]:
     if _t.get("level") == 1:
@@ -362,14 +363,15 @@ def check(sid):
 
 def entry(sid, x, rep=None):
     """A judging file's record -> data/suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
-    (tools/fish_judge.py cap: the phase flag for a dimorph entry, and the reference flag r, which leaves the ease as
+    (tools/fish_judge.py cap: the phase flag of a species whose sexes or colour phases differ by a cited source, phase_flag:
+    a dimorph entry or the cited phase list; and the reference flag r, which leaves the ease as
     judged, for a candidate whose data/fish-cand.json record carries `rep`; a juvenile caps nothing). A sea slug's: its
     rubric's caps (no entry: no phase), keep best when the judgement names none, and an egg-mass
     photo as {egg: 1} (the egg rule: never in play)."""
     if x.get("egg"):
         return {"egg": 1, **({"n": x["note"]} if x.get("note") else {})}
     t = ENTRY.get(sid) or {}
-    ease, tags = cap(x["code"], bool(t.get("dimorph")), rep, subject=SUBJECT)
+    ease, tags = cap(x["code"], SUBJECT == "fish" and phase_flag(sid, t), rep, subject=SUBJECT)
     e = {"jt": tags, "e": ease, "k": x.get("keep", CFG["keep"])}
     if x.get("phase"):
         e["ph"] = x["phase"]
