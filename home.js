@@ -128,7 +128,7 @@
             <h2>${esc(W.title)}</h2>
             <p class="hddesc">${esc(W.desc)}</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}</b><small>${esc(W.soon)}</small></a>
+              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}${W.soon ? '<span class="hdsoon">soon</span>' : ''}</b></a>
             </div>
           </div>
         </section>`

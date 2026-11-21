@@ -3518,10 +3518,12 @@ async function namesCard(b, base, errs) {
       return {
         title: d ? d.querySelector('h2').textContent : '',
         links: d ? [...new Set([...d.querySelectorAll('a')].map(a => a.getAttribute('href')))].join() : '',
-        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
+        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true,
+        // REE-211: the tag shows on the door while the subject's key is not built, visible at every width.
+        soon: d && d.querySelector('.hdsoon') ? (e => !!e.offsetParent && /soon/i.test(e.textContent))(d.querySelector('.hdsoon')) : false
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral || !door.soon)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
     await q.evaluate(() => (location.hash = '#identify/key'));
@@ -3578,6 +3580,14 @@ async function namesCard(b, base, errs) {
     const d = await page();
     if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // REE-211: the corals' Identify door has no "soon" tag (their key is built).
+    await q.evaluate(() => (location.hash = '#home'));
+    await q.waitForSelector('#view .hdoor.identify', {timeout: 15000}).catch(() => {});
+    const ct = await q.evaluate(() => ({
+      door: !!document.querySelector('#view .hdoor.identify'),
+      tag: !!document.querySelector('#view .hdoor.identify .hdsoon')
+    }));
+    if (!ct.door || ct.tag) ui.push(`${width}px Home's Identify door, Coral on, has a "soon" tag: ${JSON.stringify(ct)}`);
     // A fish page linked straight (the subject prefix in the app's addresses): a new tab on a fish
     // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
     for (const [h, key] of [
