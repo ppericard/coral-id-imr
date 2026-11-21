@@ -751,6 +751,53 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
+  // 5b. Down the tree (proto/downtree.js, the Lab) on the sea slugs, whose tree has a family that is structure only (Codex review
+  // #1387): their genera and species (the sheet's SCI_SHEET) unlocked, the photos stubbed; tests/downtree.check.js plays the rounds:
+  // every walk starts at a genus, never at the family, and is two steps.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s5b')) return;
+        sessionStorage.setItem('s5b', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      store.set(SHEETV, SCI_SHEET);
+      const G = pool()
+          .filter(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).length))
+          .slice(0, 12),
+        S = sciSpAll().filter(u => G.includes(GX(u).parent) && photoAny(u));
+      introAdd([...G, ...S], true);
+      return [G.length, S.length, G.filter(g => GX(g).parent && GX(GX(g).parent)).length];
+    });
+    check(n[0] >= 6 && n[1] >= 6, `5b: ${n} sea slug genera, species unlocked, genera under a family record`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./downtree.check.js')(p, w, fails, 'sea slugs', 4);
+    }
+    check(!errs.length, '5b: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
   // 6. Type the genus, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the sea slugs, as
   // tests/fish.smoke.js labGames plays them on the fish: ten genera unlocked, the photos stubbed; tests/labgames.check.js plays
   // them at 390 and 1280 px.
