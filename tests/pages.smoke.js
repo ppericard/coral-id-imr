@@ -107,9 +107,10 @@ const left = (p, from, timeout = 10000) =>
     .waitForFunction(f => location.hash !== f, from, {timeout})
     .then(() => drawn(p))
     .catch(() => false);
-// (3 photos enlarged ends the zoom tip; the basics tip's two showings used, since "new", this page's default player, is its audience.)
+// (3 photos enlarged ends the zoom tip; the basics tip's two showings used, since "new", this page's default player, is its
+// audience; the typed-answers tip's too, since a smoke that answers "I don't know" to typed questions meets its run.)
 const TIPS_OFF = () =>
-  localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
+  localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0],"typed":[0,0]}}');
 // One overlay at a time, and each one closable. Returns the failures.
 async function overlays(b, base) {
   const fails = [];
@@ -3173,7 +3174,11 @@ async function tipsCheck(b, base) {
         if (!localStorage.getItem('reefid-tips'))
           localStorage.setItem(
             'reefid-tips',
-            JSON.stringify({u: {i: 1, ...u}, s: x.s || {basics: [0, 0]}, v: x.v ? {...x.v, t: Date.now()} : {t: Date.now(), n: 12, tip: 0}})
+            JSON.stringify({
+              u: {i: 1, ...u},
+              s: x.s || {basics: [0, 0], typed: [0, 0]},
+              v: x.v ? {...x.v, t: Date.now()} : {t: Date.now(), n: 12, tip: 0}
+            })
           );
       },
       [u, x]
@@ -3710,6 +3715,116 @@ async function tipsCheck(b, base) {
       if (n) fails.push(`${W} identify tip shown at a break of the Quiz`);
       const ids = await p.evaluate(() => Object.keys(UNITS).filter(k => UNITS[k].idtip));
       if (ids.join() !== 'coral') fails.push(`${W} identify tip words declared by ${ids.join()}`);
+      await c.close();
+    }
+    // The typed-answers tip (f): typed questions forced (every next question typed: model.js TYPED, as the other smokes do), a
+    // player who answers "I don't know" three typed questions in a row gets the card at the Next after the third (the run
+    // is counted on the device, u.k), and not before; the card says a close spelling counts, in the subject's own word,
+    // with Got it only (nothing to open) and no tap at once; logged; Escape is Got it. A text typed (even a wrong one) ends
+    // the run: it takes three again.
+    // One typed question (a choice question before it is answered wrong, Next, as a player passing it by): "I don't know",
+    // or a wrong genus typed when text. Returns whether the tip is up after Next (null: no typed question came).
+    const typedStep = async (p, text) => {
+      for (let i = 0; i < 14; i++) {
+        await qa.ready(p, {timeout: 10000});
+        const typed = await p.evaluate(text => {
+          document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          const typed = !!document.querySelector('#view .q:not(.done) .tyform');
+          smokeAnswer(typed && text ? (qNow().g === 'Acropora' ? 'Porites' : 'Acropora') : false);
+          document.getElementById('next').click();
+          return typed;
+        }, text);
+        await p
+          .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {
+            timeout: 10000
+          })
+          .catch(() => {});
+        if (typed || (await p.$('.tipcard'))) return !!(await p.$('.tipcard'));
+      }
+      return null;
+    };
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
+      const up = [];
+      for (let i = 0; i < 3; i++) up.push(await typedStep(p, ''));
+      const st = await tips(p);
+      if (up.join() !== 'false,false,true' || st.u.k !== 3 || (st.s.typed || []).length !== 1)
+        fails.push(
+          `${W} typed tip: shown at the Next after the third "I don't know", not before: ${JSON.stringify({up, k: st.u.k, s: st.s})}`
+        );
+      const k = await p.evaluate(() => {
+        const d = document.querySelector('.tipcard');
+        if (!d) return null;
+        const card = d.querySelector('.ulcard').getBoundingClientRect();
+        return {
+          kick: d.querySelector('.ulkick').textContent,
+          title: d.querySelector('h3').textContent,
+          body: [...d.querySelectorAll('p')].pop().textContent,
+          btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+          dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+          wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+        };
+      });
+      if (!k) fails.push(`${W} typed tip: no card`);
+      else {
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Not sure how to spell it? Type it anyway' ||
+          k.body !==
+            "A close spelling counts as right: you just retype the genus once to learn its spelling. “I don't know” counts as a miss." ||
+          k.btns.join() !== 'Got it' ||
+          !k.dis ||
+          k.wide
+        )
+          fails.push(`${W} typed tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b]');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} typed tip: Got it did not go on to the next question`);
+        const ev = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+            .filter(x => /^tip:/.test(x.src || ''))
+            .map(x => `${x.k}:${x.src}:${x.r}`)
+        );
+        if (ev.join() !== 'pulse:tip:typed:shown,pulse:tip:typed:ok') fails.push(`${W} typed tip events: ${JSON.stringify(ev)}`);
+        // The same visit: no second tip, however many more "I don't know".
+        let again = 0;
+        for (let i = 0; i < 3; i++) if (await typedStep(p, '')) again++;
+        if (again) fails.push(`${W} typed tip: shown again in the same visit`);
+      }
+      if (errs.length) fails.push(`${W} typed tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
+      // Two "I don't know", a wrong text, two more: the text ended the run, so no tip and a run of 2 ...
+      const seq = ['', '', 'text', '', ''],
+        up = [];
+      for (const t of seq) up.push(await typedStep(p, t));
+      const st = await tips(p);
+      if (up.some(x => x !== false) || st.u.k !== 2 || (st.s.typed || []).length)
+        fails.push(`${W} typed tip: a typed text did not end the run: ${JSON.stringify({up, k: st.u.k, s: st.s})}`);
+      // ... and the next one makes three again: the card, closed by Escape (= Got it), then the game goes on.
+      if ((await typedStep(p, '')) !== true) fails.push(`${W} typed tip: not shown at three after a restart`);
+      else {
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.keyboard.press('Escape');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} typed tip: Escape did not go on to the next question`);
+      }
+      await c.close();
+    }
+    // Not for these: two in a row (k 2, and no typed answer), the Duel tab (no typed question).
+    {
+      const [c, p] = await open(w, h, {q: 60, z: 3, c: 1, d: 1, m: 1, k: 2}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} typed tip shown to a player with two "I don't know" in a row`);
       await c.close();
     }
     // Not for these: one pair only, no pair, the view seen before (m 1). Right answers only: a miss makes a pair of its own,
