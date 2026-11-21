@@ -73,7 +73,7 @@ keeps a PR out of the train.
 - **Code per name**: a name's progress can only be written with its code; 5 wrong codes lock the name for 10 minutes.
 - **Caps per 6 hours** (`over_`): 100 answers per anonymous request; 600 per anonymous id and 6000 for all anonymous
   players (counted by answer, not by request: since 2026-11-08 a device not signed in sends each answer about 3 s after
-  it, `sync.js` `anonSoon`, instead of 10 at a time); 3000 answers per name; 40 new accounts; 300 report requests; 200 events per device and 3000 in all (v19 error reports and one-tap answers, `events_`, 50 per request). Over a cap the script writes nothing and
+  it, `sync.js` `anonSoon`, instead of 10 at a time); 3000 answers per name; 40 new accounts; 300 report requests; 6 report images per player and 120 in all, each 200,000 bytes at most (an image over a cap is not kept, its report is: spec/sync.md "Report images"); 200 events per device and 3000 in all (v19 error reports and one-tap answers, `events_`, 50 per request). Over a cap the script writes nothing and
   answers `busy` (the app keeps its answers and sends them later). The first refusal of each window is written to the
   Sheet's **Alerts** tab, which the admin shows in To do › Alerts (below).
 - **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19), and in the Pages tab (v30).

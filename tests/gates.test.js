@@ -55,6 +55,9 @@ const GATES = {
     assert.strictEqual('vp' in sent, on, 'the screen is sent exactly when the gate is on');
     return on;
   },
+  // The picture input of the report dialog (sync.js repImgOn, reportDialog; Code.gs logReports_ keeps it in the Report
+  // images tab): offered from the version that keeps it; before, the dialog as it was (tests/reportimage.test.js).
+  REPIMG_SHEET: (v, N) => fn('sync.js', 'const repImgOn = ', '\n', 'repImgOn', {sheetV: () => v, REPIMG_SHEET: N})(),
   // The leaderboard tree sent only when it changed, or the sheet holds another (sync.js treeOn, boardUnits, treesSeen;
   // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).

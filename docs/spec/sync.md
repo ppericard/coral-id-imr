@@ -54,7 +54,8 @@ record in a new tab.
 | `By genus` | The corals' progress per player and genus, written from each save's summary; its header row is the list of genera the corals' leaderboard counts |
 | `Answers` | One row per answer (below) |
 | `Activity` | A QUERY per player over the Answers tab; it counts every subject's answers |
-| `Reports` | One row per report or feedback: time, reporter, verified, reason, expected, answered, suggested genus, note, mode (game, photo, sheet or page), photos, where, id |
+| `Reports` | One row per report or feedback: time, reporter, verified, reason, expected, answered, suggested genus, note, mode (game, photo, sheet or page), photos, where, id, image (the report's id when a picture is attached, else empty; from v212) |
+| `Report images` | One row per picture a player attached to a report (below): id, time, player, type, bytes, the image in base64 chunks |
 | `Events` | The app's events (below) |
 | `Pages` | The pages-opened summaries, same columns as Events (below) |
 | `Replayed`, `Replayed Fish`, one per replayed subject | The full replays kept per player (below) |
@@ -216,7 +217,9 @@ released.
   public `?stats=1` keeps only the pooled numbers, so a leaderboard name cannot be matched to an answer history.
 - `POST {reports, rname, rpin}` the players' reports, logged once per id. The reporter goes in `rname` / `rpin`, never
   `name` / `pin`, so a script that does not know reports refuses it (`input`) instead of taking it for an empty progress
-  write; `Verified` = 1 when the code matches the sync account.
+  write; `Verified` = 1 when the code matches the sync account. A report may carry `img` (`{t: 'image/jpeg', d: base64}`),
+  kept in the `Report images` tab (below); the reply then holds `img: {id: 1 | 0}` (kept or refused), the report logged
+  either way.
 - `POST {readReports: 1, token}` the reports with names, newest first, admins only. The script checks the admin page's
   GitHub token with GitHub (`UrlFetchApp`, write access to the repository), remembers a valid one 10 minutes by its
   hash and never stores it. That permission (`script.external_request`) is not asked by a redeploy nor by running
@@ -231,6 +234,35 @@ released.
 
 **Hardening**: user strings never become formulas (`safe_`), answer fields are pattern-checked, 5 wrong codes for a name
 block it for 10 minutes (`wait`), and answers are logged before the progress is written.
+
+## Report images
+
+A screenshot or photo attached to a report (Pierre, 2026-11-21, Q446; [decision](../decisions/2026-11-21-report-image.md)).
+Gate: the app offers it from script v212 (`sync.js` `REPIMG_SHEET`, rule D4).
+
+- **The app** (`sync.js` `repImgReduce`): the player picks a file in the report dialog; a canvas re-encodes it to a JPEG
+  of at most 800 px on the long side, quality 0.6 (smaller steps if it is still over 180 kB), which drops the EXIF and
+  the GPS. One image a report. It waits in memory (`repImgPend`) for its report, never in the queue
+  (`reefid-reports`, `localStorage`); its report goes alone in its request (`repBatch`). Offline when the report is
+  sent, or when the page closes before the send, the report goes without the image, and the dialog says so.
+- **The tab** (`Code.gs` `REPIMG`): one row per image, `Id` (the report's), `Time`, `Player` (the reporter's anonymous
+  id, as the Audit tab's; empty without a name), `Type` (`image/jpeg`), `Bytes` (decoded), then the base64 text in
+  chunks of 45,000 characters, one per cell from column F (a cell holds at most 50,000). The report's row holds the same
+  id in its `Image` cell. The script checks the size (200,000 decoded bytes at most), the JPEG header and the base64, and
+  the caps (6 images a player and 120 in all, per 6 hours, `over_`); an image it refuses is simply not kept, the report
+  still is. No new scope: the script already writes the sheet.
+- **Reading it** (the integrator, when a report is handled): read the tab with the Sheets connector (`get_values` on
+  `'Report images'`, read-only), save the rows as JSON, then `node tools/report_image.js list rows.json` and
+  `node tools/report_image.js decode rows.json <report id> out.jpg` (it checks the size and the JPEG header against the
+  row). A picture never enters play by itself (rule A1).
+- **Deleting it**: once the report is handled, the integrator clears the image's row, with the connector's
+  `batch_clear_values` on the range `node tools/report_image.js clear rows.json <report id>` prints (a decided process,
+  Pierre, 2026-11-21: «je la lis quand il traite le rapport, puis on l'efface»); never another row, never automatic. The
+  Reports row keeps the id in `Image`, the record that the report had a picture.
+- **Rule D7**: an image never outlives its report. A deleted account's reports go, and `repImgSweep_` removes the
+  images of the reports that went; "delete, keep answers" keeps the reports anonymised but deletes their images
+  (`anonReports_`); a merge or an archive renames the `Player` column (`repImgRelabel_`). The weekly pCloud backup holds
+  the tab like any other (privacy.html: the backup copies made before a deletion).
 
 ## Accounts and signing in
 

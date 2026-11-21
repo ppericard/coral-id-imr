@@ -28,6 +28,11 @@ report. The admin's To do, where reports are listed with the other items, is
 - Reports queue in `localStorage` `reefid-reports` and are sent by `sendReports()` (on send, at start-up and when back
   online) to the sheet script, each with who sent it (the sync account or the name typed, so a report retried after
   another player signs in is never credited to them); an older script leaves them queued.
+- **A screenshot or photo** (optional, one a report; "Screenshot or photo" under the note): offered only from the
+  sheet script version that keeps it (`REPIMG_SHEET`, rule D4). The app reduces it on the phone (about 800 px, JPEG,
+  no EXIF or GPS) and sends it with the report to the sheet's `Report images` tab; it is held in memory, never in the
+  queue, so a report sent offline goes without it and the dialog says so. Pierre reads it when he handles the report
+  and it is then deleted: [spec/sync.md › Report images](sync.md#report-images).
 
 ## In the admin (`reports.js`, admin only)
 
