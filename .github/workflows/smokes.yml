@@ -93,6 +93,9 @@ jobs:
           - name: net
             smoke: net
             what: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
+          - name: pending
+            smoke: pending
+            what: Kept question test (every subject, leave to Learn and back, a reload, answered; the Quiz, the Custom quiz, the Duel tab, typed and Find the X)
           - name: staged
             smoke: staged
             what: Built copy test (the site as the deploy builds it, scripts minified; each subject's Home and a question, the Lab, the admin, the worker)

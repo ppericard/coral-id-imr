@@ -312,25 +312,29 @@ const typeStep = (m, text, sp, t) => {
 // Time to answer and photo enlarged (the sheet's Seconds, Enlarged; docs/LEARNING.md "Response time"): the clock starts
 // when the first photo is in, again when a card over the question closes (reading it is not looking), stops while
 // hidden; zm: 1 once a photo is enlarged. The seconds weigh a right answer's steps (core.js rtWeight); zm is logged only.
-const QCLOCK = {n: 0, t0: null, off: 0, hid: null, zm: 0};
+// pre: the seconds already spent on this question before the player left it and came back (a kept question, pendTake):
+// the time away is no time spent recognising, the time looked at it before leaving still is.
+const QCLOCK = {n: 0, t0: null, off: 0, hid: null, zm: 0, pre: 0};
 const qclockStart = () => {
   const t = performance.now();
   Object.assign(QCLOCK, {t0: t, off: 0, hid: document.hidden ? t : null});
 };
 const qclockGo = () => QCLOCK.t0 === null && qclockStart();
-const qclockAgain = () => QCLOCK.t0 !== null && qclockStart();
+const qclockAgain = () => QCLOCK.t0 !== null && (qclockStart(), (QCLOCK.pre = 0));
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) QCLOCK.hid = performance.now();
+  if (document.hidden) ((QCLOCK.hid = performance.now()), pendClock());
   else if (QCLOCK.hid !== null) ((QCLOCK.off += performance.now() - QCLOCK.hid), (QCLOCK.hid = null));
 });
-const qclockRead = () =>
-  QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000)) * 10) / 10;
+addEventListener('pagehide', () => pendClock());
+// at: the reading's moment (performance.now()); a page being closed while hidden reads at the moment it was hidden.
+const qclockRead = (at = performance.now()) =>
+  QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (at - QCLOCK.t0 - QCLOCK.off) / 1000 + QCLOCK.pre)) * 10) / 10;
 // A new question's clock (question(), winkShow): stopped and not enlarged; the first of its photos to be in starts it,
 // whichever (one cached or quicker than the first in the page would otherwise be looked at off the clock).
 function qclockArm() {
   const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
     ims = [...$v.querySelectorAll('.qstage .qph img')]; // a Find the X's tiles start it in its gate (question), all four in
-  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
+  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0, pre: 0});
   if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
   else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
 }
@@ -453,6 +457,7 @@ function question(cur, target, choices, prompt, set, kq) {
     reveal();
     answered = true;
     QOPEN = false;
+    pendDone(); // an answered question is no more kept: the next one is drawn
     // A Find the X: the photo tapped (its four units are distinct, so the tile of the unit given), logged with the answer.
     const tap = fx ? (fx.find(x => x.n === c) || {}).p : null;
     answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tap);
@@ -2042,6 +2047,187 @@ function dropPlans() {
   NEXTQ = null;
 }
 const plain = q => !q.intro && !q.auto && !q.findx && !q[4].exam && q[2].length > 2;
+// The prompts of the formats as the planners write them (planPhoto, planFind, planDuel), for a kept question built again
+// (pendBuild): tests/pending.test.js reads the planners' source and fails when one of them changes its words.
+const QPROMPT = {
+  which: t => `Which ${GX(t).one || SUBJ.one}?`,
+  type: t => `Which ${GX(t).one || SUBJ.one}? Type it`,
+  find: t => `Find the ${uname(t)}`,
+  again: (a, b) => `Again: ${uname(a)} or ${uname(b)}?`,
+  look: (a, b) => `Look-alikes: ${uname(a)} or ${uname(b)}?`,
+  duel: (a, b) => `${uname(a)} or ${uname(b)}?`
+};
+// The pending question (docs/spec/quiz.md "The pending question"): the question on screen is kept per subject and per game
+// (cur: the Quiz, the Custom quiz, the Duel tab, one pair's duels) on this device, from the moment it shows until it is
+// answered, so leaving the page (Learn, My progress, anywhere) or reloading it brings back the same question, its photos
+// and its choices, never a new draw. It is stored as units and photo files, never as HTML or photo records: a kept
+// question is built again from the current data (pendBuild), so a photo or a genus that left the draw ends it (pendOk) and a
+// new question is drawn. A question shown with a first-meeting card is not kept (its card is the genus's meeting).
+// The seconds already looked at it travel with it (rt, QCLOCK.pre): the time away is not counted, the time before is.
+const PEND = {KEY: 'pending', MAX: 6};
+const pendKey = () => sDev(PEND.KEY); // reefid-<dev>pending: stays on this device, cleared at sign-out (sync.js)
+const pendAll = (key = pendKey()) => {
+  const o = store.get(key, null);
+  return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+};
+let PENDQ = null; // the kept question on screen: {key, cur, el}
+// The record of question q of game cur: null when it is not kept (a card's question, a photo with no file name).
+function pendRec(cur, q) {
+  const [, t, c, , set, kq] = q;
+  if (q.intro || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
+  const ph = p => (p && p.f ? [p.f, String(p.view || '')] : null),
+    sh = set.shown.map(ph),
+    hi = set.hint ? ph(set.hint) : null,
+    re = set.reveal ? set.reveal.map(ph) : null,
+    fd = set.find ? set.find.map(x => [x.n, ph(x.p)]) : null;
+  if ([...sh, ...(re || []), ...(set.hint ? [hi] : []), ...(fd || []).map(x => x[1])].some(x => !x)) return null;
+  const kind = q.findx ? 'find' : q.again ? 'again' : q.auto ? 'look' : cur.startsWith('quiz-duel') ? 'duel' : set.typed ? 'type' : 'which';
+  return {
+    t,
+    c: c.slice(),
+    k: Number.isFinite(kq) ? kq : 0,
+    kind,
+    pr: q.pr || null,
+    sh,
+    hi,
+    re,
+    fd,
+    ty: set.typed ? 1 : 0,
+    ex: set.exam ? 1 : 0,
+    cu: q.custom ? 1 : 0,
+    wm: q.warm ? Number(q.cb) || 1 : 0
+  };
+}
+// The question of a record r, built from the current data; null when anything of it is gone or not as expected.
+function pendBuild(cur, r) {
+  const unit = n => typeof n === 'string' && !!GX(n),
+    // The photo of unit n by its file, as the draw made it ({...record, view}); one hidden or moved since is gone. A mastery
+    // exam question may show a photo the player's reserve holds back from the games (core.js heldOf: model.js examPics).
+    pic = (n, x) => {
+      const p =
+        Array.isArray(x) && typeof x[0] === 'string'
+          ? VIEWS.flatMap(([v]) => [...gamePics(n, v), ...(r.ex ? heldOf(GX(n), v) : [])]).find(y => y.f === x[0] && gamePhotoOk(n, y))
+          : null;
+      return p ? {...p, view: typeof x[1] === 'string' ? x[1] : ''} : null;
+    };
+  if (
+    !r ||
+    typeof r !== 'object' ||
+    !unit(r.t) ||
+    !Array.isArray(r.c) ||
+    r.c.length < 2 ||
+    !r.c.every(unit) ||
+    !Array.isArray(r.sh) ||
+    !r.sh.length
+  )
+    return null;
+  const duel = cur.startsWith('quiz-duel'),
+    pr = Array.isArray(r.pr) && r.pr.length === 2 && r.pr.every(unit) ? r.pr : r.c.slice(0, 2),
+    prompt = {
+      find: () => QPROMPT.find(r.t),
+      again: () => QPROMPT.again(...pr),
+      look: () => QPROMPT.look(...pr),
+      duel: () => QPROMPT.duel(...r.c),
+      type: () => QPROMPT.type(r.t),
+      which: () => QPROMPT.which(r.t)
+    }[r.kind];
+  if (!prompt || duel !== (r.kind === 'duel')) return null;
+  const sh = r.sh.map(x => pic(r.t, x)),
+    hi = r.hi ? pic(r.t, r.hi) : null,
+    re = Array.isArray(r.re) ? r.re.map(x => pic(r.t, x)) : null,
+    fd = Array.isArray(r.fd) ? r.fd.map(x => (Array.isArray(x) && unit(x[0]) ? {n: x[0], p: pic(x[0], x[1])} : null)) : null;
+  if ([...sh, ...(re || []), ...(fd || []).map(x => x && x.p)].some(x => !x) || (r.hi && !hi)) return null;
+  const set = {
+      shown: sh,
+      hint: hi,
+      ...(re ? {reveal: re} : {}),
+      ...(fd ? {find: fd} : {}),
+      ...(r.ty ? {typed: 1} : {}),
+      ...(r.ex ? {exam: true} : {})
+    },
+    k = Number.isFinite(r.k) && r.k >= 0 ? r.k : 0;
+  return Object.assign(
+    [cur, r.t, r.c.slice(), prompt(), set, k],
+    r.kind === 'find' ? {findx: 1} : {},
+    r.kind === 'again' ? {again: 1, pr} : {},
+    r.kind === 'look' ? {auto: pr.slice().sort().join('|'), pr} : {},
+    r.cu ? {custom: 1} : {},
+    r.wm ? {warm: 1, cb: Number(r.wm) || 1} : {}
+  );
+}
+// Whether the kept question q of game cur can still be asked: its genus (and its choices) still in play and met, in the
+// custom quiz still among the genera picked, in the Duel tab still unlocked, an exam question still due. Photos: pendBuild.
+function pendOk(cur, q) {
+  const [, t, c, , set] = q,
+    play = pool();
+  // The target is in play, met and among its choices. The choices of a question with several are known units: the wrong ones
+  // may be a rank's fallback outside the units in play (model.js distractors, rankUnits); the choices of a pair (an Again, a
+  // duel) and the four of a Find the X are drawn among the units in play.
+  if (!play.includes(t) || !introduced(t) || !c.includes(t)) return false;
+  if ((c.length === 2 || q.findx) && !c.every(n => play.includes(n))) return false;
+  if (cur === CUSTOM_H) return (customSel() || []).includes(t);
+  if (cur.startsWith('quiz-duel')) {
+    const open = unlocked(play);
+    return c.every(n => open.includes(n));
+  }
+  return !set.exam || examReady(t);
+}
+// The kept question of game cur: {q, rt, zm} (rt: the seconds looked at it before), or null, a question that cannot be kept
+// being forgotten.
+function pendTake(cur) {
+  const key = pendKey(),
+    r = pendAll(key)[cur];
+  if (!r) return null;
+  const q = pendBuild(cur, r);
+  if (!q || !pendOk(cur, q)) return (pendDrop(cur, key), null);
+  return {q, rt: Math.max(0, Math.min(600, Number(r.rt) || 0)), zm: r.zm ? 1 : 0};
+}
+function pendDrop(cur, key = pendKey()) {
+  const all = pendAll(key);
+  if (cur in all) (delete all[cur], store.set(key, all));
+}
+// The question now on screen (question() was just called for it): kept as it is, or, when it came back from the store
+// (kept: pendTake's reply), with the clock it left with.
+function pendShow(cur, q, kept) {
+  if (kept) {
+    Object.assign(QCLOCK, {pre: kept.rt, zm: kept.zm});
+    PENDQ = {key: pendKey(), cur, el: $v.querySelector('.q')};
+    return;
+  }
+  const key = pendKey(),
+    all = pendAll(key),
+    r = pendRec(cur, q);
+  if (r) all[cur] = {...r, rt: 0, zm: 0, at: Date.now()};
+  else delete all[cur];
+  const old = Object.keys(all).sort((a, b) => (all[a].at || 0) - (all[b].at || 0));
+  old.slice(0, Math.max(0, old.length - PEND.MAX)).forEach(k => delete all[k]);
+  store.set(key, all);
+  PENDQ = r ? {key, cur, el: $v.querySelector('.q')} : null;
+}
+// The question was answered, or another one was asked for (a photo that would not load): nothing is kept for it.
+function pendDone() {
+  if (PENDQ) pendDrop(PENDQ.cur, PENDQ.key);
+  PENDQ = null;
+}
+// The seconds looked at the question on screen, written when the player leaves the page (app.js route), hides it or closes it.
+// A clock not started yet (no photo in: qclockRead is null) leaves what the record holds, the seconds a kept question
+// came back with included.
+function pendClock() {
+  if (!PENDQ || !PENDQ.el || !PENDQ.el.isConnected) return;
+  const all = pendAll(PENDQ.key),
+    r = all[PENDQ.cur],
+    // closed while hidden: the time since it was hidden is not looked time (QCLOCK.off adds it when the page shows again)
+    rt = qclockRead(QCLOCK.hid === null ? undefined : QCLOCK.hid);
+  if (!r) return;
+  if (rt !== null) r.rt = rt;
+  r.zm = QCLOCK.zm ? 1 : 0;
+  store.set(PENDQ.key, all);
+}
+// The photos of a kept question are the window's latest (model.js SEENQ): the entry of its first showing is replaced, not repeated.
+const pendSeen = q => {
+  const k = L => L.map(p => p && p.f).join();
+  SEENQ = SEENQ.filter(e => k(e.L) !== k(qPhotos(q)));
+};
 // The planned questions' photos, fetched in the order needed, two files at a time (all at once, the first photo came
 // later than with no preloading: tools/perf.js, slow 3G); the question on screen (ONQ) first, a dropped one no more.
 // prefetched() resolves once nothing is left (the start-up's next tier waits for it).
@@ -2147,18 +2333,31 @@ let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto(cur = 'quiz') {
   // The first-launch question first (model.js startOf): a player with no answer to it (tour skipped, or an existing
   // player) is asked on a card before the next quiz question; from CHOICE.ASK answers on it is inferred, silently.
-  if (cur === 'quiz' && startGate()) return startAskShow(cur);
+  // A question shown and not answered (the player went to Learn and came back, or reloaded) comes back as it was, before
+  // anything else is decided: pendTake. A new one only once it is answered, or when its photo or genus left the draw.
+  const kept = pendTake(cur);
+  if (!kept && cur === 'quiz' && startGate()) return startAskShow(cur);
   // Now and then a wink instead (winkShow): not a question of the game. Decided before any question is taken or chosen,
   // so the planned ones and the Again / duel spacing wait for the next. The photo quiz only.
-  const wk = cur === 'quiz' && winkDue();
+  const wk = !kept && cur === 'quiz' && winkDue();
   if (wk) return winkShow(wk);
-  let q = takePlan(cur) || planPhoto(cur);
+  let q = kept ? kept.q : takePlan(cur) || planPhoto(cur);
   // Chosen again: every planned question after a new break (rustNow: the app may stay open across it), a comeback
   // question once the rust melted, and a card of the path that would now wait (noOpen, introHold, model.js openRight:
   // an opening only after a right answer; a level's group, lvl, as a card of the path). The custom quiz's cards are the
-  // player's choice: they never wait.
+  // player's choice: they never wait. A kept question stays whatever happened meanwhile (its player has not answered it
+  // yet): only the questions planned behind it are chosen again after a break.
   const brk = rustNow();
-  if (brk || (q.intro && !q.custom && (noOpen() || ((!q.start || q.lvl) && (introHold() || !openRight())))) || !!q.warm !== cbIn(cur)) {
+  if (kept) {
+    if (brk) dropPlans();
+    // After a reload no question remembers it was asked: the draw's repeat window starts with it.
+    if (!lastQs.includes(q[1])) ((last = q[1]), (lastQs = [...lastQs, q[1]].slice(-4)));
+    pendSeen(q);
+  } else if (
+    brk ||
+    (q.intro && !q.custom && (noOpen() || ((!q.start || q.lvl) && (introHold() || !openRight())))) ||
+    !!q.warm !== cbIn(cur)
+  ) {
     dropPlans();
     q = planPhoto(cur);
   }
@@ -2166,14 +2365,15 @@ function quizPhoto(cur = 'quiz') {
   AUTOD = !!q.auto;
   FINDX = !!q.findx;
   question(...q);
+  pendShow(cur, q, kept);
   // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
   // The first cards' "Had the IMR lecture? Open all" box: not for a player who answered "I'm new to corals" (My progress
   // keeps the button for them), nor on a level's group (introShow).
   if (q.intro)
     q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start, undefined, q.start && (startOf() || {}).c !== 'new');
   // The offers about which genera are in play (back to one at a time, bonus genera) belong to the photo quiz. Open all
-  // is on the first cards and in My progress, never offered here.
-  else if (cur !== 'quiz') {
+  // is on the first cards and in My progress, never offered here. None over a kept question: it was shown with them.
+  else if (cur !== 'quiz' || kept) {
   } else if (!noOpen() && promptOk() && startDue())
     (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
@@ -2556,7 +2756,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
           `Again: ${uname(pair[0])} or ${uname(pair[1])}?`,
           photoSet(t, null, Math.log(R) + ease, 2, 'again', mimKeep(mim, pair, t))
         ],
-        {again: 1, ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
+        {again: 1, pr: pair.slice(), ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
   }
@@ -2620,7 +2820,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       lastQs = [...lastQs.slice(0, -1), t];
       return Object.assign(
         [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel', k)],
-        {auto: twoPair, ...(sel ? {custom: 1} : {})}
+        {auto: twoPair, pr: pair.slice(), ...(sel ? {custom: 1} : {})}
       );
     }
   }
@@ -2695,13 +2895,17 @@ function quizDuel(a, b, fresh = true, from = '') {
     DUELRUN = bk ? bk.run : {up: 0, shown: 0};
     if (bk) ev('pulse', {r: 'back', src: 'tip:duelhold', m: 'quiz-duel', n: session.n});
   }
-  const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
+  // A duel shown and not answered comes back as it was (pendTake; the Duel tab's and each pair's drill their own).
+  const kept = pendTake(a && b ? `quiz-duel|${a}|${b}` : 'quiz-duel'),
+    q = kept ? kept.q : (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
+  if (kept) pendSeen(q);
   // No look-alike pair unlocked yet (a new player): the duels come once the quiz has opened two look-alikes.
   if (!q) {
     $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
     return;
   }
   question(...q);
+  pendShow(q[0], q, kept);
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.

@@ -1868,7 +1868,8 @@ function signOutClear(all) {
       ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'st', 'start', 'wink', 'custom'].map(k => subjKey(S.id, k)),
       // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; rule D7)
       // and its basics module's record (Coral basics, Fish basics: app.js basicsKey), else the next beginner gets no offer
-      ...['hold', 'comeback', 'custom-left', 'basics'].map(k => subjDev(S.id, k)),
+      // and the question left unanswered, kept for the player's return (quiz.js PEND), else the next player gets it
+      ...['hold', 'comeback', 'custom-left', 'basics', 'pending'].map(k => subjDev(S.id, k)),
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; rule D7)
       ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k)),
       // and the juveniles and phases cards' marks, one per kind (quiz.js PHASEC; rule D7)
