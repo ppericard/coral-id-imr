@@ -49,6 +49,21 @@ for (const p of o.profiles) {
       d = seeds.map((s, i) => (a[i] !== null && b[i] !== null ? a[i] - b[i] : null)).filter(x => x !== null);
     console.log(`  ${String(n).padStart(2)}th  ${f(med(a))} / ${f(med(b))}  ${ci(d)}`);
   }
+  // Added after the results (not declared): the family answers given before the nth family's Advanced. About equal in both
+  // arms: the delay is the answers handed to the free genera (dilution); different: the genera slow the families otherwise.
+  console.log('\nAfter the results: family answers before the nth family reaches Advanced; median free / empty; paired free - empty');
+  for (const n of [5, 10, 15, 20, 25]) {
+    const fa = arm =>
+        seeds.map(s => {
+          const r = by(s, arm),
+            at = nth(r, 'f', n);
+          return at === null ? null : [...r.seq.slice(0, at)].filter(c => c === 'f').length;
+        }),
+      a = fa('free'),
+      b = fa('empty'),
+      d = seeds.map((s, i) => (a[i] !== null && b[i] !== null ? a[i] - b[i] : null)).filter(x => x !== null);
+    console.log(`  ${String(n).padStart(2)}th  ${f(med(a))} / ${f(med(b))}  ${ci(d)}`);
+  }
   console.log('\nThe auto IMR genera (a): answer at which the nth reaches Open Water / Advanced; median free / empty; paired free - empty (negative: the cap delays them)');
   const na = Math.max(0, ...R.map(r => Object.values(r.kinds).filter(x => x === 'a').length));
   console.log(`  auto genera: ${na}`);

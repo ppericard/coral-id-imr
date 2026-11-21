@@ -851,8 +851,10 @@ in place of species by common name), not the families' own share (64% against 64
 Beyond reach of these runs: whether a real player's genus answers also teach the family (each simulated unit has its own
 knowledge, so any delay seen is dilution) and the app world (the run was cut at its budget). An IMR player's genera
 without the offer sit outside the rank share (`app.js` `shareFree`); they take 15% of the lecture RA's answers 301-1,000
-and 9% of 1,001-2,000, mostly before the 5th family is at Advanced, and the arms do not vary that (ROADMAP
-"learnsim: long runs crash, and the genus share").
+and 9% of 1,001-2,000, mostly before the 5th family is at Advanced. Against an arm with `shareFree` empty (10 paired
+seeds x 3,000 answers), they delay the lecture RA's 10th family at Advanced by 99 answers [59, 139], the 15th-25th by
+about 150-200, only by taking those answers (the family answers before each mark are the same), the shown score
+unchanged; the IMR genera reach Open Water 500-850 answers earlier (docs/reviews/2026-11-21-sharefree-arm.md).
 
 ### Fish: the species level, step 1, by common name
 
