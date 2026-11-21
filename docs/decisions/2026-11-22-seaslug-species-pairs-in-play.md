@@ -1,6 +1,6 @@
 # Sea slug species look-alikes: the decided species pairs in play as declared look-alikes
 
-Date: 2026-11-22. PR: this one. Rules or docs touched: S1, D4, D5, L11, L12; `core.js` `treeSpUnits` (`spDecl`),
+Date: 2026-11-22. PR: #1433. Rules or docs touched: S1, D4, D5, L11, L12; `core.js` `treeSpUnits` (`spDecl`),
 `app.js` `treeGenera`, LEARNING.md "Confusion groups", spec/tools.md, spec/fish-game.md; Linear REE-20 (step 2 of
 [2026-11-21](2026-11-21-seaslug-species-pairs.md)).
 
