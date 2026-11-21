@@ -1790,8 +1790,8 @@ async function lazyPart(b, base, fails) {
               if (!on().pass.has(sid)) miss.push(k);
             });
             [
-              ['remove', fishReject],
-              ['exclude', fishExclude]
+              ['reject', fishReject],
+              ['remove', fishExclude]
             ].forEach(([k, fn]) => {
               DRAFT.fish = fn(JSON.parse(F0), f);
               if (!on().pass.has(sid)) miss.push(k);
@@ -2403,7 +2403,7 @@ async function lazyPart(b, base, fails) {
           await p.click('[data-fuimr="all"]');
           // The actions on a family with photos in play: the order (the easiest, then the most reference-like: core.js
           // easyRank; nobody's photos moved up),
-          // Feature, Cover, Remove and Undo, Not this → no game species → Put back, ×, Validated refused while something
+          // Feature, Cover, Remove, its Removed list and Undo, Not this → no game species → Put back, Validated refused while something
           // is missing; the coral part of the draft untouched; everything undone after.
           // Four candidates of a species nobody decided put in play (one draft step, undone with the rest).
           const st = await p.evaluate(() => ({
@@ -2452,22 +2452,57 @@ async function lazyPart(b, base, fails) {
           await p.click(`${sec} [data-f="${f0}"] [data-fu="cover"]`);
           const f1 = await nth(1);
           await p.click(`${sec} [data-f="${f1}"] [data-fu="remove"]`);
+          // The one Remove (REE-44): out for good (exclude, never the old reviewed mark), the toast with its Undo button, the
+          // photo in the page's Removed list with Put back; Put back makes it a candidate again (one Undo step), Undo twice
+          // brings the photo back in play.
+          const rmL = f => `[data-np-sec] [data-f="${f}"]`;
           let d = await p.evaluate(
-            ([fam, sid, f0, f1]) => ({
+            ([fam, sid, f0, f1, sec, rl]) => ({
               g: DRAFT.fish.genera[fam],
-              seen: DRAFT.fish.seen[f1],
+              x: (DRAFT.fish.exclude || {})[f1],
+              seen: (DRAFT.fish.seen || {})[f1],
               add: DRAFT.fish.add[f1],
-              tile: !!document.querySelector(`[data-f="${f1}"]`),
+              tile: !!document.querySelector(`${sec} [data-f="${f1}"]`),
+              listed: !!document.querySelector(`${rl} [data-np="restore"]`),
+              head: (document.querySelector('[data-np-sec] h3') || {}).textContent || '',
+              undo: !!document.querySelector('.adm-toast:not([hidden]) .adm-toast-undo'),
               num: (document.querySelector(`[data-f="${f0}"] .adm-num`) || {}).textContent
             }),
-            [fam, order.sid, f0, f1]
+            [fam, order.sid, f0, f1, sec, rmL(f1)]
           );
-          if (!d.g || !d.g.feat || d.g.feat[order.sid][0] !== f0 || d.g.cover !== f0 || d.seen !== 1 || d.add || d.tile || d.num !== '1')
+          if (
+            !d.g ||
+            !d.g.feat ||
+            d.g.feat[order.sid][0] !== f0 ||
+            d.g.cover !== f0 ||
+            d.x !== 'excluded' ||
+            d.seen ||
+            d.add ||
+            d.tile ||
+            !d.listed ||
+            !/^Removed/.test(d.head) ||
+            !d.undo ||
+            d.num !== '1'
+          )
             fails.push(`${w}px Families: Feature / Cover / Remove ${JSON.stringify(d)}`);
+          if (d.listed) {
+            await p.click(`${rmL(f1)} [data-np="restore"]`);
+            await settle();
+            d = await p.evaluate(
+              ([f1, rl]) => ({x: (DRAFT.fish.exclude || {})[f1], add: (DRAFT.fish.add || {})[f1], listed: !!document.querySelector(rl)}),
+              [f1, rmL(f1)]
+            );
+            if (d.x || d.add || d.listed) fails.push(`${w}px Families: Put back of a removed photo ${JSON.stringify(d)}`);
+            await p.evaluate(() => undo());
+            await settle();
+          }
           await p.evaluate(() => undo());
           await settle();
-          d = await p.evaluate(f1 => ({seen: (DRAFT.fish.seen || {})[f1], tile: !!document.querySelector(`[data-f="${f1}"]`)}), f1);
-          if (d.seen || !d.tile) fails.push(`${w}px Families: Undo of Remove ${JSON.stringify(d)}`);
+          d = await p.evaluate(
+            ([f1, sec]) => ({x: (DRAFT.fish.exclude || {})[f1], tile: !!document.querySelector(`${sec} [data-f="${f1}"]`)}),
+            [f1, sec]
+          );
+          if (d.x || !d.tile) fails.push(`${w}px Families: Undo of Remove ${JSON.stringify(d)}`);
           await p.click(`${sec} [data-f="${f1}"] [data-fu="not"]`);
           await p.selectOption(`${sec} [data-f="${f1}"] [data-funot]`, 'x');
           await settle();
@@ -2724,9 +2759,11 @@ async function lazyPart(b, base, fails) {
             if (d !== 'p1g0smk') fails.push(`${w}px Families: Undo of Keep in play left ${d}`);
           }
           const f2 = await nth(2);
-          await p.click(`${sec} [data-f="${f2}"] [data-fu="exclude"]`);
+          if (await p.evaluate(sec => !!document.querySelector(`${sec} .adm-x, ${sec} [data-fu="exclude"]`), sec))
+            fails.push(`${w}px Families: a corner × is still drawn (one Remove)`);
+          await p.click(`${sec} [data-f="${f2}"] [data-fu="remove"]`);
           await settle();
-          if (!(await p.evaluate(f2 => (DRAFT.fish.exclude || {})[f2], f2))) fails.push(`${w}px Families: × did not exclude`);
+          if (!(await p.evaluate(f2 => (DRAFT.fish.exclude || {})[f2], f2))) fails.push(`${w}px Families: Remove did not exclude`);
           const needs = await p.evaluate(() => (document.querySelector('.adm-needs') || {}).textContent || '');
           await p.click('[data-ok]');
           await settle();
@@ -6592,20 +6629,24 @@ async function lazyPart(b, base, fails) {
           [card(id), fam]
         );
       let fr = await ft('demorep5');
-      if (!fr || !fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
+      // One Remove (REE-44): no corner ×; Remove takes the photo out for good (exclude, never the old reviewed mark), the
+      // tile says removed, the toast's Undo button takes it back.
+      if (!fr || fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
       else {
         await p.click(card('demorep5') + ' [data-fu="remove"]');
         await settle();
-        const rm = await p.evaluate(f => ((DRAFT.fish || {}).seen || {})[f], fr.f);
+        const rm = await p.evaluate(
+          f => ({
+            x: ((DRAFT.fish || {}).exclude || {})[f],
+            seen: ((DRAFT.fish || {}).seen || {})[f],
+            undo: !!document.querySelector('.adm-toast:not([hidden]) .adm-toast-undo')
+          }),
+          fr.f
+        );
         const fr2 = await ft('demorep5');
-        if (rm !== 1 || fr2.out !== 'removed' || fr2.rm) fails.push(`To do › Reports, a fish photo's Remove: ${JSON.stringify({rm, fr2})}`);
-        await p.click('#undo');
-        await settle();
-        await p.click(card('demorep5') + ' [data-fu="exclude"]');
-        await settle();
-        if (!(await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f], fr.f)))
-          fails.push(`To do › Reports, a fish photo's ×: not excluded`);
-        await p.click('#undo');
+        if (rm.x !== 'excluded' || rm.seen || !rm.undo || fr2.out !== 'removed' || fr2.rm)
+          fails.push(`To do › Reports, a fish photo's Remove: ${JSON.stringify({rm, fr2})}`);
+        await p.click(rm.undo ? '.adm-toast .adm-toast-undo' : '#undo');
         await settle();
         if (await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f] || !!((DRAFT.fish || {}).seen || {})[f], fr.f))
           fails.push(`To do › Reports, a fish photo: Undo did not take the tools back`);
@@ -7236,6 +7277,8 @@ async function lazyPart(b, base, fails) {
       if (
         fo.heads.join() !== 'All photos,Per family,Fewest and most,Circles,Sources,Answers per photo,3+ answers per family' ||
         fo.pool.Candidates !== fo.cov ||
+        // one Removed row (the one Remove: exclude; REE-44), the reviewed marks apart as Rejected, no Excluded row
+        Object.keys(fo.pool).join() !== 'In play,Not in games,Other species,Removed,Candidates,Rejected,Not this,Total' ||
         fo.kpi.join() !== 'Photos in play,Observations in play,Families in play,Candidates' ||
         Number(fo.kv[0]) !== fo.pool['In play'] ||
         !fo.pool['In play'] ||
@@ -8808,7 +8851,9 @@ async function lazyPart(b, base, fails) {
         if (fg) await sq.click(`.adm-ftile[data-f="${fg}"] [data-fu="cover"]`);
         const s1 = await sq.evaluate(
           ([f0, f1, fg, fish0]) => ({
-            seen: ((DRAFT.seaslug || {}).seen || {})[f0],
+            // the one Remove (REE-44): out for good in their own part, listed in the page's Removed list with Put back
+            removed: ((DRAFT.seaslug || {}).exclude || {})[f0],
+            listed: !!document.querySelector(`[data-np-sec] [data-f="${CSS.escape(f0)}"] [data-np="restore"]`),
             feat: JSON.stringify(((DRAFT.seaslug || {}).genera || {})['f:Chromodorididae']),
             cover: (((DRAFT.seaslug || {}).genera || {})['g:Chromodoris'] || {}).cover === fg,
             fish: JSON.stringify(DRAFT.fish) === fish0,
@@ -8817,7 +8862,15 @@ async function lazyPart(b, base, fails) {
           }),
           [f0, f1, fg, fish0]
         );
-        if (!s1.seen || !s1.feat.includes(f1) || !s1.cover || !s1.fish || !s1.out || !/sea slug photos? set aside/.test(s1.sum))
+        if (
+          !s1.removed ||
+          !s1.listed ||
+          !s1.feat.includes(f1) ||
+          !s1.cover ||
+          !s1.fish ||
+          !s1.out ||
+          !/sea slug photos? removed/.test(s1.sum)
+        )
           se.push(`the tools ${JSON.stringify(s1)}`);
         // the genus-level leaf's page reads that cover under its genus's id, as ★ Cover writes it (Codex review #1047)
         if (fg) {

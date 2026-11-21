@@ -380,8 +380,10 @@ corals'.
   (`fishLoad` `entry`).
 - **Buttons**: ✕ Reject (← key; `seen`), Skip (→; this tab only), + Add (1; dashed when the pass would add it): in
   play for the species with the pass's tags, ease, phase and crop written beside it where Pierre has none (as the
-  auto-sort writes its adds, so every photo in play carries its tags and ease for the game), and the × on the photo
-  (`exclude`, for good). Each click one Undo step in `DRAFT.fish`, sent by Publish; never a coral key.
+  auto-sort writes its adds, so every photo in play carries its tags and ease for the game), and the × on the photo,
+  titled Remove: the one Remove of every photo tile (`admin.js` `treeRemove`: `exclude`, for good; the toast's Undo
+  button, beside a Check's answer; the Tree's Removed list puts it back). Each click one Undo step in `DRAFT.fish`, sent
+  by Publish; never a coral key.
 - **Auto**: the fish auto-sort's line above the card (in, set aside, Checks to answer, keep agreement and whether it is
   on), folded behind the **Auto** chip at the end of the chips' row as the corals', and its Details below it
   (disagreements, every decision still standing with Undo, `fishAutoUndo`), here and not on the coral Candidates.

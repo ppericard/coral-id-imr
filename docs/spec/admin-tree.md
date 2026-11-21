@@ -95,7 +95,8 @@ children, a key group's included, at every width).
 - **A family's page**: the book's family (English name, the scientific names below, an **IMR** tag on the families and
   genera in the IMR course, its IMR name in the tooltip), one block per genus and one section per species with its
   photos in play, featured first, then the game's order (the easiest, then the most reference-like: `core.js`
-  `easyRank`), never by who took them (`autosort.js` `fishOrder`); Feature / ★ Cover / Remove / Not this / ×,
+  `easyRank`), never by who took them (`autosort.js` `fishOrder`); Feature / ★ Cover / Remove (the one Remove, out for
+  good, the node's Removed list below the page) / Not this,
   ✓ Validated with what is missing (`fishNeeds`), a wink's card. Only the family's page has the wink card, ✓ Validated
   and what it needs; Feature, Remove, Not this and the rows Not this species and Other species, out of play keep their
   family's id on every page (those rows list the photos of the page's species). The family's choices are in
@@ -212,8 +213,15 @@ subject declares (`SUBJECTS` `flat`, `admin.js` `treeShape`, as the Tree's build
   Candidates, Not this genus); the fish's their builder's node page (`TREE_BUILD` `tree`: a section per species, ease
   and phase tags, ★ Cover at every rank). Different data (`genera[<genus>]`, `fish.genera[<node id>]`) and tiles; one
   body is a later step (the study's step 8).
-- **`removed`, `excluded`**: the corals' `genera[g].hide` and top-level `exclude`; none for the fish yet: their Remove
-  (`fish.seen`) returns the photo to Candidates and `fish.exclude` has no tested restore (next step).
+- **`removed`, `excluded`**: the corals' `genera[g].hide` and top-level `exclude`. The tree subjects' (the fish, the sea
+  slugs; REE-44 part 2): their part's `exclude` only (`fish.exclude`, `seaslug.exclude`), written by the one Remove of
+  every photo tile and of the Candidates card's × (`admin.js` `treeRemove`, the toast with its Undo button), each photo
+  under the leaf of its species (Not this's species first, else its candidate's or game record's: `npTreeExcluded`; a
+  genus-level photo under its genus's leaf), the photos with no leaf at the first root ("Removed, no species any more");
+  Put back deletes the entry, one Undo step, and the photo is a candidate again (a reference photo the game holds, in
+  play again; the auto-sort, which logged it, never adds it again by itself). Their `seen` (✕ Reject, Out of play, a
+  P3 count, and the old Remove's mark) is not in the list: it is a reviewed mark, the photo still a candidate
+  (`tests/adminremove-tree.test.js`).
 
 ## The corals' Tree
 
