@@ -14,6 +14,9 @@ infrastructure numbers against their free-tier limits (one line, from the hourly
 of a limit; in the short brief only when one warns or the check failed), the open questions for Pierre from docs/STATUS.md,
 and where open work is tracked (Linear's team views, as links: the brief never queries Linear; in the short brief on the
 questions line); the full brief adds the fish candidates waiting for the judging pass.
+It always says whether the local origin/main ref is the remote's main (one bounded `git ls-remote`, no fetch, nothing
+moved; "remote freshness unknown" when it fails; on the time line in the short brief), since the tools, the drift check
+and the VERSION on main are all read from that ref (REE-180).
 When this checkout's CLAUDE.md, AGENTS.md or .claude/ instructions differ from origin/main it says so (agents load this
 copy), it counts today's Agent launches by model and effort from tools/agent_guard.py's log, and it names the docs past
 their size mark (tests/docs.test.js DOC_MARKS; only when one is: a warning, never a block). The hooks run main's reviewed copy
@@ -223,6 +226,102 @@ def stray(pool, open_refs):
         if b['name'] != 'main' and b['name'] not in open_refs and not b['name'].startswith('train/')
     ]
     return [pool.submit(one, b) for b in branches]
+
+
+# --- Is the local origin/main current? (REE-180; the integrator continuity study, E.2) ----------------------------------
+# The hooks fetch origin/main only when the ref is missing, and everything below (the drift check, the sheet script's
+# VERSION on main, the tools the hooks run) reads the local ref: an old ref must never pass as current. One bounded
+# `git ls-remote` (no fetch: nothing moves) tells whether the remote's main is the sha the local ref holds. Read-only:
+# the ref, the working tree and the local work are never touched; any failure is "remote freshness unknown".
+
+MAIN_BRANCH = 'refs/heads/main'
+MAIN_LOCAL = 'refs/remotes/origin/main'
+FETCH_FIX = 'git fetch origin +refs/heads/main:refs/remotes/origin/main'
+LS_LIMIT = 3.0  # seconds for `git ls-remote` (the SessionStart hook has 15 s, the brief's deadline is DEADLINE)
+
+
+def git_text(root, *args):
+    """Stdout of a local git command, or None when it fails. Never raises."""
+    try:
+        r = subprocess.run(['git', '-C', root] + list(args), capture_output=True, text=True, timeout=3, stdin=subprocess.DEVNULL)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def ls_remote_main(root, limit):
+    """The sha of main on `origin`, by `git ls-remote`: no prompt, killed (with its helpers) past `limit` seconds."""
+    env = dict(os.environ, GIT_TERMINAL_PROMPT='0')
+    try:
+        p = subprocess.Popen(['git', '-C', root, 'ls-remote', 'origin', MAIN_BRANCH], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL, text=True, env=env, start_new_session=True)
+    except OSError:
+        raise Soft('no git')
+    try:
+        out, _ = p.communicate(timeout=max(0.3, limit))
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(p.pid, 9)
+        except OSError:
+            pass
+        p.communicate()
+        raise Soft('no answer in %g s' % limit)
+    if p.returncode:
+        raise Soft('origin not reachable')
+    for line in out.splitlines():
+        sha, _, ref = line.partition('\t')
+        if ref == MAIN_BRANCH and re.fullmatch(r'[0-9a-f]{40}', sha):
+            return sha
+    raise Soft('origin has no main')
+
+
+def freshness(root):
+    """What the local origin/main ref is worth: {'local': sha or None, 'moved': epoch it last changed or None,
+    'commit': epoch of its commit when it has no reflog, 'remote': sha or None, 'why': why the remote is unknown or None, 'behind': commits the remote has that the ref lacks,
+    when countable (the objects are here), else None}. Never raises."""
+    f = {'local': git_text(root, 'rev-parse', '-q', '--verify', MAIN_LOCAL), 'moved': None, 'remote': None, 'why': None, 'behind': None}
+    stamp = git_text(root, 'reflog', 'show', '-1', '--format=%ct', MAIN_LOCAL)  # when the ref last changed (not when last checked)
+    f['moved'] = int(stamp) if stamp and stamp.isdigit() else None
+    if f['local'] and not f['moved']:  # a fresh clone has no reflog for the ref: the age of its commit tells something
+        stamp = git_text(root, 'log', '-1', '--format=%ct', MAIN_LOCAL)
+        f['commit'] = int(stamp) if stamp and stamp.isdigit() else None
+    try:
+        f['remote'] = ls_remote_main(root, min(LS_LIMIT, left()))
+    except Soft as e:
+        f['why'] = str(e)
+        return f
+    except Exception as e:  # anything else is soft too: a hook must not fail on the network
+        f['why'] = type(e).__name__
+        return f
+    if f['local'] and f['remote'] != f['local'] and git_text(root, 'cat-file', '-e', f['remote'] + '^{commit}') is not None:
+        n = git_text(root, 'rev-list', '--count', '%s..%s' % (f['local'], f['remote']))
+        f['behind'] = int(n) if n and n.isdigit() else None
+    return f
+
+
+def span(seconds):
+    s = max(0, seconds)
+    return '%dm' % (s // 60) if s < 3600 else '%dh' % (s // 3600) if s < 48 * 3600 else '%dd' % (s // 86400)
+
+
+def fresh_line(f, short, now=None):
+    """The one clause or line on the local origin/main ref against the remote's main; never says current unless the remote said so."""
+    now = time.time() if now is None else now
+    loc, rem = (f.get('local') or '')[:7], (f.get('remote') or '')[:7]
+    moved = ('ref last moved %s ago' % span(now - f['moved']) if f.get('moved') else
+             'no ref reflog, its commit is %s old' % span(now - f['commit']) if f.get('commit') else 'ref age unknown')
+    if not f.get('remote'):
+        if not loc:
+            return 'remote freshness unknown (%s) and no local origin/main ref: %s' % (f.get('why') or '?', FETCH_FIX)
+        return 'remote freshness unknown (%s): local origin/main %s, %s' % (f.get('why') or '?', loc, moved)
+    if f['remote'] == f.get('local'):
+        return ('origin/main %s = remote main' % loc) if short else (
+            'Remote freshness: local origin/main %s = remote main (git ls-remote just now); %s' % (loc, moved))
+    n = f.get('behind')
+    how = ('%d commit%s behind' % (n, '' if n == 1 else 's')) if n else 'differs from' if f.get('local') else 'is missing against'
+    head = '⚠ local origin/main %s %s remote main %s (%s)' % (loc or 'none', how, rem, moved)
+    return head + ('; instructions and tools here come from the old ref: ' if short else
+                   '; the drift check, the sheet script VERSION on main and the tools the hooks run come from the old ref: ') + FETCH_FIX
 
 
 # --- Sheet script version ------------------------------------------------------------------------------------------------
@@ -560,12 +659,19 @@ def result(f):
 
 def brief(short, at):
     lines = [time_line(at)]
+    pool = ThreadPoolExecutor(max_workers=16)
+    f_fresh = pool.submit(freshness, ROOT)  # the network step runs beside the others, bounded by LS_LIMIT
     drifted = drift()
     if drifted and short:  # the short brief has 5 lines: on the time line
         lines[0] += ' · ' + drift_note(drifted)
     elif drifted:
         lines.append(drift_note(drifted))
-    pool = ThreadPoolExecutor(max_workers=16)
+    fresh, fresh_err = result(f_fresh)
+    fl = fresh_line(fresh, short) if fresh else 'remote freshness unknown (%s)' % fresh_err
+    if short:  # the time line always survives the 5-line cut
+        lines[0] += ' · ' + fl
+    else:
+        lines.append(fl)
     have_gh = shutil.which('gh') is not None
     url = sync_url()
     f_prs = pool.submit(prs, pool) if have_gh else None
