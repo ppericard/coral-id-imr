@@ -73,6 +73,7 @@ function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, sub
     [
       // distractors and the labels it keeps apart (choiceKey, choiceApart, just above it).
       cut(model, "// A choice's label as its button shows it", '\n}\n', {through: 1, file: 'model.js'}),
+      cut(quiz, 'const QPROMPT = {', '\n};\n', {through: 1, file: 'quiz.js'}), // the prompts of the formats
       cut(quiz, 'function planFind(cur, t, list, ease = 0, sel = null) {', '\n}\n', {through: 1, file: 'quiz.js'}),
       'this.planFind = planFind;'
     ].join('\n'),

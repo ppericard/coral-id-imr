@@ -305,7 +305,12 @@ test('the Duel tab: its photo eased by the opening hold, as every question of th
       holdEase: () => ctx.ease
     };
   vm.createContext(ctx);
-  vm.runInContext(/function planDuel\(a, b\) \{[\s\S]*?\n\}\n/.exec(src)[0] + 'this.planDuel = planDuel;', ctx);
+  vm.runInContext(
+    /const QPROMPT = \{[\s\S]*?\n\};\n/.exec(src)[0] +
+      /function planDuel\(a, b\) \{[\s\S]*?\n\}\n/.exec(src)[0] +
+      'this.planDuel = planDuel;',
+    ctx
+  );
   for (const [ease, args] of [
     [0, []],
     [-0.8, []],
@@ -370,6 +375,9 @@ test('the Duel tab relief card: back from its comparison, the same run goes on; 
       ev: (k, o) => events.push(o.r),
       takePlan: () => null,
       planDuel: (a, b) => ['quiz-duel|' + a + '|' + b, a, [a, b], '', {}],
+      pendTake: () => null, // quiz.js: no question kept (tests/pending.test.js)
+      pendShow: () => {},
+      pendSeen: () => {},
       question: () => {},
       introduced: () => true,
       starRefs: () => [],

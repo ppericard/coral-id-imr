@@ -1835,3 +1835,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   chat (the integrator's role; a ledger hit is evidence, checked for scope, later amendments and applicability; an
   observation, a one-incident correction, tone or repetition never widen an instruction, a clear stop is obeyed).
   Applied: #1361; REE-178.
+- **18:12, the quiz keeps its question (an RA's feedback, relayed).** «Quand on quitte le jeu et qu'on y revient … on se
+  retrouve avec une photo différente et un jeu différent … ça permet de skipper des questions difficiles sans perdre de
+  points … parfois on a envie d'aller voir dans Learn pour revérifier quelque chose avant de pouvoir répondre à la
+  question, mais la question a disparu entre temps. Donc ça serait bien que globalement, en fait, on puisse revenir sur
+  la même question et que les questions restent, plutôt que d'avoir à chaque fois une nouvelle question quand on ne fait
+  juste que partir pour aller voir un truc et revenir.» The question on screen stays, per subject and game, until it is
+  answered, across navigation and a reload. Applied: docs/spec/quiz.md "The pending question",
+  decisions/2026-11-21-quiz-keeps-pending-question.md (#1374); REE-188.

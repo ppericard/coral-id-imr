@@ -57,7 +57,7 @@ could clash with another app on the shared origin `ppericard.github.io`). `core.
 | every other `imr-<name>` | `reefid-<name>` | The device-only keys, below. |
 
 The device-only keys: `reefid-tour`, `-nudge`, `-log0`, `-recalc`, `-prompt-at`, `-pulse`, `-again-told`, `-hold`,
-`-comeback`, `-link`, `-photo-q`, `-photo-stats`, `-idkey-x`, `-idkey-lay`, `-idkey-pv`, `-idkey-start2`, `-lab-votes`,
+`-comeback`, `-pending` (the question left unanswered, per subject: `reefid-pending`, `reefid-fish-pending`; [quiz.md](quiz.md#the-pending-question)), `-link`, `-photo-q`, `-photo-stats`, `-idkey-x`, `-idkey-lay`, `-idkey-pv`, `-idkey-start2`, `-lab-votes`,
 `-curation-last`, `-curation-draft`, `-curation-base` (the admin's old draft, moved once into its IndexedDB store:
 `admin.js` `draftMove`), `-ach-new`, `-achs-cache`, `-board-cache`, `-board-told`, `-board-sent14`, `-anon-base`,
 `-anon-id`, `-anon-resent`, `-anonq`, `-dev-id`, `-evq`, `-reports`, `-report-name`, `-photo-flags`, and the admin's
