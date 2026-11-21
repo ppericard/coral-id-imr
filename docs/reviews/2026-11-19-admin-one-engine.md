@@ -311,6 +311,17 @@ green checks; refactors of this size probably run longer.
    species with no name yet; each first sheet at 390 px and with the species filter on All), progress seeded, the
    clock, the random numbers and the player's reserve fixed: identical byte for byte, before and after.
 11. **Small Learn, home and progress readers** (Dup-16, Dup-17; fix S).
+   **Done** (spec/subjects.md "What reads the subject's data", `tests/homeread.test.js`): Home no longer tells a subject
+   whose units have names from the corals by testing the data (`!!GX(slateGenera()[0]).name`): `UNITS` has a member
+   `named`, set once in `TREE_UNITS` (so for the fish and the sea slugs), and `home.js` follows it for its Learn band, its
+   Identify door and its words; the corals' band reads its genus through `GX` like the others. My progress' Groups view
+   and the custom quiz's first view read the group of a genus through a new member, `UNITS group(k)` (the corals': the IMR
+   lecture's group `k`, `data.json` `imrg`), instead of reading `DATA.imrg` themselves. The progress record, the feats and
+   every stored key are untouched (the readers only). The ratchet: `DATA.gen` in `home.js` 2 to 1, `DATA.imrg` in
+   `progress.js` and `quiz.js` 1 to 0 each, and the `home.js` entry of `LINES` gone. Not changed: the corals' band still
+   draws from every genus of `data.json` (Millepora, a slate genus read from the extra part, is not in it: the slate is not
+   the same list), the corals' door words stay in `home.js`, and the `DATA.gen` and `DATA.imrg` reads of the Learn list and
+   sheets (`learn.js`: the flat builders and the compare pages, step 12's) and of the ID Key stay where they are.
 12. **Compare pages made generic** (Dup-15; feature M): the code only. Opening them to other subjects is Pierre's
     call.
 13. **Tools: one tree-game builder** (Dup-20; tooling, probably L): `seaslug_game.py` on `fish_game.py`'s functions,

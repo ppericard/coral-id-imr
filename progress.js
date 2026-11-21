@@ -227,7 +227,7 @@ function quizBoard() {
     },
     groups: () => `<div class="pgroups">${groups
       .map(k => {
-        const gr = DATA.imrg.find(x => x.n === k),
+        const gr = UNITS[SUBJ.id].group(k),
           L = list.filter(n => gi(n) === k),
           // No lecture group: Millepora (the benthic slate, F as on the Slate view); a starred genus left ungrouped, ★.
           [mk, t] = gr
