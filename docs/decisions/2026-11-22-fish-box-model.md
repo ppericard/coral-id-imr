@@ -56,4 +56,6 @@ question (REE-202), not decided here.
   lost); drift redo 24 of 24 agree.
 - Wave 3 (batches 15-26, #1444): 600 photos of 157 species with no tile, 546 boxed, 54 left without a box (9.0%, tiles
   lost); drift redo 22 of 24 agree (both disagreements Sonnet's "no box" where Opus 5.5 high boxed).
+- Wave 4 (batches 27-37, #PR4): 512 photos of 142 species with no tile, 440 boxed, 72 left without a box (14.1%, tiles
+  lost); drift redo 20 of 22 agree (both disagreements Sonnet's "no box" where Opus 5.5 high boxed).
 - The bench, its threshold files and every run stay in the session's scratch folder; the figures are here and in the PR.
