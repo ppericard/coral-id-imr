@@ -471,6 +471,29 @@ async function findTheXSpecies(b, base, errs) {
     }
     ok(seen.cn >= 3, `Find the X on species by common name: ${seen.cn}`);
     ok(seen.sci >= 3, `Find the X on species by scientific name: ${seen.sci}`);
+    // The mimicry pair (REE-45, Q416 c): the class's photos carry no tile on the data today (no box on a juvenile Acanthurus
+    // pyroferus), so they are given one here, in the page only. "Find the Angelfishes" then has the Surgeonfishes' juvenile
+    // as its decoy tile, one of its three others, whatever the draw; the question's own photo is the species resembled.
+    {
+      const E = ((GX('f:Surgeonfishes') || {}).mim || [])[0];
+      ok(!!E, 'a mimicry entry on the Surgeonfishes');
+      if (E) {
+        GX('f:Surgeonfishes').views.wide.forEach(p => mimIn([E], p) === E && (p.xc = [0, 0, 1, 1]));
+        ok(UNITS.fish.tiles('f:Angelfishes').length > 0, 'the Angelfishes have a tile');
+        for (let i = 0; i < 12; i++) {
+          const Q0 = planFind('quiz', 'f:Angelfishes', pool(), 0, null);
+          if (!Q0) {
+            ok(false, 'no Find the X on the Angelfishes');
+            break;
+          }
+          const dec = Q0[4].find.filter(x => x.n !== 'f:Angelfishes' && mimUnit(x.n, x.p) === 'f:Angelfishes');
+          ok(
+            dec.length === 1 && dec[0].n === 'f:Surgeonfishes' && Q0[2].length === 4,
+            `the class's decoy tile: ${Q0[2]} ${dec.map(x => x.n)}`
+          );
+        }
+      }
+    }
     // The ordinary draw with FIND.P back at 0: none (the family and species draws alike).
     FIND.P = 0;
     let none = 0;
