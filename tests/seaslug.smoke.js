@@ -1127,6 +1127,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         }
         seen++;
         const [, t, ch, prompt, set] = Q0,
+          // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
           tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
         ok(prompt === `Find the ${uname(t)}`, `the prompt: ${prompt}`);
         ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four genera: ${ch}`);
@@ -1135,6 +1136,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
           `only genera met, in play: ${ch}`
         );
         ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+        // answer.js: the format has no name buttons (a read)
         ok(!document.querySelector('#view .ans'), 'no name buttons');
         ok(
           set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
