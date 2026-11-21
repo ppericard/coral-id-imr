@@ -1395,7 +1395,7 @@ const RECALC = {
 // Whether start-up has settled its one-time cards (recalcNotice, mxLostNotice, rvNotice, sorryNotice, subjHello, the
 // achievements' toasts): tests wait for window.CARDS_SAID rather than for a fixed time, as for window.RECALC_SAID. True
 // once the app is ready (app.js SETUP 2 sets APP_READY after calling them), the notices that waited for the visit's first
-// sync have run on the merged state (sync.js noticesReady), subjHello is not waiting for its calm moment (helloT), and
+// sync have run on the merged state (sync.js noticesReady), subjHello is not waiting for its calm moment (helloT), the Identify tip is not either (quiz.js tipOutT), and
 // no card waits to try again (noticeAgain) unless a card or the tour it waits behind is on screen: every card due is
 // then on screen, decided against, or behind one that is. Read live, so a page change that closes a card unseen (it
 // comes back 300 ms later) reads false until it is back.
@@ -1408,7 +1408,8 @@ function noticeAgain(fn, ms) {
 const noticeStop = t => (clearTimeout(t), NOTICE_AGAIN.delete(t));
 Object.defineProperty(window, 'CARDS_SAID', {
   configurable: true,
-  get: () => !!window.APP_READY && noticesReady() && !helloT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
+  get: () =>
+    !!window.APP_READY && noticesReady() && !helloT && !tipOutT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
 });
 // visit: run inside another subject's visit (inSubject), for the notes about that subject; it returns RECALC_BACK when
 // the subject on screen is to look again (the visited subject's notes marked, the engine's after them left for it).
