@@ -82,6 +82,13 @@ test('aboutCites: a site cited by several pages is one line with its pages count
             }
           ],
           en: [{n: 'x', web: [{t: "Nudi Pixel, 'Nudibranch Look-Alikes': A, B", u: 'https://nudipixel.net/similarities'}]}]
+        },
+        // a species named by a paper: its own `cite`, linked by its doi, named whole
+        {
+          id: 'x:sp',
+          inf: 1,
+          cite: 'Soong, G.Y. & Reimer, J.D. (2020). A species complex (Nudibranchia: Doridina). Marine Biodiversity 50: 25.',
+          doi: '10.1007/s12526-020-01048-w'
         }
       ],
       taxa: {cite: 'never a source: no object {t}', groups: [{n: 1, title: 'not a source'}]}
@@ -99,7 +106,12 @@ test('aboutCites: a site cited by several pages is one line with its pages count
     {name: 'Kim, Donohoo and Gosliner 2024, The Fionidae (PeerJ 12)', url: 'https://doi.org/10.2/y', pages: 0},
     {name: "Nudi Pixel, 'Nudibranch Look-Alikes'", url: 'https://nudipixel.net/similarities', pages: 0},
     // the site's own line takes the forum message cited by another short name
-    {name: 'Sea Slug Forum', url: 'https://seaslugforum.net', pages: 3}
+    {name: 'Sea Slug Forum', url: 'https://www.seaslugforum.net', pages: 3},
+    {
+      name: 'Soong, G.Y. & Reimer, J.D. (2020). A species complex (Nudibranchia: Doridina). Marine Biodiversity 50: 25.',
+      url: 'https://doi.org/10.1007/s12526-020-01048-w',
+      pages: 0
+    }
   ]);
 });
 
@@ -119,27 +131,38 @@ test('the sea slugs declare what their data cites; the corals and the fish keep 
     if (Array.isArray(o)) o.forEach(x => walk(x, part));
     else if (o && typeof o === 'object') {
       if (typeof o.t === 'string' && Object.keys(o).every(k => k === 't' || k === 'u' || k === 'read')) holds.push(part);
-      else Object.values(o).forEach(x => walk(x, part));
+      else {
+        if (typeof o.cite === 'string') holds.push(part);
+        Object.values(o).forEach(x => walk(x, part));
+      }
     }
   };
-  Object.entries(SLUG).forEach(([k, v]) => walk(v, k));
+  Object.entries(SLUG).forEach(([k, v]) => k !== 'taxa' && walk(v, k)); // the taxa's cite is WoRMS's own line (the test below)
   assert.deepStrictEqual([...new Set(holds)].sort(), [...SEA.cites.in].sort());
 });
 
 test("About lists every source the sea slugs' data cites, named as the data names it, none invented", () => {
   const L = cites(SLUG, SEA.cites.in);
   assert.ok(L.length >= 30, `${L.length} lines`);
-  // the sources, read again by a walk over the whole file
+  // the sources, read again by a walk over the whole file (not the taxa's: WoRMS's own line, below), a record's `cite`
+  // with its doi as the source it names whole
   const cited = [];
   const walk = o => {
     if (Array.isArray(o)) o.forEach(walk);
     else if (o && typeof o === 'object') {
       if (typeof o.t === 'string' && Object.keys(o).every(k => k === 't' || k === 'u' || k === 'read')) cited.push(o);
-      else Object.values(o).forEach(walk);
+      else {
+        if (typeof o.cite === 'string') cited.push({t: o.cite, u: o.doi ? 'https://doi.org/' + o.doi : undefined});
+        Object.values(o).forEach(walk);
+      }
     }
   };
-  walk(SLUG);
+  Object.entries(SLUG).forEach(([k, v]) => k !== 'taxa' && walk(v));
   assert.ok(cited.length > 600, `${cited.length} citations`);
+  assert.ok(
+    cited.some(s => /^Soong, G\.Y\./.test(s.t) && /^https:\/\/doi\.org\/10\./.test(s.u)),
+    'the species named by a paper'
+  );
   const sites = L.filter(s => s.pages),
     docs = L.filter(s => !s.pages);
   cited.forEach(s => {
@@ -171,6 +194,40 @@ test("About lists every source the sea slugs' data cites, named as the data name
   assert.ok(world && world.pages > 50 && world.url === 'https://en.seaslug.world', JSON.stringify(world));
   assert.ok(L.some(s => /^Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs$/.test(s.name)));
   assert.strictEqual(new Set(L.map(s => s.name)).size, L.length, 'one line per source');
+  assert.ok(L.some(s => /^Soong, G\.Y\./.test(s.name) && /^https:\/\/doi\.org\/10\./.test(s.url)));
+});
+
+test("every source the sea slugs' data cites by a key has its line on About (iNaturalist, WoRMS, Wikipedia, the guides, the web pages)", () => {
+  // en[].src: the keys a name's sources are cited by; ensrc: each record's ids at them; taxa.cite: the classification's
+  const keys = new Set(),
+    walk = o => {
+      if (Array.isArray(o)) o.forEach(walk);
+      else if (o && typeof o === 'object') {
+        if (Array.isArray(o.src) && o.src.every(x => typeof x === 'string')) o.src.forEach(k => keys.add(k));
+        Object.values(o).forEach(walk);
+      }
+    };
+  walk(SLUG);
+  Object.keys(SLUG.ensrc).forEach(k => keys.add(k));
+  const p = page([{id: 'coral'}, {id: 'seaslug', about: SEA, f: SLUG}]);
+  p.c.window.viewAbout();
+  const html = p.out.innerHTML,
+    L = p.c.window.aboutCites(SLUG, SEA.cites.in),
+    line = {
+      inat: /<a href="https:\/\/www\.inaturalist\.org"[^>]*>iNaturalist<\/a>/,
+      worms: /<a href="https:\/\/www\.marinespecies\.org"[^>]*>World Register of Marine Species/,
+      wiki: /<a href="https:\/\/en\.wikipedia\.org"[^>]*>Wikipedia<\/a>/
+    };
+  assert.deepStrictEqual([...keys].sort(), ['guide', 'inat', 'web', 'wiki', 'worms'], 'a new key needs its line (and this test its case)');
+  Object.entries(line).forEach(([k, re]) => assert.match(html, re, `the key ${k} has no line on About`));
+  // guide: the guides ensrc.guide names, as the list's lines; web: each page, in the list (the test above)
+  SLUG.ensrc.guide.forEach(g =>
+    assert.ok(
+      L.some(s => g.t.startsWith(s.name)),
+      `the guide is not listed: ${g.t}`
+    )
+  );
+  assert.ok(SLUG.taxa.cite.startsWith('WoRMS Editorial Board') && /WoRMS Editorial Board/.test(html), 'the classification: WoRMS');
 });
 
 test('viewAbout: the sea slugs list their sources under References once the file is in, the others change nothing', async () => {
