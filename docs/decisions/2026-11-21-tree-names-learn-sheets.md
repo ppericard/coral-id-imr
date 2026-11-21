@@ -1,6 +1,6 @@
 # The tree sheets' helpers of learn.js named tree*, not fish*
 
-Date: 2026-11-21. PR: #0. Rules or docs touched: `tests/treenames.test.js`, `docs/spec/fish-sheets.md`,
+Date: 2026-11-21. PR: #1389. Rules or docs touched: `tests/treenames.test.js`, `docs/spec/fish-sheets.md`,
 `docs/spec/subjects.md`, `docs/spec/seaslugs.md`, `docs/spec/tools.md`, `docs/ARCHITECTURE.md`.
 
 ## Context
