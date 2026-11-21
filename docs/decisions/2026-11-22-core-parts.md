@@ -1,6 +1,6 @@
 # core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte
 
-Date: 2026-11-22. PR: #NNNN. Rules or docs touched: ARCHITECTURE "Front end" and "Progress sync", spec/loading.md
+Date: 2026-11-22. PR: #1452. Rules or docs touched: ARCHITECTURE "Front end" and "Progress sync", spec/loading.md
 "Load order in tiers", spec/site.md "A static site", `tools/sync_core.py`, `tools/sheet_version.py`, `.gitattributes`,
 `.prettierignore`.
 
