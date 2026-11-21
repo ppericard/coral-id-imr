@@ -477,20 +477,29 @@ def add_ok(F, f, sid, top, sug):
             and not other_out((F.get('tags') or {}).get(f), ((sug or {}).get(f) or {}).get('jt')))
 
 
-def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
+def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None, key='fish', sure=None, keys=None,
+            units=None):
     """[(species id, record, its data/fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
     Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that data/fish-cand.json still
-    describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
-    "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the same photo. Never
-    the same photo twice (pid); a candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
+    describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved)
+    and whose count in force is not other species one could take for its subject (other_out: his tag first; rule P3, as
+    core.js treePhotoIn); "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the
+    same photo. Never the same photo twice (pid), across every candidate list (the first list read keeps it); a
+    candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
     on an observation already in play (another photo of it) enters too once judged against that observation's photos,
     like a candidate (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): keep
     (rkeep: tools/fish_judge.json "keep", {photo: best | alt | dup}) best or alt; one not judged against them yet stays
-    out, and a dup stays out whatever comes first. The game draws one observation a question (model.js photoSet), so its photos share one draw."""
-    F = (cur or {}).get('fish') or {}
+    out, and a dup stays out whatever comes first. The game draws one observation a question (model.js photoSet), so its photos share one draw.
+    The same for every tree subject (tools/seaslug_game.py build reads it): key, the subject's part of the curation
+    (core.js SUBJECTS admin.cur); sure, its rule for a judgement that enters by itself (cand_sure on the fish's rubric by
+    default); keys, the candidate lists read, in this order (every list by default); units, the units an add may name
+    (any by default)."""
+    F = (cur or {}).get(key) or {}
+    sure = sure or cand_sure
     top = set((cur or {}).get('exclude') or {})
-    gone = gone_ids(cur)
-    rec = {p['f']: (p, s) for s, L in ((cand or {}).get('cand') or {}).items() for p in L if p.get('f')}
+    gone = gone_ids(cur, key)
+    C = (cand or {}).get('cand') or {}
+    rec = {p['f']: (p, s) for s, L in C.items() for p in L if p.get('f')}
     out, have, obs = [], set(), set()
 
     def put(sid, p, orig, route):
@@ -498,14 +507,16 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
         have.add(pid(p['f']))
         obs.add(p.get('o'))
     for f, sid in sorted((F.get('add') or {}).items()):
-        if f not in rec or not rec[f][0].get('src') or not add_ok(F, f, sid, top, sug):
+        if f not in rec or not rec[f][0].get('src') or (units is not None and sid not in units) or not add_ok(F, f, sid, top, sug):
             continue  # not a candidate, or other species one could take for its subject, or not sorted yet: out (rule P3)
         put(sid, *rec[f], None)
     decided = decided_of(F)
-    for s, L in ((cand or {}).get('cand') or {}).items():
-        for p in L:
+    for s in (C if keys is None else keys):
+        for p in C.get(s) or []:
             f = p.get('f')
-            if f and p.get('src') and f not in decided and pid(f) not in gone and pid(f) not in have and cand_sure((sug or {}).get(f)):
+            j = (sug or {}).get(f)
+            if f and p.get('src') and f not in decided and pid(f) not in gone and pid(f) not in have and sure(j) \
+                    and not other_out((F.get('tags') or {}).get(f), j.get('jt')):
                 put(s, p, s, 'cand')
     if fish and refs and codes:
         for sid, r in ref_play(fish, refs, codes):
