@@ -64,8 +64,12 @@ whole; `photoHasR2` tests each address of a `srcset` or style so): an address th
 user part, or a look-alike host, is left alone. `photoFail` in `app.js` is a capture listener on `document`, before
 every other; the admin has the same.
 
-- Without a service worker, `R2` then turns false and `AWAY` true for the rest of the visit, so the next photos go there
-  directly (`loc()`, `resized()`; the quiz preloads, which are no page elements, do the same in `pump()`).
+- Without a service worker, that photo falls back on its own, and its file is not asked from R2 again on the page
+  (`R2MISS`). Once **3 different photos** (`app.js` `R2_OUT`) failed so in a row, no photo loaded from R2 in between
+  (`r2Failed`, `r2Loaded`; a photo's sizes and Find the X tile count as one), `R2` turns false and `AWAY` true for the
+  rest of the visit, so the next photos go there directly (`loc()`, `resized()`; the quiz preloads, which are no page
+  elements, count and follow the same way in `pump()`). One missing file or one passing error leaves the other photos on
+  R2 ([decision](../decisions/2026-11-21-r2-given-up-after-three.md)).
 - Under the service worker both stay as they are: the worker keeps photos offline under their R2 address and fails at
   once while R2 is out, each photo falls back on its own, and its 480 px step (`data-lo`) and backdrop stay on R2, where
   an offline copy may be.
@@ -145,7 +149,7 @@ An object is **used** when it is one of the files `tools/r2_sync.sh` wants (the 
 R2 only, a tile when its record has `xc`, every file name in git's `img/`). Anything else is **unused** only when it
 is an old tile of a live photo, or a photo that no record and no tracked text file names. It stays **doubtful**, off
 the list, when it is recent (72 h: an upload comes before its data commit), oddly named, its photo is in
-`data/excluded.json` (the admin's Restore puts that record back and expects the files, so deleting them breaks a
+`data/excluded.json` (the admin's Put back puts that record back and expects the files, so deleting them breaks a
 Restore until they are uploaded again), a record names it with `r: 1`, or its name appears in the app, the judging
 files, `curation.json`, a data file or the docs. Deleting is a separate step, after Pierre has seen the list.
 
@@ -265,8 +269,8 @@ neither shown nor counted as waiting.
 
 Each record Pierre's exclusion removes is kept in **`data/excluded.json`** (`{photos: {f: {in, g, k, v, i, p}}}`: which list,
 genus, views or more, view, position and the record; one photo per line, written through `datajson.py`; seeded from git
-history by `tools/apply_excluded_archive.py` for the photos removed before it existed), so that his **Restore** (admin
-Tree, genus page) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
+history by `tools/apply_excluded_archive.py` for the photos removed before it existed), so that his **Put back** (admin
+Tree, Removed list) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
 back marked `restored: 1`, which the share-alike drop spares (a share-alike one he restores stays a candidate he can
 add). A photo with no online original (an IMR lecture photo, whose file left `img/` with its exclusion) is held in
 `data/excluded.json` until its file is back: the workflow (whole history, `fetch-depth: 0`, `filter: blob:none`) runs

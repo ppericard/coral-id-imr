@@ -121,6 +121,26 @@ test('trajectories: a window ends with a session, never inside one: its session 
   assert.strictEqual(one.n, 0);
 });
 
+test('trajectories: sessions a week count the break up to the next window, a window of one session included (Codex)', () => {
+  // one session of 100 answers per window; the windows start a day apart, then 28 days apart: a window read on its own
+  // answers would say one a week all along (at least a week), the break after its session makes it a quarter
+  const rows = ['a', 'b', 'c'].flatMap((id, k) =>
+      player(id, 400, {ses: 100, seed: 3 + k}).map((r, i) => {
+        const w = Math.floor(i / W);
+        return [r[0], r[1] + Math.max(0, w - 1) * 27 * 864e5, ...r.slice(2)];
+      })
+    ),
+    T = A.trajectories(A.prep(rows), 0, 1),
+    f = T.feats.findIndex(x => x.k === 'wk') + 2;
+  assert.ok(!T.thin);
+  T.who.forEach(p => {
+    const wk = p.w.map(r => r[f]);
+    assert.deepStrictEqual(wk.slice(0, 3), [1, 0.25, 0.25], `${p.k}: ${wk}`);
+    // the last window has no break after it to count: a week at the least
+    assert.strictEqual(wk[3], 1);
+  });
+});
+
 test('trajectories: right beyond the expectation rises along a history planted to rise, and stays with none; evening play follows the hour', () => {
   const T = A.trajectories(
       log({

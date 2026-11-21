@@ -802,6 +802,101 @@ async function matrixGame(b, base, errs) {
   await c.close();
   return fails.map(m => `matrix: ${m}`);
 }
+// (20) Down the tree (proto/downtree.js, the Lab) on the fish: twelve families, their scientific genera and species unlocked
+// (the sheet's version at the species level, Scientific names on), the photos stubbed; tests/downtree.check.js plays the rounds
+// at 390 and 1280 px (one photo, the steps from the family down, each unlocked and under the one above, names of one rank, a
+// right step ticked, a wrong one crossed with the walk going on, the end sheet with the partial credit, one screen in every state,
+// no progress, log or answer count changes); and that a player with the families alone has nothing to walk down yet.
+async function downTree(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-dt')) {
+        sessionStorage.setItem('fish-dt', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`down the tree: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  // The families alone: no finer unit is unlocked, so the Tools page lists the game (the subject has a tree) but it has nothing to
+  // ask, and says so.
+  const fams = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => !rankOf(n) && gamePics(n, 'wide').length)
+      .slice(0, 12);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (fams < 6) return [`down the tree: ${fams} fish families with a photo`];
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q
+    .waitForFunction(
+      () =>
+        /./.test((document.querySelector('#view .note') || {}).textContent || '') &&
+        !/^\s*Loading/.test(document.querySelector('#view .note').textContent),
+      null,
+      {
+        timeout: 15000
+      }
+    )
+    .catch(() => {});
+  const none = await q.evaluate(() => ({
+    note: (document.querySelector('#view .note') || {}).textContent || '',
+    names: document.querySelectorAll('#view .dtq .dtans [data-n]').length
+  }));
+  if (none.names || !/Meet a few in the quiz first/.test(none.note)) fails.push(`families alone: ${JSON.stringify(none)}`);
+  // Their genera and species too (the species level is on from the sheet's SCI_SHEET).
+  const n = await q.evaluate(() => {
+    store.set(SHEETV, SCI_SHEET);
+    Q.sci = true;
+    const F = pool().filter(n => !rankOf(n) && isOpenFam(n)),
+      G = sciNow().filter(g => F.includes(GX(g).parent) && photoAny(g)),
+      S = sciSpAll().filter(u => G.includes(GX(u).parent) && photoAny(u));
+    introAdd([...G, ...S], true);
+    return [F.length, G.length, S.length];
+    function isOpenFam(n) {
+      return unlocked([n]).length === 1;
+    }
+  });
+  if (n[1] < 6 || n[2] < 6) return [...fails, `${n} families, genera, species unlocked`].map(m => `down the tree: ${m}`);
+  await q.evaluate(() => (location.hash = hr('lab'))); // the game is drawn afresh by the check, with the units now unlocked
+  await q.waitForTimeout(300);
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./downtree.check.js')(q, w, fails, 'fish', 8);
+  }
+  // Switched to the corals without a reload (TREEU stays loaded): the game is not offered, not on the Tools page and not by its address.
+  await q.evaluate(() => setSubject('coral'));
+  await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
+  await q.evaluate(() => (location.hash = hr('lab')));
+  await q.waitForTimeout(500);
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q.waitForTimeout(500);
+  const coral = await q.evaluate(() => ({
+    subject: SUBJ.id,
+    on: LAB.list.find(x => x.id === 'downtree').on(),
+    page: !!document.querySelector('#view .dtq')
+  }));
+  if (coral.subject !== 'coral' || coral.on || coral.page) fails.push(`switched to the corals: ${JSON.stringify(coral)}`);
+  await c.close();
+  return fails.map(m => `down the tree: ${m}`);
+}
 // (16) Type the family, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the fish: twelve
 // families unlocked, the photos stubbed; tests/labgames.check.js plays them at 390 and 1280 px (the unit word, the photo of an
 // unlocked family, no id shown as a name, the typed answers and the retype, four choices of one rank, the web's nodes and
@@ -3291,6 +3386,75 @@ async function namesCard(b, base, errs) {
       return r;
     });
     if (!bt2.shown || bt2.after || bt2.told) ui.push(`${width}px leaderboard toast and a subject switch: ${JSON.stringify(bt2)}`);
+    // REE-210: the leaderboard notice never sits over a question's answers or Next (at 390 px it covered two of four
+    // answers for 15 s). It waits while a question is on screen, answered or not; it shows on the first page without one,
+    // its ✕ at least 44 px; a question that opens while it shows takes it away at once, not told (an observer of the
+    // test's own, registered after the app's, sees the toast gone in the very change that draws the question). Light and
+    // dark, the question unanswered and answered (Next on screen). The sync is stubbed in memory only after the answer
+    // (rule D1: no call to the sheet).
+    for (const theme of ['light', 'dark']) {
+      await q.evaluate(() => (location.hash = '#practice/quiz'));
+      // A card due is out of the way first: the start question (answered by its first choice), then any other.
+      await q.waitForFunction(() => document.querySelector('.unlock.startq, #view .q'), null, {timeout: 15000});
+      if (await q.$('.unlock.startq [data-start]'))
+        await q.click(`.unlock.startq [data-start="${(await q.$('.unlock.startq [data-start="know"]')) ? 'know' : 'imr'}"]`);
+      const st = await settle(q);
+      if (st) ui.push(`${width}px leaderboard notice and a question: ${st}`);
+      await qa.ready(q);
+      const bq = await q.evaluate(async theme => {
+        document.documentElement.dataset.theme = theme;
+        const s0 = SYNC,
+          wait = ms => new Promise(r => setTimeout(r, ms)),
+          toast = () => [...document.querySelectorAll('.apptoast')],
+          r = {};
+        store.set('reefid-board-sent14', 1);
+        store.set('reefid-board-told', 0);
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice(); // a question unanswered
+        await wait(300);
+        r.open = toast().length || store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        smokeAnswer(); // the feedback state, Next on screen
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice();
+        await wait(300);
+        r.feedback = toast().length || store.get('reefid-board-told', 0);
+        location.hash = '#about';
+        for (let i = 0; i < 20 && !toast().length; i++) await wait(100);
+        const t = toast()[0],
+          b = t && t.querySelector('button').getBoundingClientRect();
+        r.shown = toast().length; // exactly one
+        r.close = b ? [Math.round(b.width), Math.round(b.height)] : null;
+        r.fits = t ? t.getBoundingClientRect().right <= innerWidth + 1 && t.getBoundingClientRect().left >= -1 : false;
+        let over = 0;
+        new MutationObserver(() => document.querySelector('#view .q') && toast().length && over++).observe($v, {
+          childList: true,
+          subtree: true
+        });
+        location.hash = '#practice/quiz'; // a question opens under it: taken away, not told, never painted over it
+        for (let i = 0; i < 40 && !document.querySelector('#view .q'); i++) await wait(100);
+        r.over = over;
+        r.pulled = !toast().length && !store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        toast().forEach(x => x.remove());
+        return r;
+      }, theme);
+      if (
+        bq.open ||
+        bq.feedback ||
+        bq.shown !== 1 ||
+        !bq.close ||
+        bq.close[0] < 44 ||
+        bq.close[1] < 44 ||
+        !bq.fits ||
+        bq.over ||
+        !bq.pulled
+      )
+        ui.push(`${width}px ${theme} leaderboard notice and a question on screen: ${JSON.stringify(bq)}`);
+    }
+    await q.evaluate(() => delete document.documentElement.dataset.theme);
     await q.evaluate(() => (location.hash = '#about'));
     await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
     // From the keyboard: Tab reaches each side, Enter switches, and the focus stays on the side chosen once the header is
@@ -3449,10 +3613,12 @@ async function namesCard(b, base, errs) {
       return {
         title: d ? d.querySelector('h2').textContent : '',
         links: d ? [...new Set([...d.querySelectorAll('a')].map(a => a.getAttribute('href')))].join() : '',
-        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
+        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true,
+        // REE-211: the tag shows on the door while the subject's key is not built, visible at every width.
+        soon: d && d.querySelector('.hdsoon') ? (e => !!e.offsetParent && /soon/i.test(e.textContent))(d.querySelector('.hdsoon')) : false
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral || !door.soon)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
     await q.evaluate(() => (location.hash = '#identify/key'));
@@ -3509,6 +3675,14 @@ async function namesCard(b, base, errs) {
     const d = await page();
     if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // REE-211: the corals' Identify door has no "soon" tag (their key is built).
+    await q.evaluate(() => (location.hash = '#home'));
+    await q.waitForSelector('#view .hdoor.identify', {timeout: 15000}).catch(() => {});
+    const ct = await q.evaluate(() => ({
+      door: !!document.querySelector('#view .hdoor.identify'),
+      tag: !!document.querySelector('#view .hdoor.identify .hdsoon')
+    }));
+    if (!ct.door || ct.tag) ui.push(`${width}px Home's Identify door, Coral on, has a "soon" tag: ${JSON.stringify(ct)}`);
     // A fish page linked straight (the subject prefix in the app's addresses): a new tab on a fish
     // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
     for (const [h, key] of [
@@ -4174,6 +4348,8 @@ async function namesCard(b, base, errs) {
   const oo = run.has('main') ? await oddOne(b, base, errs) : [];
   // (15) Matrix: matrixGame, above.
   const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
+  // (20) Down the tree: downTree, above.
+  const dt = run.has('main') ? await downTree(b, base, errs) : [];
   // (16) Type the family, Blur reveal and the Look-alike web: labGames, above.
   const lg = run.has('main') ? await labGames(b, base, errs) : [];
   // (17) The custom quiz: customQuiz, above.
@@ -4525,6 +4701,7 @@ async function namesCard(b, base, errs) {
     ...sd,
     ...oo,
     ...mx,
+    ...dt,
     ...lg,
     ...cqz,
     ...la,

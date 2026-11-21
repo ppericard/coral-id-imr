@@ -1795,8 +1795,8 @@ async function lazyPart(b, base, fails) {
               if (!on().pass.has(sid)) miss.push(k);
             });
             [
-              ['remove', fishReject],
-              ['exclude', fishExclude]
+              ['reject', fishReject],
+              ['remove', fishExclude]
             ].forEach(([k, fn]) => {
               DRAFT.fish = fn(JSON.parse(F0), f);
               if (!on().pass.has(sid)) miss.push(k);
@@ -2122,6 +2122,42 @@ async function lazyPart(b, base, fails) {
           await p.selectOption('#frevfam', 'f:Butterflyfishes');
           await settle();
           if (await p.$('#view [data-frp]')) fails.push(`${w}px Fish Photo review: a phase row on the Butterflyfishes`);
+          // Wrasses have no IMR phase line, but 50 of their species carry phs (the cited phase list, fish.json; REE-201): the
+          // row on those species' photos only, set and undone as an IMR family's.
+          await p.selectOption('#frevfam', 'f:Wrasses');
+          await settle();
+          const wr = await p.evaluate(() => ({
+            unit: !!(FISHC.units.find(u => u.id === 'f:Wrasses').phase || []).length,
+            tiles: [...document.querySelectorAll('#view .adm-tile[data-f]')].map(t => [
+              t.dataset.f,
+              !!FISHC.species[t.dataset.sid].phs,
+              !!t.querySelector('[data-frp]')
+            ])
+          }));
+          const wp = wr.tiles.find(t => t[1]);
+          if (wr.unit || !wp || wr.tiles.some(t => t[1] !== t[2]))
+            fails.push(`${w}px Fish Photo review, Wrasses: the phase row only on phs species ${JSON.stringify(wr)}`);
+          else {
+            if (w === 1280) await shot('review-phase-phs-1280', `#view .adm-tile[data-f="${wp[0]}"]`);
+            await p.click(`#view .adm-tile[data-f="${wp[0]}"] [data-frp="female"]`);
+            await settle();
+            if ((await p.evaluate(f => (DRAFT.fish.phase || {})[f], wp[0])) !== 'female')
+              fails.push(`${w}px Fish Photo review, Wrasses: phase female on a phs species`);
+            await p.evaluate(() => undo());
+            await settle();
+            if ((await p.evaluate(f => (DRAFT.fish.phase || {})[f], wp[0])) !== undefined)
+              fails.push(`${w}px Fish Photo review, Wrasses: Undo of the phase`);
+          }
+          // The Candidates card and a photo's tag rows (admin-fish.js fishRows): the Phase row for a phs species on an entry with
+          // no phase line, none for a species with neither.
+          const fr = await p.evaluate(() => {
+            const sp = Object.values(FISHC.species),
+              plain = sp.find(s => !s.phs && !((FISHC.entry[s.id] || {}).phase || []).length && !(FISHC.entry[s.id] || {}).dimorph),
+              flag = sp.find(s => s.phs && !((FISHC.entry[s.id] || {}).phase || []).length && !(FISHC.entry[s.id] || {}).dimorph),
+              rows = s => fishRows(readView(DRAFT.fish || {}), {f: 'x'}, null, true, FISHC.entry[s.id], false, s);
+            return {plain: rows(plain).includes('data-fph'), flag: rows(flag).includes('data-fph')};
+          });
+          if (fr.plain || !fr.flag) fails.push(`${w}px Fish tag rows: the phase row only for a phs species ${JSON.stringify(fr)}`);
         }
         // Fish Look-alikes (admin plan PR 10): one row per IMR pair of families, phase-matched photos, Auto / Manual, Shown /
         // Hidden; the corals keep their pairs (the photos put in play above are still there).
@@ -2251,43 +2287,68 @@ async function lazyPart(b, base, fails) {
           await settle();
           if ((await p.evaluate(() => location.hash)) !== '#photos/tree/key/Stylophora' || !(await p.$('[data-lv]')))
             fails.push(`${w}px Coral Tree: a card's link`);
-          // Removed from the site and Excluded are lists on a genus's page: Remove lists the photo (Put back returns it, one
-          // click each), × lists it as excluded (Restore); a group's page lists those of its genera; the Tag… filters count
-          // the genera that have any; Undo steps back
+          // Removed is one list on a genus's page (Pierre, 2026-11-21 05:48, option A): the one Remove takes the photo out for good
+          // and lists it (a toast with an Undo button, Put back returns it, one click each); a group's page lists those of its
+          // genera; the Tag… filter counts the genera that have any (no Excluded filter any more); Undo steps back
           await go('photos/tree/key/Acropora');
           const lists = () =>
             p.evaluate(() => ({
-              rm: [...document.querySelectorAll('[data-np-sec="back"] figure')].map(x => x.dataset.f),
-              ex: [...document.querySelectorAll('[data-np-sec="restore"] figure')].map(x => x.dataset.f),
+              rm: [...document.querySelectorAll('[data-np-sec] figure[data-np-kind="restore"]')].map(x => x.dataset.f),
+              old: [...document.querySelectorAll('[data-np-sec] figure[data-np-kind="back"]')].map(x => x.dataset.f),
+              heads: [...document.querySelectorAll('[data-np-sec] h3')].map(x => x.firstChild.textContent.trim()),
+              rmbtns: document.querySelectorAll('[data-drop] .adm-tile [data-act="remove"]').length,
+              crosses: document.querySelectorAll('.adm-tile .adm-x, .adm-tile [data-act="exclude"], .adm-tile [data-act="hide"]').length,
               tags: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean)
             }));
           c = await lists();
           // (the real curation already excludes some of Acropora's photos: the list shows them, nothing else)
-          const ex0 = c.ex.length;
-          if (c.rm.length || !c.tags.includes('removed') || !c.tags.includes('excluded'))
-            fails.push(`${w}px Coral Tree: lists on a genus with nothing removed ${JSON.stringify(c.rm)}`);
+          const rm0 = c.rm.length;
+          if (c.old.length || !c.tags.includes('removed') || c.tags.includes('excluded') || !c.rmbtns || c.crosses)
+            fails.push(`${w}px Coral Tree: one Remove per tile, one list ${JSON.stringify(c)}`);
+          if (rm0 && c.heads[0] !== 'Removed') fails.push(`${w}px Coral Tree: the list is not called Removed ${JSON.stringify(c.heads)}`);
           const f0 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
-          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="hide"]`);
+          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="remove"]`);
           await settle();
           c = await lists();
-          if (c.rm.join() !== f0) fails.push(`${w}px Coral Tree: Remove listed ${JSON.stringify(c)}`);
+          if (c.rm.length !== rm0 + 1 || !c.rm.includes(f0) || !(await p.evaluate(f => !!(DRAFT.exclude || {})[f], f0)))
+            fails.push(`${w}px Coral Tree: Remove listed ${JSON.stringify(c)}`);
+          const tu = await p.evaluate(() => {
+            const t = document.querySelector('.adm-toast');
+            return !t.hidden && /^Removed\./.test(t.textContent) && !!t.querySelector('button.adm-toast-undo');
+          });
+          if (!tu) fails.push(`${w}px Coral Tree: Remove's toast has no Undo button`);
+          await p.click('.adm-toast .adm-toast-undo');
+          await settle();
+          c = await lists();
+          if (c.rm.length !== rm0 || c.rm.includes(f0)) fails.push(`${w}px Coral Tree: the toast's Undo ${JSON.stringify(c)}`);
+          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="remove"]`);
+          await settle();
+          // Another edit after the Remove: the toast's Undo must not undo that newer edit (Codex review, #1393): it goes away, says
+          // so, and the Remove stays.
+          const late = await p.evaluate(f => {
+            DRAFT.quality = {...(DRAFT.quality || {}), 'zz-late': 1};
+            saveDraft();
+            document.querySelector('.adm-toast .adm-toast-undo').click();
+            const r = {
+              gone: !document.querySelector('.adm-toast .adm-toast-undo'),
+              kept: !!(DRAFT.exclude || {})[f],
+              newer: !!(DRAFT.quality || {})['zz-late']
+            };
+            delete DRAFT.quality['zz-late'];
+            if (!Object.keys(DRAFT.quality).length) delete DRAFT.quality;
+            saveDraft();
+            return r;
+          }, f0);
+          if (!late.gone || !late.kept || !late.newer)
+            fails.push(`${w}px Coral Tree: the toast's Undo after another edit ${JSON.stringify(late)}`);
           await go('photos/tree/key/' + encodeURIComponent('k:1'));
           c = await lists();
           if (!c.rm.includes(f0)) fails.push(`${w}px Coral Tree: a group page lists its genera's removed photos ${JSON.stringify(c)}`);
           await go('photos/tree/key/Acropora');
-          await p.click(`[data-np-sec="back"] figure[data-f="${f0}"] [data-np="back"]`);
+          await p.click(`[data-np-sec] figure[data-f="${f0}"] [data-np="restore"]`);
           await settle();
           c = await lists();
-          if (c.rm.length) fails.push(`${w}px Coral Tree: Put back ${JSON.stringify(c)}`);
-          const f1 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
-          await p.click(`[data-drop] .adm-tile[data-f="${f1}"] [data-act="exclude"]`);
-          await settle();
-          c = await lists();
-          if (c.ex.length !== ex0 + 1 || !c.ex.includes(f1)) fails.push(`${w}px Coral Tree: × listed ${JSON.stringify(c.ex)}`);
-          await p.click(`[data-np-sec="restore"] figure[data-f="${f1}"] [data-np="restore"]`);
-          await settle();
-          c = await lists();
-          if (c.ex.length !== ex0 || c.ex.includes(f1)) fails.push(`${w}px Coral Tree: Restore ${JSON.stringify(c.ex)}`);
+          if (c.rm.length !== rm0 || c.rm.includes(f0)) fails.push(`${w}px Coral Tree: Put back ${JSON.stringify(c.rm)}`);
           if (once) {
             // Opened cold at a coral Tree address (a bookmark, a reload): the page draws, with no error.
             const nc = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
@@ -2347,7 +2408,7 @@ async function lazyPart(b, base, fails) {
           await p.click('[data-fuimr="all"]');
           // The actions on a family with photos in play: the order (the easiest, then the most reference-like: core.js
           // easyRank; nobody's photos moved up),
-          // Feature, Cover, Remove and Undo, Not this → no game species → Put back, ×, Validated refused while something
+          // Feature, Cover, Remove, its Removed list and Undo, Not this → no game species → Put back, Validated refused while something
           // is missing; the coral part of the draft untouched; everything undone after.
           // Four candidates of a species nobody decided put in play (one draft step, undone with the rest).
           const st = await p.evaluate(() => ({
@@ -2396,22 +2457,57 @@ async function lazyPart(b, base, fails) {
           await p.click(`${sec} [data-f="${f0}"] [data-fu="cover"]`);
           const f1 = await nth(1);
           await p.click(`${sec} [data-f="${f1}"] [data-fu="remove"]`);
+          // The one Remove (REE-44): out for good (exclude, never the old reviewed mark), the toast with its Undo button, the
+          // photo in the page's Removed list with Put back; Put back makes it a candidate again (one Undo step), Undo twice
+          // brings the photo back in play.
+          const rmL = f => `[data-np-sec] [data-f="${f}"]`;
           let d = await p.evaluate(
-            ([fam, sid, f0, f1]) => ({
+            ([fam, sid, f0, f1, sec, rl]) => ({
               g: DRAFT.fish.genera[fam],
-              seen: DRAFT.fish.seen[f1],
+              x: (DRAFT.fish.exclude || {})[f1],
+              seen: (DRAFT.fish.seen || {})[f1],
               add: DRAFT.fish.add[f1],
-              tile: !!document.querySelector(`[data-f="${f1}"]`),
+              tile: !!document.querySelector(`${sec} [data-f="${f1}"]`),
+              listed: !!document.querySelector(`${rl} [data-np="restore"]`),
+              head: (document.querySelector('[data-np-sec] h3') || {}).textContent || '',
+              undo: !!document.querySelector('.adm-toast:not([hidden]) .adm-toast-undo'),
               num: (document.querySelector(`[data-f="${f0}"] .adm-num`) || {}).textContent
             }),
-            [fam, order.sid, f0, f1]
+            [fam, order.sid, f0, f1, sec, rmL(f1)]
           );
-          if (!d.g || !d.g.feat || d.g.feat[order.sid][0] !== f0 || d.g.cover !== f0 || d.seen !== 1 || d.add || d.tile || d.num !== '1')
+          if (
+            !d.g ||
+            !d.g.feat ||
+            d.g.feat[order.sid][0] !== f0 ||
+            d.g.cover !== f0 ||
+            d.x !== 'excluded' ||
+            d.seen ||
+            d.add ||
+            d.tile ||
+            !d.listed ||
+            !/^Removed/.test(d.head) ||
+            !d.undo ||
+            d.num !== '1'
+          )
             fails.push(`${w}px Families: Feature / Cover / Remove ${JSON.stringify(d)}`);
+          if (d.listed) {
+            await p.click(`${rmL(f1)} [data-np="restore"]`);
+            await settle();
+            d = await p.evaluate(
+              ([f1, rl]) => ({x: (DRAFT.fish.exclude || {})[f1], add: (DRAFT.fish.add || {})[f1], listed: !!document.querySelector(rl)}),
+              [f1, rmL(f1)]
+            );
+            if (d.x || d.add || d.listed) fails.push(`${w}px Families: Put back of a removed photo ${JSON.stringify(d)}`);
+            await p.evaluate(() => undo());
+            await settle();
+          }
           await p.evaluate(() => undo());
           await settle();
-          d = await p.evaluate(f1 => ({seen: (DRAFT.fish.seen || {})[f1], tile: !!document.querySelector(`[data-f="${f1}"]`)}), f1);
-          if (d.seen || !d.tile) fails.push(`${w}px Families: Undo of Remove ${JSON.stringify(d)}`);
+          d = await p.evaluate(
+            ([f1, sec]) => ({x: (DRAFT.fish.exclude || {})[f1], tile: !!document.querySelector(`${sec} [data-f="${f1}"]`)}),
+            [f1, sec]
+          );
+          if (d.x || !d.tile) fails.push(`${w}px Families: Undo of Remove ${JSON.stringify(d)}`);
           await p.click(`${sec} [data-f="${f1}"] [data-fu="not"]`);
           await p.selectOption(`${sec} [data-f="${f1}"] [data-funot]`, 'x');
           await settle();
@@ -2668,9 +2764,11 @@ async function lazyPart(b, base, fails) {
             if (d !== 'p1g0smk') fails.push(`${w}px Families: Undo of Keep in play left ${d}`);
           }
           const f2 = await nth(2);
-          await p.click(`${sec} [data-f="${f2}"] [data-fu="exclude"]`);
+          if (await p.evaluate(sec => !!document.querySelector(`${sec} .adm-x, ${sec} [data-fu="exclude"]`), sec))
+            fails.push(`${w}px Families: a corner × is still drawn (one Remove)`);
+          await p.click(`${sec} [data-f="${f2}"] [data-fu="remove"]`);
           await settle();
-          if (!(await p.evaluate(f2 => (DRAFT.fish.exclude || {})[f2], f2))) fails.push(`${w}px Families: × did not exclude`);
+          if (!(await p.evaluate(f2 => (DRAFT.fish.exclude || {})[f2], f2))) fails.push(`${w}px Families: Remove did not exclude`);
           const needs = await p.evaluate(() => (document.querySelector('.adm-needs') || {}).textContent || '');
           await p.click('[data-ok]');
           await settle();
@@ -3093,6 +3191,37 @@ async function lazyPart(b, base, fails) {
         });
         if (!cb || !cb.folded || !/Not enough data yet\. \d/.test(cb.text) || !/about 200 from 20 players/.test(cb.text))
           fails.push(`${w}px Analyses #${h} forgetting by genus: ${JSON.stringify(cb)}`);
+        // The same card with a fit put into the report (the demo's players have too few to make one): what it says when the
+        // range is narrow already but the players are too few (need 0: more players, not more precision), and when the range
+        // has no end (no count to give); the table scrolls inside its card, never the page (Codex review, #1398)
+        const fit = await p.evaluate(() => {
+          const rep = (typeof ANLOC !== 'undefined' && ANLOC && ANLOC.rep) || (ANREPS[ASUBJ.id] && ANREPS[ASUBJ.id].rep),
+            A = rep && rep.R[rep.M[rep.M.length - 1]].A.back;
+          if (!A) return null;
+          const keep = A.stab,
+            base = {n: 250, players: 12, min: 200, minPlayers: 20, right: 0.74, E: 0.7, est: 1.35, lo: 1.2, hi: 1.5, other: 0, g: []},
+            words = s => {
+              A.stab = s;
+              render();
+              return document.getElementById('anc-the-app-s-forgetting-genus-by-genus').textContent.replace(/\s+/g, ' ');
+            },
+            out = {
+              narrow: words({...base, need: 0}),
+              none: words({...base, open: ['hi']}),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          A.stab = keep;
+          render();
+          return out;
+        });
+        if (
+          !fit ||
+          !/already within ±30% of the stability/.test(fit.narrow) ||
+          /open-ended/.test(fit.narrow) ||
+          !/open-ended/.test(fit.none) ||
+          fit.wide > 0
+        )
+          fails.push(`${w}px Analyses #${h} forgetting by genus with a fit: ${JSON.stringify(fit)}`);
       }
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
@@ -3804,19 +3933,21 @@ async function lazyPart(b, base, fails) {
         JSON.stringify(all.pr) !== JSON.stringify([['handled in #577', 'https://github.com/ppericard/coral-id-imr/pull/577']])
       )
         fails.push(`${w}px To do › All, a report handled in a PR: ${JSON.stringify(all)}`);
-      // Tree › a genus › Removed from the site: Put back takes a removed photo back.
+      // Tree › a genus › Removed: a photo the old Remove took off the site (a published hide entry; nothing writes one now) is
+      // in the same list, and Put back takes it back.
       const hid = await p.evaluate(() => {
         const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
           f = photos(n)[0].f;
-        ACT.hide(n, f);
+        DRAFT.genera[n] = {...entry(n), hide: [f]};
+        saveDraft();
         location.hash = 'photos/tree/key/' + encodeURIComponent(n);
         return {n, f};
       });
       await settle();
-      if (!(await p.$(`#view [data-np-sec="back"] [data-f="${hid.f}"] [data-np="back"]`)))
+      if (!(await p.$(`#view [data-np-sec] [data-f="${hid.f}"][data-np-kind="back"] [data-np="back"]`)))
         fails.push(`${w}px Removed: the removed photo is not listed`);
       else {
-        await p.click(`#view [data-np-sec="back"] [data-f="${hid.f}"] [data-np="back"]`);
+        await p.click(`#view [data-np-sec] [data-f="${hid.f}"][data-np-kind="back"] [data-np="back"]`);
         await settle();
         if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid))
           fails.push(`${w}px Removed: Put back left the photo removed`);
@@ -6221,7 +6352,7 @@ async function lazyPart(b, base, fails) {
       const hw = await p
         .waitForFunction(
           () => {
-            const t = document.querySelector('[data-health="photos"] .adm-tile [data-act="hide"]');
+            const t = document.querySelector('[data-health="photos"] .adm-tile [data-act="remove"]');
             return t ? String(document.documentElement.scrollWidth - innerWidth) : false;
           },
           null,
@@ -6257,12 +6388,13 @@ async function lazyPart(b, base, fails) {
       const rsel = card('demorep11') + ' .adm-ftile';
       await p.waitForFunction(s => document.querySelector(s + '[data-play]'), rsel, {timeout: 15000}).catch(() => {});
       let a = await tools(rsel);
-      const want = 'cover,crop,exclude,feat,not,remove,tags,zoom';
+      const want = 'cover,crop,feat,not,remove,tags,zoom'; // one Remove, no corner × (REE-44)
       if (!a || !a.play || a.fu !== want) return fails.push(`${w}px To do › Reports, a fish photo in play: its tools ${JSON.stringify(a)}`);
       if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
       await settle();
       a = await tools(rsel);
-      if (!/^Ease,.*View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
+      // Its species is a wrasse the cited phase list flags (fish.json phs; REE-201): the Phase row, wrapped inside the tile.
+      if (!/^Ease,Phase,View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
         fails.push(`${w}px To do › Reports, a fish photo's tag rows: ${JSON.stringify(a)}`);
       // The Count row in plain words, each with its meaning on hover (Pierre, 2026-11-09: "Others" did not say several
       // species); other species split by the risk of confusion (Q323): k takes a photo in play out, o keeps it.
@@ -6300,7 +6432,8 @@ async function lazyPart(b, base, fails) {
         [a.f, rsel]
       );
       const after = await fishOf();
-      if (rep.tag !== 'k' || rep.seen !== 1 || rep.add || rep.out !== 'removed')
+      // a P3 count sets the reviewed mark (seen: the tile says rejected), never the one Remove (REE-44)
+      if (rep.tag !== 'k' || rep.seen !== 1 || rep.add || rep.out !== 'rejected')
         fails.push(`${w}px To do › Reports, Count Others on a fish photo in play: ${JSON.stringify(rep)}`);
       await p.click('#undo');
       await settle();
@@ -6391,7 +6524,7 @@ async function lazyPart(b, base, fails) {
             page: a('[data-rp]') && a('[data-rp]').getAttribute('href'),
             attach: !!a('[data-ratt]'),
             tiles: [...c.querySelectorAll('.adm-tile')].map(t => t.dataset.f),
-            coralTools: !!a('.adm-tile [data-act="hide"]'),
+            coralTools: !!a('.adm-tile [data-act="remove"]'),
             pick: c.querySelectorAll('[data-rpf]').length,
             unitSel: !!a('[data-rpunit]'),
             where: (a('.adm-where') || {}).textContent || '',
@@ -6553,7 +6686,7 @@ async function lazyPart(b, base, fails) {
         let s = await st();
         if (JSON.stringify(s.open) !== JSON.stringify([seed.f]) || s.tiles.includes('zz-gone-1') || !s.tiles.includes(seed.f))
           fails.push(`${w}px To do › Flagged: a flag on a missing photo listed or counted ${JSON.stringify(s)}`);
-        await p.click(`#view .adm-flagged [data-f="${seed.f}"] [data-act="hide"]`);
+        await p.click(`#view .adm-flagged [data-f="${seed.f}"] [data-act="remove"]`);
         await settle();
         s = await st();
         if (s.kept.length || s.tiles.length)
@@ -6601,20 +6734,24 @@ async function lazyPart(b, base, fails) {
           [card(id), fam]
         );
       let fr = await ft('demorep5');
-      if (!fr || !fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
+      // One Remove (REE-44): no corner ×; Remove takes the photo out for good (exclude, never the old reviewed mark), the
+      // tile says removed, the toast's Undo button takes it back.
+      if (!fr || fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
       else {
         await p.click(card('demorep5') + ' [data-fu="remove"]');
         await settle();
-        const rm = await p.evaluate(f => ((DRAFT.fish || {}).seen || {})[f], fr.f);
+        const rm = await p.evaluate(
+          f => ({
+            x: ((DRAFT.fish || {}).exclude || {})[f],
+            seen: ((DRAFT.fish || {}).seen || {})[f],
+            undo: !!document.querySelector('.adm-toast:not([hidden]) .adm-toast-undo')
+          }),
+          fr.f
+        );
         const fr2 = await ft('demorep5');
-        if (rm !== 1 || fr2.out !== 'removed' || fr2.rm) fails.push(`To do › Reports, a fish photo's Remove: ${JSON.stringify({rm, fr2})}`);
-        await p.click('#undo');
-        await settle();
-        await p.click(card('demorep5') + ' [data-fu="exclude"]');
-        await settle();
-        if (!(await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f], fr.f)))
-          fails.push(`To do › Reports, a fish photo's ×: not excluded`);
-        await p.click('#undo');
+        if (rm.x !== 'excluded' || rm.seen || !rm.undo || fr2.out !== 'removed' || fr2.rm)
+          fails.push(`To do › Reports, a fish photo's Remove: ${JSON.stringify({rm, fr2})}`);
+        await p.click(rm.undo ? '.adm-toast .adm-toast-undo' : '#undo');
         await settle();
         if (await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f] || !!((DRAFT.fish || {}).seen || {})[f], fr.f))
           fails.push(`To do › Reports, a fish photo: Undo did not take the tools back`);
@@ -7066,10 +7203,7 @@ async function lazyPart(b, base, fails) {
         want: [String(play), String(cols), String(per.filter(Boolean).length), String(wait)],
         pool,
         rej,
-        sum: ['In play', 'Not in games', 'Comparison only', 'Removed', 'Candidates', 'Rejected', 'Excluded'].reduce(
-          (t, k) => t + pool[k],
-          0
-        ),
+        sum: ['In play', 'Not in games', 'Comparison only', 'Removed', 'Candidates', 'Rejected'].reduce((t, k) => t + pool[k], 0),
         genus: cells('[data-pov="genus"] tbody tr')[0],
         wantMed: txt(med(per)),
         wantRange: `${Math.min(...per)}–${Math.max(...per)}`,
@@ -7248,6 +7382,8 @@ async function lazyPart(b, base, fails) {
       if (
         fo.heads.join() !== 'All photos,Per family,Fewest and most,Circles,Sources,Answers per photo,3+ answers per family' ||
         fo.pool.Candidates !== fo.cov ||
+        // one Removed row (the one Remove: exclude; REE-44), the reviewed marks apart as Rejected, no Excluded row
+        Object.keys(fo.pool).join() !== 'In play,Not in games,Other species,Removed,Candidates,Rejected,Not this,Total' ||
         fo.kpi.join() !== 'Photos in play,Observations in play,Families in play,Candidates' ||
         Number(fo.kv[0]) !== fo.pool['In play'] ||
         !fo.pool['In play'] ||
@@ -8820,7 +8956,9 @@ async function lazyPart(b, base, fails) {
         if (fg) await sq.click(`.adm-ftile[data-f="${fg}"] [data-fu="cover"]`);
         const s1 = await sq.evaluate(
           ([f0, f1, fg, fish0]) => ({
-            seen: ((DRAFT.seaslug || {}).seen || {})[f0],
+            // the one Remove (REE-44): out for good in their own part, listed in the page's Removed list with Put back
+            removed: ((DRAFT.seaslug || {}).exclude || {})[f0],
+            listed: !!document.querySelector(`[data-np-sec] [data-f="${CSS.escape(f0)}"] [data-np="restore"]`),
             feat: JSON.stringify(((DRAFT.seaslug || {}).genera || {})['f:Chromodorididae']),
             cover: (((DRAFT.seaslug || {}).genera || {})['g:Chromodoris'] || {}).cover === fg,
             fish: JSON.stringify(DRAFT.fish) === fish0,
@@ -8829,7 +8967,15 @@ async function lazyPart(b, base, fails) {
           }),
           [f0, f1, fg, fish0]
         );
-        if (!s1.seen || !s1.feat.includes(f1) || !s1.cover || !s1.fish || !s1.out || !/sea slug photos? set aside/.test(s1.sum))
+        if (
+          !s1.removed ||
+          !s1.listed ||
+          !s1.feat.includes(f1) ||
+          !s1.cover ||
+          !s1.fish ||
+          !s1.out ||
+          !/sea slug photos? removed/.test(s1.sum)
+        )
           se.push(`the tools ${JSON.stringify(s1)}`);
         // the genus-level leaf's page reads that cover under its genus's id, as ★ Cover writes it (Codex review #1047)
         if (fg) {
@@ -8924,10 +9070,12 @@ async function lazyPart(b, base, fails) {
         await sq.goto(base + 'admin.html?demo#seaslug/inbox/todo/reports');
         await swait(() => !!document.querySelector('.adm-rep .adm-ftile [data-fu="remove"]'), 'a sea-slug report with its tools');
         const s2 = await sq.evaluate(() => ({
-          seen: Object.keys((DRAFT.seaslug || {}).seen || {}).length,
+          // the draft as it was: the one photo Remove took out (their part's exclude, REE-44)
+          removed: Object.keys((DRAFT.seaslug || {}).exclude || {}).length,
           open: [...document.querySelectorAll('.adm-rep a[data-ru]')].map(a => a.getAttribute('href'))
         }));
-        if (s2.seen !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h))) se.push(`the report ${JSON.stringify(s2)}`);
+        if (s2.removed !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h)))
+          se.push(`the report ${JSON.stringify(s2)}`);
         await sq.goto(base + 'admin.html?demo#seaslug/photos/stats/overview');
         await swait(() => /genera in play/i.test(document.querySelector('#view').textContent), 'Photo stats by genus');
         // The rest of their admin at parity (Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin, c'est
@@ -9080,13 +9228,18 @@ async function lazyPart(b, base, fails) {
         await cwait(() => /No cover proposal left/.test(document.getElementById('view').textContent));
         let s = await cst();
         if (s.views.includes('Cover proposals') || s.tiles.length) ce.push(`no cover of his: ${JSON.stringify(s)}`);
-        // Three families with a default, each given as his cover an adult photo in play that is not the rule's.
+        // Three families with a default, each given as his cover an adult photo in play that is not the rule's, nor
+        // watermarked (a watermarked cover's card adds its own "Watermark" line, checked at Choose another).
         const picks = await cq.evaluate(() => {
           const out = {};
           for (const u of FISHC.units) {
             const e = fuFamM(u),
               r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
-              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+              p =
+                r &&
+                e.all.find(
+                  q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish) && !fishWm(q, fuJ(q.f), DRAFT.fish)
+                );
             if (p) out[u.id] = {cover: p.f};
             if (Object.keys(out).length === 3) break;
           }
@@ -10231,6 +10384,14 @@ async function lazyPart(b, base, fails) {
         // The time of his answer is logged, and his answer is the latest comparison (Codex review #400).
         if (!(res.t > Date.now() / 1000 - 600) || res.last !== CHK)
           fails.push(`${w}px Auto: Check answer not timed (${JSON.stringify(res)})`);
+        // A Remove that answers a Check (Codex review, #1393): the agent's answer and the toast's Undo button together.
+        const rm = await p.evaluate(C => {
+          checkToast(C, true);
+          const t = document.querySelector('.adm-toast');
+          return {text: t.textContent, undo: !!t.querySelector('button.adm-toast-undo')};
+        }, CHK);
+        if (!/^Removed\. Check: the agent said/.test(rm.text) || !rm.undo)
+          fails.push(`${w}px Auto: a Remove answering a Check lost its Undo or the agent's answer (${JSON.stringify(rm)})`);
       }
       // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
       await p.evaluate(() => {
@@ -10325,16 +10486,16 @@ async function lazyPart(b, base, fails) {
         const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
         await goGenus(g);
         if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
-        // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
-        // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
-        await p.$eval(`[data-f="${CF[0]}"] [data-act="hide"]`, b => b.click());
+        // Remove on the genus page of a photo the auto-sort added: removed for good (curation exclude), a Keep disagreement, timed as
+        // the latest comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is the same.
+        await p.$eval(`[data-f="${CF[0]}"] [data-act="remove"]`, b => b.click());
         await settle();
         const rm = await p.evaluate(
           ([F, g]) => {
             const K = aCmp().filter(c => c.field === 'keep');
             return {
               added: !!(entry(g).add || {})[F],
-              rej: rejected(F),
+              rej: !!(DRAFT.exclude || {})[F],
               fix: K.some(c => c.f === F && !c.ok && c.how === 'fix'),
               last: (K.slice(-1)[0] || {}).f,
               t: !!aOf(F).d.t
@@ -10346,20 +10507,23 @@ async function lazyPart(b, base, fails) {
           fails.push(`${w}px Auto: Remove of an auto-added photo is not a Keep disagreement ${JSON.stringify(rm)}`);
         await p.click('#undo');
         await settle();
-        const back = await p.evaluate(([F, g]) => ({added: !!(entry(g).add || {})[F], rej: rejected(F), t: !!aOf(F).d.t}), [CF[0], g]);
+        const back = await p.evaluate(
+          ([F, g]) => ({added: !!(entry(g).add || {})[F], rej: !!(DRAFT.exclude || {})[F], t: !!aOf(F).d.t}),
+          [CF[0], g]
+        );
         if (!back.added || back.rej || back.t) fails.push(`${w}px Auto: Undo of that Remove ${JSON.stringify(back)}`);
         const own = await p.evaluate(g => {
-          const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f));
+          const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f) && !(DRAFT.exclude || {})[x.f]);
           if (!c) return null;
           ACT.addc(g, c.f, null, 'wide');
-          ACT.hide(g, c.f);
-          const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
+          ACT.remove(g, c.f);
+          const r = {rej: !!(DRAFT.exclude || {})[c.f], added: !!(entry(g).add || {})[c.f]};
           undo();
           undo();
-          r.after = rejected(c.f) || !!(entry(g).add || {})[c.f]; // both Undos: neither mark left
+          r.after = !!(DRAFT.exclude || {})[c.f] || !!(entry(g).add || {})[c.f]; // both Undos: neither mark left
           return r;
         }, g);
-        // Remove of a candidate Pierre added himself: rejected as well (no return to Candidates, no new auto add); two Undos restore.
+        // Remove of a candidate Pierre added himself: removed as well (no return to Candidates, no new auto add); two Undos restore.
         if (own && (!own.rej || own.added || own.after)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
       }
       // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.

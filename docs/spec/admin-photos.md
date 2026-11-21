@@ -16,10 +16,10 @@ tools below are `coralLive` in `admin-nodephotos.js`.
 
 - **Its photos** per view, its candidates and Not this genus. The first 3 of each view are featured (genus sheet, Coral
   ID Key): a photo dragged into the first 3 places is featured, out of them it drops (the next best moves up), places
-  not set fill automatically; a drag to another view moves a photo, from the candidates adds it. **Remove** takes a
-  photo off the site (games included) and
-  lists it with the candidates, where it can be added back; Not this (wrong genus, or only fit for a look-alike
-  comparison); × excludes for good; Crop (with the rotation, below); the cover; each photo's growth form letters; the
+  not set fill automatically; a drag to another view moves a photo, from the candidates adds it. **Remove** is the one
+  way a photo leaves (games included): out for good in one click (curation `exclude`: imports skip it, it never comes back
+  by itself), an Undo button in the toast just after, and the node's **Removed** list to put it back (Pierre, 2026-11-21
+  05:48, option A); Not this (wrong genus, or only fit for a look-alike comparison); Crop (with the rotation, below); the cover; each photo's growth form letters; the
   out of rule, share-alike and WoRMS name tags (`HELP.genus`). Its sticky bar has a view filter, All · Colony ·
   Close-up · Corallites: one view's section alone, Candidates and Not this genus hidden and counted in one line; kept
   across genera in `reefid-admin-gview`, All on a genus without the saved view. The origin chips are the filter bar's
@@ -30,11 +30,12 @@ tools below are `coralLive` in `admin-nodephotos.js`.
   repeated photos, mix-ups), ranked (`needsOf()`, also Where to look's ranking).
 - **Remove** on the genus page of an added candidate (the auto-sort's or Pierre's own) also marks it rejected (below):
   it does not come back in Candidates and the auto-sort never adds it again.
-- **Removed from the site** (`genera[g].hide`): the genus's photos taken off the site, each with **Put back**; the Tag…
-  filter **Removed photos**.
-- **Excluded** (`exclude`): the genus's excluded photos, each with **Restore**; a restored photo comes back at its place
-  at the next run of the candidate workflow (`data/excluded.json`, `tools/fetch_local.py` `tidy()`); the Tag… filter
-  **Excluded photos**; one that names no genus any more is listed on the first root page of each view.
+- **Removed** (`ACT.remove`, one click: `exclude`): the photos taken out of the genus, each with **Put back**; a photo
+  put back comes back at its place at the next run of the candidate workflow (`data/excluded.json`,
+  `tools/fetch_local.py` `tidy()`); the photos an earlier Remove took off the site (`genera[g].hide`, as published: nothing
+  writes one now, and a Remove of such a photo drops its entry) are in the same list, their Put back deleting the entry
+  (`ACT.unhide`); the Tag… filter **Removed photos**; one that names no genus any more is listed on the first root page of
+  each view. There is no × on a tile and no separate Excluded list.
 
 ## Candidates (the corals)
 
@@ -59,7 +60,7 @@ slugs' the `tree` builder's, in `admin-fish.js`:
   long runs of one genus; the shuffle seed in `reefid-admin-cseed`.
 - **Buttons only** (no swipe gesture: it misfires when zooming): ✕ Reject (`seen['cand:f']`, a reviewed mark; the
   photo stays a candidate on its genus page, tagged "rejected"), + Colony / Close-up / Corallites (adds it), Skip, Not
-  this, × exclude, Crop (`crop`, applied by `fetch_approved.py` on download). The judging pass's view guess (`vg`) is a
+  this, × (titled Remove: the one Remove, `exclude`), Crop (`crop`, applied by `fetch_approved.py` on download). The judging pass's view guess (`vg`) is a
   dashed outline, never a green tick (a tick reads as Pierre's choice). Auto-refilled candidates arrive without
   growth-form or quality guesses.
 - A candidate whose guessed view is full leaves the queue ("The cap per genus × view", below).
@@ -103,9 +104,8 @@ slugs' the `tree` builder's, in `admin-fish.js`:
   comparison set per photo, from its latest log entry (`autoIdx`): two devices' drafts that logged it on different days
   are both kept by `merge3` and are not counted twice. "Not this genus" on a photo counts as not kept even when Pierre
   then adds it in the genus it went to (the auto only decides a candidate in its own genus). **Remove** on the genus page
-  of a photo the auto-sort added also marks it rejected (`seen['cand:f']`, as ✕ Reject: it stays with the genus page's
-  candidates, off the Candidates queue; one Undo step), so it counts as a Keep disagreement; Remove of any other photo
-  is unchanged.
+  of a photo the auto-sort added drops its add and excludes it (`autosort.js` `pierreOf` reads an exclusion as rejected;
+  one Undo step), so it counts as a Keep disagreement.
 - **The order of the comparisons** is when Pierre answered or corrected, not when the auto decided: each click that
   changes his answer on a logged photo writes the time into its code (`@t`, Unix seconds in base 36; `saveDraft` →
   `autoWhen` → `autosort.js` `autoSigs`, `autoStamp`), so a Check of an older run he answers today is among the latest
@@ -242,8 +242,8 @@ On the tree subjects' side, `#fish/photos/review/by-difficulty` (after the axes 
 on Ease): the fish photos players answered, by their answers alone since the sheet rates the corals' photos only
 (`diffByAnswers` over `photoAnswers` and `rowsOf`, as fish Health counts them: every answer that showed the photo,
 family and genus questions alike), Hardest (lowest share right) or Easiest first, more answers first on a tie, the
-corals' ≥1 / ≥3 / ≥10 answers; each photo a family-page tile (`fishRepTile`: Tags with its ease, Remove, Not this, Crop,
-×) with its share right, answers and players who miss it; a photo already out (excluded, Not this, removed) left out, as
+corals' ≥1 / ≥3 / ≥10 answers; each photo a family-page tile (`fishRepTile`: Tags with its ease, Remove, Not this,
+Crop) with its share right, answers and players who miss it; a photo already out (removed, Not this, rejected) left out, as
 on Health; the first 48 shown (the tree builder's `max`), the rest counted; its own ? (`fishdiff`, no photo-difficulty
 note).
 
@@ -260,8 +260,9 @@ offset alone (their photos have no judged ease; `genusPrior`), "prior" beside th
 
 The tree builder's axes (`REVIEW_BUILD` `tree`; the `GROUPS` view option `axis`): Ease `#fish/photos/review/ease` and
 Phase & framing `#fish/photos/review/phase-framing`, one family's photos in play at a time (`reefid-admin-fishrev`), each
-in the row of its value now; one click sets Pierre's ease, juvenile flag, phase word (a family with IMR phase lines only)
-or view (`autosort.js` `fishSet`, `fishTag`, as the fish Candidates); the agreement line, the draft's values against the
+in the row of its value now; one click sets Pierre's ease, juvenile flag, phase word (a family with IMR phase lines, or
+a photo of a species the cited phase list flags, `fish.json` species `phs`: `autosort.js` `hasPhaseRow`, also on the fish
+Candidates card and a photo's tag rows) or view (`autosort.js` `fishSet`, `fishTag`, as the fish Candidates); the agreement line, the draft's values against the
 judging pass's (`fishAgree`).
 
 ### Light proposals
@@ -413,8 +414,10 @@ over `fuData`: per family, genus and species), in the fish data's words (`SUBJEC
 `admin.origins`, the circles of `structure`):
 
 - headline photos and observations in play, families in play, candidates waiting;
-- **All photos**, every photo the fish data hold, once by `core.js` `treePid` (in play first, then excluded, Not this,
-  removed by `fishState`, another species one could take for it out of play, a candidate waiting, else not in games);
+- **All photos**, every photo the fish data hold, once by `core.js` `treePid` (in play first, then removed, Not this,
+  rejected by `fishState`, another species one could take for it out of play, a candidate waiting, else not in games):
+  one **Removed** row (the one Remove, `exclude`, as the corals'), **Rejected** apart (`seen`: ✕ Reject, Out of play, a
+  P3 count and the old Remove's mark, still candidates), no Excluded row;
 - **Per family** photos and observations, then the photos in play per genus and per species; **Fewest and most**
   families (their Tree pages); **Circles** in the Views card's place (photos per circle, the spread over its families,
   families without); **Sources** (the fish origins);

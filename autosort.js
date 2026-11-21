@@ -991,6 +991,10 @@
     if (/females?\b/.test(s) || (t && t.dimorph)) out.push('female');
     return out;
   }
+  // Whether the admin shows the Phase row for photos of t (a teach entry or a family: its phase lines, dimorph) of the species
+  // sp (a fish.json species record): when the IMR lines or dimorph say its phases differ, or sp carries phs (the cited
+  // phase list's flag, tools/build_fish.py phase_sources), the same species whose photos carry the phase flag p.
+  const hasPhaseRow = (t, sp) => !!((t && ((t.phase || []).length || t.dimorph)) || (sp && sp.phs));
   // What a family still needs before the admin's ✓ Validated (docs/ARCHITECTURE.md "Admin for every subject"): each
   // species' observations in play up to its target (fishTarget), 5 easy photos per family (ease 4 or 5, judging/FISH.md)
   // and every IMR phase at least once. play: {species id: [photo]} in play, species: {id: fish.json species} (the
@@ -1656,6 +1660,7 @@
     fishJuv,
     fishWm,
     fishUnitPhases,
+    hasPhaseRow,
     FISHEASY,
     fishNeeds,
     fishUnits,

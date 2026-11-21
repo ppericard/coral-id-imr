@@ -305,10 +305,14 @@ choices per family in the app" has the details.
   pools, or new code that lets Home show other photos.
 - **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
   `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
-  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. A photo a later pass
+  already looked at whole at full size (the tag-doubt pass, `judging/fish-tag-doubts.json`) is left out, and so is an
+  ease-only change that does not make the photo reference-level (`core.js` `refLevel`). Look as the second pass
   did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
   photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
-  (nothing to download: the flag is its only change).
+  (nothing to download: the flag is its only change). The two exclusions hold only while every unit keeps a clean
+  band-kind photo and a clean reference-level adult: after tagging, count them per unit against the previous pass's
+  files, and look at the fallback photos of any unit that lost its last one (as the third pass did).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
@@ -354,6 +358,12 @@ so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` c
   judging passes box the photos already judged as they go: the first two box passes (2026-11-09) boxed 172 photos, about
   7 per circle-1 entry (168 tiles kept, 4 too small in the original), so 21 of the 27 circle-1 families have 6
   observations with a tile; the rest wait for the next rounds, entry by entry, the starter core first.
+- **The bulk box pass** (2026-11-22, REE-202; [decision record](../docs/decisions/2026-11-22-fish-box-model.md)): measured
+  first (Q441), **Sonnet 5.5 at medium effort** boxes the photos waiting, one picture per photo (iNaturalist's large size
+  shown at 1000 px, a 10 x 10 grid labelled on the edges, ticks at the half tenths; a framed photo's frame outlined and
+  the outside dimmed), the box read to 0.01 and rounded outward, a seeded 5% of each batch redone blind by Opus 5.5 high.
+  Order: the species of the mimicry pairs whose class can have a tile (M2, M3, M5), all their photos waiting; then the
+  species with no tile, in `fish.json` order, at most 4 photos each. The boxes go into `tools/fish_judge.json` `boxes`.
 
 **The tile** (`tools/fish_game.py` `tile_crop`, `tile_write`; Q321 D4): the box's longer side plus 10% of it on each
 side (less, down to none, where the photo's short side is shorter), squared, centred on the fish, kept inside Pierre's

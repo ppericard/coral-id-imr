@@ -3361,7 +3361,10 @@
         [...lens.entries()].filter(([k]) => k !== cut).map(([, v]) => v),
         0.5
       );
-      o[fi('wk')] = (lens.size * 7) / Math.max(7, (L[L.length - 1].t - L[0].t) / DAY);
+      // the span runs to the answer's own `until` when it has one: a trajectory window is read up to the next window's first
+      // answer, so the break after its last session counts (a window of one session would read one a week whatever the gap)
+      const lastA = L[L.length - 1];
+      o[fi('wk')] = (lens.size * 7) / Math.max(7, ((lastA.until != null ? lastA.until : lastA.t) - L[0].t) / DAY);
       o[fi('eve')] = mean(L.map(a => ((new Date(a.t).getUTCHours() + 8) % 24 >= 17 ? 1 : 0)));
     });
     return out;
@@ -3667,7 +3670,12 @@
       B.forEach(([a, b], w) => {
         if (w < B.length - TR.MAXW) return;
         used += b - a;
-        L.slice(a, b).forEach(x => D.push({...x, p: id + TR_SEP + (w + 1)}));
+        // the window's last answer carries when the next answer of the player came (the next window's first, or the short
+        // block after the last window): profFeat reads the sessions a week up to it, so the gap between windows counts
+        const nxt = b < L.length ? L[b].t : null;
+        L.slice(a, b).forEach((x, i, S) =>
+          D.push({...x, p: id + TR_SEP + (w + 1), ...(nxt != null && i === S.length - 1 ? {until: nxt} : {})})
+        );
       })
     );
     const V = profFeat(D, null),

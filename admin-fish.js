@@ -21,9 +21,9 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
 // fishCoverOf, fishSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
 fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
-// its tooltip ([value, label, title]).
-const fRow = (name, at, opts, v, auto) =>
-  `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
+// its tooltip ([value, label, title]). wrap: a row of long labels (the phase words) that wraps, never clips nor widens its tile.
+const fRow = (name, at, opts, v, auto, wrap = false) =>
+  `<span class="adm-qseg adm-ftag${wrap ? ' adm-fwrap' : ''}${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
     .map(
       ([k, t, tip]) =>
         `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</button>`
@@ -38,7 +38,7 @@ const fVals = (F, f, j) => ({
 });
 // The rows of a card. blind (a Check): only the admin's own values pressed, nothing of the pass shown. open: the seven tag
 // rows and the flags shown too (the card's Tags; a photo tile's own, admin.js fishTile).
-function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
+function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN, species = null) {
   const S = FISHS, // the subject whose rubric the rows are (SUBJECTS admin.tags)
     V = fVals(F, p.f, blind ? null : j),
     code = V.tags.mine || V.tags.pass || '',
@@ -52,10 +52,11 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
     ease != null ? String(ease) : null,
     V.ease.mine == null
   );
-  // The phase row only for an entry whose phases differ (fish.json teach phase lines: Angelfish, Spadefish, Parrotfish,
-  // Sweetlips, Anthias): elsewhere a phase tag has nothing to say.
-  if (entry && ((entry.phase || []).length || entry.dimorph))
-    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined);
+  // The phase row only for a species whose phases differ: its entry's phase lines or dimorph (fish.json teach: Angelfish,
+  // Spadefish, Parrotfish, Sweetlips, Anthias) or the cited phase list's phs (fish.json species; autosort.js hasPhaseRow):
+  // elsewhere a phase tag has nothing to say.
+  if (hasPhaseRow(entry, species))
+    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined, true);
   if (open)
     h +=
       `<div class="adm-ftags">` +
@@ -147,8 +148,8 @@ const fishInPlay = (F, sid) => {
   return L;
 };
 // One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (the admin's ✕
-// Reject on it: off the species, a correction when the auto-sort had proposed it). A photo leaving play here or on the card
-// (Reject, ×, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
+// Reject on it: off the species, a correction when the auto-sort had proposed it; it stays a candidate). A photo leaving play
+// here or on the card (Reject, Remove, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
 function fishZoom(p, sid, inPlay, blind) {
   const lb = $('lightbox'),
     n = fishName(sid),
@@ -260,14 +261,16 @@ function bindFishAuto(scope) {
 // subject's candidates through autosort.js fishQueue, a species' (or a genus-level list's) target the unit of the cap, the
 // pass's judgment and the rubric's rows, the species' photos in play beside the card, Not this → another species.
 CAND_BUILD.tree = (() => {
-  // After his answer to a Check: what the auto-sort had said.
-  const told = c => {
-      if (!c.chk) return;
-      const x = fishIdx(DRAFT[TK])[c.p.f];
-      if (x)
-        toast(
-          `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
-        );
+  // After his answer to a Check: what the auto-sort had said ('' for any other card).
+  const toldMsg = c => {
+      const x = c.chk && fishIdx(DRAFT[TK])[c.p.f];
+      return x
+        ? `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
+        : '';
+    },
+    told = c => {
+      const m = toldMsg(c);
+      if (m) toast(m);
     },
     // The photo as the card shows it: the pass's judgment, never on a Check (blind).
     shownPhoto = c => ({...c.p, j: c.chk ? null : c.j}),
@@ -334,7 +337,7 @@ CAND_BUILD.tree = (() => {
             `<button type="button" class="adm-fth" data-fp="${esc(q.f)}" aria-label="Enlarge a photo in play">${q.src ? `<img ${fishSrc(q, 1)} alt="" loading="lazy">` : ''}</button>`
         )
         .join('')}</div>`,
-        rows: fishRows(readView(F), p, j, chk, FISHC.entry[sid]),
+        rows: fishRows(readView(F), p, j, chk, FISHC.entry[sid], FTAGS_OPEN, FISHC.species[sid]),
         not: fishNotThisSel(sid, from),
         tool: `<button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button>`,
         crop: cropOn(F, p.f),
@@ -351,10 +354,10 @@ CAND_BUILD.tree = (() => {
       fishEdit(G => fishReject(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
       told(c);
     },
+    // The card's × is the one Remove of every photo tile (admin.js treeRemove): out for good, Undo in its toast, beside a
+    // Check's answer.
     exclude(Q, c) {
-      fishEdit(G => fishExclude(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
-      if (!c.chk) toast('Excluded. Undo (Ctrl+Z) brings it back.');
-      told(c);
+      treeRemove(fishFamOf(c.sid), c.p.f, null, () => toldMsg(c));
     },
     zoom: (Q, c) => fishZoom(shownPhoto(c), c.sid, false, c.chk),
     // The crop (fishCrop): the admin's, else the pass's (never on a Check).

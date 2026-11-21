@@ -237,7 +237,10 @@ comeback question, a mastery exam question). One engine (`quiz.js` `PEND`, `pend
   answers count; after a break they are planned again, `rustNow`), the repeat window (`lastQs`) and the photo window
   (`SEENQ`) hold it once (a reload starts them with it), the opening hold, the comeback and the Elo are read at answer
   time as for any question, a comeback question keeps its mark. The cards and offers of the first showing are not shown
-  again, and a question that came with a first-meeting card is not kept (its card is the genus's meeting). The hint
+  again. A question about the genus of its own first-meeting card is not kept (its card is the genus's meeting); one
+  that came with another genus's card (a genus opening next, the question about a genus already met) is kept, and the
+  card does not show again (`introAdd` marks its genus met when the card shows)
+  ([decision](../decisions/2026-11-22-pending-question-other-card.md)). The hint
   (Show the corallites) is hidden again: opening it counts as help.
 - **Response time**: the clock counts the seconds the player looked at the question before leaving (`QCLOCK.pre`,
   written at each leave, hide and page close, `pendClock`) and the seconds since the return, never the time away: a
