@@ -41,7 +41,7 @@ over the cap).
 | Analyses | Overview | `#analyses/overview` |
 | Analyses | Speed | Answer time `#analyses/speed/answer-time` · Enlarging `#analyses/speed/enlarging` |
 | Analyses | Difficulty | Photos `#analyses/difficulty/photos` · Formats `#analyses/difficulty/formats` · Mix-ups `#analyses/difficulty/mix-ups` · Time `#analyses/difficulty/time` · Pairs `#analyses/difficulty/pairs` · Heatmap `#analyses/difficulty/heatmap` |
-| Analyses | Learning | Practice `#analyses/learning/practice` · After a break `#analyses/learning/after-a-break` · Sessions `#analyses/learning/sessions` · Profiles `#analyses/learning/profiles` · Answer log `#analyses/learning/answer-log` · Stops `#analyses/learning/stops` |
+| Analyses | Learning | Practice `#analyses/learning/practice` · After a break `#analyses/learning/after-a-break` · Sessions `#analyses/learning/sessions` · Profiles `#analyses/learning/profiles` · Trajectories `#analyses/learning/trajectories` · Answer log `#analyses/learning/answer-log` · Stops `#analyses/learning/stops` |
 
 The Analyses tabs: **Overview** (what the data says clearly, every result in words, the milestones); Speed's Answer time
 and Enlarging; Difficulty's Photos, Formats, Mix-ups, **Time** (what the time to answer and enlarging say about a
