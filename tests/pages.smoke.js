@@ -6025,8 +6025,7 @@ async function subjTour(b, base) {
     await tap(p, '#tour [data-start="know"]', 'names step, old sheet');
     await p.waitForTimeout(600);
     const s = await bub(p);
-    if (!s || s.n !== '3 / 8' || !/, any time$/.test(s.h))
-      fails.push(`names step, sheet not heard: ${JSON.stringify(s && [s.n, s.h])}`);
+    if (!s || s.n !== '3 / 8' || !/, any time$/.test(s.h)) fails.push(`names step, sheet not heard: ${JSON.stringify(s && [s.n, s.h])}`);
     await c.close();
   }
   if (errs.length) fails.push(`subject tour: page errors ${errs.slice(0, 3).join(' | ')}`);
