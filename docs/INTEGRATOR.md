@@ -327,6 +327,11 @@ Pierre asked where a third of the quota went in a few hours.
   cut off and resumed, which spends quota for nothing. Agents that only read can run beyond that.
 - **Wake the integrator per wave, not per item**: batch judges report through one waiter at the end of a wave, not one
   notification per batch.
+- **Lessons of 2026-11-21/22** (about 125 PRs in two days, about 60% of an Ultra quota): parallel PRs on the same files
+  (`admin.js`, `quiz.js`, `fish_judge.json`, `suggest.json`) were brought up to date two or three times each, every time
+  re-running an agent, CI and Codex: order such PRs one after another instead. Stacked PRs never share a train (the
+  second fails after the first's squash). A partial PR's body says "Part of REE-N", or GitHub closes the issue
+  (REE-219). Grouped trains wait in arrival order by elapsed time, never by process id (REE-220).
 
 ## Where open work sits
 
