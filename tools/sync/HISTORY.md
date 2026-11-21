@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v218 (2026-11-22)
+
+The sea slug species look-alike pairs a specialist source names (`seaslug.json` species `look`: the two Spanish dancers, Q377, Pierre, 2026-11-15; *Thecacera pacifica* / *T. pikachu* and *Chromodoris alcalai* / *C. dianae*, Q390 D, Pierre, 2026-11-17) become the species units' declared look-alikes (`core.js` `treeSpUnits` `decl`, copied by `tools/sync_core.py`). The replay reads a unit's `look`, which already held each pair (both species of one family), so every replay, leaderboard and variant table is unchanged: no rules version, no gate (rule D4)
+
 ## v217 (2026-11-22)
 
 the player's time net of the photo's (Pierre, 2026-11-21, Q452: «si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui […] il faut recalculer la progression de tous. On peut le faire en silence»): the embedded core.js weighs a right answer's ability steps by its time net of its photos' time term (`rtWeight` ti: z less the mean of the photos' served time terms, `ptimeQ`), and the scoring record keeps that term (`scoreRec` i, so this version stores it in the Scoring column); the full replay (`replay_`, `replayedAll_`) passes the corals' photos with their terms (`photos: st.photos`), so an answer logged without its term is netted by the terms served now; core.js rules version 13 replays every coral player once, silently, and fish rules version 6 and sea slug rules version 3 likewise (their replays read no pooled photo numbers: only answers logged with the term are netted); the app nets and logs the term only from this version (core.js `RTNET_SHEET`)

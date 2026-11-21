@@ -10,31 +10,38 @@
   },
   "fish-s205-cand-623595426": {
    "code": "p0g2sl12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-602132389": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-670802915": {
    "code": "o1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-611861210": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-545406147": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-610007171": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-730384171": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-730384142": {
    "code": "p1g2bs11",
@@ -70,7 +77,8 @@
   },
   "fish-s205-cand-623289532": {
    "code": "h1g2bl11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-623289534": {
    "code": "h1g2bl11",
@@ -86,7 +94,8 @@
   },
   "fish-s205-cand-674463873": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-732716423": {
    "code": "p1g2ss11",
@@ -106,15 +115,18 @@
   },
   "fish-s205-cand-610007140": {
    "code": "p1g3sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-fb-Scrub_m0": {
    "code": "p1g0sl15",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-fb-Scrub_u2": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-328706904": {
    "code": "p1g0ss1j2",
@@ -162,7 +174,8 @@
   },
   "fish-s205-cand-308118491": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-308119085": {
    "code": "p1g1slm3",
@@ -170,7 +183,8 @@
   },
   "fish-s205-cand-245052380": {
    "code": "p1n0sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-141861851": {
    "code": "p1g1ss12",
@@ -178,24 +192,29 @@
   },
   "fish-s205-cand-249153929": {
    "code": "o1g1mmo2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-279254339": {
    "code": "p1g1slo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-288455486": {
    "code": "o1g1sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-350115780": {
    "code": "p1g2smo2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-607685700": {
    "code": "o1g1slo3",
    "keep": "best",
-   "note": "A second, spotted parrotfish below may be another phase of the same species or another species."
+   "note": "A second, spotted parrotfish below may be another phase of the same species or another species.",
+   "phase": "terminal"
   },
   "fish-s205-cand-623601157": {
    "code": "o1g1sm12",
@@ -231,7 +250,8 @@
   },
   "fish-s205-cand-674336550": {
    "code": "p1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-597171251": {
    "code": "o1d2bm11",
@@ -239,7 +259,8 @@
   },
   "fish-s205-cand-615534049": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s205-cand-554520997": {
    "code": "p1g2ml12",
@@ -247,7 +268,8 @@
   },
   "fish-s205-cand-623581790": {
    "code": "o1g2ml12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s205-cand-623581754": {
    "code": "t1g2ml11",
@@ -267,7 +289,8 @@
   },
   "fish-s205-cand-623624879": {
    "code": "p0g1sl13",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "terminal"
   },
   "fish-s205-cand-623581698": {
    "code": "t1g2slk2",
@@ -279,7 +302,8 @@
   },
   "fish-s205-cand-623581477": {
    "code": "d1g2sl12",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "terminal"
   },
   "fish-s205-cand-623581511": {
    "code": "d1g2sl12",

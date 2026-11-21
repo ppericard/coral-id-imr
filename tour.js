@@ -412,9 +412,27 @@
     b.style.top = Math.max(m, Math.min(H - bh - m, top)) + 'px';
     arrows(s, rects, b, W, H);
   }
+  // The boxes of the page's readable text (every text line, the tour itself left out): an arrow never covers one.
+  function textBoxes(W, H) {
+    const out = [],
+      rg = document.createRange(),
+      walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode: n => (n.nodeValue.trim() && !root.contains(n) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT)
+      });
+    for (let n; (n = walk.nextNode());) {
+      const e = n.parentElement;
+      if (!e || /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(e.tagName)) continue;
+      if (e.checkVisibility && !e.checkVisibility({visibilityProperty: true, opacityProperty: true})) continue;
+      rg.selectNodeContents(n);
+      for (const q of rg.getClientRects())
+        if (q.width > 0 && q.height > 0 && q.right > 0 && q.left < W && q.bottom > 0 && q.top < H) out.push(q);
+    }
+    return out;
+  }
   // Big arrows in the dimmed area, one per spotlight, pointing at it: below or above it (towards the middle of the
-  // screen first), else beside it; never over the bubble or another spotlight. The main one aims at the target's
-  // content (the game tabs, not the empty end of their bar).
+  // screen first), else beside it; never over the bubble, another spotlight or any page text (the longest arrow that
+  // finds clear room, else a shorter one; none when there is no room at all: the ring alone still shows the target).
+  // The main one aims at the target's content (the game tabs, not the empty end of their bar).
   function arrows(s, rects, b, W, H) {
     const g = root.querySelector('.tarrows');
     if (!s.arrows) {
@@ -423,10 +441,10 @@
     }
     const bb = b.getBoundingClientRect(),
       A = 44,
-      L = 58,
       pad = 6,
       hit = (x, y, w, h, q, e = 6) => x < q.right + e && x + w > q.left - e && y < q.bottom + e && y + h > q.top - e;
-    const kids = target ? [...target.children].filter(vis).map(e => e.getBoundingClientRect()) : [];
+    const kids = target ? [...target.children].filter(vis).map(e => e.getBoundingClientRect()) : [],
+      words = textBoxes(W, H);
     const aimX = (q, i) =>
       !i && kids.length ? (Math.min(...kids.map(k => k.left)) + Math.max(...kids.map(k => k.right))) / 2 : (q.left + q.right) / 2;
     let out = '';
@@ -434,25 +452,32 @@
       const cx = aimX(q, i),
         cy = (q.top + q.bottom) / 2,
         up = cy < H / 2;
-      const spots = [
-        {x: cx - A / 2, y: q.bottom + pad + 8, w: A, h: L, a: 0}, // below, pointing up
-        {x: cx - A / 2, y: q.top - pad - 8 - L, w: A, h: L, a: 180}, // above, pointing down
-        {x: q.left - pad - 8 - L, y: cy - A / 2, w: L, h: A, a: 90}, // left, pointing right
-        {x: q.right + pad + 8, y: cy - A / 2, w: L, h: A, a: 270} // right, pointing left
-      ];
-      if (!up) [spots[0], spots[1]] = [spots[1], spots[0]];
-      const p = spots.find(
-        o =>
-          o.x >= 2 &&
-          o.y >= 2 &&
-          o.x + o.w <= W - 2 &&
-          o.y + o.h <= H - 2 &&
-          !hit(o.x, o.y, o.w, o.h, bb) &&
-          !rects.some(z => hit(o.x, o.y, o.w, o.h, z, 2))
-      );
+      let p = null,
+        L = 0;
+      for (L of [58, 44, 32, 24]) {
+        const spots = [
+          {x: cx - A / 2, y: q.bottom + pad + 8, w: A, h: L, a: 0}, // below, pointing up
+          {x: cx - A / 2, y: q.top - pad - 8 - L, w: A, h: L, a: 180}, // above, pointing down
+          {x: q.left - pad - 8 - L, y: cy - A / 2, w: L, h: A, a: 90}, // left, pointing right
+          {x: q.right + pad + 8, y: cy - A / 2, w: L, h: A, a: 270} // right, pointing left
+        ];
+        if (!up) [spots[0], spots[1]] = [spots[1], spots[0]];
+        p = spots.find(
+          o =>
+            o.x >= 2 &&
+            o.y >= 2 &&
+            o.x + o.w <= W - 2 &&
+            o.y + o.h <= H - 2 &&
+            !hit(o.x, o.y, o.w, o.h, bb) &&
+            !rects.some(z => hit(o.x, o.y, o.w, o.h, z, 2)) &&
+            !words.some(z => hit(o.x, o.y, o.w, o.h, z, 3))
+        );
+        if (p) break;
+      }
       if (!p) return;
       // Drawn pointing up around (0,0), then turned: the bob animation moves it towards the spotlight.
-      out += `<g transform="translate(${p.x + p.w / 2},${p.y + p.h / 2}) rotate(${p.a})"><path class="tarw" d="M0,${-L / 2} L${A / 2},${-L / 2 + 24} H${A * 0.17} V${L / 2} H${-A * 0.17} V${-L / 2 + 24} H${-A / 2} Z"/></g>`;
+      const k = Math.min(24, L * 0.45); // the head's height
+      out += `<g transform="translate(${p.x + p.w / 2},${p.y + p.h / 2}) rotate(${p.a})"><path class="tarw" d="M0,${-L / 2} L${A / 2},${-L / 2 + k} H${A * 0.17} V${L / 2} H${-A * 0.17} V${-L / 2 + k} H${-A / 2} Z"/></g>`;
     });
     g.innerHTML = out;
   }

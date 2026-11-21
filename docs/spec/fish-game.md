@@ -122,7 +122,7 @@ docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, ste
 
 - **Units**: `core.js` `treeSpUnits` lists one unit per species with a listed name, in a family in play (`s:` + its id,
   `s:s091`; its family's other species as `look`; `from` its family). `app.js` `treeGenera` builds each record:
-  `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl: []`, `noex`,
+  `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl` (the species its record's `look` names: none for the fish), `noex`,
   its family's photos of that species, `sci` its scientific name, `also` its listed names, `name` the player's first
   common name (a getter, `cnFirst`). `TREEU.spl` lists them.
 - **Opening** (the species): the set `sp` in `UNITS` fish `sets` (`auto` only: no offer, no switch). `app.js` `spPlay`
