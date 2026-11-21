@@ -54,7 +54,8 @@ already allowed.
 - **Questions, the details** (AGENTS.md "Questions to Pierre" has the rule): an open numbered question waits in STATUS
   "Questions for Pierre" (number, context, question, recommendation, PR) until he answers; past numbers stay as they
   are, never renumbered; he does not remember everything as an agent does and may ask for more context.
-*Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19.
+*Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19; a hit as
+evidence, 2026-11-21 (#1361).
 
 ### W8
 
