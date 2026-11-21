@@ -1,1 +1,0 @@
-Comments only: the embedded `core.js` copy's long comment blocks are cut to their contract and a pointer to the doc section that explains them (the facts they held moved into `docs/LEARNING.md` and `docs/spec/` first). No behaviour change: the code is token-identical (integrator's call, Q406 / REE-29, architecture steps 3-4 decision (c))
