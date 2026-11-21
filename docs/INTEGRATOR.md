@@ -372,6 +372,10 @@ through the Linear MCP tools. ROADMAP.md keeps a pointer for each subject transf
   integrator updates Linear, unless the brief tells the subagent to.
 - **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in
   the chat in French (AGENTS.md "Questions to Pierre"); the issue holds its context. Blocked, Study, Idea, Waiting,
-  Parked as named.
+  Parked as named. **Scheduled** (Pierre, 2026-11-22; [decision](decisions/2026-11-22-scheduled-tasks.md)): a task
+  that only needs to come back on a date or a named trigger goes to Backlog with this label, its due date (or its
+  trigger in the description's "Comes back" line); it stays out of every list, report, STATUS and question to Pierre
+  until then. The integrator checks Scheduled issues at each session start and brings one back to Todo, telling Pierre
+  once, when the date comes (14 days before a due date: integrator's call) or the trigger happens.
 - **The free plan**: 250 active issues (archived ones unlimited). Basic (USD 10 a user a month, billed yearly) only if
   the limit blocks useful work, and then asked to him with its price first (money: AGENTS.md "Always ask first").
