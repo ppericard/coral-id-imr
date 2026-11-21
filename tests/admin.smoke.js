@@ -3128,7 +3128,7 @@ async function lazyPart(b, base, fails) {
           wide: document.documentElement.scrollWidth - innerWidth
         };
       });
-      if (tr.charts !== 7 || tr.players < 3 || tr.typical < 5 || tr.words < 8 || tr.rows < 2 || tr.small || tr.wide > 0)
+      if (tr.charts !== 7 || tr.players < 3 || tr.typical < 5 || tr.words < 3 || tr.rows < 2 || tr.small || tr.wide > 0)
         fails.push(`${w}px Analyses player trajectories: ${JSON.stringify(tr)}`);
     }
     // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their

@@ -1684,7 +1684,8 @@ function anGcurve(a) {
 // κ that fits the rusty comeback questions' answers (×1 = the app's FSRS stabilities, above: players remember longer),
 // pooled and for each genus with 5 questions or more (shrunk towards the pooled one), with its likely range; in words
 // first, what it can conclude (rule A5), then a chart on a log scale and a table. Descriptive, no verdict.
-const anMult = v => (v == null || !isFinite(v) ? '–' : v > 50 ? '×50+' : '×' + (v >= 10 ? Math.round(v) : v.toFixed(v >= 2 ? 1 : 2)));
+const anMult = v =>
+  v == null || !isFinite(v) ? '–' : v > 50 ? '×50+' : v < 0.02 ? '×0.02−' : '×' + (v >= 10 ? Math.round(v) : v.toFixed(v >= 2 ? 1 : 2));
 function anBackGenus(a) {
   const S = a.stab;
   if (!S) return '';
@@ -1698,15 +1699,27 @@ function anBackGenus(a) {
       '',
       false
     );
-  const enough = S.n >= S.min && S.players >= S.minPlayers && S.lo != null,
+  // A range that runs to the end of what the fit searched (every answer right, say) is no measurement: nothing is
+  // concluded from it. Clear when the range leaves ×1 out; within the margin only when the whole range sits inside it
+  // (rule A5: failing to find a difference is not agreement); else not enough data yet, with the answers it would need.
+  const enough = S.n >= S.min && S.players >= S.minPlayers && S.lo != null && !S.edge,
     pooled = `${anMult(S.est)} the app’s${S.lo != null ? ` (likely ${anMult(S.lo)} to ${anMult(S.hi)})` : ''}`,
-    verdict = !enough
-      ? `Not enough data yet. ${left}; about ${S.min} from ${S.minPlayers} players are needed, and ${S.need ? `about ${anInt(S.need)} questions for a range within ±30% of the stability` : 'the range is not drawn yet'}. So far players’ stabilities read ${pooled}.`
-      : S.lo > 1
-        ? `Players remember longer than the app’s stabilities assume: ${pooled}. The comeback could be lighter once the bias below is corrected for.`
-        : S.hi < 1
-          ? `Players forget faster than the app’s stabilities assume: ${pooled}. The comeback may be too light.`
-          : `Within the range: the app’s stabilities fit what players answered, ${pooled}.${S.need ? ` About ${anInt(S.need)} questions would pin the stability to ±30%.` : ''}`,
+    mlo = Math.exp(-(S.hw || 0.3)),
+    mhi = Math.exp(S.hw || 0.3),
+    need = S.need
+      ? `about ${anInt(S.need)} questions for a range within ±30% of the stability`
+      : 'its range is open-ended, so no count can be given',
+    verdict = S.edge
+      ? `Not enough data yet. ${left}; they fit any stability ${S.est > 1 ? 'above' : 'below'} ${anMult(S.est)} (the likelihood is still ${S.est > 1 ? 'rising' : 'falling'} at the end of the range searched): about ${S.min} from ${S.minPlayers} players are needed.`
+      : !enough
+        ? `Not enough data yet. ${left}; about ${S.min} from ${S.minPlayers} players are needed, and ${need}. So far players’ stabilities read ${pooled}.`
+        : S.lo > 1
+          ? `Players remember longer than the app’s stabilities assume: ${pooled}. The comeback could be lighter once the bias below is corrected for.`
+          : S.hi < 1
+            ? `Players forget faster than the app’s stabilities assume: ${pooled}. The comeback may be too light.`
+            : S.lo >= mlo && S.hi <= mhi
+              ? `Within the margin: the app’s stabilities fit what players answered, ${pooled}, all inside ${anMult(mlo)} to ${anMult(mhi)}.`
+              : `Not enough data yet. ${left}; the range ${pooled} still holds the app’s stabilities and stabilities well away from them: ${need}.`,
     G = S.g || [],
     rows = [
       ...(S.lo != null

@@ -106,6 +106,26 @@ test('comeback by genus: at the app’s own stabilities the multiplier reads 1, 
   S.g.forEach(g => assert.ok(g.est > 0.5 && g.est < 2, `${g.k} ${g.est}`));
 });
 
+test('comeback by genus: a multiplier at the end of the searched range is an edge, never a measured one', () => {
+  const rows = rusty(7, () => 1, 20, 12, 3),
+    right = rows.map(r => [...r.slice(0, 3), r[2], 1, ...r.slice(5)]),
+    wrong = rows.map(r => [...r.slice(0, 3), 'Gen9', 0, ...r.slice(5)]),
+    up = A.backGenus(A.prep(right), 30, 3),
+    down = A.backGenus(A.prep(wrong), 30, 3);
+  // every answer right: the likelihood is still rising where the search ends
+  assert.strictEqual(up.edge, 1, JSON.stringify([up.est, up.lo, up.hi]));
+  assert.ok(up.est > 50 && up.open.includes('hi'));
+  assert.strictEqual(up.need, undefined, 'a range that runs to the end says nothing of the answers needed');
+  // every answer wrong: the same at the other end
+  assert.strictEqual(down.edge, 1);
+  assert.ok(down.est < 0.03 && down.open.includes('lo'));
+  // a genuine fit has neither
+  const fit = A.backGenus(A.prep(rusty(4, () => 1)), 30, 4);
+  assert.strictEqual(fit.edge, undefined);
+  assert.strictEqual(fit.open, undefined);
+  assert.ok(fit.need >= 0 && fit.hw === 0.3);
+});
+
 test('comeback by genus: a handful of rusty questions gives counts and no estimate; the genera under 5 questions are only counted', () => {
   const few = A.backGenus(A.prep(rusty(5, () => 1, 1, 8, 2)), 0, 1);
   assert.strictEqual(few.n, 8);
