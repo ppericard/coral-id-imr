@@ -80,6 +80,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The admin's Crop works on an IMR lecture photo traced to its original](2026-11-21-lecture-crop.md) | #1400 |
 | 2026-11-21 | [Life stages matched: a Lab prototype on the documented phases only, a stage shown and the same species at another stage among three, the source said](2026-11-21-life-stages-lab.md) | #1388 |
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
+| 2026-11-21 | [Name modifiers in Confusions: a shared common-name word as an exploratory effect, with the genus and look-alikes held](2026-11-21-name-modifiers-in-confusions.md) | #1403 |
 | 2026-11-21 | [One Remove in the admin: one click, out for good, an Undo just after, one list to put a photo back](2026-11-21-one-remove.md) | #1393 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
 | 2026-11-21 | [Player trajectories: the profiles' behaviours on windows of a player's whole history, Learning › Trajectories](2026-11-21-player-trajectories.md) | #1401 |

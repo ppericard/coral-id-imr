@@ -28,7 +28,9 @@ corals' model (`phSpec`, `PH_FX`: the ease per point, juvenile and another phase
 photo; a feature no answer measured left out; the judged ease primary, `PRIMARY` photo), its tables by ease, phase, view
 and whole or part (`tabs`), its photo lists against "ease, phase and framing" (`of`), a photo's thumbnail from
 its registry's `ph` (`admin.js` `reg`; `anThumbs`, enlarged by `zoomOne`). The report's fingerprint reads `fph` too, so a changed judgement refits
-the milestones. Their mix-ups carry no view effect (`analysis.js` `confusions`: a view never shown is left out). For the
+the milestones. Their mix-ups carry no view effect (`analysis.js` `confusions`: a view never shown is left out); where species are asked
+by their common name they carry an effect of the option sharing a modifier word of the name with the right answer
+(Yellowtail, Bicolor…; `meta.mod`, [analyses-method.md](analyses-method.md) Confusions), exploratory. For the
 fish, the views read live from the answer log (`admin.js` `LIVE_STATS`) read their answers there, not the report: Stops
 (`statsHealth`), Answer log (`statsPlayers`: the families and genera by name, an IMR sub-entry with its IMR name, its
 Conditions by rank and, once players type, typed against picked, `logConds`; no Elo column, the sheet sending the

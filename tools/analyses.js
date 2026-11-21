@@ -41,7 +41,10 @@ const metaOf = (subject = C.replaySubject()) => {
         : k
           ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('data/metrics.json'))}
           : {ph: {}};
-  return rk ? {...m, rk} : m;
+  // mod: the common-name modifier words of the species units a tree subject asks by their common name (analysis.js
+  // modMeta, from its tree file), for Confusions' shared-word effect; none where no species has a common name
+  const mod = rk && S.admin.files.f ? A.modMeta(rd(S.admin.files.f)) : {};
+  return {...m, ...(rk ? {rk} : {}), ...(Object.keys(mod).length ? {mod} : {})};
 };
 // The subjects with an Analyses report (core.js SUBJECTS analyses), the replayed one (the corals) first: one report per
 // subject, each refitted every 1000 of its own answers.
