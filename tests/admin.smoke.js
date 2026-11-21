@@ -10693,31 +10693,106 @@ async function lazyPart(b, base, fails) {
         const G = await p.evaluate(() =>
           Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.imr && !x.r && !crOf(x.f) && !roOf(x.f)))
         );
-        // An IMR lecture photo traced to its original has no Crop tool: its framing is the lecture's, and a crop saved for it
-        // would never reach its R2 file (Codex review of #1292).
-        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r)));
+        // An IMR lecture photo traced to its original has the Crop tool (REE-60): its editor opens on the lecture's framing
+        // (data.json cr), saved as opened it writes nothing, Full photo writes [0, 0, 1, 1] (the framing it replaces is a
+        // crop, so the key is never dropped) and a turn comes from the rotation map alone; Undo brings the lecture's framing
+        // back. The untraced lecture photos (no original online) have no Crop tool.
+        const L = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && x.src && !x.r && x.cr)));
         if (L) {
           await goGenus(L);
-          const lc = await p.evaluate(n => {
-            const imr = new Set(
-              photos(n)
-                .filter(x => x.imr && x.src)
-                .map(x => x.f)
-            );
-            return [...document.querySelectorAll('#view .adm-tile[data-f]')]
-              .filter(t => imr.has(t.dataset.f))
-              .map(t => !!t.querySelector('[data-act="crop"]'));
-          }, L);
-          if (!lc.length || lc.some(Boolean))
-            fails.push(`${w}px Rotate: a lecture photo's tile on ${L} has the Crop tool: ${JSON.stringify(lc)}`);
+          const lf = await p.evaluate(n => photos(n).find(x => x.imr && x.src && !x.r && x.cr).f, L),
+            lt = `#view .adm-tile[data-f="${lf}"]`,
+            lst = () =>
+              p.evaluate(
+                ([f, t]) => ({
+                  crop: (DRAFT.crop || {})[f],
+                  rot: (DRAFT.rot || {})[f],
+                  steps: HIST.length,
+                  on: !!document.querySelector(t + ' [data-act="crop"].on'),
+                  box: ((document.querySelector(t + ' .adm-ph img') || {}).getAttribute?.('style') || '').replace(/\s+/g, ' ')
+                }),
+                [lf, lt]
+              ),
+            frame = () =>
+              p.evaluate(() => {
+                const s = document.querySelector('#lightbox .adm-cropfr').style;
+                return [s.left, s.top, s.width, s.height].map(v => (parseFloat(v) || 0) / 100);
+              });
+          // The smoke leaves no request to another host: the original (coralsoftheworld.org) is stood in for by a local photo, so
+          // the editor's frame is drawn once it has loaded.
+          const stub = fs.readdirSync(path.join(ROOT, 'img')).find(x => /-s\.webp$/.test(x)),
+            fromCotw = /^https:\/\/www\.coralsoftheworld\.org\//;
+          await p.route(fromCotw, r => r.fulfill({contentType: 'image/webp', body: fs.readFileSync(path.join(ROOT, 'img', stub))}));
+          const l0 = await lst();
+          await p.click(`${lt} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox .adm-crop [data-c="save"]');
+          await p.waitForFunction(() => document.querySelector('#lightbox .adm-cropfr').style.width);
+          const want = await p.evaluate(([n, f]) => photos(n).find(x => x.f === f).cr, [L, lf]),
+            fr0 = await frame();
+          if (Math.abs(fr0[0] - want[0]) > 0.001 || Math.abs(fr0[2] - (want[2] - want[0])) > 0.001)
+            fails.push(`${w}px Rotate: a lecture photo's editor opens on ${JSON.stringify(fr0)}, its framing is ${JSON.stringify(want)}`);
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const l1 = await lst();
+          if (l1.crop !== undefined || l1.rot !== undefined || l1.steps !== l0.steps || l1.on)
+            fails.push(`${w}px Rotate: a lecture photo saved as opened ${JSON.stringify({l0, l1})}`);
+          await p.click(`${lt} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox [data-c="full"]');
+          await p.click('#lightbox [data-c="full"]');
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const l2 = await lst();
+          if (
+            JSON.stringify(l2.crop) !== '[0,0,1,1]' ||
+            l2.rot !== undefined ||
+            l2.steps !== l0.steps + 1 ||
+            !l2.on ||
+            !/inset\(0% 0% 0% 0%\)/.test(l2.box) ||
+            JSON.stringify(await p.evaluate(f => output().crop[f], lf)) !== '[0,0,1,1]'
+          )
+            fails.push(`${w}px Rotate: a lecture photo's Full photo ${JSON.stringify({l0, l2})}`);
+          // Reopened, the editor starts on the whole photo; a quarter right is saved as the rotation map's own entry.
+          await p.click(`${lt} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox .adm-rotbar [data-r="90"]');
+          await p.waitForFunction(() => document.querySelector('#lightbox .adm-cropfr').style.width);
+          const fr1 = await frame();
+          await p.click('#lightbox [data-r="90"]');
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const l3 = await lst();
+          if (fr1.join() !== '0,0,1,1' || l3.rot !== 90 || JSON.stringify(l3.crop) !== '[0,0,1,1]')
+            fails.push(`${w}px Rotate: a lecture photo turned ${JSON.stringify({fr1, l3})}`);
+          await p.click('#undo');
+          await p.click('#undo');
+          await settle();
+          const l4 = await lst();
+          if (l4.crop !== undefined || l4.rot !== undefined || l4.steps !== l0.steps || l4.box !== l0.box)
+            fails.push(`${w}px Rotate: Undo of a lecture photo's crop ${JSON.stringify({l0, l4})}`);
+          await p.unroute(fromCotw);
+          const untraced = await p.evaluate(() => {
+            const n = Object.keys(DATA.gen).find(n => photos(n).some(x => x.imr && !x.src));
+            return n && [n, photos(n).find(x => x.imr && !x.src).f];
+          });
+          if (untraced) {
+            await goGenus(untraced[0]);
+            if (await p.$(`#view .adm-tile[data-f="${untraced[1]}"] [data-act="crop"]`))
+              fails.push(`${w}px Rotate: an untraced lecture photo has the Crop tool`);
+          }
         } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
-        const f = await p.evaluate(() => {
-          const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
-            x => !crOf(x.closest('[data-f]').dataset.f)
-          );
+        // Not a lecture photo: its editor starts on the lecture's framing, tested above.
+        const f = await p.evaluate(n => {
+          const own = new Set(
+              photos(n)
+                .filter(x => !x.imr)
+                .map(x => x.f)
+            ),
+            b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(x => {
+              const t = x.closest('[data-f]').dataset.f;
+              return own.has(t) && !crOf(t);
+            });
           return b && b.closest('[data-f]').dataset.f;
-        });
+        }, G);
         const tile = `#view .adm-tile[data-f="${f}"]`,
           st0 = await p.evaluate(() => ({title: document.getElementById('save').title, sum: pubSummary(), h: HIST.length}));
         if (!f) fails.push(`${w}px Rotate: no photo with the Crop tool on ${G}`);
