@@ -247,8 +247,9 @@ note).
 
 The tree builder's axes (`REVIEW_BUILD` `tree`; the `GROUPS` view option `axis`): Ease `#fish/photos/review/ease` and
 Phase & framing `#fish/photos/review/phase-framing`, one family's photos in play at a time (`reefid-admin-fishrev`), each
-in the row of its value now; one click sets Pierre's ease, juvenile flag, phase word (a family with IMR phase lines only)
-or view (`autosort.js` `fishSet`, `fishTag`, as the fish Candidates); the agreement line, the draft's values against the
+in the row of its value now; one click sets Pierre's ease, juvenile flag, phase word (a family with IMR phase lines, or
+a photo of a species the cited phase list flags, `fish.json` species `phs`: `autosort.js` `hasPhaseRow`, also on the fish
+Candidates card and a photo's tag rows) or view (`autosort.js` `fishSet`, `fishTag`, as the fish Candidates); the agreement line, the draft's values against the
 judging pass's (`fishAgree`).
 
 ### Light proposals

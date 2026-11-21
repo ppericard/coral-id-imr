@@ -2087,6 +2087,42 @@ async function lazyPart(b, base, fails) {
           await p.selectOption('#frevfam', 'f:Butterflyfishes');
           await settle();
           if (await p.$('#view [data-frp]')) fails.push(`${w}px Fish Photo review: a phase row on the Butterflyfishes`);
+          // Wrasses have no IMR phase line, but 50 of their species carry phs (the cited phase list, fish.json; REE-201): the
+          // row on those species' photos only, set and undone as an IMR family's.
+          await p.selectOption('#frevfam', 'f:Wrasses');
+          await settle();
+          const wr = await p.evaluate(() => ({
+            unit: !!(FISHC.units.find(u => u.id === 'f:Wrasses').phase || []).length,
+            tiles: [...document.querySelectorAll('#view .adm-tile[data-f]')].map(t => [
+              t.dataset.f,
+              !!FISHC.species[t.dataset.sid].phs,
+              !!t.querySelector('[data-frp]')
+            ])
+          }));
+          const wp = wr.tiles.find(t => t[1]);
+          if (wr.unit || !wp || wr.tiles.some(t => t[1] !== t[2]))
+            fails.push(`${w}px Fish Photo review, Wrasses: the phase row only on phs species ${JSON.stringify(wr)}`);
+          else {
+            if (w === 1280) await shot('review-phase-phs-1280', `#view .adm-tile[data-f="${wp[0]}"]`);
+            await p.click(`#view .adm-tile[data-f="${wp[0]}"] [data-frp="female"]`);
+            await settle();
+            if ((await p.evaluate(f => (DRAFT.fish.phase || {})[f], wp[0])) !== 'female')
+              fails.push(`${w}px Fish Photo review, Wrasses: phase female on a phs species`);
+            await p.evaluate(() => undo());
+            await settle();
+            if ((await p.evaluate(f => (DRAFT.fish.phase || {})[f], wp[0])) !== undefined)
+              fails.push(`${w}px Fish Photo review, Wrasses: Undo of the phase`);
+          }
+          // The Candidates card and a photo's tag rows (admin-fish.js fishRows): the Phase row for a phs species on an entry with
+          // no phase line, none for a species with neither.
+          const fr = await p.evaluate(() => {
+            const sp = Object.values(FISHC.species),
+              plain = sp.find(s => !s.phs && !((FISHC.entry[s.id] || {}).phase || []).length && !(FISHC.entry[s.id] || {}).dimorph),
+              flag = sp.find(s => s.phs && !((FISHC.entry[s.id] || {}).phase || []).length && !(FISHC.entry[s.id] || {}).dimorph),
+              rows = s => fishRows(readView(DRAFT.fish || {}), {f: 'x'}, null, true, FISHC.entry[s.id], false, s);
+            return {plain: rows(plain).includes('data-fph'), flag: rows(flag).includes('data-fph')};
+          });
+          if (fr.plain || !fr.flag) fails.push(`${w}px Fish tag rows: the phase row only for a phs species ${JSON.stringify(fr)}`);
         }
         // Fish Look-alikes (admin plan PR 10): one row per IMR pair of families, phase-matched photos, Auto / Manual, Shown /
         // Hidden; the corals keep their pairs (the photos put in play above are still there).
