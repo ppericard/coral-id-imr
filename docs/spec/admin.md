@@ -158,8 +158,16 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   builder in `REVIEW_BUILD`, picked by the same declared shape (`reviewBuild`; the `GROUPS` review views carry an `axis`
   and `hasPage` gives a subject the axes of its builder, no subject field needed). The growth-form axis is the corals'
   named hook (rule C4); the quality and ease scales stay two (study §6 c); every draft write and browser key is where it
-  was (`tests/reviewbuild.test.js`; [admin-photos.md](admin-photos.md)). The tiles still read each side's own state (the
-  study's step 8);
+  was (`tests/reviewbuild.test.js`; [admin-photos.md](admin-photos.md)). **One montage and one coverage page for every
+  subject** (`admin.js` `renderMont`, `renderCov`, the study's step 7): the frame of Photos › Look-alikes (a row per pair
+  with its switch, Auto | Manual, Shown | Hidden, the two photos and a strip of each unit's) and the frame of Coverage ›
+  Games (the section, the table) are one; the pairs, the corals' View and the tree subjects' Phase, the rows and columns
+  come from the subject's builder in `MONT_BUILD` and `COV_BUILD`, picked by the same declared shape (`montBuild`,
+  `covBuild`); every draft write (`mont`, the corals' at the top level, a tree subject's in its part) and browser key
+  (`reefid-admin-fishcov`) is where it was (`tests/montcovtile.test.js`). **One photo tile outside its page** (the study's
+  step 8): To do's reports and flags and Health's photos everyone misses draw a photo's tile through one door, `repTile`,
+  which asks the registries of `TILE_BUILD` in turn (the subject in force's, another subject's read-only, the corals') and
+  binds them through `repBind`; the corals' genus-page tile and the tree subjects' family-page tile are both one `tileFrame`;
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside and its route out of one it put in (`sortBack`, `sortOut`) reading the pass's date of each candidate

@@ -483,8 +483,9 @@ test('the frame names no subject: one renderReview and one renderDiff, their dif
 });
 
 test("the growth-form axis is the corals' named hook (rule C4): its pieces are in the flat builder only", () => {
-  const flat = block(ADMIN, '    flat: (() => {', '    // The tree subjects (fish, sea slugs)', {file: 'admin.js'}),
-    tree = block(ADMIN, '    tree: (() => {', '\n  },\n  // A subject', {file: 'admin.js'});
+  const review = block(ADMIN, '// review build: begin', '// review build: end', {file: 'admin.js'}),
+    flat = block(review, '    flat: (() => {', '    // The tree subjects (fish, sea slugs)', {file: 'admin.js'}),
+    tree = block(review, '    tree: (() => {', '\n  },\n  // A subject', {file: 'admin.js'});
   for (const k of ['fSeg', 'pinBtn', 'agreeFill', 'data-fok', 'LEGACY', 'FORM_ORDER']) {
     assert.ok(flat.includes(k), `the flat builder has ${k}`);
     assert.ok(!tree.includes(k), `the tree builder does not have ${k}`);

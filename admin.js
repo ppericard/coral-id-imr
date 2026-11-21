@@ -1440,12 +1440,16 @@ function tile(n, p, v, st) {
   const moves = VIEWS.filter(([w]) => w === v || !(two && w === 'medium'))
     .map(([w]) => `<button type="button" data-act="move" data-to="${w}" aria-pressed="${w === v}">${label(n, w)}</button>`)
     .join('');
-  return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? XBTN : GRIP + XBTN}
-    ${st.num ? `<span class="adm-num${st.sheet ? ' sheet' : ''}"${st.sheet ? ' title="Genus sheet"' : ''}>${st.num}</span>` : ''}
-    ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
-    <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">added</span>' : ''}${srcTag(p)}${p.multi || p.wasMulti ? `<button type="button" class="adm-src multi${p.wasMulti ? ' off' : ''}" data-act="multi" title="Several corals" aria-pressed="${!p.wasMulti}">${p.wasMulti ? 'one coral' : 'several corals'}</button>` : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}${fSeg(p)}
+  return tileFrame({
+    cls: ` ${st.cls || ''}${isCover ? ' is-cover' : ''}`,
+    attrs: ` data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}`,
+    zoom: 'data-act="zoom"',
+    photo: `<img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false">`,
+    tools: st.cls === 'is-hidden' ? XBTN : GRIP + XBTN,
+    num: st.num ? `<span class="adm-num${st.sheet ? ' sheet' : ''}"${st.sheet ? ' title="Genus sheet"' : ''}>${st.num}</span>` : '',
+    mark: isCover ? '<span class="adm-covermark">Cover</span>' : '',
+    cap: `${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">added</span>' : ''}${srcTag(p)}${p.multi || p.wasMulti ? `<button type="button" class="adm-src multi${p.wasMulti ? ' off' : ''}" data-act="multi" title="Several corals" aria-pressed="${!p.wasMulti}">${p.wasMulti ? 'one coral' : 'several corals'}</button>` : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span>`,
+    acts: `${qSeg(p)}${fSeg(p)}
       ${
         st.cls === 'is-hidden'
           ? `<button type="button" data-act="hide" class="on">Show again</button>`
@@ -1456,8 +1460,19 @@ function tile(n, p, v, st) {
       ${p.src && !p.imr ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
       ${p.from ? '' : notThis(n)}`
       }${st.extra || ''}
-    </div></figure>`;
+    `
+  });
 }
+// The photo tile's one frame, the corals' (tile) and the tree subjects' (admin.js fishTile) alike (docs/reviews/2026-11-19-admin-one-engine.md
+// §5 step 8, Dup-8): the figure, the photo's button (its zoom), the corner tools, the number and the cover mark, the caption and
+// the actions. Each tile builds its own parts: the corals' Quality, Growth form and views, the tree subjects' Ease, Phase and
+// tag rows. t: {cls (after "adm-tile"), attrs, zoom (the button's data attribute), photo, tools, num, mark, cap, acts}.
+const tileFrame = t => `<figure class="adm-tile${t.cls}"${t.attrs}>
+    <button type="button" class="adm-ph" ${t.zoom} aria-label="Enlarge">${t.photo}</button>${t.tools}
+    ${t.num}
+    ${t.mark}
+    <figcaption>${t.cap}</figcaption>
+    <div class="adm-acts">${t.acts}</div></figure>`;
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 // What status() reads from the draft and the published file alone (what changed, the suggestions, the cells over the cap)
@@ -2259,12 +2274,17 @@ function fishTile(p, o) {
       (o.play || cand
         ? `<button type="button" data-fu="crop" class="${crop ? 'on' : ''}" aria-pressed="${crop}" title="Crop">Crop</button><button type="button" data-fu="tags" aria-pressed="${rows}" title="Tags">Tags</button>`
         : '');
-  return `<figure class="adm-tile adm-ftile${num ? ' is-feat' : ''}${isCover || more ? ' is-cover' : ''}${rows ? ' is-tags' : ''}" data-f="${esc(f)}" data-sid="${esc(sid || '')}" data-fam="${esc(o.fam || '')}"${o.path ? ` data-cvk="${esc(path[lv] || '')}"` : ''}${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}${o.play ? ' data-play' : ''}>
-    <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
-    ${num ? `<span class="adm-num">${num}</span>` : ''}
-    ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
-    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${refLevel({e: ease, jt}) ? '<span class="adm-src view" title="Reference level: ease 4-5 with the reference look">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}</figcaption>
-    <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(V, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
+  return tileFrame({
+    cls: ` adm-ftile${num ? ' is-feat' : ''}${isCover || more ? ' is-cover' : ''}${rows ? ' is-tags' : ''}`,
+    attrs: ` data-f="${esc(f)}" data-sid="${esc(sid || '')}" data-fam="${esc(o.fam || '')}"${o.path ? ` data-cvk="${esc(path[lv] || '')}"` : ''}${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}${o.play ? ' data-play' : ''}`,
+    zoom: 'data-fu="zoom"',
+    photo: p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : '',
+    tools: out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>',
+    num: num ? `<span class="adm-num">${num}</span>` : '',
+    mark: isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : '',
+    cap: `${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind !== 'r' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${refLevel({e: ease, jt}) ? '<span class="adm-src view" title="Reference level: ease 4-5 with the reference look">reference</span>' : ''}<span class="adm-t">${tagText(jt)}</span>${o.cap || ''}`,
+    acts: `${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(V, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}`
+  });
 }
 // A node page's tile (TREE_BUILD tree page): st {num} for a featured photo; cover: the page node's cover in force; path: the
 // photo's node ids from its unit down (its unit, its genus, its species for fish), lv: the page's node along it (★ Cover
@@ -3229,21 +3249,15 @@ function renderTree(S, id, view = TREE) {
   if (P.bind) P.bind();
   treeMount(TV, sel, R.row, vis, hadF, top);
 }
-// ---- Fish Coverage (docs/ROADMAP.md "Admin for every subject") ----
-// Inbox › Coverage › Games on the fish side (#fish/inbox/coverage/games): per family, genus or species (the level switch),
+// ---- Coverage › Games, the tree subjects' page (docs/ROADMAP.md "Admin for every subject") ----
+// Inbox › Coverage › Games of a tree subject (#fish/inbox/coverage/games): per family, genus or species (the level switch),
 // the photos in play, the observations against the targets, the easy and reference photos, the phases shown (the IMR ones
 // still missing marked) and what is missing, with the candidates still waiting (autosort.js fishCov); the IMR filter of
 // the Tree page (FU_IMR); Thinnest or Book order. Above it, To do (what to act on, each with its count) and Where to
-// look (the species most worth a candidate search, fishLook; ?look=all, every one).
+// look (the species most worth a candidate search, fishLook; ?look=all, every one). The page's content for the frame
+// (renderCov, COV_BUILD tree).
 let FISHCOV = Object.assign({lv: 'fam', order: 'thin'}, store.get('reefid-admin-fishcov', {}));
-function renderFishCov() {
-  if (!FISHC || !FISHC.plays) {
-    status();
-    $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad(true).then(() => cur === 'inbox/coverage/games' && render());
-    return;
-  }
-  status();
+function covTreePage() {
   const U = FISHC.units,
     D = fuData(),
     C = fishCov(U, D.play, FISHC.species, FISHC.cand, readView(D.F), fuJ),
@@ -3292,7 +3306,7 @@ function renderFishCov() {
     lv === 'sp'
       ? '<th>Species</th><th title="Observations in play / target">Obs.</th>'
       : `<th>${lv === 'gen' ? 'Genus' : 'Family'}</th><th title="Species at their target / species">At target</th>`;
-  $v.innerHTML = `<section class="adm-cov adm-fishcov">${rightsLine()}
+  const top = `
     ${todo.length ? `<div class="adm-filter adm-ftodo"><span class="label">To do</span>${todo.map(([k, l, t, n]) => `<button type="button" class="adm-fchip plain" data-fishtodo="${k}" data-fishtl="${l}" aria-pressed="${!!tdo && tdo[0] === k}" title="Show only these">${n} ${t}</button>`).join('')}</div>` : ''}
     <div class="cov-look open">${look}</div>
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Level">${lvs.map(([k, t]) => `<button type="button" data-fishlv="${k}" aria-pressed="${lv === k}">${t}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Shown">${[
@@ -3306,36 +3320,75 @@ function renderFishCov() {
     ]
       .map(([k, t]) => `<button type="button" data-fishco="${k}" aria-pressed="${FISHCOV.order === k}">${t}</button>`)
       .join('')}</span><b>${R.length} ${lvs.find(x => x[0] === lv)[1].toLowerCase()}</b></div>
-    <div class="adm-fishcovw"><table class="cov-t adm-fishcovt"><thead><tr>${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference level photos (ease 4-5 with the reference look)">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th></tr></thead>
-    <tbody>${R.map(
-      r =>
-        `<tr data-id="${esc(r.id)}"><th scope="row">${name(r)}</th><td class="cov-c cov-${lvl(r)}">${r.of ? `${r.ok}/${r.of}` : `${r.obs}/${r.tgt}`}</td><td>${r.n}</td><td>${lv === 'fam' && r.easy < FISHEASY ? `<b class="warnc">${r.easy}/${FISHEASY}</b>` : r.easy}</td><td>${r.ref}</td><td class="adm-fph">${phases(r)}</td><td>${r.wait || ''}</td><td class="adm-fneed">${r.need.map(esc).join(' · ')}</td></tr>`
-    ).join('')}</tbody></table></div></section>`;
+    `;
   const keep = () => {
     store.set('reefid-admin-fishcov', FISHCOV);
     render();
   };
-  // The level switch shows every row of its level; a To do chip only its rows (again: every row).
-  $v.querySelectorAll('[data-fishlv]').forEach(b => (b.onclick = () => ((FISHCOV.lv = b.dataset.fishlv), (FISHCOV.todo = ''), keep())));
-  $v.querySelectorAll('[data-fishtodo]').forEach(
-    b =>
-      (b.onclick = () => {
-        const k = b.dataset.fishtodo,
-          on = FISHCOV.todo === k && FISHCOV.lv === b.dataset.fishtl;
-        Object.assign(FISHCOV, {lv: b.dataset.fishtl, todo: on ? '' : k, order: 'thin'});
-        keep();
-      })
-  );
-  $v.querySelectorAll('[data-fishco]').forEach(b => (b.onclick = () => ((FISHCOV.order = b.dataset.fishco), keep())));
-  $v.querySelectorAll('[data-fuimr]').forEach(
-    b =>
-      (b.onclick = () => {
-        FU_IMR = b.dataset.fuimr;
-        store.set('reefid-admin-fu-imr', FU_IMR);
-        render();
-      })
-  );
+  return {
+    cls: ' adm-fishcov',
+    top,
+    tcls: ' adm-fishcovt',
+    head: `${head}<th>Photos</th><th title="Ease 4-5">Easy</th><th title="Reference level photos (ease 4-5 with the reference look)">Ref.</th><th title="Phases shown (an IMR phase still missing: ?)">Phases</th><th title="Candidates waiting">+</th><th>Missing</th>`,
+    rows: R.map(
+      r =>
+        `<tr data-id="${esc(r.id)}"><th scope="row">${name(r)}</th><td class="cov-c cov-${lvl(r)}">${r.of ? `${r.ok}/${r.of}` : `${r.obs}/${r.tgt}`}</td><td>${r.n}</td><td>${lv === 'fam' && r.easy < FISHEASY ? `<b class="warnc">${r.easy}/${FISHEASY}</b>` : r.easy}</td><td>${r.ref}</td><td class="adm-fph">${phases(r)}</td><td>${r.wait || ''}</td><td class="adm-fneed">${r.need.map(esc).join(' · ')}</td></tr>`
+    ).join(''),
+    wrap: ['<div class="adm-fishcovw">', '</div>'],
+    bind: () => {
+      // The level switch shows every row of its level; a To do chip only its rows (again: every row).
+      $v.querySelectorAll('[data-fishlv]').forEach(b => (b.onclick = () => ((FISHCOV.lv = b.dataset.fishlv), (FISHCOV.todo = ''), keep())));
+      $v.querySelectorAll('[data-fishtodo]').forEach(
+        b =>
+          (b.onclick = () => {
+            const k = b.dataset.fishtodo,
+              on = FISHCOV.todo === k && FISHCOV.lv === b.dataset.fishtl;
+            Object.assign(FISHCOV, {lv: b.dataset.fishtl, todo: on ? '' : k, order: 'thin'});
+            keep();
+          })
+      );
+      $v.querySelectorAll('[data-fishco]').forEach(b => (b.onclick = () => ((FISHCOV.order = b.dataset.fishco), keep())));
+      $v.querySelectorAll('[data-fuimr]').forEach(
+        b =>
+          (b.onclick = () => {
+            FU_IMR = b.dataset.fuimr;
+            store.set('reefid-admin-fu-imr', FU_IMR);
+            render();
+          })
+      );
+    }
+  };
 }
+// cov build: begin
+// Inbox › Coverage › Games, one frame for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 7, Dup-7;
+// docs/spec/admin.md): renderCov(S) draws the page's section and its table; what differs between subjects is a builder in
+// COV_BUILD, picked by the data shape the subject declares (SUBJECTS flat: treeShape, as MONT_BUILD, TREE_BUILD and the others
+// are): `flat` (the corals: covFlatPage, a row per genus, a column per view) and `tree` (the tree subjects: covTreePage, a row per
+// family, genus or species by the level switch, the phases shown). A builder's members, the same in both:
+//   ready()  its data are read; load(): a promise of them (the page draws again when it comes)
+//   page()   one render's page: {cls (the section's extra class), top (everything above the table: the banner of where to look,
+//            the filters, the legend), tcls (the table's extra class), head (its header cells), rows (its rows' markup), wrap
+//            (what opens and closes around the table), bind() (the controls, once the page is in)}
+// Never a test on which subject: a builder knows only its data shape.
+function renderCov(S) {
+  const B = covBuild(S);
+  status();
+  if (!B.ready()) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    B.load().then(() => cur === 'inbox/coverage/games' && render());
+    return;
+  }
+  const P = B.page();
+  $v.innerHTML = `<section class="adm-cov${P.cls}">${rightsLine()}${P.top}${P.wrap[0]}<table class="cov-t${P.tcls}"><thead><tr>${P.head}</tr></thead>
+    <tbody>${P.rows}</tbody></table>${P.wrap[1]}</section>`;
+  P.bind();
+}
+const COV_BUILD = {
+    flat: {ready: () => true, load: () => Promise.resolve(), page: covFlatPage},
+    tree: {ready: () => !!(FISHC && FISHC.plays), load: () => fishLoad(true), page: covTreePage}
+  },
+  covBuild = S => COV_BUILD[treeShape(S)];
+// cov build: end
 // To do › All on the fish side (fish admin at parity; SUBJECTS admin todo 'photos'): the fish photo work as counts, each
 // opening the page where it is done: the candidates the Candidates swiper shows by default (never the auto-sort's
 // Checks), the open cover and light proposals (Photo review), and Coverage's To do
@@ -3546,111 +3599,228 @@ function renderRights() {
       })
   );
 }
-// ---- Fish Look-alikes (docs/ROADMAP.md "Admin for every subject") ----
-// Photos › Look-alikes on the fish side (#fish/photos/look-alikes): one row per look-alike pair of families in force
-// (admin-content.js montPairs: autosort.js fishPairs over fish.json with the draft's pairs laid over it, the content
-// editor's: the IMR course's less those withdrawn, plus those added on the Tree, marked "(added)" as the Tree's
-// Look-alikes filter marks them), with IMR's lines on them (sourced), a phase switch (Adult, Juvenile, All: the two
-// photos phase-matched), Auto / Manual and Shown / Hidden as the coral pairs, the two photos side by side and a strip of
-// each family's photos in play (the page's order: the families page's) to pick from. The picks in curation.json fish
-// mont {pair: {v, a, b, hide}} (the coral key names; the pair key core.js contentPairKey, an added pair's as a base
-// pair's), through the draft and Publish (rule A1). A withdrawn pair's picks stay there, unused, for its return.
-const FMONT_T = {adult: 'Adult', juvenile: 'Juvenile', all: 'All'};
-function renderFishMont() {
-  if (!FISHC || !FISHC.plays) {
-    status();
+// mont build: begin
+// Photos › Look-alikes, one frame for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 7, Dup-6;
+// docs/spec/admin-photos.md): one row per look-alike pair, with its switch (the corals' View, the tree subjects' Phase), Auto
+// / Manual and Shown / Hidden, the two photos side by side and a strip of each unit's photos to pick from. The picks go to
+// curation.json `mont {pair: {v, a, b, hide}}` (one set of key names for every subject: the corals' at the top level, the
+// others in their part), through the draft and Publish (rule A1); a withdrawn pair's picks stay there, unused, for its
+// return. What differs between subjects is a builder in MONT_BUILD, picked by the data shape the subject declares (SUBJECTS
+// flat: treeShape, as TREE_BUILD, CAND_BUILD, REVIEW_BUILD and reg(S) are): `flat` (the corals: the pairs the IMR course and
+// the Coral Finder give, a pair's photos by view: Close-up, Colony, Wide, or All) and `tree` (the tree subjects: the pairs
+// in force of admin-content.js montPairs, a pair's photos in play by phase: Adult, Juvenile, All, the two phase-matched). A
+// builder's members, the same in both:
+//   cls, none     the section's extra class; what the page says when there is no pair
+//   axisLabel     the switch's accessible name; attr {axis, auto, hide}: the names of the three controls' data attributes
+//   strip         the most photos a strip shows
+//   noPhotos      the row's note when the two units have no photos to show together
+//   ready()       its data are read; load(): a promise of them (the page draws again when it comes)
+//   thumb(x)      one photo of a strip: {title, img (the image's attributes), tag}
+//   open(S)       one render's state X: {rows: [{k, m (the pick: v, a, b, set, hide), title, src (the head's words), axis: [[value,
+//                 label, enabled]], body() → {pics: [[image attributes, alt], two], sides: [[label, photos, the chosen one's f],
+//                 two]}}], axis(k, w), thumb(k, side, f), auto(k), hide(k, hidden)}: the four writes to the draft, each
+//                 false when it changes nothing (the frame draws again after one that does, keeping the scroll)
+// Never a test on which subject: a builder knows only its data shape.
+function renderMont(S) {
+  const B = montBuild(S);
+  status();
+  if (!B.ready()) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad(true).then(() => cur === 'photos/look-alikes' && render());
+    B.load().then(() => cur === 'photos/look-alikes' && render());
     return;
   }
-  status();
-  const U = FISHC.units,
-    UB = Object.fromEntries(U.map(u => [u.id, u])),
-    D = fuData(),
-    F = D.F,
-    P = typeof montPairs === 'function' ? montPairs(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ), U) : fishPairs(U),
-    ph = p => fishPhase(p, fuJ(p.f), readView(F)),
-    famL = id => (u => fuFam(u, D).all)(UB[id]),
-    STRIP = 24;
-  const thumb = (p, side, x, on) =>
-    `<button type="button" class="adm-mth${on ? ' on' : ''}" data-k="${esc(p.k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(fuName(x.sid))}"><img ${crSrc(fuP(x), 1)} alt="" loading="lazy"><span class="adm-src o-${origin(x)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(x)) || [, , origin(x)])[2])}</span></button>`;
-  $v.innerHTML = `<section class="adm-quality adm-mont adm-fishmont">${
-    P.length
-      ? P.map(p => {
-          const LA = famL(p.A),
-            LB = famL(p.B),
-            m = fishMontPick((F.mont || {})[p.k], LA, LB, ph),
-            phases = FMONT_V.filter(v => fishMontPick({v}, LA, LB, ph).v === v);
-          return `<article class="adm-mrow${m.set ? ' set' : ''}${m.hide ? ' off' : ''}"><div class="adm-mhead"><b>${esc(UB[p.A].name)} / ${esc(UB[p.B].name)}${p.added ? ' (added)' : ''}</b><small>${p.cues.map(([, w, s]) => `${esc(w)} (${esc(s)})`).join(' · ')}</small>
-      <span class="adm-qseg adm-lvseg" role="group" aria-label="Phase">${FMONT_V.map(v => `<button type="button" data-k="${esc(p.k)}" data-fmv="${v}" aria-pressed="${m.v === v}"${phases.includes(v) ? '' : ' disabled'}>${FMONT_T[v]}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Pick"><button type="button" data-k="${esc(p.k)}" data-fmauto aria-pressed="${!m.set}" title="Automatic pick">Auto</button><button type="button" aria-pressed="${m.set}" disabled title="Manual">Manual</button></span>
-      <span class="adm-qseg adm-lvseg adm-mvis" role="group" aria-label="On the site"><button type="button" data-k="${esc(p.k)}" data-fmhide="0" aria-pressed="${!m.hide}" title="Shown on the site">Shown</button><button type="button" data-k="${esc(p.k)}" data-fmhide="1" aria-pressed="${m.hide}" title="Hidden from the site">Hidden</button></span></div>
+  const X = B.open(S),
+    tile = (k, side, x, on) => {
+      const t = B.thumb(x);
+      return `<button type="button" class="adm-mth${on ? ' on' : ''}" data-k="${esc(k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(t.title)}"><img ${t.img} alt="" loading="lazy">${t.tag}</button>`;
+    },
+    strip = (k, side, list, on) =>
+      `<div class="adm-mstrip">${list
+        .slice(0, B.strip)
+        .map(x => tile(k, side, x, x.f === on))
+        .join('')}</div>`,
+    row = r => {
+      const m = r.m,
+        k = esc(r.k),
+        a = B.attr;
+      return `<article class="adm-mrow${m.set ? ' set' : ''}${m.hide ? ' off' : ''}"><div class="adm-mhead"><b>${r.title}</b><small>${r.src}</small>
+      <span class="adm-qseg adm-lvseg" role="group" aria-label="${B.axisLabel}">${r.axis.map(([w, t, ok]) => `<button type="button" data-k="${k}" data-${a.axis}="${w}" aria-pressed="${m.v === w}"${ok ? '' : ' disabled'}>${t}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Pick"><button type="button" data-k="${k}" data-${a.auto} aria-pressed="${!m.set}" title="Automatic pick">Auto</button><button type="button" aria-pressed="${m.set}" disabled title="Manual">Manual</button></span>
+      <span class="adm-qseg adm-lvseg adm-mvis" role="group" aria-label="On the site"><button type="button" data-k="${k}" data-${a.hide}="0" aria-pressed="${!m.hide}" title="Shown on the site">Shown</button><button type="button" data-k="${k}" data-${a.hide}="1" aria-pressed="${m.hide}" title="Hidden from the site">Hidden</button></span></div>
       ${
         m.v
-          ? `<div class="adm-mbody"><div class="adm-mprev"><img ${crSrc(fuP(m.a))} alt="${esc(UB[p.A].name)}"><img ${crSrc(fuP(m.b))} alt="${esc(UB[p.B].name)}"></div>
-        <div class="adm-msides"><div>${esc(UB[p.A].name)} <small><i>${esc(fuName(m.a.sid))}</i></small><div class="adm-mstrip">${m.LA.slice(
-          0,
-          STRIP
-        )
-          .map(x => thumb(p, 'a', x, x.f === m.a.f))
-          .join('')}</div></div><div>${esc(UB[p.B].name)} <small><i>${esc(fuName(m.b.sid))}</i></small><div class="adm-mstrip">${m.LB.slice(
-          0,
-          STRIP
-        )
-          .map(x => thumb(p, 'b', x, x.f === m.b.f))
-          .join('')}</div></div></div></div>`
-          : '<p class="note">No photo in play in both families yet.</p>'
+          ? (b =>
+              `<div class="adm-mbody"><div class="adm-mprev">${b.pics.map(([img, alt]) => `<img ${img} alt="${esc(alt)}">`).join('')}</div>
+        <div class="adm-msides">${b.sides.map(([label, list, on], i) => `<div>${label}${strip(r.k, 'ab'[i], list, on)}</div>`).join('')}</div></div>`)(
+              r.body()
+            )
+          : `<p class="note">${B.noPhotos}</p>`
       }</article>`;
-        }).join('')
-      : '<p class="note">No look-alike pairs.</p>'
-  }</section>`;
-  const curE = k => ({...((DRAFT[TK] || {}).mont || {})[k]});
-  const keep = e2 => {
+    };
+  $v.innerHTML = `<section class="adm-quality adm-mont${B.cls}">${X.rows.length ? X.rows.map(row).join('') : B.none}</section>`;
+  // A write keeps the scroll; one that changes nothing draws nothing.
+  const keep = fn => {
     const y = window.scrollY;
-    DRAFT[TK] = fishMontSet(DRAFT[TK], e2[0], e2[1]);
-    saveDraft();
-    renderFishMont();
+    if (fn() === false) return;
+    renderMont(S);
     window.scrollTo(0, y);
   };
-  const pickOf = k => {
-    const p = P.find(x => x.k === k);
-    return [p, fishMontPick(curE(k), famL(p.A), famL(p.B), ph)];
-  };
-  // A phase keeps the two photos on show when they belong to it (always so for All).
-  $v.querySelectorAll('[data-fmv]').forEach(
-    b =>
-      (b.onclick = () => {
-        const k = b.dataset.k,
-          [p, m] = pickOf(k),
-          n = fishMontPick({v: b.dataset.fmv, a: m.a && m.a.f, b: m.b && m.b.f}, famL(p.A), famL(p.B), ph);
-        keep([
-          k,
-          {hide: curE(k).hide, v: n.v, a: n.a && n.a.f === (m.a && m.a.f) ? n.a.f : null, b: n.b && n.b.f === (m.b && m.b.f) ? n.b.f : null}
-        ]);
-      })
-  );
-  $v.querySelectorAll('.adm-fishmont .adm-mth').forEach(
-    b =>
-      (b.onclick = () => {
-        const k = b.dataset.k,
-          [, m] = pickOf(k);
-        keep([k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [b.dataset.side]: b.dataset.f}]);
-      })
-  );
-  $v.querySelectorAll('[data-fmauto]').forEach(
-    b =>
-      (b.onclick = () => {
-        if (curE(b.dataset.k).v) keep([b.dataset.k, {hide: curE(b.dataset.k).hide}]);
-      })
-  );
-  $v.querySelectorAll('[data-fmhide]').forEach(
-    b =>
-      (b.onclick = () => {
-        const e = curE(b.dataset.k),
-          h = b.dataset.fmhide === '1';
-        if (!!e.hide !== h) keep([b.dataset.k, {...e, hide: h}]);
-      })
-  );
+  const a = B.attr;
+  $v.querySelectorAll(`[data-${a.axis}]`).forEach(b => (b.onclick = () => keep(() => X.axis(b.dataset.k, b.dataset[a.axis]))));
+  $v.querySelectorAll('.adm-mth').forEach(b => (b.onclick = () => keep(() => X.thumb(b.dataset.k, b.dataset.side, b.dataset.f))));
+  $v.querySelectorAll(`[data-${a.auto}]`).forEach(b => (b.onclick = () => keep(() => X.auto(b.dataset.k))));
+  $v.querySelectorAll(`[data-${a.hide}]`).forEach(b => (b.onclick = () => keep(() => X.hide(b.dataset.k, b.dataset[a.hide] === '1'))));
 }
+const MONT_BUILD = {
+    flat: {
+      cls: '',
+      none: '',
+      axisLabel: 'View',
+      attr: {axis: 'mv', auto: 'mauto', hide: 'mhide'},
+      strip: Infinity,
+      noPhotos: 'No view with photos of both.',
+      ready: () => true,
+      load: () => Promise.resolve(),
+      thumb: x => ({title: x.t || '', img: `src="${img(x, 1)}"`, tag: srcTag(x)}),
+      open: () => {
+        const L = classicPairs(),
+          cur0 = k => ({...((DRAFT.mont || {})[k] || {})}),
+          pair = k => L.find(x => x.k === k);
+        return {
+          rows: L.map(p => {
+            const m = montPick(p);
+            return {
+              k: p.k,
+              m,
+              title: `<i>${esc(p.A)}</i> / <i>${esc(p.B)}</i>`,
+              src: esc(p.src),
+              axis: MONT_VIEWS.map(([w, t]) => [w, t, montList(p.A, w).length && montList(p.B, w).length]),
+              body: () => ({
+                pics: [
+                  [`src="${img(m.a)}"`, p.A],
+                  [`src="${img(m.b)}"`, p.B]
+                ],
+                sides: [
+                  [`<i>${esc(p.A)}</i>`, m.LA, m.a.f],
+                  [`<i>${esc(p.B)}</i>`, m.LB, m.b.f]
+                ]
+              })
+            };
+          }),
+          // Changing the view keeps the two photos on show when they belong to the new view (always so for All).
+          axis: (k, w) => {
+            const p = pair(k),
+              m = montPick(p),
+              has = (n, x) => (x && montList(n, w).some(y => y.f === x.f) ? x.f : null);
+            setMont(k, {hide: cur0(k).hide, v: w, a: has(p.A, m.a), b: has(p.B, m.b)});
+          },
+          thumb: (k, side, f) => {
+            const m = montPick(pair(k));
+            setMont(k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [side]: f});
+          },
+          auto: k => {
+            if (!cur0(k).v) return false;
+            setMont(k, {hide: cur0(k).hide});
+          },
+          hide: (k, h) => {
+            const e = cur0(k);
+            if (!!e.hide === h) return false;
+            setMont(k, {...e, hide: h});
+          }
+        };
+      }
+    },
+    // The tree subjects' pairs (admin-content.js montPairs: autosort.js fishPairs over fish.json with the draft's pairs laid
+    // over it, the content editor's: the IMR course's less those withdrawn, plus those added on the Tree, marked "(added)" as
+    // the Tree's Look-alikes filter marks them), with IMR's lines on them (sourced), the two photos phase-matched, a strip of
+    // each family's photos in play (the page's order: the families page's) to pick from.
+    tree: (() => {
+      const PHASE_T = {adult: 'Adult', juvenile: 'Juvenile', all: 'All'};
+      return {
+        cls: ' adm-fishmont',
+        none: '<p class="note">No look-alike pairs.</p>',
+        axisLabel: 'Phase',
+        attr: {axis: 'fmv', auto: 'fmauto', hide: 'fmhide'},
+        strip: 24,
+        noPhotos: 'No photo in play in both families yet.',
+        ready: () => !!(FISHC && FISHC.plays),
+        load: () => fishLoad(true),
+        thumb: x => ({
+          title: fuName(x.sid),
+          img: crSrc(fuP(x), 1),
+          tag: `<span class="adm-src o-${origin(x)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(x)) || [, , origin(x)])[2])}</span>`
+        }),
+        open: S => {
+          const U = FISHC.units,
+            UB = Object.fromEntries(U.map(u => [u.id, u])),
+            D = fuData(),
+            F = D.F,
+            P = typeof montPairs === 'function' ? montPairs(S, FISHC.raw, contentOf(DRAFT, S), U) : fishPairs(U),
+            ph = p => fishPhase(p, fuJ(p.f), readView(F)),
+            famL = id => (u => fuFam(u, D).all)(UB[id]),
+            curE = k => ({...((DRAFT[TK] || {}).mont || {})[k]}),
+            pickOf = k => {
+              const p = P.find(x => x.k === k);
+              return [p, fishMontPick(curE(k), famL(p.A), famL(p.B), ph)];
+            },
+            put = (k, e) => {
+              DRAFT[TK] = fishMontSet(DRAFT[TK], k, e);
+              saveDraft();
+            };
+          return {
+            rows: P.map(p => {
+              const LA = famL(p.A),
+                LB = famL(p.B),
+                m = fishMontPick((F.mont || {})[p.k], LA, LB, ph),
+                phases = FMONT_V.filter(v => fishMontPick({v}, LA, LB, ph).v === v);
+              return {
+                k: p.k,
+                m,
+                title: `${esc(UB[p.A].name)} / ${esc(UB[p.B].name)}${p.added ? ' (added)' : ''}`,
+                src: p.cues.map(([, w, s]) => `${esc(w)} (${esc(s)})`).join(' · '),
+                axis: FMONT_V.map(v => [v, PHASE_T[v], phases.includes(v)]),
+                body: () => ({
+                  pics: [
+                    [crSrc(fuP(m.a)), UB[p.A].name],
+                    [crSrc(fuP(m.b)), UB[p.B].name]
+                  ],
+                  sides: [
+                    [`${esc(UB[p.A].name)} <small><i>${esc(fuName(m.a.sid))}</i></small>`, m.LA, m.a.f],
+                    [`${esc(UB[p.B].name)} <small><i>${esc(fuName(m.b.sid))}</i></small>`, m.LB, m.b.f]
+                  ]
+                })
+              };
+            }),
+            // A phase keeps the two photos on show when they belong to it (always so for All).
+            axis: (k, w) => {
+              const [p, m] = pickOf(k),
+                n = fishMontPick({v: w, a: m.a && m.a.f, b: m.b && m.b.f}, famL(p.A), famL(p.B), ph);
+              put(k, {
+                hide: curE(k).hide,
+                v: n.v,
+                a: n.a && n.a.f === (m.a && m.a.f) ? n.a.f : null,
+                b: n.b && n.b.f === (m.b && m.b.f) ? n.b.f : null
+              });
+            },
+            thumb: (k, side, f) => {
+              const [, m] = pickOf(k);
+              put(k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [side]: f});
+            },
+            auto: k => {
+              if (!curE(k).v) return false;
+              put(k, {hide: curE(k).hide});
+            },
+            hide: (k, h) => {
+              const e = curE(k);
+              if (!!e.hide === h) return false;
+              put(k, {...e, hide: h});
+            }
+          };
+        }
+      };
+    })()
+  },
+  montBuild = S => MONT_BUILD[treeShape(S)];
+// mont build: end
 // Scripts only some pages need are fetched when a page asks, not by every visit (the admin opens on Players › Activity,
 // which needs none of them): admin.html lists them as inert tags (type text/plain, data-lazy="group group"), kept there so
 // the version stamping and the name checks still see them. lazyLoad(group) inserts the real tag of each, in the order
@@ -3749,10 +3919,9 @@ function render() {
   if (cur === 'inbox/todo/health') return renderStats();
   if (cur === 'inbox/todo/points') return renderPoints();
   if (cur.startsWith(POINT_R)) return renderPoint(cur.slice(POINT_R.length));
-  // Game coverage with the Where to look banner above it (folded, open in full with ?look=all: lookAll).
-  // A subject whose units are families (fish): its own coverage (renderFishCov); the corals' grid otherwise.
-  if (cur === 'inbox/coverage/games' && ASUBJ.rank === 'family') return renderFishCov();
-  if (cur === 'inbox/coverage/games') return renderCov();
+  // Game coverage with the Where to look banner above it (folded, open in full with ?look=all: lookAll): one page for
+  // every subject, its rows and columns from the subject's builder (COV_BUILD).
+  if (cur === 'inbox/coverage/games') return renderCov(ASUBJ);
   if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
   if (cur === 'inbox/coverage/rights') return renderRights();
   // Opened from its address, the page can be drawn before admin-visits.js is in, as a journey (below).
@@ -3783,7 +3952,8 @@ function render() {
     return statsPhotos();
   }
   if (modeKey() === 'stats') return renderStats();
-  if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
+  // Photos › Look-alikes: one page for every subject, its pairs and photos from the subject's builder (MONT_BUILD).
+  if (cur === 'photos/look-alikes') return renderMont(ASUBJ);
   // Photos › Candidates: one swiper for every subject, its queue and card from the subject's builder (CAND_BUILD).
   if (cur === 'photos/candidates') return renderCand(ASUBJ);
   // Photos › Tree: one page for every subject, its trees and node pages from the subject's builder (TREE_BUILD).
@@ -5961,6 +6131,67 @@ function fishRepTile(fp, o = {}) {
     picked: e && e.k.cover
   });
 }
+// A photo of another subject with sheets at several ranks (unitPhOf): the photo (Enlarge: its unit, species, credits and
+// observation), its unit, the species it is identified as, its source, rights and credits. No tool: fishTile's act on
+// FISHS's part of curation.json (docs/ROADMAP.md "More subjects": its photo pages are not built yet).
+// o: {flag (the flag's key), cap, extra}.
+const unitTile = ({S, p}, o = {}) => `<figure class="adm-tile" data-f="${esc(p.f)}"${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}>
+      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
+      <figcaption>${repUnit(p.entry, true, S)} ${p.t ? `<small><i>${esc(p.t)}</i></small> ` : ''}<span class="adm-src o-${origin(p)}">${esc((S.admin.origins.find(y => y[0] === origin(p)) || [, , origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, S)}${p.a ? `<small class="adm-where">${esc(p.a)}</small>` : ''}${o.cap || ''}</figcaption><div class="adm-acts">${o.extra || ''}</div></figure>`;
+// tile build: begin
+// A photo's tile outside its page, one door for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 8, Dup-8):
+// To do's reports and flags, Health's photos everyone misses. repTile(f, o) finds the registry that holds photo f and draws its
+// tile there, with every tool of its page, or gives null when no tile can be drawn (the caller draws the photo alone);
+// repBind(scope) binds the tools of the tiles in scope. The tile itself is one frame (tileFrame) filled by the tile of the
+// photo's own page: the corals' genus page tile (tile) or the tree subjects' family page tile (fishTile). o: {unit (the
+// photo's unit, when the caller knows it), p (its record, when the caller has it), flag (the key of the flag it comes from:
+// the tools that take the photo out also clear it), where (the words of where it was seen), cap (its caption's last words),
+// done (the Done button)}. What differs between registries is a builder in TILE_BUILD, tried in the order listed; the last
+// holds any photo it is asked for: `tree` (the tree subject in force's registry: fishRepTile), `read` (another tree subject's,
+// read only: unitTile, no tool yet) and `flat` (the corals': coralRepTile). A builder's members, the same in all:
+//   has(f)         whether its registry holds photo f
+//   tile(f, o)     the tile, or null
+//   bind(scope)    the tools of its tiles in scope
+// Never a test on which subject: a builder knows only the registry it reads.
+const TILE_BUILD = {
+    tree: {
+      has: f => !!(FISHA && FISHA.ph[f]),
+      tile: (f, o) =>
+        fishRepTile(o.p || FISHA.ph[f], {
+          flag: o.flag,
+          cap: o.where || o.cap,
+          extra: o.done ? '<button type="button" data-act="tdone">Done</button>' : ''
+        }),
+      bind: scope => bindFishTiles(scope)
+    },
+    read: {
+      has: f => !!unitPhOf(f),
+      tile: (f, o) =>
+        unitTile(unitPhOf(f), {
+          flag: o.flag,
+          cap: o.where || o.cap,
+          extra: o.done ? '<button type="button" data-act="tdone">Done</button>' : ''
+        }),
+      bind: () => {}
+    },
+    flat: {
+      has: () => true,
+      tile: (f, o) =>
+        coralRepTile(f, o.unit, {
+          lead: o.where,
+          cap: o.cap,
+          extra: o.done ? '<button type="button" class="adm-tdone" data-tdone>✓ Done</button>' : ''
+        }),
+      bind: scope => {
+        bindTiles(scope, t => t.dataset.g);
+        bindF(scope);
+        bindQ();
+      }
+    }
+  },
+  repTile = (f, o = {}) => TILE_BUILD[['tree', 'read'].find(k => TILE_BUILD[k].has(f)) || 'flat'].tile(f, o),
+  repBind = scope => Object.values(TILE_BUILD).forEach(B => B.bind(scope));
+// tile build: end
 // "Attach a photo" on a report that carries none: the photos of its unit (a unit picker first when it names none) to
 // pick from; the photo picked shows on the report with its tools. Kept in this tab only (REP_ATT, by report id), never
 // saved. REP_PICK: the reports whose picker is open, with the unit picked there.
@@ -6114,48 +6345,24 @@ function renderTriage() {
   const tile = (p, acts, cap) => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${PHOTOS[p.f] ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : '<span class="none">missing</span>'}</button>
       <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
-  // A flagged photo still on a genus page gets every tool of that page (often flagged for its zoom level), plus Done.
+  // A flagged photo: where it was seen, and every tool of its page (the door repTile: a coral photo's genus page, often flagged
+  // for its zoom level, a tree subject's family page; those that take it out of play also clear the flag), plus Done; Undo takes
+  // any back. A photo whose data are missing: the corals' with Poor and Done, another subject's Done only.
   const flagTile = p => {
-    if (!own) return unitFlagTile(p);
     const where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
     return (
-      coralRepTile(p.f, p.genus, {lead: where, extra: `<button type="button" class="adm-tdone" data-tdone>✓ Done</button>`}) ||
-      tile(
-        p,
-        `<button type="button" data-act="tpoor">Poor</button><button type="button" data-act="tdone">Done</button>`,
-        `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span>${where}`
-      )
+      repTile(own ? p.f : p.fl.file || p.f, {unit: p.genus, flag: p.f, where, done: true}) ||
+      (own
+        ? tile(
+            p,
+            `<button type="button" data-act="tpoor">Poor</button><button type="button" data-act="tdone">Done</button>`,
+            `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span>${where}`
+          )
+        : `<figure class="adm-tile" data-f="${esc(p.f)}"><span class="adm-ph none">missing</span><figcaption>${p.fl.unit ? repUnit(p.fl.unit, false, ASUBJ) : ''}${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdone">Done</button></div></figure>`)
     );
   };
-  // A flagged photo of a subject with its own part of the curation: the photo, its unit, where it was seen, and every tool
-  // of its family's page (fishRepTile), those that take it out of play also clearing the flag, plus Done; Undo takes any
-  // back. A photo whose data are missing: Done only.
-  const unitFlagTile = p => {
-    const k = p.fl.file || p.f,
-      fp = FISHA && FISHA.ph[k],
-      up = unitPhOf(k),
-      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`,
-      done = '<button type="button" data-act="tdone">Done</button>';
-    if (fp) return fishRepTile(fp, {flag: p.f, cap: where, extra: done});
-    if (up) return unitTile(up, {flag: p.f, cap: where, extra: done});
-    return `<figure class="adm-tile" data-f="${esc(p.f)}"><span class="adm-ph none">missing</span><figcaption>${p.fl.unit ? repUnit(p.fl.unit, false, ASUBJ) : ''}${where}</figcaption><div class="adm-acts">${done}</div></figure>`;
-  };
-  // A photo of another subject with sheets at several ranks (unitPhOf): the photo (Enlarge: its unit,
-  // species, credits and observation), its unit, the species it is identified as, its source, rights and credits. No tool:
-  // fishTile's act on FISHS's part of curation.json (docs/ROADMAP.md "More subjects": its photo pages are not built yet).
-  // o: {flag (the flag's key), cap, extra}.
-  const unitTile = ({S, p}, o = {}) => `<figure class="adm-tile" data-f="${esc(p.f)}"${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}>
-      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
-      <figcaption>${repUnit(p.entry, true, S)} ${p.t ? `<small><i>${esc(p.t)}</i></small> ` : ''}<span class="adm-src o-${origin(p)}">${esc((S.admin.origins.find(y => y[0] === origin(p)) || [, , origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, S)}${p.a ? `<small class="adm-where">${esc(p.a)}</small>` : ''}${o.cap || ''}</figcaption><div class="adm-acts">${o.extra || ''}</div></figure>`;
-  // A reported photo: every tool of its genus page, like a flagged one; a fish photo every tool of its family's page;
-  // another subject's (unitTile) with none yet.
-  const repTile = (f, g0) => {
-    const fp = FISHA && FISHA.ph[f],
-      up = !fp && unitPhOf(f);
-    if (fp) return fishRepTile(fp);
-    if (up) return unitTile(up);
-    return coralRepTile(f, g0) || tile({...(PHOTOS[f] || {}), f, genus: (PHOTOS[f] || {}).genus || g0}, '', '');
-  };
+  // A reported photo: every tool of its page, like a flagged one (the door repTile; a coral photo on no genus page, the photo alone).
+  const reportTile = (f, g0) => repTile(f, {unit: g0}) || tile({...(PHOTOS[f] || {}), f, genus: (PHOTOS[f] || {}).genus || g0}, '', '');
   // The reports of the subject on screen (rule A4; one about no subject on every side), by status (reports.js repsOrder):
   // a report handled in a PR (reports-handled.json) is listed apart unless marked Done.
   const repAll = repsOf(),
@@ -6219,7 +6426,7 @@ function renderTriage() {
       <span class="adm-repwhy">${esc(repWhyText(c, S))}</span>${c.unit ? `<span>${repUnit(c.unit, false, S)}${c.ans && c.ans !== c.unit ? ` · answered ${repUnit(c.ans, false, S)}` : ''}</span>` : ''}${c.fix ? `<span class="adm-repfix">→ <i>${esc(c.fix)}</i></span>` : ''}
       <small class="adm-where">${esc(c.game ? 'game ' + c.mode : c.mode)}${c.page ? ` · ${esc(c.page)}` : ''} · ${esc(when(c.t))}</small></div>
       ${c.note ? `<p class="adm-repnote">${esc(c.note)}</p>` : ''}${bar}${
-        shown.length ? `<div class="adm-grid adm-qgrid adm-flagged">${shown.map(f => repTile(f, c.unit)).join('')}</div>` : ''
+        shown.length ? `<div class="adm-grid adm-qgrid adm-flagged">${shown.map(f => reportTile(f, c.unit)).join('')}</div>` : ''
       }${REP_PICK[c.id] && !c.photos.length ? repPicker(c, S) : ''}</article>`;
   };
   // The sections the subject on screen has (core.js SUBJECTS admin todo) besides the reports, the flags and the errors,
@@ -6291,12 +6498,8 @@ function renderTriage() {
         render();
       })
   );
-  const FL = $v.querySelectorAll('.adm-flagged');
-  FL.forEach(x => {
-    bindTiles(x, t => t.dataset.g);
-    bindF(x);
-  });
-  if (FL.length) bindQ();
+  // The photo tiles' tools, a report's and a flag's, each by the registry of its photo (repBind).
+  $v.querySelectorAll('.adm-flagged').forEach(repBind);
   // A report's status: one click, one Undo step; Done thanks the player (seen 'rep:<id>'), Stand-by and Dismiss never.
   $v.querySelectorAll('[data-rst]').forEach(
     b =>
@@ -6316,7 +6519,6 @@ function renderTriage() {
   );
   $v.querySelectorAll('[data-repfold]').forEach(d => (d.ontoggle = () => (REP_OPEN[d.dataset.repfold] = d.open)));
   bindRepAttach();
-  bindFishTiles($v);
   const rl = $v.querySelector('[data-rload]');
   if (rl)
     rl.onclick = () =>
@@ -6599,68 +6801,6 @@ function setMont(k, e) {
   else delete M[k];
   DRAFT.mont = M;
   saveDraft();
-}
-function renderMont() {
-  status();
-  const L = classicPairs();
-  const strip = (p, side, list, chosen) =>
-    `<div class="adm-mstrip">${list.map(x => `<button type="button" class="adm-mth${x.f === chosen.f ? ' on' : ''}" data-k="${esc(p.k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(x.t || '')}"><img src="${img(x, 1)}" alt="" loading="lazy">${srcTag(x)}</button>`).join('')}</div>`;
-  $v.innerHTML = `<section class="adm-quality adm-mont">${L.map(p => {
-    const m = montPick(p);
-    return `<article class="adm-mrow${m.set ? ' set' : ''}${m.hide ? ' off' : ''}"><div class="adm-mhead"><b><i>${esc(p.A)}</i> / <i>${esc(p.B)}</i></b><small>${esc(p.src)}</small>
-      <span class="adm-qseg adm-lvseg" role="group" aria-label="View">${MONT_VIEWS.map(([w, t]) => `<button type="button" data-k="${esc(p.k)}" data-mv="${w}" aria-pressed="${m.v === w}"${montList(p.A, w).length && montList(p.B, w).length ? '' : ' disabled'}>${t}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Pick"><button type="button" data-k="${esc(p.k)}" data-mauto aria-pressed="${!m.set}" title="Automatic pick">Auto</button><button type="button" aria-pressed="${m.set}" disabled title="Manual">Manual</button></span>
-      <span class="adm-qseg adm-lvseg adm-mvis" role="group" aria-label="On the site"><button type="button" data-k="${esc(p.k)}" data-mhide="0" aria-pressed="${!m.hide}" title="Shown on the site">Shown</button><button type="button" data-k="${esc(p.k)}" data-mhide="1" aria-pressed="${m.hide}" title="Hidden from the site">Hidden</button></span></div>
-      ${
-        m.v
-          ? `<div class="adm-mbody"><div class="adm-mprev"><img src="${img(m.a)}" alt="${esc(p.A)}"><img src="${img(m.b)}" alt="${esc(p.B)}"></div>
-        <div class="adm-msides"><div><i>${esc(p.A)}</i>${strip(p, 'a', m.LA, m.a)}</div><div><i>${esc(p.B)}</i>${strip(p, 'b', m.LB, m.b)}</div></div></div>`
-          : '<p class="note">No view with photos of both.</p>'
-      }</article>`;
-  }).join('')}</section>`;
-  const cur = k => ({...((DRAFT.mont || {})[k] || {})});
-  const keep = fn => {
-    const y = window.scrollY;
-    fn();
-    renderMont();
-    window.scrollTo(0, y);
-  };
-  // Changing the view keeps the two photos on show when they belong to the new view (always so for All).
-  $v.querySelectorAll('[data-mv]').forEach(
-    b =>
-      (b.onclick = () =>
-        keep(() => {
-          const k = b.dataset.k,
-            w = b.dataset.mv,
-            p = L.find(x => x.k === k),
-            m = montPick(p);
-          const has = (n, x) => (x && montList(n, w).some(y => y.f === x.f) ? x.f : null);
-          setMont(k, {hide: cur(k).hide, v: w, a: has(p.A, m.a), b: has(p.B, m.b)});
-        }))
-  );
-  $v.querySelectorAll('.adm-mth').forEach(
-    b =>
-      (b.onclick = () =>
-        keep(() => {
-          const k = b.dataset.k,
-            p = L.find(x => x.k === k),
-            m = montPick(p);
-          setMont(k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [b.dataset.side]: b.dataset.f});
-        }))
-  );
-  $v.querySelectorAll('[data-mauto]').forEach(
-    b =>
-      (b.onclick = () => {
-        if (cur(b.dataset.k).v) keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide}));
-      })
-  );
-  $v.querySelectorAll('[data-mhide]').forEach(
-    b =>
-      (b.onclick = () => {
-        const e = cur(b.dataset.k),
-          h = b.dataset.mhide === '1';
-        if (!!e.hide !== h) keep(() => setMont(b.dataset.k, {...e, hide: h}));
-      })
-  );
 }
 /* ---------- Triage: the judging agent's suggestions (data/suggest.json) ---------- */
 const seen = k => !!(DRAFT.seen || {})[k];
@@ -9583,8 +9723,10 @@ const CAND_SRC = [
   ['world', 'Other', 'iNat elsewhere'],
   ['imr', 'IMR', 'IMR lecture']
 ];
-function renderCov() {
-  status();
+// Coverage › Games, the corals' page: per genus and view, the photos and the colonies in the games, the sources and the
+// candidates waiting; Thinnest, Thickest or Lecture order, or a view's column; Where to look above it (lookBanner). The
+// page's content for the frame (renderCov, COV_BUILD flat).
+function covFlatPage() {
   const R = [...GAME].map((n, i) => {
     const cells = VIEWS.map(([v]) => (covViews(n).some(x => x[0] === v) ? covOf(n, v) : null)),
       live = cells.filter(Boolean);
@@ -9635,7 +9777,7 @@ function renderCov() {
     ['thick', 'Thickest', 'Most photos first'],
     ['lecture', 'Lecture', 'Lecture order']
   ];
-  $v.innerHTML = `<section class="adm-cov">${rightsLine()}<div class="cov-look" id="cov-look"></div>
+  const top = `<div class="cov-look" id="cov-look"></div>
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b>${(k => (k ? `<b class="warnc" title="Cells over the cap of ${CELL_MAX} colonies (added anyway): orange outline below; adding to a full cell suggests a colony to retire">⚠ ${k} over the cap</b>` : ''))(R.reduce((s, r) => s + r.cells.filter(c => c && c.obs > CELL_MAX).length, 0))}<b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
@@ -9648,9 +9790,9 @@ function renderCov() {
       <dt>+</dt><dd>candidates waiting in Candidates, by source: <b>Dauin</b> iNaturalist at Dauin · <b>PH</b> iNaturalist elsewhere in the Philippines · <b>Own</b> your photos · <b>Other</b> iNaturalist elsewhere</dd>
       <dt>thin · full · at 8+</dt><dd>cells with 0–2 colonies · at the cap of ${CELL_MAX} colonies · with 8 or more</dd>
       <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
-    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source">+</th></tr></thead>
-    <tbody>${R.map(
-      r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+    `;
+  const rows = R.map(
+    r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="${esc(genusHref(r.n))}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : DATA.gen[r.n].x ? ' <small class="kcov-x">not IMR</small>' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
         ([k]) => r.cby[k]
       )
@@ -9658,23 +9800,33 @@ function renderCov() {
         .join('')}">${CAND_SRC.filter(([k]) => r.cby[k])
         .map(([k, s]) => `<span class="o-${k}">${s} ${r.cby[k]}</span>`)
         .join('')}</td></tr>`
-    ).join('')}</tbody></table></section>`;
-  $v.querySelectorAll('[data-co]').forEach(
-    b =>
-      (b.onclick = () => {
-        COV_ORDER = b.dataset.co;
-        COVS.col = '';
-        render();
-      })
-  );
-  bindCol(COVS, () => {});
-  $v.querySelectorAll('.cov-t tbody tr').forEach(
-    tr =>
-      (tr.onclick = e => {
-        if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
-      })
-  );
-  lookBanner();
+  ).join('');
+  return {
+    cls: '',
+    top,
+    tcls: '',
+    head: `<th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source">+</th>`,
+    rows,
+    wrap: ['', ''],
+    bind: () => {
+      $v.querySelectorAll('[data-co]').forEach(
+        b =>
+          (b.onclick = () => {
+            COV_ORDER = b.dataset.co;
+            COVS.col = '';
+            render();
+          })
+      );
+      bindCol(COVS, () => {});
+      $v.querySelectorAll('.cov-t tbody tr').forEach(
+        tr =>
+          (tr.onclick = e => {
+            if (!e.target.closest('a')) location.hash = genusHref(tr.dataset.g);
+          })
+      );
+      lookBanner();
+    }
+  };
 }
 // Where to look (a banner above the Games grid): the few genus x view
 // cells most worth a candidate search now, ranked as in the full list (needsOf: most reasons first, then fewest
@@ -12596,8 +12748,8 @@ function statsHealth() {
       o.d != null
         ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>`
         : '',
-    fishHTile = o => fishRepTile(o.p, {cap: hnum(o)}),
-    coralTile = o => coralRepTile(o.p.f, o.p.genus, {cap: hnum(o) + hrec(o)}) || phTile(o),
+    // (a tree subject's photos have no recognition badge: hrec is empty for them)
+    healthTile = o => repTile(o.p.f, {p: o.p, unit: o.p.genus, cap: hnum(o) + hrec(o)}) || phTile(o),
     MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
@@ -12606,7 +12758,7 @@ function statsHealth() {
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
       ? `<div class="adm-hphotos adm-grid adm-qgrid">${BAD.slice(0, MAXPH)
-          .map(ASUBJ.sheets ? fishHTile : coralTile)
+          .map(healthTile)
           .join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
       : '<p class="note">None.</p>'
   }</section>`;
@@ -12637,14 +12789,9 @@ function statsHealth() {
       `<div class="adm-sgrid adm-health">${stopSec}${healthSheets()}</div>`
     : head + `<div class="adm-sgrid adm-health">${phSec}${gSec}</div>`;
   bindStats();
-  // the photo tiles' tools: a coral photo's of its genus page, another subject's of its family's page (bindFishTiles)
+  // the photo tiles' tools, each by the registry of its photo (repBind)
   const hp = !stops && $v.querySelector('[data-health="photos"] .adm-hphotos');
-  if (hp && ASUBJ.sheets) bindFishTiles(hp);
-  else if (hp) {
-    bindTiles(hp, t => t.dataset.g);
-    bindF(hp);
-    bindQ();
-  }
+  if (hp) repBind(hp);
   // The pages summaries come with their own read: the section fills in when they arrive, and is read again
   // once stale.
   if (stops) pagesFresh('analyses/learning/stops');

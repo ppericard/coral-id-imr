@@ -226,7 +226,7 @@
     return out;
   }
   // ---- Photos › Look-alikes: the pairs in force (design note v2, after step 4) ----
-  // The look-alike pairs of fish file R under content map Cm, one photo pair each (admin.js renderFishMont, curation.json
+  // The look-alike pairs of fish file R under content map Cm, one photo pair each (admin.js renderMont, MONT_BUILD tree, curation.json
   // fish mont): autosort.js fishPairs over the units of R with the pairs in force (sheetFile, core.js structApply: the
   // base's less those he withdrew, plus those he added; the circles left out, as the Tree's Look-alikes filter), each one
   // the base does not declare marked added. A withdrawn pair has no row and keeps its photo pair in fish mont (nothing is

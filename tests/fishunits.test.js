@@ -402,7 +402,7 @@ test('fishCovTodo and fishCandTodo: the counts of Coverage’s To do and of the 
     ['spwait', 'spnone', 'famnr'],
     'no family validated'
   );
-  // the same row tests as Coverage's chips filter its rows with (admin.js renderFishCov)
+  // the same row tests as Coverage's chips filter its rows with (admin.js covTreePage)
   A.FISHCOV_TODO.forEach(([k, lv, , fn]) =>
     assert.strictEqual(C[lv].filter(r => fn(r, F)).length, (A.fishCovTodo(C, F).find(x => x[0] === k) || [0, 0, 0, 0])[3], k)
   );

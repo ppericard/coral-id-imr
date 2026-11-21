@@ -131,7 +131,8 @@ The fish auto-sort is the same idea on the fish part: [fish-photos.md › The fi
 
 ### Coverage › Games
 
-`#inbox/coverage/games` (`renderCov`, `covOf`, `gamePool`): game-usable photos per genus × view (field and IMR lecture
+`#inbox/coverage/games` (`renderCov` for every subject, its section and table; the corals' content `covFlatPage`, the
+`flat` builder of `COV_BUILD`; `covOf`, `gamePool`): game-usable photos per genus × view (field and IMR lecture
 photos; no book, multi-coral, hidden or sheet-only photos; Poor ones count), coloured by distinct colonies (0 / 1-2 / 3-4
 / 5-7 / 8+), with an "excl." line and a tooltip listing what was left out and why. `covOf` is shared with the Candidates
 swiper. Its rows are the game genera (`gameOf`: Millepora and the bonus genera included, tagged "not IMR"), as on Where
@@ -178,7 +179,7 @@ reverse).
 
 ### The fish's Coverage › Games
 
-`#fish/inbox/coverage/games` (`renderFishCov`): per family, genus or species (switch), the species at target,
+`#fish/inbox/coverage/games` (`renderCov`, the content `covTreePage`, the `tree` builder of `COV_BUILD`): per family, genus or species (switch), the species at target,
 the photos in play, easy (ease 4-5) and reference-level photos (`refLevel`, as the tile's badge: rule P1), the phases
 shown (an IMR phase still missing marked ?), the candidates waiting (the "+" column: `autosort.js` `fishWaiting`, the
 candidates nobody decided and not in play under any of their names, `treePid`: a sure candidate the game plays itself
@@ -327,14 +328,16 @@ or turned.
 
 ## Look-alikes
 
-`#photos/look-alikes` (`renderMont`): one row per classic pair (the same list and automatic pick as `learn.js`
+`#photos/look-alikes` (`renderMont` for every subject: a row per pair, its switch, Auto | Manual, Shown | Hidden, the two
+photos and the strips; what differs is the builder of `MONT_BUILD`, picked by the declared data shape, `flat` for the
+corals, `tree` for the others, documented above `renderMont`): one row per classic pair (the same list and automatic pick as `learn.js`
 `classics()` / `montage()`). Per pair: View Colony / Close-up / Corallites / **All** (photos of every zoom, the automatic
 pick preferring the nearest zooms), **Auto | Manual** (clicking a photo makes it Manual; Auto drops his view and photo
 picks but keeps a hide), **Shown | Hidden** (Hidden keeps the comparison off the public Look-alikes page until good
 examples exist). Stored in `curation.json` `mont`. These pages read the base's pairs (`classicPairs`); the content
 editor's pair entries are edited on the Tree ([admin-tree.md](admin-tree.md#the-corals-tree)).
 
-On the fish side, `#fish/photos/look-alikes` (`renderFishMont`): one row per look-alike pair of families in force on the
+On the fish side, `#fish/photos/look-alikes` (`renderMont`, the `tree` builder): one row per look-alike pair of families in force on the
 draft (`admin-content.js` `montPairs`: `autosort.js` `fishPairs` over `fish.json` `families` `look` with the content
 editor's pairs laid over it, `sheetFile`; the IMR course's pairs, less those he withdrew on the Tree, plus those he added
 there, marked "(added)" as in the Tree's Look-alikes filter; the circles leave every pair in; IMR's lines shown as their
