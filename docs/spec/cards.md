@@ -324,16 +324,17 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with four tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with five tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
   tip's `id`, `ctx` (the games whose break may show it), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
-  break's `b.mix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
-  break: b = {ctx, miss, zm, mix}),
+  break's `b.mix`, and for the basics tip `b.bx`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
+  break: b = {ctx, miss, zm, mix, bx}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
-  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj}, subj the `core.js` `SUBJECTS` record on
-  screen: the text follows the subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
+  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics}, subj the `core.js` `SUBJECTS` record on
+  screen, basics the `app.js` `UNITS` `basics` words of the subject: the text follows the subject, whose fields hold the
+  words, never a test on its id, rule S1; the zoom tip reads
   `zoom`: corallites for coral players, markings and fins for fish players) and `act` (its "Show me", `quiz.js`
   `TIP_ACT`). `tipDue(state, b)` picks the tip of a break; `TIPR`: at most one tip a visit, never in its first `FLOOR`
   (10) answers; a visit is answers less than `GAP` (30 min, as `model.js` `SESSION.GAP`) apart, and a reload is no new
@@ -389,6 +390,21 @@ once a player uses it, how often is their choice. A small generic system with fo
   picking page on the My mix-ups view, which it then keeps as the chosen view) and **Got it**. The log cannot say who
   saw the view, so `m` counts from the device on. My progress's "Your tricky pairs" shows itself: no tip
   ([record](../decisions/2026-11-21-tip-c-my-mix-ups.md)).
+- **The basics tip** (`id` `basics`, tip (d) of [REE-13](https://linear.app/reef-id/issue/REE-13), Coral basics for the
+  corals, Fish basics for the fish): for the player the subject's first-launch offer of its basics module is for who
+  never opened it (`quiz.js` `tipBasics`, passed as `b.bx`; no counter, the module's own record says it). The player is
+  the one whose first-launch answer in that subject's record (`startOf`) is one whose `CHOICE` variables offer the basics
+  first (`startVars(c).basics`: "new", asked at the tour or on the card, or inferred at 50 answers), with the module not
+  done (`basicsDue`) and nothing in its record (`reefid-basics`: its page stores the step it opens, `last` and `seen`).
+  A subject with no first-launch question (the sea slugs) has no record, so no tip; no player the "lower" fallback card
+  serves (it is for the answers "IMR course" and "know well", and offers the same module), none that the "higher" card was
+  shown to or is about to be (`fb` `new-hi`, verdict `v`). In the Quiz only; from 30 questions; its moment, the Next
+  right after a miss, else any break from 20 questions later; twice at most, the second 150 questions after the first;
+  last of the five when several are due (one tip a visit). Card: "Did you know?", "New to corals? Try Coral basics"
+  (`UNITS` `basics` `ask` and `name`), the module's `lo` line and "It is in Learn, any time.", **Show me** (opens the
+  module, as the first-launch offer's button does) and **Got it**. The offers the module already has (the tour's last
+  button and `startBasicsOffer` before the first question, Home's line under 50 answers, the Learn card) come before the
+  tip; the tip is the reminder for the player who passed them by ([record](../decisions/2026-11-21-tip-d-coral-basics.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,
