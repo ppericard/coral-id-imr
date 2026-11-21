@@ -1897,6 +1897,7 @@ const GROUPS = [
           ['after-a-break', 'After a break'],
           ['sessions', 'Sessions'],
           ['profiles', 'Profiles'],
+          ['trajectories', 'Trajectories'],
           ['answer-log', 'Answer log'],
           ['stops', 'Stops']
         ]
