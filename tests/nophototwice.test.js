@@ -264,6 +264,8 @@ test('before Open Water: every easy photo in the window, the one shown longest a
   ];
   for (let i = 0; i < 60; i++) L.push({f: `h${i}`, o: `h${i}`, e: 1 + (i % 3)});
   const E = RE.engine('fish', L, {score: 0.2});
+  // A floor of 3 (model.js RARE.FEW, 12 in the app): every observation it rotates fits in the window of RECENT (10).
+  E.RARE.FEW = 3;
   ['e1', 'e0', 'e2'].forEach(f => E.seenAdd(shownQ(f)));
   let hard = 0,
     e1 = 0;

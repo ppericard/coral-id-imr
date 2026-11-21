@@ -132,7 +132,7 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
 - **Short** (`shortness`): a species under its cap (the room of `species_room`: the cap net of what Pierre rejected,
   excluded or sent elsewhere and of the pre-sort's sure set-asides), or with fewer than `EASY_NEED` (3) observations
   holding a very easy adult photo (ease ≥ `EASY_E`, 4, the ease under which `model.js` `RARE` holds a unit's photos back
-  before Open Water; 3 as `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
+  before Open Water; 3 is the refill's own count, not `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
   reads the judged tags, Pierre's, and a candidate source's life stage; a game photo by its tags only) in play or
   sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `fishSure`'s adds, the game photos of
   `fish-photos.json`). Only room is refilled: a species short of easy photos at its cap stays as it is (the cap holds;

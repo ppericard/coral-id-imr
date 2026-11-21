@@ -2,6 +2,8 @@
 
 Date: 2026-11-21. PR: #1376. Rules or docs touched: LEARNING.md "Rarely under ease 4 before Open Water".
 
+Changed by: [2026-11-21-rare-few-floor.md](2026-11-21-rare-few-floor.md) (`RARE.FEW` a floor of 12, the cliff below).
+
 ## Context
 
 An RA reported a remora photo in the fish quiz, "Seen this photo like 5 times in five minutes" (Reports tab,

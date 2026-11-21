@@ -217,7 +217,8 @@ test('the cap under ease 4 before Open Water still holds with the phase photos h
   // Easy photos half phase (as the Anthias' and the Parrotfishes'), the rest under ease 4: holding the easy phase photos
   // back must not let the hard ones past the cap (model.js RARE, applied after).
   const L = [];
-  for (let i = 0; i < 12; i++) L.push({f: `e${i}`, o: `e${i}`, e: 5, ...(i % 2 ? {ph: 'female'} : {})});
+  // 24 easy, so the 12 adults among them fill the rotation's floor (model.js RARE.FEW) and ease 4 is the bar.
+  for (let i = 0; i < 24; i++) L.push({f: `e${i}`, o: `e${i}`, e: 5, ...(i % 2 ? {ph: 'female'} : {})});
   for (let i = 0; i < 200; i++) L.push({f: `h${i}`, o: `h${i}`, e: 1 + (i % 3)});
   const E = engine('fish', L, {ok: 2, score: 0.3}),
     e = Object.fromEntries(L.map(p => [p.f, p.e]));
