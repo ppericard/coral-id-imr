@@ -853,8 +853,9 @@ knowledge, so any delay seen is dilution) and the app world (the run was cut at 
 without the offer sit outside the rank share (`app.js` `shareFree`); they take 15% of the lecture RA's answers 301-1,000
 and 9% of 1,001-2,000, mostly before the 5th family is at Advanced. Against an arm with `shareFree` empty (10 paired
 seeds x 3,000 answers), they delay the lecture RA's 10th family at Advanced by 99 answers [59, 139], the 15th-25th by
-about 150-200, only by taking those answers (the family answers before each mark are the same), the shown score
-unchanged; the IMR genera reach Open Water 500-850 answers earlier (docs/reviews/2026-11-21-sharefree-arm.md).
+about 150-200, consistent with their taking those answers (other effects not ruled out), the shown score unchanged;
+where both arms got there by 3,000 answers, the IMR genera reach Open Water 500-850 answers earlier
+(docs/reviews/2026-11-21-sharefree-arm.md).
 
 ### Fish: the species level, step 1, by common name
 

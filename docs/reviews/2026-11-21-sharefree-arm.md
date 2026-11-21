@@ -39,7 +39,7 @@ protect, i.e. do the uncapped genera delay the families? Only if it shows a cost
 ## Results
 
 The app's code at `2ef8ff0d1` (`origin/main`), the scripts at `e47f8cd80`; 20 runs (10 paired seeds), none failed, none
-cut, in 756 s. `node tools/studies/sharefree/arm.js --seeds 10 --questions 3000 --profiles lectureRA`, then
+cut, in 756 s. `node tools/studies/sharefree/arm.js --seeds 10 --questions 3000 --profiles lectureRA --out results.json`, then
 `node tools/studies/sharefree/report.js` on its output. The arm took: the engine's free set held up to 6 genera in the
 `free` arm and none in the `empty` arm; no seed gave the same answers in both.
 
@@ -60,20 +60,23 @@ The secondary rows from the 15th on sit above the bar; they are secondary and un
 not move: the shown score's paired difference is −0.2 to +0.1 points at 100, 300, 1,000 and 3,000 answers (sd 0.6-1.3),
 and the families at Advanced are 14.5 / 17.5 at 1,000 answers and 30 / 31 at 3,000 (median, free / empty).
 
-**What the delay is (added after the results, not declared).** The family answers given before the nth family reaches
-Advanced are the same in both arms: 5th +12 [−17, 42], 10th −13 [−43, 18], 15th +8 [−29, 44], 20th −9 [−74, 56], 25th
-−19 [−103, 66]. So the delay is the answers handed to the free genera, answer for answer (dilution), not a slower
-family once asked. Since no simulated genus answer teaches its family, that is an upper bound on a real player's delay.
+**What the delay is (added after the results, not declared).** The paired difference in family answers given before
+the nth family reaches Advanced: 5th +12 [−17, 42], 10th −13 [−43, 18], 15th +8 [−29, 44], 20th −9 [−74, 56], 25th
+−19 [−103, 66]. Every interval contains 0, which does not show the counts equal (no equivalence margin was declared,
+and the 25th's interval allows −103 to +66). So the results are **consistent with dilution** (the delay coming from the
+answers the free genera take) and **inconclusive about other effects**, mostly at the later families. In this
+simulation no genus answer teaches its family; whether a real player's genus answers do is not measured here.
 
 **The other side: the IMR genera.** In the `empty` arm they open only once the families reach Advanced (cap m^2 is 0
-before), so they come much later. Only the runs that reached the mark by 3,000 answers are paired, so these are at
-least the figures shown:
+before), so they come later. The paired differences below are **conditional on both arms reaching the milestone by
+3,000 answers** (complete cases only). The pairs left out are censored (the `empty` arm past 3,000), so these means are
+neither bounds on the whole nor intervals that account for the censoring:
 
-| auto IMR genus | free | empty | paired free - empty |
+| auto IMR genus | free, median (runs reaching it) | empty, median (runs reaching it) | paired free - empty, complete cases |
 | --- | --- | --- | --- |
-| 1st at Open Water | 632 (10 of 10 runs) | 1,010 (9 of 10) | at least −490 [−684, −297] (9 pairs) |
-| 3rd at Open Water | 867 (10 of 10) | 1,241 (9 of 10) | at least −674 [−976, −373] (9 pairs) |
-| 5th at Open Water | 1,084 (10 of 10) | 1,892 (6 of 10) | at least −847 [−1,410, −283] (6 pairs) |
+| 1st at Open Water | 632 (10 of 10) | 1,010 (9 of 10) | −490 [−684, −297] (9 pairs) |
+| 3rd at Open Water | 867 (10 of 10) | 1,241 (9 of 10) | −674 [−976, −373] (9 pairs) |
+| 5th at Open Water | 1,084 (10 of 10) | 1,892 (6 of 10) | −847 [−1,410, −283] (6 pairs) |
 | 1st at Advanced | 1,568 (10 of 10) | 1 of 10 runs | - |
 | 3rd at Advanced | 2 of 10 runs | 0 of 10 | - |
 
@@ -93,9 +96,10 @@ at 705 against 728).
 ## Reading
 
 - **No question to Pierre from this arm**, by the rule declared before it ran; a close call: today's free IMR genera
-  delay the lecture RA's families by about 100-200 answers (13-17% of the `empty` arm's timings, 5th to 25th family), purely by taking those answers, with no change to
-  the shown score, and in exchange the IMR genera reach Open Water about 500-850 answers earlier and Advanced at all
-  within 3,000 answers.
+  delay the lecture RA's families by about 100-200 answers (13-17% of the `empty` arm's timings, 5th to 25th family),
+  consistent with their taking those answers (other effects not ruled out), with no change to the shown score. In
+  exchange, where both arms got there, the IMR genera reach Open Water about 500-850 answers earlier (complete cases),
+  and the 1st reaches Advanced within 3,000 answers in 10 of 10 runs against 1 of 10.
 - **The `empty` arm is not a candidate rule**: it withdraws Q219's Open Water opening in effect. A question worth
   asking would need another arm, not run here: the IMR genera still open at their family's Open Water (Q219), but
   their questions counted under the rank share's draw cap (`shareW`) and not its opening check (`shareRoom`).

@@ -40,6 +40,11 @@ for (const p of o.profiles) {
         .sort((a, b) => a - b);
       return L.length >= n ? L[n - 1] : null;
     };
+  // A partial file (cut at the budget, or a failed run): a profile with no seed run in both arms has no paired estimate.
+  if (!seeds.length) {
+    console.log(`\n== ${p}: insufficient data (${R.length} successful runs, no seed with both arms)`);
+    continue;
+  }
   console.log(`\n== ${p}: ${seeds.length} paired seeds; free set seen (max over runs, free arm / empty arm): ${Math.max(...R.filter(r => r.arm === 'free').map(r => r.freeMax))} / ${Math.max(...R.filter(r => r.arm === 'empty').map(r => r.freeMax))}`);
   console.log(`identical sequences: ${seeds.filter(s => by(s, 'free').seq === by(s, 'empty').seq).length} of ${seeds.length}`);
   console.log('\nPrimary: answer at which the nth family reaches Advanced; median free / empty; paired free - empty: mean [95% CI] (positive: today\'s free genera delay the families)');
@@ -64,7 +69,7 @@ for (const p of o.profiles) {
       d = seeds.map((s, i) => (a[i] !== null && b[i] !== null ? a[i] - b[i] : null)).filter(x => x !== null);
     console.log(`  ${String(n).padStart(2)}th  ${f(med(a))} / ${f(med(b))}  ${ci(d)}`);
   }
-  console.log('\nThe auto IMR genera (a): answer at which the nth reaches Open Water / Advanced; median free / empty; paired free - empty (negative: the cap delays them)');
+  console.log('\nThe auto IMR genera (a): answer at which the nth reaches Open Water / Advanced; median free / empty; paired free - empty over the complete cases only (both arms reached it by the horizon; censored pairs left out, so no bound on the whole; negative: the cap delays them)');
   const na = Math.max(0, ...R.map(r => Object.values(r.kinds).filter(x => x === 'a').length));
   console.log(`  auto genera: ${na}`);
   for (const n of [1, 3, 5, 10].filter(n => n <= na)) {

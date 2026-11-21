@@ -7,7 +7,8 @@
 // holding shareFree) gets shareFree () => [] when the worker runs the empty arm. Nothing in the app or the tools changes.
 //
 //   node tools/studies/sharefree/arm.js [--seeds 10] [--questions 3000] [--profiles lectureRA,beginner] [--workers 4]
-//                                       [--budget 40] [--out file.json]
+//                                       [--budget 40] --out file.json
+// --out is required; over 20 seeds or 10,000 answers (level 3, tools/checkbudget.js level3Reason) it refuses.
 // Per run: each answer's unit kind (f family, g scientific genus under the offer, a auto IMR genus, s species by common
 // name, x species by scientific name), advAt / owAt, the checkpoint rows, and the size of the free set seen by the engine
 // (a check that the arm took). Takes the machine slot (tests/slot.js, rule W24); stops at the budget (40 minutes at most,
@@ -73,24 +74,44 @@ if (!isMainThread && workerData === 'sharefree')
   });
 else if (isMainThread) main();
 
-async function main() {
-  require(path.join(ROOT, 'tests', 'slot.js')).guard('tools/studies/sharefree/arm.js');
+// The options, checked before anything runs: --out is required (the results live only there), and the study stays at
+// level 2 (tools/checkbudget.js level3Reason: over 20 seeds or 10,000 answers is level 3, never run here; rule L11).
+function options(argv) {
   const arg = (k, d) => {
-      const i = process.argv.indexOf('--' + k);
-      return i > 0 ? process.argv[i + 1] : d;
+      const i = argv.indexOf('--' + k);
+      return i > 0 ? argv[i + 1] : d;
     },
-    SEEDS = +arg('seeds', 10),
-    N = +arg('questions', 3000),
-    PROFILES = arg('profiles', 'lectureRA').split(','),
-    WORKERS = +arg('workers', 4),
-    BUDGET = Math.min(40, +arg('budget', 40)),
-    OUT = arg('out', null),
+    o = {
+      SEEDS: +arg('seeds', 10),
+      N: +arg('questions', 3000),
+      PROFILES: arg('profiles', 'lectureRA').split(','),
+      WORKERS: +arg('workers', 4),
+      BUDGET: Math.min(40, +arg('budget', 40)),
+      OUT: arg('out', null)
+    };
+  if (!o.OUT) throw new Error('--out FILE is required: the results are written there and nowhere else (report.js reads it)');
+  if (!(o.SEEDS >= 1 && o.N >= 1 && o.WORKERS >= 1 && o.BUDGET > 0)) throw new Error('--seeds, --questions, --workers: 1 or more; --budget: above 0');
+  const why = require(path.join(ROOT, 'tools', 'checkbudget.js')).level3Reason({world: 'rated', seeds: o.SEEDS, N: o.N});
+  if (why) throw new Error(`Level 3 (${why}): this study runs at level 2 only (rule L11); nothing ran`);
+  return o;
+}
+
+async function main() {
+  let o;
+  try {
+    o = options(process.argv);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
+  }
+  require(path.join(ROOT, 'tests', 'slot.js')).guard('tools/studies/sharefree/arm.js');
+  const {SEEDS, N, PROFILES, WORKERS, BUDGET, OUT} = o,
     t0 = Date.now(),
     jobs = [];
   for (let s = 1; s <= SEEDS; s++) for (const profile of PROFILES) for (const arm of ['free', 'empty']) jobs.push({arm, profile, seed: s, N});
   const commit = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], {cwd: ROOT}).toString().trim(),
     runs = [],
-    save = cut => OUT && fs.writeFileSync(OUT, JSON.stringify({date: new Date().toISOString(), commit, seeds: SEEDS, questions: N, profiles: PROFILES, seconds: (Date.now() - t0) / 1000, cut, partial: !cut && runs.length < SEEDS * PROFILES.length * 2, runs})),
+    save = cut => fs.writeFileSync(OUT, JSON.stringify({date: new Date().toISOString(), commit, seeds: SEEDS, questions: N, profiles: PROFILES, seconds: (Date.now() - t0) / 1000, cut, partial: !cut && runs.length < SEEDS * PROFILES.length * 2, runs})),
     ws =Array.from({length: Math.min(WORKERS, jobs.length)}, () => new Worker(__filename, {workerData: 'sharefree'})),
     deadline = t0 + BUDGET * 60000;
   let cut = false;
