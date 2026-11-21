@@ -12,23 +12,25 @@
 //      (its picking page or its quiz, quiz.js quizCustom; the log cannot tell its answers from the Quiz's), d times the Duel
 //      tab was opened here (quiz.js quizDuel; a Duel tab answer in the device's log folds in as one, tipsLoad), m times the
 //      Custom quiz's My mix-ups view was drawn here (quiz.js viewCustom; a saved choice of that view folds in as one,
-//      tipsLoad). Seeded once, when the state is first made,
+//      tipsLoad), i times the subject's Identify tool (the Coral ID Key) was opened here (app.js route, quiz.js tipRoute; a
+//      choice saved in the key folds in as one, tipsLoad). Seeded once, when the state is first made,
 //      from the answers the device still holds (LOG0 / SYNC.log: their count and their zm flags), so a player who has
 //      played here before is not counted from zero; a signed-in device holds only its unsent answers, so it starts low.
 //   s  per tip, the value of u.q at each showing: {zoom: [212, 318]}
 //   v  the visit: {t: time of its last answer, n: answers in it, tip: 1 once a tip showed in it}. A gap of TIPR.GAP (30
 //      minutes, as model.js SESSION.GAP) starts a new one; a reload does not.
-// A tip in TIPS: id; ctx, the games whose break at Next may show it (the hash before any "|"); target(u, b), who it is
+// A tip in TIPS: id; ctx, the games whose break at Next may show it, or for an out: true tip the pages outside the games
+// (home, progress: quiz.js tipOut) where it shows at a calm moment (the hash before any "|"); target(u, b), who it is
 // for, on the counters (and, for the one whose audience is the player's own record, on b); from, the u.q from which it
 // can first show; now(b), its preferred moment at a break (b: {ctx, miss, zm, mix: the pairs of units the player mixed up
 // TIPR.MIX times or more, counted by quiz.js only while a tip needs it, bx: 1 for a player the basics tip is for,
-// quiz.js tipBasics}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
+// quiz.js tipBasics, ix: 1 for a subject that declares the Identify tip's words, quiz.js idWords}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
 // the questions between two; card (kick, title(o) and body(o), o: {mouse, subj: the SUBJECTS record on screen, basics: the
-// subject's basics words, app.js UNITS basics}), the text of its card; act, its "Show me" action
-// (quiz.js TIP_ACT), or none.
+// subject's basics words, app.js UNITS basics, key: its Identify tip's words, app.js UNITS idtip}), the text of its card;
+// act, its "Show me" action (quiz.js TIP_ACT), or none.
 (function (root) {
-  // Global rules: at most one tip a visit, never in its first FLOOR answers (plus, in quiz.js: one card a break, within
-  // the prompt spacing, never over another card, the tour or a toast).
+  // Global rules: at most one tip a visit, never in its first FLOOR answers of a game (plus, in quiz.js: one card a break,
+  // within the prompt spacing, never over another card, the tour or a toast).
   // MIX: how many times a pair must have been mixed up (both ways added, as the My mix-ups view weighs it) to count.
   const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10, MIX: 3};
   const TIPS = [
@@ -149,6 +151,32 @@
           `${(o && o.basics && o.basics.lo) || 'The basics shows the words the ID tips use, on real photos. About 5 minutes.'} It is in Learn, any time.`
       },
       act: 'basics'
+    },
+    {
+      // The subject's Identify tool (e: the Coral ID Key), for a player with 200 questions or more here who never opened
+      // it (i counts the draws of its page, app.js route; a saved choice in the key folds in as one, quiz.js tipsLoad).
+      // The only tip outside the games: on Home or My progress (out: true), where nothing is being answered, so the
+      // visit's first-answers floor does not apply (quiz.js tipOut, a calm moment after the page is drawn); at any such
+      // visit from 200 questions; twice at most, the second 150 questions after the first. b.ix: 1 only for a subject
+      // whose UNITS declare the tip's words (idtip: the subject has a working Identify tool, as the corals' key), so a
+      // subject with none (the Fish ID Key is coming soon) gets no tip. Show me opens the tool.
+      id: 'identify',
+      ctx: ['home', 'progress'],
+      out: true,
+      target: (u, b) => u.i < 1 && !!(b && b.ix),
+      from: 200,
+      now: () => true,
+      wait: 0,
+      max: 2,
+      every: 150,
+      card: {
+        kick: 'Did you know?',
+        // The words of the subject (o.key: app.js UNITS idtip: name, ask, lo).
+        title: o => `${(o && o.key && o.key.ask) || 'Not sure what it is?'} Try the ${(o && o.key && o.key.name) || 'ID key'}`,
+        body: o =>
+          `${(o && o.key && o.key.lo) || 'Tap the clues you see and it shortlists the candidates.'} It is under Identify, any time.`
+      },
+      act: 'identify'
     }
   ];
   const num = x => (typeof x === 'number' && isFinite(x) && x >= 0 ? Math.floor(x) : 0);
@@ -161,7 +189,7 @@
       s = o && o.s && typeof o.s === 'object' ? o.s : {},
       v = o && o.v && typeof o.v === 'object' ? o.v : {};
     return {
-      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, m: 0, ...u}).map(([k, x]) => [k, num(x)])),
+      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, ...u}).map(([k, x]) => [k, num(x)])),
       s: Object.fromEntries(Object.entries(s).map(([k, L]) => [k, Array.isArray(L) ? L.map(num) : []])),
       v: {t: num(v.t), n: num(v.n), tip: v.tip ? 1 : 0}
     };
@@ -176,18 +204,36 @@
   // The tip due at this break, or null. b: {ctx: the game (hash before "|"), miss: the answer was wrong, zm: a photo of
   // the question was enlarged before answering, mix: the pairs mixed up TIPR.MIX times or more, 0 when not counted, bx:
   // the basics tip's audience, 0 when not counted}.
-  function tipDue(st, b, L = TIPS) {
-    if (st.v.tip || st.v.n < TIPR.FLOOR) return null;
+  // now: the time, given only for a page outside the games (Home, My progress), which has no answer of its own to date the
+  // visit: the visit counted is the last one (st.v), still open when its last answer is less than TIPR.GAP before now,
+  // else over, so a new one with no tip yet and no answers. A tip with out: true is not held by the floor (nothing is
+  // being answered there).
+  const tipOpen = (st, now) => !now || (st.v.t > 0 && now >= st.v.t && now - st.v.t < TIPR.GAP);
+  function tipDue(st, b, L = TIPS, now = 0) {
+    const v = tipOpen(st, now) ? st.v : {t: 0, n: 0, tip: 0};
+    if (v.tip) return null;
     return (
       L.find(t => {
         const sh = st.s[t.id] || [],
           from = sh.length ? sh[sh.length - 1] + t.every : t.from;
-        return t.ctx.includes(b.ctx) && sh.length < t.max && t.target(st.u, b) && st.u.q >= from && (t.now(b) || st.u.q >= from + t.wait);
+        return (
+          (t.out || v.n >= TIPR.FLOOR) &&
+          t.ctx.includes(b.ctx) &&
+          sh.length < t.max &&
+          t.target(st.u, b) &&
+          st.u.q >= from &&
+          (t.now(b) || st.u.q >= from + t.wait)
+        );
       }) || null
     );
   }
-  // A tip shown: when (in questions), and none again this visit.
-  const tipShown = (st, id) => ({...st, s: {...st.s, [id]: [...(st.s[id] || []), st.u.q]}, v: {...st.v, tip: 1}});
+  // A tip shown: when (in questions), and none again this visit. On a page (now given) the visit is stamped with the time,
+  // so the answers that follow, within TIPR.GAP, belong to the same visit and bring no second tip.
+  const tipShown = (st, id, now = 0) => ({
+    ...st,
+    s: {...st.s, [id]: [...(st.s[id] || []), st.u.q]},
+    v: now ? {t: now, n: tipOpen(st, now) ? st.v.n : 0, tip: 1} : {...st.v, tip: 1}
+  });
   const API = {TIPR, TIPS, tipsInit, tipNote, tipUse, tipDue, tipShown};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);

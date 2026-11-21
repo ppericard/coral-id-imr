@@ -1797,8 +1797,12 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
     } catch (e) {}
   const d = dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
   // The view the Custom quiz kept (CQ.VIEW) is the last one the player chose: My mix-ups shows it was seen before m was counted.
-  return !d.u.m && store.get(CQ.VIEW, '') === 'mix' ? {...d, u: {...d.u, m: 1}} : d;
+  const m = !d.u.m && store.get(CQ.VIEW, '') === 'mix' ? {...d, u: {...d.u, m: 1}} : d;
+  // What the Coral ID Key keeps once the player changed one of its choices (its start view, layout or photos, proto/idkey.js):
+  // one on the device shows it was opened before i was counted.
+  return !m.u.i && IDKEY_SAVED.some(k => store.get(k, null) !== null) ? {...m, u: {...m.u, i: 1}} : m;
 };
+const IDKEY_SAVED = ['reefid-idkey-start2', 'reefid-idkey-lay', 'reefid-idkey-pv'];
 // One more open of a feature of a tip (k: a counter of u): that tip is not for this player.
 const tipOpened = k => store.set(TIPR.KEY, tipUse(tipsLoad(), k));
 // A quiz photo enlarged by the player (question(), the mix-up montage in answer()); a tip's "Show me" is not theirs.
@@ -1807,7 +1811,7 @@ const tipZoomed = () => tipDemo || store.set(TIPR.KEY, tipUse(tipsLoad(), 'z'));
 // After each answer in a game: count it; a tip due (tipDue) within the prompt spacing (promptOk, which it then pushes
 // back) takes the break at Next, checked again at the tap; it waits when the next question brings a card (never two
 // cards back to back). hold: the mastery toast is due in a moment.
-const TIP = {WAIT: 600};
+const TIP = {WAIT: 600, OUT: 2000};
 // Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro).
 // (A Duel tab duel draws only genera unlocked, so it brings no card.)
 const nextCards = (cur, q) => !!q.intro;
@@ -1868,6 +1872,8 @@ const TIP_ACT = {
   },
   // The subject's basics module (Coral basics, Fish basics), as the first-launch offer's button opens it.
   basics: () => go('basics'),
+  // The subject's Identify tool (the Coral ID Key).
+  identify: () => (location.hash = hr(keyOf(SUBJ))),
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -1882,8 +1888,8 @@ const TIP_ACT = {
 // The tip's card (cardShow kind 'tip'), anti-reflex as the one-tap question (no tap for TIP.WAIT ms, the focus on the
 // title). Logged as one-tap events (ev 'pulse', src "tip:<id>", r shown / show / ok / none: no new sheet column; the
 // admin counts them apart), at most 2 a showing.
-function tipShow(t, st, cur) {
-  store.set(TIPR.KEY, tipShown(st, t.id));
+function tipShow(t, st, cur, now = 0) {
+  store.set(TIPR.KEY, tipShown(st, t.id, now));
   const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches,
     im = $v.querySelector('.q.done .qstage .zoom img'),
     at = {m: cur.split('|')[0], n: session.n},
@@ -1893,8 +1899,8 @@ function tipShow(t, st, cur) {
     kind: 'tip',
     cls: 'tipcard',
     kick: esc(t.card.kick),
-    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords()})),
-    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords()}))}</p>`,
+    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()}))}</p>`,
     primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
     secondary: {text: 'Got it', attr: 'disabled'},
     focus: 'h3',
@@ -1903,10 +1909,40 @@ function tipShow(t, st, cur) {
     onClose: how => {
       log(how === 1 ? 'show' : how === 'route' ? 'none' : 'ok');
       if (how === 1 && TIP_ACT[t.act]) TIP_ACT[t.act]();
-      else if (how !== 'route') route();
+      else if (how !== 'route' && !t.out) route(); // a game goes on to its next question; a page stays as it is
     }
   });
   setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+}
+// The subject's words for the Identify tip (app.js UNITS idtip), null for a subject whose Identify tool is not built.
+const idWords = () => UNITS[SUBJ.id].idtip || null;
+// A page drawn (app.js route, and SETUP 2 for one drawn before this tier): the Identify tool's page counts as one open
+// (tip i), and Home or My progress may show the tip about it.
+function tipRoute(h) {
+  if (idWords() && sectionOf(h) === 'identify' && modeOf(h) === keyOf(SUBJ) && tipsLoad().u.i < 1) tipOpened('i');
+  tipOut();
+}
+// The tip outside the games: on Home or My progress, at a calm moment (TIP.OUT ms after the page is drawn, as the install
+// nudge and the subject hello wait on Home), checked again then: the same page, nothing on screen (a card, the tour, a
+// toast, the help, the settings, a photo), within the prompt spacing (promptOk, then promptMark). The visit is the
+// device's last one (tips.js tipDue with the time). A page that closes the card unseen brings it back at the next visit.
+let tipOutT = 0;
+function tipOut() {
+  clearTimeout(tipOutT);
+  tipOutT = 0;
+  const ctx = () => (hashNow() || 'home').split('|')[0],
+    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0});
+  if (!tipDue(tipsLoad(), b(), TIPS, Date.now())) return;
+  const at = ctx();
+  tipOutT = setTimeout(() => {
+    tipOutT = 0;
+    const now = Date.now(),
+      s = tipsLoad(),
+      t = ctx() === at && tipDue(s, b(), TIPS, now);
+    if (!t || !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast') || !promptOk()) return;
+    promptMark();
+    tipShow(t, s, at, now);
+  }, TIP.OUT);
 }
 // One-tap questions (docs/ARCHITECTURE.md "One-tap questions"): a question from core.js PULSEQ (pulsePick's rounds)
 // answered in one tap or "Not now", logged as ev 'pulse'; nothing in the game changes with it. From PULSE.FIRST answers,
