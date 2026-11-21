@@ -1914,23 +1914,32 @@
       .filter(Boolean);
     return [...new Set(w.slice(0, -1).filter(x => x.length > 2 && !MOD_STOP.has(x) && !/['’]s?$/.test(x)))];
   }
-  // The species units a tree file asks by their common name (core.js LEVELS cn: 's:' + the species id), each with its
-  // modifier words (w; a name of one word has none, still a unit whose name the player reads), its genus unit (g) and the
-  // units the tree file declares look-alikes of it (l, F.lookalikes pairs a / b): {unit: {w, g, l}}. The genus and the
-  // look-alikes are the controls of the shared-word effect (the study's FAM and LOOK): species of one genus look alike,
-  // and share words more often than others. From the tree file's species (fish.json, seaslug.json) with a `common` name.
+  // The species units a tree file asks by their common name (core.js LEVELS cn: 's:' + the species id), each with the
+  // modifier words of the name a question shows (w: the main name; wi: the IMR name; a name of one word has none, still a
+  // unit whose name the player reads), its genus unit (g) and the units the tree file declares look-alikes of it (l,
+  // F.lookalikes pairs a / b): {unit: {w, wi, g, l}}. The genus and the look-alikes are the controls of the shared-word
+  // effect (the study's FAM and LOOK): species of one genus look alike, and share words more often than others. From the
+  // tree file's species (fish.json, seaslug.json) with a listed name (cn).
   function modMeta(F) {
     const out = {},
       id = x => 's:' + x;
-    ((F && F.species) || []).forEach(s => s && s.id && s.common && (out[id(s.id)] = {w: modWords(s.common), g: s.genus || null, l: []}));
+    ((F && F.species) || []).forEach(s => {
+      // the names a question shows (app.js cnFirst): the main name (cn[0][0]) to everyone, the IMR name (cn[cni][0]) to a
+      // player at IMR, which the answer log does not say; a species with no listed name is not asked by name
+      const nm = i => (s && s.cn && s.cn[i] && s.cn[i][0]) || '',
+        main = nm(0),
+        imr = Number.isInteger(s && s.cni) && nm(s.cni) ? nm(s.cni) : main;
+      if (s && s.id && main) out[id(s.id)] = {w: modWords(main), wi: modWords(imr), g: s.genus || null, l: []};
+    });
     ((F && F.lookalikes) || []).forEach(p => {
       if (p && out[id(p.a)] && out[id(p.b)]) (out[id(p.a)].l.push(id(p.b)), out[id(p.b)].l.push(id(p.a)));
     });
     return out;
   }
   // The rows of the per-offer model: one per option offered besides the right one. With meta.mod (modMeta), when the genus
-  // shown and the option are both units asked by a common name: mo (both are), mod (they share a modifier word), sg (the
-  // same genus) and lk (declared look-alikes).
+  // shown and the option are both units asked by a common name: mo (both are, and whether they share a modifier word is
+  // the same under the main names and the IMR names, which the log does not tell apart: else the row is left out of the
+  // contrast, mo 0), mod (they share a modifier word), sg (the same genus) and lk (declared look-alikes).
   function confRows(A, MOD) {
     const E = [];
     A.forEach(a => {
@@ -1940,11 +1949,13 @@
         const e = {p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length};
         if (MOD && MOD[a.g] && MOD[c]) {
           const u = MOD[a.g],
-            v = MOD[c];
-          e.mo = 1;
-          e.mod = u.w.some(w => v.w.includes(w)) ? 1 : 0;
-          e.sg = u.g && u.g === v.g ? 1 : 0;
-          e.lk = u.l.includes(c) ? 1 : 0;
+            v = MOD[c],
+            shared = (x, y) => x.some(w => y.includes(w)),
+            main = shared(u.w, v.w);
+          e.mo = main === shared(u.wi || u.w, v.wi || v.w) ? 1 : 0;
+          e.mod = e.mo && main ? 1 : 0;
+          e.sg = e.mo && u.g && u.g === v.g ? 1 : 0;
+          e.lk = e.mo && u.l.includes(c) ? 1 : 0;
         }
         // the rank asked (a question's choices stay within it: model.js distractors), a subject whose ranks are told apart
         if (a.rk0) ((e.rk0 = a.rk0), (e.rk = a.rk));
@@ -1989,35 +2000,47 @@
     if (RK.length) M.rk = RK;
     return {M, F, X};
   }
+  // The common-name columns of the second fit (confFit md), or null when no option shares a word, or none that does not
+  // among the clean rows. Each column only where it can be told from those before it: mo (both units are asked by name)
+  // when some rows are not such pairs and it is not a rank's indicator already (a log of families, genera and species asked
+  // by their common name only: mo is the species rank, and the rank effect would be lost); sg and lk where they vary among
+  // the rows of the pairs.
+  function modCols(E, RK) {
+    if (!E.some(e => e.mod) || !E.some(e => e.mo && !e.mod)) return null;
+    const ref = E[0].rk0,
+      isRank = f => RK.concat(ref ? [ref] : []).some(r => E.every(e => !!f(e) === (e.rk === r)));
+    return {
+      k: [
+        ...(E.some(e => !e.mo) && !isRank(e => e.mo) ? ['mo'] : []),
+        'mod',
+        ...['sg', 'lk'].filter(k => E.some(e => e.mo && e[k]) && E.some(e => e.mo && !e[k]))
+      ]
+    };
+  }
   function confusions(A, B, seed, meta) {
     const E = confRows(A, meta && meta.mod),
       mixed = sum(E.map(e => e.y));
     if (E.length < 300 || mixed < 20) return thin(E.length, 300, {mixed});
     const RK = rkLev(E),
       KR = rkX(RK, E[0].rk0),
-      // the common-name modifier column, when a unit asked by its common name shares a word with an option offered
-      // (meta.mod, modMeta); its place after the ranks' columns
-      md = E.some(e => e.mod)
-        ? {
-            k: [
-              ...(E.some(e => !e.mo) ? ['mo'] : []),
-              'mod',
-              ...['sg', 'lk'].filter(k => E.some(e => e.mo && e[k]) && E.some(e => e.mo && !e[k]))
-            ]
-          }
-        : null,
+      // the common-name columns, when a unit asked by its common name shares a word with an option offered (meta.mod,
+      // modMeta), in a fit of their own beside this one: the pairs' relative rates, the mix-up map's prior and the players'
+      // expected mix-ups read the fit as it always was, as the new columns' contributions are pair-level ones they would
+      // otherwise lose
+      md = modCols(E, RK),
       cm = md ? CF_RK + RK.length + md.k.indexOf('mod') : -1,
-      {M, F, X} = confFit(E, RK, md),
+      Mn = md ? confFit(E, RK, md).M : null,
+      {M, F, X} = confFit(E, RK),
       n = E.length,
       fams = [], // each draw's families of mix-ups (the mix-up map's stability, mixStab)
       bi = boot(
         E,
         S => {
-          const r = confFit(S, RK, md),
+          const r = confFit(S, RK),
             o = {sd_pair: Math.sqrt(r.F[0].tau2), sd_player: Math.sqrt(r.F[1].tau2)};
           CF_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
           KR.forEach(([k], j) => (o[k] = r.M.b[CF_RK + j]));
-          if (md) o.mod = r.M.b[cm];
+          if (md) o.mod = confFit(S, RK, md).M.b[cm];
           if (S !== E) fams.push(mixFams(S, r.M, r.F));
           return o;
         },
@@ -2031,7 +2054,7 @@
     ).filter(Boolean);
     KR.forEach(([k, l], j) => effects.push(eff(k, l, M.b[CF_RK + j], M.se[CF_RK + j], bi, 'logit', 0.25, n, {rows: M.nz[CF_RK + j]})));
     // a common-name modifier shared with the option: exploratory, like every effect not named in PRIMARY
-    if (md) effects.push(eff('mod', CF_MOD, M.b[cm], M.se[cm], bi, 'logit', 0.25, n, {rows: M.nz[cm]}));
+    if (md) effects.push(eff('mod', CF_MOD, Mn.b[cm], Mn.se[cm], bi, 'logit', 0.25, n, {rows: Mn.nz[cm]}));
     effects.push(sdEff('sd_player', 'SD player (each player vs pooled)', F[1].tau2, F[1].n, bi, 'logit', 0.25, n, mean([...F[1].cv])));
     effects.push(sdEff('sd_pair', 'SD pair', F[0].tau2, F[0].n, bi, 'logit', 0.25, n, mean([...F[0].cv])));
     const P = {};
@@ -2104,19 +2127,13 @@
       effects,
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
-      ent: entOf(
-        M.V,
-        X,
-        [null, ...CF_X.map(x => x[0]), null, ...KR.map(x => x[0]), ...(md ? md.k.map(k => (k === 'mod' ? k : null)) : [])],
-        [],
-        bi
-      ),
+      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null, ...KR.map(x => x[0])], [], bi),
       map: mixStab(mixMap(E, M, F), fams),
       ix: ixOf([confIx(A, B, seed + 31)]),
       ...(E[0].rk0 ? {rk0: E[0].rk0} : {}),
       chk: checkOf(
         E,
-        S => confFit(S, RK, md).M,
+        S => confFit(S, RK).M,
         () => 0,
         seed
       )
@@ -5020,6 +5037,7 @@
     rankRef,
     modWords,
     modMeta,
+    modCols,
     confRows,
     prep,
     milestones,

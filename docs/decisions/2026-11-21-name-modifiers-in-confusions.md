@@ -21,7 +21,13 @@ same way". The options shown are already logged (`Choices`).
   them the effect reads negative, since the pairs that share a word are never the declared look-alikes.
 - A clear result says pairs sharing a word are mixed up more, not that the name causes it (the study's §3.3 reading of the
   first letter).
-- The names are read from the tree file (`meta.mod`), generic for any tree subject (rule S1), in the report's fingerprint.
+- The names are read from the tree file (`meta.mod`), generic for any tree subject (rule S1), in the report's fingerprint:
+  the names a question shows (the main name to everyone, the IMR name to a player at IMR, which the log does not say; a
+  pair that shares a word under one and not the other is left out of the contrast), not the file's `common` field
+  (Codex's review of #1403).
+- The columns are a second fit beside the model, so the pairs' relative rates, the mix-up map and every other result read
+  the model without them (the pair-level contributions would otherwise be lost to those views), and the "both asked by
+  name" column is left out when it is a rank's indicator already (Codex's review of #1403).
 
 ## Consequences
 

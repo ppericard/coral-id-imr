@@ -129,16 +129,23 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    **A common-name word shared with the option** (the name-confusion study's (h), Q124; `modWords`, `modMeta`, `mod`):
    where a tree subject's species units are asked by their common name (core.js `LEVELS` `cn`, `s:` + the species id;
    the options are the other species of the family), a column says whether the option shares a *modifier word* with the
-   right answer: a word of its common name before the head noun (its last word), lower case, a hyphenated word as its
-   parts ("Three-lined wrasse": three, lined), no possessive (an eponym, "Bleeker's"), no word of 2 letters or fewer or
-   stop word ("Yellowtail", "Blackspot", "Bicolor" name a feature). It is exploratory (one test, Benjamini-Hochberg), read
-   as the study's pre-declared first-letter test was: against the pair's visual similarity, which is what a name often
-   describes, so a clear effect says the pairs that share a word are mixed up more, not that the name is the cause.
-   Controls, each a column where it varies among those rows: the same genus (`sg`), the declared look-alike species
-   (`lk`, fish.json `lookalikes`), and whether both units are such species units (`mo`); without them the effect reads
-   negative on planted data, as the pairs sharing a word are never the declared look-alikes. The names come from the
-   tree file (`meta.mod`: `tools/analyses.js` `metaOf`, the admin's Recompute here), in the report's fingerprint; none
-   without them (the corals, the sea slugs while no species is asked by name).
+   right answer: a word of the name a question shows before the head noun (its last word), lower case, a hyphenated word
+   as its parts ("Three-lined wrasse": three, lined), no possessive (an eponym, "Bleeker's"), no word of 2 letters or fewer
+   or stop word ("Yellowtail", "Blackspot", "Bicolor" name a feature). The name shown is the main name (`cn[0][0]`) to
+   everyone and the IMR name (`cn[cni][0]`) to a player at IMR (`app.js` `cnFirst`), which the log does not say: a pair
+   that shares a word under one and not the other is left out of the contrast (`mo` 0), 31 of the 10,083 pairs of one
+   family on `fish.json`. It is exploratory (one test, Benjamini-Hochberg), read as the study's pre-declared first-letter
+   test was: against the pair's visual similarity, which is what a name often describes, so a clear effect says the pairs
+   that share a word are mixed up more, not that the name is the cause. Controls, each a column where it varies among
+   those rows: the same genus (`sg`), the declared look-alike species (`lk`, fish.json `lookalikes`), and whether both
+   units are such species units (`mo`, left out when it is a rank's indicator already, as in a log of families, genera
+   and species asked by common name only: `modCols`); without the controls the effect reads negative on planted data, as
+   the pairs sharing a word are never the declared look-alikes. These columns are a **second fit** beside the model, with
+   its own bootstrap draws: the pairs' relative rates, the mix-up map, the players' expected mix-ups and every other
+   effect read the model without them, as before (a pair's genus or modifier contribution is a pair-level one the pairs'
+   table would otherwise lose). The names come from the tree file (`meta.mod`: `tools/analyses.js` `metaOf`, the admin's
+   Recompute here), in the report's fingerprint; none without them (the corals, the sea slugs while no species is asked
+   by name).
 6. **Learning curves** (200 answers; `lnFit`): right ~ log(1 + answers on the unit) + after a miss (on the unit shown or
    given wrongly, as the app counts it) + Again asked after it + typed + exam + comeback + (player) + (unit) +
    (0 + practice | player) + (0 + practice | unit): each player's and each unit's own learning slope around the common
