@@ -160,7 +160,7 @@ test('repCtx: an enlarged photo, a sheet, the ID marks: not games', () => {
   assert.deepStrictEqual([p.src, p.game, p.unit, p.photos.join(), p.subj], ['photo', false, 'Acropora', 'a-9', 'coral']);
   const s = repCtx(row({why: 'info', g: 'Acropora', m: 'sheet', w: 'learn/genus/Acropora'}));
   assert.deepStrictEqual([s.src, s.game, s.unit, s.photos.length, s.subj], ['sheet', false, 'Acropora', 0, 'coral']);
-  // the fish ID marks' "Report or correct a line" (learn.js fishMarks, mode marks): a sheet's, never a game
+  // the fish ID marks' "Report or correct a line" (learn.js treeMarks, mode marks): a sheet's, never a game
   const m = repCtx(row({why: 'info', g: 'f:Damselfishes', m: 'marks', w: 'fish/learn/family/Damselfishes'}));
   assert.deepStrictEqual([m.src, m.game, m.unit, m.subj], ['marks', false, 'f:Damselfishes', 'fish']);
   // a fish genus sheet keeps its id
