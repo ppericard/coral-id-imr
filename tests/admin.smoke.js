@@ -9463,11 +9463,26 @@ async function lazyPart(b, base, fails) {
           box = '#view .adm-cstruct[data-stid]';
         await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(FAM));
         await swait(() => document.querySelector('#view .adm-cstruct [data-stc]'));
+        // each circle's number with the subject's own words under it (SUBJECTS admin circles), in full as its tooltip
         const segs = await sq.evaluate(
-          b => [...document.querySelectorAll(b + ' [data-stc]')].map(x => [x.textContent, x.getAttribute('aria-pressed')]),
+          b =>
+            [...document.querySelectorAll(b + ' [data-stc]')].map(x => [
+              x.dataset.stc,
+              x.title,
+              x.textContent,
+              x.getAttribute('aria-pressed')
+            ]),
           box
         );
-        if (JSON.stringify(segs) !== '[["1","true"],["2","false"],["3","false"],["None","false"]]')
+        if (
+          JSON.stringify(segs) !==
+          JSON.stringify([
+            ['1', '1 · IMR course', '1IMR course', 'true'],
+            ['2', '2 · After the course', '2After the course', 'false'],
+            ['3', '3 · Beyond the course', '3Beyond the course', 'false'],
+            ['', 'None', 'None', 'false']
+          ])
+        )
           se.push(`the circle segments ${JSON.stringify(segs)}`);
         // Circle 2: one draft entry over the base, Undo and Redo, then ↺ Restore.
         await sq.click(`${box} [data-stc="2"]`);
@@ -9745,6 +9760,42 @@ async function lazyPart(b, base, fails) {
         x = await pair('Acropora|Porites');
         if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`add ${JSON.stringify(x)}`);
         if (!(await has('#view .adm-csheet [data-cs="lsrc/Porites"]'))) se.push("the added pair's line in the Sheet box");
+        // Photos › Look-alikes reads the pairs in force (admin-content.js montPairs): the added pair has its row, marked
+        // "(added)" and saying the public list lacks it (no IMR lecture or Coral Finder source); a base pair withdrawn
+        // loses its row, back with the Undo; no overflow at 1280 and 390.
+        const mrows = () =>
+            sq.evaluate(() =>
+              [...document.querySelectorAll('#view .adm-mont .adm-mrow')].map(r => r.querySelector('.adm-mhead').textContent)
+            ),
+          gh = await sq.evaluate(() => location.hash),
+          n0 = await sq.evaluate(() => classicPairs().length);
+        await sq.evaluate(() => (location.hash = '#photos/look-alikes'));
+        await swait(() => document.querySelector('#view .adm-mont .adm-mrow'));
+        let mr = await mrows();
+        const ad = mr.filter(t => /Acropora \/ Porites \(added\)/.test(t));
+        if (
+          mr.length !== n0 + 1 ||
+          ad.length !== 1 ||
+          !/not on the public Look-alikes page/.test(ad[0]) ||
+          mr.filter(t => /\(added\)/.test(t)).length !== 1
+        )
+          se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, ad})}`);
+        // a classic pair of the base (the Coral Finder's, p. 8), not the Montipora one whose source is a shared box
+        await sq.evaluate(() => {
+          DRAFT.content = contentPairSet(DRAFT.content || {}, 'Acropora|Anacropora', null, 1, null, Date.now());
+          saveDraft();
+          render();
+        });
+        await swait(() => !/Acropora \/ Anacropora/.test(document.querySelector('#view .adm-mont').textContent));
+        mr = await mrows();
+        if (mr.length !== n0) se.push(`Look-alikes: the withdrawn pair's row ${mr.length} of ${n0}`);
+        await sq.evaluate(() => undo());
+        await swait(() => /Acropora \/ Anacropora/.test(document.querySelector('#view .adm-mont').textContent));
+        await wideAt('the coral Look-alikes page with an added pair');
+        await sq.evaluate(h => (location.hash = h), gh);
+        await swait(
+          () => document.querySelector('#view .adm-cstruct[data-stid="Acropora"]') && document.querySelector('#view .adm-csheet')
+        );
         // The Look-alikes filter offers the pair he added (admin-coraltree.js ctFilters rows; Codex review #988): chosen,
         // its tools are in the bar (structBar), then the tag is put back.
         const opt = await sq.evaluate(
