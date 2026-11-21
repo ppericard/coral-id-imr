@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 215 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 216 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 215;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 216;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -2413,9 +2413,11 @@ function readEvents_(token, pages){
 // Players shows beside the name), so the page shows no name.
 // Rule D7: a line that names an account or a device (alertId_) is
 // served only while that id is a current writer's (alertIds_): a live account, or a device not signed in that still has
-// its answers. So a deleted ("~deleted <id>", redact_), merged-away or archived account's line is left out, as
+// its answers. So a deleted ("~deleted <id>", redact_) or archived account's line is left out, as
 // readEvents_ leaves out an archive's page summaries, and so is a device's once it signed in (its answers are the
 // account's then) or was deleted (anonDelete). The lines that name nobody (a: and ev: device keys, the global caps) stay.
+// redact_ rewrites a removed account's id lines (an id is its name's) to the id of what it became, so a merged-away
+// account's lines read as the account it joined, and a name taken again shows none of the old account's lines.
 // The tab itself is never changed here.
 function readAlerts_(token){
   if (!gate_(token, 'players', 'readAlerts')) return {ok: false, error: 'token'};
@@ -3354,14 +3356,24 @@ function anonReports_(name, into){
 // A removed name in the log tabs: Events' Message names a player in brackets ("app before 2026-11-03: load
 // (<name>)", oldApp_), Alerts names a capped name as "n:<name> (" (over_). Each mention becomes `into` (a deleted
 // account's "~deleted <id>", or the name a merged one joined). Case-blind, as names are.
+// Alerts also names an account by its admin id (aid_: the id is the name's, so a new account under the same name has the
+// same id): the photos line, the left-out line by the account the device signed in as, the self-delete cap's "sd:" line.
+// Those ids become the admin id of `into` (aid_(into): never a name in an id slot). A deleted account's lines then carry
+// the id of its "~deleted <id>", no current writer's (rule D7, readAlerts_), so a player who takes the name again does not
+// get the old account's lines; a merge or an archive carries them to the account it joined, as the "n:" lines go. The ids
+// are base64, case-sensitive: matched as written.
 function redact_(name, into){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), esc = String(name).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (!esc) return 0;
+  const a0 = aid_(name).replace(/[+/]/g, '\\$&'), a1 = aid_(into),
+    id = pre => [new RegExp('^(' + pre + ')' + a0 + '(?=[ ,])'), (m, p) => p + a1];
   let n = 0;
-  [['Events', 4, new RegExp('\\(' + esc + '\\)', 'gi'), '(' + into + ')'], ['Alerts', 2, new RegExp('n:' + esc + ' \\(', 'gi'), 'n:' + into + ' (']].forEach(([tab, col, re, to]) => {
+  [['Events', 4, [[new RegExp('\\(' + esc + '\\)', 'gi'), () => '(' + into + ')']]],
+    ['Alerts', 2, [[new RegExp('n:' + esc + ' \\(', 'gi'), () => 'n:' + into + ' ('], id('photos not of the unit shown: '),
+      id('left out of the statistics: device \\S+ signed in as '), id('limit reached: sd:')]]].forEach(([tab, col, rules]) => {
     const sh = ss.getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return;
     const rg = sh.getRange(2, col, sh.getLastRow() - 1, 1), v = rg.getValues(); let k = 0;
-    const nv = v.map(r => { const x = String(r[0]), y = x.replace(re, () => to); if (y !== x) { k++; return [safe_(y)]; } return [r[0]]; });
+    const nv = v.map(r => { const x = String(r[0]), y = rules.reduce((t, [re, f]) => t.replace(re, f), x); if (y !== x) { k++; return [safe_(y)]; } return [r[0]]; });
     if (k) rg.setValues(nv);
     n += k;
   });

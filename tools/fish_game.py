@@ -442,7 +442,7 @@ TAGS = re.compile(r'^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$')  # au
 def ref_play(fish, refs, codes):
     """[(species id, reference photo with e and jt)] of the units' reference photos (tools/fish_refs.json, by species)
     judged sure on the candidates' rubric (tools/fish_judge.json codes, the rubric's caps and reference flag: tools/
-    fish_judge.py cap; judged_sure), whatever their reference level (Pierre, 2026-11-08, Q212: "we bring them in like
+    fish_judge.py cap, the phase flag by fish_judge.py phase_flag; judged_sure), whatever their reference level (Pierre, 2026-11-08, Q212: "we bring them in like
     candidates"; before, only the reference level entered, Q199), in tools/fish_refs.json order. A reference photo has no
     keep or unsure field in its code; the same photo as one already in play stays out, and one on an observation already in
     play enters only once judged against its photos (in_play, keep)."""
@@ -455,7 +455,7 @@ def ref_play(fish, refs, codes):
         for r in L:
             if not t or r.get('f') not in codes or not r.get('src'):
                 continue
-            e, jt = J.cap(codes[r['f']], t in dim, r.get('rep'))
+            e, jt = J.cap(codes[r['f']], t in dim or sid in J.phase_species(), r.get('rep'))
             q = {k: v for k, v in r.items() if k != 'for'}
             q.update(e=e, jt=jt)
             if judged_sure(jt, e):
@@ -534,6 +534,18 @@ def mine_tags(F, f, passed, auto=None):
     return refined(mine, passed)
 
 
+def phased(jt, sid):
+    """Tags jt with the phase flag p when the cited phase list flags species sid (tools/fish_judge.py phase_species: its
+    sex or ip_tp verdict "yes"), Pierre's tags included: the flag is the tool's, never typed (judging/FISH.md "Tags"), so a
+    photo he tagged before the list flagged its species, or moved to it with Not this, gets it as the pass's tags do. A
+    dimorph entry's photos have it from their tags already (the admin and the pass add it). Never taken off."""
+    import fish_judge as J
+    if not jt or len(jt) < 7 or sid not in J.phase_species() or 'p' in jt[7:]:
+        return jt
+    fl = set(jt[7:]) | {'p'}
+    return jt[:7] + ''.join(c for c in FLAGORD if c in fl) + ''.join(c for c in jt[7:] if c not in FLAGORD)
+
+
 def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
     with Not this (orig, its data/fish-cand.json species, is not sid) is named after its new species (fish.json species: the
@@ -543,7 +555,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     every route: the admin's tag rows on a photo in play; Q373, his Watermark off). auto: tags_auto(F) (mine_tags)."""
     if route == 'ref':
         r = {k: p[k] for k in KEEP if k in p}
-        jt = mine_tags(F, p['f'], p['jt'], auto) or p['jt']
+        jt = phased(mine_tags(F, p['f'], p['jt'], auto) or p['jt'], sid)
         r.update(sp=sid, loc=p.get('loc') or 'world', e=int((F.get('ease') or {}).get(p['f'], p['e'])), jt=jt, auto='ref')
         for k in ('via', 'rep', 'from', 'own'):
             if p.get(k):
@@ -558,7 +570,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     if p.get('own'):
         r['own'] = True
     e = (F.get('ease') or {}).get(f, j.get('e'))
-    jt = mine_tags(F, f, j.get('jt'), auto) if f in (F.get('tags') or {}) else j.get('jt')
+    jt = phased(mine_tags(F, f, j.get('jt'), auto) if f in (F.get('tags') or {}) else j.get('jt'), sid)
     if e:
         r['e'] = int(e)
     if jt:

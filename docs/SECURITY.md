@@ -257,16 +257,21 @@ script writes there itself, never what a player sends:
 The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves it as the name's admin id (`aid_`, the
 id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name
 the player in brackets; the tab itself keeps the name, as before. A delete or a merge rewrites that mention in the tab
-(`redact_`: `~deleted <id>`, or the name it joined); an archive moves it to the archive's name.
+(`redact_`: `~deleted <id>`, or the name it joined); an archive moves it to the archive's name. The lines that name an
+account by its admin id (the photos line, the left-out line's account, `sd:<admin id>`) are rewritten the same way, to the
+admin id of that same name (`aid_(into)`, never a name in an id slot).
 
 **Rule D7** (the integrator, 2026-11-16): a line that names an account or a device (`n:<name>`, `sd:<admin id>`, the
 photos line, the left-out line by the account the device signed in as) is served only while its admin id is a current
 writer's: a live account (an RAs row, not archived) or a device not signed in that still has answers (`~anon <id>` in
 the Answers tab). So the page shows and counts nothing of a deleted (`~deleted <id>`), merged-away or archived account,
 nor of a device once it signed in (its answers are the account's) or was deleted; the tab keeps every line. The lines
-that name nobody stay (`a:` and `ev:` device ids, the global caps). **Not covered** (ROADMAP "Alerts lines of a name
-taken again"): an admin id is the name's, so a new account under a deleted or archived account's name shows that old
-account's id lines again; closing it means rewriting those ids in the tab, a write-path change for its own PR.
+that name nobody stay (`a:` and `ev:` device ids, the global caps). **A name taken again** (REE-36): an admin id is the
+name's, so `redact_` rewrites the old account's id lines in the tab when it is deleted, merged or archived (to the id of
+its `~deleted <id>`, of the name it joined, of the archive's name), and a new account under the same name shows none of
+them. A merged-away account's lines thus read as the account it joined (as its `n:` line does), a deleted or archived
+one's as no current writer's, left out. The lines written before the change are rewritten only when their account is
+next deleted, merged or archived: a name already taken again keeps showing the old lines it showed.
 
 ## Infrastructure (sheet v180, the hourly Health check)
 
