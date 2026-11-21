@@ -1843,3 +1843,29 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   juste que partir pour aller voir un truc et revenir.» The question on screen stays, per subject and game, until it is
   answered, across navigation and a reload. Applied: docs/spec/quiz.md "The pending question",
   decisions/2026-11-21-quiz-keeps-pending-question.md (#1375); REE-188.
+- **18:12, photo diversity for thin families (an RA's feedback, relayed).** «elle trouvait qu'il y avait beaucoup de
+  redondance dans les photos pour certaines espèces, ou genres, ou familles. Typiquement … les rémoras, les scorpionfish
+  … est-ce que tu peux refaire une passe? … il faudrait rajouter dynamiquement des photos pour des familles qui
+  globalement ont très peu d'espèces.» Applied: the draw's repeat fixed (#1376), a family floor and a first judging pass
+  (#1379), reviews/2026-11-21-photo-diversity.md; REE-189; the draw's cliff REE-197.
+- **18:12, the RA's reports and unverified photos.** «il faudrait que tu vérifies les flags et les retours sur l'app …
+  elle a trouvé des photos qui étaient pas correctement identifiées … ni research grade ni validé par un expert … je te
+  laisse reprendre tous ces retours et regarder aussi ce qu'elle a fait globalement et voir les difficultés qu'elle a pu
+  rencontrer.» Applied: reviews/2026-11-21-ra-session-review.md (#1374), the weekly photo re-check (#1377); REE-190,
+  REE-194, REE-195.
+- **18:14, beginners and experts.** «au début elle s'ennuyait un petit peu parce que finalement elle allait assez vite
+  sur des trucs et finalement le progrès, ça avançait pas assez vite pour elle … c'est toujours le fameux problème de
+  comment est-ce qu'on contente à la fois les débutants et les experts sur les différents modes de jeu.» Not a decision:
+  a subject to study. Applied: Linear REE-191.
+- **18:15, an entry quiz.** «elle me reparlait d'un quiz à l'entrée, comme Duolingo, qui permet de positionner plus
+  correctement … un joueur lorsqu'il démarre.» The opt-in placement test he decided on 2026-11-18 (#1080). Applied: Linear
+  REE-112 (priority raised; the shrinkage check, reviews/2026-11-21-placement-shrinkage-check.md, #1380).
+- **18:17, the RA is a coral expert.** «sur les coraux, elle est vraiment [experte]. Donc, potentiellement, là où elle a
+  eu des erreurs ou des longtemps avant de répondre, c'est qu'il y avait possiblement des erreurs dans nos données ou une
+  des vraies difficultés sur les photos.» (dictated: "inexperte", read as "experte"). Applied:
+  reviews/2026-11-21-ra-session-review.md §3 (#1374); REE-194.
+- **20:59-21:00, keep going until he says stop.** «Du coup, il n'y a plus rien sur lequel tu peux avancer et travailler
+  tout seul cette nuit.» «Et du coup, pourquoi tu les as pas lancés avant?» «Mais sans forcément de priorité haute. Oui,
+  qu'il fallait commencer par de la priorité haute, ok, mais en fait, tant que j'ai pas dit qu'on s'arrêtait, il faut
+  continuer, quoi. Et il faut écluser tout ce qu'il y a dans la roadmap qui est faisable sans moi, et déjà décidé.»
+  Applied: INTEGRATOR.md "Linear" (drain the Todo column until he says stop) (#1384); the night's waves of agents.

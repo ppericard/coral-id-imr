@@ -301,7 +301,7 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   assert.ok(tg.indexOf('ID tips (IMR') < tg.indexOf('${genMarks(g, g.id)}'), 'the IMR cues first, then the marks');
   for (const [fn, at] of [
     ['function treeGenus(g) {', '${genMarks(g, g.id)}'],
-    ['function fishSpecies(s) {', "${genMarks(g, 's:' + s.name)}"],
+    ['function treeSpecies(s) {', "${genMarks(g, 's:' + s.name)}"],
     ['function treeFamily(f) {', "${G.map(g => genMarks(g, f.id)).join('')}"]
   ])
     assert.ok(block(LEARN, fn, '\n}\n').includes(at), fn);
