@@ -126,6 +126,19 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    log(wrong choices) + (pair) + (player): the views that confuse more, the 15 pairs most mixed up (of each rank where
    ranks are told apart), and each player's mix-ups observed / expected from the pooled rates (its interval from the
    count's Poisson spread), with the player's own effect as an odds ratio beside it.
+   **A common-name word shared with the option** (the name-confusion study's (h), Q124; `modWords`, `modMeta`, `mod`):
+   where a tree subject's species units are asked by their common name (core.js `LEVELS` `cn`, `s:` + the species id;
+   the options are the other species of the family), a column says whether the option shares a *modifier word* with the
+   right answer: a word of its common name before the head noun (its last word), lower case, a hyphenated word as its
+   parts ("Three-lined wrasse": three, lined), no possessive (an eponym, "Bleeker's"), no word of 2 letters or fewer or
+   stop word ("Yellowtail", "Blackspot", "Bicolor" name a feature). It is exploratory (one test, Benjamini-Hochberg), read
+   as the study's pre-declared first-letter test was: against the pair's visual similarity, which is what a name often
+   describes, so a clear effect says the pairs that share a word are mixed up more, not that the name is the cause.
+   Controls, each a column where it varies among those rows: the same genus (`sg`), the declared look-alike species
+   (`lk`, fish.json `lookalikes`), and whether both units are such species units (`mo`); without them the effect reads
+   negative on planted data, as the pairs sharing a word are never the declared look-alikes. The names come from the
+   tree file (`meta.mod`: `tools/analyses.js` `metaOf`, the admin's Recompute here), in the report's fingerprint; none
+   without them (the corals, the sea slugs while no species is asked by name).
 6. **Learning curves** (200 answers; `lnFit`): right ~ log(1 + answers on the unit) + after a miss (on the unit shown or
    given wrongly, as the app counts it) + Again asked after it + typed + exam + comeback + (player) + (unit) +
    (0 + practice | player) + (0 + practice | unit): each player's and each unit's own learning slope around the common

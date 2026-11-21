@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 17;
+  const AV = 18;
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -1901,13 +1901,51 @@
     ['macro', 'Corallites shown (vs colony)'],
     ['multi', 'Several views shown (vs colony)']
   ];
-  function confRows(A) {
+  // Common-name modifiers (the name-confusion study's (h), docs/reviews/2026-11-05-name-confusion-study.md §4): the words
+  // of a common name before its head noun (its last word), lower case, a hyphenated word as its parts ("Three-lined
+  // wrasse": three, lined), without a possessive (an eponym: "Bleeker's"), a word of 2 letters or fewer or a stop word.
+  // "Yellowtail" and "Blackspot" name a feature, often the very one two species share.
+  const MOD_STOP = new Set(['the', 'and', 'del', 'des', 'les', 'von', 'van']);
+  function modWords(name) {
+    const w = String(name == null ? '' : name)
+      .toLowerCase()
+      .replace(/\(.*?\)/g, ' ')
+      .split(/[^a-zà-ÿ'’]+/)
+      .filter(Boolean);
+    return [...new Set(w.slice(0, -1).filter(x => x.length > 2 && !MOD_STOP.has(x) && !/['’]s?$/.test(x)))];
+  }
+  // The species units a tree file asks by their common name (core.js LEVELS cn: 's:' + the species id), each with its
+  // modifier words (w; a name of one word has none, still a unit whose name the player reads), its genus unit (g) and the
+  // units the tree file declares look-alikes of it (l, F.lookalikes pairs a / b): {unit: {w, g, l}}. The genus and the
+  // look-alikes are the controls of the shared-word effect (the study's FAM and LOOK): species of one genus look alike,
+  // and share words more often than others. From the tree file's species (fish.json, seaslug.json) with a `common` name.
+  function modMeta(F) {
+    const out = {},
+      id = x => 's:' + x;
+    ((F && F.species) || []).forEach(s => s && s.id && s.common && (out[id(s.id)] = {w: modWords(s.common), g: s.genus || null, l: []}));
+    ((F && F.lookalikes) || []).forEach(p => {
+      if (p && out[id(p.a)] && out[id(p.b)]) (out[id(p.a)].l.push(id(p.b)), out[id(p.b)].l.push(id(p.a)));
+    });
+    return out;
+  }
+  // The rows of the per-offer model: one per option offered besides the right one. With meta.mod (modMeta), when the genus
+  // shown and the option are both units asked by a common name: mo (both are), mod (they share a modifier word), sg (the
+  // same genus) and lk (declared look-alikes).
+  function confRows(A, MOD) {
     const E = [];
     A.forEach(a => {
       if (a.typed || a.ch.length < 2) return;
       a.ch.forEach(c => {
         if (c === a.g) return;
         const e = {p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length};
+        if (MOD && MOD[a.g] && MOD[c]) {
+          const u = MOD[a.g],
+            v = MOD[c];
+          e.mo = 1;
+          e.mod = u.w.some(w => v.w.includes(w)) ? 1 : 0;
+          e.sg = u.g && u.g === v.g ? 1 : 0;
+          e.lk = u.l.includes(c) ? 1 : 0;
+        }
         // the rank asked (a question's choices stay within it: model.js distractors), a subject whose ranks are told apart
         if (a.rk0) ((e.rk0 = a.rk0), (e.rk = a.rk));
         E.push(e);
@@ -1917,14 +1955,19 @@
   }
   // The ranks' columns (RK: rkLev) after the views' and the choices' (column CF_RK on).
   const CF_RK = 5;
-  function confFit(E, RK = []) {
+  const CF_MOD = 'A common-name modifier word shared with the option (vs none)';
+  // md: the common-name modifier columns after the ranks' (a subject with species units asked by common name, meta.mod):
+  // {k: their keys among mo, mod, sg, lk}, each there only when it varies among the rows it applies to (mo: when some rows
+  // are such units and some are not; else it would be the intercept).
+  function confFit(E, RK = [], md = null) {
     const X = E.map(e => [
         1,
         e.qv === 'medium' ? 1 : 0,
         e.qv === 'macro' ? 1 : 0,
         e.qv === 'multi' ? 1 : 0,
         Math.log(e.k - 1),
-        ...rkCols(e, RK)
+        ...rkCols(e, RK),
+        ...(md ? md.k.map(k => e[k] || 0) : [])
       ]),
       F = [
         factor(
@@ -1946,22 +1989,35 @@
     if (RK.length) M.rk = RK;
     return {M, F, X};
   }
-  function confusions(A, B, seed) {
-    const E = confRows(A),
+  function confusions(A, B, seed, meta) {
+    const E = confRows(A, meta && meta.mod),
       mixed = sum(E.map(e => e.y));
     if (E.length < 300 || mixed < 20) return thin(E.length, 300, {mixed});
     const RK = rkLev(E),
       KR = rkX(RK, E[0].rk0),
-      {M, F, X} = confFit(E, RK),
+      // the common-name modifier column, when a unit asked by its common name shares a word with an option offered
+      // (meta.mod, modMeta); its place after the ranks' columns
+      md = E.some(e => e.mod)
+        ? {
+            k: [
+              ...(E.some(e => !e.mo) ? ['mo'] : []),
+              'mod',
+              ...['sg', 'lk'].filter(k => E.some(e => e.mo && e[k]) && E.some(e => e.mo && !e[k]))
+            ]
+          }
+        : null,
+      cm = md ? CF_RK + RK.length + md.k.indexOf('mod') : -1,
+      {M, F, X} = confFit(E, RK, md),
       n = E.length,
       fams = [], // each draw's families of mix-ups (the mix-up map's stability, mixStab)
       bi = boot(
         E,
         S => {
-          const r = confFit(S, RK),
+          const r = confFit(S, RK, md),
             o = {sd_pair: Math.sqrt(r.F[0].tau2), sd_player: Math.sqrt(r.F[1].tau2)};
           CF_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
           KR.forEach(([k], j) => (o[k] = r.M.b[CF_RK + j]));
+          if (md) o.mod = r.M.b[cm];
           if (S !== E) fams.push(mixFams(S, r.M, r.F));
           return o;
         },
@@ -1974,6 +2030,8 @@
       M.nz[j + 1] ? eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}) : null
     ).filter(Boolean);
     KR.forEach(([k, l], j) => effects.push(eff(k, l, M.b[CF_RK + j], M.se[CF_RK + j], bi, 'logit', 0.25, n, {rows: M.nz[CF_RK + j]})));
+    // a common-name modifier shared with the option: exploratory, like every effect not named in PRIMARY
+    if (md) effects.push(eff('mod', CF_MOD, M.b[cm], M.se[cm], bi, 'logit', 0.25, n, {rows: M.nz[cm]}));
     effects.push(sdEff('sd_player', 'SD player (each player vs pooled)', F[1].tau2, F[1].n, bi, 'logit', 0.25, n, mean([...F[1].cv])));
     effects.push(sdEff('sd_pair', 'SD pair', F[0].tau2, F[0].n, bi, 'logit', 0.25, n, mean([...F[0].cv])));
     const P = {};
@@ -2046,13 +2104,19 @@
       effects,
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
-      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null, ...KR.map(x => x[0])], [], bi),
+      ent: entOf(
+        M.V,
+        X,
+        [null, ...CF_X.map(x => x[0]), null, ...KR.map(x => x[0]), ...(md ? md.k.map(k => (k === 'mod' ? k : null)) : [])],
+        [],
+        bi
+      ),
       map: mixStab(mixMap(E, M, F), fams),
       ix: ixOf([confIx(A, B, seed + 31)]),
       ...(E[0].rk0 ? {rk0: E[0].rk0} : {}),
       chk: checkOf(
         E,
-        S => confFit(S, RK).M,
+        S => confFit(S, RK, md).M,
         () => 0,
         seed
       )
@@ -3888,10 +3952,13 @@
     // interactions (0: none; the tests of the interactions plant them): enlarging on a corallite photo, on the log-odds;
     // a look-alike's pull on a corallite photo for the even-numbered genera, on the log of its weight; the practice slope
     // of typed answers, on top of the others'
-    ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0}
+    ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0},
+    // the pull, on the log of its weight, of an option sharing a common-name word with the right answer (synth's share; 0:
+    // none; the tests of the shared-word effect plant one)
+    mod: 0
   };
   // o: {players: [[id, ability, answers, enlarge rate, own learning slope (added to the common one; optional)]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
-  // start, end (ms), seed, subject, rk}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
+  // start, end (ms), seed, subject, rk, share: {genus: [the genera sharing a common-name word with it]}}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
   // carries it in the Subject column (index 17, core.js LOG_SUBJ), as the sheet serves another subject's answers (the
   // fish: units f:Damselfishes, g:Chromis, photos of one view). rk: {rank: [logit, log seconds]}, a rank's questions
   // that much harder and slower (the unit's id prefix: rankOfUnit), for the tests of the rank effects.
@@ -3907,8 +3974,9 @@
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
       // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
-      pickW = (L, look, pull = 1) => {
-        const w = L.map(x => (look.includes(x) ? T.mix * pull : 1));
+      // share: the options sharing a common-name word with the genus shown, each T.mod more weighted on the log scale
+      pickW = (L, look, pull = 1, share = []) => {
+        const w = L.map(x => (look.includes(x) ? T.mix * pull : 1) * (share.includes(x) ? Math.exp(T.mod) : 1));
         let r = R() * sum(w);
         return L.find((x, i) => (r -= w[i]) < 0) || L[L.length - 1];
       },
@@ -3989,7 +4057,12 @@
               ? R() < 0.5
                 ? ''
                 : pick(G)
-              : pickW(ch.slice(1), look, p.v === 'macro' && G.indexOf(g) % 2 === 0 ? Math.exp(T.ix.pairMacro) : 1),
+              : pickW(
+                  ch.slice(1),
+                  look,
+                  p.v === 'macro' && G.indexOf(g) % 2 === 0 ? Math.exp(T.ix.pairMacro) : 1,
+                  (o.share && o.share[g]) || []
+                ),
           sec = Math.exp(
             T.rt.b0 +
               rp +
@@ -4156,6 +4229,7 @@
       medium: {name: 'A close-up shown instead of a colony', o: 'mix'},
       macro: {name: 'Corallites shown instead of a colony', o: 'mix'},
       multi: {name: 'Several views shown instead of a colony', o: 'mix'},
+      mod: {name: 'An option sharing a common-name word (Yellowtail, Bicolor…) with the right answer instead of one not', o: 'mix'},
       sd_player: {name: 'How much players differ from each other', o: 'mix', who: 'player'},
       sd_pair: {name: 'How much pairs of genera differ from each other', o: 'mix', who: 'pair of genera'}
     },
@@ -4799,7 +4873,11 @@
       live = o.live && all.length % STEP ? all.length : 0,
       Ms = milestones(all.length).concat(live ? [live] : []),
       // the fish photos' features too (fph): a judgment changed refits every milestone, as a coral view or quality
-      mh = hashOf(meta && meta.ph) + (meta && meta.fph ? ':' + hashOf(meta.fph) : '') + (meta && meta.rk ? ':rk' + meta.rk : ''),
+      mh =
+        hashOf(meta && meta.ph) +
+        (meta && meta.fph ? ':' + hashOf(meta.fph) : '') +
+        (meta && meta.rk ? ':rk' + meta.rk : '') +
+        (meta && meta.mod ? ':md' + hashOf(meta.mod) : ''),
       B = o.B == null ? BOOT : o.B,
       Bh = Math.min(B, o.Bh == null ? 199 : o.Bh),
       cap = o.hcap == null ? 60000 : o.hcap,
@@ -4899,6 +4977,9 @@
     RANKS,
     rankOfUnit,
     rankRef,
+    modWords,
+    modMeta,
+    confRows,
     prep,
     milestones,
     boot,
