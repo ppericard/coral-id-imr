@@ -14,16 +14,43 @@ const C = require('../core.js');
 const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
 const rule = cut(app, '// When R2 is given up (docs/decisions/', "\ndocument.addEventListener('error'", {file: 'app.js'});
 
-const page = (base = C.PHOTO_BASE) => {
+// The admin (admin.js, REE-204) has the same rule: the same text between its RULE markers as app.js between R2_OUT and
+// r2Loaded; r2Out is its own (it draws no crops). Both are run by the tests below, and the two texts kept equal.
+const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8');
+const adminRule = cut(admin, '// RULE-BEGIN\n', '// RULE-END\n', {file: 'admin.js'}).replace('// RULE-BEGIN\n', '');
+const appRule = cut(app, 'const R2_OUT = 3;\n', 'const r2Loaded = u => photoOnR2(u) && R2RUN.clear();\n', {file: 'app.js', through: 1});
+const adminOut = cut(admin, 'const r2Out = ', '\n', {file: 'admin.js', through: 1});
+
+const pageOf = (src, base = C.PHOTO_BASE) => {
   const ctx = vm.createContext({...C, crops: 0});
   vm.runInContext(
     `let R2 = !!${JSON.stringify(base)}, AWAY = !${JSON.stringify(base)};\nconst cropWatch = () => crops++;\n` +
-      rule +
+      src +
       '\nthis.T = {R2_OUT, r2Failed, r2Loaded, r2Missed, state: () => ({R2, AWAY})};',
     ctx
   );
   return {...ctx.T, crops: () => ctx.crops};
 };
+const page = (base = C.PHOTO_BASE) => pageOf(rule, base);
+
+test('the admin holds the app’s R2 give-up rule: the same text, and the same behavior', () => {
+  assert.strictEqual(adminRule, appRule, 'admin.js between RULE-BEGIN and RULE-END differs from app.js');
+  const T = pageOf(adminRule + adminOut);
+  assert.strictEqual(T.R2_OUT, 3);
+  const k = n => `${R}img/ad${n}-s.webp`;
+  T.r2Failed(k(0));
+  T.r2Failed(k(0));
+  T.r2Failed(k(1));
+  assert.deepStrictEqual({...T.state()}, on, 'one photo twice and a second one: R2 stays');
+  T.r2Loaded(k(1));
+  T.r2Failed(k(2));
+  T.r2Failed(k(3));
+  assert.deepStrictEqual({...T.state()}, on, 'a load from R2 restarted the count');
+  assert.strictEqual(T.r2Missed(k(3)), true);
+  T.r2Failed(k(4));
+  assert.deepStrictEqual({...T.state()}, off, 'three different photos in a row');
+  assert.deepStrictEqual({...pageOf(adminRule + adminOut, '').state()}, off, 'R2 switched off');
+});
 const R = C.PHOTO_BASE,
   on = {R2: true, AWAY: false},
   off = {R2: false, AWAY: true};
