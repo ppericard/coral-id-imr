@@ -37,6 +37,9 @@ const LAB_ICONS = {
   // Four photos over a row of names (Matrix, the game: the Feature matrix keeps `matrix`).
   matrixgame:
     '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><path d="M3 15h4M9 15h4M15 15h6M3 19.5h6M11 19.5h4M17 19.5h4"/>',
+  // A small fish and a larger one, and an arrow between them (Life stages matched).
+  lifestages:
+    '<path d="M2.5 16c1.1-1.7 2.4-2.5 3.8-2.5s2.6.8 3.5 2.5c-.9 1.7-2.1 2.5-3.5 2.5S3.6 17.7 2.5 16zM2.5 16 1 14.8M2.5 16 1 17.2M12 10c1.8-2.6 4-4 6.5-4s4.5 1.2 4.5 4c-1.9 2.6-4.1 4-6.6 4S13.8 12.6 12 10zM12 10l-1.6-1.4M12 10l-1.6 1.4"/><circle cx="19.2" cy="9.4" r=".7" fill="currentColor"/>',
   // A card over a dimmed screen (the cards and pop-ups mock-up).
   cards:
     '<rect x="2.5" y="3.5" width="19" height="17" rx="2"/><rect x="6.5" y="7" width="11" height="10" rx="1.5"/><path d="M9 10.5h6M9 13.5h4"/>'
@@ -67,6 +70,7 @@ const LAB = {
     'samediff',
     'oddone',
     'matrixgame',
+    'lifestages',
     'gallery',
     'cards'
   ],

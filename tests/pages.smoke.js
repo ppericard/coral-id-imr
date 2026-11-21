@@ -39,6 +39,7 @@ const ROUTES = [
   'tools/samediff',
   'tools/oddone',
   'tools/matrixgame',
+  'tools/lifestages', // the corals have no list of documented phases: not offered, the address goes to the Tools page
   'learn/basics/walls',
   'learn/basics/words',
   'about',

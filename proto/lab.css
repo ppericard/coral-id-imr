@@ -4590,7 +4590,8 @@ body:has(.ikstart:not([hidden])) main {
 /* Odd one out (proto/oddone.js): Find the X's four square tiles (app.css .fxt, quiz.js fitStage). Most photos here are shown
    whole, not as the fish's square cut, so each tile has a blurred copy of its photo behind it, as the quiz's photos do (no
    black bars): the same for the four, so no tile looks different from the others. */
-.q.ooq .fxt::before {
+.q.ooq .fxt::before,
+.q.lsq .fxt::before {
   content: '';
   position: absolute;
   inset: -30px;
@@ -4602,13 +4603,29 @@ body:has(.ikstart:not([hidden])) main {
 }
 /* Answered, on a phone or tablet: the verdict sheet is at the bottom and the stage takes the space above it, so the prompt
    would only peek out above the sheet. */
-.q.ooq.done .qtop {
+.q.ooq.done .qtop,
+.q.lsq.done .qtop {
   display: none;
 }
 @media (min-width: 1024px) {
-  .q.ooq.done .qtop {
+  .q.ooq.done .qtop,
+  .q.lsq.done .qtop {
     display: flex;
   }
+}
+
+/* Life stages matched (proto/lifestages.js): Odd one out's tiles (above), the first one the stage shown: not a button, outlined
+   in the accent colour with its stage on it ("juvenile", "female": what is asked, not an answer), the three others the choices.
+   Answered, each tile names its species and its stage. */
+.q.lsq .fxt.fref {
+  outline: 3px dashed var(--accent);
+  outline-offset: -3px;
+}
+.q.lsq .fxt figcaption {
+  text-transform: capitalize;
+}
+.q.lsq .fxt figcaption small {
+  font-weight: 400;
 }
 
 /* Matrix (proto/matrixgame.js): Find the X's tiles (as Odd one out's above, a blurred copy of the photo behind each) with the

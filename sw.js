@@ -77,6 +77,7 @@ const SHELL = [
     'samediff',
     'oddone',
     'matrixgame',
+    'lifestages',
     'gallery',
     'cards'
   ].map(f => `proto/${f}.js?v=84`)
