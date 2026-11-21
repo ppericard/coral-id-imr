@@ -38,3 +38,6 @@ rising with the level, but strong players' times less scattered (clear for the f
   moves a question by about 0.03 logits. In the rated world the shown score at 1,000 answers fell 1-2 points for one
   profile (a breached guardrail, back by 3,000): LEARNING.md "The photo's time term". Its re-fit (C, and whether the weighting helps) waits for more players: ROADMAP "Time
   in the photo rating". Step 2 (Q452: the player's time net of the photo's, a silent replay) is next.
+
+Changed by: [2026-11-21-rt-net-photo.md](2026-11-21-rt-net-photo.md) (the replay now reads the time term: a right
+answer's time weight is netted of it, rules version 13).
