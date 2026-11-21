@@ -99,7 +99,26 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       asked.some(u => /seaslug\.json/.test(u)),
       `1: the sea-slug files not fetched: ${asked.filter(u => /seaslug/.test(u))}`
     );
-    check(!errs.length, '1: page errors: ' + errs.join('; '));
+    // About (REE-213, rule C2): the References list the sources the sea slugs' data cites, each a link to a cited page or site
+    // (tests/seaslug-about.test.js checks the list against every citation); WoRMS and the hand-written lines stay.
+    await p.evaluate(() => (location.hash = '#about'));
+    await p.waitForFunction(() => document.querySelector('#view .abcites li a'), null, {timeout: 15000});
+    const ab = await p.evaluate(() => {
+      const L = [...document.querySelectorAll('#view .abcites li')];
+      return {
+        n: L.length,
+        loading: L.some(x => /Loading|could not be loaded/.test(x.textContent)),
+        forum: L.some(x => /^Sea Slug Forum: \d+ pages cited$/.test(x.textContent) && /seaslugforum\.net/.test(x.querySelector('a').href)),
+        paper: L.some(x => /^Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs$/.test(x.textContent)),
+        https: [...document.querySelectorAll('#view .abcites a')].every(a => /^https:\/\//.test(a.href) && a.target === '_blank'),
+        worms: /World Register of Marine Species/.test(document.querySelector('#view .about').textContent)
+      };
+    });
+    check(
+      ab.n >= 30 && !ab.loading && ab.forum && ab.paper && ab.https && ab.worms,
+      `1: About does not list the sea slugs' cited sources: ${JSON.stringify(ab)}`
+    );
+    check(!errs.length, '1: page errors on About: ' + errs.join('; '));
     await ctx.close();
   }
 
