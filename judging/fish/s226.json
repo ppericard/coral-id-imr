@@ -2,15 +2,18 @@
  "photos": {
   "fish-s226-cand-538922059": {
    "code": "p1g2bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-464298562": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-756242698": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-674304096": {
    "code": "p1g1sm1j3",
@@ -22,7 +25,8 @@
   },
   "fish-s226-cand-661391792": {
    "code": "p1g2ss11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-637568069": {
    "code": "p1g2bsx1",
@@ -38,7 +42,8 @@
   },
   "fish-s226-cand-738788613": {
    "code": "d1g2sm12",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "female"
   },
   "fish-s226-cand-738788624": {
    "code": "d1g2ss11",
@@ -46,11 +51,13 @@
   },
   "fish-s226-cand-330077577": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-635079749": {
    "code": "p1g3sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-635079768": {
    "code": "p1g3ssx1",
@@ -74,7 +81,8 @@
   },
   "fish-s226-cand-664956712": {
    "code": "p1g2ss11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-664956719": {
    "code": "p1g2ssm1",
@@ -118,7 +126,8 @@
   },
   "fish-s226-cand-753075850": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-176251993": {
    "code": "p1g2ss11",
@@ -166,11 +175,13 @@
   },
   "fish-s226-cand-619049635": {
    "code": "o1g1ms12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-334738478": {
    "code": "o1d2bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-335070055": {
    "code": "o1d2bm11",
@@ -178,7 +189,8 @@
   },
   "fish-s226-cand-351874849": {
    "code": "o1d2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-133770085": {
    "code": "p1d0sl14",
@@ -189,7 +201,8 @@
     0.85,
     0.76
    ],
-   "note": "crop: the surgeonfish above, the butterflyfish and the dark fish at right leave the frame (Q430)"
+   "note": "crop: the surgeonfish above, the butterflyfish and the dark fish at right leave the frame (Q430)",
+   "phase": "male"
   },
   "fish-s226-cand-661094341": {
    "code": "o1g1sm12",
@@ -197,7 +210,8 @@
   },
   "fish-s226-cand-661094413": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-33044918": {
    "code": "o1g1sm13",
@@ -205,15 +219,18 @@
   },
   "fish-s226-cand-637588971": {
    "code": "o1g1smo2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-705117319": {
    "code": "o1g1ms12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-760053806": {
    "code": "o1g2mm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-753075930": {
    "code": "p1g0sl14",
@@ -230,15 +247,18 @@
     0.6,
     0.7
    ],
-   "note": "crop: the damselfishes and the small fish above leave the frame (Q430)"
+   "note": "crop: the damselfishes and the small fish above leave the frame (Q430)",
+   "phase": "male"
   },
   "fish-s226-cand-176252019": {
    "code": "o1g2mm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-665157228": {
    "code": "p1g2mm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-665157255": {
    "code": "o1g2ssm1",
@@ -258,7 +278,8 @@
   },
   "fish-s226-cand-745845414": {
    "code": "p1d2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-668819886": {
    "code": "p1g0ml14",
@@ -269,11 +290,13 @@
     0.8,
     0.65
    ],
-   "note": "crop: the damselfish below leaves the frame (Q430)"
+   "note": "crop: the damselfish below leaves the frame (Q430)",
+   "phase": "female"
   },
   "fish-s226-cand-597648205": {
    "code": "o1g1bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-705140980": {
    "code": "p1g1bl12",
@@ -293,7 +316,8 @@
   },
   "fish-s226-cand-638815520": {
    "code": "o1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-661813823": {
    "code": "d1g1ss11",
@@ -305,11 +329,13 @@
   },
   "fish-s226-cand-656489337": {
    "code": "o1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-630350262": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-654074615": {
    "code": "o1g1smk2",
@@ -317,7 +343,8 @@
   },
   "fish-s226-cand-619049637": {
    "code": "o1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-63481901": {
    "code": "o1g1ss12",
@@ -332,7 +359,8 @@
     1.0,
     0.8
    ],
-   "note": "crop: the blue damselfish at left leaves the frame; the rock hides its tail fin (Q430)"
+   "note": "crop: the blue damselfish at left leaves the frame; the rock hides its tail fin (Q430)",
+   "phase": "female"
   },
   "fish-s226-cand-335068172": {
    "code": "o1g2bm11",
@@ -344,11 +372,13 @@
   },
   "fish-s226-cand-33044847": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-754459546": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-754459507": {
    "code": "o1g1sm13",
@@ -360,15 +390,18 @@
   },
   "fish-s226-cand-657899867": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-674419534": {
    "code": "p1g1bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-690171214": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-268683223": {
    "code": "o1g1ss1j2",
@@ -376,19 +409,23 @@
   },
   "fish-s226-cand-690769797": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-666977332": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-637930651": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s226-cand-747769589": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s226-cand-680059709": {
    "code": "p1g2smk1",
