@@ -172,8 +172,9 @@ test('the gate on every photo in play: a card only where its source says so, alw
   // species in play.
   // REE-189's judging pass: 4 more juveniles in play with no card (3 eel-tailed catfish schools, the observer's stage,
   // and a pelagic young flying gurnard), as every juvenile of a species with no source saying it differs.
-  // REE-207's judging pass: 21 more juveniles in play with no card (9 blackvent damsels and 1 blue damsel, 11 striped
-  // catfish photos, each the observer's stage), on species with no source saying the young differ.
+  // REE-207's judging pass: 21 more juveniles in play with no card (9 blackvent damsels and 1 blue damsel, the
+  // observer's stage; 11 striped catfish photos, no stage recorded, read on the photo), on species with no source
+  // saying the young differ.
   assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1166, juvOff: 1973, subOn: 8, subOff: 0, noAdult: 0});
   // the 8 sub-adults in play (7 Diagramma pictum and the Diagramma melanacrum sweetlips; their young sourced as
   // different), under the same rule
