@@ -2881,7 +2881,7 @@ const UNITS = {
     // learns"): right after the first-launch question, in the tour and on its card, common names, scientific names or
     // both. rows: what each answer does to the What I learn rows below (k: on or off); skip: the first-launch answers
     // that skip it ("I'm at IMR" has both already). Closing it leaves the rows as they play.
-    names: {
+    namesStep: {
       q: 'Which names do you want to learn?',
       lede: 'Every fish starts with its family. You can change this any time: My progress, What I learn.',
       skip: ['imr'],
@@ -3133,12 +3133,12 @@ function learnSet(k, on) {
   else Q[k + 'O'] = true;
   bonusSet(!!on, k);
 }
-// The names step at the welcome (UNITS names; Pierre, 2026-11-04): asked after the first-launch answer c, in the tour and on
+// The names step at the welcome (UNITS namesStep; Pierre, 2026-11-04): asked after the first-launch answer c, in the tour and on
 // its card, unless that answer skips it or the player said "I'm at IMR" (imrNow: an answer given earlier here counts), every
 // row it sets is on offer (learnRows: the species level, rule D4) and no row was chosen yet (Q404 A: the players who already
 // play keep what they have). again: it was asked already in this tour, so a row it set does not hide it when the answer is
 // changed.
-const namesDecl = () => UNITS[SUBJ.id].names || null;
+const namesDecl = () => UNITS[SUBJ.id].namesStep || null;
 const namesKeys = () => Object.keys(namesDecl().opts[0].rows);
 function namesAsk(c, again) {
   const N = namesDecl();

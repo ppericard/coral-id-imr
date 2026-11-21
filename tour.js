@@ -37,7 +37,7 @@
       d: 'Switch here, or with the button next to the logo on every other page. Each subject keeps its own progress.'
     },
     ask: {k: 'ask', h: '', ask: true},
-    // names: the names step of a subject that has one (app.js UNITS names), right after the question; a forced choice too.
+    // names: the names step of a subject that has one (app.js UNITS namesStep), right after the question; a forced choice too.
     names: {k: 'names', h: '', names: true},
     doors: {
       k: 'doors',

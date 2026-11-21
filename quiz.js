@@ -2425,7 +2425,7 @@ function startAskShow(cur) {
   });
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
 }
-// The names step (app.js UNITS names, namesAsk): right after the first-launch answer c on its card, common names, scientific
+// The names step (app.js UNITS namesStep, namesAsk): right after the first-launch answer c on its card, common names, scientific
 // names or both; go: what comes next (the basics offer, the quiz). An answer sets the What I learn rows (namesSet); Escape
 // leaves them as they play. Its own card class, not startq: the question's card is the one the sync closes (model.js
 // startMerge). Returns whether it showed.

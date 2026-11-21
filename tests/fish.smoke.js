@@ -1134,7 +1134,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
   await c6.close();
 }
 
-// (10b) The names step on the welcome card (app.js UNITS names, quiz.js namesAskShow; Pierre, 2026-11-04): after "How well do
+// (10b) The names step on the welcome card (app.js UNITS namesStep, quiz.js namesAskShow; Pierre, 2026-11-04): after "How well do
 // you know reef fish?" a player who is not at IMR is asked which names to learn, on its own card (not the question's), and
 // each answer sets the What I learn rows; "I'm at IMR" is not asked; a device that has not heard the sheet script at the
 // species level (rule D4) is not asked; Escape leaves the record as it plays. Cases: [welcome answer, sheet version heard,

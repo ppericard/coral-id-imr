@@ -5953,7 +5953,7 @@ async function subjTour(b, base) {
       fails.push(`subject tour, open to all: Corals ${JSON.stringify({s1, k})}`);
     await c.close();
   }
-  // 5. The fish names step (app.js UNITS names; Pierre, 2026-11-04): after "I know reef fish well" a forced step, one more
+  // 5. The fish names step (app.js UNITS namesStep; Pierre, 2026-11-04): after "I know reef fish well" a forced step, one more
   // step in the count, whose answer sets the What I learn rows; Back shows it marked and a changed answer replaces it;
   // changed to "I'm at IMR" it goes (the choice taken back); a device that has not heard the sheet (rule D4) gets no step.
   {

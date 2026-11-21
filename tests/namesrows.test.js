@@ -16,11 +16,12 @@ const test = require('node:test'),
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const APP = read('app.js'),
   PROG = read('progress.js');
-// The fish's names step as app.js declares it (UNITS fish names).
+// The fish's names step as app.js declares it (UNITS fish namesStep).
 const NAMES = JSON.parse(
   JSON.stringify(
-    vm.runInNewContext('({' + block(APP, '    names: {\n      q:', "    // The What I learn card's names rows", {file: 'app.js'}) + '})')
-      .names
+    vm.runInNewContext(
+      '({' + block(APP, '    namesStep: {\n      q:', "    // The What I learn card's names rows", {file: 'app.js'}) + '})'
+    ).namesStep
   )
 );
 
@@ -48,7 +49,7 @@ function run({imr = false, q = {}, sp = true} = {}) {
   ];
   ctx.UNITS = {
     fish: {
-      names: NAMES,
+      namesStep: NAMES,
       learn: [
         {k: 'sp', name: 'Common names', when: () => sp, self: () => true, line: () => ''},
         {k: 'sci', name: 'Scientific names', self: () => ctx.imr, line: () => 'every genus', part: () => 'the IMR genera only'}
@@ -223,7 +224,7 @@ test('mergeUsers: a row turned off stays off only where both accounts have it of
   assert.ok(m(off, {sp: true}).sp === true && m(off, {sp: true}).spO === undefined, 'on on either: on');
 });
 
-// The names step at the welcome (app.js UNITS names, namesAsk, namesSet; tour.js, quiz.js namesAskShow; Pierre, 2026-11-04).
+// The names step at the welcome (app.js UNITS namesStep, namesAsk, namesSet; tour.js, quiz.js namesAskShow; Pierre, 2026-11-04).
 test('the names step: common names writes nothing, so scientific names are still offered at Advanced', () => {
   const X = run();
   X.namesSet('common');
@@ -275,6 +276,10 @@ test('the names step is declared in one place, in the player words, its answers 
     ['common', 'sci', 'both']
   );
   assert.deepStrictEqual(NAMES.skip, ['imr']);
+  // `names` is already a UNITS key, a function (the name index of each subject): the step's key is namesStep, never a second
+  // `names` that would silently replace it
+  assert.ok(!/^ {4}names: \{/m.test(APP), 'no `names: {` in the UNITS objects');
+  assert.strictEqual((APP.match(/^ {4}names: \(\) =>/gm) || []).length, 3, "each subject's name index stays");
   const rows = run()
     .learnRows()
     .map(r => r.k);

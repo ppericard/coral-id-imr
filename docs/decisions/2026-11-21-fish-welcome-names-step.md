@@ -26,7 +26,7 @@ It reads the card's rows, so a later change on My progress, What I learn, is the
   earlier counts), for a player who already set a row (the players who already play keep what they have), and while the
   sheet script does not replay the species level (rule D4: one row, no choice). Closing it (Escape) leaves the record as it
   plays; it is not asked again.
-- **Declared in one place** (rule S1): `app.js` `UNITS` fish `names` (the question, the answers' words, the row each sets,
+- **Declared in one place** (rule S1): `app.js` `UNITS` fish `namesStep` (the question, the answers' words, the row each sets,
   the first-launch answers that skip it); `tour.js` and `quiz.js` read it and name no subject. The sea slugs and the corals
   declare none, so they have no step.
 

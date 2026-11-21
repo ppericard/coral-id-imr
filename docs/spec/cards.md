@@ -114,7 +114,7 @@ to wait for). The admin's player journey shows the corals' record only.
 
 ### The names step at the welcome
 
-A subject may declare a second step right after its question (`app.js` `UNITS[id].names`: `q`, `lede`, `opts` (`id`,
+A subject may declare a second step right after its question (`app.js` `UNITS[id].namesStep`: `q`, `lede`, `opts` (`id`,
 `name`, `line`, `rows`: each What I learn row, by its set `k`, on or off) and `skip`, the first-launch answers that skip it);
 the fish do ([decision](../decisions/2026-11-21-fish-welcome-names-step.md), docs/FISH_PATH.md "Which names a player
 learns"): "Which names do you want to learn?", **Common names**, **Scientific names**, **Both**, as the same big buttons.
