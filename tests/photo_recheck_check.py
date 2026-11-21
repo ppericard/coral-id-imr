@@ -4,6 +4,7 @@ network case). Prints one JSON object. Usage: photo_recheck_check.py CASE (reaso
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -41,6 +42,10 @@ def rec(f, o, **more):
     return {"f": f, "o": f"https://www.inaturalist.org/observations/{o}", "t": more.pop("t", ""), "loc": "ph", **more}
 
 
+def obs_of(r):
+    return int(r["o"].rsplit("/", 1)[-1]) if str(r.get("o", "")).rsplit("/", 1)[-1].isdigit() else None
+
+
 def world():
     """(files of the repository, {subject: {observation id: reply or None}}, expected {photo: [reasons]})."""
     import taxonomy
@@ -52,7 +57,8 @@ def world():
               rec("acropora-wide-3", 103, t="Acropora"), rec("acropora-wide-4", 104, t="Acropora"),
               rec("acropora-wide-5", 105, t="Acropora"), rec("acropora-wide-6", 106, t="Acropora"),
               rec("acropora-wide-7", 107, t="Acropora", loc="world"), rec("acropora-wide-8", 108, t="Acropora", skel=1),
-              rec("acropora-wide-9", 109, t="Acropora"), {"f": "lecture-1", "t": "Acropora"}]  # a lecture photo: no observation
+              rec("acropora-wide-9", 109, t="Acropora"), rec("acropora-wide-10", 110, t="Acropora"),
+              {"f": "lecture-1", "t": "Acropora"}]  # a lecture photo: no observation
     C = {
         101: obs(101, A1),  # Research Grade, species of the genus: passes
         102: obs(102, A, "needs_id", community_taxon_id=acro, identifications_most_agree=True),  # genus-level community ID
@@ -63,6 +69,7 @@ def world():
         107: obs(107, A, "needs_id", community_taxon_id=acro, identifications_most_agree=True),  # abroad: Research Grade only
         108: obs(108, P),  # a skeleton: not in play, never asked
         109: obs(109, taxon(48460, "Scleractinia", "order", (1,)), "needs_id"),  # coarser than the genus
+        110: obs(110, A1, photos=[{"id": 9999}]),  # the observation no longer holds the photo
     }
     del C[108]
     # fish
@@ -81,14 +88,19 @@ def world():
             rec("fi3010", 301, t="Fishus unus", sp="s001", **{"from": "taxon"}),  # a reference photo: passes
             rec("fi3020", 302, t="Fishus unus", sp="s001", **{"from": "taxon"}),  # a reference photo, Needs ID now
             rec("fi3030", 303, t="Fishus unus", sp="s001", **{"from": "cover"}),  # a reference photo, another species
+            rec("fish-s001-cand-12", 212, t="Fishus unus", sp="s001"),  # its licence closed, a sibling's still open
+            rec("fish-s001-cand-13", 213, t="Fishus unus", sp="s001"),  # taken off its observation, a sibling stays
+            rec("fi3040", 304, t="Fishus unus", sp="s001", **{"from": "taxon"}),  # a reference photo taken off its observation
             {"f": "fbAcnig_u0", "o": "https://www.fishbase.se/photos/PicturesSummary.php?ID=1", "t": "Fishus unus", "sp": "s001"}]
     F = {
         201: obs(201, S1), 202: obs(202, S1, "needs_id", user="ppericard"), 203: obs(203, S1, "needs_id"), 204: obs(204, S2),
         205: None, 206: obs(206, S1, "casual", user="ppericard"), 207: obs(207, S1, annotations=[
             {"controlled_attribute_id": 17, "controlled_value_id": 19, "vote_score": 1}]), 208: obs(208, G1, "needs_id"),
         210: obs(210, S1, captive=True),
-        211: obs(211, S1, photos=[{"id": 2110, "url": PH % 2110, "license_code": None}]),
-        301: obs(301, S1), 302: obs(302, S1, "needs_id"), 303: obs(303, S2),
+        211: obs(211, S1, photos=[{"id": 11, "url": PH % 11, "license_code": None}]),
+        212: obs(212, S1, photos=[{"id": 12, "url": PH % 12, "license_code": None}, {"id": 9999, "url": PH % 9999, "license_code": "cc-by"}]),
+        213: obs(213, S1, photos=[{"id": 9999, "url": PH % 9999, "license_code": "cc-by"}]),
+        301: obs(301, S1), 302: obs(302, S1, "needs_id"), 303: obs(303, S2), 304: obs(304, S1, photos=[{"id": 1, "url": PH % 1}]),
     }
     # sea slugs (the tools' own seaslugs.json / seaslug_informal.json are read)
     inf = json.loads((ROOT / "tools" / "seaslug_informal.json").read_text())["species"][0]
@@ -105,7 +117,9 @@ def world():
             rec("seaslug-Nudi-cand-6", 406, t="Nudi", sp="g:Nudi", gl=1),  # one identifier only: ID lost
             rec("seaslug-Nudi-cand-7", 407, t="Nudi", sp="g:Nudi", gl=1),  # now another genus's species
             rec("seaslug-" + inf["key"] + "-cand-8", 408, t=inf["genus"], sp="x:" + inf["key"]),  # label still there: passes
-            rec("seaslug-" + inf["key"] + "-cand-9", 409, t=inf["genus"], sp="x:" + inf["key"])]  # label withdrawn
+            rec("seaslug-" + inf["key"] + "-cand-9", 409, t=inf["genus"], sp="x:" + inf["key"]),  # label withdrawn
+            rec("seaslug-Nudi-cand-10", 410, t="Nudi", sp="g:Nudi", gl=1),  # refined to a species, Needs ID: the genus still agreed
+            rec("seaslug-5001-cand-11", 411, t="Nudi unus", sp="s5001")]  # taken off its observation, a sibling stays
     ag = lambda t: [ident("a", t), ident("b", t)]  # noqa: E731
     N = {
         401: obs(401, N1), 402: obs(402, N2),
@@ -116,7 +130,14 @@ def world():
         407: obs(407, taxon(7001, "Other thing", "species", (1, 2, 7000))),
         408: obs(408, GO, "needs_id", identifications=ag(GO), ofvs=[{"field_id": inf["field"]["id"], "name": inf["field"]["name"], "value": "Yes"}]),
         409: obs(409, GO, "needs_id", identifications=ag(GO), ofvs=[]),
+        410: obs(410, NGS, "needs_id", identifications=[ident("a", NG), ident("b", NG), ident("c", NGS)]),
+        411: obs(411, N1, photos=[{"id": 9999, "url": PH % 9999, "license_code": "cc-by"}]),
     }
+    for subject, records in (("coral", cviews), ("fish", fish), ("seaslug", slug)):  # each default photo is the record's own
+        for r in records:
+            o = {"coral": C, "fish": F, "seaslug": N}[subject].get(obs_of(r))
+            if o and len(o["photos"]) == 1 and o["photos"][0]["id"] == o["id"] * 10 and not re.match(r"fi\d", r["f"]):
+                o["photos"][0].update(id=int(re.search(r"(\d+)$", r["f"]).group(1)), url=PH % re.search(r"(\d+)$", r["f"]).group(1))
     files = {
         "data.json": {"gen": {"Acropora": {"views": {"wide": cviews}}}, "x": {"gen": {}}, "cand": {}},
         "curation.json": {"fish": {"exclude": {"fish-s001-cand-9": "excluded"}}, "seaslug": {}},
@@ -130,8 +151,9 @@ def world():
         "acropora-wide-6": ["casual"], "acropora-wide-7": ["id_lost"], "acropora-wide-9": ["id_lost"],
         "fish-s001-cand-3": ["id_lost"], "fish-s001-cand-4": ["other_taxon"], "fish-s001-cand-5": ["deleted"],
         "fish-s001-cand-6": ["casual"], "fish-s001-cand-7": ["dead"], "fish-s001-cand-8": ["id_lost"],
-        "fish-s001-cand-10": ["captive"], "fish-s001-cand-11": ["rule"],
-        "fi3020": ["id_lost"], "fi3030": ["other_taxon"],
+        "fish-s001-cand-10": ["captive"], "fish-s001-cand-11": ["rule"], "fish-s001-cand-12": ["rule"],
+        "fish-s001-cand-13": ["photo_gone"], "fi3020": ["id_lost"], "fi3030": ["other_taxon"], "fi3040": ["photo_gone"],
+        "acropora-wide-10": ["photo_gone"], "seaslug-5001-cand-11": ["photo_gone"],
         "seaslug-5001-cand-2": ["other_taxon"], "seaslug-5001-cand-3": ["egg"],
         "seaslug-Nudi-cand-6": ["id_lost"], "seaslug-Nudi-cand-7": ["other_taxon"],
         "seaslug-" + inf["key"] + "-cand-9": ["id_lost"],
@@ -183,6 +205,9 @@ def verdicts(S, fail):
 
 def main(case):
     inat.get = no_network
+    informal = json.loads((ROOT / "tools" / "seaslug_informal.json").read_text())["species"][0]["genus"]
+    if case != "network":  # the genera's taxa: the network case asks for them through the stub
+        fs.genus_ids = lambda net, src, names: {g: i for g, i in {"Nudi": 5000, informal: 9000}.items() if g in names}
     if case == "reasons":
         repo, cache, replies, want = fixture()
         out = BASE / "out"
@@ -223,9 +248,14 @@ def main(case):
         files, replies, want = world()
         repo = write_repo(files)
         out = BASE / "out"
-        urls, dropped = [], set()
+        urls, taxa, dropped = [], [], set()
+        genus_of = {s["inat"]: s["genus"] for s in json.loads((ROOT / "tools" / "seaslugs.json").read_text())["species"]}
 
         def stub(url, missing=False, timeout=90):
+            if "/taxa/" in url:  # the genera's taxa (fetch_seaslugs.genus_ids): a species and its genus, by taxon id
+                taxa.append(url)
+                got = [int(x) for x in url.split("/taxa/")[1].split("?")[0].split(",")]
+                return {"results": [{"id": i, "ancestors": [{"id": 9000, "name": genus_of.get(i), "rank": "genus"}]} for i in got]}
             urls.append(url)
             ids = [int(x) for x in url.split("id=")[1].split("&")[0].split(",")]
             subj = next(s for s in pr.SUBJECTS if url.endswith(pr.FIELDS[s]))
@@ -254,6 +284,7 @@ def main(case):
         return {"urls": len(urls), "ok": all(u.startswith(inat.V2 + "observations?id=") and "&per_page=200&fields=" in u for u in urls),
                 "ids_max": max(len(h.split("id=")[1].split("&")[0].split(",")) for h in heads),
                 "only_ids": all(h.count("=") == 2 for h in heads),  # id= and per_page=, no name, no project data
+                "taxa": len(taxa), "taxa_ids_only": all(re.fullmatch(r"[\d,]+", u.split("/taxa/")[1].split("?")[0]) for u in taxa),
                 "gone": gone, "recovered": "acropora-wide-1" not in [x["f"] for x in fail], "failed": failed, "rc": rc}
     if case == "readonly":
         repo, cache, replies, want = fixture()

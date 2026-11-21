@@ -34,14 +34,15 @@ test('every reason is found on its photo, and only there: the rest of the game p
     'egg',
     'id_lost',
     'other_taxon',
+    'photo_gone',
     'rule'
   ]);
   // Photos with no observation (the IMR lecture, FishBase), and the excluded, skeleton and several-coral ones, are not asked.
   const S = R.summary;
-  assert.strictEqual(S.coral.in_play, 9); // the skeleton photo is not in play
-  assert.strictEqual(S.coral.with_observation, 8);
-  assert.strictEqual(S.fish.in_play, 14); // the excluded photo is not in play
-  assert.strictEqual(S.fish.with_observation, 13); // FishBase's has none
+  assert.strictEqual(S.coral.in_play, 10); // the skeleton photo is not in play
+  assert.strictEqual(S.coral.with_observation, 9);
+  assert.strictEqual(S.fish.in_play, 17); // the excluded photo is not in play
+  assert.strictEqual(S.fish.with_observation, 16); // FishBase's has none
   assert.strictEqual(S.coral.failing + S.fish.failing + S.seaslug.failing, Object.keys(R.want).length);
   assert.deepStrictEqual(R.summary.fish.by_reason, {
     id_lost: 3,
@@ -50,7 +51,8 @@ test('every reason is found on its photo, and only there: the rest of the game p
     casual: 1,
     dead: 1,
     captive: 1,
-    rule: 1
+    rule: 2,
+    photo_gone: 2
   });
   assert.deepStrictEqual(R.unchecked, []);
 });
@@ -65,7 +67,16 @@ test('the primary reason is the first in the order: deleted, casual, other taxon
 
 test("a fish photo of Pierre's own in Needs ID passes, a sea slug genus-level photo refined to a species of its genus passes", () => {
   const R = reasons();
-  for (const f of ['fish-s001-cand-2', 'seaslug-Nudi-cand-5', 'seaslug-Nudi-cand-4', 'acropora-wide-2', 'acropora-wide-1', 'fi3010'])
+  // (Nudi-cand-10: refined to a species, Needs ID, its identifications still agree at the genus.)
+  for (const f of [
+    'fish-s001-cand-2',
+    'seaslug-Nudi-cand-5',
+    'seaslug-Nudi-cand-4',
+    'seaslug-Nudi-cand-10',
+    'acropora-wide-2',
+    'acropora-wide-1',
+    'fi3010'
+  ])
     assert.ok(!(f in R.got), f + ' passes');
 });
 
@@ -74,7 +85,7 @@ test('the report says what failed, in markdown, tab-separated and JSON', () => {
   assert.deepStrictEqual(R.files, ['failing.tsv', 'report.json', 'report.md']);
   assert.match(R.md, /Read only: nothing is changed/);
   assert.match(R.md, /## deleted \(2\)/);
-  assert.match(R.md, /\| fish \| 14 \| 13 \| 1 \| 10 \| 0 \|/);
+  assert.match(R.md, /\| fish \| 17 \| 16 \| 1 \| 13 \| 0 \|/);
   assert.match(R.md, /`fish-s001-cand-6` \(Pierre's own\)/);
   assert.match(R.md, /\[205\]\(https:\/\/www\.inaturalist\.org\/observations\/205\)/);
   const rows = R.tsv.trim().split('\n');
@@ -116,6 +127,13 @@ test("the tool calls the fetchers' predicates: patch one and the verdicts follow
   assert.deepStrictEqual(R.lenient['fish-s001-cand-4'], ['other_taxon']);
   assert.deepStrictEqual(R.lenient['acropora-wide-4'], ['other_taxon']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-5'], ['deleted']);
+  // The predicate is asked of the game photo alone: a sibling's licence does not stand for it, and a photo taken off its
+  // observation fails whatever the predicates say.
+  assert.ok(!('fish-s001-cand-12' in R.lenient));
+  assert.deepStrictEqual(R.lenient['fish-s001-cand-13'], ['photo_gone']);
+  assert.deepStrictEqual(R.lenient['fi3040'], ['photo_gone']);
+  assert.deepStrictEqual(R.lenient['seaslug-5001-cand-11'], ['photo_gone']);
+  assert.deepStrictEqual(R.lenient['acropora-wide-10'], ['photo_gone']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-6'], ['casual']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-10'], ['captive']);
   assert.deepStrictEqual(R.lenient['acropora-wide-9'], ['id_lost']);
@@ -128,6 +146,7 @@ test('it asks iNaturalist for observation ids only, 200 a request, once more for
   const R = check('network');
   assert.ok(R.ok, 'every request is observations?id=…&per_page=200&fields=…');
   assert.ok(R.only_ids, 'no name or project data in a query');
+  assert.ok(R.taxa >= 1 && R.taxa_ids_only, "the sea-slug genera's taxa are asked by taxon id, a few requests");
   assert.ok(R.ids_max <= 200);
   assert.strictEqual(R.urls, 5, 'one request a subject, one more for each that missed an observation (coral, fish)');
   assert.deepStrictEqual(R.gone, ['acropora-wide-5', 'fish-s001-cand-5']);

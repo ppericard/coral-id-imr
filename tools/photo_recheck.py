@@ -24,11 +24,14 @@ change); what a fetcher leaves to its search query (the taxon, casual, captive) 
     photo taxon as `want`;
   - sea slugs: a species (s<taxon>): tools/fetch_seaslugs.py usable (usable_obs, and no egg annotation); a genus-level photo
     (g:<genus>): usable_gl (agreed at the genus); a species with no name (x:<key>): usable_gl and the label field still
-    there (labelled). A genus-level observation since refined to a species of its genus is still a genus-level photo, so
-    its rank is not asked again.
+    there (labelled). A genus-level observation since refined to a species of its genus is still a genus-level photo: its
+    rank is not asked again and its identifications are counted at the genus (fetch_seaslugs.agreement, on the genus's
+    taxon, a few requests by taxon id), as the genus search counted them.
+  The predicates are given the game photo alone among its observation's photos: a sibling's licence does not stand for it.
 
 The reasons (primary first, in this order):
   deleted      iNaturalist no longer returns the observation (asked again once before it is called deleted);
+  photo_gone   the observation is there but no longer holds the game photo;
   casual       its quality grade is casual;
   other_taxon  its taxon is now another species (or genus) than the photo's unit, or off the unit's genus;
   id_lost      its identification is no longer enough: coarser than the rank asked, Needs ID without the agreement the route
@@ -69,7 +72,7 @@ from taxonomy import inat_taxon  # noqa: E402  the iNaturalist taxon of each cor
 
 ROOT = HERE.parent
 SUBJECTS = ("coral", "fish", "seaslug")
-REASONS = ("deleted", "casual", "other_taxon", "id_lost", "captive", "dead", "egg", "rule")
+REASONS = ("deleted", "photo_gone", "casual", "other_taxon", "id_lost", "captive", "dead", "egg", "rule")
 GENUS_OR_BELOW = {"genus", "subgenus", "section", "complex", "species", "hybrid", "subspecies", "variety", "form",
                   "infrahybrid"}  # iNaturalist's ranks at the genus or finer
 BATCH = inat.OBS_PAGE  # observations a request (iNaturalist's most)
@@ -85,7 +88,7 @@ def union(*parts):
 
 # What the predicates read, from the modules' own field lists plus what they take from the observation.
 FIELDS = {
-    "coral": union("id,quality_grade,captive,user.login,taxon.id,taxon.name,taxon.rank,taxon.ancestor_ids,community_taxon_id,"
+    "coral": union("id,quality_grade,captive,user.login,photos.id,taxon.id,taxon.name,taxon.rank,taxon.ancestor_ids,community_taxon_id,"
                    "identifications_most_agree,identifications.current,identifications.user.login,identifications.taxon.id,"
                    "identifications.taxon.name,identifications.taxon.rank,identifications.taxon.ancestor_ids"),
     "fish": union(ff.FIELDS, fr.FIELDS, "captive,taxon.ancestor_ids"),
@@ -252,11 +255,24 @@ class Context:
     def __init__(self, root):
         F = load(root / "fish.json", {})
         self.fish = {s["id"]: s for s in F.get("species") or []}
-        src = load(HERE / "seaslugs.json", {})
-        self.pairs = [tuple(p) for p in ((src.get("photoTarget") or {}).get("exclude") or {}).get("annotations") or []]
+        self.src = load(HERE / "seaslugs.json", {})
+        self.pairs = [tuple(p) for p in ((self.src.get("photoTarget") or {}).get("exclude") or {}).get("annotations") or []]
         inf = load(HERE / "seaslug_informal.json", {})
         self.informal = {s["key"]: s for s in inf.get("species") or []}
         self.coral_tids = {}
+        self.gids = {}  # sea-slug genus name -> its iNaturalist taxon id (genus_taxa)
+
+    def genus_taxa(self, recs, out):
+        """The iNaturalist taxa of the sea-slug genera the genus-level photos belong to (fetch_seaslugs.genus_ids, a few
+        requests by taxon id), so the agreement of a genus-level photo can be read at its genus."""
+        names = {self.genus_of(r) for r in recs if r["subj"] == "seaslug" and not re.fullmatch(r"s\d+", r["sp"])} - {""}
+        if names:
+            self.gids = fs.genus_ids(ff.Net(Path(out) / "genus-taxa.json"), self.src, names)
+
+    def genus_of(self, r):
+        """The genus a sea-slug genus-level photo is for: its unit's (g:<genus>) or its informal species' genus."""
+        key = r["sp"].split(":", 1)[1] if ":" in r["sp"] else ""
+        return self.informal[key]["genus"] if key in self.informal else key
 
     def fish_taxa(self, *ids):
         """The photo taxa (fetch_fish.photo_taxon) of fish species ids: what a species' searches ask for."""
@@ -287,6 +303,8 @@ def check_coral(r, o, X):
         return None, "no iNaturalist taxon for the genus in tools/taxonomy.json"
     tx = o.get("taxon") or {}
     loc = r["loc"] or "ph"  # no place said: the Philippines tiers' rule, the lenient one
+    if photo_id(r["f"]) not in {str(p.get("id")) for p in o.get("photos") or []}:
+        why.append("photo_gone")
     if tx.get("rank") not in GENUS_OR_BELOW:
         why.append("id_lost")
     elif not any(fl.in_genus(tx, t) for t in tids):
@@ -301,6 +319,14 @@ def off_species(tr, want):
     taxon_id of fetch_fish.queries, which usable_obs leaves to the search."""
     line = set(tr.get("tx") or ([tr["tid"]] if tr.get("tid") else []))
     return bool(want) and bool(line) and tr.get("rk") in ff.SPECIES_RANKS and not set(want) & line
+
+
+def own_photo(tr, f):
+    """tr with the game photo f as its one photo, and whether the observation still has that photo: the predicates ask
+    whether the observation has a usable photo, and a sibling's licence must not stand for the game photo's own."""
+    pid = photo_id(f)
+    mine = [p for p in tr.get("ph") or [] if str(p[0]) == pid]
+    return {**tr, "ph": mine}, bool(mine)
 
 
 def diag_species(tr, why):
@@ -321,7 +347,9 @@ def check_fish(r, o, X):
     want = X.fish_taxa(*{sid, r["sp"]} - {None})
     if re.match(r"fi\d", r["f"]):  # a reference photo: the unit's taxon page photo (fish_refs)
         rec = fr.keep_obs({"results": [o]}).get(photo_id(r["f"]))
-        if rec and fr.passes(rec, want or {rec["sp"]}):
+        if rec is None:
+            return order(why + ["photo_gone"]), "fish_refs.passes"
+        if fr.passes(rec, want or {rec["sp"]}):
             return order(why), "fish_refs.passes"
         if rec and want and rec["rank"] in fr.SPECIES_RANKS and rec["sp"] not in want:
             why.append("other_taxon")
@@ -330,11 +358,13 @@ def check_fish(r, o, X):
         if rec and (rec["rank"] not in fr.SPECIES_RANKS or rec["q"] != "research"):
             why.append("id_lost")
         return order(why or ["rule"]), "fish_refs.passes"
-    tr = ff.trim(o)
-    ok = bool(ff.usable_obs(tr, set(), ()))
+    tr, there = own_photo(ff.trim(o), r["f"])
+    ok = there and bool(ff.usable_obs(tr, set(), ()))
+    if not there:
+        why.append("photo_gone")
     if off_species(tr, want):
         why.append("other_taxon")
-    if not ok:
+    if there and not ok:
         why = diag_species(tr, why)
     return order(why), "fetch_fish.usable_obs"
 
@@ -343,31 +373,37 @@ def check_seaslug(r, o, X):
     why = common(o)
     if o is None:
         return why, ""
-    tr = fs.trim_id(o)
+    tr, there = own_photo(fs.trim_id(o), r["f"])
+    if not there:
+        why.append("photo_gone")
     if re.fullmatch(r"s\d+", r["sp"]):  # a species: the fish's rule and no egg annotation
-        ok = bool(fs.usable(tr, X.pairs))
+        ok = there and bool(fs.usable(tr, X.pairs))
         if off_species(tr, {int(r["sp"][1:])}):
             why.append("other_taxon")
-        if not ok:
+        if there and not ok:
             why = diag_species(tr, why)
             if fs.is_egg(tr, X.pairs):
                 why = [x for x in why if x != "rule"] + ["egg"]
         return order(why), "fetch_seaslugs.usable"
     # a genus-level photo (g:<genus>), or a species with no name (x:<key>, with its genus): usable_gl
-    key = r["sp"].split(":", 1)[1] if ":" in r["sp"] else ""
-    inf = X.informal.get(key)
-    genus = inf["genus"] if inf else key
+    genus = X.genus_of(r)
+    inf = X.informal.get(r["sp"].split(":", 1)[1]) if ":" in r["sp"] else None
     name = tr.get("t") or ""
     inside = bool(genus) and (name == genus or name.startswith(genus + " "))
     if tr.get("rk") not in GENUS_OR_BELOW:
         why.append("id_lost")  # coarser than the genus
     elif not inside:
         why.append("other_taxon")
-    # The genus search asks rank=genus; an observation refined since to a species of its genus is still a genus-level
-    # photo, so the rank is not asked again.
+    # The genus search asks rank=genus and counts the identifications at the genus. An observation refined since to a
+    # species of its genus is still a genus-level photo: its rank is not asked again, and its identifications are counted
+    # at the genus again (fetch_seaslugs.agreement, on the genus as the observation's taxon), not at the species.
     gl = {**tr, "rk": "genus"}
-    ok = inside and bool(fs.usable_gl(gl, X.pairs)) and (not inf or fs.labelled(tr, inf["field"]))
-    if not ok and inside:
+    gid = X.gids.get(genus)
+    line = (o.get("taxon") or {}).get("ancestor_ids") or []
+    if inside and gid and gid in line:
+        gl["ag"], gl["dg"] = fs.agreement({**o, "taxon": {"id": gid, "ancestor_ids": line[:line.index(gid)]}})
+    ok = there and inside and bool(fs.usable_gl(gl, X.pairs)) and (not inf or fs.labelled(tr, inf["field"]))
+    if not ok and inside and there:
         if [*ff.DEAD] in tr.get("an", []):
             why.append("dead")
         elif fs.is_egg(tr, X.pairs):
@@ -481,6 +517,8 @@ def run(root, out, only, cache_path, label, log=lambda m: print(m, file=sys.stde
         if ids and gone > max(MISSING_FLOOR, MISSING_MAX * len(ids)):
             raise RuntimeError(f"{s}: iNaturalist returned nothing for {gone} of {len(ids)} observations: not drift, a failed run")
     with_obs = [r for r in recs if r["obs"]]
+    if "seaslug" in only:
+        X.genus_taxa(with_obs, out)
     fail, skip = judge(with_obs, replies, X)
     S = summary(recs, fail, skip, asked)
     out = Path(out)

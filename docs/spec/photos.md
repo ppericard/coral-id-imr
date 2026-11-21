@@ -167,10 +167,13 @@ Research Grade, a genus-level community ID or the trusted identifier's; abroad: 
 candidates `fetch_fish.usable_obs`; fish reference photos `fish_refs.passes`; sea slugs `fetch_seaslugs.usable` (a species),
 `usable_gl` (a genus-level photo) and the label (a species with no name). What a fetcher leaves to its search query is asked
 beside the predicate: the species or genus (`taxon_id`), casual and captive. A genus-level sea-slug photo whose observation was
-refined to a species of its genus still passes (its rank is not asked again).
+refined to a species of its genus still passes (its rank is not asked again, and its identifications are counted at the genus
+again). The predicates are given the game photo alone among its observation's photos, so a sibling's licence never stands
+for it.
 
-**The reasons**, primary first: `deleted` (not returned, asked twice), `casual`, `other_taxon`, `id_lost` (coarser than the
-rank asked, or not enough agreement), `captive`, `dead`, `egg`, `rule` (another check of the predicate: licence, place).
+**The reasons**, primary first: `deleted` (not returned, asked twice), `photo_gone` (the observation no longer holds the
+game photo: its observer replaced it), `casual`, `other_taxon`, `id_lost` (coarser than the rank asked, or not enough
+agreement), `captive`, `dead`, `egg`, `rule` (another check of the predicate: licence, place).
 
 **The route:** `photo-recheck.yml`, every Wednesday and by hand, `contents: read`, no secret, uploads the artifact
 `photo-recheck` (the report in markdown, the failing photos as a tab-separated list, and the figures in JSON) and the report goes to the run's summary. It changes no data file,
