@@ -8,6 +8,12 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
+**Where the work is tracked: Linear**, team REE (Pierre, 2026-11-21 14:41; [INTEGRATOR "Linear"](INTEGRATOR.md#linear)):
+open points, priorities, delegated work and the next action of each subject are there:
+[active](https://linear.app/reef-id/team/REE/active), [backlog](https://linear.app/reef-id/team/REE/backlog),
+[all](https://linear.app/reef-id/team/REE/all), [projects](https://linear.app/reef-id/projects/all). A subject not
+transferred yet keeps its [ROADMAP.md](ROADMAP.md) row. This file keeps the active discussion and the handover.
+
 Written 2026-11-21, about 09:00 Manila, by the integrator, **at Pierre's stop** (06:25: «ne lances plus de nouvelles PR
 ou ouvre de nouvelles taches … Tu termines tout ce que t'as démarré. Tu fait une passation propre»; he is preparing a
 change of method from a study). **A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
@@ -19,9 +25,10 @@ Last checked: reports and events: 2026-11-21 ~04:30 Manila (no new report since 
 Main: sheet script **v213** (#1357, the photo's time term). Merged since 11-20 17:30: about 47 PRs (the list:
 `python3 tools/night.py`, `git log`). Nothing runs: no agent, no queue, no open PR once this one is in.
 
-- **The backlog's reference is the inventory** [docs/reviews/2026-11-20-backlog-inventory.md](reviews/2026-11-20-backlog-inventory.md)
-  (#1326, refreshed 2026-11-21): every open point against Pierre's words; §1.3 "Ready to launch now" is where the next
-  work comes from; §1.4 the questions still open.
+- **The open work is in Linear** (team REE, [backlog](https://linear.app/reef-id/team/REE/backlog); ROADMAP.md keeps
+  pointers and the rows not transferred yet); the inventory
+  [docs/reviews/2026-11-20-backlog-inventory.md](reviews/2026-11-20-backlog-inventory.md) (#1326, refreshed 2026-11-21)
+  is the migration's source, kept as history.
 - **Open points per day** (his ask, 06:27), counted as the inventories count (Done and Obsolete rows left out):
   - 2026-11-18: 148 open (151 items, 3 obsolete; no Done state; blocked rows inside "Decided"; some sources not
     counted, its §1.1).
