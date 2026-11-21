@@ -14,6 +14,11 @@ const SHEETS_ALL = [
   'Over 300 answers 1 0% 1 0%',
   'All 23 48% 82 48%'
 ].join(' | ');
+// The Analyses views the fish and the sea slugs do not list yet (core.js SUBJECTS admin), the one exception to "no line on
+// what is not there" on their side: Learning › Trajectories (REE-23) waits for the PR that holds core.js (rule W27); the
+// follow-up that lists it there empties this list.
+const NOT_YET = ['Learning › Trajectories'];
+const notYet = (subject, text) => !text || text === `Not for ${subject} yet: ${NOT_YET.join(', ')}.`;
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -3556,7 +3561,7 @@ async function lazyPart(b, base, fails) {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
             // every Analyses view on the fish side since the Heatmap (Q123 m, 2026-11-16): no line on what is not there
-            if (at.not) fe.push(`the line on what is not there: "${at.not}"`);
+            if (!notYet('fish', at.not)) fe.push(`the line on what is not there: "${at.not}"`);
             // every view the fish side has: the live ones (Stops, Pairs, Heatmap, Answer log) and the others, each drawn
             // from the fish report
             const [H, LV] = await fq.evaluate(() => [
@@ -3635,7 +3640,7 @@ async function lazyPart(b, base, fails) {
           // words stay. At 1280 from the script that stores one report per subject.
           if (v >= GATE && vw === 1280) {
             at = await look('seaslug/analyses/overview');
-            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || at.not)
+            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || !notYet('sea slugs', at.not))
               fe.push(`sea slug Overview ${JSON.stringify(at)}`);
             const [H, LV] = await fq.evaluate(() => [
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(subjectOf('seaslug'), h))),
