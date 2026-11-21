@@ -77,6 +77,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
 | 2026-11-21 | [The player's time net of the photo's: a right answer's z less its photos' time term, a silent replay](2026-11-21-rt-net-photo.md) | #1414 |
 | 2026-11-21 | [Sea slug species look-alikes: the two sourced pairs recorded as decided species pairs, not yet in play](2026-11-21-seaslug-species-pairs.md) | #1394 |
+| 2026-11-21 | [The machine slot serves its waiters in arrival order](2026-11-21-slot-arrival-order.md) | #1424 |
 | 2026-11-21 | [Find the X for the sea slugs plays: the boxes and tiles are in, checked on the real tiles](2026-11-21-slug-find-the-x-plays.md) | #1411 |
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | ["Did you know?" tip (c): My mix-ups, for players with several pairs mixed up who never saw the view](2026-11-21-tip-c-my-mix-ups.md) | #1420 |

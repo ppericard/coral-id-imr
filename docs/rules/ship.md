@@ -346,6 +346,8 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
   on 4 cores); above, the run waits. At most `SMOKE_SLOTS` heavy runs at once (default one per 2 cores; `SMOKE_SLOTS=1`
   while several agents run). A holder's children run in its slot (`REEFID_SLOT`): a full run or a smoke that starts a
   guarded tool never waits for itself.
+- **Arrival order**: each waiter takes a ticket in the slots directory and a free slot goes to the oldest live ticket; a
+  dead waiter's ticket is skipped (the holders' PID and start-time check).
 - **Disk**: a heavy run refuses to start with less than 5 GB free on the repository's disk (`tests/slot.js` `diskOk()`,
   `MIN_FREE_GB`), and says what to clean. **Every agent cleans up behind itself**: its worktree once its PR is merged
   (`git worktree remove`), temporary downloads, venvs, screenshots it no longer needs.
