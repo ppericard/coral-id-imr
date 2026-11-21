@@ -1,6 +1,6 @@
 # The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first
 
-Date: 2026-11-22. PR: #1425. Rules or docs touched: P1, A1; judging/FISH.md "The fish's box".
+Date: 2026-11-22. PR: #1426. Rules or docs touched: P1, A1; judging/FISH.md "The fish's box".
 
 ## Context
 
