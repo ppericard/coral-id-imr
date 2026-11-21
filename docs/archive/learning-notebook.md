@@ -7539,8 +7539,9 @@ The tool of #1310 and its check 2B (`tools/studies/q316/replay2b.js`) on the ans
 - **2C** (Q136): the corals' per-unit δ not centred (Spearman with the live gd −0.77, p < 0.001; halves −0.64 and
   −0.50), an association that rule L2's bookkeeping alone can produce; the fish (exploratory) "centring not rejected",
   its second half having 5 units.
-- **2B**: the shared chain against today's engine on new fish photos, −0.0063 nats per answer (95% −0.0146 to
-  +0.0020), p 0.15, 5 of 9 players better: the measure cannot tell. Compression of the unit offsets against the offline
+- **2B**: the shared chain against today's engine on new fish photos, −0.0065 nats per answer (95% −0.0147 to
+  +0.0018), p 0.11, 5 of 9 players better: the measure cannot tell (the second run, after Codex's fixes; the first
+  −0.0063, p 0.15). Compression of the unit offsets against the offline
   D(u): fish 0.68 today, 0.98 shared chain; corals 0.66 and 0.79 (exploratory).
 
 **Outcome**: nothing changed in the engine. Step 2 waits for the study's prepared question on the genus and species
