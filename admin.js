@@ -4031,15 +4031,22 @@ function toast(msg, ms = 3500, bg = false) {
 }
 // A toast with an Undo button, for a click that cannot be taken back otherwise than by its Undo step (the one Remove: Pierre,
 // 2026-11-21 05:48, "un undo juste après"): the same step as Ctrl+Z and the header's Undo. Held longer than a plain toast.
+// Called right after the click's saveDraft: the button steps back only while the draft is still the one that click left
+// (snap); after another edit it would undo that newer edit instead, so it goes away and says so (Codex review, #1393).
 function toastUndo(msg, ms = 6000) {
   toast(msg, ms);
   const t = document.querySelector('.adm-toast');
   if (!t || t.hidden) return;
-  const b = document.createElement('button');
+  const at = snap,
+    b = document.createElement('button');
   b.type = 'button';
   b.className = 'adm-toast-undo';
   b.textContent = 'Undo';
-  b.onclick = undo;
+  b.onclick = () => {
+    if (snap === at) return undo();
+    b.remove();
+    toast('Another change came after it: Undo (Ctrl+Z) steps back one change at a time.');
+  };
   t.append(' ', b);
 }
 

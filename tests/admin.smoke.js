@@ -2252,6 +2252,24 @@ async function lazyPart(b, base, fails) {
           if (c.rm.length !== rm0 || c.rm.includes(f0)) fails.push(`${w}px Coral Tree: the toast's Undo ${JSON.stringify(c)}`);
           await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="remove"]`);
           await settle();
+          // Another edit after the Remove: the toast's Undo must not undo that newer edit (Codex review, #1393): it goes away, says
+          // so, and the Remove stays.
+          const late = await p.evaluate(f => {
+            DRAFT.quality = {...(DRAFT.quality || {}), 'zz-late': 1};
+            saveDraft();
+            document.querySelector('.adm-toast .adm-toast-undo').click();
+            const r = {
+              gone: !document.querySelector('.adm-toast .adm-toast-undo'),
+              kept: !!(DRAFT.exclude || {})[f],
+              newer: !!(DRAFT.quality || {})['zz-late']
+            };
+            delete DRAFT.quality['zz-late'];
+            if (!Object.keys(DRAFT.quality).length) delete DRAFT.quality;
+            saveDraft();
+            return r;
+          }, f0);
+          if (!late.gone || !late.kept || !late.newer)
+            fails.push(`${w}px Coral Tree: the toast's Undo after another edit ${JSON.stringify(late)}`);
           await go('photos/tree/key/' + encodeURIComponent('k:1'));
           c = await lists();
           if (!c.rm.includes(f0)) fails.push(`${w}px Coral Tree: a group page lists its genera's removed photos ${JSON.stringify(c)}`);
