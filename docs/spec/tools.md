@@ -460,7 +460,7 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   `build`) checks them (a source on every line, https, at most 80 characters, no number, a species named only among the
   genus's game species, rule C6; every circle-1 genus in marks or none; every source used) and puts `marks`, `msrc`,
   `mby` on `seaslug.json`'s genera and families, as on a fish genus (`tools/fish_genus_marks.json`), so the fish engine
-  shows them unchanged: `learn.js` `genMarks` and `fishMarks` on the sheets, `app.js` `treeGenera` in the quiz feedback
+  shows them unchanged: `learn.js` `genMarks` and `treeMarks` on the sheets, `app.js` `treeGenera` in the quiz feedback
   ("ID marks (Sea Slug Forum, …)"); run alone, it prints what it covers. Its `apart` holds the
   declared genus pairs' tell-apart lines (`apart_of`, the same checks, on a declared pair only, one side or both) and
   `apartNone` the pairs left without one, with why
