@@ -3283,7 +3283,7 @@ function cqByIMR(play) {
   return [...new Set(play.map(gk))]
     .sort((a, b) => ord(a) - ord(b))
     .map(k => {
-      const gr = DATA.imrg.find(x => x.n === k),
+      const gr = UNITS[SUBJ.id].group(k),
         L = play.filter(n => gk(n) === k);
       return gr
         ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
