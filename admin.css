@@ -3906,13 +3906,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-htile figcaption > span {
   color: var(--muted);
 }
-.adm-hphotos .adm-hnum {
+.adm-hphotos .adm-hnum,
+.adm-fdiffg .adm-hnum {
   display: block;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-/* The photo's difficulty reading (recBadge) on its own line under right · answers. */
-.adm-hphotos .adm-hnum + .adm-hnum {
+/* The photo's difficulty reading (recBadge) on its own line under right · answers (Health's photos; By difficulty's prior, REE-62). */
+.adm-hphotos .adm-hnum + .adm-hnum,
+.adm-fdiffg .adm-hnum + .adm-hnum {
   margin-top: 2px;
 }
 /* Health's photos carry the tools of their page (Q309): the To do tiles' grid (adm-qgrid), one tile a row on a phone. */
