@@ -102,7 +102,7 @@ Per subject:
 stepper jumps anywhere and Next never waits for a check.
 
 **The Learn card** (`learn.js` `basicsCard`, `basicsArt`) is step 0 of the Learn path, the first block of the Genera
-page ("0 · Coral basics") or of the fish families page and the sea slug genera page (`viewFishList`, "0 · Fish basics",
+page ("0 · Coral basics") or of the fish families page and the sea slug genera page (`viewList`, `listBasics`, "0 · Fish basics",
 "0 · Sea slug basics"): in the photo's place, the steps as a trail of soft discs with line drawings (`BASICS_TRAIL` for
 the corals; `BASICS_TRAIL_F` and its places `BASICS_AT_F` for the fish; `BASICS_TRAIL_S` and `BASICS_AT_S` for the sea
 slugs), one colour per step (`--bt1`…`--bt7`). A step seen is tinted with a ✓, the next one has a

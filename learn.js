@@ -1,4 +1,4 @@
-// IMR Reef ID: the Learn pages. Genera (the list, its filters and groups: viewGenera), a genus sheet (viewGenus,
+// IMR Reef ID: the Learn pages. The list of units (viewList, one page for every subject: its groups, its filters), a genus sheet (viewGenus,
 // myProg), Look-alikes (viewLookalikes, the montage deck, classics, pairs) and Compare side by side (viewCompare). The
 // shared helpers they use (photos, ID tips, glossary) are in app.js. A classic script like app.js, loaded right after
 // quiz.js (index.html order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
@@ -156,144 +156,293 @@ function basicsCard(tips) {
     ? `<article class="tipg bxtip"><a href="${to}" class="tipph">${art}<i>${esc(W.name)}</i></a><div><p class="note">${state}</p><p>${esc(say)}</p></div></article>`
     : `<a class="card bxcard${done ? ' done' : ''}" href="${to}">${art}<span class="cap"><b>${esc(W.name)}</b><small>${state}</small><p>${esc(say)}</p></span></a>`;
 }
-function viewGenera() {
-  const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
-  // Phones: family, order and the group index fold behind one Filter line, so the genera start near the top.
-  const phone = isPhone();
-  const famSel = `<select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option value="${esc(f)}"${azFam === f ? ' selected' : ''}>${esc(altName(f))}</option>`).join('')}</select>`;
-  const viewSeg = `<div class="seg" role="group" aria-label="View">${[
-    ['photos', 'Photos'],
-    ['tips', 'ID tips']
-  ]
-    .map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`)
-    .join('')}</div>`;
-  const orderSeg = `<div class="seg" role="group" aria-label="Order">${[
-    ['lecture', 'Lecture', ' groups'],
-    ['slate', 'Slate', ' numbers']
-  ]
-    .map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`)
-    .join('')}</div>`;
-  const jump =
-    azOrder === 'lecture'
-      ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>`
-      : '';
-  $v.innerHTML = `<h2>The genera on the IMR slate</h2>
+// Learn's list (#learn/genera), one page for every subject (docs/reviews/2026-11-19-admin-one-engine.md §5 step 9, Dup-13;
+// rule S1): viewList draws it, and what differs between subjects is its builder in LIST_BUILD, picked by the data shape the
+// subject declares (SUBJECTS flat, as the admin's TREE_BUILD, CAND_BUILD and REVIEW_BUILD are): `flat` (the corals: the
+// IMR slate's genera, in the lecture's groups or in the slate's order, with a search, a family filter, the Photos | ID tips
+// switch and the Coral Finder's other genera folded under them) and `tree` (the fish and the sea slugs: the units by the
+// identification key's groups, or by the rank listBy names, or one block; no filter). Each builder has the same members:
+//   lead()      the HTML above the grid (the intro, the tools, the ID tips heading, the group index)
+//   grid()      {id, cls(shown)}: the grid's id ('' for none: only a grid with an id is packed again when the window is
+//               resized) and its class, `shown` telling whether the grid holds any block
+//   blocks()    {html, shown}: the grid's content for the filters in force
+//   foot()      the HTML under the grid (the key's credit)
+//   bind(draw)  the tools' events; draw redraws the grid
+//   after(grid) what the drawn grid needs (the folds, the cards)
+// The shared parts: the blocks (one section per group, listBlock), the basics block (listBasics), the grid (drawing,
+// packing the groups side by side) and the one entry point.
+// list build: begin
+// A group: its heading, then its units' cards (none: no block).
+const listBlock = (head, L, card) =>
+  L.length ? `<section class="gblk" data-n="${L.length}">${head}${L.map(card).join('')}</section>` : '';
+// Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card, a block before the groups; where tells what
+// it comes before, tc the class of its title (the corals' lecture groups and the tree's key groups wear their own).
+const listBasics = (where, tc, tips) =>
+  `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the ${where}"><span class="gn">0</span><span class="${tc}">${esc(basicsWords().name)}</span></h3>${basicsCard(tips)}</section>`;
+const LIST_BUILD = {
+  flat: {
+    lead() {
+      const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
+      // Phones: family, order and the group index fold behind one Filter line, so the genera start near the top.
+      const phone = isPhone();
+      const famSel = `<select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option value="${esc(f)}"${azFam === f ? ' selected' : ''}>${esc(altName(f))}</option>`).join('')}</select>`;
+      const viewSeg = `<div class="seg" role="group" aria-label="View">${[
+        ['photos', 'Photos'],
+        ['tips', 'ID tips']
+      ]
+        .map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`)
+        .join('')}</div>`;
+      const orderSeg = `<div class="seg" role="group" aria-label="Order">${[
+        ['lecture', 'Lecture', ' groups'],
+        ['slate', 'Slate', ' numbers']
+      ]
+        .map(
+          ([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`
+        )
+        .join('')}</div>`;
+      const jump =
+        azOrder === 'lecture'
+          ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>`
+          : '';
+      return `<h2>The genera on the IMR slate</h2>
   <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. The group names follow the lecture's ID questions: corallite size (small, large), mouth raised or embedded ("submerged"), and wall structure (separate walls, with coenosteum between them, or shared walls). Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search" title="Shortcut: / from any page, Enter opens the first genus">
     ${viewSeg}${phone ? `<details class="gfilt"${gfOpen ? ' open' : ''}><summary>Filter${azFam ? ' <span class="ikn">1</span>' : ''}</summary>${famSel}${orderSeg}${jump}</details>` : famSel + orderSeg}</div>
-  ${azView === 'tips' ? tipsHead() : ''}${phone ? '' : jump}<div class="${azView === 'tips' ? 'tiplist' : 'grid'}" id="azgrid"></div>`;
-  const draw = () => {
-    const q = azQ.toLowerCase(),
-      tips = azView === 'tips';
-    const names = Object.keys(DATA.gen).filter(
-      n =>
-        (!azFam || DATA.gen[n].fam === azFam || (azFam === '★' && !DATA.gen[n].n)) &&
-        (!q || (n + ' ' + DATA.gen[n].crit.join(' ') + ' ' + DATA.gen[n].imr.join(' ')).toLowerCase().includes(q))
-    );
-    let html;
-    if (azOrder === 'lecture') {
-      const gi = n => shownGroup(n) || 99;
-      names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b));
-      // Desktop: each lecture group is a block, and small groups sit side by side (packGroups) instead of one row each.
-      const blocks = [];
-      names.forEach((n, i) => {
-        if (!i || gi(names[i - 1]) !== gi(n)) blocks.push([]);
-        blocks[blocks.length - 1].push(n);
-      });
-      html = blocks
-        .map(L => {
-          const gr = DATA.imrg.find(x => x.n === shownGroup(L[0]));
-          const head = gr
-            ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gtitle">${esc(gr.t)}</span></h3>`
-            : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
-          return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => (tips ? tipCard(n) : card(n, 'stripe'))).join('')}</section>`;
-        })
-        .join('');
-      if (html && !q && !azFam && SUBJ.pages.includes('basics'))
-        html = `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the genera"><span class="gn">0</span><span class="gtitle">Coral basics</span></h3>${basicsCard(tips)}</section>${html}`;
-    } else
-      html =
-        (!q && !azFam && names.length && SUBJ.pages.includes('basics') ? basicsCard(tips) : '') +
-        names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
-    const grid = document.getElementById('azgrid');
-    // The Coral Finder book's extra genera (not on the IMR list, seen at Dauin): one folded line under the slate's.
-    const X = Object.keys((DATA.x || {}).gen || {}).filter(n => !q || (n + ' ' + GX(n).crit.join(' ')).toLowerCase().includes(q));
-    const xs =
-      !azFam && X.length
-        ? `<details class="xgen"${xOpen ? ' open' : ''}><summary>${X.length} other genera seen at Dauin <small>not on the IMR list</small></summary><div class="grid">${X.map(n => card(n)).join('')}</div></details>`
-        : '';
-    grid.innerHTML = (html || '<p class="note">No genus matches.</p>') + xs;
-    const xd = grid.querySelector('.xgen');
-    if (xd)
-      xd.ontoggle = () => {
-        xOpen = xd.open;
+  ${azView === 'tips' ? tipsHead() : ''}${phone ? '' : jump}`;
+    },
+    grid: () => ({id: 'azgrid', cls: shown => (azView === 'tips' ? 'tiplist' : 'grid') + (azOrder === 'lecture' && shown ? ' gpack' : '')}),
+    blocks() {
+      const q = azQ.toLowerCase(),
+        tips = azView === 'tips';
+      const names = Object.keys(DATA.gen).filter(
+        n =>
+          (!azFam || DATA.gen[n].fam === azFam || (azFam === '★' && !DATA.gen[n].n)) &&
+          (!q || (n + ' ' + DATA.gen[n].crit.join(' ') + ' ' + DATA.gen[n].imr.join(' ')).toLowerCase().includes(q))
+      );
+      let html;
+      if (azOrder === 'lecture') {
+        const gi = n => shownGroup(n) || 99;
+        names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b));
+        // Desktop: each lecture group is a block, and small groups sit side by side (packGroups) instead of one row each.
+        const blocks = [];
+        names.forEach((n, i) => {
+          if (!i || gi(names[i - 1]) !== gi(n)) blocks.push([]);
+          blocks[blocks.length - 1].push(n);
+        });
+        html = blocks
+          .map(L => {
+            const gr = DATA.imrg.find(x => x.n === shownGroup(L[0]));
+            const head = gr
+              ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gtitle">${esc(gr.t)}</span></h3>`
+              : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
+            return listBlock(head, L, n => (tips ? tipCard(n) : card(n, 'stripe')));
+          })
+          .join('');
+        if (html && !q && !azFam && SUBJ.pages.includes('basics')) html = listBasics('genera', 'gtitle', tips) + html;
+      } else
+        html =
+          (!q && !azFam && names.length && SUBJ.pages.includes('basics') ? basicsCard(tips) : '') +
+          names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
+      // The Coral Finder book's extra genera (not on the IMR list, seen at Dauin): one folded line under the slate's.
+      const X = Object.keys((DATA.x || {}).gen || {}).filter(n => !q || (n + ' ' + GX(n).crit.join(' ')).toLowerCase().includes(q));
+      const xs =
+        !azFam && X.length
+          ? `<details class="xgen"${xOpen ? ' open' : ''}><summary>${X.length} other genera seen at Dauin <small>not on the IMR list</small></summary><div class="grid">${X.map(n => card(n)).join('')}</div></details>`
+          : '';
+      return {html: (html || '<p class="note">No genus matches.</p>') + xs, shown: !!html};
+    },
+    foot: () => '',
+    bind(draw) {
+      const qi = document.getElementById('q');
+      qi.oninput = () => {
+        azQ = qi.value;
+        draw();
       };
-    grid.classList.toggle('gpack', azOrder === 'lecture' && !!html);
-    packGroups(grid);
-    bindCards();
-  };
-  const qi = document.getElementById('q');
-  qi.oninput = () => {
-    azQ = qi.value;
-    draw();
-  };
-  // Enter opens the first genus that matches (with the / shortcut: /, a few letters, Enter = the sheet).
-  qi.onkeydown = e => {
-    if (e.key !== 'Enter') return;
-    const q = qi.value.trim().toLowerCase(),
-      L = [...document.querySelectorAll(`#azgrid a[href^="${hr('g-x').slice(0, -1)}"]`)];
-    const name = a => (routeIn(a.getAttribute('href')).key || '').slice(2).toLowerCase();
-    const a = L.find(x => name(x).startsWith(q)) || L.find(x => name(x).includes(q)) || L[0];
-    if (a) {
-      e.preventDefault();
-      location.hash = a.getAttribute('href');
+      // Enter opens the first genus that matches (with the / shortcut: /, a few letters, Enter = the sheet).
+      qi.onkeydown = e => {
+        if (e.key !== 'Enter') return;
+        const q = qi.value.trim().toLowerCase(),
+          L = [...document.querySelectorAll(`#azgrid a[href^="${hr('g-x').slice(0, -1)}"]`)];
+        const name = a => (routeIn(a.getAttribute('href')).key || '').slice(2).toLowerCase();
+        const a = L.find(x => name(x).startsWith(q)) || L.find(x => name(x).includes(q)) || L[0];
+        if (a) {
+          e.preventDefault();
+          location.hash = a.getAttribute('href');
+        }
+      };
+      if (wantSearch) {
+        wantSearch = false;
+        qi.focus();
+        qi.select();
+      }
+      const gf = $v.querySelector('.gfilt');
+      if (gf)
+        gf.ontoggle = () => {
+          gfOpen = gf.open;
+        };
+      document.getElementById('fam').onchange = e => {
+        azFam = e.target.value || null;
+        draw();
+      };
+      $v.querySelectorAll('[data-o]').forEach(
+        b =>
+          (b.onclick = () => {
+            azOrder = b.dataset.o;
+            try {
+              localStorage.setItem('reefid-sync-order', azOrder);
+            } catch (e) {}
+            viewList();
+          })
+      );
+      // Group index: jump to a lecture group (a button, not a link: the hash is the page route).
+      $v.querySelectorAll('[data-jump]').forEach(
+        b =>
+          (b.onclick = () => {
+            const h = document.getElementById('grp-' + b.dataset.jump);
+            if (h) h.scrollIntoView({behavior: 'smooth', block: 'start'});
+          })
+      );
+      $v.querySelectorAll('[data-gv]').forEach(
+        b =>
+          (b.onclick = () => {
+            azView = b.dataset.gv;
+            try {
+              localStorage.setItem('reefid-sync-gview', azView);
+            } catch (e) {}
+            viewList();
+            pageHelp();
+          })
+      );
+    },
+    after(grid) {
+      const xd = grid.querySelector('.xgen');
+      if (xd)
+        xd.ontoggle = () => {
+          xOpen = xd.open;
+        };
+      bindCards();
     }
-  };
-  if (wantSearch) {
-    wantSearch = false;
-    qi.focus();
-    qi.select();
+  },
+  // The tree subjects' list: the fish families (every family of the slate, all circles) by the groups of the identification key
+  // in force (fish.json key; rule S3), in the key's order, each group under its number and title as the key prints them; each
+  // family with a photo, its IMR cues and how IMR tells its look-alikes apart; the key is credited in full under the list. A
+  // region with no key: the entries in one block (a keyless tree with UNITS listBy: a block per unit of that rank). The winks
+  // stay a surprise. Each entry opens its sheet (viewFishSheet; an IMR entry by the family it was renamed into).
+  tree: {
+    // A subject's own line (UNITS lede: the sea slugs), else the fish's
+    lead() {
+      const key = TREEU.key,
+        lede =
+          UNITS[SUBJ.id].lede ||
+          `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named on its sheet) and IMR’s names. Tap a family to open its sheet. Photos: iNaturalist and FishBase.`;
+      return `<p class="lede">${lede}</p>`;
+    },
+    // No id: this grid is not packed again when the window is resized.
+    grid: () => ({id: '', cls: () => `tiplist gpack${listTaxa() ? ' gtaxa' : ''}`}),
+    blocks() {
+      // Each entry is one card that opens its sheet (app.js listCard, shared with the corals' ID tips view; Pierre,
+      // 2026-11-20): the photo opens the sheet too, where the photos enlarge with their credits.
+      const tip = n => {
+        const g = GX(n),
+          // its first English name given as information (app.js vernFirst: the sea slugs'), under its name
+          ven = vernFirst(n);
+        // the photo: the admin's ★ Cover while in play (app.js treeCurate), else the card photo (core.js easyCover)
+        return listCard(
+          n,
+          cover(g),
+          `${ven ? `<span class="ven">${esc(capFirst(ven))}</span>` : ''}<small>${esc(altName(g.fam))}</small>`,
+          // the look-alikes' lines without their sources, which the sheet gives (app.js treeGenera lksrc; rule C2)
+          `${g.lk.length ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>` : ''}${
+            g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''
+          }`
+        );
+      };
+      const blk = (head, L) => listBlock(head, L, tip);
+      const key = TREEU.key,
+        head = (n, t) =>
+          `<h3 class="gdiv"${typeof n === 'number' ? ` style="--g:${groupHue(n)}"` : ''}><span class="gn">${n}</span><span class="gt">${esc(t)}</span></h3>`,
+        groups = key
+          ? [
+              ...TREEU.groups.map(gr =>
+                blk(
+                  head(gr.n, gr.title),
+                  slateGenera().filter(n => GX(n).group === gr.n)
+                )
+              ),
+              blk(
+                head('?', 'Not in a group yet'),
+                slateGenera().filter(n => !GX(n).group)
+              )
+            ]
+          : UNITS[SUBJ.id].listBy
+            ? byRank(slateGenera(), UNITS[SUBJ.id].listBy, blk)
+            : [blk('', slateGenera())];
+      const sets = SETS().map(S =>
+        Q[S.k] && S.page !== false
+          ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units())
+          : ''
+      );
+      // Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card before the groups.
+      const bas = SUBJ.pages.includes('basics') ? listBasics('groups', 'gt', true) : '';
+      return {html: [bas, ...groups, ...sets].join(''), shown: true};
+    },
+    foot() {
+      const key = TREEU.key,
+        tx = listTaxa();
+      return key
+        ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>`
+        : tx
+          ? `<p class="note keycite">Groups: ${esc(tx.cite)}</p>`
+          : '';
+    },
+    bind() {},
+    after() {}
   }
-  const gf = $v.querySelector('.gfilt');
-  if (gf)
-    gf.ontoggle = () => {
-      gfOpen = gf.open;
-    };
-  document.getElementById('fam').onchange = e => {
-    azFam = e.target.value || null;
-    draw();
+};
+// The taxonomic groups a keyless tree subject's families sit under (the sea slugs'), none for a subject with a key.
+const listTaxa = () => !TREEU.key && UNITS[SUBJ.id].listBy && TREEU.taxa;
+// No key and a rank to group by (UNITS listBy: the sea slugs' 'family'): one block per unit of that rank above the units
+// (their parent), titled by its name, in the subject's order (its tree's, TREEU.gen), the units in the slate's order
+// inside it; units without one in a last block.
+function byRank(L, rk, blk) {
+  const B = unitsByParent(L, rk),
+    // the family's heading, its first English name beside it (app.js vernFirst)
+    fam = ([p, U]) =>
+      blk(
+        p
+          ? `<h3 class="gdiv" title="${esc(unameT(p))}"><span class="gtitle">${uname(p)}${vernFirst(p) ? ` <small class="ven">${esc(capFirst(vernFirst(p)))}</small>` : ''}</span></h3>`
+          : '',
+        U
+      ),
+    tx = TREEU.taxa;
+  if (!tx) return B.map(fam);
+  // Its families under their taxonomic groups (the tree's taxa, a published classification: tools/seaslug_groups.json;
+  // the true nudibranchs apart from the other sea slugs), in the groups' order, a heading each.
+  const tg = p => (p && GX(p).tg) || 0;
+  return [...tx.groups, {n: 0, title: ''}].flatMap(gr => {
+    const In = B.filter(([p]) => tg(p) === gr.n);
+    return In.length ? [gr.n ? `<h3 class="gtax">${esc(gr.title)}</h3>` : '', ...In.map(fam)] : [];
+  });
+}
+const listBuild = S => LIST_BUILD[S && S.flat ? 'flat' : 'tree'];
+// The page: the builder's lead, the grid (empty, then drawn: the filters redraw it alone), the builder's foot. The grid is the
+// page's one `.tiplist` or `.grid` child.
+function viewList() {
+  const B = listBuild(SUBJ),
+    G = B.grid();
+  $v.innerHTML = `${B.lead()}<div class="${G.cls(false)}"${G.id ? ` id="${G.id}"` : ''}></div>${B.foot()}`;
+  const grid = $v.querySelector(':scope > .tiplist, :scope > .grid');
+  const draw = () => {
+    const o = B.blocks();
+    grid.innerHTML = o.html;
+    grid.className = G.cls(o.shown);
+    packGroups(grid);
+    B.after(grid);
   };
-  $v.querySelectorAll('[data-o]').forEach(
-    b =>
-      (b.onclick = () => {
-        azOrder = b.dataset.o;
-        try {
-          localStorage.setItem('reefid-sync-order', azOrder);
-        } catch (e) {}
-        viewGenera();
-      })
-  );
-  // Group index: jump to a lecture group (a button, not a link: the hash is the page route).
-  $v.querySelectorAll('[data-jump]').forEach(
-    b =>
-      (b.onclick = () => {
-        const h = document.getElementById('grp-' + b.dataset.jump);
-        if (h) h.scrollIntoView({behavior: 'smooth', block: 'start'});
-      })
-  );
-  $v.querySelectorAll('[data-gv]').forEach(
-    b =>
-      (b.onclick = () => {
-        azView = b.dataset.gv;
-        try {
-          localStorage.setItem('reefid-sync-gview', azView);
-        } catch (e) {}
-        viewGenera();
-        pageHelp();
-      })
-  );
+  B.bind(draw);
   draw();
 }
+// list build: end
 
 // Lecture groups as blocks on one grid: a block spans as many columns as it has genera (up to the row), so a
 // group of 1-3 genera shares its row with the next ones. Phones keep one group per row (blocks display:contents).
@@ -357,7 +506,7 @@ const rootLine = (g, slate, where = 'on the slate', unit = n => `<i>${esc(n)}</i
 
 function viewGenus(name) {
   const g = GX(name);
-  if (!g) return viewGenera();
+  if (!g) return viewList();
   const XL = (DATA.x || {}).leaf || {},
     paths = [...DATA.key, ...(g.x ? DATA.x.groups : [])].flatMap(k =>
       k.leaves.filter(l => l.g.includes(name) || (XL[l.id] || []).includes(name)).map(l => ({k, l}))
@@ -791,95 +940,12 @@ function viewCompare(a, b) {
   bindCards();
   bindGo();
 }
-// Fish families (#learn/genera with the fish subject, app.js UNITS list): every family of the slate (all circles) by the
-// groups of the identification key in force (fish.json key; rule S3), in the key's order, each group under its number
-// and title as the key prints them; each family with a photo, its IMR cues and how IMR tells its look-alikes apart. The
-// key is credited in full under the list. A region with no key: the entries in one block. The winks stay a surprise.
-// Each entry opens its family's sheet (viewFishSheet; an IMR entry by the family it was renamed into).
 // The photo a unit's Learn list card shows (app.js cover), null for a sheet that is not a list unit: the first photo of
 // the sheet the card opens (Pierre, 2026-11-20), enlargeable there with its credits.
 const listPhoto = id => {
   const g = GX(id);
   return g ? cover(g) : null;
 };
-function viewFishList() {
-  // Each entry is one card that opens its sheet (app.js listCard, shared with the corals' ID tips view; Pierre,
-  // 2026-11-20): the photo opens the sheet too, where the photos enlarge with their credits.
-  const tip = n => {
-    const g = GX(n),
-      // its first English name given as information (app.js vernFirst: the sea slugs'), under its name
-      ven = vernFirst(n);
-    // the photo: the admin's ★ Cover while in play (app.js treeCurate), else the card photo (core.js easyCover)
-    return listCard(
-      n,
-      cover(g),
-      `${ven ? `<span class="ven">${esc(capFirst(ven))}</span>` : ''}<small>${esc(altName(g.fam))}</small>`,
-      // the look-alikes' lines without their sources, which the sheet gives (app.js treeGenera lksrc; rule C2)
-      `${g.lk.length ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>` : ''}${
-        g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''
-      }`
-    );
-  };
-  const blk = (head, L) => (L.length ? `<section class="gblk" data-n="${L.length}">${head}${L.map(tip).join('')}</section>` : '');
-  const key = TREEU.key,
-    head = (n, t) =>
-      `<h3 class="gdiv"${typeof n === 'number' ? ` style="--g:${groupHue(n)}"` : ''}><span class="gn">${n}</span><span class="gt">${esc(t)}</span></h3>`,
-    groups = key
-      ? [
-          ...TREEU.groups.map(gr =>
-            blk(
-              head(gr.n, gr.title),
-              slateGenera().filter(n => GX(n).group === gr.n)
-            )
-          ),
-          blk(
-            head('?', 'Not in a group yet'),
-            slateGenera().filter(n => !GX(n).group)
-          )
-        ]
-      : UNITS[SUBJ.id].listBy
-        ? byRank(slateGenera(), UNITS[SUBJ.id].listBy)
-        : [blk('', slateGenera())];
-  // No key and a rank to group by (UNITS listBy: the sea slugs' 'family'): one block per unit of that rank above the units
-  // (their parent), titled by its name, in the subject's order (its tree's, TREEU.gen), the units in the slate's order
-  // inside it; units without one in a last block.
-  function byRank(L, rk) {
-    const B = unitsByParent(L, rk),
-      // the family's heading, its first English name beside it (app.js vernFirst)
-      fam = ([p, U]) =>
-        blk(
-          p
-            ? `<h3 class="gdiv" title="${esc(unameT(p))}"><span class="gtitle">${uname(p)}${vernFirst(p) ? ` <small class="ven">${esc(capFirst(vernFirst(p)))}</small>` : ''}</span></h3>`
-            : '',
-          U
-        ),
-      tx = TREEU.taxa;
-    if (!tx) return B.map(fam);
-    // Its families under their taxonomic groups (the tree's taxa, a published classification: tools/seaslug_groups.json;
-    // the true nudibranchs apart from the other sea slugs), in the groups' order, a heading each.
-    const tg = p => (p && GX(p).tg) || 0;
-    return [...tx.groups, {n: 0, title: ''}].flatMap(gr => {
-      const In = B.filter(([p]) => tg(p) === gr.n);
-      return In.length ? [gr.n ? `<h3 class="gtax">${esc(gr.title)}</h3>` : '', ...In.map(fam)] : [];
-    });
-  }
-  const sets = SETS().map(S =>
-    Q[S.k] && S.page !== false
-      ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units())
-      : ''
-  );
-  // A subject's own line (UNITS lede: the sea slugs), else the fish's
-  const lede =
-    UNITS[SUBJ.id].lede ||
-    `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named on its sheet) and IMR’s names. Tap a family to open its sheet. Photos: iNaturalist and FishBase.`;
-  const tx = !key && UNITS[SUBJ.id].listBy && TREEU.taxa;
-  // Step 0 of the Learn path (SUBJECTS pages 'basics'): the subject's basics card before the groups.
-  const bas = SUBJ.pages.includes('basics')
-    ? `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the groups"><span class="gn">0</span><span class="gt">${esc(basicsWords().name)}</span></h3>${basicsCard(true)}</section>`
-    : '';
-  $v.innerHTML = `<p class="lede">${lede}</p><div class="tiplist gpack${tx ? ' gtaxa' : ''}">${[bas, ...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : tx ? `<p class="note keycite">Groups: ${esc(tx.cite)}</p>` : ''}`;
-  packGroups($v.querySelector('.tiplist'));
-}
 
 /* ---------- Fish sheets ---------- */
 // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B): one family sheet per family of the

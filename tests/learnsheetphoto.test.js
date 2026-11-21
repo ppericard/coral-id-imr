@@ -17,7 +17,7 @@ test('listPhoto is the photo the list card shows, null when the id is not a list
   const ctx = {GX: n => GEN[n], cover: g => g.coverP || {f: 'default.jpg'}};
   vm.createContext(ctx);
   vm.runInContext(
-    block(learn, 'const listPhoto = id => {', '\nfunction viewFishList', {file: 'learn.js'}) + '\nthis.listPhoto = listPhoto;',
+    block(learn, 'const listPhoto = id => {', '\n/* ---------- Fish sheets', {file: 'learn.js'}) + '\nthis.listPhoto = listPhoto;',
     ctx
   );
   assert.deepStrictEqual(ctx.listPhoto('fam1'), {f: 'list.jpg'});

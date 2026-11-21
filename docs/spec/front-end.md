@@ -73,8 +73,14 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   the first Learn tab ("Basics" on phones): [basics.md](basics.md).
 - **Learn › Genera** (`#learn/genera`): the genera grid (lecture-group order by default, a slate order toggle), Photos
   or ID tips view; its first block is the basics card ([basics.md](basics.md#one-engine-one-content-per-subject)). Lecture group
-  titles are `.gtitle`. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
-  genera, `learn.js` `viewFishList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
+  titles are `.gtitle`. **One list page for every subject** (`learn.js` `viewList`, rule S1; the one-engine study §5 step 9):
+  the frame (the lead, the grid, the foot, the redraw, the packing of the groups) is shared, and what differs is the
+  builder `LIST_BUILD` picks by the data shape the subject declares (`SUBJECTS` `flat`): `flat` (the corals: the IMR slate in
+  the lecture's groups or the slate's order, the search, the family filter, Photos | ID tips, the Coral Finder's other
+  genera folded under the list) and `tree` (the fish and the sea slugs: the key's groups, or a block per unit of the rank
+  `UNITS listBy` names, or one block; the opt-in sets; no filter), each with the same six members (`lead`, `grid`, `blocks`,
+  `foot`, `bind`, `after`); `tests/listbuild.test.js`. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
+  genera, `learn.js` `viewList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
   name and its notes are its arguments), on the `.lcard` surface (DESIGN.md "Components"). The whole card opens the
   unit's sheet (Pierre, 2026-11-20): one link, the unit's name (`a.tipsheet`), stretched over the card, a chevron, no
   "Open the sheet" line; its cues without their heading or source (`tipsList` `bare`), which the sheet shows (rule C2);
