@@ -34,8 +34,13 @@ correct (the note already classes the clean rule, the stop rule and the primary 
 - **Clean** (per-player reserve): a reserved exam answer whose observation (the photo's `o` in `fish-game.json`, rule
   L3) has no earlier logged quiz exposure for that player, **and** whose player's first answer in that subject came
   after the reserve shipped. The second condition stands for the exposures nobody logs (sheets, cards, Home, Memory),
-  as the note's `since` did. A row that fails it is reported apart as a sensitivity row; it never enters the primary or
-  the stop rule.
+  as the note's `since` did. **Amended after review (Codex on #1386, the same evening, while no clean row existed, so
+  no outcome informed it):** the reserve is stateless (`core.js` `reserveOf`), so an observation can enter a player's
+  reserve when the photos in play change, after it sat in practice on unlogged sheets or cards. A third condition
+  therefore: the observation is in that player's reserve (`reserveOf` with their `reserveId`) at every version of the
+  subject's pool files (their commits on `main`) from the player's first answer in the subject to the exam answer. A
+  row whose withholding cannot be shown that way counts as not clean. A row that fails any condition is reported apart
+  as a sensitivity row; it never enters the primary or the stop rule.
 - **Primary contrast (adapted to exam only):** among exam answers, clean reserved against not reserved, matched on
   subject and typed or not; players as the unit, a sign-flip test over players, one-sided 5%. Confounds that remain and
   are named, not removed: a not-reserved exam answer happens only once the player's reserve for that unit is spent or
@@ -44,8 +49,12 @@ correct (the note already classes the clean rule, the stop rule and the primary 
   exposure, same subject, matched on typed or not and the number of choices. Exploratory: an exam photo is the hardest
   of its pool, so this contrast reads a difficulty gap as well as transfer.
 - **Stop rule (restated for the exam):** the primary runs once 20 players each have 10 clean reserved exam answers or
-  more (two exams' worth, `EXAM.n` = 5). Before that, pooled counts only, read as descriptive: no test, no interval,
-  no per-player table.
+  more (two exams' worth, `EXAM.n` = 5) **and** at least 3 not-reserved exam answers in the same matched cell (subject ×
+  typed or not), so each of the 20 gives a paired difference (amended after the same review: `examSet` asks unused
+  reserved observations first and a unit reserves up to 15, so reserved answers alone can pile up with no comparator).
+  Before that, pooled counts only, read as descriptive: no test, no interval, no per-player table. If the reserved
+  side reaches 20 players but the paired side does not, the primary is not run and the report says so; the
+  secondary is then the only contrast, read as exploratory.
 
 ## 3. What the log holds (aggregates)
 
@@ -69,6 +78,8 @@ correct (the note already classes the clean rule, the stop rule and the primary 
 
 - Clean rows need players who start a subject after 2026-11-19 15:12 Manila. There are none yet. Every current player
   adds only sensitivity rows, for good, in the subjects they had already played.
+- Not-reserved exam answers come late (a unit's reserve spent, or a thin unit): 3 since the reserve shipped. The paired
+  side of the stop rule is likely to be the slower one.
 - 20 such players with 10 clean reserved exam answers each means 200 clean exam answers, at least 40 exams. With 3
   active players today, it is reached only with a new intake of RAs (or by starting a subject they have not played:
   their first sea slug or coral answers after the reserve would make those subjects' rows clean).
