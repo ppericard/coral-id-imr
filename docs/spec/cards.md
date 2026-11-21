@@ -300,12 +300,13 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with three tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with four tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
-  tip's `id`, `ctx` (the games whose break may show it), `target(u)` (who it is for, on the usage counters), `from` (the
-  questions answered from which it can first show), `now(b)` (its preferred moment at a break: b = {ctx, miss, zm}),
+  tip's `id`, `ctx` (the games whose break may show it), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
+  break's `b.mix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
+  break: b = {ctx, miss, zm, mix}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
   between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj}, subj the `core.js` `SUBJECTS` record on
   screen: the text follows the subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
@@ -317,7 +318,9 @@ once a player uses it, how often is their choice. A small generic system with th
   like `reefid-zoomhint`): `u` the usage counters (`q` game questions answered here: photo quiz, custom quiz, duels; `z`
   quiz photos the player enlarged here, on a question or its mix-up montage, `quiz.js` `tipZoomed`; a tip's own Show me
   is not counted; `c` times the Custom quiz was opened here; `d` times the Duel tab was opened here, `quiz.js`
-  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
+  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`; `m` times the
+  Custom quiz's My mix-ups view was drawn here, `quiz.js` `viewCustom`, a saved choice of that view also folding in as one),
+  seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
   a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
@@ -351,6 +354,17 @@ once a player uses it, how often is their choice. A small generic system with th
   subject's own word, `SUBJECTS` `many`), "Look-alike duels show photos of one of two look-alike genera and ask which one
   it is. The ones you still mix up come up most." (the Duel tab's own pick, `duelPick`), **Show me** (opens the
   Duel tab, `#practice/duels`) and **Got it**.
+- **The My mix-ups tip** (`id` `mixups`, tip (c) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  with 100 questions or more here who has mixed up **at least 2 pairs** of units `TIPR.MIX` (3) times or more (the pairs
+  the view's own `mixEdges` weigh, both ways added, read at the break from the player's record, `b.mix`: counted only while
+  `u.m` is 0) and never saw the Custom quiz's My mix-ups view (counter `u.m`). In the Quiz and the Custom quiz; its
+  moment, the Next right after a miss, else any break from 20 questions later; twice at most, the second 150 questions
+  after the first; last of the four when several are due (one tip a visit). Card: "Did you know?", "Quiz yourself on
+  your mix-ups", "The Custom quiz's My mix-ups view groups the genera you confuse with each other, the most confused
+  first. Tap All on a group, then Start." ("Click" with a mouse; the subject's own word, `SUBJECTS` `many`), **Show me** (the Custom quiz's
+  picking page on the My mix-ups view, which it then keeps as the chosen view) and **Got it**. The log cannot say who
+  saw the view, so `m` counts from the device on. My progress's "Your tricky pairs" shows itself: no tip
+  ([record](../decisions/2026-11-21-tip-c-my-mix-ups.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,

@@ -1707,9 +1707,14 @@ function anBackGenus(a) {
     pooled = `${anMult(S.est)} the app’s${S.lo != null ? ` (likely ${anMult(S.lo)} to ${anMult(S.hi)})` : ''}`,
     mlo = Math.exp(-(S.hw || 0.3)),
     mhi = Math.exp(S.hw || 0.3),
-    need = S.need
-      ? `about ${anInt(S.need)} questions for a range within ±30% of the stability`
-      : 'its range is open-ended, so no count can be given',
+    // S.need: the questions a range within ±30% of the stability would take; 0 for a range that narrow already (what is
+    // missing is then players, not precision); absent for a range with no end (analysis.js backGenus)
+    need =
+      S.need > 0
+        ? `about ${anInt(S.need)} questions for a range within ±30% of the stability`
+        : S.need === 0
+          ? 'its range is already within ±30% of the stability, so more questions would not narrow it much'
+          : 'its range is open-ended, so no count can be given',
     verdict = S.edge
       ? `Not enough data yet. ${left}; they fit any stability ${S.est > 1 ? 'above' : 'below'} ${anMult(S.est)} (the likelihood is still ${S.est > 1 ? 'rising' : 'falling'} at the end of the range searched): about ${S.min} from ${S.minPlayers} players are needed.`
       : !enough

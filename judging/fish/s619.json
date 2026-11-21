@@ -234,7 +234,8 @@
   },
   "fish-s619-cand-33650710": {
    "code": "p1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s619-cand-25741361": {
    "code": "o1g1smk1",
@@ -281,7 +282,8 @@
     0.75,
     0.62
    ],
-   "note": "crop: the dark wrasses below leave the frame (Q430)"
+   "note": "crop: the dark wrasses below leave the frame (Q430)",
+   "phase": "male"
   },
   "fish-s619-cand-333097936": {
    "code": "o1g1ssk1",
@@ -348,7 +350,8 @@
   },
   "fish-s619-cand-458581383": {
    "code": "p1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s619-cand-277429739": {
    "code": "o1g1smk2",
@@ -356,7 +359,8 @@
   },
   "fish-s619-cand-281175686": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s619-cand-33650703": {
    "code": "o1g1mss2",
@@ -396,7 +400,8 @@
   },
   "fish-s619-cand-489154796": {
    "code": "p1g2mmo2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s619-cand-733543358": {
    "code": "p1g1sm14",
@@ -432,7 +437,8 @@
   },
   "fish-s619-cand-281244771": {
    "code": "p1g0ss13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s619-cand-56995420": {
    "code": "p1g0sm1j3",
@@ -440,7 +446,8 @@
   },
   "fish-s619-cand-2990412": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s619-cand-112422713": {
    "code": "o1g0mm12",
