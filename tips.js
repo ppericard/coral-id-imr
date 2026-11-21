@@ -21,8 +21,10 @@
 // A tip in TIPS: id; ctx, the games whose break at Next may show it (the hash before any "|"); target(u, b), who it is
 // for, on the counters (and, for the one whose audience is the player's own record, on b); from, the u.q from which it
 // can first show; now(b), its preferred moment at a break (b: {ctx, miss, zm, mix: the pairs of units the player mixed up
-// TIPR.MIX times or more, counted by quiz.js only while a tip needs it}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
-// the questions between two; card (kick, title(o) and body(o), o: {mouse, subj: the SUBJECTS record on screen}), the text of its card; act, its "Show me" action
+// TIPR.MIX times or more, counted by quiz.js only while a tip needs it, bx: 1 for a player the basics tip is for,
+// quiz.js tipBasics}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
+// the questions between two; card (kick, title(o) and body(o), o: {mouse, subj: the SUBJECTS record on screen, basics: the
+// subject's basics words, app.js UNITS basics}), the text of its card; act, its "Show me" action
 // (quiz.js TIP_ACT), or none.
 (function (root) {
   // Global rules: at most one tip a visit, never in its first FLOOR answers (plus, in quiz.js: one card a break, within
@@ -122,6 +124,31 @@
           `The Custom quiz's My mix-ups view groups the ${(o && o.subj && o.subj.many) || 'genera'} you confuse with each other, the most confused first. ${o && o.mouse ? 'Click' : 'Tap'} All on a group, then Start.`
       },
       act: 'mixups'
+    },
+    {
+      // The subject's basics module (d: Coral basics, Fish basics), the one the first-launch answer "new" offers first (the
+      // tour's last button, quiz.js startBasicsOffer, Home's line), for the player that offer is for (b.bx: quiz.js tipBasics,
+      // read from the subject's own first-launch record and its basics record, not a counter: the module's page already
+      // records the step it opens) who still has not opened it. The "lower" fallback card offers it to those who said they
+      // had the course or know the subject, never to "new": the two audiences are apart, so one player never gets both.
+      // Shown in the Quiz only, from 30 questions; best right after a miss (the first genera felt hard), else at any break
+      // from 20 questions later; twice at most, the second 150 questions after the first; after the other four tips when
+      // several are due. Show me opens the module. Its words are the subject's (o.basics: app.js UNITS basics).
+      id: 'basics',
+      ctx: ['quiz'],
+      target: (u, b) => !!(b && b.bx),
+      from: 30,
+      now: b => !!b.miss,
+      wait: 20,
+      max: 2,
+      every: 150,
+      card: {
+        kick: 'Did you know?',
+        title: o => `${(o && o.basics && o.basics.ask) || 'New here?'} Try ${(o && o.basics && o.basics.name) || 'the basics'}`,
+        body: o =>
+          `${(o && o.basics && o.basics.lo) || 'The basics shows the words the ID tips use, on real photos. About 5 minutes.'} It is in Learn, any time.`
+      },
+      act: 'basics'
     }
   ];
   const num = x => (typeof x === 'number' && isFinite(x) && x >= 0 ? Math.floor(x) : 0);
@@ -147,7 +174,8 @@
   // One more use of a feature (k: a counter of u).
   const tipUse = (st, k) => ({...st, u: {...st.u, [k]: (st.u[k] || 0) + 1}});
   // The tip due at this break, or null. b: {ctx: the game (hash before "|"), miss: the answer was wrong, zm: a photo of
-  // the question was enlarged before answering, mix: the pairs mixed up TIPR.MIX times or more, 0 when not counted}.
+  // the question was enlarged before answering, mix: the pairs mixed up TIPR.MIX times or more, 0 when not counted, bx:
+  // the basics tip's audience, 0 when not counted}.
   function tipDue(st, b, L = TIPS) {
     if (st.v.tip || st.v.n < TIPR.FLOOR) return null;
     return (

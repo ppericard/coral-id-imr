@@ -70,6 +70,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [A family the game covers with few species gets at least 90 candidate photos](2026-11-21-fish-family-floor.md) | #1379 |
 | 2026-11-21 | [The fish phase flag comes from the cited phase list too, and the phase card names the list's sources](2026-11-21-fish-phase-flag-from-cited-list.md) | #1395 |
 | 2026-11-21 | [The fish welcome's names step: common names, scientific names or both, right after the first-launch question](2026-11-21-fish-welcome-names-step.md) | #1396 |
+| 2026-11-21 | [Life stages matched: a Lab prototype on the documented phases only, a stage shown and the same species at another stage among three, the source said](2026-11-21-life-stages-lab.md) | #1388 |
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
 | 2026-11-21 | [One Remove in the admin: one click, out for good, an Undo just after, one list to put a photo back](2026-11-21-one-remove.md) | #1393 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
@@ -83,6 +84,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [Find the X for the sea slugs plays: the boxes and tiles are in, checked on the real tiles](2026-11-21-slug-find-the-x-plays.md) | #1411 |
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | ["Did you know?" tip (c): My mix-ups, for players with several pairs mixed up who never saw the view](2026-11-21-tip-c-my-mix-ups.md) | #1420 |
+| 2026-11-21 | ["Did you know?" tip (d): Coral basics, for the "new" player who never opened it](2026-11-21-tip-d-coral-basics.md) | #1446 |
 | 2026-11-21 | [The tree sheets' helpers of learn.js named tree*, not fish*](2026-11-21-tree-names-learn-sheets.md) | #1389 |
 | 2026-11-21 | [One tree-game builder: the sea slugs' photos in play are the fish's, one photo once across every list](2026-11-21-tree-photo-once.md) | #1405 |
 | 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |

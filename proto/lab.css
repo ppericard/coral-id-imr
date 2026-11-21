@@ -4590,7 +4590,8 @@ body:has(.ikstart:not([hidden])) main {
 /* Odd one out (proto/oddone.js): Find the X's four square tiles (app.css .fxt, quiz.js fitStage). Most photos here are shown
    whole, not as the fish's square cut, so each tile has a blurred copy of its photo behind it, as the quiz's photos do (no
    black bars): the same for the four, so no tile looks different from the others. */
-.q.ooq .fxt::before {
+.q.ooq .fxt::before,
+.q.lsq .fxt::before {
   content: '';
   position: absolute;
   inset: -30px;
@@ -4602,12 +4603,52 @@ body:has(.ikstart:not([hidden])) main {
 }
 /* Answered, on a phone or tablet: the verdict sheet is at the bottom and the stage takes the space above it, so the prompt
    would only peek out above the sheet. */
-.q.ooq.done .qtop {
+.q.ooq.done .qtop,
+.q.lsq.done .qtop {
   display: none;
 }
 @media (min-width: 1024px) {
-  .q.ooq.done .qtop {
+  .q.ooq.done .qtop,
+  .q.lsq.done .qtop {
     display: flex;
+  }
+}
+
+/* Life stages matched (proto/lifestages.js): Odd one out's tiles (above), the first one the stage shown: not a button, outlined
+   in the accent colour with its stage on it ("juvenile", "female": what is asked, not an answer), the three others the choices.
+   Answered, each tile names its species and its stage. */
+.q.lsq .fxt > button[data-c],
+.q.lsq .fxt.fref img {
+  position: relative;
+}
+.q.lsq .fxt.fref {
+  outline: 3px dashed var(--accent);
+  outline-offset: -3px;
+}
+/* Answered, the caption is the stage on its own line, then the species' name, which wraps (never cut: on a phone a long
+   common name would cut the stage off with it). */
+.q.lsq .fxt figcaption {
+  width: max-content;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  line-height: 1.2;
+  padding: 3px 9px;
+  border-radius: 10px;
+}
+.q.lsq .fxt .lsst {
+  display: block;
+  text-transform: capitalize;
+}
+.q.lsq .fxt .lsnm {
+  display: block;
+  font-weight: 400;
+}
+/* Answered with More open on a phone or tablet: the sheet scrolls inside a shorter box (its More and Next stay in view at its
+   bottom, app.css .fbrow) so the four photos above it keep a size whose captions can be read. */
+@media (max-width: 1023px) {
+  .q.lsq.done #after {
+    max-height: 40vh;
   }
 }
 

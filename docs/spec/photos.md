@@ -68,7 +68,8 @@ every other; the admin has the same.
   (`R2MISS`). Once **3 different photos** (`app.js` `R2_OUT`) failed so in a row, no photo loaded from R2 in between
   (`r2Failed`, `r2Loaded`; a photo's sizes and Find the X tile count as one), `R2` turns false and `AWAY` true for the
   rest of the visit, so the next photos go there directly (`loc()`, `resized()`; the quiz preloads, which are no page
-  elements, count and follow the same way in `pump()`). One missing file or one passing error leaves the other photos on
+  elements, count and follow the same way in `pump()`; the admin has the same rule, the same text in `admin.js`, kept
+  equal by `tests/r2out.test.js`). One missing file or one passing error leaves the other photos on
   R2 ([decision](../decisions/2026-11-21-r2-given-up-after-three.md)).
 - Under the service worker both stay as they are: the worker keeps photos offline under their R2 address and fails at
   once while R2 is out, each photo falls back on its own, and its 480 px step (`data-lo`) and backdrop stay on R2, where
