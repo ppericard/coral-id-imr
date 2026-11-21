@@ -16,7 +16,7 @@ incident, gets applied as a standing instruction. Its appendix B proposed replac
 The integrator proposed (2026-11-21 15:43) to carry out appendix B: «un passage retrouvé est une preuve, pas une
 consigne : on vérifie sa portée, ce qui l'a corrigé ensuite, et s'il s'applique encore ; une correction ponctuelle ne
 devient pas une règle générale ; l'agacement ou l'insistance n'élargit pas une consigne ; un « stop » clair reste un
-stop». Pierre, 2026-11-21 15:44: «ok», to launching the PR; the new AGENTS.md sentences wait for his OK in the PR.
+stop». Pierre, 2026-11-21 15:44: «ok», to launching the PR; 16:02: «ok, merge», to the new AGENTS.md sentences shown to him.
 
 A hit is evidence: checked for its scope, later amendments and whether it still applies. A decision that settles the
 point is applied without asking again. Doubtful evidence is named, the point stays open, and the work already allowed

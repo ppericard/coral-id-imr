@@ -1828,3 +1828,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   n'élargit pas une consigne ; un « stop » clair reste un stop» («Tu es d'accord pour que je lance la PR du point 1 ?»).
   Decides: the PR is launched; its new AGENTS.md sentences wait for his OK there. Applied: AGENTS.md, rule W7,
   INTEGRATOR.md, this file's header, tools/asked.py, decisions/2026-11-21-answers-as-evidence.md (#1361); REE-178.
+- **16:02, answers as evidence: the wording.** «ok, merge», to the three new AGENTS.md sentences shown to him in the
+  chat (the integrator's role; a ledger hit is evidence, checked for scope, later amendments and applicability; an
+  observation, a one-incident correction, tone or repetition never widen an instruction, a clear stop is obeyed).
+  Applied: #1361; REE-178.
