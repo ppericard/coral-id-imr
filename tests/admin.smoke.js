@@ -3640,7 +3640,11 @@ async function lazyPart(b, base, fails) {
           // words stay. At 1280 from the script that stores one report per subject.
           if (v >= GATE && vw === 1280) {
             at = await look('seaslug/analyses/overview');
-            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || !notYet('sea slugs', at.not))
+            if (
+              !/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) ||
+              !at.cards ||
+              !notYet('sea slugs', at.not)
+            )
               fe.push(`sea slug Overview ${JSON.stringify(at)}`);
             const [H, LV] = await fq.evaluate(() => [
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(subjectOf('seaslug'), h))),
