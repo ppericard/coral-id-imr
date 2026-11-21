@@ -85,9 +85,9 @@ offsets, from the script that serves them, and its replay reads the same.
    `statsFor(S)` (`admin.js:10630`), which returns `{}` for every subject without `SUBJECTS` `replay` (the fish, the sea
    slugs), and `loadStats` (`admin.js:10139`) reads `?stats=1` without `&s=`, the corals' statistics alone. Built as
    items 1-5 only, the admin would replay a fish history holding one of the nine rows differently from the sheet. So:
-   `ownRead` and `loadOwnStats` (`admin.js:13087`, today the photos and `gd` for the Analyses) also keep `mem` and `fmt`
-   of a reply at or above the subject's `offsets` version; `statsFor(S)` gives a subject with `offsets` exactly what
-   `rplMake_` passes it (its own `mem` and `fmt`, nothing of the corals'); Players and Journey load the subject's
+   `ownRead` and `loadOwnStats` (`admin.js:13087`, today the photos and `gd` for the photo-difficulty views) also keep
+   `mem` and `fmt` of a reply at or above the subject's `offsets` version; `statsFor(S)` gives a subject with `offsets`
+   exactly what `rplMake_` passes it (its own `mem` and `fmt`, nothing of the corals'); Players and Journey load the subject's
    statistics before they replay, and the `progOf` and `sessProg` memos key on them (today on `SMEM`, the corals').
 
 Files: `core.js`, `sync.js`, `model.js`, `Code.gs` (with its `tools/sync/changes/<branch>.md`, the version assigned
@@ -108,11 +108,11 @@ Players and Journey replay a fish history with a row without a record as `rplMak
   has its record replays as before. Each of the nine rows without one is re-scored with today's offsets if it carries
   the logged expectation and ability (`replayProgress` rebuilds such a row only then, `core.js:6834`): its format
   offset (`core.js:6863`) enters the unit's bar step and the ability steps (`dm − df`, `core.js:6102`, `6113`); its
-  memory offset only for a row logged before 2026-11-03 (`MEM_LOGGED`: after it the logged expectation already holds
-  the memory, `core.js:6861`). From that row on, the player's abilities (unit and level Elo, which also order the
-  leaderboard after the %) carry the change into every later answer, whose record keeps its inputs but not the ability
-  it starts from (`core.js:6096`); the bar of the unit answered in that row carries it through that unit's later
-  answers. The other units' bars read no ability (`barOf`, `core.js:5274`). How far it goes is not measured: the build
+  memory offset only for a row logged before 2026-11-03 12:46 Manila (`MEM_LOGGED`: after it the logged expectation
+  already holds the memory, `core.js:6861`). From that row on, the player's abilities (unit and level Elo, which also
+  order the leaderboard after the %) carry the change into every later answer, whose record keeps its inputs but not
+  the ability its Elo steps start from (`eloStep`, `core.js:6113` and the level's step after it); the bar of the unit
+  answered in that row carries it through that unit's later answers. The other units' bars read no ability (`barOf`, `core.js:5274`). How far it goes is not measured: the build
   replays every fish player with the offsets off and on and reports the difference before it merges (section 5).
 - **The sea slugs change at once too, a little:** their fitted offsets are already nonzero (section 2: k4 +0.13, k2
   −0.22, again +0.09, right once −0.71), so switching them on moves their scoring and draw from the first answer, by
@@ -149,8 +149,9 @@ Players and Journey replay a fish history with a row without a record as `rplMak
 **The fish at the same aim as the corals.** Fish players answer right 88% of the time where the app expects 82%.
 With their own format offsets, as the corals have since rules version 6, the fish draw would show photos a bit harder
 and a right answer would count a little less, to come back to the aim. Progress already reached does not move, except
-for the players who have one of the nine fish answers logged without their scoring record: theirs may move a little,
-measured and listed in the build's PR before it merges (section 4, corrected after review).
+for the players who have one of the nine fish answers logged without their scoring record: theirs may move (not measured
+yet; expected small, a guess), measured and listed in the build's PR before it merges (section 4, corrected after
+review).
 - **A**: switch the fish and the sea slugs to their own offsets, as designed here (the sea slugs' are small but already
   nonzero, section 2).
 - **B**: keep the fish on no offset until the photo difficulty prior is re-examined (REE-10).
