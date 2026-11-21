@@ -302,7 +302,8 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => ({}), // model.js pfmt: no offsets for the fish
-      genusDiff: () => 0
+      genusDiff: () => 0,
+      photoTimeQ: () => undefined // quiz.js photoTimeQ: no photo time term (before RTNET_SHEET)
     };
     vm.createContext(env);
     st(target);

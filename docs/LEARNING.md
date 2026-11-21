@@ -1183,7 +1183,10 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
   the corals).
 - **Equivalence.** With no terms passed and none logged, the replay of every player of the log (corals, fish, sea
   slugs; the corals also with the sheet's other numbers) is identical to `main`'s.
-APPWORLD
+- **The app world** (level 1; `node tools/learnsim.js --stats` (the corals' statistics rebuilt from the real log with
+  the terms, at `RTNET_SHEET`) `--truth gen`, the default profiles, 5 seeds, 300 questions; before = `main`): its
+  simulated seconds do not depend on the photo, so it can show only that no learning path breaks, never a gain.
+  Results: see the PR (#TBD).
 
 ### Photo memory
 
