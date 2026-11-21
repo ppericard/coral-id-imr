@@ -1,6 +1,6 @@
 # The fish welcome's names step: common names, scientific names or both, right after the first-launch question
 
-Date: 2026-11-21. PR: #1388. Linear: REE-57. Rules or docs touched: S1, D4; docs/FISH_PATH.md "Which names a
+Date: 2026-11-21. PR: #1396. Linear: REE-57. Rules or docs touched: S1, D4; docs/FISH_PATH.md "Which names a
 player learns", docs/spec/cards.md "The first-launch question", docs/spec/fish-game.md "The What I learn card: names
 rows", docs/LEARNING.md "The first-launch question".
 
