@@ -2,11 +2,13 @@
  "photos": {
   "fish-s206-cand-467757212": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s206-cand-467757227": {
    "code": "o1g1sm13",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "terminal"
   },
   "fish-s206-cand-467757231": {
    "code": "h1g1sm12",
@@ -18,11 +20,13 @@
   },
   "fish-s206-cand-459045636": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s206-cand-738722507": {
    "code": "o1g2bl11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s206-cand-738722514": {
    "code": "p1g2sm13",
@@ -34,7 +38,8 @@
   },
   "fish-s206-cand-605888989": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s206-cand-605878777": {
    "code": "d1g2sl12",
@@ -94,7 +99,8 @@
   },
   "fish-s206-cand-625748186": {
    "code": "p1g2sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s206-cand-705117043": {
    "code": "d1g2sm12",
@@ -150,7 +156,8 @@
   },
   "fish-s206-cand-545406261": {
    "code": "o1g1slo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s206-cand-545406279": {
    "code": "o1g1slm2",
@@ -178,11 +185,13 @@
   },
   "fish-s206-cand-252588375": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s206-cand-249025113": {
    "code": "o1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s206-cand-249025107": {
    "code": "p1g1sm13",
@@ -190,11 +199,13 @@
   },
   "fish-s206-cand-328944123": {
    "code": "p1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s206-cand-444037469": {
    "code": "p0g0sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s206-cand-151450086": {
    "code": "o1g1ssx1",
@@ -206,7 +217,8 @@
   },
   "fish-s206-cand-553770440": {
    "code": "p0g0sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s206-cand-89109370": {
    "code": "o1d2sm11",
@@ -226,7 +238,8 @@
   },
   "fish-s206-cand-738762286": {
    "code": "p1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s206-cand-738762304": {
    "code": "o1g1sm12",

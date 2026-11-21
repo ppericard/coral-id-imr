@@ -2884,10 +2884,12 @@ async function startSmoke(b, base) {
       for (let i = 0; i < CHOICE.AT[0]; i++) startStep(0, 4, i % 4 === 0, true);
       return startDue();
     });
-    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).
+    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits). Each
+    // one is answered first (pendDone): a question left on screen is kept, and a kept question comes back with no offer.
     for (let k = 0; k < 6 && !(await p.$('.unlock.startfb')); k++) {
       await p.evaluate(() => {
         document.querySelectorAll('.unlock.intro').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        pendDone();
         quizPhoto();
       });
       await p.waitForTimeout(300);
@@ -2923,7 +2925,7 @@ async function startSmoke(b, base) {
     )
       fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
     if (fb) await p.click('.unlock.startfb [data-keep]');
-    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
+    const again = await p.evaluate(() => (pendDone(), quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
     if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
     // The "higher" card: no number either (it goes stale, or miscounts what is open).
@@ -6150,6 +6152,106 @@ async function subjTour(b, base) {
   return fails;
 }
 
+// The tour's arrows (tour.js arrows) never cover readable page text: at every step of the tour, phone and desktop, no
+// arrow's box meets a text line of the page behind the dim; and with text put under each arrow (a probe, as the quiz's
+// "Show the corallites (hint)" link sits under the Practice arrow), the arrow moves, shortens or goes: none stays over it.
+// Fish photos are not fetched (every other host is aborted). Returns the failures.
+async function tourArrowsCheck(b, base) {
+  const fails = [],
+    errs = [];
+  // The arrows now on screen and the page's text lines they meet (the tour itself left out).
+  const measure = () => {
+    const tour = document.getElementById('tour'),
+      arrows = [...document.querySelectorAll('#tour .tarw')].map(a => a.getBoundingClientRect()),
+      rg = document.createRange(),
+      walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT),
+      hits = [];
+    for (let n; (n = walk.nextNode());) {
+      const e = n.parentElement;
+      if (!n.nodeValue.trim() || tour.contains(n) || !e || /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(e.tagName)) continue;
+      if (!e.checkVisibility({visibilityProperty: true, opacityProperty: true})) continue;
+      rg.selectNodeContents(n);
+      for (const q of rg.getClientRects())
+        for (const a of arrows)
+          if (q.width > 0 && q.height > 0 && a.left < q.right && a.right > q.left && a.top < q.bottom && a.bottom > q.top)
+            hits.push(n.nodeValue.trim().slice(0, 30));
+    }
+    return {arrows: arrows.length, hits};
+  };
+  // Text lines laid exactly over each arrow now on screen (the tour is then re-placed by a resize).
+  const probe = () => {
+    const boxes = [...document.querySelectorAll('#tour .tarw')].map(a => a.getBoundingClientRect());
+    let made = 0;
+    for (const r of boxes)
+      for (let y = r.top; y < r.bottom; y += 14) {
+        const d = document.createElement('div');
+        d.className = 'arwprobe';
+        d.textContent = 'W'.repeat(Math.ceil(r.width / 7) + 2);
+        d.style.cssText = `position:fixed;z-index:1;left:${r.left}px;top:${y}px;font:12px/14px monospace;white-space:nowrap;pointer-events:none`;
+        document.body.appendChild(d);
+        made++;
+      }
+    return made;
+  };
+  for (const w of [390, 1280]) {
+    const c = await b.newContext({
+      viewport: {width: w, height: w < 600 ? 844 : 800},
+      serviceWorkers: 'block',
+      hasTouch: w < 600,
+      isMobile: w < 600
+    });
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => localStorage.setItem('reefid-nudge', '1'));
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(`${w}: ${e.message}`));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000});
+    let games = 0;
+    for (let k = 0; k < 12; k++) {
+      const pick = await p.$('#tour [data-pick="coral"]'),
+        start = pick ? null : await p.$('#tour [data-start="imr"]'),
+        before = await p.evaluate(() => (document.querySelector('#tour .tstep') || {}).textContent);
+      if (pick || start) {
+        await (pick || start).click();
+        await p
+          .waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, before, {timeout: 10000})
+          .catch(() => {});
+        await p.waitForTimeout(500);
+        continue;
+      }
+      await p.waitForTimeout(900); // the page behind the dim (photos, layout) settles; the tour places itself every 400 ms
+      const h = await p.evaluate(() => (document.querySelector('#tour .tbub h3') || {}).textContent || '');
+      const m = await p.evaluate(measure);
+      if (m.hits.length) fails.push(`tour arrows ${w} px, step "${h}": an arrow covers text ${JSON.stringify(m.hits)}`);
+      if (h === 'Four games') {
+        games++;
+        if (!m.arrows) fails.push(`tour arrows ${w} px: the Four games step shows no arrow`);
+        const n = await p.evaluate(probe);
+        await p.evaluate(() => dispatchEvent(new Event('resize')));
+        await p.waitForTimeout(300);
+        const m2 = await p.evaluate(measure);
+        if (n && m2.hits.length)
+          fails.push(`tour arrows ${w} px, text under the arrows: one still covers ${JSON.stringify([...new Set(m2.hits)].slice(0, 3))}`);
+        await p.evaluate(() => document.querySelectorAll('.arwprobe').forEach(e => e.remove()));
+      }
+      const next = await p.$('#tour .tnext');
+      if (!next) break;
+      if (/Start playing|Coral basics/.test(await next.textContent())) break;
+      await next.click();
+      await p
+        .waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, before, {timeout: 10000})
+        .catch(() => {});
+    }
+    if (games !== 1) fails.push(`tour arrows ${w} px: the Four games step was met ${games} times`);
+    await c.close();
+  }
+  if (errs.length) fails.push(`tour arrows: page errors ${errs.slice(0, 3).join(' | ')}`);
+  return fails;
+}
+
 // The offer to install the app (app.js installNudge, installCard), at 390 px on a touch screen: an
 // Android-like browser (a beforeinstallprompt event, made here: headless Chromium sends none), iPhone Safari (the steps),
 // the installed app (standalone), the 2nd visit, a quiz question, and ⚙ Settings › Install the app. The decision itself is
@@ -6565,7 +6667,7 @@ async function comparedLayoutCheck(b, base) {
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
 // (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
-// the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck);
+// the tour, for a player with one subject and with two (subjTour), and no tour arrow over page text (tourArrowsCheck); install: the offer to install the app (installCheck);
 // fishkey: the Fish ID Key in the Lab (fishKeyCheck); noupscale: an IMR lecture photo never drawn past its own pixels
 // (noUpscaleCheck).
 const PARTS = [
@@ -7550,7 +7652,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('tips')) for (const f of await customLeftCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
-  if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
+  if (run.has('subjtour')) for (const f of [...(await subjTour(b, base)), ...(await tourArrowsCheck(b, base))]) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);
