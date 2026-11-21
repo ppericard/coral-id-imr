@@ -29,8 +29,10 @@ a crop, could not be undone with "Full photo". Pierre decided the originals and 
   `tools/fetch_imr_originals.py` (run by `reefid-originals.yml` on a change of the frames file) writes the framing in force,
   not the lecture's.
 - **One writer of a lecture photo's files at a time** (integrator's call, Codex review of #1400): `reefid-originals.yml`
-  joins the `candidate-photos` concurrency group of `approved-photos.yml` (its job reads `main` when it starts, so its
-  `curation.json` is the latest) and no longer runs on a change of the tool alone, only on the frames file or by hand; a
+  runs in the `candidate-photos` concurrency group of `approved-photos.yml` (its run reads `main` when it starts, so its
+  `curation.json` is the latest) and in no other: not `photos-r2` as well, since holding `photos-r2` while waiting for
+  `candidate-photos` deadlocks with the `r2` job of `approved-photos.yml` (the reverse order); its files are never in
+  `img/`, so the copy of `img/` cannot touch them. It no longer runs on a change of the tool alone, only on the frames file or by hand; a
   photo whose original cannot be read is skipped with its reason, never stops the others (`fetch_imr_originals.make`).
 - **A lecture crop saved as it was opened writes nothing**, so rounding never makes the workflow download an original for
   the same picture. The 34 untraced lecture photos (no original online) keep no Crop: nothing to cut from.

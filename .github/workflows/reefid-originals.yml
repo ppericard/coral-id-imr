@@ -16,19 +16,20 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-# One writer of the bucket at a time (photos-r2.yml, approved-photos.yml).
+# One writer of a lecture photo's files at a time with approved-photos.yml, which remakes one when Pierre crops it (REE-60): a
+# run here that began before his Publish must not upload the lecture's framing over the new crop after that run did. The
+# run reads main when it starts, so its curation.json is the latest one. This one group only, never photos-r2 as well: with
+# both, this run (holding photos-r2) waited for candidate-photos while an approved-photos run (holding candidate-photos)
+# waited in its r2 job for photos-r2, a deadlock (Codex review of #1400). The files here are never in img/ (the 86 traced
+# photos are off it, tests/imrsources.test.js), so photos-r2.yml's and the r2 job's copy of img/ cannot touch them, and
+# this upload, like the one of new photos in approved-photos.yml, only adds files. (GitHub keeps one waiting run per group:
+# a run waiting behind another is replaced by a newer one, whichever workflow it is; start this one by hand again if it
+# was, and an approved-photos run replaced here is made up by the next one, which reads main whole: the weekly run too.)
 concurrency:
-  group: photos-r2
+  group: candidate-photos
   cancel-in-progress: false
 jobs:
   originals:
-    # Also one at a time with approved-photos.yml, which remakes a lecture photo when Pierre crops it (REE-60): a run here that
-    # began before his Publish must not upload the lecture's framing over the new crop after that run did. The job reads main
-    # when it starts, so its curation.json is the latest one. (GitHub keeps one waiting run per group: a run waiting behind
-    # another is replaced by a newer one; start this one by hand again if it was.)
-    concurrency:
-      group: candidate-photos
-      cancel-in-progress: false
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
