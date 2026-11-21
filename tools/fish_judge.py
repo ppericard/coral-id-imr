@@ -65,6 +65,42 @@ def with_flag(code, x, subject="fish"):
         raise ValueError(f"bad code {code!r}")
     fl = set(m.group(8)) | {x}
     return code[:7] + "".join(c for c in R["flags"] if c in fl) + m.group(9)
+
+
+# The phase flag p (judging/FISH.md "Tags"): every photo of a species whose sexes or colour phases look different, by a
+# cited source. Two sources, either one enough: the IMR presentation's phase lines (its teaching entry marked dimorph in
+# tools/fish_source.json: the Parrotfishes, the Anthias) and the cited phase list tools/fish_phases.json, whose sex or
+# ip_tp (initial and terminal phases) verdict is "yes" (docs/decisions/2026-11-20-fish-phases-sourced.md: any solid cited
+# source establishes a species' phases; Pierre, 2026-11-20 19:28). A sub-adult alone ("sub") adds no flag: its photo keeps
+# the juvenile card's Sub-adult (quiz.js juvCard); a "conflict" adds none either (rule C5: not settled here).
+PHASE_LIST = ROOT / "tools" / "fish_phases.json"
+PHASE_KINDS = ("sex", "ip_tp")
+_PHASE_SP = {}
+
+
+def phase_species(path=None):
+    """{fish.json species id: the verdicts of PHASE_KINDS that say "yes" for it} from the cited phase list, read once per
+    path; a species with none is not listed."""
+    p = Path(path) if path else PHASE_LIST
+    if p not in _PHASE_SP:
+        doc = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+        out = {}
+        for n, v in doc.items():
+            if n.startswith("_") or not isinstance(v, dict) or not v.get("sp"):
+                continue
+            kinds = tuple(k for k in PHASE_KINDS if v.get(k) == "yes")
+            if kinds:
+                out[v["sp"]] = kinds
+        _PHASE_SP[p] = out
+    return _PHASE_SP[p]
+
+
+def phase_flag(sid, entry=None, path=None):
+    """Whether the photos of species sid carry the phase flag p: its teaching entry (fish.json teach) marked dimorph, or
+    the cited phase list's sex or ip_tp verdict "yes" for it."""
+    return bool((entry or {}).get("dimorph")) or sid in phase_species(path)
+
+
 EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # at least 5 very easy photos per circle-1 entry
