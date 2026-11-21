@@ -189,7 +189,7 @@ ${idoor}
     const ver = typeof appVer === 'function' ? appVer() : '',
       inat = 'https://www.inaturalist.org',
       ab = subjMine() // the other subjects open to this player add their lines (app.js UNITS about); the corals' are below
-        .map(S => UNITS[S.id].about)
+        .map(S => UNITS[S.id].about && {...UNITS[S.id].about, id: S.id})
         .filter(Boolean);
     $v.innerHTML = `<h2 class="vh">About and credits</h2><div class="about">
       <section>
@@ -213,7 +213,10 @@ ${idoor}
           <li>Russell Kelley, <i>Coral Finder 2022</i> (Indo-Pacific), BYOGUIDES: an ID guide, cited by page on genus sheets and look-alike pairs.</li>
           ${ab.map(a => a.refs).join('')}
           <li><a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species (WoRMS)</a> and <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a>, linked from every genus sheet.</li>
-        </ul>
+        </ul>${ab
+          .filter(a => a.cites)
+          .map(a => `<p>${esc(a.cites.lead)}</p><ul class="abcites" data-cites="${esc(a.id)}"><li>Loading the sources…</li></ul>`)
+          .join('')}
       </section>
       <section>
         <h3>Privacy</h3>
@@ -227,5 +230,78 @@ ${idoor}
       <p class="note">Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).</p>
       <p class="note abver">${ver ? `Version ${esc(ver)} · ` : ''}<a href="https://github.com/ppericard/coral-id-imr" target="_blank" rel="noopener">Source on GitHub</a></p>
     </div>`;
+    // A subject that declares what its data cites (UNITS about.cites) lists the sources its data file names, filled in once
+    // the file is in (the player's copy when the subject has been in force, else its file, as the subject's Home reads it).
+    ab.filter(a => a.cites).forEach(a => {
+      const T = typeof treeOf === 'function' ? treeOf(a.id) : null,
+        fill = html => {
+          const ul = $v.querySelector(`[data-cites="${a.id}"]`); // gone when the player left the page meanwhile
+          if (ul) ul.innerHTML = html;
+        };
+      Promise.resolve((T && T.TREERAW && T.TREERAW.f) || UNITS[a.id].get.f())
+        .then(f => {
+          const L = window.aboutCites(f, a.cites.in);
+          if (!L.length) throw new Error('no sources');
+          fill(
+            L.map(
+              s =>
+                `<li>${s.url ? `<a href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)}</a>` : esc(s.name)}${s.pages ? `: ${s.pages} pages cited` : ''}</li>`
+            ).join('')
+          );
+        })
+        .catch(() => fill('<li>The sources could not be loaded just now: try again later.</li>'));
+    });
+  };
+  // The sources a data file cites, one line each (About › References). A source is an object {t, u} in the parts of the file
+  // that hold them (`parts`, from UNITS about.cites.in; u, its web address when it has one), t the way the data names it: the
+  // source's short name before its first comma, then what it is and where in it (rule C2). A site cited by several pages (the
+  // Sea Slug Forum's fact sheets) is one line, linked to the site, with its pages counted; a work cited at several places
+  // (a paper, a page) is one line, named by what the places share and linked to the work. Returns [{name, url, pages}] by name.
+  window.aboutCites = function (file, parts) {
+    const found = [],
+      walk = o => {
+        if (Array.isArray(o)) o.forEach(walk);
+        else if (o && typeof o === 'object') {
+          if (typeof o.t === 'string' && o.t.trim() && Object.keys(o).every(k => k === 't' || k === 'u' || k === 'read')) found.push(o);
+          else Object.values(o).forEach(walk);
+        }
+      };
+    (parts || []).forEach(k => walk((file || {})[k]));
+    const short = t => t.trim().split(', ')[0],
+      // the work's own name: t without the place in it, cut after the title's venue "(Journal 12)" or before a ": place"
+      work = t => {
+        const rest = t.trim().slice(short(t).length),
+          m = /^(.*?\))(?:, |$)/.exec(rest) || /^(.*?): /.exec(rest);
+        return short(t) + (m ? m[1] : rest);
+      },
+      host = u => u.replace(/^https?:\/\/(?:www\.)?/i, '').split('/')[0],
+      groups = new Map(); // short name -> {name, works, pages: web address -> its first spelling}
+    found.forEach(s => {
+      const g = groups.get(short(s.t)) || groups.set(short(s.t), {name: short(s.t), works: new Set(), pages: new Map()}).get(short(s.t));
+      g.works.add(work(s.t));
+      if (s.u) g.pages.set(String(s.u).replace(/^https?:\/\/(?:www\.)?/i, ''), s.u);
+    });
+    // a site: a short name cited with several pages; every page of its host is one of its pages, whatever its short name
+    const sites = new Map(); // host -> {name, url, pages}
+    [...groups.values()]
+      .filter(g => g.pages.size > 1)
+      .forEach(g => {
+        const h = host([...g.pages.values()][0]),
+          S = sites.get(h) || sites.set(h, {name: g.name, url: 'https://' + h, pages: new Set()}).get(h);
+        if (g.name.length > S.name.length) S.name = g.name; // "SEASLUG.WORLD (Kimoto Nobuhiko)" over "SEASLUG.WORLD"
+      });
+    const out = [];
+    groups.forEach(g => {
+      const own = [...g.pages.keys()].filter(u => !sites.has(host(u)));
+      [...g.pages.keys()].filter(u => sites.has(host(u))).forEach(u => sites.get(host(u)).pages.add(u));
+      if (g.pages.size && !own.length) return; // every page of it is a site's
+      // a work cited at several places: the parts of its name they share, the short name at least
+      const P = [...g.works].map(w => w.split(', '));
+      let n = 1;
+      while (P.every(p => p[n] !== undefined && p[n] === P[0][n])) n++;
+      out.push({name: P[0].slice(0, n).join(', '), url: own.length ? g.pages.get(own[0]) : '', pages: 0});
+    });
+    sites.forEach(S => out.push({name: S.name, url: S.url, pages: S.pages.size}));
+    return out.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
   };
 })();

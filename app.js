@@ -3034,7 +3034,13 @@ const UNITS = {
       photos: '',
       course:
         'The sea slugs, their circles and their stars come from iNaturalist’s Research Grade observations in the Philippines, Wikipedia pageviews and public dive pages; their names and classification from WoRMS.',
-      refs: '<li>WoRMS Editorial Board, <a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species</a>: the sea slugs’ scientific names and classification.</li>'
+      refs: '<li>WoRMS Editorial Board, <a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species</a>: the sea slugs’ scientific names and classification.</li>',
+      // The sources its data cites, listed under References (home.js aboutCites): in, the parts of seaslug.json that hold
+      // them (the ID marks and look-alike lines of its families, genera and species, their names' sources, its guides).
+      cites: {
+        lead: 'Cited on the sea slug sheets, for their ID marks, look-alike lines and names:',
+        in: ['families', 'genera', 'species', 'ensrc']
+      }
     },
     // No level-change card until the subject is calibrated (as the fish).
     startFb: false,
