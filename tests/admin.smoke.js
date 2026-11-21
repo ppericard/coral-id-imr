@@ -118,6 +118,36 @@ const toastLog = p =>
     mo.observe(document.body, {childList: true});
   });
 const toastsOf = p => p.evaluate(() => window.__toasts || []);
+// A page settled: no demo call in flight (admin-demo.js DEMO_PENDING, which must exist and be 0: a page whose demo is not
+// loaded yet is not settled) and no "Loading…" on the view, for three frames in a row (as settle() below), then `tail` ms;
+// else a failure, "<label>: never settled" (20 s). One sample of DEMO_PENDING === 0 is not enough: a write's answer and the
+// read it starts are two demo calls with a gap between them, and a click's answer is read by the page a task after the
+// call ends, so a single sample can land in the gap and read the page before the write was drawn (REE-183, REE-184: seen
+// under CPU throttling, never yet on CI). groups: also no Groups write on its way (admin.js rPend, given back once the
+// players read after the write is in and drawn); held: a write the test holds on purpose is not waited for (with groups);
+// draft: also the admin's draft is loaded (DRAFT.genera).
+const calmed = (q, fails, label, {tail = 300, groups = false, held = false, draft = false} = {}) =>
+  q
+    .evaluate(() => (window.__calm = 0))
+    .then(() =>
+      q.waitForFunction(
+        ({groups, held, draft}) => {
+          const v = document.getElementById('view'),
+            busy =
+              window.DEMO_PENDING !== 0 ||
+              !v ||
+              /^\s*Loading/.test(v.innerText) ||
+              (draft && !(typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera)) ||
+              (groups && !held && (typeof rPend === 'undefined' || rPend !== null));
+          window.__calm = busy ? 0 : (window.__calm || 0) + 1;
+          return window.__calm >= 3;
+        },
+        {groups, held, draft},
+        {timeout: 20000, polling: 'raf'}
+      )
+    )
+    .then(() => q.waitForTimeout(tail))
+    .catch(async () => fails.push(`${typeof label === 'function' ? await label() : label}: never settled`));
 // Sign out on a shared device (model B of the seal, Pierre, 2026-11-18; admin-draft.js): two admin tabs of one token (the
 // demo's) in one browser, with the real IndexedDB. A rates a photo, B takes it in at once and rates another, A takes that
 // in. B then stops hearing the other tabs (a frozen tab) and A signs out: the store keeps no plain draft and no base, only
@@ -4491,13 +4521,7 @@ async function lazyPart(b, base, fails) {
           q.on('dialog', d =>
             d.type() === 'prompt' ? d.accept('RA Test 2026') : (fails.push(`${w}px cohorts: a ${d.type()} dialog`), d.dismiss())
           );
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(300))
-              .catch(() => fails.push(`${w}px cohorts: never settled`));
+          const calm = () => calmed(q, fails, `${w}px cohorts`);
           const bar = async () => {
             if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
             return q.evaluate(() => {
@@ -4558,13 +4582,7 @@ async function lazyPart(b, base, fails) {
                 ? d.accept()
                 : d.dismiss();
           });
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(300))
-              .catch(() => fails.push(`${w}px groups: never settled`));
+          const calm = () => calmed(q, fails, `${w}px groups`, {groups: true});
           const bar = async () => {
             if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
             return q.evaluate(() => {
@@ -4679,13 +4697,7 @@ async function lazyPart(b, base, fails) {
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px stats exclusion page error: ${e.message}`));
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(300))
-              .catch(() => fails.push(`${w}px stats exclusion: never settled`));
+          const calm = () => calmed(q, fails, `${w}px stats exclusion`);
           const st = () =>
             q.evaluate(() => {
               const row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Ben Demo'),
@@ -4732,13 +4744,7 @@ async function lazyPart(b, base, fails) {
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px two subjects page error: ${e.message}`));
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(800))
-              .catch(() => fails.push(`${w}px two subjects: never settled`));
+          const calm = () => calmed(q, fails, `${w}px two subjects`, {tail: 800});
           await q.goto(base + 'admin.html?demo&v=81#players/list');
           await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
           await calm();
@@ -4869,19 +4875,7 @@ async function lazyPart(b, base, fails) {
           const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
           const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
           const quiet = () =>
-            q
-              .waitForFunction(
-                () =>
-                  window.DEMO_PENDING === 0 &&
-                  typeof DRAFT !== 'undefined' &&
-                  DRAFT &&
-                  DRAFT.genera &&
-                  !/^\s*Loading/.test(document.getElementById('view').innerText),
-                null,
-                {timeout: 20000}
-              )
-              .then(() => q.waitForTimeout(1500))
-              .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
+            calmed(q, fails, async () => `sheet reads: ${await q.evaluate(() => location.hash)}`, {tail: 1500, draft: true});
           await q.goto(base + 'admin.html?demo#inbox/todo/all');
           await quiet();
           const n = count(await calls());
@@ -5209,28 +5203,9 @@ async function lazyPart(b, base, fails) {
           said.push(d.type() + ': ' + d.message());
           return d.type() === 'confirm' && !/^Give Carla Demo/.test(d.message()) ? d.accept() : d.dismiss();
         });
-        // Settled: no demo call in flight, no "Loading…", and no Groups write on its way (admin.js rPend, given back once
-        // the players read after the write is in and drawn), for three frames in a row, then 300 ms. A write's answer and
-        // the players read it starts are two demo calls with a gap between them: one sample of DEMO_PENDING could land in
-        // it and read the page before the read drew the answer (REE-183: "saved in part" with no note, on a slow runner).
+        // Settled (calmed, above, with the Groups write too; REE-183: "saved in part" with no note, on a slow runner).
         // held: a write the test holds on purpose (its fetch not yet made) is not waited for.
-        const calm = (held = false) =>
-          q
-            .evaluate(() => (window.__calm = 0))
-            .then(() =>
-              q.waitForFunction(
-                held => {
-                  const busy =
-                    window.DEMO_PENDING > 0 || /^\s*Loading/.test(document.getElementById('view').innerText) || (!held && rPend !== null);
-                  window.__calm = busy ? 0 : (window.__calm || 0) + 1;
-                  return window.__calm >= 3;
-                },
-                held,
-                {timeout: 20000, polling: 'raf'}
-              )
-            )
-            .then(() => q.waitForTimeout(300))
-            .catch(() => fails.push(`${w}px rights groups: never settled`));
+        const calm = (held = false) => calmed(q, fails, `${w}px rights groups`, {groups: true, held});
         const page = () =>
           q.evaluate(() => ({
             cards: [...document.querySelectorAll('.adm-gcard')].map(c => ({
@@ -9432,11 +9407,26 @@ async function lazyPart(b, base, fails) {
           box = '#view .adm-cstruct[data-stid]';
         await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(FAM));
         await swait(() => document.querySelector('#view .adm-cstruct [data-stc]'));
+        // each circle's number with the subject's own words under it (SUBJECTS admin circles), in full as its tooltip
         const segs = await sq.evaluate(
-          b => [...document.querySelectorAll(b + ' [data-stc]')].map(x => [x.textContent, x.getAttribute('aria-pressed')]),
+          b =>
+            [...document.querySelectorAll(b + ' [data-stc]')].map(x => [
+              x.dataset.stc,
+              x.title,
+              x.textContent,
+              x.getAttribute('aria-pressed')
+            ]),
           box
         );
-        if (JSON.stringify(segs) !== '[["1","true"],["2","false"],["3","false"],["None","false"]]')
+        if (
+          JSON.stringify(segs) !==
+          JSON.stringify([
+            ['1', '1 · IMR course', '1IMR course', 'true'],
+            ['2', '2 · After the course', '2After the course', 'false'],
+            ['3', '3 · Beyond the course', '3Beyond the course', 'false'],
+            ['', 'None', 'None', 'false']
+          ])
+        )
           se.push(`the circle segments ${JSON.stringify(segs)}`);
         // Circle 2: one draft entry over the base, Undo and Redo, then ↺ Restore.
         await sq.click(`${box} [data-stc="2"]`);
@@ -9714,6 +9704,42 @@ async function lazyPart(b, base, fails) {
         x = await pair('Acropora|Porites');
         if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`add ${JSON.stringify(x)}`);
         if (!(await has('#view .adm-csheet [data-cs="lsrc/Porites"]'))) se.push("the added pair's line in the Sheet box");
+        // Photos › Look-alikes reads the pairs in force (admin-content.js montPairs): the added pair has its row, marked
+        // "(added)" and saying the public list lacks it (no IMR lecture or Coral Finder source); a base pair withdrawn
+        // loses its row, back with the Undo; no overflow at 1280 and 390.
+        const mrows = () =>
+            sq.evaluate(() =>
+              [...document.querySelectorAll('#view .adm-mont .adm-mrow')].map(r => r.querySelector('.adm-mhead').textContent)
+            ),
+          gh = await sq.evaluate(() => location.hash),
+          n0 = await sq.evaluate(() => classicPairs().length);
+        await sq.evaluate(() => (location.hash = '#photos/look-alikes'));
+        await swait(() => document.querySelector('#view .adm-mont .adm-mrow'));
+        let mr = await mrows();
+        const ad = mr.filter(t => /Acropora \/ Porites \(added\)/.test(t));
+        if (
+          mr.length !== n0 + 1 ||
+          ad.length !== 1 ||
+          !/not on the public Look-alikes page/.test(ad[0]) ||
+          mr.filter(t => /\(added\)/.test(t)).length !== 1
+        )
+          se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, ad})}`);
+        // a classic pair of the base (the Coral Finder's, p. 8), not the Montipora one whose source is a shared box
+        await sq.evaluate(() => {
+          DRAFT.content = contentPairSet(DRAFT.content || {}, 'Acropora|Anacropora', null, 1, null, Date.now());
+          saveDraft();
+          render();
+        });
+        await swait(() => !/Acropora \/ Anacropora/.test(document.querySelector('#view .adm-mont').textContent));
+        mr = await mrows();
+        if (mr.length !== n0) se.push(`Look-alikes: the withdrawn pair's row ${mr.length} of ${n0}`);
+        await sq.evaluate(() => undo());
+        await swait(() => /Acropora \/ Anacropora/.test(document.querySelector('#view .adm-mont').textContent));
+        await wideAt('the coral Look-alikes page with an added pair');
+        await sq.evaluate(h => (location.hash = h), gh);
+        await swait(
+          () => document.querySelector('#view .adm-cstruct[data-stid="Acropora"]') && document.querySelector('#view .adm-csheet')
+        );
         // The Look-alikes filter offers the pair he added (admin-coraltree.js ctFilters rows; Codex review #988): chosen,
         // its tools are in the bar (structBar), then the tag is put back.
         const opt = await sq.evaluate(
