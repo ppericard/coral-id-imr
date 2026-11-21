@@ -3790,7 +3790,7 @@ function renderMont(S) {
   };
   const a = B.attr;
   $v.querySelectorAll(`[data-${a.axis}]`).forEach(b => (b.onclick = () => keep(() => X.axis(b.dataset.k, b.dataset[a.axis]))));
-  $v.querySelectorAll('.adm-mth').forEach(b => (b.onclick = () => keep(() => X.thumb(b.dataset.k, b.dataset.side, b.dataset.f))));
+  $v.querySelectorAll('.adm-mth[data-k]').forEach(b => (b.onclick = () => keep(() => X.thumb(b.dataset.k, b.dataset.side, b.dataset.f))));
   $v.querySelectorAll(`[data-${a.auto}]`).forEach(b => (b.onclick = () => keep(() => X.auto(b.dataset.k))));
   $v.querySelectorAll(`[data-${a.hide}]`).forEach(b => (b.onclick = () => keep(() => X.hide(b.dataset.k, b.dataset[a.hide] === '1'))));
 }
