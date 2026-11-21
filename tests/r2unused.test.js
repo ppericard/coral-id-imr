@@ -64,8 +64,10 @@ const listing = () => [
   o('other/file.bin', 123456),
   {Path: 'img', Name: 'img', Size: -1, IsDir: true}
 ];
-const run = (root, items, extra = []) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2unused-out-'));
+// inside: the listing and the report in a folder of the repository itself (a run that does not keep them outside).
+const run = (root, items, extra = [], inside = '') => {
+  const dir = inside ? path.join(root, inside) : fs.mkdtempSync(path.join(os.tmpdir(), 'r2unused-out-'));
+  fs.mkdirSync(dir, {recursive: true});
   roots.push(dir);
   const file = path.join(dir, 'listing.json');
   fs.writeFileSync(file, typeof items === 'string' ? items : JSON.stringify(items));
@@ -101,6 +103,19 @@ test('wanted files are used; the rest is unused only when nothing names its phot
   assert.strictEqual(j.by_state.outside.objects, 1); // other/file.bin; the directory entry is no object
   assert.strictEqual(j.by_top_prefix['other/'].bytes, 123456);
   assert.strictEqual(j.by_img_prefix.orphan.unused, 2);
+});
+
+test('the listing and the report are never scanned for names, wherever they are (Codex review #1367)', () => {
+  // The listing names every object: read as a repository file it would name every orphan.
+  for (const inside of ['work', 'work/deeper']) {
+    const {r, out} = run(repo(), listing(), [], inside);
+    assert.strictEqual(r.status, 0, r.stderr);
+    assert.deepStrictEqual(
+      rows(out('unused.tsv')).map(x => x[0]),
+      ['img/live2-x.webp', 'img/orphan1-m.webp', 'img/orphan1.webp'],
+      inside
+    );
+  }
 });
 
 test('the doubtful are kept off the list, each with its reason', () => {
@@ -222,6 +237,9 @@ test('the workflow lists and reports only: dispatch by hand, contents: read, the
   assert.ok(at('name: List the bucket') > 0 && at('name: Compare with the repository') > Math.max(...secrets));
   assert.ok(Math.min(...secrets) > at('name: List the bucket'));
   assert.ok(/tools\/r2_list\.sh/.test(c) && /tools\/r2_unused\.py/.test(c));
+  // The listing and the report are outside the checkout (it names every object: never part of what is scanned).
+  assert.ok(/r2_list\.sh "\$RUNNER_TEMP\/r2-unused\/listing\.json"/.test(c) && /--out "\$RUNNER_TEMP\/r2-unused"/.test(c));
+  assert.ok(/path: \$\{\{ runner\.temp \}\}\/r2-unused\//.test(c));
   assert.match(c, /upload-artifact@v\d+[\s\S]*name: r2-unused[\s\S]*if-no-files-found: error/);
   // The listing step prints no key: no env dump, no echo of a secret.
   assert.ok(!/\benv\b\s*$|printenv|echo .*(R2_|secrets\.)/m.test(c));

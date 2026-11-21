@@ -28,20 +28,22 @@ jobs:
       # The only step that holds the R2 keys: it lists, nothing else.
       - name: List the bucket (read only)
         run: |
-          mkdir -p r2-unused
-          tools/r2_list.sh r2-unused/listing.json
+          mkdir -p "$RUNNER_TEMP/r2-unused"
+          tools/r2_list.sh "$RUNNER_TEMP/r2-unused/listing.json"
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
+      # The listing and the report live outside the checkout: the listing names every object, so a scan of the checkout
+      # must never meet it (tools/r2_unused.py leaves them out as well).
       - name: Compare with the repository
         run: |
-          python3 tools/r2_unused.py --listing r2-unused/listing.json --out r2-unused --label "main@$(git rev-parse --short HEAD)"
-          cat r2-unused/report.md >>"$GITHUB_STEP_SUMMARY"
+          python3 tools/r2_unused.py --listing "$RUNNER_TEMP/r2-unused/listing.json" --out "$RUNNER_TEMP/r2-unused" --label "main@$(git rev-parse --short HEAD)"
+          cat "$RUNNER_TEMP/r2-unused/report.md" >>"$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: r2-unused
-          path: r2-unused/
+          path: ${{ runner.temp }}/r2-unused/
           if-no-files-found: error
           retention-days: 14

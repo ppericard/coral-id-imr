@@ -32,7 +32,7 @@ import photos  # noqa: E402  (records, online, tiles: the want side, one definit
 SIZE_SUFFIXES = ('-m', '-s', '-t', '-x')
 TEXT_EXT = {'.js', '.mjs', '.cjs', '.json', '.html', '.css', '.md', '.py', '.sh', '.yml', '.yaml', '.txt', '.webmanifest',
             '.svg', '.csv', '.gs'}
-SKIP_DIRS = {'.git', 'node_modules', '.claude', '.cache', 'r2-upload', 'img'}
+SKIP_DIRS = {'.git', 'node_modules', '.claude', '.cache', 'r2-upload', 'r2-unused', 'img'}
 GROUPS = ('app', 'judging', 'curation', 'data', 'docs')  # strongest first
 REASON_TEXT = {
     'young': 'modified recently: an upload whose data commit may not have landed yet',
@@ -101,17 +101,20 @@ def parse_key(name, known):
     return base, ''
 
 
-def scan_names(root, stems):
-    """{stem: {group: [first paths]}} for the stems named in a tracked text file of root (a whole-word match: letters,
-    digits, - and _ , so a stem is never found inside a longer name)."""
+def scan_names(root, stems, skip=()):
+    """{stem: {group: [first paths]}} for the stems named in a text file of root (a whole-word match: letters,
+    digits, - and _ , so a stem is never found inside a longer name). skip: paths (files or folders) this run reads or
+    writes, never scanned: the listing names every object of the bucket, so it would name every photo (Codex review #1367)."""
     out = {}
     if not stems: return out
     tok = re.compile(r'[A-Za-z0-9_-]+')
+    skip = [os.path.abspath(s) for s in skip]
     for dp, dns, fns in os.walk(root):
-        dns[:] = sorted(d for d in dns if d not in SKIP_DIRS)
+        dns[:] = sorted(d for d in dns if d not in SKIP_DIRS and os.path.abspath(os.path.join(dp, d)) not in skip)
         for fn in sorted(fns):
             if os.path.splitext(fn)[1] not in TEXT_EXT: continue
             p = os.path.join(dp, fn)
+            if os.path.abspath(p) in skip: continue
             try:
                 text = open(p, encoding='utf-8', errors='ignore').read()
             except OSError:
@@ -302,14 +305,15 @@ def write_all(out, rows, summ, missing, label, now, min_age_hours):
         f.write('\n')
 
 
-def analyse(listing, root=ROOT, now=None, min_age_hours=72):
-    """The whole comparison: (rows, summary, missing) for a listing and a repository checkout."""
+def analyse(listing, root=ROOT, now=None, min_age_hours=72, skip=()):
+    """The whole comparison: (rows, summary, missing) for a listing and a repository checkout; skip: files and folders
+    of this run (the listing, the output) that the text scan leaves out."""
     now = now or datetime.datetime.now(datetime.timezone.utc)
     view = repo_view(root)
     # Only the photos of objects nothing wants need the (slower) text scan.
     first = classify(listing, view, {}, now, min_age_hours)
     need = {r['stem'] for r in first if r['state'] == 'unused' and r['reason'] == 'orphan' and 'stem' in r}
-    rows = classify(listing, view, scan_names(root, need), now, min_age_hours)
+    rows = classify(listing, view, scan_names(root, need, skip), now, min_age_hours)
     return rows, summary(rows), missing_wanted(listing, view)
 
 
@@ -331,7 +335,7 @@ def main(argv=None):
     if not isinstance(listing, list) or not any(str(o.get('Path', '')).startswith('img/') for o in listing if isinstance(o, dict)):
         print('the listing holds no img/ object: wrong bucket or key? no report written', file=sys.stderr)
         return 1
-    rows, summ, missing = analyse(listing, a.root, now, a.min_age_hours)
+    rows, summ, missing = analyse(listing, a.root, now, a.min_age_hours, skip=(a.listing, a.out))
     write_all(a.out, rows, summ, missing, a.label, now, a.min_age_hours)
     st = summ['by_state']
     print(f'{summ["objects"]} objects ({mib(summ["bytes"])}): ' + ', '.join(f'{s} {st[s]["objects"]} ({mib(st[s]["bytes"])})' for s in st)
