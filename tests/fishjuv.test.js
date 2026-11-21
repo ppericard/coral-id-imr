@@ -138,7 +138,7 @@ test('the species sheet shows the juvenile line with its numbered sources, one h
   assert.match(h, /href="https:\/\/www\.fishbase\.se\/summary\/Iniistius-pavo\.html"[^>]*title="FishBase">\[1\]/);
   // the family note's URL list still numbers "Source n"
   assert.match(ctx.juvNote('x', ['https://a.example/p']), /title="Source 1">\[1\]<\/a><\/p>$/);
-  const sp = block(learn, 'function fishSpecies(s) {', '\n}\n');
-  assert.ok(sp.includes("${s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : ''}"));
+  const sp = block(learn, 'function treeSpecies(s) {', '\n}\n');
+  assert.ok(sp.includes("juvenile: () => (s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : '')"));
   assert.ok(learn.includes("f.juv && f.juv.note ? juvNote(f.juv.note, f.juv.src, {extra: esrcIn(f, 'juv.note')}) : ''"));
 });

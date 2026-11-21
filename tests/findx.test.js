@@ -18,21 +18,27 @@ const quiz = read('quiz.js'),
 // Ten families A..J of one subject, each with photos (the tile ones carry xc), a unit G of another rank (a genus), the
 // declared look-alikes A <-> B, C (the confusion prior: model.js pooledConf's LOOK for them, BASE otherwise).
 const UNITS = 'ABCDEFGHIJ'.split('');
-const LOOK = {A: ['B', 'C'], B: ['A'], C: ['A']};
+const LOOK = {A: ['B', 'C'], B: ['A'], C: ['A'], Sa: ['Sb'], Sb: ['Sa'], Ta: ['Tb'], Tb: ['Ta']};
+// (a unit's label is its letters only, model.js labelKey: two units named S1 and S2 would carry one label)
 const photosOf = (n, tiles = 2) => [
   ...Array.from({length: tiles}, (_, i) => ({f: `${n}t${i}`, xc: [0, 0, 1, 1], e: 4})),
   {f: `${n}p0`, e: 4},
   {f: `${n}p1`, e: 3}
 ];
 // planFind with its world: met (introReady), the units with tiles, the random stream (counted: rnd.n).
-function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, subj = 'fish'} = {}) {
+// rank and kind: the rank and the kind of name of units beyond A..J and G (the species: S1..S6 by common name, T1..T6 by
+// scientific name); rankUnits: what app.js rankUnits would name for a rank (units outside the question's list).
+function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, kind = {}, subj = 'fish', rankUnits = () => []} = {}) {
   let s = seed;
   const rnd = () => (rnd.n++, (s = (s * 16807) % 2147483647) / 2147483647);
   rnd.n = 0;
   const M = Object.create(Math);
   M.random = rnd;
   const GEN = Object.fromEntries(
-    [...UNITS, 'G'].map(n => [n, {name: n, look: LOOK[n] || [], fam: n, views: {wide: photosOf(n, tiled.includes(n) ? 2 : 0)}}])
+    [...new Set([...UNITS, 'G', ...Object.keys(rank)])].map(n => [
+      n,
+      {name: n, look: LOOK[n] || [], fam: n, views: {wide: photosOf(n, tiled.includes(n) ? 2 : 0)}}
+    ])
   );
   const conf = (t, n) => ((LOOK[t] || []).includes(n) || (LOOK[n] || []).includes(t) ? C.CONF.LOOK : C.CONF.BASE),
     shots = [];
@@ -44,7 +50,9 @@ function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, sub
     GX: n => GEN[n],
     UNITS: {[subj]: {tiles: n => GEN[n].views.wide.filter(p => p.xc)}},
     rankOf: n => rank[n] || '',
-    rankUnits: () => [],
+    // app.js kindRank: the rank and the kind of name (model.js rankKind reads it)
+    kindRank: n => (rank[n] || '') + (kind[n] ? ':' + kind[n] : ''),
+    rankUnits,
     introReady: n => met.includes(n),
     imrFormsOf: () => [],
     confOf: conf,
@@ -73,7 +81,7 @@ function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, sub
     [
       // distractors and the labels it keeps apart (choiceKey, choiceApart, just above it).
       cut(model, "// A choice's label as its button shows it", '\n}\n', {through: 1, file: 'model.js'}),
-      cut(quiz, 'function planFind(cur, t, list, ease = 0, sel = null) {', '\n}\n', {through: 1, file: 'quiz.js'}),
+      cut(quiz, "const findRank = n => !rankOf(n) || rankOf(n) === 'species';", '\n}\n', {through: 1, file: 'quiz.js'}),
       'this.planFind = planFind;'
     ].join('\n'),
     ctx
@@ -145,6 +153,73 @@ test('the sea slugs (Q437): the same engine, never on a unit not met, and withou
   W = planner({subj: 'seaslug', tiled: [], P: 1});
   for (const n of UNITS) assert.strictEqual(W.plan(n), null);
   assert.strictEqual(W.rnd.n, 0);
+});
+
+test('the species (REE-63): Find the X on a species, its three others of its own kind of name, met, tiled and in the list', () => {
+  const SP = 'abcdef'.split('').map(i => 'S' + i), // species by their common names
+    SC = 'abcdef'.split('').map(i => 'T' + i), // species by their scientific names
+    rank = {...Object.fromEntries([...SP, ...SC].map(n => [n, 'species'])), G: 'genus'},
+    kind = {...Object.fromEntries(SP.map(n => [n, 'cn'])), ...Object.fromEntries(SC.map(n => [n, 'sci']))},
+    all = [...UNITS, 'G', ...SP, ...SC];
+  // met: every species; the list holds them all (the pool at Advanced), the families too.
+  const W = planner({P: 1, seed: 5, rank, kind, met: all, tiled: all});
+  for (const t of [...SP, ...SC]) {
+    for (let i = 0; i < 40; i++) {
+      const q = W.plan(t, all);
+      assert.ok(q && q.findx, `a Find the X on ${t}`);
+      const [, , ch, prompt, set] = q;
+      assert.strictEqual(prompt, `Find the ${t}`);
+      assert.strictEqual(new Set(ch).size, 4);
+      // all four of the target's own class: a common-name species never stands with a scientific-name one, nor a family
+      assert.ok(
+        ch.every(n => kind[n] === kind[t] && rank[n] === 'species'),
+        `one class: ${t}: ${ch}`
+      );
+      assert.ok(
+        set.find.every(x => x.p.xc && x.p.f.startsWith(x.n)),
+        'each photo a tile of its unit'
+      );
+    }
+  }
+  // The declared look-alikes first (the traps), as for the families.
+  for (let i = 0; i < 40; i++) assert.ok(W.plan('Sa', all)[2].includes('Sb'), 'the look-alike species among the four');
+  // The scientific genus (rank genus) and the families keep their ordinary questions: no question for G, and G never a photo.
+  assert.strictEqual(W.plan('G', all), null);
+  for (let i = 0; i < 40; i++)
+    assert.ok(!W.plan('Sa', all)[2].includes('G') && !W.plan('A', all)[2].some(n => rank[n]), 'a family stands with families');
+  // Only met units: S5 and S6 not met, never among the four, whatever the draw.
+  const M = planner({P: 1, seed: 8, rank, kind, met: all.filter(n => !['Se', 'Sf'].includes(n)), tiled: all});
+  for (let i = 0; i < 100; i++) assert.ok(!M.plan('Sa', all)[2].some(n => ['Se', 'Sf'].includes(n)));
+  // Fewer than three other met, tiled species of its kind (S4..S6 untiled): none, and no random number drawn.
+  const T = planner({P: 1, rank, kind, met: all, tiled: all.filter(n => !['Sd', 'Se', 'Sf'].includes(n))});
+  assert.strictEqual(T.plan('Sa', all), null);
+  assert.strictEqual(T.rnd.n, 0, 'nothing drawn for a species with too few others');
+  // The target itself with no tile, or not met: none, nothing drawn.
+  for (const o of [{tiled: all.filter(n => n !== 'Sa')}, {met: all.filter(n => n !== 'Sa')}]) {
+    const U = planner({P: 1, rank, kind, met: all, tiled: all, ...o});
+    assert.strictEqual(U.plan('Sa', all), null);
+    assert.strictEqual(U.rnd.n, 0);
+  }
+});
+
+test('the species: the question takes its choices from the list only, never the rank wide (distractors wide false)', () => {
+  const SP = 'abcdef'.split('').map(i => 'S' + i),
+    rank = Object.fromEntries(SP.map(n => [n, 'species'])),
+    kind = Object.fromEntries(SP.map(n => [n, 'cn'])),
+    all = [...UNITS, ...SP];
+  // The list (the custom quiz's selection, or the pool) holds S1..S4 only; S5 and S6 are species outside it, met, tiled and
+  // named by app.js rankUnits: they would take a place under distractors' default (wide).
+  const W = planner({P: 1, seed: 9, rank, kind, met: all, tiled: all, rankUnits: rk => (rk === 'species:cn' ? SP : [])});
+  for (let i = 0; i < 200; i++) {
+    const q = W.plan('Sa', ['Sa', 'Sb', 'Sc', 'Sd'], ['Sa', 'Sb', 'Sc', 'Sd']);
+    assert.ok(q && q.custom === 1);
+    assert.ok(
+      q[2].every(n => ['Sa', 'Sb', 'Sc', 'Sd'].includes(n)),
+      `only the list: ${q[2]}`
+    );
+  }
+  // With only S1..S3 in the list: three others are missing, no question (the rank-wide species do not fill in).
+  assert.strictEqual(W.plan('Sa', ['Sa', 'Sb', 'Sc']), null);
 });
 
 test('a subject with no tiles (the corals) draws exactly as before: no random number, no question', () => {
@@ -302,7 +377,8 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => ({}), // model.js pfmt: no offsets for the fish
-      genusDiff: () => 0
+      genusDiff: () => 0,
+      photoTimeQ: () => undefined // quiz.js photoTimeQ: no photo time term (before RTNET_SHEET)
     };
     vm.createContext(env);
     st(target);
@@ -354,6 +430,30 @@ test('the tiles: the fish data holds families with tiles enough for the format t
   assert.ok(Object.keys(byFam).length >= 4, `families with a tile: ${Object.keys(byFam).length}`);
   // Every tile's square: four numbers (fractions of the original; past its edge where the photo's blurred copy fills it).
   Object.values(gm.photos).forEach(L => L.filter(p => p.xc).forEach(p => assert.ok(p.xc.length === 4 && p.xc.every(Number.isFinite), p.f)));
+});
+
+test('the sea slug data (REE-66): the animal box and its tile on the photos, in genera enough for the format to come up', () => {
+  const gm = C.treeGameRead(JSON.parse(read('seaslug-game.json'))),
+    F = JSON.parse(read('seaslug.json')),
+    genOf = new Map(F.species.map(s => [s.id, s.genus])),
+    byGen = {};
+  let boxed = 0,
+    tiled = 0;
+  Object.values(gm.photos).forEach(L =>
+    L.forEach(p => {
+      if (p.bb) boxed++;
+      if (!p.xc) return;
+      tiled++;
+      // a tile is cut around a box (tools/seaslug_game.py): never one without
+      assert.ok(p.bb, `a tile with no box: ${p.f}`);
+      assert.ok(p.xc.length === 4 && p.xc.every(Number.isFinite), p.f);
+      const g = genOf.get(p.sp);
+      if (g) byGen[g] = (byGen[g] || 0) + 1;
+    })
+  );
+  assert.ok(boxed >= 2000 && tiled >= 1900, `boxes ${boxed}, tiles ${tiled}`);
+  // the game's units are the genera (core.js SUBJECTS seaslug unitRank): four with a tile at least, the question's four
+  assert.ok(Object.keys(byGen).length >= 40, `genera with a tile: ${Object.keys(byGen).length}`);
 });
 
 test("the tile's address: its square and its rewrite count, so a corrected tile is a new file for the caches", () => {

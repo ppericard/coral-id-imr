@@ -2,11 +2,13 @@
  "photos": {
   "fish-s201-cand-330584816": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-669417070": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-744733475": {
    "code": "p1g2ss11",
@@ -14,11 +16,13 @@
   },
   "fish-s201-cand-738772815": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-703824898": {
    "code": "p1g1smo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-703824892": {
    "code": "p1g1smm3",
@@ -34,7 +38,8 @@
   },
   "fish-s201-cand-664049133": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-664049191": {
    "code": "d1g1sm12",
@@ -50,7 +55,8 @@
   },
   "fish-s201-cand-551805470": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-551805495": {
    "code": "p1g2sm13",
@@ -130,11 +136,13 @@
   },
   "fish-s201-cand-fb-Scriv_m1": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s201-cand-fb-Scriv_u0": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s201-cand-713523887": {
    "code": "d1g0bs11",

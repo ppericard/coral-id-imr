@@ -90,7 +90,7 @@ one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their un
 
 `UNITS[id]` holds what the engine and the pages read for each subject. The tree subjects' entries start from
 `TREE_UNITS`, the members that read the tree in force the same way for each (`load`, `slate`, `core`, `circles`,
-`gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `bar`); each entry adds only
+`gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `sheetParts`, `bar`); each entry adds only
 its words, its files and its own settings and differences. The Look-alikes deck and Compare read `deck` (the pairs of
 the deck), `inGame` (a unit Compare may show) and `cmp` (`src`, `clues`, `tag`, `line`, `more`: what each says of a unit
 beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes).
@@ -130,7 +130,8 @@ beside its tips) from every subject ([front-end.md](front-end.md) › Learn › 
   Tests: `tests/answertaxon.test.js`, `tests/fish.smoke.js`. `species(p)` gives the species logged with an answer.
 - **Pages.** `memory` (how a Memory pair is made: `views` for the corals, `photos` for the tree subjects, in
   `TREE_UNITS`; `proto/pairs.js` `MEMORY`), `pairs()` (the duels), `winks()` (the surprise cards), `tiles(n)` (Find the X), `list()` (the Learn page:
-  `viewList`, one page for every subject), `sheet(id)` (a sheet: `viewGenus` / `viewFishSheet`), `bar(id)` (a tree subject's page
+  `viewList`, one page for every subject), `sheet(id)` (a sheet: `viewGenus` / `viewTreeSheet`), `sheetParts` (each sheet's sections in their order, `learn.js`
+  `sheetBody`: the corals' `genus`, the tree subjects' `family`, `genus`, `species`), `bar(id)` (a tree subject's page
   bar on its sheets, `learn.js` `treeBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
   `progHelp` and `achHelp` (the ? texts of the quiz, My progress and the achievements; the corals keep theirs inline),
   `hello` (the cards that introduce the subject, [below](#the-subjects-card)), `about` (its lines in About and credits,

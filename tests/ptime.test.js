@@ -1,7 +1,8 @@
 require('./slot.js').testGuard();
 // The photo's time term (core.js PTIME, ptimeStep, ptimeOut, ptimeInto, ptimeOff; docs/LEARNING.md "The photo's time
 // term"): which answers feed it, the weight by the player's level, the enlargement against habit, the fade by
-// information, and that the progress replay never reads it (rule D5).
+// information; and step 2 (Q452): a right answer's time net of its photos' term, logged in the scoring record and
+// replayed (rule D5, rules version 13).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -143,35 +144,101 @@ test('model.js photoDiff adds the term to the blend as it is, rated or not; none
   assert.ok(Math.abs(c.photoDiff('Acropora', {f: 'r'}) - blend) < 1e-12, 'no term: as before');
 });
 
-test('rule D5: the progress replay never reads the photos or their time terms', () => {
-  // replayProgress takes gen, mem, conf, fmt, gd (and its own options): a photo's term moves only future answers' d0,
-  // which each answer logs in its scoring record, so the replay of a logged answer is the same with or without it.
-  const gen = {Acropora: {}, Porites: {}},
-    row = (i, ok) => {
-      const r = new Array(C.LOG_SC + 1).fill(null);
-      Object.assign(r, {
-        0: 'p1',
-        1: Date.UTC(2026, 10, 10) + i * 60000,
-        2: 'Acropora',
-        3: ok ? 'Acropora' : 'Porites',
-        4: ok,
-        5: 'quiz',
-        6: 'a1',
-        7: 0.7,
-        8: 0.2,
-        10: 'Acropora Porites',
-        12: 5 + i
-      });
-      r[C.LOG_SC] = {d: 0.3 + i / 20, m: 0, n: 0};
-      return r;
-    },
-    rows = [0, 1, 2, 3].map(i => row(i, i % 3 ? 1 : 0)),
-    st = {gen, gd: {Acropora: [0.1, 5]}},
-    a = C.replayProgress(rows, st),
-    b = C.replayProgress(rows, {...st, photos: {a1: [0.4, 3, 2, 3, 'Acropora', 0.25, 0.1, 0.2]}});
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(a)));
-  // and the sheet's replays pass it none of the photos (Code.gs rplMake_, replayedAll_)
+// Step 2 (Q452; docs/LEARNING.md "The player's time net of the photo's"): the player's time net of the photo's.
+// A replay row of player p1: an Acropora question on photo a1, right or not, at minute i, s seconds, its scoring record sc.
+const gen2 = {Acropora: {}, Porites: {}},
+  row2 = (i, ok, s, sc) => {
+    const r = new Array(C.LOG_SC + 1).fill(null);
+    Object.assign(r, {
+      0: 'p1',
+      1: Date.UTC(2026, 10, 10) + i * 60000,
+      2: 'Acropora',
+      3: ok ? 'Acropora' : 'Porites',
+      4: ok,
+      5: 'quiz',
+      6: i >= 12 ? 'a1' : 'h' + i,
+      7: 0.7,
+      8: 0.2,
+      10: 'Acropora Porites',
+      12: s
+    });
+    r[C.LOG_SC] = {d: 0.3, m: 0, n: 0, ...sc};
+    return r;
+  },
+  // 12 answers to set the habit (8 s), then right answers on a1 at 16 s
+  log2 = sc => [...Array.from({length: 12}, (_, i) => row2(i, 1, 8, {})), ...[12, 13, 14].map(i => row2(i, 1, 16, sc))],
+  thOf = R => R.p1.P.Acropora.th;
+
+test('rtWeight: z net of the photos time term; 0 or none is the rule before', () => {
+  const G = {rt: {80: 12}}; // a habit of 8 s
+  const w0 = C.rtWeight(G, 16, 4, true),
+    w1 = C.rtWeight(G, 16, 4, true, Math.log(2));
+  assert.strictEqual(C.rtWeight(G, 16, 4, true, 0), w0);
+  assert.ok(Math.abs(w0 - (1 - C.RTIME.K * Math.log(2))) < 1e-9 || w0 === C.RTIME.LO, String(w0));
+  assert.ok(Math.abs(w1 - 1) < 1e-9, 'a slowness the photo explains in full weighs as an answer at the habit: ' + w1);
+  // symmetric: a fast answer on a photo fast for everyone earns less
+  assert.ok(C.rtWeight(G, 6, 4, true, -0.3) < C.rtWeight(G, 6, 4, true, 0));
+  // a miss, a typed answer, no seconds: 1 whatever the term
+  assert.strictEqual(C.rtWeight(G, 16, 4, false, 0.5), 1);
+  assert.strictEqual(C.rtWeight(G, 16, Infinity, true, 0.5), 1);
+  assert.strictEqual(C.rtWeight(G, null, 4, true, 0.5), 1);
+  // a term that is not a number counts 0
+  assert.strictEqual(C.rtWeight(G, 16, 4, true, NaN), w0);
+});
+
+test('ptimeQ: the mean of the photos terms, 0 for a photo without one; ptimeAt reads the 6th number of a ?stats=1 entry', () => {
+  const at = C.ptimeAt({a: [0.1, 4, 3, 4, 'Acropora', 0.3, 0, 1], b: [0.2, 2, 1, 2, 'Acropora']});
+  assert.strictEqual(at('a'), 0.3);
+  assert.strictEqual(at('b'), 0);
+  assert.strictEqual(at('constructor'), 0);
+  assert.strictEqual(C.ptimeQ(['a', 'b'], at), 0.15);
+  assert.strictEqual(C.ptimeQ([], at), 0);
+  assert.strictEqual(
+    C.ptimeQ(['a'], () => 'x'),
+    0
+  );
+  // the served term equals the state's (ptimeTerm, ptimeOut)
+  const T = C.ptimeNew();
+  ['a', 'b', 'c'].forEach(w => habit(T, w));
+  ['a', 'b', 'c'].forEach(w => step(T, {w, fs: ['slow'], sec: 16}));
+  assert.strictEqual(C.ptimeTerm(T, 'slow'), C.ptimeOut(T).slow[0]);
+  assert.strictEqual(C.ptimeTerm(T, 'none'), 0);
+});
+
+test('rule D5: the replay nets a right answer by its logged term, else by the photos served now; none, as before', () => {
+  const st = {gen: gen2, gd: {Acropora: [0.1, 5]}},
+    photos = {a1: [0.4, 3, 2, 3, 'Acropora', 0.5, 0.1, 0.2]},
+    none = C.replayProgress(log2({}), st),
+    served = C.replayProgress(log2({}), {...st, photos}),
+    logged = C.replayProgress(log2({i: 0.5}), st),
+    logged0 = C.replayProgress(log2({i: 0}), {...st, photos});
+  // slow right answers on a photo slow for everyone weigh more once netted
+  assert.ok(thOf(served) > thOf(none), thOf(served) + ' ' + thOf(none));
+  // the logged term is the one used, whatever is served now (an answer logged with 0 replays as not netted)
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(logged)), JSON.parse(JSON.stringify(served)));
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(logged0)), JSON.parse(JSON.stringify(none)));
+  // photos with no term: the replay before this rule
+  const plain = C.replayProgress(log2({}), {...st, photos: {a1: [0.4, 3, 2, 3, 'Acropora']}});
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(plain)), JSON.parse(JSON.stringify(none)));
+  // and the sheet's replays pass the photos (Code.gs rplMake_, replayedAll_), as the device's (sync.js) and the admin's
   const gs = fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
   const calls = [...gs.matchAll(/CORE_\.replayProgress\([^;]*/g)].map(m => m[0]);
-  assert.ok(calls.length >= 2 && calls.every(c => !/photos/.test(c)), calls.join('\n'));
+  assert.ok(calls.length >= 2 && calls.every(c => /photos: st\.photos/.test(c)), calls.join('\n'));
+});
+
+test('the scoring record keeps the term (i), even at 0; the game rounds it before scoring', () => {
+  assert.strictEqual(C.scoreRec({d: 0.1, i: 0.1234}).i, 0.123);
+  assert.strictEqual(C.scoreRec({d: 0.1, i: 0}).i, 0);
+  assert.ok(!('i' in C.scoreRec({d: 0.1})));
+  assert.ok(!('i' in C.scoreRec({d: 0.1, i: 'x'})));
+  assert.strictEqual(C.scoreRec(JSON.stringify({d: 0.1, i: -0.2})).i, -0.2);
+  // the game (quiz.js: scoreIn, scoreAnswer, scoreLog) and the replay of what it logged give the same state
+  const P = {},
+    q = {t: 'Acropora', c: 'Acropora', ok: true, k: 2, chs: ['Acropora', 'Porites'], ph: ['a1'], d0: 0.3, mu: 0, sec: 16, ti: 0.4567};
+  P[C.LEVEL] = {th: 0, ok: 12, ko: 0, rt: {80: 12}};
+  const qi = C.scoreIn(q);
+  assert.strictEqual(qi.ti, 0.457);
+  const res = C.scoreAnswer(P, qi);
+  assert.strictEqual(C.scoreLog(qi, res).i, 0.457);
+  assert.ok(Math.abs(res.rw - Math.min(C.RTIME.HI, 1 - C.RTIME.K * (Math.log(16 / 8) - 0.457))) < 1e-9, String(res.rw));
 });

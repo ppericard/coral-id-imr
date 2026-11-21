@@ -4,7 +4,9 @@ require('./slot.js').testGuard();
 // page through sheetPage, and write the lines every sheet has (the report line, the "More details" fold, the first photo's
 // button, the IMR cues box, "Don't confuse with") with the same parts, so the markup is one in every sheet. These tests run
 // the parts' block of learn.js on stubs and check each part's markup, that every sheet draws through the frame and none
-// writes the page itself, and that the sheets use each shared part instead of a copy of its markup.
+// writes the page itself, and that the sheets use each shared part instead of a copy of its markup. Each sheet's sections
+// are the parts its subject declares (app.js UNITS sheetParts), drawn in that order by sheetBody from the sheet's builders:
+// every declared part has its builder, and every builder is declared.
 // node --test tests/sheetparts.test.js
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -27,7 +29,7 @@ const ctx = vm.createContext({
   srcset: p => `${p.f} 1x`,
   esrcP: (r, k) => (r.esrc ? `<p class="note esrc">${r.esrc[k]}</p>` : '')
 });
-vm.runInContext(PARTS + '\nthis.P = {sheetPage, sheetRep, moreDetails, heroBtn, heroPic, cuesBox, looksSection};', ctx);
+vm.runInContext(PARTS + '\nthis.P = {sheetPage, sheetBody, sheetRep, moreDetails, heroBtn, heroPic, cuesBox, looksSection};', ctx);
 const P = ctx.P;
 
 test('the frame: the intro, then the article with the body as given', () => {
@@ -58,7 +60,7 @@ test('every sheet draws through the frame and uses the shared parts, none its ow
     viewGenus: block(LEARN, 'function viewGenus(name) {', '\n}\n', {file: 'learn.js'}),
     treeFamily: block(LEARN, 'function treeFamily(f) {', '\n}\n', {file: 'learn.js'}),
     treeGenus: block(LEARN, 'function treeGenus(g) {', '\n}\n', {file: 'learn.js'}),
-    fishSpecies: block(LEARN, 'function fishSpecies(s) {', '\n}\n', {file: 'learn.js'})
+    treeSpecies: block(LEARN, 'function treeSpecies(s) {', '\n}\n', {file: 'learn.js'})
   };
   for (const [fn, body] of Object.entries(sheets)) {
     assert.ok(body.includes('sheetPage('), `${fn} draws through sheetPage`);
@@ -78,7 +80,53 @@ test('every sheet draws through the frame and uses the shared parts, none its ow
   );
   assert.ok(sheets.treeGenus.includes('cuesBox(g,') && sheets.treeGenus.includes('looksSection('), 'a genus: the cues and the look-alikes');
   assert.ok(
-    sheets.fishSpecies.includes('looksSection(') && sheets.fishSpecies.includes('moreDetails('),
+    sheets.treeSpecies.includes('looksSection(') && sheets.treeSpecies.includes('moreDetails('),
     'a species: the look-alikes and the fold'
+  );
+});
+
+test("sheetBody: the subject's declared parts, in its order, one to a line; a declared part with no builder throws", () => {
+  ctx.SUBJ = {id: 'x'};
+  ctx.UNITS = {x: {sheetParts: {genus: ['b', 'a'], family: ['a', 'zz']}}};
+  const built = [];
+  const S = {a: () => (built.push('a'), 'A'), b: () => (built.push('b'), 'B'), c: () => (built.push('c'), 'C')};
+  assert.strictEqual(P.sheetBody('genus', S), '\n    B\n    A\n  ');
+  assert.deepStrictEqual(built, ['b', 'a'], 'built in the declared order, an undeclared part never');
+  assert.throws(() => P.sheetBody('family', S), /no family part "zz"/);
+});
+
+// The declared parts (app.js UNITS sheetParts) and each sheet's builders (its sheetBody call: `name: () =>`).
+const APP = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+  declared = {
+    coral: vm.runInNewContext('(' + block(APP, '    sheetParts: {genus: [', '},', {through: 0, file: 'app.js'}).slice(16) + '})'),
+    tree: vm.runInNewContext('(' + block(APP, '  sheetParts: {\n    family:', '\n  },', {file: 'app.js'}).slice(14) + '\n  })')
+  },
+  builders = (fn, kind) => {
+    const b = block(LEARN, fn, '\n}\n', {file: 'learn.js'}),
+      i = b.indexOf(`sheetBody('${kind}', {`);
+    assert.ok(i > 0, `${fn} draws its body with sheetBody('${kind}')`);
+    return [...b.slice(i).matchAll(/^ {6}(\w+): \(\) =>/gm)].map(m => m[1]);
+  };
+
+test('every declared part has its builder in its sheet, and every builder is declared', () => {
+  for (const [subj, kind, fn] of [
+    ['coral', 'genus', 'function viewGenus(name) {'],
+    ['tree', 'family', 'function treeFamily(f) {'],
+    ['tree', 'genus', 'function treeGenus(g) {'],
+    ['tree', 'species', 'function treeSpecies(s) {']
+  ]) {
+    const want = declared[subj][kind];
+    assert.ok(Array.isArray(want) && want.length, `${subj} declares its ${kind} parts`);
+    assert.deepStrictEqual([...builders(fn, kind)].sort(), [...want].sort(), `${subj} ${kind}: the declared parts are the builders`);
+    assert.strictEqual(new Set(want).size, want.length, `${subj} ${kind}: a part declared twice`);
+  }
+  // Every sheet ends with its report line, and the tree sheets open with their names.
+  assert.deepStrictEqual(
+    [declared.coral.genus, declared.tree.family, declared.tree.genus, declared.tree.species].map(L => L[L.length - 1]),
+    ['report', 'report', 'report', 'report']
+  );
+  assert.deepStrictEqual(
+    ['family', 'genus', 'species'].map(k => declared.tree[k][0]),
+    ['names', 'names', 'names']
   );
 });

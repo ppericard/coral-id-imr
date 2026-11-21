@@ -332,8 +332,9 @@ test('rootLine: the warning names the unit and its tip, one or several, escaped;
 
 test('a fish genus root shows on the one sheet the genus opens: its page, its one species’ sheet, or its family’s', () => {
   const learn = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8');
-  assert.ok(block(learn, 'function treeGenus(g) {', '\n}\n').includes('${treeRoot(g, g.id)}'));
-  assert.ok(block(learn, 'function fishSpecies(s) {', '\n}\n').includes("${treeRoot(g, 's:' + s.name)}"));
+  // the genus and species sheets' roots part (app.js UNITS sheetParts: tests/sheetparts.test.js holds each declared part to its builder)
+  assert.ok(block(learn, 'function treeGenus(g) {', '\n}\n').includes('roots: () => treeRoot(g, g.id)'));
+  assert.ok(block(learn, 'function treeSpecies(s) {', '\n}\n').includes("roots: () => treeRoot(g, 's:' + s.name)"));
   assert.ok(block(learn, 'function treeFamily(f) {', '\n}\n').includes("${G.map(g => treeRoot(g, f.id)).join('')}"));
   assert.ok(block(learn, 'const treeRoot = ', "\n    : '';\n").includes('treeGo(g.id) === at'));
   const T = require('../core.js').treeSheets(FISH);

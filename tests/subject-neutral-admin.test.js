@@ -118,7 +118,7 @@ const COUNTS = {
     'admin-coraltree.js': 1,
     'admin-journey.js': 1,
     'admin-nodephotos.js': 2,
-    'admin.js': 45,
+    'admin.js': 44,
     'home.js': 2,
     'learn.js': 14,
     'progress.js': 1,
@@ -163,7 +163,7 @@ const WHOLE = ['admin-fish.js'],
     [
       'learn.js',
       'Dup-14',
-      'viewGenus FTREE FTREE_OF NOFISH noFish famUnit fishMine fishIsWink famSci famIMR famGroup famSpecies fishFamOf viewFishSheet fishTile famSizes fishMarks treeFamily treeGenus fishSpecies'
+      'viewGenus FTREE FTREE_OF NOFISH noFish famUnit fishIsWink famSci famIMR famGroup famSpecies famSizes treeFamily treeGenus'
     ],
     ['learn.js', 'Dup-15', 'classics viewLookalikes viewCompare treeGenusLooks']
   ],

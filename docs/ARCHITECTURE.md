@@ -116,7 +116,7 @@ and the player switches between the subjects open to them.
 **Main files.** `core.js` `SUBJECTS` (the registry, shared with the admin and the sheet script), `unitRankOf`,
 `subjGroup`, `treeGen`, `treeScore`; `app.js` `UNITS` (what the app reads each subject's units and pages through),
 `setSubject`, `inSubject`, `subjOpen`, `treeGenera`, the tree state (`treeAt`, `treeLoad`); `progress.js` `subjHello`;
-`learn.js` `viewList`, `viewFishSheet`; `sync.js` `mergeSubject`; `tools/seaslug_game.py` and the fish build tools
+`learn.js` `viewList`, `viewTreeSheet`; `sync.js` `mergeSubject`; `tools/seaslug_game.py` and the fish build tools
 (Data files).
 
 **How it connects.** Each subject's data comes from its own files (Data files); its progress syncs and replays per
@@ -252,7 +252,7 @@ P1-P6 ([rules/photos.md](rules/photos.md)) govern them.
 - **Sources** of the coral photos: [photos.md](spec/photos.md#coral-photo-sources).
 - **New candidates are not stored**, the Candidate photos workflow, the **Key-only genus** cap:
   [photos.md](spec/photos.md#the-candidate-photos-workflow).
-- **Excluded photos** (`tools/excluded.py`, `data/excluded.json`, **Restore**): [photos.md](spec/photos.md#excluded-photos).
+- **Excluded photos** (`tools/excluded.py`, `data/excluded.json`, the admin's **Put back**): [photos.md](spec/photos.md#excluded-photos).
 - **Measured values** of each game photo (contrast, brightness, saturation, warm share, sharpness; `data/measured.json`,
   `tools/photo_measure.py`): [spec/measured.md](spec/measured.md).
 

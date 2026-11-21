@@ -20,7 +20,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
   subject has it (`UNITS` `pairs`, `duelLede`).
 - **Typed** (`|t`): no guess rate, no time weight, never a comeback, an Again or a duel (below).
 - **Find the X** (`|f`): scored as 4 choices, the photo tapped the unit given (rule L2); its own format offset, `find`
-  (`core.js` `fmtOf`).
+  (`core.js` `fmtOf`). Asked on the subject's own rank and on its species (the rank `species`, by common or scientific
+  name; the four units of one kind of name), never a scientific genus.
 - **Every format**: its own fitted offset (`core.js` `fmtOf`); no known-mix-ups term on 2 choices (`model.js`
   `confTerm`).
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked
@@ -236,7 +237,10 @@ comeback question, a mastery exam question). One engine (`quiz.js` `PEND`, `pend
   answers count; after a break they are planned again, `rustNow`), the repeat window (`lastQs`) and the photo window
   (`SEENQ`) hold it once (a reload starts them with it), the opening hold, the comeback and the Elo are read at answer
   time as for any question, a comeback question keeps its mark. The cards and offers of the first showing are not shown
-  again, and a question that came with a first-meeting card is not kept (its card is the genus's meeting). The hint
+  again. A question about the genus of its own first-meeting card is not kept (its card is the genus's meeting); one
+  that came with another genus's card (a genus opening next, the question about a genus already met) is kept, and the
+  card does not show again (`introAdd` marks its genus met when the card shows)
+  ([decision](../decisions/2026-11-22-pending-question-other-card.md)). The hint
   (Show the corallites) is hidden again: opening it counts as help.
 - **Response time**: the clock counts the seconds the player looked at the question before leaving (`QCLOCK.pre`,
   written at each leave, hide and page close, `pendClock`) and the seconds since the return, never the time away: a

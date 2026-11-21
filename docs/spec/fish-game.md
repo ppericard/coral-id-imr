@@ -93,7 +93,8 @@ place, `app.js` `UNITS[id].learn`: `{name, line(), when(), self(), k}`, `k` the 
 `SUBJECTS` `optin`, so the choice syncs and merges). The fish: Common names (`sp`, shown from `SPECIES_SHEET`) and
 Scientific names (`sci`: the genera, and through `sciUp` their species); the sea slugs: Species (`ssp`, shown from
 `SCI_SHEET`); the corals: none, so no card and no Home link. `learnRows()` keeps the rows whose `when()` holds (rule
-D4).
+D4). The fish's welcome sets these rows once, in its names step right after the first-launch question
+([cards.md](cards.md#the-names-step-at-the-welcome): `UNITS[id].namesStep`, `namesSet`).
 
 - **A row's state** (`rowOn`): on while not turned off on the card (`Q[k + 'O']`) and either turned on (`Q[k]` true) or
   bringing its units by itself (`self()`: the species; an IMR player's scientific genera, "I'm at IMR" meaning both). A
@@ -121,7 +122,7 @@ docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, ste
 
 - **Units**: `core.js` `treeSpUnits` lists one unit per species with a listed name, in a family in play (`s:` + its id,
   `s:s091`; its family's other species as `look`; `from` its family). `app.js` `treeGenera` builds each record:
-  `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl: []`, `noex`,
+  `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl` (the species its record's `look` names: none for the fish), `noex`,
   its family's photos of that species, `sci` its scientific name, `also` its listed names, `name` the player's first
   common name (a getter, `cnFirst`). `TREEU.spl` lists them.
 - **Opening** (the species): the set `sp` in `UNITS` fish `sets` (`auto` only: no offer, no switch). `app.js` `spPlay`
