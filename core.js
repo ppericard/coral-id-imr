@@ -4481,6 +4481,18 @@
   // diver-flavoured; descriptions plain and exact. fpct25 is retired: the recount (progress.js ACH_V, achMigrate)
   // removes it from every record. Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
   const FISH_ACH = [
+    // Fish basics done: every step of the module seen (proto/fishbasics.js; its feat SUBJECTS fish basics.feat, read by
+    // progress.js achSnap), the twin of the corals' "Basics" (one 📖 bronze). A learning milestone like the others, earned
+    // by finishing the module (a fixed number of screens), never after a number of answers or an amount of time; not in
+    // ACH_LEARN (nothing takes it back).
+    [
+      'fbasics',
+      'Fin to tail',
+      'You know what to look at first on a reef fish: body shape, the groups, fins, tails and markings',
+      1,
+      '📖',
+      s => s.basics
+    ],
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
     ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
