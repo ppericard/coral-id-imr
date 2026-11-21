@@ -71,17 +71,16 @@ Values have 3 decimals; `sh` has 1. Besides the whole frame's block, a photo has
 
 ## Coverage
 
-15,483 of the 29,295 game photos are measured (2026-11-21):
+All 29,295 downloaded game photos are measured (2026-11-22; the file holds 29,296 entries, one photo that left the game
+keeping its entry):
 
 - a fixed hash sample of 500 photos across every subject (33 corals, 405 fish, 62 sea slugs);
 - the 425 fish photos with a box;
-- the first two `--minutes 35` slices of the full run, in the hash order (6,891 and 7,718 photos, about 3.2-3.8 a
-  second on the shared agent machine, under the slot).
+- the full run, in the hash order, as resumed `--minutes 35` slices under the slot: 6,891 and 7,718 photos, then 8,042
+  and 5,771 (REE-19, Q434), 0 failed.
 
 Left (the list of record for this work: [REE-19](https://linear.app/reef-id/issue/REE-19)):
 
-- the full run's last 13,812 photos: two more `--minutes 35` runs (`python3 tools/photo_measure.py`, which resumes),
-  or one on a GitHub runner;
 - the upkeep: the Candidate photos workflow runs `--dir r2-upload` on the photos it downloads, and its push job allows
   `data/measured.json`;
 - the measures in the analyses' photo features (a refit of every milestone) and in the judging checks;
