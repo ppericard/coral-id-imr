@@ -167,6 +167,24 @@ test("the montage frame draws a planted subject's pairs from the builder's parts
   assert.strictEqual(c.pg.v.innerHTML, '<section class="adm-quality adm-mont x-mont"><p class="none">NONE</p></section>');
 });
 
+test("a builder's after() is drawn under the rows and its bindAfter() runs; the pick binding leaves the strips that carry no pair key", () => {
+  const c = glue({ASUBJ: NEW}),
+    log = [];
+  c.MONT_BUILD.tree = plantedMont(log, {
+    open: () => ({
+      ...plantedMont(log).open(),
+      after: () => '<section class="after">AFTER</section>',
+      bindAfter: () => log.push(['bindAfter'])
+    })
+  });
+  c.renderMont(NEW);
+  assert.ok(c.pg.v.innerHTML.endsWith('</section><section class="after">AFTER</section>'), 'the html comes after the frame');
+  assert.deepStrictEqual(plain(log), [['bindAfter']]);
+  // the pick thumbnails are bound by their pair key, so a strip button of another kind (the species pairs') keeps its own click
+  assert.ok(ADMIN.includes("querySelectorAll('.adm-mth[data-k]')"));
+  assert.ok(!ADMIN.includes("querySelectorAll('.adm-mth')"));
+});
+
 test('the montage controls reach the builder; a write that changes nothing draws nothing; a write keeps the scroll', () => {
   const c = glue({ASUBJ: NEW}),
     log = [];
@@ -176,7 +194,7 @@ test('the montage controls reach the builder; a write that changes nothing draws
     auto = el({dataset: {k: 'C|D'}}),
     hide = el({dataset: {k: 'A|B', hi: '1'}}),
     show = el({dataset: {k: 'A|B', hi: '0'}});
-  Object.assign(c.pg.all, {'[data-ax]': [axis], '.adm-mth': [thumb], '[data-au]': [auto], '[data-hi]': [hide, show]});
+  Object.assign(c.pg.all, {'[data-ax]': [axis], '.adm-mth[data-k]': [thumb], '[data-au]': [auto], '[data-hi]': [hide, show]});
   c.renderMont(NEW);
   const draws = () => c.calls.filter(x => x === 'status').length,
     scrolls = () => c.calls.filter(x => Array.isArray(x) && x[0] === 'scroll').length;
