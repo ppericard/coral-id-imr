@@ -281,7 +281,7 @@ test('data/names.json: the admin extract, in step with taxonomy.json; the admin 
   assert.strictEqual(N.coral.gen.Symphyllia, 'Lobophyllia');
   assert.strictEqual(N.coral.gen.Phymastrea, 'Favites');
   ['Favia', 'Montastraea', 'Coscinaraea', 'Micromussa'].forEach(g => assert.ok(!(g in N.coral.gen), g));
-  // Each genus's WoRMS AphiaID and family (the admin's Photos › Tree WoRMS view, admin-coraltree.js ctWormsOf), WoRMS's own
+  // Each genus's WoRMS AphiaID and family (the admin's Photos › Tree WoRMS view, tools/tree_section.py coral_worms), WoRMS's own
   // family, not the app's word: Pachyseris and Plerogyra sit elsewhere in the IMR lecture, Diploastrea's family is spelt
   // Diploastraeidae.
   assert.deepStrictEqual(Object.keys(N.coral.worms).sort(), Object.keys(C.gen).sort(), 'every genus');
