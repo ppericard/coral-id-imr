@@ -2761,7 +2761,9 @@
     // Answers whose previous answer on the same genus (same player) was right and had an expectation.
     const D = A.filter(a => a.prev && a.prev.y && a.prev.x != null),
       far = D.filter(a => a.t - a.prev.t >= GAP);
-    if (D.length < 100 || far.length < 20) return thin(far.length, 20, {all: D.length});
+    // the forgetting slope needs these; the stability fit (backGenus) reads every rusty comeback question, so it stays
+    // when the slope has too few (Codex review, #1401)
+    if (D.length < 100 || far.length < 20) return thin(far.length, 20, {all: D.length, stab: backGenus(A, B, seed + 2)});
     const M = backFit(D),
       n = D.length,
       C = A.filter(a => a.back && a.E != null),

@@ -3167,6 +3167,10 @@ async function lazyPart(b, base, fails) {
               none: words({...base, open: ['hi']}),
               wide: document.documentElement.scrollWidth - innerWidth
             };
+          // the slope too thin to fit (analysis.js comeback): the stability card is still drawn
+          A.thin = true;
+          out.thin = words({...base, need: 0});
+          delete A.thin;
           A.stab = keep;
           render();
           return out;
@@ -3176,6 +3180,7 @@ async function lazyPart(b, base, fails) {
           !/already within ±30% of the stability/.test(fit.narrow) ||
           /open-ended/.test(fit.narrow) ||
           !/open-ended/.test(fit.none) ||
+          !/already within ±30% of the stability/.test(fit.thin) ||
           fit.wide > 0
         )
           fails.push(`${w}px Analyses #${h} forgetting by genus with a fit: ${JSON.stringify(fit)}`);

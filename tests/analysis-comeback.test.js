@@ -148,7 +148,7 @@ test('cbFit: the likelihood’s maximum, within the range, whatever the answers'
   assert.ok(Math.abs(A.cbFit(few, 0, 1)) < Math.abs(A.cbFit(few)) + 1e-9);
 });
 
-test('comeback: the stability fit rides the Comeback analysis, a thin log keeping none', () => {
+test('comeback: the stability fit rides the Comeback analysis, a thin slope keeping the stability', () => {
   const rows = rusty(8, () => 1, 8, 80, 6),
     D = A.prep(rows),
     // ordinary answers around the comeback questions, so the forgetting slope can fit
@@ -179,4 +179,8 @@ test('comeback: the stability fit rides the Comeback analysis, a thin log keepin
   void D;
   const t = A.comeback(A.prep(rows.slice(0, 30)), 0, 9);
   assert.ok(t.thin, 'under 100 answers: the Comeback analysis is thin');
+  // the forgetting slope is what is thin: the stability fit reads every rusty comeback question and is kept (Codex)
+  assert.ok(t.stab && t.stab.n === 30 && t.stab.min === 200, JSON.stringify(t.stab));
+  const wrong = A.comeback(A.prep(rows.map(r => [...r.slice(0, 3), 'Gen9', 0, ...r.slice(5)])), 0, 9);
+  assert.ok(wrong.thin && wrong.stab && wrong.stab.edge === 1, 'no answer follows a right one: no slope, the stability still read');
 });
