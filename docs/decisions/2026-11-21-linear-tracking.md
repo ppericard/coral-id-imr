@@ -1,6 +1,6 @@
 # Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet
 
-Date: 2026-11-21. PR: #0. Rules or docs touched: AGENTS.md, rules W6 and W19 (docs/rules/ship.md), docs/rules/README.md,
+Date: 2026-11-21. PR: #1360. Rules or docs touched: AGENTS.md, rules W6 and W19 (docs/rules/ship.md), docs/rules/README.md,
 docs/INTEGRATOR.md "Linear", docs/STATUS.md (its top), tools/brief.py, the PR template, CONTRIBUTING.md, README.md.
 
 ## Context

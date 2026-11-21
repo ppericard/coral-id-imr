@@ -1814,4 +1814,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   should not enter tickets, relay subagent results or approve ordinary bookkeeping. Keep the dev, review and merge
   workflow.» Open work is tracked in Linear (team REE); ROADMAP.md keeps pointers and the subjects not transferred yet.
   Applied: AGENTS.md, rules W6 and W19, INTEGRATOR.md "Linear", STATUS.md, tools/brief.py,
-  decisions/2026-11-21-linear-tracking.md (#0).
+  decisions/2026-11-21-linear-tracking.md (#1360).

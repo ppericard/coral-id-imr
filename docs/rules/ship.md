@@ -40,7 +40,7 @@ integrator's own reminder (Pierre does not browse GitHub), not the source of tru
 questions themselves, and remove the label in the same step that records his answer (`tools/train.py` refuses a PR
 that still has it).
 *Why:* the fish mode, built on branches that never got a PR, went silent for a day although beta players had been
-promised it. *Source:* Pierre, 2026-11-04; the track on its Linear issue, 2026-11-21 (#PRNUM).
+promised it. *Source:* Pierre, 2026-11-04; the track on its Linear issue, 2026-11-21 (#1360).
 
 ### W7
 
@@ -284,7 +284,7 @@ ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every wo
 chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
 #1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
 history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409); ideas not built into ROADMAP, by 2026-11-01; Linear
-as the tracker, 2026-11-21 (#PRNUM).
+as the tracker, 2026-11-21 (#1360).
 
 ### W21
 
