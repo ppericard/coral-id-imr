@@ -802,6 +802,101 @@ async function matrixGame(b, base, errs) {
   await c.close();
   return fails.map(m => `matrix: ${m}`);
 }
+// (20) Down the tree (proto/downtree.js, the Lab) on the fish: twelve families, their scientific genera and species unlocked
+// (the sheet's version at the species level, Scientific names on), the photos stubbed; tests/downtree.check.js plays the rounds
+// at 390 and 1280 px (one photo, the steps from the family down, each unlocked and under the one above, names of one rank, a
+// right step ticked, a wrong one crossed with the walk going on, the end sheet with the partial credit, one screen in every state,
+// no progress, log or answer count changes); and that a player with the families alone has nothing to walk down yet.
+async function downTree(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-dt')) {
+        sessionStorage.setItem('fish-dt', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`down the tree: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  // The families alone: no finer unit is unlocked, so the Tools page lists the game (the subject has a tree) but it has nothing to
+  // ask, and says so.
+  const fams = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => !rankOf(n) && gamePics(n, 'wide').length)
+      .slice(0, 12);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (fams < 6) return [`down the tree: ${fams} fish families with a photo`];
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q
+    .waitForFunction(
+      () =>
+        /./.test((document.querySelector('#view .note') || {}).textContent || '') &&
+        !/^\s*Loading/.test(document.querySelector('#view .note').textContent),
+      null,
+      {
+        timeout: 15000
+      }
+    )
+    .catch(() => {});
+  const none = await q.evaluate(() => ({
+    note: (document.querySelector('#view .note') || {}).textContent || '',
+    names: document.querySelectorAll('#view .dtq .dtans [data-n]').length
+  }));
+  if (none.names || !/Meet a few in the quiz first/.test(none.note)) fails.push(`families alone: ${JSON.stringify(none)}`);
+  // Their genera and species too (the species level is on from the sheet's SCI_SHEET).
+  const n = await q.evaluate(() => {
+    store.set(SHEETV, SCI_SHEET);
+    Q.sci = true;
+    const F = pool().filter(n => !rankOf(n) && isOpenFam(n)),
+      G = sciNow().filter(g => F.includes(GX(g).parent) && photoAny(g)),
+      S = sciSpAll().filter(u => G.includes(GX(u).parent) && photoAny(u));
+    introAdd([...G, ...S], true);
+    return [F.length, G.length, S.length];
+    function isOpenFam(n) {
+      return unlocked([n]).length === 1;
+    }
+  });
+  if (n[1] < 6 || n[2] < 6) return [...fails, `${n} families, genera, species unlocked`].map(m => `down the tree: ${m}`);
+  await q.evaluate(() => (location.hash = hr('lab'))); // the game is drawn afresh by the check, with the units now unlocked
+  await q.waitForTimeout(300);
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./downtree.check.js')(q, w, fails, 'fish', 8);
+  }
+  // Switched to the corals without a reload (TREEU stays loaded): the game is not offered, not on the Tools page and not by its address.
+  await q.evaluate(() => setSubject('coral'));
+  await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
+  await q.evaluate(() => (location.hash = hr('lab')));
+  await q.waitForTimeout(500);
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q.waitForTimeout(500);
+  const coral = await q.evaluate(() => ({
+    subject: SUBJ.id,
+    on: LAB.list.find(x => x.id === 'downtree').on(),
+    page: !!document.querySelector('#view .dtq')
+  }));
+  if (coral.subject !== 'coral' || coral.on || coral.page) fails.push(`switched to the corals: ${JSON.stringify(coral)}`);
+  await c.close();
+  return fails.map(m => `down the tree: ${m}`);
+}
 // (16) Type the family, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the fish: twelve
 // families unlocked, the photos stubbed; tests/labgames.check.js plays them at 390 and 1280 px (the unit word, the photo of an
 // unlocked family, no id shown as a name, the typed answers and the retype, four choices of one rank, the web's nodes and
@@ -4253,6 +4348,8 @@ async function namesCard(b, base, errs) {
   const oo = run.has('main') ? await oddOne(b, base, errs) : [];
   // (15) Matrix: matrixGame, above.
   const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
+  // (20) Down the tree: downTree, above.
+  const dt = run.has('main') ? await downTree(b, base, errs) : [];
   // (16) Type the family, Blur reveal and the Look-alike web: labGames, above.
   const lg = run.has('main') ? await labGames(b, base, errs) : [];
   // (17) The custom quiz: customQuiz, above.
@@ -4604,6 +4701,7 @@ async function namesCard(b, base, errs) {
     ...sd,
     ...oo,
     ...mx,
+    ...dt,
     ...lg,
     ...cqz,
     ...la,
