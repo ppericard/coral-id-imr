@@ -112,14 +112,14 @@ Players and Journey replay a fish history with a row without a record as `rplMak
   showed none is replayed). The nine fish rows without a record are surprise-card answers (mode `wink`), left out of
   every replay (`core.js` `subjRows`, `Code.gs:596` `subjRows_`), and none carries the logged expectation and ability
   that `replayProgress` needs to rebuild a row (`core.js:6834`). What a replayed row without a record would do, for the
-  record and for the parity test (section 3, item 6): it would be re-scored with today's offsets; its format
-  offset (`core.js:6863`) would enter the unit's bar step and the ability steps (`dm − df`, `core.js:6102`, `6113`); its
+  record and for the parity test (section 3, item 6): it would be re-scored with today's offsets; its format offset
+  (`core.js:6863`) would enter the unit's bar step and the ability steps (`dm − df`, `core.js:6102`, `6113`); its
   memory offset only for a row logged before 2026-11-03 12:46 Manila (`MEM_LOGGED`: after it the logged expectation
   already holds the memory, `core.js:6861`). From that row on, the player's abilities (unit and level Elo, which also
-  order the leaderboard after the %) would carry the change into every later answer, whose record keeps its inputs but not
-  the ability its Elo steps start from (`eloStep`, `core.js:6113` and the level's step after it); the bar of the unit
-  answered in that row carries it through that unit's later answers. The other units' bars read no ability (`barOf`,
-  `core.js:5274`). The build's before/after replay checks that no fish player moves (section 5).
+  order the leaderboard after the %) would carry the change into every later answer, whose record keeps its inputs but
+  not the ability its Elo steps start from (`eloStep`, `core.js:6113` and the level's step after it); the bar of the
+  unit answered in that row would carry it through that unit's later answers. The other units' bars read no ability
+  (`barOf`, `core.js:5274`). The build's before/after replay checks that no fish player moves (section 5).
 - **The sea slugs change at once too, a little:** their fitted offsets are already nonzero (section 2: k4 +0.13, k2
   −0.22, again +0.09, right once −0.71), so switching them on moves their scoring and draw from the first answer, by
   less than a quarter logit except the right-once bucket (corrected after review: an earlier version said nothing
