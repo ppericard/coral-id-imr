@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v215 (2026-11-21)
+
+The embedded `core.js` gains `SUBJECTS` `admin.circles` on the fish and the sea slugs, the words the admin's Tree names each circle in beside its number (the fish: IMR course, After the course, Beyond the course; the sea slugs: Stars and most common, Next most common, Less common). The script's replays, boards and stamp read nothing of it: no player's progress moves and no new script version is needed by the app (integrator's call, easy to correct: the words of the admin's Tree, REE-186)
+
 ## v214 (2026-11-21)
 
 The embedded `core.js` gains the fish achievement `fbasics` ("Fin to tail", tier 1, 📖) in `FISH_ACH`, earned when the Fish basics module is done (the fish's done feat `_fbasics`, already held in the synced achievements record since v182); `achSnap` now reads the feat of the subject on screen (`SUBJECTS` `basics.feat`) instead of the corals' alone. It moves no progress and takes no rules version (rule D5), and the sheet needs nothing new: `achs_` counts any id of the saved records. The fish list becomes 32 achievements (the name, tier and words are the integrator's call; the achievement itself was decided with the fish achievements' redesign)
