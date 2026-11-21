@@ -4735,7 +4735,7 @@ const REVIEW_BUILD = {
                 const [d, n, r] = R[p.f];
                 return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${photo(p)}</button>
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${coralPrior(p.genus)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${genusPrior(p.genus)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
               },
               bind(scope) {
@@ -9086,7 +9086,7 @@ function diffByAnswers(PH, min, order) {
 const PRIOR_TRY = {};
 // The corals' prior on their tile: the genus's offset (GD, the sheet's ?stats=1 gd), the photos having no judged ease; nothing
 // before the genus has one.
-function coralPrior(genus) {
+function genusPrior(genus) {
   const o = (GD[genus] || [])[0],
     d = photoPrior(null, o, 0);
   return d === null
@@ -9924,7 +9924,10 @@ function sheetAgain(...kinds) {
     else if (k === 'alerts') ALS = null;
     else if (k === 'infra') INF = null;
     else if (k === 'reports') REPS = null;
-    else if (k.startsWith('own:')) delete OWNST[k.slice(4)];
+    else if (k.startsWith('own:')) {
+      delete OWNST[k.slice(4)];
+      delete PRIOR_TRY[k.slice(4)]; // By difficulty reads the new offsets (REE-62)
+    }
   });
 }
 // The reads the landing page needs leave as soon as the token is known, in parallel with the token check and start()'s

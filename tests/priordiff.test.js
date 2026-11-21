@@ -2,7 +2,7 @@ require('./slot.js').testGuard();
 // Photo review › By difficulty shows each photo's prior beside its answers (REE-62, plan PR 9): the difficulty the app
 // starts the photo at before any answer (autosort.js photoPrior, as model.js photoDiff), read for a tree subject (fish, sea
 // slugs) from its judged ease and its unit's offset in the subject's own ratings (admin.js treePrior), for the corals from
-// the genus offset alone (coralPrior).
+// the genus offset alone (genusPrior).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

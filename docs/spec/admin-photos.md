@@ -250,7 +250,7 @@ difficulty the app starts it at before any answer, read as "recognised by N%" (`
 else the judging pass's) and its family's offset from the subject's own ratings (`?stats=1&s=`, `loadOwnStats`, read once
 behind the page: the tile draws first, the prior follows; with the ratings unread or the script too old, the ease alone, and
 the title says "unit offset not read"), on its own line under the answers (`treePrior`, `priorHnum`). The corals: the genus's
-offset alone (their photos have no judged ease; `coralPrior`), "prior" beside the learned reading.
+offset alone (their photos have no judged ease; `genusPrior`), "prior" beside the learned reading.
 
 ### The fish views: Ease and Phase & framing
 
