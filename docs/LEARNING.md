@@ -1028,7 +1028,11 @@ judged"); a photo nobody has answered is its prior, and every prior is 0 before 
 time term is added on top of that blend ("The photo's time term", below). A unit's difficulty is read from the same
 offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
 Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one
-difficulty split into rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review".
+difficulty split into rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review"; its
+offline fit on the real log and the replay of the step-2 candidates (2026-11-21) are in
+[reviews/2026-11-21-q316-offline-fit.md](reviews/2026-11-21-q316-offline-fit.md): the coral genus SD and the fish family
+SD measured (about 0.8 logits each), the photo, the fish genus and species and Q136's τ not estimable yet; whether the
+shared chain predicts the fish answers better or worse than today: the measure cannot tell.
 
 ### The photo's time term
 

@@ -96,7 +96,7 @@ test('the family sheets lines (tools/fish_sheets.json): families of fish.json, e
 
 // The families IMR gives no cue for (circles 2-3, the Soapfishes): each
 // has its own ID marks, checked against two sources at least, and the app shows them where it shows IMR's cues (app.js
-// treeGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewFishList read qt and tl).
+// treeGenera: qt, under a label naming the sources; quiz.js fbBody and introCard, learn.js viewList read qt and tl).
 test('every family of the game has ID cues to show: IMR’s, or its own ID marks with two sources at least', () => {
   const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_sheets.json'), 'utf8')).families;
   const bare = F.families.filter(f => !(f.cues || []).length);

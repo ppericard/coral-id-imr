@@ -159,7 +159,7 @@ const WHOLE = ['admin-fish.js'],
     ['admin.js', 'Dup-8', 'fishTile fuTile bindFishTiles repPhotoSubj coralRepTile fishRepTile'],
     ['admin.js', 'Precedent', 'pstatsCoral pstatsFish'],
     ['analysis.js', 'Dup-21', 'photoMetaFish'],
-    ['learn.js', 'Dup-13', 'viewGenera packGroups viewFishList'],
+    ['learn.js', 'Dup-13', 'packGroups'],
     [
       'learn.js',
       'Dup-14',

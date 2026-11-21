@@ -98,7 +98,7 @@ test('no "Open the sheet", no ID marks heading and no source on a list card; the
 
 test('the photo opens the sheet, not the photo viewer, on every subject’s list', () => {
   for (const h of cards()) assert.ok(!/data-z|class="zoom"|<button/.test(h), h);
-  const fishList = block(learn, 'function viewFishList() {', '\n/* ---------- Fish sheets', {file: 'learn.js'});
+  const fishList = block(learn, "  // The tree subjects' list:", '\n// The taxonomic groups', {file: 'learn.js'});
   assert.match(fishList, /listCard\(/);
   assert.ok(!/zoom\(|data-z|Open the sheet|g\.tl/.test(fishList), 'the fish and sea slug list: no viewer, no sheet line, no heading');
 });
