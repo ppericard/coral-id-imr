@@ -25,5 +25,5 @@ R2 out of reach now costs up to three photos' failures (each with its retry) bef
 their online original or the site; a missing file or a passing error leaves the rest of the visit on R2. A photo
 loaded from the browser's cache counts as an R2 load, so R2 failing mid-visit can take a few more failures to be given
 up; each photo still falls back on its own meanwhile. Under a service worker nothing changes. The admin (`admin.js`)
-keeps its own one-failure rule. Specified in [docs/spec/photos.md](../spec/photos.md) "Served from Cloudflare R2";
+holds the same rule since REE-204 (the same text, kept equal by `tests/r2out.test.js`). Specified in [docs/spec/photos.md](../spec/photos.md) "Served from Cloudflare R2";
 tested by `tests/r2out.test.js` and `tests/net.smoke.js` check 12 a2.

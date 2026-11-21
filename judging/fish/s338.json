@@ -481,6 +481,52 @@
   "fish-s338-cand-623777373": {
    "code": "p1g1mm13",
    "keep": "dup"
+  },
+  "fish-s338-cand-765083217": {
+   "code": "p1g2mmk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Wrasses and a parrotfish near the trumpetfish's size, as sharp, around it in the blue: o or k? Out until decided."
+  },
+  "fish-s338-cand-713617693": {
+   "code": "p1g1slo4",
+   "keep": "best"
+  },
+  "fish-s338-cand-757119357": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s338-cand-762955434": {
+   "code": "p1d3bs11",
+   "keep": "best"
+  },
+  "fish-s338-cand-545720092": {
+   "code": "p1d1mlo3",
+   "keep": "best"
+  },
+  "fish-s338-cand-742121007": {
+   "code": "p1g1sm14",
+   "keep": "best",
+   "bb": [
+    0.3,
+    0.3,
+    0.65,
+    0.55
+   ]
+  },
+  "fish-s338-cand-352109716": {
+   "code": "p1d1sm1w3",
+   "keep": "best"
+  },
+  "fish-s338-cand-659820842": {
+   "code": "p0g0slo3",
+   "keep": "best"
+  },
+  "fish-s338-cand-623777461": {
+   "code": "o1g1mm13",
+   "keep": "dup"
   }
  }
 }

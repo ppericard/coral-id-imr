@@ -1978,7 +1978,9 @@ function anView(key, rep, R) {
     return (
       head +
       `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} answers this analysis needs.</p>` +
-      (key === 'sess' && a.desc ? `<div class="adm-sgrid adm-an-grid">${anSessDesc(a.desc).join('')}</div>` : '')
+      (key === 'sess' && a.desc ? `<div class="adm-sgrid adm-an-grid">${anSessDesc(a.desc).join('')}</div>` : '') +
+      // the stability fit does not wait for the forgetting slope (analysis.js comeback)
+      (key === 'back' && a.stab ? `<div class="adm-sgrid adm-an-grid">${anBackGenus(a)}</div>` : '')
     );
   const lean = a.lean ? AN_LEAN : '';
   const parts = [anEffects(a, key)];
