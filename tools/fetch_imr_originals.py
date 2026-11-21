@@ -80,17 +80,29 @@ def download(url, cache=DEFAULT_CACHE):
 def make(f, url, cr, ro, px, crop, rot, cache, out):
     """Writes the four sizes of lecture photo f into out, from its original at url, framed as photos.lecture_frame says (crop
     and rot: curation.json's maps, None for none). Returns (the shape ar of the 480 px file, the framing's crop and rotation),
-    or (None, why) when the picture could not be fetched or is no longer the one the lecture's framing was matched on."""
+    or (None, why) when the picture could not be fetched, cannot be read (a truncated file, an error page: the cached copy is
+    dropped, so the next run asks again) or is no longer the one the lecture's framing was matched on. Never raises for one
+    photo: a caller going through many (tools/fetch_approved.py) goes on with the next."""
     from PIL import Image
     path = download(url, cache)
     if not path:
         return None, f'{f}: could not download {url}'
-    im = Image.open(path).convert('RGB')
+    try:
+        im = Image.open(path).convert('RGB')
+    except Exception as e:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        return None, f'{f}: {url} is not a readable picture ({e})'
     cut = photos.turn(im, cr, ro)
     if list(cut.size) != list(px):
         return None, f'{f}: the picture is {im.size}, the cut is {cut.size}, tools/imr_frames.json says {px}'
     c, r = photos.lecture_frame(f, cr, ro, crop, rot)
-    return photos.write(im, f, out, c, r), (c, r)
+    try:
+        return photos.write(im, f, out, c, r), (c, r)
+    except Exception as e:
+        return None, f'{f}: could not write its files ({e})'
 
 
 def main():

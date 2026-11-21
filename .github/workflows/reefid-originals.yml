@@ -10,7 +10,9 @@ name: IMR lecture originals to R2
 on:
   push:
     branches: [main]
-    paths: [tools/imr_frames.json, tools/fetch_imr_originals.py]
+    # The frames file only: a change of the tool alone does not rebuild the 86 photos (since REE-60 the tool writes the framing in
+    # force, Pierre's crop over the lecture's, and tools/fetch_approved.py remakes a photo when it changes).
+    paths: [tools/imr_frames.json]
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,6 +22,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   originals:
+    # Also one at a time with approved-photos.yml, which remakes a lecture photo when Pierre crops it (REE-60): a run here that
+    # began before his Publish must not upload the lecture's framing over the new crop after that run did. The job reads main
+    # when it starts, so its curation.json is the latest one. (GitHub keeps one waiting run per group: a run waiting behind
+    # another is replaced by a newer one; start this one by hand again if it was.)
+    concurrency:
+      group: candidate-photos
+      cancel-in-progress: false
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7

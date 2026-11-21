@@ -241,8 +241,15 @@ try:
     imr.download('https://example.org/t.jpg', cache)
 except ValueError as e:
     r['host'] = str(e)[:30]
+# an error page kept as the picture: refused for that photo alone (no raise), and not kept in the cache
+open(os.path.join(cache, 'bad.jpg'), 'w').write('<html>' + 'x' * 2000)
+r['bad'] = imr.make('f2', 'https://www.coralsoftheworld.org/media/images/bad.jpg', cr, ro, px, None, None, cache, out)
+r['bad_kept'] = os.path.exists(os.path.join(cache, 'bad.jpg'))
 print(json.dumps(r))`)
     );
+    assert.strictEqual(r.bad[0], null);
+    assert.match(r.bad[1], /^f2: .*is not a readable picture/);
+    assert.strictEqual(r.bad_kept, false, 'the next run asks for the picture again');
     assert.deepStrictEqual(r.lecture, [1.5, [[0, 0, 0.5, 1], 90]]);
     assert.deepStrictEqual(r.lecture_size, [300, 200], 'cut to its left half, then turned: never the lecture’s own pixels');
     assert.deepStrictEqual(r.his, [1.33, [[0, 0, 1, 1], 0]], 'Full photo: the whole original, the lecture’s turn off');

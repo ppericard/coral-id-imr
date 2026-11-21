@@ -1,7 +1,8 @@
 # The admin's Crop works on an IMR lecture photo traced to its original
 
 Date: 2026-11-21. PR: #1400. Rules or docs touched: `docs/spec/photos.md`, `admin.js`, `autosort.js`, `tools/photos.py`,
-`tools/fetch_approved.py`, `tools/fetch_imr_originals.py`, `tools/apply_imr_originals.py`, `tests/rotate.test.js`,
+`tools/fetch_approved.py`, `tools/fetch_imr_originals.py`, `tools/apply_imr_originals.py`,
+`.github/workflows/reefid-originals.yml`, `tests/rotate.test.js`,
 `tests/imrsources.test.js`, `tests/admin.smoke.js`.
 
 ## Context
@@ -27,6 +28,10 @@ a crop, could not be undone with "Full photo". Pierre decided the originals and 
 - **The lecture tools leave his crop alone**: `tools/apply_imr_originals.py` skips a record already applied;
   `tools/fetch_imr_originals.py` (run by `reefid-originals.yml` on a change of the frames file) writes the framing in force,
   not the lecture's.
+- **One writer of a lecture photo's files at a time** (integrator's call, Codex review of #1400): `reefid-originals.yml`
+  joins the `candidate-photos` concurrency group of `approved-photos.yml` (its job reads `main` when it starts, so its
+  `curation.json` is the latest) and no longer runs on a change of the tool alone, only on the frames file or by hand; a
+  photo whose original cannot be read is skipped with its reason, never stops the others (`fetch_imr_originals.make`).
 - **A lecture crop saved as it was opened writes nothing**, so rounding never makes the workflow download an original for
   the same picture. The 34 untraced lecture photos (no original online) keep no Crop: nothing to cut from.
 
