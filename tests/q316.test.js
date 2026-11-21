@@ -311,3 +311,116 @@ test('fit.py: refuses to write its output inside the repository', {skip: !sci &&
   assert.strictEqual(r.status, 2);
   assert.match(r.stderr, /outside the repository/);
 });
+
+// ---- 2B (replay2b.js): the engine's own functions, the scorer, the shared chain's update, the primary's coverage.
+const B2 = require(path.join(DIR, 'replay2b.js'));
+
+test("replay2b.js: one eloReplay serves what core.js eloOf and genusOffsetsOf serve; photoDiff is model.js's own", () => {
+  const C = require(path.join(ROOT, 'core.js')),
+    ch = ['Acropora', 'Porites', 'Favia', 'Montipora'],
+    rows = [];
+  for (let i = 0; i < 120; i++)
+    rows.push(ra('w' + (i % 4), i, ch[i % 4], ['c' + (i % 4) + '-' + (i % 5)], (i * 7) % 10 < 7, ch, {d: 0.1, f: 0, o: 0}));
+  const E = B2.engine().eloReplay(rows),
+    s = B2.served(E);
+  assert.deepStrictEqual(s.photos, C.eloOf(rows));
+  assert.deepStrictEqual(s.gd, C.genusOffsetsOf(rows));
+  const PD = B2.photoDiffOf(C.SUBJECTS[0]);
+  Object.assign(PD, {PGD: s.gd, PSTAT: s.photos, PTM: s.ptm});
+  const o = s.photos['c0-0'],
+    W = 5;
+  const want = (o[1] * o[0] + W * s.gd.Acropora[0]) / (o[1] + W) + C.ptimeOff(s.ptm['c0-0'], W);
+  assert.ok(Math.abs(PD.photoDiff('Acropora', {f: 'c0-0'}) - want) < 1e-9, PD.photoDiff('Acropora', {f: 'c0-0'}) + ' ' + want);
+});
+
+test("replay2b.js: the expectation is core.js scoreAnswer's, on the ability the app logged", () => {
+  const C = require(path.join(ROOT, 'core.js'));
+  const q = {t: 'Acropora', c: 'Acropora', ok: true, k: 4, chs: ['Acropora', 'Porites', 'Favia', 'Montipora'], ph: ['x']};
+  Object.assign(q, {d0: 0.4, fam: -0.5, cf: 0.1, R: 0.9, S: 1.2, th: 0.7, p: 0, dom: true, look: false});
+  const e = C.scoreAnswer({}, q).e;
+  const r = {g: 0.25, R: 0.9, Sl: 1.2, th: 0.7, mem: -0.5, cf: 0.1};
+  assert.ok(Math.abs(B2.expected(r, 0.4) - e) < 1e-12);
+});
+
+test('replay2b.js: the shared chain: no photo moves nothing; an untrusted answer moves the level only; the surprise split by the variances', () => {
+  const C = require(path.join(ROOT, 'core.js'));
+  const V = {fam: 0.1, gen: 0.4, sp: 0.2, photo: 0.9},
+    st = B2.chainState('fish', V),
+    r = {p: 'P1', u: 'f:A', rk: 'family', F: 'f:A', G: 'g:B', S: 's1', ph: ['x'], mu: [0.3], g: 0.25, y: 1},
+    x = (o = {}) => ({r: {...r, ...o}, w: ['P1'], trusted: true, mem: C.MEM.PRIOR.slice(), delta: null});
+  B2.chainStep(st, x({ph: [], mu: []}));
+  assert.deepStrictEqual([Object.keys(st.R).length, Object.keys(st.m).length], [0, 0], 'an answer without photos moves nothing');
+  B2.chainStep(st, {...x(), trusted: false});
+  assert.strictEqual(Object.keys(st.m).length, 0, 'untrusted: no part moves');
+  assert.strictEqual(st.R.P1[1], 1, 'but the level steps');
+  // trusted, n = 1 answer before (weight 1/11): each part moves by its variance; the photo starts at its prior mean
+  const before = B2.chainD(st, r);
+  B2.chainStep(st, x());
+  const mv = k => (k === 'I|x' ? st.m[k] - 0.3 : st.m[k]);
+  assert.ok(B2.chainD(st, r) < before, 'a right answer: the question easier');
+  const ratio = mv('I|x') / mv('G|g:B');
+  assert.ok(Math.abs(ratio - 0.9 / 0.4) < 1e-9, 'moves in the ratio of the variances: ' + ratio);
+  assert.ok(st.v['I|x'] < 0.9 && st.v['G|g:B'] < 0.4, 'each variance shrinks');
+  // the v31-equivalent: today's steps over the gradient at the game's target
+  assert.ok(Math.abs(B2.V31.photo / B2.V31.unit - 2) < 1e-12);
+  assert.ok(B2.aStar > 0.9 && B2.aStar < 0.93);
+});
+
+test("replay2b.js: the variances: the half fit's SD for a level that passed, the v31-equivalent for one that did not", () => {
+  const H = {sd: {fam: [0.5], gen: [0.6], sp: [0.7], photo: [0.02]}, fixed: {r_genus: [0.3, 0.1, {}]}},
+    full = {report: {fam: {verdict: 'pass'}, gen: {verdict: 'x'}, sp: {verdict: 'x'}, photo: {verdict: 'x'}, r_genus: {verdict: 'x'}}};
+  const {v, src} = B2.variances('fish', H, full);
+  assert.strictEqual(v.fam, 0.25);
+  assert.strictEqual(v.gen, B2.V31.unit / 2, 'two fish levels failed: they share the unit variance');
+  assert.strictEqual(v.photo, B2.V31.photo);
+  assert.strictEqual(v.r_genus, 'online');
+  assert.strictEqual(src.photo, 'v31-equivalent');
+  full.report_shared = {gs: {verdict: 'pass'}};
+  full.fit_shared = {sd: {gs: [0.45]}};
+  assert.ok(Math.abs(B2.variances('fish', H, full).v.sp - 0.45 ** 2) < 1e-12, 'the shared SD when it passed');
+  assert.ok(Math.abs(B2.variances('coral', {sd: {gen: [0.8], photo: [0.4]}}, {report: {gen: {verdict: 'pass'}}}).v.gen - 0.64) < 1e-12);
+});
+
+test("replay2b.js: the primary counts only the earlier answers of players trusted at that moment; the arms' predictions", () => {
+  const G = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8'));
+  const pics = Object.values(G.photos)
+    .flat()
+    .filter(p => p && p.sp && typeof p.e === 'number')
+    .slice(0, 6);
+  const tax = Pr.fishTax().of(pics[0].sp),
+    ch = [tax.F, 'f:Other'],
+    sc = {d: 0.2, f: 0, o: 0},
+    rows = [],
+    add = (w, f, ok) => rows.push(ra(w, rows.length, tax.F, [f], ok, ch, sc, {s: 'fish', rk: 'family'}));
+  for (let i = 0; i < 20; i++) add('t1', pics[1 + (i % 5)].f, 1); // a trusted player (20 right of 2 choices)
+  for (let i = 0; i < 3; i++) add('u1', pics[0].f, 0); // an untrusted one, 3 answers on photo 0
+  for (let i = 0; i < 4; i++) add('t1', pics[0].f, 1);
+  const L = Pr.load({ok: true, rows});
+  const X = Pr.prepare(L.rows, 'fish'),
+    lab = new Map(Object.entries(X.map).map(([l, w]) => [w, l])),
+    raw = L.rows.map(r => [lab.get(r[0]), ...r.slice(1)]);
+  const fit = {sd: {fam: [0.4], gen: [0.3], sp: [0.3], photo: [0.4]}, fixed: {}},
+    R = B2.replay(raw, X, {A: fit, B: fit}, null);
+  assert.ok(R.prim[23], "the untrusted player's 3 answers do not count");
+  assert.ok(R.prim[25] && !R.prim[26], '3 earlier trusted answers: no longer new');
+  assert.ok(R.E.a1.every(x => x > 0 && x < 1) && R.E.a2.every(x => x > 0 && x < 1));
+  assert.ok(R.E.log.every((x, i) => Math.abs(x - B2.expected(X.rows[i], 0.2)) < 1e-12), "the logged arm: the scoring record's d");
+  const T = B2.tables(X, R, null, null);
+  assert.strictEqual(T.primary.verdict, 'the measure cannot tell', 'two players: no test');
+});
+
+test("the rules the README declares for 2B are replay2b.js's", () => {
+  const P = B2.RULES.primary;
+  assert.deepStrictEqual([P.minPlayers, P.minAnswers, P.alpha, B2.RULES.minutes], [6, 20, 0.05, 40]);
+  for (const s of [
+    'fewer than 3 earlier answers by players trusted at that moment',
+    '20 or more such answers',
+    'fewer than 6 such players',
+    'odd labels P1, P3',
+    'v31-equivalent',
+    'photo 0.8, unit `GENUS_K` 0.4',
+    'units with 20 or more answers',
+    'Its own 40-minute'
+  ])
+    assert.ok(README.replace(/\s+/g, ' ').includes(s), 'README: ' + s);
+});
