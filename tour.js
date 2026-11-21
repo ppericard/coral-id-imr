@@ -37,6 +37,8 @@
       d: 'Switch here, or with the button next to the logo on every other page. Each subject keeps its own progress.'
     },
     ask: {k: 'ask', h: '', ask: true},
+    // names: the names step of a subject that has one (app.js UNITS namesStep), right after the question; a forced choice too.
+    names: {k: 'names', h: '', names: true},
     doors: {
       k: 'doors',
       h: '',
@@ -78,7 +80,9 @@
   // on a new device: the sheet's reply names the group, sync.js groupsSeen, and the page reloads back on the sign-in step)
   // brings pick and swap right after the sign-in step, the steps before it unchanged so the step number stays right, and
   // the new subject's question when it is not the one already asked. OPEN: what the tour started with ({two, s}: two
-  // subjects or more, the subject on screen), kept across that reload.
+  // subjects or more, the subject on screen), kept across that reload. OPEN.n: the subject whose names step the answer just
+  // given asks (app.js namesAsk), which then follows the last question; none for an answer that skips it. OPEN.c: the names
+  // step's answer, held here and written when the tour closes (app.js namesSet), so a step taken back leaves nothing behind.
   let OPEN = null;
   function plan() {
     const two = subjMine().length > 1,
@@ -87,8 +91,14 @@
         : OPEN && !OPEN.two
           ? ['ask', 'doors', 'signin', 'pick', ...(SUBJ.id !== OPEN.s ? ['ask'] : []), 'swap', 'games', 'progress', 'help']
           : ['pick', 'ask', 'swap', 'doors', 'signin', 'games', 'progress', 'help'];
+    if (OPEN && OPEN.n === SUBJ.id) ks.splice(ks.lastIndexOf('ask') + 1, 0, 'names');
     return ks.map(k => DEF[k]).filter(s => !s.signin || SYNC_URL);
   }
+  const keepOpen = () => {
+    try {
+      sessionStorage.setItem(KEY + '-open', JSON.stringify(OPEN));
+    } catch (e) {}
+  };
   let STEPS = [];
   // A step's title and text: the subject's own words for it (UNITS tour[k]: {t, d}), else the step's (the corals'); either
   // may be a function (d of "Tap" / "Click").
@@ -185,8 +195,14 @@
       b = root.querySelector('.tbub'),
       // The answer already given: the subject's question, or the subject picked (a saved choice: this tour's, or the
       // account's once signed in), so Back shows it and Next goes on.
-      cur = s.pick ? (store.get(SUBJECT_KEY, null) ? SUBJ.id : null) : (store.get(startKey(SUBJ.id), null) || {}).c,
-      forced = s.ask || s.pick,
+      cur = s.pick
+        ? store.get(SUBJECT_KEY, null)
+          ? SUBJ.id
+          : null
+        : s.names
+          ? OPEN.c || null
+          : (store.get(startKey(SUBJ.id), null) || {}).c,
+      forced = s.ask || s.pick || s.names,
       // The last step of a player new to corals: Coral basics first (5 min), the quiz beside it.
       bas = last && cur && startVars(cur).basics && basicsDue();
     // The sign-in step holds the real sign-in box (bindSync in app.js); its Next reads "Later" until the RA has signed in.
@@ -212,7 +228,9 @@
             .join('')}</div>`
         : s.ask
           ? `<h3>${esc(SUBJ.start.q)}</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
-          : `<h3>${esc(t)}</h3><p>${esc(d)}</p>`;
+          : s.names
+            ? `<h3>${esc(namesDecl().q)}</h3><p>${esc(namesDecl().lede)}</p>${namesOptsHtml(cur)}`
+            : `<h3>${esc(t)}</h3><p>${esc(d)}</p>`;
     b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${body}
       <div class="tnav">${forced ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>
       ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${forced && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? basicsWords().name + ' (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
@@ -228,6 +246,7 @@
               my = token;
             // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's.
             picking = true;
+            OPEN.c = null; // the names step is the picked subject's own
             all.forEach(x => {
               if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
               x.disabled = true;
@@ -256,6 +275,21 @@
             b.querySelectorAll('[data-start]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
             // model.js comes with the quiz tier; the answer is kept as soon as it is in (a first visit on a slow line).
             if (c !== cur) saving = need(2).then(() => startSet(c, 'tour'));
+            // The names step follows (app.js namesAsk, from the answer just clicked: the record is saved a moment later);
+            // an answer that skips it drops a choice made on a first go (held, not written yet).
+            OPEN.n = namesAsk(c) ? SUBJ.id : null;
+            if (!OPEN.n) OPEN.c = null;
+            keepOpen();
+            show(step + 1);
+          })
+      );
+    if (s.names)
+      b.querySelectorAll('[data-names]').forEach(
+        o =>
+          (o.onclick = () => {
+            b.querySelectorAll('[data-names]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
+            OPEN.c = o.dataset.names; // written when the tour closes (close)
+            keepOpen();
             show(step + 1);
           })
       );
@@ -378,9 +412,27 @@
     b.style.top = Math.max(m, Math.min(H - bh - m, top)) + 'px';
     arrows(s, rects, b, W, H);
   }
+  // The boxes of the page's readable text (every text line, the tour itself left out): an arrow never covers one.
+  function textBoxes(W, H) {
+    const out = [],
+      rg = document.createRange(),
+      walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode: n => (n.nodeValue.trim() && !root.contains(n) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT)
+      });
+    for (let n; (n = walk.nextNode());) {
+      const e = n.parentElement;
+      if (!e || /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(e.tagName)) continue;
+      if (e.checkVisibility && !e.checkVisibility({visibilityProperty: true, opacityProperty: true})) continue;
+      rg.selectNodeContents(n);
+      for (const q of rg.getClientRects())
+        if (q.width > 0 && q.height > 0 && q.right > 0 && q.left < W && q.bottom > 0 && q.top < H) out.push(q);
+    }
+    return out;
+  }
   // Big arrows in the dimmed area, one per spotlight, pointing at it: below or above it (towards the middle of the
-  // screen first), else beside it; never over the bubble or another spotlight. The main one aims at the target's
-  // content (the game tabs, not the empty end of their bar).
+  // screen first), else beside it; never over the bubble, another spotlight or any page text (the longest arrow that
+  // finds clear room, else a shorter one; none when there is no room at all: the ring alone still shows the target).
+  // The main one aims at the target's content (the game tabs, not the empty end of their bar).
   function arrows(s, rects, b, W, H) {
     const g = root.querySelector('.tarrows');
     if (!s.arrows) {
@@ -389,10 +441,10 @@
     }
     const bb = b.getBoundingClientRect(),
       A = 44,
-      L = 58,
       pad = 6,
       hit = (x, y, w, h, q, e = 6) => x < q.right + e && x + w > q.left - e && y < q.bottom + e && y + h > q.top - e;
-    const kids = target ? [...target.children].filter(vis).map(e => e.getBoundingClientRect()) : [];
+    const kids = target ? [...target.children].filter(vis).map(e => e.getBoundingClientRect()) : [],
+      words = textBoxes(W, H);
     const aimX = (q, i) =>
       !i && kids.length ? (Math.min(...kids.map(k => k.left)) + Math.max(...kids.map(k => k.right))) / 2 : (q.left + q.right) / 2;
     let out = '';
@@ -400,25 +452,32 @@
       const cx = aimX(q, i),
         cy = (q.top + q.bottom) / 2,
         up = cy < H / 2;
-      const spots = [
-        {x: cx - A / 2, y: q.bottom + pad + 8, w: A, h: L, a: 0}, // below, pointing up
-        {x: cx - A / 2, y: q.top - pad - 8 - L, w: A, h: L, a: 180}, // above, pointing down
-        {x: q.left - pad - 8 - L, y: cy - A / 2, w: L, h: A, a: 90}, // left, pointing right
-        {x: q.right + pad + 8, y: cy - A / 2, w: L, h: A, a: 270} // right, pointing left
-      ];
-      if (!up) [spots[0], spots[1]] = [spots[1], spots[0]];
-      const p = spots.find(
-        o =>
-          o.x >= 2 &&
-          o.y >= 2 &&
-          o.x + o.w <= W - 2 &&
-          o.y + o.h <= H - 2 &&
-          !hit(o.x, o.y, o.w, o.h, bb) &&
-          !rects.some(z => hit(o.x, o.y, o.w, o.h, z, 2))
-      );
+      let p = null,
+        L = 0;
+      for (L of [58, 44, 32, 24]) {
+        const spots = [
+          {x: cx - A / 2, y: q.bottom + pad + 8, w: A, h: L, a: 0}, // below, pointing up
+          {x: cx - A / 2, y: q.top - pad - 8 - L, w: A, h: L, a: 180}, // above, pointing down
+          {x: q.left - pad - 8 - L, y: cy - A / 2, w: L, h: A, a: 90}, // left, pointing right
+          {x: q.right + pad + 8, y: cy - A / 2, w: L, h: A, a: 270} // right, pointing left
+        ];
+        if (!up) [spots[0], spots[1]] = [spots[1], spots[0]];
+        p = spots.find(
+          o =>
+            o.x >= 2 &&
+            o.y >= 2 &&
+            o.x + o.w <= W - 2 &&
+            o.y + o.h <= H - 2 &&
+            !hit(o.x, o.y, o.w, o.h, bb) &&
+            !rects.some(z => hit(o.x, o.y, o.w, o.h, z, 2)) &&
+            !words.some(z => hit(o.x, o.y, o.w, o.h, z, 3))
+        );
+        if (p) break;
+      }
       if (!p) return;
       // Drawn pointing up around (0,0), then turned: the bob animation moves it towards the spotlight.
-      out += `<g transform="translate(${p.x + p.w / 2},${p.y + p.h / 2}) rotate(${p.a})"><path class="tarw" d="M0,${-L / 2} L${A / 2},${-L / 2 + 24} H${A * 0.17} V${L / 2} H${-A * 0.17} V${-L / 2 + 24} H${-A / 2} Z"/></g>`;
+      const k = Math.min(24, L * 0.45); // the head's height
+      out += `<g transform="translate(${p.x + p.w / 2},${p.y + p.h / 2}) rotate(${p.a})"><path class="tarw" d="M0,${-L / 2} L${A / 2},${-L / 2 + k} H${A * 0.17} V${L / 2} H${-A * 0.17} V${-L / 2 + k} H${-A / 2} Z"/></g>`;
     });
     g.innerHTML = out;
   }
@@ -428,6 +487,9 @@
   function close(to, skipped) {
     if (!root) return;
     const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step + 1).some(s => s.signin);
+    // The names step's answer, final now (a step taken back changed nothing meanwhile): written to the subject it was asked
+    // for, unless a row was set or "I'm at IMR" said since.
+    if (OPEN && OPEN.c && OPEN.n === SUBJ.id && namesFresh() && !imrNow()) namesSet(OPEN.c);
     token++;
     picking = false;
     try {
@@ -457,7 +519,7 @@
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       // The first-launch question is answered before the tour goes on (forced).
-      if ((STEPS[step].ask || STEPS[step].pick) && !root.querySelector('.tbub .tnext')) return;
+      if ((STEPS[step].ask || STEPS[step].pick || STEPS[step].names) && !root.querySelector('.tbub .tnext')) return;
       show(step + 1);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -475,9 +537,7 @@
       if (at) OPEN = JSON.parse(sessionStorage.getItem(KEY + '-open'));
     } catch (e) {}
     if (!OPEN || typeof OPEN !== 'object') OPEN = {two: subjMine().length > 1, s: SUBJ.id};
-    try {
-      sessionStorage.setItem(KEY + '-open', JSON.stringify(OPEN));
-    } catch (e) {}
+    keepOpen();
     $helpbox.hidden = true;
     $help.setAttribute('aria-expanded', 'false');
     root = document.createElement('div');

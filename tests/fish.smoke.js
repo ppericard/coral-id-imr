@@ -1318,6 +1318,102 @@ async function freshSeed(b, base, errs, seed, fresh) {
   await c6.close();
 }
 
+// (10b) The names step on the welcome card (app.js UNITS namesStep, quiz.js namesAskShow; Pierre, 2026-11-04): after "How well do
+// you know reef fish?" a player who is not at IMR is asked which names to learn, on its own card (not the question's), and
+// each answer sets the What I learn rows; "I'm at IMR" is not asked; a device that has not heard the sheet script at the
+// species level (rule D4) is not asked; Escape leaves the record as it plays. Cases: [welcome answer, sheet version heard,
+// names answer or 'esc', the rows after: [Common names on, Scientific names on]].
+async function namesCard(b, base, errs) {
+  const fails = [];
+  const cases = [
+    ['new', 300, 'sci', [false, true]],
+    ['know', 300, 'both', [true, true]],
+    ['new', 300, 'common', [true, false]],
+    ['know', 300, 'esc', [true, false]],
+    ['imr', 300, null, [true, true]],
+    ['new', 0, null, [true, false]]
+  ];
+  for (const [pick, v, names, want] of cases) {
+    const tag = `names step ${pick}/${v}/${names}`;
+    const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(v => {
+      try {
+        if (!sessionStorage.getItem('fish-names')) {
+          sessionStorage.setItem('fish-names', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour'}));
+          if (v) localStorage.setItem('reefid-sheet-v', String(v));
+        }
+      } catch (e) {}
+    }, v);
+    const q = await c.newPage();
+    q.on('pageerror', e => errs.push(`${tag}: ${e.message}`));
+    await q.goto(base + '#practice/quiz');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('.unlock.startq'), null, {timeout: 30000});
+    await q.click(`.unlock.startq [data-start="${pick}"]`);
+    await q
+      .waitForFunction(() => document.querySelector('.unlock.namesq, #view .q, .unlock.basicsq'), null, {timeout: 15000})
+      .catch(() => fails.push(`${tag}: nothing after the answer`));
+    const card = await q.evaluate(() => {
+      const d = document.querySelector('.unlock.namesq');
+      return d
+        ? {
+            title: (d.querySelector('h3') || {}).textContent || '',
+            opts: [...d.querySelectorAll('[data-names]')].map(x => x.dataset.names),
+            startq: d.classList.contains('startq'),
+            quiz: !!document.querySelector('#view .q'),
+            text: d.textContent
+          }
+        : null;
+    });
+    if (names) {
+      if (
+        !card ||
+        card.title !== 'Which names do you want to learn?' ||
+        card.opts.join() !== 'common,sci,both' ||
+        card.startq ||
+        card.quiz ||
+        /Latin/.test(card.text)
+      )
+        fails.push(`${tag}: the card ${JSON.stringify(card)}`);
+      if (card) {
+        if (names === 'esc') await q.keyboard.press('Escape');
+        else await q.click(`.unlock.namesq [data-names="${names}"]`);
+        await q
+          .waitForFunction(() => !document.querySelector('.unlock.namesq'), null, {timeout: 5000})
+          .catch(() => fails.push(`${tag}: the card stays`));
+      }
+    } else if (card) fails.push(`${tag}: asked, but it should not be`);
+    // what comes next: Fish basics offered to "new", else the quiz
+    await q
+      .waitForFunction(() => document.querySelector('#view .q, .unlock.basicsq'), null, {timeout: 15000})
+      .catch(() => fails.push(`${tag}: neither the basics offer nor the quiz after the step`));
+    const st = await q.evaluate(() => ({
+      rows: learnRows().map(r => rowOn(r)),
+      n: learnRows().length,
+      q: ['sp', 'spO', 'sci', 'sciO', 'sciH'].map(k => (k in Q ? Q[k] : null)),
+      fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
+      basics: !!document.querySelector('.unlock.basicsq')
+    }));
+    // the rows read as the answer says (one row only where the sheet has not been heard: its choice is not on offer)
+    const rows = st.n === 1 ? [st.rows[0]] : st.rows;
+    if (JSON.stringify(rows) !== JSON.stringify(st.n === 1 ? [want[1]] : want) || st.q[4] || (st.fish || {}).c !== pick)
+      fails.push(`${tag}: after ${JSON.stringify(st)}`);
+    if (names === 'common' || names === 'esc' || !names) {
+      if (st.q.some(x => x !== null) && pick !== 'imr') fails.push(`${tag}: wrote something it should not ${JSON.stringify(st.q)}`);
+    }
+    if (pick === 'new' && !st.basics) fails.push(`${tag}: Fish basics is not offered after the step`);
+    await c.close();
+  }
+  return fails;
+}
+
 (async () => {
   const run = slot.parts(PARTS, {main: ['main'], fresh: ['fresh']});
   await slot('fish.smoke');
@@ -3218,6 +3314,75 @@ async function freshSeed(b, base, errs, seed, fresh) {
       return r;
     });
     if (!bt2.shown || bt2.after || bt2.told) ui.push(`${width}px leaderboard toast and a subject switch: ${JSON.stringify(bt2)}`);
+    // REE-210: the leaderboard notice never sits over a question's answers or Next (at 390 px it covered two of four
+    // answers for 15 s). It waits while a question is on screen, answered or not; it shows on the first page without one,
+    // its ✕ at least 44 px; a question that opens while it shows takes it away at once, not told (an observer of the
+    // test's own, registered after the app's, sees the toast gone in the very change that draws the question). Light and
+    // dark, the question unanswered and answered (Next on screen). The sync is stubbed in memory only after the answer
+    // (rule D1: no call to the sheet).
+    for (const theme of ['light', 'dark']) {
+      await q.evaluate(() => (location.hash = '#practice/quiz'));
+      // A card due is out of the way first: the start question (answered by its first choice), then any other.
+      await q.waitForFunction(() => document.querySelector('.unlock.startq, #view .q'), null, {timeout: 15000});
+      if (await q.$('.unlock.startq [data-start]'))
+        await q.click(`.unlock.startq [data-start="${(await q.$('.unlock.startq [data-start="know"]')) ? 'know' : 'imr'}"]`);
+      const st = await settle(q);
+      if (st) ui.push(`${width}px leaderboard notice and a question: ${st}`);
+      await qa.ready(q);
+      const bq = await q.evaluate(async theme => {
+        document.documentElement.dataset.theme = theme;
+        const s0 = SYNC,
+          wait = ms => new Promise(r => setTimeout(r, ms)),
+          toast = () => [...document.querySelectorAll('.apptoast')],
+          r = {};
+        store.set('reefid-board-sent14', 1);
+        store.set('reefid-board-told', 0);
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice(); // a question unanswered
+        await wait(300);
+        r.open = toast().length || store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        smokeAnswer(); // the feedback state, Next on screen
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice();
+        await wait(300);
+        r.feedback = toast().length || store.get('reefid-board-told', 0);
+        location.hash = '#about';
+        for (let i = 0; i < 20 && !toast().length; i++) await wait(100);
+        const t = toast()[0],
+          b = t && t.querySelector('button').getBoundingClientRect();
+        r.shown = toast().length; // exactly one
+        r.close = b ? [Math.round(b.width), Math.round(b.height)] : null;
+        r.fits = t ? t.getBoundingClientRect().right <= innerWidth + 1 && t.getBoundingClientRect().left >= -1 : false;
+        let over = 0;
+        new MutationObserver(() => document.querySelector('#view .q') && toast().length && over++).observe($v, {
+          childList: true,
+          subtree: true
+        });
+        location.hash = '#practice/quiz'; // a question opens under it: taken away, not told, never painted over it
+        for (let i = 0; i < 40 && !document.querySelector('#view .q'); i++) await wait(100);
+        r.over = over;
+        r.pulled = !toast().length && !store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        toast().forEach(x => x.remove());
+        return r;
+      }, theme);
+      if (
+        bq.open ||
+        bq.feedback ||
+        bq.shown !== 1 ||
+        !bq.close ||
+        bq.close[0] < 44 ||
+        bq.close[1] < 44 ||
+        !bq.fits ||
+        bq.over ||
+        !bq.pulled
+      )
+        ui.push(`${width}px ${theme} leaderboard notice and a question on screen: ${JSON.stringify(bq)}`);
+    }
+    await q.evaluate(() => delete document.documentElement.dataset.theme);
     await q.evaluate(() => (location.hash = '#about'));
     await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
     // From the keyboard: Tab reaches each side, Enter switches, and the focus stays on the side chosen once the header is
@@ -3376,10 +3541,12 @@ async function freshSeed(b, base, errs, seed, fresh) {
       return {
         title: d ? d.querySelector('h2').textContent : '',
         links: d ? [...new Set([...d.querySelectorAll('a')].map(a => a.getAttribute('href')))].join() : '',
-        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
+        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true,
+        // REE-211: the tag shows on the door while the subject's key is not built, visible at every width.
+        soon: d && d.querySelector('.hdsoon') ? (e => !!e.offsetParent && /soon/i.test(e.textContent))(d.querySelector('.hdsoon')) : false
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral || !door.soon)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
     await q.evaluate(() => (location.hash = '#identify/key'));
@@ -3436,6 +3603,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const d = await page();
     if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // REE-211: the corals' Identify door has no "soon" tag (their key is built).
+    await q.evaluate(() => (location.hash = '#home'));
+    await q.waitForSelector('#view .hdoor.identify', {timeout: 15000}).catch(() => {});
+    const ct = await q.evaluate(() => ({
+      door: !!document.querySelector('#view .hdoor.identify'),
+      tag: !!document.querySelector('#view .hdoor.identify .hdsoon')
+    }));
+    if (!ct.door || ct.tag) ui.push(`${width}px Home's Identify door, Coral on, has a "soon" tag: ${JSON.stringify(ct)}`);
     // A fish page linked straight (the subject prefix in the app's addresses): a new tab on a fish
     // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
     for (const [h, key] of [
@@ -4111,6 +4286,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
+  // (10b) The names step on the welcome card: namesCard, above.
+  const names = run.has('main') ? await namesCard(b, base, errs) : [];
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -4458,6 +4635,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...grp,
     ...all,
     ...welcome,
+    ...names,
     ...hello,
     ...flag,
     ...early

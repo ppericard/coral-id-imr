@@ -213,4 +213,5 @@ test('home.js viewHome without DATA: the corals doors, the band empty', () => {
   assert.ok(!/reefcloud-example/.test(h), "the Identify door's photo waits for the data too (it shared the slow line)");
   assert.match(h, /data-subj="coral"/, 'the subject row as once the data is in');
   assert.match(h, /New to corals\?/, 'the basics line, from the device alone');
+  assert.ok(!/hdsoon/.test(h), 'the corals have a key: no "soon" tag');
 });

@@ -379,7 +379,8 @@ test('scored as a quiz answer with 4 choices; the replay of the log gives the st
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
       pfmt: () => ({}), // model.js pfmt: no offsets for the fish
-      genusDiff: () => 0
+      genusDiff: () => 0,
+      photoTimeQ: () => undefined // quiz.js photoTimeQ: no photo time term (before RTNET_SHEET)
     };
     vm.createContext(env);
     st(target);
@@ -431,6 +432,30 @@ test('the tiles: the fish data holds families with tiles enough for the format t
   assert.ok(Object.keys(byFam).length >= 4, `families with a tile: ${Object.keys(byFam).length}`);
   // Every tile's square: four numbers (fractions of the original; past its edge where the photo's blurred copy fills it).
   Object.values(gm.photos).forEach(L => L.filter(p => p.xc).forEach(p => assert.ok(p.xc.length === 4 && p.xc.every(Number.isFinite), p.f)));
+});
+
+test('the sea slug data (REE-66): the animal box and its tile on the photos, in genera enough for the format to come up', () => {
+  const gm = C.treeGameRead(JSON.parse(read('seaslug-game.json'))),
+    F = JSON.parse(read('seaslug.json')),
+    genOf = new Map(F.species.map(s => [s.id, s.genus])),
+    byGen = {};
+  let boxed = 0,
+    tiled = 0;
+  Object.values(gm.photos).forEach(L =>
+    L.forEach(p => {
+      if (p.bb) boxed++;
+      if (!p.xc) return;
+      tiled++;
+      // a tile is cut around a box (tools/seaslug_game.py): never one without
+      assert.ok(p.bb, `a tile with no box: ${p.f}`);
+      assert.ok(p.xc.length === 4 && p.xc.every(Number.isFinite), p.f);
+      const g = genOf.get(p.sp);
+      if (g) byGen[g] = (byGen[g] || 0) + 1;
+    })
+  );
+  assert.ok(boxed >= 2000 && tiled >= 1900, `boxes ${boxed}, tiles ${tiled}`);
+  // the game's units are the genera (core.js SUBJECTS seaslug unitRank): four with a tile at least, the question's four
+  assert.ok(Object.keys(byGen).length >= 40, `genera with a tile: ${Object.keys(byGen).length}`);
 });
 
 test("the tile's address: its square and its rewrite count, so a corrected tile is a new file for the caches", () => {
