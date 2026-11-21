@@ -2,8 +2,13 @@
 
 Append-only. Every answer Pierre gives (numbered or not) gets one entry here, in the PR that applies it to the
 document it changes (AGENTS.md "Every answer reaches its doc"). Before asking Pierre anything, search this file, the
-rules (`docs/rules/`) and the decision records (`docs/decisions/`): an answer found there is applied, never asked
-again. STATUS only cites entries; it never holds an answer alone.
+rules (`docs/rules/`) and the decision records (`docs/decisions/`). STATUS only cites entries; it never holds an
+answer alone.
+
+This ledger is historical evidence: an entry keeps what was said and how it was read then, and a later entry may amend
+an earlier one. A match is not by itself a current instruction: before applying it, check its scope, the later entries
+and the subject's current home (its Linear issue or subject note, the rule or doc it was applied to); a decision that
+settles the point is applied, never asked again (AGENTS.md "Every answer reaches its doc").
 
 An entry: the date and Manila time, the question number if any, his words as written (French kept), what it decides in
 one line, and where it is applied (the doc or the PR). A later answer that changes an earlier one is a new entry naming

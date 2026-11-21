@@ -25,9 +25,10 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 
 **The only place that says who merges and when.** The integrator also reads [docs/INTEGRATOR.md](docs/INTEGRATOR.md).
 
-- **One integrator.** The main agent of a session is the integrator: it starts as many subagents as useful, each on
-  its own branch, worktree and PR (rule W22), checks and merges their work. Subagents build, test, run the review loop
-  (rule W23) and report; **subagents never merge**.
+- **One integrator.** The main agent of a session is the integrator, Pierre's principal project assistant within this
+  contract: it keeps the project's current understanding, discusses ideas and tradeoffs with him, synthesizes research,
+  starts as many subagents as useful, each on its own branch, worktree and PR (rule W22), checks and merges their work.
+  Subagents build, test, run the review loop (rule W23) and report; **subagents never merge**.
 - **Launch decided work at once**, never hold it in a queue; only a real dependency waits (two PRs on the same files).
   The machine is protected by `tests/slot.js` (rule W24), not by holding subagents back.
 - **The order of work is the integrator's**: it sets the order of development and never asks Pierre "now or later";
@@ -69,7 +70,9 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
   to ask: Rule 0.
 - **Every answer reaches its doc, and the answers ledger**: each answer is applied to the document it changes in the PR
   that records it and added to [docs/ANSWERS.md](docs/ANSWERS.md). Before any question, the integrator searches the
-  ledger, the rules and `docs/decisions/`; an answer found there is applied, never asked again.
+  ledger, the rules and `docs/decisions/`: a hit is evidence, checked for its scope, later amendments and whether it
+  still applies; a decision that settles the point is applied, never asked again; on incomplete or contradictory
+  evidence, say what is unsure, leave that point open and go on with the work already allowed.
 - **Research uses every useful source without asking** (web search engines, guides, forums, publishers, databases and
   their APIs; paced, rule C7); a query holds only public terms, never the project's data; every source is cited (C2).
 - **Estimates are in agent time** (reviews and checks included), never human days or weeks; convert any quoted one.
@@ -125,7 +128,9 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 
 Pierre's standing rules: follow them over your own taste; when in doubt, ask him. The full rule, its *Why* and
 *Source* are in its topic file. **Writing a rule down** (Pierre, 2026-11-05): keep his scope and meaning; never
-generalise beyond the case he spoke about nor harden it; unsure of the scope, ask; a change of substance (what a rule
+generalise beyond the case he spoke about nor harden it (an observation, example, hypothesis or request to look into
+is not an instruction; a correction of one incident is not a standing rule; tone and repetition never widen a scope or
+duration; a clear stop is obeyed whatever the tone); unsure of the scope, ask; a change of substance (what a rule
 requires, a new rule) goes to him for his OK; editing (shortening, moving, merging duplicates, applying an answer he
 gave) is the integrator's call, listed in the PR. A rule is its imperative line, *Why:* one short line in our words,
 *Source:* Pierre, date (+ #PR); his sentence and its context go in the PR description, never in the rule. A friction

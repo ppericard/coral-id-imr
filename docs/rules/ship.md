@@ -47,8 +47,10 @@ promised it. *Source:* Pierre, 2026-11-04.
 **Work autonomously; fix by default; never re-ask what was answered**: branch, build, test, open PRs and fix every
 review finding without asking. Ask Pierre only what is costly to undo (AGENTS.md "Working mode") or needs his hands
 (his curation, IMR content); anything destructive or irreversible: AGENTS.md "Always ask first". Before any question,
-search the ledger ([docs/ANSWERS.md](../ANSWERS.md)), the rules and `docs/decisions/`: an answer found there is
-applied, never asked again.
+search the ledger ([docs/ANSWERS.md](../ANSWERS.md)), the rules and `docs/decisions/`: a hit is evidence, checked for
+its scope, later amendments and whether it still applies; a decision that settles the point is applied, never asked
+again; on incomplete or contradictory evidence, say what is unsure, leave that point open and go on with the work
+already allowed.
 - **Questions, the details** (AGENTS.md "Questions to Pierre" has the rule): an open numbered question waits in STATUS
   "Questions for Pierre" (number, context, question, recommendation, PR) until he answers; past numbers stay as they
   are, never renumbered; he does not remember everything as an agent does and may ask for more context.

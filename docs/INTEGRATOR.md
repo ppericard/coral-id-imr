@@ -40,9 +40,15 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   does on every head), and say so.
 - **The Candidate photos run moves `main`** after any judging merge, and a train started meanwhile stops ("main moved"):
   wait for that workflow's run to end, then train.
-- **Before any question to Pierre**: `python3 tools/asked.py <terms>`; a hit is applied, never asked again (open PRs'
-  ledgers included); its last
-  line ("searched: … — N hits") goes under the question.
+- **Before any question to Pierre**: `python3 tools/asked.py <terms>` (open PRs' ledgers included). A hit is evidence,
+  not an instruction: read its scope, the later entries and docs that amend it, and whether it still applies; a
+  decision that settles the point is applied without asking again; if the evidence is incomplete or contradictory, say
+  what is unsure, leave that point open and go on with the work already allowed (AGENTS.md "Every answer reaches its
+  doc"). Its last line ("searched: … — N hits") goes under the question.
+- **A correction repairs the work and what caused it**: the work itself, and the doc, brief or subject note that held
+  the wrong assumption. When it helps Pierre judge the repair, one line names the assumption corrected ("I had taken
+  the storage option as agreed; the later answer chooses a sheet tab; the design and the brief are corrected"). A cause
+  still unknown is said so: no invented explanation, no promise, no rule added only to show the feedback was heard.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
   otherwise), `data/suggest.json` (re-import the PR's species over `main`'s file), the decisions index
   (`python3 tools/decisions_index.py --fix`; it also deletes the retired OLDER.md of the split index, which a branch may carry).
