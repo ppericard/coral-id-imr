@@ -2550,8 +2550,8 @@ const UNITS = {
     memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
     // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
-    // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
-    // read when the card is drawn).
+    // (quiz.js startBasicsOffer and the fallback card; lo is also the body of the "Did you know?" basics tip, tips.js,
+    // with ask and name); card, the Learn card's line; trail, the card's picture (learn.js, read when the card is drawn).
     basics: {
       mod: 'basics',
       name: 'Coral basics',

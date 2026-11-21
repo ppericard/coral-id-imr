@@ -1797,6 +1797,18 @@ const TIP = {WAIT: 600};
 // Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro).
 // (A Duel tab duel draws only genera unlocked, so it brings no card.)
 const nextCards = (cur, q) => !!q.intro;
+// The basics tip's audience (tips.js `basics`): the player the first-launch offer of the subject's basics module is for,
+// who has not opened it. The answer in the subject's own record (startOf; a subject with no question, the sea slugs, has
+// none and gets no tip) whose CHOICE variables offer the basics first (startVars(c).basics: "new", asked or inferred), the
+// module not done (basicsDue) and nothing recorded in its record (the module's page stores the step it opens: `last`,
+// `seen`). Never for the player the "lower" fallback card serves (who said IMR course or know well: it offers the same
+// module), nor one the "higher" card said knows more than they answered, shown or about to be (verdict v).
+const tipBasics = () => {
+  const o = startOn() && startOf();
+  if (!o || !startVars(o.c).basics || !basicsDue() || o.v === 'hi' || (o.fb || {})[o.c + '-hi']) return false;
+  const r = store.get(basicsKey(), {}) || {};
+  return !r.last && !Object.keys(r.seen || {}).length;
+};
 function tipAfter(nb, cur, miss, zm, hold) {
   const raw = store.get(TIPR.KEY, null);
   let st = tipsLoad(raw);
@@ -1810,7 +1822,8 @@ function tipAfter(nb, cur, miss, zm, hold) {
     ctx: cur.split('|')[0],
     miss,
     zm: !!zm,
-    mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0
+    mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0,
+    bx: tipBasics() ? 1 : 0
   };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
@@ -1839,6 +1852,8 @@ const TIP_ACT = {
     store.set(CQ.VIEW, 'mix');
     location.hash = hr('quiz-custom');
   },
+  // The subject's basics module (Coral basics, Fish basics), as the first-launch offer's button opens it.
+  basics: () => go('basics'),
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -1864,8 +1879,8 @@ function tipShow(t, st, cur) {
     kind: 'tip',
     cls: 'tipcard',
     kick: esc(t.card.kick),
-    title: esc(t.card.title({mouse, subj: SUBJ})),
-    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ}))}</p>`,
+    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords()})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords()}))}</p>`,
     primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
     secondary: {text: 'Got it', attr: 'disabled'},
     focus: 'h3',
