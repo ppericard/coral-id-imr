@@ -2466,7 +2466,7 @@ const TREE_UNITS = {
   list: () => viewList(),
   // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
   // name line for each.
-  sheet: id => viewFishSheet(id),
+  sheet: id => viewTreeSheet(id),
   bar: id => treeBar(id)
 };
 // What the tree subjects (fish, sea slugs) say in the Look-alikes deck and Compare (UNITS cmp, deck, inGame): their declared

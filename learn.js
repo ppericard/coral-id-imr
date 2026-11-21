@@ -327,7 +327,7 @@ const LIST_BUILD = {
   // in force (fish.json key; rule S3), in the key's order, each group under its number and title as the key prints them; each
   // family with a photo, its IMR cues and how IMR tells its look-alikes apart; the key is credited in full under the list. A
   // region with no key: the entries in one block (a keyless tree with UNITS listBy: a block per unit of that rank). The winks
-  // stay a surprise. Each entry opens its sheet (viewFishSheet; an IMR entry by the family it was renamed into).
+  // stay a surprise. Each entry opens its sheet (viewTreeSheet; an IMR entry by the family it was renamed into).
   tree: {
     // A subject's own line (UNITS lede: the sea slugs), else the fish's
     lead() {
@@ -1073,8 +1073,8 @@ const spOpen = s => {
     (!!u && genScore(u) >= LV_AT[1])
   );
 };
-// The species filter, on by default each time a sheet opens (viewFishSheet): one tap shows every species.
-let fishMine = true;
+// The species filter, on by default each time a sheet opens (viewTreeSheet): one tap shows every species.
+let treeMine = true;
 // The families a player meets on the families page: circle 1, and the opt-in circles once on (their units renamed into
 // families, an entry renamed into two giving both: SUBJECTS renamed split);
 // never a wink, which stays a surprise.
@@ -1106,7 +1106,7 @@ const treeGo = id => ftree().go(sheetIdOf(SUBJ, id));
 function treeBar(id) {
   const T = ftree(),
     to = treeGo(id),
-    f = fishFamOf(to);
+    f = treeFamOf(to);
   if (!f || fishIsWink(f.id)) return '';
   // A species sheet: its name, its family and genus; previous / next among its genus's species (its family's when the
   // genus has one).
@@ -1155,23 +1155,23 @@ function treeBar(id) {
   return `<h2 class="ctx-t">${esc(f.name)}<small>${esc(famSci(f))}${f.group ? ' · group ' + f.group : ''}</small></h2>${nav}`;
 }
 // The family of a sheet id (a family, genus or species), null for none.
-const fishFamOf = to => {
+const treeFamOf = to => {
   const T = ftree(),
     s = to ? T.spOf(to) : null;
   return !to ? null : T.fam[to] || (s ? T.fam[s.family] : T.fam[(T.gen[to] || {}).family]) || null;
 };
 // A sheet's page (route): an unknown id or a wink opens the families page; a genus opens its short page, or the sheet
 // option B gives it (treeSheets go): the species sheet of a genus with one species; a species opens its sheet.
-function viewFishSheet(id) {
-  fishMine = true; // each sheet opened starts on "Opened for me"; the filter's own redraw keeps the choice
+function viewTreeSheet(id) {
+  treeMine = true; // each sheet opened starts on "Opened for me"; the filter's own redraw keeps the choice
   const T = ftree(),
     to = treeGo(id),
-    f = fishFamOf(to);
+    f = treeFamOf(to);
   if (!f || fishIsWink(f.id)) return UNITS[SUBJ.id].list();
   const sp = T.spOf(to),
     at = T.gen[to] || sp ? to : f.id;
   if (at !== id) return void location.replace(hrFull('g-' + at));
-  sp ? fishSpecies(sp) : T.gen[at] ? treeGenus(T.gen[at]) : treeFamily(f);
+  sp ? treeSpecies(sp) : T.gen[at] ? treeGenus(T.gen[at]) : treeFamily(f);
 }
 // A fish genus's name roots (fish.json root, rootLine) on the one sheet the genus opens (treeSheets go,
 // `at`): its own page, its one species' sheet, or its family's when it is the only genus with several species; the
@@ -1216,7 +1216,7 @@ const treeBind = (flat, redraw) => {
   $v.querySelectorAll('[data-mine]').forEach(
     b =>
       (b.onclick = () => {
-        fishMine = b.dataset.mine === '1';
+        treeMine = b.dataset.mine === '1';
         const y = scrollY;
         redraw();
         scrollTo(0, y);
@@ -1310,17 +1310,17 @@ const spLinks = s => {
     ...more.map(([u, t]) => a(u, esc(t)))
   ].join(' · ');
 };
-const fishTile = s =>
+const treeTile = s =>
   `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap">${spNameH(s)}${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
     s.now && s.now !== s.name ? `<small>now <i>${esc(s.now)}</i> in WoRMS</small>` : ''
   }${s.cs ? `<small><b class="star">★</b> IMR most sighted #${s.cs}</small>` : ''}</span></a>`;
 // Every species of a list, the "Opened for me" filter first (on by default).
 function treeTiles(L, flat) {
   const op = L.filter(spOpen),
-    S = fishMine ? op : L,
+    S = treeMine ? op : L,
     hid = L.length - S.length;
-  return `<div class="seg-row"><div class="seg" role="group" aria-label="Which species"><button type="button" data-mine="1" aria-pressed="${fishMine}">Opened for me · ${op.length}</button><button type="button" data-mine="0" aria-pressed="${!fishMine}">All · ${L.length}</button></div></div>${
-    S.length ? `<div class="ftiles">${S.map(fishTile).join('')}</div>` : ''
+  return `<div class="seg-row"><div class="seg" role="group" aria-label="Which species"><button type="button" data-mine="1" aria-pressed="${treeMine}">Opened for me · ${op.length}</button><button type="button" data-mine="0" aria-pressed="${!treeMine}">All · ${L.length}</button></div></div>${
+    S.length ? `<div class="ftiles">${S.map(treeTile).join('')}</div>` : ''
   }${hid ? `<p class="note fmore">${S.length ? '' : 'None opened for you yet. '}<button type="button" class="linkish" data-mine="0">Show ${S.length ? `the ${hid} more` : `all ${hid}`}</button></p>` : ''}`;
 }
 // A genus row on its family sheet (option B): a few of its species' photos, its name, how many species and how many are
@@ -1406,7 +1406,7 @@ const srcNums = (r, ix) =>
         : ''
     )
     .join('');
-const fishMarks = f =>
+const treeMarks = f =>
   (f.marks || []).length || (f.life || []).length || famSizes(f)
     ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map((x, i) => `<li>${esc(x)}${srcNums(f, ((f.mby || {}).marks || [])[i])}</li>`).join('')}</ul>${esrcP(f, 'marks')}` : ''}${
         (f.life || []).length || famSizes(f)
@@ -1503,7 +1503,7 @@ function treeFamily(f) {
       ${hero ? heroBtn(0, f.name, heroPic(hero, f.name)) : `<span class="hero-ph">${noFish()}</span>`}
       <div class="idbox">
         ${(f.cues || []).length ? cuesBox(f, 'ID tips (IMR)', esc(slideLine(f.sl))) : ''}
-        ${fishMarks(f)}
+        ${treeMarks(f)}
         ${treeNote(f)}
         ${G.map(g => genMarks(g, f.id)).join('')}
         ${G.map(g => treeRoot(g, f.id)).join('')}
@@ -1625,7 +1625,7 @@ function spSheetPhotos(P, lead = null) {
   const main = [...(lead ? [lead] : []), ...P.filter(p => p !== lead && !juvP(p))];
   return {shown: [...main.slice(0, 3), ...P.filter(p => p !== lead && juvP(p)).slice(0, 2)], more: main.slice(3)};
 }
-function fishSpecies(s) {
+function treeSpecies(s) {
   const T = ftree(),
     f = T.fam[s.family],
     g = T.gen[s.genus],
@@ -1673,11 +1673,11 @@ function fishSpecies(s) {
         : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
     }
     ${s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : ''}
-    ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(fishTile).join('')}</div>` : ''}
+    ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(treeTile).join('')}</div>` : ''}
     ${glooks.length ? looksSection(glooks.map(L => treeGenusLookCard(g, T, L)).join('')) : ''}
     ${moreDetails(`${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${s.inf && s.cite ? esc(s.cite) + ' · ' : ''}${links}</p>`)}
     ${sheetRep(s.id)}
   `
   );
-  treeBind(flat, () => fishSpecies(s));
+  treeBind(flat, () => treeSpecies(s));
 }

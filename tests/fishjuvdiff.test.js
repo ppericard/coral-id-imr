@@ -205,6 +205,8 @@ test('the juvenile card says nothing of its own: its title names the two photos,
   const show = (c, g) => {
     let o = null;
     const stubs = {
+      TREEU: {sps: {}},
+      safeUrl: u => u,
       GX: () => g,
       phasePair: () => null,
       phasePool: () => [],
