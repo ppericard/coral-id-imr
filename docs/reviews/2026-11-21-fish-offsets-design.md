@@ -40,7 +40,9 @@ The prior is 0, −0.5, −0.5, −1.5. Format offsets need `FMT.N` = 20 answers
   questions: observed 88.4% where the logged expectation says 82.1%. The k4 offset (+0.71) carries most of that gap.
   So the "format" offset here is largely the fish's general calibration gap, not a format effect. Section 5 says what
   that implies.
-- **Sea slugs:** one trusted player; their offsets stay at the prior and 0 by the fit's own shrinkage.
+- **Sea slugs:** one trusted player, but the fit does not wait for more players: k4, k2 and again reach `FMT.N` (99, 29
+  and 24 answers), so `fmtFit` returns their shrunk estimates (+0.13, −0.22, +0.09), and the right-once memory bucket
+  fits −0.71 against the prior's −0.50. Small offsets, but not zero (corrected after review).
 
 **Would the fish's own format offsets predict better? (rule L12, leave one player out).** Each trusted player's fish
 answers were scored with offsets fitted on the other eight players only, against today's (none).
@@ -88,7 +90,10 @@ it), `tests/replay.test.js` (a row without a record replayed with the subject's 
 - **Fish progress grows a little more slowly per right answer.** The ability step expects the question with its offset,
   so an answer the app now expects to be right counts for less, and a miss for more. Bars already reached do not move:
   every logged answer replays from its scoring record.
-- **The sea slugs:** nothing changes until their data moves their offsets away from the prior and 0.
+- **The sea slugs change at once too, a little:** their fitted offsets are already nonzero (section 2: k4 +0.13, k2
+  −0.22, again +0.09, right once −0.71), so switching them on moves their scoring and draw from the first answer, by
+  less than a quarter logit except the right-once bucket (corrected after review: an earlier version said nothing
+  changed until their data moved).
 
 ## 5. Risks and what the build checks
 
@@ -116,7 +121,8 @@ it), `tests/replay.test.js` (a row without a record replayed with the subject's 
 **The fish at the same aim as the corals.** Fish players answer right 88% of the time where the app expects 82%.
 With their own format offsets, as the corals have since rules version 6, the fish draw would show photos a bit harder
 and a right answer would count a little less, to come back to the aim. Bars already reached do not move.
-- **A**: switch the fish (and the sea slugs, as their data comes) to their own offsets, as designed here.
+- **A**: switch the fish and the sea slugs to their own offsets, as designed here (the sea slugs' are small but already
+  nonzero, section 2).
 - **B**: keep the fish on no offset until the photo difficulty prior is re-examined (REE-10).
 
 *Recommendation: A.* It is the corals' rule applied to the fish (one engine, rule S1). It predicts the fish answers
@@ -124,5 +130,6 @@ better on the real log, and a rules version takes it back if needed.
 
 ## Integrator's calls (easy to correct, stated, not asked)
 
-- `offsets` as a per-subject script version (rule D4), the sea slugs carried along at their prior, no card for the rules
+- `offsets` as a per-subject script version (rule D4), the sea slugs carried along with their own small fitted
+  offsets, no card for the rules
   versions, the tests listed.
