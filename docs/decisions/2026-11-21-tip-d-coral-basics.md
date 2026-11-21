@@ -1,6 +1,6 @@
 # "Did you know?" tip (d): Coral basics, for the "new" player who never opened it
 
-Date: 2026-11-21. PR: #1442. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; REE-13.
+Date: 2026-11-21. PR: #1446. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; REE-13.
 
 ## Context
 
