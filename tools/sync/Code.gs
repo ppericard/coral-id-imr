@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 214 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 215 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 214;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 215;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -5041,6 +5041,10 @@ const CORE_ = (function () { const module = {exports: {}};
         // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
         // the candidates judged sure that the game does not take in by itself.
         autosort: true,
+        // circles: the words the admin's Tree names each circle in, beside its number (admin-content.js circleLab): the
+        // players' own, "the IMR course's families", "the family that opens right after the IMR course's" and "the
+        // families beyond the IMR course" (docs/spec/fish.md "Circles"). A circle with no words is its number alone.
+        circles: {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'},
         // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
         // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
         tags: treeRubric('fish', 'fish', {
@@ -5247,6 +5251,10 @@ const CORE_ = (function () { const module = {exports: {}};
         // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
         // play up to it; tests/seaslugadmin.test.js keeps the two equal).
         target: 12,
+        // circles: the admin's words for its circles, beside their numbers (the fish's field), as Pierre decided them
+        // (2026-11-15, Q377): circle 1 the stars and the most common species, circles 2 and 3 the next ones by commonness
+        // (docs/reviews/2026-11-15-seaslug-list.md §1.6 and §4).
+        circles: {1: 'Stars and most common', 2: 'Next most common', 3: 'Less common'},
         // tags: its rubric (judging/SEASLUG.md "Tags"), as treeRubric lays it out: its six views (the dorsal, lateral and
         // oblique are the good ones: said by the judged line only), its light without night livery, and the flags Pierre
         // may set (the fish's j c w, and f, features hidden).
