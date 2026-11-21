@@ -103,6 +103,28 @@ test('--fix: an edit made in core.js is carried back into its part, an edit in a
   }
 });
 
+test("--fix from the merge queue's shadow root (tools/queue/lib.sh trusted_root: links into the PR's checkout)", () => {
+  const r = repo(),
+    t = fs.mkdtempSync(path.join(os.tmpdir(), 'coreparts-shadow-'));
+  try {
+    // As trusted_root lays it out: each top-level entry a link to the checkout's, tools/ a folder whose data files link.
+    fs.symlinkSync(path.join(r.d, 'core.js'), path.join(t, 'core.js'));
+    fs.symlinkSync(path.join(r.d, 'core'), path.join(t, 'core'));
+    fs.mkdirSync(path.join(t, 'tools', 'sync'), {recursive: true});
+    fs.symlinkSync(path.join(r.d, GS), path.join(t, GS));
+    const mark = r.read(parts[1]).split('\n')[0] + '\n';
+    r.write('core.js', r.read('core.js').replace(mark, mark + '  // a hand edit\n'));
+    const f = tool(t, '--fix');
+    assert.strictEqual(f.status, 0, f.stdout + f.stderr);
+    assert.ok(r.read(parts[1]).startsWith(mark + '  // a hand edit\n'), "carried into the checkout's part");
+    assert.ok(r.read(GS).includes('  // a hand edit\n'));
+    assert.strictEqual(tool(r.d, '--check').status, 0);
+  } finally {
+    fs.rmSync(t, {recursive: true, force: true});
+    r.done();
+  }
+});
+
 test('--fix after a commit that left core.js and its parts apart: nothing guessed, --join or --cut says which', () => {
   const r = repo();
   try {

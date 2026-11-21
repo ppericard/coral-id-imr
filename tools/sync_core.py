@@ -85,14 +85,21 @@ def cut(core, parts):
     return [''.join(lines[a:b]) for a, b in zip(bounds, bounds[1:])]
 
 
+def checkout(root):
+    """The checkout core.js belongs to: root, or where its core.js links to (the merge queue runs main's tools on a
+    shadow root whose files are links into the PR's checkout, tools/queue/lib.sh trusted_root)."""
+    return os.path.dirname(os.path.realpath(os.path.join(root, CORE)))
+
+
 def at_head(rel, root):
     """The file as HEAD has it, or None (no git, no such file)."""
-    r = subprocess.run(['git', '-C', root, 'show', 'HEAD:' + rel], capture_output=True)
+    r = subprocess.run(['git', '-C', checkout(root), 'show', 'HEAD:' + rel], capture_output=True)
     return r.stdout.decode('utf-8') if r.returncode == 0 else None
 
 
 def merging(root):
-    return subprocess.run(['git', '-C', root, 'rev-parse', '-q', '--verify', 'MERGE_HEAD'], capture_output=True).returncode == 0
+    return subprocess.run(['git', '-C', checkout(root), 'rev-parse', '-q', '--verify', 'MERGE_HEAD'],
+                          capture_output=True).returncode == 0
 
 
 def problems(core, parts, root):
