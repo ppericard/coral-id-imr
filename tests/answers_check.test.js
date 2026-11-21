@@ -125,6 +125,8 @@ test('from 2026-11-19 21:00, an entry naming a ROADMAP item says the ROADMAP or 
   for (const e of [
     `- **21:10, Q906.** ${title}: B. Applied: ROADMAP "Trace IMR lecture photos to their original source".`,
     `- **21:10, Q906.** ${title}: B. Applied: #1130.`,
+    // A subject moved to Linear: its issue is where the decision is applied.
+    `- **21:10, Q906.** ${title}: B. Applied: Linear REE-42.`,
     '- **21:10, inventory C12.** A+D. Applied in #1131: the row.',
     // A rule ID or a short title is not an item: "rule P1", "Modules" in prose.
     '- **21:10, rule P1.** Modules stay shared. Applied: rules/photos.md P1.',

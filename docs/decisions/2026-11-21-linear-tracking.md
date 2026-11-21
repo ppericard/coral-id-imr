@@ -14,12 +14,13 @@ Idea, Waiting and Parked, an issue template.
 
 ## Decision
 
-Pierre, 2026-11-21 14:41, his request with the continuity study (in French; the integrator's English rendering): «Make
-Linear the tracking location for transferred subjects: replace their old entries with pointers, keep the location of
-unmigrated subjects visible, and apply repo changes through the normal review and merge process. Adapt the recovery
-brief (STATUS, brief.py, existing mechanisms) so a successor finds the active discussion, priorities, delegated work,
-documents and next action. Maintain Linear as part of normal work: Pierre should not enter tickets, relay subagent
-results or approve ordinary bookkeeping. Keep the dev, review and merge workflow.»
+Pierre, 2026-11-21 14:41, his request with the continuity study (written in English; extract): «Make Linear the current
+tracking location for transferred subjects. Replace their old tracking entries with pointers and keep the location of
+unmigrated subjects visible. Apply necessary repository changes through our existing review and merge process.» «Adapt
+the existing recovery brief so a successor can find the active discussion, current priorities, ongoing delegated work,
+relevant documents and next useful action.» «Maintain Linear as part of your normal work from this point onward. I
+should not need to enter tickets, relay subagent results or approve ordinary bookkeeping. Preserve the existing
+development, review and integration workflow.»
 
 The wording of the rules and docs that carry it out is the integrator's call (easy to correct): a closed issue stays in
 Linear (Done, Canceled) as the tracker's record, while the docs still keep no done list; a deferred idea gets the label
