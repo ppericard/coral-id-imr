@@ -173,7 +173,8 @@ DEAD = (17, 19)
 SPECIES_RANKS = ("species", "subspecies", "variety", "form")  # the ranks a photo's observation may name (usable_obs)
 # The automatic refill (--refill; docs/spec/photos.md "No more candidates is no more candidates"). A species short of easy photos has fewer than EASY_NEED
 # observations with a very easy adult photo (ease >= EASY_E) in play or sure to come: until its unit reaches Open Water,
-# model.js RARE keeps the photos under ease 4 (or under its RARE.FEW, 3, easiest observations) to about 1 in 10.
+# model.js RARE keeps the photos under ease 4 to about 1 in 10 (a unit with fewer than RARE.FEW, 12, easy observations
+# rotates its 12 easiest instead). EASY_NEED is the refill's own count, no longer RARE.FEW.
 EASY_E, EASY_NEED = 4, 3
 REFILL_MAX = 40  # species refilled per run at most (rule C7: about 2 requests each, the general searches batched; the shortest first)
 RECHECK_DAYS = 30  # a part of a species' room searched to the end is searched again after this many days
