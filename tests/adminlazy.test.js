@@ -64,6 +64,16 @@ function world(fail = new Set(), selfDraw = false) {
   return Object.assign(W, {ctx, ...ctx.M});
 }
 const tick = (n = 10) => new Promise(ok => setTimeout(ok, n));
+// Waits for the state the test checks, not for a time: the group asked for is in or failed (LAZY_WAIT, which lazyPage clears
+// in the same step that draws or reports), at most `ms`; fails the test, with that said, when it never is. Each file loads on
+// a timer after the one before it, so a fixed 10 ms (REE-196) ended before the second file loaded whenever the machine was
+// busy. The short tick after it keeps the checks of "nothing drew twice" what they were: a stray second draw still shows.
+const settled = async (w, ms = 10000) => {
+  const end = Date.now() + ms;
+  while (w.LAZY_WAIT.size && Date.now() < end) await tick(1);
+  assert.strictEqual(w.LAZY_WAIT.size, 0, 'the group neither came in nor failed');
+  await tick();
+};
 const bare = s => s.replace(/\?.*$/, '');
 
 test('admin.html: the lazy scripts are inert tags, in the order they ran in, with the versions the stamping reads', () => {
@@ -154,7 +164,7 @@ test('lazyPage: Loading… at once, one request however often it is asked, no se
   assert.match(w.v.innerHTML, /Loading…/);
   w.lazyPage('analyses', w.ctx.cur);
   w.lazyPage('analyses', w.ctx.cur);
-  await tick();
+  await settled(w);
   assert.strictEqual(w.inserted.length, 2);
   // the Analyses script drew its page over the note (its last line): render() is not called again from here
   assert.strictEqual(w.v.innerHTML, '<div>the page</div>');
@@ -166,7 +176,7 @@ test('lazyPage: the note still on screen once the whole group is in: the page is
   const w = world();
   w.lazyPage('analyses', w.ctx.cur);
   w.lazyPage('analyses', w.ctx.cur);
-  await tick();
+  await settled(w);
   assert.strictEqual(w.rendered, 1);
 });
 
@@ -175,7 +185,7 @@ test('lazyPage: analysis.js fails: admin-analyses.js is never run, a word on the
     fail = new Set([first]),
     w = world(fail);
   w.lazyPage('analyses', w.ctx.cur);
-  await tick();
+  await settled(w);
   assert.match(w.v.innerHTML, /could not be loaded/);
   // the dependent is not even inserted: it would run, throw at its top level, and be cached as loaded (Codex, P2)
   assert.deepStrictEqual(
@@ -187,7 +197,7 @@ test('lazyPage: analysis.js fails: admin-analyses.js is never run, a word on the
   // the next visit: both files are fetched, in order
   fail.clear();
   w.lazyPage('analyses', w.ctx.cur);
-  await tick();
+  await settled(w);
   assert.deepStrictEqual(
     w.inserted.map(s => bare(s.src)),
     ['analysis.js', 'analysis.js', 'admin-analyses.js']
@@ -226,7 +236,7 @@ test('lazyPage: a second view asked while the group is on its way gets the answe
   f.lazyPage('analyses', f.ctx.cur);
   assert.match(f.v.innerHTML, /Loading…/);
   assert.strictEqual(f.inserted.length, 0, 'one request for the group, however many views ask');
-  await tick();
+  await settled(f);
   assert.match(f.v.innerHTML, /could not be loaded/, 'the view on screen says so, with the retry wording');
   assert.match(f.v.innerHTML, /open it again/);
   assert.strictEqual(f.LAZY_WAIT.size, 0, 'cleared: a retry fetches again');
@@ -234,7 +244,7 @@ test('lazyPage: a second view asked while the group is on its way gets the answe
   // a retry from the second view fetches the file again and draws the page
   fail.clear();
   f.lazyPage('analyses', f.ctx.cur);
-  await tick();
+  await settled(f);
   assert.strictEqual(f.inserted.length, 3, 'only the file that failed is asked for again');
   assert.strictEqual(f.rendered, 1, 'the second view is drawn');
   // the same when the group comes in: the page on screen is drawn, not the first asker's
@@ -243,7 +253,7 @@ test('lazyPage: a second view asked while the group is on its way gets the answe
   g.lazyPage('analyses', g.ctx.cur);
   g.ctx.cur = 'analyses/difficulty/formats';
   g.lazyPage('analyses', g.ctx.cur);
-  await tick();
+  await settled(g);
   assert.strictEqual(g.rendered, 1);
   // the admin left for an unrelated page: it is left alone
   const h = world(new Set([bad]));
@@ -253,7 +263,7 @@ test('lazyPage: a second view asked while the group is on its way gets the answe
   h.lazyPage('analyses', h.ctx.cur);
   h.ctx.cur = 'photos/candidates';
   h.v.innerHTML = 'Candidates';
-  await tick();
+  await settled(h);
   assert.strictEqual(h.v.innerHTML, 'Candidates');
 });
 
@@ -262,7 +272,7 @@ test('lazyPage: a failure says so only on the page that asked, and is asked agai
   const f = world(new Set([bad]));
   f.ctx.cur = 'analyses/overview';
   f.lazyPage('analyses', f.ctx.cur);
-  await tick();
+  await settled(f);
   assert.match(f.v.innerHTML, /could not be loaded/);
   assert.strictEqual(f.LAZY_WAIT.size, 0, 'asked again by the next visit');
   assert.ok(f.warned.length === 1);
@@ -272,7 +282,7 @@ test('lazyPage: a failure says so only on the page that asked, and is asked agai
   g.lazyPage('analyses', g.ctx.cur);
   g.ctx.cur = 'photos/candidates';
   g.v.innerHTML = 'Candidates';
-  await tick();
+  await settled(g);
   assert.strictEqual(g.v.innerHTML, 'Candidates', 'the page on screen is left alone');
 });
 
