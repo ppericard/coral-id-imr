@@ -3208,7 +3208,7 @@
   // The behaviours of every player in D (any set of answers, prep's shape, in time order): {id: [value or null per
   // PROF_F]}. Kept apart from the window so a later analysis can run it on successive windows of a player's history
   // (whole-history trajectories).
-  function profFeat(D, slopes) {
+  function profFeat(D, slopes, horizon) {
     const by = new Map();
     D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
     const out = {},
@@ -3237,7 +3237,8 @@
       o[0] += a.z;
       o[1]++;
     });
-    const end = D.reduce((m, a) => (a.t > m ? a.t : m), -Infinity);
+    // the log's last moment: the rows' own, or the one given (a trajectory's discarded tails still show a session ended)
+    const end = D.reduce((m, a) => (a.t > m ? a.t : m), horizon != null ? horizon : -Infinity);
     // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over).
     // The misses are counted within the session (prep's streak runs across a break, so a session's first miss after a
     // miss that ended the one before would read as two in a row).
@@ -3599,7 +3600,12 @@
         );
       })
     );
-    const V = profFeat(D, null),
+    // the log's last answer (the windows drop the short tails): a session that ended before it is over, whatever window it is in
+    const V = profFeat(
+        D,
+        null,
+        A.reduce((m, a) => (a.t > m ? a.t : m), -Infinity)
+      ),
       val = (id, o) => {
         const r = V[id + TR_SEP + o];
         return fx.map(f => (r && r[f] != null && isFinite(r[f]) ? r3(r[f]) : null));
