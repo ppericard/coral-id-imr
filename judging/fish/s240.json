@@ -42,7 +42,8 @@
   },
   "fish-s240-cand-641670487": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s240-cand-641670501": {
    "code": "p1g1sl14",
@@ -70,7 +71,8 @@
   },
   "fish-s240-cand-581563331": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-408425565": {
    "code": "p1g1sm14",
@@ -110,7 +112,8 @@
   },
   "fish-s240-cand-471349099": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-482719207": {
    "code": "d1g2bsx1",
@@ -166,7 +169,8 @@
   },
   "fish-s240-cand-595786017": {
    "code": "p1g2sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-555852573": {
    "code": "p1g1sl14",
@@ -183,7 +187,8 @@
     0.6,
     1.0
    ],
-   "note": "crop: the checkerboard wrasse above leaves the frame (Q430)"
+   "note": "crop: the checkerboard wrasse above leaves the frame (Q430)",
+   "phase": "terminal"
   },
   "fish-s240-cand-682554473": {
    "code": "p1d2sms2",
@@ -199,16 +204,19 @@
   },
   "fish-s240-cand-760771370": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-582458206": {
    "code": "o1g2mmo1",
    "keep": "best",
-   "note": "The wrasse swims over a large spotted fish (a ray?) that fills the background."
+   "note": "The wrasse swims over a large spotted fish (a ray?) that fills the background.",
+   "phase": "intermediate"
   },
   "fish-s240-cand-654475837": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-330377693": {
    "code": "p1g0bl1j2",
@@ -220,7 +228,8 @@
   },
   "fish-s240-cand-603911408": {
    "code": "p1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-455718247": {
    "code": "o1g1sm12",
@@ -244,7 +253,8 @@
   },
   "fish-s240-cand-269597060": {
    "code": "p1g0sl15",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s240-cand-269597098": {
    "code": "p1g0sl15",
@@ -252,15 +262,18 @@
   },
   "fish-s240-cand-256070703": {
    "code": "p1g0sl15",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-270197323": {
    "code": "o1g0sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s240-cand-303025785": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-537290380": {
    "code": "o1g1ss12",
@@ -272,7 +285,8 @@
   },
   "fish-s240-cand-336827223": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s240-cand-740211599": {
    "code": "o1g2sm12",
@@ -284,7 +298,8 @@
   },
   "fish-s240-cand-305278964": {
    "code": "o1g1bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s240-cand-592810720": {
    "code": "p1g2ssk1",
@@ -308,7 +323,8 @@
   },
   "fish-s240-cand-603220346": {
    "code": "p0g0sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s240-cand-546890323": {
    "code": "o1g1ss1j3",

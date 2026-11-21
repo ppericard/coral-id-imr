@@ -18,7 +18,8 @@
   },
   "fish-s259-cand-29329912": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s259-cand-451736338": {
    "code": "p1g1smo3",
@@ -101,7 +102,8 @@
   },
   "fish-s259-cand-450199706": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s259-cand-436433097": {
    "code": "p1g1sm14",
@@ -293,7 +295,8 @@
   },
   "fish-s259-cand-389247819": {
    "code": "p1g0slo4",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   }
  }
 }
