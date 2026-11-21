@@ -5,8 +5,11 @@ to it. Run from the repo root.
     python3 tools/sync_core.py           # same as --check
     python3 tools/sync_core.py --check   # fails when core.js is not its parts joined, or Code.gs's copy differs (CI)
     python3 tools/sync_core.py --fix     # writes core.js from the parts, or carries a hand edit of core.js back into
-                                         # its part; then core.js into Code.gs (adds the block at the end the first time)
+                                         # its part (and, in a merge, an edit the merged core.js holds and its parts
+                                         # lack); then core.js into Code.gs (adds the block at the end the first time).
+                                         # When both could hold the edit, it says so and writes nothing:
     python3 tools/sync_core.py --cut     # carries core.js into the parts whatever changed (the parts' own edits are lost)
+    python3 tools/sync_core.py --join    # writes core.js from the parts whatever changed (core.js's own edits are lost)
     python3 tools/sync_core.py --where N # the part, and its line, that holds core.js line N
     python3 tools/sync_core.py --list    # the parts, in order
 
@@ -133,6 +136,7 @@ def main():
     g.add_argument('--check', action='store_true')
     g.add_argument('--fix', action='store_true')
     g.add_argument('--cut', action='store_true')
+    g.add_argument('--join', action='store_true')
     g.add_argument('--where', type=int, metavar='N')
     g.add_argument('--list', action='store_true')
     ap.add_argument('--root', default=ROOT, help=argparse.SUPPRESS)
@@ -149,26 +153,37 @@ def main():
         w = where(a.where, parts)
         print('core/%s:%d' % w if w else 'core.js line %d is the wrapper: tools/sync_core.py OPEN or CLOSE' % a.where)
         return
-    if a.fix or a.cut:
+    write = a.fix or a.cut or a.join
+    if write and core != join(parts):
+        # Which side holds the edit, against HEAD: never guessed when both could (nothing is overwritten silently).
         rels = [PARTS_DIR + '/' + p for p in PARTS]
-        if core != join(parts):
-            core_edited = core != at_head(CORE, root)
-            parts_edited = parts != [at_head(r, root) for r in rels]
-            if a.cut or (core_edited and not parts_edited):
-                new = cut(core, parts)
-                for r, old, text in zip(rels, parts, new):
-                    if text != old:
-                        open(path(r), 'w', encoding='utf-8').write(text)
-                        print('core.js carried back into %s' % r)
-                parts = new
-            elif not core_edited or merging(root):
-                core = join(parts)
-                open(path(CORE), 'w', encoding='utf-8').write(core)
-                print('core.js written from its parts')
-            else:
-                sys.exit('✗ core.js and its parts both changed since HEAD: python3 tools/sync_core.py --cut carries core.js'
-                         ' into the parts (their own edits are lost), or git checkout core.js then --fix writes core.js'
-                         ' from the parts')
+        head_core, head_parts = at_head(CORE, root), [at_head(r, root) for r in rels]
+        core_edited, parts_edited = core != head_core, parts != head_parts
+        head_ok = head_core is not None and None not in head_parts and join(head_parts) == head_core
+        # A merge: each side kept core.js and its parts in step (--check), so the merged core.js holds both sides'
+        # edits, and the parts may lack one that a side made in core.js alone (a branch from before the parts): carried
+        # back into them.
+        if a.cut or (not a.join and core_edited and (not parts_edited or merging(root))):
+            if any(l.startswith(('<<<<<<< ', '>>>>>>> ')) for l in core.splitlines()):
+                sys.exit('✗ core.js holds conflict markers: settle them first')
+            new = cut(core, parts)
+            for r, old, text in zip(rels, parts, new):
+                if text != old:
+                    open(path(r), 'w', encoding='utf-8').write(text)
+                    print('core.js carried back into %s' % r)
+            parts = new
+        elif a.join or (not core_edited and head_ok):
+            core = join(parts)
+            open(path(CORE), 'w', encoding='utf-8').write(core)
+            print('core.js written from its parts')
+        elif not core_edited:
+            sys.exit('✗ core.js and its parts already disagree in the last commit (git diff HEAD~1 -- core.js core/ shows'
+                     ' which you changed): python3 tools/sync_core.py --join writes core.js from the parts (an edit made'
+                     ' in core.js is lost), --cut writes the parts from core.js (an edit made in a part is lost)')
+        else:
+            sys.exit('✗ core.js and its parts both changed since HEAD: python3 tools/sync_core.py --cut carries core.js'
+                     ' into the parts (their own edits are lost), --join writes core.js from the parts (its own edits are'
+                     ' lost)')
     bad = problems(core, parts, root)
     if bad:
         sys.exit('✗ ' + '\n✗ '.join(bad))
@@ -185,7 +200,7 @@ def main():
     if new == gs:
         print('core.js is its parts joined; core.js in Code.gs: OK')
         return
-    if a.fix or a.cut:
+    if write:
         open(path(GS), 'w', encoding='utf-8').write(new)
         print('core.js copied into tools/sync/Code.gs: add its entry in tools/sync/changes/<branch>.md, never VERSION (rule D3)')
         return

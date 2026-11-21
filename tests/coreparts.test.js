@@ -103,6 +103,47 @@ test('--fix: an edit made in core.js is carried back into its part, an edit in a
   }
 });
 
+test('--fix after a commit that left core.js and its parts apart: nothing guessed, --join or --cut says which', () => {
+  const r = repo();
+  try {
+    r.write(parts[0], r.read(parts[0]) + '  // a part edit, committed without --fix\n');
+    r.commit();
+    const f = tool(r.d, '--fix');
+    assert.strictEqual(f.status, 1, f.stdout);
+    assert.match(f.stderr, /already disagree in the last commit.*--join writes core\.js from the parts/);
+    const j = tool(r.d, '--join');
+    assert.strictEqual(j.status, 0, j.stdout + j.stderr);
+    assert.ok(r.read('core.js').includes('  // a part edit, committed without --fix\n'));
+    assert.strictEqual(tool(r.d, '--check').status, 0);
+  } finally {
+    r.done();
+  }
+});
+
+test('--fix in a merge: an edit a branch made in core.js alone (a branch from before the parts) is carried into its part', () => {
+  const r = repo();
+  try {
+    const mark = r.read(parts[1]).split('\n')[0] + '\n';
+    r.git('checkout', '-q', '-b', 'old');
+    r.write('core.js', r.read('core.js').replace(mark, mark + '  // the branch, in core.js\n'));
+    r.commit();
+    r.git('checkout', '-q', 'main');
+    r.write(parts[0], '  // main, in its part\n' + r.read(parts[0]));
+    assert.strictEqual(tool(r.d, '--fix').status, 0);
+    r.commit();
+    r.git('checkout', '-q', 'old');
+    r.git('merge', '-q', '--no-ff', '--no-commit', 'main');
+    const f = tool(r.d, '--fix');
+    assert.strictEqual(f.status, 0, f.stdout + f.stderr);
+    assert.match(f.stdout, new RegExp('core\\.js carried back into ' + parts[1]));
+    assert.ok(r.read(parts[0]).startsWith('  // main, in its part\n'), "main's edit kept");
+    assert.ok(r.read(parts[1]).includes(mark + '  // the branch, in core.js\n'), "the branch's edit in its part");
+    assert.strictEqual(tool(r.d, '--check').status, 0);
+  } finally {
+    r.done();
+  }
+});
+
 test('--check refuses a file of core/ outside PARTS, a part whose first line is not unique, and an edit of the wrapper', () => {
   const r = repo();
   try {
