@@ -21,9 +21,9 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
 // fishCoverOf, fishSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
 fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
-// its tooltip ([value, label, title]).
-const fRow = (name, at, opts, v, auto) =>
-  `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
+// its tooltip ([value, label, title]). wrap: a row of long labels (the phase words) that wraps, never clips nor widens its tile.
+const fRow = (name, at, opts, v, auto, wrap = false) =>
+  `<span class="adm-qseg adm-ftag${wrap ? ' adm-fwrap' : ''}${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
     .map(
       ([k, t, tip]) =>
         `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</button>`
@@ -38,7 +38,7 @@ const fVals = (F, f, j) => ({
 });
 // The rows of a card. blind (a Check): only the admin's own values pressed, nothing of the pass shown. open: the seven tag
 // rows and the flags shown too (the card's Tags; a photo tile's own, admin.js fishTile).
-function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
+function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN, species = null) {
   const S = FISHS, // the subject whose rubric the rows are (SUBJECTS admin.tags)
     V = fVals(F, p.f, blind ? null : j),
     code = V.tags.mine || V.tags.pass || '',
@@ -52,10 +52,11 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
     ease != null ? String(ease) : null,
     V.ease.mine == null
   );
-  // The phase row only for an entry whose phases differ (fish.json teach phase lines: Angelfish, Spadefish, Parrotfish,
-  // Sweetlips, Anthias): elsewhere a phase tag has nothing to say.
-  if (entry && ((entry.phase || []).length || entry.dimorph))
-    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined);
+  // The phase row only for a species whose phases differ: its entry's phase lines or dimorph (fish.json teach: Angelfish,
+  // Spadefish, Parrotfish, Sweetlips, Anthias) or the cited phase list's phs (fish.json species; autosort.js hasPhaseRow):
+  // elsewhere a phase tag has nothing to say.
+  if (hasPhaseRow(entry, species))
+    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined, true);
   if (open)
     h +=
       `<div class="adm-ftags">` +
@@ -334,7 +335,7 @@ CAND_BUILD.tree = (() => {
             `<button type="button" class="adm-fth" data-fp="${esc(q.f)}" aria-label="Enlarge a photo in play">${q.src ? `<img ${fishSrc(q, 1)} alt="" loading="lazy">` : ''}</button>`
         )
         .join('')}</div>`,
-        rows: fishRows(readView(F), p, j, chk, FISHC.entry[sid]),
+        rows: fishRows(readView(F), p, j, chk, FISHC.entry[sid], FTAGS_OPEN, FISHC.species[sid]),
         not: fishNotThisSel(sid, from),
         tool: `<button type="button" data-ftags aria-pressed="${FTAGS_OPEN}">Tags</button>`,
         crop: cropOn(F, p.f),
