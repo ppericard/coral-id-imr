@@ -56,7 +56,7 @@
   };
   const bandPhoto = (g, land, n, now) => (land && dayPick(landPool(g), n, now)) || tilePhoto(g, land);
   const ph = (n, v) => {
-    const g = DATA.gen[n];
+    const g = GX(n);
     if (!g) return '';
     const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g);
     return p ? thumb(p, '(max-width:599.98px) calc((100vw - 40px) / 4), 270px') : ''; // a phone tile: a quarter of the band
@@ -65,7 +65,7 @@
     document.documentElement.dataset.page = 'lab'; // as the Lab pages set it (proto/lab.js); no stylesheet reads it
     // Before the data (app.js beforeData: the corals' doors, UNITS doorsFirst), no names: the band stays empty until it comes.
     const names = DATA ? Object.keys(DATA.gen) : [],
-      fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name, // a subject whose units have names of their own (fish entries)
+      named = !!DATA && !!UNITS[SUBJ.id].named, // a subject whose units have names of their own (UNITS named: the tree subjects')
       // its words where they are not the corals' (app.js UNITS door: the fish's, the sea slugs')
       W = UNITS[SUBJ.id].door || {};
     // The subject switch (docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
@@ -92,7 +92,7 @@
     // photo picked to suit them, one of several, the day's (bandPhoto: the cover or a reference photo that suits the
     // tile; none, tilePhoto: the first of its easiest that does).
     const land = !!UNITS[SUBJ.id].land;
-    const tiles = fish
+    const tiles = named
       ? shuffle(slateGenera().filter(homeUnit))
           .slice(0, 12)
           .map(
@@ -113,13 +113,13 @@
     const key = keyOf(SUBJ),
       // Its fish art, a landscape box too (home.css .hdart.rc.land, near 3:2 at every size, so the whole fish shows): the
       // same photo a tile would show (tilePhoto).
-      fp = key && fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
+      fp = key && named && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
       fishArt = fp
         ? `<img ${thumb(fp, land ? '(max-width:599.98px) 184px, 520px' : '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">`
         : '';
     const idoor = !key
       ? ''
-      : fish
+      : named
         ? `
         <section class="hdoor identify">
           <a class="hdart rc${land ? ' land' : ''}" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
@@ -144,17 +144,17 @@
             </div>
           </div>
         </section>`;
-    $v.innerHTML = `<p class="lede">${key ? `Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.` : `Learn &amp; practise while you are learning the ${SUBJ.many}.`}</p><div class="home-page">${subj}
+    $v.innerHTML = `<p class="lede">${key ? `Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${named ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.` : `Learn &amp; practise while you are learning the ${SUBJ.many}.`}</p><div class="home-page">${subj}
       <div class="hdoors${key ? '' : ' one'}">
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen"><span>Learning phase<span class="wide"> · before ${fish ? W.before : 'ReefCloud or your next dive'}</span></span>${wil ? `<a class="hdwil" href="${esc(hr('progress'))}">What I learn ›</a>` : ''}</p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="' + esc(basicsWords().ask) + ' Start with the basics (5 min)">' + esc(basicsWords().ask) + ' Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen"><span>Learning phase<span class="wide"> · before ${named ? W.before : 'ReefCloud or your next dive'}</span></span>${wil ? `<a class="hdwil" href="${esc(hr('progress'))}">What I learn ›</a>` : ''}</p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="' + esc(basicsWords().ask) + ' Start with the basics (5 min)">' + esc(basicsWords().ask) + ' Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${fish ? W.learn || 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
-              <a class="hdbtn main" href="${esc(hr('quiz'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${fish ? W.practice || 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
+              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${named ? W.learn || 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
+              <a class="hdbtn main" href="${esc(hr('quiz'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${named ? W.practice || 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
             </div>${newb ? '<p class="hdnew"><a href="' + esc(hr('basics')) + '">' + esc(basicsWords().ask) + ' Start with the basics (5 min) ›</a></p>' : ''}
           </div>
         </section>
