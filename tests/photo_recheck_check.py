@@ -4,6 +4,7 @@ network case). Prints one JSON object. Usage: photo_recheck_check.py CASE (reaso
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -12,6 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import fetch_fish as ff  # noqa: E402
 import fetch_local as fl  # noqa: E402
+import fetch_seaslugs as fs  # noqa: E402
 import fish_refs as fr  # noqa: E402
 import inat  # noqa: E402
 import photo_recheck as pr  # noqa: E402
@@ -137,8 +139,12 @@ def world():
     return files, replies, want
 
 
+BASE = Path(tempfile.mkdtemp(prefix="photo-recheck-"))  # the repository, the cache and the report of a case; removed at the end
+
+
 def write_repo(files):
-    d = Path(tempfile.mkdtemp(prefix="photo-recheck-"))
+    d = BASE / "repo"
+    d.mkdir()
     for name, body in files.items():
         (d / name).write_text(json.dumps(body), encoding="utf-8")
     return d
@@ -166,7 +172,7 @@ def digest(d):
 def fixture(extra=None):
     files, replies, want = world()
     repo = write_repo(files)
-    cache = repo.parent / (repo.name + "-cache.json")
+    cache = BASE / "cache.json"
     write_cache(cache, replies)
     return repo, cache, replies, want
 
@@ -179,7 +185,7 @@ def main(case):
     inat.get = no_network
     if case == "reasons":
         repo, cache, replies, want = fixture()
-        out = repo.parent / (repo.name + "-out")
+        out = BASE / "out"
         S, fail = pr.run(repo, out, pr.SUBJECTS, cache, "test", log=lambda m: None)
         rep = json.loads((out / "report.json").read_text())
         return {"got": verdicts(S, fail), "want": want, "summary": S, "files": sorted(p.name for p in out.iterdir()),
@@ -190,29 +196,33 @@ def main(case):
     if case == "predicates":
         # The verdict follows the fetchers' own predicates: patch one and the rows change with it.
         repo, cache, replies, want = fixture()
-        out = repo.parent / (repo.name + "-out")
+        out = BASE / "out"
         res = {}
-        keep = (fl.accepted, ff.usable_obs, fr.passes)
+        keep = (fl.accepted, ff.usable_obs, fr.passes, fs.usable, fs.usable_gl)
         try:
             fl.accepted = lambda o, tid, loc: False
             ff.usable_obs = lambda o, used, excl: None
             fr.passes = lambda o, want: False
+            fs.usable = lambda o, pairs, *a: None
+            fs.usable_gl = lambda o, pairs, *a: None
             S, fail = pr.run(repo, out, pr.SUBJECTS, cache, "test", log=lambda m: None)
             res["strict"] = verdicts(S, fail)
             fl.accepted = lambda o, tid, loc: True
             ff.usable_obs = lambda o, used, excl: {"ok": 1}
             fr.passes = lambda o, want: True
+            fs.usable = lambda o, pairs, *a: {"ok": 1}
+            fs.usable_gl = lambda o, pairs, *a: {"ok": 1}
             S, fail = pr.run(repo, out, pr.SUBJECTS, cache, "test", log=lambda m: None)
             res["lenient"] = verdicts(S, fail)
         finally:
-            fl.accepted, ff.usable_obs, fr.passes = keep
+            fl.accepted, ff.usable_obs, fr.passes, fs.usable, fs.usable_gl = keep
         S, fail = pr.run(repo, out, pr.SUBJECTS, cache, "test", log=lambda m: None)
         res["real"] = verdicts(S, fail)
         return res
     if case == "network":
         files, replies, want = world()
         repo = write_repo(files)
-        out = repo.parent / (repo.name + "-out")
+        out = BASE / "out"
         urls, dropped = [], set()
 
         def stub(url, missing=False, timeout=90):
@@ -248,7 +258,7 @@ def main(case):
     if case == "readonly":
         repo, cache, replies, want = fixture()
         before = digest(repo)
-        out = repo.parent / (repo.name + "-out")
+        out = BASE / "out"
         pr.run(repo, out, pr.SUBJECTS, cache, "test", log=lambda m: None)
         return {"same": before == digest(repo), "out": sorted(p.name for p in out.iterdir())}
     raise SystemExit("unknown case " + case)
@@ -256,4 +266,7 @@ def main(case):
 
 if __name__ == "__main__":
     os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
-    print(json.dumps(main(sys.argv[1])))
+    try:
+        print(json.dumps(main(sys.argv[1])))
+    finally:
+        shutil.rmtree(BASE, ignore_errors=True)

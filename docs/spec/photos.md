@@ -176,13 +176,15 @@ rank asked, or not enough agreement), `captive`, `dead`, `egg`, `rule` (another 
 `photo-recheck` (the report in markdown, the failing photos as a tab-separated list, and the figures in JSON) and the report goes to the run's summary. It changes no data file,
 never `curation.json` (rule A1) and not the sheet, and commits nothing: removing a photo stays Pierre's, in the admin. A run
 passes whatever it finds; it fails only when it cannot be trusted (iNaturalist unreachable, over 5 % of the observations
-missing). No admin Inbox point is written: that route writes to the sheet.
+missing). No admin Inbox point is written: the Points route is `data/points.json`, which agents write in a PR, so a
+workflow writing it would write data; the integrator turns the report's rows into points when it reads the artifact.
 
 **What the report cannot say.** Pierre's own coral photos in the curated views never came through the fetch rule (it has no
-rule for them), so those whose genus rests on his identification alone list as `id_lost`, marked as his own; whether they
-stay is his call (the review, §4). The coral rule is also stricter than "another identifier agrees at the genus": it needs
-iNaturalist's genus-level community ID (or the trusted identifier's), so a Needs ID photo whose genus rests on one other
-identifier and a coarser identification of the observer lists too. A rename of a taxon on iNaturalist (a new taxon id)
+rule for them), so those whose genus rests on his identification alone, or on one other identifier beside his coarser one,
+list as `id_lost`, marked as his own, every week; whether they stay is his call (the review, §4). The coral rule is also
+stricter than "another identifier agrees at the genus": it needs iNaturalist's genus-level community ID (or the trusted
+identifier's), so a Needs ID photo whose genus rests on one other identifier and a coarser or withdrawn identification of
+the observer lists too (iNaturalist's `identifications_most_agree`, which the rule reads, counts withdrawn ones). A rename of a taxon on iNaturalist (a new taxon id)
 shows as `other_taxon`, with the old and new names, for a person to read.
 
 ## Coral photo sources

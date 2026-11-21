@@ -19,9 +19,11 @@ const check = c =>
       env: {...process.env, PYTHONDONTWRITEBYTECODE: '1'}
     })
   );
+let first; // the case every report test reads, run once
+const reasons = () => (first = first || check('reasons'));
 
 test('every reason is found on its photo, and only there: the rest of the game photos pass', () => {
-  const R = check('reasons');
+  const R = reasons();
   assert.deepStrictEqual(R.got, R.want);
   // The reasons the issue names: ID lost, deleted, other taxon, casual; and what the predicates add.
   assert.deepStrictEqual([...new Set(Object.values(R.got).flat())].sort(), [
@@ -54,21 +56,21 @@ test('every reason is found on its photo, and only there: the rest of the game p
 });
 
 test('the primary reason is the first in the order: deleted, casual, other taxon, ID lost, captive, dead, egg, rule', () => {
-  const R = check('reasons');
+  const R = reasons();
   assert.strictEqual(R.primary['acropora-wide-5'], 'deleted');
   assert.strictEqual(R.primary['fish-s001-cand-6'], 'casual'); // his own casual observation passes usable_obs: only the search kept it out
   assert.strictEqual(R.primary['fish-s001-cand-4'], 'other_taxon'); // Research Grade as another species
   assert.strictEqual(R.primary['seaslug-5001-cand-3'], 'egg');
 });
 
-test('a fish photo of Pierre\'s own in Needs ID passes, a sea slug genus-level photo refined to a species of its genus passes', () => {
-  const R = check('reasons');
+test("a fish photo of Pierre's own in Needs ID passes, a sea slug genus-level photo refined to a species of its genus passes", () => {
+  const R = reasons();
   for (const f of ['fish-s001-cand-2', 'seaslug-Nudi-cand-5', 'seaslug-Nudi-cand-4', 'acropora-wide-2', 'acropora-wide-1', 'fi3010'])
     assert.ok(!(f in R.got), f + ' passes');
 });
 
 test('the report says what failed, in markdown, tab-separated and JSON', () => {
-  const R = check('reasons');
+  const R = reasons();
   assert.deepStrictEqual(R.files, ['failing.tsv', 'report.json', 'report.md']);
   assert.match(R.md, /Read only: nothing is changed/);
   assert.match(R.md, /## deleted \(2\)/);
@@ -88,23 +90,36 @@ test('the report says what failed, in markdown, tab-separated and JSON', () => {
   });
 });
 
-test('the tool calls the fetchers\' predicates: patch one and the verdicts follow (not a copy of the rule)', () => {
+test("the tool calls the fetchers' predicates: patch one and the verdicts follow (not a copy of the rule)", () => {
   const R = check('predicates');
   // Every predicate refusing: photos that pass for real fail, each on the predicate.
   assert.deepStrictEqual(R.strict['acropora-wide-1'], ['id_lost']);
   assert.deepStrictEqual(R.strict['fish-s001-cand-1'], ['rule']);
   assert.deepStrictEqual(R.strict['fi3010'], ['rule']);
+  assert.deepStrictEqual(R.strict['seaslug-5001-cand-1'], ['rule']);
+  assert.deepStrictEqual(R.strict['seaslug-Nudi-cand-4'], ['rule']);
   // Every predicate accepting: what only the predicates refused passes; what the search left to the tool (the species, casual,
   // captive, gone, a rank above the genus) still fails.
-  for (const f of ['acropora-wide-3', 'acropora-wide-7', 'fish-s001-cand-3', 'fish-s001-cand-7', 'fish-s001-cand-8', 'fish-s001-cand-11', 'fi3020'])
+  for (const f of [
+    'acropora-wide-3',
+    'acropora-wide-7',
+    'fish-s001-cand-3',
+    'fish-s001-cand-7',
+    'fish-s001-cand-8',
+    'fish-s001-cand-11',
+    'fi3020',
+    'seaslug-5001-cand-3',
+    'seaslug-Nudi-cand-6'
+  ])
     assert.ok(!(f in R.lenient), f);
-  assert.ok(!('fi3030' in R.lenient), 'a reference photo of another species is fish_refs.passes\'s to refuse');
+  assert.ok(!('fi3030' in R.lenient), "a reference photo of another species is fish_refs.passes's to refuse");
   assert.deepStrictEqual(R.lenient['fish-s001-cand-4'], ['other_taxon']);
   assert.deepStrictEqual(R.lenient['acropora-wide-4'], ['other_taxon']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-5'], ['deleted']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-6'], ['casual']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-10'], ['captive']);
   assert.deepStrictEqual(R.lenient['acropora-wide-9'], ['id_lost']);
+  assert.deepStrictEqual(R.lenient['seaslug-5001-cand-2'], ['other_taxon']);
   // The patched predicates are put back.
   assert.ok(R.real['fish-s001-cand-3'] && !('fish-s001-cand-1' in R.real));
 });
@@ -136,17 +151,15 @@ const code = f =>
 
 test('tools/photo_recheck.py writes only its report and the cache it is given, and reaches the sheet nowhere', () => {
   const py = code('tools/photo_recheck.py');
-  assert.ok(!/^\s*(import|from)\s+(subprocess|requests|boto3?|socket|http|urllib)\b|os\.system/m.test(py), 'process or network code of its own');
+  assert.ok(
+    !/^\s*(import|from)\s+(subprocess|requests|boto3?|socket|http|urllib)\b|os\.system/m.test(py),
+    'process or network code of its own'
+  );
   assert.ok(!/\b(os\.remove|os\.unlink|os\.rmdir|os\.rename|os\.replace|shutil|rmtree|unlink)\b/.test(py), 'a deletion');
   assert.ok(!/script\.google|SYNC_URL|exec\b/.test(py), 'the sheet');
   // The only writes: the three report files and the cache (write_text on a path built from --out or --cache).
   const writes = [...py.matchAll(/^\s*(.*?)\.write_text\(/gm)].map(m => m[1]);
-  assert.deepStrictEqual(writes.sort(), [
-    '(out / "failing.tsv")',
-    '(out / "report.json")',
-    '(out / "report.md")',
-    'Path(cache_path)'
-  ]);
+  assert.deepStrictEqual(writes.sort(), ['(out / "failing.tsv")', '(out / "report.json")', '(out / "report.md")', 'Path(cache_path)']);
   assert.ok(!/\bopen\(/.test(py), 'a bare open()');
   assert.ok(!/curation\.json[^\n]*write|write[^\n]*curation\.json/.test(py));
   // The fetchers it imports are not run: no main(), no refresh of their data.
@@ -162,7 +175,10 @@ test('the weekly workflow reads and reports only: a schedule and a dispatch, con
   assert.ok(!/secrets\.|GITHUB_TOKEN|GH_TOKEN|git (push|commit|add)|\bgh \w|contents: write|issues: write|rclone|wrangler/.test(c));
   assert.ok(/tools\/photo_recheck\.py/.test(c));
   assert.ok(/--out "\$RUNNER_TEMP\/photo-recheck"/.test(c));
-  assert.match(c, /upload-artifact@v\d+[\s\S]*name: photo-recheck[\s\S]*path: \$\{\{ runner\.temp \}\}\/photo-recheck\/[\s\S]*if-no-files-found: error/);
+  assert.match(
+    c,
+    /upload-artifact@v\d+[\s\S]*name: photo-recheck[\s\S]*path: \$\{\{ runner\.temp \}\}\/photo-recheck\/[\s\S]*if-no-files-found: error/
+  );
   assert.match(c, /cat "\$RUNNER_TEMP\/photo-recheck\/report\.md" >>"\$GITHUB_STEP_SUMMARY"/);
   // A finding does not fail the job (the report is the product); a failed run does.
   assert.ok(!/\|\| true|continue-on-error/.test(c));
