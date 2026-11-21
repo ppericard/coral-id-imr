@@ -725,3 +725,17 @@ test("slot: a holder's children never queue, even behind an older live ticket (n
     fs.rmSync(dir, {recursive: true, force: true});
   }
 });
+
+// No queue without a usable directory: a slots path that is a file runs the command without a slot, as before.
+test('node tests/slot.js -- cmd: a slots directory that cannot be used runs the command without a slot, never waits', async () => {
+  const {dir, env} = sandbox(),
+    file = path.join(dir, 'not-a-dir');
+  fs.writeFileSync(file, '');
+  try {
+    const r = await exec(process.execPath, [SLOT, '--', process.execPath, '-e', "console.log('ran')"], {...env, SMOKE_SLOT_DIR: file});
+    assert.deepStrictEqual([r.code, r.out.trim()], [0, 'ran']);
+    assert.match(r.err, /running without one/);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});

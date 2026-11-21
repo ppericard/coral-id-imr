@@ -211,7 +211,9 @@ function ahead(key) {
   }
   return k;
 }
-// How many of the n slots are free: no file, or a holder that is gone (taken back by the next try).
+// How many of the n slots are free: no file, or a holder that is gone (taken back by the next try). A slot that cannot be
+// read (a directory that is not one, or not searchable) counts as free too: the try that follows meets the error and
+// runs without a slot, as before the queue.
 function freeSlots(n) {
   let k = 0;
   for (let i = 0; i < n; i++) {
@@ -219,7 +221,7 @@ function freeSlots(n) {
     try {
       if (dead(fs.readFileSync(f, 'utf8'), fs.statSync(f))) k++;
     } catch (e) {
-      if (e.code === 'ENOENT') k++;
+      k++;
     }
   }
   return k;
