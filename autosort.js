@@ -1201,7 +1201,7 @@
     return out;
   }
   // Coverage's To do (fish): what to act on, each [key, level of fishCov's rows, words, row test]; F: curation.json fish.
-  // Inbox › Coverage › Games shows each as a chip over its rows, To do › All its counts (admin.js renderFishCov,
+  // Inbox › Coverage › Games shows each as a chip over its rows, To do › All its counts (admin.js covTreePage,
   // fishTodoLines).
   const FISHCOV_TODO = [
     ['spwait', 'sp', 'species under target with candidates waiting', r => r.obs < r.tgt && r.wait],

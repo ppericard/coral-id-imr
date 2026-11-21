@@ -2317,6 +2317,10 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //   opens       slate parts opened on a yes (quiz.js openOfferShow, My progress any time once due), counted either way
 //   done()      the card once every unit is met and none may open (quiz.js allMetDue): {k, kick, title, lines}
 //   listBy      a keyless tree subject's grouping rank on its Learn list (the sea slugs: 'family'); absent, one block
+//   named       true where the units have names of their own, read through GX(n).name (the tree subjects' entries, from
+//               TREE_UNITS): Home's band draws the slate's units and its door says the subject's words (home.js)
+//   group(k)    a unit group of the subject's teaching by its number, {n, t} (the corals: the IMR lecture's groups,
+//               DATA.imrg), for the views that group the units (My progress' Groups, the quiz's progress groups)
 
 // Bonus genera (core.js BONUS; docs/ARCHITECTURE.md "Bonus genera"): Coral Finder genera common at Dauin with a
 // look-alike on the slate, or no hard coral; opt-in (Q.bon, ⚙ any time, off keeps their progress), then open like the
@@ -2459,6 +2463,8 @@ const SEA_HELLO = {
 // adds only its words, its files and its own settings and differences (rule S1). Functions only, no shared state.
 const TREE_UNITS = {
   load: S => treeLoad(S.id),
+  // Its units have names of their own (GX(n).name): Home's band and words (home.js).
+  named: true,
   // Its circles 1 to 3, all on the path and in the progress (a sea slug genus's circle is its best species').
   slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : []),
   // The "mystery" tiles on My progress (progress.js mysteryOn): for every player, whatever their first-launch answer.
@@ -2490,7 +2496,7 @@ const TREE_UNITS = {
   sheet: id => viewTreeSheet(id),
   // The sections of each sheet, in their order on the page (learn.js sheetBody; each is the sheet's own builder of that
   // name): the names, my progress, the first photo with the ID tips, the look-alikes, the genus rows or species, the
-  // juveniles, the report line.
+  // juveniles, a species' sexes or colour phases (phases: only where the cited phase list gives them), the report line.
   sheetParts: {
     family: ['names', 'prog', 'hero', 'looks', 'genera', 'juveniles', 'report'],
     genus: ['names', 'prog', 'hero', 'genusMarks', 'note', 'roots', 'moved', 'species', 'looks', 'more', 'report'],
@@ -2505,6 +2511,7 @@ const TREE_UNITS = {
       'rank',
       'photos',
       'juvenile',
+      'phases',
       'siblings',
       'looks',
       'more',
@@ -2533,6 +2540,7 @@ const unitsByParent = (L, rk) => {
   L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
   return [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity));
 };
+let phasesFile = null; // the fish's documented colour phases, once (UNITS fish phases)
 const UNITS = {
   coral: {
     // The custom quiz's groups (quiz.js viewCustom; the other two views are the same for every subject): by, the first
@@ -2550,8 +2558,8 @@ const UNITS = {
     memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
     // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
-    // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
-    // read when the card is drawn).
+    // (quiz.js startBasicsOffer and the fallback card; lo is also the body of the "Did you know?" basics tip, tips.js,
+    // with ask and name); card, the Learn card's line; trail, the card's picture (learn.js, read when the card is drawn).
     basics: {
       mod: 'basics',
       name: 'Coral basics',
@@ -2570,6 +2578,8 @@ const UNITS = {
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
+    // The IMR lecture's group k (data.json imrg: {n, t}), undefined for the genera outside the lecture's groups.
+    group: k => DATA.imrg.find(x => x.n === k),
     // The structure stamp of its units (core.js structStamp: '' while the look-alike pairs in force are data.json's), sent
     // with the requests so the sheet replays under the pairs in force (sync.js stsAsk).
     st: () => DATAST,
@@ -2843,6 +2853,19 @@ const UNITS = {
     winks: () => (TREEU ? TREEU.winks.filter(n => TREEU.gen[n].views.wide.length) : []),
     // The tile photos of unit n (Find the X, quiz.js planPhoto; unitTiles): fish-game.json's xc.
     tiles: unitTiles,
+    // The colour phases a cited source documents, per species (fish-phases.json, tools/fish_phases_site.py from
+    // tools/fish_phases.json): {species: {id: {name, juv, sex, ip_tp}}}, fetched once, by the Lab's Life stages matched
+    // (proto/lifestages.js), which a subject without this member does not offer. Unversioned and outside the service worker's
+    // shell (as the sea slugs' files): a Lab game's data is not carried by every device's install.
+    // Only a list that came is kept: a failed fetch (json gives {}) is dropped so reopening the game asks again.
+    phases: () =>
+      (phasesFile =
+        phasesFile ||
+        json('fish-phases.json').then(j => {
+          if (j && j.species) return j;
+          phasesFile = null;
+          throw new Error('fish-phases.json');
+        })),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
       `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
