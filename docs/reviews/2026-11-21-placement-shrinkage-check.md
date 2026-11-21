@@ -294,7 +294,9 @@ photos with 5-9 answers, 50 with 10-17):
   excluded), so a test on genus offsets alone would most likely carry an error over the gate's; that photo by photo,
   today's ratings recover little of it, because most of a photo's answers show it beside other views; that items
   answered 10+ times as shown come near the gate, and only 17 exist; and that one log of 3,920 answers from 15 players
-  cannot pin the spread between 0.4 and 1.2.
+  cannot pin the spread between 0.4 and 1.2. That agrees with the same day's Q316 offline fit
+  ([2026-11-21-q316-offline-fit.md](2026-11-21-q316-offline-fit.md)), which found the coral photo SD not estimable on
+  today's log by its own acceptance test.
 - It cannot say what the test would do on real players (none has taken one), nor what 20 answers a member buy: the
   planted check only reaches today's counts (up to 17). The population is narrow (15 players, IMR people and the
   owner's account).
