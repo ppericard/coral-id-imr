@@ -35,6 +35,8 @@ step 1 left three implementation choices open for step 2 (docs/reviews/2026-11-2
   so only their answers logged from the new script on are netted; their past answers keep their weight. Giving those
   replays the served terms is a follow-up, not built.
 - The replay nets a past answer by today's term, which holds that answer's own time (shrunk); the live game nets by the
-  term it read before the answer. The real-log check reports both.
+  term it read before the answer. The real-log check reports both. A coral answer logged before its term was (every
+  answer of today's log) no longer replays exactly as the game scored it: its time weight follows the terms served at
+  each replay. A re-fit of `PTIME` now moves the corals' replayed progress, so it takes a rules version.
 - On today's log the bars (the domain score) do not move: the time weight moves only the ability steps; the global
   level moves by a few hundredths (LEARNING.md "The player's time net of the photo's").

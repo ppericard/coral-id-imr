@@ -1164,7 +1164,8 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
   (sd 0.104, −0.31 to +0.28), so on average the net weights are slightly smaller; why the mean is below 0 is not
   established (the term is measured against the habit over right answers in the same format, `rtWeight`'s z against
   the habit over all timed answers).
-- **The real log** (rule L12; declared before running; level 1: only a right answer's step size changes, within
+- **The real log** (rule L12; declared before running; declared level 1: the rule changes only a right answer's step
+  size, though the paths that follow can differ, below; within
   [0.5, 1.5]). `tools/abilityeval.js` on the corals (15 players with 20+ answers, 3,920 answers), the app as it is
   (`e+X+M+A`) against the time netted (`+P`: the terms before each answer, as the live game reads them, from
   `core.js` `eloReplay`'s own pass; `+Q`: the whole log's terms, as the replay nets a past answer, the answer's own time
@@ -1189,8 +1190,10 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
   look, guardrails only (declared): no path breaks; held everywhere but the beginner's E = bar − D* at 300 answers,
   −0.508 → −0.461 (+0.047, bound +0.082 against a margin of +0.030): breached on the side the margin guards, though the
   bar moved toward the true knowledge (it stays 0.46 under it), with the beginner meeting 3.4 more units and true
-  knowledge +0.027; the lecture RA's and the expert's longest plateau unclear (the measure cannot tell). The arms
-  differ only by this change on the same seeds, so the netting ran.
+  knowledge +0.027; the lecture RA's and the expert's longest plateau unclear (the measure cannot tell). The paths
+  moved (no margin: the expert's right % since the previous checkpoint at 300 −2.0 [−2.5, −1.5], the beginner's
+  −2.2), the cause not established. The arms differ only by this change on the same seeds, so the netting ran. This
+  world does not model a photo's time shared by its players; the rated world does (level 2), not run.
 
 ### Photo memory
 
@@ -1359,7 +1362,8 @@ replay".
 - **One engine.** The sheet embeds `core.js` (`tools/sync_core.py`), and every answer is scored by `core.js`
   `scoreAnswer`, the game's own scorer ("One scorer"), with the sheet's photo memory offsets, pooled pairs and photos'
   time terms for the corals and none for the other subjects. An answer logged with its scoring record replays exactly as the game scored
-  it. An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
+  it, but for a coral right answer logged before its time term was (no `i`): its time weight is netted by the terms
+  served at each replay, so it follows them ("The player's time net of the photo's"). An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
   memory and the mix-ups term taken out of the logged `e` from `MEM_LOGGED` and `CF_LOGGED`, the replay's own put
   back); a comeback answer's recall counts as 1, and a row with no `e` and `th` counts in the counts only.
 - **What the replay gives and what the device keeps** (`core.js` `replayedOf`): per unit the log has answers on, the

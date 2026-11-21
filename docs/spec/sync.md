@@ -647,7 +647,8 @@ step (`statsStep_`, `statsOut_`; `core.js` `fmtPoint` and `fmtFit` for the forma
 **The photos' time terms.** A photo with a time term carries three more numbers in its `photos` entry, after the five:
 the time term, the enlargement term and the information its rating has gathered (`core.js` `ptimeInto`, `ptimeOut`;
 LEARNING.md "The photo's time term"); a photo with neither term keeps its five. The app reads them from a reply of
-`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). On the real log of 2026-11-20 they add about 25% to the
+`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). The corals' full replays read the time term too
+(`replayProgress` photos: a right answer's time netted of it, LEARNING.md "The player's time net of the photo's"). On the real log of 2026-11-20 they add about 25% to the
 corals' `photos` (79 to 99 KB) and 19% to the fish's.
 
 **The `Stats` tab** (internal, versioned by `STATS.FMT`, 4: no other code reads it). Columns Part, Version, Updated,
