@@ -1136,6 +1136,52 @@ longest plateau, +3 and +1 answers): "the measure cannot tell". The fish cannot 
 corals' statistics, so the fish rest on the real log's guardrail G and the unit tests.
 - Compute: about 5 minutes a run of 10 seeds; within the 40-minute cap per case.
 
+### The player's time net of the photo's
+
+Pierre, 2026-11-21 (Q452): «si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui. […] il
+faut recalculer la progression de tous. On peut le faire en silence, c'est pas grave.» Decision record:
+docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`), `ptimeQ`, `ptimeAt`; `quiz.js`
+`photoTimeQ`; rules version 13 (fish 6, sea slugs 3).
+
+- **The rule.** A right answer's time weight ("Response time") takes its z net of the question's photo time term:
+  w = clamp(1 − K (z − ti), LO, HI), ti the mean over its photos of their time term ("The photo's time term": the
+  first of the three served numbers; a photo without one counts 0). Both are in log seconds against a player's own
+  habit, and the term is already a shrunk estimate of the photo's part of z, so it is taken off once: no `PTIME.C`, no
+  fade, no V(L) (they turn the terms into a difficulty), no enlargement term (a rate, not seconds). Symmetric: a fast
+  answer on a photo fast for everyone earns less. A miss, a typed answer, an answer without seconds: w 1 as before.
+- **Logged and replayed.** The game nets by the terms it holds (`PTM`) and logs the term in the scoring record (`i`,
+  kept even at 0), only from sheet `RTNET_SHEET` (rule D4). The full replay takes the logged term, else the photos'
+  terms served when it replays (`replayProgress` photos: the corals' replays in `Code.gs` `rplMake_`, `replayedAll_`,
+  `sync.js`, the admin), so every coral answer of the log is netted, silently (rule D6). The fish and sea slug replays
+  read no pooled photo numbers, so there only the answers logged with the term are netted; their earlier answers keep
+  their weight. A re-fit of the term (`PTIME`) now moves the corals' replayed progress, so it takes a rules version.
+- **What moves.** The bars (the domain score) do not read the time weight, only the ability steps do. On the real log
+  to 2026-11-21 17:17 (corals, 15 players, the branch's replay with the terms served from the whole log against
+  without): no player's slate % moves; the global level moves by −0.03 to +0.001 (11 of 15 down, the largest −0.027).
+  1,200 of 1,439 rated photos have a term; over the 2,566 right timed answers with one, its mean is −0.024 log seconds
+  (sd 0.104, −0.31 to +0.28): on average the photos answered are slightly fast against the players' all-answer habit,
+  so the net weights are slightly smaller.
+- **The real log** (rule L12; declared before running; level 1: only a right answer's step size changes, within
+  [0.5, 1.5]). `tools/abilityeval.js` on the corals (15 players with 20+ answers, 3,920 answers), the app as it is
+  (`e+X+M+A`) against the time netted (`+P`: the terms before each answer, as the live game reads them, from
+  `core.js` `eloReplay`'s own pass; `+Q`: the whole log's terms, as the replay nets a past answer, the answer's own time
+  in them; `+R`: the whole log's without the player's own answers). Next-answer log-loss, players as the unit:
+
+  | Arm against the app as it is | Mean of the players' differences [95%] | Sign-flip p | Verdict (declared) |
+  | --- | --- | --- | --- |
+  | `+P` (online) | +0.000 [−0.000, +0.000] (per answer +0.0001) | 0.84 | guardrail held (bound under +0.002); better: the measure cannot tell |
+  | `+Q` (whole log) | +0.000 [−0.000, +0.000] (per answer +0.0002) | 0.83 | guardrail held; better: the measure cannot tell |
+  | `+R` (whole log, own answers out; exploratory) | +0.000 [−0.000, +0.000] (per answer +0.0002) | 0.99 | no difference |
+
+  Calibration by level band and format: unchanged to two decimals in every group. Exploratory, uncorrected (14 group
+  rows): after a fast right answer, `+P` +0.000 [+0.000, +0.001], p 0.02. The change is too small to show on 15
+  players either way; it is built because the direction is decided (Q452) and its logic holds, not because the log
+  shows a gain (docs/reviews/2026-11-21-simulation-scope.md). Fish and sea slugs: not measured (`abilityeval` replays
+  the corals).
+- **Equivalence.** With no terms passed and none logged, the replay of every player of the log (corals, fish, sea
+  slugs; the corals also with the sheet's other numbers) is identical to `main`'s.
+APPWORLD
+
 ### Photo memory
 
 A photo a player has already been shown is easier for them than for a player meeting it the first time. One rule, in the

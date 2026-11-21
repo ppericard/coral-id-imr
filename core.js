@@ -424,7 +424,7 @@
   const PTIME_SHEET = 213;
   // The sync script version whose replay nets a right answer's time of its photos' time term (rtWeight ti, rules version
   // 13) and keeps the term in the scoring record (scoreRec i): the app nets it, and logs it, only with this script or
-  // later (model.js ptNetOn), so an older script, which would drop the field and replay without it, never meets an
+  // later (quiz.js ptNetOn), so an older script, which would drop the field and replay without it, never meets an
   // answer the app weighed otherwise.
   const RTNET_SHEET = 215;
   // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component

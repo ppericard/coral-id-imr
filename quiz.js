@@ -687,6 +687,18 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
+// The player's time net of the photo's (core.js rtWeight ti, ptimeQ; docs/LEARNING.md "The player's time net of the
+// photo's"): a question's time term, the mean of its photos' served time terms (model.js PTM; a photo without one: 0),
+// which the scorer takes off a right answer's z and the scoring record keeps (i). Only with a script whose replay does
+// the same (core.js RTNET_SHEET, rule D4); otherwise undefined: the answer weighs and is logged as before.
+const ptNetOn = () => typeof sheetV === 'function' && sheetV() >= RTNET_SHEET;
+const photoTimeQ = ph =>
+  ptNetOn()
+    ? ptimeQ(
+        ph.map(p => p.f),
+        f => (PTM[f] || [])[0]
+      )
+    : undefined;
 // One answer recorder (docs/spec/quiz.md "What each mode counts"): what every counted answer does to the player's record
 // and the answer log, whatever its game: the photo quiz, the custom quiz and the Duel tab (answer, below) and a live game
 // (live.js liveLog). No screen: the caller keeps its own (the feedback, the prompts, the session's tally).
@@ -753,7 +765,7 @@ function recordAnswer({
     p: startP(),
     sec: tm.rt,
     // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does, net of the photos' time term
-    // (model.js photoTimeQ: the photos d0 averages; logged in sc as i; undefined before the script that replays it).
+    // (photoTimeQ above: the photos d0 averages; logged in sc as i; undefined before the script that replays it).
     timed: true,
     ti: photoTimeQ(ph),
     // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
