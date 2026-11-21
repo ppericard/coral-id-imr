@@ -1559,7 +1559,8 @@ const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || to
 // the species' young look clearly different (sps[p.sp].jd.d: tools/fish_juv_differs.json; jd.sub is information only);
 // false, or no source either way (no jd, as on a subject without them), and no adult of its species in L: no card. The
 // photo's phase is Pierre's in the admin when he set one (core.js phaseOf; rule A1). The sex or colour phase card (core.js
-// phaseKind 'phase', an entry marked dimorph) is as before.
+// phaseKind 'phase': the phase flag p, on a species whose sexes or colour phases differ by a cited source, its entry
+// marked dimorph or the cited phase list: tools/fish_judge.py phase_flag) is as before.
 function juvCard(p, sps, L) {
   if (!p) return null;
   if (phaseKind(p) === 'phase') return {p, k: 'phase', q: phasePair(p, L)};
@@ -1603,10 +1604,16 @@ function phaseShow({p, k, q: q0}, n, brk) {
     q = q0 !== undefined ? q0 : phasePair(p, phasePool(n)),
     tx = photoTaxon([p], n),
     juv = k === 'juvenile',
+    // The cited phase list's word on the photo's species (fish.json species phs, tools/build_fish.py phase_sources): k
+    // 'sex' (its males and females differ) or 'phase' (its initial and terminal phases), src its sources ({t, u}).
+    phs = juv ? null : (((TREEU && TREEU.sps) || {})[p.sp] || {}).phs || null,
     // The sex or colour phase card's lines, under their source: the one the content editor gave with an edit of them
-    // (app.js treeGenera psrc, core.js contentApply esrc; rule C2), else IMR's, the presentation's own words. The juvenile
-    // card has none: the two photos say it.
-    lines = juv ? [] : g.phase || [],
+    // (app.js treeGenera psrc, core.js contentApply esrc; rule C2), else IMR's, the presentation's own words; for a species
+    // the cited list flags, only the lines on sexes or phases (an IMR family's juvenile line is not this card's), then
+    // the list's sources. The juvenile card has none: the two photos say it.
+    lines = juv ? [] : (g.phase || []).filter(l => !phs || /\b(?:fe)?males?\b|phases?\b/i.test(l)),
+    srcs = phs && (phs.src || []).length ? phs.src : [],
+    srcLink = x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)),
     w = phaseOf(p),
     word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
@@ -1614,7 +1621,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     credits = [p, q].filter(Boolean).map(credit).join('<br>'),
     title = juv
       ? `${word(p)} and ${q ? word(q).toLowerCase() : 'adult'}`
-      : w === 'intermediate'
+      : w === 'intermediate' || (phs && phs.k === 'phase')
         ? 'Careful: this species’ colour phases can look very different'
         : 'Careful: this species’ males and females can look very different';
   const d = cardShow({
@@ -1622,7 +1629,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">Source${srcs.length > 1 ? 's' : ''}: ${srcs.map(srcLink).join(', ')}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
