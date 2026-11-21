@@ -22,6 +22,7 @@ call (REE-206).
 
 ## Consequences
 
-W24 says so in one bullet, with the wave note's "one command per slot". Not done here (REE-206, item 2, optional):
+W24 says so in one bullet. Working note, not in the rule (a new obligation waits for Pierre): the wave note's "one
+command per slot", a slot never kept between runs nor held idle by a script that waits inside it. Not done here (REE-206, item 2, optional):
 refusing a long-lived dispatcher command. A waiter that is alive but stuck (stopped, never polling) keeps its turn: the
 liveness check cannot see it.
