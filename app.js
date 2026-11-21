@@ -2488,6 +2488,29 @@ const TREE_UNITS = {
   // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
   // name line for each.
   sheet: id => viewTreeSheet(id),
+  // The sections of each sheet, in their order on the page (learn.js sheetBody; each is the sheet's own builder of that
+  // name): the names, my progress, the first photo with the ID tips, the look-alikes, the genus rows or species, the
+  // juveniles, the report line.
+  sheetParts: {
+    family: ['names', 'prog', 'hero', 'looks', 'genera', 'juveniles', 'report'],
+    genus: ['names', 'prog', 'hero', 'genusMarks', 'note', 'roots', 'moved', 'species', 'looks', 'more', 'report'],
+    species: [
+      'names',
+      'badges',
+      'facts',
+      'note',
+      'genusMarks',
+      'marks',
+      'roots',
+      'rank',
+      'photos',
+      'juvenile',
+      'siblings',
+      'looks',
+      'more',
+      'report'
+    ]
+  },
   bar: id => treeBar(id)
 };
 // What the tree subjects (fish, sea slugs) say in the Look-alikes deck and Compare (UNITS cmp, deck, inGame): their declared
@@ -2620,6 +2643,10 @@ const UNITS = {
     // (#learn/genus/Acropora).
     list: () => viewList(),
     sheet: n => viewGenus(n),
+    // The sections of its genus sheet, in their order (learn.js sheetBody): the summary line, the warning (a benthic, a
+    // genus not on the IMR list, a ★ genus not surveyed), my progress, the cover with the ID tips and More details (the
+    // Coral ID Key criteria, In the key), the photos by view, the look-alikes in the same view, the report line.
+    sheetParts: {genus: ['sum', 'warn', 'prog', 'hero', 'views', 'looks', 'report']},
     sets: [
       {
         k: 'bon',
