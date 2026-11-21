@@ -290,6 +290,22 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **A crowded machine cuts agents off**: an agent that waits too long for a `tests/slot.js` slot or a train is handed
   back unfinished. Keep its worktree; resume it later or finish the push and PR yourself (wait until no `train.py`
   runs, then push).
+- **One worktree per PR, and never queue a PR whose agent is still on it** (2026-11-21): the queue's `uptodate.sh`
+  merges `main` in the PR's own worktree and pushes whatever the agent has committed there (#1348's cut was pushed
+  before its agent's tests). A second worktree on the same branch (`git checkout -B` elsewhere) leaves the first with a
+  stale index that the queue reads as "local changes": confirm the files equal an older commit of the branch, then
+  restore them or remove that worktree.
+- **Resolve a thread only after its fix is pushed** (2026-11-20, #1313): an agent that resolves first lets the queue
+  merge the head without the fix. Every brief says so.
+- **The main checkout must sit on `main`**: `train.py` runs from it, and an agent once left it detached on an old
+  commit, so the trains ran an old `train.py`. `git checkout main && git pull` before starting a wave.
+- **Shared scratch scripts get overwritten**: an agent rewrote the integrator's push helper for its own branch. Keep
+  queue tooling in `tools/queue/` (#1315) and tell agents not to edit the integrator's scratch files.
+- **A Codex receipt with findings is its answer**: `prstate.sh` labels it `summary`; waiting for a clean receipt on
+  that head only loses time (30 minutes a PR on 11-20); the queue now moves on after 3 minutes.
+- **Screenshots with real photos**: the container reaches the R2 host through its proxy (`curl`), but Playwright's
+  browser is not proxied: download the photos with `curl` and serve them to the page from a route; never disable TLS
+  verification.
 
 ### Quota (rule W25), lessons of 2026-11-20
 
