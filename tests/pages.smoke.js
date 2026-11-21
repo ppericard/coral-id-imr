@@ -3732,6 +3732,7 @@ async function tipsCheck(b, base) {
           document.querySelectorAll('.achpop').forEach(x => x.remove());
           achQ.length = 0;
           achBusy = false;
+          // answer.js: only asks whether the question is typed, to choose what to answer; smokeAnswer answers it
           const typed = !!document.querySelector('#view .q:not(.done) .tyform');
           smokeAnswer(typed && text ? (qNow().g === 'Acropora' ? 'Porites' : 'Acropora') : false);
           document.getElementById('next').click();
