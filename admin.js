@@ -10628,8 +10628,9 @@ function unitRpl(S, f, ph, gm, cur) {
 const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).pct : pctOf(P, M.slate));
 // replay units: end
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
-// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's.
-const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD} : {});
+// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's; and the photos with
+// their time terms (photos: st.photos, core.js replayProgress photos: an answer logged without its term).
+const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD, photos: STATS || {}} : {});
 // One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
 // rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
 function progOf(u, full, S = replayS()) {
