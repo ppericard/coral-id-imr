@@ -1,6 +1,6 @@
 # "Did you know?" tip (e): Identify (the Coral ID Key), for the player who never opened it
 
-Date: 2026-11-21. PR: #1447. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/DESIGN.md "Cards"; REE-13.
+Date: 2026-11-21. PR: #1450. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/DESIGN.md "Cards"; REE-13.
 
 ## Context
 
