@@ -722,11 +722,14 @@ pool of 30 does.
 
 ### Rarely under ease 4 before Open Water
 
-Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` (or its `RARE.FEW` easiest when it has
-fewer) make at most `RARE.SHARE` of the photos drawn, whatever their number (`model.js` `rareCap`, applied last, to the
-choice of the observation and of its photo): no wall, they still come, rarely. `model.js`
-`RARE = {E: 4, FEW: 3, SHARE: 0.1}`. Only on units of the subject's own rank (the fish families, the sea slug genera:
-`model.js` `rareOn`); photos with no judged ease (every coral photo) are never capped.
+Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` (or under its `RARE.FEW` easiest
+observations when it has fewer) make at most `RARE.SHARE` of the photos drawn, whatever their number (`model.js`
+`rareCap`, applied last, to the choice of the observation and of its photo): no wall, they still come, rarely. The
+`RARE.FEW` easiest are observations the draw can show at full weight, each by its easiest such photo: a variant its unit
+still holds back and a second photo of one observation do not count (REE-189:
+docs/decisions/2026-11-21-rare-few-by-observation.md). `model.js` `RARE = {E: 4, FEW: 3, SHARE: 0.1}`. Only on units of
+the subject's own rank (the fish families, the sea slug genera: `model.js` `rareOn`); photos with no judged ease (every
+coral photo) are never capped.
 
 ### Juveniles and colour phases on their unit's mastery
 
