@@ -413,6 +413,7 @@ async function findTheXSpecies(b, base, errs) {
         question(...Q0);
         pendShow('quiz', Q0, null);
         const [, , ch, prompt, set] = Q0,
+          // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
           tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
         seen[k]++;
         ok(Q0.findx && rankOf(t) === 'species' && kindOf(t) === k, `a species Find the X: ${t}`);
@@ -423,6 +424,7 @@ async function findTheXSpecies(b, base, errs) {
           `four species of one kind of name, met, in play: ${ch}`
         );
         ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+        // answer.js: the format has no name buttons (a read)
         ok(!document.querySelector('#view .ans'), 'no name buttons');
         ok(
           set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
@@ -2506,7 +2508,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       if (gl.hash !== h0 || !gl.pop) ui.push(`${width}px families page: a glossary term on a card ${JSON.stringify(gl)}`);
       await q.keyboard.press('Escape');
     }
-    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family's photo on the families page
+    // The family sheets (learn.js viewTreeSheet; the fish-sheets study, option B): a family's photo on the families page
     // opens its sheet (no longer the photo viewer: the sheet's photos enlarge, with their credits), under the book's
     // English name with its scientific name below; an old entry id links to its family; the only genus of a family opens
     // the family sheet; the species filter is on by default and one tap shows them all.

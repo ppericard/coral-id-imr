@@ -3266,7 +3266,7 @@ function cqByIMR(play) {
     });
 }
 // The fish's groups: the identification groups of the regional key (TREEU.groups), in its order, as the Families page
-// shows them (learn.js viewFishList); a unit under a family (a species, a scientific genus) is in its family's group.
+// shows them (learn.js viewList); a unit under a family (a species, a scientific genus) is in its family's group.
 function cqByKey(play) {
   const gOf = n => {
       for (let u = GX(n), i = 0; u && i < 4; u = GX(u.parent), i++) if (u.group) return u.group;
