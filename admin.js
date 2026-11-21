@@ -347,7 +347,12 @@ const keepHist = () => {
 addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
-function saveDraft() {
+// auto: a save nobody clicked (the startup import of the site's flags, importFlags; the auto-sorts, saveRun). Any other
+// save is the admin's action (ACTED), from which on a background run is no Undo step of its own (saveRun).
+// docs/decisions/2026-11-21-undo-background-run.md.
+let ACTED = false;
+function saveDraft(auto = false) {
+  if (!auto) ACTED = true;
   memoReset();
   sweepFlags();
   if (snap !== null) {
@@ -358,6 +363,112 @@ function saveDraft() {
   FUT = [];
   snap = JSON.stringify(DRAFT);
   if (ASIG) ASIG_OF = snap;
+  if (!TOKEN) return;
+  putDraft();
+  draftAt = new Date();
+  keepHist();
+}
+// What a background run changed (run: the draft now, against before: the draft it started from), laid onto one Undo or
+// Redo step (onto), photo by photo. A run decides whole photos: its entries for one photo (an add, a rejection `seen`
+// under the photo's own name or its check key CK, an exclusion, a rating, its log line) are its decision on that photo.
+// They are laid onto the step only when the step holds exactly what before held for that photo, in every map the run
+// touched; else the step keeps the admin's own decision on it (an Add he made, then undid, stays an Add when redone).
+// A map the step lacks is made for the run's entries (undoing the click that made it keeps them), and a map the run
+// empties stays {} (merge3 reads a missing map as removed).
+const photoOfKey = k => String(k).replace(/^cand:/, ''); // CK's inverse
+const layDiff = (B, R, path = [], out = []) => {
+  const O = o => !!o && typeof o === 'object' && !Array.isArray(o),
+    J = v => JSON.stringify(v === undefined ? null : v);
+  new Set([...Object.keys(B || {}), ...Object.keys(R || {})]).forEach(k => {
+    const b = (B || {})[k],
+      r = (R || {})[k];
+    if (J(r) === J(b)) return;
+    if (O(r) && (O(b) || b === undefined)) layDiff(b, r, [...path, k], out);
+    else out.push({path: [...path, k], v: r});
+  });
+  return out;
+};
+// Everything the draft D holds under a key naming one of the photos P, whatever map it sits in: {photo: {path: value}}.
+const layLeaves = (D, P) => {
+  const out = {},
+    walk = (o, path) =>
+      Object.keys(o).forEach(k => {
+        const v = o[k],
+          p = [...path, k],
+          f = photoOfKey(k);
+        if (P.has(f)) (out[f] = out[f] || {})[JSON.stringify(p)] = v;
+        else if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, p);
+      });
+  if (D && typeof D === 'object') walk(D, []);
+  return out;
+};
+// The photo a change is about: the last key of its path naming one of the photos P, else none.
+const layPhoto = (path, P) => {
+  for (let i = path.length - 1; i >= 0; i--) if (P.has(photoOfKey(path[i]))) return photoOfKey(path[i]);
+  return null;
+};
+// In place: T is the step's own fresh copy (saveRun parses each step), so no map is copied (Codex on #1408: copying
+// fish.add, 5,803 entries, at every leaf froze the page for seconds).
+const layPut = (T, path, v) => {
+  let o = T;
+  for (let i = 0; i < path.length - 1; i++) {
+    const k = path[i];
+    if (!(o[k] && typeof o[k] === 'object' && !Array.isArray(o[k]))) o[k] = {};
+    o = o[k];
+  }
+  if (v === undefined) delete o[path[path.length - 1]];
+  else o[path[path.length - 1]] = v;
+};
+// The run's change (layPlan, once per run), laid onto each step (layRun). The photos it decided are those of its log
+// lines (an auto map's day: {photo: code}, autosort.js: the corals' auto, the tree subject's part's auto); a change about
+// none of them (a counter, a stamp) is laid key by key: only where the step holds what before held.
+const layPlan = (before, run) => {
+  const D = layDiff(before, run),
+    P = new Set();
+  D.forEach(d => {
+    const i = d.path.lastIndexOf('auto');
+    if (i >= 0 && d.path.length > i + 2) P.add(photoOfKey(d.path[i + 2]));
+  });
+  const by = {},
+    rest = [];
+  D.forEach(d => {
+    const f = layPhoto(d.path, P);
+    if (f) (by[f] = by[f] || []).push(d);
+    else rest.push(d);
+  });
+  return {by, rest, P, was: layLeaves(before, P), before};
+};
+const layAt = (o, path) => path.reduce((x, k) => (x && typeof x === 'object' ? x[k] : undefined), o);
+// onto: the step's own fresh copy, changed in place and returned.
+const layRun = (plan, onto) => {
+  const out = onto || {},
+    has = layLeaves(out, plan.P),
+    J = o => JSON.stringify(Object.entries(o || {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))),
+    V = v => JSON.stringify(v === undefined ? null : v);
+  Object.entries(plan.by).forEach(([f, L]) => {
+    if (J(has[f]) !== J(plan.was[f])) return; // the step's own decision on this photo stays
+    L.forEach(d => layPut(out, d.path, d.v));
+  });
+  plan.rest.forEach(d => V(layAt(out, d.path)) === V(layAt(plan.before, d.path)) && layPut(out, d.path, d.v));
+  return out;
+};
+// An auto-sort's run saved (autoRun, fishAutoRun). Before the admin's first action of this visit (ACTED): one Undo step,
+// as at every load. After it, the run lands among his steps: it is laid onto every Undo and Redo step (layRun) and onto
+// the draft, and is no step of its own, so Undo and Redo move his clicks only and never take the run back (its decisions
+// are taken back one by one: Auto › Undo).
+function saveRun() {
+  if (!ACTED || snap === null) return saveDraft(true);
+  memoReset();
+  const plan = layPlan(JSON.parse(snap), DRAFT),
+    lay = L =>
+      L.map(x => {
+        const m = layRun(plan, JSON.parse(x));
+        m.genera = m.genera || {};
+        return JSON.stringify(m);
+      });
+  HIST = lay(HIST);
+  FUT = lay(FUT);
+  snap = JSON.stringify(DRAFT);
   if (!TOKEN) return;
   putDraft();
   draftAt = new Date();
@@ -521,7 +632,7 @@ function importFlags() {
     n++;
   });
   store.set('reefid-photo-flags', null);
-  if (n) saveDraft();
+  if (n) saveDraft(true);
   return n;
 }
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
@@ -6993,7 +7104,7 @@ function autoRun() {
   });
   if (!(R.add + R.reject + R.exclude + R.check)) return R;
   DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
-  saveDraft();
+  saveRun();
   return R;
 }
 // The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (data/fish-cand.json, judged in
@@ -7090,7 +7201,7 @@ async function fishAutoRun() {
     {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => passAt(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
-  saveDraft();
+  saveRun();
   render();
   return R;
 }
@@ -8586,6 +8697,8 @@ async function start() {
     const f = x => JSON.stringify(base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
     HIST = kept.hist.map(f);
     FUT = kept.fut.map(f);
+    // Steps kept from before the reload are the admin's: this load's runs land after them (saveRun).
+    ACTED = HIST.length + FUT.length > 0;
   }
   snap = JSON.stringify(DRAFT);
   if (TOKEN) {
@@ -8602,14 +8715,15 @@ async function start() {
   });
   const keep = changed().length;
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
-  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
+  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run
+  // before the admin's first action, else laid onto his steps (saveRun).
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const sugRun = () => {
     const ar = TOKEN && autoRun();
     if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar), 3500, true), keep ? 4000 : 0);
     // The fish auto-sort once the first page is drawn and the page is idle (an admin who opened on a Players page: once its
     // suggestions are in, sugLater): it reads data/fish-cand.json, 9 million characters, which would share the line and the
-    // main thread with the first page. One Undo step. At every admin load (rule A1), whatever page the admin stays on; a
+    // main thread with the first page. One Undo step, or laid onto his steps once he acted (saveRun). At every admin load (rule A1), whatever page the admin stays on; a
     // Publish that comes before the idle time runs it first (asortDone), so its proposals are in what is sent.
     const fishLater = () =>
       (ASORT_P =
