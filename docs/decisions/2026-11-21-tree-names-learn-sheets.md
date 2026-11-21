@@ -25,4 +25,5 @@ names in the player app's scripts.
 - No player sees a change: a pure word substitution, checked reversible file by file against `origin/main`.
 - `core.js` comments still cite `viewFishSheet` until the next `core.js` change (rule D3: it carries a sheet version),
   which is why `tests/treenames.test.js` leaves `core.js` out of this table's scope for now.
-- Left of step 3 (a): the admin's names, `Code.gs`'s own, the Python library; (b) the `replay` capabilities.
+- Left of step 3 (a): the admin's names and the Python library (`Code.gs` has no `fish*` name of its own left; a
+  `core.js` comment still cites the `fishGen_` it once had); (b) the `replay` capabilities.
