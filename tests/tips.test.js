@@ -18,17 +18,17 @@ const MISS = {ctx: 'quiz', miss: true, zm: false},
   RIGHT = {ctx: 'quiz', miss: false, zm: false};
 
 test('tipsInit: empty, malformed, and seeded once from the device answers', () => {
-  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, c: 0, d: 0, m: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
-  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, c: 0, d: 0, m: 0});
+  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
+  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0});
   assert.deepStrictEqual(tipsInit({u: {q: -3, z: 'a'}, s: {zoom: 'x'}, v: 5}, null), {
-    u: {q: 0, z: 0, c: 0, d: 0, m: 0},
+    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0},
     s: {zoom: []},
     v: {t: 0, n: 0, tip: 0}
   });
   // The seed: the answers' count and their zm flags; never once a state exists.
   const log = [{zm: 1}, {zm: 0}, {}, {zm: 1}, null];
-  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, c: 0, d: 0, m: 0});
-  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0});
+  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, c: 0, d: 0, m: 0, i: 0});
+  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0});
 });
 
 test('tipNote: a visit is answers less than 30 minutes apart; a tip shown holds for the visit only', () => {
@@ -247,8 +247,8 @@ test('basics tip: only for b.bx, from 30 questions, at the Next after a miss, in
   assert.strictEqual(tipDue(fresh(400), {ctx: 'quiz', miss: true, zm: false}), null);
   // Its game: the Quiz; not the Custom quiz, the Duel tab nor another page.
   for (const ctx of ['quiz-custom', 'quiz-duel', 'genera']) assert.strictEqual(tipDue(fresh(100), {...BX, ctx}), null, ctx);
-  // No counter of its own: the state holds no basics count (the module's page records its opening).
-  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'm', 'q', 'z']);
+  // No counter of its own: the state holds no basics count (the module's page records its opening); the Identify tip's is i.
+  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'i', 'm', 'q', 'z']);
 });
 
 test('basics tip: once a visit, twice ever 150 questions apart, after the other four tips', () => {
@@ -292,6 +292,76 @@ test('basics tip: the card speaks the subject’s basics words and never a subje
   assert.match(t.card.title({}) + t.card.body({}), /basics/i);
   assert.doesNotMatch(t.card.title({}) + t.card.body({}), /coral|fish|genus|genera/i);
   assert.strictEqual(t.act, 'basics');
+});
+
+// The Identify tip (e): the only tip outside the games, on Home or My progress, with the time given (quiz.js tipOut).
+const OUT = {ctx: 'home', miss: false, zm: false, mix: 0, bx: 0, ix: 1};
+test('identify tip: only for ix and u.i 0, from 200 questions, on Home or My progress, never in a game', () => {
+  const fresh = (n, u = {c: 1, d: 1, z: 3, m: 1}) => played(n, 0, tipsInit({u})),
+    due = (st, b = OUT) => tipDue(st, b, TIPS, st.v.t + MIN);
+  assert.strictEqual(due(fresh(199)), null);
+  assert.strictEqual(due(fresh(200)).id, 'identify');
+  assert.strictEqual(due(fresh(200), {...OUT, ctx: 'progress'}).id, 'identify');
+  // Not a subject whose Identify tool is not built (ix 0, or not counted), nor a player who opened the tool (i).
+  for (const ix of [0, undefined]) assert.strictEqual(due(fresh(400), {...OUT, ix}), null, String(ix));
+  assert.strictEqual(due(fresh(400, {c: 1, d: 1, z: 3, m: 1, i: 1})), null);
+  // Its pages only: never at a break of a game, nor another page.
+  for (const ctx of ['quiz', 'quiz-custom', 'quiz-duel', 'genera', 'about']) assert.strictEqual(due(fresh(400), {...OUT, ctx}), null, ctx);
+  // A game's break (no time) never picks it, and its own state holds a count only in u.i.
+  assert.strictEqual(tipDue(fresh(400), {...MISS, ix: 1}), null);
+  assert.strictEqual(TIPS.find(t => t.id === 'identify').out, true);
+  for (const t of TIPS.filter(t => t.id !== 'identify')) assert.ok(!t.out && !t.ctx.includes('home') && !t.ctx.includes('progress'), t.id);
+});
+
+test('identify tip: a page has no first-answers floor; the visit is the last one, over after 30 minutes', () => {
+  const base = tipsInit({u: {c: 1, d: 1, z: 3, m: 1, q: 250}});
+  // Nothing answered this visit (n 0, no visit at all): the floor of the games does not hold it.
+  assert.strictEqual(tipDue(base, OUT, TIPS, 1e12).id, 'identify');
+  // A tip shown in the visit still open (its last answer less than 30 minutes before) holds; once it is over, a new visit.
+  let st = {...base, v: {t: 1e12, n: 12, tip: 1}};
+  assert.strictEqual(tipDue(st, OUT, TIPS, 1e12 + TIPR.GAP - 1), null);
+  assert.strictEqual(tipDue(st, OUT, TIPS, 1e12 + TIPR.GAP).id, 'identify');
+  // A clock gone back is not an open visit: it counts as over.
+  assert.strictEqual(tipDue(st, OUT, TIPS, 1e12 - 5).id, 'identify');
+});
+
+test('identify tip: shown on a page it stamps the visit, so the answers after it bring no second tip', () => {
+  const t0 = 1e12;
+  let st = played(250, 0, tipsInit({u: {c: 1, d: 1, m: 1}}), t0); // zoom tip due in a game (z 0), 250 questions
+  const now = st.v.t + 5 * MIN;
+  assert.strictEqual(tipDue(st, MISS).id, 'zoom');
+  assert.strictEqual(tipDue(st, OUT, TIPS, now).id, 'identify');
+  st = tipShown(st, 'identify', now);
+  assert.deepStrictEqual(st.s.identify, [250]);
+  assert.deepStrictEqual(st.v, {t: now, n: 250, tip: 1}); // the visit was open: its answers kept, the time stamped
+  assert.strictEqual(tipDue(st, OUT, TIPS, now + MIN), null); // same visit
+  // The answers that follow, within 30 minutes of each other, are the same visit: no zoom tip after the tip.
+  st = tipNote(st, now + 2 * MIN);
+  assert.strictEqual(st.v.tip, 1);
+  assert.strictEqual(tipDue(st, MISS), null);
+  // A visit later (over 30 minutes), two showings at most, the second 150 questions after the first.
+  let later = tipNote(st, now + TIPR.GAP + 5 * MIN);
+  assert.strictEqual(later.v.tip, 0);
+  assert.strictEqual(tipDue(later, OUT, TIPS, later.v.t + MIN), null); // 251: 150 questions not yet
+  later = played(150, 0, later, later.v.t + MIN);
+  assert.strictEqual(tipDue(later, OUT, TIPS, later.v.t + MIN).id, 'identify');
+  later = tipShown(later, 'identify', later.v.t + MIN);
+  assert.strictEqual(tipDue(played(500, 0, later, later.v.t + TIPR.GAP + MIN), OUT, TIPS, 1e13), null); // never a third time
+  // A visit over when a tip is shown on a page starts the stamp at no answers.
+  const old = tipShown({...tipsInit({u: {q: 300}}), v: {t: t0, n: 40, tip: 0}}, 'identify', t0 + TIPR.GAP + 1);
+  assert.deepStrictEqual(old.v, {t: t0 + TIPR.GAP + 1, n: 0, tip: 1});
+});
+
+test('identify tip: the card speaks the subject’s Identify words and names no subject of its own', () => {
+  const t = TIPS.find(x => x.id === 'identify'),
+    key = {name: 'Coral ID Key', ask: 'Stuck on a coral?', lo: 'Tap the clues.'};
+  assert.strictEqual(t.card.title({key}), 'Stuck on a coral? Try the Coral ID Key');
+  assert.strictEqual(t.card.body({key}), 'Tap the clues. It is under Identify, any time.');
+  assert.doesNotMatch(t.card.title({}) + t.card.body({}), /coral|fish|genus|genera|slug/i);
+  assert.strictEqual(t.act, 'identify');
+  // The words are declared by the one subject whose Identify tool works (rule S1: one place, no test on the subject).
+  const app = require('fs').readFileSync(require('path').join(__dirname, '..', 'app.js'), 'utf8');
+  assert.strictEqual((app.match(/^\s+idtip: \{/gm) || []).length, 1);
 });
 
 // The card speaks the subject on screen: a fish player is never told to look at the corallites. Every subject gets a
