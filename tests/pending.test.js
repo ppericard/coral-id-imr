@@ -148,6 +148,28 @@ test('the prompts a kept question is built with are the planners: planPhoto, pla
   for (const l of lits) assert.ok(rest.includes(l), `a planner no longer writes ${l}`);
 });
 
+test('how a species question showed its names (sciShow draws at random) is kept: a scientific-only question stays so', () => {
+  const w = world(),
+    q = make('which');
+  w.SCIQ = {t: 'A', v: 'so'}; // set by question() just before pendShow
+  const r = w.L.pendRec('quiz', q);
+  assert.strictEqual(r.sv, 'so');
+  assert.strictEqual(w.L.pendBuild('quiz', JSON.parse(JSON.stringify(r))).sv, 'so', 'the display comes back with the question');
+  w.SCIQ = {t: 'A', v: 'sc'};
+  assert.strictEqual(w.L.pendRec('quiz', q).sv, 'sc');
+  w.SCIQ = {t: 'B', v: 'so'}; // another question's
+  assert.strictEqual(w.L.pendRec('quiz', q).sv, null);
+  w.SCIQ = null;
+  assert.strictEqual(w.L.pendRec('quiz', q).sv, null, 'a question with no such display');
+  assert.strictEqual('sv' in w.L.pendBuild('quiz', {...r, sv: null}), false);
+  assert.strictEqual('sv' in w.L.pendBuild('quiz', {...r, sv: '<b>x</b>'}), false, 'only the two displays the game has');
+  // question() shows the display it is given, not a new draw
+  const src = SRC.slice(SRC.indexOf('  SCIQ = !set.typed'), SRC.indexOf('const sub = c =>'));
+  assert.ok(/PENDSCI \|\| sciShow\(target\)/.test(src) && /PENDSCI = null/.test(src), 'question() uses the display it was given');
+  // and both entry points give it before question() is called
+  assert.strictEqual((SRC.match(/PENDSCI = q\.sv \|\| null;\n\s+question\(\.\.\.q\);/g) || []).length, 2);
+});
+
 test('a question with a first-meeting card, or a photo with no file name, is not kept', () => {
   const w = world(),
     q = Object.assign(make('which'), {intro: ['A'], start: false});

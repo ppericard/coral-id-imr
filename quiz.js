@@ -348,7 +348,9 @@ function question(cur, target, choices, prompt, set, kq) {
   // A species asked by its scientific name with choices: how its names show (app.js sciShow, the display schedule), the
   // same for its four choices, logged in the mode (answer: |sc, |so). sub: a choice's small line, the scientific name of
   // a species by its common name, the common name of one by its scientific name while shown.
-  SCIQ = !set.typed && !set.find && kindOf(target) === 'sci' ? {t: target, v: sciShow(target)} : null;
+  // A kept question comes back with the display it was shown with (PENDSCI, q.sv): sciShow draws at random between two.
+  SCIQ = !set.typed && !set.find && kindOf(target) === 'sci' ? {t: target, v: PENDSCI || sciShow(target)} : null;
+  PENDSCI = null;
   const sub = c => (SCIQ ? (SCIQ.v === 'sc' ? (GX(c) || {}).cn || '' : '') : (GX(c) || {}).sci || '');
   let answered = false,
     hintShown = false;
@@ -2071,6 +2073,7 @@ const pendAll = (key = pendKey()) => {
   return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
 };
 let PENDQ = null; // the kept question on screen: {key, cur, el}
+let PENDSCI = null; // the name display ('sc' / 'so', app.js sciShow) the next question is shown with, when it comes back
 // The record of question q of game cur: null when it is not kept (a card's question, a photo with no file name).
 function pendRec(cur, q) {
   const [, t, c, , set, kq] = q;
@@ -2095,7 +2098,9 @@ function pendRec(cur, q) {
     ty: set.typed ? 1 : 0,
     ex: set.exam ? 1 : 0,
     cu: q.custom ? 1 : 0,
-    wm: q.warm ? Number(q.cb) || 1 : 0
+    wm: q.warm ? Number(q.cb) || 1 : 0,
+    // how its names were shown (SCIQ, set by question just before): the choice at random is made once
+    sv: typeof SCIQ !== 'undefined' && SCIQ && SCIQ.t === t ? SCIQ.v : null
   };
 }
 // The question of a record r, built from the current data; null when anything of it is gone or not as expected.
@@ -2152,7 +2157,8 @@ function pendBuild(cur, r) {
     r.kind === 'again' ? {again: 1, pr} : {},
     r.kind === 'look' ? {auto: pr.slice().sort().join('|'), pr} : {},
     r.cu ? {custom: 1} : {},
-    r.wm ? {warm: 1, cb: Number(r.wm) || 1} : {}
+    r.wm ? {warm: 1, cb: Number(r.wm) || 1} : {},
+    r.sv === 'sc' || r.sv === 'so' ? {sv: r.sv} : {}
   );
 }
 // Whether the kept question q of game cur can still be asked: its genus (and its choices) still in play and met, in the
@@ -2364,6 +2370,7 @@ function quizPhoto(cur = 'quiz') {
   SHOWNQ = q;
   AUTOD = !!q.auto;
   FINDX = !!q.findx;
+  PENDSCI = q.sv || null;
   question(...q);
   pendShow(cur, q, kept);
   // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
@@ -2904,6 +2911,7 @@ function quizDuel(a, b, fresh = true, from = '') {
     $v.innerHTML = `<p class="note duelnone">Duels pit two look-alike ${SUBJ.many} against each other. They start once you have met two of them in the quiz.</p><p><a class="next" href="${esc(hr('quiz'))}">Play the quiz</a></p>`;
     return;
   }
+  PENDSCI = q.sv || null;
   question(...q);
   pendShow(q[0], q, kept);
 }

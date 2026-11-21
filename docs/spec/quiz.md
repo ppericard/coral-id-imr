@@ -221,8 +221,9 @@ comeback question, a mastery exam question). One engine (`quiz.js` `PEND`, `pend
 - **Kept** by `quizPhoto` and `quizDuel` when the question shows (`pendShow`), in the device key `reefid-<dev>pending`
   (`{game: record}`, `pendKey`; the corals' `reefid-pending`): never synced, cleared at sign-out and account deletion
   (`sync.js` `signOutClear`, rule D7), at most `PEND.MAX` games. The record holds units, choices, photo files with their
-  view and the format's flags (its kind, the typed, exam, custom and comeback marks, the pair's order): never HTML, a
-  prompt or a photo record. `answer` ends it (`go`: any answer, "I don't know" included), so an answered question is
+  view and the format's flags (its kind, the typed, exam, custom and comeback marks, the pair's order, and for a species
+  asked by its scientific name the names' display, `sv`: `sciShow` draws it at random, so it is drawn once and comes
+  back as it was, never a second look at the common names): never HTML, a prompt or a photo record. `answer` ends it (`go`: any answer, "I don't know" included), so an answered question is
   never kept, reloaded after its feedback or not.
 - **Taken** first thing in `quizPhoto` / `quizDuel` (`pendTake`, before the first-launch question, the surprise and the
   plan): built again from the current data, so the photos are the draw's own records (`pendBuild`: a photo hidden or
