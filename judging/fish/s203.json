@@ -2,7 +2,8 @@
  "photos": {
   "fish-s203-cand-637588984": {
    "code": "p1g2smo2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-732923140": {
    "code": "p0g3bl11",
@@ -14,7 +15,8 @@
   },
   "fish-s203-cand-738734035": {
    "code": "p1g2bl11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-738734065": {
    "code": "p1g2ss11",
@@ -22,7 +24,8 @@
   },
   "fish-s203-cand-592326142": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-526519058": {
    "code": "p1g3bmk1",
@@ -30,15 +33,18 @@
   },
   "fish-s203-cand-655239407": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-453758370": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-744733080": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-446985792": {
    "code": "p1g1ss12",
@@ -46,7 +52,8 @@
   },
   "fish-s203-cand-694470077": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-694470114": {
    "code": "p1g2sm13",
@@ -58,7 +65,8 @@
   },
   "fish-s203-cand-670080897": {
    "code": "d1g1ss11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-670082788": {
    "code": "p1g1ss12",
@@ -70,11 +78,13 @@
   },
   "fish-s203-cand-705117171": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-413779813": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-355203202": {
    "code": "p1g3bm11",
@@ -86,15 +96,18 @@
   },
   "fish-s203-cand-536925296": {
    "code": "p1g2bl11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-536925284": {
    "code": "p1g2sl13",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "terminal"
   },
   "fish-s203-cand-620504053": {
    "code": "p1g2bs11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-622060080": {
    "code": "p1g2sm13",
@@ -110,11 +123,13 @@
   },
   "fish-s203-cand-592129165": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-637568632": {
    "code": "o1g1bs11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-760871432": {
    "code": "o1g1ss11",
@@ -122,7 +137,8 @@
   },
   "fish-s203-cand-760871441": {
    "code": "o1g1ss11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-760871408": {
    "code": "o1g1ss1c1",
@@ -130,19 +146,23 @@
   },
   "fish-s203-cand-600474961": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-595087415": {
    "code": "o1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-450273208": {
    "code": "o1d1sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-738740105": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-738740120": {
    "code": "o1g1ss12",
@@ -150,7 +170,8 @@
   },
   "fish-s203-cand-620504016": {
    "code": "p1g1sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-606251021": {
    "code": "o1g2bmm1",
@@ -166,7 +187,8 @@
   },
   "fish-s203-cand-619349220": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-615720988": {
    "code": "o1g3smk1",
@@ -181,11 +203,13 @@
     0.82,
     0.88
    ],
-   "note": "crop: the dark fish at left leaves the frame (Q430)"
+   "note": "crop: the dark fish at left leaves the frame (Q430)",
+   "phase": "terminal"
   },
   "fish-s203-cand-637568568": {
    "code": "p1g1bs11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s203-cand-434492892": {
    "code": "p1g1ssx1",
@@ -200,7 +224,8 @@
     0.45,
     1.0
    ],
-   "note": "crop: the rabbitfishes and the parrotfish above right leave the frame (Q430)"
+   "note": "crop: the rabbitfishes and the parrotfish above right leave the frame (Q430)",
+   "phase": "terminal"
   },
   "fish-s203-cand-434492886": {
    "code": "p1g1ssx1",
