@@ -2271,12 +2271,14 @@ const pump = () => {
     while (pfLive < 2 && x.urls.length) {
       const i = new Image();
       pfLive++;
-      // Once R2 has failed, a URL queued before goes to its online original or the site straight away.
-      const u = AWAY ? photoAway(x.urls.shift(), photoLook) : x.urls.shift();
-      i.onload = () => (pfLive--, pump());
+      // Once R2 is given up, or this file failed on it already, a URL queued before goes to its online original or the
+      // site straight away.
+      const v = x.urls.shift(),
+        u = AWAY || r2Missed(v) ? photoAway(v, photoLook) : v;
+      i.onload = () => (pfLive--, r2Loaded(u), pump());
       // A preload is no element of the page (app.js photoFail): failed on R2, it is asked from R2 once more after
       // PHOTO_RETRY ms (core.js photoRetry; under a service worker, the worker did), then its online original or its file
-      // on the site (core.js photoAway), and so are the next photos when no service worker controls the page.
+      // on the site (core.js photoAway); with no service worker it counts toward giving R2 up (app.js r2Failed).
       i.onerror = () => {
         pfLive--;
         if (photoLocal(u) !== u) {
@@ -2285,7 +2287,7 @@ const pump = () => {
             x.r2try.add(u);
             return setTimeout(() => (x.urls.unshift(u), PF.includes(x) || PF.push(x), pump()), PHOTO_RETRY);
           }
-          if (!swOn()) r2Out();
+          if (!swOn()) r2Failed(u);
           x.urls.unshift(photoAway(u, photoLook));
         }
         pump();
