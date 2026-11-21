@@ -2533,6 +2533,7 @@ const unitsByParent = (L, rk) => {
   L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
   return [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity));
 };
+let phasesFile = null; // the fish's documented colour phases, once (UNITS fish phases)
 const UNITS = {
   coral: {
     // The custom quiz's groups (quiz.js viewCustom; the other two views are the same for every subject): by, the first
@@ -2851,6 +2852,19 @@ const UNITS = {
     winks: () => (TREEU ? TREEU.winks.filter(n => TREEU.gen[n].views.wide.length) : []),
     // The tile photos of unit n (Find the X, quiz.js planPhoto; unitTiles): fish-game.json's xc.
     tiles: unitTiles,
+    // The colour phases a cited source documents, per species (fish-phases.json, tools/fish_phases_site.py from
+    // tools/fish_phases.json): {species: {id: {name, juv, sex, ip_tp}}}, fetched once, by the Lab's Life stages matched
+    // (proto/lifestages.js), which a subject without this member does not offer. Unversioned and outside the service worker's
+    // shell (as the sea slugs' files): a Lab game's data is not carried by every device's install.
+    // Only a list that came is kept: a failed fetch (json gives {}) is dropped so reopening the game asks again.
+    phases: () =>
+      (phasesFile =
+        phasesFile ||
+        json('fish-phases.json').then(j => {
+          if (j && j.species) return j;
+          phasesFile = null;
+          throw new Error('fish-phases.json');
+        })),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
       `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
