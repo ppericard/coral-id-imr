@@ -236,16 +236,21 @@ async function more(p, S, L) {
       );
       await answered(p, S, `${L} quiz`, 'quiz');
       // typed (forced as tests/pages.smoke.js does): the form, no choices, the same genus
-      await p.evaluate(() => {
+      // (a duel or an Again slipped in is answered and the next drawn: a typed question comes within a few)
+      const got = await p.evaluate(() => {
         Object.assign(TYPED, {from: 0, at: [[0, 1]]});
-        NEXTQ = null;
+        for (let i = 0; i < 40; i++) {
+          NEXTQ = null;
+          quizPhoto();
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          if (SHOWNQ && SHOWNQ[4].typed) return true;
+          smokeAnswer();
+        }
+        return false;
       });
-      await go(p, S, 'genera');
-      await p.evaluate(key => localStorage.setItem(key, '{}'), k);
-      await go(p, S, 'quiz');
       await qa.ready(p);
       const ty = await look(p);
-      if (ok(ty && ty.typed, `${L} typed: a typed question was forced (${JSON.stringify(ty)})`)) {
+      if (ok(got && ty && ty.typed, `${L} typed: a typed question was forced (${JSON.stringify(ty)})`)) {
         const t2 = await keep(p, S, `${L} typed`, 'quiz', 'quiz');
         ok(t2 && t2.typed && !t2.ch.length, `${L} typed: the form and no choices after the reload`);
         await answered(p, S, `${L} typed`, 'quiz');
