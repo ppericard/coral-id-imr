@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // The sea slugs' admin at parity with the fish's: their Candidates (target and genus-level lists), their rubric's tag rows and words (core.js
-// SUBJECTS seaslug admin tags; admin.js tagRows, tagWords, tagText), the f flag kept (autosort.js fishTag), their
+// SUBJECTS seaslug admin tags; admin.js tagRows, tagWords, tagText), the f flag kept (autosort.js treeTag), their
 // sheets' text slots (SUBJECTS seaslug content; core.js contentApply), an edited list keeping its lines' source numbers
 // only where a line is kept (core.js contentPut: rule C2), and their admin pages.
 const test = require('node:test'),
@@ -20,33 +20,33 @@ test('the sea slugs: Candidates, Health and the Tree among their admin pages, th
   ['photos/candidates', 'inbox/todo/health', 'photos/tree/key'].forEach(p => assert.ok(SS.admin.pages.includes(p), p));
   // tools/seaslug_game.py puts the sure photos in play up to photoTarget.gameCap: the Candidates fill up to the same
   assert.strictEqual(SS.admin.target, rd('tools/seaslugs.json').photoTarget.gameCap);
-  assert.ok(!FI.admin.target, 'the fish keep their own targets (autosort.js FISHT)');
+  assert.ok(!FI.admin.target, 'the fish keep their own targets (autosort.js TREET)');
 });
 
-test('fishTarget: a species record marked with its subject target (fishSpecies tgt) takes it, the fish records as before', () => {
+test('treeTarget: a species record marked with its subject target (treeSpeciesOf tgt) takes it, the fish records as before', () => {
   const J = {families: [{id: 'f:A', species: ['s1']}], species: [{id: 's1', cs: 1}, {id: 's2'}]};
-  const S = A.fishSpecies(J, 12);
-  assert.strictEqual(A.fishTarget(S.s1), 12);
-  assert.strictEqual(A.fishTarget(S.s2), 12);
+  const S = A.treeSpeciesOf(J, 12);
+  assert.strictEqual(A.treeTarget(S.s1), 12);
+  assert.strictEqual(A.treeTarget(S.s2), 12);
   assert.ok(!('tgt' in J.species[0]), 'the tree itself is not changed');
-  const F = A.fishSpecies(J);
+  const F = A.treeSpeciesOf(J);
   assert.strictEqual(F.s2, J.species[1], 'no target: the same record');
-  assert.strictEqual(A.fishTarget(F.s1), A.FISHT.top);
+  assert.strictEqual(A.treeTarget(F.s1), A.TREET.top);
   // The queue stops a species at it: 12 observations in play, the 13th candidate is at target.
   const L = [...Array(13)].map((_, i) => ({f: 'seaslug-1-cand-' + i, o: 'o' + i, t: 'X'})),
     cur = {add: Object.fromEntries(L.slice(0, 12).map(p => [p.f, 's1']))},
-    Q = A.fishQueue({s1: L}, {}, S, cur, []);
+    Q = A.treeQueue({s1: L}, {}, S, cur, []);
   assert.strictEqual(Q.length, 1);
   assert.ok(Q[0].full && Q[0].target === 12);
 });
 
-test("fishTag keeps the sea slugs' f flag (features hidden) and toggles it, in the rubric order", () => {
-  assert.strictEqual(A.fishTag('d1g0sl1f', 'w'), 'd1g0sl1wf');
-  assert.strictEqual(A.fishTag('d1g0sl1wf', 'f'), 'd1g0sl1w');
-  assert.strictEqual(A.fishTag('d1g0sl1', 'f'), 'd1g0sl1f');
-  assert.strictEqual(A.fishTag('d1g0sl1jf', 0, 'v'), 'v1g0sl1jf');
+test("treeTag keeps the sea slugs' f flag (features hidden) and toggles it, in the rubric order", () => {
+  assert.strictEqual(A.treeTag('d1g0sl1f', 'w'), 'd1g0sl1wf');
+  assert.strictEqual(A.treeTag('d1g0sl1wf', 'f'), 'd1g0sl1w');
+  assert.strictEqual(A.treeTag('d1g0sl1', 'f'), 'd1g0sl1f');
+  assert.strictEqual(A.treeTag('d1g0sl1jf', 0, 'v'), 'v1g0sl1jf');
   // the fish's flags as before
-  assert.strictEqual(A.fishTag('p1g0sm1jr', 'c'), 'p1g0sm1jcr');
+  assert.strictEqual(A.treeTag('p1g0sm1jr', 'c'), 'p1g0sm1jcr');
 });
 
 // The admin's one reader of a subject's declared rubric (admin.js tagRows, tagFlags, tagWords, tagText), run in a vm.
@@ -107,9 +107,9 @@ test("tagRows, tagFlags and tagText: the sea slugs' rubric on the Tags rows and 
     tagFlags(SS).map(x => x[0]),
     ['j', 'c', 'w', 'f']
   );
-  // every value the rows offer is one the code accepts (autosort.js FISH_TAGS)
+  // every value the rows offer is one the code accepts (autosort.js TREE_TAGS)
   R.forEach(([i, , o]) =>
-    o.forEach(([v]) => assert.ok(A.fishSure({jt: 'p1g0sm1'.slice(0, i) + v + 'p1g0sm1'.slice(i + 1), e: 3, k: 'best'}), v))
+    o.forEach(([v]) => assert.ok(A.treeSure({jt: 'p1g0sm1'.slice(0, i) + v + 'p1g0sm1'.slice(i + 1), e: 3, k: 'best'}), v))
   );
   // words: only what makes a photo harder; a dorsal or oblique sea slug says nothing, the fish's "from above" as before
   assert.strictEqual(fuTags('d1g0sl1', SS), '');
@@ -159,10 +159,10 @@ test('every tree subject declares its whole rubric: the seven positions, the fla
         `${S.id}: flag ${k}`
       );
     assert.ok(tagList(S, 'phase').length >= 2);
-    // every value of the rows is one the game's code accepts (autosort.js FISH_TAGS), as the Tags buttons set it
+    // every value of the rows is one the game's code accepts (autosort.js TREE_TAGS), as the Tags buttons set it
     tagRows(S).forEach(([i, , o]) =>
       o.forEach(([v]) =>
-        assert.ok(A.fishSure({jt: 'p1g0sm1'.slice(0, i) + v + 'p1g0sm1'.slice(i + 1), e: 3, k: 'best'}), `${S.id} ${i}${v}`)
+        assert.ok(A.treeSure({jt: 'p1g0sm1'.slice(0, i) + v + 'p1g0sm1'.slice(i + 1), e: 3, k: 'best'}), `${S.id} ${i}${v}`)
       )
     );
   }
@@ -218,9 +218,9 @@ test("the sea slugs' sheet slots: declared at every rank of their tree, their ID
   assert.strictEqual(SS.structure.pairs.rank, 'genus');
 });
 
-test("fishSure: an egg-mass judgement (the sea slugs' egg rule) is set aside, never added", () => {
-  assert.deepStrictEqual(A.fishSure({egg: 1, n: 'a made-up egg ribbon'}), {keep: 'reject', why: 'egg'});
+test("treeSure: an egg-mass judgement (the sea slugs' egg rule) is set aside, never added", () => {
+  assert.deepStrictEqual(A.treeSure({egg: 1, n: 'a made-up egg ribbon'}), {keep: 'reject', why: 'egg'});
   const L = [{f: 'seaslug-1-cand-1', o: 'o1', t: 'X'}],
-    Q = A.fishQueue({s1: L}, {'seaslug-1-cand-1': {egg: 1}}, A.fishSpecies({species: [{id: 's1'}]}, 12), {}, []);
+    Q = A.treeQueue({s1: L}, {'seaslug-1-cand-1': {egg: 1}}, A.treeSpeciesOf({species: [{id: 's1'}]}, 12), {}, []);
   assert.ok(Q[0].aside, 'shown on demand only, with the set-aside ones');
 });

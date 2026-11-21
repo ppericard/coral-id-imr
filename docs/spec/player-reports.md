@@ -63,7 +63,7 @@ phase and the rubric's tag rows and flags, `fishRows` / `bindFishRows` as on the
 tile only, which on a family page then takes a whole row on a phone and two columns from 600 px), ×, enlarge in place,
 plus Open in Tree. A count of Other species in view (code `m`, several species on one photo; the Count row reads One
 fish, Same species, Other species in view, Unclear, each with its tooltip) or Unclear set on a photo in play also takes
-it out of play in the same Undo step (rule P3: the game never plays such a photo by itself, `autosort.js` `fishSure`,
+it out of play in the same Undo step (rule P3: the game never plays such a photo by itself, `autosort.js` `treeSure`,
 `tools/fish_game.py` `judged_sure`). A fish flag's tile the same, the tools that take the photo out clearing the flag,
 plus Done.
 

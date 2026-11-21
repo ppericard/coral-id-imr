@@ -69,6 +69,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The draw's few easiest before Open Water are counted by observation the draw can show, not by photo](2026-11-21-rare-few-by-observation.md) | #1376 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
+| 2026-11-21 | [The admin's auto-sort of the tree subjects named tree*, not fish*](2026-11-21-tree-names-autosort.md) | #0 |
 | 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |
 | 2026-11-21 | [Rule W27: no fixed number of Codex rounds; a part whose findings keep coming back leaves the PR](2026-11-21-w27-no-round-count.md) | #1355 |
 | 2026-11-20 | [A level opens in a group: at least 4 close units together, no question before](2026-11-20-a-level-opens-in-a-group.md) | #1331 |

@@ -468,7 +468,7 @@ test('the frame names no subject: one renderReview and one renderDiff, their dif
   // no builder's own function or state
   assert.doesNotMatch(
     code,
-    /\b(?:allPhotos|qSeg|fSeg|qTag|rateTile|formTile|polTile|bindQ|bindF|agreeFill|fishSet|fishTag|fishRepTile|bindFishTiles|fishLoad|fishAdmin|diffByAnswers|photoStats|photoAnswers|QUAL|FORM_ORDER|FREV)\b/
+    /\b(?:allPhotos|qSeg|fSeg|qTag|rateTile|formTile|polTile|bindQ|bindF|agreeFill|treePhotoSet|treeTag|fishRepTile|bindFishTiles|fishLoad|fishAdmin|diffByAnswers|photoStats|photoAnswers|QUAL|FORM_ORDER|FREV)\b/
   );
   SUBJECTS.forEach(S => assert.doesNotMatch(code, new RegExp(`'${S.id}'`), S.id));
   // the dispatch asks the frame, the frame asks the shape and hasPage the builder; the old pages and their state are gone

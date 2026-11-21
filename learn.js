@@ -742,7 +742,7 @@ const MONT_V = {
 // The admin can hide a comparison until good examples exist (curation.json "mont" {"A|B": {hide: true}}, admin
 // Montages), and pick "all" as the view to pair photos of nearby zoom levels.
 // A subject with one view (SUBJECTS views: the fish, the sea slugs) has no view to pick: its entry's v is a phase, as the
-// admin's Photos › Look-alikes writes it (autosort.js fishMontPick): adult (every photo not of a juvenile; the default),
+// admin's Photos › Look-alikes writes it (autosort.js treeMontPick): adult (every photo not of a juvenile; the default),
 // juvenile or all; and it shows one photo a side, the admin's pick (a, b: photo files) or the first of the phase.
 // Where the picks live: curation.json "mont" for the corals, the subject's own part for the others (core.js montOf).
 const montPhase = (L, v) => (v === 'all' ? L : L.filter(p => juvP(p) === (v === 'juvenile')));
@@ -1003,7 +1003,7 @@ const treeSpPhotos = () => {
   Object.values((TREEU && TREEU.gen) || {}).forEach(g => ((g.views || {}).wide || []).forEach(add));
   Object.values((TREEU && TREEU.sheet) || {}).forEach(L => (L || []).forEach(add));
   Object.keys(by).forEach(k => (by[k] = easyRank(by[k])));
-  // The admin's featured photos of a species first, in his order (app.js treeCurate featP; autosort.js fishOrder), then
+  // The admin's featured photos of a species first, in his order (app.js treeCurate featP; autosort.js treeOrder), then
   // the others in the game's order.
   Object.values((TREEU && TREEU.gen) || {}).forEach(g =>
     Object.entries(g.featP || {}).forEach(([sid, F]) => {

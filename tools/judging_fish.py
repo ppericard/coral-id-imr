@@ -6,7 +6,7 @@ One fish judging vocabulary (Pierre, 2026-11-04): a candidate is judged on the s
 juvenile, camouflage and out-of-water flags, ease 1-5), plus what only a candidate needs: keep (best / alt / dup within
 its observation), the IMR phase when the photo shows one, a suggested crop. **Visual criteria only**: the species is the
 iNaturalist identification by human experts (Research Grade, or Pierre's own), taken as given; the pass never says
-whether a photo shows the right species. Its sure decisions (autosort.js fishSure) go through the admin's auto-sort once
+whether a photo shows the right species. Its sure decisions (autosort.js treeSure) go through the admin's auto-sort once
 the fish curation exists (admin plan PR 4); nothing here writes curation.json.
 
     python3 tools/judging_fish.py sheets [id ...]   download the photos (judging/fish/img/, not in git) and build contact
@@ -43,7 +43,7 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    (#970's filter 2): {"egg": true} and no code excludes an egg-mass photo
 
 judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, bb, unsure, note}}}; data/suggest.json "fish"
-{photo: {jt, e, k, ph, c, bb, u, n}} (autosort.js fishSure reads it): jt the tags and e the ease after the rubric's caps
+{photo: {jt, e, k, ph, c, bb, u, n}} (autosort.js treeSure reads it): jt the tags and e the ease after the rubric's caps
 (tools/fish_judge.py cap, the same as the game photos' jt and e in fish-photos.json), c the proposed crop, bb the fish's
 box (judging/FISH.md "The fish's box": every photo whose code passes the tile rule; tools/fish_game.py cuts its tile); "by" {species: {fish: {by, at, n}}}. Re-importing a species replaces its candidates' entries; the rest is kept.
 """
@@ -361,7 +361,7 @@ def check(sid):
 
 
 def entry(sid, x, rep=None):
-    """A judging file's record -> data/suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
+    """A judging file's record -> data/suggest.json "fish" (autosort.js treeSure): the tags and ease after the rubric's caps
     (tools/fish_judge.py cap: the phase flag for a dimorph entry, and the reference flag r, which leaves the ease as
     judged, for a candidate whose data/fish-cand.json record carries `rep`; a juvenile caps nothing). A sea slug's: its
     rubric's caps (no entry: no phase), keep best when the judgement names none, and an egg-mass

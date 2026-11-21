@@ -11,7 +11,7 @@
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP: a juvenile is never a cover), but the admin's ★ Cover on one he confirmed (cj: app.js
   // treeCurate). Never a photo tagged with a visible watermark or text (its judged flag w: Home skips them, the games
-  // keep them), a ★ Cover included, even one kept as a cover in the admin (autosort.js fishCoverW: the Keep holds the
+  // keep them), a ★ Cover included, even one kept as a cover in the admin (autosort.js treeCoverW: the Keep holds the
   // cover elsewhere, never on Home): homeOk.
   const homeOk = p => !!p && !/w/.test(String(p.jt || '').slice(7));
   const landOk = p => homeOk(p) && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);

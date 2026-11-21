@@ -60,10 +60,10 @@ const glue = (ctx = {}) => {
       addEventListener: t => calls.push('listen:' + t),
       Image: function () {},
       // the tree builder's helpers (admin-fish.js, autosort.js, admin.js)
-      FISHT: {obs: 8, top: 12, cap: 20, wink: 5},
+      TREET: {obs: 8, top: 12, cap: 20, wink: 5},
       candSpecies: () => ({}),
-      fishQueue: () => c.ROWS,
-      fishGameIn: () => [],
+      treeQueue: () => c.ROWS,
+      treeGameIn: () => [],
       fishLoad: arg => (calls.push('load:' + arg), Promise.resolve()),
       ROWS: [],
       ...ctx
@@ -343,7 +343,7 @@ test('the frame names no subject: one renderCand, its subject differences only i
   assert.doesNotMatch(code, /\.rank\s*===\s*'|\.sheets\b|\.admin\.cur\b|\bFISHS\b|\bFISHC\b|\bDATA\b|\.flat\b|\bTK\b/);
   assert.doesNotMatch(
     code,
-    /\b(?:candQueue|fishQueue|autoBlock|fishAutoBlock|retestNext|renderRetest|renderRepl|cellFull|capOf|capViews|qSeg|fSeg|fishRows|fishName|CSRC|CREPL|CDONE|FTAGS_OPEN|FQ)\b/
+    /\b(?:candQueue|treeQueue|autoBlock|fishAutoBlock|retestNext|renderRetest|renderRepl|cellFull|capOf|capViews|qSeg|fSeg|fishRows|fishName|CSRC|CREPL|CDONE|FTAGS_OPEN|FQ)\b/
   );
   SUBJECTS.forEach(S => assert.doesNotMatch(code, new RegExp(`'${S.id}'`), S.id));
   // the dispatch asks the frame, the frame asks the shape; the two pages and their state are gone

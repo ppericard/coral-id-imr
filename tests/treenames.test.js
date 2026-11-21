@@ -140,3 +140,110 @@ test('the flat subject is a capability (SUBJECTS flat), never a pool file compar
     .filter(f => /files\[0\]\s*===?\s*['"]data\.json['"]/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')));
   assert.deepStrictEqual(bad, [], 'the engine asks SUBJECTS flat, never a pool file by its name');
 });
+
+// The admin's auto-sort of the tree subjects' candidates (autosort.js): retired everywhere but core.js and its copy in
+// the sheet script (their comments cite them until core.js's next change, rule D3) and the files with a function of their
+// own under the old name (AUTOSORT_OWN). The fish's winks keep theirs (fishWinkFold).
+const AUTOSORT = {
+  FISHCOV_TODO: 'TREECOV_TODO',
+  FISHEASY: 'TREEEASY',
+  FISHFEAT: 'TREEFEAT',
+  FISHK: 'TREEK',
+  FISHT: 'TREET',
+  FISHW: 'TREEW',
+  FISH_TAGS: 'TREE_TAGS',
+  fishAdd: 'treeAdd',
+  fishAgree: 'treeAgree',
+  fishAt: 'treePhotoAt',
+  fishCandTodo: 'treeCandTodo',
+  fishCompare: 'treeCompare',
+  fishCopy: 'treeCopy',
+  fishCov: 'treeCov',
+  fishCovTodo: 'treeCovTodo',
+  fishCover: 'treeCover',
+  fishCoverJ: 'treeCoverJ',
+  fishCoverJOk: 'treeCoverJOk',
+  fishCoverOf: 'treeCoverOf',
+  fishCoverRule: 'treeCoverRule',
+  fishCoverW: 'treeCoverW',
+  fishCoverWOk: 'treeCoverWOk',
+  fishCoverYes: 'treeCoverYes',
+  fishDrop: 'treeDrop',
+  fishEase: 'treeEase',
+  fishExclude: 'treeExclude',
+  fishFeat: 'treeFeat',
+  fishGameIn: 'treeGameIn',
+  fishIdx: 'treeIdx',
+  fishJuv: 'treeJuv',
+  fishLeafCover: 'treeLeafCover',
+  fishLook: 'treeLook',
+  fishMarked: 'treeMarked',
+  fishMine: 'treeKeepOf',
+  fishMontPick: 'treeMontPick',
+  fishMontSet: 'treeMontSet',
+  fishNear: 'treeNear',
+  fishNeeds: 'treeNeeds',
+  fishNotThis: 'treeNotThis',
+  fishOk: 'treeOk',
+  fishOrder: 'treeOrder',
+  fishOwn: 'treeOwn',
+  fishPairs: 'treePairs',
+  fishParse: 'treeParse',
+  fishPhase: 'treePhase',
+  fishPick: 'treePick',
+  fishPlay: 'treePlay',
+  fishQueue: 'treeQueue',
+  fishRec: 'treePhotoRec',
+  fishReject: 'treeReject',
+  fishRun: 'treeRun',
+  fishSeenFrom: 'treeSeenFrom',
+  fishSeenOf: 'treeSeenOf',
+  fishSet: 'treePhotoSet',
+  fishSigs: 'treeSigs',
+  fishSpecies: 'treeSpeciesOf',
+  fishStamp: 'treeStamp',
+  fishState: 'treeStateOf',
+  fishSure: 'treeSure',
+  fishTag: 'treeTag',
+  fishTagsAuto: 'treeTagsAuto',
+  fishTagsMine: 'treeTagsMine',
+  fishTarget: 'treeTarget',
+  fishUndo: 'treeUndo',
+  fishUnitPhases: 'treeUnitPhases',
+  fishUnits: 'treeUnitsOf',
+  fishUnsure: 'treeUnsure',
+  fishWaiting: 'treeWaiting',
+  fishWm: 'treeWm'
+};
+// The files that name another function under one of those names: learn.js's sheet helpers (until their own rename),
+// admin.js's photo words (fishState) and the comment of the admin smoke that tells the two apart, tools/ratedworld.js's
+// fish units, and the tests of each.
+const AUTOSORT_OWN = {
+  'learn.js': ['fishMine', 'fishSpecies'],
+  'admin.js': ['fishState'],
+  'tests/admin.smoke.js': ['fishState'],
+  'tools/ratedworld.js': ['fishUnits'],
+  'tests/ratedworld.test.js': ['fishUnits'],
+  'tests/opengroup.test.js': ['fishUnits'],
+  'tests/familiesfirst.test.js': ['fishUnits'],
+  'tests/sheetparts.test.js': ['fishSpecies'],
+  'tests/speciesmarks.test.js': ['fishSpecies'],
+  'tests/genusmarks.test.js': ['fishSpecies'],
+  'tests/fishjuv.test.js': ['fishSpecies'],
+  'tests/roots.test.js': ['fishSpecies'],
+  'tests/subject-neutral-admin.test.js': ['fishState', 'fishMine', 'fishSpecies']
+};
+
+test('the auto-sort keeps its tree* names: no retired fish* name of autosort.js comes back', () => {
+  const bad = [];
+  for (const f of files) {
+    if (f === 'tests/treenames.test.js' || f === 'core.js' || f === 'tools/sync/Code.gs') continue;
+    const L = lines(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    for (const n of Object.keys(AUTOSORT))
+      if (!(AUTOSORT_OWN[f] || []).includes(n) && L.some(l => word(n).test(l))) bad.push(`${f}: ${n} (now ${AUTOSORT[n]})`);
+  }
+  assert.deepStrictEqual(bad, [], 'a retired fish* name of the auto-sort is back: use its tree* name');
+  const as = fs.readFileSync(path.join(ROOT, 'autosort.js'), 'utf8');
+  for (const n of Object.values(AUTOSORT)) assert.ok(word(n).test(as), `autosort.js declares ${n}`);
+  assert.strictEqual(typeof require('../autosort.js').fishWinkFold, 'function', 'autosort.js keeps fishWinkFold');
+});

@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // The builds' generic tree section (tools/tree_section.py: data/<subject id>-tree.json; docs/ROADMAP.md "The Tree tab"; Pierre,
 // 2026-11-13, Q339-Q341: each subject builds its own tree from its own references). The Python build is held to the shared
-// JS functions on the real data (autosort.js fishUnits, taxtree.js ttFromRef, ttBuild), the files to their sources (a section
+// JS functions on the real data (autosort.js treeUnitsOf, taxtree.js ttFromRef, ttBuild), the files to their sources (a section
 // out of date fails here: run `python3 tools/tree_section.py`), and the admin's reader (admin.js fuTreeOf, fuWormsOf) is run on
 // made-up sections: the units' records and the IMR tag laid back on the nodes, the genus-level leaves added from the photos.
 const test = require('node:test'),
@@ -16,7 +16,7 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
   {SUBJECTS} = require('../core.js'),
-  {fishUnits} = require('../autosort.js'),
+  {treeUnitsOf} = require('../autosort.js'),
   {ttBuild, ttFromRef, ttSection} = require('../taxtree.js'),
   PY = path.join(ROOT, 'tools/tree_section.py'),
   TREE_SUBJECTS = SUBJECTS.filter(S => !S.flat);
@@ -49,7 +49,7 @@ test('a section out of date with its sources is found: the check bites', () => {
 // The units as admin.js fishLoad lays them out (the taxonomic group a tree puts a family in when the key has none).
 const unitsOf = F => {
   const tg = Object.fromEntries((F.families || []).filter(f => f.tgroup != null).map(f => [f.id, f.tgroup]));
-  return fishUnits(F)
+  return treeUnitsOf(F)
     .map(u => (u.group == null && u.id in tg ? {...u, group: tg[u.id]} : u))
     .sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group));
 };

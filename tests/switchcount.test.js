@@ -15,11 +15,11 @@ test('the switch counts To do items only: flags and open reports, never the auto
   const ctx = {
     DRAFT: {fish: {flag: {a: 1, b: 1}, pick: {}}},
     repsOpen: () => [1, 2, 3],
-    fishIdx: () => {
+    treeIdx: () => {
       checksRead++;
       return {x: {d: {check: 1}}, y: {d: {check: 1}}};
     },
-    fishMine: () => false
+    treeKeepOf: () => false
   };
   vm.createContext(ctx);
   vm.runInContext(code + '\nthis.subjTodo = subjTodo;', ctx);
