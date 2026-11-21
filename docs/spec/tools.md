@@ -384,7 +384,8 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     look-alike (`isDataLook`, `dataLooks`: duels, sheets) from the start, until the pooled answers bring its score under
     `CONF.TRAP`. `lsrc` holds each one's sources `[{t, u}]`, said on the sheets (`learn.js` `treeGenusLooks`,
     `treeGenusLookCard`: a genus's page, or the family's or the species' sheet it opens, `treeGenusLooksOn`). A pair
-    inside one family adds nothing (the siblings already are look-alikes); the species pairs wait for the species level.
+    inside one family adds nothing (the siblings already are look-alikes); a species pair is never taken from the candidates: only the decided ones of `tools/seaslug_source.json`
+    `lookalikes` reach `seaslug.json` (species `look`, the species units' declared look-alikes, `core.js` `treeSpUnits`).
     A species judged later enters at the next build.
   - **The sea slugs without a species name**: a species of `tools/seaslug_informal.json` (*Goniobranchus* sp. 5 of Soong
     et al. 2020) joins the tree as a species of its genus when its label passes the presence rule beside C8
@@ -470,8 +471,8 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   `species_apply`: the same for `seaslug_species_marks.json` onto the species ([seaslugs.md](seaslugs.md)).
 - **`seaslug_lookalikes.py`, `seaslug_lookalikes_source.json`** → `seaslug_lookalikes_cand.json`: the look-alike
   candidates ([survey](../reviews/2026-11-17-seaslug-lookalikes-survey.md)); the app does not read the file:
-  `seaslug_game.py` `genus_looks` takes its genus pairs into `seaslug.json`, the species pairs wait for the species
-  level, and the decided pair stays in `tools/seaslugs.json` `lookalikes`. It gathers iNaturalist's similar species for
+  `seaslug_game.py` `genus_looks` takes its genus pairs into `seaslug.json`; its species pairs stay candidates, and the
+  decided species pairs come from `tools/seaslugs.json` `lookalikes` (species `look`). It gathers iNaturalist's similar species for
   each species and genus of `seaslug.json`, in the Philippines and worldwide, with their observations (`--pull`,
   ~1 request/s through `tools/inat.py`), the references WoRMS cites, the comparing sentences of English Wikipedia and of
   GBIF's descriptions, and the hand-kept literature sets (Sea Slug Forum, Nudi Pixel, papers; each with its source and
