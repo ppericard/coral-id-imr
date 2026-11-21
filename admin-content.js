@@ -88,9 +88,9 @@
     );
     return rows;
   }
-  // Whether node id of fish file R has a sheet of its own in the app (core.js treeSheets go, learn.js viewFishSheet): a family
+  // Whether node id of fish file R has a sheet of its own in the app (core.js treeSheets go, learn.js viewTreeSheet): a family
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
-  // viewFishSheet sends to the families list (the whale and thresher sharks' species). A subject with
+  // viewTreeSheet sends to the families list (the whale and thresher sharks' species). A subject with
   // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
   // viewGenus; design note v2, step 8): every node its slots reach. A subject whose game units are its genera (SUBJECTS
   // unitRank genus: the sea slugs) has every genus, one the app opens as its family or its one species included: each is a

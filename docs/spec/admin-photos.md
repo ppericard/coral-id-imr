@@ -77,7 +77,11 @@ slugs' the `tree` builder's, in `admin-fish.js`:
   decisions", Undo), one implementation that both decides and shows the agreement, and no PR that changes
   `curation.json` (rule A1); nothing reaches the site before his Publish. A value Pierre already gave (rating, form,
   crop) is never replaced; a photo he decided (added, rejected, excluded, sent elsewhere) or that is already logged is
-  never touched. The whole run at load is one Undo step. Its toast (a background toast) waits behind the result of his own
+  never touched. The whole run at load is one Undo step, when it lands before Pierre's first action of the visit (the
+  startup import of the site's flags is not one). A run that lands after his clicks is laid onto every Undo and Redo step
+  instead, photo by photo, never over a step's own decision on a photo (`saveRun`, `layRun`): Undo and Redo then move
+  his clicks only, and its decisions are taken back one by one in
+  Auto (decision record 2026-11-21-undo-background-run). Its toast (a background toast) waits behind the result of his own
   action, such as "Published", for 4 s (`toast`).
 - **Sure rule** (`autoSure`, from the pass's fields, no `unsure` at all): best of its observation in its view, Fair or
   Good, view and form given → added to that view (`cellView`, only the views `capViews` allows) with quality, form and
@@ -243,6 +247,15 @@ corals' ≥1 / ≥3 / ≥10 answers; each photo a family-page tile (`fishRepTile
 on Health; the first 48 shown (the tree builder's `max`), the rest counted; its own ? (`fishdiff`, no photo-difficulty
 note).
 
+**The prior beside the answers** (REE-62, plan PR 9; every subject): each tile also shows the photo's prior, the
+difficulty the app starts it at before any answer, read as "recognised by N%" (`recBadge`) from the same formula as
+`model.js` `photoDiff` (`autosort.js` `photoPrior`: the unit's offset `gd` + (3 − ease) × `calibOf(S).ease`, `PRIOR_MID` =
+`PDIFF.MID`, tested in `tests/priordiff.test.js`). A tree subject (fish, sea slugs): its judged ease in force (the admin's,
+else the judging pass's) and its family's offset from the subject's own ratings (`?stats=1&s=`, `loadOwnStats`, read once
+behind the page: the tile draws first, the prior follows; with the ratings unread or the script too old, the ease alone, and
+the title says "unit offset not read"), on its own line under the answers (`treePrior`, `priorHnum`). The corals: the genus's
+offset alone (their photos have no judged ease; `genusPrior`), "prior" beside the learned reading.
+
 ### The fish views: Ease and Phase & framing
 
 The tree builder's axes (`REVIEW_BUILD` `tree`; the `GROUPS` view option `axis`): Ease `#fish/photos/review/ease` and
@@ -348,8 +361,19 @@ there, marked "(added)" as in the Tree's Look-alikes filter; the circles leave e
 source, none on an added pair), a phase switch (Adult = every photo not of a juvenile, Juvenile, All: `fishMontPick`),
 Auto / Manual and Shown / Hidden as the coral pairs, the two photos and a strip of each family's photos in play; picks in
 `curation.json` `fish` `mont` `{pair: {v, a, b, hide}}` (`fishMontSet`), the pair key `core.js` `contentPairKey` (an
-added pair's picks stored as a base pair's; a withdrawn pair's kept, unused, back with the pair). Species pairs are not
-built yet.
+added pair's picks stored as a base pair's; a withdrawn pair's kept, unused, back with the pair).
+
+**Species pairs** (REE-46, plan PR 10), read only, under the families' pairs on the same page (`speciesPairsHtml`): the pairs
+between two species that the data declares (`fish.json` `lookalikes`, hand-kept in `tools/fish_lookalikes.json` with a quote
+for every statement, rule C2; `autosort.js` `speciesPairs`). Per pair: the two species (common name, scientific name) and
+their families, which resembles which and at which stage (juvenile or all), the sources that state it (links), what tells the
+two apart on a photo (our words, each with its sources; one with none shows "no source"), the players' confusion of the two
+(`speciesPairConf`: the pooled [offered together, mixed up] of `confusionOf` over the two species' own units, `cn` and `sci`,
+read behind the page from the answer log, the same counts as Pairs; "needs the token" when the answers are admin-only) and a
+strip of each species' photos in play, the stage that resembles first, which enlarge. Adding, withdrawing or editing a
+species pair is not built: the file is hand-kept (a new pair needs its sources and a quote), and a pair proposed from the
+players' confusions alone would need Pierre's rule for it (ROADMAP "Fish look-alikes at any rank"). Tested in
+`tests/speciespairs.test.js` and the admin smoke's Structure block.
 
 ## Photo stats
 

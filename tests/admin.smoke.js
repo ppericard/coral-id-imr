@@ -123,6 +123,36 @@ const toastLog = p =>
     mo.observe(document.body, {childList: true});
   });
 const toastsOf = p => p.evaluate(() => window.__toasts || []);
+// A page settled: no demo call in flight (admin-demo.js DEMO_PENDING, which must exist and be 0: a page whose demo is not
+// loaded yet is not settled) and no "Loading…" on the view, for three frames in a row (as settle() below), then `tail` ms;
+// else a failure, "<label>: never settled" (20 s). One sample of DEMO_PENDING === 0 is not enough: a write's answer and the
+// read it starts are two demo calls with a gap between them, and a click's answer is read by the page a task after the
+// call ends, so a single sample can land in the gap and read the page before the write was drawn (REE-183, REE-184: seen
+// under CPU throttling, never yet on CI). groups: also no Groups write on its way (admin.js rPend, given back once the
+// players read after the write is in and drawn); held: a write the test holds on purpose is not waited for (with groups);
+// draft: also the admin's draft is loaded (DRAFT.genera).
+const calmed = (q, fails, label, {tail = 300, groups = false, held = false, draft = false} = {}) =>
+  q
+    .evaluate(() => (window.__calm = 0))
+    .then(() =>
+      q.waitForFunction(
+        ({groups, held, draft}) => {
+          const v = document.getElementById('view'),
+            busy =
+              window.DEMO_PENDING !== 0 ||
+              !v ||
+              /^\s*Loading/.test(v.innerText) ||
+              (draft && !(typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera)) ||
+              (groups && !held && (typeof rPend === 'undefined' || rPend !== null));
+          window.__calm = busy ? 0 : (window.__calm || 0) + 1;
+          return window.__calm >= 3;
+        },
+        {groups, held, draft},
+        {timeout: 20000, polling: 'raf'}
+      )
+    )
+    .then(() => q.waitForTimeout(tail))
+    .catch(async () => fails.push(`${typeof label === 'function' ? await label() : label}: never settled`));
 // Sign out on a shared device (model B of the seal, Pierre, 2026-11-18; admin-draft.js): two admin tabs of one token (the
 // demo's) in one browser, with the real IndexedDB. A rates a photo, B takes it in at once and rates another, A takes that
 // in. B then stops hearing the other tabs (a frozen tab) and A signs out: the store keeps no plain draft and no base, only
@@ -4531,13 +4561,7 @@ async function lazyPart(b, base, fails) {
           q.on('dialog', d =>
             d.type() === 'prompt' ? d.accept('RA Test 2026') : (fails.push(`${w}px cohorts: a ${d.type()} dialog`), d.dismiss())
           );
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(300))
-              .catch(() => fails.push(`${w}px cohorts: never settled`));
+          const calm = () => calmed(q, fails, `${w}px cohorts`);
           const bar = async () => {
             if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
             return q.evaluate(() => {
@@ -4598,13 +4622,7 @@ async function lazyPart(b, base, fails) {
                 ? d.accept()
                 : d.dismiss();
           });
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(300))
-              .catch(() => fails.push(`${w}px groups: never settled`));
+          const calm = () => calmed(q, fails, `${w}px groups`, {groups: true});
           const bar = async () => {
             if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
             return q.evaluate(() => {
@@ -4719,13 +4737,7 @@ async function lazyPart(b, base, fails) {
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px stats exclusion page error: ${e.message}`));
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(300))
-              .catch(() => fails.push(`${w}px stats exclusion: never settled`));
+          const calm = () => calmed(q, fails, `${w}px stats exclusion`);
           const st = () =>
             q.evaluate(() => {
               const row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Ben Demo'),
@@ -4772,13 +4784,7 @@ async function lazyPart(b, base, fails) {
         {
           const q = await p.context().newPage();
           q.on('pageerror', e => fails.push(`${w}px two subjects page error: ${e.message}`));
-          const calm = () =>
-            q
-              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-                timeout: 20000
-              })
-              .then(() => q.waitForTimeout(800))
-              .catch(() => fails.push(`${w}px two subjects: never settled`));
+          const calm = () => calmed(q, fails, `${w}px two subjects`, {tail: 800});
           await q.goto(base + 'admin.html?demo&v=81#players/list');
           await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
           await calm();
@@ -4909,19 +4915,7 @@ async function lazyPart(b, base, fails) {
           const calls = () => q.evaluate(() => window.DEMO_CALLS.map(c => ({...c})));
           const count = L => L.reduce((o, c) => ((o[c.k] = (o[c.k] || 0) + 1), o), {});
           const quiet = () =>
-            q
-              .waitForFunction(
-                () =>
-                  window.DEMO_PENDING === 0 &&
-                  typeof DRAFT !== 'undefined' &&
-                  DRAFT &&
-                  DRAFT.genera &&
-                  !/^\s*Loading/.test(document.getElementById('view').innerText),
-                null,
-                {timeout: 20000}
-              )
-              .then(() => q.waitForTimeout(1500))
-              .catch(async () => fails.push(`sheet reads: ${await q.evaluate(() => location.hash)} never settled`));
+            calmed(q, fails, async () => `sheet reads: ${await q.evaluate(() => location.hash)}`, {tail: 1500, draft: true});
           await q.goto(base + 'admin.html?demo#inbox/todo/all');
           await quiet();
           const n = count(await calls());
@@ -5249,28 +5243,9 @@ async function lazyPart(b, base, fails) {
           said.push(d.type() + ': ' + d.message());
           return d.type() === 'confirm' && !/^Give Carla Demo/.test(d.message()) ? d.accept() : d.dismiss();
         });
-        // Settled: no demo call in flight, no "Loading…", and no Groups write on its way (admin.js rPend, given back once
-        // the players read after the write is in and drawn), for three frames in a row, then 300 ms. A write's answer and
-        // the players read it starts are two demo calls with a gap between them: one sample of DEMO_PENDING could land in
-        // it and read the page before the read drew the answer (REE-183: "saved in part" with no note, on a slow runner).
+        // Settled (calmed, above, with the Groups write too; REE-183: "saved in part" with no note, on a slow runner).
         // held: a write the test holds on purpose (its fetch not yet made) is not waited for.
-        const calm = (held = false) =>
-          q
-            .evaluate(() => (window.__calm = 0))
-            .then(() =>
-              q.waitForFunction(
-                held => {
-                  const busy =
-                    window.DEMO_PENDING > 0 || /^\s*Loading/.test(document.getElementById('view').innerText) || (!held && rPend !== null);
-                  window.__calm = busy ? 0 : (window.__calm || 0) + 1;
-                  return window.__calm >= 3;
-                },
-                held,
-                {timeout: 20000, polling: 'raf'}
-              )
-            )
-            .then(() => q.waitForTimeout(300))
-            .catch(() => fails.push(`${w}px rights groups: never settled`));
+        const calm = (held = false) => calmed(q, fails, `${w}px rights groups`, {groups: true, held});
         const page = () =>
           q.evaluate(() => ({
             cards: [...document.querySelectorAll('.adm-gcard')].map(c => ({
@@ -8271,13 +8246,20 @@ async function lazyPart(b, base, fails) {
                 first: T.length ? T[0].dataset.f : '',
                 n: T.length,
                 cap: me ? (me.querySelector('.adm-hnum') || {}).textContent || '' : '',
+                prior: me ? (me.querySelector('.adm-hprior') || {}).textContent || '' : '',
                 not: !!(me && me.querySelector('[data-fu="not"]')),
                 removed: T.filter(e => seen.includes(e.dataset.f)).length,
                 rec: /recognised by/.test(document.getElementById('view').textContent),
                 wide: document.documentElement.scrollWidth - innerWidth
               };
             }, pre.f);
+          // The prior beside the answers (REE-62): read behind the page (the subject's own ratings), then on every tile that has
+          // a judged ease or its family's offset: "prior 61% · ease 4", its own line under the answers.
+          await fq
+            .waitForFunction(() => document.querySelector('.adm-fdiffg .adm-hprior'), null, {timeout: 20000})
+            .catch(() => fe.push('By difficulty: no prior drawn'));
           const d0 = await dv();
+          if (!/^prior \d+%( · ease [1-5])?$/.test(d0.prior)) fe.push(`By difficulty, the prior ${JSON.stringify(d0.prior)}`);
           if (
             d0.views.slice(0, 3).join() !== 'ease,phase-framing,by-difficulty' ||
             d0.first !== pre.f ||
@@ -9634,6 +9616,27 @@ async function lazyPart(b, base, fails) {
         const head = await sq.evaluate(s => (document.querySelector(s + ' .adm-mhead b') || {}).textContent || '', mrow(KA));
         if (mr.length !== n0 + 1 || !/ \(added\)$/.test(head) || mr.filter(t => /\(added\)/.test(t)).length !== 1)
           se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, head})}`);
+        // Species pairs (REE-46), read only under the families': every pair fish.json declares, with the sources that state it,
+        // every cue sourced, the players' confusion line (read behind the page) and the photo strips, which enlarge.
+        await swait(() =>
+          /^Players’ confusion: (mixed|never|needs)/.test((document.querySelector('#view .adm-spair .adm-spconf') || {}).textContent || '')
+        );
+        const spp = await sq.evaluate(() => ({
+          n: document.querySelectorAll('#view .adm-spairs .adm-spair').length,
+          want: speciesPairs(FISHC.raw).length,
+          says: [...document.querySelectorAll('#view .adm-spair .adm-says')].every(e => e.querySelector('a')),
+          unsourced: document.querySelectorAll('#view .adm-spair .adm-marks .warnc').length,
+          marks: document.querySelectorAll('#view .adm-spair .adm-marks li').length,
+          thumbs: document.querySelectorAll('#view .adm-spair [data-spz]').length,
+          rows: document.querySelectorAll('#view .adm-fishmont .adm-spair').length
+        }));
+        if (!spp.want || spp.n !== spp.want || !spp.says || spp.unsourced || !spp.marks || spp.rows)
+          se.push(`Species pairs ${JSON.stringify(spp)}`);
+        if (spp.thumbs) {
+          await sq.click('#view .adm-spair [data-spz]');
+          if (!(await sq.$('#lightbox:not([hidden]) .lb-cap'))) se.push('Species pairs: a photo does not enlarge');
+          await sq.evaluate(() => document.querySelector('#lightbox [data-x]') && document.querySelector('#lightbox [data-x]').click());
+        }
         const fa = await pickIn(KA, 'a');
         x = await mont(KA);
         if (fa && (!x || x.a !== fa || KA !== (await sq.evaluate(([a, b]) => contentPairKey(b, a), [FAM, ids.add]))))
