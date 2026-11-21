@@ -18,7 +18,9 @@ adapted to each subject). What differs between subjects is its **builder**, decl
 its rank or its name (rule S1; `tests/treebuild.test.js`): `flat`, a subject whose units are a flat list in `data.json`
 (the corals: `admin-coraltree.js` `ctTree`, `ctRow`, `ctFilters`, its genus pages' photos `admin-nodephotos.js`
 `coralLive`), and `tree`, a subject read from its files (the fish and the sea slugs: `fuTreeOf`, `fuWormsOf`, `fuRow`,
-`fuFilters`, its node pages' photos). A builder gives its help, whether its data is in and how to read it, a view's tree,
+`fuFilters`, its node pages' photos). The trees themselves are never built in the admin: each subject's build writes
+them ("The tree section", below) and every builder reads that file the same way. A builder gives its help, whether its
+data is in and how to read it, a view's tree,
 and one render's context: the Key's tree and the view's, the rows, the Tag… options, All | IMR (when the IMR course tags
 some node), the content editor's data, and the node's own page (its cover, name, tools, why, body and binder) or none for
 a page of its children's cards. The page draws the rest the same for every subject: the tree at the left, the bar (the
@@ -47,9 +49,9 @@ child, ← folds then goes to the parent, Home / End, `*` unfolds the siblings, 
 
 ### The WoRMS view
 
-`fuWormsOf`: the reference taxonomy as a tree, from `fish.json` `ref` (WoRMS AphiaIDs, each `{name, rank, parent}`,
-`tools/build_fish.py`) above the Key's own leaves (the species in the game, in the Key's order), with `taxtree.js`
-`ttFromRef`: any depth and WoRMS's ranks in lower case (class, order, suborder, family, subfamily, tribe, genus; up to 8
+`fuWormsOf`: the reference taxonomy as a tree, the section's `worms` view (built from `fish.json` `ref`: WoRMS AphiaIDs,
+each `{name, rank, parent}`, `tools/build_fish.py`) above the Key's own leaves (the species in the game, in the Key's
+order): any depth and WoRMS's ranks in lower case (class, order, suborder, family, subfamily, tribe, genus; up to 8
 levels), its problems (a reference or a parent missing, a cycle) counted in the bar (`.adm-ttprob`). None or an unknown
 id: its first family. The bar's families' select lists WoRMS's families in the tree's order. The unfolded nodes are kept per view (`reefid-admin-tree-open-worms-<subject>`).
 
@@ -200,9 +202,11 @@ subject declares (`SUBJECTS` `flat`, `admin.js` `treeShape`, as the Tree's build
 
 ## The corals' Tree
 
-`#photos/tree/key/<node id>`, `#photos/tree/worms/<node id>` (`admin-coraltree.js`: its pure part `ctKeyOf`,
-`ctWormsOf`, `ctFilters` tested in `tests/coraltree.test.js`, its admin part `ctTree`, `ctRow` read by the corals'
-builder, `admin.js` `TREE_BUILD` `flat`; the tab is the corals' first Photos tab since the former Genera tab was folded
+`#photos/tree/key/<node id>`, `#photos/tree/worms/<node id>` (`admin-coraltree.js`: its pure part `ctFilters` tested in
+`tests/coraltree.test.js`, its admin part `ctTrees`, `ctTree`, `ctRow` read by the corals' builder, `admin.js`
+`TREE_BUILD` `flat`; the trees are the corals' tree section, `data/coral-tree.json`, built by `tools/tree_section.py`
+`coral_key`, `coral_worms` from `data.json` and `data/names.json` and checked against `core.js` `lectureGroup` and
+`slateOf` in `tests/coraltree.test.js`; the tab is the corals' first Photos tab since the former Genera tab was folded
 into it, 2026-11-19). None or an unknown id: the view's first genus (Acropora), as every subject's Tree opens on its
 first node of its broadest rank. The leaves are the genera, every genus the admin has a page for (`data.json` `gen` and
 `x.gen`), each its own name as id and one node in both views (a photo's species is only a name, never curated: no
@@ -245,9 +249,11 @@ species rank).
 The sea slugs are a tree subject ([admin.md › The tree subjects](admin.md#the-tree-subjects)) with the fish's Tree and
 photo tools on their own part of `curation.json`:
 
-- Photos › Tree › Key | WoRMS: their reference taxonomy `seaslug.json` `ref` (from `tools/seaslug_worms.py`), drawn by
-  the fish's `fuWormsOf`: a genus-level leaf, or a species with no published name yet, sits under its genus's WoRMS node,
-  the genus's `ref`, through `taxtree.js` `ttFromRef` `at`; their families sit under their taxonomic groups
+- Photos › Tree › Key | WoRMS: their reference taxonomy `seaslug.json` `ref` (from `tools/seaslug_worms.py`), built into
+  their tree section (`data/seaslug-tree.json`, by `tools/seaslug_game.py` with the tree) like the fish's and read by the
+  fish's `fuWormsOf`: a species with no published name yet sits under its genus's WoRMS node (the genus's `ref`; the
+  build's `ttFromRef`'s `at`), and a genus-level leaf, which the admin adds at load, under the section's `at` for its genus;
+  their families sit under their taxonomic groups
   (`seaslug.json` `taxa`, each family's `tgroup`). All | IMR shows only for a tree the IMR course names; a species with no
   common name shows by its scientific name alone.
 - Photos › Candidates: the fish's swiper on `data/seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, the
@@ -286,11 +292,43 @@ whatever the number of levels.
   leads to them and what is under them, through the two).
 - `ttRows` (the rows on screen from what is open and shown, with the ARIA level, position and set size) and `ttKey` (the
   WAI-ARIA tree keys).
+- `ttSection(sec, view)` reads a view of a subject's tree section (below): its nodes as `ttBuild` takes them (copies),
+  the build's problems and `at`; the admin reads every subject's trees with it.
 - `ttFromRef` builds the nodes of a classification from a reference table (a parent-pointer table keyed by the
   reference's own ids, `{key: {name, rank, parent}}`) above the subject's leaves: each leaf keeps its own id (two leaves
   may share one reference), each ancestor becomes one node once with the id and rank word the adapter maps (`o.id`,
   `o.rank`), and a leaf with no reference or one the table lacks, a parent the table lacks (the node becomes a root) and
-  a cycle (through `ttBuild`) are reported.
-- It never assumes a number of levels or rank names: a subject's adapter turns its references into nodes (the fish
-  key's: `admin.js` `fuTreeOf`; WoRMS's: `fuWormsOf`, ids `w:<AphiaID>` above the shared species ids; the corals':
-  `admin-coraltree.js` `ctKeyOf`, the IMR lecture groups, and `ctWormsOf`, `wf:<family>` above the shared genus ids).
+  a cycle (through `ttBuild`) are reported. The admin no longer calls it: it is the JS reference of the build's Python
+  port (`tools/tree_section.py` `from_ref`), which `tests/treesection.test.js` holds to it on the real data.
+- It never assumes a number of levels or rank names: a subject's build turns its references into nodes ("The tree
+  section", below).
+
+## The tree section (`tools/tree_section.py`)
+
+Pierre, 2026-11-13 (Q339-Q341): the Tree "works for any subject: each subject builds its own tree from its own
+references". Each subject's build writes the subject's two classifications as a file of its own,
+`data/<subject id>-tree.json` (`data/fish-tree.json`, `data/seaslug-tree.json`, `data/coral-tree.json`; admin only, in
+the repository's `data/` as `names.json` and `fish-cand.json` are: players never download it, and `data.json`, `fish.json`
+and `seaslug.json` keep their keys): `{"v": 1, "views": {"key": {"nodes"}, "worms": {"nodes", "problems", "at"}}}`, one
+node per line. A node is `taxtree.js`'s own, `{id, name, rank, up}`, with what the rows read: for the tree subjects `sci`,
+`it`, `unit`, `sid`, and `imr` / `imrWith` (the IMR course's tag, which the admin turns into the row's tag); for the
+corals `genus`, `grp`, `num`, `slate`, `star`. `problems` are what hanging the leaves on the reference found (a leaf with
+no reference, a reference or a parent the table lacks), shown in the bar with the tree's own; `at` says, for each genus of
+the Key, the WoRMS node a genus-level leaf of its own hangs under.
+
+- **One module builds them, one function reads them.** `tools/tree_section.py` holds the shared helpers (`from_ref`, the
+  Python port of `ttFromRef`; the section's layout) and one adapter per data shape, listed in its `SUBJECTS` (a new
+  subject adds its own and nothing else, rule S1): the tree subjects' (`tree_key`, `tree_worms`: `fish.json`, `seaslug.json`,
+  one shape) and the corals' (`coral_key`, `coral_worms`: `data.json` and `data/names.json`). The admin reads a section
+  through `taxtree.js` `ttSection`, builds nothing, and adds only what the sources cannot give: each node's unit record
+  (`u`, `g`) and IMR tag from the units the page holds, and the genus-level leaves, which come from the candidates and the
+  game's photos (`admin.js` `fuGlLeaves`).
+- **When it is written.** By the tool that writes its source: `tools/build_fish.py` (after `fish.json`),
+  `tools/seaslug_game.py` (after `seaslug.json`), `tools/taxonomy.py` (after `data/names.json`) and `tools/datajson.py`
+  `dump` (after `data.json`); `python3 tools/tree_section.py` writes them all, `--check` fails on a section that is
+  missing or is not what its sources give, which `tests/treesection.test.js` runs.
+- **What is held.** `tests/treesection.test.js` holds the real sections to the shared JS functions (`autosort.js`
+  `fishUnits`, `taxtree.js` `ttFromRef`, `ttBuild`) and `tests/coraltree.test.js` to `core.js` `lectureGroup` and
+  `slateOf`; the admin's reader is run on made-up sections.
+- **No section yet** (the file is missing): the Tree says so, with the command that writes it, and its other pages are
+  not affected.

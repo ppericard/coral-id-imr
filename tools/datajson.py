@@ -113,6 +113,10 @@ def dump(d, path=PATH):
         d = instance.coral_layered(d)
     with open(path, 'w', encoding='utf-8', newline='\n') as fh:
         fh.write(dumps(d))
+    if is_data(path) and isinstance(d, dict) and 'gen' in d:
+        import tree_section  # the corals' tree section (the admin's Tree tab) follows data.json: lecture groups, genera, pairs
+
+        tree_section.write('coral')
 
 
 if __name__ == '__main__':
