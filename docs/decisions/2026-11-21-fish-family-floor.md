@@ -1,6 +1,6 @@
 # A family the game covers with few species gets at least 90 candidate photos
 
-Date: 2026-11-21. PR: #0000. Rules or docs touched: docs/spec/fish-photos.md "The cap, weighted by phases", "Automatic
+Date: 2026-11-21. PR: #1379. Rules or docs touched: docs/spec/fish-photos.md "The cap, weighted by phases", "Automatic
 refill"; the review docs/reviews/2026-11-21-photo-diversity.md.
 
 ## Context
