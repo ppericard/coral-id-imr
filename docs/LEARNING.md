@@ -550,6 +550,16 @@ offset and the answer scored with it, and the sheet fits that offset on Find the
 it counts 0 wherever it is played, as every format offset does for a subject the sheet does not rate (`model.js`
 `pfmt`); it applies once that subject's format offsets are read.
 
+**On the species** (`quiz.js` `planFind`, `findRank`): Find the X is also asked on a species (rank `species`), by its
+common name or by its scientific name, once it is a unit in play, met and with a tile. The unit and its three others
+are of its own kind of name (`model.js` `rankKind`: never a species by its common name beside one by its scientific
+name, nor a family or a genus), each from the units in play (`distractors` with `wide` false, so no unit of the rank
+outside the pool or the custom selection takes a place). The scientific genera keep their usual questions. The prompt
+is the one name; a scientific name's question shows no common name (the quiz's `sc` display is a choice's label, and
+this format has none). The share stays `FIND.P` of the questions that could be one; the draw, the scoring, the log
+(`quiz|f` at the rank `species`) and the exam are unchanged. The format offset `find` is the subject's one, fitted on
+the families' and the species' Find the X answers together.
+
 ### The Duel tab when the hold sets in
 
 The photo quiz eases its questions while the opening hold is on; the Duel tab keeps drilling the same pair, but eases

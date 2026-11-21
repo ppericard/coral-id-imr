@@ -617,7 +617,8 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
    **Built** (2026-11-14, Q321 D1) on the families, with the square tiles: 5% of the questions that could be one (`quiz.js` `FIND`,
    `planFind`), logged `quiz|f` with the photo tapped (sheet v141 Photo answered, Q371: the species-to-family view reads its species)
-   (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
+   (docs/LEARNING.md "Find the X slipped into the fish quiz"); and on the species, by either kind of name, once they are units
+   (2026-11-21, REE-63).
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
 both show the square fish tiles (`judging/FISH.md` "The fish's box"); Matrix is in the Lab for every subject, unscored (ROADMAP "Matrix"). Later, not agreed yet: photo-to-trait (needs per-photo
