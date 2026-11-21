@@ -517,3 +517,60 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   assert.match(block(LEARN, 'function viewCompare(a, b) {', '\n}\n', {file: 'learn.js'}), /\$\{U\.cmp\.more\(g\)\}/);
   ['quiz.js', 'proto/idkey.js'].forEach(f => assert.ok(!src(f).includes('Coral Finder p. ${g.pages'), `${f}: a hard-coded criteria page`));
 });
+
+// Photos › Look-alikes reads the pairs in force (admin-content.js montPairs, classicPairsOf; admin.js renderMont), not the
+// base's alone: the corals' Tree already writes the editor's pair entries, so the page that picks their photo pairs follows.
+test('the admin Look-alikes: the base classic pairs as before; a withdrawn pair gone, a held one stays, an added one marked', () => {
+  // the admin's coral data: the x genera merged into gen (admin.js), the same record at both paths
+  const M = JSON.parse(DJSON);
+  Object.assign(M.gen, M.x.gen);
+  // the page's list before (admin.js classicPairs of the commit before this one), kept here as the reference
+  const old = G => {
+    const src = (a, b) => (G[a].lsrc || {})[b] || (G[b].lsrc || {})[a] || '',
+      idx = n => Object.keys(G).indexOf(n),
+      seen = new Set(),
+      res = [];
+    Object.keys(G).forEach(a =>
+      G[a].look.forEach(b => {
+        const k = [a, b].sort().join('|');
+        if (G[b] && !seen.has(k) && /^(IMR|Coral Finder p)/.test(src(a, b))) {
+          seen.add(k);
+          res.push({k, A: k.split('|')[0], B: k.split('|')[1], src: src(a, b)});
+        }
+      })
+    );
+    const tier = p => (/^IMR/.test(p.src) ? 0 : 1);
+    return res.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
+  };
+  const base = ed.montPairs(S, M, {});
+  assert.ok(base.length > 20);
+  assert.deepStrictEqual(base, old(M.gen), 'no edit: the pairs the page listed before');
+  assert.deepStrictEqual(ed.classicPairsOf(M.gen), base);
+  assert.ok(base.every(p => !p.added && !('deck' in p)));
+  // a withdrawn pair (between genera the ★ rule leaves alone) has no row, the others stay in their order
+  const free = base.find(p => !STARS.includes(p.A) && !STARS.includes(p.B));
+  assert.strictEqual(C.structEntries(S, M, {pairs: out(free.A, free.B)}).pairs[0].state, 'fresh');
+  const w = ed.montPairs(S, M, {pairs: out(free.A, free.B)});
+  assert.deepStrictEqual(
+    w.map(p => p.k),
+    base.filter(p => p.k !== free.k).map(p => p.k)
+  );
+  // Undo (no entry again): the pair is back where it was
+  assert.deepStrictEqual(ed.montPairs(S, M, {pairs: {}}), base);
+  // a withdrawal the ★ rule holds (Halomitra's only look-alike, no classic pair) is never applied: nothing changes
+  assert.strictEqual(C.structEntries(S, M, {pairs: out('Halomitra', 'Herpolitha')}).pairs[0].why, 'hold');
+  assert.deepStrictEqual(ed.montPairs(S, M, {pairs: out('Halomitra', 'Herpolitha')}), base);
+  // an added pair is listed, marked, with its source or the editor's; it is on the public deck only when a source compares it
+  const numbered = Object.keys(M.gen).filter(n => M.gen[n].n && !M.x.gen[n]),
+    pair = numbered.flatMap(a =>
+      numbered.filter(b => a < b && !M.gen[a].look.includes(b) && !M.gen[b].look.includes(a)).map(b => [a, b])
+    )[0];
+  const a1 = ed.montPairs(S, M, {pairs: add(...pair)}).find(p => p.k === key(...pair));
+  assert.deepStrictEqual([a1.added, a1.deck, a1.src], [true, false, C.EDITOR_PAIR]);
+  const a2 = ed.montPairs(S, M, {pairs: add(...pair, {t: 'IMR Lecture 9 (a made-up source)'})}).find(p => p.k === key(...pair));
+  assert.deepStrictEqual([a2.added, a2.deck, a2.src], [true, true, 'IMR Lecture 9 (a made-up source)']);
+  assert.strictEqual(ed.montPairs(S, M, {pairs: add(...pair)}).length, base.length + 1);
+  // the base is never changed by it
+  assert.deepStrictEqual(ed.montPairs(S, M, {}), base);
+  assert.ok(!M.gen[pair[0]].look.includes(pair[1]));
+});

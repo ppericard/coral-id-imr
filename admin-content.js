@@ -152,6 +152,14 @@
       ...E.pairs.filter(todo).map(x => ({id: x.key, node: x.a || x.key, slot: 'pair:' + x.key, state: x.state, ...why(x)}))
     ];
   }
+  // A circle in the subject's own words (SUBJECTS admin circles: {circle: words}, one place for every subject that has
+  // circles; the Tree's rows, tags and Structure box read it): circleWord the words ('' none declared), circleLab the
+  // circle as the admin names it, the number first: "1 · IMR course", else "1"; null (in no circle) is "None".
+  const circleWord = (S, c) => {
+    const W = S && S.admin && S.admin.circles;
+    return c != null && isObj(W) && typeof W[c] === 'string' ? W[c] : '';
+  };
+  const circleLab = (S, c) => (c == null ? 'None' : circleWord(S, c) ? `${c} · ${circleWord(S, c)}` : String(c));
   // ---- The structure (design note v2, step 4; docs/ARCHITECTURE.md "The content editor's edits") ----
   // Node id's circle under content map Cm, built file R (SUBJECTS structure circle: a node of its rank; null for any
   // other): {of (the declared circles), base (the record's; null none), e (his entry or null), state ('' none, fresh,
@@ -234,9 +242,49 @@
   // contentPairKey), so an added pair's photo pair is stored as a base pair's. Its lines and sources are the base's (an
   // added pair has none there: its words are the Sheet's look/<id> line). U0: the units of R when made already
   // (FISHC.units). One computation per pairs map.
+  // ---- The corals' pairs (a flat subject) ----
+  // The corals' (a flat subject: its units are the genus records of data.json R, not a tree) are classicPairsOf over the
+  // genus records with the pairs in force (sheetFile): the base's less those withdrawn (a withdrawal the ★ rule holds
+  // stays), plus every pair he added, whatever its source (its row says when the public page does not show it). The same
+  // order and the same test as the page players see (learn.js classics).
+  const CLASSIC = /^(IMR|Coral Finder p)/;
+  // The pairs the sources compare in so many words, in the genus records G (a map by name: gen and x.gen merged), each
+  // {k, A, B, src}: the IMR lecture's (lsrc "IMR Lecture 6...") and the Coral Finder text's ("Coral Finder p. ..."), the
+  // IMR ones first, then by the slate's order. B, when given, is the base's records: a pair G holds that B does not is
+  // one he added (added: true, deck: whether a source of the two compares it, so the public page shows it); with no B,
+  // only the classic ones.
+  function classicPairsOf(G, B) {
+    const src = (a, b) => (G[a].lsrc || {})[b] || (G[b].lsrc || {})[a] || '',
+      idx = n => Object.keys(G).indexOf(n),
+      has = (X, a, b) =>
+        !!(X[a] && (X[a].look || []).some(y => C.pairIdOf(y) === b)) || !!(X[b] && (X[b].look || []).some(y => C.pairIdOf(y) === a)),
+      seen = new Set(),
+      out = [];
+    Object.keys(G).forEach(a =>
+      (Array.isArray(G[a].look) ? G[a].look : []).forEach(y => {
+        const b = C.pairIdOf(y),
+          k = b ? C.contentPairKey(a, b) : '';
+        if (!k || !G[b] || b === a || seen.has(k)) return;
+        const s = src(a, b),
+          ok = CLASSIC.test(s),
+          add = !!B && !has(B, a, b);
+        if (!ok && !add) return;
+        seen.add(k);
+        out.push({k, A: k.split('|')[0], B: k.split('|')[1], src: s, ...(add ? {added: true, deck: ok} : {})});
+      })
+    );
+    const tier = p => (/^IMR/.test(p.src) ? 0 : 1);
+    return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
+  }
+  // montPairs: the pairs in force of subject S's built file R under content map Cm, by the data shape S declares (flat: the
+  // corals', classicPairsOf; else the tree subjects', as the fish comment above says); U0 only for the tree subjects'.
   let MP = null;
   function montPairs(S, R, Cm, U0) {
     const P = sheetFile(S, R, Cm);
+    if (S && S.flat) {
+      if (!MP || MP.R !== R || MP.P !== P) MP = {R, P, L: classicPairsOf(P.gen, R.gen)};
+      return MP.L;
+    }
     if (!MP || MP.R !== R || MP.P !== P) {
       const L = A.fishPairs(U0 || A.fishUnits(R)),
         base = new Set(L.map(p => p.k));
@@ -340,9 +388,12 @@
       contentShells,
       sheetFile,
       circleRow,
+      circleWord,
+      circleLab,
       pairRows,
       structChanged,
-      montPairs
+      montPairs,
+      classicPairsOf
     };
     return;
   }
@@ -523,7 +574,6 @@
   // The same pair tools in the Look-alikes filter of every Tree page (structBar): + Pair (both families chosen) under Any
   // look-alike, the pair's state and tools under one pair.
   const ST_STATE = {fresh: 'Edited', stale: 'Base changed', absorbed: 'In the base'};
-  const stLab = c => (c == null ? 'None' : String(c));
   // Why an entry is never applied, in words: a held one (the subject's own guard, SUBJECTS structure pairs hold: the
   // corals' ★ rule) in the subject's word for it (held).
   const whyOf = (S, w) => (w === 'hold' && S && S.structure && S.structure.pairs && S.structure.pairs.held) || WHY[w] || w;
@@ -591,7 +641,7 @@
         : `<span class="adm-qseg adm-lvseg adm-stseg" role="group" aria-label="Circle">${[...cr.of, null]
             .map(
               c =>
-                `<button type="button" data-stc="${c == null ? '' : c}" aria-pressed="${cr.v === c}"${can ? '' : ' disabled'}>${stLab(c)}</button>`
+                `<button type="button" data-stc="${c == null ? '' : c}" aria-pressed="${cr.v === c}"${can ? '' : ' disabled'} title="${esc(circleLab(S, c))}">${c == null ? 'None' : `${c}${circleWord(S, c) ? `<small>${esc(circleWord(S, c))}</small>` : ''}`}</button>`
             )
             .join('')}</span>`,
       cActs =
@@ -607,9 +657,9 @@
       cBody = !cr
         ? ''
         : cr.state === 'stale'
-          ? `<div class="adm-cs3"><div><small>When edited</small><p class="adm-csv">${stLab(cr.e.was)}</p></div><div><small>Now</small><p class="adm-csv">${stLab(cr.base)}</p></div><div><small>Mine</small><p class="adm-csv">${stLab(cr.e.v)}</p></div></div>`
+          ? `<div class="adm-cs3"><div><small>When edited</small><p class="adm-csv">${esc(circleLab(S, cr.e.was))}</p></div><div><small>Now</small><p class="adm-csv">${esc(circleLab(S, cr.base))}</p></div><div><small>Mine</small><p class="adm-csv">${esc(circleLab(S, cr.e.v))}</p></div></div>`
           : cr.state === 'fresh'
-            ? `<p class="adm-cssrc">Original: ${stLab(cr.base)}</p>`
+            ? `<p class="adm-cssrc">Original: ${esc(circleLab(S, cr.base))}</p>`
             : '',
       circle = !cr
         ? ''
@@ -821,9 +871,12 @@
     contentShells,
     sheetFile,
     circleRow,
+    circleWord,
+    circleLab,
     pairRows,
     structChanged,
     montPairs,
+    classicPairsOf,
     structBox,
     structBar,
     structAdd,

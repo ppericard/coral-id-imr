@@ -1864,3 +1864,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   eu des erreurs ou des longtemps avant de répondre, c'est qu'il y avait possiblement des erreurs dans nos données ou une
   des vraies difficultés sur les photos.» (dictated: "inexperte", read as "experte"). Applied:
   reviews/2026-11-21-ra-session-review.md §3 (#1374); REE-194.
+- **20:59-21:00, keep going until he says stop.** «Du coup, il n'y a plus rien sur lequel tu peux avancer et travailler
+  tout seul cette nuit.» «Et du coup, pourquoi tu les as pas lancés avant?» «Mais sans forcément de priorité haute. Oui,
+  qu'il fallait commencer par de la priorité haute, ok, mais en fait, tant que j'ai pas dit qu'on s'arrêtait, il faut
+  continuer, quoi. Et il faut écluser tout ce qu'il y a dans la roadmap qui est faisable sans moi, et déjà décidé.»
+  Applied: INTEGRATOR.md "Linear" (drain the Todo column until he says stop) (#1384); the night's waves of agents.

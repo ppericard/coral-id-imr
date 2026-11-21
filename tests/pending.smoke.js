@@ -127,12 +127,21 @@ const started = p =>
       () => true,
       () => false
     );
+// Why a question's photos are not in, for a failure's message: R2 given up for the page (app.js r2Out, after a file the
+// photo stub left a 404: tests/photostub.js), and the photos' addresses (an online original's host is cut off here).
+const photosWhy = p =>
+  p.evaluate(
+    () =>
+      `${AWAY ? 'R2 given up for this page (app.js r2Out), ' : ''}photos ${[...document.querySelectorAll('#view .qstage img')]
+        .map(i => `${i.complete && i.naturalWidth ? 'in' : 'not in'} ${(i.getAttribute('src') || '').slice(0, 90)}`)
+        .join(', ')}`
+  );
 // One game, one format: leave to Learn and back, reload, answer. at: the page key of the game; kept: its key in the store.
 async function keep(p, S, label, at, kept) {
   const key = C.subjDev(S.id, 'pending'),
     a = await look(p);
   if (!ok(a && !a.done, `${label}: no question on screen`)) return null;
-  ok(await started(p), `${label}: the clock never started (its photos are not in)`);
+  if (!(await started(p))) fails.push(`${label}: the clock never started (its photos are not in: ${await photosWhy(p)})`);
   await p.waitForTimeout(2000); // looked at for a while
   await go(p, S, 'genera');
   const rec = (await stored(p, key))[kept];
@@ -146,7 +155,8 @@ async function keep(p, S, label, at, kept) {
     JSON.stringify(a) === JSON.stringify(b),
     `${label}: back from Learn, the same question\n  ${JSON.stringify(a)}\n  ${JSON.stringify(b)}`
   );
-  await started(p); // its first photo in: the clock runs, with the seconds carried
+  const back = await started(p); // its first photo in: the clock runs, with the seconds carried
+  if (!back) fails.push(`${label}: back from Learn, its photos are not in (${await photosWhy(p)})`);
   const clock = await p.evaluate(() => ({pre: QCLOCK.pre, read: qclockRead()}));
   ok(rec && Math.abs(clock.pre - rec.rt) < 0.06, `${label}: the clock carries ${rec && rec.rt} s (pre ${clock.pre})`);
   ok(
