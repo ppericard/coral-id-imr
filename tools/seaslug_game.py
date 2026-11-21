@@ -641,6 +641,8 @@ def write(root, tree, game):
         if not os.path.exists(p) or open(p, encoding='utf-8').read() != s:
             with open(p, 'w', encoding='utf-8') as fh:
                 fh.write(s)
+    if os.path.realpath(root) == os.path.realpath(ROOT):  # the repository's own: its tree section (the admin's Tree tab) follows
+        tree_section.write('seaslug')
 
 
 def run(out='r2-upload', root=ROOT, get=None, pause=None, workers=6, limit=None):
@@ -704,7 +706,6 @@ def main():
               f'{n} photos in seaslug-game.json' + (f'; {wait} more wait for the next run' if wait else ''))
         return
     write(ROOT, tree, game)
-    tree_section.write('seaslug')  # its tree section, from the file just written (the admin's Tree tab reads it)
     n = sum(len(x) for x in game['photos'].values())
     sp = len({p['sp'] for x in game['photos'].values() for p in x})
     print(f'seaslug.json: {len(tree["families"])} families, {len(tree["genera"])} genera, {len(tree["species"])} species; '
