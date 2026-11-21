@@ -361,6 +361,7 @@
  "s457": {"at": "2026-11-07", "parts": ["free"]},
  "s459": {"at": "2026-11-08", "parts": ["free"]},
  "s462": {"at": "2026-11-15", "parts": ["free", "juvenile"]},
+ "s465": {"at": "2026-11-21", "cap": 40, "parts": ["juvenile"]},
  "s466": {"at": "2026-11-08", "parts": ["free", "juvenile"]},
  "s468": {"at": "2026-11-16", "parts": ["juvenile", "male"]},
  "s469": {"at": "2026-11-08", "parts": ["free"]},
