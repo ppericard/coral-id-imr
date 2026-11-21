@@ -2100,7 +2100,9 @@ const QPROMPT = {
 // answered, so leaving the page (Learn, My progress, anywhere) or reloading it brings back the same question, its photos
 // and its choices, never a new draw. It is stored as units and photo files, never as HTML or photo records: a kept
 // question is built again from the current data (pendBuild), so a photo or a genus that left the draw ends it (pendOk) and a
-// new question is drawn. A question shown with a first-meeting card is not kept (its card is the genus's meeting).
+// new question is drawn. A question about the genus its own first-meeting card introduces is not kept (its card is the
+// genus's meeting); one shown with another genus's card is kept (introAdd marks that genus met when its card shows, so the
+// card does not come back).
 // The seconds already looked at it travel with it (rt, QCLOCK.pre): the time away is not counted, the time before is.
 const PEND = {KEY: 'pending', MAX: 6};
 const pendKey = () => sDev(PEND.KEY); // reefid-<dev>pending: stays on this device, cleared at sign-out (sync.js)
@@ -2110,10 +2112,11 @@ const pendAll = (key = pendKey()) => {
 };
 let PENDQ = null; // the kept question on screen: {key, cur, el}
 let PENDSCI = null; // the name display ('sc' / 'so', app.js sciShow) the next question is shown with, when it comes back
-// The record of question q of game cur: null when it is not kept (a card's question, a photo with no file name).
+// The record of question q of game cur: null when it is not kept (a question about the genus its own card introduces, a photo
+// with no file name).
 function pendRec(cur, q) {
   const [, t, c, , set, kq] = q;
-  if (q.intro || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
+  if ((q.intro || []).includes(t) || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
   const ph = p => (p && p.f ? [p.f, String(p.view || '')] : null),
     sh = set.shown.map(ph),
     hi = set.hint ? ph(set.hint) : null,

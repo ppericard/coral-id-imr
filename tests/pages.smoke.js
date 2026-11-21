@@ -2884,10 +2884,12 @@ async function startSmoke(b, base) {
       for (let i = 0; i < CHOICE.AT[0]; i++) startStep(0, 4, i % 4 === 0, true);
       return startDue();
     });
-    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).
+    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits). Each
+    // one is answered first (pendDone): a question left on screen is kept, and a kept question comes back with no offer.
     for (let k = 0; k < 6 && !(await p.$('.unlock.startfb')); k++) {
       await p.evaluate(() => {
         document.querySelectorAll('.unlock.intro').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        pendDone();
         quizPhoto();
       });
       await p.waitForTimeout(300);
@@ -2923,7 +2925,7 @@ async function startSmoke(b, base) {
     )
       fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
     if (fb) await p.click('.unlock.startfb [data-keep]');
-    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
+    const again = await p.evaluate(() => (pendDone(), quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
     if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
     // The "higher" card: no number either (it goes stale, or miscounts what is open).
