@@ -1,6 +1,6 @@
 # Before Open Water a unit rotates at least its 12 easiest observations' worth, so an easy photo added never shrinks it
 
-Date: 2026-11-21. PR: #1382. Rules or docs touched: LEARNING.md "Rarely under ease 4 before Open Water".
+Date: 2026-11-21. PR: #1391. Rules or docs touched: LEARNING.md "Rarely under ease 4 before Open Water".
 
 ## Context
 
