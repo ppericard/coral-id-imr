@@ -101,6 +101,28 @@ const photoRoOf = u => {
   const p = typeof u === 'string' && photoIdx().src.get(u.replace(/#.*$/, '').replace(/\/(?:small|medium|large)\.(\w+)$/, '/original.$1'));
   return p && !p.r ? rotNorm(p.ro) : 0;
 };
+// When R2 is given up: the app's rule (app.js, docs/decisions/2026-11-21-r2-given-up-after-three.md), the same text in
+// both files (tests/r2out.test.js keeps them equal and runs the admin's too): with no service worker, a photo that still
+// fails on R2 after its retry falls back on its own; R2 is given up for the visit (r2Out) once R2_OUT different photos
+// failed so in a row, no photo loaded from R2 in between. A photo counts once; R2MISS: the files that failed so, not
+// asked from R2 once more.
+// RULE-BEGIN
+const R2_OUT = 3;
+const R2MISS = new Set(),
+  R2RUN = new Set();
+const r2File = u => photoLocal(String(u || '')).replace(/[?#].*$/, '');
+const r2Missed = u => photoOnR2(u) && R2MISS.has(r2File(u));
+const r2Failed = u => {
+  const x = photoFileOf(u);
+  if (!x || !photoOnR2(u)) return;
+  R2MISS.add(r2File(u));
+  R2RUN.add(x.f.replace(/-x$/, ''));
+  if (R2 && R2RUN.size >= R2_OUT) r2Out();
+};
+const r2Loaded = u => photoOnR2(u) && R2RUN.clear();
+// RULE-END
+const r2Out = () => ((R2 = false), (AWAY = true));
+document.addEventListener('load', e => e.target instanceof HTMLImageElement && r2Loaded(e.target.currentSrc), true);
 document.addEventListener(
   'error',
   e => {
@@ -111,8 +133,9 @@ document.addEventListener(
     // its offline copies (and has retried R2 already).
     const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
     const away = i => {
+      const was = i.currentSrc || i.getAttribute('src');
       if (!photoFallback(i, photoLook)) return false;
-      if (!sw) ((R2 = false), (AWAY = true));
+      if (!sw) r2Failed(was);
       const u = i.getAttribute('src') || '',
         c = photoCropOf(u, photoIdx()),
         ro = photoRoOf(u);
@@ -121,7 +144,8 @@ document.addEventListener(
       return true;
     };
     // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
-    if ((!sw && photoRetry(e.target, away)) || away(e.target)) e.stopImmediatePropagation();
+    if ((!sw && !r2Missed(e.target.currentSrc || e.target.getAttribute('src')) && photoRetry(e.target, away)) || away(e.target))
+      e.stopImmediatePropagation();
   },
   true
 );
