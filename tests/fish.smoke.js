@@ -1134,6 +1134,102 @@ async function freshSeed(b, base, errs, seed, fresh) {
   await c6.close();
 }
 
+// (10b) The names step on the welcome card (app.js UNITS namesStep, quiz.js namesAskShow; Pierre, 2026-11-04): after "How well do
+// you know reef fish?" a player who is not at IMR is asked which names to learn, on its own card (not the question's), and
+// each answer sets the What I learn rows; "I'm at IMR" is not asked; a device that has not heard the sheet script at the
+// species level (rule D4) is not asked; Escape leaves the record as it plays. Cases: [welcome answer, sheet version heard,
+// names answer or 'esc', the rows after: [Common names on, Scientific names on]].
+async function namesCard(b, base, errs) {
+  const fails = [];
+  const cases = [
+    ['new', 300, 'sci', [false, true]],
+    ['know', 300, 'both', [true, true]],
+    ['new', 300, 'common', [true, false]],
+    ['know', 300, 'esc', [true, false]],
+    ['imr', 300, null, [true, true]],
+    ['new', 0, null, [true, false]]
+  ];
+  for (const [pick, v, names, want] of cases) {
+    const tag = `names step ${pick}/${v}/${names}`;
+    const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(v => {
+      try {
+        if (!sessionStorage.getItem('fish-names')) {
+          sessionStorage.setItem('fish-names', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour'}));
+          if (v) localStorage.setItem('reefid-sheet-v', String(v));
+        }
+      } catch (e) {}
+    }, v);
+    const q = await c.newPage();
+    q.on('pageerror', e => errs.push(`${tag}: ${e.message}`));
+    await q.goto(base + '#practice/quiz');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('.unlock.startq'), null, {timeout: 30000});
+    await q.click(`.unlock.startq [data-start="${pick}"]`);
+    await q
+      .waitForFunction(() => document.querySelector('.unlock.namesq, #view .q, .unlock.basicsq'), null, {timeout: 15000})
+      .catch(() => fails.push(`${tag}: nothing after the answer`));
+    const card = await q.evaluate(() => {
+      const d = document.querySelector('.unlock.namesq');
+      return d
+        ? {
+            title: (d.querySelector('h3') || {}).textContent || '',
+            opts: [...d.querySelectorAll('[data-names]')].map(x => x.dataset.names),
+            startq: d.classList.contains('startq'),
+            quiz: !!document.querySelector('#view .q'),
+            text: d.textContent
+          }
+        : null;
+    });
+    if (names) {
+      if (
+        !card ||
+        card.title !== 'Which names do you want to learn?' ||
+        card.opts.join() !== 'common,sci,both' ||
+        card.startq ||
+        card.quiz ||
+        /Latin/.test(card.text)
+      )
+        fails.push(`${tag}: the card ${JSON.stringify(card)}`);
+      if (card) {
+        if (names === 'esc') await q.keyboard.press('Escape');
+        else await q.click(`.unlock.namesq [data-names="${names}"]`);
+        await q
+          .waitForFunction(() => !document.querySelector('.unlock.namesq'), null, {timeout: 5000})
+          .catch(() => fails.push(`${tag}: the card stays`));
+      }
+    } else if (card) fails.push(`${tag}: asked, but it should not be`);
+    // what comes next: Fish basics offered to "new", else the quiz
+    await q
+      .waitForFunction(() => document.querySelector('#view .q, .unlock.basicsq'), null, {timeout: 15000})
+      .catch(() => fails.push(`${tag}: neither the basics offer nor the quiz after the step`));
+    const st = await q.evaluate(() => ({
+      rows: learnRows().map(r => rowOn(r)),
+      n: learnRows().length,
+      q: ['sp', 'spO', 'sci', 'sciO', 'sciH'].map(k => (k in Q ? Q[k] : null)),
+      fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
+      basics: !!document.querySelector('.unlock.basicsq')
+    }));
+    // the rows read as the answer says (one row only where the sheet has not been heard: its choice is not on offer)
+    const rows = st.n === 1 ? [st.rows[0]] : st.rows;
+    if (JSON.stringify(rows) !== JSON.stringify(st.n === 1 ? [want[1]] : want) || st.q[4] || (st.fish || {}).c !== pick)
+      fails.push(`${tag}: after ${JSON.stringify(st)}`);
+    if (names === 'common' || names === 'esc' || !names) {
+      if (st.q.some(x => x !== null) && pick !== 'imr') fails.push(`${tag}: wrote something it should not ${JSON.stringify(st.q)}`);
+    }
+    if (pick === 'new' && !st.basics) fails.push(`${tag}: Fish basics is not offered after the step`);
+    await c.close();
+  }
+  return fails;
+}
+
 (async () => {
   const run = slot.parts(PARTS, {main: ['main'], fresh: ['fresh']});
   await slot('fish.smoke');
@@ -3927,6 +4023,8 @@ async function freshSeed(b, base, errs, seed, fresh) {
   const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
+  // (10b) The names step on the welcome card: namesCard, above.
+  const names = run.has('main') ? await namesCard(b, base, errs) : [];
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -4274,6 +4372,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     ...grp,
     ...all,
     ...welcome,
+    ...names,
     ...hello,
     ...flag,
     ...early
