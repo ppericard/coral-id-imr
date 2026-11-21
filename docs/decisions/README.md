@@ -65,6 +65,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-22 | [Tasks that only come back on a date or a trigger are labelled Scheduled and left out of every list](2026-11-22-scheduled-tasks.md) | #1453 |
 | 2026-11-22 | [About lists the sources the sea slugs' data cites, by a declaration in the subject's entry](2026-11-22-seaslug-about-sources.md) | #1442 |
 | 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
+| 2026-11-22 | ["Did you know?" tip (f): typed answers, a close spelling counts, for the player who answers "I don't know" every time](2026-11-22-tip-f-typed-answers.md) | #1454 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [Comeback by genus: a stability multiplier fitted from the logged recall, descriptive, an upper bound](2026-11-21-comeback-by-genus.md) | #1398 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
