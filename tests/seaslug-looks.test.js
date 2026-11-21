@@ -107,11 +107,51 @@ test('seaslug.json: the declared genus pairs across families of the survey, each
   // the pairs only iNaturalist shows, among them the survey's (§6.1)
   ['Hexabranchus', 'Phyllidia'].forEach(o => assert.ok(byName.Goniobranchus.dlook.includes(byName[o].id), o));
   assert.ok(byName.Chromodoris.dlook.includes('g:Nembrotha'));
-  // the species pairs wait: the one decided species pair is the only species look
+  // the species looks are the decided species pairs only (tools/seaslug_source.json lookalikes): the two Spanish dancers
+  // (Q377) and the two sourced pairs of #1164 (Q390 D); the survey's other species sets wait
   assert.deepStrictEqual(
-    F.species.filter(s => s.look).map(s => s.name),
-    ['Hexabranchus lacer', 'Hexabranchus sanguineus']
+    F.species
+      .filter(s => s.look)
+      .map(s => s.name)
+      .sort(),
+    [
+      'Chromodoris alcalai',
+      'Chromodoris dianae',
+      'Hexabranchus lacer',
+      'Hexabranchus sanguineus',
+      'Thecacera pacifica',
+      'Thecacera pikachu'
+    ]
   );
+  const sid = Object.fromEntries(F.species.map(s => [s.name, s.id])),
+    lk = n => F.species.find(s => s.name === n).look;
+  [
+    ['Thecacera pacifica', 'Thecacera pikachu'],
+    ['Chromodoris alcalai', 'Chromodoris dianae']
+  ].forEach(([a, b]) => assert.deepStrictEqual([lk(a), lk(b)], [[sid[b]], [sid[a]]], `${a} / ${b} both ways`));
+});
+
+// Each decided species pair that names a literature set (tools/seaslug_source.json lookalikes, set) is that set's two
+// members, its why that set's source and quote word for word (rules C2, C8): never a pair the survey did not source.
+test('the decided species pairs carry their literature set verbatim', () => {
+  const S = json('tools/seaslug_source.json').lookalikes,
+    sets = Object.fromEntries(json('tools/seaslug_lookalikes_source.json').sets.map(s => [s.id, s])),
+    L = S.filter(p => p.set);
+  assert.deepStrictEqual(
+    L.map(p => p.set),
+    ['pola2026-pacifica-pikachu', 'gosliner2021-alcalai-dianae']
+  );
+  L.forEach(p => {
+    const s = sets[p.set];
+    assert.ok(s, p.set);
+    assert.strictEqual(s.rank, 'species', p.set);
+    assert.deepStrictEqual([...p.pair].sort(), [...s.members].sort(), p.set);
+    assert.ok(p.why.startsWith(s.source + ': "' + s.quote + '"'), `${p.set}: its source and quote`);
+    assert.ok(p.why.includes('(read: ' + s.read + ')'), `${p.set}: what was read`);
+    assert.match(p.decided, /^Q390 D \(Pierre, 2026-11-17/);
+  });
+  // copied as they are into tools/seaslugs.json, which the game build reads
+  assert.deepStrictEqual(json('tools/seaslugs.json').lookalikes, S);
 });
 
 // app.js treeGenera as the app has it, on the real tree.

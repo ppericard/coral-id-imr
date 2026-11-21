@@ -42,8 +42,8 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     Q377: never the opening order), present {area: distinct Research Grade observers in the subject's area, the
     Philippines (Q369 (b)), what the game's commonness reads (core.js fishGen cm); near, nearU, nearN: rule C8's near
     test and the observers and observations within the instance's radius of Dauin, what the default covers read (app.js
-    nearSeen)}, look (the decided look-alike pairs, tools/seaslugs.json lookalikes: the two Spanish dancers, for step
-    8)};
+    nearSeen)}, look (the decided look-alike pairs, tools/seaslugs.json lookalikes: the two Spanish dancers, Q377, and
+    the two sourced pairs of #1164, Q390 D; docs/decisions/2026-11-21-seaslug-species-pairs.md)};
   - on a family, genus or species some source names in English: en [{n, src, nick, web}], its English common names and
     nicknames, and ensrc {inat, worms, wiki}, where its sources hold it (tools/seaslug_names.json, names_of); the tree's
     own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
