@@ -3154,7 +3154,8 @@ async function tipsCheck(b, base) {
   const fails = [];
   // x: what the page's player has besides the counters: start, the first-launch record (default "new": the corals' default
   // player, whom the basics tip is for), s, the tips shown (default: the basics tip's two showings used, so only the tip
-  // under test is in play), basics and ach, the Coral basics record and the achievements (default none).
+  // under test is in play), basics and ach, the Coral basics record and the achievements (default none), v, the visit
+  // (default: open, 12 answers, no tip yet). The player has opened the Coral ID Key (u.i 1) unless u says otherwise.
   const open = async (w, h, u, at = '#practice/quiz', intro = false, x = {}) => {
     const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
     await c.route(
@@ -3169,7 +3170,10 @@ async function tipsCheck(b, base) {
         if (x.basics) localStorage.setItem('reefid-basics', x.basics);
         if (x.ach) localStorage.setItem('reefid-sync-ach', x.ach);
         if (!localStorage.getItem('reefid-tips'))
-          localStorage.setItem('reefid-tips', JSON.stringify({u, s: x.s || {basics: [0, 0]}, v: {t: Date.now(), n: 12, tip: 0}}));
+          localStorage.setItem(
+            'reefid-tips',
+            JSON.stringify({u: {i: 1, ...u}, s: x.s || {basics: [0, 0]}, v: x.v ? {...x.v, t: Date.now()} : {t: Date.now(), n: 12, tip: 0}})
+          );
       },
       [u, x]
     );
@@ -3599,6 +3603,112 @@ async function tipsCheck(b, base) {
       let n = 0;
       for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
       if (n) fails.push(`${W} basics tip shown to ${JSON.stringify({u, x})}`);
+      await c.close();
+    }
+    // The Identify tip (e), outside the games: the corals' player with 200 questions who never opened the Coral ID Key (u.i 0)
+    // gets it on Home, a moment after the page is drawn (quiz.js tipOut), and on My progress; the card speaks the subject's own
+    // words (UNITS idtip), fits the screen, takes no tap at once; Show me opens the key (its page counts the open); logged
+    // (shown, show); Got it stays on the page; not again in the visit, even after a reload; never at a break of a game.
+    {
+      const U = {q: 200, z: 3, c: 1, d: 1, m: 1, i: 0};
+      const [c, p, errs] = await open(w, h, U, '', false);
+      const at = await p.evaluate(() => (location.hash || '#') + '|' + document.querySelectorAll('.tipcard').length);
+      if (at.endsWith('|1')) fails.push(`${W} identify tip: on Home at once, not after a calm moment: ${at}`);
+      await p.waitForSelector('.tipcard', {timeout: 10000}).catch(() => {});
+      const k = await p.evaluate(() => {
+        const d = document.querySelector('.tipcard');
+        if (!d) return null;
+        const card = d.querySelector('.ulcard').getBoundingClientRect();
+        return {
+          kick: d.querySelector('.ulkick').textContent,
+          title: d.querySelector('h3').textContent,
+          body: [...d.querySelectorAll('p')].pop().textContent,
+          btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+          dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+          wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth,
+          home: !!document.querySelector('.home-page')
+        };
+      });
+      if (!k) fails.push(`${W} identify tip: not shown on Home to a player with 200 questions who never opened the Coral ID Key`);
+      else {
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Stuck on a coral? Try the Coral ID Key' ||
+          !/^Tap the growth form and the clues you can see.* It is under Identify, any time\.$/.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          !k.home ||
+          k.wide
+        )
+          fails.push(`${W} identify tip card: ${JSON.stringify(k)}`);
+        if (!k.dis) fails.push(`${W} identify tip: its buttons take a tap at once`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p.waitForFunction(() => location.hash.startsWith('#identify/key'), null, {timeout: 8000}).catch(() => {});
+        await p.waitForFunction(() => JSON.parse(localStorage.getItem('reefid-tips')).u.i === 1, null, {timeout: 8000}).catch(() => {});
+        const st = await tips(p),
+          hash = await p.evaluate(() => location.hash),
+          ev = await p.evaluate(() =>
+            JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+              .filter(x => /^tip:/.test(x.src || ''))
+              .map(x => `${x.k}:${x.src}:${x.r}:${x.m}`)
+          );
+        if (!hash.startsWith('#identify/key') || st.u.i !== 1 || (st.s.identify || []).length !== 1)
+          fails.push(`${W} identify tip Show me: ${JSON.stringify({hash, st})}`);
+        if (ev.join() !== 'pulse:tip:identify:shown:home,pulse:tip:identify:show:home')
+          fails.push(`${W} identify tip events: ${JSON.stringify(ev)}`);
+      }
+      if (errs.length) fails.push(`${W} identify tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Got it stays on Home (no redraw, no next question); no second card in the visit, a reload included (the visit was
+    // stamped); My progress gets it for another player the same way.
+    {
+      const [c, p] = await open(w, h, {q: 200, z: 3, c: 1, d: 1, m: 1, i: 0}, '', false);
+      await p.waitForSelector('.tipcard', {timeout: 10000}).catch(() => {});
+      await p
+        .waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000})
+        .catch(() => {});
+      await p.evaluate(() => (window.SMOKE_BAND = document.querySelector('.hdtiles')));
+      await p.click('.tipcard [data-b="2"]').catch(() => fails.push(`${W} identify tip: no Got it`));
+      const after = await p.evaluate(() => ({
+        gone: !document.querySelector('.tipcard'),
+        same: window.SMOKE_BAND === document.querySelector('.hdtiles'),
+        hash: location.hash
+      }));
+      if (!after.gone || !after.same || after.hash !== '') fails.push(`${W} identify tip Got it: ${JSON.stringify(after)}`);
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.waitForTimeout(3500);
+      if (await p.$('.tipcard')) fails.push(`${W} identify tip: a second card in the same visit`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 200, z: 3, c: 1, d: 1, m: 1, i: 0}, '#progress', false);
+      await p.waitForSelector('.tipcard', {timeout: 10000}).catch(() => {});
+      const t = await p.evaluate(() => (document.querySelector('.tipcard h3') || {}).textContent);
+      if (t !== 'Stuck on a coral? Try the Coral ID Key') fails.push(`${W} identify tip on My progress: ${JSON.stringify(t)}`);
+      await c.close();
+    }
+    // Not for these: it was opened (i 1), 199 questions, a tip already shown in this visit; nor at a break of a game; the
+    // subjects with no Identify tool declare no words (UNITS idtip is the corals' only).
+    for (const [u, x, at] of [
+      [{q: 400, z: 3, c: 1, d: 1, m: 1, i: 1}, {}, ''],
+      [{q: 199, z: 3, c: 1, d: 1, m: 1, i: 0}, {}, ''],
+      [{q: 400, z: 3, c: 1, d: 1, m: 1, i: 0}, {v: {n: 12, tip: 1}}, ''],
+      [{q: 400, z: 3, c: 1, d: 1, m: 1, i: 0}, {}, '#learn/genera']
+    ]) {
+      const [c, p] = await open(w, h, u, at, false, x);
+      await p.waitForTimeout(3500);
+      if (await p.$('.tipcard')) fails.push(`${W} identify tip shown to ${JSON.stringify({u, x, at})}`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 400, z: 3, c: 1, d: 1, m: 1, i: 0}, '#practice/quiz', false);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} identify tip shown at a break of the Quiz`);
+      const ids = await p.evaluate(() => Object.keys(UNITS).filter(k => UNITS[k].idtip));
+      if (ids.join() !== 'coral') fails.push(`${W} identify tip words declared by ${ids.join()}`);
       await c.close();
     }
     // Not for these: one pair only, no pair, the view seen before (m 1). Right answers only: a miss makes a pair of its own,

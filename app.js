@@ -2546,6 +2546,14 @@ const UNITS = {
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // The words of the "Did you know?" tip for its Identify tool (tips.js identify, quiz.js tipOut): ask, the title's
+    // question; name; lo, the body. Declared only by a subject whose Identify tool works: no words, no tip (the Fish ID Key
+    // is coming soon).
+    idtip: {
+      ask: 'Stuck on a coral?',
+      name: 'Coral ID Key',
+      lo: 'Tap the growth form and the clues you can see: it ranks the genera that fit, then compares them side by side.'
+    },
     // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
     memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
@@ -4006,6 +4014,8 @@ function route() {
   if ((h || 'home') === 'home' && typeof subjHello === 'function') subjHello();
   // The same moment for the offer to install the app (installNudge, below).
   if ((h || 'home') === 'home' && typeof installNudge === 'function') installNudge();
+  // The Identify tool opened counts for the "Did you know?" tip about it; Home and My progress may show that tip (quiz.js).
+  if (typeof tipRoute === 'function') tipRoute(h);
   // The page of address h is drawn: the tests wait for this instead of a fixed time (tests/pages.smoke.js drawn()).
   window.ROUTED = h;
 }
@@ -4471,6 +4481,7 @@ const SETUP = {
     achHelped(); // a report of this player's marked done in the admin: told once
     subjHello(); // a subject newly open to the player (fish): once, at a calm moment on Home
     installNudge(); // install the app on the home screen: once, at a calm moment on Home
+    tipRoute(hashNow()); // the Identify tool's "Did you know?" tip: Home or My progress, a page drawn before this tier
     prog();
     window.APP_READY = true; // Home, the quiz and My progress work (tests and tools/perf.js wait for this)
   },

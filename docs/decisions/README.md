@@ -84,6 +84,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | ["Did you know?" tip (c): My mix-ups, for players with several pairs mixed up who never saw the view](2026-11-21-tip-c-my-mix-ups.md) | #1420 |
 | 2026-11-21 | ["Did you know?" tip (d): Coral basics, for the "new" player who never opened it](2026-11-21-tip-d-coral-basics.md) | #1446 |
+| 2026-11-21 | ["Did you know?" tip (e): Identify (the Coral ID Key), for the player who never opened it](2026-11-21-tip-e-identify.md) | #1447 |
 | 2026-11-21 | [The tree sheets' helpers of learn.js named tree*, not fish*](2026-11-21-tree-names-learn-sheets.md) | #1389 |
 | 2026-11-21 | [One tree-game builder: the sea slugs' photos in play are the fish's, one photo once across every list](2026-11-21-tree-photo-once.md) | #1405 |
 | 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |

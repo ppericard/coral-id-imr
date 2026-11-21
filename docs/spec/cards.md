@@ -300,27 +300,33 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with five tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with six tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
-  tip's `id`, `ctx` (the games whose break may show it), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
-  break's `b.mix`, and for the basics tip `b.bx`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
-  break: b = {ctx, miss, zm, mix, bx}),
+  tip's `id`, `ctx` (the games whose break may show it; for the one tip with `out: true`, the pages outside the games,
+  `home` and `progress`), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
+  break's `b.mix`, for the basics tip `b.bx`, for the Identify tip `b.ix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
+  break: b = {ctx, miss, zm, mix, bx, ix}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
-  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics}, subj the `core.js` `SUBJECTS` record on
-  screen, basics the `app.js` `UNITS` `basics` words of the subject: the text follows the subject, whose fields hold the
-  words, never a test on its id, rule S1; the zoom tip reads
+  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics, key}, subj the `core.js` `SUBJECTS` record on
+  screen, basics the `app.js` `UNITS` `basics` words of the subject, key its `UNITS` `idtip` words: the text follows the
+  subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
   `zoom`: corallites for coral players, markings and fins for fish players) and `act` (its "Show me", `quiz.js`
-  `TIP_ACT`). `tipDue(state, b)` picks the tip of a break; `TIPR`: at most one tip a visit, never in its first `FLOOR`
-  (10) answers; a visit is answers less than `GAP` (30 min, as `model.js` `SESSION.GAP`) apart, and a reload is no new
-  visit.
+  `TIP_ACT`). `tipDue(state, b, L, now)` picks the tip of a break (a page outside the games passes the time); `TIPR`: at
+  most one tip a visit, never in its first `FLOOR` (10) answers of a game (a page has no answers to wait for: `out: true`
+  tips skip the floor); a visit is answers less than `GAP` (30 min, as `model.js` `SESSION.GAP`) apart, and a reload is
+  no new visit. On a page the visit counted is the last one, over when its last answer is `GAP` or more before the time
+  (a new visit, no tip yet); a tip shown on a page stamps the visit's time (`tipShown(state, id, now)`), so the answers
+  that follow, within `GAP`, bring no second tip.
 - **State, per device** (`reefid-tips`, outside the `reefid-sync-*` progress keys, so not synced and kept on sign-out,
   like `reefid-zoomhint`): `u` the usage counters (`q` game questions answered here: photo quiz, custom quiz, duels; `z`
   quiz photos the player enlarged here, on a question or its mix-up montage, `quiz.js` `tipZoomed`; a tip's own Show me
   is not counted; `c` times the Custom quiz was opened here; `d` times the Duel tab was opened here, `quiz.js`
   `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`; `m` times the
-  Custom quiz's My mix-ups view was drawn here, `quiz.js` `viewCustom`, a saved choice of that view also folding in as one),
+  Custom quiz's My mix-ups view was drawn here, `quiz.js` `viewCustom`, a saved choice of that view also folding in as one;
+  `i` times the Identify tool's page (the Coral ID Key) was drawn here, `app.js` `route()` through `quiz.js` `tipRoute`, a
+  choice the key saved on the device, `reefid-idkey-start2`, `-lay` or `-pv`, also folding in as one),
   seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
   a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
@@ -381,6 +387,21 @@ once a player uses it, how often is their choice. A small generic system with fi
   module, as the first-launch offer's button does) and **Got it**. The offers the module already has (the tour's last
   button and `startBasicsOffer` before the first question, Home's line under 50 answers, the Learn card) come before the
   tip; the tip is the reminder for the player who passed them by ([record](../decisions/2026-11-21-tip-d-coral-basics.md)).
+- **The Identify tip** (`id` `identify`, tip (e) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player with
+  200 questions or more here who never opened the subject's Identify tool (counter `u.i`), in a subject that has one (the
+  corals' Coral ID Key: `b.ix`, 1 only when `UNITS` declares the `idtip` words, so the Fish ID Key, coming soon, and the
+  sea slugs, with no key, get none; a subject whose key goes live declares its words and is served by the same entry).
+  The only tip outside the games: on **Home or My progress** (`ctx` `home`, `progress`; `quiz.js` `tipOut`, called from
+  `route()` through `tipRoute` and once from `SETUP[2]` for a page drawn before the quiz tier), 2 s (`TIP.OUT`) after the
+  page is drawn, checked again then: still on that page, no card, tour, toast, help, settings or photo open, within the
+  prompt spacing (`promptOk`, then `promptMark`), so it waits behind the install nudge and the subject hello and never
+  shows over them; `CARDS_SAID` waits for it. No moment to prefer (any visit from 200 questions); twice at most, the
+  second 150 questions after the first; the visit rules are those above (no floor on a page, one tip a visit, the time
+  stamped). Card: "Did you know?", "Stuck on a coral? Try the Coral ID Key" (`UNITS` `idtip` `ask` and `name`), the
+  `lo` line and "It is under Identify, any time.", **Show me** (opens the key, `#identify/key`) and **Got it**, which
+  leaves the page as it is (no redraw, no next question). Logged as the others (`m` is `home` or `progress`). The log
+  cannot say who opened the key before the counter existed, so `i` counts from the device on, plus a choice the key saved
+  ([record](../decisions/2026-11-21-tip-e-identify.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,
