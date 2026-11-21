@@ -1806,3 +1806,14 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   faut, à un moment donné, il faut quand même noter ce qu'on vient de dire et la discussion qu'on vient d'avoir, parce
   que sinon, on va juste re-avoir la même discussion dans 2 heures ou dans 2 jours.» Applied: #1357 merged;
   reviews/2026-11-21-simulation-scope.md (#1359).
+- **14:41, Linear as the tracking location.** (his request, written in English, with the integrator continuity study;
+  extract) «Make Linear the current tracking location for transferred subjects. Replace their old tracking entries with
+  pointers and keep the location of unmigrated subjects visible. Apply necessary repository changes through our
+  existing review and merge process.» «Adapt the existing recovery brief so a successor can find the active
+  discussion, current priorities, ongoing delegated work, relevant documents and next useful action.» «Maintain Linear
+  as part of your normal work from this point onward. I should not need to enter tickets, relay subagent results or
+  approve ordinary bookkeeping. Preserve the existing development, review and integration workflow.» «Use the existing
+  free plan initially. If its limits would prevent a useful migration, present the concrete cost and required scope
+  before subscribing.» Open work is tracked in Linear (team REE); ROADMAP.md keeps pointers and the subjects not transferred yet.
+  Applied: AGENTS.md, rules W6 and W19, INTEGRATOR.md "Linear", STATUS.md, tools/brief.py,
+  decisions/2026-11-21-linear-tracking.md (#1360).

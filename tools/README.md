@@ -40,7 +40,7 @@ Conventions that hold across them:
 
 | Tool | What it does |
 |---|---|
-| `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre. The session hooks run it (`--short`, `--time`) |
+| `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre, the links to Linear (where open work is tracked). The session hooks run it (`--short`, `--time`) |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
 | `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |

@@ -109,7 +109,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **W16** Corals: write `data.json` only with `tools/datajson.py`.
 - **W17** Check visually with Playwright, light and dark.
 - **W18** A PR from the template, squash-merged; merge `origin/main` into it, never rebase or force-push.
-- **W19** Docs in the same PR; a decision carried out gets a record; ideas not built go into ROADMAP; no history in the docs.
+- **W19** Docs in the same PR; a decision carried out gets a record; open work and ideas not built go into Linear; no history in the docs.
 - **W21** One consistent naming.
 - **W22** A worktree each, one smoke at a time; one open PR per agent.
 - **W23** The review loop on every PR; never re-run a failed job.

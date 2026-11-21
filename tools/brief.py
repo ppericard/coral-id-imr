@@ -11,7 +11,9 @@ It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
 the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), the
 infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
-of a limit; in the short brief only when one warns or the check failed), and the open questions for Pierre from docs/STATUS.md; the full brief adds the fish candidates waiting for the judging pass.
+of a limit; in the short brief only when one warns or the check failed), the open questions for Pierre from docs/STATUS.md,
+and where open work is tracked (Linear's team views, as links: the brief never queries Linear; in the short brief on the
+questions line); the full brief adds the fish candidates waiting for the judging pass.
 When this checkout's CLAUDE.md, AGENTS.md or .claude/ instructions differ from origin/main it says so (agents load this
 copy), it counts today's Agent launches by model and effort from tools/agent_guard.py's log, and it names the docs past
 their size mark (tests/docs.test.js DOC_MARKS; only when one is: a warning, never a block). The hooks run main's reviewed copy
@@ -45,6 +47,9 @@ REPO = 'ppericard/coral-id-imr'
 DEADLINE = 5.0  # seconds for every network call together
 START = time.monotonic()
 MANILA = timezone(timedelta(hours=8))  # Asia/Manila, UTC+8 all year (no daylight saving)
+# Where open work is tracked (docs/INTEGRATOR.md "Linear"): links only, never a call to Linear (the hooks have ~5 s).
+LINEAR_ACTIVE = 'https://linear.app/reef-id/team/REE/active'
+LINEAR_BACKLOG = 'https://linear.app/reef-id/team/REE/backlog'
 
 
 def left():
@@ -405,6 +410,11 @@ def questions():
     return n, (int(last.group(1)) if last else None), (checked.group(1).strip() if checked else None)
 
 
+def tracker_line():
+    """Where open work is tracked: Linear's team views, as links (offline: the brief never queries Linear)."""
+    return 'Open work: Linear team REE, active %s · backlog %s' % (LINEAR_ACTIVE, LINEAR_BACKLOG)
+
+
 # --- What loads here, and the agents launched today (the rules core trial; AGENTS.md "The right model and effort") -----
 # Agents load this checkout's CLAUDE.md, AGENTS.md and .claude/, not origin/main's: a stale or changed copy is said in
 # one line (the proposal's G13). tools/agent_guard.py logs every Agent launch in the git common dir; the brief counts
@@ -628,11 +638,15 @@ def brief(short, at):
     # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
     # "Working mode", reports and events): remind of the check, with when it was last done.
     remind = 'reports and events last checked %s: read them (sheet tabs Reports, Events; Sheets connector)' % (checked or 'never')
+    # Where open work is tracked: in the short brief (5 lines) on the questions line, which always survives the cut.
+    tl = tracker_line()
     if q_open is None:
-        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + remind)
+        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + (tl + ' · ' if short else '') + remind)
     else:
         q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
-        lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
+        lines += [q + ' · ' + tl + ' · ' + remind] if short else [q, 'Players: ' + remind]
+    if not short:
+        lines.append(tl)
     al = launches(at)
     if al and short:
         lines[-1] += ' · ' + al
