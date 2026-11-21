@@ -232,6 +232,68 @@ test('my mix-ups tip: once a visit, twice ever 150 questions apart, after the zo
   assert.strictEqual(tipDue(d, MIXED).id, 'mixups');
 });
 
+// The basics tip (d): b.bx is the player the subject's first-launch offer of its basics module is for who never opened it
+// (quiz.js tipBasics, read from the player's records).
+test('basics tip: only for b.bx, from 30 questions, at the Next after a miss, in the Quiz only', () => {
+  const fresh = n => played(n, 0, tipsInit({u: {c: 1, d: 1, z: 3, m: 1}})),
+    BX = {...MISS, bx: 1};
+  assert.strictEqual(tipDue(fresh(29), BX), null);
+  assert.strictEqual(tipDue(fresh(30), BX).id, 'basics'); // a miss: the first genera felt hard, the moment
+  assert.strictEqual(tipDue(fresh(30), {...RIGHT, bx: 1}), null); // a right answer before 50: not the moment
+  assert.strictEqual(tipDue(fresh(49), {...RIGHT, bx: 1}), null);
+  assert.strictEqual(tipDue(fresh(50), {...RIGHT, bx: 1}).id, 'basics'); // any break from 20 questions later
+  // Not the player of that offer, or not counted (b.bx missing): none, at any size.
+  for (const bx of [0, undefined]) assert.strictEqual(tipDue(fresh(400), {...MISS, bx}), null, String(bx));
+  assert.strictEqual(tipDue(fresh(400), {ctx: 'quiz', miss: true, zm: false}), null);
+  // Its game: the Quiz; not the Custom quiz, the Duel tab nor another page.
+  for (const ctx of ['quiz-custom', 'quiz-duel', 'genera']) assert.strictEqual(tipDue(fresh(100), {...BX, ctx}), null, ctx);
+  // No counter of its own: the state holds no basics count (the module's page records its opening).
+  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'm', 'q', 'z']);
+});
+
+test('basics tip: once a visit, twice ever 150 questions apart, after the other four tips', () => {
+  const BX = {...MISS, bx: 1},
+    visit = (st, n) => played(n, 0, st, st.v.t + TIPR.GAP);
+  let st = tipShown(played(30, 0, tipsInit({u: {c: 1, d: 1, z: 3, m: 1}})), 'basics');
+  assert.deepStrictEqual(st.s.basics, [30]);
+  assert.strictEqual(tipDue(st, BX), null); // same visit
+  st = visit(st, 149);
+  assert.strictEqual(st.u.q, 179);
+  assert.strictEqual(tipDue(st, BX), null);
+  st = played(1, 0, st, st.v.t + MIN);
+  assert.strictEqual(tipDue(st, BX).id, 'basics'); // 180
+  st = tipShown(st, 'basics');
+  assert.strictEqual(tipDue(visit(st, 500), BX), null); // never a third time
+  // With all five due (a "new" player at 150 questions), the others first, at later visits.
+  const all = played(150, 0, tipsInit({})),
+    MBX = {...BX, mix: 3};
+  assert.strictEqual(tipDue(all, MBX).id, 'zoom');
+  let s = all;
+  for (const id of ['zoom', 'custom', 'duels', 'mixups']) {
+    assert.strictEqual(tipDue(s, MBX).id, id);
+    s = visit(tipShown(s, id), 12);
+  }
+  assert.strictEqual(tipDue(s, MBX).id, 'basics');
+  // A "new" player's early questions: the zoom tip from 20, so it comes before this one in a visit that has both due.
+  assert.strictEqual(tipDue(played(40, 0, tipsInit({u: {c: 1, d: 1, m: 1}})), BX).id, 'zoom');
+});
+
+test('basics tip: the card speaks the subject’s basics words and never a subject of its own', () => {
+  const t = TIPS.find(x => x.id === 'basics'),
+    W = [
+      {name: 'Coral basics', ask: 'New to corals?', lo: 'Coral basics shows the few words the ID tips use. About 5 minutes.'},
+      {name: 'Fish basics', ask: 'New to reef fish?', lo: 'Fish basics shows what to look at first. About 5 minutes.'}
+    ];
+  for (const w of W) {
+    assert.strictEqual(t.card.title({basics: w}), `${w.ask} Try ${w.name}`);
+    assert.strictEqual(t.card.body({basics: w}), `${w.lo} It is in Learn, any time.`);
+  }
+  // Without its words, a plain text that names no subject.
+  assert.match(t.card.title({}) + t.card.body({}), /basics/i);
+  assert.doesNotMatch(t.card.title({}) + t.card.body({}), /coral|fish|genus|genera/i);
+  assert.strictEqual(t.act, 'basics');
+});
+
 // The card speaks the subject on screen: a fish player is never told to look at the corallites. Every subject gets a
 // text; a fish player's never names a coral part. The wording is the subject's (core.js SUBJECTS zoom): tips.js never
 // names a subject (rule S1).
