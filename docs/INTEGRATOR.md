@@ -362,6 +362,12 @@ through the Linear MCP tools. ROADMAP.md keeps a pointer for each subject transf
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
   detail in its collapsible "Agent notes". Todo means ready: permitted by a decision of his or the integrator's
   mandate, never approved by the status alone.
+- **Drain the Todo column until he says stop** (Pierre, 2026-11-21 21:00: «tant que j'ai pas dit qu'on s'arrêtait, il
+  faut continuer … écluser tout ce qu'il y a dans la roadmap qui est faisable sans moi, et déjà décidé»): every Todo
+  issue not assigned to him has an agent, High first, then the rest, evenings and nights included (Rule 0 stops
+  questions, not work); the sensitive files go one PR at a time (rule W27), the rest in parallel. A "Next" list in
+  STATUS is never a substitute for launching. Launch agents from the main checkout: an agent starts in the
+  integrator's current directory, and one started inside a PR's worktree takes it over.
 - **Pierre never enters tickets**, relays a subagent's result or approves ordinary bookkeeping. Subagents report; the
   integrator updates Linear, unless the brief tells the subagent to.
 - **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in
