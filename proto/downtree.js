@@ -72,14 +72,16 @@ LAB.add({
     const score = {ok: 0, n: 0};
     // The units of the game in play and those the player has unlocked (rule L4), the tree's children by parent.
     const world = () => {
+      // (a unit of the tree is one of the game's, not any record: a sea slug genus's family is structure only)
       const play = [...new Set([...pool(), ...sciNow(), ...sciSpAll()])],
+        set = new Set(play),
         open = new Set(unlocked(play)),
         kids = new Map();
       Object.values(TREEU.gen).forEach(g => {
-        const k = g.parent && GX(g.parent) ? g.parent : '';
+        const k = g.parent && set.has(g.parent) ? g.parent : '';
         kids.set(k, [...(kids.get(k) || []), g.id]);
       });
-      return {play, open, kids};
+      return {play, set, open, kids};
     };
     const rankKey = o => `${(GX(o) || {}).rank || ''}|${(GX(o) || {}).kind || ''}`;
     // One round: a unit the player has unlocked that has an unlocked unit above it or below it, a photo of it, and the chain
@@ -88,11 +90,12 @@ LAB.add({
     const round = () => {
       const W = world(),
         up = o => (GX(o) || {}).parent || '',
-        has = o => !!GX(o),
+        has = o => W.set.has(o),
         isOpen = o => W.open.has(o),
         apart = (a, b) => !choiceNames(a, b) && !choiceNames(b, a),
-        // the unlocked units with a rank of their own (a genus, a species): a family alone gives a one-step walk
-        cand = [...W.open].filter(o => (GX(o) || {}).rank);
+        // the unlocked units with a rank of their own (a genus, a species by its scientific name: the common-name species hang
+        // from the family, a second tree): a family alone gives a one-step walk
+        cand = [...W.open].filter(o => (GX(o) || {}).rank && (GX(o).rank !== 'species' || o === spUnitId('sci', GX(o).sp)));
       let planned = false;
       for (let i = 0, L = shuffle(cand); i < 24 && i < L.length; i++) {
         const u = L[i],
@@ -100,13 +103,13 @@ LAB.add({
         if (!p) continue;
         // the lineage of the photo's species when it has one (a genus unit's photo is of one of its species), else of the unit
         const sp = !p.gl && p.sp ? spUnitId('sci', p.sp) : '',
-          viaSp = sp && GX(sp) ? dtLineage(sp, up, has) : [],
+          viaSp = sp && has(sp) ? dtLineage(sp, up, has) : [],
           chain = viaSp.includes(u) ? viaSp : dtLineage(u, up, has),
           steps = dtSteps(chain, isOpen),
           made = [];
         for (const o of steps) {
           const par = up(o),
-            peers = par && GX(par) ? W.kids.get(par) || [] : W.play.filter(x => rankKey(x) === rankKey(o)),
+            peers = par && W.set.has(par) ? W.kids.get(par) || [] : W.play.filter(x => rankKey(x) === rankKey(o)),
             ch = dtChoices(
               o,
               peers.filter(x => rankKey(x) === rankKey(o)),
@@ -174,10 +177,15 @@ LAB.add({
         q.querySelector('#dtp').textContent = `Which ${GX(s.u).one || SUBJ.one} is it?`;
         ans.innerHTML = s.ch.map(name).join('');
         ans.querySelectorAll('[data-n]').forEach(b => (b.onclick = () => take(b.dataset.n)));
+        gate();
         fit();
       };
+      // A photo that cannot load for good closes the question (app.js marks it .qnone, as for the quiz): no step is taken on a
+      // missing photo, by tap or by key, and the next step's names stay closed.
+      const gate = () => ans.querySelectorAll('[data-n]').forEach(b => (b.disabled = q.classList.contains('qnone')));
+      new MutationObserver(gate).observe(q, {attributes: true, attributeFilter: ['class']});
       const take = c => {
-        if (done) return;
+        if (done || q.classList.contains('qnone')) return;
         const s = steps[at],
           good = c === s.u,
           li = lis[at];

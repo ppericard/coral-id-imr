@@ -680,7 +680,17 @@ async function downTree(b, base, errs) {
   });
   if (fams < 6) return [`down the tree: ${fams} fish families with a photo`];
   await q.evaluate(() => (location.hash = hr('lab-downtree')));
-  await q.waitForSelector('#view .note', {timeout: 15000}).catch(() => {});
+  await q
+    .waitForFunction(
+      () =>
+        /./.test((document.querySelector('#view .note') || {}).textContent || '') &&
+        !/^\s*Loading/.test(document.querySelector('#view .note').textContent),
+      null,
+      {
+        timeout: 15000
+      }
+    )
+    .catch(() => {});
   const none = await q.evaluate(() => ({
     note: (document.querySelector('#view .note') || {}).textContent || '',
     names: document.querySelectorAll('#view .dtq .dtans [data-n]').length

@@ -65,6 +65,8 @@ module.exports = async function downTreeCheck(p, w, fails, tag = '', rounds = 6)
         // the broadest down, each one under the one above, each unlocked (rule L4)
         lineage: chain.every((u, i) => (i ? GX(u).parent === chain[i - 1] : true)),
         unlockedAll: chain.every(u => open.has(u)),
+        // the walk starts at one of the subject's own units (a sea slug genus), never at a record that is structure only (its family)
+        top: pool().includes(chain[0]),
         ranks: chain.map(u => GX(u).rank || ''),
         distinctRanks: new Set(chain.map(u => GX(u).rank || '')).size === chain.length,
         empty: lisText === '',
@@ -77,6 +79,7 @@ module.exports = async function downTreeCheck(p, w, fails, tag = '', rounds = 6)
     if (pre.photos !== 1 || pre.n < 2 || pre.n > 3 || !pre.empty || pre.named || !/^Which .+ is it\?$/.test(pre.prompt || ''))
       fails.push(`${at}, round ${k + 1} before the first tap: ${JSON.stringify(pre)}`);
     if (!pre.lineage) fails.push(`${at}, round ${k + 1}: a step is not under the step above ${JSON.stringify(pre.chain)}`);
+    if (!pre.top) fails.push(`${at}, round ${k + 1}: the walk starts at a unit that is not one of the game's ${JSON.stringify(pre.chain)}`);
     if (!pre.unlockedAll) fails.push(`${at}, round ${k + 1}: a step on a unit not unlocked ${JSON.stringify(pre.chain)}`);
     if (!pre.distinctRanks) fails.push(`${at}, round ${k + 1}: two steps of one rank ${JSON.stringify(pre.ranks)}`);
     await screen('fresh', k);

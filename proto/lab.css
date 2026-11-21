@@ -4680,7 +4680,7 @@ body:has(.ikstart:not([hidden])) main {
    crossed with the right name (a tick or a cross, never colour alone). The step's verdict sits under the names; the walk's
    end is the quiz's own short sheet, whose "Partly" heading (a partial credit) is neither the right answer's green nor the
    miss's red. */
-.fb h3.mid .v {
+.q.dtq .fb h3.mid .v {
   color: var(--ink);
 }
 .dtsteps {
@@ -4743,6 +4743,11 @@ body:has(.ikstart:not([hidden])) main {
 .q.dtq.done .dtsteps,
 .q.dtq.done .dtscore {
   display: none;
+}
+/* ...and the stage may be as small as fitStage makes it (120 px at least), not the quiz's 180: under a tall sheet (More open) the
+   photo would sit 12 px behind it. */
+.q.dtq.done .qstage {
+  min-height: 0;
 }
 @media (min-width: 1024px) {
   .q.dtq.done .qtop {

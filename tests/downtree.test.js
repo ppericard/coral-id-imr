@@ -181,6 +181,35 @@ test('the page is untimed and changes no progress: it never calls the quiz recor
   assert.ok(!/<button[^>]*data-c=/.test(code));
 });
 
+test('the units of the walk are the game’s own (Codex review #1387), the species the scientific ones, a lost photo closes the steps', () => {
+  const code = SRC.split('\n')
+    .map(l => l.replace(/(^|\s)\/\/.*$/, ''))
+    .join('\n');
+  // membership in the game's units, never "has a record": a sea slug genus's family is a record that is not a unit
+  assert.match(code, /has = o => W\.set\.has\(o\)/);
+  assert.ok(!/has = o => !!GX\(o\)/.test(code));
+  assert.match(code, /par && W\.set\.has\(par\)/);
+  // the candidates: a species only by its scientific unit (the common-name species hang from the family)
+  assert.match(code, /o === spUnitId\('sci', GX\(o\)\.sp\)/);
+  // a photo that cannot load closes the question (.qnone): neither a tap nor a key takes a step, the names are disabled
+  assert.match(code, /if \(done \|\| q\.classList\.contains\('qnone'\)\) return;/);
+  assert.match(code, /b\.disabled = q\.classList\.contains\('qnone'\)/);
+  assert.match(code, /new MutationObserver\(gate\)/);
+  // a sea slug tree on the pure part: the family is not a unit of the game, the walk is genus then species
+  const slug = o => ({'g:A': 'fam:X', 'sci:a1': 'g:A'})[o] || '';
+  assert.deepStrictEqual(
+    lineage('sci:a1', slug, o => o !== 'fam:X'),
+    ['g:A', 'sci:a1']
+  );
+  assert.deepStrictEqual(
+    steps(
+      lineage('sci:a1', slug, o => o !== 'fam:X'),
+      () => true
+    ),
+    ['g:A', 'sci:a1']
+  );
+});
+
 test('registered: the Tools list, the service worker list and the hub icon; offered only where a unit has finer ones under it', () => {
   const sw = read('sw.js');
   assert.match(block(LAB, 'files: [', '],', {file: 'proto/lab.js'}), /'downtree'/);
