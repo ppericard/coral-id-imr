@@ -1,6 +1,6 @@
 # The Tree names each subject's circles in its own words; the coral Look-alikes page reads the pairs in force
 
-Date: 2026-11-21. PR: #TBD. Rules or docs touched: S1, C2, A1; docs/spec/admin-tree.md, content.md, admin-photos.md; REE-186.
+Date: 2026-11-21. PR: #1385. Rules or docs touched: S1, C2, A1; docs/spec/admin-tree.md, content.md, admin-photos.md; REE-186.
 
 ## Context
 
