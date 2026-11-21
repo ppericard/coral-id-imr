@@ -19,6 +19,27 @@ const LS_PAIRS = [
 // Whether the list documents phase `ph` for a species record P: the juvenile's own verdict, the female's and the male's from
 // the sexes' colours or the initial and terminal phases'.
 const lsSourced = (P, ph) => !!P && (ph === 'juvenile' ? !!P.juv : ph === 'female' || ph === 'male' ? !!(P.sex || P.ip_tp) : false);
+// What the sheet says for a stage (rule C2: the source's own words): one quote of the verdict the stage rests on. A verdict
+// holds every quote the list gives for it, each about one stage or several (Coris gaimard's sexes: a female's, a male's, then
+// both), so a quote goes under a stage's name only when it names that stage, as a whole word ("Females" never names the
+// male; "initial phase" is not read as a sex: a source may call the juvenile so). One that names that stage alone first, then
+// one that names it with another; with none, the verdict's first quote under the verdict's own name (the sexes, the juvenile
+// and the adult, the initial and terminal phases). {label, q, s} or null.
+const LS_WORDS = {juvenile: /\bjuveniles?\b/i, female: /\bfemales?\b/i, male: /\bmales?\b/i},
+  LS_VERDICTS = {juvenile: ['juv'], female: ['sex', 'ip_tp'], male: ['sex', 'ip_tp']},
+  LS_BOTH = {juv: 'Juvenile and adult', sex: 'Female and male', ip_tp: 'Initial and terminal phases'};
+function lsQuote(P, ph) {
+  const ks = (LS_VERDICTS[ph] || []).filter(k => P && P[k] && [].concat(P[k].q).filter(Boolean).length);
+  if (!ks.length) return null;
+  const qs = k => [].concat(P[k].q).filter(Boolean),
+    alone = x => Object.keys(LS_WORDS).every(o => o === ph || !LS_WORDS[o].test(x));
+  for (const pass of [alone, () => true])
+    for (const k of ks) {
+      const q = qs(k).find(x => LS_WORDS[ph].test(x) && pass(x));
+      if (q) return {label: ph[0].toUpperCase() + ph.slice(1), q, s: P[k].s};
+    }
+  return {label: LS_BOTH[ks[0]], q: qs(ks[0])[0], s: P[ks[0]].s};
+}
 // The species of the game that can be asked: items [{p, n}] are the photos of the unlocked units (p a photo carrying `sp`
 // and `ph`, n its unit), phases the list's species by id. Each species holds {n, ph: {phase: [photos]}}, only for a species
 // the list documents, only the phases it documents, and only when two of them have a photo: a match needs two stages.
@@ -96,13 +117,10 @@ LAB.add({
       label = id => (sp(id).common ? `${esc(sp(id).common)} <small><i>${esc(sp(id).name)}</i></small>` : `<i>${esc(sp(id).name)}</i>`),
       short = id => (sp(id).common ? esc(sp(id).common) : `<i>${esc(sp(id).name)}</i>`),
       src = e => esc(e.s.map(x => x.t).join('; ')),
-      // the list's own words for a phase and its sources (rule C2), "Male: …", from the verdict the phase rests on
-      say = (id, ph, P) => {
-        const v = ph === 'juvenile' ? P.juv : P.sex || P.ip_tp;
-        return v
-          ? `<p class="vs fbline">${esc(word(ph)[0].toUpperCase() + word(ph).slice(1))}: ${esc(v.q)} <small class="esrc">(${src(v)})</small></p>`
-          : '';
-      };
+      // the list's own words for a phase and its sources (rule C2), "Male: …" only over a quote that names the male (lsQuote);
+      // a quote already said in this sheet is not said again (the female and the male often rest on one quote of the sexes)
+      say = (x, not) =>
+        x && !(not && not.q === x.q) ? `<p class="vs fbline">${esc(x.label)}: ${esc(x.q)} <small class="esrc">(${src(x)})</small></p>` : '';
     const build = phases => {
       // the photos of the units the player has unlocked (rule L4), the families: each with the species and phase it carries
       // (the subject's own rank, rankOf '': a genus unit holds its species' photos again)
@@ -185,23 +203,25 @@ LAB.add({
         answered = true;
         const good = k === R.at;
         qAnswers(q, false);
-        // Each tile now says its species and its stage, and its source (rule P5: only now): the right one ticked, a wrong tap
-        // crossed (never colour alone), and opens the four photos whole.
+        // Each tile now says its stage, then its species, and its source (rule P5: only now): the right one ticked, a wrong tap
+        // crossed (never colour alone), and opens the four photos whole. The stage first, on its own line, the name wrapping
+        // under it (lab.css): the stage is the point of the game, never the part cut off.
         stage.querySelectorAll('.fxt').forEach((f, i) => {
           const m = i === 0 ? '' : i - 1 === R.at ? 'fok' : i - 1 === k ? 'fko' : '';
           if (m) f.classList.add(m);
           f.querySelectorAll('figcaption').forEach(c => c.remove());
           f.insertAdjacentHTML(
             'beforeend',
-            `<figcaption>${m ? `<span aria-hidden="true">${m === 'fok' ? '✓' : '✗'}</span> ` : ''}${short(spOf[i])} <small>· ${esc(word(stageOf[i]))}</small></figcaption><button type="button" class="zoom" data-fz="${i}" aria-label="Enlarge ${esc(sp(spOf[i]).name)}">${ZOOMI}</button>${photoSrc(R.ph[i])}`
+            `<figcaption><span class="lsst">${m ? `<span aria-hidden="true">${m === 'fok' ? '✓' : '✗'}</span> ` : ''}${esc(word(stageOf[i]))}</span> <span class="lsnm">${short(spOf[i])}</span></figcaption><button type="button" class="zoom" data-fz="${i}" aria-label="Enlarge ${esc(sp(spOf[i]).name)}">${ZOOMI}</button>${photoSrc(R.ph[i])}`
           );
         });
-        const P = phases[R.sp];
+        const P = phases[R.sp],
+          said = lsQuote(P, R.tgt);
         labSheet(q, {
           good,
           head: `the ${esc(word(R.tgt))} of this ${esc(word(R.ref))} is ${label(R.sp)}`,
-          line: say(R.sp, R.tgt, P),
-          more: `${say(R.sp, R.ref, P)}${labTips([R.n])}`,
+          line: say(said),
+          more: `${say(lsQuote(P, R.ref), said)}${labTips([R.n])}`,
           photos: R.ph,
           rep: {g: R.n, a: '', ph: R.ph.map(p => p.f).filter(Boolean), m: 'lifestages'},
           next: () => draw(index),

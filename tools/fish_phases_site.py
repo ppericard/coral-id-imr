@@ -7,8 +7,8 @@ the page needs only the species where a source documents the adult phases, each 
 list's notes and `no` or `unknown` verdicts.
 
 What goes in (rules C2 and C5, nothing settled here): a species with a `yes` verdict for `sex` (female and male colours) or for
-`ip_tp` (initial and terminal phase colours), and none of the verdicts it uses a conflict: the verdict, its quote (the list's
-own words, the first sentence) and its sources {t, u}. The juvenile verdict (`juv`) goes in when it is `yes`. A species
+`ip_tp` (initial and terminal phase colours), and none of the verdicts it uses a conflict: the verdict, its quotes (the list's
+own words, every one, each about one stage or several) and its sources {t, u}. The juvenile verdict (`juv`) goes in when it is `yes`. A species
 whose note for a verdict it uses records a disagreement between sources (the list's `conflict` or a note that says so,
 tests/phasepoints.test.js) is left out whole: the game never picks a side. A species with no adult verdict is left out: a match
 needs two phases and the young alone gives none.
@@ -35,7 +35,9 @@ def sources(raw):
     """The list's `src` string ("Name <url> | Name <url> Short description; ...") as [{t, u}], each address once. A source the
     list names with no address (the FishBase Morphology table, a book) keeps its words and u ''."""
     out, seen = [], set()
-    for part in str(raw or "").split(" | "):
+    # the list separates its sources with " | " or "; " ("FishBase <url> Short description; Reef Life Survey <url>"): each one
+    # is kept, never only the first of a part (a quote may come from any of them)
+    for part in re.split(r"\s+\|\s+|;\s+", str(raw or "")):
         part = part.strip()
         m = SOURCE.match(part)
         t, u = (m.group(1).strip(" ;,"), m.group(2)) if m else (part, "")
@@ -53,8 +55,9 @@ def verdict(e, k):
     s = sources((e.get("src") or {}).get(k))
     if not q or not s:
         sys.exit(f"{SRC.name} {e.get('sp')}: a yes for {k} with no quote or no source")
-    # the first sentence only: the game says one (the file is in the service worker's shell, which every device downloads)
-    return {"q": q[0], "s": s}
+    # every quote of the verdict, in the list's order: each may describe another stage (Coris gaimard's sexes: a female's, a
+    # male's, then both), and the game says, under a stage's name, only one that names that stage (proto/lifestages.js lsQuote)
+    return {"q": q, "s": s}
 
 
 def build(doc):

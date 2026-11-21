@@ -19,10 +19,17 @@ version, no sheet change. Choices made while building, none decided with Pierre,
   a `yes` for the sexes' colours (`sex`) or the initial and terminal phases (`ip_tp`) and, for a juvenile, a `yes` for `juv`. A
   species whose sources disagree is left out whole (the game picks no side). 94 species in the list, 28 with two documented stages
   on photos in play today. The answer says the stage with the list's quote and its sources, More the stage shown with its own.
+  A verdict's quotes describe one stage or several (Coris gaimard's sexes: a female's, a male's, then both), so a stage's name
+  goes only over a quote that names that stage as a whole word, one naming it alone first (`lsQuote`); with none, the verdict's
+  first quote under the verdict's name ("Female and male", "Juvenile and adult", "Initial and terminal phases"; "initial
+  phase" is never read as the female: a source calls the juvenile so). A quote is said once per sheet. The verdict's sources
+  are all said, the list not tying each quote to one of them. (The visual check of #1388 found "Male: Females have a bright
+  yellow caudal fin" and one quote under both Male and Female: 89 of the 212 stage lines did not name their stage.)
 - **How the list reaches the page.** `tools/` is not on the site, so `tools/fish_phases_site.py` writes `fish-phases.json` from the
-  list (the species with an adult verdict, each verdict with its first quote sentence and its sources; `--check` in
-  `tests/fishphasesite.test.js` fails when they drift) and `UNITS.fish.phases` fetches it once, unversioned and outside the service
-  worker's shell (as the sea slugs' files: 39 KB that not every device's install should carry for a Lab game). A file of its own,
+  list (the species with an adult verdict, each verdict with all its quotes and all its sources, those the list separates with
+  " | " or "; "; `--check` in `tests/fishphasesite.test.js` fails when they drift) and `UNITS.fish.phases` fetches it once,
+  unversioned and outside the service worker's shell (as the sea slugs' files: 59 KB that not every device's install should
+  carry for a Lab game). A file of its own,
   not a field of `fish.json` as `jd` (the juvenile card's list), so the fish build is not rerun for a Lab prototype.
 - **The photos** are those `fish-game.json` tags with the phase (`ph`: juvenile, female, male), from the families the player has
   unlocked (rule L4), the draw's own choice where it gives one (`labShots`), else any photo of the stage; none of them framed on
@@ -42,7 +49,7 @@ version, no sheet change. Choices made while building, none decided with Pierre,
   list, conflicts left out, a verdict without a source refused) and `tests/lifestages.check.js`, played by the fish smoke
   (rounds at 390 and 1280 px, one screen in every state, no progress, log or answer count changed, no unit opened).
 - `fish-phases.json` is a data file other code may follow once the game graduates: its shape (`species` by id with `name`, `juv`,
-  `sex`, `ip_tp` each `{q, s}`) is the integrator's call here and easy to change while only the Lab reads it.
+  `sex`, `ip_tp` each `{q: [quotes], s}`) is the integrator's call here and easy to change while only the Lab reads it.
 - Left, for when Pierre has judged it by taps: scoring, the species whose photos carry no phase tag (the next judging pass,
   ROADMAP "Fish photo judging, next", re-judges phases on this list: more species will qualify), a "to its name" variant (the
   issue says "to each other or to its name": built is the match to each other; naming the species is the Matrix and the quiz).

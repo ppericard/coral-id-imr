@@ -19,11 +19,11 @@ const ctx = {};
 vm.createContext(ctx);
 vm.runInContext(
   block(SRC, 'const LS_PAIRS', 'LAB.add(', {file: 'proto/lifestages.js'}) +
-    '\nthis.pairs = LS_PAIRS; this.sourced = lsSourced; this.index = lsIndex; this.plan = lsPlan; this.photos = lsPhotos;',
+    '\nthis.pairs = LS_PAIRS; this.sourced = lsSourced; this.index = lsIndex; this.plan = lsPlan; this.photos = lsPhotos; this.quote = lsQuote;',
   ctx
 );
 const copy = x => JSON.parse(JSON.stringify(x));
-const {sourced, index, plan, photos} = ctx;
+const {sourced, index, plan, photos, quote} = ctx;
 const seeded = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
 
 // The list: A documents the three stages (juvenile and the adults' sexes), B the sexes only, C the initial and terminal phases only,
@@ -218,6 +218,79 @@ test('Codex review #1388: each lightbox photo its own unit, a late list draws no
   assert.ok(at > 0);
   assert.match(css.slice(at), /\.q\.lsq \.fxt > button\[data-c\],\s*\.q\.lsq \.fxt\.fref img \{\s*position: relative;/);
   assert.match(css, /\.q\.ooq \.fxt::before,\s*\.q\.lsq \.fxt::before/);
+});
+
+// A stage's name goes only over a quote that names that stage (whole words: "Females" does not name the male); a quote about
+// the sexes in general goes under the verdict's own name. The visual check of #1388 found "Male: Females have a bright yellow
+// caudal fin" (the sexes' first quote said under the male) and one quote under both Male and Female.
+const STAGE = {juvenile: /\bjuveniles?\b/i, female: /\bfemales?\b/i, male: /\bmales?\b/i};
+const VERDICTS = {juvenile: ['juv'], female: ['sex', 'ip_tp'], male: ['sex', 'ip_tp']};
+
+test('a stage’s name goes only over a quote that names it, the one naming it alone first; else the verdict’s name', () => {
+  const P = {
+    sex: {q: ['Females have a yellow tail.', 'Male with a blue body.', 'Females similar to males but red.'], s: [{t: 'A', u: ''}]},
+    juv: {q: ['Adults are pink.', 'As a juvenile it is red.'], s: [{t: 'B', u: ''}]}
+  };
+  assert.deepStrictEqual(copy(quote(P, 'male')), {label: 'Male', q: 'Male with a blue body.', s: [{t: 'A', u: ''}]});
+  assert.strictEqual(quote(P, 'female').q, 'Females have a yellow tail.');
+  assert.deepStrictEqual(copy(quote(P, 'juvenile')), {label: 'Juvenile', q: 'As a juvenile it is red.', s: [{t: 'B', u: ''}]});
+  // only a quote naming both: it goes under the stage, it is about it too
+  assert.strictEqual(quote({sex: {q: ['Females similar to males but red.'], s: []}}, 'male').q, 'Females similar to males but red.');
+  // no quote names the stage: the verdict's first quote, under the verdict's name
+  assert.deepStrictEqual(copy(quote({sex: {q: ['Different colours in mature adults.'], s: []}}, 'female')), {
+    label: 'Female and male',
+    q: 'Different colours in mature adults.',
+    s: []
+  });
+  assert.strictEqual(quote({juv: {q: ['Adults are pink.'], s: []}}, 'juvenile').label, 'Juvenile and adult');
+  // "initial phase" is not read as the female (a source may call the juvenile so)
+  const ip = quote({ip_tp: {q: ['Juveniles (Initial phase) are orange.'], s: []}}, 'female');
+  assert.strictEqual(ip.label, 'Initial and terminal phases');
+  // the sexes' verdict before the phases', as the stage's documentation (lsSourced)
+  assert.strictEqual(quote({sex: {q: ['Male blue.'], s: []}, ip_tp: {q: ['Males green.'], s: []}}, 'male').q, 'Male blue.');
+  assert.strictEqual(quote({ip_tp: {q: ['Males green.'], s: []}}, 'male').q, 'Males green.');
+  // a stage the game does not ask, or no verdict for it
+  assert.strictEqual(quote(P, 'intermediate'), null);
+  assert.strictEqual(quote({sex: P.sex}, 'juvenile'), null);
+  assert.strictEqual(quote(undefined, 'male'), null);
+});
+
+test('on the real list, every stage’s name is over a quote that names that stage, from the verdict it rests on', () => {
+  const L = JSON.parse(read('fish-phases.json')).species;
+  let named = 0,
+    general = 0;
+  for (const [id, P] of Object.entries(L))
+    for (const ph of ['juvenile', 'female', 'male']) {
+      const x = quote(P, ph);
+      assert.strictEqual(!!x, sourced(P, ph), `${id} ${ph}: a quote exactly when the stage is documented`);
+      if (!x) continue;
+      const own = VERDICTS[ph].filter(k => P[k]);
+      assert.ok(
+        own.some(k => P[k].q.includes(x.q) && P[k].s === x.s),
+        `${id} ${ph}: the quote and its sources come from the stage’s own verdict`
+      );
+      if (x.label === ph[0].toUpperCase() + ph.slice(1)) {
+        named++;
+        assert.match(x.q, STAGE[ph], `${id}: "${x.label}: ${x.q}"`);
+      } else {
+        general++;
+        assert.ok(['Juvenile and adult', 'Female and male', 'Initial and terminal phases'].includes(x.label), x.label);
+        assert.ok(!own.some(k => P[k].q.some(q => STAGE[ph].test(q))), `${id} ${ph}: a quote names the stage but is not said`);
+      }
+    }
+  assert.ok(named > 20 && general > 20, `named ${named}, general ${general}`);
+  // the cases the visual check found: Coris gaimard's (s207) sexes and Chlorurus spilurus' (s189) juvenile
+  assert.strictEqual(quote(L.s207, 'male').q.slice(0, 26), 'Male with dark green-blue ');
+  assert.strictEqual(quote(L.s207, 'female').q, 'Females have a bright yellow caudal fin (Ref. 48636 ).');
+  assert.strictEqual(quote(L.s189, 'juvenile').q, 'Small juveniles are dark brown with four white stripes along the side.');
+});
+
+test('the sheet says a quote once: the stage shown’s is left out of More when it is the stage found’s', () => {
+  const code = SRC.replace(/(^|\s)\/\/.*$/gm, '');
+  assert.match(code, /say = \(x, not\) =>\s*\(?x && !\(not && not\.q === x\.q\)/);
+  assert.match(code, /line: say\(said\)/);
+  assert.match(code, /more: `\$\{say\(lsQuote\(P, R\.ref\), said\)\}/);
+  assert.ok(!/P\.sex \|\| P\.ip_tp\)?;?\s*\n?\s*return v/.test(code), 'the old stage-blind quote');
 });
 
 test('registered: the Tools list, the service worker list and the hub icon; offered only to a subject with a list of phases', () => {

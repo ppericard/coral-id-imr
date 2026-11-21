@@ -54,13 +54,22 @@ test('a species with a documented adult stage goes in, with its quotes and sourc
       }),
       'Juvenile only': entry('s3', {juv: 'yes', src: {juv: 'A <https://a.org/>'}, quote: {juv: 'Barred.'}}),
       'No stages': entry('s4', {sex: 'no', juv: 'no'}),
+      'Two sources': entry('s6', {
+        sex: 'yes',
+        src: {
+          sex: 'FishBase <https://www.fishbase.se/c> Short description; Reef Life Survey <https://reeflifesurvey.com/c/>; FishBase (Ref. 1)'
+        },
+        quote: {sex: 'Females red. | Male blue.'}
+      }),
       'Unknown': entry('s5')
     })
   );
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.deepStrictEqual(Object.keys(r.json.species), ['s1', 's2']);
+  assert.deepStrictEqual(Object.keys(r.json.species), ['s1', 's2', 's6']);
   const a = r.json.species.s1;
-  assert.strictEqual(a.sex.q, 'Male blue.', 'the first sentence');
+  // every quote, in the list's order: each may be about another stage (proto/lifestages.js lsQuote says the one naming it)
+  assert.deepStrictEqual(a.sex.q, ['Male blue.', 'Female yellow.']);
+  assert.deepStrictEqual(a.juv.q, ['Juveniles barred.']);
   assert.deepStrictEqual(a.sex.s, [
     {t: 'Reef Life Survey', u: 'https://reeflifesurvey.com/a/'},
     {t: 'FishBase Morphology table (snapshot)', u: ''}
@@ -68,6 +77,13 @@ test('a species with a documented adult stage goes in, with its quotes and sourc
   assert.deepStrictEqual(a.juv.s, [{t: 'Fishes of Australia', u: 'https://fishesofaustralia.net.au/x'}]);
   assert.ok(!('ip_tp' in a), 'a verdict that is not yes is kept out');
   assert.deepStrictEqual(r.json.species.s2.ip_tp.s, [{t: 'FishBase', u: 'https://www.fishbase.se/s'}], 'each address once');
+  // sources the list separates with "; " are each kept (the visual check of #1388: Reef Life Survey after "FishBase <…> Short
+  // description;" was dropped, so its sentence was cited to FishBase)
+  assert.deepStrictEqual(r.json.species.s6.sex.s, [
+    {t: 'FishBase', u: 'https://www.fishbase.se/c'},
+    {t: 'Reef Life Survey', u: 'https://reeflifesurvey.com/c/'},
+    {t: 'FishBase (Ref. 1)', u: ''}
+  ]);
   assert.strictEqual(r.json.species.s2.name, 'Phase yes');
 });
 
@@ -113,6 +129,14 @@ test('fish-phases.json is what tools/fish_phases_site.py gives from tools/fish_p
     if (x.ip_tp) assert.strictEqual(e.ip_tp, 'yes', name);
     if (x.juv) assert.strictEqual(e.juv, 'yes', name);
     for (const v of [x.juv, x.sex, x.ip_tp].filter(Boolean))
-      assert.ok(v.q && v.s.length && v.s.every(s => s.t), `${name}: a verdict with no quote or source`);
+      assert.ok(
+        Array.isArray(v.q) && v.q.length && v.q.every(Boolean) && v.s.length && v.s.every(s => s.t),
+        `${name}: a verdict with no quote or source`
+      );
+    // every address the list gives for a verdict is said (a quote may come from any of them), each once
+    for (const k of ['juv', 'sex', 'ip_tp'].filter(k => x[k])) {
+      const urls = [...new Set((String(e.src[k]).match(/<https:\/\/[^>\s]+>/g) || []).map(u => u.slice(1, -1)))];
+      assert.deepStrictEqual(x[k].s.map(s => s.u).filter(Boolean), urls, `${name} ${k}`);
+    }
   }
 });

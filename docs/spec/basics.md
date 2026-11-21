@@ -43,7 +43,8 @@ stage to find (the female or the male) of three species, one the first's; `lsInd
 the phases a cited source documents, read from `fish-phases.json` (`UNITS.fish.phases`; built by
 `tools/fish_phases_site.py` from `tools/fish_phases.json`, `--check` in `tests/fishphasesite.test.js`: the species with a
 `yes` for the sexes or the initial and terminal phases, never one whose sources disagree) on the photos carrying that phase
-(`fish-game.json` `ph`), from the families the player has unlocked, and says the source with the answer (rule C2). Offered
+(`fish-game.json` `ph`), from the families the player has unlocked, and says the source with the answer (rule C2): under a stage's name only a quote
+that names that stage, else the verdict's first quote under the verdict's name (`lsQuote`), each quote once. Offered
 (`on()`) to a subject whose `UNITS` has `phases`, so not to the corals or the sea slugs; untimed, counted nowhere.
 
 `type`, `reveal` and `web` follow the subject on screen too ([decision](../decisions/2026-11-20-lab-tools-every-subject.md)),

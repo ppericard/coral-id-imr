@@ -4625,11 +4625,31 @@ body:has(.ikstart:not([hidden])) main {
   outline: 3px dashed var(--accent);
   outline-offset: -3px;
 }
+/* Answered, the caption is the stage on its own line, then the species' name, which wraps (never cut: on a phone a long
+   common name would cut the stage off with it). */
 .q.lsq .fxt figcaption {
+  width: max-content;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  line-height: 1.2;
+  padding: 3px 9px;
+  border-radius: 10px;
+}
+.q.lsq .fxt .lsst {
+  display: block;
   text-transform: capitalize;
 }
-.q.lsq .fxt figcaption small {
+.q.lsq .fxt .lsnm {
+  display: block;
   font-weight: 400;
+}
+/* Answered with More open on a phone or tablet: the sheet scrolls inside a shorter box (its More and Next stay in view at its
+   bottom, app.css .fbrow) so the four photos above it keep a size whose captions can be read. */
+@media (max-width: 1023px) {
+  .q.lsq.done #after {
+    max-height: 40vh;
+  }
 }
 
 /* Matrix (proto/matrixgame.js): Find the X's tiles (as Odd one out's above, a blurred copy of the photo behind each) with the

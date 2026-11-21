@@ -127,11 +127,12 @@ module.exports = async function lifeStagesCheck(p, w, fails, tag = '', rounds = 
       end.ok !== 1 ||
       end.ko !== (good ? 0 : 1) ||
       end.caps.length !== 4 ||
-      end.caps.some((c, i) => !c.toLowerCase().endsWith((i ? pre.tgt : pre.rf) + '')) ||
+      end.caps.some((c, i) => !c.toLowerCase().startsWith((i ? pre.tgt : pre.rf) + ' ')) ||
       !(good ? /^✓ Yes/ : /^✗ No/).test(end.h3) ||
       !end.more ||
       end.enlarge !== 4 ||
-      !end.line.toLowerCase().includes(pre.tgt) ||
+      // the stage's quote under its name, or the verdict's under the verdict's (proto/lifestages.js lsQuote)
+      !/^[A-Z][a-z ]+: \S/.test(end.line) ||
       !/\(.+\)/.test(end.line)
     )
       fails.push(`${at}, round ${k + 1} answered: ${JSON.stringify(end)}`);
