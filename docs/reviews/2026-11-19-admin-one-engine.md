@@ -281,6 +281,22 @@ green checks; refactors of this size probably run longer.
     call.
 13. **Tools: one tree-game builder** (Dup-20; tooling, probably L): `seaslug_game.py` on `fish_game.py`'s functions,
     the outputs byte-identical.
+    **Done in part** (`tests/treegame.test.js`): the rules of the photos in play that `seaslug_game.py` wrote a second time
+    are `fish_game.py`'s, which it calls with the sea slugs' own rubric: `cand_sure` and `judged_sure` take the subject's
+    pattern of the tags and the keep a judgement without one counts as (`sure` is the fish rule, the sea slugs' tags, best by
+    default, plus their egg masses), `phase` is `fish_game.phase`, `crop_mine` reads `crop_of`, `stale` is `photos.stale`,
+    and Pierre's decisions and adds read through two new shared functions, `decided_of` and `add_ok`, which the fish's
+    `in_play` uses too. Gone: `PLAY_COUNT`, the sea slugs' copies of the count and tag tests. The REE-12 hook stays in
+    `seaslug_game.write` (the tree section follows the repository's own files), now with a test. Checked: `--check` of
+    the sea slugs' files and the unit tests of both builds; `build()` of the sea slugs and `plan()` of the fish, old and new
+    code, on the real inputs and on 12 and 8 made-up curations (adds, rejections, exclusions, moves, tags, eases, crops,
+    rotations, the top-level exclude): the same trees, games and download lists. One difference, in an input the admin never
+    writes: a rotation that is not 90, 180 or 270 counts as none when a photo's files are tested for being stale (the
+    fish's rule). **Not done**: the sea slugs' `build()` closures (`rec`, `judged`, `kept`, `place`) on `in_play` and
+    `record`. They are not copies but a different order of the same rules: `in_play` is keyed by the fish's teaching
+    entries and dedupes a photo across every list, the sea slugs' lists (species and genus-level) do not, and a record's
+    fields differ (`gl`, `bb`, `r`). Moving them changes which photos can play in an edge case (the same observation in a
+    species' and its genus' list), so it needs a decision on the dedupe first.
 14. **Later**: the format changes of §6, only if wanted. None is needed for 1-13.
 
 ## 6. What needs Pierre (S1's last sentence: data format or players' progress)
