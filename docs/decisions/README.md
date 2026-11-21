@@ -59,6 +59,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
+| 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
 | 2026-11-22 | [A kept question is lost only when it is about its own first-meeting card's genus](2026-11-22-pending-question-other-card.md) | #1428 |
 | 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
@@ -66,6 +67,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
 | 2026-11-21 | [Down the tree: a Lab prototype, one photo named family, then genus, then species, each step a partial credit shown on screen only](2026-11-21-down-the-tree-lab.md) | #1387 |
 | 2026-11-21 | [The answer feedback no longer says "(IMR)" as its line's source](2026-11-21-feedback-no-imr-label.md) | #1353 |
+| 2026-11-21 | [Find the X on a mimicry pair: the class's photo is the decoy tile, dormant until the class has tiles](2026-11-21-find-the-x-mimicry-pair.md) | #1412 |
 | 2026-11-21 | [Find the X on the species: both kinds of name, the same share, the units in play only](2026-11-21-find-the-x-species.md) | #1410 |
 | 2026-11-21 | [Fish basics earns an achievement, "Fin to tail"](2026-11-21-fish-basics-achievement.md) | #1369 |
 | 2026-11-21 | [A family the game covers with few species gets at least 90 candidate photos](2026-11-21-fish-family-floor.md) | #1379 |

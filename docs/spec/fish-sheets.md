@@ -61,10 +61,17 @@ single-species genus row:
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
 - "Juvenile:" and its sourced line under the photos ([below](#juveniles-per-species));
+- its sexes or colour phases (`spPhases`, the species part `phases`), only for a species the cited phase list flags
+  with a source (`fish.json` species `phs`): "Males and females" (`k` `sex`) or "Colour phases" (`k` `phase`), "This
+  species' … can look very different", the list's sources (`quiz.js` `phaseSrcs`, the phase card's line), then up to 2
+  photos of each judged phase (`phaseOf`: intermediate, female, male, terminal, in that order), in the photos' order,
+  each captioned with the phase card's word; no section, and no line in the page, for any other species
+  ([decision](../decisions/2026-11-22-fish-species-phases-section.md));
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
-No photo: the drawing and those links. Not on a species sheet yet: phase sections, look-alike cues of its own.
+No photo: the drawing and those links. Not on a species sheet yet: a description line, a size or a source's own term for
+each phase (the study's per-species phase list, §5.2), look-alike cues of its own.
 
 ## Family ID marks and behaviour, habitat, size lines
 
