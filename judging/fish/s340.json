@@ -548,7 +548,13 @@
   },
   "fish-s340-cand-731635478": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.3,
+    0.8,
+    0.7
+   ]
   },
   "fish-s340-cand-265923441": {
    "code": "d1g1mlsj2",

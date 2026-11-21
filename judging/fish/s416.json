@@ -542,7 +542,13 @@
   },
   "fish-s416-cand-598433038": {
    "code": "o1g0sl13",
-   "keep": "best"
+   "keep": "best",
+   "bb": [
+    0.2,
+    0.05,
+    0.8,
+    0.95
+   ]
   },
   "fish-s416-cand-472904420": {
    "code": "h1g2ml12",

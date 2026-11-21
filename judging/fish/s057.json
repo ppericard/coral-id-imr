@@ -232,7 +232,13 @@
   },
   "fish-s057-cand-748698914": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "bb": [
+    0.2,
+    0.0,
+    0.7,
+    0.7
+   ]
   },
   "fish-s057-cand-750608911": {
    "code": "p1g1ms12",
@@ -496,7 +502,13 @@
   },
   "fish-s057-cand-498542167": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "bb": [
+    0.2,
+    0.0,
+    0.8,
+    0.75
+   ]
   },
   "fish-s057-cand-750645738": {
    "code": "p1g1ms12",
