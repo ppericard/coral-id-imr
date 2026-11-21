@@ -3299,6 +3299,12 @@ async function namesCard(b, base, errs) {
     // (rule D1: no call to the sheet).
     for (const theme of ['light', 'dark']) {
       await q.evaluate(() => (location.hash = '#practice/quiz'));
+      // A card due is out of the way first: the start question (answered by its first choice), then any other.
+      await q.waitForFunction(() => document.querySelector('.unlock.startq, #view .q'), null, {timeout: 15000});
+      if (await q.$('.unlock.startq [data-start]'))
+        await q.click(`.unlock.startq [data-start="${(await q.$('.unlock.startq [data-start="know"]')) ? 'know' : 'imr'}"]`);
+      const st = await settle(q);
+      if (st) ui.push(`${width}px leaderboard notice and a question: ${st}`);
       await qa.ready(q);
       const bq = await q.evaluate(async theme => {
         document.documentElement.dataset.theme = theme;
