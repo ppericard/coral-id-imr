@@ -9579,6 +9579,27 @@ async function lazyPart(b, base, fails) {
         const head = await sq.evaluate(s => (document.querySelector(s + ' .adm-mhead b') || {}).textContent || '', mrow(KA));
         if (mr.length !== n0 + 1 || !/ \(added\)$/.test(head) || mr.filter(t => /\(added\)/.test(t)).length !== 1)
           se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, head})}`);
+        // Species pairs (REE-46), read only under the families': every pair fish.json declares, with the sources that state it,
+        // every cue sourced, the players' confusion line (read behind the page) and the photo strips, which enlarge.
+        await swait(() =>
+          /^Players’ confusion: (mixed|never|needs)/.test((document.querySelector('#view .adm-spair .adm-spconf') || {}).textContent || '')
+        );
+        const spp = await sq.evaluate(() => ({
+          n: document.querySelectorAll('#view .adm-spairs .adm-spair').length,
+          want: speciesPairs(FISHC.raw).length,
+          says: [...document.querySelectorAll('#view .adm-spair .adm-says')].every(e => e.querySelector('a')),
+          unsourced: document.querySelectorAll('#view .adm-spair .adm-marks .warnc').length,
+          marks: document.querySelectorAll('#view .adm-spair .adm-marks li').length,
+          thumbs: document.querySelectorAll('#view .adm-spair [data-spz]').length,
+          rows: document.querySelectorAll('#view .adm-fishmont .adm-spair').length
+        }));
+        if (!spp.want || spp.n !== spp.want || !spp.says || spp.unsourced || !spp.marks || spp.rows)
+          se.push(`Species pairs ${JSON.stringify(spp)}`);
+        if (spp.thumbs) {
+          await sq.click('#view .adm-spair [data-spz]');
+          if (!(await sq.$('#lightbox:not([hidden]) .lb-cap'))) se.push('Species pairs: a photo does not enlarge');
+          await sq.evaluate(() => document.querySelector('#lightbox [data-x]') && document.querySelector('#lightbox [data-x]').click());
+        }
         const fa = await pickIn(KA, 'a');
         x = await mont(KA);
         if (fa && (!x || x.a !== fa || KA !== (await sq.evaluate(([a, b]) => contentPairKey(b, a), [FAM, ids.add]))))
