@@ -129,7 +129,7 @@ coming soon", `fish-004-tour4.png`), Home's door does not. The key itself is und
 ships.
 
 **Options**: (a) keep until REE-9 ships; (b) a "soon" tag on the door, as the sea slugs' "beta". **Recommendation**:
-(b) if REE-9 is more than a few days away, else (a).
+(b) unless REE-9 is about to ship, else (a).
 
 ### 6. Design, small: Sea slug basics earns no achievement
 
