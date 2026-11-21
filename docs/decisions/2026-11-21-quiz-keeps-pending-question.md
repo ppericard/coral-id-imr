@@ -1,6 +1,6 @@
 # The quiz keeps its question when the player leaves and comes back
 
-Date: 2026-11-21. PR: #1374. Rules or docs touched: docs/spec/quiz.md "The pending question", docs/spec/storage.md,
+Date: 2026-11-21. PR: #1375. Rules or docs touched: docs/spec/quiz.md "The pending question", docs/spec/storage.md,
 docs/ANSWERS.md.
 
 ## Context

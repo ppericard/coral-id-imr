@@ -1842,4 +1842,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   la même question et que les questions restent, plutôt que d'avoir à chaque fois une nouvelle question quand on ne fait
   juste que partir pour aller voir un truc et revenir.» The question on screen stays, per subject and game, until it is
   answered, across navigation and a reload. Applied: docs/spec/quiz.md "The pending question",
-  decisions/2026-11-21-quiz-keeps-pending-question.md (#1374); REE-188.
+  decisions/2026-11-21-quiz-keeps-pending-question.md (#1375); REE-188.
