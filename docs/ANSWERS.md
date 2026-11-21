@@ -1787,3 +1787,22 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   aussi que le problème vient de la conception, pas d'un cas à corriger de plus»).** «ça je suis effectivement
   complètement d'accord» He agrees: findings that keep coming back on the same part point to its design, not to one
   more case to fix. Applied: rules/ship.md W27 (the point kept; #1355).
+- **13:23, simulations against logic (on #1357's breached rated-world guardrail).** «Faut vraiment arrêter avec ces
+  simulations jusqu'à 1000 réponses … sur le temps de réponse typiquement, qui sont des implémentations qui sont tout à
+  fait logiques et qui font du sens. Et en fait, des fois j'ai l'impression qu'on ne regarde plus que la simulation pour
+  déterminer si ça a fait du sens ou pas. Est-ce que la simulation en elle-même, en fait, elle est réellement
+  représentative de ce qui se passe réellement dans un cas d'apprentissage avec des joueurs réels? C'est ça le
+  problème.» Applied: #1357 merged with the breach accepted; reviews/2026-11-21-simulation-scope.md (#1359).
+- **13:25, rule L11 and the scope of simulations.** «Pour la règle L11, je sais pas en fait, je sais pas dans quelle
+  mesure il faut la changer ou comment il faut la changer. Mais ce qui est sûr, c'est que c'est parfois, j'ai
+  l'impression qu'on met la simulation avant la simple logique … on ajoute une nouvelle variable, on développe une
+  nouvelle feature, et en fait, quoi que dise la simulation, c'est comme ça. … il faut pas non plus l'inverser
+  complètement et le transformer plus qu'en garde-fou … il faut déterminer dans quel contexte et pour quel type
+  d'application la simulation a ses utilités, et pour quel contexte et pour quel type de travail, finalement, elle
+  montre ses limites.» Not decided: rule L11 unchanged; the question goes to his review of the working method.
+  Applied: reviews/2026-11-21-simulation-scope.md, ROADMAP "Where simulations decide" (#1359).
+- **13:27, merge #1357 and record the discussion.** «Bon, mais du coup, il faut quand même noter quelque part cette
+  réflexion, parce que sinon, elle va disparaître quand ta session va disparaître. Donc, ok pour merger la PR, mais il
+  faut, à un moment donné, il faut quand même noter ce qu'on vient de dire et la discussion qu'on vient d'avoir, parce
+  que sinon, on va juste re-avoir la même discussion dans 2 heures ou dans 2 jours.» Applied: #1357 merged;
+  reviews/2026-11-21-simulation-scope.md (#1359).
