@@ -268,6 +268,10 @@ written with `tools/datajson.py`.
 - **`r2_move.py`**: lists what leaves `img/` (a photo with an online original) and what stays, by kind, owner and genus,
   with sizes; `--verify` checks each file on R2 byte for byte (R2's ETag is the file's MD5); `--apply` removes from `img/`
   the files R2 holds identically.
+- **`r2_list.sh`, `r2_unused.py`**: the read-only list of the R2 objects nothing uses ([photos.md](photos.md) "Listing
+  the unused R2 files"). `r2_list.sh` writes rclone's `lsjson` of the whole bucket (the rclone release pinned in
+  `r2_sync.sh`); `r2_unused.py --listing FILE --out DIR` compares it with the repository and writes the report, the
+  unused and doubtful lists and the figures in DIR. Neither can modify the bucket; `tests/r2unused.test.js` keeps it so.
 - **`photo_quality.py`**: the automatic quality rating → `quality.json`.
 - **`photo_metrics.py`**: objective metrics (sharpness, size, colour cast) of live photos and iNaturalist candidates →
   `data/metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).
