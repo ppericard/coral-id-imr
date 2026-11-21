@@ -91,7 +91,9 @@ was kept.
 - **Scoring**: what the app scored the answer with, `core.js` `scoreRec` as JSON (photo difficulty, memory, mix-ups
   term, look-alike test, recalls, the corallites hint revealed after the answer, the format's offset `o`, the kind of a
   smaller fault `z`: `cn` a common name typed for a species' scientific name, `g` its genus alone, `core.js` `PART`,
-  Q394 A; a miss weighed half or a quarter, never a gain); read by its
+  Q394 A; a miss weighed half or a quarter, never a gain; the photos' time term `i` a right answer's time was netted of,
+  `core.js` `rtWeight` ti, kept even at 0, from sheet `RTNET_SHEET`: a row without it is netted by the terms served
+  when it is replayed, LEARNING.md "The player's time net of the photo's"); read by its
   name (`SC_COL`, column W); `readAnswers` index 22, an object, and the same index in the replay's rows (`rowOf_`,
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
 - **Rejected tries**: the texts a typed answer refused before it, a JSON list. Logged only.
@@ -645,7 +647,8 @@ step (`statsStep_`, `statsOut_`; `core.js` `fmtPoint` and `fmtFit` for the forma
 **The photos' time terms.** A photo with a time term carries three more numbers in its `photos` entry, after the five:
 the time term, the enlargement term and the information its rating has gathered (`core.js` `ptimeInto`, `ptimeOut`;
 LEARNING.md "The photo's time term"); a photo with neither term keeps its five. The app reads them from a reply of
-`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). On the real log of 2026-11-20 they add about 25% to the
+`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). The corals' full replays read the time term too
+(`replayProgress` photos: a right answer's time netted of it, LEARNING.md "The player's time net of the photo's"). On the real log of 2026-11-20 they add about 25% to the
 corals' `photos` (79 to 99 KB) and 19% to the fish's.
 
 **The `Stats` tab** (internal, versioned by `STATS.FMT`, 4: no other code reads it). Columns Part, Version, Updated,

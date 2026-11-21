@@ -133,8 +133,8 @@ function normalise(raw) {
     .map(x => x[0]);
   return raw.map((r, i) =>
     typeof r[1] === 'number'
-      ? {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10], ...rt(r)}
-      : {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: String(r[4]) === '1' ? 1 : 0, mode: r[5], e: r[8], th: r[9], ch: r[11], ...rt(r)}
+      ? {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10], ph: r[6], rk: r[18], ...rt(r)}
+      : {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: String(r[4]) === '1' ? 1 : 0, mode: r[5], e: r[8], th: r[9], ch: r[11], ph: r[6], rk: r[18], ...rt(r)}
   );
 }
 const num = x => (x === '' || x === null || x === undefined ? NaN : Number(x));
@@ -275,8 +275,12 @@ function replay(list, variant, pooledOf = null) {
     lastZ[r.t] = good ? zr : null;
     // +A: the app's own answer-time rule (core.js rtWeight and rtAdd, as quiz.js answer and replayProgress run them; a
     // core.js without them through --model: no change).
-    const appRT = flags.includes('A') && typeof M.K.rtWeight === 'function',
-      wA = appRT ? M.K.rtWeight(P[C.LEVEL], r.sec, k, good) : 1;
+    // +P, +Q, +R (with +A): the time net of the photos' time term (core.js rtWeight ti, rules version 13): +P the terms as
+    // the app read them before the answer (online), +Q today's, from the whole log (what the replay nets an answer logged
+    // without its term by), +R today's without the player's own answers (photoTerms).
+    const ti = flags.includes('P') ? r.pt : flags.includes('Q') ? r.pq : flags.includes('R') ? r.pr : 0,
+      appRT = flags.includes('A') && typeof M.K.rtWeight === 'function',
+      wA = appRT ? M.K.rtWeight(P[C.LEVEL], r.sec, k, good, ti || 0) : 1;
     if (v === 'd') offStep(r.t, s, good, d, k);
     else {
       const th1 = M.M.ability(r.t); // what abilityStep starts from (its answer count already holds this answer)
@@ -503,9 +507,34 @@ function score(list) {
 
 // Every rule on every player with min answers or more: {players, res: {rule: {all, groups, per}}, ref}.
 // A variant with '*' is a family over grid (one list of values per '*'), scored by leave one player out (below).
+// The photos' time terms of each answer for +P, +Q, +R (core.js eloReplay, ptimeTerm, ptimeQ: the sheet's own pass over
+// the log, the subject's rows, every player): pt the question's term before the answer (the online state, as the app read
+// it, the player's own earlier answers included), pq at the end of the log (what the replay nets an older answer by:
+// it holds the answer's own time, shrunk), pr at the end of the log without the player's answers (no own time in it).
+function photoTerms(L) {
+  const row = r => {
+      const x = [r.p, r.at, r.t, r.a, r.ok, r.mode, r.ph, r.e, r.th, null, r.ch, null, isFinite(r.sec) ? r.sec : null, r.zm];
+      x[18] = r.rk || '';
+      x.src = r;
+      return x;
+    },
+    fsOf = r =>
+      String(r.ph || '')
+        .split(/\s+/)
+        .filter(Boolean),
+    rows = L.map(row);
+  const T = C.eloReplay(rows, (x, TM) => (x.src.pt = C.ptimeQ(fsOf(x.src), f => C.ptimeTerm(TM, f)))).TM;
+  L.forEach(r => (r.pq = C.ptimeQ(fsOf(r), f => C.ptimeTerm(T, f))));
+  [...new Set(L.map(r => r.p))].forEach(p => {
+    const Tp = C.eloReplay(rows.filter(x => x[0] !== p)).TM;
+    L.filter(r => r.p === p).forEach(r => (r.pr = C.ptimeQ(fsOf(r), f => C.ptimeTerm(Tp, f))));
+  });
+}
 function evaluate(raw, {variants = ['a', 'e'], min = 20, only = null, priors = null, grid = [[0.1, 0.2, 0.3, 0.5]]} = {}) {
-const byPlayer = {};
-normalise(raw).forEach(r => (byPlayer[r.p] = byPlayer[r.p] || []).push(r));
+const byPlayer = {},
+  all = normalise(raw);
+if (variants.some(v => /\+[PQR](\+|$)/.test(v)) && typeof C.eloReplay === 'function') photoTerms(all);
+all.forEach(r => (byPlayer[r.p] = byPlayer[r.p] || []).push(r));
 // Pooled confusions (+X/+Y/+Z): [offered together, mixed up] per pair, per player, so each player's own answers can be
 // left out of their pooled score (core.js confusionOf's counts, without its trust filter).
 const pc = {},

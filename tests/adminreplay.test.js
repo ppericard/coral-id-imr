@@ -16,15 +16,23 @@ test("statsFor: the replayed subject's stats with the genus offsets, as the shee
       SMEM: [0, -0.5, -0.5, -1.5],
       SCONF: {'A|B': [3, 1]},
       SFMT: {k2: [0.3, 9]},
-      GD: {Acropora: [0.2, 12]}
+      GD: {Acropora: [0.2, 12]},
+      // the ?stats=1 photos, with a photo's time term (core.js replayProgress photos, rtWeight ti)
+      STATS: {a1: [0.3, 4, 3, 4, 'Acropora', 0.2, 0, 1]}
     };
   vm.createContext(ctx);
   vm.runInContext(cut(src, 'const statsFor = ', '\n', {through: 1, file: 'admin.js'}) + 'this.statsFor = statsFor;', ctx);
   const same = (a, b) => assert.strictEqual(JSON.stringify(a), JSON.stringify(b)); // objects made in the vm's realm
-  same(ctx.statsFor({replay: true}), {mem: ctx.SMEM, conf: ctx.SCONF, fmt: ctx.SFMT, gd: ctx.GD});
+  same(ctx.statsFor({replay: true}), {mem: ctx.SMEM, conf: ctx.SCONF, fmt: ctx.SFMT, gd: ctx.GD, photos: ctx.STATS});
   assert.strictEqual(ctx.statsFor({replay: true}).gd, ctx.GD, 'the genus offsets the admin holds (?stats=1 gd)');
   same(ctx.statsFor({replay: false}), {});
+  // before the photo stats are in: no photos, no term
+  ctx.STATS = null;
+  same(ctx.statsFor({replay: true}).photos, {});
   // The sheet's replay passes the same names (Code.gs replay_).
   const gs = fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
-  assert.match(gs, /CORE_\.replayProgress\(rows, \{gen: gen, mem: st\.mem, conf: st\.conf, fmt: st\.fmt \|\| \{\}, gd: st\.gd/);
+  assert.match(
+    gs,
+    /CORE_\.replayProgress\(rows, \{gen: gen, mem: st\.mem, conf: st\.conf, fmt: st\.fmt \|\| \{\}, gd: st\.gd, photos: st\.photos/
+  );
 });
