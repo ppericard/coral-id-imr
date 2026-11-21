@@ -199,9 +199,9 @@ ${idoor}
       </section>
       <section>
         <h3>Photos</h3>
-        <p>Most photos are those of <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, Pierre Pericard among them, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a>: CC0, CC BY or CC BY-NC. Some are cropped. Many thanks to them.${ab.map(a => (a.photos ? ' ' + a.photos : '')).join('')}</p>
-        <p>Coral photos also come from IMR Lecture 6, for IMR’s internal training. Many were not taken by IMR: most come from <a href="https://www.coralsoftheworld.org/" target="_blank" rel="noopener">Corals of the World</a>, credited to their photographers with a link to the page that credits them, under its <a href="https://www.coralsoftheworld.org/page/terms-of-use/" target="_blank" rel="noopener">terms</a> (personal, non-commercial or academic use with citation). The sources of the others are not known yet.</p>
-        <p>Every photo keeps its own credit: enlarge a photo to see its author and licence, with a link to its original page.</p>
+        <p>Most photos come from <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, Pierre Pericard among them, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a> (CC0, CC BY or CC BY-NC). Some are cropped. Thank you to them all.${ab.map(a => (a.photos ? ' ' + a.photos : '')).join('')}</p>
+        <p>The coral photos from IMR Lecture 6 serve IMR’s internal training. Many were not taken by IMR: most of those come from <a href="https://www.coralsoftheworld.org/" target="_blank" rel="noopener">Corals of the World</a> and its photographers, under its <a href="https://www.coralsoftheworld.org/page/terms-of-use/" target="_blank" rel="noopener">terms of use</a>. The others have no known source yet.</p>
+        <p>Every photo carries its own credit: enlarge it to see the author, the licence and a link to the original page.</p>
       </section>
       <section>
         <h3>References</h3>
