@@ -6328,7 +6328,8 @@ async function lazyPart(b, base, fails) {
         [a.f, rsel]
       );
       const after = await fishOf();
-      if (rep.tag !== 'k' || rep.seen !== 1 || rep.add || rep.out !== 'removed')
+      // a P3 count sets the reviewed mark (seen: the tile says rejected), never the one Remove (REE-44)
+      if (rep.tag !== 'k' || rep.seen !== 1 || rep.add || rep.out !== 'rejected')
         fails.push(`${w}px To do › Reports, Count Others on a fish photo in play: ${JSON.stringify(rep)}`);
       await p.click('#undo');
       await settle();

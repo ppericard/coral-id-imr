@@ -151,14 +151,25 @@ const NODE_PHOTOS = {
     all: T => {
       if (!T || !FISHC) return [];
       const leaf = new Map(T.roots.flatMap(r => ttLeaves(T, r)).map(x => [leafSid(T, x), x]));
+      // A photo no loaded file holds any more (a reference photo only the game held: once its removal is published, the
+      // rebuilt game file leaves it out, and the reference list, tools/, is not on the site): its iNaturalist photo, from the
+      // id its name ends with (as the corals' gone photos), so it can still be told and put back.
+      const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
       return npTreeExcluded(DRAFT[TK], FISHC.byF, FISHC.plays).map(it => {
         const unit = leaf.get(it.sid) || '',
-          p = it.p;
+          p = it.p,
+          inat = !p && (it.f.match(/(\d{5,})$/) || [])[1];
         return {
           ...it,
           unit,
-          thumb: p && p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy">` : '',
-          cap: `${unit ? `<a class="adm-gen" href="${esc(tvHref(unit))}"><i>${esc(fuName(it.sid))}</i></a>` : `<span class="adm-gen">${it.sid ? esc(fuName(it.sid)) : 'no species'}</span>`}${p ? fishSrcTag(p) : `<code class="adm-t">${esc(it.f)}</code>`}`
+          inat,
+          thumb:
+            p && p.src
+              ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy">`
+              : inat
+                ? `<img src="${io(inat)}.jpg" alt="" loading="lazy" data-ext="0">`
+                : '',
+          cap: `${unit ? `<a class="adm-gen" href="${esc(tvHref(unit))}"><i>${esc(fuName(it.sid))}</i></a>` : `<span class="adm-gen">${it.sid ? esc(fuName(it.sid)) : 'species not known here'}</span>`}${p ? fishSrcTag(p) : inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${inat}" target="_blank" rel="noopener">iNat ↗</a>` : `<code class="adm-t">${esc(it.f)}</code>`}`
         };
       });
     },
@@ -173,7 +184,7 @@ const NODE_PHOTOS = {
         return {...F, exclude: X};
       }),
     zoom: it => it.p && fishZoom(it.p, it.sid, false),
-    orphanT: 'Removed, no species any more'
+    orphanT: 'Removed, species not known here'
   }
 };
 const npOf = () => NODE_PHOTOS[treeShape(ASUBJ)] || {};

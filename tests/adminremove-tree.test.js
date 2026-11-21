@@ -168,6 +168,12 @@ test('The Removed list of a tree subject: each photo under its species’ leaf, 
     'a species off the tree: at the first root'
   );
   assert.match(A.orphanT, /species/);
+  // a photo no loaded file holds (a removed reference photo once published): its iNaturalist photo, from its id
+  const {A: A2, T: T2} = adapter({exclude: {fi296664069: 'excluded'}}),
+    [g] = A2.orphans(T2);
+  assert.strictEqual(g.inat, '296664069');
+  assert.match(g.thumb, /photos\/296664069\/small\.jpg/);
+  assert.match(g.cap, /species not known here/);
   assert.strictEqual(A.removed, null, 'no second list: the old Remove was a reviewed mark, as ✕ Reject');
 });
 

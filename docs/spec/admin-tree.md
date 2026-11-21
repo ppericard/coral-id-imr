@@ -217,7 +217,9 @@ subject declares (`SUBJECTS` `flat`, `admin.js` `treeShape`, as the Tree's build
   slugs; REE-44 part 2): their part's `exclude` only (`fish.exclude`, `seaslug.exclude`), written by the one Remove of
   every photo tile and of the Candidates card's × (`admin.js` `treeRemove`, the toast with its Undo button), each photo
   under the leaf of its species (Not this's species first, else its candidate's or game record's: `npTreeExcluded`; a
-  genus-level photo under its genus's leaf), the photos with no leaf at the first root ("Removed, no species any more");
+  genus-level photo under its genus's leaf), the photos with no leaf at the first root ("Removed, species not known
+  here": a reference photo only the game held is left out of the rebuilt game file once its removal is published, and
+  the reference list, `tools/fish_refs.json`, is not on the site, so it shows its iNaturalist photo from its id);
   Put back deletes the entry, one Undo step, and the photo is a candidate again (a reference photo the game holds, in
   play again; the auto-sort, which logged it, never adds it again by itself). Their `seen` (✕ Reject, Out of play, a
   P3 count, and the old Remove's mark) is not in the list: it is a reviewed mark, the photo still a candidate
