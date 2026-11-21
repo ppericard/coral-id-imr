@@ -1333,6 +1333,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       W0 = WINK.AT.slice();
     WINK.AT[0] = answersSoFar();
     closeCards();
+    pendDrop('quiz'); // the question left unanswered above is not kept: a wink is decided before a new question is drawn
     quizPhoto();
     const wk = document.querySelector('#view .q.wink');
     ok(!!wk, 'a wink comes for a circle-1 player');
@@ -2995,6 +2996,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
           WINK.AT[0] = answersSoFar();
           delete WINKS[SUBJ.id];
           localStorage.removeItem('reefid-sync-fish-wink');
+          pendDrop('quiz'); // the question on screen is not kept: a wink is decided before a new question is drawn
           quizPhoto();
           ok({wink: !!document.querySelector('#view .q.wink'), seen: Object.keys(WINKS[SUBJ.id] || {}).length});
         }, 300)

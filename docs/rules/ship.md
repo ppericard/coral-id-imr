@@ -172,7 +172,8 @@ and reports every failing one. Locally, run what your change can break, once:
   `SMOKE_W=1280 node tests/admin.smoke.js` (`SMOKE_W=390` for a layout change). The question draw (`model.js`, the draw
   in `quiz.js`, `core.js` `photoSet`/`distractors`/the path) → `node tests/draw.smoke.js`, and
   `node tests/profiles.smoke.js` when the learning path changes (rule L11). Fish, `SUBJECTS`, `UNITS` →
-  `node tests/fish.smoke.js`. `sw.js`, the loader in `index.html`, photo sizes and fallbacks, R2 →
+  `node tests/fish.smoke.js`. The question kept for the player's return (`quiz.js` `PEND`) → `node tests/pending.smoke.js`.
+  `sw.js`, the loader in `index.html`, photo sizes and fallbacks, R2 →
   `node tests/net.smoke.js`. In `tests/pages.smoke.js`, `SMOKE_ONLY=<part>[,<part>]` runs some of its parts: `tips`
   (`tips.js`), `relief` (the Duel tab's relief card, `quiz.js` `reliefShow`), `start` (the first-launch question, its
   fallback cards: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `install` (the offer to install the app: `installCheck`), `fishkey` (the Fish ID Key in the Lab: `fishKeyCheck`), `noupscale` (an IMR lecture photo never drawn past its own pixels: `noUpscaleCheck`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
