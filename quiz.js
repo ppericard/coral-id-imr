@@ -2426,11 +2426,39 @@ function startAskShow(cur) {
           (b.onclick = () => {
             startSet(b.dataset.start, 'card');
             d.close('pick');
-            startBasicsOffer(cur) || quizPhoto(cur);
+            const next = () => startBasicsOffer(cur) || quizPhoto(cur);
+            namesAskShow(b.dataset.start, next) || next();
           })
       )
   });
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
+}
+// The names step (app.js UNITS namesStep, namesAsk): right after the first-launch answer c on its card, common names, scientific
+// names or both; go: what comes next (the basics offer, the quiz). An answer sets the What I learn rows (namesSet); Escape
+// leaves them as they play. Its own card class, not startq: the question's card is the one the sync closes (model.js
+// startMerge). Returns whether it showed.
+function namesAskShow(c, go) {
+  if (!namesAsk(c)) return false;
+  const N = namesDecl();
+  const d = cardShow({
+    kind: 'feature',
+    cls: 'namesq',
+    kick: 'Before you start',
+    title: N.q,
+    label: N.q,
+    body: `<p>${esc(N.lede)}</p>${namesOptsHtml(null)}`,
+    esc: () => (d.close('esc'), go()),
+    bind: d =>
+      d.querySelectorAll('[data-names]').forEach(
+        b =>
+          (b.onclick = () => {
+            namesSet(b.dataset.names);
+            d.close('pick');
+            go();
+          })
+      )
+  });
+  return true;
 }
 // "I'm new to corals" (CHOICE v.basics): the subject's basics module (Coral basics, Fish basics) offered first, about 5
 // minutes, then the quiz. Only while the module is not done, and only for a subject that has one (app.js basicsDue), in

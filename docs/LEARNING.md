@@ -453,8 +453,9 @@ mark of One at a time with no time) until the path opens it on its card, with it
 ### The first-launch question
 
 One forced choice per subject (`SUBJECTS` `start`: its words), in the welcome tour before the first question, or on a
-card before the next quiz question for a player who skipped the tour. It sets a few variables of the model, never a
-path (rule L10): `core.js` `CHOICE.opts` new {p: 0, basics: 1}, imr {p: 0.5, basics: 0}, know {p: 1.25, basics: 0}.
+card before the next quiz question for a player who skipped the tour (the fish add a names step right after it, which
+sets the What I learn rows and no model variable: [cards.md](spec/cards.md#the-names-step-at-the-welcome)). It sets a few
+variables of the model, never a path (rule L10): `core.js` `CHOICE.opts` new {p: 0, basics: 1}, imr {p: 0.5, basics: 0}, know {p: 1.25, basics: 0}.
 p is the level the answers are shrunk towards in `core.js` `playerStart` (hence the first questions on each new unit
 and, through shaky, the pace of the opening); basics offers the subject's basics module first. "new" is the default
 player (a new player is a beginner). A player with `CHOICE.ASK` (50) answers or more is not asked: the answer is
