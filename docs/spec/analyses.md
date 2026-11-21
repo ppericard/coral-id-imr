@@ -118,7 +118,10 @@ Each analysis has:
   (pair × view, on missed questions)}]; `compact` keeps the tests, not the levels);
 - `map` in Confusions (the mix-up map, `mixMap`: `g` the genera in the dendrogram's order, `m` its merges, `fam` the
   families, `cells` [shown, answered, offers, mix-ups, shrunk rate] in that order, `base` a typical pair's rate,
-  `across`, `left`; `stab` each family's mean best Jaccard over the bootstrap draws, `draws`, `at` 0.75).
+  `across`, `left`; `stab` each family's mean best Jaccard over the bootstrap draws, `draws`, `at` 0.75);
+- `stab` in Comeback (the app's forgetting by genus, `backGenus`: `n` rusty comeback questions, `players`, `est` /
+  `lo` / `hi` the pooled stability multiplier and its range, `right`, `E`, `need`, `g` [{k, n, players, right, E, est,
+  lo, hi}] lowest first, `other` the questions of genera under 5, `min` and `minPlayers` what it waits for).
 
 `who` (Player profiles, `profiles`): `feats`, `who` [{k anonymous id, n answers in the window, low, v the behaviours, z
 their z-scores}] in the tree's order then the greyed rows, `m` Ward's tree, `cols` and `cm` the behaviours' order and
@@ -223,6 +226,10 @@ unless said, so outside the multiple-testing correction.
   players left out are from what they answered, whether the quantile residuals lie on the line, and, for Enlarging and
   After a break, whether they predict new players better than the app's own chance; the two charts (answered against
   predicted by band, the quantile residuals; Answer time: its residuals against a normal curve) and the bands' table.
+- **The app's forgetting, genus by genus** (`anBackGenus`, Learning › After a break, folded; `stab` in the Comeback
+  result): the stability multiplier that fits the rusty comeback questions (×1 = the app's FSRS stabilities), pooled and
+  for each genus with 5 questions or more, in words first (what it can conclude, the answers it needs, rule A5, and that
+  it is an upper bound while the comeback's stopping rule is not corrected for), then a chart on a log scale and a table.
 - **Players and genera on one scale** (the Wright map, `anWright`) and **A second skill?** (the residual biplot,
   `anSkill`, folded on a phone), on Learning › Practice.
 - **Player profiles** (Learning › Profiles, `#analyses/learning/profiles`, `anProfiles`): a heatmap of players ×

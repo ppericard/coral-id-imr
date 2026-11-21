@@ -3139,6 +3139,47 @@ async function lazyPart(b, base, fails) {
         ).length
       }));
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+      // The app's forgetting, genus by genus (ROADMAP "Analyses: next views"): the demo's players have no rusty comeback
+      // question, so its card is there, folded, and says what it waits for (rule A5)
+      if (h === 'analyses/learning/after-a-break') {
+        const cb = await p.evaluate(() => {
+          const c = document.getElementById('anc-the-app-s-forgetting-genus-by-genus');
+          return c && {folded: c.classList.contains('folded'), text: c.textContent.replace(/\s+/g, ' ').slice(0, 200)};
+        });
+        if (!cb || !cb.folded || !/Not enough data yet\. \d/.test(cb.text) || !/about 200 from 20 players/.test(cb.text))
+          fails.push(`${w}px Analyses #${h} forgetting by genus: ${JSON.stringify(cb)}`);
+        // The same card with a fit put into the report (the demo's players have too few to make one): what it says when the
+        // range is narrow already but the players are too few (need 0: more players, not more precision), and when the range
+        // has no end (no count to give); the table scrolls inside its card, never the page (Codex review, #1398)
+        const fit = await p.evaluate(() => {
+          const rep = (typeof ANLOC !== 'undefined' && ANLOC && ANLOC.rep) || (ANREPS[ASUBJ.id] && ANREPS[ASUBJ.id].rep),
+            A = rep && rep.R[rep.M[rep.M.length - 1]].A.back;
+          if (!A) return null;
+          const keep = A.stab,
+            base = {n: 250, players: 12, min: 200, minPlayers: 20, right: 0.74, E: 0.7, est: 1.35, lo: 1.2, hi: 1.5, other: 0, g: []},
+            words = s => {
+              A.stab = s;
+              render();
+              return document.getElementById('anc-the-app-s-forgetting-genus-by-genus').textContent.replace(/\s+/g, ' ');
+            },
+            out = {
+              narrow: words({...base, need: 0}),
+              none: words({...base, open: ['hi']}),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          A.stab = keep;
+          render();
+          return out;
+        });
+        if (
+          !fit ||
+          !/already within ±30% of the stability/.test(fit.narrow) ||
+          /open-ended/.test(fit.narrow) ||
+          !/open-ended/.test(fit.none) ||
+          fit.wide > 0
+        )
+          fails.push(`${w}px Analyses #${h} forgetting by genus with a fit: ${JSON.stringify(fit)}`);
+      }
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
       if (h !== 'analyses/learning/after-a-break' && h !== 'analyses/learning/profiles') {
