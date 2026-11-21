@@ -1,7 +1,8 @@
 # One Remove in the admin: one click, out for good, an Undo just after, one list to put a photo back
 
-Date: 2026-11-21. PR: #1393. Rules or docs touched: A2 (docs/rules/admin.md), docs/spec/admin-photos.md,
-docs/spec/admin-tree.md, docs/spec/admin.md, docs/spec/data.md, docs/spec/photos.md, the admin's help texts.
+Date: 2026-11-21. PR: #1393 (corals), then the fish and the sea slugs. Rules or docs touched: A2 (docs/rules/admin.md),
+docs/spec/admin-photos.md, docs/spec/admin-tree.md, docs/spec/admin.md, docs/spec/data.md, docs/spec/photos.md,
+docs/spec/fish-photos.md, docs/spec/fish.md, docs/spec/player-reports.md, the admin's help texts.
 
 ## Context
 
@@ -27,5 +28,10 @@ une liste des photos retirées pour en remettre si j'ai besoin. Oui, ça me va, 
 ## Consequences
 
 `ACT.remove` (was `exclude`) and `ACT.unhide` (was `hide`) in `admin.js`, `toastUndo`, `RMBTN`, the shared list
-(`admin-nodephotos.js` `npLists`). Corals only in this PR: the fish and sea-slug tiles keep their Remove (a rejected
-mark) and ×, and have no Removed list yet (`NODE_PHOTOS` `tree`); they follow in a second step.
+(`admin-nodephotos.js` `npLists`). The fish and the sea slugs, the second step (the PR after #1393): the same Remove on
+every photo tile and the Candidates card's × (`treeRemove`: their part's `exclude`, the toast with its Undo), their
+Removed list (`NODE_PHOTOS` `tree`: Put back deletes the entry, the photo is a candidate again), one Removed row in
+their Photo stats with their reviewed marks (`seen`: ✕ Reject, Out of play, a P3 count, the old Remove's) apart as
+Rejected, never rewritten (rule A1). Integrator's call, easy to correct: Reject, Out of play and a P3 count keep the
+reviewed mark (the photo stays a candidate); Publish's summary counts their "photos removed" apart from "photos set
+aside".
