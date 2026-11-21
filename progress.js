@@ -820,7 +820,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261), each by its
     // scientific name: how many, how many at Advanced or above; null for a subject without.
     top: U.top ? (L => ({total: L.length, adv: at(L, 3)}))(U.top()) : null,
-    basics: !!A._basics,
+    // The subject's own basics feat (SUBJECTS basics.feat: _basics, _fbasics, _sbasics), read in the subject on screen.
+    basics: !!A[(SUBJ.basics || {}).feat || '_basics'],
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
 }
@@ -1029,7 +1030,7 @@ function achAfter(good, ph, cur) {
 }
 // A subject's basics module done (Coral basics, Fish basics: proto/basics.js seenStep): a one-off feat of the record, synced
 // with it, so the Home line and the first-launch offers know on every device (app.js basicsDone). Each subject has its own
-// (SUBJECTS basics.feat). The corals' feat also grants the achievement "Coral basics"; the fish's has none yet.
+// (SUBJECTS basics.feat). The corals' feat also grants the achievement "Coral basics", the fish's "Fin to tail" (fbasics); the sea slugs' has none.
 function achBasics(feat = (SUBJ.basics || {}).feat || '_basics') {
   if (!store.get(ACHK, null)) achCheck(true);
   const A = store.get(ACHK, {}) || {};

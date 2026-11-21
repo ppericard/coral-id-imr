@@ -314,7 +314,8 @@ below.
   **Enlarged photo**: [admin.md › Conventions of every page](spec/admin.md#conventions-of-every-page).
 - **Health**, **Confusions**, **Heatmap**: [admin-players.md › Live analyses](spec/admin-players.md#health-and-stops),
   [Pairs](spec/admin-players.md#confusions-analyses--difficulty--pairs), [Heatmap](spec/admin-players.md#heatmap).
-- **The generic tree**: [admin-tree.md](spec/admin-tree.md#the-generic-tree-taxtreejs).
+- **The generic tree**: [admin-tree.md](spec/admin-tree.md#the-generic-tree-taxtreejs); **the builds' tree section**, each
+  subject's classifications as `data/<subject>-tree.json`: [admin-tree.md](spec/admin-tree.md#the-tree-section-toolstree_sectionpy).
 
 ## Analyses
 

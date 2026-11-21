@@ -1,13 +1,16 @@
 require('./slot.js').testGuard();
 // Photos › Tree for the corals (admin-coraltree.js; docs/ROADMAP.md "The Tree tab", its last step: one tree for every
-// subject): the corals' adapter of the generic tree (taxtree.js), on the real
-// data.json and data/names.json (as the admin holds them: the x genera merged into gen) and on made-up data.
+// subject): the corals' reader of the generic tree (taxtree.js), on the section the corals' build wrote (tools/tree_section.py,
+// data/coral-tree.json: the Key and WoRMS views, the same file shape as every subject's) checked against core.js and the real
+// data.json and data/names.json (as the admin holds them: the x genera merged into gen), and the build itself on made-up data.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
-  path = require('path');
-const {ctLeaves, ctKeyOf, ctWormsOf, ctFilters} = require('../admin-coraltree.js'),
-  {ttBuild, ttLeaves, ttPath, ttPass, ttReach} = require('../taxtree.js'),
+  os = require('os'),
+  path = require('path'),
+  {execFileSync} = require('child_process');
+const {ctFilters} = require('../admin-coraltree.js'),
+  {ttBuild, ttLeaves, ttPath, ttPass, ttReach, ttSection} = require('../taxtree.js'),
   {lectureGroup, slateOf} = require('../core.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
@@ -18,10 +21,34 @@ const adminData = () => {
   return d;
 };
 const W = read('data/names.json').coral.worms;
+// The section's views as the admin reads them: {nodes, problems (the build's)} and the tree ttBuild makes of the nodes.
+const SEC = read('data/coral-tree.json'),
+  keyNodes = () => ttSection(SEC, 'key').nodes,
+  keyTree = () => ttBuild(keyNodes()),
+  wormsTree = () => ttBuild(ttSection(SEC, 'worms').nodes);
+// The build on made-up sources (tools/tree_section.py --print coral <data.json> <names.json>).
+const build = (d, names) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'coraltree-'));
+  fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(d));
+  fs.writeFileSync(path.join(dir, 'names.json'), JSON.stringify(names || {}));
+  try {
+    return JSON.parse(
+      execFileSync(
+        'python3',
+        [path.join(ROOT, 'tools/tree_section.py'), '--print', 'coral', path.join(dir, 'data.json'), path.join(dir, 'names.json')],
+        {
+          encoding: 'utf8'
+        }
+      )
+    );
+  } finally {
+    fs.rmSync(dir, {recursive: true});
+  }
+};
 
 test('Key: the IMR lecture groups, each genus once, a leaf, under the group the app shows it in', () => {
   const d = adminData(),
-    T = ttBuild(ctKeyOf(d)),
+    T = keyTree(),
     G = Object.keys(d.gen);
   assert.deepStrictEqual(T.problems, []);
   // every genus the admin has a page for is exactly one leaf, its id its name; nothing else is a leaf
@@ -61,11 +88,18 @@ test('Key: the IMR lecture groups, each genus once, a leaf, under the group the 
   const S = new Set(slateOf(d));
   G.forEach(n => assert.strictEqual(T.node.get(n).slate, S.has(n), n));
   assert.strictEqual(T.node.get('Millepora').star, false);
+  // what the rows read, on every genus: its name as the genus, its lecture group and its slate number
+  G.forEach(n => {
+    const x = T.node.get(n);
+    assert.strictEqual(x.genus, n);
+    assert.strictEqual(x.grp, lectureGroup(d, n));
+    assert.strictEqual(x.num, d.gen[n].n || 0);
+  });
 });
 
 test('Key: never the Coral Finder key of data.json key (growth forms, rule C4), never a growth form', () => {
   const d = adminData(),
-    N = ctKeyOf(d),
+    N = keyNodes(),
     ids = new Set(N.map(n => n.id)),
     boxes = [...d.key, ...d.x.groups].flatMap(k => [k.id, ...k.leaves.map(l => l.id)]),
     forms = [...d.key, ...d.x.groups].map(k => k.name);
@@ -79,10 +113,9 @@ test('Key: never the Coral Finder key of data.json key (growth forms, rule C4), 
 
 test('WoRMS: each genus under the family WoRMS gives it (data/names.json), the same leaves as the Key', () => {
   const d = adminData(),
-    {nodes, problems} = ctWormsOf(d, W),
-    T = ttBuild(nodes),
-    K = ttBuild(ctKeyOf(d));
-  assert.deepStrictEqual(problems, []);
+    T = wormsTree(),
+    K = keyTree();
+  assert.deepStrictEqual(ttSection(SEC, 'worms').problems, []);
   assert.deepStrictEqual(T.problems, []);
   // the same leaves, in the Key's order
   const leaves = T.roots.flatMap(r => ttLeaves(T, r)),
@@ -111,11 +144,11 @@ test('WoRMS: a genus the extract lacks is reported, never placed', () => {
   const d = adminData(),
     W2 = {...W};
   delete W2.Acropora;
-  const {nodes, problems} = ctWormsOf(d, W2),
-    T = ttBuild(nodes);
-  assert.deepStrictEqual(problems, [{id: 'Acropora', why: 'no reference'}]);
+  const sec = build(read('data.json'), {coral: {worms: W2}}),
+    T = ttBuild(ttSection(sec, 'worms').nodes);
+  assert.deepStrictEqual(ttSection(sec, 'worms').problems, [{id: 'Acropora', why: 'no reference'}]);
   assert.ok(T.roots.includes('Acropora'));
-  assert.deepStrictEqual(ctWormsOf(d, {}).problems.length, Object.keys(d.gen).length);
+  assert.deepStrictEqual(ttSection(build(read('data.json'), {coral: {worms: {}}}), 'worms').problems.length, Object.keys(d.gen).length);
 });
 
 test('made-up data: a group with no genus is left out, a ★ genus follows its look-alikes, an x genus has no group', () => {
@@ -134,7 +167,8 @@ test('made-up data: a group with no genus is left out, a ★ genus follows its l
     },
     x: {gen: {Xx: {}}}
   };
-  const T = ttBuild(ctKeyOf(d));
+  const sec = build(d),
+    T = ttBuild(ttSection(sec, 'key').nodes);
   assert.deepStrictEqual(T.roots, ['k:1', 'k:2', 'k:none']);
   assert.deepStrictEqual(T.kids.get('k:1'), ['Aa', 'Bb']);
   assert.deepStrictEqual(T.kids.get('k:2'), ['Cc', 'Star']);
@@ -144,16 +178,18 @@ test('made-up data: a group with no genus is left out, a ★ genus follows its l
   assert.strictEqual(T.node.get('Xx').star, false);
   assert.strictEqual(T.node.get('Xx').slate, false);
   assert.deepStrictEqual(
-    ctLeaves(d).map(l => l.id),
+    [...T.node.values()].filter(n => n.genus).map(l => l.id),
     ['Aa', 'Bb', 'Cc', 'Star', 'Xx']
   );
 });
 
+// The leaves a Tree page filters: the Key's genus nodes (admin.js TREE_BUILD flat).
+const genera = T => [...T.node.values()].filter(n => n.genus);
+
 test('filters: tags on the genera, read through the leaves, the same genera in both views; never a growth form', () => {
-  const d = adminData(),
-    K = ttBuild(ctKeyOf(d)),
-    T = ttBuild(ctWormsOf(d, W).nodes),
-    F = ctFilters(d, {
+  const K = keyTree(),
+    T = wormsTree(),
+    F = ctFilters(genera(K), {
       pairs: [{k: 'Favites|Goniastrea', A: 'Favites', B: 'Goniastrea'}],
       needs: n => (n === 'Porites' ? ['Colony 1/3'] : []),
       waiting: n => (n === 'Acropora' ? 4 : 0),
@@ -182,7 +218,7 @@ test('filters: tags on the genera, read through the leaves, the same genera in b
   assert.ok(!ttPass(K, [imr]).has('Euphyllia'));
   // no pair: no look-alike option
   assert.deepStrictEqual(
-    ctFilters(d, {}).map(x => x.k),
+    ctFilters(genera(K), {}).map(x => x.k),
     ['star', 'work', 'cand', 'draft']
   );
 });
@@ -195,7 +231,8 @@ test('filters: the look-alikes hold the draft’s pairs, an added one selectable
     {pairRows} = require('../admin-content.js'),
     d = adminData(),
     S = C.subjectOf('coral'),
-    K = ttBuild(ctKeyOf(d)),
+    K = keyTree(),
+    L = genera(K),
     rows = pairRows(S, d, {
       pairs: {
         'Acropora|Porites': {v: 1, was: null, t: 1},
@@ -207,7 +244,7 @@ test('filters: the look-alikes hold the draft’s pairs, an added one selectable
       {k: 'Favites|Goniastrea', A: 'Favites', B: 'Goniastrea'},
       {k: 'Acropora|Anacropora', A: 'Acropora', B: 'Anacropora'}
     ],
-    F = ctFilters(d, {pairs: P0, rows}),
+    F = ctFilters(L, {pairs: P0, rows}),
     by = k => F.find(x => x.k === k),
     pass = f => [...ttPass(K, [f.on])].sort();
   // the base's in their order, then the draft's entries (a base pair he withdrew, the one he added) in key order
@@ -226,14 +263,14 @@ test('filters: the look-alikes hold the draft’s pairs, an added one selectable
   assert.deepStrictEqual(pass(by('look')), ['Acropora', 'Anacropora', 'Porites']);
   // without the draft's rows: the base's pairs only
   assert.deepStrictEqual(
-    ctFilters(d, {pairs: P0})
+    ctFilters(L, {pairs: P0})
       .filter(x => x.grp === 'Look-alikes')
       .map(x => x.k),
     ['look', 'look:Favites|Goniastrea', 'look:Acropora|Anacropora']
   );
   // a pair entry on a genus the tree does not hold is no option
   assert.ok(
-    !ctFilters(d, {pairs: P0, rows: [{key: 'Acropora|Zz', a: 'Acropora', b: 'Zz', e: {v: 1}, state: 'orphan', v: null}]}).some(
+    !ctFilters(L, {pairs: P0, rows: [{key: 'Acropora|Zz', a: 'Acropora', b: 'Zz', e: {v: 1}, state: 'orphan', v: null}]}).some(
       x => x.k === 'look:Acropora|Zz'
     )
   );

@@ -533,9 +533,10 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
 // an empty one (nothing for time or for opening the app).
 test('fish achievements: ids apart from the corals, each reachable, none for nothing', () => {
   const {ACH, FISH_ACH, SEASLUG_ACH, ACH_CONTRIB, ACH_LEARN, achFind, newAch, achRevoke, SUBJECTS} = require('../core.js');
-  // the fish set's 33 less the 2 that wait for the ultimate exam or Fish basics (fpct100, fbasics): fsp1, fsp10 and fsp50
-  // came with the species level's step 1, fspsci1, fboth25, fdauin20 and fpct70 with step 2
-  assert.strictEqual(FISH_ACH.length, 31, String(FISH_ACH.length));
+  // the fish set's 33 less the one that waits for the ultimate exam (fpct100): fsp1, fsp10 and fsp50 came with the species
+  // level's step 1, fspsci1, fboth25, fdauin20 and fpct70 with step 2, fbasics with Fish basics
+  assert.strictEqual(FISH_ACH.length, 32, String(FISH_ACH.length));
+  assert.ok(achFind('fbasics') && !ACH_LEARN.includes('fbasics') && FISH_ACH[0].id === 'fbasics');
   const ids = [...ACH, ...FISH_ACH, ...SEASLUG_ACH].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
   assert.ok(FISH_ACH.every(a => a.kind === 'learn' && [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
@@ -585,9 +586,13 @@ test('fish achievements: ids apart from the corals, each reachable, none for not
     setsAdv: {sci: 130, sp: 659, ssp: 662},
     both: 659,
     top: {total: 20, adv: 20},
+    basics: true,
     fb: 0
   };
   assert.strictEqual(newAch(all, {}, FISH_ACH).length, FISH_ACH.length, 'every fish achievement is reachable');
+  // Fish basics alone (its done feat, progress.js achSnap basics) earns fbasics and nothing else, whatever the progress.
+  assert.deepStrictEqual(newAch({...none, basics: true}, {}, FISH_ACH), ['fbasics']);
+  assert.ok(!newAch({...all, basics: false}, {}, FISH_ACH).includes('fbasics'), 'not without the module');
   assert.ok(!newAch(all, {}).some(id => FISH_ACH.some(a => a.id === id)), "a fish snapshot never earns from the corals' list by default");
   // A learned mark taken away takes back the fish learned-based ones only from the fish list.
   const A = {flearn1: 5, fmet5: 5, learn1: 5};
