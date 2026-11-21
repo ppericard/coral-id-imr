@@ -39,9 +39,12 @@ function setup() {
   git(src, 'commit', '-q', '-m', 'one');
   execFileSync('git', ['clone', '-q', '--bare', src, origin]);
   execFileSync('git', ['clone', '-q', 'file://' + origin, clone], {env: gitEnv});
-  const advance = () => {
+  // `date`: the new commit's date (a commit made days before the fetch that brings it).
+  const advance = date => {
     fs.appendFileSync(path.join(src, 'AGENTS.md'), 'more\n');
-    git(src, 'commit', '-q', '-am', 'next');
+    execFileSync('git', ['-C', src, 'commit', '-q', '-am', 'next'], {
+      env: date ? {...gitEnv, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date} : gitEnv
+    });
     git(src, 'push', '-q', origin, 'main');
     return git(src, 'rev-parse', 'HEAD');
   };
@@ -130,6 +133,17 @@ test('an old local ref with a newer remote is never called current: both shas, t
   assert.match(probe(s.clone).full, /ref last moved \d+[mhd] ago$/);
 });
 
+// Codex, #1363: the reflog's own time, never the date of the commit a fetch brought (%ct of a reflog entry is the commit's).
+test('a ref a fetch just moved to an old commit moved minutes ago, not days', () => {
+  const s = setup();
+  const old = s.advance('2020-01-01T00:00:00Z');
+  git(s.clone, 'fetch', '-q', 'origin', '+refs/heads/main:refs/remotes/origin/main');
+  const {f, full} = probe(s.clone);
+  assert.strictEqual(f.local, old);
+  assert.ok(Math.abs(f.moved - Date.now() / 1000) < 120, 'moved: ' + f.moved);
+  assert.match(full, /= remote main .*; ref last moved [0-2]m ago$/);
+});
+
 test('remote unavailable: "remote freshness unknown", the local ref and when it moved, exit 0', () => {
   const s = setup();
   git(s.clone, 'remote', 'set-url', 'origin', path.join(s.top, 'gone.git'));
@@ -168,6 +182,31 @@ test('a remote that never answers is cut at the limit, not waited for', async ()
     const {f, short} = JSON.parse(out.stdout);
     assert.match(f.why, /^no answer in 0\.7 s$/);
     assert.match(short, /^remote freshness unknown \(no answer in 0\.7 s\)/);
+  } finally {
+    server.close();
+  }
+});
+
+// The hook with the real limit: an origin that never answers costs the 3 s limit, inside the brief's 5 s deadline.
+test('the hook with an origin that never answers still ends in time, exit 0, freshness unknown on the time line', async () => {
+  const s = setup();
+  const server = net.createServer(sock => sock.on('error', () => {}));
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  try {
+    git(s.clone, 'remote', 'set-url', 'origin', 'http://127.0.0.1:' + server.address().port + '/x.git');
+    const t = Date.now();
+    const out = await new Promise(resolve => {
+      const p = spawn('python3', ['-I', '-', '--short'], {cwd: '/', env: envOf(s.clone)});
+      let stdout = '';
+      p.stdout.on('data', b => (stdout += b));
+      p.on('close', status => resolve({status, stdout}));
+      p.stdin.end(fs.readFileSync(path.join(ROOT, 'tools', 'brief.py'), 'utf-8'));
+    });
+    assert.strictEqual(out.status, 0);
+    assert.ok(Date.now() - t < 8000, 'bounded: ' + (Date.now() - t) + ' ms');
+    const lines = out.stdout.trim().split('\n');
+    assert.ok(lines.length <= 5);
+    assert.match(lines[0], /^Manila .* · remote freshness unknown \(no answer in [23](\.\d)? s\)/);
   } finally {
     server.close();
   }

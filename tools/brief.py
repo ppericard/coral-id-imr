@@ -280,8 +280,10 @@ def freshness(root):
     'commit': epoch of its commit when it has no reflog, 'remote': sha or None, 'why': why the remote is unknown or None, 'behind': commits the remote has that the ref lacks,
     when countable (the objects are here), else None}. Never raises."""
     f = {'local': git_text(root, 'rev-parse', '-q', '--verify', MAIN_LOCAL), 'moved': None, 'remote': None, 'why': None, 'behind': None}
-    stamp = git_text(root, 'reflog', 'show', '-1', '--format=%ct', MAIN_LOCAL)  # when the ref last changed (not when last checked)
-    f['moved'] = int(stamp) if stamp and stamp.isdigit() else None
+    # When the ref last changed (not when last checked): the newest reflog entry's own time, `refs/remotes/origin/main@{<unix>}`
+    # (`%ct` would be the commit's date, which is days old after a fetch of an old commit: Codex review #1363).
+    stamp = re.search(r'@\{(\d+)\}$', git_text(root, 'reflog', 'show', '-1', '--date=unix', '--format=%gd', MAIN_LOCAL) or '')
+    f['moved'] = int(stamp.group(1)) if stamp else None
     if f['local'] and not f['moved']:  # a fresh clone has no reflog for the ref: the age of its commit tells something
         stamp = git_text(root, 'log', '-1', '--format=%ct', MAIN_LOCAL)
         f['commit'] = int(stamp) if stamp and stamp.isdigit() else None
@@ -666,12 +668,7 @@ def brief(short, at):
         lines[0] += ' · ' + drift_note(drifted)
     elif drifted:
         lines.append(drift_note(drifted))
-    fresh, fresh_err = result(f_fresh)
-    fl = fresh_line(fresh, short) if fresh else 'remote freshness unknown (%s)' % fresh_err
-    if short:  # the time line always survives the 5-line cut
-        lines[0] += ' · ' + fl
-    else:
-        lines.append(fl)
+    n_head = len(lines)  # the freshness line goes after the time line and the drift note, once the other checks have had their time
     have_gh = shutil.which('gh') is not None
     url = sync_url()
     f_prs = pool.submit(prs, pool) if have_gh else None
@@ -767,6 +764,13 @@ def brief(short, at):
     ft = None if short else fish_todo()
     if ft and ft[0]:
         lines.append('Fish candidates waiting for the judging pass: %d in %d species (python3 tools/judging_fish.py todo)' % ft)
+    # Is the local origin/main the remote's? Read last: its ls-remote ran beside the checks above, which keep their deadline.
+    fresh, fresh_err = result(f_fresh)
+    fl = fresh_line(fresh, short) if fresh else 'remote freshness unknown (%s)' % fresh_err
+    if short:  # the 5-line cut: the time line always survives it
+        lines[0] += ' · ' + fl
+    else:
+        lines.insert(n_head, fl)
     pool.shutdown(wait=False, cancel_futures=True)
     return lines[:5] if short else lines
 
