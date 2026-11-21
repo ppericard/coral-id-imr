@@ -110,7 +110,7 @@ configuration was measured (docs/INTEGRATOR.md "A large judging or boxing pass i
   `male` and `female` for the Anthias). Then `judging_fish.py codes` (only `ph` changed in `data/suggest.json`, for
   430 photos) and `one`.
   - Drift: 44 tags (10%, so that 5% is more than one photo) re-read on 480 px tiles after a gap: 40 the same, 1
-    different, 3 abstentions. Settled at 1024 px, the bulk was right on 4 and undecided on 1 (a *Scarus niger*), whose
+    different, 3 abstentions. Settled at 1024 px, the bulk was right on 3 and undecided on 1 (a *Scarus niger*), whose
     tag was dropped: 0 of 44 wrong.
   - Against the observers' sex annotations: 163 of 167 agree.
   - Every unit of these 27 species already had a sex or colour phase photo in play: no new variant group.
