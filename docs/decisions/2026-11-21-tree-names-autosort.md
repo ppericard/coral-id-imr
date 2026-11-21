@@ -1,6 +1,6 @@
 # The admin's auto-sort of the tree subjects named tree*, not fish*
 
-Date: 2026-11-21. PR: #0. Rules or docs touched: `tests/treenames.test.js`, `tests/subject-neutral-admin.test.js`,
+Date: 2026-11-21. PR: #1390. Rules or docs touched: `tests/treenames.test.js`, `tests/subject-neutral-admin.test.js`,
 `docs/rules/admin.md`, `docs/rules/photos.md` (a name in a cite), `docs/spec/admin*.md`, `docs/spec/fish*.md`,
 `docs/spec/content.md`, `docs/spec/data.md`, `docs/spec/player-reports.md`, `judging/FISH.md`.
 
