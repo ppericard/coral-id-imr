@@ -168,9 +168,10 @@ test('auto off under the threshold once there are enough comparisons, on again w
   assert.ok(AUTO.min.keep > AUTO.min.quality && AUTO.min.view > AUTO.min.quality && AUTO.min.quality === 0.73);
 });
 
-test('an auto add Pierre removed (Remove on its genus page: add gone, reject mark) is a Keep disagreement', () => {
-  // admin.js ACT.hide on an auto-added photo deletes its add and writes the reject mark.
-  const cur = {auto: {'2026-11-03': {a1: 'aw2B', a2: 'aw2B'}}, genera: {G: {add: {a2: 'wide'}}}, seen: {'cand:a1': 1}};
+test('an auto add Pierre removed (Remove on its genus page: add gone, excluded) is a Keep disagreement', () => {
+  // admin.js ACT.remove on an auto-added photo deletes its add and excludes it (a reject mark from a rejected candidate and an
+  // old Remove's hide entry read the same way).
+  const cur = {auto: {'2026-11-03': {a1: 'aw2B', a2: 'aw2B'}}, genera: {G: {add: {a2: 'wide'}}}, exclude: {a1: 'excluded'}};
   assert.strictEqual(pierreOf(cur, curIdx(cur), 'a1').keep, 'reject');
   const C = autoCompare(cur);
   assert.deepStrictEqual(

@@ -67,6 +67,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The fish phase flag comes from the cited phase list too, and the phase card names the list's sources](2026-11-21-fish-phase-flag-from-cited-list.md) | #1395 |
 | 2026-11-21 | [The fish welcome's names step: common names, scientific names or both, right after the first-launch question](2026-11-21-fish-welcome-names-step.md) | #1396 |
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
+| 2026-11-21 | [One Remove in the admin: one click, out for good, an Undo just after, one list to put a photo back](2026-11-21-one-remove.md) | #1393 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
 | 2026-11-21 | [The quiz keeps its question when the player leaves and comes back](2026-11-21-quiz-keeps-pending-question.md) | #1375 |
 | 2026-11-21 | [R2 is given up for a visit after three photos fail in a row, not after one](2026-11-21-r2-given-up-after-three.md) | #1416 |

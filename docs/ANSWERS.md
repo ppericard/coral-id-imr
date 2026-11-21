@@ -1760,7 +1760,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pour supprimer les photos du jeu. Donc... il faut un bouton remove, là en un clic la photo ne revient jamais, avec un
   undo juste après, une liste des photos retirées pour en remettre si j'ai besoin. Oui, ça me va, ta proposition A me
   va.» Option A decided: one Remove, one click, the photo never comes back, an Undo just after, a list of the removed
-  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph).
+  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph); the corals' admin, #1393
+  (decisions/2026-11-21-one-remove.md); the fish and sea slugs wait for a second step.
 - **05:48, the read-only R2 token for the CI (answers the 05:40 entry): withdrawn.** «Pour le jeton R2 en lecture seule,
   ouais, ok, bon, tu retires la demande, très bien.» The integrator withdraws the request; he agreed. Applied: no doc
   change (the question only sits in STATUS, the integrator's).
