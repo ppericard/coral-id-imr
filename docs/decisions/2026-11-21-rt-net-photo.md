@@ -1,6 +1,6 @@
 # The player's time net of the photo's: a right answer's z less its photos' time term, a silent replay
 
-Date: 2026-11-21. PR: #TBD. Rules or docs touched: L1, D3, D4, D5, D6, S1; docs/LEARNING.md "The player's time net of the
+Date: 2026-11-21. PR: #1414. Rules or docs touched: L1, D3, D4, D5, D6, S1; docs/LEARNING.md "The player's time net of the
 photo's", "Response time", "The photo's time term"; docs/spec/sync.md "Scoring".
 
 ## Context

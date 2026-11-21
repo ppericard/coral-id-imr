@@ -1186,7 +1186,7 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
 - **The app world** (level 1; `node tools/learnsim.js --stats` (the corals' statistics rebuilt from the real log with
   the terms, at `RTNET_SHEET`) `--truth gen`, the default profiles, 5 seeds, 300 questions; before = `main`): its
   simulated seconds do not depend on the photo, so it can show only that no learning path breaks, never a gain.
-  Results: see the PR (#TBD).
+  Results: see the PR (#1414).
 
 ### Photo memory
 
