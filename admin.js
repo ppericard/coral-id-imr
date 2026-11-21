@@ -747,13 +747,15 @@ const vbox = c =>
 // The rotation goes the same way: the files have the published one baked in (data.json / fish-game.json "ro"); a draft
 // rotation is drawn on the original, after its crop, by a CSS rotate (data-rot, rotFit). p.j.ro: a fish photo's (fuP).
 // An IMR lecture photo traced to its original (data.json cr, ro: how the lecture framed it, tools/apply_imr_originals.py)
-// has that framing as its baseline, not in the draft: with no draft crop or turn it shows its framed file, and from its
-// original (AWAY) draws that framing. The admin offers no Crop on a lecture photo (genus tiles): a crop published for it
-// would never reach its R2 file (tools/fetch_approved.py remakes candidates and the views' photos, not `course`; Codex
-// review of #1292), so its framing is only ever that baseline and "Full photo" cannot arise.
+// has that framing as its baseline, not in the draft: with no draft crop it shows its framed file, and from its original
+// (AWAY) draws that framing. The admin's Crop on it (REE-60) writes a crop entry that replaces the baseline, always one,
+// [0, 0, 1, 1] for Full photo, and its rotation then comes from the rotation map alone: a key that is gone brings the
+// lecture's framing back (autosort.js lectureFrame; tools/photos.py lecture_frame, which tools/fetch_approved.py remakes the
+// photo's files by).
 const crSrc = (p, s) => {
-  const c = crOf(p.f) || sugCrop(p) || (p.imr ? p.cr : undefined),
-    ro = p.j && p.j.ro != null ? rotNorm(p.j.ro) : roOf(p.f) || (p.imr ? rotNorm(p.ro) : 0),
+  const L = p.imr ? lectureFrame(p.f, p.cr, p.ro, DRAFT.crop, DRAFT.rot) : null,
+    c = crOf(p.f) || sugCrop(p) || (L ? L[0] || undefined : undefined),
+    ro = p.j && p.j.ro != null ? rotNorm(p.j.ro) : L ? L[1] : roOf(p.f),
     // Once R2 failed, a downloaded photo comes from its online original, uncropped (img(), AWAY): its crop is drawn.
     baked = !p.r && (p.cr || p.ro) && !(AWAY && p.src);
   if (baked && same(c, p.cr) && ro === rotNorm(p.ro)) return `src="${img(p, s)}"`;
@@ -1582,7 +1584,7 @@ function tile(n, p, v, st) {
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       ${RMBTN}
-      ${p.src && !p.imr ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
+      ${p.src ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
       ${p.from ? '' : notThis(n)}`
       }${st.extra || ''}
     `
@@ -4198,7 +4200,7 @@ function bindTiles(scope, g) {
     else if (a === 'crop')
       el.onclick = () => {
         const p = [...photos(n), ...pending(n)].find(x => x.f === f);
-        if (p && !p.imr) cropEditor(p);
+        if (p) cropEditor(p);
       };
     else if (a === 'out') {
       if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value);
@@ -8258,10 +8260,13 @@ function candKeys() {
 // cuts the crop first and then turns it (tools/photos.py turn). Save writes the crop and the rotation as one Undo step.
 // opt (the fish Candidates, admin-fish.js): {start, rot, save(v, full, rot)} in place of the coral crops and rotations.
 function cropEditor(p, opt) {
-  const lb = $('lightbox'),
-    c0 = (opt ? opt.start : crOf(p.f) || sugCrop(p)) || [0, 0, 1, 1];
+  // A lecture photo (REE-60) starts from the framing in force: its crop entry, else how the lecture framed it (p.cr, p.ro).
+  const lec = !opt && p.imr ? lectureFrame(p.f, p.cr, p.ro, DRAFT.crop, DRAFT.rot) : null,
+    lb = $('lightbox'),
+    c0 = (opt ? opt.start : lec ? lec[0] : crOf(p.f) || sugCrop(p)) || [0, 0, 1, 1];
   let c = c0.slice(),
-    ro = rotNorm(opt ? opt.rot : roOf(p.f));
+    ro = rotNorm(opt ? opt.rot : lec ? lec[1] : roOf(p.f));
+  const ro0 = ro;
   lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
     <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div>
     <div class="adm-cropbar adm-rotbar" role="group" aria-label="Rotation"><button type="button" data-r="-90" title="Rotate left" aria-label="Rotate left">⟲</button><button type="button" data-r="0" title="No rotation" aria-label="No rotation"${ro ? '' : ' disabled'}>0°</button><button type="button" data-r="90" title="Rotate right" aria-label="Rotate right">⟳</button></div></div>`;
@@ -8362,10 +8367,17 @@ function cropEditor(p, opt) {
         if (a === 'save') {
           const v = c.map(x => Math.round(x * 1000) / 1000),
             full = v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1;
+          // A lecture photo saved as it was opened writes nothing (its crop entry would only differ by the rounding, and
+          // make the workflow download its original again for the same picture).
+          if (lec && same(c, c0) && ro === ro0) {
+            close();
+            return;
+          }
           DRAFT.crop = {...(DRAFT.crop || {})};
           // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back (nor
           // get written with the add, ACT.addc). Read from data/suggest.json: a Check's card is blind (no j) but has one.
-          if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
+          // A lecture photo's Full photo is always written: the baseline it replaces is a crop (lectureFrame).
+          if (full && !lec && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
           // An empty map stays (output() leaves it out of the file): with the key gone, the next merge (merge3) would drop
