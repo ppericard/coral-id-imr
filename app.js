@@ -3048,7 +3048,7 @@ const UNITS = {
     webBy: () => [{chip: 'Colour by family', of: n => GX(n).parent || 0, name: k => (k ? (GX(k) || {name: k}).name : 'No family')}],
     winks: () => [],
     // The tile photos of unit n (Find the X; unitTiles): seaslug-game.json's xc, cut by tools/seaslug_game.py where a photo
-    // carries the animal's box (bb). No photo does yet (judging/SEASLUG.md gives none), so the draw is as without it.
+    // carries the animal's box (bb: judging/SEASLUG.md "The animal's box"), so a genus plays it once it has tiles.
     tiles: unitTiles,
     // Its sheets in its own words (learn.js sheetWord: no fish word on a sea-slug sheet): each sheet's ?
     // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
