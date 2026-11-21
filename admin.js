@@ -4966,8 +4966,10 @@ const REVIEW_BUILD = {
             if (rows.length && !FISHC) fishLoad().then(again);
             // The prior beside the answers (REE-62): the photo's ease in force (the admin's, else the pass's) and its unit's
             // offset from the subject's own ratings (?stats=1&s=, read once behind the page: the page draws without it).
-            if (rows.length && !OWNST[S.id] && !PRIOR_TRY[S.id]) {
-              PRIOR_TRY[S.id] = 1;
+            // (read once: DIFF_TRY, which sheetAgain('stats') empties with the ratings, so new offsets are read again)
+            const tried = (DIFF_TRY[S.id] = DIFF_TRY[S.id] || {});
+            if (rows.length && !OWNST[S.id] && !tried.prior) {
+              tried.prior = 1;
               loadOwnStats(S).then(again);
             }
             const V = FISHC ? readView(fuData().F) : null,
@@ -9071,7 +9073,6 @@ function diffByAnswers(PH, min, order) {
 // app starts it (autosort.js photoPrior: its unit's offset in the subject's own ratings + (3 - ease) x calib.ease), read as
 // "recognised by N%" like the learned reading. treePrior(S, ease, own, unit): {d, ease, off} or null when there is neither a
 // judged ease nor an offset; own is OWNST[S.id] (loadOwnStats; none or old: the ease alone, off null). Pure: tests/priordiff.test.js.
-const PRIOR_TRY = {};
 // The corals' prior on their tile: the genus's offset (GD, the sheet's ?stats=1 gd), the photos having no judged ease; nothing
 // before the genus has one.
 function genusPrior(genus) {
@@ -9912,10 +9913,7 @@ function sheetAgain(...kinds) {
     else if (k === 'alerts') ALS = null;
     else if (k === 'infra') INF = null;
     else if (k === 'reports') REPS = null;
-    else if (k.startsWith('own:')) {
-      delete OWNST[k.slice(4)];
-      delete PRIOR_TRY[k.slice(4)]; // By difficulty reads the new offsets (REE-62)
-    }
+    else if (k.startsWith('own:')) delete OWNST[k.slice(4)];
   });
 }
 // The reads the landing page needs leave as soon as the token is known, in parallel with the token check and start()'s
