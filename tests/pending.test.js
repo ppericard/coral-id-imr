@@ -170,10 +170,19 @@ test('how a species question showed its names (sciShow draws at random) is kept:
   assert.strictEqual((SRC.match(/PENDSCI = q\.sv \|\| null;\n\s+question\(\.\.\.q\);/g) || []).length, 2);
 });
 
-test('a question with a first-meeting card, or a photo with no file name, is not kept', () => {
+test("a question about its own first-meeting card genus, or a photo with no file name, is not kept; another genus's card does not stop it", () => {
   const w = world(),
     q = Object.assign(make('which'), {intro: ['A'], start: false});
-  assert.strictEqual(w.L.pendRec('quiz', q), null);
+  assert.strictEqual(w.L.pendRec('quiz', q), null, "the question's own unit is on the card");
+  assert.strictEqual(w.L.pendRec('quiz', Object.assign(make('which'), {intro: ['B', 'A'], start: true})), null, 'one of the first cards');
+  // a question about a genus already met, shown over the card of the genus opening next: kept (REE-209)
+  const other = Object.assign(make('which'), {intro: ['E'], start: false}),
+    r = w.L.pendRec('quiz', other);
+  assert.ok(r && r.t === 'A', "another unit's card: kept");
+  w.L.pendShow('quiz', other, null);
+  const k = w.L.pendTake('quiz');
+  assert.ok(k, 'it comes back after a leave or a reload');
+  assert.strictEqual(k.q.intro, undefined, 'without the card (introAdd marked its genus met when it showed)');
   const bad = make('which');
   delete bad[4].shown[0].f;
   assert.strictEqual(w.L.pendRec('quiz', bad), null);

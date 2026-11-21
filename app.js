@@ -254,30 +254,51 @@ const upsize = (root = $v) =>
     upsizeImg(i, Math.max(r.width, r.height));
   });
 // A photo failing on R2: asked once more (core.js photoRetry; a service worker did so already), then its online original
-// or the site's file (photoFallback); with no worker the page's next photos go there at once (r2Out), so R2 out of reach
-// costs one failed request. Before every other error listener.
+// or the site's file (photoFallback); with no worker R2 is given up for the page once R2_OUT photos failed in a row
+// (r2Failed). Before every other error listener.
 const photoFail = e => {
   const i = e.target;
   if (!(i instanceof HTMLImageElement)) return;
   // A card's photo stays out of sight while it is asked again (the cards' own error listener, quiz.js, which this one
   // stops, does the same for the retries after it: never a broken-image icon on a card); its load shows it again.
   const hide = () => i.closest('.unlock') && i.classList.add('fail');
-  // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
-  if (!swOn() && photoRetry(i, away)) return (hide(), e.stopImmediatePropagation());
+  // R2 once more first (core.js photoRetry: a passing error), then the online original or the site; a file that failed
+  // so already (its quiz preload) is not asked again.
+  if (!swOn() && !r2Missed(i.currentSrc || i.getAttribute('src')) && photoRetry(i, away)) return (hide(), e.stopImmediatePropagation());
   if (away(i)) (hide(), e.stopImmediatePropagation());
 };
 const away = i => {
   // Under a service worker the 480 px step and the backdrop stay on R2, where the worker keeps its offline copies.
-  const sw = swOn();
+  const sw = swOn(),
+    u = i.currentSrc || i.getAttribute('src');
   if (!photoFallback(i, photoLook, sw)) return false;
-  if (!sw) (r2Out(), photoFallback(i.closest('figure'), photoLook));
+  if (!sw) (photoFallback(i.closest('figure'), photoLook), r2Failed(u));
   cropWatch();
   return true;
 };
-// R2 failed on a page no service worker controls (an element, app.js away, or a quiz preload, quiz.js pump): the next
-// photos go to their online original or the site, and the crops are drawn from now on.
+// When R2 is given up (docs/decisions/2026-11-21-r2-given-up-after-three.md). On a page no service worker controls, a
+// photo that still fails on R2 after its retry (an element, app.js away, or a quiz preload, quiz.js pump) falls back on
+// its own; R2 is given up for the visit (r2Out) once R2_OUT different photos failed so in a row, no photo loaded from R2
+// in between: R2 down, or a network that blocks it, costs a few failed requests, and one file missing or one passing
+// error leaves the other photos on R2. A photo counts once (its sizes and its Find the X tile are one photo, its preload
+// and its element one failure); R2MISS: the files that failed so, not asked from R2 once more.
+const R2_OUT = 3;
+const R2MISS = new Set(),
+  R2RUN = new Set();
+const r2File = u => photoLocal(String(u || '')).replace(/[?#].*$/, '');
+const r2Missed = u => photoOnR2(u) && R2MISS.has(r2File(u));
+const r2Failed = u => {
+  const x = photoFileOf(u);
+  if (!x || !photoOnR2(u)) return;
+  R2MISS.add(r2File(u));
+  R2RUN.add(x.f.replace(/-x$/, ''));
+  if (R2 && R2RUN.size >= R2_OUT) r2Out();
+};
+const r2Loaded = u => photoOnR2(u) && R2RUN.clear();
+// R2 given up: the next photos go to their online original or the site, and the crops are drawn from now on.
 const r2Out = () => ((R2 = false), (AWAY = true), cropWatch());
 document.addEventListener('error', photoFail, true);
+document.addEventListener('load', e => e.target instanceof HTMLImageElement && r2Loaded(e.target.currentSrc), true);
 // A cropped photo shown from its online original gets its crop drawn (core.js photoCropOf: the site's files have it baked
 // in): every <img> added or given a new src is checked, from the first fallback on (nothing watches before).
 let CROPW = null;
@@ -838,8 +859,8 @@ function treeGenera(X, F) {
   X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
   // The fish species level, step 1 (docs/ARCHITECTURE.md "Fish species, step 1: by common name"): one unit per species
   // with a listed common name (core.js treeSpUnits: s:s091), its scientific name in small type under each choice. In its
-  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl empty (its pairs
-  // come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
+  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl, the species its record's
+  // look names (core.js spDecl: none for the fish; the other pairs come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
   // (cnFirst, read when shown); also, every listed name (model.js choiceKeys). X.spl: every species unit, families' order.
   const imr = () => typeof imrNow === 'function' && imrNow(),
     first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr()) : ((s.cn || [])[0] || [])[0]) || s.common || s.name;
@@ -867,7 +888,7 @@ function treeGenera(X, F) {
       ig: E.ig,
       forms: E.forms,
       look: u.look,
-      decl: [],
+      decl: u.decl,
       lk: [],
       lsrc: {},
       also: (s.cn || []).flat(),
@@ -923,7 +944,7 @@ function treeGenera(X, F) {
       ig: G.ig,
       forms: G.forms,
       look: u.look,
-      decl: [],
+      decl: u.decl,
       lk: [],
       lsrc: {},
       also: [],
@@ -2467,6 +2488,29 @@ const TREE_UNITS = {
   // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
   // name line for each.
   sheet: id => viewTreeSheet(id),
+  // The sections of each sheet, in their order on the page (learn.js sheetBody; each is the sheet's own builder of that
+  // name): the names, my progress, the first photo with the ID tips, the look-alikes, the genus rows or species, the
+  // juveniles, the report line.
+  sheetParts: {
+    family: ['names', 'prog', 'hero', 'looks', 'genera', 'juveniles', 'report'],
+    genus: ['names', 'prog', 'hero', 'genusMarks', 'note', 'roots', 'moved', 'species', 'looks', 'more', 'report'],
+    species: [
+      'names',
+      'badges',
+      'facts',
+      'note',
+      'genusMarks',
+      'marks',
+      'roots',
+      'rank',
+      'photos',
+      'juvenile',
+      'siblings',
+      'looks',
+      'more',
+      'report'
+    ]
+  },
   bar: id => treeBar(id)
 };
 // What the tree subjects (fish, sea slugs) say in the Look-alikes deck and Compare (UNITS cmp, deck, inGame): their declared
@@ -2599,6 +2643,10 @@ const UNITS = {
     // (#learn/genus/Acropora).
     list: () => viewList(),
     sheet: n => viewGenus(n),
+    // The sections of its genus sheet, in their order (learn.js sheetBody): the summary line, the warning (a benthic, a
+    // genus not on the IMR list, a ★ genus not surveyed), my progress, the cover with the ID tips and More details (the
+    // Coral ID Key criteria, In the key), the photos by view, the look-alikes in the same view, the report line.
+    sheetParts: {genus: ['sum', 'warn', 'prog', 'hero', 'views', 'looks', 'report']},
     sets: [
       {
         k: 'bon',
@@ -2877,6 +2925,35 @@ const UNITS = {
       // scientific genera in play (sciUp), so the Scientific names row turns both.
       SCI_SP
     ],
+    // The names step at the welcome (namesAsk, namesSet; Pierre, 2026-11-04, docs/FISH_PATH.md "Which names a player
+    // learns"): right after the first-launch question, in the tour and on its card, common names, scientific names or
+    // both. rows: what each answer does to the What I learn rows below (k: on or off); skip: the first-launch answers
+    // that skip it ("I'm at IMR" has both already). Closing it leaves the rows as they play.
+    namesStep: {
+      q: 'Which names do you want to learn?',
+      lede: 'Every fish starts with its family. You can change this any time: My progress, What I learn.',
+      skip: ['imr'],
+      opts: [
+        {
+          id: 'common',
+          name: 'Common names',
+          line: 'Each family’s species by their common names, as you reach Advanced on it. Scientific names are offered later.',
+          rows: {sp: true, sci: false}
+        },
+        {
+          id: 'sci',
+          name: 'Scientific names',
+          line: 'Each family’s genera, then their species, by their scientific names, as you reach Advanced on it. No common-name species.',
+          rows: {sp: false, sci: true}
+        },
+        {
+          id: 'both',
+          name: 'Both',
+          line: 'Common and scientific names, each as you reach Advanced on a family.',
+          rows: {sp: true, sci: true}
+        }
+      ]
+    },
     // The What I learn card's names rows (learnRows; Pierre, 2026-11-18, Q396, Q400 D, Q404 A): common names, scientific
     // names, each on or off, both off leaving the families; "I'm at IMR" has both (its IMR genera come by themselves).
     learn: [
@@ -3019,7 +3096,7 @@ const UNITS = {
     webBy: () => [{chip: 'Colour by family', of: n => GX(n).parent || 0, name: k => (k ? (GX(k) || {name: k}).name : 'No family')}],
     winks: () => [],
     // The tile photos of unit n (Find the X; unitTiles): seaslug-game.json's xc, cut by tools/seaslug_game.py where a photo
-    // carries the animal's box (bb). No photo does yet (judging/SEASLUG.md gives none), so the draw is as without it.
+    // carries the animal's box (bb: judging/SEASLUG.md "The animal's box"), so a genus plays it once it has tiles.
     tiles: unitTiles,
     // Its sheets in its own words (learn.js sheetWord: no fish word on a sea-slug sheet): each sheet's ?
     // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
@@ -3104,6 +3181,36 @@ function learnSet(k, on) {
   else Q[k + 'O'] = true;
   bonusSet(!!on, k);
 }
+// The names step at the welcome (UNITS namesStep; Pierre, 2026-11-04): asked after the first-launch answer c, in the tour and on
+// its card, unless that answer skips it or the player said "I'm at IMR" (imrNow: an answer given earlier here counts), every
+// row it sets is on offer (learnRows: the species level, rule D4) and no row was chosen yet (Q404 A: the players who already
+// play keep what they have).
+const namesDecl = () => UNITS[SUBJ.id].namesStep || null;
+const namesKeys = () => Object.keys(namesDecl().opts[0].rows);
+// No row of the step set yet (a record no switch was tapped on).
+const namesFresh = () => namesKeys().every(k => Q[k] === undefined && !Q[k + 'O']);
+function namesAsk(c) {
+  const N = namesDecl();
+  if (!N || !c || N.skip.includes(c) || imrNow()) return false;
+  const rows = learnRows();
+  return namesKeys().every(k => rows.some(r => r.k === k)) && namesFresh();
+}
+// An answer of the step: each row it names on or off as the answer says (learnSet), only where the row is not so already,
+// so "common names" on a record no switch was tapped on writes nothing and the scientific names stay offered at Advanced.
+// Written once, when the answer is final (the card's click; the tour's close, which holds it meanwhile so that going back
+// to change it, or the first-launch answer, leaves nothing to take back or to synchronize).
+function namesSet(id) {
+  const o = namesDecl().opts.find(x => x.id === id);
+  if (o) learnRows().forEach(r => r.k in o.rows && rowOn(r) !== o.rows[r.k] && learnSet(r.k, o.rows[r.k]));
+}
+// The step's answers as big buttons, like the first-launch question's (startOptsHtml); cur: the one in force, marked.
+const namesOptsHtml = cur =>
+  `<div class="startopts" role="group" aria-label="${esc(namesDecl().q)}">${namesDecl()
+    .opts.map(
+      o =>
+        `<button type="button" class="startopt" data-names="${o.id}" aria-pressed="${o.id === cur}"><b>${esc(o.name)}</b><small>${esc(o.line)}</small></button>`
+    )
+    .join('')}</div>`;
 // The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once.
 const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
