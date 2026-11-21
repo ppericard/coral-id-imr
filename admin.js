@@ -3671,14 +3671,20 @@ function renderFishMont() {
 // strip of each species' photos in play (the stage that resembles first). Adding or withdrawing a species pair is a question
 // of its own (ROADMAP); the file is hand-kept with its sources.
 const SPZ = {};
-let SPAIR_TRY = false;
+let SPAIR_BUSY = false; // the answers are being read for the page (one read at a time; read again once ANS is dropped)
 function speciesPairsHtml(D, ph, UB) {
   const SP = speciesPairs(FISHC.raw);
   if (!SP.length) return '';
   const S = ASUBJ;
-  if (!ANS && !SPAIR_TRY) {
-    SPAIR_TRY = true;
-    loadStats().then(() => cur === 'photos/look-alikes' && render());
+  if (!ANS && !SPAIR_BUSY) {
+    SPAIR_BUSY = true;
+    Promise.resolve(loadStats())
+      .catch(() => {})
+      .then(() => {
+        SPAIR_BUSY = false;
+        // drawn again only once the answers (or their refusal) are there: a read that leaves ANS empty never loops
+        if (ANS && cur === 'photos/look-alikes') render();
+      });
   }
   const conf =
       ANS && !ANS.old
