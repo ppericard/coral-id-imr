@@ -1479,6 +1479,34 @@ kbd {
   flex-wrap: wrap;
   gap: 4px;
 }
+/* Fish Look-alikes, species pairs (REE-46): read-only cards under the families' pairs; the two species' strips side by side
+   once there is room, the sources as links. */
+.adm-spairs > h3 {
+  margin: 20px 0 8px;
+}
+.adm-spairs > h3 small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.adm-spair .adm-marks {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+.adm-spair .adm-marks small,
+.adm-spair .adm-says {
+  color: var(--muted);
+}
+.adm-spair .adm-spconf {
+  margin: 0 0 8px;
+}
+.adm-spair .adm-msides {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.adm-spair .adm-msides > div {
+  min-width: 0;
+}
 .adm-mth {
   position: relative;
   padding: 0;
@@ -3861,13 +3889,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-htile figcaption > span {
   color: var(--muted);
 }
-.adm-hphotos .adm-hnum {
+.adm-hphotos .adm-hnum,
+.adm-fdiffg .adm-hnum {
   display: block;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-/* The photo's difficulty reading (recBadge) on its own line under right · answers. */
-.adm-hphotos .adm-hnum + .adm-hnum {
+/* The photo's difficulty reading (recBadge) on its own line under right · answers (Health's photos; By difficulty's prior, REE-62). */
+.adm-hphotos .adm-hnum + .adm-hnum,
+.adm-fdiffg .adm-hnum + .adm-hnum {
   margin-top: 2px;
 }
 /* Health's photos carry the tools of their page (Q309): the To do tiles' grid (adm-qgrid), one tile a row on a phone. */
