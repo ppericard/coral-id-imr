@@ -149,7 +149,11 @@ question card left waiting resumes the quiz only once `sync.js` `mergeSaved` has
   `[c, at, t, via]` and eases `[band below, answers, t, 'ease', the answer eased, the time of the choice event eased]`. An ease
   applies only while that very choice event is in force (an ease without that time is bound to the latest choice of its
   answer at or before it, in its own record). Every event is kept: the full replay needs each answer's prior, and a
-  compaction would not commute with the union; `START_CAP` (200) is only a safety bound. The prior at any time comes
+  compaction would not commute with the union (an event that repeats the answer in force can matter again once another
+  device's events are merged in between: know@100 and know@300 merged with imr@200 give "know" from 300 on);
+  `START_CAP` (200) is only a safety bound, far above any real history (a player gives one answer, rarely changes it,
+  and a fallback card comes once per answer and direction): at about 40 bytes an event, 200 events stay under 8 KB in
+  the synced record. The prior at any time comes
   from it (`startPriorAt`: an ease applies from its time until the next answer, to the answer it eased only); a record
   without `h` reads as its answer and its ease field.
 - `w`: the fallback window, `[[difficulty, guess rate, right, first answer on its unit]…]`, up to the last of
@@ -218,13 +222,24 @@ the engine's notes after them still come in the subject on screen. A later recal
 note at the end of `RECALC.L` (a `subj` if it speaks of one subject), no code; a recalculation of progress is
 otherwise silent (rule D6).
 
+**The rules version's card** (`core.js` `RVS` `msg`, rule D6): a rules version may carry a card `{t: title, p: paragraph,
+in plain words}` that every device which skipped that version shows once; with `only: 'changed'`, only when the
+adoption moved the player's progress % by `min` points or more, `{from}` and `{to}` in `p` being the two %. The standard
+recalculation card (`core.js` `RV_CARD`, rule D5, kind `update`) is shown to a player whose % the adoption moved by 5
+points or more, either way (`progress.js` `rvNoticeAdd`), with the two %.
+
 **The apology card** (`progress.js` `sorryNotice`, `core.js` `SORRY`, `sorryOf`, `sorryFelt`, `sorryText`): one card,
 at app open, to the players who played through a run of the draw that was not right, shown only until `SORRY.UNTIL`
 (2026-11-17): it no longer shows, in any subject (an engine card, kept as a template). What the device held when this
 code first ran on it is read once and kept (`reefid-sorry-first` {t, n, h, c}): n, the answers between `SORRY.FROM`
 and then (the answers still in `LOG0` / `SYNC.log`, else those since the last card shown before the window); h, the
-opening hold's sum (`reefid-hold`); c, the most units carded within 15 answers in the window. Due with n ≥
-`SORRY.N` (20) and h ≥ `SORRY.H` (3), or h ≥ 1.5 with c ≥ `SORRY.CARDS` (4). It greets the player by first
+opening hold's sum (`reefid-hold`; `model.js` `holdStep`, a CUSUM of the shortfall against each answer's expected
+success, 0.1 allowed per answer: where their last run ended); c, the most units carded within `OPEN.WIN` (15) answers
+in the window. Due with n ≥ `SORRY.N` (20) and h ≥ `SORRY.H` (3, twice `INTRO.HOLD`, the evidence the
+back-to-one-at-a-time card asks for), or h ≥ 1.5 with c ≥ `SORRY.CARDS` (4, one more than `OPEN.MAX` allows). On the
+real answers it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31 answers, h 4.31) and nobody
+else; a run at the expected success ends at 3 or more about 2-5% of the time (simulated, 20-80 answers at e 0.7-0.9).
+Not after `SORRY.UNTIL`: a player back weeks later would not know what it is about. It greets the player by first
 name ("Hi Ana! Sorry about your last run.", `core.js` `firstName`: the first word of the sign-in name, capitalised,
 else "Hi!"; rule U10), then "Yesterday evening we adjusted how the app
 picks your questions, and some of it wasn't right yet: too many new genera came at once, and the questions didn't get
@@ -282,8 +297,17 @@ subject never brings the question at the first answer in another.
   the same wording never comes twice in a row; the very first is the plain "These questions are"): "These questions
   are" (Too easy · About right · Too hard), "Right now I feel" (Bored · In the zone · Struggling), "Want harder
   photos?" (Yes · Keep it · Easier), "Having fun?" (Not really · It's OK · Yes!), "Frustrating?" (Not at all · A bit ·
-  Very), "Getting boring?" (Not at all · A bit · Yes). Each answer sits on one or two common scales (`pulseScore`): felt
-  difficulty (−1 too easy, 0 right, +1 too hard) and feel (−1 bad, +1 good).
+  Very), "Getting boring?" (Not at all · A bit · Yes): slightly different questions about roughly the same concept. Each
+  answer sits on one or two common scales (`pulseScore`): felt difficulty (−1 too easy, 0 right, +1 too hard) and feel
+  (−1 bad, 0 neutral, +1 good); null says nothing on that scale. A "no" to a one-sided item (frustrating? boring?) is 0
+  on both: asked as often as each other, the two one-sided items shrink a mean towards 0 without tilting it. The codes
+  `easy`, `ok`, `hard` keep their meaning on the difficulty scale (the sheet's Detail keeps only those three); an item's
+  other codes ride as they come (the Message column) and its id in the Where column, both stored as text. The items'
+  sources (LEARNING.md "What the players say about the difficulty", References): `are`, the Too Easy / Appropriate /
+  Too Difficult rating of Papoušek, Stanislav & Pelánek 2016; `zone`, flow's three channels (boredom, flow, anxiety:
+  Csikszentmihalyi 1975), the balance the flow short scale's item 16 asks as demands too little / just right / too high
+  (Rheinberg, Vollmeyer & Engeser 2003); `more`, the same balance asked as a wish; `fun`, `frus`, `bored`, the in-game
+  GEQ's positive affect, tension and negative affect items (IJsselsteijn, de Kort & Poels 2013).
 - **Logged** by `ev('pulse')` with `r` = the answer's code, `src` = the item id, and `m`, `n` (the page's answers,
   `session.n`), `rr`, `lv`, `met` (what the game knew when the prompt showed, the same on every event of one prompt). The response rate: each prompt also
   logs `r` = `shown` when the card shows, `skip` for Not now or Escape, `none` when another page is opened with the card

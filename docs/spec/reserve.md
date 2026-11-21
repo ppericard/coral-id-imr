@@ -19,7 +19,13 @@ why it was decided in [docs/decisions/](../decisions/README.md) and the PRs; the
 - **How many** (`RESERVE`): up to `target` (15, three exams of `EXAM.n`) per unit with an exam (not `noex`), across its
   species in turn, never leaving a species fewer than `keep` (8) nor a unit with an exam fewer than `floor` (30) in
   practice; each such unit's floor bounds what the others take from its species. The units with the most observations
-  first (a family before its genera), each topped up to the target.
+  first (a family before its genera), each topped up to the target. Only from a real surplus, learning first when
+  photos are few: a thin genus inside a rich family keeps its photos, and a thinner unit reserves little or nothing (its
+  exam asks the photos this player has not seen). Another player's order differs, so every photo is practised and rated
+  by others.
+- **Stateless**: a function of the player's id and the photos in play, so a photo added or gone moves the reserve at its
+  margin only; an observation that comes into the reserve after it was seen waits behind the fresh ones in the exam.
+  The sheet could compute a player's reserve the same way (the answer log's player, `reserveId`) and never needs to.
 - **Out of practice**: `reserveSplit(X, R)` moves the reserved photos out of every unit's `views` and game lists (`sl`)
   into its `held` lists by view (copies marked `ho`), as new list objects; `heldOf(g, v)` reads them. `app.js`
   `reserveOn` runs both on the corals' `build` (after `applySlots`) and on every tree subject's `treeBuild` (after

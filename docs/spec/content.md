@@ -105,7 +105,9 @@ own writer).
 - **The fish** (`core.js` `treeStructure`): a family's circle is written onto the family, its genera, its species and
   each teaching node holding its species (its families' smallest circle in force), and `start` keeps the circle-1
   teaching nodes. In no circle, the family and its genera are left out and its species are `out` ("family in no
-  circle"), as the build leaves out a family no teaching node holds, with every look-alike line to it. A withdrawn pair
+  circle", with no circle, family or genus), as the build leaves out a family no teaching node holds, with every
+  look-alike line to it (a pair with one side gone is not applied); a teaching node left with no family in a circle has
+  none. A withdrawn pair
   loses its line on both sides (a pair the base declares one way only included); an added one gets a line with no words
   on both sides, its `lsrc` the editor's source or "Added by the content editor", never the IMR presentation.
 - **The structure stamp** (`structStamp`) is `''` while the structure in force is the base's (no edit, or none that
@@ -158,7 +160,8 @@ section 6, "Not in this design"); the pairs are.
   both). The corals declare no circle.
 - `core.js` `genStructure` writes the pairs in force on both records, in `gen` or `x.gen`: a withdrawn pair leaves both
   `look` lists and both `lsrc` lines (its words' slots then orphaned, kept); an added one joins both `look` lists after
-  the base's, with an `lsrc` line on each side, the editor's source or `EDITOR_PAIR`.
+  the base's, with an `lsrc` line on each side, the editor's source or `EDITOR_PAIR`. It is `core.js` `lookStructure`,
+  the writer the sea slugs share (below): a record held at two paths (the admin's merged coral data) changes at both.
 - **The ★ rule kept** (rule L5): `SUBJECTS` structure `pairs` `hold` (`core.js` `starHold`), read by `structEntries`,
   refuses the withdrawals that would leave a starred genus with no surveyed look-alike to open after (`starRefs` empty:
   it would open at any time and show in no lecture group; Alveopora and Halomitra have one look-alike each). Additions
@@ -180,7 +183,7 @@ a specialist source names).
 
 - The apply is the corals' (`core.js` `lookStructure`, by id in the `genera` list: `srcsStructure`): a withdrawn pair
   leaves both `look` lists and both `lsrc` lines; an added one joins both `look` lists, leaves `dlook` (a data
-  look-alike it was: never both, as in the build), and its line is the record's own for that genus (a data pair's
+  look-alike it was: never both, as in the build, `tools/seaslug_game.py` `genus_looks`), and its line is the record's own for that genus (a data pair's
   iNaturalist counts) with the editor's source after it, else his source, else `EDITOR_PAIR` as its one source.
 - **What a pair edit does to players**: the duels, the confusion groups' declared pairs and the sheet's Don't confuse
   with follow (`app.js` `treeGenera` `look`, `decl`; `UNITS` seaslug `pairs`), and every sea-slug player's progress is

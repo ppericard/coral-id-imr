@@ -130,8 +130,12 @@ coral genus, a fish family, genus or species, a sea slug genus); the code says "
   `core.js` `levelMargin`, its 95% margin); players never see it.
 - **A unit never answered** starts from the global level, shrunk towards the first-launch answer's level p
   (`core.js` `playerStart`): `START.W` × (m · level + `START.N` · p) / (m + `START.N`), m the answers so far, clamped to
-  [`START.LO`, `START.HI`]; `core.js` `START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5}`. A strong player's first question
-  on a new unit has traps, single views and harder photos; never the hardest. A unit whose record names `from` (a fish
+  [`START.LO`, `START.HI`]; `core.js` `START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5}`. W carries the level over only in
+  part (knowing Acropora well says something, not everything, about Porites); with no answer, W × p (p 0, "I'm new",
+  gives 0); a record without a global level reads the mean ability of the units answered, weighed by their answers. A
+  strong player's first question on a new unit has traps, single views and harder photos; never the hardest; a
+  struggling player's starts a little easier. Taken once: the unit's first answer saves its own ability (`s.th`) from
+  there. A unit whose record names `from` (a fish
   species: its family) starts from that unit's ability once it has one.
 
 **Global level and genus.** A unit already answered reads its own estimate plus the global level's move since its own
@@ -189,9 +193,12 @@ A right answer given faster than the player's usual is stronger evidence than a 
 about that answer, never a decay). Its two ability steps (the unit and the global level) are multiplied by
 w = clamp(1 − K · z, LO, HI), z = log(seconds) − the median log(seconds) of the player's own earlier timed answers
 (`core.js` `rtWeight`, `rtMedian`). `core.js` `RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10}`. w = 1 for a miss, an
-answer without seconds, a typed answer, and before `RTIME.MIN` timed answers. The seconds are those logged (tenths, at
-most 600); the earlier times live in the level's record (`P['~level'].rt`, a count per tenth of a second: `core.js`
-`rtAdd`), so two devices' records add up and a replay rebuilds them. The answer's own time never changes its
+answer without seconds, a typed answer, and before `RTIME.MIN` timed answers. K 1.5 is the value chosen by leaving one
+player out on the real answers for 8 of 9 players (`tools/abilityeval.js` `+T*+G`); LO, HI and MIN as measured. The
+seconds are those logged (tenths, at most 600: `quiz.js` `qclockRead`, `Code.gs` `secs_`), so the sheet's replay meets
+exactly the same ones; the earlier times live in the level's record (`P['~level'].rt`, a count per tenth of a second,
+`{"45": 3, …}`, a few hundred keys at most: `core.js` `rtAdd`), so the median is exact, the record compact, two devices'
+records add up and a replay rebuilds them. The answer's own time never changes its
 expectation, only the step after it. z is taken net of the question's photo time term ("The player's time net of the
 photo's", below).
 
@@ -235,11 +242,16 @@ an exam question.
 ### Per-format offsets
 
 The players find some formats easier than their guess rate 1/k explains (two plausible choices among four buttons) and
-others harder (typed). Each format f gets an offset d_f in logits, added to the app's log-odds:
-P(right) = 1/k + (1 − 1/k) σ(ability − difficulty + d_f), positive when easier than the app thought. The sheet fits it
-(`core.js` `fmtOffsetsOf`, `fmtFit`; served as `?stats=1` `fmt`) on the trusted answers and their logged expectation e:
-Newton's method on d_f with a normal prior N(0, `FMT.SD`²), for a format with `FMT.N` answers or more;
-`core.js` `FMT = {N: 20, SD: 1}`. The guess rate stays 1/k (fitted together, the two are not identifiable). The format
+others harder (typed): on the real answers, 2 plausible choices among 4 shown are right 87% of the time where the app
+expected 74%, typed answers 76% where it expected 82%. Each format f gets an offset d_f in logits, added to the app's
+log-odds: P(right) = 1/k + (1 − 1/k) σ(ability − difficulty + d_f), positive when easier than the app thought. The sheet
+fits it (`core.js` `fmtOffsetsOf`, `fmtFit`; served as `?stats=1` `fmt`, {format: [offset, answers]}) on the trusted
+answers and their logged expectation e, the app's log-odds then x = logit((e − 1/k) / (1 − 1/k)) with e clamped to
+1-99%: Newton's method on d_f with a normal prior N(0, `FMT.SD`²), so a format with few answers stays near the app's own
+value, 0, for a format with `FMT.N` answers or more; `core.js` `FMT = {N: 20, SD: 1}`. The guess rate stays 1/k: fitted
+together on the real log, the two are not identifiable (their estimates correlate at −0.9, the 2-choice guess rate runs
+off to 0.87 and its offset to minus infinity). The logged e stays the app's expectation before the offset, so the fit
+always reads the same quantity. The format
 of an answer comes from its mode and choices (`core.js` `fmtOf`: `k4`, `k3`, `k2`, `again`, `qduel`, `find`, `typed`, `exam`…;
 a format absent counts 0, `core.js` `fmtOff`). The ability steps expect the question with its format's offset, and the
 photo's aim takes it (`aimOff(k, df)`), so a 2-choice question that is right more often than 1 in 2 explains no longer
@@ -463,13 +475,17 @@ sets the What I learn rows and no model variable: [cards.md](spec/cards.md#the-n
 variables of the model, never a path (rule L10): `core.js` `CHOICE.opts` new {p: 0, basics: 1}, imr {p: 0.5, basics: 0}, know {p: 1.25, basics: 0}.
 p is the level the answers are shrunk towards in `core.js` `playerStart` (hence the first questions on each new unit
 and, through shaky, the pace of the opening); basics offers the subject's basics module first. "new" is the default
-player (a new player is a beginner). A player with `CHOICE.ASK` (50) answers or more is not asked: the answer is
+player (a new player is a beginner). An existing player with fewer than `CHOICE.ASK` answers is asked once, on the
+card; a player with `CHOICE.ASK` (50) answers or more is not asked: the answer is
 inferred from the global level, the option whose `START.W` × p is nearest (`core.js` `startInfer`). Kept per subject in
 `reefid-sync-<subject>-start` (`core.js` `startKey`), synced, with its history, so a replay uses the answer in force at
 each answer (`model.js` `startSet`, `startMerge`; `core.js` `startUnion`).
 
 **The fallback test, redesigned around the global level** (`core.js` `startCheck`, `model.js` `startStep`, `startDue`).
-Everyone may have picked wrong, so the answers after the choice are checked, at `CHOICE.AT` = 40 and 60 answers only.
+Everyone may have picked wrong, so the answers after the choice are checked, at `CHOICE.AT` = 40 and 60 answers only
+(at 20, with few units open, even a mediocre player gets everything right). The variant built ("Ba80H") makes "lower"
+the sensitive side, its card a gentle offer, because a true beginner left on a harder path is the costliest error; "higher"
+takes the 95% of the admin's level margin.
 Each answer predicts a band of levels, its edges midway between the priors (`core.js` `startBand`: new under 0.25, IMR
 course 0.25 to 0.875, know well above). With the global level and its standard error over the window:
 
@@ -622,27 +638,40 @@ progress (rule L6).
 
 A unit's bar is the share of all its possible photos, easy to hard, the player would name right, one photo alone and
 typed, as far as **their own answers on that unit** have shown: never the global level, never another unit. It is the
-IRT domain score over the unit's photo population (a photo's difficulty d ~ N(the genus offset, `DOM.TAU`²), so adding
-photos moves no bar), estimated as the posterior expectation on a grid of abilities (`core.js` `domStep`, `domUpdate`,
-`domScore`, `domBar`):
+IRT domain score (Bock, Thissen & Zimowski 1997) over the unit's photo population (random-item IRT, De Boeck 2008: a
+photo's difficulty d ~ N(the sheet's genus offset `gd`, `DOM.TAU`²), so adding photos moves no bar), estimated as the
+posterior expectation on a grid of abilities ([engine algorithms review](reviews/2026-11-06-engine-algorithms-review.md)
+§14; `core.js` `domStep`, `domUpdate`, `domScore`, `domBar`):
 
-- **The prior**: N(`DOM.M0`, `DOM.SD0`²) for a unit never answered: most players start a unit not knowing it.
-- **Each own answer** multiplies in its likelihood, format-aware (guess rate 1/k, none typed; the format's offset), with
-  the photo's difficulty, memory and mix-ups as the game scored them, and the recall after a break. With a logistic
-  likelihood a miss can only move the posterior down. Before each own answer the posterior drifts by `DOM.Q` (the
-  process noise of a Kalman filter), so old answers fade and a unit learned late is credited.
-- **Stored** at each own answer: the log posterior on the grid (`s.dp`, relative to its top, clipped at −`DOM.CLIP`) and
+- **The grid**: `DOM.LO` + i × `DOM.STEP`, `DOM.N` points (−4 to 6: the abilities and photo difficulties the game meets,
+  with room for the prior).
+- **The prior**: N(`DOM.M0`, `DOM.SD0`²) for a unit never answered: most players start a unit not knowing it (the
+  game's ability floor `ELO.lo` is −1.5), and a broad 1.5 lets an expert's first right answers on hard photos lift it
+  within a handful. `DOM.TAU`, the spread of a photo's own difficulty around its unit, comes from the hierarchical photo
+  Elo study (`model.js` `PDIFF.EASE`); `DOM.SINGLE`, one view alone being harder (`model.js` `PICKD.SINGLE`).
+- **Each own answer** multiplies in its likelihood, format-aware (guess rate 1/k, none typed; the format's offset and
+  the shared slope as inputs), with the photo's difficulty, memory and mix-ups as the game scored them, and the recall
+  after a break. With a logistic likelihood a miss can only move the posterior down (monotone likelihood ratio): the
+  caution comes from the prior, not from a lower bound (θ − z SE rose after a miss). Before each own answer the
+  posterior drifts by `DOM.Q` (in ability standard deviations: the process noise of a Kalman filter, Glicko's growing
+  deviation), so old answers fade and a unit learned late is credited.
+- **Stored** at each own answer: the log posterior on the grid (`s.dp`, relative to its top, 2 decimals, clipped at −`DOM.CLIP`) and
   the bar (`s.ds`). The bar moves only when the player answers or a replay rebuilds it, never when the photo statistics
   change, and only the answer's way: a right answer never lowers it, a miss never raises it.
 - **Zero for a unit never answered**: below a knee at `DOM.KNEE` × the prior's own domain score (or halfway to 1 for a
   very easy unit) the bar is a straight ramp from 0 at the prior's score, so it reaches every value up to 1.
 - **The unit given in a mix-up is a false alarm** (`core.js` `faOf`): naming n for another unit's photo says the player
   answers n too readily, not that they fail on n's photos. The bar reads Pr = H − FA (two-high-threshold corrected
-  recognition): H the domain score, FA the times n was given for another unit's photo over the questions where n was a
-  possible answer (offered, or any typed question of its rank). `core.js` `barOf` = min(0.95, max(0, `s.ds` − FA)).
+  recognition; signal detection theory separates the two): H the domain score, FA the times n was given for another
+  unit's photo (the other records' `s.conf[n]`) over the questions where n was a possible answer (offered, the other
+  records' `s.off[n]`, or any typed question on another unit of its rank, `P['~level'].tyk[rank]` − `s.ty`), 0 with no
+  such question. `core.js` `barOf` = min(0.95, max(0, `s.ds` − FA)).
 
 `core.js` `DOM = {LO: -4, STEP: 0.5, N: 21, M0: -2, SD0: 1.5, TAU: 0.5, SINGLE: 0.5, Q: 0.1, EX: 0.85, KEEP: 0.8, CLIP: 30, KNEE: 2}`.
-The dynamic bar runs from 0 to 95%; every consumer reads it through `core.js` `barOf`, `examOpen` and `keepsMark`.
+The dynamic bar runs from 0 to 95%; every consumer reads it through `core.js` `barOf`, `examOpen` and `keepsMark`. The
+exam opens at `DOM.EX` and only the exam takes the unit to 100%; a learned unit keeps its mark while its bar stays at
+`DOM.KEEP` (about one miss below `DOM.EX`) or above. A record these rules have not rebuilt (no `s.dp`, until the
+sheet's full replay reaches the device) keeps its moving average `s.pg` (`pgOf`, `PROG`; rule D4).
 
 **The levels** (`model.js` `MASTERY`, `LV_AT`, `lvStep`): named points on the bar, a diver's ladder: Snorkeler under
 50%, Open Water from 50%, Advanced from 80%, Divemaster from the exam's entry (`DOM.EX`, 85%, with pair coverage),
@@ -672,11 +701,25 @@ replay alike.
 
 **The former moving average** (`core.js` `PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67}`, `pgStep`, `pgOf`): a
 record not yet rebuilt under the domain-score rules (no `s.dp`) keeps `s.pg`, an exponential moving average of its
-answers weighed by what each proves (`core.js` `pgRightW`, `pgMissW`, `pgMemW`): a right answer s.pg += A · w · (1 −
-s.pg), a miss s.pg −= A · w · s.pg. Its bar is 95% × s.pg / `PROG.M`, its exam opens at `PROG.M` and its mark keeps
+answers weighed by what each proves (`core.js` `pgRightW`, `pgMissW`, `pgMemW`; Pelánek & Řihák 2017; the simulation
+behind A 0.15 and M 0.8: the [notebook](archive/learning-notebook.md)): a right answer s.pg += A · w · (1 − s.pg), w
+from the choices (`model.js` `pgWeight`); a miss s.pg −= A · w · s.pg, w in full on a photo at the player's level and
+less on a harder one (a miss on a very hard photo does not mean the unit is badly known, and a miss must not cost more
+than it proves). Each point is harder to earn than the last, a run of right answers on easy choices tops out lower
+than one against look-alikes, and the bar follows the recent answers. A record without `s.pg` (BKT's estimate) is
+recomputed from its last 10 results in order (`s.h`), from 0, a right answer weighed `PROG.OLD` (2/3, the middle
+weight: what it proved is not known); simulated, that is close for a beginner and below the live value for a strong
+player (10 right answers in a row give 0.65, 77% on the bar), so no unit enters the exam on old answers alone. Its bar
+is 95% × s.pg / `PROG.M`, its exam opens at `PROG.M` and its mark keeps
 while s.pg ≥ `PROG.M` × (1 − `PROG.A`). A replay under the current rules rebuilds such a record; for a subject the sheet
 does not replay on the device, the record is rebuilt from its own counts, silently, once (`model.js` `domRecalcAll`,
-`core.js` `domFromCounts`). A learned mark passed under the model before the moving average (Bayesian Knowledge
+`core.js` `domFromCounts`): signed-in devices keep no log of the answers the sheet has confirmed, and players cannot
+read the sheet's log, so the rebuild works from what every copy of the record holds, its right and wrong answers (`ok`,
+`ko`) and the order of its last 10 (`h`). The earlier answers are spread evenly, rights among misses, then the last 10
+in their order, each on a photo of the unit's average difficulty (its genus offset, one view alone) among k choices:
+approximate (each answer's photos, format and memory are not kept), deterministic, the same on every device. A false
+alarm (this unit named on another unit's photo) adds a 0 to `h` and no `ko`, so `h` keeps at most `ko` of its zeros,
+the latest (an own miss invented on an earlier zero would count a false alarm twice). A learned mark passed under the model before the moving average (Bayesian Knowledge
 Tracing, a record with neither `s.pg` nor `s.ds`) is dropped (`core.js` `afterBkt`).
 
 ### The log, the only reference for progress
@@ -953,8 +996,11 @@ cheatsheet's most sighted and iNaturalist's distinct observers around Dauin, shr
 
 The fish headline % is one score over the whole path (`core.js` `treeScore`, `treeScoreTree`; `SUBJECTS` fish `score`):
 the families on the trunk, every species of those families on the branches, each species weighted by how common it is
-near Dauin (`core.js` `rankWeights`: 1/√ of its rank by distinct observers within 40 km), a family by the sum of its
-species'. Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, `half` × its genus's
+near Dauin (`core.js` `rankWeights`: 1/√ of its rank by distinct Research Grade observers within 40 km, `present.dauinU`:
+observers, not observations, so a few keen photographers of one species do not weigh), a family by the sum of its
+species'. The species with no unit of their own are packed by genus and circle (their weights summed: the same score, a
+shorter tree for the sheet); with the scientific species level on, those that leave a pack round their weights apart
+by about 1e-6 of the raw score. Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, `half` × its genus's
 bar), credit = a C + b S + (1 − a − b) C S; raw = `entries` × the families' weighted mean + (1 − `entries`) × the mean
 credit; shown as 100 × raw^`pow`. `core.js` `score: {entries: 0.25, a: 11 / 15, b: 0.8, half: 0.5, pow: 0.5}`. A species
 with no common name at all counts its scientific value alone. Every unit keeps its own bar; this only adds them up. The
@@ -1229,7 +1275,10 @@ sheet, the admin and the app (`core.js` `MEM`, `memBucket`, `memFam`, `eloReplay
 - **Estimated in the same pass** as the photos, on the trusted answers weighed as for the photos: after each answer,
   each bucket its photos fall in moves by the surprise over the information gathered so far plus the prior's (a Newton
   step on the log-likelihood). The prior, `MEM.PRIOR` = [0, −0.5, −0.5, −1.5] (from `PHOTO_W.NEW` 0.5 and
-  `PHOTO_W.KNOWN` −1), weighs `MEM.N` = 10 answers at the game's usual chance (80%, 4 choices). Served as `mem`, with
+  `PHOTO_W.KNOWN` −1), weighs `MEM.N` = 10 answers at the game's usual chance (80%, 4 choices), as Glicko moves a
+  rating: answers on a remembered photo are 90% right or more and each tells little, so a few dozen move a bucket about
+  two thirds of the way to what they show. In a genus with few photos the same ones come back, and players learn the
+  photos rather than the genus: the buckets measure that. Served as `mem`, with
   `memn`, the trusted answers behind each bucket.
 - **Per subject** (`model.js` `pmem`): the app reads the sheet's offsets (`PMEM`) for the subject the sheet replays
   with them (`SUBJECTS` `offsets`: the corals), and the prior `MEM.PRIOR` for every other subject; the prior too with an
@@ -1257,17 +1306,25 @@ below (the corals and the fish) are in the notebook.
   first).
 - **Saved progress recalculated once, silently** (`core.js` `memRecalc`, `model.js` `memRecalcAll`): a record of the
   former moving average not yet under this rule (no `s.pm`) is corrected from its photos [shown, right]: its `pg` takes
-  f · pg / (f · pg + 1 − pg), f the mean memory weight of its right answers at the game's target (of a photo's r right
-  answers in n shows, r / n count as its first show, the rest as repeats in the photo's bucket now). It never raises a
-  bar and leaves a learned unit alone; `s.pm` marks the record, which travels with it between devices and accounts
-  (`mergeProgress`, `mergeUsers`), so no record is corrected twice. It runs at load, after each pull of the synced
+  f · pg / (f · pg + 1 − pg), f the mean memory weight of its right answers at the game's target (ability 1 above the
+  photo, 4 choices; of a photo's r right answers in n shows, r / n count as its first show, at weight 1, as if right
+  answers fell evenly on its shows, the rest as repeats in the photo's bucket now): a uniform factor f on the right
+  answers' weights multiplies the moving average's balance odds by f (pg = p w / (p w + (1 − p) m) for a success rate
+  p, right weight w, miss weight m). Approximate (no order is kept, misses on known photos are not redone):
+  `tools/memreplay.js` prints it beside the full replay of the sheet's log, where the real log's bars moved down 1-3
+  points, so no pop-up. It never raises a
+  bar and leaves a learned unit alone; `s.pm` marks the record (also one that needed no change), which travels with it
+  between devices and accounts (`mergeProgress`, `mergeUsers`), so no record is corrected twice; a record made after
+  the rule is marked at its first answer and never corrected. It runs at load, after each pull of the synced
   progress and before a record's first answer (`quiz.js` `answer`). A record adopted from the sheet's replay carries
   `pm` 1 and is never corrected here: this is the fallback for a device that never reached the sheet.
 - **Learned under the former model**: a learned mark on a record with neither `s.pg` nor `s.ds` was passed under
-  Bayesian Knowledge Tracing (`core.js` `afterBkt`), whose exam came too early. `memRecalc` drops its `s.mx` and any
-  `s.ex` at every call (load, pull, answer), and the replay never keeps it (`core.js` `replayedOf`); the unit keeps its
-  bar and takes the exam again. Silent: `model.js` `mxRecalc` tells nothing and the achievements stay
-  (`MXL.QUIET`, rule D6).
+  Bayesian Knowledge Tracing (`core.js` `afterBkt`), whose exam came too early: its estimate reached 95% after about 4
+  right answers, and those units replayed with today's rules (`tools/memreplay.js`) stand at 78-83%, under the exam's
+  entry. `memRecalc` drops its `s.mx` and any `s.ex` at every call (load, pull, answer: a copy from another device that
+  still has it loses it too), and the replay never keeps it (`core.js` `replayedOf`); the unit keeps its bar (`pgOf`,
+  `s.h`) and takes the exam again; an exam passed since (`s.pg` beside `s.mx`) is left alone. Silent: `model.js`
+  `mxRecalc` tells nothing and the achievements stay (`MXL.QUIET`, rule D6).
 
 ### Confusions
 
@@ -1387,16 +1444,27 @@ replay".
   it, but for a coral right answer logged before its time term was (no `i`): its time weight is netted by the terms
   served at each replay, so it follows them ("The player's time net of the photo's"). An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
   memory and the mix-ups term taken out of the logged `e` from `MEM_LOGGED` and `CF_LOGGED`, the replay's own put
-  back); a comeback answer's recall counts as 1, and a row with no `e` and `th` counts in the counts only.
+  back: d from e = 1/k + (1 − 1/k) σ(th − d), th the ability then, a typed answer's k infinite, + 0.5 for a photo shown
+  alone); such a row keeps the ability and photos the app logged, a comeback answer's recall counts as 1, the look-alike
+  test and the mix-ups term take a prior from the look-alikes and the family only (the sheet does not know the growth
+  forms behind `CONF.FORM`), a miss on the unit wrongly given weighs its ability as replayed, and every photo of a
+  right answer counts as recognised; a row with no `e` and `th` counts in the counts only and moves no ability.
 - **What the replay gives and what the device keeps** (`core.js` `replayedOf`): per unit the log has answers on, the
   replay's record (the bar, counts, recent results, typed questions, photos seen, offers and mix-ups, ability, its level
-  move and volatility, run, variant groups left; the photos seen per photo the larger of the two sides), `pm` 1 and the
-  rules version; for the global level, the replay's ability and the larger answer count. From the device, what the log
+  move and volatility, run, the later last answer `at`, a duel won on either side, variant groups left `vl`; the photos
+  seen per photo the larger of the two sides, since the device also counts as shown a corallites hint revealed after the
+  answer, which the log leaves out and the exam must not meet as new), `pm` 1 and the rules version (so `mergeProgress`
+  keeps it over an older copy of the same answers); for the global level, the replay's ability and the larger answer
+  count (`answersSoFar` keys the exam's gaps, the cards met and the prompts, so it never goes back) with the answer
+  times `rt` of the same side, and no ability when the log has no answer at all. A unit the log has answers on takes
+  the replay's record and counts even when the saved copy holds more there (counted twice: a reply lost, then another
+  device's save); the copy's counts and recent results only when none of its answers is replayable. From the device, what the log
   cannot give: the mastery exam passed or in course (the exam is not replayed), dropped when a miss logged after it
-  takes it away as the game would (`core.js` `keepsMark`), a passed exam turned back into one in course while a variant
+  takes it away as the game would (`core.js` `keepsMark`; an exam in course ends at any miss on the unit, shown or
+  given, after its start, or after the unit's last answer for an exam saved without one), a passed exam turned back into one in course while a variant
   group has no right answer in the log; and the days answered right, the last colonies shown and the corallites seen
   (`dd`, `dl`, `ro`, `cor`). A unit the log has no answer on keeps the device's record only if it counts no answer
-  either.
+  either. The opening hold is not here: the sheet replays it from the same log (`Code.gs` `hold_`).
 - **Rules versions** (`core.js` `RVS` for the corals, `FISH_RVS`, `SEASLUG_RVS`; rule D5): every change to a progress
   rule appends `{v, at, why, msg}`; a change to how `Code.gs` `stats_` computes what the corals' replay reads from it
   (`mem`, `conf`, `fmt`, `gd`, the photos' time terms) is one. A version is not a frozen engine: the sheet always replays with the code's
@@ -2107,6 +2175,13 @@ their dates and question numbers, are in the notebook's section of the same name
 - Bock, R. D. (1972). Estimating item parameters and latent ability when responses are scored in two or more nominal
   categories. *Psychometrika* 37, 29-51. Thissen, D., Steinberg, L. (1984). A response model for multiple choice items.
   *Psychometrika* 49.
+- Bock, R. D., Thissen, D., Zimowski, M. F. (1997). IRT estimation of domain scores. *Journal of Educational
+  Measurement* 34(3), 197-211 (the domain-score bar). De Boeck, P. (2008). Random item IRT models. *Psychometrika* 73(4),
+  533-559 (the photo population).
+- Green, D. M., Swets, J. A. (1966). *Signal detection theory and psychophysics*. Wiley; Macmillan, N. A., Creelman,
+  C. D. (2005). *Detection theory: a user's guide* (2nd ed.). Erlbaum; Snodgrass, J. G., Corwin, J. (1988). Pragmatics
+  of measuring recognition memory. *Journal of Experimental Psychology: General* 117(1), 34-50 (the false-alarm
+  correction, Pr = H − FA).
 - Ghosh, A., Raspat, J., Lan, A. (2021). Option tracing: beyond correctness analysis in knowledge tracing. *AIED 2021*.
   <https://arxiv.org/abs/2104.09043>
 - Papoušek, J., Stanislav, V., Pelánek, R. (2016). Impact of question difficulty on engagement and learning. In
