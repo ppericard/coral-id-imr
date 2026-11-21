@@ -4617,6 +4617,10 @@ body:has(.ikstart:not([hidden])) main {
 /* Life stages matched (proto/lifestages.js): Odd one out's tiles (above), the first one the stage shown: not a button, outlined
    in the accent colour with its stage on it ("juvenile", "female": what is asked, not an answer), the three others the choices.
    Answered, each tile names its species and its stage. */
+.q.lsq .fxt > button[data-c],
+.q.lsq .fxt.fref img {
+  position: relative;
+}
 .q.lsq .fxt.fref {
   outline: 3px dashed var(--accent);
   outline-offset: -3px;

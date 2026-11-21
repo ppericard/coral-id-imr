@@ -213,7 +213,8 @@ LAB.add({
         const z = e.target.closest('[data-fz]');
         if (z)
           zoom(
-            R.ph.map((p, i) => ({...p, genus: R.n})),
+            // each photo with its own species' unit (a wrong choice may be of another family): the lightbox names it and reports it
+            R.ph.map((p, i) => ({...p, genus: index.get(spOf[i]).n})),
             Number(z.dataset.fz)
           );
       };
@@ -233,13 +234,18 @@ LAB.add({
       );
     };
     // The list of documented phases (UNITS phases), once; with it every round is drawn from the photos of the unlocked families.
-    let phases = {};
+    // Once the player has left the tool (the stop function below, called by lab.js when another page opens), a list that arrives
+    // late draws nothing: a draw takes the page's keyboard controller (viewKeys) from the page now on screen.
+    let phases = {},
+      alive = true;
     UNITS[SUBJ.id].phases().then(
       j => {
+        if (!alive) return;
         phases = (j && j.species) || {};
         draw(build(phases));
       },
-      () => (root.innerHTML = '<p class="note">The list of documented phases could not be loaded. Try again later.</p>')
+      () => alive && (root.innerHTML = '<p class="note">The list of documented phases could not be loaded. Try again later.</p>')
     );
+    return () => (alive = false);
   }
 });

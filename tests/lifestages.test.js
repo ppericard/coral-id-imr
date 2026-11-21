@@ -195,6 +195,31 @@ test('the page is untimed and changes no progress: it never calls the quiz recor
   assert.ok(!/fref[^`]*<button/.test(tileFn), 'the stage shown is a button');
 });
 
+test('Codex review #1388: each lightbox photo its own unit, a late list draws nothing, a failed list is asked again, the blur stays behind', () => {
+  const strip = t =>
+    t
+      .split('\n')
+      .map(l => l.replace(/(^|\s)\/\/.*$/, ''))
+      .join('\n');
+  const code = strip(SRC);
+  // a wrong choice may be of another family: the enlarged photo and its report carry the unit of its own species
+  assert.match(code, /genus: index\.get\(spOf\[i\]\)\.n/);
+  assert.ok(!/genus: R\.n/.test(code), 'every photo takes the first one’s unit');
+  // leaving the tool before the list arrives: nothing is drawn (a draw takes the page's keyboard controller)
+  assert.match(code, /if \(!alive\) return;/);
+  assert.match(code, /return \(\) => \(alive = false\);/);
+  // a failed fetch is not kept (json gives {} on failure)
+  const app = block(read('app.js'), 'phases: () =>', 'throw new Error', {file: 'app.js', through: true});
+  assert.match(app, /phasesFile = null/);
+  assert.match(app, /j && j\.species/);
+  // the blurred copy behind each tile (::before) is behind the photos: the choices and the stage shown are positioned
+  const css = read('proto/lab.css'),
+    at = css.indexOf('Life stages matched (proto/lifestages.js)');
+  assert.ok(at > 0);
+  assert.match(css.slice(at), /\.q\.lsq \.fxt > button\[data-c\],\s*\.q\.lsq \.fxt\.fref img \{\s*position: relative;/);
+  assert.match(css, /\.q\.ooq \.fxt::before,\s*\.q\.lsq \.fxt::before/);
+});
+
 test('registered: the Tools list, the service worker list and the hub icon; offered only to a subject with a list of phases', () => {
   const sw = read('sw.js'),
     app = read('app.js');
