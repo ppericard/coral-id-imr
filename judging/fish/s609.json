@@ -66,7 +66,8 @@
   },
   "fish-s609-cand-606190258": {
    "code": "p0g1sl12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s609-cand-606190243": {
    "code": "o1g1sm13",
@@ -78,7 +79,8 @@
   },
   "fish-s609-cand-609160514": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s609-cand-696834512": {
    "code": "p1g2mm12",
@@ -249,7 +251,8 @@
   },
   "fish-s609-cand-359434893": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s609-cand-624832162": {
    "code": "p1g1mm12",
