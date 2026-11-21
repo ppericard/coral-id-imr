@@ -437,16 +437,33 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     // from the script that serves it (SEASLUGRP_SHEET, rule D4), the corals' board before; its replay's units, the app's
     // (UNITS gen, read with its own tree in force: sync.js rpUnits). The sheet's replies are fixtures inside the page's
     // fetch (rule D1).
+    //
+    // Two races, both about the page's own board fetch (REE-185: "before" read "The leaderboard needs a connection." with
+    // nothing asked, on a slow runner). 1. Start-up fetches the first subject's board itself once the My progress tier is in
+    // (app.js tier 4, loadBoard) through the real fetch, which this context aborts (offline); a board view that met that
+    // fetch in flight drew its offline answer, not the stub's. So the tier is waited for, that fetch let finish, and the
+    // boards forgotten, as the "after" read does. 2. The board was read after a fixed 200 ms, before the page had fetched and
+    // drawn it: shown() now waits, bounded, for the fetch asked and the board drawn (no longer "Loading…"), then reads it.
+    await p.waitForFunction(() => HAVE >= 4, null, {timeout: 30000});
     const sb = await p.evaluate(async () => {
       const f0 = window.fetch,
         asked = [],
         sv0 = store.get(SHEETV, 0);
+      await Promise.all(Object.values(boardP));
+      Object.keys(boardP).forEach(k => delete boardP[k]);
+      Object.keys(boardAt).forEach(k => delete boardAt[k]);
       window.fetch = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=seaslug/.test(u) ? [['Slug P', 41, 0.7]] : [['Coral P', 90, 1.1]];
         return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: store.get(SHEETV, 0)})));
       };
-      const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 200));
+      const shown = async () => {
+        const t0 = Date.now(),
+          text = () => (document.getElementById('board') || {}).textContent || '';
+        while (!(asked.length && text() && !/^\s*Loading/.test(text())) && Date.now() - t0 < 20000)
+          await new Promise(ok => setTimeout(ok, 25));
+        return text();
+      };
       try {
         store.set(SHEETV, SEASLUGRP_SHEET - 1);
         go('board');
