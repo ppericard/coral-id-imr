@@ -227,7 +227,7 @@
     );
 
   // The fish's own families in their identification groups: the key's groups that hold families in the game (TREEU.groups,
-  // never numbered here), each family with its cover photo, the way the families page shows them (learn.js viewFishList).
+  // never numbered here), each family with its cover photo, the way the families page shows them (learn.js viewList).
   const groupsShown = () =>
     ((TREEU && TREEU.groups) || []).map(gr => ({gr, units: slateGenera().filter(n => GX(n).group === gr.n)})).filter(x => x.units.length);
   // A group's view and check are the engine's (proto/basics.js BASICS_KIT), in the fish's words.

@@ -95,7 +95,9 @@ is the design's shorthand, and internal identifiers may keep it.
   stops being asked and its units keep their bars (Q402 A). **Built** (the card's names rows,
   [spec](spec/fish-game.md#the-what-i-learn-card-names-rows)): the card on My progress with its Common names and Scientific
   names rows (the sea slugs: their Species row), "What I learn ›" on Home's Learn door, ⚙'s Scientific names row gone.
-  Not yet: the names step at the fish welcome, and the card's other levels (Bonus genera, Beyond the IMR course, Open all).
+  The welcome's **names step** ([decision](decisions/2026-11-21-fish-welcome-names-step.md),
+  [spec](spec/cards.md#the-names-step-at-the-welcome)): asked right after "How well do you know reef fish?", of "new" and
+  "know", not of "I'm at IMR"; it sets those rows. Not yet: the card's other levels (Bonus genera, Beyond the IMR course, Open all).
 - **"I'm at IMR (Research Assistant programme)"** = both, with scientific names early (EventMeasure takes scientific names).
 - **One score scale for everyone**, whatever the choice, so the leaderboards stay comparable ("My progress (fish)").
 
@@ -566,7 +568,10 @@ Decided from the admin pooling study:
   comes, never its ease (Q435).
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
-  (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.
+  (`fish-game.json` `jt` `p`) caps nothing; it will matter for species questions. It marks every photo of a species whose
+  sexes or colour phases differ by a cited source (Pierre, 2026-11-04: species-level sex and colour-phase flags from a
+  cited source): its entry marked `dimorph` (the IMR presentation) or the cited phase list `tools/fish_phases.json`
+  (since 2026-11-21; [decision](decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
 - Supersedes the "not in the first questions" line of 2026-11-04 morning for phases and dimorphism (Pierre, later the same day): they
   are species-level difficulties, kept back no longer.
 - **Introduced with an explanation** (Pierre, 2026-11-04): when a juvenile, a colour phase or a strongly dimorphic species first comes in,
@@ -617,7 +622,8 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
    **Built** (2026-11-14, Q321 D1) on the families, with the square tiles: 5% of the questions that could be one (`quiz.js` `FIND`,
    `planFind`), logged `quiz|f` with the photo tapped (sheet v141 Photo answered, Q371: the species-to-family view reads its species)
-   (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
+   (docs/LEARNING.md "Find the X slipped into the fish quiz"); and on the species, by either kind of name, once they are units
+   (2026-11-21, REE-63).
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
 both show the square fish tiles (`judging/FISH.md` "The fish's box"); Matrix is in the Lab for every subject, unscored (ROADMAP "Matrix"). Later, not agreed yet: photo-to-trait (needs per-photo

@@ -442,7 +442,7 @@ TAGS = re.compile(r'^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$')  # au
 def ref_play(fish, refs, codes):
     """[(species id, reference photo with e and jt)] of the units' reference photos (tools/fish_refs.json, by species)
     judged sure on the candidates' rubric (tools/fish_judge.json codes, the rubric's caps and reference flag: tools/
-    fish_judge.py cap; judged_sure), whatever their reference level (Pierre, 2026-11-08, Q212: "we bring them in like
+    fish_judge.py cap, the phase flag by fish_judge.py phase_flag; judged_sure), whatever their reference level (Pierre, 2026-11-08, Q212: "we bring them in like
     candidates"; before, only the reference level entered, Q199), in tools/fish_refs.json order. A reference photo has no
     keep or unsure field in its code; the same photo as one already in play stays out, and one on an observation already in
     play enters only once judged against its photos (in_play, keep)."""
@@ -455,7 +455,7 @@ def ref_play(fish, refs, codes):
         for r in L:
             if not t or r.get('f') not in codes or not r.get('src'):
                 continue
-            e, jt = J.cap(codes[r['f']], t in dim, r.get('rep'))
+            e, jt = J.cap(codes[r['f']], t in dim or sid in J.phase_species(), r.get('rep'))
             q = {k: v for k, v in r.items() if k != 'for'}
             q.update(e=e, jt=jt)
             if judged_sure(jt, e):
@@ -477,20 +477,29 @@ def add_ok(F, f, sid, top, sug):
             and not other_out((F.get('tags') or {}).get(f), ((sug or {}).get(f) or {}).get('jt')))
 
 
-def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
+def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None, key='fish', sure=None, keys=None,
+            units=None):
     """[(species id, record, its data/fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
     Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that data/fish-cand.json still
-    describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
-    "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the same photo. Never
-    the same photo twice (pid); a candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
+    describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved)
+    and whose count in force is not other species one could take for its subject (other_out: his tag first; rule P3, as
+    core.js treePhotoIn); "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the
+    same photo. Never the same photo twice (pid), across every candidate list (the first list read keeps it); a
+    candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
     on an observation already in play (another photo of it) enters too once judged against that observation's photos,
     like a candidate (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): keep
     (rkeep: tools/fish_judge.json "keep", {photo: best | alt | dup}) best or alt; one not judged against them yet stays
-    out, and a dup stays out whatever comes first. The game draws one observation a question (model.js photoSet), so its photos share one draw."""
-    F = (cur or {}).get('fish') or {}
+    out, and a dup stays out whatever comes first. The game draws one observation a question (model.js photoSet), so its photos share one draw.
+    The same for every tree subject (tools/seaslug_game.py build reads it): key, the subject's part of the curation
+    (core.js SUBJECTS admin.cur); sure, its rule for a judgement that enters by itself (cand_sure on the fish's rubric by
+    default); keys, the candidate lists read, in this order (every list by default); units, the units an add may name
+    (any by default)."""
+    F = (cur or {}).get(key) or {}
+    sure = sure or cand_sure
     top = set((cur or {}).get('exclude') or {})
-    gone = gone_ids(cur)
-    rec = {p['f']: (p, s) for s, L in ((cand or {}).get('cand') or {}).items() for p in L if p.get('f')}
+    gone = gone_ids(cur, key)
+    C = (cand or {}).get('cand') or {}
+    rec = {p['f']: (p, s) for s, L in C.items() for p in L if p.get('f')}
     out, have, obs = [], set(), set()
 
     def put(sid, p, orig, route):
@@ -498,14 +507,16 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
         have.add(pid(p['f']))
         obs.add(p.get('o'))
     for f, sid in sorted((F.get('add') or {}).items()):
-        if f not in rec or not rec[f][0].get('src') or not add_ok(F, f, sid, top, sug):
+        if f not in rec or not rec[f][0].get('src') or (units is not None and sid not in units) or not add_ok(F, f, sid, top, sug):
             continue  # not a candidate, or other species one could take for its subject, or not sorted yet: out (rule P3)
         put(sid, *rec[f], None)
     decided = decided_of(F)
-    for s, L in ((cand or {}).get('cand') or {}).items():
-        for p in L:
+    for s in (C if keys is None else keys):
+        for p in C.get(s) or []:
             f = p.get('f')
-            if f and p.get('src') and f not in decided and pid(f) not in gone and pid(f) not in have and cand_sure((sug or {}).get(f)):
+            j = (sug or {}).get(f)
+            if f and p.get('src') and f not in decided and pid(f) not in gone and pid(f) not in have and sure(j) \
+                    and not other_out((F.get('tags') or {}).get(f), j.get('jt')):
                 put(s, p, s, 'cand')
     if fish and refs and codes:
         for sid, r in ref_play(fish, refs, codes):
@@ -534,6 +545,18 @@ def mine_tags(F, f, passed, auto=None):
     return refined(mine, passed)
 
 
+def phased(jt, sid):
+    """Tags jt with the phase flag p when the cited phase list flags species sid (tools/fish_judge.py phase_species: its
+    sex or ip_tp verdict "yes"), Pierre's tags included: the flag is the tool's, never typed (judging/FISH.md "Tags"), so a
+    photo he tagged before the list flagged its species, or moved to it with Not this, gets it as the pass's tags do. A
+    dimorph entry's photos have it from their tags already (the admin and the pass add it). Never taken off."""
+    import fish_judge as J
+    if not jt or len(jt) < 7 or sid not in J.phase_species() or 'p' in jt[7:]:
+        return jt
+    fl = set(jt[7:]) | {'p'}
+    return jt[:7] + ''.join(c for c in FLAGORD if c in fl) + ''.join(c for c in jt[7:] if c not in FLAGORD)
+
+
 def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
     with Not this (orig, its data/fish-cand.json species, is not sid) is named after its new species (fish.json species: the
@@ -543,7 +566,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     every route: the admin's tag rows on a photo in play; Q373, his Watermark off). auto: tags_auto(F) (mine_tags)."""
     if route == 'ref':
         r = {k: p[k] for k in KEEP if k in p}
-        jt = mine_tags(F, p['f'], p['jt'], auto) or p['jt']
+        jt = phased(mine_tags(F, p['f'], p['jt'], auto) or p['jt'], sid)
         r.update(sp=sid, loc=p.get('loc') or 'world', e=int((F.get('ease') or {}).get(p['f'], p['e'])), jt=jt, auto='ref')
         for k in ('via', 'rep', 'from', 'own'):
             if p.get(k):
@@ -558,7 +581,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     if p.get('own'):
         r['own'] = True
     e = (F.get('ease') or {}).get(f, j.get('e'))
-    jt = mine_tags(F, f, j.get('jt'), auto) if f in (F.get('tags') or {}) else j.get('jt')
+    jt = phased(mine_tags(F, f, j.get('jt'), auto) if f in (F.get('tags') or {}) else j.get('jt'), sid)
     if e:
         r['e'] = int(e)
     if jt:
