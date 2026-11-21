@@ -808,11 +808,14 @@ function recordAnswer({
       );
     } else s.ex = ex;
   }
-  if (!good && GX(c) && P[c]) delete P[c].ex;
+  // The entries a species of another entry picked counted against (core.js entryMiss: res.up, the photo's and the one
+  // given) take the same: their exam ends, their learned mark is tested (the replay's lx, lm).
+  const ups = res.up || [];
+  [...(!good && GX(c) ? [c] : []), ...ups].forEach(n => P[n] && delete P[n].ex);
   // Mastery is kept only while the genus stays known: a second miss before it is back up loses it and the exam comes
   // back, for the genus shown and for the one answered (mxKept). Only at a miss, as the full replay's lm (a mark the
   // replay kept with its bar under DOM.KEEP must not go at a right answer).
-  if (!good) [target, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
+  if (!good) [target, ...(GX(c) ? [c] : []), ...ups].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed.

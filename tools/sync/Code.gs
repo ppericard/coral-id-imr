@@ -10375,7 +10375,50 @@ const CORE_ = (function () { const module = {exports: {}};
       x.h = (x.h + '0').slice(-10);
       x.streak = 0;
     }
+    // The entries (docs/FISH_PATH.md "Questions and choices at the species level", rule L2): a species picked wrongly
+    // in another entry counts against both entries too. out.up: the entry records it touched, [the photo's, the one
+    // given], for what only the game or the replay holds (the exam ended, the learned mark tested: quiz.js answer,
+    // replayProgress lx, lm).
+    out.up = entryMiss(P, q, t, ok, d0, k, R, p, scored);
     return out;
+  }
+  // The entry a unit answered at its level hangs from, when that level is a species level under the entries (LEVELS:
+  // the common-name species, s:, under their family; never the scientific species, whose tree hangs from the genera,
+  // Q398): its record's from (treeSpUnits from, the family), '' otherwise. f: the unit's from (q.from, q.cfrom).
+  const entryOf = (n, f) => {
+    const L = LEVELS[levelOf(n)];
+    return L && L.rank === 'species' && L.parent === 'family' && f ? String(f) : '';
+  };
+  // A species of another entry picked for the photo (docs/FISH_PATH.md "Questions and choices at the species level":
+  // "a wrong pick in another entry counts against both entries and both species", rule L2; a wrong pick inside the same
+  // entry never counts against it, a right answer only on the species). Both entries' records must be met already (a
+  // species opens once its entry is at Advanced; the one given, any record it has): none is ever made here. The entries
+  // keep their own questions: neither ability moves (docs/LEARNING.md "The genus wrongly given in the Elo"), nor their
+  // answer counts, offers or mix-ups (the entry pair's matrix is another question, docs/reviews/2026-11-05-fish-confusion-
+  // study.md §4.4). Every input is the answer's own, logged with it, so the replay counts it as the game does:
+  // - the photo's entry: a miss in its bar on the photo shown (its difficulty d0, without the memory and the mix-ups of
+  //   the species shown; the species' genus offset q.mu, the one the answer logs), a miss in its recent results, its run
+  //   reset;
+  // - the entry given: as rule L2's unit given (above): a miss in its recent results, its run reset, and on a record
+  //   still under the moving average a miss on the photo shown; its bar under the domain score is untouched.
+  // Returns [the photo's entry, the entry given] when it counted, [] otherwise.
+  function entryMiss(P, q, t, ok, d0, k, R, p, scored) {
+    if (ok || !q.cv || !q.c || q.c === t) return [];
+    const a = entryOf(t, q.from),
+      b = entryOf(q.c, q.cfrom),
+      met = n => !!P[n] && (P[n].ok || 0) + (P[n].ko || 0) > 0;
+    if (!a || !b || a === b || !met(a) || !met(b)) return [];
+    [a, b].forEach(n => {
+      const x = P[n],
+        r = n === a ? R : typeof q.Rc === 'number' ? q.Rc : 1;
+      x.h = ((x.h || '') + '0').slice(-10);
+      x.streak = 0;
+      if (!scored) return;
+      delete x.L;
+      if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, n, p), d0, k, r, aimOf(P[LEVEL].th)));
+      else if (n === a) domStep(x, false, d0, k, R, domF(q, q.mu));
+    });
+    return [a, b];
   }
   // The scoring record logged with each answer (quiz.js answer: the answer's sc; the sheet's Answers column Scoring, and
   // the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log, so a
@@ -10609,6 +10652,13 @@ const CORE_ = (function () { const module = {exports: {}};
       v: 5,
       at: '2026-11-19',
       why: "The species by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md; Q397, Q398, Pierre, 2026-11-18) and the smaller faults (Q394 A, Pierre, 2026-11-17): the sheet's replay reads every species in play under its genus unit as a unit (treeSpUnits 'sci', sci:<species id>: the other scientific species of its family as its look-alikes, its genus the unit it starts from), so a wrong pick of one counts against it (rule L2); a common name typed for a species' scientific name counts as half a miss, its genus alone as a quarter, never a gain (core.js PART, the scoring record's z); the leaderboard's tree gives each of those species its own entry (treeBoardTree). A log with no such answer replays as before; every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)",
+      // No card (rule D6).
+      msg: null
+    },
+    {
+      v: 6,
+      at: '2026-11-21',
+      why: 'A species of another family picked counts against both families (docs/FISH_PATH.md "Questions and choices at the species level": "a wrong pick in another entry counts against both entries and both species", rule L2; docs/reviews/2026-11-14-species-step1.md "Feeding the families"): on a common-name species question, the photo\'s family takes a miss in its bar on the photo shown, its recent results and its run, the family given a miss in its recent results and its run (rule L2\'s unit given); neither family\'s ability, answer counts or mix-ups move, and a pick inside the same family counts on the species only (core.js entryMiss). A log with no such answer replays as before; every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)',
       // No card (rule D6).
       msg: null
     }
@@ -11058,11 +11108,12 @@ const CORE_ = (function () { const module = {exports: {}};
         if (!ok) s.lx = r[1];
         if (!ok && !keepsMark(s, pl.P, t)) s.lm = r[1];
         if (ok && contrastQ(mode, chs.length)) s.du = 1;
-        if (wrong) {
-          const x = pl.P[c];
+        // the unit given, and the entries a species of another entry picked counted against (entryMiss: res.up)
+        [...(wrong ? [c] : []), ...(res.up || [])].forEach(n => {
+          const x = pl.P[n];
           x.lx = r[1];
-          if (!keepsMark(x, pl.P, c)) x.lm = r[1];
-        }
+          if (!keepsMark(x, pl.P, n)) x.lm = r[1];
+        });
       });
     // vars (a subject's variant table, treeVarTable; Code.gs rplMake_): each unit's variant groups with no photo answered
     // right in the log (vl: varLeftOf at a full bar, a learned unit's), which take a learned mark away (replayedOf; rules

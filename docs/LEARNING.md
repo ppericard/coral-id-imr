@@ -868,6 +868,21 @@ one in the family's commonness order open (`app.js` `spPlay`; fish.json `cmi`; t
 group: "A level opens in a group"), at the opening's usual pace and within the rank share. A species never answered starts from its family's ability; it has no mastery exam (`noex`), so its bar
 tops out at 95%. On only once the sheet replays the species units (`sync.js` `SPECIES_SHEET`, rule D4).
 
+**A species of another family picked counts against both families** (rule L2; FISH_PATH "Questions and choices at the
+species level"; fish rules version 6, `core.js` `entryMiss`, called by `scoreAnswer`). Both families must be met already.
+- The photo's family takes a miss in its bar. The difficulty is the photo's own (`d0`, without the memory and the mix-ups
+  of the species shown) and the offset is the species' logged one (`mu`). It also takes a miss in its recent results and
+  its run is reset.
+- The family given is treated as rule L2's unit given: a miss in its recent results and its run reset. Under the domain
+  score its bar is untouched.
+- Both families' exams end and their learned marks are tested (`quiz.js` `recordAnswer`; the replay's `lx`, `lm`).
+- The families keep their own questions: neither ability moves, and neither do their answer counts, offers or mix-ups.
+  The family pair's matrix is the confusion study's open question (docs/reviews/2026-11-05-fish-confusion-study.md §4.4).
+- A pick inside the same family counts on the species only.
+- The scientific species are left as they were: their tree hangs from the genera.
+
+Every input is the answer's own, logged with it, so the sheet's replay reads no new field.
+
 ### Species by their scientific names (step 2)
 
 The fish and the sea slugs (`core.js` `SUBJECTS` `names`; docs/reviews/2026-11-18-species-step2-plan.md): one unit per

@@ -293,8 +293,8 @@ The first fish questions must be easy and readable. Two decisions, each built in
   - **Achievements**: fsp1, fsp10, fsp50.
   - **The gate**: on only once the sheet keeps the tree in chunks and replays the species units (`sync.js` `speciesOn`:
     `TREE_SHEET` and `SPECIES_SHEET`; rule D4). Until then the species are not opened and the score's tree is the one of before.
-  - **Not built**: a wrong pick of another family's species counting against both families ("Questions and choices at
-    the species level"). Added later, it needs a fish rules version (`FISH_RVS`).
+  - **A wrong pick of another family's species counts against both families** ("Questions and choices at the species
+    level"; fish rules version 6, `core.js` `entryMiss`; docs/LEARNING.md "Fish: the species level, step 1").
 
 ## Species order: the commonness index (Pierre, 2026-11-04)
 
