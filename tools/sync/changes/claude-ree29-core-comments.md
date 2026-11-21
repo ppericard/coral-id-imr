@@ -1,0 +1,1 @@
+Comments only: the embedded `core.js` copy now cites the tree names the player app uses (`viewTreeSheet`, `viewList`) and the script's own `subjGen_` where it cited the gone `fishGen_`. No behaviour change (integrator's call, Q406 / REE-29).
