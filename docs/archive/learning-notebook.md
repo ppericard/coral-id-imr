@@ -7527,3 +7527,22 @@ since the wide targeting is what sends an unrated photo to players of other leve
 **Outcome**: not adopted; `CAL.U` stays 1 (the integrator's call: keeping it changes nothing), and the ROADMAP row was
 closed. Shipping a smaller U would mean accepting the lag, or a level 3 choosing a value on GitHub runners, both
 Pierre's.
+
+## Q316's offline fit on the real log, 2C and 2B (2026-11-21, REE-10)
+
+The tool of #1310 and its check 2B (`tools/studies/q316/replay2b.js`) on the answers to 2026-11-20 15:50 (corals
+3,662 of 15 players, fish 2,813 of 9). Full record: [the review](../reviews/2026-11-21-q316-offline-fit.md).
+
+- **The fit** (acceptance test declared in #1310): the coral genus SD 0.80 (95% 0.59-1.09), the coral player SD 0.86
+  (0.54-1.36), the fish family SD 0.84 (0.50-1.41); not estimable on today's log: the photo SD (both subjects), the fish
+  genus and species SDs (also as one shared SD), the fish genus rank offset, the fish player SD and Q136's τ (both).
+- **2C** (Q136): the corals' per-unit δ not centred (Spearman with the live gd −0.77, p < 0.001; halves −0.64 and
+  −0.50), an association that rule L2's bookkeeping alone can produce; the fish (exploratory) "centring not rejected",
+  its second half having 5 units.
+- **2B**: the shared chain against today's engine on new fish photos, −0.0065 nats per answer (95% −0.0147 to
+  +0.0018), p 0.11, 5 of 9 players better: the measure cannot tell (the second run, after Codex's fixes; the first
+  −0.0063, p 0.15). Compression of the unit offsets against the offline
+  D(u): fish 0.68 today, 0.98 shared chain; corals 0.66 and 0.79 (exploratory).
+
+**Outcome**: nothing changed in the engine. Step 2 waits for the study's prepared question on the genus and species
+levels.
