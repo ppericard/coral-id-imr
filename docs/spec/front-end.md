@@ -79,7 +79,10 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   the lecture's groups or the slate's order, the search, the family filter, Photos | ID tips, the Coral Finder's other
   genera folded under the list) and `tree` (the fish and the sea slugs: the key's groups, or a block per unit of the rank
   `UNITS listBy` names, or one block; the opt-in sets; no filter), each with the same six members (`lead`, `grid`, `blocks`,
-  `foot`, `bind`, `after`); `tests/listbuild.test.js`. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
+  `foot`, `bind`, `after`); `tests/listbuild.test.js`. **Every sheet** (the corals' genus sheet; a tree's family, genus and
+  species sheets) is drawn through one frame, `sheetPage`, and shares its report line, its "More details" fold, its first
+  photo's button, its IMR cues box and its look-alikes section (`sheetRep`, `moreDetails`, `heroBtn`, `cuesBox`,
+  `looksSection`; step 10, `tests/sheetparts.test.js`). **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
   genera, `learn.js` `viewList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
   name and its notes are its arguments), on the `.lcard` surface (DESIGN.md "Components"). The whole card opens the
   unit's sheet (Pierre, 2026-11-20): one link, the unit's name (`a.tipsheet`), stretched over the card, a chevron, no

@@ -275,7 +275,35 @@ green checks; refactors of this size probably run longer.
 8. **One tile** (Dup-8; admin M). It falls out of 3-5.
 9. **Learn: one list** (Dup-13; feature M). Acceptance: the same HTML as today for each subject (snapshot tests), so
    players see nothing new and it stays out of Pierre's queue.
+   **Done** (spec/front-end.md "Learn › Genera", `tests/listbuild.test.js`): `learn.js` `viewList` draws every subject's
+   Learn list (the lead, the grid, the foot, the redraw of the grid by the filters, the packing of the groups side by
+   side); `LIST_BUILD` (`// list build: begin/end`) holds the two builders, picked by the declared data shape (`SUBJECTS`
+   `flat`: `listBuild`, as `TREE_BUILD`, `CAND_BUILD` and `REVIEW_BUILD` are), each with the same six members (`lead`,
+   `grid`, `blocks`, `foot`, `bind`, `after`): `flat` (the corals: the IMR slate in the lecture's groups or the slate's
+   order, the search, the family filter, Photos | ID tips, the Coral Finder's other genera folded under it) and `tree`
+   (the fish and the sea slugs: the key's groups, or a block per unit of the rank `UNITS listBy` names, or one block;
+   the opt-in sets; the key's credit). Shared: `listBlock` (a group's block), `listBasics` (step 0's block). The
+   corals' lecture groups, order switch and filters stay the flat builder's: putting them in data would open them to
+   every subject, which players would see (Pierre's words needed). Two things the two lists did differently stay
+   different, builder-supplied: the tree list's grid has no id (it is not packed again when the window is resized,
+   as before) and the classes of the group titles (`gtitle`, `gt`). Gone: `viewGenera`, `viewFishList` (the names
+   `UNITS list` entries and tests used). No `SUBJECTS` or `UNITS` field was added, and the ratchet's counts did not
+   move (the code moved, its reads stayed in the builder). Checked: the app's `#view`, help box and page bar
+   HTML of 90 states (the corals' list in each order and view, with a family, ★, a search that hits and one that does
+   not, Enter on the search, the other genera's fold open, basics none, started and done, progress seeded, the bonus
+   genera on, a view and an order switch; the fish's and the sea slugs' lists with basics in its three states, progress
+   and the opt-in sets), at 1280 and 390 px, the clock, the random numbers and the player's reserve fixed: identical
+   byte for byte, before and after.
 10. **Learn: one sheet** (Dup-14; feature L), with `UNITS sheetParts`. Acceptance: the same HTML as today.
+   **Done in part** (spec/front-end.md, `tests/sheetparts.test.js`): the four sheets (the corals' genus sheet; a tree's
+   family, genus and species sheets) are drawn through one frame, `sheetPage(lede, cls, body)`, and the lines they
+   share are one part each: `sheetRep` (the report line), `moreDetails` (the fold), `heroBtn` and `heroPic` (the first
+   photo's button), `cuesBox` (the IMR cues box), `looksSection` ("Don't confuse with" for the tree sheets). The
+   sheets' own sections stay in their functions, in their order. **Not done**: the sheets as lists of declared parts
+   (`UNITS sheetParts`) built from the node: each sheet function is a template of its own sections and about ten
+   tests read those templates by their text (the order of the marks and roots, the juvenile line, the hero's place
+   in the viewer's list), so it is a rewrite of the four sheets and of those tests, with the same HTML as its
+   acceptance. No `UNITS` field was added.
 11. **Small Learn, home and progress readers** (Dup-16, Dup-17; fix S).
 12. **Compare pages made generic** (Dup-15; feature M): the code only. Opening them to other subjects is Pierre's
     call.
