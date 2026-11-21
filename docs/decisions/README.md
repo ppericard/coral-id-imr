@@ -66,7 +66,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
 | 2026-11-21 | [The draw's few easiest before Open Water are counted by observation the draw can show, not by photo](2026-11-21-rare-few-by-observation.md) | #1376 |
-| 2026-11-21 | [Before Open Water a unit rotates at least its 12 easiest observations' worth, so an easy photo added never shrinks it](2026-11-21-rare-few-floor.md) | #1391 |
+| 2026-11-21 | [Before Open Water a unit rotates at least its 12 easiest observations' worth, so an easy photo added never makes a cliff](2026-11-21-rare-few-floor.md) | #1391 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |
