@@ -261,14 +261,8 @@
    "keep": "best"
   },
   "fish-s338-cand-112939934": {
-   "code": "p1g1sl14",
-   "keep": "best",
-   "bb": [
-    0.0,
-    0.25,
-    1.0,
-    0.5
-   ]
+   "code": "p1g1ml13",
+   "keep": "best"
   },
   "fish-s338-cand-49757222": {
    "code": "p1g2mm1w3",
@@ -295,8 +289,12 @@
    "keep": "best"
   },
   "fish-s338-cand-698249107": {
-   "code": "p1d1smo3",
-   "keep": "best"
+   "code": "p1d1smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A lionfish, another game family, large at the top right beside the subject: k or o not settled."
   },
   "fish-s338-cand-760682868": {
    "code": "o1g0sl13",
@@ -316,10 +314,10 @@
    "code": "p1g0sm1w4",
    "keep": "best",
    "bb": [
-    0.05,
+    0.0,
     0.35,
-    0.75,
-    0.6
+    0.7,
+    0.55
    ]
   },
   "fish-s338-cand-175493315": {

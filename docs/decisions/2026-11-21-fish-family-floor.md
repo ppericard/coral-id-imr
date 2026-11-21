@@ -26,7 +26,7 @@ familles qui globalement ont très peu d'espèces.»
 ## Consequences
 
 - `tools/fetch_fish.py` `FAMILY_FLOOR`, `family_cap`, `pick_short`, `easy_obs`; test `tests/familyfloor.test.js`.
-- The refill run of this PR brought 872 candidates for 17 species. 206 were judged here: 126 sure adds, 11 of them
+- The refill run of this PR brought 872 candidates for 17 species. 206 were judged here: 125 sure adds, 9 of them
   easy adults. The rest wait for the routine judging pass.
 - A family with 2 easy adults or fewer rotates many photos before Open Water, one with exactly 3 only those 3 (the
   review's "The cliff"). The judging of the 2-easy families waits for the integrator's choice on `RARE.FEW`.

@@ -85,7 +85,9 @@ Genera: median 68 photos, minimum 5. Species: median 36, a few with none in play
   - The thinnest rotations before Open Water: Notobryon (4 easy observations), Dolabella (5), Colpodaspis and
     Pteraeolidia (7).
   - Near repeats: 5 in all, one each on 5 genera.
-  - Their candidate tool is another pipeline (`tools/fetch_seaslugs.py`, its own caps): no change here.
+  - Nothing is added here. The genus cap is set by design (`tools/fetch_seaslugs.py`, a decided cap per genus), and
+    the log shows almost no repeats. The judging tool is the same (`judging_fish.py --subject seaslug`), should one be
+    wanted.
 - **Corals**: 45 genera, median 32 photos, minimum 8 (Anacropora). The corals have no judged ease, so `RARE` never holds
   a photo back. 3,920 quiz answers, 234 near repeats (6%, a lower bound).
   - The highest counts: Turbinaria 22 of 166 answers, Duncanopsammia 19 of 102, Halomitra 16 of 93, Danafungia 14 of
@@ -142,11 +144,20 @@ Open Water, but only about 1 easy adult in 30 for before it.
 
   | Family (species) | Judged | Sure adds (in play at merge) | Easy adults among them | Rotated before Open Water |
   | --- | ---: | ---: | ---: | --- |
-  | Tunas & Mackerels (*Rastrelliger kanagurta*) | 21 | 7 | 1 | 3 → 4 |
+  | Tunas & Mackerels (*Rastrelliger kanagurta*) | 21 | 7 | 0 | 3 → 3 |
   | Flying Gurnards | 59 | 44 | 5 | 3 → 8 |
-  | Trumpetfishes | 61 | 44 | 4 | 4 → 8 |
+  | Trumpetfishes | 61 | 43 | 3 | 4 → 7 |
   | Eel-tailed Catfishes | 65 | 31 | 1 | 4 → 5 |
-  | **Total** | **206** | **126** | **11** | |
+  | **Total** | **206** | **125** | **9** | |
+
+  - Every easy adult was checked at 1,024 px (`judging_fish.py big`), and every count `o` photo of these species was
+    looked at again. That check lowered one easy adult to 3, a school of mackerels in soft, dim light. A hazy yellow
+    trumpetfish also went to 3. A trumpetfish beside a large lionfish became `k`, unsure, so it stays out. Five fish
+    boxes were tightened.
+  - `tools/fish_game.py --plan`: 125 photos to download, 9 tiles with them.
+  - None of the new sure adds is a Needs ID or Pierre's own observation: all are Research Grade.
+  - The rotations are counted on the whole pool. Each player's reserve (up to 15 observations a unit) can take a few
+    easy ones out of their practice.
 
   The other 666 new candidates wait for the routine judging pass (`python3 tools/judging_fish.py todo`). For Remoras,
   Stargazers, Sea Moths, Needlefishes, Convict Blennies and Jawfishes, see "The cliff" below before judging.
