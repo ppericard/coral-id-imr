@@ -1804,6 +1804,10 @@ def checks(s, how, now):
 
 def write(o):
     OUT.write_text(render(o), encoding="utf-8")
+    if OUT == ROOT / "fish.json":  # the subject's tree section, from the file just written (tools/tree_section.py)
+        import tree_section
+
+        tree_section.write("fish")
 
 
 def render(o):
