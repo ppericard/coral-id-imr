@@ -69,6 +69,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The quiz keeps its question when the player leaves and comes back](2026-11-21-quiz-keeps-pending-question.md) | #1375 |
 | 2026-11-21 | [The draw's few easiest before Open Water are counted by observation the draw can show, not by photo](2026-11-21-rare-few-by-observation.md) | #1376 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
+| 2026-11-21 | [Find the X for the sea slugs plays: the boxes and tiles are in, checked on the real tiles](2026-11-21-slug-find-the-x-plays.md) | #1411 |
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |
 | 2026-11-21 | [The Tree names each subject's circles in its own words; the coral Look-alikes page reads the pairs in force](2026-11-21-tree-words-and-pairs.md) | #1385 |
