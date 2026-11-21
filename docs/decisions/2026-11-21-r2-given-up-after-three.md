@@ -1,6 +1,6 @@
 # R2 is given up for a visit after three photos fail in a row, not after one
 
-Date: 2026-11-21. PR: #0. Rules or docs touched: docs/spec/photos.md "Served from Cloudflare R2" (Fallback).
+Date: 2026-11-21. PR: #1416. Rules or docs touched: docs/spec/photos.md "Served from Cloudflare R2" (Fallback).
 
 ## Context
 
