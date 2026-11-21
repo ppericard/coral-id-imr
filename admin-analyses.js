@@ -27,7 +27,8 @@ const AN_VIEWS = [
   ['analyses/learning/practice', 'learn', 'Learning with practice'],
   ['analyses/learning/after-a-break', 'back', 'After a break'],
   ['analyses/learning/sessions', 'sess', 'Sessions'],
-  ['analyses/learning/profiles', 'who', 'Player profiles']
+  ['analyses/learning/profiles', 'who', 'Player profiles'],
+  ['analyses/learning/trajectories', 'traj', 'Player trajectories']
 ];
 const anKey = h => (AN_VIEWS.find(v => v[0] === h) || [])[1];
 const anTitle = k => (AN_VIEWS.find(v => v[1] === k) || [])[2] || k;
@@ -288,7 +289,7 @@ function lines(series, o = {}) {
             : [[x, y]]
         )
       : S.pts;
-    s += `<path class="an-line${k ? ' alt' : ''}${S.dash ? ' dash' : ''}" d="M${P.map(([x, y]) => `${X(x).toFixed(1)} ${Y(y).toFixed(1)}`).join('L')}"/>`;
+    s += `<path class="an-line${S.cls ? ' ' + S.cls : k ? ' alt' : ''}${S.dash ? ' dash' : ''}" d="M${P.map(([x, y]) => `${X(x).toFixed(1)} ${Y(y).toFixed(1)}`).join('L')}">${S.title ? `<title>${esc(S.title)}</title>` : ''}</path>`;
     if (S.dots)
       S.pts.forEach(
         ([x, y, n]) =>
@@ -1302,6 +1303,85 @@ function anProfiles(a) {
   ];
 }
 
+// Player trajectories (Learning › Trajectories, analysis.js trajectories; Pierre, 2026-11-05, Q78): the profile's
+// behaviours on successive windows of about 100 answers (whole sessions) of each player's whole history. One small chart
+// a behaviour (the window's ordinal along the bottom): a thin line a player, the typical player (the median over the
+// players at each window) over them; in words, how many players rose, fell or stayed from their first window to their last; a table of the typical
+// player by window. Descriptive, no verdict. Names come from Players (the report keeps anonymous ids).
+const AN_TRAJ = {
+  pace: ['Answer time', v => Math.round((Math.exp(v) - 1) * 100) + '%', 'Time to answer, against the average window (+ slower)'],
+  zoom: ['Enlarging', v => Math.round(v * 100), 'Points of photos enlarged, against what the views shown predict'],
+  acc: ['Right beyond the app’s expectation', v => Math.round(v * 100), 'Points of right answers above the app’s expected chance'],
+  stop: ['Stopping after misses', v => Math.round(v * 100), 'Points of extra chance to end a session after 2+ misses in a row'],
+  len: ['Session length', v => Math.round(v), 'Answers in a typical session'],
+  wk: ['Sessions per week', v => v.toFixed(1), 'Sessions a week'],
+  eve: ['Evening play', v => Math.round(v * 100) + '%', 'Share of answers from 17:00 to midnight, Manila time']
+};
+function anTraj(a) {
+  const F = a.feats || [],
+    W = a.who || [],
+    nm = W.map((w, i) => anWhoText(w.k, i)),
+    c = Math.max(1, Math.min(3, Math.floor((anW() + 12) / 330))),
+    pw = Math.floor((anW() - 12 * (c - 1)) / c),
+    xs = [...new Set(W.flatMap(p => p.w.map(r => r[0])))].sort((x, y) => x - y),
+    panels = F.map((f, i) => {
+      const T = AN_TRAJ[f.k] || [f.label, v => anNum(v, 2), f.label],
+        lines0 = W.map((p, j) => ({
+          label: nm[j],
+          title: `${nm[j]}: ${T[0].toLowerCase()}`,
+          cls: 'pl',
+          pts: p.w.filter(r => r[i + 2] != null).map(r => [r[0], r[i + 2]])
+        })).filter(S => S.pts.length > 1),
+        med = {label: 'Typical player', cls: 'med', pts: (a.med || []).filter(r => r[i + 2] != null).map(r => [r[0], r[i + 2]])},
+        V = [...lines0.flatMap(S => S.pts.map(p => p[1])), ...med.pts.map(p => p[1])],
+        lo = V.length ? Math.min(...V) : 0,
+        hi = V.length ? Math.max(...V) : 1,
+        pad = (hi - lo) * 0.08 || 0.1;
+      return {
+        label: esc(T[0]),
+        body: V.length
+          ? lines([...lines0, ...(med.pts.length > 1 ? [med] : [])], {
+              w: pw,
+              h: 150,
+              leg: false,
+              title: T[2],
+              ymin: lo - pad,
+              ymax: hi + pad,
+              yf: T[1],
+              xmin: xs[0],
+              xmax: xs[xs.length - 1],
+              xticks: xs.length > 6 ? xs.filter((_, k) => k % Math.ceil(xs.length / 5) === 0) : xs,
+              xlab: 'Window (about 100 answers)',
+              xf: v => String(v)
+            })
+          : '<p class="note">No value yet.</p>'
+      };
+    }),
+    say = F.map((f, i) => {
+      const k = (a.chg || [])[i] || {n: 0};
+      return k.n
+        ? `<li><b>${esc((AN_TRAJ[f.k] || [f.label])[0])}</b>: from the first window to the last, up for ${k.up} of ${k.n} players, down for ${k.down}, about the same for ${k.flat}.</li>`
+        : '';
+    }).join(''),
+    words = `<ul class="adm-an-says-l"><li>${a.players} player${a.players === 1 ? '' : 's'} with two windows or more (${a.win} answers or more each, ending with a session)${a.more ? `; the ${W.length} with the most answers are drawn` : ''}. A line is a player; the thick one is the typical player. A change counts as up or down from half a standard deviation of the behaviour’s windows.</li>${say}</ul>`,
+    table = anTable(
+      ['Window', '#Answers by its end', ...F.map(f => '#' + ((AN_TRAJ[f.k] || [f.label])[0] || f.label))],
+      (a.med || []).map(
+        r =>
+          `<tr><td>${anInt(r[0])}</td><td class="n">${anInt(r[1])}</td>${F.map((f, i) => `<td class="n">${r[i + 2] == null ? '–' : (AN_TRAJ[f.k] || [0, v => anNum(v, 2)])[1](r[i + 2])}</td>`).join('')}</tr>`
+      )
+    );
+  return [
+    anCard(
+      'Along each player’s history',
+      words +
+        `<div class="adm-an-sm c${c}">${panels.map(P => `<figure><figcaption>${P.label}</figcaption>${P.body}</figure>`).join('')}</div>`,
+      'wide'
+    ),
+    anCard('The typical player, window by window', table, 'wide', false)
+  ];
+}
+
 // The Wright map (study §2.7, §5 item 3; analysis.js wrightOf): players and genera on the Learning model's one scale,
 // a genus level with a player = about 50% recognised beyond guessing; the ★ look-alikes marked; in words, the genera
 // beyond every player today and those every player recognises at 80% or more; a table of the exact places.
@@ -1879,6 +1959,20 @@ function anView(key, rep, R) {
       (a.thin
         ? `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} players with ${anInt(a.at)} answers or more a profile map needs.</p>`
         : `<div class="adm-sgrid adm-an-grid">${anProfiles(a).join('')}</div>`)
+    );
+  // Player trajectories: no effects, its own cards (a compacted milestone keeps the counts only, as the profiles)
+  if (key === 'traj')
+    return (
+      kpis([
+        ['Answers used', anInt(a.thin ? null : a.n)],
+        ['Players', a.thin ? anInt(a.n) : (a.players ?? '–')],
+        ['Window', `${anInt(a.win)} answers`]
+      ]) +
+      (a.lean
+        ? AN_LEAN
+        : a.thin
+          ? `<p class="note">Not enough data yet: ${anInt(a.n)} of the ${anInt(a.min)} players with ${anInt(a.at)} answers or more a trajectory needs.</p>`
+          : `<div class="adm-sgrid adm-an-grid">${anTraj(a).join('')}</div>`)
     );
   if (a.thin)
     return (
@@ -2697,7 +2791,8 @@ Object.assign(HELP, {
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p><p><b>The app's forgetting, genus by genus.</b> A rusty comeback question carries the recall the app gave it (FSRS: the chance the genus is still remembered after the days since its last answer, from its stability). The multiplier is how much longer (above ×1) or shorter (below ×1) players' stability is than the app's, fitted on those questions' answers with the app's own ability estimate kept; a genus with 5 questions or more has its own, pulled towards the pooled one, its likely range from resampling the players. It needs about 200 questions from 20 players before it is read, and it is an upper bound on remembering until the comeback's stopping rule (it ends on right answers) is corrected for. It measures; it changes nothing in the app.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
   'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,
-  'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. <b>Slope</b>, the player's own learning slope (the Learning model's, fitted on these answers): the extra right answers twice as many answers on a genus bring, for a typical question. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
+  'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. <b>Slope</b>, the player's own learning slope (the Learning model's, fitted on these answers): the extra right answers twice as many answers on a genus bring, for a typical question. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`,
+  'an-traj': `<p><b>Player trajectories</b> (Pierre, 2026-11-05: learning trajectories from the first answer to now, a later level of the profiles). The behaviours of Player profiles, except the learning slope, on successive windows of about 100 answers of each player's whole history instead of their last 300 (a window ends with a session, so no session is cut in two; its sessions a week count the break up to the next window's first answer): where a player started and where they are now. Each window is read against all the windows of all the players, not against the players at the same stage (answer time: its effect in one answer time model fitted on every window; stops after misses: the rates pooled over every window). <b>Charts</b>: the window's number along the bottom (1 is a player's first), a thin line a player, the thick line the typical player (the median over the players that have that window, from 3 players). <b>Up or down</b>: a player's last window against their first, beyond half a standard deviation of that behaviour's windows. A player needs 200 answers (two windows) and 3 players are needed; with many players the 60 with the most answers are drawn. A description of these players, not a test: no verdict. Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in. (cur is null while admin.js
 // start still awaits the draft store, after DATA: it renders then itself.)
