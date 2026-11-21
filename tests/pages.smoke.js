@@ -4715,6 +4715,14 @@ async function fishBasicsCheck(b, base) {
     });
     if (JSON.stringify(grp.picks) !== JSON.stringify(grp.key) || !grp.tiles || !grp.cite)
       fails.push(`${W} the groups are not the key's: ${JSON.stringify(grp)}`);
+    // A step of several views names the term of its official line: under "Locking spines" the deck's scalpel line says it
+    // is about the scalpel (new-RA review, 2026-11-22). Its last view shown, as a player reaches it.
+    await p.evaluate(() => (location.hash = 'fish/learn/basics/features'));
+    await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
+    await p.click('.bx .bx-picks button:last-child');
+    const feat = await p.evaluate(() => [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent));
+    const scal = feat.find(t => /scalpel on caudal/.test(t));
+    if (!scal || !/^Scalpel · /.test(scal)) fails.push(`${W} features: the scalpel line does not name its term: ${JSON.stringify(feat)}`);
     // Done = every step seen: its own record and feat, the corals' untouched; the Home line goes; the corals still due.
     for (const st of STEPS) {
       await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
