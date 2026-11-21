@@ -409,7 +409,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    - `phase` (optional): the sex or colour phase a solid, cited source documents for the species (the IMR fish
      presentation, `fish.json` `teach[].phase`, is one such source among others; Pierre, 2026-11-20 19:29) when the
      photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile is the code's `j` flag;
-     an adult needs no tag.
+     an adult needs no tag. The cited phase list `tools/fish_phases.json` says which (its quotes); a phase the quote
+     does not let the photo show is left untagged, never marked `unsure` (the re-judge of 2026-11-21:
+     [the decision](../docs/decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
    - `crop` (optional): as "A proposed crop" above.
    - `bb` (for a photo whose code passes the tile rule): the fish's box, as "The fish's box" above.
    - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`, `bb`) and `note` (140 characters at most; required with

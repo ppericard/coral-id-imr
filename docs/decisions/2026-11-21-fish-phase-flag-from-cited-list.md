@@ -44,14 +44,53 @@ Integrator's call, easy to correct: the card's source line and its wording; the 
 
 **Counts on the build of 2026-11-21** (`fish-game.json`):
 - 97 species flagged by the list (89 sex, 8 initial and terminal phases only); 69 of them were not flagged before.
-- 3,176 photos in play gain `p`; 543 of them (54 species) are judged male or female, so they can now bring the card.
+- 3,176 photos in play gain `p`; 543 of them (54 species) are judged or annotated male or female, so they can now
+  bring the card.
 - The card shows once per subject and player (`quiz.js` `phaseSeen`), so a player who has seen it sees nothing new.
+
+## The photos re-judged for phases, measured first
+
+The judging process and rubric are agreed (judging/FISH.md, `phase`); the judge is Opus 5.5 high. Only the reading
+configuration was measured (docs/INTEGRATOR.md "A large judging or boxing pass is measured first").
+
+- **Bench**: the 99 adult photos in play of flagged species on which Pierre set a phase in the admin (his phase is the
+  gold), read blind (the sheets name the species and the list's quotes, never his phase, the observer's annotation or
+  the photo's current phase). Threshold written before: precision 95% or more, coverage 70% or more.
+  - 30 tiles of 260 px per sheet (the cheapest): precision 95.9% (70 of 73 tags), coverage 70.7%.
+  - 12 tiles of 480 px (the usual fish sheet): precision 98.8% (79 of 80), coverage 79.8%. Read second, after the
+    first reading's error list had been seen, so it is an upper bound.
+  - The three errors of the cheap reading are subtle phases: two plain red *Paracheilinus carpenteri* Pierre calls
+    male, one brownish *Halichoeres argus*.
+  - The cheapest configuration passes, so it does the bulk.
+- **The judge's rule**: a phase only where the species' quote lets the photo be read. Otherwise no tag, never `unsure`,
+  which would take a photo in play out of the game.
+  - No tag for species whose quote names no colour (*Genicanthus lamarck*: "different colors in mature adults only";
+    *Amphiprion frenatus*).
+  - No tag where the difference is too fine for a tile (*Parapercis clathrata*'s gill spot), or a matter of degree
+    (*Thalassoma lunare*, "similar but more blue"; *T. hardwicke*'s brighter terminal males, except the clearest).
+  - Where both the sex and the initial and terminal phases are sourced, female and male; but for *Halichoeres
+    hortulanus* the chequered initial phase is tagged `intermediate`. The observers call 7 of these photos male, and
+    the initial phase covers both sexes.
+- **Batch 1** (2026-11-21): the newly flagged species with the most photos first, 900 photos read (30 sheets), 17
+  species.
+  - 320 phases written in their judging files (female 129, male 155, intermediate 26, terminal 10), then
+    `judging_fish.py codes` (only `ph` changed in `data/suggest.json`).
+  - Drift: 5% of the tags (16 photos) re-read on 480 px tiles, all 16 the same.
+  - Against the observers' iNaturalist sex annotations where they name one: 145 of 148 agree (the hortulanus initial
+    phases aside).
+  - Every unit these species belong to (species, genus, family) already had a sex or colour phase photo in play, from
+    the observers' annotations. So no unit gains a new variant group, and no "Learned" mark can be taken by this batch.
+- **Left**: about 2,400 photos of the bulk list (the other newly flagged species, then the IMR dimorph entries'
+  photos with no phase judged).
+  - At 30 per sheet, about 80 sheet reads and 5% drift.
+  - The 384 reference photos with no candidate copy have no phase field in `tools/fish_judge.json`, so a judged phase
+    cannot be written for them yet.
 
 ## Consequences
 
 - The draw, the ease and "Learned" do not read the flag. They read the photo's phase (`core.js` `varKindOf`), which
-  this change leaves as it is.
-- The fish photos' re-judge for phases on the list is the next step (REE-52, measured first).
+  this change leaves as it is. The re-judge adds phases; check each batch's units for a new variant group first.
+- The rest of the re-judge goes on in batches as above (REE-52).
 - `core.js` `phaseKind`'s comment and `Code.gs`'s copy still name only the dimorph entries. `core.js` was held by
   another PR; the comment is corrected with its next change.
 - The admin's Phase row still shows only for an entry with IMR phase lines or `dimorph` (`admin-fish.js`, `admin.js`

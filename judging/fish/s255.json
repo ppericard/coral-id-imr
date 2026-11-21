@@ -98,7 +98,8 @@
   },
   "fish-s255-cand-fb-Thhar_u0": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s255-cand-270474684": {
    "code": "p1g1mm1j2",
@@ -158,7 +159,8 @@
   },
   "fish-s255-cand-760771692": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s255-cand-760913816": {
    "code": "o1g1smo3",
@@ -194,7 +196,8 @@
   },
   "fish-s255-cand-753899272": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s255-cand-270195656": {
    "code": "p1g1sl14",
@@ -230,7 +233,8 @@
   },
   "fish-s255-cand-748261260": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "terminal"
   },
   "fish-s255-cand-721741652": {
    "code": "p1g0sl15",
