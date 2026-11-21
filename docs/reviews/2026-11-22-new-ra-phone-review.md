@@ -50,14 +50,16 @@ under 40 px, every photo loaded, the feedback and Next always on one screen abov
 Barbels, Locking spines). Under every one of them the page shows the step's official IMR line, *IMR fish presentation
 (Lecture 10): "Presence of scalpel on caudal peduncle"*, with nothing saying it is about the scalpel. Under "Locking
 spines" (`fish-021-basics-end.png`) a new RA reads it as the course's words for locking spines. The same holds for any
-basics step of several views: the fish markings ("Bar"), the coral walls ("Wall"), the sea slug steps.
+basics step of several views with an official line: the fish markings ("Bar"), the coral walls ("Wall"). The sea slug
+steps checked show no such line.
 
 **Cause**: `proto/basics.js` shows the step's term line (`official(s.term)`) beside every view, without the term; the
 extra lines of a step (`also`) already name theirs.
 
 **Fix (this PR)**: in a step of several views, the line names its term, as the extra lines do: "**Scalpel** · IMR fish
 presentation (Lecture 10): "Presence of scalpel on caudal peduncle"". A step of one view is unchanged. The IMR wording
-is untouched (rule C1). Checked by `tests/pages.smoke.js` (part `basics`, Fish basics).
+is untouched (rule C1). Checked by `tests/pages.smoke.js` (part `basics`, Fish basics); seen at 390 and 1280 px,
+light and dark, on Fish basics' features and Coral basics' walls (`fix-fish-features-*.png`, `fix-coral-walls-*.png`).
 
 ### 2. Possible bug, cause unknown: a reload did not keep the question in 2 of 4 runs
 
@@ -124,7 +126,7 @@ leaderboard; to leave it, ⚙ Settings, Leaderboard: Off" instead of "New:".
 ### 5. Design, small: Home's "Fish ID Key" opens a "coming soon" page
 
 **Seen**: the fish Home shows "In EventMeasure · Identify a fish · **Fish ID Key**" as a ready button
-(`fish-073-page-home-light.png`); it opens a page that says the key is on its way. The tour said so ("its key is
+(`fish-073-page-home-light.png`); it opens a page headed "Fish ID Key · Coming soon" (`fishkey-page-390-light.png`). The tour said so ("its key is
 coming soon", `fish-004-tour4.png`), Home's door does not. The key itself is under way (REE-9), so this lasts until it
 ships.
 
