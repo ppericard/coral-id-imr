@@ -170,7 +170,9 @@ test('the gate on every photo in play: a card only where its source says so, alw
   // The counts the PR states (the judging of 2026-11-20, #1323 merged: the sweetlips stays a sub-adult, Pierre: «Non
   // c'était bien un sub-adulte», and the goatfish lost its j): every photo sourced as different has an adult of its
   // species in play.
-  assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1166, juvOff: 1948, subOn: 8, subOff: 0, noAdult: 0});
+  // REE-189's judging pass: 4 more juveniles in play with no card (3 eel-tailed catfish schools, the observer's stage,
+  // and a pelagic young flying gurnard), as every juvenile of a species with no source saying it differs.
+  assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1166, juvOff: 1952, subOn: 8, subOff: 0, noAdult: 0});
   // the 8 sub-adults in play (7 Diagramma pictum and the Diagramma melanacrum sweetlips; their young sourced as
   // different), under the same rule
   const c = card('fish-s596-cand-552119382');

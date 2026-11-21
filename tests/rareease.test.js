@@ -37,6 +37,42 @@ test('a family with few easy photos: its few easiest count as the easy ones', ()
   assert.ok(one > 0, 'still drawn');
 });
 
+test('the few easiest are observations the draw can show: a held-back juvenile and a second photo count for nothing', () => {
+  // A one-species family as a remora's was (REE-189): two easy adults (a at ease 5, b at 4, b's observation with a second
+  // photo at 4), an easy juvenile its bar still holds back, the rest of its adults at ease 3. Counted by photo, the third
+  // easiest was the juvenile or b's second photo (ease 4), so ease 3 was "hard" and the two adults took about 90% of
+  // the questions, however often they had been seen (both seen 3 times, right: the photo memory could not help); a player
+  // saw one photo 3 times in 14 minutes. By observation at full weight the third easiest is at ease 3: the adults share
+  // the draw with the ease-3 ones, and ease 1-2 stays rare.
+  const L = [
+    {f: 'a', o: 'a', e: 5},
+    {f: 'b', o: 'b', e: 4},
+    {f: 'b2', o: 'b', e: 4},
+    {f: 'j', o: 'j', e: 4, ph: 'juvenile'}
+  ];
+  for (let i = 0; i < 20; i++) L.push({f: `m${i}`, o: `m${i}`, e: 3});
+  for (let i = 0; i < 20; i++) L.push({f: `h${i}`, o: `h${i}`, e: 1 + (i % 2)});
+  const E = engine('fish', L, {th: 2.2, score: 0.3, ok: 6, ps: {a: [3, 3], b: [3, 3]}}),
+    e = Object.fromEntries(L.map(p => [p.f, p.e]));
+  let ab = 0,
+    three = 0,
+    low = 0,
+    juv = 0,
+    tot = 0;
+  for (let i = 0; i < DRAWS.CAP; i++)
+    E.photoSet('u', null, 0, 4, 'k4').shown.forEach(x => {
+      tot++;
+      if (x.o === 'a' || x.o === 'b') ab++;
+      if (e[x.f] === 3) three++;
+      if (e[x.f] < 3) low++;
+      if (x.f === 'j') juv++;
+    });
+  assert.ok(ab / tot < 0.3, `the two easy adults: ${((100 * ab) / tot).toFixed(1)}% of the draws`);
+  assert.ok(three / tot > 0.6, `ease 3: ${((100 * three) / tot).toFixed(1)}%`);
+  assert.ok(low / tot <= E.RARE.SHARE + 0.03, `ease 1-2 still rare: ${((100 * low) / tot).toFixed(1)}%`);
+  assert.strictEqual(juv, 0, 'the juvenile still waits for its ramp');
+});
+
 test('rareCap: the hard photos weigh at most the share, whatever their number', () => {
   const E = engine('fish', pool());
   for (const nh of [5, 50, 500, 5000]) {

@@ -944,9 +944,11 @@ test('fetch_fish.py with phases (Q36): the juvenile room filled with juveniles f
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
       {id: 's2', name: 'Fishus stabilis', inat: 502, circle: 1, present: {ph: true}}
     ],
+    // Each entry lists three species (two of them not in this fixture), so no family floor raises the caps of Q36
+    // (fetch_fish.py family_cap: tests/familyfloor.test.js).
     teach: [
-      {id: 't1', name: 'Juvenile fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1']},
-      {id: 't2', name: 'Stable fishes', circle: 1, species: ['s2']}
+      {id: 't1', name: 'Juvenile fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1', 'sx1', 'sx2']},
+      {id: 't2', name: 'Stable fishes', circle: 1, species: ['s2', 'sx3', 'sx4']}
     ]
   };
   // s1 keeps 25 adult photos and 1 juvenile (iNaturalist annotation); s2 keeps 28.
@@ -1170,7 +1172,8 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.strictEqual(got.s2.length, 5, 'filled to its cap from the first page');
   // s1 is still short (room 1) and its searches were read to the end: searched to the end today; s2 is full.
   const M = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8'));
-  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', parts: ['free']}});
+  // The record keeps the cap it was made under: a cap raised later (family_cap) opens it again.
+  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', parts: ['free'], cap: 5}});
   assert.ok(M._doc);
   const P = JSON.parse(run('--plan'));
   assert.deepStrictEqual([P.pick, P.skip], [[], ['s1']], 'no iNaturalist request for it until the re-check');
