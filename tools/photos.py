@@ -134,6 +134,17 @@ def mark(p, crop=None, rot=0):
     return p
 
 
+def lecture_frame(f, cr, ro, crop=None, rot=None):
+    """The (crop, rotation) in force for IMR lecture photo f traced to its original: Pierre's own when curation.json crop
+    (`crop`) has an entry for it, with the rotation from curation.json rot (`rot`) alone (none when it has no entry), else
+    how the lecture framed it (cr, ro: tools/imr_frames.json, data.json). The admin's crop editor always writes a crop
+    entry for a lecture photo, [0, 0, 1, 1] for "Full photo", so a key that is gone brings the lecture's framing back and a
+    turn taken off is told by the absent rot entry. autosort.js lectureFrame is the same rule (tests/lectureframe.test.js)."""
+    if f in (crop or {}):
+        return crop[f], rot_of((rot or {}).get(f))
+    return cr, rot_of(ro)
+
+
 def write(im, f, folder, crop=None, rot=0):
     """The four sizes of photo f from its original im, Pierre's crop and rotation applied (turn); returns its shape (ar,
     width / height of the 480 px file, as tools/apply_ratios.py measures it)."""
