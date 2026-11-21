@@ -568,7 +568,10 @@ Decided from the admin pooling study:
   comes, never its ease (Q435).
 - **Sex and colour phases are a species-level difficulty** (Pierre, 2026-11-04): an Anthias is easy to call an Anthias whatever its
   sex, a parrotfish a parrotfish (its family-level difficulty is telling it from a wrasse). At the family level the phase flag
-  (`fish-photos.json` `jt` `p`, entries marked `dimorph`) caps nothing; it will matter for species questions.
+  (`fish-game.json` `jt` `p`) caps nothing; it will matter for species questions. It marks every photo of a species whose
+  sexes or colour phases differ by a cited source (Pierre, 2026-11-04: species-level sex and colour-phase flags from a
+  cited source): its entry marked `dimorph` (the IMR presentation) or the cited phase list `tools/fish_phases.json`
+  (since 2026-11-21; [decision](decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
 - Supersedes the "not in the first questions" line of 2026-11-04 morning for phases and dimorphism (Pierre, later the same day): they
   are species-level difficulties, kept back no longer.
 - **Introduced with an explanation** (Pierre, 2026-11-04): when a juvenile, a colour phase or a strongly dimorphic species first comes in,

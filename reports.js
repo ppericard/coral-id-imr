@@ -63,7 +63,7 @@
     (rows || []).forEach(r => out[repStatus(cur, r[0])].push(r));
     return out;
   };
-  // The modes that are not a game: an enlarged photo, a sheet, a sheet's ID marks (learn.js fishMarks), a page's feedback.
+  // The modes that are not a game: an enlarged photo, a sheet, a sheet's ID marks (learn.js treeMarks), a page's feedback.
   const REP_NOGAME = ['photo', 'sheet', 'marks', 'page'];
   // The subject a unit id belongs to: a subject whose sheets have prefixes (core.js SUBJECTS sheets: f:, g:, s:) takes the
   // ids with one of them, or an old id it renamed (SUBJECTS renamed); the subject without sheet ranks takes any other.

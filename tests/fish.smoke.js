@@ -2420,7 +2420,7 @@ async function namesCard(b, base, errs) {
       if (gl.hash !== h0 || !gl.pop) ui.push(`${width}px families page: a glossary term on a card ${JSON.stringify(gl)}`);
       await q.keyboard.press('Escape');
     }
-    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family's photo on the families page
+    // The family sheets (learn.js viewTreeSheet; the fish-sheets study, option B): a family's photo on the families page
     // opens its sheet (no longer the photo viewer: the sheet's photos enlarge, with their credits), under the book's
     // English name with its scientific name below; an old entry id links to its family; the only genus of a family opens
     // the family sheet; the species filter is on by default and one tap shows them all.
