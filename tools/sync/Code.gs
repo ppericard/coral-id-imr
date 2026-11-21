@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 219 (2026-11-22). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 220 (2026-11-22). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 219;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 220;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -4493,84 +4493,13 @@ const CORE_ = (function () { const module = {exports: {}};
     return out;
   }
 
-  // Subjects (docs/ARCHITECTURE.md "Subjects"): what the game teaches. The engine (model.js, quiz.js, progress.js) works
-  // on one subject at a time, the current one (app.js SUBJ): its units, their records (app.js GX), its progress P and quiz
-  // settings Q under its own keys. Everything a subject differs in is a field here or a function of app.js UNITS; the
-  // engine never names a subject. The fields:
-  //   id      key part: reefid-sync-<id>-progress, -quiz, -intro, -intro-offer, -reset (subjKey; rule W21)
-  //   dev     its device-only keys: reefid-<dev><name> (subjDev): '' for corals, whose keys predate subjects
-  //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
-  //   name, one, many, what, lecture: words of the interface. Names of units: app.js uname
-  //   icon    its icon in the app's and the admin's subject switches (app.js subjIcon): SVG inside a 24 px viewBox
-  //   beta    a subject in beta: {kick, line}, Home's Learn door top line and description (line: HTML), and a "beta" tag
-  //           on its buttons. The label only: who sees the subject is open
-  //   open    who the subject opens to (subjGroup): 'all' (the default: every player, signed out included) or 'group'
-  //           (the admin and the players of its group, picked in the admin's Players: app.js subjOpen, Code.gs groupIds_)
-  //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
-  //   views   the views a question may show, [code, label] (one view: one photo per question)
-  //   optin   the opt-in choices: Q[k] true = on, Q[k + 'T'] when chosen, and for a part of the slate opened by choice
-  //           Q[k + 'N'] its "Not now" count, Q[k + 'A'] the answer count at the last one (app.js UNITS[id].sets: units
-  //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button);
-  //           Q[k + 'O'] turned off on the What I learn card (app.js learnSet: the units the set brings by itself stop too)
-  //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins), logged with every answer in the
-  //           sheet's Answers tab under the subject's id. For a tree subject, its top rank (the family), which the admin
-  //           reads as its tree's
-  //   unitRank  the rank of a tree subject's game units from level 1, when not its rank (unitRankOf): the sea slugs'
-  //           'genus', its genera the units of its circles, its families structure only. Unset: rank
-  //   names   a tree subject's kinds of name its species are asked by (LEVELS kind: cn its common names, sci its
-  //           scientific name; app.js treeGenera): a kind not listed has no units (the sea slugs: no common-name branch).
-  //           Unset: none
-  //   flat    its units are a flat list in data.json, not a tree (the corals): its content slots and structure apply to
-  //           data.json (app.js build, structSeen); a tree subject reads its files through UNITS get instead. The engine
-  //           asks this field, never a pool file's name
-  //   replay  the sheet's first replay path computes from its logged answers (Code.gs answerRows_ keeps only its rows):
-  //           the full replay of its progress under RVS (the reply's unprefixed replay, sync.js replayAdopt), the default
-  //           subject of an unlabelled row (replaySubject); the others the sheet replays are SUBJECTS replayed
-  //   The subject differences one-engine step 2 split out of replay (docs/reviews/2026-11-19-one-engine-audit.md;
-  //   rule S1), each a feature switched on for the subjects that hold it, at the values replay gave:
-  //   offsets  the sheet's photo memory and format offsets are fitted on its answers (Code.gs stats_): the app reads
-  //           them for it (model.js pmem, pfmt); any other subject draws and scores with the prior and no offset
-  //   anonBase  signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js
-  //           signIn); any other subject adds all the progress this device holds
-  //   offsets follows the sheet, which computes it for replay's subject alone (tests/subject-neutral.test.js). The
-  //           opening hold is no feature: the app adopts each subject's own from the sheet (sync.js holdAdopt; one-engine
-  //           step 5)
-  //   gate    a tree subject's circle thresholds (app.js treeGate): c3, circle 3 offered once circle 1's Entries
-  //           component (treeScore by[1].entries) reaches c3.entries, or, with no global score, its plain mean c3.mean
-  //   ach     it has achievements: achs() its list (ACH, FISH_ACH), all in the one synced record (progress.js ACHK)
-  //           under ids of their own; achFeats: its answers keep the record's feats (runs, corallites, hard photos)
-  //   board   it has its own leaderboard (Code.gs board_ &s=<id>), by its % then its Elo; boardSheet, the script version
-  //           that serves it when later than the first boards (progress.js boardLive; rule D4)
-  //   replayed  a subject other than replay's whose progress the sheet replays from its own answers: gen(F) its units
-  //           from its file (file, else its pool's first), rvs() its rules versions, tree(F) its board's tree (a subject
-  //           with a score), sheet the script version that replays it (sync.js rpOn)
-  //   progress  the views of My progress (progress.js quizBoard), the first by default
-  //   pv      the prefix of its page names in the visit log (pageName: '' for corals, 'fish.' for fish)
-  //   hash    the prefix of its addresses in the app and the admin ('' for the corals, 'fish/'; routeOut, routeIn,
-  //           admin.js subjOfHash)
-  //   zoom    what the "Did you know?" zoom tip asks to look at closely (tips.js)
-  //   calib   the difficulty engine's calibration for its photos, over CALIB (calibOf; one engine, a calibration per
-  //           subject, docs/LEARNING.md): ease, the logits one judged ease point moves a photo's prior difficulty
-  //           (model.js photoDiff); ref, how many times more a never-seen reference-level photo weighs in the draw
-  //           (refLevel); early, how many logits lower the draw aims on a unit with no answer yet, fading with its
-  //           answers; u, the variance of the difficulty of a photo nobody has answered (model.js calSd); pool, the number
-  //           of observations a unit's draw floor is shared over (model.js photoSet: PICKD.FLOOR of the best one's weight,
-  //           times pool / observations). The corals keep the defaults (no judged ease, early 0, no u, unbounded pool)
-  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key
-  //           g-<Genus>); Identify and the Tools are the corals' only
-  //   pool    where its game photos come from, for the sheet's photo exposure per player (Code.gs pools_, unitPool):
-  //           files, the site's files it reads (fetched from main, in this order); of, the builder of POOLS that turns them
-  //           into its units' game photos as the app's games draw them; as, what each file is to that builder (f its tree,
-  //           ph its first photos, gm its game photos, cur curation.json). A subject with a pool has its own pooled
-  //           statistics on the sheet (Code.gs statsSubjects_: its own tab and ?stats=1&s=<id>)
-  //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
-  //           serves them (the reply naming its subject; rule D4). The corals' are read as replay's; a subject with a pool
-  //           and no stats draws on its priors in the app
-  // The fish units renamed from the IMR teaching entries to the book's families (docs/reviews/2026-11-06-fish-units-plan.md):
-  // each old entry id (t01) and the family holding most of its species (fish.json families); split: the genera of an
-  // entry that went to another family; names: each family's name. Read through the subject (SUBJECTS renamed:
-  // renamedId, renameUnits, renameLogEntry); tests/fishrename.test.js checks it against fish.json. Kept while old ids may
-  // still arrive (an old app, a saved copy, the log).
+  // Subjects (docs/spec/subjects.md "The registry", which describes every field; docs/ARCHITECTURE.md "Subjects"): what
+  // the game teaches, one record each. The engine (model.js, quiz.js, progress.js) works on the current subject (app.js
+  // SUBJ: its units, their records app.js GX, its progress P and quiz settings Q under its own keys) and never names
+  // one: everything a subject differs in is a field here or a function of app.js UNITS, and a field one subject alone
+  // holds is a declared feature (rule S1, tests/subject-neutral.test.js). FISH_RENAMED: the fish's old IMR entry ids
+  // (t01) to the book's families, read through SUBJECTS renamed (docs/spec/fish.md "The game's units: families, genera,
+  // species"; tests/fishrename.test.js).
   const FISH_RENAMED = {
     ids: {
       't01': 'f:Damselfishes',
@@ -5406,24 +5335,15 @@ const CORE_ = (function () { const module = {exports: {}};
   // An answer's words for a subject (SUBJECTS start): [answer, line], null for an unknown answer.
   const startText = (s, c) => ((subjectOf(s).start || {}).opts || {})[c] || null;
 
-  // Fish (fish.json, built by tools/build_fish.py; docs/ARCHITECTURE.md "Fish content"). The game's family level is the
-  // book's families (fish.json families; the IMR course a tag, imr), each made into a record the engine reads like a
-  // coral genus's (app.js GX): {id (f:Damselfishes), name (the book's English name), fam (the line under it), imr, look
-  // (family ids), lk (how to tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification
-  // key in force; rule S3), forms (that group: the wrong choices start in other groups, as coral growth forms), ig (the
-  // same group), cm (how common near Dauin), views {wide: photos}, levels 1, circle, wink, names (accepted when typed)}.
-  // photos: the photos in play (treePhotos: teaching id -> photo objects, each to its species' family).
-  // key: the identification key in force ({id, region, cite, short}, null for a region with none); groups, its groups in
-  // order ({n, title, pages}). c1 / c2 / c3: the families of each circle (all on the path and in the progress: app.js
-  // UNITS fish slate, treeGate); winks: the wink entries (a surprise card, never a question).
-  // first: one of the starter core (fish.json start), opened before the others (model.js openPick).
-  // views.wide in easyRank order with no licence in it (the draw reads it): the easiest, most reference-like photo
-  // first, whoever took it; cover: the card's photo (app.js cover), the first of that order, an open licence breaking
-  // ties (easyCover).
-  // sheet: fish-photos.json "sheet" (species id -> photos), the sheet-only photos: a species with no game photo may keep
-  // one for its sheet, never in any game (docs/ARCHITECTURE.md "Fish content"; tools/fish_photos.py SHEET). A photo
-  // marked use: 'ref' never joins an entry's game photos, wherever it is listed: every game draw reads views.wide
-  // (model.js photoSet, app.js treeGenera). The result's sheet holds them by species ({species id: [photo]}).
+  // Fish (fish.json, built by tools/build_fish.py; docs/spec/fish.md "The game's units: families, genera, species"):
+  // treeGen(F, photos, sheet) makes each of the book's families a record the engine reads like a coral genus's (app.js
+  // GX): {id (f:Damselfishes), name (the book's English name), fam (the line under it), imr, look (family ids), lk (how
+  // to tell each apart, IMR's words), qt (the IMR cues), group and forms (its group in the identification key in force,
+  // rule S3: the wrong choices start in other groups, as coral growth forms), ig, cm, views {wide} (easyRank order;
+  // cover its first), levels 1, circle, wink, names (accepted when typed), first (the starter core)}. Returns {gen, c1
+  // / c2 / c3 (each circle's families, all on the path and in the progress), winks (surprise cards, never questions),
+  // key ({id, region, cite, short}, null for none), groups, sheet ({species id: [photo]}: a use: 'ref' photo never
+  // joins a game, docs/spec/fish-photos.md "Sheet-only photos")}.
   const sheetOnly = p => !!p && p.use === 'ref';
   // The rights a photo comes with (docs/ARCHITECTURE.md "Photo rights tie-break"): 'imr' an IMR lecture photo, 'book' a
   // Coral Finder book photo, 'own' Pierre's own (whatever its licence), 'open' CC0 or CC BY, 'nc' the rest (CC BY-NC, or
@@ -5899,22 +5819,13 @@ const CORE_ = (function () { const module = {exports: {}};
   const spUnitId = (lv, id) => LEVELS[lv].pre + (LEVELS[lv].plain ? String(id).replace(/[^A-Za-z0-9]/g, '') : String(id));
   // A unit's level (its LEVELS key), '' for a unit with no prefix (a coral genus).
   const levelOf = id => Object.keys(LEVELS).find(k => String(id || '').startsWith(LEVELS[k].pre)) || '';
-  // The species units of a tree subject at a species level lv (LEVELS):
-  // - 'cn' (the default; docs/LEARNING.md "Fish: the species level, step 1, by common name"): one progress unit per
-  //   species answered by common name, 's:' + the species id (s:s091), one for each species with a listed common name
-  //   (fish.json cn) in a family in play (never a wink family's), in each family's species order (the commonness order,
-  //   cmi), the order they open in. Each with: s, its fish.json record; family, its family unit; look, the other species
-  //   units of its family (the traps of its choices, rule L7); fam, its family's line; from, the unit a species never
-  //   answered starts from, its family (docs/FISH_PATH.md "Unlock rules"; abilityOf); decl, its declared look-alikes
-  //   (spDecl, below: the species its record's look names).
-  // - 'sci' (docs/reviews/2026-11-18-species-step2-plan.md §2.1; Q397, Q398): one unit per species by its scientific name,
-  //   every species under a genus unit of a family in play (treeGenSets: the fish's scientific genera of every circle, the
-  //   sea slugs' genus units), a common name or none, in each family's species order; its id sci: + the species id in
-  //   letters and digits (spUnitId); look, the other scientific species units of its family; genus and from, its genus
-  //   unit (the scientific tree: never the common-name unit); decl, as at 'cn'. X must then be treeGen's units at the
-  //   subject's unit rank.
-  // The app's units (app.js treeGenera) and the sheet's replay (treeReplayGen) read this one list. X: treeGen's units,
-  // when built already.
+  // The species units of a tree subject at species level lv (docs/spec/fish-game.md "Fish species, step 1: by common
+  // name" and "Species by scientific name (step 2)"): 'cn' (the default), s:<species id>, by common name; 'sci',
+  // sci:<the id in letters and digits> (spUnitId), by scientific name. Each with s (its fish.json record), family, fam,
+  // look (the other species units of its family, rule L7), from (the unit a species never answered starts from,
+  // abilityOf: its family at 'cn'; at 'sci' its genus unit, also its genus) and decl (its declared look-alikes,
+  // spDecl). X: treeGen's units when built already (at 'sci', at the subject's unit rank). The app's units (app.js
+  // treeGenera) and the sheet's replay (treeReplayGen) read this one list.
   function treeSpUnits(F, X, lv = 'cn') {
     const X0 = X || treeGen(F || {}, {}),
       G = X0.gen,
@@ -5968,18 +5879,11 @@ const CORE_ = (function () { const module = {exports: {}};
     const X = treeGen(F || {}, {});
     return treeScoreTree({...X, gen: {...treeReplayGen(F), ...X.gen}}, F || {}, true, true);
   }
-  // The fish structure in force (SUBJECTS fish structure apply): fish.json F with the content editor's circles and pairs
-  // X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null, src}]}, each a change from F: structApply)
-  // written as the build writes them:
-  // - a family's circle onto the family, its genera, its species (a species takes its family's circle) and each
-  //   teaching node holding its species (its families' smallest circle in force, as the build's family takes its species'
-  //   best); start kept to the teaching nodes in circle 1;
-  // - in no circle (null): the family and its genera left out, its species out ('family in no circle', with no circle,
-  //   family or genus), as the build leaves a family no teaching node holds, and every look-alike line to it dropped (a
-  //   pair with one side gone is not applied); a teaching node left with no family in a circle, none;
-  // - a pair withdrawn: its line dropped on both sides; one added: a line with no words on both sides (its words: the text
-  //   slot look/<other id>), its source the one the editor gave, else EDITOR_PAIR (lsrc: never the IMR presentation's).
-  // A new object sharing every record it does not change; F itself when X changes nothing.
+  // The fish structure in force (SUBJECTS fish structure apply; docs/spec/content.md "Structure: circles and look-alike
+  // pairs", The fish): fish.json F with the content editor's circles and pairs X ({circle: Map family id -> 1, 2, 3 or
+  // null, pairs: [{a, b, v: 1 or null, src}]}, each a change from F: structApply) written as the build writes them. An
+  // added pair's line has no words and its source is the editor's, else EDITOR_PAIR. A new object sharing every record
+  // it does not change; F itself when X changes nothing.
   const EDITOR_PAIR = 'Added by the content editor';
   function treeStructure(F, X) {
     const C = (X && X.circle) || new Map(),
@@ -6060,17 +5964,13 @@ const CORE_ = (function () { const module = {exports: {}};
   function genStructure(R, X) {
     return lookStructure(R, X, GEN_AT, (old, s) => old || (s ? s.t : EDITOR_PAIR));
   }
-  // The look-alike pairs in force written into built file R (SUBJECTS structure apply), for a subject whose pairs are a
-  // list of node ids in each record's look and whose lines sit in its lsrc by the other id (the corals' genera, by name in
-  // data.json gen and x.gen; the sea slugs' genera, by id in seaslug.json genera): the content editor's pairs X ({pairs:
-  // [{a, b, v: 1 or null, src}]}, each a change from R: structApply) on both records of each pair. at: where the records
-  // sit (paths of lists by id or of maps by name, as contentRecs reads them); line(old, src): an added pair's lsrc line,
-  // from the line the record holds already for that other node (undefined: none) and the source the editor gave (null:
-  // none). One withdrawn leaves both looks and both lsrc lines (its words' text slots are then orphaned, kept and not
-  // applied); one added joins both looks after the base's look-alikes and leaves dlook (a data look-alike of the build,
-  // which the pair declared now is not: a pair is never both, tools/seaslug_game.py genus_looks). A record held at two
-  // paths (the admin's merged coral data) changes at both. A new object sharing every record it does not change; R itself
-  // when X changes nothing.
+  // The look-alike pairs in force written into built file R (SUBJECTS structure apply; docs/spec/content.md "The
+  // corals' structure" and "The sea slugs' structure"), for a subject whose pairs are node ids in each record's look
+  // with their lines in its lsrc by the other id: the editor's pairs X ({pairs: [{a, b, v: 1 or null, src}]}, each a
+  // change from R: structApply) on both records of each pair. at: where the records sit (paths of lists by id or of
+  // maps by name, as contentRecs reads them); line(old, src): an added pair's lsrc line, from the record's line for
+  // that other node (undefined: none) and the editor's source (null: none). A new object sharing every record it does
+  // not change; R itself when X changes nothing.
   function lookStructure(R, X, at, line) {
     const P = (X && X.pairs) || [];
     if (!P.length) return R;
@@ -6248,16 +6148,13 @@ const CORE_ = (function () { const module = {exports: {}};
     G && G.photos && typeof G.photos === 'object'
       ? {...G, photos: Object.fromEntries(Object.entries(G.photos).map(([t, L]) => [t, Array.isArray(L) ? L.map(treeGameRow) : L]))}
       : G;
-  // treePhotos(first, game, cur): {teaching id: [photo]}, what treeGen takes. game: fish-game.json photos (each with sp,
-  // the species it is in play for); first: fish-photos.json photos, a few of those same records per entry (tools/
-  // fish_game.py first_photos, on R2 too), read only while the game list is not in (app.js fishHome: Home before
-  // fish-game.json; or when it cannot come); cur: curation.json (or a draft), null when not loaded yet. Pierre's curation
-  // applies at once, before the workflow runs again: a photo shows only while it is in play (treePhotoIn: his add, or a photo
-  // that entered by itself he did not reject, exclude or move) and not excluded for good (curation exclude, by name or
-  // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2.
-  // treeCur(S, cur): the curation as the fish engine reads it for tree subject S (treePhotos, treeGone, app.js treeCurate:
-  // its fish part): S's own part (SUBJECTS admin.cur) under the fish's key, the rest as it is; the same content for the
-  // fish. A subject with no part yet gets none: its photos in play are its judged ones. null stays null (not loaded).
+  // treePhotos(first, game, cur): {teaching id: [photo]}, what treeGen takes (docs/spec/fish-photos.md "In the game"
+  // and "First photos"). game: fish-game.json photos (each with sp, the species it is in play for); first:
+  // fish-photos.json's first photos, read only while game is empty; cur: curation.json (or a draft), null when not
+  // loaded (the lists as they are). A photo shows only while in play (treePhotoIn) and not excluded for good (curation
+  // exclude, by name or photo id). treeCur(S, cur): the curation as the tree engine reads it for subject S: S's own
+  // part (SUBJECTS admin.cur) under the fish's key, the rest as it is; a subject with no part gets none; null stays
+  // null.
   const treeCur = (S, cur) => {
     const k = S && S.admin && S.admin.cur;
     return cur && k ? {...cur, fish: cur[k]} : cur;
@@ -6283,28 +6180,11 @@ const CORE_ = (function () { const module = {exports: {}};
     const s = String(o);
     return s.startsWith(TREE_OBS) ? s.slice(TREE_OBS.length) : s;
   };
-  // The per-player reserve (docs/decisions/2026-11-19-per-player-reserve.md, docs/LEARNING.md "The reserve in the
-  // game"): per player and unit, a few observations that player never sees in practice, which their mastery exam asks
-  // first (model.js examSet), unannounced, counted like any answer and logged |h (quiz.js answer). One rule for every
-  // subject (rule S1), on the units as built (reserveOf, reserveSplit):
-  // - Which: in each species (a unit with no species, a coral genus: the unit), its eligible observations in the order of
-  //   a hash of the player's id and the observation (resHash), first ones first: the same on all of a player's devices
-  //   for the same photos, another order for another player, so every photo is practised and rated by others.
-  // - Eligible (resOut): an observation none of whose photos is Pierre's own (rule P1: his photos are never left out of
-  //   practice), of reference level (refLevel), nor a card's (a unit's cover, a featured photo, Pierre's ★ picks:
-  //   resCards). Never by who took a photo nor by the route it came in (rule P1,
-  //   docs/decisions/2026-11-19-per-player-reserve.md).
-  // - How many: up to RESERVE.target (15, three exams of model.js EXAM.n) per unit with a mastery exam (not noex), across
-  //   its species in turn, only from a real surplus, learning first when photos are few: never leaving a species fewer
-  //   than RESERVE.keep (8) in practice nor a unit with an exam fewer than RESERVE.floor (30) (each such unit's floor
-  //   bounds what the others take from its species: a thin genus inside a rich family keeps its photos). The units with
-  //   the most observations first (a family before its genera), each topped up to the target. A thinner unit reserves
-  //   little or nothing, and its exam asks the photos this player has not seen.
-  // - Stateless: a function of the player's id and the photos in play, so a photo added or gone moves the reserve at its
-  //   margin only; the exam asks first the reserved observations this player was never shown (model.js examSet), so an
-  //   observation that comes into the reserve after it was seen waits behind the fresh ones.
-  // The sheet can compute a player's reserve the same way (the answer log's player, reserveId); it never needs it: the
-  // tag |h logged with the answer is the record, and no replay reads it (rules D8, D9).
+  // The per-player reserve (docs/spec/reserve.md; docs/LEARNING.md "The reserve in the game"): per player and unit with
+  // a mastery exam, a few observations that player never sees in practice and their exam asks first (model.js examSet),
+  // logged |h. One rule for every subject (rule S1), stateless, on the units as built (reserveOf, reserveSplit): which
+  // (resHash order), eligible (resOut, resCards: never Pierre's own, rule P1) and how many (RESERVE: target, keep,
+  // floor) as the spec says. No replay reads it (rules D8, D9).
   const RESERVE = {target: 15, keep: 8, floor: 30};
   // A player's stable id for the reserve: an account's name (the sheet's Answers player, any case), else "~anon <id>",
   // the device's anonymous id as the sheet logs its answers (sync.js anonId).
@@ -6513,19 +6393,13 @@ const CORE_ = (function () { const module = {exports: {}};
       .toLowerCase()
       .normalize('NFD')
       .replace(/[^a-z]/g, '');
-  // Every name a player may type for the fish entries gen (treeGen): [{k, g, old, alt}], old = the name typed when it is
-  // not the entry's own (read as the entry), alt marks those as other names, not old ones. A name two entries share (a
-  // family the book splits: Holocentridae = Soldierfishes and Squirrelfishes) names both (typeMatchIn shared).
-  // drop (SUBJECTS typeDrop: 'fish'): a word a name may be typed without ("trigger", "clown", "damsel";
-  // docs/FISH_PATH.md), as its suffix, a separate word or a plural ("Triggerfish", "Trigger fish", "Triggerfishes" ->
-  // "Trigger"), its own short form accepted as another name of the entry, unless it is ambiguous in the game: within the
-  // spelling tolerance of a name or short form of another entry (then it is left out: typing it is no answer).
-  // A name in common use (fishOften: oft) carries oft: [usual name, the name often used], its short forms too.
-  // Every name is also read in the other number (typeForms: "Grouper" for Groupers, "Goby" for Gobies, "Pipefish" for
-  // Pipefishes), as the name itself: exactly, never as a spelling to fix, whatever other name it is close to.
-  // known (treeNameIndex): the names below the entries, each read as the entry it lifts to (Peacock razorfish, Iniistius,
-  // Anglerfish), and the words owned by none, read exactly as such ({known}, typeMatchIn), so a name the game knows is
-  // never taken for a slip of another (Angelfishes).
+  // Every name a player may type for the fish entries gen (treeGen; docs/FISH_PATH.md "Typed family names",
+  // docs/spec/fish.md "The name index"): [{k, g, old, alt}], old = the name typed when it is not the entry's own (read
+  // as the entry), alt marks those as other names, not old ones; a name two entries share names both (typeMatchIn
+  // shared); a name in common use carries oft: [usual name, the name often used] (fishOften). drop (SUBJECTS typeDrop):
+  // a word a name may be typed without, its short form left out when within the spelling tolerance of another entry's
+  // name or short form. Every name is also read in the other number (typeForms), exactly. known (treeNameIndex): the
+  // names below the entries, read as the entry they lift to, and the words owned by none, read as such ({known}).
   function treeTypeNames(gen, drop = '', known = []) {
     const out = [],
       // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
@@ -7636,17 +7510,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // the formats duel, qduel and again of a quiz answer (fmtOf; a live answer is none). A right one counts for the duel
   // achievement (s.du), in the game (quiz.js recordAnswer) and in the replay (replayProgress).
   const contrastQ = (m, nch) => /^quiz/.test(String(m || '')) && ['duel', 'qduel', 'again'].includes(fmtOf(m, nch));
-  // Per-format offsets (docs/LEARNING.md "Per-format offsets"): a question's format moves its success beyond what the
-  // app's guess rate 1/k allows for (2 plausible choices among 4 shown: right 87% where the app expected 74%; typed: 76%
-  // where it expected 82%, on the real answers). Each format f gets an offset d_f, in logits, added
-  // to the app's log-odds: P(right) = 1/k + (1 - 1/k) sig(ability - difficulty + d_f) (positive: easier than the app
-  // thought). Fitted by the sheet (Code.gs stats_, ?stats=1 fmt) on the trusted answers with their logged expectation e,
-  // the app's log-odds then x = logit((e - 1/k) / (1 - 1/k)), clamped to 1-99%: Newton's method on d_f with a normal prior
-  // N(0, FMT.SD^2) (a format with few answers stays near the app's own value, 0), for a format with FMT.N answers or more.
-  // The guess rate stays 1/k: fitted with it, the two were not identifiable on the real log (estimates correlated -0.9,
-  // the 2-choice guess running off to 0.87 with its offset to minus infinity). Served {format: [offset, answers]}; a
-  // format absent counts 0 (fmtOff). The logged e stays the app's expectation before the offset, so the fit always reads
-  // the same quantity.
+  // Per-format offsets (docs/LEARNING.md "Per-format offsets"): each format f gets an offset d_f in logits on the app's
+  // log-odds, P(right) = 1/k + (1 - 1/k) sig(ability - difficulty + d_f), the guess rate staying 1/k. Fitted by the
+  // sheet (Code.gs stats_, ?stats=1 fmt, served {format: [offset, answers]}) on the trusted answers and their logged e,
+  // by Newton's method under a prior N(0, FMT.SD^2), for a format with FMT.N answers or more; a format absent counts 0
+  // (fmtOff). The logged e stays the app's expectation before the offset.
   const FMT = {N: 20, SD: 1};
   function fmtOffsetsOf(rows) {
     const trust = trustOf(rows),
@@ -7762,18 +7630,12 @@ const CORE_ = (function () { const module = {exports: {}};
   const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1};
   // Every player starts as a beginner (Code.gs PLAYER0): about 45% right on an average photo with 4 choices.
   const PLAYER0 = -1;
-  // Photo memory (docs/LEARNING.md "Photo memory"): in a genus with few photos the same ones come back and players learn
-  // the photos rather than the genus. One rule for the sheet, the admin and the app: an answer on a photo is expected
-  // easier by an offset (logits subtracted from its difficulty) that depends on the player's own history with that
-  // photo, [times shown, times right] (H in the replay, s.ps in the app): bucket 0 new, 1 shown but never right, 2 right
-  // once, 3 right twice or more (memBucket). A question with several photos takes the mean offset of its photos (memFam).
-  // New is the reference, 0. The other three are estimated from the trusted answers in the same replay as the photos and
-  // the players (eloReplay, Code.gs stats_): after each answer, each offset its photos fall in moves by its surprise over
-  // the information gathered so far plus the prior's (a Newton step, as Glicko moves a rating), the prior MEM.PRIOR (the
-  // fixed rule PHOTO_W as offsets: 0, -0.5, -0.5, -1.5) weighing as much as MEM.N answers at the game's usual chance (80%,
-  // 4 choices). N 10: answers on a remembered photo are 90% right or more and each tells little, so a few dozen move a
-  // bucket about two thirds of the way to what they show. ?stats=1 serves the estimate as mem (memn: answers behind each
-  // bucket); the app falls back to the prior without it (memOf).
+  // Photo memory (docs/LEARNING.md "Photo memory"), one rule for the sheet, the admin and the app: an answer on a photo
+  // is expected easier by an offset (logits subtracted from its difficulty) by the player's history with it, [times
+  // shown, times right] (H in the replay, s.ps in the app): bucket 0 new (the reference, 0), 1 shown but never right, 2
+  // right once, 3 right twice or more (memBucket); a question takes the mean offset of its photos (memFam). Estimated
+  // in the replay with the photos (eloReplay, Code.gs stats_) under the prior MEM.PRIOR, weighing MEM.N answers; served
+  // as mem (memn: the answers behind each bucket); the prior without it (memOf).
   const MEM = {N: 10, PRIOR: [0, -PHOTO_W.NEW, -PHOTO_W.NEW, PHOTO_W.KNOWN - PHOTO_W.NEW]};
   const memBucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3);
   const memFam = (hs, mem) => (hs.length ? hs.reduce((t, h) => t + mem[memBucket(h)], 0) / hs.length : 0);
@@ -7795,29 +7657,13 @@ const CORE_ = (function () { const module = {exports: {}};
   // moves anything, 0.2 and 0.4 both beat a photo-only Elo and the Easy / Medium / Hard prior, 0.8 moves too fast.
   // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd, the photos' ratings as totals.
   const GENUS_K = 0.4;
-  // The photo's time term (docs/LEARNING.md "The photo's time term"; docs/decisions/2026-11-21-photo-time-term.md): how much
-  // longer than their own habit trusted players take to answer a photo right, and how much more often than their own habit
-  // they enlarge it, each a shrunk mean per photo, served by the sheet with the photo ratings (ptimeInto) and added to
-  // the photo's difficulty in the app (model.js photoDiff), fading as the photo's answers bring information.
-  // - z: an answer's log seconds against the player's own median as rtWeight takes it (rtTenths, rtMedian), over their
-  //   earlier timed, non-typed right answers in the subject, from the RTIME.MIN-th (a player who misses often has slow
-  //   misses in an all-answer median, which would make every right answer of theirs look fast), less the mean z of the
-  //   earlier right answers in the same format (fmtCell: the game, fmtOf, the photos shown and the rank asked), then
-  //   clipped at +-CLIP.
-  // - Which answers: right, timed, not typed, not enlarged, of a player who rates the photos (trusted, photo check passed).
-  // - Each answer's weight: its trust weight over V(L), the variance of z at the player's level L (the sheet's own rating
-  //   before the answer), fitted on the subject's answers so far: V(L) = Vbar exp(beta (L - Lbar)), beta the slope of z^2
-  //   on L relative to its mean, shrunk by its own uncertainty (players as clusters: max(0, 1 - se^2 / b^2)), 0 with fewer
-  //   than MIN_P players or MIN_N answers (an early fit swings and its weights stay in the photos' sums), the weights'
-  //   spread capped at BMAX either side. Steadier players' times weigh more; where the
-  //   data do not show a slope the weights are equal. One code path for every subject.
-  // - The time term: sum(w z / V) / (sum(w / V) + 1 / TAU2), TAU2 the photo's own share of the variance (the prior).
-  // - The enlargement term: enlarged (0/1) less the player's own rate so far ((enlarged + E0 EM) / (answers + EM)), any
-  //   trusted answer that logged it, right or wrong, weighed by trust, shrunk by NE answers.
-  // - I: the Fisher information the photo's rating has gathered, every rating answer, on the photo Elo's own expectation.
-  // C (the app): logits per unit of the two terms; the term fades as I0 / (I + I0), I0 = PDIFF.W answers at the game's
-  // target, so a photo answered only by players who never miss keeps it, and one whose rating has learned from misses
-  // lets it go.
+  // The photo's time term (docs/LEARNING.md "The photo's time term", which gives each step and constant;
+  // docs/decisions/2026-11-21-photo-time-term.md): how much longer than their own habit trusted players take to answer
+  // a photo right (z: right, timed, not typed, not enlarged answers, each weighed by trust over V(L), the variance of z
+  // at the player's level), and how much more often than their own habit they enlarge it, each a shrunk mean per photo,
+  // served by the sheet with the photo ratings (ptimeInto) and added to the photo's difficulty in the app (model.js
+  // photoDiff) as C x (the two terms) x I0 / (I + I0), fading as the photo's rating gathers information I. One code
+  // path for every subject.
   const PTIME = {CLIP: 1, FN: 5, V0: 0.3, VN: 20, MIN_P: 5, MIN_N: 500, BMAX: Math.log(3), TAU2: 0.06, E0: 0.1, EM: 10, NE: 10, C: 0.5};
   // The format cell of an answer for its time: the game (the mode before its first |), fmtOf, the photos shown (1, 2, 3+)
   // and the rank asked (a fish genus question is slower than a family one).
@@ -7943,16 +7789,14 @@ const CORE_ = (function () { const module = {exports: {}};
     return Array.isArray(o) && o.length >= 6 ? o[5] : 0;
   };
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
-  // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
-  // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf),
-  // weighed as above. All against the same expectation, photo memory included, so the level and the photos never pull
-  // apart.
-  // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
-  // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
-  // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
-  // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule P4).
-  // on (optional, tools/abilityeval.js +P): called with each row and the time terms' state TM before the row moves them
-  // (the terms as the app read them then, ptimeTerm).
+  // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them;
+  // docs/LEARNING.md "Photo memory"). Every answer moves the player's level; the photos and the memory offsets move on
+  // trusted players' answers only (trustOf), all against the same expectation, photo memory included. Returns the photo
+  // ratings P ([rating, weighed answers, weighed right, answers]), PG (each photo's genus: every photo of a question is
+  // of the genus shown, rule P4), the genus offsets G ([offset, weighed answers]), the player levels R ([level,
+  // answers, information]), mem (rounded as served) and memn (a question with several photos shares its answer between
+  // their buckets). on (optional, tools/abilityeval.js +P): called with each row and the time terms' state TM before
+  // the row moves them (ptimeTerm).
   function eloReplay(rows, on) {
     const P = {},
       PG = {},
@@ -8041,28 +7885,13 @@ const CORE_ = (function () { const module = {exports: {}};
     const {mem, memn} = eloReplay(rows);
     return {mem, memn};
   }
-  // Progress saved before the photo memory, recalculated once and silently (the replay of the real answer log moved the
-  // bars down 1-3 points, so no pop-up). Every answer since the change weighs a right answer on a known photo x pgMemW
-  // (model.js); the answers before it counted in full. The device keeps no answer log for a
-  // signed-in player (the sheet has it), only each genus's record: its photos [shown, right] (s.ps). A uniform factor f
-  // on the right answers' weights multiplies the moving average's balance odds by f (pg = p w / (p w + (1 - p) m) for a
-  // success rate p, right weight w, miss weight m), so pg' = f pg / (f pg + 1 - pg), f the mean weight of the genus's
-  // right answers: of a photo's r right answers in n shows, r / n count as its first show (weight 1, a share as if right
-  // answers fell evenly on its shows) and the rest as repeats, at the weight of the bucket the photo has now, at the
-  // game's target (ability 1 above the photo, 4 choices). Approximate (no order is kept, misses on known photos are not
-  // redone): tools/memreplay.js prints it beside the full replay of the sheet's log. Never raises a bar. A learned genus is
-  // left alone (its exam showed photos never seen). Once per record: s.pm marks it (also set on a record that needed no
-  // change) and travels with s.pg between devices (mergeProgress, mergeUsers), so no device corrects a record twice; a
-  // record made after the change is marked at its first answer (quiz.js answer) and never corrected. Returns true when
-  // it marked the record now or dropped a former learned mark (below).
-  // Learned under the former model (docs/LEARNING.md "Learned under the former model"; decision in
-  // docs/decisions/2026-11-18-decisions-from-code-comments.md): a genus learned on a record without s.pg passed its exam
-  // under BKT, whose estimate reached 95% after about 4 right answers; replayed with today's rules (tools/memreplay.js)
-  // those genera stand at 78-83%, under the exam's entry. Their learned mark (and any exam in course) is dropped at every
-  // call (load, pull, answer: a copy from another device that still has it loses it too); the genus keeps its bar (pgOf,
-  // s.h) and takes the exam again. An exam passed since (s.pg kept beside s.mx) is left alone. Silent: the app sees the
-  // mark go (model.js mxRecalc) and tells nothing. This is only the fallback for a device that never reaches the sheet's
-  // full replay (replayProgress): a record adopted from the replay carries pm 1, so it is never corrected here.
+  // Progress saved before the photo memory, recalculated once and silently (docs/LEARNING.md "Photo memory", Saved
+  // progress recalculated once and Learned under the former model): the record's moving average s.pg corrected from its
+  // photos [shown, right] (s.ps), never raised, a learned genus left alone; s.pm marks the record (it travels with
+  // s.pg: mergeProgress, mergeUsers), so no device corrects it twice. A learned mark passed under the former model
+  // (afterBkt) is dropped at every call; an exam passed since is kept. Returns true when it marked the record now or
+  // dropped a former learned mark. Only the fallback for a device that never reaches the sheet's full replay
+  // (replayProgress).
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;
     let old = false;
@@ -8198,19 +8027,12 @@ const CORE_ = (function () { const module = {exports: {}};
     return [Math.max(mix, ((x.off || {})[b] || 0) + ((y.off || {})[a] || 0)), mix];
   }
 
-  // An apology, once (docs/ARCHITECTURE.md "Progress sync (Google Sheet)"; decision in
-  // docs/decisions/2026-11-18-decisions-from-code-comments.md): between FROM and the fix, the app opened too many genera
-  // at once to strong players and did not ease the questions after misses. Only to the players who really felt it, read
-  // from the device's own data at its first run of the fix (progress.js sorryNotice keeps it):
-  // - n: their answers in the window, at least SORRY.N (20). Exact from the answers the device still keeps (signed out:
-  //   all of them); else the answers since the last card shown before FROM (the cards keep the answers count and time).
-  // - h: the opening hold's sum then (model.js holdStep: a CUSUM of the shortfall against each answer's expected
-  //   success e, 0.1 allowed per answer), so where their last run ended: SORRY.H (3, 2 x INTRO.HOLD, the evidence the
-  //   back-to-one-at-a-time card asks for) or more; or half of it with SORRY.CARDS (4, one more than OPEN.MAX now allows)
-  //   genera or more opened on cards within OPEN.WIN answers in the window (c, the most in any 15).
-  // On the real answers it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31 answers, h 4.31)
-  // and nobody else; a run at the expected success ends at 3 or more about 2-5% of the time
-  // (simulated, 20-80 answers at e 0.7-0.9). Not after UNTIL: a player back weeks later would not know what it is about.
+  // An apology, once (docs/spec/cards.md "The apology card", which gives the selection and how it was checked; decision
+  // in docs/decisions/2026-11-18-decisions-from-code-comments.md): between FROM and the fix, the app opened too many
+  // genera at once to strong players and did not ease the questions after misses. Only to the players who really felt
+  // it, read once from the device's own data (progress.js sorryNotice keeps it): n, their answers in the window (at
+  // least N); h, the opening hold's sum then (at least H, or half of it with CARDS genera or more opened on cards
+  // within WIN answers, c). Never after UNTIL.
   const SORRY = {FROM: Date.parse('2026-11-03T11:34:11Z'), UNTIL: Date.parse('2026-11-17T00:00:00Z'), N: 20, H: 3, CARDS: 4, WIN: 15};
   const sorryFelt = ({n, h, c}) =>
     (Number(n) || 0) >= SORRY.N && ((Number(h) || 0) >= SORRY.H || ((Number(c) || 0) >= SORRY.CARDS && h >= SORRY.H / 2));
@@ -8561,18 +8383,12 @@ const CORE_ = (function () { const module = {exports: {}};
     });
   }
 
-  // Global player level (docs/LEARNING.md "Global level and genus"; decision in
-  // docs/decisions/2026-11-18-decisions-from-code-comments.md): the starting ability of a genus the player has never
-  // answered. The player's global ability is an Elo over ALL their answers (app.js keeps it in the progress as the
-  // pseudo-genus LEVEL, '~level': ok, ko and th like a genus, so it syncs and merges like one); a record without it
-  // falls back on the mean ability of the genera answered. It is shrunk
-  // towards 0 while answers are few (M / (M + N)) and only partly carried over (W: knowing Acropora well says something,
-  // not everything, about Porites), then clamped to [LO, HI]: a strong player's first question on a new genus has traps
-  // and harder photos but is never the hardest, a struggling player's starts a little easier. Taken once: the first answer
-  // on the genus saves its own ability (s.th) from there.
-  // p (the first-launch question, CHOICE below): the level the player said they start from. The answers are shrunk
-  // towards it instead of towards 0, with the same weight N: (m t + N p) / (m + N). No answers: W x p; p 0 (the default,
-  // "I'm new to corals") shrinks towards 0.
+  // Global player level (docs/LEARNING.md "Ability per genus (Elo) and the global level"; decision in
+  // docs/decisions/2026-11-18-decisions-from-code-comments.md): playerStart gives the starting ability of a unit the
+  // player has never answered: the global level (LEVEL, '~level', a pseudo-genus of the progress that syncs and merges
+  // like one; without it, the mean ability of the units answered), shrunk towards p (the first-launch answer's level,
+  // CHOICE below) with the weight START.N, times START.W, clamped to [START.LO, START.HI]. Taken once: the unit's first
+  // answer saves its own ability (s.th).
   const LEVEL = '~level',
     START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5};
   function playerStart(P, skip, p = 0) {
@@ -8597,29 +8413,14 @@ const CORE_ = (function () { const module = {exports: {}};
     return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
   }
 
-  // The first-launch question (docs/LEARNING.md "The first-launch question"): a forced choice among three, in the welcome
-  // tour before the first question (or on a card before the next quiz question for a player who skipped the tour, and
-  // once for an existing player with fewer than ASK answers; from ASK answers on the choice is inferred silently:
-  // startInfer). It initialises a few variables of the existing model, never a coded path: v.p, the level the answers
-  // are shrunk towards (playerStart: the starting ability of a genus never answered, hence the photos, traps and single
-  // views of its first questions, and the shaky signal that paces the opening of genera); v.basics, Coral basics offered
-  // first. "new" is the default (a new player is a beginner). Each subject asks its own (SUBJECTS start: its words), with
-  // these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the progress):
-  // {c, t, at, via, w, v, hd, fb, h}.
-  // Fallback (for everyone, also those who answered: they may have picked wrong): the answers after the choice (w:
-  // [difficulty, guess rate, right, first answer on its genus], kept up to the last checkpoint) are checked at AT (40
-  // and 60) answers only: with few genera unlocked even a mediocre player gets everything right at 20 (startCheck). The
-  // level each answer predicts is a band around its prior, the edges midway between the priors (new under 0.25, IMR
-  // course 0.25 to 0.875, know well above). The rule reads the global level (the Elo over every answer, difficulty
-  // allowed for), with its standard error over the window (variant "Ba80H": a true beginner left on a harder path is the
-  // costliest error, so "lower" is sensitive and its card a gentle offer): 'lo' (Coral basics, or a lower answer; only
-  // for the answers with a floor, IMR course and know well) when the global level is below the floor with one-sided 80%
-  // confidence (ZL), or the opening hold has fired in the window (it eases the questions, so the misses do not show in
-  // the level); 'hi' (a higher answer), with OFFER.MET (10) genera met, when the global level is above the
-  // band's ceiling with 95% confidence (Z, as the admin's level margin) and, as a guard only, the level fitted on each
-  // genus's FIRST answer (before the game has adapted to it; levelFit) is above the ceiling too: a player who did well
-  // only on the few genera they have learned is not moved up. The simulation, the real log and the variants compared:
-  // docs/LEARNING.md "The fallback test, redesigned".
+  // The first-launch question (docs/LEARNING.md "The first-launch question" and its fallback test; docs/spec/cards.md
+  // "The record" and "The fallback card"): a forced choice among three that initialises a few variables of the model,
+  // never a coded path (v.p, the level playerStart shrinks towards; v.basics, the basics module offered first). Each
+  // subject asks its own (SUBJECTS start), stored in reefid-sync-<subject>-start (startKey) as {c, t, at, via, w, v,
+  // hd, fb, h}. Inferred silently from ASK answers on (startInfer). The fallback (startCheck) reads the answers after
+  // the choice (w) at AT answers only, against the band the answer predicts: 'lo' below its floor with one-sided
+  // confidence ZL or the opening hold fired; 'hi' with MET units met, above its ceiling with confidence Z, the
+  // first-answer level (levelFit) above it too.
   const CHOICE = {
     ASK: 50,
     AT: [40, 60], // the checkpoints of the fallback window (answers after the choice); the window ends at the last
@@ -8752,16 +8553,13 @@ const CORE_ = (function () { const module = {exports: {}};
     return (cms || []).map(x => (typeof x === 'number' && x >= 0 ? Math.sqrt((1 + x) / (1 + med)) : 1));
   }
 
-  // Achievements (docs/ARCHITECTURE.md "Learning model"): milestones that pop up as they are passed, spread out over the
-  // ~300-430 questions learning a whole genus takes. Learning milestones only, never time or days played (rule L8),
-  // plus one family apart, the Contributions (kind 'contrib', at the end: reports sent). Each has a family, a tier (1
-  // bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
-  //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 85%, DOM.EX) or above; model.js MASTERY],
-  //    learned (Instructor), pct, streak (best run of right answers), duel, cor, hard, elo (0 until 200 answers, app.js
-  //    ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met), basics
-  //    (Coral basics done), fb (reports counted for the Contributions, contribAdd)}.
-  // Descriptions say what the player can now do (informational feedback motivates: Deci, Koestner & Ryan 1999); counts
-  // stay counts (genera met, progress %, Elo).
+  // Achievements (docs/spec/achievements.md "Achievements"): learning milestones only, never time or days played (rule
+  // L8), plus the Contributions (kind 'contrib', at the end: reports sent). Each [id, title, description, tier (1
+  // bronze, 2 silver, 3 gold), icon (its family), test] tests a snapshot the app builds (app.js achSnap): {total, met,
+  // q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 85%, DOM.EX) or above; model.js MASTERY],
+  // learned (Instructor), pct, streak (best run of right answers), duel, cor, hard, elo (0 until progress.js ELO_MIN),
+  // group (an IMR lecture group fully learned), bonus (bonus genera met), basics (Coral basics done), fb (reports
+  // counted, contribAdd)}.
   const ACH = [
     ['met10', 'Explorer', 'Met 10 genera', 1, '🧭', s => s.met >= 10],
     ['met20', 'Wide eyes', 'Met 20 genera', 1, '🧭', s => s.met >= 20],
@@ -9087,16 +8885,11 @@ const CORE_ = (function () { const module = {exports: {}};
     });
     return out;
   }
-  // "Your feedback helped": when the admin marks a report done (admin To do › Reports ✓ Done: curation.json seen
-  // 'rep:<id>', public), the player who sent it is told once, at their next visit (progress.js achHelped). The
-  // achievements record keeps the ids of the reports the player sent (_rep: from this device at sending, sync.js
-  // reportDialog; from the sheet's load reply for those sent signed in, Code.gs reps) and those already thanked (_thx),
-  // both synced and joined across devices (mergeAch), the last LIST_MAX of each: more thanked kept than sent, and twice
-  // the sheet's REPS_MAX sent, so an id the sheet lists again is never one whose thanks were dropped. Ids only: nothing
-  // the admin wrote reaches the player. repsAdd adds ids (true when A changed). A player who sends many reports is
-  // thanked at the first report handled, then for every report handled since the last thanks in one, at most once per
-  // HELPED_GAP (7 days; _thxAt, the time of the last thanks, the latest of two devices).
-  // helpedDue returns the ids to thank now ([] within the gap); helpedMark marks them thanked at `now`.
+  // "Your feedback helped" (docs/spec/achievements.md "Your feedback helped"): the player who sent a report is thanked
+  // once it is handled. The achievements record keeps the ids of the reports the player sent (_rep) and those already
+  // thanked (_thx), the last LIST_MAX of each, synced and joined across devices (mergeAch); ids only: nothing the admin
+  // wrote reaches the player. repsAdd adds ids (true when A changed); helpedDue returns the ids to thank now ([] within
+  // HELPED_GAP of _thxAt, the last thanks); helpedMark marks them thanked at `now`.
   const REP_ID = /^[a-z0-9]{1,20}$/,
     LIST_MAX = {_fb: CONTRIB_MAX, _rep: 100, _thx: 200};
   function repsAdd(A, ids) {
@@ -9156,19 +8949,11 @@ const CORE_ = (function () { const module = {exports: {}};
     return A;
   }
 
-  // Progress of a genus under the moving average (docs/LEARNING.md "Progress (moving average) and mastery", which has
-  // the simulation behind A 0.15 and M 0.8; Pelánek & Řihák 2017): s.pg, an exponential moving average of the answers on
-  // the genus, each weighed by what it proves (w, 0 to 1): a right answer s.pg += PROG.A × w × (1 − s.pg), w from the
-  // choices (model.js pgWeight); a miss s.pg −= PROG.A × w × s.pg, w from how hard the photo was for the player
-  // (model.js pgMissW: in full on a photo at the player's level, less on a harder one: a miss on a very hard photo does
-  // not mean the genus is badly known, and a miss must not cost more than it proves). Each point is harder to earn than
-  // the last, a run of right answers on easy choices tops out lower than one against look-alikes, and the bar follows
-  // the recent answers. PROG.M = the mastery exam's entry, shown as 95%.
-  // OLD: a record without s.pg (BKT's L) is recomputed from its last 10 results in order (s.h), from 0, a right answer
-  // weighed 2/3 (the middle weight: what it proved is not known). Simulated, that is close for a beginner and below the
-  // live value for a strong player: 10 right answers in a row give 0.65, 77% on the bar, so no genus enters the exam on
-  // old answers alone. A genus learned on such a record loses its mark (memRecalc); until then it counts at the exam
-  // entry.
+  // The former moving average (docs/LEARNING.md "Progress (moving average) and mastery", The former moving average):
+  // s.pg, an exponential moving average of the answers on a unit, each weighed by what it proves (w, 0 to 1): a right
+  // answer s.pg += PROG.A × w × (1 − s.pg), a miss s.pg −= PROG.A × w × s.pg. PROG.M is the mastery exam's entry, shown
+  // as 95%. OLD: the weight of a right answer when a record without s.pg (BKT's) is recomputed from its last 10 results
+  // (s.h); a unit learned on such a record loses its mark (memRecalc).
   const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
   // A learned genus keeps its mark while its progress stays at PROG.M × (1 − PROG.A) or above after a miss (one miss from
   // PROG.M or above, not two): the game's rule (model.js mxKept, applied in quiz.js answer after each miss) and the
@@ -9219,20 +9004,15 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     return w;
   }
-  // The tree of the fish global score (treeScore, SUBJECTS fish score; docs/FISH_PATH.md "My progress (fish)"): the
-  // families of the slate on the trunk, each weighted by the sum of its species' weights; on the branches every species
-  // of those families, weighted by how common it is near Dauin (rankWeights over fish.json present.dauinU, its distinct
-  // Research Grade observers within 40 km: observers, not observations, so a few keen photographers of one species do
-  // not weigh), with its units: its genus when the game has it as a unit (treeGenSets, app.js treeGenera). The species
-  // with no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can
-  // keep). The circle is the family's (treeScore by: the components per circle).
-  // on: the species level on (sync.js speciesOn; rule D4): each species with a common-name unit (treeSpUnits) has an
-  // entry of its own, [weight, genus, '', [its unit], circle], its unit in the common-name place (C); its scientific
-  // name has no unit (''). Off, every species is packed, whatever the data.
-  // sci: the scientific species level on (SCI_SHEET; rule D4): each species with a scientific unit (treeSpUnits 'sci')
-  // has an entry of its own, that unit in the scientific place (S), its common-name unit as above (none: null); its
-  // weight, genus and circle as before, so a player with no scientific species answered scores what the tree without
-  // them gives (the species that leave a pack round their weights apart: about 1e-6 of the raw score).
+  // The tree of a subject's global score (treeScore, SUBJECTS score; docs/LEARNING.md "Fish: the global score, built"):
+  // the families of the slate on the trunk, each weighted by the sum of its species' weights (rankWeights over
+  // fish.json present.dauinU); on the branches every species of those families with its units, its genus when the game
+  // has it as a unit (treeGenSets), the species with no unit of their own packed by genus and circle, the circle the
+  // family's. on: the species level on (sync.js speciesOn; rule D4): each species with a common-name unit (treeSpUnits)
+  // has an entry of its own, [weight, genus, '', [its unit], circle]; off, every species is packed. sci: the scientific
+  // species level on (SCI_SHEET; rule D4): each species with a scientific unit has an entry of its own, that unit in
+  // the scientific place, its common-name unit as above (none: null), so a player with none of them answered scores
+  // what the tree without them gives.
   function treeScoreTree(X, F, on, sci) {
     const own = sci ? new Set(treeSpUnits(F, X, 'sci').map(u => u.s.id)) : null,
       sp = new Map((F.species || []).map(s => [s.id, s])),
@@ -9264,24 +9044,15 @@ const CORE_ = (function () { const module = {exports: {}};
     });
     return {f: fams.map(id => [id, r4(fw[id] || 0), circ(id)]), s: [...pack.values()].map(e => [r4(e[0]), ...e.slice(1)])};
   }
-  // A subject's global score and its components, from one computation (docs/FISH_PATH.md "My progress (fish)"). Every
-  // unit keeps its own bar (scoreOf: 1 once its exam is passed, 0 never answered), which drives its levels and its exam;
-  // this only adds them up.
-  // T, the subject's tree (app.js UNITS tree): f [[family unit, weight, circle]], the trunk; s [[weight, genus unit,
-  // species unit, [common-name units], circle]], the branches, one per species ('' and [] for units that do not exist
-  // yet). An entry of s may stand for several species of one genus with no unit of their own (their weights summed: the
-  // same score, a shorter tree for the sheet). A family's weight is the sum of its species' (rankWeights over the
-  // observers near Dauin), a genus's the sum of its species' too.
-  // K, the subject's constants (SUBJECTS score): entries (the trunk's share, 0.25), a and b (a species' credit
-  // with its common names only, its scientific name only), half (a genus's share of its species' scientific credit), pow
-  // (the display: 100 raw^pow, 0.5 the square root).
-  // Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, half × its genus's bar),
-  // credit = a C + b S + (1 − a − b) C S. raw = entries × Entries + (1 − entries) × the weighted mean credit.
-  // Returns {pct (the % shown, 0-100, rounded), raw, and the components, each a weighted mean from 0 to 1: entries (the
-  // families), genera (the genera, each weighted by its species), common (C over the species), scientific (the species'
-  // own scientific names, no genus credit), S (S over the species, the genus credit included), credit; by: the same per
-  // circle, {1: {...}, 2: {...}}; units: every unit of the tree with its own bar}. A rule that reads a score reads one of
-  // these (app.js treeGate: by[1].entries). A species entry whose common names are null has none at all (below).
+  // A subject's global score and its components, from one computation (docs/LEARNING.md "Fish: the global score,
+  // built"; docs/spec/fish-game.md "The fish global score"); every unit keeps its own bar (scoreOf), this only adds
+  // them up. T, the subject's tree (app.js UNITS tree, treeScoreTree): f [[family unit, weight, circle]]; s [[weight,
+  // genus unit, species unit, [common-name units], circle]] ('' and [] for units that do not exist yet; null common
+  // names: a species with none, which counts its scientific value alone). K, the subject's constants (SUBJECTS score:
+  // entries, a, b, half, pow). Returns {pct (the % shown, 0-100, rounded), raw, entries (the families), genera (each
+  // weighted by its species), common (C over the species), scientific (the species' own, no genus credit), S (the genus
+  // credit included), credit, each a weighted mean from 0 to 1; by: the same per circle; units: every unit of the tree
+  // with its own bar}. A rule that reads a score reads one of these (app.js treeGate: by[1].entries).
   function treeScore(P, T, K) {
     const F = (T && T.f) || [],
       S = (T && T.s) || [],
@@ -9338,33 +9109,13 @@ const CORE_ = (function () { const module = {exports: {}};
     return R;
   }
 
-  // The domain-score bar (docs/LEARNING.md "The domain-score bar"): the bar of a genus is the share of ALL its possible
-  // photos, easy to hard, the player would name right, one photo alone with no choices to guess from (100% = every photo
-  // named), as far as their own answers on that genus have shown (never the global level, never another genus). The
-  // IRT domain score (Bock, Thissen & Zimowski 1997) over the genus's photo
-  // population (random-item IRT, De Boeck 2008: a photo's difficulty d ~ N(mu_g, DOM.TAU²), mu_g the sheet's genus
-  // offset gd, so adding photos moves no bar), estimated as the POSTERIOR EXPECTED domain score on a grid of abilities
-  // (docs/reviews/2026-11-06-engine-algorithms-review.md §14): a fixed population prior N(DOM.M0, DOM.SD0²) for a genus
-  // never answered, then each own answer's likelihood, format-aware (guess rate 1/k, none typed; a per-format offset and
-  // the shared slope as inputs), with the photo's difficulty, memory and mix-ups term as the game scores it.
-  // With a logistic likelihood a miss shifts the posterior down (monotone likelihood ratio), so the bar never rises on a
-  // miss; the caution comes from the prior, not from a lower bound (θ - z SE rose after a miss). Learners change: before
-  // each own answer the posterior drifts by DOM.Q (the process noise of a Kalman filter, Glicko's growing deviation), so
-  // old answers fade and a genus learned late is credited. The grid holds the log posterior (s.dp, relative to its top,
-  // 2 decimals, clipped at -DOM.CLIP), the bar its expectation (s.ds), stored at each own answer: it moves only when the
-  // player answers (or a replay rebuilds it), never when the photo stats change. A genus never answered shows 0: s.ds is
-  // the domain score from twice the prior's own (D0) up, a ramp from 0 at D0 below (domBar): increasing, so monotone too.
-  // The dynamic bar runs 0 to 95% (min(0.95, s.ds)); the mastery exam opens at s.ds >= DOM.EX and only the exam takes
-  // the genus to 100%. A learned genus keeps its mark while s.ds >= DOM.KEEP.
-  // A record these rules have not rebuilt (no s.dp, until the sheet's full replay reaches the device) keeps its moving
-  // average s.pg (pgOf, PROG; rule D4).
-  // Grid: LO + i STEP, N points (-4 to 6, the abilities and photo difficulties the game meets, with room for the prior).
-  // M0, SD0: the population prior of a genus never answered: most players start a genus not knowing it (the game's
-  // ability floor ELO.lo is -1.5; a broad 1.5 lets an expert's first right answers on hard photos lift it within a
-  // handful). TAU: the spread of a photo's own difficulty around its genus (the hierarchical photo Elo study,
-  // docs/LEARNING.md; model.js PDIFF.EASE). SINGLE: one view alone is harder (model.js PICKD.SINGLE). Q: the drift per
-  // own answer, in ability units (sd). EX: the exam's entry; KEEP: the learned mark's keep rule (about one miss below EX).
-  // KNEE: where the zero ramp meets the domain score, in multiples of the prior's own D0 (domBar).
+  // The domain-score bar (docs/LEARNING.md "The domain-score bar", which gives the model, its sources and each DOM
+  // constant): a unit's bar is the share of all its possible photos the player would name right, one photo alone with
+  // no choices, as far as their own answers on that unit have shown: the posterior expected IRT domain score on a grid
+  // of abilities, from a population prior, each own answer's likelihood as the game scored it, and a drift DOM.Q before
+  // each. Stored at each own answer: s.dp, the log posterior on the grid (relative to its top, 2 decimals, clipped at
+  // -DOM.CLIP), and s.ds, the bar (domBar: a ramp from 0 below the KNEE); never moved by the photo statistics. A record
+  // with no s.dp keeps its moving average s.pg (pgOf, PROG; rule D4).
   const DOM = {LO: -4, STEP: 0.5, N: 21, M0: -2, SD0: 1.5, TAU: 0.5, SINGLE: 0.5, Q: 0.1, EX: 0.85, KEEP: 0.8, CLIP: 30, KNEE: 2};
   const domTh = i => DOM.LO + i * DOM.STEP;
   const DOM_PRIOR = Array.from({length: DOM.N}, (_, i) => -0.5 * ((domTh(i) - DOM.M0) / DOM.SD0) ** 2);
@@ -9440,17 +9191,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // Whether a record is under the domain-score rules (s.dp), and the three readings every consumer goes through:
   // barOf (the dynamic bar, 0 to 0.95), examOpen (the mastery exam may start), keepsMark (a learned genus stays learned).
   const domOn = s => !!s && Array.isArray(s.dp) && typeof s.ds === 'number';
-  // A record of a subject the sheet does not replay (SUBJECTS replay false: fish), kept under the former moving average
-  // s.pg, rebuilt on the device under the domain-score rules (model.js domRecalcAll), silently.
-  // Signed-in devices keep no log of the answers the sheet has confirmed, and the sheet's answer log is not readable by
-  // players, so the rebuild works from what every copy of the record holds: its right and wrong answers (ok, ko) and the
-  // order of its last 10 (h). The earlier answers are spread evenly, rights among misses, then the last 10 in their
-  // order, each on a photo of the unit's average difficulty d (its genus offset with one view alone) among k choices.
-  // Approximate (the photos, formats and memory of each answer are not kept), deterministic, the same on every device.
-  // A false alarm (this unit named on another unit's photo, scoreAnswer) adds a 0 to h and no ko: it is no miss on the
-  // unit's own photos (faOf takes it), so h keeps at most ko of its zeros, the latest (its earlier zeros could be false
-  // alarms, and an own miss invented there would count each false alarm twice).
-  // Returns the record's new dp and ds (domStep from the prior), the record itself unchanged.
+  // A record of a subject the sheet does not replay on the device, kept under the former moving average s.pg, rebuilt
+  // under the domain-score rules (model.js domRecalcAll), silently, from what every copy of the record holds: ok, ko
+  // and the order of its last 10 (h), each answer on a photo of the unit's average difficulty d among k choices
+  // (docs/LEARNING.md "Progress (moving average) and mastery", The former moving average). Approximate, deterministic,
+  // the same on every device; a false alarm's 0 in h is no miss (h keeps at most ko of its zeros, the latest). Returns
+  // the record's new dp and ds (domStep from the prior), the record itself unchanged.
   function domFromCounts(s, d, k = 4, mu = 0) {
     const ok = Math.max(0, s.ok || 0),
       ko = Math.max(0, s.ko || 0),
@@ -9476,17 +9222,13 @@ const CORE_ = (function () { const module = {exports: {}};
     seq.forEach(ok1 => domStep(x, ok1, d, k, 1, {mu}));
     return {dp: x.dp, ds: x.ds};
   }
-  // The false-alarm correction (in the bar, in place of rule L2's miss on the genus wrongly given). Naming genus n for a
-  // photo of another genus is a false alarm: it says the player answers n too readily (a
-  // response bias), not that they fail to name n's own photos, so it does not enter n's posterior. Signal detection
-  // theory separates the two (Green & Swets 1966; Macmillan & Creelman 2005): the two-high-threshold corrected
-  // recognition Pr = H - FA (Snodgrass & Corwin 1988, J. Exp. Psychol. Gen. 117(1)), H the hit rate, here the domain
-  // score from n's own photos, FA the false-alarm rate: the times n was given for another genus's photo (the other
-  // records' s.conf[n]) over the questions where n was a possible answer (offered among the choices, the other records'
-  // s.off[n], or any typed question on another unit of its rank: P[LEVEL].tyk[rank] - s.ty, every unit of the rank asked
-  // can be typed). 0 without P or without a question where n could be given. The rule L2 count of the genus given (its
-  // recent results, its run) and the ability are untouched.
-  // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
+  // The false-alarm correction (docs/LEARNING.md "The domain-score bar", the unit given in a mix-up): naming n for
+  // another unit's photo is a false alarm, a response bias, not a failure on n's own photos, so it never enters n's
+  // posterior; faOf(P, n) gives n's false-alarm rate, the times n was given for another unit's photo over the questions
+  // where n was a possible answer (offered among the choices, or any typed question on another unit of its rank), 0
+  // without P or without such a question, and barOf takes Pr = H - FA. Rule L2's count of the unit given (recent
+  // results, run) and the ability are untouched. rankKey: a unit's rank as its id says it (a fish family f:, a
+  // scientific genus g:; a coral genus, or an id without a prefix: '').
   const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
   // The typed questions on other units of n's rank, where the chances to give n start (above).
   const faTyped = (P, n) => Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
@@ -9501,16 +9243,13 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     return op > 0 ? Math.min(1, fa / op) : 0;
   }
-  // The false-alarm table (speed only, every value the same to the last bit). The scan reads every record of
-  // P for one unit, and a caller that reads every unit's bar after each answer pays it once per unit: the rated world
-  // (tools/ratedworld.js) spent most of a 10,000-answer fish run there. faArm(P) lets the next faOf build one table of
-  // every unit's false alarms and chances in a single pass over P, in the scan's own order (the records in P's order, the
-  // typed questions first: each unit's sums take the same numbers in the same order, so the same floats), and answer the
-  // later calls from it until scoreAnswer writes P (it disarms the table while it runs and arms it again, empty, after) or
-  // faDisarm(P). Opt-in: the caller arms P only while nothing but scoreAnswer writes the records' conf, off, ty or the
-  // level's tyk (the rated world, one answer at a time); the app and the sheet never arm, so they always scan. A P
-  // whose conf or off is not a plain object of numbers, or a unit id that is not a string or that Object.prototype holds,
-  // is scanned. FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
+  // The false-alarm table (speed only, every value the same to the last bit; docs/LEARNING.md "Long rated runs: the
+  // false-alarm table"). faArm(P) lets the next faOf build one table of every unit's false alarms and chances in a
+  // single pass over P, in the scan's own order, and answer later calls from it until scoreAnswer writes P (it disarms
+  // the table while it runs and arms it again, empty, after) or faDisarm(P). Opt-in, only while nothing but scoreAnswer
+  // writes the records' conf, off, ty or the level's tyk; the app and the sheet never arm. A P whose conf or off is not
+  // a plain object of numbers, or a unit id that is not a string or that Object.prototype holds, is scanned.
+  // FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
   const FA_CHECK = {on: false},
     FAT = new WeakMap(),
     faArm = P => void (P && typeof P === 'object' && FAT.set(P, null)),
@@ -9573,16 +9312,12 @@ const CORE_ = (function () { const module = {exports: {}};
   const afterBkt = s => !!s && (typeof s.pg === 'number' || typeof s.ds === 'number');
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
-  // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
-  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral ID Key, except:
-  // - BENTHIC: Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR benthic slate and
-  //   everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
-  // - BONUS: genera off the slate common at Dauin and easily taken for a slate genus (app.js bonusList, isBonus). Played
-  //   once the player turns them on; never counted in the progress.
-  // slateOf(d) = the slate as the games and the progress count it (app.js slateGenera); gameOf(d) = every genus a game
-  // can ask (slate + BONUS), the "game genera" of the admin (candidate queue first, Game coverage, caps). The rest of
-  // data.json "x" are the Key-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
-  // DATA.gen also holds the "x" genera (admin.js): a genus of d.x.gen is never a slate genus by its key in d.gen.
+  // two lists below from this file; docs/spec/quiz.md "Bonus genera", docs/LEARNING.md "Millepora and the bonus
+  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate, never
+  // counted in the progress. slateOf(d) = the slate as the games and the progress count it (app.js slateGenera);
+  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera; the rest of data.json "x" are
+  // Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
+  // a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
   const xGen = d => (d && d.x && d.x.gen) || {};
@@ -9975,17 +9710,14 @@ const CORE_ = (function () { const module = {exports: {}};
       ...(best[0].sc ? {sc: best[0].sc} : {})
     };
   }
-  // What a typed text that is no unit of the rank asked names instead, for a nudge that gives nothing away (on a genus
-  // question, "not a genus in the game: check the spelling" would mislead a player who typed a common or a family name;
-  // the same nudge whether it is the photo's or another one, never a scientific name: quiz.js typeBind). other: the
-  // names of the units of the other ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the scientific names at the rank
-  // asked, in the game or not (one of them, or another name of a unit that is one, is no common name: the spelling
-  // message); x.common: the common names at the rank asked (Anemonefishes); x.rank(g): the rank word of unit g; x.own(g):
-  // IMR's name for it (Damselfish; "Surgeonfish & Unicornfish", each part too), its own name as much as its first.
-  // Returns x.rank(g) for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish,
-  // Pomacentridae; Scarinae for the book's Parrotfishes), 'common' for any other name it goes by (Anemonefish,
-  // Clownfish) or a common name at the rank asked, '' otherwise.
-  // The names of the lists, read once per norm and name (the same lists come at every refused text): typeElse's own.
+  // What a typed text that is no unit of the rank asked names instead, for a nudge that gives nothing away
+  // (docs/spec/quiz.md "Another rank or a common name"; quiz.js typeBind). other: the names of the units of the other
+  // ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the scientific names at the rank asked, in the game or not (one
+  // of them, or another name of a unit that is one, is no common name: the spelling message); x.common: the common
+  // names at the rank asked; x.rank(g): the rank word of unit g; x.own(g): IMR's name for it, each part too. Returns
+  // x.rank(g) for a unit's own name or a scientific name of it (Damselfishes, Pomacentridae; Scarinae for the book's
+  // Parrotfishes), 'common' for any other name it goes by or a common name at the rank asked, '' otherwise. The lists'
+  // names are read once per norm and name (TYPE_NORMED).
   const TYPE_NORMED = new Map();
   const typeNormed = norm => {
     let c = TYPE_NORMED.get(norm);
@@ -10168,19 +9900,12 @@ const CORE_ = (function () { const module = {exports: {}};
     return n >= 2 && n < 4 ? n : 4;
   };
 
-  // Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo): an Elo step after each
-  // answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
-  // ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below kmin, so a
-  // genus that starts going wrong eases off quickly. Learners change: as Glicko-2's volatility (Glickman 2012), s.vr
-  // follows the recent surprise (result - expected, moving average, rate vr); while answers keep beating (or missing) the
-  // expectation, the step grows by up to vg x |s.vr|, within kmax (docs/LEARNING.md "Ability per genus (Elo) and the
-  // global level"). Here, not in model.js, so the full replay (replayProgress) rebuilds the ability with the app's own
-  // step; model.js ability / abilityStep call these on the app's P.
-  // abilityOf(P, n): a record with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability; a genus
-  // never answered starts from the player's global level (playerStart); a genus already answered: its own estimate (s.th,
-  // from its last own step) plus the global level's move since then (levelMove), so what the player shows on the other
-  // genera moves it too while its own answers are few: the global + concept skill of Pelánek et al. (UMUAI 2017), as a
-  // lazy update (docs/LEARNING.md "Global level and genus").
+  // Player ability per unit (s.th), on the photo-difficulty scale: an Elo step after each answer (docs/LEARNING.md
+  // "Ability per genus (Elo) and the global level", which gives the answer model, the volatility s.vr and each ELO
+  // constant). Here, not in model.js, so the full replay (replayProgress) rebuilds the ability with the app's own step;
+  // model.js ability / abilityStep call these on the app's P. abilityOf(P, n): a record with the old Easy/Medium/Hard
+  // steps (s.lv) starts from the matching ability; a unit never answered from playerStart; one already answered from
+  // its own estimate (s.th) plus the global level's move since its last own step (levelMove).
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
   // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
   // from (playerStart); 0, the default player's, when they have not answered.
@@ -10230,17 +9955,11 @@ const CORE_ = (function () { const module = {exports: {}};
   }
 
   // Response time (rule L1: the seconds taken to answer are evidence about that answer, never a decay; docs/LEARNING.md
-  // "Response time"). A right answer given faster than the player's usual is stronger evidence that they know
-  // the genus, a slow one weaker: its two ability steps (the genus shown and the global level) are taken times
-  // w = clamp(1 - K z, LO, HI), z = log(seconds) minus the median log(seconds) of the player's own earlier timed answers.
-  // A miss, an answer without seconds (an old row, a clock that never started), a typed answer (slower by design) and
-  // the player's first MIN timed answers: w 1. The answer's own time never changes its prediction, only the step after
-  // it. K 1.5: the value chosen by leave one player out on the real answers for 8 of 9 players (tools/abilityeval.js
-  // +T*+G); LO, HI and MIN as measured. The seconds are those logged (to the
-  // tenth, at most 600: quiz.js qclockRead, Code.gs secs_), so the sheet's replay of the log meets exactly the same ones.
-  // The earlier times live in the global level's record (P[LEVEL].rt: how many timed answers took each number of tenths
-  // of a second, {"45": 3, ...}; a few hundred keys at most), so the median is exact, the record compact, two devices'
-  // records add up (mergeProgress) and the full replay rebuilds it from the log (replayProgress).
+  // "Response time"): a right answer's two ability steps (the unit shown and the global level) are taken times w =
+  // clamp(1 - K z, LO, HI), z = log(seconds) minus the median log(seconds) of the player's own earlier timed answers; w
+  // 1 for a miss, an answer without seconds, a typed answer and the first MIN timed answers. The earlier times live in
+  // the global level's record (P[LEVEL].rt: how many timed answers took each number of tenths of a second), so the
+  // median is exact, two devices' records add up (mergeProgress) and the full replay rebuilds it (replayProgress).
   const RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10};
   // The tenths of a second of a timed answer, or 0 when it does not count (no seconds, 0, a typed answer: k infinite).
   const rtTenths = (sec, k) => (typeof sec === 'number' && isFinite(sec) && isFinite(k) ? Math.round(Math.min(600, sec) * 10) : 0);
@@ -10288,34 +10007,18 @@ const CORE_ = (function () { const module = {exports: {}};
     G.rt[x] = (G.rt[x] || 0) + 1;
   }
 
-  // One scorer for an answer (docs/LEARNING.md "One scorer"): the live game (quiz.js answer) and the full replay of the answer log
-  // (replayProgress: the sheet's, the admin's, this device's own) score an answer through this one function, so a rule
-  // is written once and both give the same state. P: the player's progress (genus records and LEVEL), changed in place.
-  // q, what the question was:
-  // - t the genus shown, c the genus given ('' for none or "I don't know"), ok, k (the plausible choices, Infinity for a
-  //   typed answer), chs the choices offered, cv (c is a genus of the game: it then takes a miss too, rule L2);
-  // - ph the photo files seen while answering, hint a corallites hint revealed after the answer without being opened
-  //   (shown, never recognised: the log keeps it in the scoring record, scoreRec h);
-  // - the inputs the game had then (null d0: an answer that moves only the counts, as the replay's oldest rows): d0 the
-  //   photo difficulty (the mean over its photos, + PICKD.SINGLE for a photo alone), fam the photo
-  //   memory (memFam), cf the known mix-ups term (model.js confTerm), look (a genus it is confused with among the
-  //   choices: a boolean, or a function called after the offers are counted, as the game always checked it), R the recall
-  //   of a comeback question (1 otherwise), Rc the recall of the genus given (1 otherwise), df the offset of the question's
-  //   format (fmtOff: 0 without the sheet's fmt), which the ability steps' expectation takes (the question that much
-  //   easier) and nothing else does: the logged e and the progress weights stay without it;
-  // - p the first-launch answer's prior (playerStart), sec the seconds, timed (the time weighs a right answer's steps,
-  //   rtWeight), rt (the seconds are recorded, rtAdd; true unless false); z the kind of a smaller fault (PART: a common
-  //   name or the genus alone typed for a species' scientific name), its miss then weighed by partOf;
-  // - th: the ability the weights use, only for a row logged before the scorer (its logged th; the replay then
-  //   recovered d0 from its rounded e). Otherwise the ability as P holds it, which is what the game logged.
-  // Returns {th0, dm, e, w, look, rw}: the ability before the answer, the question's difficulty with the memory and the
-  // mix-ups, the expected success (logged e), the progress weight, the look-alike test and the time weight.
-  // What only the game knows stays in quiz.js answer (the exam, the days answered, the last observations, the cards and
-  // the hold); what only the log knows stays in replayProgress (the last misses lx and lm, duels won from the mode).
-  // The domain-score bar's inputs of a question (scoreAnswer): q.dom false (a replay with dom false, replayProgress) keeps
-  // the former moving average; a record already under them (s.dp), or one
-  // without a former moving average (a genus first answered under them, every genus of a full replay), takes the domain
-  // score; a record with s.pg keeps it until a full replay under these rules rebuilds it from the log.
+  // One scorer for an answer (docs/LEARNING.md "One scorer"): the live game (quiz.js answer) and the full replay
+  // (replayProgress) score an answer through scoreAnswer(P, q), so a rule is written once and both give the same state.
+  // P: the player's progress, changed in place. q: t, c ('' for none or "I don't know"), ok, k (Infinity typed), chs,
+  // cv (c is a unit of the game: it then takes a miss too, rule L2); ph the photo files seen, hint (a corallites hint
+  // revealed after the answer: shown, never recognised); d0 (null: an answer that moves only the counts), fam, cf, look
+  // (a boolean, or a function called after the offers are counted), R, Rc, df (taken by the ability steps' expectation
+  // only); p, sec, timed, rt (true unless false: rtAdd records the seconds); z (a smaller fault's kind, weighed by
+  // partOf); th, only for a row logged before the scorer (its logged th). Returns {th0, dm, e, w, look, rw}: the
+  // ability before the answer, the question's difficulty with memory and mix-ups, the expected success (logged e), the
+  // progress weight, the look-alike test and the time weight. What only the game knows stays in quiz.js answer, what
+  // only the log knows in replayProgress. domIn: q.dom false keeps the former moving average; a record with s.dp, or
+  // without s.pg, takes the domain-score bar.
   const domIn = (q, s) => q.dom !== false && (domOn(s) || typeof s.pg !== 'number');
   // The shared slope of the answer model: one input, used in the expectation (the ability step, the logged e) and in
   // the bar's posterior; 1 (the Elo's own) unless the game passes q.S.
@@ -10447,18 +10150,14 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     return out;
   }
-  // The scoring record logged with each answer (quiz.js answer: the answer's sc; the sheet's Answers column Scoring, and
-  // the replay rows' index LOG_SC, 22): the inputs scoreAnswer had that the replay cannot rebuild from the log, so a
-  // replay scores what the game scored, whenever and wherever it runs.
-  // d the photo difficulty d0, f the photo memory fam, c the mix-ups term cf, l the look-alike test (1 or 0), r the
-  // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (the
-  // sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c, r,
-  // g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below); z the kind of a
-  // smaller fault (PART, Q394: 'cn' or 'g', left out for any other answer); i the photos' time term the answer's time was
-  // netted of (rtWeight ti, ptimeQ; kept even at 0: absent means a row logged before, whose replay takes the photos'
-  // terms served now, replayProgress photos). Numbers to 3
-  // decimals: the game rounds them before scoring (scoreIn), so the replay meets exactly what it used. x: the record as
-  // an object or its JSON (a sheet cell); null when it has no d (a row logged before the scorer, or broken).
+  // The scoring record logged with each answer (docs/spec/sync.md "The Answers tab", Scoring; docs/LEARNING.md "One
+  // scorer"): the inputs scoreAnswer had that the replay cannot rebuild from the log (quiz.js answer's sc; the replay
+  // rows' index LOG_SC), so a replay scores what the game scored. d d0, f fam, c cf, l the look-alike test (1 or 0), r
+  // R, g Rc, h the hint revealed after the answer, o df (the sheet's fmt as the game had it, so a replay never takes
+  // today's offsets for an answer scored with others; f, c, r, g, h and o left out at their default: 0, 0, 1, 1, none,
+  // 0); m, n, t, s the domain-score bar's; z the kind of a smaller fault (PART: 'cn' or 'g'); i the photos' time term
+  // the answer's time was netted of (kept even at 0; absent: a row logged before it). Numbers to 3 decimals, as the
+  // game rounds them before scoring (scoreIn). x: the record as an object or its JSON; null when it has no d.
   const SC_MAX = 50;
   const r3 = x => Math.round(x * 1000) / 1000;
   const scNum = x => (typeof x === 'number' && isFinite(x) && Math.abs(x) <= SC_MAX ? r3(x) : null);
@@ -10527,18 +10226,12 @@ const CORE_ = (function () { const module = {exports: {}};
       i: q.ti
     });
 
-  // Rules versions: progress is recalculated from the whole answer log, by the sheet, whenever the progress engine
-  // changes (docs/LEARNING.md "Full replay"; rules D5, D6, D8, D9). Every change to a rule that moves the progress (what
-  // an answer weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...)
-  // appends an entry here: v (the next number), at (the date), why (one line for the docs), msg (null, or the card
-  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once, rule D6; with
-  // only: 'changed', shown only when the adoption moved the player's progress % by min points or more, {from} and {to}
-  // in p being the two %). The sync script, which embeds this file (tools/sync_core.py), replays a player's log again
-  // when their stored replay is older than RV, and the app adopts a replay newer than the one it applied (sync.js
-  // replayAdopt). The leaderboards follow on their own (rule D8): the script's 15-minute trigger replays every listed
-  // player behind the new version (Code.gs boardWarm_), and each board ranks them by what their app will adopt.
-  // The standard recalculation card (rule D5): shown to a player whose progress % the adoption moved by 5 points or
-  // more, either way (progress.js rvNoticeAdd), with the two %.
+  // Rules versions (docs/LEARNING.md "Full replay", Rules versions; docs/spec/sync.md "Full replay"; rules D5, D6, D8,
+  // D9): every change to a rule that moves the progress appends an entry here, v (the next number), at (the date), why
+  // (one line for the docs), msg (null, or the card every device which skipped this version shows once:
+  // docs/spec/cards.md "The rules version's card"). The sync script, which embeds this file, replays a player's log
+  // again when their stored replay is older than RV, and the app adopts a replay newer than the one it applied (sync.js
+  // replayAdopt); the leaderboards follow on their own (Code.gs boardWarm_). RV_CARD: the standard recalculation card.
   const RV_CARD = {
     kind: 'update', // the card's kind (app.js cardShow, CARD_KINDS)
     t: 'Your progress was recalculated with the improved model',
@@ -10784,18 +10477,11 @@ const CORE_ = (function () { const module = {exports: {}};
       b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
     return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
   }
-  // The content version of an answer (docs/ROADMAP.md "Content versions and duplicate-safe answers"): a short id of the
-  // content its subject's units were built
-  // from on this device, so analyses and replays can tell which content an answer saw. Per subject, from:
-  // - files: the version of each data file the subject's units are built from, in a fixed order (app.js contentVer): the
-  //   deploy's hash of the file (its ?v=, tools/stamp_versions.py), else, for a file fetched without one (the sea slugs'),
-  //   a hash of its content (app.js fileVer);
-  // - cur: the curation the units were built under, the subject's part of it only (curPart), so a Publish of another
-  //   subject's choices leaves it as it is;
-  // - st: the structure stamp in force (structStamp: '' on the base's circles and pairs, and while the sheet does not
-  //   replay under the structure yet, which the units then do not follow).
-  // So it changes whenever the photos in play, the units, the structure or the curation do; a text edit in a data file
-  // changes it too. 'c' and a hash53 (12 characters at most): a letter first, so the sheet never reads it as a number.
+  // The content version of an answer (docs/spec/sync.md "The Answers tab", Content version): a short id of the content
+  // its subject's units were built from on this device, so analyses and replays can tell which content an answer saw.
+  // files: the version of each data file the units are built from, in a fixed order (app.js contentVer, fileVer); cur:
+  // the curation they were built under, the subject's part only (curPart); st: the structure stamp in force
+  // (structStamp). 'c' and a hash53 (12 characters at most): a letter first, so the sheet never reads it as a number.
   function contentVersion(S, cur, files, st) {
     const f = (files || []).map(x => (x == null || x === '' ? '-' : String(x)));
     return 'c' + hash53(JSON.stringify([f, hash53(JSON.stringify(curPart(S, cur))), String(st || '')]));
@@ -10831,62 +10517,32 @@ const CORE_ = (function () { const module = {exports: {}};
     return L.some(x => x.msg.kind === 'apology') ? L.filter(x => x.msg !== RV_CARD) : L;
   };
 
-  // Full replay (docs/LEARNING.md "Full replay"): every player's progress rebuilt from the sheet's answer log, in time
-  // order, with today's rules, as if every answer had been played under them. The reference recalculation, done by the
-  // sync sheet itself (Code.gs replay_, in the reply to a sign-in, load or save when the player's stored replay is older
-  // than RV or covers fewer rows than the log has) and adopted by the app (sync.js replayAdopt). The device's own
-  // recalculations (memRecalc, pgOf) are only the fallback for a device that never reaches the sheet.
-  // rows: the answer log (sheet readAnswers rows, Code.gs rowOf_, or the app's own log through logRow: [id, time ms,
-  // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, (11: unused here),
-  // seconds to answer (null without), (13 to 21: unused here), the scoring record (LOG_SC: scoreRec, null without)]).
-  // Every answer goes through scoreAnswer, the game's own scorer. o:
-  //   gen     the units: data.json genera, Millepora and the bonus genera included (look-alikes look, family fam)
-  //   mem     photo memory offsets (?stats=1 mem; the prior without); conf: the pooled pairs (?stats=1 conf)
-  //   since   {id: time ms}: only the answers after a progress reset
-  //   memory  false: no photo memory (a what-if, tools/memreplay.js); time: false: no response time
-  //   fmt     the per-format offsets (?stats=1 fmt), for a row without a scoring record (one with it replays its own o)
-  //   start   {id: player}: a replay to go on from, as returned here (the sheet's, with this device's unconfirmed
-  //           answers on top); copied, never changed
-  //   onAnswer(row, {d, fam, cf, k, w, look}); dom: false, the moving average instead of the domain-score bar; gd: the
-  //           genus offsets for rows logged without them; vars: the variant table (below); starts: the first-launch
-  //           records by player
-  // Returns {id: {P: {genus: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok,
-  // ko, th, vr, at, rt}}, n, used, rep}}: per genus the bar's log posterior dp and bar ds (domStep; pg for a start record
-  // that holds one, or with dom false), right / wrong answers, the last 10 results, the photos [shown, right], the
-  // choices offered beside it and the genera given instead, u = answers that moved the bar, the ability th and its
-  // volatility vr (on the genus shown only, never on the genus wrongly given), the run of right answers, the last answer
-  // (at), a look-alike duel won (du), the last miss on it, shown or given (lx: it ends an exam in course), the last one
-  // that took the progress below the keep rule (lm: keepsMark); the global level LEVEL as the app keeps it; per player
-  // the rows read (n), replayed (used) and on a photo already shown (rep).
-  // A row with its scoring record (LOG_SC) is scored with what the game had then, so the replay gives exactly the
-  // state the game had, wherever it runs, whatever pooled stats each place holds; only the rules (this file) change it.
-  // An older row: its difficulty d (+ 0.5 for a photo shown alone) is recovered from what the app logged, e = 1/k +
-  // (1 - 1/k) sig(th - d), th the ability then (a typed answer: k infinite, e = sig(th - d)). From MEM_LOGGED the logged
-  // e includes the photo memory (fam), from CF_LOGGED the mix-ups term too (cf), both taken out again here and replaced
-  // by the replay's own. Approximations of such a row: the ability th and the photos are those the app logged; a
-  // comeback question's recall is taken as 1; the look-alike test and the mix-ups term have a prior from the look-alikes
-  // and the family only (the sheet does not know the growth forms behind CONF.FORM); a miss on the genus wrongly given
-  // weighs its ability as replayed; every photo of a right answer counts as recognised. Rows without e and th count in
-  // ok/ko/h only and move no ability. The mastery exam is not replayed: replayedOf takes it from the saved copy.
+  // Full replay (docs/LEARNING.md "Full replay"; docs/spec/sync.md "Full replay"): every player's progress rebuilt from
+  // the answer log, in time order, with today's rules, every answer through scoreAnswer. rows: the answer log (the
+  // sheet's readAnswers rows, Code.gs rowOf_, or the app's own through logRow: [id, time ms, genus shown, answered,
+  // right 0|1, mode, photos, expected e, ability th, new photos, choices, (11: unused here), seconds (null without),
+  // (13 to 21: unused here), the scoring record (LOG_SC: scoreRec, null without)]). o: gen (the units: look-alikes
+  // look, family fam), mem (?stats=1 mem; the prior without), conf (?stats=1 conf), since ({id: time ms}: only the
+  // answers after a reset), memory false (no photo memory) and time false (no response time) for a what-if, fmt
+  // (?stats=1 fmt, for a row without a scoring record; one with it replays its own o), start ({id: player}: a replay to
+  // go on from, as returned here, the sheet's with this device's unconfirmed answers on top; copied, never changed),
+  // onAnswer(row, {d, fam, cf, k, w, look}), dom false (the moving average instead of the bar), gd (the genus offsets
+  // for rows logged without them), vars (the variant table), starts (the first-launch records by player). Returns {id:
+  // {P: {unit: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr,
+  // at, rt}}, n, used, rep}}: pg in place of dp and ds with dom false or from a start record that holds one; u the
+  // answers that moved the bar, du a look-alike duel won, lx the last miss on it shown or given, lm the last that took
+  // it below the keep rule (keepsMark); n the rows read, used those replayed, rep those on a photo already shown.
+  // MEM_LOGGED, CF_LOGGED: from then the logged e includes the photo memory, then the mix-ups term, taken out again for
+  // an older row's difficulty. The mastery exam is not replayed (replayedOf).
   const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // from then the app's logged e includes the photo memory
   // From then the app's logged e includes its mix-ups term (model.js confTerm; the instant tools/abilityeval.js CF_FROM
   // reads on the sheet's wall clock), taken out again here. An app not yet updated logs a few answers without it after.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
-  // The first-launch record's history (reefid-sync-coral-start h): an append-only list of timestamped
-  // events, merged between devices as a union (startUnion), from which the current answer, the silent ease and the prior
-  // at any time are derived (startNorm, startPriorAt). A choice event: [c, answers then, time, via] (via tour, card,
-  // fallback, inferred). An ease event (Coral basics on the "lower" card, model.js startEase): [the band below, answers
-  // then, time, 'ease', the answer it eased, the time of that answer's choice event]; it applies from its time until the
-  // next choice event, and only while that very choice event is the one in force (matched by its code alone, an ease
-  // taken on know@100 would also ease an independent know@200 from another device). A record without h: its answer as
-  // one choice event at its t, and its ease field (if any) as one ease event. An ease event without the choice's time
-  // (an old record): bound, within its own record, to the latest choice of that answer at or before the ease.
-  // Every event is kept: the replay of the whole log needs the prior in force at each answer, however old. Nor is the
-  // list compacted: an event that repeats the answer
-  // in force can matter again once another device's events are merged in between (know@100, know@300 merged with
-  // imr@200: "know" from 300 on), so dropping it would not commute with the union. START_CAP is only a safety bound, far
-  // above any real history (a player gives one answer, rarely changes it, and a fallback card comes once per answer and
-  // direction): at about 40 bytes an event, 200 events stay under 8 KB in the synced record.
+  // The first-launch record's history (docs/spec/cards.md "The record", h): an append-only list of timestamped events,
+  // merged between devices as a union (startUnion), from which the answer, the silent ease and the prior at any time
+  // are derived (startNorm, startPriorAt): a choice event [c, answers then, time, via], an ease event [the band below,
+  // answers then, time, 'ease', the answer it eased, the time of that answer's choice event]. Every event is kept and
+  // the list never compacted (that would not commute with the union); START_CAP is only a safety bound.
   const START_CAP = 200;
   const stTime = x => (typeof x[2] === 'number' ? x[2] : -Infinity);
   const stEase = x => x[3] === 'ease';
@@ -10994,21 +10650,12 @@ const CORE_ = (function () { const module = {exports: {}};
             : A;
     return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
   }
-  // Pierre's change of a player's first-launch answer for one subject (the admin's Players, Change; Code.gs users_
-  // userStart), e.g. after a fallback card moved a player to the wrong answer. data: the player's saved copy (keysIn
-  // names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
-  // The change is a choice event appended to the history, via 'admin', never an event taken away: a device's copy would
-  // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
-  // just after the latest event when a device's clock ran ahead, so it is always the answer in force; its answers count
-  // the player's in that subject (its LEVEL record). Every earlier event stays, so the replay keeps each answer's prior
-  // (startPriorAt). The fallback window starts again from this event, as an answer given in the app does (model.js
-  // startSet), so the level card can still come if the player turns out much better: its answers (w), the opening hold
-  // seen in it (hd), its epoch (wt) and a verdict waiting for its card (v) were about the former answer and go; the
-  // checkpoints count the answers after the change. The cards shown (fb) stay: once per answer and direction, as in the
-  // app. The copy under the key's old name (keyLegacy, which an old app still reads) gets the same record when the copy
-  // holds it. null when nothing is to change: an unknown
-  // subject or answer, a subject without the question, or no answer saved for it (the player is asked on their device).
-  // Returns {data, start: the new record}.
+  // Pierre's change of a player's first-launch answer for one subject (docs/spec/admin-players.md, The starting answer;
+  // Code.gs users_ userStart): a choice event appended to the history, via 'admin', at now or just after the latest
+  // event, never an event taken away; the fallback window starts again from it. data: the player's saved copy (keysIn
+  // names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms. Returns {data, start: the
+  // new record}, or null when nothing is to change (an unknown subject or answer, a subject without the question, or no
+  // answer saved for it).
   function startAdminSet(data, s, c, now) {
     if (!isObj(data) || !startOpt(c) || !SUBJECTS.some(S => S.id === s && S.start)) return null;
     const k = startKey(s),
@@ -11201,34 +10848,13 @@ const CORE_ = (function () { const module = {exports: {}};
     ...new Array(LOG_SC - 13).fill(null),
     scoreRec(a.sc)
   ];
-  // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
-  // reefid-sync-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
-  // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, lt, vr, streak,
-  //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
-  //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must
-  //   not make it new again for the exam, model.js examSet), pm 1 (the record is under the photo memory rule: memRecalc
-  //   must never correct it again), rv when given (the rules version it was replayed with: mergeProgress then keeps it
-  //   over an older copy of the same answers), and the variant groups with no right answer in the log (vl, which the
-  //   exam reads over ps: model.js varLeft);
-  // - from the saved copy, what the log cannot give: the mastery exam passed (mx) or in course (ex), dropped when passed
-  //   under the former model (afterBkt: that genus takes the exam again), and the mark dropped too when the log has a
-  //   miss after the exam that the game takes it away at (r.lm later than s.mx, the time it was passed): misses logged
-  //   but never in the saved copy (a save refused) count as the game counts them, and a recalculation alone keeps the
-  //   mark; likewise the exam in course ends at any miss on the genus, shown or given, later than its start (r.lx after
-  //   s.ex.ts; an exam saved without its start time: after the genus's last answer, s.at), as quiz.js answer ends it; the
-  //   days answered right (dd, dl: the device's calendar days, for the comeback after a break); the last observations
-  //   shown (ro: the log keeps photo files, not observations); right with the corallites in view (cor: the log does not
-  //   say which view a photo was shown in);
-  // - the log is the only reference (rule D9): a genus the log has answers on takes the replay's record and counts, also
-  //   when the saved copy holds more answers there (counted twice: a reply lost then another device's save), its counts
-  //   and recent results only when none of them is replayable; a genus the log has no answer on keeps the saved record
-  //   only if it holds no answer either (its answers are in no log: dropped);
-  // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
-  //   cards met and the prompts, so it never goes back) with the answer times (rt) of the same side, the later at, rv
-  //   when given; no ability when the log has no answer at all (rule D9).
-  // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
-  // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
-  // after the exam takes it away, as the game does (mxKeeps, lm).
+  // A player's progress as the app holds it after the replay (docs/LEARNING.md "Full replay", What the replay gives and
+  // what the device keeps; rule D9). rep: replayProgress's player; saved: the player's reefid-sync-coral-progress (the
+  // device's copy in the app, the sheet's in the admin). From the replay, every unit the log has replayable answers on
+  // (pm 1, rv when given, vl its variant groups with no right answer in the log); from the saved copy, what the log
+  // cannot give (the exam passed or in course, dropped as the game drops it: afterBkt, a later miss r.lm or r.lx; dd,
+  // dl, ro, cor); a unit the log has no answer on keeps the saved record only if it counts no answer either; LEVEL, the
+  // replayed ability with the larger answer count. The replay never decides the exam (mxKeeps, lm).
   const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
   // vl (replayProgress vars): the unit's variant groups with no right answer in the log, kept on the record so the app's
   // exam asks them (model.js varLeft) even where the photos seen ps, merged with the saved copy below, hold a right answer
@@ -11310,19 +10936,12 @@ const CORE_ = (function () { const module = {exports: {}};
     });
     return out;
   }
-  // The merge baseline once a replay is adopted (sync.js replayAdopt, mergeProgress's B): the history every device of the
-  // account shares, never mixed with this device's own answers not in the sheet yet, which stay the difference P - B and
-  // so go on top in the next three-way merge (otherwise two devices adopting the same log count it twice, an older app's
-  // answers are dropped, or an unsent answer is taken into the baseline and lost). rec: the sheet's
-  // replay (replay.rec), M: the record adopted (replayedOf), rv: its rules version, B: the baseline before (the shared
-  // saved copy). Per genus:
-  // - adopted from the replay (M[g].rv is rv): the replayed record as the app holds it without this device's copy
-  //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
-  //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
-  // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
-  // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
-  //   keeps the larger count); when the sheet sent no level (no answer in the log), B's level, never the adopted one,
-  //   which holds this device's unsent answers.
+  // The merge baseline once a replay is adopted (sync.js replayAdopt, mergeProgress's B; docs/spec/sync.md "Full
+  // replay", Adopting): the history every device of the account shares, never this device's own answers not in the
+  // sheet yet, which stay the difference P - B. rec: the sheet's replay (replay.rec), M: the record adopted
+  // (replayedOf), rv: its rules version, B: the baseline before. Per unit: adopted (M[g].rv is rv), replayedOf of rec
+  // alone with its photos shown per photo the larger of rec's and B's; kept from this device's copy, B's record. The
+  // level: the replay's, with B's answer count and times (rt) when larger; B's when the sheet sent none.
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -11420,15 +11039,11 @@ const CORE_ = (function () { const module = {exports: {}};
     };
   }
   // routes: begin
-  // The app's addresses (docs/ARCHITECTURE.md "Pages and routing"; docs/reviews/2026-11-05-url-scheme-study.md 3.2):
-  // #<section>/<page>[/<thing>…][?filters], in the words on screen: #learn/genus/Acropora, #practice/duels/A/B,
-  // #identify/key?form=B&box=B1, #tools/anatomy, #leaderboard/achievements; Home is the clean URL. A subject other than
-  // the corals puts its prefix first (SUBJECTS hash: #fish/practice/quiz), on the pages of the sections that follow the
-  // subject (ROUTE_SUBJ); its units' words come from SUBJECTS one / many (#fish/learn/families).
-  // Inside, the app names a page by its page key, the vocabulary its code, SUBJECTS pages, MODES and the answer modes
-  // share ('genera', 'g-Acropora', 'cmp|A|B', 'cmp-A|B', 'quiz-duel|A|B', 'idkey|form=B;box=B1', 'lab-anatomy|arr|x').
-  // routeOut and routeIn translate one into the other, here only: every link is built by them (app.js hr), every
-  // address read by them (app.js hashNow). No old address is read (rule W3): routeIn gives an unknown one no key.
+  // The app's addresses (docs/spec/front-end.md "Addresses and routing"; docs/ARCHITECTURE.md "Pages and routing"):
+  // #<section>/<page>[/<thing>…][?filters], in the words on screen; a subject other than the corals puts its prefix
+  // first (SUBJECTS hash) on the pages of the sections that follow the subject (ROUTE_SUBJ). Inside, the app names a
+  // page by its page key ('genera', 'g-Acropora', 'cmp|A|B'…); routeOut and routeIn translate one into the other, here
+  // only. No old address is read (rule W3): routeIn gives an unknown one no key.
   const ROUTE_SUBJ = ['learn', 'practice', 'identify', 'progress'];
   // A section's own page, for its bare address (#learn) and an unknown address inside it (the header tabs' targets).
   const ROUTE_FIRST = {
@@ -11823,21 +11438,11 @@ const CORE_ = (function () { const module = {exports: {}};
     return out;
   }
 
-  // The one-tap question's bank: slightly different questions about roughly the same concept, so the players say as
-  // they go whether the difficulty suits their level (quiz.js pulseAsk, admin Errors).
-  // Each item is answered in one tap; each answer sits on one or two common scales: d, felt difficulty (−1 too easy,
-  // 0 right, +1 too hard) and f, how the play feels (−1 bad, 0 neutral, +1 good); null = says nothing on that scale.
-  // A "no" to a one-sided item (frustrating? boring?) is 0 on both: not too hard, not too easy; asked as often as each
-  // other, the two one-sided items shrink a mean towards 0 without tilting it. Codes easy / ok / hard keep their
-  // meaning on the difficulty scale (the sheet's Detail keeps only those three); an item's other codes ride as they
-  // come (Message column) and its id in the Where column, both stored as text.
-  // Sources (docs/LEARNING.md "What the players say about the difficulty"): are, the first item (the
-  // Too Easy / Appropriate / Too Difficult rating of Papoušek, Stanislav & Pelánek 2016); zone, flow's three channels
-  // (boredom, flow, anxiety: Csikszentmihalyi 1975), the balance the flow short scale's item 16 asks as demands too
-  // little / just right / too high (Rheinberg, Vollmeyer & Engeser 2003); more, the same balance asked as a wish; fun,
-  // frus, bored, the in-game GEQ's positive affect, tension and negative affect items (IJsselsteijn, de Kort & Poels 2013).
-  // Besides the answers, every prompt logs its showing (PULSE_SHOWN) and, when it ends without an answer, a "Not now"
-  // (PULSE_SKIP) or moving on without a tap (PULSE_NONE): the admin's response rates.
+  // The one-tap question's bank (docs/spec/cards.md "One-tap questions", which gives the items, their scales and their
+  // sources; quiz.js pulseAsk, admin Errors). Each item {id, q: its question, a: its answers}, each answer [code,
+  // label, d, f]: d felt difficulty (-1 too easy, 0 right, +1 too hard), f how the play feels (-1 bad, 0 neutral, +1
+  // good), null says nothing on that scale. Every prompt also logs its showing (PULSE_SHOWN) and, when it ends without
+  // an answer, a "Not now" (PULSE_SKIP) or moving on without a tap (PULSE_NONE).
   const PULSE_SHOWN = 'shown',
     PULSE_SKIP = 'skip',
     PULSE_NONE = 'none';
