@@ -326,6 +326,167 @@ async function findTheX(b, base, errs) {
   await c.close();
   return r.map(m => `find the X: ${m}`);
 }
+// (11b) Find the X on the species (REE-63): the species by their common names and by their scientific names, both levels on
+// (SPECIES_SHEET, SCI_SHEET: rule D4), every family at Advanced so their species are in play, met. FIND.P is 1 for the run:
+// a species asked (rank species) comes with three species of its own kind of name, each its own unit with a tile, never a
+// family, a genus or the other kind of name; logged quiz|f at the rank species (a scientific name's with no |sc or |so);
+// the question is kept when the player leaves and comes back (the pending question: its four tiles are back, unanswered).
+async function findTheXSpecies(b, base, errs) {
+  const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-fxs')) {
+        sessionStorage.setItem('fish-fxs', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 777;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`find the X species: ${e.message}`));
+  await q.goto(base + '#practice/quiz');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU && document.querySelector('#view .q'), null, {
+    timeout: 30000
+  });
+  await qa.install(q);
+  const r = await q.evaluate(async () => {
+    const fails = [],
+      ok = (x, m) => x || fails.push(m),
+      closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    store.set(SHEETV, Math.max(SPECIES_SHEET, SCI_SHEET));
+    Q.sci = true;
+    // every family at Advanced and met: their genera and species come into play, as the scientific names and the
+    // species levels open (a unit's bar set through the former moving average, as the other parts of this smoke do)
+    [...TREEU.c1, ...TREEU.c2, ...TREEU.c3].forEach(n => {
+      introAdd([n], false);
+      const s = st(n);
+      Object.assign(s, {ok: 4, ko: 0, streak: 4, h: '1111', th: 1});
+      delete s.dp;
+      delete s.ds;
+      s.pg = 0.9;
+    });
+    closeCards();
+    dropPlans();
+    // the species in play: met (a card is not the question here)
+    const meet = () => {
+      const L = pool().filter(n => rankOf(n) === 'species');
+      introAdd(L, false);
+      L.forEach(n => Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1}));
+      closeCards();
+      return L;
+    };
+    // the genera too, so the scientific species hang from met units
+    pool()
+      .filter(n => rankOf(n) === 'genus')
+      .forEach(n => (introAdd([n], false), Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1}), (st(n).pg = 0.9)));
+    let L = meet();
+    L = [...L, ...meet()];
+    const by = k => L.filter(n => kindOf(n) === k && UNITS.fish.tiles(n).length),
+      cn = by('cn'),
+      sc = by('sci');
+    ok(cn.length >= 4, `species by common name in play with a tile: ${cn.length}`);
+    ok(sc.length >= 4, `species by scientific name in play with a tile: ${sc.length}`);
+    FIND.P = 1;
+    const seen = {cn: 0, sci: 0},
+      notMet = pool().filter(n => !introReady(n));
+    let kept = false;
+    // planFind asked on species of each kind, shown as the quiz shows a question (quiz.js quizPhoto: the planners' own
+    // draw through planPhoto is covered by tests/findx.test.js; a species pool is too heavy to draw hundreds of questions)
+    for (const k of ['cn', 'sci']) {
+      for (const t of by(k).slice(0, 6)) {
+        const Q0 = planFind('quiz', t, pool(), 0, null);
+        if (!Q0) {
+          ok(false, `no Find the X on ${t}`);
+          continue;
+        }
+        SHOWNQ = Q0;
+        AUTOD = false;
+        FINDX = true;
+        PENDSCI = null;
+        question(...Q0);
+        pendShow('quiz', Q0, null);
+        const [, , ch, prompt, set] = Q0,
+          // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
+          tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
+        seen[k]++;
+        ok(Q0.findx && rankOf(t) === 'species' && kindOf(t) === k, `a species Find the X: ${t}`);
+        ok(prompt === `Find the ${uname(t)}`, `the prompt: ${prompt}`);
+        ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four units: ${ch}`);
+        ok(
+          ch.every(n => rankOf(n) === 'species' && kindOf(n) === k && introReady(n) && !notMet.includes(n) && pool().includes(n)),
+          `four species of one kind of name, met, in play: ${ch}`
+        );
+        ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+        // answer.js: the format has no name buttons (a read)
+        ok(!document.querySelector('#view .ans'), 'no name buttons');
+        ok(
+          set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
+          'each photo a tile of its own species'
+        );
+        ok(
+          [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
+          'the tile files'
+        );
+        ok(!document.querySelector('#view .csn'), 'no scientific name under a tile before the answer');
+        // The pending question (quiz.js PEND, #1375): a species Find the X on screen is kept as units and photo files, and
+        // built again from the data (pendBuild): the same species, four units and four tiles, still askable (pendOk: all four
+        // in play).
+        if (!kept) {
+          kept = true;
+          const rec = pendAll(pendKey()).quiz,
+            q2 = rec && pendBuild('quiz', rec);
+          ok(
+            q2 &&
+              q2.findx &&
+              q2[1] === t &&
+              q2[2].join() === ch.join() &&
+              q2[4].find.map(x => x.p.f).join() === set.find.map(x => x.p.f).join(),
+            `kept: the same species Find the X built again from its record: ${rec && JSON.stringify(rec).slice(0, 120)}`
+          );
+          ok(q2 && pendOk('quiz', q2), 'kept: still askable');
+        }
+        const pick = seen[k] % 2 ? ch.find(n => n !== t) : t,
+          before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
+        smokeAnswer(pick);
+        const log = SYNC ? SYNC.log : store.get(LOG0, []),
+          a = log[log.length - 1];
+        ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
+        if (a) {
+          ok(a.m === 'quiz|f', `mode ${a.m}, a species Find the X has no |sc or |so`);
+          ok(a.rk === 'species', `rank ${a.rk}`);
+          ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
+          ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
+          ok(a.pa === set.find.find(x => x.n === pick).p.f, `the photo tapped: ${a.pa}`);
+          ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
+        }
+        ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
+      }
+    }
+    ok(seen.cn >= 3, `Find the X on species by common name: ${seen.cn}`);
+    ok(seen.sci >= 3, `Find the X on species by scientific name: ${seen.sci}`);
+    // The ordinary draw with FIND.P back at 0: none (the family and species draws alike).
+    FIND.P = 0;
+    let none = 0;
+    for (let i = 0; i < 6; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) none++;
+      smokeAnswer();
+    }
+    ok(!none, `${none} Find the X with FIND.P 0`);
+    return fails;
+  });
+  await c.close();
+  return r.map(m => `find the X species: ${m}`);
+}
 // (13) Same or different? (proto/samediff.js, the Lab) on the fish: the units of the declared look-alike pairs of three pairs
 // unlocked, every other family locked. 24 rounds: a photo only of an unlocked family; a Different shows the two families of a
 // declared pair (UNITS fish pairs), a Same two observations of one family (rule P4); both kinds come; the answers change no
@@ -4006,7 +4167,7 @@ async function namesCard(b, base, errs) {
   // (9) A brand-new fish player: freshPlayers, above (its own CI shard).
   const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
   // (11) Find the X: findTheX, above.
-  const fx = await findTheX(b, base, errs);
+  const fx = [...(await findTheX(b, base, errs)), ...(await findTheXSpecies(b, base, errs))];
   // (13) Same or different?: sameDifferent, above.
   const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
   // (14) Odd one out: oddOne, above.
