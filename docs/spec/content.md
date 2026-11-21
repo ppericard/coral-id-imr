@@ -129,9 +129,9 @@ own writer).
   that empties the pairs map keeps `{}` through every merge, `admin-content.js` `contentShells`), and a Publish that
   changes them confirms once that it changes every player's path and progress.
 - **Photos › Look-alikes** lists the pairs in force on the draft (`admin-content.js` `montPairs`: `autosort.js`
-  `fishPairs` over the file with the pairs laid over it, `sheetFile`, the circles left out as in the Tree's filter). A
+  `treePairs` over the file with the pairs laid over it, `sheetFile`, the circles left out as in the Tree's filter). A
   pair he added has its row, marked "(added)", its photo pair stored in `fish` `mont` under its pair key as a base
-  pair's (`fishPairs` keys by `contentPairKey`); a withdrawn pair has none, and its photo pair stays in `mont`, unused,
+  pair's (`treePairs` keys by `contentPairKey`); a withdrawn pair has none, and its photo pair stays in `mont`, unused,
   for its return.
 - **The leaderboard's tree** follows the structure in force: the sheet makes it itself with the replay's units
   (`SUBJECTS` `replayed` `tree`, `core.js` `treeBoardTree`, the app's own `UNITS` tree;

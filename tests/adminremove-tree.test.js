@@ -20,7 +20,7 @@ const ROOT = path.join(__dirname, '..'),
   np = fs.readFileSync(path.join(ROOT, 'admin-nodephotos.js'), 'utf8'),
   fishSrc = fs.readFileSync(path.join(ROOT, 'admin-fish.js'), 'utf8');
 
-// admin.js treeRemove, run on a draft with the real autosort.js fishExclude and fishDrop.
+// admin.js treeRemove, run on a draft with the real autosort.js treeExclude and treeDrop.
 const remove = (F, fam, f, key, more) => {
   const ctx = {
     DRAFT: {fish: F, flag: key ? {[key]: {genus: 'x'}, other: {genus: 'y'}} : undefined},
@@ -29,8 +29,8 @@ const remove = (F, fam, f, key, more) => {
     saves: 0,
     renders: 0,
     toasts: [],
-    fishExclude: AS.fishExclude,
-    fishDrop: AS.fishDrop,
+    treeExclude: AS.treeExclude,
+    treeDrop: AS.treeDrop,
     flagsOf: D => D.flag || {},
     flagsSet: (D, S, L) => (D.flag = L),
     saveDraft: () => ctx.saves++,
@@ -53,7 +53,7 @@ test('Remove of a photo in play: out for good (exclude), its add, cover and feat
   assert.deepStrictEqual(c.DRAFT.fish.genera['f:A'].feat.s1, ['b']);
   assert.strictEqual(c.saves, 1, 'one draft write: one Undo step');
   assert.deepStrictEqual(c.toasts, ['Removed.']);
-  assert.strictEqual(AS.fishMine(c.DRAFT.fish, 'a'), 'reject', 'counts against the auto-sort keep');
+  assert.strictEqual(AS.treeKeepOf(c.DRAFT.fish, 'a'), 'reject', 'counts against the auto-sort keep');
 });
 
 test('Remove of a flagged photo clears its flag, and only its flag', () => {
@@ -191,10 +191,10 @@ test('Put back deletes the exclusion, one Undo step; the photo is a candidate ag
     sug = {a: {k: 'best', e: 5, jt: 'p1g1sso'}},
     species = {s1: {tgt: 8}};
   assert.deepStrictEqual(
-    AS.fishQueue(cands, sug, species, F, []).map(x => x.p.f),
+    AS.treeQueue(cands, sug, species, F, []).map(x => x.p.f),
     ['a'],
     'in the Candidates queue again'
   );
-  const run = AS.fishRun(cands, sug, species, F, '2026-11-22');
+  const run = AS.treeRun(cands, sug, species, F, '2026-11-22');
   assert.strictEqual((run.F.add || {}).a, undefined, 'the auto-sort, which logged it, never adds it again by itself');
 });

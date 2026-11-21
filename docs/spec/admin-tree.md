@@ -81,10 +81,10 @@ children, a key group's included, at every width).
 - A **family, genus or species** (the unit, or a node under it: `taxtree.js` `ttNearest` finds its unit) shows its
   photos in play, one section per species under it inside one block per genus between them (any depth: `block`), each
   heading with its own cover in force (ringed when his) and its name opening its page, and on each species heading the
-  candidates still waiting (`autosort.js` `fishWaiting` over the photos in play, as Coverage's). The bar shows its cover
+  candidates still waiting (`autosort.js` `treeWaiting` over the photos in play, as Coverage's). The bar shows its cover
   in force and why (`admin-covers.js` `nodeCover`, `nodeCoverWhy`: "Your ★ cover", else "Default: Most seen near
-  <centre>: N observers" for a node with species under it, the default cover rule as `autosort.js` `fishCoverOf`; for a
-  species "Default: its first photo (featured, then the easiest)", `autosort.js` `fishLeafCover`, as the app's sheets;
+  <centre>: N observers" for a node with species under it, the default cover rule as `autosort.js` `treeCoverOf`; for a
+  species "Default: its first photo (featured, then the easiest)", `autosort.js` `treeLeafCover`, as the app's sheets;
   his ★ on a juvenile or out of play said), with a link to Cover proposals while the rule's other pick of a node he
   covered is open ([admin-photos.md › Cover proposals](admin-photos.md#cover-proposals)); its species and photos in
   play.
@@ -95,15 +95,15 @@ children, a key group's included, at every width).
 - **A family's page**: the book's family (English name, the scientific names below, an **IMR** tag on the families and
   genera in the IMR course, its IMR name in the tooltip), one block per genus and one section per species with its
   photos in play, featured first, then the game's order (the easiest, then the most reference-like: `core.js`
-  `easyRank`), never by who took them (`autosort.js` `fishOrder`); Feature / ★ Cover / Remove (the one Remove, out for
+  `easyRank`), never by who took them (`autosort.js` `treeOrder`); Feature / ★ Cover / Remove (the one Remove, out for
   good, the node's Removed list below the page) / Not this,
-  ✓ Validated with what is missing (`fishNeeds`), a wink's card. Only the family's page has the wink card, ✓ Validated
+  ✓ Validated with what is missing (`treeNeeds`), a wink's card. Only the family's page has the wink card, ✓ Validated
   and what it needs; Feature, Remove, Not this and the rows Not this species and Other species, out of play keep their
   family's id on every page (those rows list the photos of the page's species). The family's choices are in
   `curation.json` `fish` `genera` `{family id: {cover, feat: {species id: [f]}, ok}}`; the families are read through
-  `autosort.js` `fishUnits` from `fish.json` `families` / `genera`.
+  `autosort.js` `treeUnitsOf` from `fish.json` `families` / `genera`.
 - **A wink family's species** (met only on the surprise cards: a few really good photos, not the whole stock) shows
-  `FISHT.wink` (5) of its photos in play: its featured ones, then the surprise card's own (`wink.photos`, by photo id),
+  `TREET.wink` (5) of its photos in play: its featured ones, then the surprise card's own (`wink.photos`, by photo id),
   then the page's order (`autosort.js` `fishWinkFold`), the rest behind its **N more** chip (`FU_WALL`, this tab);
   display only, every photo stays in play and counts (observations, covers, what it needs).
 
@@ -115,11 +115,11 @@ All \| IMR filters the tree (shared with Coverage, `reefid-admin-fu-imr`) and, b
 
 - **Circle** N (a unit's `circle`, one per value the units carry; the circle in force, `admin.js` `fuCircle`, with No
   circle for a family taken off the game);
-- **Look-alikes** (any, or one pair the IMR course compares: `autosort.js` `fishPairs`, as Photos › Look-alikes;
+- **Look-alikes** (any, or one pair the IMR course compares: `autosort.js` `treePairs`, as Photos › Look-alikes;
   `fish.json` declares them between families only, so no genus or species pair; the pairs he withdrew or added are listed
   too, saying so: "Structure", below);
 - **Needs photos** (a species under its target: its heading's warning);
-- **Needs work** (a family whose ✓ Validated waits: `fishNeeds`);
+- **Needs work** (a family whose ✓ Validated waits: `treeNeeds`);
 - **Draft** (a node whose own choices changed since the published file: the rows' dot, each change on its node, a photo
   featured counted on its species, a photo's play, crop, rotation, ease, phase or tags on its species: `fuData`
   `dirty`).
@@ -284,9 +284,9 @@ photo tools on their own part of `curation.json`:
   (`seaslug.json` `taxa`, each family's `tgroup`). All | IMR shows only for a tree the IMR course names; a species with no
   common name shows by its scientific name alone.
 - Photos › Candidates: the fish's swiper on `data/seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, the
-  game's cap) on each species and each genus-level list (`autosort.js` `fishSpecies(J, tgt)`, `fishTarget`,
+  game's cap) on each species and each genus-level list (`autosort.js` `treeSpeciesOf(J, tgt)`, `treeTarget`,
   `admin-fish.js` `candSpecies`); no auto-sort, so the queue has no Checks switch; an egg-mass judgement (`{egg: 1}`) is
-  set aside (`autosort.js` `fishSure`).
+  set aside (`autosort.js` `treeSure`).
 - Their rubric's tag rows on a photo's Tags and in words, and the view buttons of Photo review (`SUBJECTS` `admin.tags`,
   declared by each tree subject: the views, the light and the flags differ from the fish's, the rest comes from
   `core.js` `treeRubric`; read by `admin.js` `tagRows`, `tagFlags`, `tagWords`, `tagText`).
@@ -355,7 +355,7 @@ the Key, the WoRMS node a genus-level leaf of its own hangs under.
   `dump` (after `data.json`); `python3 tools/tree_section.py` writes them all, `--check` fails on a section that is
   missing or is not what its sources give, which `tests/treesection.test.js` runs.
 - **What is held.** `tests/treesection.test.js` holds the real sections to the shared JS functions (`autosort.js`
-  `fishUnits`, `taxtree.js` `ttFromRef`, `ttBuild`) and `tests/coraltree.test.js` to `core.js` `lectureGroup` and
+  `treeUnitsOf`, `taxtree.js` `ttFromRef`, `ttBuild`) and `tests/coraltree.test.js` to `core.js` `lectureGroup` and
   `slateOf`; the admin's reader is run on made-up sections.
 - **No section yet** (the file is missing): the Tree says so, with the command that writes it, and its other pages are
   not affected.

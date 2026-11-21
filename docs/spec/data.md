@@ -305,10 +305,10 @@ version could use grows; the CC BY-NC photos stay fully usable.
   open one (rule P1).
 - It is the **last key before the fixed order** (hash, file name, votes rank) wherever otherwise equal photos are
   ordered: `easyCover` (`easyRank` with the rights: the fish card photo of a family, genus or species, and the admin's
-  `fishOrder` and `fishCoverOf` when Pierre has not picked), `applySlots` `byQr` (`easyRank` with the rights: the corals'
+  `treeOrder` and `treeCoverOf` when Pierre has not picked), `applySlots` `byQr` (`easyRank` with the rights: the corals'
   featured, sheet and Coral ID Key photos at equal quality, whoever took them; the admin's `autoOrder` the same),
-  `autosort.js` `fishRun` (which sure
-  candidates fill a species' room) and `fishQueue` (the swiper's order within a species), `tools/fetch_local.py`
+  `autosort.js` `treeRun` (which sure
+  candidates fill a species' room) and `treeQueue` (the swiper's order within a species), `tools/fetch_local.py`
   `tie_key` (between coral observations of the same grade and as many iNaturalist votes), and `tools/fetch_fish.py`
   `select`, after the distance and the observer and life-stage variety (the licence class, `lic_class`, is in
   `tools/rights.py`).

@@ -130,7 +130,7 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
     {v: 1, seen: {'rep:r1': 1}, fish: {seen: {'cand:b': 1}}}
   );
   assert.deepStrictEqual(slim({v: 1, seen: {'cand:a': 1}}), {v: 1});
-  // The admin's confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ) reaches the players.
+  // The admin's confirmation of a juvenile cover (coverJ beside the cover: autosort.js treeCoverJ) reaches the players.
   const G = {'f:A': {cover: 'fi1', coverJ: 'fi1'}};
   assert.deepStrictEqual(slim({fish: {genera: G, tags: {fi1: 'p1g0sl1j'}}}).fish.genera, G);
 });

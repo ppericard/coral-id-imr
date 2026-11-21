@@ -9,7 +9,7 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
     species, the photo is neither rejected (seen) nor excluded, and its Not this (out), if set, names that same species;
     never one whose count in force is other species one could take for its subject (k), nor his legacy m the pass has
     not sorted into o or k (count_of, other_out: Pierre, 2026-11-09, Q323; rule P3);
-  - the candidates judged sure (data/suggest.json "fish", cand_sure: autosort.js fishSure's add, one kind of fish) he has not
+  - the candidates judged sure (data/suggest.json "fish", cand_sure: autosort.js treeSure's add, one kind of fish) he has not
     decided on, listed with auto: "cand", the pass's proposed crop applied as the auto-sort would write it;
   - the units' reference photos (tools/fish_refs.json) judged sure on the same rubric as a candidate, whatever their
     reference level (tools/fish_judge.json codes after the caps; judged_sure: one kind of fish, in the water; Pierre,
@@ -34,7 +34,7 @@ For each photo in play, from its data/fish-cand.json record (the original: iNatu
     on iNaturalist, its extension alone when the photo is the record's own: tools/fish_short.py, core.js fishGameRow), a, lic, t, sp (the species it is in play for), loc, own,
     ar, e (fish.ease, else the pass's data/suggest.json fish e), jt (fish.tags, his legacy m refined by the pass's o or k,
     and, where they are the auto-sort's copy, the pass's watermark flag w: mine_tags; else the pass's jt), ph (its phase, as the
-    admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
+    admin's autosort.js treePhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
 The tile (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix): a photo in play whose tags pass the
 tile rule (tile_tags: profile or slight oblique, whole, good light, colour loss 0-1, sharp, large or medium, one fish, no
@@ -123,12 +123,12 @@ def fish_on(F, f, sid):
     return (F.get('add') or {}).get(f) == sid and not (F.get('seen') or {}).get(f) and not (F.get('exclude') or {}).get(f) and (not o or o == sid)
 
 
-UNDONE_ADD = re.compile(r'^-a')  # autosort.js fish log code: an auto add Pierre undid (fishUndo writes '-' + the code)
+UNDONE_ADD = re.compile(r'^-a')  # autosort.js fish log code: an auto add Pierre undid (treeUndo writes '-' + the code)
 
 
 def gone_ids(cur, key='fish'):
     """The photo ids (pid) Pierre decided against: rejected (seen), excluded or moved with Not this (out) in his fish
-    curation, an automatic add of the auto-sort he undid (its log code '-a...': autosort.js fishUndo, "the photo waits
+    curation, an automatic add of the auto-sort he undid (its log code '-a...': autosort.js treeUndo, "the photo waits
     for his decision"; Codex review #674), and the top-level exclude (core.js fishGone). key: the tree subject's part of
     the curation (core.js SUBJECTS admin.cur: tools/seaslug_game.py passes the sea slugs')."""
     F = (cur or {}).get(key) or {}
@@ -156,7 +156,7 @@ def pid(f):
 
 
 def phase(p, f, F, j):
-    """autosort.js fishPhase: Pierre's phase and tags first, then the pass's phase, its juvenile flag, else the source's."""
+    """autosort.js treePhase: Pierre's phase and tags first, then the pass's phase, its juvenile flag, else the source's."""
     mine = f in (F.get('phase') or {}) or f in (F.get('tags') or {})
     ph = F['phase'][f] if f in (F.get('phase') or {}) else (j or {}).get('ph')
     jt = (F.get('tags') or {}).get(f) or (j or {}).get('jt') or ''
@@ -296,15 +296,15 @@ def refined(mine, passed):
     return mine
 
 
-# autosort.js fishParse: a fish log code (a in, b brought back, r set aside); its fields (t tags, e ease, p phase, c crop)
+# autosort.js treeParse: a fish log code (a in, b brought back, r set aside); its fields (t tags, e ease, p phase, c crop)
 # are the ones the auto-sort wrote.
 LOG = re.compile(r'^([?-]?)([abr])([tepc]*)(?:@([0-9a-z]+))?$')
 FLAGORD = 'jcawfpr'  # autosort.js FFLAGORD: the flags in the rubrics' order (the sea slugs' f too)
 
 
 def tags_auto(F):
-    """autosort.js fishTagsAuto for every photo: {f} whose tags in Pierre's fish curation F are the auto-sort's copy of
-    the pass's (its latest valid log code lists t; his first edit of them takes the t off: fishOwn)."""
+    """autosort.js treeTagsAuto for every photo: {f} whose tags in Pierre's fish curation F are the auto-sort's copy of
+    the pass's (its latest valid log code lists t; his first edit of them takes the t off: treeOwn)."""
     last = {}
     for day in sorted((F or {}).get('auto') or {}):
         for f, c in ((F['auto'][day]) or {}).items():
@@ -315,7 +315,7 @@ def tags_auto(F):
 
 
 def marked(mine, passed, auto):
-    """autosort.js fishMarked: the watermark flag w of the pass's code (passed) added to Pierre's tags (mine) when they are
+    """autosort.js treeMarked: the watermark flag w of the pass's code (passed) added to Pierre's tags (mine) when they are
     the auto-sort's copy (auto), a judgement made after the copy (Pierre, 2026-11-15, Q373); tags he set himself stand,
     so his Watermark off is his."""
     if not auto or not TAGS.match(mine or '') or 'w' not in str(passed or '')[7:] or 'w' in mine[7:]:
@@ -327,7 +327,7 @@ def marked(mine, passed, auto):
 def judged_sure(jt, e, tags=None):
     """The rubric's part of a sure judgement, the same for a candidate and a reference photo: valid tags and ease (any
     ease 1-5: the judged ease is the photo's prior difficulty), never an unclear subject (count x) nor a fish out of the
-    water (flag a; autosort.js fishSure), and a count an automatic route may put in play (PLAY_COUNT: one fish, several
+    water (flag a; autosort.js treeSure), and a count an automatic route may put in play (PLAY_COUNT: one fish, several
     of its kind, other species with no risk of confusion; never k nor the unsorted m: rule P3, Q323). tags: the tree
     subject's own pattern of the tags (TAGS, the fish's, by default: tools/seaslug_game.py passes the sea slugs')."""
     jt = jt or ''
@@ -335,14 +335,14 @@ def judged_sure(jt, e, tags=None):
 
 
 def unsure(j):
-    """The fields of a judgement the judge doubted that weigh on the photo itself (autosort.js fishUnsure): every unsure
+    """The fields of a judgement the judge doubted that weigh on the photo itself (autosort.js treeUnsure): every unsure
     field but the fish's box, whose doubt only withholds the photo's tile (box_of; Codex review #826)."""
     return [x for x in ((j or {}).get('u') or []) if x != 'bb']
 
 
 def cand_sure(j, tags=None, k=None):
     """A judged candidate that enters play by itself (data/suggest.json "fish" {jt, e, k, ph, c, bb, u}; Pierre, 2026-11-06, Q180):
-    autosort.js fishSure's add (no unsure field but the box, keep best or alt, never dup) on a sure judgement
+    autosort.js treeSure's add (no unsure field but the box, keep best or alt, never dup) on a sure judgement
     (judged_sure). tags: the subject's pattern of the tags (judged_sure); k: the keep a judgement without one counts as
     (the fish's judgements always carry it: none; the sea slugs' count as best)."""
     if not j or unsure(j) or j.get('k', k) not in ('best', 'alt'):
@@ -351,7 +351,7 @@ def cand_sure(j, tags=None, k=None):
 
 
 def copy_of(p, j, mine=False):
-    """autosort.js fishCopy with no tags of Pierre's (the auto-sort's copy of judgement j for candidate p): (tags, phase),
+    """autosort.js treeCopy with no tags of Pierre's (the auto-sort's copy of judgement j for candidate p): (tags, phase),
     the pass's, with the source's life stage (p st) when the pass gives no phase: the j flag for a juvenile, else its
     phase word; never when he chose the photo's phase himself (mine: No phase included)."""
     tags, ph = j.get('jt'), j.get('ph') or None
@@ -364,16 +364,16 @@ def copy_of(p, j, mine=False):
     return tags, src or ph
 
 
-WROTE = {'t': 'tags', 'e': 'ease', 'p': 'phase', 'c': 'crop'}  # autosort.js FISHW: a log code's letters
+WROTE = {'t': 'tags', 'e': 'ease', 'p': 'phase', 'c': 'crop'}  # autosort.js TREEW: a log code's letters
 
 
 def read_cur(cur, cand, sug, by=None, key='fish'):
     """The curation as the build reads it (Pierre, 2026-11-19 20:57 and 20:59: what the auto-sort proposed and he only let
     through is no curation of his; a newer judgement goes into the game, his own decisions keep priority; rule A1:
-    curation.json itself is never written). What his log marks as the auto-sort's (autosort.js fishIdx: a photo's latest
+    curation.json itself is never written). What his log marks as the auto-sort's (autosort.js treeIdx: a photo's latest
     code, neither a Check, '?', nor undone, '-') reads the pass's newer judgement (data/suggest.json "fish", sug):
     - the fields it wrote (the code's letters: t tags, e ease, p phase, c crop; his own edit takes its letter off,
-      autosort.js fishOwn) read the pass's values when its judgement is a sure add (cand_sure: tags and phase as the
+      autosort.js treeOwn) read the pass's values when its judgement is a sure add (cand_sure: tags and phase as the
       auto-sort copies them, copy_of; a crop the pass no longer gives leaves), unless he answered its re-judge proposal
       Keep mine (kept); a newer sure rejection stays a proposal;
     - its reject, while he never corrected it (no @t), on a sure judgement made on or after the day it decided (by:
@@ -436,7 +436,7 @@ def read_cur(cur, cand, sug, by=None, key='fish'):
     return {**cur, key: N}
 
 
-TAGS = re.compile(r'^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$')  # autosort.js FISH_TAGS (v, f: the sea slugs')
+TAGS = re.compile(r'^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$')  # autosort.js TREE_TAGS (v, f: the sea slugs')
 
 
 def ref_play(fish, refs, codes):
@@ -485,7 +485,7 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None, k
     and whose count in force is not other species one could take for its subject (other_out: his tag first; rule P3, as
     core.js treePhotoIn); "ref", the reference photos judged sure like a candidate (ref_play), unless he decided against the
     same photo. Never the same photo twice (pid), across every candidate list (the first list read keeps it); a
-    candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
+    candidate's sure best and alt both enter, as treeSure proposes them. A reference photo
     on an observation already in play (another photo of it) enters too once judged against that observation's photos,
     like a candidate (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): keep
     (rkeep: tools/fish_judge.json "keep", {photo: best | alt | dup}) best or alt; one not judged against them yet stays
@@ -609,7 +609,7 @@ def tier(fish):
 
 
 # A species met only on the surprise cards (a wink entry's: fish.json families and teach wink) keeps at most WINK_KEEP
-# photos in play, its very good reference photos, in the game data as in the admin's target (autosort.js FISHT.wink).
+# photos in play, its very good reference photos, in the game data as in the admin's target (autosort.js TREET.wink).
 WINK_KEEP = 5
 # autosort.js fish log code: an add the auto-sort applied itself, or a photo it brought back (b); never a Check (?a) nor
 # undone (-a, -b)
@@ -639,7 +639,7 @@ def wink_trim(recs, fish, cur, n=WINK_KEEP):
     species met only on the surprise cards, all but its n best. Always kept, whatever their number, by photo id (pid):
     Pierre's own picks (curation.json fish genera covers and featured photos, at any rank; an add he made himself, not one
     the auto-sort applied), and the surprise card's own photos (fish.json wink photos, which quiz.js winkPhoto draws from).
-    Then, up to n, the best by wink_key, a new observation first (the admin counts observations in play against FISHT.wink:
+    Then, up to n, the best by wink_key, a new observation first (the admin counts observations in play against TREET.wink:
     with fewer, its Candidates queue and auto-sort would open again), then any. Other species: unchanged."""
     W = wink_species(fish)
     if not W:
@@ -963,7 +963,7 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
     from rights import rights_rank
     G = ((cur or {}).get('fish') or {}).get('genera') or {}
     covers = {pid(k['cover']) for k in G.values() if isinstance(k, dict) and k.get('cover')}
-    # His covers on a juvenile he confirmed (coverJ naming the cover's photo: autosort.js fishCoverJ)
+    # His covers on a juvenile he confirmed (coverJ naming the cover's photo: autosort.js treeCoverJ)
     # come with the adults.
     jok = {pid(k['cover']) for k in G.values()
            if isinstance(k, dict) and k.get('cover') and k.get('coverJ') and pid(k['coverJ']) == pid(k['cover'])}
