@@ -371,6 +371,9 @@ test('the Duel tab relief card: back from its comparison, the same run goes on; 
       tipOpened: () => {}, // the "Did you know?" tips' counter of the Duel tab's opens
       takePlan: () => null,
       planDuel: (a, b) => ['quiz-duel|' + a + '|' + b, a, [a, b], '', {}],
+      pendTake: () => null, // quiz.js: no question kept (tests/pending.test.js)
+      pendShow: () => {},
+      pendSeen: () => {},
       question: () => {},
       introduced: () => true,
       starRefs: () => [],

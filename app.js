@@ -465,6 +465,7 @@ $v.addEventListener(
         );
         a.querySelector('#qfail button').onclick = () => {
           NEXTQ = null;
+          if (typeof pendDone === 'function') pendDone(); // the question whose photo failed is not kept
           route();
         };
       }
@@ -475,6 +476,8 @@ $v.addEventListener(
       if (q && (q.querySelector('.qstage.qfx') || ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth))) {
         q.classList.add('qnone');
         qAnswers(q, false);
+        // A question that cannot be answered is not kept for the player's return (quiz.js pendDone): the next is drawn.
+        if (typeof pendDone === 'function') pendDone();
       }
       if (typeof fitStage === 'function') fitStage();
     }
@@ -3732,9 +3735,11 @@ function fromHome(h, nt) {
   });
 }
 function route() {
+  // The seconds looked at the question on screen go with it, as it is kept for the player's return (quiz.js pendClock).
+  if (typeof pendClock === 'function') pendClock();
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
-  QOPEN = false; // a question left unanswered for another page (the quiz draws its next one: question())
+  QOPEN = false; // a question left unanswered for another page (the quiz keeps it, pendTake: it comes back)
   if (typeof fbEnd === 'function') fbEnd(); // the answer's feedback leaves the screen: its seconds are counted (quiz.js)
   // A tab tapped while the app is still loading (a slow line): Home's doors, or the loading bar for
   // any other page (beforeData); the start-up's own route() opens the page tapped, from the hash.
