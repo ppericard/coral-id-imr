@@ -1589,6 +1589,18 @@ function memRecalcAll() {
 // the corals' alone (SUBJECTS offsets: pmem, pfmt), as the sheet's replay of another subject reads (Code.gs rplMake_).
 const OWN_STATS = 'reefid-photo-stats-';
 let PBASE = store.get('reefid-photo-stats', {}) || {};
+// The photos' time terms (core.js PTIME, ptimeInto: a photo's ?stats=1 entry's 6th to 8th numbers; docs/LEARNING.md "The
+// photo's time term"), every subject's joined as the ratings are, read only from a reply of the script that serves them
+// (PTIME_SHEET, rule D4: ptmOf), {} otherwise.
+let PTM = {};
+const ptmOf = (ph, v) => {
+  const o = {};
+  if (Number(v) >= PTIME_SHEET && ph && typeof ph === 'object')
+    Object.keys(ph).forEach(f => {
+      if (Array.isArray(ph[f]) && ph[f].length >= 8) o[f] = ph[f].slice(5, 8);
+    });
+  return o;
+};
 function statsJoin(base = PBASE) {
   PBASE = base || {};
   const own = SUBJECTS.filter(S => S.stats)
@@ -1598,6 +1610,7 @@ function statsJoin(base = PBASE) {
   PSTAT = join(PBASE.photos || {}, 'photos');
   PCONF = join(PBASE.conf || {}, 'conf');
   PGD = join(gdOf(PBASE), 'gd');
+  PTM = Object.assign(ptmOf(PBASE.photos, PBASE.v), ...own.map(o => ptmOf(o.photos, o.v)));
   GDIFF = {}; // genus difficulties follow the new photo stats and confusions
 }
 statsJoin();
@@ -1689,14 +1702,18 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
 // keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
 // has since left (moved or renamed): it then takes its current genus's offset.
+// The photo's time term (core.js ptimeOff: how much longer than their habit trusted players take on it, and how much
+// more often they enlarge it) is added on top, fading as its rating gathers information, not answers (docs/LEARNING.md
+// "The photo's time term"); 0 for a photo without one or before a script that serves them.
 const PDIFF = {W: 5, MID: 3};
 const gdOff = n => (PGD[n] || [0])[0] || 0;
 function photoDiff(n, p) {
   const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
-    o = PSTAT[p.f];
-  if (!o) return prior;
+    o = PSTAT[p.f],
+    tm = ptimeOff(PTM[p.f], PDIFF.W);
+  if (!o) return prior + tm;
   const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
-  return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W);
+  return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W) + tm;
 }
 // Progress of a genus (s.pg, a moving average of its answers; core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress
 // (moving average) and mastery"): each answer weighs what it proves, w from 0 to 1, by core.js pgRightW, pgMissW and

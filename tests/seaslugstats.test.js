@@ -182,6 +182,7 @@ function app(sheetVersion, reply) {
       slateGenera: () => [...X.c1, ...X.c2, ...X.c3],
       bonusList: () => [],
       sheetV: () => sheetVersion,
+      PTIME_SHEET: C.PTIME_SHEET,
       appVer: () => 1,
       rankPhotos: () => {},
       store: {get: (k, d) => (k in kept ? plain(kept[k]) : d), set: (k, v) => (kept[k] = plain(v))},

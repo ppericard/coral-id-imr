@@ -61,6 +61,7 @@ function app(sheetVersion, reply) {
       SUBJ: FISH,
       SYNC_URL: 'https://sheet.invalid/exec',
       sheetV: () => sheetVersion,
+      PTIME_SHEET: C.PTIME_SHEET,
       appVer: () => 1,
       rankPhotos: () => {},
       store: {get: (k, d) => (k in kept ? plain(kept[k]) : d), set: (k, v) => (kept[k] = plain(v))},
@@ -160,7 +161,7 @@ test('a photo rated last at the genus rank keeps the family’s own offset in a 
   assert.ok(reply.gd[CH[0]] && reply.gd[G], 'both units rated');
   assert.strictEqual(o[4], G, 'the photo is rated last under the genus');
   assert.ok(reply.gd[G][0] - reply.gd[CH[0]][0] > 0.3, 'the genus offset is clearly the higher');
-  const c = vm.createContext({SUBJ: FISH, calibOf: C.calibOf, PGD: reply.gd, PSTAT: reply.photos});
+  const c = vm.createContext({SUBJ: FISH, calibOf: C.calibOf, PGD: reply.gd, PSTAT: reply.photos, PTM: {}, ptimeOff: C.ptimeOff});
   vm.runInContext(block(src('model.js'), 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}) + '\nthis.photoDiff = photoDiff;', c);
   const own = o[0] - reply.gd[G][0] + reply.gd[CH[0]][0],
     blend = (d, prior) => (o[1] * d + 5 * prior) / (o[1] + 5);
