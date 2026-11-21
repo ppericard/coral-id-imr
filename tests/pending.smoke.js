@@ -227,7 +227,6 @@ async function more(p, S, L) {
       await answered(p, S, `${L} quiz`, 'quiz');
       // typed (forced as tests/pages.smoke.js does): the form, no choices, the same genus
       await p.evaluate(() => {
-        window.TY0 = {from: TYPED.from, at: TYPED.at};
         Object.assign(TYPED, {from: 0, at: [[0, 1]]});
         NEXTQ = null;
       });
@@ -241,8 +240,7 @@ async function more(p, S, L) {
         ok(t2 && t2.typed && !t2.ch.length, `${L} typed: the form and no choices after the reload`);
         await answered(p, S, `${L} typed`, 'quiz');
       }
-      await p.evaluate(() => Object.assign(TYPED, TY0));
-      await p.reload();
+      await p.reload(); // the typed share back to the game's own
       await ready(p);
       // Find the X (the fish: the corals have no tiles)
       if (await p.evaluate(() => !!UNITS[SUBJ.id].tiles && TREEU && TREEU.c1 && TREEU.c1.some(n => UNITS[SUBJ.id].tiles(n).length))) {

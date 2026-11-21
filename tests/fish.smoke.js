@@ -1333,6 +1333,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       W0 = WINK.AT.slice();
     WINK.AT[0] = answersSoFar();
     closeCards();
+    pendDrop('quiz'); // the question left unanswered above is not kept: a wink is decided before a new question is drawn
     quizPhoto();
     const wk = document.querySelector('#view .q.wink');
     ok(!!wk, 'a wink comes for a circle-1 player');
