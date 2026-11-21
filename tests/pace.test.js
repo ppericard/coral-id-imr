@@ -368,6 +368,7 @@ test('the Duel tab relief card: back from its comparison, the same run goes on; 
       hash: '',
       session: {n: 7},
       ev: (k, o) => events.push(o.r),
+      tipOpened: () => {}, // the "Did you know?" tips' counter of the Duel tab's opens
       takePlan: () => null,
       planDuel: (a, b) => ['quiz-duel|' + a + '|' + b, a, [a, b], '', {}],
       pendTake: () => null, // quiz.js: no question kept (tests/pending.test.js)

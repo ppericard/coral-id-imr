@@ -1752,8 +1752,17 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
     } catch (e) {}
   const st = tipsInit(raw, seed);
   // The log does not say which answers were the Custom quiz's: a saved selection shows it was used before c was counted.
-  return !st.u.c && customSaved().length ? {...st, u: {...st.u, c: 1}} : st;
+  const c = !st.u.c && customSaved().length ? {...st, u: {...st.u, c: 1}} : st;
+  // The Duel tab's answers are in the log (mode quiz-duel…): one held here shows it was used before d was counted.
+  let dueled = !!c.u.d;
+  if (!dueled)
+    try {
+      dueled = ((SYNC && SYNC.log) || store.get(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
+    } catch (e) {}
+  return dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
 };
+// One more open of a feature of a tip (k: a counter of u): that tip is not for this player.
+const tipOpened = k => store.set(TIPR.KEY, tipUse(tipsLoad(), k));
 // A quiz photo enlarged by the player (question(), the mix-up montage in answer()); a tip's "Show me" is not theirs.
 let tipDemo = false;
 const tipZoomed = () => tipDemo || store.set(TIPR.KEY, tipUse(tipsLoad(), 'z'));
@@ -1792,6 +1801,8 @@ const TIP_ACT = {
   // genus answered, as a tap on the montage opens them). The player is back on the feedback when it closes; Next goes on.
   // The Custom quiz's picking page (the Custom quiz tab).
   custom: () => (location.hash = hr('quiz-custom')),
+  // The Duel tab (look-alike duels).
+  duels: () => (location.hash = hr('quiz-duel')),
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -2869,6 +2880,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
 // card opened (DUELBACK) is no new run: the same one goes on (its card already shown), and the return is logged.
 function quizDuel(a, b, fresh = true, from = '') {
   if (fresh) {
+    tipOpened('d'); // the page opened here: the look-alike duels tip is not for this player
     const bk = DUELBACK && DUELBACK.h === hashNow() && DUELBACK.cmp === from ? DUELBACK : null;
     DUELBACK = null;
     DUELRUN = bk ? bk.run : {up: 0, shown: 0};
@@ -3098,7 +3110,7 @@ function leftShow(cur, k) {
   setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
 }
 function quizCustom(h) {
-  store.set(TIPR.KEY, tipUse(tipsLoad(), 'c')); // opened here: the Custom quiz tip is not for this player
+  tipOpened('c'); // opened here: the Custom quiz tip is not for this player
   if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace(hr('quiz-custom'));
   viewCustom();
 }

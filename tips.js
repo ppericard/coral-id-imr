@@ -9,7 +9,8 @@
 // reefid-zoomhint): what a tip targets is how this person uses this device, and a tip shown twice on two devices is no harm.
 //   u  usage counters: q game questions answered here (photo quiz, custom quiz, duels), z quiz photos enlarged here (on
 //      a question or its mix-up montage; a tip's own "Show me" is not counted), c times the Custom quiz was opened here
-//      (its picking page or its quiz, quiz.js quizCustom; the log cannot tell its answers from the Quiz's). Seeded once, when the state is first made,
+//      (its picking page or its quiz, quiz.js quizCustom; the log cannot tell its answers from the Quiz's), d times the Duel
+//      tab was opened here (quiz.js quizDuel; a Duel tab answer in the device's log folds in as one, tipsLoad). Seeded once, when the state is first made,
 //      from the answers the device still holds (LOG0 / SYNC.log: their count and their zm flags), so a player who has
 //      played here before is not counted from zero; a signed-in device holds only its unsent answers, so it starts low.
 //   s  per tip, the value of u.q at each showing: {zoom: [212, 318]}
@@ -68,6 +69,30 @@
           `The Custom quiz asks only the ${(o && o.subj && o.subj.many) || 'genera'} you choose. Quick picks choose for you: your weakest, or those you missed lately.`
       },
       act: 'custom'
+    },
+    {
+      // Look-alike duels (b): the Duel tab, two look-alikes side by side, the player's own mix-ups first. For a player
+      // with 150 questions or more here who never opened it (d counts its opens; a duel of the Duel tab in the device's
+      // log folds in as one, quiz.js tipsLoad). Mix-ups are on record by then (every player of the answer log with that
+      // many answers had missed some; the pairs missed 3 times or more ran 1 to 18). Shown in the Quiz only; best right
+      // after a miss (a mix-up just made), else at any break from 20 questions later; twice at most, the second 150
+      // questions after the first, after the zoom and Custom quiz tips when several are due. Show me opens the Duel tab.
+      id: 'duels',
+      ctx: ['quiz'],
+      target: u => u.d < 1,
+      from: 150,
+      now: b => !!b.miss,
+      wait: 20,
+      max: 2,
+      every: 150,
+      card: {
+        kick: 'Did you know?',
+        // The words of the subject (o.subj: its many field), as the Duel tab says them (app.js: Look-alike duels).
+        title: o => `Practise the ${(o && o.subj && o.subj.many) || 'genera'} you mix up`,
+        body: o =>
+          `Look-alike duels show photos of one of two look-alike ${(o && o.subj && o.subj.many) || 'genera'} and ask which one it is. The ones you still mix up come up most.`
+      },
+      act: 'duels'
     }
   ];
   const num = x => (typeof x === 'number' && isFinite(x) && x >= 0 ? Math.floor(x) : 0);
@@ -80,7 +105,7 @@
       s = o && o.s && typeof o.s === 'object' ? o.s : {},
       v = o && o.v && typeof o.v === 'object' ? o.v : {};
     return {
-      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, ...u}).map(([k, x]) => [k, num(x)])),
+      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, ...u}).map(([k, x]) => [k, num(x)])),
       s: Object.fromEntries(Object.entries(s).map(([k, L]) => [k, Array.isArray(L) ? L.map(num) : []])),
       v: {t: num(v.t), n: num(v.n), tip: v.tip ? 1 : 0}
     };

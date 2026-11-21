@@ -1,0 +1,49 @@
+# The R2 objects nothing uses any more, LISTED ONLY (Linear REE-6; Pierre's yes to deleting them, 2026-11-21, with the
+# list shown to him first). By hand only (Actions > R2 unused files > Run workflow): lists the bucket with rclone lsjson
+# (tools/r2_list.sh), compares it with what the repository uses (tools/r2_unused.py) and uploads the report as the
+# artifact "r2-unused" (report.md, unused.tsv, doubtful.tsv, report.json, the listing). It deletes and changes nothing:
+# no step copies, syncs, moves or deletes, and a test (tests/r2unused.test.js) keeps it so. Commits nothing.
+name: R2 unused files
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+# Not in the photos-r2 group: a read never holds a writer back (an upload in flight only makes its new objects "young").
+concurrency:
+  group: r2-unused-list
+  cancel-in-progress: false
+jobs:
+  list:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      # Always today's main, as photos-r2.yml: the comparison is against the repository as it is now.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      # The only step that holds the R2 keys: it lists, nothing else.
+      - name: List the bucket (read only)
+        run: |
+          mkdir -p "$RUNNER_TEMP/r2-unused"
+          tools/r2_list.sh "$RUNNER_TEMP/r2-unused/listing.json"
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+      # The listing and the report live outside the checkout: the listing names every object, so a scan of the checkout
+      # must never meet it (tools/r2_unused.py leaves them out as well).
+      - name: Compare with the repository
+        run: |
+          python3 tools/r2_unused.py --listing "$RUNNER_TEMP/r2-unused/listing.json" --out "$RUNNER_TEMP/r2-unused" --label "main@$(git rev-parse --short HEAD)"
+          cat "$RUNNER_TEMP/r2-unused/report.md" >>"$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: r2-unused
+          path: ${{ runner.temp }}/r2-unused/
+          if-no-files-found: error
+          retention-days: 14
