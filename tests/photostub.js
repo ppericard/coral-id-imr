@@ -28,7 +28,14 @@ module.exports = ROOT => {
     }
     Object.values(o).forEach(walk);
   };
-  ['data.json', 'data/cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
+  // The photo files of every subject, from SUBJECTS (rule S1: no subject named here): its photos (ph), game file (gm)
+  // and candidates (cand); the corals' own are data.json and data/cand.json.
+  const files = ['data.json', 'data/cand.json'];
+  require(path.join(ROOT, 'core.js')).SUBJECTS.forEach(s => {
+    const a = (s.admin && s.admin.files) || {};
+    ['ph', 'gm', 'cand'].forEach(k => a[k] && !files.includes(a[k]) && files.push(a[k]));
+  });
+  files.forEach(f => {
     const p = path.join(ROOT, f);
     if (fs.existsSync(p)) walk(require(path.join(ROOT, 'core.js')).treeGameRead(JSON.parse(fs.readFileSync(p, 'utf8')))); // its records whole
   });
@@ -43,8 +50,9 @@ module.exports = ROOT => {
       break;
     }
   }
-  // A tile stands in as the 480 px file. A file R2 holds must be answered: one 404 here is R2 out of reach for the page
-  // (app.js r2Out), whose next photos then go to their online originals, FishBase's among them, a host every smoke cuts off.
+  // A tile stands in as the 480 px file. A file R2 holds must be answered: a 404 here sends that photo to its online
+  // original (FishBase's among them, a host every smoke cuts off), and R2_OUT of them in a row give R2 up for the page
+  // (app.js r2Failed).
   const file = name => {
     const own = path.join(IMG, name);
     if (fs.existsSync(own)) return own;

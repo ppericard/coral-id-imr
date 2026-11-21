@@ -91,7 +91,9 @@ was kept.
 - **Scoring**: what the app scored the answer with, `core.js` `scoreRec` as JSON (photo difficulty, memory, mix-ups
   term, look-alike test, recalls, the corallites hint revealed after the answer, the format's offset `o`, the kind of a
   smaller fault `z`: `cn` a common name typed for a species' scientific name, `g` its genus alone, `core.js` `PART`,
-  Q394 A; a miss weighed half or a quarter, never a gain); read by its
+  Q394 A; a miss weighed half or a quarter, never a gain; the photos' time term `i` a right answer's time was netted of,
+  `core.js` `rtWeight` ti, kept even at 0, from sheet `RTNET_SHEET`: a row without it is netted by the terms served
+  when it is replayed, LEARNING.md "The player's time net of the photo's"); read by its
   name (`SC_COL`, column W); `readAnswers` index 22, an object, and the same index in the replay's rows (`rowOf_`,
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
 - **Rejected tries**: the texts a typed answer refused before it, a JSON list. Logged only.
@@ -111,7 +113,10 @@ was kept.
   content for a file fetched without one, the sea slugs', and for what the app makes from one, `FORMS`, `AUTOQ`:
   `fileVer`), its part of the curation the units were built under (`curPart`: a tree subject's own key and the shared
   `exclude`; the corals' the root without the other subjects' keys, so another subject's Publish leaves it as it is)
-  and the structure stamp in force. Made once per build at the subject's first answer (`app.js` `contentVer`, from the
+  and the structure stamp in force (`''` on the base's circles and pairs, and while the sheet does not replay under the
+  structure yet, which the units then do not follow). So it changes whenever the photos in play, the units, the
+  structure or the curation do, and a text edit in a data file changes it too; it starts with a letter so the sheet
+  never reads it as a number. Made once per build at the subject's first answer (`app.js` `contentVer`, from the
   inputs `build` and `treeBuild` keep on the units they make, `DATA` and a tree subject's `TREEU`, as a property no copy
   or key list meets: `cvIn`), on the device, because the copy in force is the device's (a kept curation, a draft
   preview). 'c' and up to 15 lower-case letters and digits, else blank. Sent only once the replies say `v` ≥ `core.js`
@@ -448,7 +453,7 @@ as `CORE_`. `tools/sync_core.py --fix` writes it, `--check` runs in CI, and the 
 
 **Asking.** Requests carry `rv`, the rules version this device applied (`sync.js` `rvApplied`, key
 `reefid-sync-coral-rv`, synced with the progress): `GET ?…&rv=N&pt=T`, `POST {…, rv, pt}` (a save) and
-`POST {anon, anonAnswers, rv, pt, reset}` (a device that never signed in). Signing in to an existing account takes the account's
+`POST {anon, anonAnswers, rv, pt, reset, rvs, sreset, sstart}` (a device that never signed in). Signing in to an existing account takes the account's
 `reefid-sync-coral-rv` (0 when its data has none), never the device's (`sync.js` `signIn`).
 
 **Replaying.** When `rv` < `CORE_.RV` (`core.js` `RVS`), `replay_` replays the player's rows of the Answers tab since
@@ -481,7 +486,9 @@ Progress).
   brings the right replay). The reply to an anonymous send is ignored when the device signed in or changed anonymous id
   while it was on its way (`sendAnon` keeps the id it sent).
 - After an adoption the merge baseline `SYNC.base` is the sheet's replay itself, without this device's own uncounted
-  answers (`core.js` `replayBase`), so this device's unsent answers stay on top at the next merge.
+  answers (`core.js` `replayBase`), so this device's unsent answers stay on top at the next merge (otherwise two devices
+  adopting the same log count it twice, an older app's answers are dropped, or an unsent answer is taken into the
+  baseline and lost).
 - `mergeSaved` keeps the device's progress over a saved copy whose `reefid-sync-coral-rv` is below the device's (an app
   from before the replay saved it, or a copy older than the replay): the copy is not merged, and the device's version
   goes back to the copy's, so its next save (`syncPull` asks for one) brings the replay of the whole log again. The
@@ -536,8 +543,10 @@ to the in-memory sheet and checks the replays it serves; the app's own units gai
   answers there, and a unit the log has no answer on loses the answers the device counts on it (the level's answer
   count keeps the larger of the two); no floor; no card for the recalculation (rules D5, D6); and the app never adopts
   a replay of a rules version newer than its own (`replayAdoptS`, `rvOf`), which it could not hold.
-- A device that never signed in does not ask for another subject's replay; signing in drops the device's fish rules
-  version as the corals' (`signIn`), and sign-out clears it.
+- A device that never signed in asks for the other subjects' replays as a save does (`sync.js` `sendAnon`: `rvs`, the
+  structure stamps, `sreset` and `sstart` by subject; `Code.gs` `anon_` `replays_`) and adopts them (`replaysAdopt`,
+  each subject's reset as sent the cutoff); signing in drops the device's fish rules version as the corals'
+  (`signIn`), and sign-out clears it.
 
 ### Replays under the content editor's structure
 
@@ -645,7 +654,8 @@ step (`statsStep_`, `statsOut_`; `core.js` `fmtPoint` and `fmtFit` for the forma
 **The photos' time terms.** A photo with a time term carries three more numbers in its `photos` entry, after the five:
 the time term, the enlargement term and the information its rating has gathered (`core.js` `ptimeInto`, `ptimeOut`;
 LEARNING.md "The photo's time term"); a photo with neither term keeps its five. The app reads them from a reply of
-`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). On the real log of 2026-11-20 they add about 25% to the
+`core.js` `PTIME_SHEET` or later (`model.js` `ptmOf`, rule D4). The corals' full replays read the time term too
+(`replayProgress` photos: a right answer's time netted of it, LEARNING.md "The player's time net of the photo's"). On the real log of 2026-11-20 they add about 25% to the
 corals' `photos` (79 to 99 KB) and 19% to the fish's.
 
 **The `Stats` tab** (internal, versioned by `STATS.FMT`, 4: no other code reads it). Columns Part, Version, Updated,

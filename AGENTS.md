@@ -12,7 +12,7 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 - Owner: **Pierre Pericard** (`ppericard`), IMR, Dauin. Users: Pierre and the Research Assistants (RAs) he trains, on
   phones mostly, who label photos to genus in **ReefCloud**: the app teaches genus recognition (**Learn → Practice →
   Identify**, **My progress**, Pierre's **admin**). ReefRecall is separate: nothing moves between the two unasked.
-- **Open work is tracked in Linear** (team REE, INTEGRATOR "Linear"); ROADMAP.md: pointers, subjects not transferred yet.
+- **Open work is tracked in Linear** (team REE, [Project Home](https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc), INTEGRATOR "Linear"); ROADMAP.md: pointers, subjects not transferred yet.
 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 

@@ -687,6 +687,18 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
+// The player's time net of the photo's (core.js rtWeight ti, ptimeQ; docs/LEARNING.md "The player's time net of the
+// photo's"): a question's time term, the mean of its photos' served time terms (model.js PTM; a photo without one: 0),
+// which the scorer takes off a right answer's z and the scoring record keeps (i). Only with a script whose replay does
+// the same (core.js RTNET_SHEET, rule D4); otherwise undefined: the answer weighs and is logged as before.
+const ptNetOn = () => typeof sheetV === 'function' && sheetV() >= RTNET_SHEET;
+const photoTimeQ = ph =>
+  ptNetOn()
+    ? ptimeQ(
+        ph.map(p => p.f),
+        f => (PTM[f] || [])[0]
+      )
+    : undefined;
 // One answer recorder (docs/spec/quiz.md "What each mode counts"): what every counted answer does to the player's record
 // and the answer log, whatever its game: the photo quiz, the custom quiz and the Duel tab (answer, below) and a live game
 // (live.js liveLog). No screen: the caller keeps its own (the feedback, the prompts, the session's tally).
@@ -752,8 +764,10 @@ function recordAnswer({
     Rc,
     p: startP(),
     sec: tm.rt,
-    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does.
+    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does, net of the photos' time term
+    // (photoTimeQ above: the photos d0 averages; logged in sc as i; undefined before the script that replays it).
     timed: true,
+    ti: photoTimeQ(ph),
     // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
     df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
     // A smaller fault's kind (Q394 A: typeBind z, a species' common name or its genus alone typed for its scientific
@@ -922,8 +936,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
     seenPh = ph.filter(p => p !== unseen),
     // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
-    // given instead, the mix-up its Again drills on the pair's species (rematchAdd).
-    mu = mimUnit(target, seenPh[0]);
+    // given instead, the mix-up its Again drills on the pair's species (rematchAdd). In a Find the X, the decoy tile of
+    // the class (planFind mimDecoys): the unit whose tile is a photo of the class resembling the name asked, with its photo.
+    fd =
+      photoQuiz(cur) && FINDX && SHOWNQ && SHOWNQ[4] && SHOWNQ[4].find
+        ? SHOWNQ[4].find.find(x => x.n !== target && mimUnit(x.n, x.p) === target) || null
+        : null,
+    mu = mimUnit(target, seenPh[0]) || (fd ? fd.n : null);
   // No exam question in the custom quiz.
   const exq = EXAMQ === target && cur !== CUSTOM_H;
   // The mode's suffixes (docs/spec/sync.md "Mode"), the sheet reading |kN at the end:
@@ -1015,7 +1034,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
       fitStage();
     }
     // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
-    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1, mu && mu === c ? mimOf(target, seenPh[0]).pair.id : '');
+    if (photoQuiz(cur))
+      again = rematchAdd(
+        [target, c],
+        answersSoFar() - 1,
+        mu && mu === c ? (mimUnit(target, seenPh[0]) ? mimOf(target, seenPh[0]) : mimOf(fd.n, fd.p)).pair.id : ''
+      );
   }
   // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
   // popping, ~400 ms, none with prefers-reduced-motion): the reward is on the action, not in a pop-up. It never holds the
@@ -1092,7 +1116,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
   allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
-  tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
+  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run.
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '');
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
@@ -1597,6 +1622,11 @@ function phaseArm(nb, cur, L, hold) {
     return true;
   });
 }
+// The cited phase list's sources (fish.json species phs src: [{t, u}]) in words: "Source: A" or "Sources: A, B", each
+// a link when the list gives its page. One line for the sex or colour phase card and the species sheet's phases
+// (learn.js spPhases).
+const phaseSrcs = L =>
+  `Source${L.length > 1 ? 's' : ''}: ${L.map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t))).join(', ')}`;
 // c: {p, k, q} (phaseCardFor; q the photo beside it, else phasePair's from n's photos); n: the unit asked; brk: shown at
 // the break, so its close goes on to the next question.
 function phaseShow({p, k, q: q0}, n, brk) {
@@ -1613,7 +1643,6 @@ function phaseShow({p, k, q: q0}, n, brk) {
     // the list's sources. The juvenile card has none: the two photos say it.
     lines = juv ? [] : (g.phase || []).filter(l => !phs || /\b(?:fe)?males?\b|phases?\b/i.test(l)),
     srcs = phs && (phs.src || []).length ? phs.src : [],
-    srcLink = x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)),
     w = phaseOf(p),
     word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
@@ -1629,7 +1658,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">Source${srcs.length > 1 ? 's' : ''}: ${srcs.map(srcLink).join(', ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
@@ -1752,7 +1781,8 @@ function mimShow({n, p, m}, brk) {
 }
 // "Did you know?" tips (tips.js): this device's counters (reefid-tips), the break at Next, the card.
 // The device's answers seed the counters once (tips.js tipsInit): the log of a signed-in player, else LOG0.
-const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
+// run: false for the answer being noted (tipAfter): the log already holds it, the counter does not yet.
+const tipsLoad = (raw = store.get(TIPR.KEY, null), run = true) => {
   let seed = [];
   if (!raw)
     try {
@@ -1767,8 +1797,25 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
     try {
       dueled = ((SYNC && SYNC.log) || store.get(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
     } catch (e) {}
-  return dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
+  const d = dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
+  // The view the Custom quiz kept (CQ.VIEW) is the last one the player chose: My mix-ups shows it was seen before m was counted.
+  const m = !d.u.m && store.get(CQ.VIEW, '') === 'mix' ? {...d, u: {...d.u, m: 1}} : d;
+  // What the Coral ID Key keeps once the player changed one of its choices (its start view, layout or photos, proto/idkey.js):
+  // one on the device shows it was opened before i was counted.
+  const i = !m.u.i && IDKEY_SAVED.some(k => store.get(k, null) !== null) ? {...m, u: {...m.u, i: 1}} : m;
+  return run ? tipRun(i) : i;
 };
+// The log's typed answers (mode …|t, the text typed in ty) show the run of "I don't know" they end with, from before k was
+// counted (or an answer the counter missed): the longer of the two, read only while the run is short.
+const tipRun = st => {
+  let k = 0;
+  if (st.u.k < TIPR.IDK)
+    try {
+      k = tipIdkRun((SYNC && SYNC.log) || store.get(LOG0, []));
+    } catch (e) {}
+  return k > st.u.k ? {...st, u: {...st.u, k}} : st;
+};
+const IDKEY_SAVED = ['reefid-idkey-start2', 'reefid-idkey-lay', 'reefid-idkey-pv'];
 // One more open of a feature of a tip (k: a counter of u): that tip is not for this player.
 const tipOpened = k => store.set(TIPR.KEY, tipUse(tipsLoad(), k));
 // A quiz photo enlarged by the player (question(), the mix-up montage in answer()); a tip's "Show me" is not theirs.
@@ -1777,18 +1824,42 @@ const tipZoomed = () => tipDemo || store.set(TIPR.KEY, tipUse(tipsLoad(), 'z'));
 // After each answer in a game: count it; a tip due (tipDue) within the prompt spacing (promptOk, which it then pushes
 // back) takes the break at Next, checked again at the tap; it waits when the next question brings a card (never two
 // cards back to back). hold: the mastery toast is due in a moment.
-const TIP = {WAIT: 600};
+const TIP = {WAIT: 600, OUT: 2000};
 // Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro).
 // (A Duel tab duel draws only genera unlocked, so it brings no card.)
 const nextCards = (cur, q) => !!q.intro;
-function tipAfter(nb, cur, miss, zm, hold) {
+// The basics tip's audience (tips.js `basics`): the player the first-launch offer of the subject's basics module is for,
+// who has not opened it. The answer in the subject's own record (startOf; a subject with no question, the sea slugs, has
+// none and gets no tip) whose CHOICE variables offer the basics first (startVars(c).basics: "new", asked or inferred), the
+// module not done (basicsDue) and nothing recorded in its record (the module's page stores the step it opens: `last`,
+// `seen`). Never for the player the "lower" fallback card serves (who said IMR course or know well: it offers the same
+// module), nor one the "higher" card said knows more than they answered, shown or about to be (verdict v).
+const tipBasics = () => {
+  const o = startOn() && startOf();
+  if (!o || !startVars(o.c).basics || !basicsDue() || o.v === 'hi' || (o.fb || {})[o.c + '-hi']) return false;
+  const r = store.get(basicsKey(), {}) || {};
+  return !r.last && !Object.keys(r.seen || {}).length;
+};
+function tipAfter(nb, cur, miss, zm, hold, ty = '') {
   const raw = store.get(TIPR.KEY, null);
-  let st = tipsLoad(raw);
-  const q0 = st.u.q;
-  st = tipNote(st, Date.now());
+  let st = tipsLoad(raw, false);
+  const q0 = st.u.q,
+    k0 = st.u.k;
+  st = tipNote(st, Date.now(), ty);
+  // Just seeded from the log, this answer included: its own count of the run (the seed ends with this answer already).
+  if (!raw && q0 && ty) st = {...st, u: {...st.u, k: ty === 'idk' ? k0 : 0}};
+  st = tipRun(st); // after the note: the log holds this answer, so the run it shows now is compared with the counter's
   if (!raw && q0) st = {...st, u: {...st.u, q: q0}}; // just seeded from the log, this answer included
   store.set(TIPR.KEY, st);
-  const b = {ctx: cur.split('|')[0], miss, zm: !!zm};
+  // mix: the pairs of genera the player mixed up TIPR.MIX times or more (the My mix-ups view's edges), counted only for a
+  // player the My mix-ups tip can still target.
+  const b = {
+    ctx: cur.split('|')[0],
+    miss,
+    zm: !!zm,
+    mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0,
+    bx: tipBasics() ? 1 : 0
+  };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
     // The next question is planned 50 ms after the answer (answer, planNext): a Next tapped sooner plans it now, so its
@@ -1811,6 +1882,15 @@ const TIP_ACT = {
   custom: () => (location.hash = hr('quiz-custom')),
   // The Duel tab (look-alike duels).
   duels: () => (location.hash = hr('quiz-duel')),
+  // The Custom quiz's picking page on its My mix-ups view (the view the page keeps is the last one chosen).
+  mixups: () => {
+    store.set(CQ.VIEW, 'mix');
+    location.hash = hr('quiz-custom');
+  },
+  // The subject's basics module (Coral basics, Fish basics), as the first-launch offer's button opens it.
+  basics: () => go('basics'),
+  // The subject's Identify tool (the Coral ID Key).
+  identify: () => (location.hash = hr(keyOf(SUBJ))),
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -1825,8 +1905,8 @@ const TIP_ACT = {
 // The tip's card (cardShow kind 'tip'), anti-reflex as the one-tap question (no tap for TIP.WAIT ms, the focus on the
 // title). Logged as one-tap events (ev 'pulse', src "tip:<id>", r shown / show / ok / none: no new sheet column; the
 // admin counts them apart), at most 2 a showing.
-function tipShow(t, st, cur) {
-  store.set(TIPR.KEY, tipShown(st, t.id));
+function tipShow(t, st, cur, now = 0) {
+  store.set(TIPR.KEY, tipShown(st, t.id, now));
   const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches,
     im = $v.querySelector('.q.done .qstage .zoom img'),
     at = {m: cur.split('|')[0], n: session.n},
@@ -1836,8 +1916,8 @@ function tipShow(t, st, cur) {
     kind: 'tip',
     cls: 'tipcard',
     kick: esc(t.card.kick),
-    title: esc(t.card.title({mouse, subj: SUBJ})),
-    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ}))}</p>`,
+    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()}))}</p>`,
     primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
     secondary: {text: 'Got it', attr: 'disabled'},
     focus: 'h3',
@@ -1846,10 +1926,40 @@ function tipShow(t, st, cur) {
     onClose: how => {
       log(how === 1 ? 'show' : how === 'route' ? 'none' : 'ok');
       if (how === 1 && TIP_ACT[t.act]) TIP_ACT[t.act]();
-      else if (how !== 'route') route();
+      else if (how !== 'route' && !t.out) route(); // a game goes on to its next question; a page stays as it is
     }
   });
   setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+}
+// The subject's words for the Identify tip (app.js UNITS idtip), null for a subject whose Identify tool is not built.
+const idWords = () => UNITS[SUBJ.id].idtip || null;
+// A page drawn (app.js route, and SETUP 2 for one drawn before this tier): the Identify tool's page counts as one open
+// (tip i), and Home or My progress may show the tip about it.
+function tipRoute(h) {
+  if (idWords() && sectionOf(h) === 'identify' && modeOf(h) === keyOf(SUBJ) && tipsLoad().u.i < 1) tipOpened('i');
+  tipOut();
+}
+// The tip outside the games: on Home or My progress, at a calm moment (TIP.OUT ms after the page is drawn, as the install
+// nudge and the subject hello wait on Home), checked again then: the same page, nothing on screen (a card, the tour, a
+// toast, the help, the settings, a photo), within the prompt spacing (promptOk, then promptMark). The visit is the
+// device's last one (tips.js tipDue with the time). A page that closes the card unseen brings it back at the next visit.
+let tipOutT = 0;
+function tipOut() {
+  clearTimeout(tipOutT);
+  tipOutT = 0;
+  const ctx = () => (hashNow() || 'home').split('|')[0],
+    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0});
+  if (!tipDue(tipsLoad(), b(), TIPS, Date.now())) return;
+  const at = ctx();
+  tipOutT = setTimeout(() => {
+    tipOutT = 0;
+    const now = Date.now(),
+      s = tipsLoad(),
+      t = ctx() === at && tipDue(s, b(), TIPS, now);
+    if (!t || !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast') || !promptOk()) return;
+    promptMark();
+    tipShow(t, s, at, now);
+  }, TIP.OUT);
 }
 // One-tap questions (docs/ARCHITECTURE.md "One-tap questions"): a question from core.js PULSEQ (pulsePick's rounds)
 // answered in one tap or "Not now", logged as ev 'pulse'; nothing in the game changes with it. From PULSE.FIRST answers,
@@ -2006,7 +2116,8 @@ const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target
 // mix-up, CONTRAST.GAP apart, from the first answers on.
 const CONTRAST = {P: 0.1, GAP: 2, Q: 3};
 // Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): one name, four photos, tap the one that shows
-// it. Where UNITS tiles exist (the fish), with the chance P (planPhoto), in the contrast slot: spaced as the duels.
+// it. Where UNITS tiles exist (the fish, the sea slugs), on the units of the subject's own rank and on its species, with
+// the chance P (planPhoto), in the contrast slot: spaced as the duels.
 const FIND = {P: 0.05};
 let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answers so far when the missed question showed}
   twoAt = -Infinity, // answers so far when the last contrast question (an Again, a duel or a Find the X) showed
@@ -2071,7 +2182,9 @@ const QPROMPT = {
 // answered, so leaving the page (Learn, My progress, anywhere) or reloading it brings back the same question, its photos
 // and its choices, never a new draw. It is stored as units and photo files, never as HTML or photo records: a kept
 // question is built again from the current data (pendBuild), so a photo or a genus that left the draw ends it (pendOk) and a
-// new question is drawn. A question shown with a first-meeting card is not kept (its card is the genus's meeting).
+// new question is drawn. A question about the genus its own first-meeting card introduces is not kept (its card is the
+// genus's meeting); one shown with another genus's card is kept (introAdd marks that genus met when its card shows, so the
+// card does not come back).
 // The seconds already looked at it travel with it (rt, QCLOCK.pre): the time away is not counted, the time before is.
 const PEND = {KEY: 'pending', MAX: 6};
 const pendKey = () => sDev(PEND.KEY); // reefid-<dev>pending: stays on this device, cleared at sign-out (sync.js)
@@ -2081,10 +2194,11 @@ const pendAll = (key = pendKey()) => {
 };
 let PENDQ = null; // the kept question on screen: {key, cur, el}
 let PENDSCI = null; // the name display ('sc' / 'so', app.js sciShow) the next question is shown with, when it comes back
-// The record of question q of game cur: null when it is not kept (a card's question, a photo with no file name).
+// The record of question q of game cur: null when it is not kept (a question about the genus its own card introduces, a photo
+// with no file name).
 function pendRec(cur, q) {
   const [, t, c, , set, kq] = q;
-  if (q.intro || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
+  if ((q.intro || []).includes(t) || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
   const ph = p => (p && p.f ? [p.f, String(p.view || '')] : null),
     sh = set.shown.map(ph),
     hi = set.hint ? ph(set.hint) : null,
@@ -2278,12 +2392,14 @@ const pump = () => {
     while (pfLive < 2 && x.urls.length) {
       const i = new Image();
       pfLive++;
-      // Once R2 has failed, a URL queued before goes to its online original or the site straight away.
-      const u = AWAY ? photoAway(x.urls.shift(), photoLook) : x.urls.shift();
-      i.onload = () => (pfLive--, pump());
+      // Once R2 is given up, or this file failed on it already, a URL queued before goes to its online original or the
+      // site straight away.
+      const v = x.urls.shift(),
+        u = AWAY || r2Missed(v) ? photoAway(v, photoLook) : v;
+      i.onload = () => (pfLive--, r2Loaded(u), pump());
       // A preload is no element of the page (app.js photoFail): failed on R2, it is asked from R2 once more after
       // PHOTO_RETRY ms (core.js photoRetry; under a service worker, the worker did), then its online original or its file
-      // on the site (core.js photoAway), and so are the next photos when no service worker controls the page.
+      // on the site (core.js photoAway); with no service worker it counts toward giving R2 up (app.js r2Failed).
       i.onerror = () => {
         pfLive--;
         if (photoLocal(u) !== u) {
@@ -2292,7 +2408,7 @@ const pump = () => {
             x.r2try.add(u);
             return setTimeout(() => (x.urls.unshift(u), PF.includes(x) || PF.push(x), pump()), PHOTO_RETRY);
           }
-          if (!swOn()) r2Out();
+          if (!swOn()) r2Failed(u);
           x.urls.unshift(photoAway(u, photoLook));
         }
         pump();
@@ -2739,19 +2855,61 @@ function introStart(list) {
     L.push(openPick(fresh, fresh, met, {first: true}));
   return L.length ? L : levelTop(list);
 }
-// Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of the subject's own rank,
-// met and ready, have tiles (UNITS tiles); the others its look-alikes first (distractors), each photo drawn by photoSet
-// among its tiles. Scored as a 4-choice answer (another unit's photo tapped is that unit given, rule L2), logged |f. The
-// chance is drawn last, so a subject with no tile draws exactly as without it.
+// The decoys of the mimicry class for a Find the X on unit t (docs/LEARNING.md "The mimicry class", Q416 c: a photo of the
+// class is the decoy tile on "Find the Angelfish"): for each pair whose model's species t holds (an entry's m, app.js
+// mimLay, on the family of the species that resembles it), the unit d at t's own rank of the species that resembles it,
+// when d is in the list, met and ready, and its draw holds a tile of the class now (model.js mimSide, drawHas: a photo the
+// unit still holds back never shows). dk keeps d's tiles to the class's photos; tk keeps t's to the species resembled at
+// its stage when its draw holds such a tile now, null otherwise (any tile of t). A pair inside the unit asked is none.
+function mimDecoys(t, list, tile) {
+  const tiles = UNITS[SUBJ.id].tiles,
+    out = [];
+  for (const a of new Set(list.map(varHome)))
+    for (const m of (GX(a) || {}).mim || []) {
+      if (!m.m.includes(t) || m.u.includes(t)) continue;
+      const d = m.u.find(x => GX(x) && rankKind(x) === rankKind(t)),
+        dk = d && (p => tile(p) && mimSide(m, d)(p)),
+        tk = p => tile(p) && mimSide(m, t)(p);
+      if (
+        d &&
+        d !== t &&
+        !choiceNames(d, t) &&
+        !choiceNames(t, d) &&
+        list.includes(d) &&
+        introReady(d) &&
+        tiles(d).some(dk) &&
+        drawHas(d, dk)
+      )
+        out.push({m, d, dk, tk: drawHas(t, tk) && tiles(t).some(tk) ? tk : null});
+    }
+  return out;
+}
+// Find the X (FIND) is asked on the units of the subject's own rank and on its species, by common names or by scientific
+// names; a scientific genus keeps its usual questions (docs/LEARNING.md "Find the X slipped into the fish quiz").
+const findRank = n => !rankOf(n) || rankOf(n) === 'species';
+// Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of its class (findRank; the
+// class is rankKind: a species by its common name never stands with one by its scientific name), met and ready, have
+// tiles (UNITS tiles); the others its look-alikes first (distractors, among the units in play only: wide false, so no unit
+// of the rank outside them takes a place), each photo drawn by photoSet among its tiles. Scored as a 4-choice answer
+// (another unit's photo tapped is that unit given, rule L2), logged |f. The chance is drawn last, so a unit or a subject
+// with no tile draws exactly as without it.
 function planFind(cur, t, list, ease = 0, sel = null) {
   const tiles = UNITS[SUBJ.id].tiles;
-  if (rankOf(t) || !introReady(t) || !tiles(t).length) return null;
-  const others = list.filter(n => n !== t && !rankOf(n) && introReady(n) && tiles(n).length);
+  if (!findRank(t) || !introReady(t) || !tiles(t).length) return null;
+  const others = list.filter(n => n !== t && rankKind(n) === rankKind(t) && introReady(n) && tiles(n).length);
   if (others.length < 3 || !(Math.random() < FIND.P)) return null;
-  const ch = shuffle([t, ...distractors(t, others, 3, introReady)]),
-    tile = p => !!p.xc,
-    set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', tile),
-    find = ch.map(n => ({n, p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', tile).shown || [])[0]}));
+  const tile = p => !!p.xc,
+    // The mimicry class's decoy (mimDecoys), when t is the unit of the species a pair resembles: its tile is a photo of the
+    // class, in the place of the weakest trap (model.js mimTrap), and t's own photo is the species resembled at its stage.
+    dcs = mimDecoys(t, list, tile),
+    dc = dcs.length > 1 ? pick(dcs) : dcs[0] || null,
+    ch0 = shuffle([t, ...distractors(t, others, 3, introReady, false)]),
+    ch = dc ? mimTrap(t, ch0, dc.d) : ch0,
+    set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', dc && dc.tk ? dc.tk : tile),
+    find = ch.map(n => ({
+      n,
+      p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', dc && n === dc.d ? dc.dk : tile).shown || [])[0]
+    }));
   if (ch.length !== 4 || !find.every(x => x.p)) return null;
   return Object.assign([cur, t, ch, `Find the ${uname(t)}`, {...set, reveal: [], find}], {findx: 1, ...(sel ? {custom: 1} : {})});
 }
@@ -3229,7 +3387,7 @@ function cqByIMR(play) {
   return [...new Set(play.map(gk))]
     .sort((a, b) => ord(a) - ord(b))
     .map(k => {
-      const gr = DATA.imrg.find(x => x.n === k),
+      const gr = UNITS[SUBJ.id].group(k),
         L = play.filter(n => gk(n) === k);
       return gr
         ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
@@ -3331,6 +3489,7 @@ function viewCustom() {
     show();
   };
   const draw = () => {
+    if (view === 'mix') tipOpened('m'); // the My mix-ups view is on screen: its "Did you know?" tip is not for this player
     const {note, G} = cqGroups(view, play);
     box.innerHTML =
       (note ? `<p class="note cqnote">${esc(note)}</p>` : '') +

@@ -37,6 +37,22 @@ framed alike; `mxPlan` four units, from a declared pair outward, and a fifth nam
 Matrix: a right pair names its tile and ticks its name, a wrong one is kept nowhere and the retry is free; its names are
 `data-n`, not `data-c` (`qAnswers` opens every `[data-c]`).
 
+`lifestages` ([Life stages matched](../decisions/2026-11-21-life-stages-lab.md), `proto/lifestages.js`): a Matrix variant on
+Odd one out's tiles. The first tile is the stage shown (a juvenile or a female, outlined, no button), the three others the
+stage to find (the female or the male) of three species, one the first's; `lsIndex`, `lsPlan`, `lsPhotos`. It asks only about
+the phases a cited source documents, read from `fish-phases.json` (`UNITS.fish.phases`; built by
+`tools/fish_phases_site.py` from `tools/fish_phases.json`, `--check` in `tests/fishphasesite.test.js`: the species with a
+`yes` for the sexes or the initial and terminal phases, never one whose sources disagree) on the photos carrying that phase
+(`fish-game.json` `ph`), from the families the player has unlocked, and says the source with the answer (rule C2): under a stage's name only a quote
+that names that stage, else the verdict's first quote under the verdict's name (`lsQuote`), each quote once. Offered
+(`on()`) to a subject whose `UNITS` has `phases`, so not to the corals or the sea slugs; untimed, counted nowhere.
+
+`downtree` ([Down the tree](../decisions/2026-11-21-down-the-tree-lab.md), `proto/downtree.js`): one photo named step by
+step, the unit's lineage read from the records' `parent` and `rank` (`dtLineage`), asked only while each step's unit is
+unlocked (`dtSteps`, rule L4), the names of a step of one rank (`dtChoices`); each step is a point on the screen only
+(the end sheet says "N of M steps right"), nothing is recorded. Offered (`on()`) to a subject whose tree has species
+units (`TREEU.ssl`), so not to the corals.
+
 `type`, `reveal` and `web` follow the subject on screen too ([decision](../decisions/2026-11-20-lab-tools-every-subject.md)),
 each in the subject's own words (`SUBJ.one`, `SUBJ.what`, `SUBJ.many`: Type the genus is "Type the family" for the fish),
 through getters on the tool (`title`, `blurb`, `lede`), and none of them calls the quiz's recorders

@@ -149,7 +149,11 @@ question card left waiting resumes the quiz only once `sync.js` `mergeSaved` has
   `[c, at, t, via]` and eases `[band below, answers, t, 'ease', the answer eased, the time of the choice event eased]`. An ease
   applies only while that very choice event is in force (an ease without that time is bound to the latest choice of its
   answer at or before it, in its own record). Every event is kept: the full replay needs each answer's prior, and a
-  compaction would not commute with the union; `START_CAP` (200) is only a safety bound. The prior at any time comes
+  compaction would not commute with the union (an event that repeats the answer in force can matter again once another
+  device's events are merged in between: know@100 and know@300 merged with imr@200 give "know" from 300 on);
+  `START_CAP` (200) is only a safety bound, far above any real history (a player gives one answer, rarely changes it,
+  and a fallback card comes once per answer and direction): at about 40 bytes an event, 200 events stay under 8 KB in
+  the synced record. The prior at any time comes
   from it (`startPriorAt`: an ease applies from its time until the next answer, to the answer it eased only); a record
   without `h` reads as its answer and its ease field.
 - `w`: the fallback window, `[[difficulty, guess rate, right, first answer on its unit]…]`, up to the last of
@@ -218,13 +222,24 @@ the engine's notes after them still come in the subject on screen. A later recal
 note at the end of `RECALC.L` (a `subj` if it speaks of one subject), no code; a recalculation of progress is
 otherwise silent (rule D6).
 
+**The rules version's card** (`core.js` `RVS` `msg`, rule D6): a rules version may carry a card `{t: title, p:
+paragraph, in plain words}` that every device which skipped that version shows once; with `only: 'changed'`, only when
+the adoption moved the player's progress % by `min` points or more, `{from}` and `{to}` in `p` being the two %. The
+standard recalculation card (`core.js` `RV_CARD`, rule D5, kind `update`) is shown to a player whose % the adoption
+moved by 5 points or more, either way (`progress.js` `rvNoticeAdd`), with the two %.
+
 **The apology card** (`progress.js` `sorryNotice`, `core.js` `SORRY`, `sorryOf`, `sorryFelt`, `sorryText`): one card,
 at app open, to the players who played through a run of the draw that was not right, shown only until `SORRY.UNTIL`
 (2026-11-17): it no longer shows, in any subject (an engine card, kept as a template). What the device held when this
 code first ran on it is read once and kept (`reefid-sorry-first` {t, n, h, c}): n, the answers between `SORRY.FROM`
 and then (the answers still in `LOG0` / `SYNC.log`, else those since the last card shown before the window); h, the
-opening hold's sum (`reefid-hold`); c, the most units carded within 15 answers in the window. Due with n ≥
-`SORRY.N` (20) and h ≥ `SORRY.H` (3), or h ≥ 1.5 with c ≥ `SORRY.CARDS` (4). It greets the player by first
+opening hold's sum (`reefid-hold`; `model.js` `holdStep`, a CUSUM of the shortfall against each answer's expected
+success, 0.1 allowed per answer: where their last run ended); c, the most units carded within `OPEN.WIN` (15) answers
+in the window. Due with n ≥ `SORRY.N` (20) and h ≥ `SORRY.H` (3, twice `INTRO.HOLD`, the evidence the
+back-to-one-at-a-time card asks for), or h ≥ 1.5 with c ≥ `SORRY.CARDS` (4, one more than `OPEN.MAX` allows). On the
+real answers it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31 answers, h 4.31) and nobody
+else; a run at the expected success ends at 3 or more about 2-5% of the time (simulated, 20-80 answers at e 0.7-0.9).
+Not after `SORRY.UNTIL`: a player back weeks later would not know what it is about. It greets the player by first
 name ("Hi Ana! Sorry about your last run.", `core.js` `firstName`: the first word of the sign-in name, capitalised,
 else "Hi!"; rule U10), then "Yesterday evening we adjusted how the app
 picks your questions, and some of it wasn't right yet: too many new genera came at once, and the questions didn't get
@@ -282,8 +297,17 @@ subject never brings the question at the first answer in another.
   the same wording never comes twice in a row; the very first is the plain "These questions are"): "These questions
   are" (Too easy · About right · Too hard), "Right now I feel" (Bored · In the zone · Struggling), "Want harder
   photos?" (Yes · Keep it · Easier), "Having fun?" (Not really · It's OK · Yes!), "Frustrating?" (Not at all · A bit ·
-  Very), "Getting boring?" (Not at all · A bit · Yes). Each answer sits on one or two common scales (`pulseScore`): felt
-  difficulty (−1 too easy, 0 right, +1 too hard) and feel (−1 bad, +1 good).
+  Very), "Getting boring?" (Not at all · A bit · Yes): slightly different questions about roughly the same concept. Each
+  answer sits on one or two common scales (`pulseScore`): felt difficulty (−1 too easy, 0 right, +1 too hard) and feel
+  (−1 bad, 0 neutral, +1 good); null says nothing on that scale. A "no" to a one-sided item (frustrating? boring?) is 0
+  on both: asked as often as each other, the two one-sided items shrink a mean towards 0 without tilting it. The codes
+  `easy`, `ok`, `hard` keep their meaning on the difficulty scale (the sheet's Detail keeps only those three); an item's
+  other codes ride as they come (the Message column) and its id in the Where column, both stored as text. The items'
+  sources (LEARNING.md "What the players say about the difficulty", References): `are`, the Too Easy / Appropriate /
+  Too Difficult rating of Papoušek, Stanislav & Pelánek 2016; `zone`, flow's three channels (boredom, flow, anxiety:
+  Csikszentmihalyi 1975), the balance the flow short scale's item 16 asks as demands too little / just right / too high
+  (Rheinberg, Vollmeyer & Engeser 2003); `more`, the same balance asked as a wish; `fun`, `frus`, `bored`, the in-game
+  GEQ's positive affect, tension and negative affect items (IJsselsteijn, de Kort & Poels 2013).
 - **Logged** by `ev('pulse')` with `r` = the answer's code, `src` = the item id, and `m`, `n` (the page's answers,
   `session.n`), `rr`, `lv`, `met` (what the game knew when the prompt showed, the same on every event of one prompt). The response rate: each prompt also
   logs `r` = `shown` when the card shows, `skip` for Not now or Escape, `none` when another page is opened with the card
@@ -300,25 +324,36 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with three tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with seven tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
-  tip's `id`, `ctx` (the games whose break may show it), `target(u)` (who it is for, on the usage counters), `from` (the
-  questions answered from which it can first show), `now(b)` (its preferred moment at a break: b = {ctx, miss, zm}),
+  tip's `id`, `ctx` (the games whose break may show it; for the one tip with `out: true`, the pages outside the games,
+  `home` and `progress`), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
+  break's `b.mix`, for the basics tip `b.bx`, for the Identify tip `b.ix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
+  break: b = {ctx, miss, zm, mix, bx, ix}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
-  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj}, subj the `core.js` `SUBJECTS` record on
-  screen: the text follows the subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
+  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics, key}, subj the `core.js` `SUBJECTS` record on
+  screen, basics the `app.js` `UNITS` `basics` words of the subject, key its `UNITS` `idtip` words: the text follows the
+  subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
   `zoom`: corallites for coral players, markings and fins for fish players) and `act` (its "Show me", `quiz.js`
-  `TIP_ACT`). `tipDue(state, b)` picks the tip of a break; `TIPR`: at most one tip a visit, never in its first `FLOOR`
-  (10) answers; a visit is answers less than `GAP` (30 min, as `model.js` `SESSION.GAP`) apart, and a reload is no new
-  visit.
+  `TIP_ACT`; a tip with none shows only **Got it**). `tipDue(state, b, L, now)` picks the tip of a break (a page outside the games passes the time); `TIPR`: at
+  most one tip a visit, never in its first `FLOOR` (10) answers of a game (a page has no answers to wait for: `out: true`
+  tips skip the floor); a visit is answers less than `GAP` (30 min, as `model.js` `SESSION.GAP`) apart, and a reload is
+  no new visit. On a page the visit counted is the last one, over when its last answer is `GAP` or more before the time
+  (a new visit, no tip yet); a tip shown on a page stamps the visit's time (`tipShown(state, id, now)`), so the answers
+  that follow, within `GAP`, bring no second tip.
 - **State, per device** (`reefid-tips`, outside the `reefid-sync-*` progress keys, so not synced and kept on sign-out,
   like `reefid-zoomhint`): `u` the usage counters (`q` game questions answered here: photo quiz, custom quiz, duels; `z`
   quiz photos the player enlarged here, on a question or its mix-up montage, `quiz.js` `tipZoomed`; a tip's own Show me
   is not counted; `c` times the Custom quiz was opened here; `d` times the Duel tab was opened here, `quiz.js`
-  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
-  a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
+  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`; `m` times the
+  Custom quiz's My mix-ups view was drawn here, `quiz.js` `viewCustom`, a saved choice of that view also folding in as one;
+  `i` times the Identify tool's page (the Coral ID Key) was drawn here, `app.js` `route()` through `quiz.js` `tipRoute`, a
+  choice the key saved on the device, `reefid-idkey-start2`, `-lay` or `-pv`, also folding in as one; `k` the run of typed
+  questions answered "I don't know" here since the last typed answer that was not one, `tipNote` through `tipAfter`, the
+  log's trailing run folding in, `tipIdkRun`), seeded once from the answers the device still holds (`LOG0` /
+  `SYNC.log`: their count, `zm` flags and trailing run; a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
 - **At the break**: `answer()` arms the one-tap question first (`pulseArm`), then the tips (`tipAfter`: when the
@@ -351,6 +386,61 @@ once a player uses it, how often is their choice. A small generic system with th
   subject's own word, `SUBJECTS` `many`), "Look-alike duels show photos of one of two look-alike genera and ask which one
   it is. The ones you still mix up come up most." (the Duel tab's own pick, `duelPick`), **Show me** (opens the
   Duel tab, `#practice/duels`) and **Got it**.
+- **The My mix-ups tip** (`id` `mixups`, tip (c) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  with 100 questions or more here who has mixed up **at least 2 pairs** of units `TIPR.MIX` (3) times or more (the pairs
+  the view's own `mixEdges` weigh, both ways added, read at the break from the player's record, `b.mix`: counted only while
+  `u.m` is 0) and never saw the Custom quiz's My mix-ups view (counter `u.m`). In the Quiz and the Custom quiz; its
+  moment, the Next right after a miss, else any break from 20 questions later; twice at most, the second 150 questions
+  after the first; last of the four when several are due (one tip a visit). Card: "Did you know?", "Quiz yourself on
+  your mix-ups", "The Custom quiz's My mix-ups view groups the genera you confuse with each other, the most confused
+  first. Tap All on a group, then Start." ("Click" with a mouse; the subject's own word, `SUBJECTS` `many`), **Show me** (the Custom quiz's
+  picking page on the My mix-ups view, which it then keeps as the chosen view) and **Got it**. The log cannot say who
+  saw the view, so `m` counts from the device on. My progress's "Your tricky pairs" shows itself: no tip
+  ([record](../decisions/2026-11-21-tip-c-my-mix-ups.md)).
+- **The basics tip** (`id` `basics`, tip (d) of [REE-13](https://linear.app/reef-id/issue/REE-13), Coral basics for the
+  corals, Fish basics for the fish): for the player the subject's first-launch offer of its basics module is for who
+  never opened it (`quiz.js` `tipBasics`, passed as `b.bx`; no counter, the module's own record says it). The player is
+  the one whose first-launch answer in that subject's record (`startOf`) is one whose `CHOICE` variables offer the basics
+  first (`startVars(c).basics`: "new", asked at the tour or on the card, or inferred at 50 answers), with the module not
+  done (`basicsDue`) and nothing in its record (`reefid-basics`: its page stores the step it opens, `last` and `seen`).
+  A subject with no first-launch question (the sea slugs) has no record, so no tip; no player the "lower" fallback card
+  serves (it is for the answers "IMR course" and "know well", and offers the same module), none that the "higher" card was
+  shown to or is about to be (`fb` `new-hi`, verdict `v`). In the Quiz only; from 30 questions; its moment, the Next
+  right after a miss, else any break from 20 questions later; twice at most, the second 150 questions after the first;
+  last of the five when several are due (one tip a visit). Card: "Did you know?", "New to corals? Try Coral basics"
+  (`UNITS` `basics` `ask` and `name`), the module's `lo` line and "It is in Learn, any time.", **Show me** (opens the
+  module, as the first-launch offer's button does) and **Got it**. The offers the module already has (the tour's last
+  button and `startBasicsOffer` before the first question, Home's line under 50 answers, the Learn card) come before the
+  tip; the tip is the reminder for the player who passed them by ([record](../decisions/2026-11-21-tip-d-coral-basics.md)).
+- **The Identify tip** (`id` `identify`, tip (e) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player with
+  200 questions or more here who never opened the subject's Identify tool (counter `u.i`), in a subject that has one (the
+  corals' Coral ID Key: `b.ix`, 1 only when `UNITS` declares the `idtip` words, so the Fish ID Key, coming soon, and the
+  sea slugs, with no key, get none; a subject whose key goes live declares its words and is served by the same entry).
+  The only tip outside the games: on **Home or My progress** (`ctx` `home`, `progress`; `quiz.js` `tipOut`, called from
+  `route()` through `tipRoute` and once from `SETUP[2]` for a page drawn before the quiz tier), 2 s (`TIP.OUT`) after the
+  page is drawn, checked again then: still on that page, no card, tour, toast, help, settings or photo open, within the
+  prompt spacing (`promptOk`, then `promptMark`), so it waits behind the install nudge and the subject hello and never
+  shows over them; `CARDS_SAID` waits for it. No moment to prefer (any visit from 200 questions); twice at most, the
+  second 150 questions after the first; the visit rules are those above (no floor on a page, one tip a visit, the time
+  stamped). Card: "Did you know?", "Stuck on a coral? Try the Coral ID Key" (`UNITS` `idtip` `ask` and `name`), the
+  `lo` line and "It is under Identify, any time.", **Show me** (opens the key, `#identify/key`) and **Got it**, which
+  leaves the page as it is (no redraw, no next question). Logged as the others (`m` is `home` or `progress`). The log
+  cannot say who opened the key before the counter existed, so `i` counts from the device on, plus a choice the key saved
+  ([record](../decisions/2026-11-21-tip-e-identify.md)).
+- **The typed-answers tip** (`id` `typed`, tip (f) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  whose **last 3** (`TIPR.IDK`) typed questions here were all answered "I don't know" (counter `u.k`, the run of typed
+  "I don't know" since a typed answer that was not one; `quiz.js` `answer()` passes `tipAfter` how a typed question was
+  answered, `tipNote` counts it). A text typed ends the run, even a wrong one, a text the game refused before giving up, or
+  a close one retyped; a question not typed leaves it as it is; the exam's typed questions count like the others. The
+  progress record counts typed questions but not how they were answered, so a counter: the log's trailing run (`tipIdkRun`:
+  mode `…|t`, no text in `ty`, no refused try in `rj`) seeds it and folds into it (`tipsLoad`), so a player who answered
+  so before the counter existed is counted. In the Quiz and the Custom quiz (the games with typed questions; any subject
+  that has them: the card's unit word is the subject's `one`); no moment to prefer, so the first break is the Next right
+  after the third "I don't know"; twice at most, the second 150 questions after the first; last of the six when several
+  are due. Card: "Did you know?", "Not sure how to spell it? Type it anyway", "A close spelling counts as right: you just
+  retype the genus once to learn its spelling. “I don't know” counts as a miss." and **Got it** only (nothing to open:
+  no `act`, so no **Show me**; Escape is Got it). The typed form says it again at the moment itself ("So close!").
+  ([record](../decisions/2026-11-22-tip-f-typed-answers.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,

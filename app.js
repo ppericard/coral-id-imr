@@ -254,30 +254,51 @@ const upsize = (root = $v) =>
     upsizeImg(i, Math.max(r.width, r.height));
   });
 // A photo failing on R2: asked once more (core.js photoRetry; a service worker did so already), then its online original
-// or the site's file (photoFallback); with no worker the page's next photos go there at once (r2Out), so R2 out of reach
-// costs one failed request. Before every other error listener.
+// or the site's file (photoFallback); with no worker R2 is given up for the page once R2_OUT photos failed in a row
+// (r2Failed). Before every other error listener.
 const photoFail = e => {
   const i = e.target;
   if (!(i instanceof HTMLImageElement)) return;
   // A card's photo stays out of sight while it is asked again (the cards' own error listener, quiz.js, which this one
   // stops, does the same for the retries after it: never a broken-image icon on a card); its load shows it again.
   const hide = () => i.closest('.unlock') && i.classList.add('fail');
-  // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
-  if (!swOn() && photoRetry(i, away)) return (hide(), e.stopImmediatePropagation());
+  // R2 once more first (core.js photoRetry: a passing error), then the online original or the site; a file that failed
+  // so already (its quiz preload) is not asked again.
+  if (!swOn() && !r2Missed(i.currentSrc || i.getAttribute('src')) && photoRetry(i, away)) return (hide(), e.stopImmediatePropagation());
   if (away(i)) (hide(), e.stopImmediatePropagation());
 };
 const away = i => {
   // Under a service worker the 480 px step and the backdrop stay on R2, where the worker keeps its offline copies.
-  const sw = swOn();
+  const sw = swOn(),
+    u = i.currentSrc || i.getAttribute('src');
   if (!photoFallback(i, photoLook, sw)) return false;
-  if (!sw) (r2Out(), photoFallback(i.closest('figure'), photoLook));
+  if (!sw) (photoFallback(i.closest('figure'), photoLook), r2Failed(u));
   cropWatch();
   return true;
 };
-// R2 failed on a page no service worker controls (an element, app.js away, or a quiz preload, quiz.js pump): the next
-// photos go to their online original or the site, and the crops are drawn from now on.
+// When R2 is given up (docs/decisions/2026-11-21-r2-given-up-after-three.md). On a page no service worker controls, a
+// photo that still fails on R2 after its retry (an element, app.js away, or a quiz preload, quiz.js pump) falls back on
+// its own; R2 is given up for the visit (r2Out) once R2_OUT different photos failed so in a row, no photo loaded from R2
+// in between: R2 down, or a network that blocks it, costs a few failed requests, and one file missing or one passing
+// error leaves the other photos on R2. A photo counts once (its sizes and its Find the X tile are one photo, its preload
+// and its element one failure); R2MISS: the files that failed so, not asked from R2 once more.
+const R2_OUT = 3;
+const R2MISS = new Set(),
+  R2RUN = new Set();
+const r2File = u => photoLocal(String(u || '')).replace(/[?#].*$/, '');
+const r2Missed = u => photoOnR2(u) && R2MISS.has(r2File(u));
+const r2Failed = u => {
+  const x = photoFileOf(u);
+  if (!x || !photoOnR2(u)) return;
+  R2MISS.add(r2File(u));
+  R2RUN.add(x.f.replace(/-x$/, ''));
+  if (R2 && R2RUN.size >= R2_OUT) r2Out();
+};
+const r2Loaded = u => photoOnR2(u) && R2RUN.clear();
+// R2 given up: the next photos go to their online original or the site, and the crops are drawn from now on.
 const r2Out = () => ((R2 = false), (AWAY = true), cropWatch());
 document.addEventListener('error', photoFail, true);
+document.addEventListener('load', e => e.target instanceof HTMLImageElement && r2Loaded(e.target.currentSrc), true);
 // A cropped photo shown from its online original gets its crop drawn (core.js photoCropOf: the site's files have it baked
 // in): every <img> added or given a new src is checked, from the first fallback on (nothing watches before).
 let CROPW = null;
@@ -838,8 +859,8 @@ function treeGenera(X, F) {
   X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
   // The fish species level, step 1 (docs/ARCHITECTURE.md "Fish species, step 1: by common name"): one unit per species
   // with a listed common name (core.js treeSpUnits: s:s091), its scientific name in small type under each choice. In its
-  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl empty (its pairs
-  // come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
+  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl, the species its record's
+  // look names (core.js spDecl: none for the fish; the other pairs come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
   // (cnFirst, read when shown); also, every listed name (model.js choiceKeys). X.spl: every species unit, families' order.
   const imr = () => typeof imrNow === 'function' && imrNow(),
     first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr()) : ((s.cn || [])[0] || [])[0]) || s.common || s.name;
@@ -867,7 +888,7 @@ function treeGenera(X, F) {
       ig: E.ig,
       forms: E.forms,
       look: u.look,
-      decl: [],
+      decl: u.decl,
       lk: [],
       lsrc: {},
       also: (s.cn || []).flat(),
@@ -923,7 +944,7 @@ function treeGenera(X, F) {
       ig: G.ig,
       forms: G.forms,
       look: u.look,
-      decl: [],
+      decl: u.decl,
       lk: [],
       lsrc: {},
       also: [],
@@ -2296,6 +2317,10 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //   opens       slate parts opened on a yes (quiz.js openOfferShow, My progress any time once due), counted either way
 //   done()      the card once every unit is met and none may open (quiz.js allMetDue): {k, kick, title, lines}
 //   listBy      a keyless tree subject's grouping rank on its Learn list (the sea slugs: 'family'); absent, one block
+//   named       true where the units have names of their own, read through GX(n).name (the tree subjects' entries, from
+//               TREE_UNITS): Home's band draws the slate's units and its door says the subject's words (home.js)
+//   group(k)    a unit group of the subject's teaching by its number, {n, t} (the corals: the IMR lecture's groups,
+//               DATA.imrg), for the views that group the units (My progress' Groups, the quiz's progress groups)
 
 // Bonus genera (core.js BONUS; docs/ARCHITECTURE.md "Bonus genera"): Coral Finder genera common at Dauin with a
 // look-alike on the slate, or no hard coral; opt-in (Q.bon, ⚙ any time, off keeps their progress), then open like the
@@ -2438,6 +2463,8 @@ const SEA_HELLO = {
 // adds only its words, its files and its own settings and differences (rule S1). Functions only, no shared state.
 const TREE_UNITS = {
   load: S => treeLoad(S.id),
+  // Its units have names of their own (GX(n).name): Home's band and words (home.js).
+  named: true,
   // Its circles 1 to 3, all on the path and in the progress (a sea slug genus's circle is its best species').
   slate: () => (TREEU ? [...TREEU.c1, ...TREEU.c2, ...TREEU.c3] : []),
   // The "mystery" tiles on My progress (progress.js mysteryOn): for every player, whatever their first-launch answer.
@@ -2467,6 +2494,30 @@ const TREE_UNITS = {
   // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
   // name line for each.
   sheet: id => viewTreeSheet(id),
+  // The sections of each sheet, in their order on the page (learn.js sheetBody; each is the sheet's own builder of that
+  // name): the names, my progress, the first photo with the ID tips, the look-alikes, the genus rows or species, the
+  // juveniles, a species' sexes or colour phases (phases: only where the cited phase list gives them), the report line.
+  sheetParts: {
+    family: ['names', 'prog', 'hero', 'looks', 'genera', 'juveniles', 'report'],
+    genus: ['names', 'prog', 'hero', 'genusMarks', 'note', 'roots', 'moved', 'species', 'looks', 'more', 'report'],
+    species: [
+      'names',
+      'badges',
+      'facts',
+      'note',
+      'genusMarks',
+      'marks',
+      'roots',
+      'rank',
+      'photos',
+      'juvenile',
+      'phases',
+      'siblings',
+      'looks',
+      'more',
+      'report'
+    ]
+  },
   bar: id => treeBar(id)
 };
 // What the tree subjects (fish, sea slugs) say in the Look-alikes deck and Compare (UNITS cmp, deck, inGame): their declared
@@ -2489,6 +2540,7 @@ const unitsByParent = (L, rk) => {
   L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
   return [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity));
 };
+let phasesFile = null; // the fish's documented colour phases, once (UNITS fish phases)
 const UNITS = {
   coral: {
     // The custom quiz's groups (quiz.js viewCustom; the other two views are the same for every subject): by, the first
@@ -2502,12 +2554,20 @@ const UNITS = {
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
+    // The words of the "Did you know?" tip for its Identify tool (tips.js identify, quiz.js tipOut): ask, the title's
+    // question; name; lo, the body. Declared only by a subject whose Identify tool works: no words, no tip (the Fish ID Key
+    // is coming soon).
+    idtip: {
+      ask: 'Stuck on a coral?',
+      name: 'Coral ID Key',
+      lo: 'Tap the growth form and the clues you can see: it ranks the genera that fit, then compares them side by side.'
+    },
     // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
     memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
     // the Home line's question; kick, the offer card's kicker; offer, lo, all, the offer card's and the "lower" card's text
-    // (quiz.js startBasicsOffer and the fallback card); card, the Learn card's line; trail, the card's picture (learn.js,
-    // read when the card is drawn).
+    // (quiz.js startBasicsOffer and the fallback card; lo is also the body of the "Did you know?" basics tip, tips.js,
+    // with ask and name); card, the Learn card's line; trail, the card's picture (learn.js, read when the card is drawn).
     basics: {
       mod: 'basics',
       name: 'Coral basics',
@@ -2526,6 +2586,8 @@ const UNITS = {
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
+    // The IMR lecture's group k (data.json imrg: {n, t}), undefined for the genera outside the lecture's groups.
+    group: k => DATA.imrg.find(x => x.n === k),
     // The structure stamp of its units (core.js structStamp: '' while the look-alike pairs in force are data.json's), sent
     // with the requests so the sheet replays under the pairs in force (sync.js stsAsk).
     st: () => DATAST,
@@ -2599,6 +2661,10 @@ const UNITS = {
     // (#learn/genus/Acropora).
     list: () => viewList(),
     sheet: n => viewGenus(n),
+    // The sections of its genus sheet, in their order (learn.js sheetBody): the summary line, the warning (a benthic, a
+    // genus not on the IMR list, a ★ genus not surveyed), my progress, the cover with the ID tips and More details (the
+    // Coral ID Key criteria, In the key), the photos by view, the look-alikes in the same view, the report line.
+    sheetParts: {genus: ['sum', 'warn', 'prog', 'hero', 'views', 'looks', 'report']},
     sets: [
       {
         k: 'bon',
@@ -2795,6 +2861,19 @@ const UNITS = {
     winks: () => (TREEU ? TREEU.winks.filter(n => TREEU.gen[n].views.wide.length) : []),
     // The tile photos of unit n (Find the X, quiz.js planPhoto; unitTiles): fish-game.json's xc.
     tiles: unitTiles,
+    // The colour phases a cited source documents, per species (fish-phases.json, tools/fish_phases_site.py from
+    // tools/fish_phases.json): {species: {id: {name, juv, sex, ip_tp}}}, fetched once, by the Lab's Life stages matched
+    // (proto/lifestages.js), which a subject without this member does not offer. Unversioned and outside the service worker's
+    // shell (as the sea slugs' files): a Lab game's data is not carried by every device's install.
+    // Only a list that came is kept: a failed fetch (json gives {}) is dropped so reopening the game asks again.
+    phases: () =>
+      (phasesFile =
+        phasesFile ||
+        json('fish-phases.json').then(j => {
+          if (j && j.species) return j;
+          phasesFile = null;
+          throw new Error('fish-phases.json');
+        })),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
       `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
@@ -2986,7 +3065,15 @@ const UNITS = {
       photos: '',
       course:
         'The sea slugs, their circles and their stars come from iNaturalist’s Research Grade observations in the Philippines, Wikipedia pageviews and public dive pages; their names and classification from WoRMS.',
-      refs: '<li>WoRMS Editorial Board, <a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species</a>: the sea slugs’ scientific names and classification.</li>'
+      refs: '<li>WoRMS Editorial Board, <a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species</a>: the sea slugs’ scientific names and classification.</li><li><a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a>: some of the sea slugs’ English names, linked from the name.</li>',
+      // The sources its data cites, listed under References (home.js aboutCites): in, the parts of seaslug.json that hold
+      // them (the ID marks and look-alike lines of its families, genera and species, their names' sources, its guides).
+      // The sources cited by a key (en src: inat, worms, wiki) are lines of the page already: iNaturalist and WoRMS in
+      // home.js References, Wikipedia in refs above; tests/seaslug-about.test.js checks that each key has its line.
+      cites: {
+        lead: 'Cited on the sea slug sheets, for their ID marks, look-alike lines and names:',
+        in: ['families', 'genera', 'species', 'ensrc']
+      }
     },
     // No level-change card until the subject is calibrated (as the fish).
     startFb: false,
@@ -3048,7 +3135,7 @@ const UNITS = {
     webBy: () => [{chip: 'Colour by family', of: n => GX(n).parent || 0, name: k => (k ? (GX(k) || {name: k}).name : 'No family')}],
     winks: () => [],
     // The tile photos of unit n (Find the X; unitTiles): seaslug-game.json's xc, cut by tools/seaslug_game.py where a photo
-    // carries the animal's box (bb). No photo does yet (judging/SEASLUG.md gives none), so the draw is as without it.
+    // carries the animal's box (bb: judging/SEASLUG.md "The animal's box"), so a genus plays it once it has tiles.
     tiles: unitTiles,
     // Its sheets in its own words (learn.js sheetWord: no fish word on a sea-slug sheet): each sheet's ?
     // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
@@ -3958,6 +4045,8 @@ function route() {
   if ((h || 'home') === 'home' && typeof subjHello === 'function') subjHello();
   // The same moment for the offer to install the app (installNudge, below).
   if ((h || 'home') === 'home' && typeof installNudge === 'function') installNudge();
+  // The Identify tool opened counts for the "Did you know?" tip about it; Home and My progress may show that tip (quiz.js).
+  if (typeof tipRoute === 'function') tipRoute(h);
   // The page of address h is drawn: the tests wait for this instead of a fixed time (tests/pages.smoke.js drawn()).
   window.ROUTED = h;
 }
@@ -4423,6 +4512,7 @@ const SETUP = {
     achHelped(); // a report of this player's marked done in the admin: told once
     subjHello(); // a subject newly open to the player (fish): once, at a calm moment on Home
     installNudge(); // install the app on the home screen: once, at a calm moment on Home
+    tipRoute(hashNow()); // the Identify tool's "Did you know?" tip: Home or My progress, a page drawn before this tier
     prog();
     window.APP_READY = true; // Home, the quiz and My progress work (tests and tools/perf.js wait for this)
   },

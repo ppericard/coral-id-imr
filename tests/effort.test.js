@@ -48,6 +48,9 @@ test('type: a Code.gs that only copies core.js is engine, one with its own chang
   assert.strictEqual(t(paths, {'core.js': 40, 'tools/sync/Code.gs': 44}), 'engine', 'a pure copy is core.js + 4 lines');
   assert.strictEqual(t(paths, {'core.js': 40, 'tools/sync/Code.gs': 140}), 'sheet');
   assert.strictEqual(t(['tools/sync/Code.gs'], {'tools/sync/Code.gs': 6}), 'sheet');
+  // A part of core.js (core/*.js, tools/sync_core.py) is the engine as core.js is.
+  const parts = ['core/keys.js', 'core.js', 'tools/sync/Code.gs'];
+  assert.strictEqual(t(parts, {'core/keys.js': 40, 'core.js': 40, 'tools/sync/Code.gs': 44}), 'engine');
 });
 
 test('size bands from lines changed', () => {

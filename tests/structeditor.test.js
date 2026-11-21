@@ -154,7 +154,7 @@ test('a structure change: a circle or a pair, as published (an emptied map or a 
   assert.ok(!structChanged({pairs: {[K]: e(null, 1)}}, {pairs: {[K]: e(null, 1)}}));
 });
 
-// Photos › Look-alikes (admin.js renderFishMont): one photo pair per pair in force, the base's less the withdrawn ones,
+// Photos › Look-alikes (admin.js renderMont, MONT_BUILD tree): one photo pair per pair in force, the base's less the withdrawn ones,
 // plus the added ones marked, keyed as the pair entries (fish mont); the circles do not take a pair out (as the Tree's
 // filter); the same pairs as pairRows says are in force.
 test('Look-alikes lists the pairs in force: a withdrawn pair gone, an added one marked, keyed as his entries', () => {

@@ -512,6 +512,22 @@ const rootLine = (g, slate, where = 'on the slate', unit = n => `<i>${esc(n)}</i
 function sheetPage(lede, cls, body) {
   $v.innerHTML = `<p class="lede">${lede}</p>\n  <article class="${cls}">${body}</article>`;
 }
+// A sheet's body: the parts its subject declares for this kind of sheet (app.js UNITS sheetParts: {genus: [...]} for the
+// corals, {family, genus, species} for the tree subjects), in that order, each drawn by the sheet's builder of that name
+// (S: {part: () => HTML}), one to a line. A builder returns null for a part this sheet does not have: no line at all (''
+// keeps its empty line, as the parts drawn before null existed do). A declared part the sheet has no builder for throws:
+// a subject declares only the parts its sheets build.
+function sheetBody(kind, S) {
+  return (
+    UNITS[SUBJ.id].sheetParts[kind]
+      .map(k => {
+        if (typeof S[k] !== 'function') throw new Error(`sheetBody: no ${kind} part "${k}"`);
+        const h = S[k]();
+        return h === null ? '' : `\n    ${h}`;
+      })
+      .join('') + '\n  '
+  );
+}
 // The line at the end of a sheet: report a problem with it.
 const sheetRep = id => `<p class="repline">${repBtn({k: 'sheet', g: id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>`;
 // The fold under a sheet's sources and further names.
@@ -574,22 +590,21 @@ function viewGenus(name) {
   sheetPage(
     `One genus on one page. The highlighted <b>ID tips (IMR)</b> are what to remember; the <b>IMR lecture notes</b> give the full lecture cues. Its <b>IMR group</b> is the lecture's confusion group: genera in the same group are the ones to tell apart. Photos at three distances: <b>colony</b>, <b>close-up</b> (10-30 cm) and <b>corallites</b> (macro); tap one to enlarge it. <b>Don't confuse with</b>, at the bottom, shows its look-alikes in the same view. Dotted words show their definition when tapped.${isPhone() ? '' : ' ← / → go to the previous / next genus.'}`,
     'sheet',
-    `
-    ${imr.length || g.x || !g.sum ? '' : `<p class="lede keyid">${esc(g.sum)}${esrcIn(g, 'sum')}</p>`}
-    ${
-      isBenthic(name)
-        ? `<p class="warn">${BENTHIC_NOTE}</p>`
-        : g.x
-          ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>`
-          : g.n
-            ? ''
-            : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look
-                .filter(n => (DATA.gen[n] || {}).n)
-                .map(n => '<i>' + esc(n) + '</i>')
-                .join(', ')}, so you need to recognise it and set it aside.</p>`
-    }
-    ${myProg(name)}
-    <div class="hero">
+    sheetBody('genus', {
+      sum: () => (imr.length || g.x || !g.sum ? '' : `<p class="lede keyid">${esc(g.sum)}${esrcIn(g, 'sum')}</p>`),
+      warn: () =>
+        isBenthic(name)
+          ? `<p class="warn">${BENTHIC_NOTE}</p>`
+          : g.x
+            ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>`
+            : g.n
+              ? ''
+              : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look
+                  .filter(n => (DATA.gen[n] || {}).n)
+                  .map(n => '<i>' + esc(n) + '</i>')
+                  .join(', ')}, so you need to recognise it and set it aside.</p>`,
+      prog: () => myProg(name),
+      hero: () => `<div class="hero">
       ${cv ? heroBtn(ci, name, `<img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}">`) : ''}
       <div class="idbox">
         ${plainLine(g)}${esrcP(g, 'plain')}
@@ -606,11 +621,11 @@ function viewGenus(name) {
         <p class="note refs"><b>References:</b> ${imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
         `)}
       </div>
-    </div>
-    <div class="vrows">${rows}</div>
-    <section class="hubsec">${lookHub(name)}</section>
-    ${DATA.gen[name] ? sheetRep(name) : ''}
-  `
+    </div>`,
+      views: () => `<div class="vrows">${rows}</div>`,
+      looks: () => `<section class="hubsec">${lookHub(name)}</section>`,
+      report: () => (DATA.gen[name] ? sheetRep(name) : '')
+    })
   );
   $v.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.z))));
   $v.querySelectorAll('[data-cmp]').forEach(b => (b.onclick = () => go('cmp-' + name + '|' + b.dataset.cmp)));
@@ -1496,10 +1511,11 @@ function treeFamily(f) {
   sheetPage(
     `${sheetWord('famLede') ? sheetWord('famLede')(f) : `One family of ${key ? esc(key.short) : 'the identification key'} on one page, under its English name, its scientific name or names below. The <b>ID tips (IMR)</b> are the IMR fish presentation's. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next family.'}`,
     'sheet fsheet',
-    `
-    <div class="fnames"><p class="fn-t">${esc(f.name)}</p>${vernHead(f.id)}${famSci(f) || famIMR(f) ? `<p class="fn-s">${esc(famSci(f))}${famIMR(f) ? ` <span>· ${esc(famIMR(f))}</span>` : ''}</p>` : ''}${gr ? `<p class="fn-g">${gr.n}. ${esc(gr.title)}${key ? ' · ' + esc(key.short) : ''}</p>` : ''}</div>
-    ${u ? myProg(u) : ''}
-    <div class="hero">
+    sheetBody('family', {
+      names: () =>
+        `<div class="fnames"><p class="fn-t">${esc(f.name)}</p>${vernHead(f.id)}${famSci(f) || famIMR(f) ? `<p class="fn-s">${esc(famSci(f))}${famIMR(f) ? ` <span>· ${esc(famIMR(f))}</span>` : ''}</p>` : ''}${gr ? `<p class="fn-g">${gr.n}. ${esc(gr.title)}${key ? ' · ' + esc(key.short) : ''}</p>` : ''}</div>`,
+      prog: () => (u ? myProg(u) : ''),
+      hero: () => `<div class="hero">
       ${hero ? heroBtn(0, f.name, heroPic(hero, f.name)) : `<span class="hero-ph">${noFish()}</span>`}
       <div class="idbox">
         ${(f.cues || []).length ? cuesBox(f, 'ID tips (IMR)', esc(slideLine(f.sl))) : ''}
@@ -1519,12 +1535,17 @@ function treeFamily(f) {
           .join(' · ')}</p>
         `)}
       </div>
-    </div>
-    ${looks.length || glooks.length ? looksSection(`<div class="lt self">${hero ? `<img ${thumb(hero, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(f.name)}" loading="lazy">` : noFish()}<span><b>${esc(f.name)}</b><small>this family</small></span></div>${looks.map(lookCard).join('')}${glooks.map(L => treeGenusLookCard(one, T, L)).join('')}`) : ''}
-    ${gsec}
-    ${jsec}
-    ${sheetRep(f.id)}
-  `
+    </div>`,
+      looks: () =>
+        looks.length || glooks.length
+          ? looksSection(
+              `<div class="lt self">${hero ? `<img ${thumb(hero, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(f.name)}" loading="lazy">` : noFish()}<span><b>${esc(f.name)}</b><small>this family</small></span></div>${looks.map(lookCard).join('')}${glooks.map(L => treeGenusLookCard(one, T, L)).join('')}`
+            )
+          : '',
+      genera: () => gsec,
+      juveniles: () => jsec,
+      report: () => sheetRep(f.id)
+    })
   );
   treeBind(flat, () => treeFamily(f));
 }
@@ -1589,26 +1610,34 @@ function treeGenus(g) {
   sheetPage(
     `${sheetWord('genLede') ? sheetWord('genLede')(f) : `One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart, and the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}`,
     'sheet fsheet',
-    `
-    <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
-    ${GX(g.id) ? myProg(g.id) : ''}
-    ${(() => {
-      const tips = (g.cues || []).length ? cuesBox(g, `ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''})`, esc(slideLine(g.sl))) : '';
-      return hero
-        ? `<div class="hero">${heroBtn(0, g.name, heroPic(hero, g.name))}<div class="idbox">${tips}</div></div>`
-        : tips
-          ? `<div class="idbox">${tips}</div>`
-          : '';
-    })()}
-    ${genMarks(g, g.id)}
-    ${treeNote(g)}
-    ${treeRoot(g, g.id)}
-    ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
-    <h3>Species <small>${L.length}</small></h3>${treeTiles(L, flat)}
-    ${sib.length || looks.length ? looksSection(`${sib.map(card).join('')}${looks.map(L => treeGenusLookCard(g, T, L)).join('')}`) : ''}
-    ${g.common ? moreDetails(`<p class="note refs"><b>Common name:</b> ${esc(g.csrc || '')}</p>`) : vernOf(g.id).length ? moreDetails(vernMore(g.id)) : ''}
-    ${sheetRep(g.id)}
-  `
+    sheetBody('genus', {
+      names: () =>
+        `<div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>`,
+      prog: () => (GX(g.id) ? myProg(g.id) : ''),
+      hero: () => {
+        const tips = (g.cues || []).length ? cuesBox(g, `ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''})`, esc(slideLine(g.sl))) : '';
+        return hero
+          ? `<div class="hero">${heroBtn(0, g.name, heroPic(hero, g.name))}<div class="idbox">${tips}</div></div>`
+          : tips
+            ? `<div class="idbox">${tips}</div>`
+            : '';
+      },
+      genusMarks: () => genMarks(g, g.id),
+      note: () => treeNote(g),
+      roots: () => treeRoot(g, g.id),
+      moved: () =>
+        now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : '',
+      species: () => `<h3>Species <small>${L.length}</small></h3>${treeTiles(L, flat)}`,
+      looks: () =>
+        sib.length || looks.length ? looksSection(`${sib.map(card).join('')}${looks.map(L => treeGenusLookCard(g, T, L)).join('')}`) : '',
+      more: () =>
+        g.common
+          ? moreDetails(`<p class="note refs"><b>Common name:</b> ${esc(g.csrc || '')}</p>`)
+          : vernOf(g.id).length
+            ? moreDetails(vernMore(g.id))
+            : '',
+      report: () => sheetRep(g.id)
+    })
   );
   treeBind(flat, () => treeGenus(g));
 }
@@ -1624,6 +1653,30 @@ function treeGenus(g) {
 function spSheetPhotos(P, lead = null) {
   const main = [...(lead ? [lead] : []), ...P.filter(p => p !== lead && !juvP(p))];
   return {shown: [...main.slice(0, 3), ...P.filter(p => p !== lead && juvP(p)).slice(0, 2)], more: main.slice(3)};
+}
+// A species' sexes or colour phases (REE-54; the fish sheets study §5.1 S5, §5.2; Pierre's answers of 2026-11-06, Q3, Q4,
+// Q12): only for a species the cited phase list flags (fish.json species phs {k, src}: tools/build_fish.py phase_sources,
+// tools/fish_phases.json), with at least one source, else null (no section: sheetBody). What it says is what the list
+// records and the phase card says (quiz.js phaseShow): k 'sex', its males and females look different; k 'phase', its
+// colour phases do; then the list's sources (quiz.js phaseSrcs, rule C2). Then up to SP_PHASE_N photos of each phase
+// judged on its photos (core.js phaseOf: the judge's, or Pierre's in the admin), in SP_PHASES' order, each phase's in its
+// photos' order (P: treeSpPhotos, the easiest and most reference-like first, Q3), under the card's word for it (quiz.js
+// PHASEC.WORD). No phase of our own, no description line: the list gives none (rule C2). fig(p, i, word): a photo's
+// figure, i its place among the sheet's photos (flat, the lightbox's list; a photo not in it yet is added).
+const SP_PHASES = ['intermediate', 'female', 'male', 'terminal'],
+  SP_PHASE_N = 2;
+function spPhases(s, P, flat, fig) {
+  const phs = s.phs;
+  if (!phs || !(phs.src || []).length) return null;
+  const what = phs.k === 'phase' ? 'colour phases' : 'males and females',
+    word = w => (PHASEC.WORD || {})[w] || w[0].toUpperCase() + w.slice(1),
+    at = p => (flat.includes(p) ? flat.indexOf(p) : flat.push(p) - 1),
+    figs = SP_PHASES.flatMap(w =>
+      P.filter(p => phaseOf(p) === w)
+        .slice(0, SP_PHASE_N)
+        .map(p => fig(p, at(p), false, word(w)))
+    );
+  return `<section class="fphases"><h3>${what[0].toUpperCase() + what.slice(1)}</h3><p class="fjuv">This species’ ${what} can look very different.</p><p class="note refs">${phaseSrcs(phs.src)}</p>${figs.length ? `<div class="strip">${figs.join('')}</div>` : ''}</section>`;
 }
 function treeSpecies(s) {
   const T = ftree(),
@@ -1641,43 +1694,55 @@ function treeSpecies(s) {
     gto = g ? treeGo(g.id) : '',
     // its genus's look-alikes when its genus opens this sheet (one species: treeGenusLooksOn)
     glooks = treeGenusLooksOn(g, T, 's:' + s.name);
-  const fig = (p, i, big) =>
-    `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
+  // word: the caption's phase word (spPhases), else Juvenile for a juvenile
+  const fig = (p, i, big, word) =>
+    `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${word ? `<b>${esc(word)}</b> · ` : isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
   const links = spLinks(s);
   sheetPage(
     `${sheetWord('spLede') || 'One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.'}${isPhone() ? '' : ' ← / → go to the previous / next species.'}`,
     'sheet fsheet',
-    `
-    <div class="fnames"><p class="fn-t">${spNameH(s)}</p>${vernOf(s.id).length ? vernHead(s.id) : spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
-    <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
-    ${spFacts(s)}
-    ${treeNote(s)}
-    ${genMarks(g, 's:' + s.name)}
-    ${marksBox(s)}
-    ${treeRoot(g, 's:' + s.name)}
-    ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} ${esc(met.where)}.</p>` : ''}
-    ${
-      shown.length
-        ? `<div class="fphotos">${fig(shown[0], 0, true)}${
-            shown.length > 1
-              ? `<div class="strip">${shown
-                  .slice(1)
-                  .map((p, i) => fig(p, i + 1))
-                  .join('')}</div>`
-              : ''
-          }</div>${
-            more.length
-              ? `<details class="more"><summary>${more.length} more photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map((p, i) => fig(p, shown.length + i)).join('')}</div></details>`
-              : ''
-          }`
-        : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
-    }
-    ${s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : ''}
-    ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(treeTile).join('')}</div>` : ''}
-    ${glooks.length ? looksSection(glooks.map(L => treeGenusLookCard(g, T, L)).join('')) : ''}
-    ${moreDetails(`${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${s.inf && s.cite ? esc(s.cite) + ' · ' : ''}${links}</p>`)}
-    ${sheetRep(s.id)}
-  `
+    sheetBody('species', {
+      names: () =>
+        `<div class="fnames"><p class="fn-t">${spNameH(s)}</p>${vernOf(s.id).length ? vernHead(s.id) : spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>`,
+      badges: () =>
+        `<p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>`,
+      facts: () => spFacts(s),
+      note: () => treeNote(s),
+      genusMarks: () => genMarks(g, 's:' + s.name),
+      marks: () => marksBox(s),
+      roots: () => treeRoot(g, 's:' + s.name),
+      rank: () =>
+        F.length > 1 && rank
+          ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} ${esc(met.where)}.</p>`
+          : '',
+      photos: () =>
+        shown.length
+          ? `<div class="fphotos">${fig(shown[0], 0, true)}${
+              shown.length > 1
+                ? `<div class="strip">${shown
+                    .slice(1)
+                    .map((p, i) => fig(p, i + 1))
+                    .join('')}</div>`
+                : ''
+            }</div>${
+              more.length
+                ? `<details class="more"><summary>${more.length} more photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map((p, i) => fig(p, shown.length + i)).join('')}</div></details>`
+                : ''
+            }`
+          : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`,
+      juvenile: () => (s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : ''),
+      phases: () => spPhases(s, P, flat, fig),
+      siblings: () =>
+        sib.length
+          ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(treeTile).join('')}</div>`
+          : '',
+      looks: () => (glooks.length ? looksSection(glooks.map(L => treeGenusLookCard(g, T, L)).join('')) : ''),
+      more: () =>
+        moreDetails(
+          `${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${s.inf && s.cite ? esc(s.cite) + ' · ' : ''}${links}</p>`
+        ),
+      report: () => sheetRep(s.id)
+    })
   );
   treeBind(flat, () => treeSpecies(s));
 }

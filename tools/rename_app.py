@@ -33,7 +33,8 @@ docs/reviews/ and docs/reference/ (dated records), tools/archive/ and the JSON d
 5. Prettier (rule W13, the same pinned version) on the JS and CSS files it changed: longer key
    names move line breaks.
 
-A fork run by another organisation: edit core.js ORG, then run this tool with --from "IMR Reef ID" (every earlier
+A fork run by another organisation: edit ORG in core/keys.js (core.js's part that holds it), run
+python3 tools/sync_core.py --fix (core.js and the sheet script's copy follow), then run this tool with --from "IMR Reef ID" (every earlier
 name it should replace); the storage keys do not depend on the organisation, so nothing else moves.
 """
 import argparse, base64, hashlib, json, re, subprocess, sys

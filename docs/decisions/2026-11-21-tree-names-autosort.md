@@ -29,6 +29,6 @@ names.
   pure word substitution, checked reversible file by file against `origin/main`.
 - Not renamed: other files' own functions under one of the old names (`admin.js` `fishState`, `tools/ratedworld.js`
   `fishUnits`, `tools/fetch_fish.py` `FISH_TAGS`), the history (decision records, reviews, the archive), and `core.js`
-  with its copy in `Code.gs`, whose comments cite some of these names until `core.js`'s next change (rule D3).
+  (its parts in `core/`) with its copy in `Code.gs`, whose comments cite some of these names until `core.js`'s next change (rule D3).
 - Left of step 3 (a): `admin.js`'s own `fish*` names, most of them halves of the duplicates the admin one-engine study
   merges, and the Python library.

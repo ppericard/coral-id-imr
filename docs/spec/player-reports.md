@@ -54,13 +54,13 @@ Then the tools the report carries what they need for:
   photo picked shows with its tools, kept in this tab only, never saved).
 
 **Its photos carry every tool of their page**: a coral photo its genus page's tile (`coralRepTile`, `tile0` without the
-drag handle: quality, growth form, view, ★ Cover, Remove, Crop with the rotation, Not this genus, ×); a fish photo its
+drag handle: quality, growth form, view, ★ Cover, Remove, Crop with the rotation, Not this genus); a fish photo its
 family page's, one renderer and one binder for both (`fishTile`, `bindFishTiles` in `admin.js`; `fishRepTile` reads
 whether it is in play, featured or the cover as the family page does, `fuFam` once per draft, under the species it is in
 play for and that species' family, `fishFamOf`, a photo moved with Not this into another family included): Feature,
 ★ Cover, Remove, Not this (a candidate photo), Crop (with the rotation, `admin-fish.js` `fishCrop`), Tags (its Ease,
 phase and the rubric's tag rows and flags, `fishRows` / `bindFishRows` as on the fish Candidates card, unfolded on that
-tile only, which on a family page then takes a whole row on a phone and two columns from 600 px), ×, enlarge in place,
+tile only, which on a family page then takes a whole row on a phone and two columns from 600 px), enlarge in place,
 plus Open in Tree. A count of Other species in view (code `m`, several species on one photo; the Count row reads One
 fish, Same species, Other species in view, Unclear, each with its tooltip) or Unclear set on a photo in play also takes
 it out of play in the same Undo step (rule P3: the game never plays such a photo by itself, `autosort.js` `treeSure`,

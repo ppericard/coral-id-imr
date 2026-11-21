@@ -208,7 +208,7 @@ test('the frame wires the zoom, the ×, the keys and the drag to the builder; a 
   const z = [btn('a2'), btn('b1')],
     x = [btn('a1')];
   c.pg.all['[data-act="zoom"]'] = z;
-  c.pg.all['[data-act="exclude"]'] = x;
+  c.pg.all['[data-act="remove"]'] = x;
   c.pg.all['.adm-qt'] = [tile('a1')];
   c.renderReview(NEW, 'one');
   z[1].onclick();
@@ -218,7 +218,7 @@ test('the frame wires the zoom, the ×, the keys and the drag to the builder; a 
     ['zoom', 'b1'],
     ['exclude', 'a1']
   ]);
-  assert.ok(stopped, 'the × does not reach the tile');
+  assert.ok(stopped, 'Remove does not reach the tile');
   assert.deepStrictEqual(
     plain(c.calls.find(l => l[0] === 'keys')),
     ['keys', 'photos/review/one', 'function'],
@@ -339,7 +339,7 @@ const flatCtx = () => {
     FAG_OPEN: false,
     FSCOPE: [],
     GRIP: '<g></g>',
-    XBTN: '<x></x>',
+    RMBTN: '<x></x>',
     allPhotos: () => PH,
     bindBar: () => {},
     bindQ: () => {},
@@ -392,7 +392,7 @@ test("the corals' builder: Quality has a band a level with its drop value, Growt
   assert.match(t.cls, / adm-qt is-hidden$/);
   assert.match(t.attrs, /data-f="p2" data-g="Porites" data-q="1" data-drag tabindex="0"/);
   assert.match(t.cap, /<span class="adm-src multi">hidden<\/span><q><\/q>$/);
-  assert.strictEqual(t.acts, '<qseg></qseg>');
+  assert.strictEqual(t.acts, '<qseg></qseg><x></x>', 'the tile ends with the one Remove (RMBTN)');
   assert.strictEqual(typeof P.keys, 'function');
   assert.strictEqual(typeof P.drop, 'function');
   // the whole page through the frame: the drop value is the level
@@ -483,8 +483,9 @@ test('the frame names no subject: one renderReview and one renderDiff, their dif
 });
 
 test("the growth-form axis is the corals' named hook (rule C4): its pieces are in the flat builder only", () => {
-  const flat = block(ADMIN, '    flat: (() => {', '    // The tree subjects (fish, sea slugs)', {file: 'admin.js'}),
-    tree = block(ADMIN, '    tree: (() => {', '\n  },\n  // A subject', {file: 'admin.js'});
+  const review = block(ADMIN, '// review build: begin', '// review build: end', {file: 'admin.js'}),
+    flat = block(review, '    flat: (() => {', '    // The tree subjects (fish, sea slugs)', {file: 'admin.js'}),
+    tree = block(review, '    tree: (() => {', '\n  },\n  // A subject', {file: 'admin.js'});
   for (const k of ['fSeg', 'pinBtn', 'agreeFill', 'data-fok', 'LEGACY', 'FORM_ORDER']) {
     assert.ok(flat.includes(k), `the flat builder has ${k}`);
     assert.ok(!tree.includes(k), `the tree builder does not have ${k}`);

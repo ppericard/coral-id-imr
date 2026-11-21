@@ -141,6 +141,17 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    on a unit, right ~ offset (that answer's expectation) + log(1 + days since) + (player): the forgetting slope; and
    over every comeback question (10 or more), right − expected, with its own bootstrap (the app's forgetting curve,
    "Comeback after a break"). Right answers by the time since, in bands from under 30 minutes to 10 days or more.
+   **By genus** (`backGenus`, `stab`; descriptive, no verdict, outside the correction): a rusty comeback question
+   carries the recall R the app gave it, logged in the scoring record (`prep` `R`; `r`, under 1 only), and the logged
+   expectation e = g + (1 − g) R σ(ability part). Had the player's stability been κ times the app's, the recall would be
+   (1 + (R^(1/C) − 1) / κ)^C with C = −0.5 (`model.js` `FSRS.C`): the days and the unit's own stability cancel, so only
+   the logged R is needed. κ is fitted by maximum likelihood on log κ (`cbFit`: a grid over ±4, then a golden-section
+   search), the ability part as the app had it, pooled, and for each genus with `CB.GEN` 5 questions or more under a
+   normal prior of SD `CB.TAU` 1 on log κ centred on the pooled one (a genus with few questions is pulled in); the
+   ranges are the cluster bootstrap's percentiles (from 6 players). It reads *clear* of the app only from `CB.MIN` 200
+   questions and `CB.PLAYERS` 20 players (the comeback study's threshold) and says the answers the pooled range would
+   need for ±30% (`need`). Biased towards less forgetting until the comeback's stopping rule is corrected for (about
+   +0.09 on right − expected, the 2026-11-14 comeback study): an upper bound on remembering, said on the card.
 8. **Sessions** (100 answers, 10 session ends; a session ends after 30 minutes without an answer, `GAP`):
    Kaplan-Meier of the length (a session still open, its last answer under 30 minutes before the log's end, censored)
    and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (log
@@ -182,6 +193,16 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
     their usual: ±0.1, `TD_ZB`). The others' features are fixed in the bootstrap (it resamples the answers' players,
     not the features' sources). A unit's time intensity is not tested: beside the unit's own effect it is not
     identified with a few dozen units.
+11. **Player trajectories** (`trajectories`, `TR`; Pierre, 2026-11-05, Q78: learning trajectories from the first answer
+    to now): the behaviours of Player profiles but the learning slope, on successive windows of each player's whole
+    history: from a session's start, the answers up to the first session's end that makes `TR.W` 100 answers or more
+    (`trBlocks`; a window cut inside a session would end it at the cut, and its session length and stops after misses
+    would be the cut's), the answers after the last window left out. A player needs two windows, 3 players in all; the
+    newest `TR.MAXW` 40 windows a player, the `TR.SHOW` 60 players with the most answers in the report. `profFeat` runs once on every window of every player,
+    each window a unit of its own (the answer time model, the stops' pooled rates), so a window is read against all the
+    windows, not against the players of its own stage. The typical player: each behaviour's median over the players with a
+    value at that window, from 3 players. Up, down or about the same: a player's last window against their first, beyond
+    `TR.FLAT` 0.5 SD of the behaviour's windows. Descriptive, no verdict, outside the multiple-testing correction.
 
 **The rank asked** (`rankOfUnit`, `rkLev`, `rankRef`). For a subject with a sheet per rank (`SUBJECTS` `sheets`: the
 fish, the sea slugs), a question asks a family (`f:` ids), a genus (`g:`) or a species unit (`s:`); each answer's rank

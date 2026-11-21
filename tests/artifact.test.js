@@ -1,7 +1,8 @@
 'use strict';
 require('./slot.js').testGuard();
 // The published site (repo hygiene audit, 2026-11-08): pages.yml stages it with git archive, which leaves out every path
-// .gitattributes marks export-ignore: the docs, tests, tools, the judging package and the repository's own config. Nothing
+// .gitattributes marks export-ignore: the docs, tests, tools, the judging package, the repository's own config and core.js's
+// parts (core/: the pages load core.js, built from them by tools/sync_core.py). Nothing
 // the site serves may need them (the sync script reads raw.githubusercontent.com, never the site).
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -9,7 +10,7 @@ const test = require('node:test'),
   path = require('path'),
   {execFileSync} = require('child_process');
 const ROOT = path.join(__dirname, '..');
-const OUT = ['docs', 'tests', 'tools', 'judging', '.github', '.claude'];
+const OUT = ['docs', 'tests', 'tools', 'judging', '.github', '.claude', 'core'];
 // What git archive keeps of these tracked files, with this checkout's .gitattributes (as the deploy's archive of main).
 const archived = files => {
   const tar = execFileSync('tar', ['-t'], {

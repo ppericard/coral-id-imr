@@ -127,7 +127,7 @@ const started = p =>
       () => true,
       () => false
     );
-// Why a question's photos are not in, for a failure's message: R2 given up for the page (app.js r2Out, after a file the
+// Why a question's photos are not in, for a failure's message: R2 given up for the page (app.js r2Out, after files the
 // photo stub left a 404: tests/photostub.js), and the photos' addresses (an online original's host is cut off here).
 const photosWhy = p =>
   p.evaluate(

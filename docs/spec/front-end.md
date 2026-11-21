@@ -82,7 +82,10 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   `foot`, `bind`, `after`); `tests/listbuild.test.js`. **Every sheet** (the corals' genus sheet; a tree's family, genus and
   species sheets) is drawn through one frame, `sheetPage`, and shares its report line, its "More details" fold, its first
   photo's button, its IMR cues box and its look-alikes section (`sheetRep`, `moreDetails`, `heroBtn`, `cuesBox`,
-  `looksSection`; step 10, `tests/sheetparts.test.js`). **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
+  `looksSection`; step 10, `tests/sheetparts.test.js`). Its sections are the parts its subject declares, in their order
+  (`app.js` `UNITS` `sheetParts`: the corals' `genus`, the tree subjects' `family`, `genus` and `species`), which
+  `sheetBody` draws from the sheet's builders of those names; a declared part with no builder throws, and a builder
+  that returns `null` (a part this sheet does not have, such as a species' `phases` with no cited phase) gets no line. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
   genera, `learn.js` `viewList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
   name and its notes are its arguments), on the `.lcard` surface (DESIGN.md "Components"). The whole card opens the
   unit's sheet (Pierre, 2026-11-20): one link, the unit's name (`a.tipsheet`), stretched over the card, a chevron, no

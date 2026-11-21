@@ -176,7 +176,7 @@ and reports every failing one. Locally, run what your change can break, once:
   `sw.js`, the loader in `index.html`, photo sizes and fallbacks, R2 →
   `node tests/net.smoke.js`. In `tests/pages.smoke.js`, `SMOKE_ONLY=<part>[,<part>]` runs some of its parts: `tips`
   (`tips.js`), `relief` (the Duel tab's relief card, `quiz.js` `reliefShow`), `start` (the first-launch question, its
-  fallback cards: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `install` (the offer to install the app: `installCheck`), `fishkey` (the Fish ID Key in the Lab: `fishKeyCheck`), `noupscale` (an IMR lecture photo never drawn past its own pixels: `noUpscaleCheck`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
+  fallback cards: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`; no tour arrow over page text: `tourArrowsCheck`), `install` (the offer to install the app: `installCheck`), `fishkey` (the Fish ID Key in the Lab: `fishKeyCheck`), `noupscale` (an IMR lecture photo never drawn past its own pixels: `noUpscaleCheck`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
   `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|overlays|rest|more` is the group CI runs
@@ -346,6 +346,8 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
   on 4 cores); above, the run waits. At most `SMOKE_SLOTS` heavy runs at once (default one per 2 cores; `SMOKE_SLOTS=1`
   while several agents run). A holder's children run in its slot (`REEFID_SLOT`): a full run or a smoke that starts a
   guarded tool never waits for itself.
+- **Arrival order**: each waiter takes a ticket in the slots directory and a free slot goes to the oldest live ticket; a
+  dead waiter's ticket is skipped (the holders' PID and start-time check).
 - **Disk**: a heavy run refuses to start with less than 5 GB free on the repository's disk (`tests/slot.js` `diskOk()`,
   `MIN_FREE_GB`), and says what to clean. **Every agent cleans up behind itself**: its worktree once its PR is merged
   (`git worktree remove`), temporary downloads, venvs, screenshots it no longer needs.
@@ -391,8 +393,8 @@ back leaves the PR.** The integrator holds to these, each checked before it laun
 - **Each agent is on one PR or one study with one subject**; a finished agent is stopped, not kept waiting. Heavy
   agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js` (rule W24). Branches:
   rule W22.
-- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
-  until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
+- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js` and its parts `core/*.js`, `sync.js`,
+  `model.js`): the second waits until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
 - **Codex findings are fixed while they are new and small; a part whose findings keep coming back leaves the PR.** When
   findings keep coming back on the same part (say twice in a row), the integrator cuts the PR's scope (that part moves
   to a branch of its own) and tells Pierre; there is no fixed number of rounds. Findings that keep coming on the same part point to a structural problem: that part restarts from a short

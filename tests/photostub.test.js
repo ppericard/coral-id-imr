@@ -1,8 +1,9 @@
 require('./slot.js').testGuard();
 // tests/photostub.js, the photo hosts the smokes answer from the local files: every file the app asks R2 for, for a fish
-// game photo, is answered. One file it leaves a 404 is R2 out of reach for the page (app.js r2Out): the page's next
-// photos go to their online originals, FishBase's among them, a host every smoke cuts off, and a question then loses its
-// photo (tests/pending.smoke.js lost its kept question and its clock that way when a Find the X tile came first).
+// game photo, is answered. A file it leaves a 404 sends that photo to its online original (FishBase's among them, a host
+// every smoke cuts off), so a question then loses its photo (tests/pending.smoke.js lost its kept question and its clock
+// that way when a Find the X tile came first, back when one 404 gave R2 up for the page: app.js r2Failed now needs
+// R2_OUT photos in a row).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -36,6 +37,31 @@ test('the stub answers the Find the X tile of every fish game photo that has one
   assert.ok(ps.length > 50, `photos with a tile: ${ps.length}`);
   const miss = ps.map(p => `${p.f}-x.webp`).filter(n => !stub.file(n));
   assert.deepStrictEqual(miss.slice(0, 5), [], `${miss.length} tiles R2 holds left a 404`);
+});
+
+// Every subject's game file (SUBJECTS admin.files.gm, rule S1: the fish and the sea slugs alike).
+const gameFiles = C.SUBJECTS.map(s => s.admin && s.admin.files && s.admin.files.gm).filter(Boolean);
+const gameOf = f => {
+  const out = [];
+  const walk = o => {
+    if (!o || typeof o !== 'object') return;
+    if (Array.isArray(o)) return o.forEach(walk);
+    if (typeof o.f === 'string' && typeof o.src === 'string' && !o.r) out.push(o);
+    Object.values(o).forEach(walk);
+  };
+  walk(C.treeGameRead(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))));
+  return out;
+};
+
+test('the stub answers the downloaded photos and tiles of every subject game file, the sea slugs included', () => {
+  assert.ok(gameFiles.includes('seaslug-game.json'), 'the sea slugs have a game file');
+  for (const f of gameFiles) {
+    const ps = gameOf(f);
+    assert.ok(ps.length > 0, `${f} read: ${ps.length} photos`);
+    const names = ps.flatMap(p => ['', '-t', '-s', '-m'].map(s => `${p.f}${s}.webp`).concat(Array.isArray(p.xc) ? [`${p.f}-x.webp`] : []));
+    const miss = names.filter(n => !stub.file(n));
+    assert.deepStrictEqual(miss.slice(0, 5), [], `${f}: ${miss.length} files R2 holds left a 404`);
+  }
 });
 
 test('a file R2 does not hold stays a 404', () => {

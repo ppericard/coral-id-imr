@@ -37,6 +37,12 @@ const LAB_ICONS = {
   // Four photos over a row of names (Matrix, the game: the Feature matrix keeps `matrix`).
   matrixgame:
     '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><path d="M3 15h4M9 15h4M15 15h6M3 19.5h6M11 19.5h4M17 19.5h4"/>',
+  // A small fish and a larger one, and an arrow between them (Life stages matched).
+  lifestages:
+    '<path d="M2.5 16c1.1-1.7 2.4-2.5 3.8-2.5s2.6.8 3.5 2.5c-.9 1.7-2.1 2.5-3.5 2.5S3.6 17.7 2.5 16zM2.5 16 1 14.8M2.5 16 1 17.2M12 10c1.8-2.6 4-4 6.5-4s4.5 1.2 4.5 4c-1.9 2.6-4.1 4-6.6 4S13.8 12.6 12 10zM12 10l-1.6-1.4M12 10l-1.6 1.4"/><circle cx="19.2" cy="9.4" r=".7" fill="currentColor"/>',
+  // A branching tree: a trunk splitting twice (Down the tree).
+  downtree:
+    '<circle cx="12" cy="4" r="1.8"/><circle cx="6" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/><circle cx="3.5" cy="20" r="1.6"/><circle cx="8.5" cy="20" r="1.6"/><path d="M12 5.8 7 10.4M12 5.8l5 4.6M5.4 13.6 4 18.4M6.6 13.6l1.4 4.8"/>',
   // A card over a dimmed screen (the cards and pop-ups mock-up).
   cards:
     '<rect x="2.5" y="3.5" width="19" height="17" rx="2"/><rect x="6.5" y="7" width="11" height="10" rx="1.5"/><path d="M9 10.5h6M9 13.5h4"/>'
@@ -67,6 +73,8 @@ const LAB = {
     'samediff',
     'oddone',
     'matrixgame',
+    'lifestages',
+    'downtree',
     'gallery',
     'cards'
   ],
@@ -255,11 +263,12 @@ const labTips = units =>
 // The short feedback sheet of a photo game in q (the quiz's own: .fb.fbs, #after, rule C3): o.good, the verdict; o.head, its
 // sentence; o.line, the one decisive line (quiz.js fbLine); o.more, the panel behind More before the credits of o.photos;
 // the report button for o.rep (sync.js repBtn) under the decisive line, in view as the quiz's is; o.next draws the next
-// question; o.fit lays the stage out again.
+// question; o.fit lays the stage out again. o.v: the verdict's word where it is neither Yes nor No (Down the tree's
+// "Partly"), o.mid its heading's neutral style (a partial credit is neither the right-answer green nor the miss's red).
 function labSheet(q, o) {
   q.classList.add('done');
   q.querySelector('#after').innerHTML = `<div class="fb fbs">
-    <h3 class="${o.good ? 'ok cheer' : 'ko'}"><span class="v">${o.good ? '✓ Yes' : '✗ No'},</span> ${o.head}</h3>${o.line}<p class="fbrep">${repBtn(o.rep)}</p>
+    <h3 class="${o.good ? 'ok cheer' : o.mid ? 'mid' : 'ko'}"><span class="v">${o.v || (o.good ? '✓ Yes' : '✗ No')},</span> ${o.head}</h3>${o.line}<p class="fbrep">${repBtn(o.rep)}</p>
     <div class="fbmore" id="fbmore" hidden>${o.more}<p class="credit">${o.photos.map(credit).join('<br>')}</p></div>
   </div>
   <div class="fbrow"><button class="next sec" type="button" id="fbmbtn" aria-controls="fbmore" aria-expanded="false">More</button><button class="next" type="button" id="next">Next <kbd>↵</kbd></button></div>`;

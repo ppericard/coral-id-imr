@@ -1,8 +1,10 @@
 # Formatted: the app, admin, Lab and test JavaScript and the CSS (rule W13, docs/rules/ship.md).
 # Not formatted: tools/ (Code.gs deploys itself on change; Python and helper scripts), HTML (the CSP pins inline
 # script hashes), JSON data files (data.json has its own layout, tools/datajson.py), Markdown.
+# core/: core.js's parts, slices of its one function (tools/sync_core.py); formatted as core.js, which is checked.
 tools/
 judging/
+core/
 *.html
 *.json
 *.md

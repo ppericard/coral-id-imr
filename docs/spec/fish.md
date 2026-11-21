@@ -65,7 +65,12 @@ The game's units are not the IMR entries: the IMR course is a tag ([plan](../rev
   entries; typed names: the book's, IMR's and the scientific ones), `app.js` `treeGenera` (the genera inside their
   family), `model.js` `openPick` ("I'm at IMR" opens the IMR-tagged units first).
 - Old entry ids saved on a device or in an account (t01) move to their family at every load (`app.js` `unitsRenamed`,
-  `sync.js`: `core.js` `renameUnits`; Groupers keeps IMR's Groupers, the Soapfishes start unmet).
+  `sync.js`: `core.js` `renameUnits`; Groupers keeps IMR's Groupers, the Soapfishes start unmet). `core.js`
+  `FISH_RENAMED` holds each old entry id and the family holding most of its species (fish.json `families`; the
+  [fish units plan](../reviews/2026-11-06-fish-units-plan.md)), `split` (the genera of an entry that went to another
+  family) and `names` (each family's name); it is read through `SUBJECTS` `renamed` (`renamedId`, `renameUnits`,
+  `renameLogEntry`), checked against fish.json by `tests/fishrename.test.js`, and kept while old ids may still arrive
+  (an old app, a saved copy, the log).
 
 ## Circles
 
@@ -323,7 +328,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   leads the genus's row on the family sheet (then the first photo of its other species) and its card among the sibling
   genera on a genus sheet (the genus sheet has no hero), and `treeSpPhotos` puts the species' cover first (then his
   featured photos, then the game's order): its tile, the first photo of its sheet.
-- A photo leaving play (Remove, ×, Not this, a count that takes it out, Out of play and Reject in Candidates:
+- A photo leaving play (Remove, Not this, a count that takes it out, Out of play and Reject in Candidates:
   `autosort.js` `treeDrop`) leaves every cover and featured list it was in, one Undo step. Neither touches the games'
   photos or their order. `ok` (✓ Validated) is the admin's own. A candidate he adds and picks at once shows in the app
   once the Candidate photos workflow has put it in `fish-game.json`; until then the card keeps the cover as before.

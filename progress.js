@@ -227,7 +227,7 @@ function quizBoard() {
     },
     groups: () => `<div class="pgroups">${groups
       .map(k => {
-        const gr = DATA.imrg.find(x => x.n === k),
+        const gr = UNITS[SUBJ.id].group(k),
           L = list.filter(n => gi(n) === k),
           // No lecture group: Millepora (the benthic slate, F as on the Slate view); a starred genus left ungrouped, ★.
           [mk, t] = gr
@@ -1307,19 +1307,53 @@ function boardNotice() {
   // Said only on a subject with a live leaderboard; elsewhere it waits for a later load. A switch of subject while it
   // shows takes it away and it is due again (app.js setSubject, toastsOff). Told on another device of the account
   // (core.js TOLD 'board'): checked after the visit's first sync (sync.js noticeLater).
-  if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board')) return;
+  if (boardMo || !SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board'))
+    return;
+  boardMo = new MutationObserver(boardStep); // one wait at a time: a second call while one waits or shows does nothing
+  boardMo.observe(document.body, {childList: true}); // a toast closed or gone, a card or the tour opened
+  boardMo.observe($v, {childList: true, subtree: true}); // a page or a question drawn
+  boardStep();
+}
+// The notice never sits over a question's answers or Next (on a 390 px phone it covered two of four answers for 15 s;
+// REE-210): it waits while a game's question is on screen, answered or not, and shows on the first page without one
+// (Home, Learn, My progress); one on screen when a question opens is taken back, not told, and waits again, at once
+// (a page change is seen before it is painted, as achBlocked's toasts). act: what to do now, from whether the notice
+// is up (shown) and a question is (open).
+const noticeHold = (shown, open) => (open ? (shown ? 'pull' : 'wait') : shown ? 'keep' : 'show');
+const questionOpen = () => !!$v.querySelector('.q');
+const BOARD_MS = 15000;
+let boardMo = null,
+  boardEl = null;
+const boardStop = () => (boardMo && boardMo.disconnect(), (boardMo = boardEl = null));
+// One step of the notice's wait, run at each change of the page (toastsOff stops it).
+function boardStep() {
+  if (!boardMo) return;
+  if (!SYNC || !boardLive(SUBJ) || (boardEl && !boardEl.isConnected)) return boardStop(); // or closed by the player, or gone by itself: told, done
+  const act = noticeHold(!!boardEl, questionOpen());
+  if (act === 'pull') {
+    boardEl.dataset.off = 1; // not told: it comes back at the next break
+    store.set('reefid-board-told', 0);
+    boardEl.remove();
+    boardEl = null;
+  } else if (act === 'show') boardEl = boardShow();
+}
+function boardShow() {
   store.set('reefid-board-told', 1);
-  const ms = 15000,
-    t = appToast(
-      '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
-      ms
+  const t = appToast(
+      '🏆 ' +
+        (store.get('reefid-board-new', 0) ? 'There is a' : 'New: a') +
+        ' <a href="' +
+        esc(hr('board')) +
+        '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+      BOARD_MS
     ),
     // Told for the account once closed or gone by itself; not when a switch of subject takes it away (toastsOff: due again).
     told = () => !t.dataset.off && toldAdd('board');
   t.dataset.again = 'reefid-board-told';
   t.querySelector('a').onclick = () => (told(), t.remove());
   t.querySelector('button').addEventListener('click', told);
-  setTimeout(told, ms);
+  setTimeout(told, BOARD_MS);
+  return t;
 }
 // The announcement card of the notes in RECALC.L: the past progress recalculations and a new game mode (a new
 // recalculation is not announced: docs/rules/sheet.md). Once per device, to a player who already has answers, at the
@@ -1361,7 +1395,7 @@ const RECALC = {
 // Whether start-up has settled its one-time cards (recalcNotice, mxLostNotice, rvNotice, sorryNotice, subjHello, the
 // achievements' toasts): tests wait for window.CARDS_SAID rather than for a fixed time, as for window.RECALC_SAID. True
 // once the app is ready (app.js SETUP 2 sets APP_READY after calling them), the notices that waited for the visit's first
-// sync have run on the merged state (sync.js noticesReady), subjHello is not waiting for its calm moment (helloT), and
+// sync have run on the merged state (sync.js noticesReady), subjHello is not waiting for its calm moment (helloT), the Identify tip is not either (quiz.js tipOutT), and
 // no card waits to try again (noticeAgain) unless a card or the tour it waits behind is on screen: every card due is
 // then on screen, decided against, or behind one that is. Read live, so a page change that closes a card unseen (it
 // comes back 300 ms later) reads false until it is back.
@@ -1374,7 +1408,8 @@ function noticeAgain(fn, ms) {
 const noticeStop = t => (clearTimeout(t), NOTICE_AGAIN.delete(t));
 Object.defineProperty(window, 'CARDS_SAID', {
   configurable: true,
-  get: () => !!window.APP_READY && noticesReady() && !helloT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
+  get: () =>
+    !!window.APP_READY && noticesReady() && !helloT && !tipOutT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
 });
 // visit: run inside another subject's visit (inSubject), for the notes about that subject; it returns RECALC_BACK when
 // the subject on screen is to look again (the visited subject's notes marked, the engine's after them left for it).
@@ -1759,6 +1794,7 @@ function toldSeed() {
 // The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
 // data-again (its "told" key) is due again later.
 function toastsOff() {
+  boardStop(); // the leaderboard note waiting for a break is due again at a later load, as one shown
   document.querySelectorAll('.apptoast').forEach(t => {
     if (t.dataset.again) (store.set(t.dataset.again, 0), (t.dataset.off = 1));
     t.remove();
