@@ -119,13 +119,13 @@ const COUNTS = {
     'admin-journey.js': 1,
     'admin-nodephotos.js': 2,
     'admin.js': 44,
-    'home.js': 2,
+    'home.js': 1,
     'learn.js': 14,
     'progress.js': 1,
     'proto/basics.js': 3,
     'proto/idkey.js': 2
   },
-  'DATA.imrg': {'learn.js': 4, 'progress.js': 1, 'proto/idkey.js': 1, 'quiz.js': 1}
+  'DATA.imrg': {'learn.js': 4, 'proto/idkey.js': 1}
 };
 
 // 2. The names. [file, the study's row, the names]. admin-fish.js is one subject's file: every top-level name in it is
@@ -169,10 +169,7 @@ const WHOLE = ['admin-fish.js'],
   NAME_COUNTS = {'autosort.js': 71, 'proto/basics.js': 1, 'proto/fishbasics.js': 3, 'proto/seaslugbasics.js': 0};
 
 // 3. The one-off tests no pattern sees: [file, the line's text, the study's row].
-const LINES = [
-  ['home.js', '!!(GX(slateGenera()[0]) || {}).name', 'Dup-16'],
-  ['home.js', 'window.viewFishKey = function', 'Dup-19']
-];
+const LINES = [['home.js', 'window.viewFishKey = function', 'Dup-19']];
 
 // The checks, pure, so the planted cases below prove that each one bites.
 const skip = line => /^\s*(\/\/|\/?\*)/.test(line); // a comment line may name anything
