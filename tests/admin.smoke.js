@@ -3793,6 +3793,32 @@ async function lazyPart(b, base, fails) {
                 rt: rk.rt === 'Family questions,Genus questions,Species questions'
               };
               if (Object.values(ok).some(v => !v)) fe.push(`the rank asked: ${JSON.stringify({...ok, sub: rk.rt})}`);
+              // the common-name modifier (REE-24): the demo's fish report carries the shared-word effect, so its row is on the
+              // Mix-ups page (behind the results with no clear verdict when it has none) and fits its chart at any width
+              await look('fish/analyses/difficulty/mix-ups');
+              const nm = await fq.evaluate(() => {
+                const R = ANREPS[ASUBJ.id],
+                  rep = R && R.rep,
+                  A = rep && rep.R[rep.M[rep.M.length - 1]].A.conf,
+                  e = A && (A.effects || []).find(x => x.k === 'mod');
+                // each button toggles ("Show the 3 with no clear verdict" / "Hide…") and redraws the page: open the closed ones
+                for (
+                  let i = 0, b;
+                  i < 12 && (b = [...document.querySelectorAll('#view [data-anmore]')].find(x => /^Show/.test(x.textContent)));
+                  i++
+                )
+                  b.click();
+                // the row's name, a text of the chart (a tspan when it wraps) or a cell of the words (the innermost elements)
+                const lab = [...document.querySelectorAll('#view .adm-an-card *')].filter(
+                  x => /sharing a common-name word/.test(x.textContent) && !x.children.length
+                );
+                return {
+                  eff: !!e && e.est != null && e.rows > 0,
+                  label: lab.length,
+                  wide: document.documentElement.scrollWidth - innerWidth
+                };
+              });
+              if (!nm.eff || !nm.label || nm.wide > 0) fe.push(`the common-name modifier on the fish Mix-ups: ${JSON.stringify(nm)}`);
               // the corals' views: no rank
               await look('analyses/speed/answer-time');
               if (
