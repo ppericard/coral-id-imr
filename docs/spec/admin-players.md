@@ -129,8 +129,14 @@ one page to see, sort and manage the players, names joined to the anonymous stat
   answer in force and its history (date, answer, how given), and **Change…**: the subject's answers, then Change /
   Cancel in the bar, then one result line. It posts `userStart` (`Code.gs` `users_`: `core.js` `startAdminSet` appends a
   choice event via `admin`, the history kept, the revision bumped so the player's devices merge it at their next sync,
-  `startUnion`: the latest answer wins); the fallback window restarts from that event, as after `startSet` (the level
-  card is still offered), so a card counts only the answers after the change.
+  `startUnion`: the latest answer wins; never an event taken away, which a device's copy would bring back at its next
+  merge); its time is now, or just after the latest event when a device's clock ran ahead, so it is always the answer
+  in force, and its answer count is the player's in that subject (its level record). The fallback window restarts from
+  that event, as after `startSet` (the level card is still offered): the window's answers, the hold seen in it, its
+  epoch and a verdict waiting for its card go, so a card counts only the answers after the change; the cards shown stay
+  (once per answer and direction). The copy under the key's old name (`keyLegacy`, which an old app still reads) gets
+  the same record when the copy holds it. Nothing changes for an unknown subject or answer, a subject without the
+  question, or a player with no answer saved (asked on their device).
 
 ### Out of the statistics
 

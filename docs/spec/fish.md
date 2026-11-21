@@ -65,7 +65,12 @@ The game's units are not the IMR entries: the IMR course is a tag ([plan](../rev
   entries; typed names: the book's, IMR's and the scientific ones), `app.js` `treeGenera` (the genera inside their
   family), `model.js` `openPick` ("I'm at IMR" opens the IMR-tagged units first).
 - Old entry ids saved on a device or in an account (t01) move to their family at every load (`app.js` `unitsRenamed`,
-  `sync.js`: `core.js` `renameUnits`; Groupers keeps IMR's Groupers, the Soapfishes start unmet).
+  `sync.js`: `core.js` `renameUnits`; Groupers keeps IMR's Groupers, the Soapfishes start unmet). `core.js`
+  `FISH_RENAMED` holds each old entry id and the family holding most of its species (fish.json `families`; the
+  [fish units plan](../reviews/2026-11-06-fish-units-plan.md)), `split` (the genera of an entry that went to another
+  family) and `names` (each family's name); it is read through `SUBJECTS` `renamed` (`renamedId`, `renameUnits`,
+  `renameLogEntry`), checked against fish.json by `tests/fishrename.test.js`, and kept while old ids may still arrive
+  (an old app, a saved copy, the log).
 
 ## Circles
 
