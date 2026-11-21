@@ -49,7 +49,6 @@ They live in the admin since 2026-11-05 (Pierre: he settles most of them himself
 - **Re-measure whether the photo quiz presses on the same genus or pair too long**: [REE-83](https://linear.app/reef-id/issue/REE-83)
 - **Stop favouring unanswered photos while the opening hold is on**: [REE-84](https://linear.app/reef-id/issue/REE-84)
 - **No new genus after a miss outside the path?**: [REE-127](https://linear.app/reef-id/issue/REE-127)
-- **Credits, later**: [REE-50](https://linear.app/reef-id/issue/REE-50)
 - **Fish sheets at three levels**: [REE-54](https://linear.app/reef-id/issue/REE-54), [REE-74](https://linear.app/reef-id/issue/REE-74)
 - **Ability calibration, after the wrongly-given fix**: [REE-128](https://linear.app/reef-id/issue/REE-128)
 - **After the fixes of 2026-11-04**: [REE-129](https://linear.app/reef-id/issue/REE-129)

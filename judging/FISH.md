@@ -305,10 +305,14 @@ choices per family in the app" has the details.
   pools, or new code that lets Home show other photos.
 - **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
   `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
-  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. A photo a later pass
+  already looked at whole at full size (the tag-doubt pass, `judging/fish-tag-doubts.json`) is left out, and so is an
+  ease-only change that does not make the photo reference-level (`core.js` `refLevel`). Look as the second pass
   did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
   photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
-  (nothing to download: the flag is its only change).
+  (nothing to download: the flag is its only change). The two exclusions hold only while every unit keeps a clean
+  band-kind photo and a clean reference-level adult: after tagging, count them per unit against the previous pass's
+  files, and look at the fallback photos of any unit that lost its last one (as the third pass did).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.

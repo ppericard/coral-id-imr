@@ -991,6 +991,10 @@
     if (/females?\b/.test(s) || (t && t.dimorph)) out.push('female');
     return out;
   }
+  // Whether the admin shows the Phase row for photos of t (a teach entry or a family: its phase lines, dimorph) of the species
+  // sp (a fish.json species record): when the IMR lines or dimorph say its phases differ, or sp carries phs (the cited
+  // phase list's flag, tools/build_fish.py phase_sources), the same species whose photos carry the phase flag p.
+  const hasPhaseRow = (t, sp) => !!((t && ((t.phase || []).length || t.dimorph)) || (sp && sp.phs));
   // What a family still needs before the admin's ✓ Validated (docs/ARCHITECTURE.md "Admin for every subject"): each
   // species' observations in play up to its target (fishTarget), 5 easy photos per family (ease 4 or 5, judging/FISH.md)
   // and every IMR phase at least once. play: {species id: [photo]} in play, species: {id: fish.json species} (the
@@ -1312,6 +1316,48 @@
     else delete M[k];
     return {...F, mont: M};
   }
+  // The species pairs of a tree subject's file F (fish.json lookalikes, from tools/fish_lookalikes.json: each statement with its
+  // sources and a quote, rule C2) as the admin's Look-alikes page reads them (REE-46, plan PR 10): [{id, a, b (species ids),
+  // kind ('resembles': a source says a resembles b; 'confused'), st {a, b} (the stage that resembles: 'juvenile' or 'all'),
+  // says [{t, u}] (the sources that state the resemblance), marks [{side 'a' | 'b', t (what tells them apart, our words),
+  // src [{t, u}], sourced}]}], in the file's order; a pair that names a species the file lacks is left out. Pure: tests/speciespairs.test.js.
+  function speciesPairs(F) {
+    const known = new Set(((F || {}).species || []).map(s => s.id));
+    return ((F || {}).lookalikes || [])
+      .filter(r => r && known.has(r.a) && known.has(r.b) && r.a !== r.b)
+      .map(r => ({
+        id: r.id,
+        a: r.a,
+        b: r.b,
+        kind: r.kind || 'resembles',
+        st: {a: (r.st || {}).a || 'all', b: (r.st || {}).b || 'all'},
+        says: (r.says || []).map(s => ({t: s.t, u: s.u || ''})),
+        marks: (r.marks || []).map(m => ({
+          side: m.side === 'b' ? 'b' : 'a',
+          t: m.t,
+          src: (m.src || []).map(s => ({t: s.t, u: s.u || ''})),
+          sourced: (m.src || []).length > 0
+        }))
+      }));
+  }
+  // The players' confusion of a species pair: the pooled [offered together, mixed up] of core.js confusionOf (conf = its pair map)
+  // over the two species' own units (core.js spUnitId at the two species levels, cn and sci), both orders; null when the two were
+  // never offered together at a species unit.
+  function speciesPairConf(pair, conf) {
+    const ids = s => [C.spUnitId('cn', s), C.spUnitId('sci', s)],
+      out = [0, 0];
+    let seen = false;
+    ids(pair.a).forEach(x =>
+      ids(pair.b).forEach(y => {
+        const c = (conf || {})[x < y ? x + '|' + y : y + '|' + x];
+        if (!c) return;
+        seen = true;
+        out[0] += c[0];
+        out[1] += c[1];
+      })
+    );
+    return seen ? out : null;
+  }
 
   // Photo rotation (pure, tests/rotate.test.js): curation.json rot {f: 90 | 180 | 270} for the corals,
   // fish.rot for the fish, degrees clockwise, set in the crop editor (admin.js cropEditor) and applied to the files at
@@ -1328,6 +1374,17 @@
     if (rotNorm(r)) o[f] = rotNorm(r);
     else delete o[f];
     return o;
+  }
+  // A photo's prior difficulty before any answer on it, in logits (+ = harder), as model.js photoDiff starts it: its unit's
+  // offset (the sheet's gd, 0 when unknown) plus (PRIOR_MID - its judged ease) x ce, the subject's calibration of one ease step
+  // (core.js calibOf(S).ease); a photo with no judged ease (the corals') has the offset alone. PRIOR_MID is model.js
+  // PDIFF.MID (tests/priordiff.test.js reads both). null when there is nothing to start from.
+  const PRIOR_MID = 3;
+  function photoPrior(ease, off, ce) {
+    const o = Number.isFinite(off) ? off : null,
+      e = Number.isFinite(ease) && ease > 0 ? ease : null;
+    if (o === null && e === null) return null;
+    return (o || 0) + (e === null ? 0 : (PRIOR_MID - e) * (Number.isFinite(ce) ? ce : 0));
   }
   // Where a point of the original photo (x, y in fractions) lands in the file the workflow makes with crop c ([l, t, r, b],
   // null for none) and rotation r (tools/photos.py turn), in fractions of that file; null when the crop cut it off.
@@ -1537,6 +1594,8 @@
     rotNorm,
     rotStep,
     rotSet,
+    PRIOR_MID,
+    photoPrior,
     photoAt,
     turnedSize,
     rotDelta,
@@ -1601,6 +1660,7 @@
     fishJuv,
     fishWm,
     fishUnitPhases,
+    hasPhaseRow,
     FISHEASY,
     fishNeeds,
     fishUnits,
@@ -1617,6 +1677,8 @@
     FMONT_V,
     fishMontPick,
     fishMontSet,
+    speciesPairs,
+    speciesPairConf,
     autoCode,
     autoParse,
     autoIdx,
