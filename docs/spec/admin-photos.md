@@ -352,8 +352,19 @@ there, marked "(added)" as in the Tree's Look-alikes filter; the circles leave e
 source, none on an added pair), a phase switch (Adult = every photo not of a juvenile, Juvenile, All: `fishMontPick`),
 Auto / Manual and Shown / Hidden as the coral pairs, the two photos and a strip of each family's photos in play; picks in
 `curation.json` `fish` `mont` `{pair: {v, a, b, hide}}` (`fishMontSet`), the pair key `core.js` `contentPairKey` (an
-added pair's picks stored as a base pair's; a withdrawn pair's kept, unused, back with the pair). Species pairs are not
-built yet.
+added pair's picks stored as a base pair's; a withdrawn pair's kept, unused, back with the pair).
+
+**Species pairs** (REE-46, plan PR 10), read only, under the families' pairs on the same page (`speciesPairsHtml`): the pairs
+between two species that the data declares (`fish.json` `lookalikes`, hand-kept in `tools/fish_lookalikes.json` with a quote
+for every statement, rule C2; `autosort.js` `speciesPairs`). Per pair: the two species (common name, scientific name) and
+their families, which resembles which and at which stage (juvenile or all), the sources that state it (links), what tells the
+two apart on a photo (our words, each with its sources; one with none shows "no source"), the players' confusion of the two
+(`speciesPairConf`: the pooled [offered together, mixed up] of `confusionOf` over the two species' own units, `cn` and `sci`,
+read behind the page from the answer log, the same counts as Pairs; "needs the token" when the answers are admin-only) and a
+strip of each species' photos in play, the stage that resembles first, which enlarge. Adding, withdrawing or editing a
+species pair is not built: the file is hand-kept (a new pair needs its sources and a quote), and a pair proposed from the
+players' confusions alone would need Pierre's rule for it (ROADMAP "Fish look-alikes at any rank"). Tested in
+`tests/speciespairs.test.js` and the admin smoke's Structure block.
 
 ## Photo stats
 

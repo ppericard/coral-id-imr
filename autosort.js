@@ -1312,6 +1312,48 @@
     else delete M[k];
     return {...F, mont: M};
   }
+  // The species pairs of a tree subject's file F (fish.json lookalikes, from tools/fish_lookalikes.json: each statement with its
+  // sources and a quote, rule C2) as the admin's Look-alikes page reads them (REE-46, plan PR 10): [{id, a, b (species ids),
+  // kind ('resembles': a source says a resembles b; 'confused'), st {a, b} (the stage that resembles: 'juvenile' or 'all'),
+  // says [{t, u}] (the sources that state the resemblance), marks [{side 'a' | 'b', t (what tells them apart, our words),
+  // src [{t, u}], sourced}]}], in the file's order; a pair that names a species the file lacks is left out. Pure: tests/speciespairs.test.js.
+  function speciesPairs(F) {
+    const known = new Set(((F || {}).species || []).map(s => s.id));
+    return ((F || {}).lookalikes || [])
+      .filter(r => r && known.has(r.a) && known.has(r.b) && r.a !== r.b)
+      .map(r => ({
+        id: r.id,
+        a: r.a,
+        b: r.b,
+        kind: r.kind || 'resembles',
+        st: {a: (r.st || {}).a || 'all', b: (r.st || {}).b || 'all'},
+        says: (r.says || []).map(s => ({t: s.t, u: s.u || ''})),
+        marks: (r.marks || []).map(m => ({
+          side: m.side === 'b' ? 'b' : 'a',
+          t: m.t,
+          src: (m.src || []).map(s => ({t: s.t, u: s.u || ''})),
+          sourced: (m.src || []).length > 0
+        }))
+      }));
+  }
+  // The players' confusion of a species pair: the pooled [offered together, mixed up] of core.js confusionOf (conf = its pair map)
+  // over the two species' own units (core.js spUnitId at the two species levels, cn and sci), both orders; null when the two were
+  // never offered together at a species unit.
+  function speciesPairConf(pair, conf) {
+    const ids = s => [C.spUnitId('cn', s), C.spUnitId('sci', s)],
+      out = [0, 0];
+    let seen = false;
+    ids(pair.a).forEach(x =>
+      ids(pair.b).forEach(y => {
+        const c = (conf || {})[x < y ? x + '|' + y : y + '|' + x];
+        if (!c) return;
+        seen = true;
+        out[0] += c[0];
+        out[1] += c[1];
+      })
+    );
+    return seen ? out : null;
+  }
 
   // Photo rotation (pure, tests/rotate.test.js): curation.json rot {f: 90 | 180 | 270} for the corals,
   // fish.rot for the fish, degrees clockwise, set in the crop editor (admin.js cropEditor) and applied to the files at
@@ -1617,6 +1659,8 @@
     FMONT_V,
     fishMontPick,
     fishMontSet,
+    speciesPairs,
+    speciesPairConf,
     autoCode,
     autoParse,
     autoIdx,
