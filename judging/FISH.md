@@ -354,6 +354,12 @@ so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` c
   judging passes box the photos already judged as they go: the first two box passes (2026-11-09) boxed 172 photos, about
   7 per circle-1 entry (168 tiles kept, 4 too small in the original), so 21 of the 27 circle-1 families have 6
   observations with a tile; the rest wait for the next rounds, entry by entry, the starter core first.
+- **The bulk box pass** (2026-11-22, REE-202; [decision record](../docs/decisions/2026-11-22-fish-box-model.md)): measured
+  first (Q441), **Sonnet 5.5 at medium effort** boxes the photos waiting, one picture per photo (iNaturalist's large size
+  shown at 1000 px, a 10 x 10 grid labelled on the edges, ticks at the half tenths; a framed photo's frame outlined and
+  the outside dimmed), the box read to 0.01 and rounded outward, a seeded 5% of each batch redone blind by Opus 5.5 high.
+  Order: the species of the mimicry pairs whose class can have a tile (M2, M3, M5), all their photos waiting; then the
+  species with no tile, in `fish.json` order, at most 4 photos each. The boxes go into `tools/fish_judge.json` `boxes`.
 
 **The tile** (`tools/fish_game.py` `tile_crop`, `tile_write`; Q321 D4): the box's longer side plus 10% of it on each
 side (less, down to none, where the photo's short side is shorter), squared, centred on the fish, kept inside Pierre's
