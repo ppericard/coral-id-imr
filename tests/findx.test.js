@@ -59,6 +59,8 @@ function planner({met = UNITS, tiled = UNITS, seed = 7, P = 0.05, rank = {}, kin
     pooledConf: conf,
     confusable: (t, n) => conf(t, n) >= C.CONF.TRAP,
     confTerm: () => 0,
+    // the mimicry class's decoys (quiz.js mimDecoys, tests/findxmim.test.js): none in these units
+    mimDecoys: () => [],
     uname: n => n,
     // app.js shuffle's contract: a new order of the same items, from the random stream
     shuffle: a => {
