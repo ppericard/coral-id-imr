@@ -334,7 +334,7 @@
         '',
         'fish/learn/species/Chromis%20ternatensis'
       ),
-      // The fish ID marks' "Report or correct a line" (learn.js fishMarks): a sheet's report, not a game's.
+      // The fish ID marks' "Report or correct a line" (learn.js treeMarks): a sheet's report, not a game's.
       rp(
         9,
         'Eli Demo',
