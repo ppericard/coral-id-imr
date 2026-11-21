@@ -720,6 +720,19 @@ async function downTree(b, base, errs) {
     await q.waitForTimeout(300);
     await require('./downtree.check.js')(q, w, fails, 'fish', 8);
   }
+  // Switched to the corals without a reload (TREEU stays loaded): the game is not offered, not on the Tools page and not by its address.
+  await q.evaluate(() => setSubject('coral'));
+  await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
+  await q.evaluate(() => (location.hash = hr('lab')));
+  await q.waitForTimeout(500);
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q.waitForTimeout(500);
+  const coral = await q.evaluate(() => ({
+    subject: SUBJ.id,
+    on: LAB.list.find(x => x.id === 'downtree').on(),
+    page: !!document.querySelector('#view .dtq')
+  }));
+  if (coral.subject !== 'coral' || coral.on || coral.page) fails.push(`switched to the corals: ${JSON.stringify(coral)}`);
   await c.close();
   return fails.map(m => `down the tree: ${m}`);
 }

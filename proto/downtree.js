@@ -62,7 +62,15 @@ LAB.add({
   blurb: 'One photo, named in steps: its family, then its genus, then its species. Each step counts; no score kept.',
   // Offered to a subject whose units have finer ones under them (a unit with a child among the units of the game), never
   // to one with a single rank (the corals): the tree is read from the records, so no subject is named here.
-  on: () => typeof TREEU !== 'undefined' && !!TREEU && (TREEU.ssl || []).length > 0,
+  // The subject on screen must have a tree itself (UNITS gen: the tree subjects'): TREEU stays loaded after a switch to the
+  // corals, so it alone says nothing.
+  on: () =>
+    typeof UNITS !== 'undefined' &&
+    !!UNITS[SUBJ.id] &&
+    typeof UNITS[SUBJ.id].gen === 'function' &&
+    typeof TREEU !== 'undefined' &&
+    !!TREEU &&
+    (TREEU.ssl || []).length > 0,
   get lede() {
     return `One photo, named step by step: the ${SUBJ.one} first, then the finer names you have met under it. Each step is a point on its own, and a wrong step does not end the walk. Untimed; nothing here counts toward your progress.`;
   },
@@ -95,10 +103,15 @@ LAB.add({
         apart = (a, b) => !choiceNames(a, b) && !choiceNames(b, a),
         // the unlocked units with a rank of their own (a genus, a species by its scientific name: the common-name species hang
         // from the family, a second tree): a family alone gives a one-step walk
-        cand = [...W.open].filter(o => (GX(o) || {}).rank && (GX(o).rank !== 'species' || o === spUnitId('sci', GX(o).sp)));
-      let planned = false;
-      for (let i = 0, L = shuffle(cand); i < 24 && i < L.length; i++) {
-        const u = L[i],
+        cand = [...W.open].filter(o => (GX(o) || {}).rank && (GX(o).rank !== 'species' || o === spUnitId('sci', GX(o).sp))),
+        // the unlocked species by their scientific unit: their genus has a finer step even where its own parent is no unit
+        below = new Set(cand.filter(o => GX(o).rank === 'species').map(up)),
+        // only the candidates that can give two steps: an unlocked unit above it (its lineage cut at the first unit not
+        // unlocked), or an unlocked species under it; the tries below are not spent on the others
+        viable = cand.filter(o => dtSteps(dtLineage(o, up, has), isOpen).length >= 2 || below.has(o));
+      const planned = viable.length > 0;
+      for (let i = 0, L = shuffle(viable); planned && i < 24; i++) {
+        const u = L[i % L.length],
           p = photo(u, null);
         if (!p) continue;
         // the lineage of the photo's species when it has one (a genus unit's photo is of one of its species), else of the unit
@@ -122,7 +135,6 @@ LAB.add({
           made.push({u: o, ch});
         }
         if (made.length < 2) continue;
-        planned = true;
         return {p, steps: made, planned};
       }
       return {planned};

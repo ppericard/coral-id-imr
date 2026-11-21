@@ -195,6 +195,14 @@ test('the units of the walk are the game’s own (Codex review #1387), the speci
   assert.match(code, /if \(done \|\| q\.classList\.contains\('qnone'\)\) return;/);
   assert.match(code, /b\.disabled = q\.classList\.contains\('qnone'\)/);
   assert.match(code, /new MutationObserver\(gate\)/);
+  // Codex review #1387, second round: offered only where the subject on screen is a tree subject (TREEU stays loaded after a switch
+  // to the corals), the tries spent only on candidates that can give two steps, cycling through them
+  assert.match(code, /typeof UNITS\[SUBJ\.id\]\.gen === 'function'/);
+  assert.match(code, /viable = cand\.filter\(o => dtSteps\(dtLineage\(o, up, has\), isOpen\)\.length >= 2 \|\| below\.has\(o\)\)/);
+  assert.match(code, /L\[i % L\.length\]/);
+  const app = read('app.js'),
+    gens = [...app.matchAll(/^ {2}gen: \(\) =>|^ {4}\.\.\.TREE_UNITS,/gm)].length;
+  assert.strictEqual(gens, 3, 'gen is the tree subjects’ own member (TREE_UNITS: the fish, the sea slugs), not the corals’');
   // a sea slug tree on the pure part: the family is not a unit of the game, the walk is genus then species
   const slug = o => ({'g:A': 'fam:X', 'sci:a1': 'g:A'})[o] || '';
   assert.deepStrictEqual(
