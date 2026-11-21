@@ -40,6 +40,7 @@ const ROUTES = [
   'tools/oddone',
   'tools/matrixgame',
   'tools/lifestages', // the corals have no list of documented phases: not offered, the address goes to the Tools page
+  'tools/downtree', // the corals have no rank below the genus: not offered, the address goes to the Tools page
   'learn/basics/walls',
   'learn/basics/words',
   'about',

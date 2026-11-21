@@ -4715,3 +4715,104 @@ body:has(.ikstart:not([hidden])) main {
     display: flex;
   }
 }
+
+/* Down the tree (proto/downtree.js): the quiz's own stage, answers and feedback sheet (app.css .q, .qstage, .ans, .fb), one
+   photo, the steps as chips above the names: the step being asked ringed in the accent colour, a step answered ticked or
+   crossed with the right name (a tick or a cross, never colour alone). The step's verdict sits under the names; the walk's
+   end is the quiz's own short sheet, whose "Partly" heading (a partial credit) is neither the right answer's green nor the
+   miss's red. */
+.q.dtq .fb h3.mid .v {
+  color: var(--ink);
+}
+.dtsteps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+/* The chips share the row equally, each never narrower than its longest word (a name wraps between its words, never inside
+   one; the mark is glued to it: downtree.js chip); a second row only when the longest words cannot fit side by side. */
+.dtsteps li {
+  flex: 1 1 0;
+  min-width: min-content;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: var(--fs-s);
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+.dtsteps li b {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.dtsteps li[aria-current='step'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.dtsteps li.ok {
+  border-color: var(--good);
+}
+.dtsteps li.ko {
+  border-color: var(--bad);
+}
+.dtsteps li small {
+  color: var(--muted);
+}
+/* On a phone or tablet a missed chip keeps the right name only: the name given is in the verdict right under the names, and
+   the photo above keeps more height for the walk (downtree.js hold reserves the column's tallest state). */
+@media (max-width: 1023px) {
+  .dtsteps li small {
+    display: none;
+  }
+  /* ...and the verdict is one size smaller: the column's tallest state, which the photo makes room for at every step,
+     stays short. */
+  .q.dtq .dtst .fb h3 {
+    font-size: var(--fs-m);
+  }
+}
+.dtst:empty,
+.dtscore:empty {
+  display: none;
+}
+.dtst .fb {
+  padding: 8px 12px;
+}
+/* The verdict's line alone in its box: no margin above it (it took 18 px, an empty band over the text). */
+.q.dtq .dtst .fb h3 {
+  margin: 0;
+  font-size: var(--fs-l);
+}
+.dtscore {
+  margin: 6px 0 0;
+}
+/* Walk over, on a phone or tablet: the sheet is at the bottom and the stage takes the space above it, so the prompt and the
+   steps would only peek out above the sheet (the steps are under the photo and in the sheet's heading). */
+.q.dtq.done .qtop,
+.q.dtq.done .dtsteps,
+.q.dtq.done .dtscore {
+  display: none;
+}
+/* ...and the stage may be as small as fitStage makes it (120 px at least), not the quiz's 180: under a tall sheet (More open) the
+   photo would sit 12 px behind it. */
+.q.dtq.done .qstage {
+  min-height: 0;
+}
+@media (min-width: 1024px) {
+  .q.dtq.done .qtop {
+    display: flex;
+  }
+  .q.dtq.done .dtsteps {
+    display: flex;
+  }
+  .q.dtq.done .dtscore {
+    display: block;
+  }
+}

@@ -78,6 +78,7 @@ const SHELL = [
     'oddone',
     'matrixgame',
     'lifestages',
+    'downtree',
     'gallery',
     'cards'
   ].map(f => `proto/${f}.js?v=84`)

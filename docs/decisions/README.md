@@ -58,9 +58,12 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [A kept question is lost only when it is about its own first-meeting card's genus](2026-11-22-pending-question-other-card.md) | #1428 |
+| 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
+| 2026-11-21 | [Down the tree: a Lab prototype, one photo named family, then genus, then species, each step a partial credit shown on screen only](2026-11-21-down-the-tree-lab.md) | #1387 |
 | 2026-11-21 | [The answer feedback no longer says "(IMR)" as its line's source](2026-11-21-feedback-no-imr-label.md) | #1353 |
 | 2026-11-21 | [Find the X on the species: both kinds of name, the same share, the units in play only](2026-11-21-find-the-x-species.md) | #1410 |
 | 2026-11-21 | [Fish basics earns an achievement, "Fin to tail"](2026-11-21-fish-basics-achievement.md) | #1369 |
@@ -77,6 +80,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
 | 2026-11-21 | [The player's time net of the photo's: a right answer's z less its photos' time term, a silent replay](2026-11-21-rt-net-photo.md) | #1414 |
 | 2026-11-21 | [Sea slug species look-alikes: the two sourced pairs recorded as decided species pairs, not yet in play](2026-11-21-seaslug-species-pairs.md) | #1394 |
+| 2026-11-21 | [The machine slot serves its waiters in arrival order](2026-11-21-slot-arrival-order.md) | #1424 |
 | 2026-11-21 | [Find the X for the sea slugs plays: the boxes and tiles are in, checked on the real tiles](2026-11-21-slug-find-the-x-plays.md) | #1411 |
 | 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | ["Did you know?" tip (c): My mix-ups, for players with several pairs mixed up who never saw the view](2026-11-21-tip-c-my-mix-ups.md) | #1420 |
