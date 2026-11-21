@@ -2,7 +2,8 @@
  "photos": {
   "fish-s218-cand-528503962": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-386653883": {
    "code": "p1g1sm1jc2",
@@ -18,7 +19,8 @@
   },
   "fish-s218-cand-396368027": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-752688340": {
    "code": "p1g1ss1jc2",
@@ -30,7 +32,8 @@
   },
   "fish-s218-cand-731400986": {
    "code": "p1g1sm1c3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-473845118": {
    "code": "p1g2sm13",
@@ -62,11 +65,13 @@
   },
   "fish-s218-cand-536929031": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-536929036": {
    "code": "d1g1sm12",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "female"
   },
   "fish-s218-cand-610951714": {
    "code": "p1g1ss12",
@@ -82,7 +87,8 @@
   },
   "fish-s218-cand-553618161": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-610949889": {
    "code": "d1g1ss11",
@@ -94,7 +100,8 @@
   },
   "fish-s218-cand-649888408": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-484034151": {
    "code": "p1g0ml14",
@@ -105,23 +112,28 @@
     0.9,
     0.645
    ],
-   "note": "crop: the yellow tangs and the damselfishes around leave the frame (Q430)"
+   "note": "crop: the yellow tangs and the damselfishes around leave the frame (Q430)",
+   "phase": "female"
   },
   "fish-s218-cand-329924203": {
    "code": "p1g2bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-385374529": {
    "code": "d1g1sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-385374545": {
    "code": "p1g1sl14",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "female"
   },
   "fish-s218-cand-385374564": {
    "code": "p1g1sl14",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "female"
   },
   "fish-s218-cand-385374586": {
    "code": "p1g1sm14",
@@ -129,7 +141,8 @@
   },
   "fish-s218-cand-396352179": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-396352114": {
    "code": "p1g2bm11",
@@ -137,7 +150,8 @@
   },
   "fish-s218-cand-fb-Mamel_u0": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-32166464": {
    "code": "p1g0ml1j3",
@@ -169,7 +183,8 @@
   },
   "fish-s218-cand-537923649": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-537923664": {
    "code": "o1g1smk2",
@@ -177,7 +192,8 @@
   },
   "fish-s218-cand-595879816": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-596642667": {
    "code": "o1g2smk1",
@@ -185,23 +201,28 @@
   },
   "fish-s218-cand-527802723": {
    "code": "p1g0sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-586578186": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-586578522": {
    "code": "o1g1sm13",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "female"
   },
   "fish-s218-cand-723986068": {
    "code": "o1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-597570111": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s218-cand-342050779": {
    "code": "o1g1ss1j2",
@@ -221,7 +242,8 @@
   },
   "fish-s218-cand-566697110": {
    "code": "o1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s218-cand-107575173": {
    "code": "o1g2sm12",
@@ -257,11 +279,13 @@
   },
   "fish-s218-cand-419222580": {
    "code": "o1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s218-cand-675807062": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   }
  }
 }
