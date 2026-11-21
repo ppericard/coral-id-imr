@@ -8,8 +8,10 @@
 Searched, in this order: docs/ANSWERS.md (the ledger), AGENTS.md, docs/rules/*.md, docs/decisions/*.md (newest first;
 the index README.md is left out: its rows repeat the records' titles). A hit is one entry: a ledger bullet with its
 wrapped lines, a paragraph, a bullet, a table row or a heading, printed with its file:line and the heading above it.
-The last line, "searched: … — N hits", goes under the question to Pierre (docs/INTEGRATOR.md "Habits"): it says what
-was searched and that nothing answered it. Also searched: docs/ANSWERS.md on the branch of every open PR (gh lists
+A hit is an evidence match, not a current instruction: the reader checks its scope, the later entries that amend it
+and whether it still applies (AGENTS.md "Every answer reaches its doc"); this tool only finds, it never decides. The
+last line, "searched: … — N hits", goes under the question to Pierre (docs/INTEGRATOR.md "Habits"): it says what was
+searched and that nothing settled it. Also searched: docs/ANSWERS.md on the branch of every open PR (gh lists
 them, git fetches the refs; an answer is often on a PR not merged yet), a hit naming its PR. Without network that is
 skipped with a one-line note (--no-prs skips it). Standard library only; exit 0 whatever the count.
 """
@@ -123,7 +125,8 @@ def branch_hits(root, terms, any_term, prs, seen):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description='Search the answers ledger, the rules and the decision records.')
+    ap = argparse.ArgumentParser(description='Search the answers ledger, the rules and the decision records; '
+                                 'a hit is evidence to check (scope, later amendments), not an instruction.')
     ap.add_argument('terms', nargs='+', help='words or "a phrase"; every one must be in the entry (or any, --any)')
     ap.add_argument('--any', action='store_true', help='an entry holding any of the terms is a hit')
     ap.add_argument('--max', type=int, default=30, help='hits printed in full (default 30; 0: all); all are counted')
