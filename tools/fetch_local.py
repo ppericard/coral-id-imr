@@ -137,6 +137,12 @@ def ph_ok(o, tid):
     return o.get('quality_grade') == 'research' or (o.get('quality_grade') == 'needs_id' and (genus_ok(o, tid) or expert_ok(o, tid)))
 
 
+def accepted(o, tid, loc):
+    """The identification a tier accepts for genus tid: the Philippines tiers (dauin, ph) take what ph_ok takes; abroad
+    (loc world) takes Research Grade only. main uses it, and tools/photo_recheck.py asks it again of a photo in play."""
+    return o.get('quality_grade') == 'research' if loc == 'world' else ph_ok(o, tid)
+
+
 def photo_ok(ph):
     """A photo with an accepted licence (checked photo by photo: one observation may mix licences)."""
     return (ph.get('license_code') or '').lower() in LICS
@@ -316,7 +322,7 @@ def main():
             obs, more = res['results'], res.get('total_results', 0) > len(res['results'])
             # Research Grade first, then genus-level community IDs and expert IDs (votes order within each); abroad
             # Research Grade only (the query asks for nothing else).
-            obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, tid)]
+            obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] != 'research' and accepted(o, tid, loc)]
             # Shortlist that varies: pick one by one the observation whose species and observer are least represented
             # so far (votes order breaks ties), and take all its photos. Between observations of as many votes, one with an
             # open licence (CC0, CC BY) or the admin's own before CC BY-NC (tie_key: rights_rank of its best photo, a

@@ -149,6 +149,42 @@ the list, when it is recent (72 h: an upload comes before its data commit), oddl
 Restore until they are uploaded again), a record names it with `r: 1`, or its name appears in the app, the judging
 files, `curation.json`, a data file or the docs. Deleting is a separate step, after Pierre has seen the list.
 
+## Re-checking the photos in play
+
+A candidate filter looks at an observation once, when it fetches it. An identification withdrawn on iNaturalist later,
+a deleted observation or a species changed since stayed in the game until a player met it (the RA session review,
+PR #1374, §4: 9 fish photos had drifted). Linear
+REE-195, the integrator's call (it enforces the identity rules P1 to P6; nothing is new for players).
+
+`tools/photo_recheck.py` asks iNaturalist again, paced (rule C7, observation ids only), for every photo in play that has
+an observation, and reports those that no longer pass. **In play:** corals: `data.json` `gen` and `x.gen` views and the
+candidates `curation.json` `genera.add` names, not excluded, hidden, sent elsewhere (`out`), several corals or a skeleton;
+fish and sea slugs: the game files (`fish-game.json`, `seaslug-game.json`), not excluded. The IMR lecture photos, FishBase's
+and any photo with no observation are not asked (the report counts them).
+
+**Judged by the fetcher's own predicate**, called, never copied: corals `fetch_local.accepted` (the Philippines tiers:
+Research Grade, a genus-level community ID or the trusted identifier's; abroad: Research Grade only) and `in_genus`; fish
+candidates `fetch_fish.usable_obs`; fish reference photos `fish_refs.passes`; sea slugs `fetch_seaslugs.usable` (a species),
+`usable_gl` (a genus-level photo) and the label (a species with no name). What a fetcher leaves to its search query is asked
+beside the predicate: the species or genus (`taxon_id`), casual and captive. A genus-level sea-slug photo whose observation was
+refined to a species of its genus still passes (its rank is not asked again).
+
+**The reasons**, primary first: `deleted` (not returned, asked twice), `casual`, `other_taxon`, `id_lost` (coarser than the
+rank asked, or not enough agreement), `captive`, `dead`, `egg`, `rule` (another check of the predicate: licence, place).
+
+**The route:** `photo-recheck.yml`, every Wednesday and by hand, `contents: read`, no secret, uploads the artifact
+`photo-recheck` (the report in markdown, the failing photos as a tab-separated list, and the figures in JSON) and the report goes to the run's summary. It changes no data file,
+never `curation.json` (rule A1) and not the sheet, and commits nothing: removing a photo stays Pierre's, in the admin. A run
+passes whatever it finds; it fails only when it cannot be trusted (iNaturalist unreachable, over 5 % of the observations
+missing). No admin Inbox point is written: that route writes to the sheet.
+
+**What the report cannot say.** Pierre's own coral photos in the curated views never came through the fetch rule (it has no
+rule for them), so those whose genus rests on his identification alone list as `id_lost`, marked as his own; whether they
+stay is his call (the review, §4). The coral rule is also stricter than "another identifier agrees at the genus": it needs
+iNaturalist's genus-level community ID (or the trusted identifier's), so a Needs ID photo whose genus rests on one other
+identifier and a coarser identification of the observer lists too. A rename of a taxon on iNaturalist (a new taxon id)
+shows as `other_taxon`, with the old and new names, for a person to read.
+
 ## Coral photo sources
 
 - **The IMR Lecture 6 deck** (internal use at IMR only): cut from the full-resolution PowerPoint media

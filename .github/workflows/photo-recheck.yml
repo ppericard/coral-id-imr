@@ -1,0 +1,47 @@
+# The game photos re-checked against iNaturalist, weekly (Linear REE-195): each photo in play whose observation was
+# deleted, lost its identification, changed species or turned casual is found within days, not by a player (the RA session
+# review of 2026-11-21 found 9 fish photos that had drifted). Asks iNaturalist again for every game photo's observation
+# (tools/photo_recheck.py, paced as every tool that asks it, rule C7: observation ids only, no project data) and judges
+# each by its fetcher's own predicate. READ ONLY: it uploads the report as the artifact "photo-recheck" (report.md,
+# failing.tsv, report.json) and changes nothing: no data file, never curation.json (rule A1), never the sheet; no secret,
+# no commit, no issue. Removing a photo stays Pierre's, in the admin. A test (tests/photo_recheck.test.js) keeps it so.
+# A finding does not fail the job (the report is the product); a run that cannot be trusted does (iNaturalist unreachable).
+name: Photo re-check
+on:
+  schedule:
+    - cron: '17 20 * * 3'  # Wednesdays 20:17 UTC, Thursday 04:17 Manila
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: photo-recheck
+  cancel-in-progress: false
+jobs:
+  recheck:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    steps:
+      # Always main, as the other scheduled workflows: the photos in play are the ones main holds. No img/ (no photo is read).
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: |
+            /*
+            !/img/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      # The report lives outside the checkout.
+      - name: Re-check the photos in play (read only)
+        run: |
+          mkdir -p "$RUNNER_TEMP/photo-recheck"
+          python3 tools/photo_recheck.py --out "$RUNNER_TEMP/photo-recheck" --label "main@$(git rev-parse --short HEAD)"
+          cat "$RUNNER_TEMP/photo-recheck/report.md" >>"$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: photo-recheck
+          path: ${{ runner.temp }}/photo-recheck/
+          if-no-files-found: error
+          retention-days: 30
