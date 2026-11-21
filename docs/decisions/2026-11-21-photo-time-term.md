@@ -1,6 +1,6 @@
 # The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness
 
-Date: 2026-11-21. PR: #1355. Rules or docs touched: L1, L11, L12, D3, D4, D5, S1; docs/LEARNING.md "The photo's time
+Date: 2026-11-21. PR: #1357. Rules or docs touched: L1, L11, L12, D3, D4, D5, S1; docs/LEARNING.md "The photo's time
 term", docs/spec/sync.md "Pooled photo statistics", ROADMAP "Time in the photo rating".
 
 ## Context
@@ -33,6 +33,8 @@ rising with the level, but strong players' times less scattered (clear for the f
   `eloReplay` the same); the app adds them in `model.js` `photoDiff` from the script version `core.js` `PTIME_SHEET`
   (rule D4). The draw, the scoring's d0, the exam's hardest photo and the fish cards' photo order follow; the progress
   replay does not read them, so no rules version (rule D5).
-- On today's log the corals' weights sit at their fallback (equal) and the fish's move 0.8 to 1.2; the term moves a
-  question by about 0.03 logits. Its re-fit (C, and whether the weighting helps) waits for more players: ROADMAP "Time
+- z is taken against the player's median over their right answers only (an all-answer median holds a weak player's slow
+  misses). On today's log the corals' weights sit at their fallback (equal) and the fish's move 0.8 to 1.2; the term
+  moves a question by about 0.03 logits. In the rated world the shown score at 1,000 answers fell 1-2 points for one
+  profile (a breached guardrail, back by 3,000): LEARNING.md "The photo's time term". Its re-fit (C, and whether the weighting helps) waits for more players: ROADMAP "Time
   in the photo rating". Step 2 (Q452: the player's time net of the photo's, a silent replay) is next.
