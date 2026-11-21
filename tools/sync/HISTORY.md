@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v219 (2026-11-22)
+
+Comments only: the embedded `core.js` copy now cites the tree names the player app uses (`viewTreeSheet`, `viewList`) and the script's own `subjGen_` where it cited the gone `fishGen_`. No behaviour change (integrator's call, Q406 / REE-29)
+
 ## v218 (2026-11-22)
 
 The sea slug species look-alike pairs a specialist source names (`seaslug.json` species `look`: the two Spanish dancers, Q377, Pierre, 2026-11-15; *Thecacera pacifica* / *T. pikachu* and *Chromodoris alcalai* / *C. dianae*, Q390 D, Pierre, 2026-11-17) become the species units' declared look-alikes (`core.js` `treeSpUnits` `decl`, copied by `tools/sync_core.py`). The replay reads a unit's `look`, which already held each pair (both species of one family), so every replay, leaderboard and variant table is unchanged: no rules version, no gate (rule D4)
