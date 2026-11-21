@@ -10595,7 +10595,11 @@ async function lazyPart(b, base, fails) {
         await goGenus(G);
         // Not a lecture photo: its editor starts on the lecture's framing, tested above.
         const f = await p.evaluate(n => {
-          const own = new Set(photos(n).filter(x => !x.imr).map(x => x.f)),
+          const own = new Set(
+              photos(n)
+                .filter(x => !x.imr)
+                .map(x => x.f)
+            ),
             b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(x => {
               const t = x.closest('[data-f]').dataset.f;
               return own.has(t) && !crOf(t);
