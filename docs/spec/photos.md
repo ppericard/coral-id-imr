@@ -103,7 +103,15 @@ The CSP of `index.html` allows the originals' hosts (`tests/csp.test.js` checks 
   `cr`, `ro`, `ar` and `iv` on their `course` records (credit `a`, `pg` unchanged); `reefid-originals.yml` runs the fetch tool
   (one request every 2 s, `www.coralsoftheworld.org` only) and uploads. The credit stays "<photographer> / Corals of the
   World" with the species page (rule P5); `imr: true` and their `nc` rights class are unchanged. The 34 lecture photos with no
-  source found stay in play as "IMR", untouched (Pierre, 2026-11-20).
+  source found stay in play as "IMR", untouched (Pierre, 2026-11-20). **The admin's Crop on one of the 86**
+  ([record](../decisions/2026-11-21-lecture-crop.md)): its editor opens on the lecture's framing and writes the usual
+  `curation.json` `crop` entry, `[0, 0, 1, 1]` for Full photo (always an entry: the framing it replaces is a crop), with its
+  rotation from `rot` alone (an absent entry is no turn, the lecture's own turn included). The framing in force is one rule
+  in two languages: `autosort.js` `lectureFrame` (the admin) and `tools/photos.py` `lecture_frame` (the workflows), a
+  crop entry else `cr`, `ro`. `tools/fetch_approved.py` remakes a lecture photo's files from its original when that framing
+  differs from the record's `cr`, `ro` (`photos.stale`), through `fetch_imr_originals.make` (the same host, pacing and size
+  check), and records what they were made with, so `apply_imr_originals.py` leaves an applied record alone and
+  `fetch_imr_originals.py` never puts the lecture's framing back over his crop.
 - **In git** (`img/`): only the photos with no other backup: the IMR lecture photos with no online original (34), the page art and the old candidate
   files that only `curation.json` names. No Coral Finder book crop (copyrighted).
 - **What keeps it so**: `tools/fetch_approved.py` writes the photos it downloads to `r2-upload/` (gitignored, never

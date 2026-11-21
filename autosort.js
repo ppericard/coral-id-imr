@@ -1329,6 +1329,14 @@
     else delete o[f];
     return o;
   }
+  // The framing in force for an IMR lecture photo traced to its original (REE-60): [crop, rotation]. Pierre's own when the
+  // crop map has an entry for it (the crop editor always writes one for a lecture photo, [0, 0, 1, 1] for Full photo), his
+  // rotation then from the rotation map alone (none when it has no entry), else how the lecture framed it (cr, ro of its
+  // record). tools/photos.py lecture_frame is the same rule (tests/lectureframe.test.js).
+  function lectureFrame(f, cr, ro, crop, rot) {
+    if (crop && Object.prototype.hasOwnProperty.call(crop, f)) return [crop[f], rotNorm((rot || {})[f])];
+    return [cr || null, rotNorm(ro)];
+  }
   // Where a point of the original photo (x, y in fractions) lands in the file the workflow makes with crop c ([l, t, r, b],
   // null for none) and rotation r (tools/photos.py turn), in fractions of that file; null when the crop cut it off.
   function photoAt(x, y, c, r) {
@@ -1537,6 +1545,7 @@
     rotNorm,
     rotStep,
     rotSet,
+    lectureFrame,
     photoAt,
     turnedSize,
     rotDelta,

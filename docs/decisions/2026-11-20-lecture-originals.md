@@ -37,3 +37,5 @@ lecture photos with no source in play as "IMR", untouched.
   never reach its R2 file (`tools/fetch_approved.py` remakes candidates and the views' photos, not `course`), and its
   baseline framing (`cr`, `ro`) could not be undone with "Full photo". The button comes back with that pipeline (ROADMAP).
 - **Not touched.** The 34 untraced lecture photos, `curation.json`, the credits, `imr: true`, the rights class.
+
+Changed by: [2026-11-21-lecture-crop.md](2026-11-21-lecture-crop.md) (the admin's Crop on a lecture photo is built).
