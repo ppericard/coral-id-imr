@@ -188,8 +188,8 @@ const server = http.createServer((req, res) => {
       // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
       // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1) is its 'medium' file for 480 px and
       // 'large' otherwise, names resized() leaves alone, so resized(…, '') cannot be compared. The host is chosen when it
-      // shows too: R2 is cut off here, and about a second after the first R2 failure (core.js photoRetry: one more try
-      // PHOTO_RETRY ms later) the page reads its photos from their online original or the site (app.js AWAY). Planned
+      // shows too: R2 is cut off here, and about a second after the first R2 failures (core.js photoRetry: one more try
+      // PHOTO_RETRY ms later; app.js R2_OUT photos) the page reads its photos from their online original or the site (app.js AWAY). Planned
       // while R2 was still on and shown after, the same file comes from elsewhere than the R2 address read with the plan.
       // Each file is taken under both: without the R2 base (core.js photoLocal) and where it goes once R2
       // failed (core.js photoAway); check 12 is about which host.
@@ -996,6 +996,47 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('R2: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
+    // a2. R2 answering but one file missing (a 404 for the first game photo the page asks R2 for, a quiz preload or a
+    // shown photo; REE-200), no service worker: that photo falls back on its own and the page keeps R2 (app.js
+    // r2Failed: R2 is given up only after R2_OUT photos failed in a row), so the next question's photos are R2's.
+    {
+      const {ctx, p, errs} = await ctxOf();
+      await fromR2(ctx);
+      let gone = null,
+        asked404 = 0;
+      // Registered after the stub, so asked first (Playwright: the last route matching wins).
+      await ctx.route(
+        u => u.href.startsWith(R2 + 'img/'),
+        r => {
+          const f = (/\/img\/([^/?]+?)(?:-[tsm])?\.webp/.exec(r.request().url()) || [])[1];
+          if (f && !gone) gone = f;
+          if (f && f === gone) return (asked404++, r.fulfill({status: 404}));
+          return r.fallback();
+        }
+      );
+      await p.goto(base + '#practice/quiz');
+      await ready(p);
+      await shown(p);
+      await p.waitForTimeout(2500); // past its retry (core.js PHOTO_RETRY) and its fallback
+      const st = await p.evaluate(() => ({R2, AWAY, sw: swOn()}));
+      if (!gone || !asked404) fails.push('R2, one file missing: no photo was asked from R2');
+      else if (st.sw || !st.R2 || st.AWAY)
+        fails.push(`R2, one file missing (${gone}, asked ${asked404} times): R2 given up for the page (${JSON.stringify(st)})`);
+      await qa.install(p);
+      if (!(await p.$(qa.SEL))) fails.push('R2, one file missing: the question took no answer');
+      else {
+        await p.evaluate(() => smokeAnswer(false));
+        await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
+        await p.click('#next', {timeout: 10000}).catch(() => fails.push('R2, one file missing: no Next after the answer'));
+        const s2 = ((await shown(p)) || []).filter(
+          u => !/inaturalist/.test(u) && (/\/img\/([^/?]+?)(?:-[tsm])?\.webp/.exec(u) || [])[1] !== gone
+        );
+        if (!s2.length || !s2.every(u => u.startsWith(R2 + 'img/')))
+          fails.push(`R2, one file missing (${gone}): the next question's photos are not read from R2 (${s2})`);
+      }
+      if (errs.length) fails.push('R2, one file missing: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
     // b. R2 cut off: R2 was asked, the photos show from their online original or the site's img/, no "Another
     // question", and the next question asks R2 nothing more. A cropped photo shown from its original gets its crop drawn
     // (object-view-box, core.js photoCropOf), on an element that fell back and on one made afterwards; an IMR lecture
@@ -1100,14 +1141,14 @@ const server = http.createServer((req, res) => {
         if (!s2.length || off2.length || asked !== n)
           fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${off2.length ? off2 : s2})`);
       }
-      // The first R2 failure coming from a quiz preload, no element having failed yet: the crops are drawn from then on
-      // too, not only after an element's fallback.
+      // R2 given up by quiz preloads (app.js r2Failed: R2_OUT photos in a row), no element having failed yet: the crops
+      // are drawn from then on too, not only after an element's fallback.
       const pre = await p.evaluate(async () => {
-        ((R2 = true), (AWAY = false));
+        ((R2 = true), (AWAY = false), R2RUN.clear());
         if (CROPW) CROPW.disconnect();
         CROPW = null;
-        const u = PHOTO_BASE + 'img/no-such-photo-s.webp',
-          x = {urls: [u], held: [], r2try: new Set([u])};
+        const U = Array.from({length: R2_OUT}, (_, k) => `${PHOTO_BASE}img/no-such-photo${k}-s.webp`),
+          x = {urls: U, held: [], r2try: new Set(U)};
         ONQ = x;
         PF.push(x);
         pump();

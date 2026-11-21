@@ -321,12 +321,11 @@ green checks; refactors of this size probably run longer.
    **Done in part** (spec/front-end.md, `tests/sheetparts.test.js`): the four sheets (the corals' genus sheet; a tree's
    family, genus and species sheets) are drawn through one frame, `sheetPage(lede, cls, body)`, and the lines they
    share are one part each: `sheetRep` (the report line), `moreDetails` (the fold), `heroBtn` and `heroPic` (the first
-   photo's button), `cuesBox` (the IMR cues box), `looksSection` ("Don't confuse with" for the tree sheets). The
-   sheets' own sections stay in their functions, in their order. **Not done**: the sheets as lists of declared parts
-   (`UNITS sheetParts`) built from the node: each sheet function is a template of its own sections and about ten
-   tests read those templates by their text (the order of the marks and roots, the juvenile line, the hero's place
-   in the viewer's list), so it is a rewrite of the four sheets and of those tests, with the same HTML as its
-   acceptance. No `UNITS` field was added. Checked: the app's `#view`, help box and page bar HTML of 116 states (a coral
+   photo's button), `cuesBox` (the IMR cues box), `looksSection` ("Don't confuse with" for the tree sheets). **Then**
+   the sheets are lists of declared parts: `UNITS sheetParts` names each sheet's sections in their order (the
+   corals' `genus`; the tree subjects' `family`, `genus`, `species`), and `sheetBody` draws them from the sheet's
+   builders of those names (`tests/sheetparts.test.js`: every declared part has its builder, every builder is
+   declared; the tests that read a section's place now read the declared order). Checked: the app's `#view`, help box and page bar HTML of 116 states (a coral
    genus of the lecture, a starred one, a bonus one and one of two levels, and a look-alike view switch; the fish's and
    the sea slugs' families with several genera, with one genus, with one species, with and without IMR cues, a wink
    family sent to the list, genera with and without cues and roots, one sent on to its one species, species with
@@ -349,11 +348,15 @@ green checks; refactors of this size probably run longer.
     code, on the real inputs and on 12 and 8 made-up curations (adds, rejections, exclusions, moves, tags, eases, crops,
     rotations, the top-level exclude): the same trees, games and download lists. One difference, in an input the admin never
     writes: a rotation that is not 90, 180 or 270 counts as none when a photo's files are tested for being stale (the
-    fish's rule). **Not done**: the sea slugs' `build()` closures (`rec`, `judged`, `kept`, `place`) on `in_play` and
-    `record`. They are not copies but a different order of the same rules: `in_play` is keyed by the fish's teaching
-    entries and dedupes a photo across every list, the sea slugs' lists (species and genus-level) do not, and a record's
-    fields differ (`gl`, `bb`, `r`). Moving them changes which photos can play in an edge case (the same observation in a
-    species' and its genus' list), so it needs a decision on the dedupe first.
+    fish's rule). **Then** the sea slugs' photos in play and their records are `in_play` and `record` themselves:
+    `in_play` takes the subject's part of the curation, its sure rule, its candidate lists in order and the units an add
+    may name, and keeps its rule of one photo once across every list (the species' lists first, then the genus-level
+    ones; [decision](../decisions/2026-11-21-tree-photo-once.md)); `seaslug_game.py` adds its own fields (`gl`, `bb`,
+    `r`) to `record`'s and keeps its cap (`kept`) and R2 step (`place`). The candidate route now also keeps out a photo
+    whose count in force is other species one could take for its subject for both subjects (`other_out`, as core.js
+    `treePhotoIn`). Checked: `--check` of the sea slugs' files, and old and new code on the real inputs (3,014 sea-slug
+    photos in play, 0 photos in more than one of the 272 lists; the fish's `plan()`): identical; on made-up inputs, the
+    differences are the edge cases the decision lists.
 14. **Later**: the format changes of §6, only if wanted. None is needed for 1-13.
 
 ## 6. What needs Pierre (S1's last sentence: data format or players' progress)

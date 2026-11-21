@@ -52,7 +52,7 @@ outside does nothing, so a double tap or the reflex tap on Next cannot answer or
 
 ## The welcome tour
 
-`tour.js`: 6 steps, the first-launch question first; 8 for a player with two subjects or more (below). Each step
+`tour.js`: 6 steps, the first-launch question first; 8 for a player with two subjects or more (below), one more when the subject has a names step ([below](#the-names-step-at-the-welcome)). Each step
 spotlights `sel` (fallback `alt`), joined with `also` into one frame, plus an optional separate `plus` spotlight (step 3:
 Practice in the menu). The bubble never covers a spotlight: `frame()` scrolls once per step so the target fits in the
 band between the pinned header and the phone tab bar, beside or above or below the bubble (`.tbub.wide` on wide screens
@@ -111,6 +111,30 @@ holds per subject. A subject offers its own basics module after "new" and on its
 but no first-launch question and no level-change card, so they offer it only on Home's line and the Learn page. The fish's level-change cards, that one included, stay off
 (`UNITS` `startFb: false`). The fish answers are logged but not replayed, so the fish prior applies at once (`model.js` `startP`: no replay
 to wait for). The admin's player journey shows the corals' record only.
+
+### The names step at the welcome
+
+A subject may declare a second step right after its question (`app.js` `UNITS[id].namesStep`: `q`, `lede`, `opts` (`id`,
+`name`, `line`, `rows`: each What I learn row, by its set `k`, on or off) and `skip`, the first-launch answers that skip it);
+the fish do ([decision](../decisions/2026-11-21-fish-welcome-names-step.md), docs/FISH_PATH.md "Which names a player
+learns"): "Which names do you want to learn?", **Common names**, **Scientific names**, **Both**, as the same big buttons.
+`namesAsk(c)` says whether it is asked: the answer `c` is not in `skip` (the fish: `imr`) and no earlier "I'm at IMR"
+(`imrNow`), every row it sets is on offer (`learnRows`: the species level, rule D4, so a device that has not yet heard the
+sheet script at that version gets no step) and none was chosen yet (`Q[k]`, `Q[k + 'O']` unset: a player who already plays
+keeps what they have). `namesSet(id)` turns each named row on or off through `learnSet`, only where it is not so already:
+"Common names" on a record no switch was tapped on writes nothing, so the scientific names are still offered at Advanced;
+"Scientific names" is the Scientific names row on and the Common names row off; "Both", the Scientific names row on. It
+opens nothing early (Q401 A) and moves no progress. Not an answer to the question: closing it (Escape) leaves the record as
+it plays, and it is not asked again; the choice is the What I learn card's, changeable there any time.
+
+- **In the tour** (`tour.js`): a `names` step (forced, like `ask`: no Skip, no Next until answered) right after the last
+  `ask`, planned from the answer just clicked (`OPEN.n`, the subject it is planned for, kept in `sessionStorage` across a
+  sign-in's reload; the record is saved a moment later). Its answer is held (`OPEN.c`) and written when the tour closes
+  (`close`: `namesSet`, only while no row was set meanwhile and no "I'm at IMR" said), so going back to change it, or the
+  question's answer to one that skips the step, leaves nothing to take back (nor to synchronize: the sheet's merge restores a
+  saved row from a device that has none).
+- **On the card** (`quiz.js` `namesAskShow`): after the question's card, before the basics offer or the quiz; its own class
+  `namesq` (not `startq`, the card the sync closes); Escape goes on with the record as it plays.
 
 ### The record
 
@@ -276,12 +300,13 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with three tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with four tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
-  tip's `id`, `ctx` (the games whose break may show it), `target(u)` (who it is for, on the usage counters), `from` (the
-  questions answered from which it can first show), `now(b)` (its preferred moment at a break: b = {ctx, miss, zm}),
+  tip's `id`, `ctx` (the games whose break may show it), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
+  break's `b.mix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
+  break: b = {ctx, miss, zm, mix}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
   between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj}, subj the `core.js` `SUBJECTS` record on
   screen: the text follows the subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
@@ -293,7 +318,9 @@ once a player uses it, how often is their choice. A small generic system with th
   like `reefid-zoomhint`): `u` the usage counters (`q` game questions answered here: photo quiz, custom quiz, duels; `z`
   quiz photos the player enlarged here, on a question or its mix-up montage, `quiz.js` `tipZoomed`; a tip's own Show me
   is not counted; `c` times the Custom quiz was opened here; `d` times the Duel tab was opened here, `quiz.js`
-  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
+  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`; `m` times the
+  Custom quiz's My mix-ups view was drawn here, `quiz.js` `viewCustom`, a saved choice of that view also folding in as one),
+  seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
   a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
@@ -327,6 +354,17 @@ once a player uses it, how often is their choice. A small generic system with th
   subject's own word, `SUBJECTS` `many`), "Look-alike duels show photos of one of two look-alike genera and ask which one
   it is. The ones you still mix up come up most." (the Duel tab's own pick, `duelPick`), **Show me** (opens the
   Duel tab, `#practice/duels`) and **Got it**.
+- **The My mix-ups tip** (`id` `mixups`, tip (c) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  with 100 questions or more here who has mixed up **at least 2 pairs** of units `TIPR.MIX` (3) times or more (the pairs
+  the view's own `mixEdges` weigh, both ways added, read at the break from the player's record, `b.mix`: counted only while
+  `u.m` is 0) and never saw the Custom quiz's My mix-ups view (counter `u.m`). In the Quiz and the Custom quiz; its
+  moment, the Next right after a miss, else any break from 20 questions later; twice at most, the second 150 questions
+  after the first; last of the four when several are due (one tip a visit). Card: "Did you know?", "Quiz yourself on
+  your mix-ups", "The Custom quiz's My mix-ups view groups the genera you confuse with each other, the most confused
+  first. Tap All on a group, then Start." ("Click" with a mouse; the subject's own word, `SUBJECTS` `many`), **Show me** (the Custom quiz's
+  picking page on the My mix-ups view, which it then keeps as the chosen view) and **Got it**. The log cannot say who
+  saw the view, so `m` counts from the device on. My progress's "Your tricky pairs" shows itself: no tip
+  ([record](../decisions/2026-11-21-tip-c-my-mix-ups.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,

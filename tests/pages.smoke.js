@@ -2884,10 +2884,12 @@ async function startSmoke(b, base) {
       for (let i = 0; i < CHOICE.AT[0]; i++) startStep(0, 4, i % 4 === 0, true);
       return startDue();
     });
-    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).
+    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits). Each
+    // one is answered first (pendDone): a question left on screen is kept, and a kept question comes back with no offer.
     for (let k = 0; k < 6 && !(await p.$('.unlock.startfb')); k++) {
       await p.evaluate(() => {
         document.querySelectorAll('.unlock.intro').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        pendDone();
         quizPhoto();
       });
       await p.waitForTimeout(300);
@@ -2923,7 +2925,7 @@ async function startSmoke(b, base) {
     )
       fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
     if (fb) await p.click('.unlock.startfb [data-keep]');
-    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
+    const again = await p.evaluate(() => (pendDone(), quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
     if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
     // The "higher" card: no number either (it goes stale, or miscounts what is open).
@@ -3443,13 +3445,90 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} duels tip: page errors ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
+    // The My mix-ups tip: a player with 100 questions, 3 photos enlarged, the Custom quiz and the Duel tab opened, who
+    // mixed up two pairs 3 times and never saw the My mix-ups view, gets it at the Next right after a miss in the Quiz; the
+    // card says what the view does, fits the screen; Show me opens the Custom quiz on that view and counts as a view, so it
+    // never comes again. (The pairs are set on the player's record in the page: the genera in play, mixed up 3 times.)
+    const mixed = (p, n) =>
+      p.evaluate(n => {
+        const L = unlocked();
+        for (const [a, b] of [
+          [L[0], L[1]],
+          [L[2], L[3]]
+        ].slice(0, n))
+          P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        return L.length;
+      }, n);
+    {
+      const [c, p, errs] = await open(w, h, {q: 100, z: 3, c: 1, d: 1});
+      if ((await mixed(p, 2)) < 4) fails.push(`${W} mix-ups tip: fewer than 4 genera in play`);
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p);
+      if (!r.next) fails.push(`${W} mix-ups tip: not shown to a player with two pairs mixed up who never saw the view`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Quiz yourself on your mix-ups' ||
+          !/^The Custom quiz's My mix-ups view groups the genera you confuse with each other, the most confused first\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} mix-ups tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p
+          .waitForFunction(
+            () => location.hash === '#practice/custom' && document.querySelector('[data-cv="mix"][aria-pressed="true"]'),
+            null,
+            {
+              timeout: 5000
+            }
+          )
+          .catch(() => {});
+        const st = await tips(p),
+          view = await p.evaluate(() => ({
+            hash: location.hash,
+            mix: !!document.querySelector('[data-cv="mix"][aria-pressed="true"]'),
+            groups: document.querySelectorAll('.cqg').length
+          }));
+        if (view.hash !== '#practice/custom' || !view.mix || !view.groups || !(st.u.m >= 1) || (st.s.mixups || []).length !== 1)
+          fails.push(`${W} mix-ups tip Show me: ${JSON.stringify({view, st})}`);
+      }
+      if (errs.length) fails.push(`${W} mix-ups tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these: one pair only, no pair, the view seen before (m 1). Right answers only: a miss makes a pair of its own,
+    // and the tip, past 120 questions, takes any break.
+    for (const [u, pairs] of [
+      [{q: 150, z: 3, c: 1, d: 1}, 1],
+      [{q: 150, z: 3, c: 1, d: 1}, 0],
+      [{q: 150, z: 3, c: 1, d: 1, m: 1}, 2]
+    ]) {
+      const [c, p] = await open(w, h, u);
+      await mixed(p, pairs);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p, {right: true})).next) n++;
+      if (n) fails.push(`${W} mix-ups tip shown to ${JSON.stringify({u, pairs})}`);
+      await c.close();
+    }
     // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened, the
-    // Duel tab opened.
+    // Duel tab opened, the My mix-ups view seen (the misses make pairs of their own, so m 1 where 100 questions are past).
     for (const u of [
-      {q: 100, z: 3, c: 1},
+      {q: 100, z: 3, c: 1, m: 1},
       {q: 5, z: 0},
       {q: 80, z: 3},
-      {q: 200, z: 3, c: 1, d: 1}
+      {q: 200, z: 3, c: 1, d: 1, m: 1}
     ]) {
       const [c, p] = await open(w, h, u);
       let n = 0;
@@ -4150,12 +4229,15 @@ async function credits(b, base) {
         licences: !!a && /CC BY/.test(a.textContent),
         // the lecture photos traced to Corals of the World: the site and its terms named
         cotw: !!(a && a.querySelector('a[href="https://www.coralsoftheworld.org/page/terms-of-use/"]')),
+        // REE-50: the app's version line and the link to the source
+        ver: !!a && /Version \S+/.test(a.querySelector('.abver')?.textContent || ''),
+        src: !!(a && a.querySelector('.abver a[href="https://github.com/ppericard/coral-id-imr"]')),
         // The book may be cited under References only, never in the credits around it.
         credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
         bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
       };
     });
-    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || !r.ver || !r.src || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
     // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
@@ -4715,6 +4797,14 @@ async function fishBasicsCheck(b, base) {
     });
     if (JSON.stringify(grp.picks) !== JSON.stringify(grp.key) || !grp.tiles || !grp.cite)
       fails.push(`${W} the groups are not the key's: ${JSON.stringify(grp)}`);
+    // A step of several views names the term of its official line: under "Locking spines" the deck's scalpel line says it
+    // is about the scalpel (new-RA review, 2026-11-22). Its last view shown, as a player reaches it.
+    await p.evaluate(() => (location.hash = 'fish/learn/basics/features'));
+    await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
+    await p.click('.bx .bx-picks button:last-child');
+    const feat = await p.evaluate(() => [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent));
+    const scal = feat.find(t => /scalpel on caudal/.test(t));
+    if (!scal || !/^Scalpel · /.test(scal)) fails.push(`${W} features: the scalpel line does not name its term: ${JSON.stringify(feat)}`);
     // Done = every step seen: its own record and feat, the corals' untouched; the Home line goes; the corals still due.
     for (const st of STEPS) {
       await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
@@ -5738,7 +5828,8 @@ async function subjTour(b, base) {
   const fails = [],
     errs = [];
   // mode: 'plain' (no group), 'group' (signed in, in the fish group), 'late' (signed out; signing in to their existing
-  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out).
+  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out), 'names'
+  // ('all' on a device that has heard a sheet script with the species level: the fish names step is on offer, rule D4).
   const open = async mode => {
     const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
     await c.route(
@@ -5754,7 +5845,7 @@ async function subjTour(b, base) {
           t = await res.text();
         if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
         // every subject but the corals back to a group (fish and the sea slugs open to all)
-        await r.fulfill({response: res, body: mode === 'all' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
+        await r.fulfill({response: res, body: mode === 'all' || mode === 'names' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
       }
     );
     await c.addInitScript(mode => {
@@ -5764,13 +5855,14 @@ async function subjTour(b, base) {
           localStorage.setItem('reefid-nudge', '1');
           localStorage.setItem('reefid-board-told', '1');
           localStorage.setItem('reefid-board-sent14', '1');
+          if (mode === 'names') localStorage.setItem('reefid-sheet-v', '300');
           if (mode === 'group') {
             localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234'}));
             localStorage.setItem('reefid-groups', JSON.stringify({n: 'Ana', g: ['fish']}));
           }
         }
       } catch (e) {}
-      const g = mode === 'plain' || mode === 'all' ? [] : ['fish'];
+      const g = mode === 'plain' || mode === 'all' || mode === 'names' ? [] : ['fish'];
       window.SHEET_STUB = (url, o) =>
         Promise.resolve({
           json: () =>
@@ -5951,7 +6043,212 @@ async function subjTour(b, base) {
       fails.push(`subject tour, open to all: Corals ${JSON.stringify({s1, k})}`);
     await c.close();
   }
+  // 5. The fish names step (app.js UNITS namesStep; Pierre, 2026-11-04): after "I know reef fish well" a forced step, one more
+  // step in the count, whose answer sets the What I learn rows when the tour closes (held until then); Back shows it marked
+  // and a changed answer replaces it; changed to "I'm at IMR" it goes, nothing written; a device that has not heard the
+  // sheet (rule D4) gets no step.
+  {
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'step');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step: not asked after "know"'));
+    await p.waitForTimeout(300);
+    const rows = () => p.evaluate(() => learnRows().map(r => [r.k, rowOn(r)]));
+    const n0 = await p.evaluate(() => {
+      const b = document.querySelector('#tour .tbub');
+      return {
+        n: (b.querySelector('.tstep') || {}).textContent.trim(),
+        h: (b.querySelector('h3') || {}).textContent,
+        opts: [...b.querySelectorAll('[data-names]')].map(x => x.dataset.names),
+        next: !!b.querySelector('.tnext'),
+        skip: !!b.querySelector('.tskip')
+      };
+    });
+    if (n0.n !== '3 / 9' || n0.h !== 'Which names do you want to learn?' || n0.opts.join() !== 'common,sci,both' || n0.next || n0.skip)
+      fails.push(`names step: ${JSON.stringify(n0)}`);
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    if (((await p.evaluate(() => (document.querySelector('#tour .tstep') || {}).textContent)) || '').trim() !== '3 / 9')
+      fails.push('names step: the arrow key passed the forced choice');
+    await tap(p, '#tour [data-names="sci"]', 'names step');
+    await p.waitForTimeout(500);
+    const s1 = await bub(p),
+      r1 = await rows(),
+      q1 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (!s1 || s1.n !== '4 / 9' || !/, any time$/.test(s1.h))
+      fails.push(`names step: after the answer ${JSON.stringify(s1 && [s1.n, s1.h])}`);
+    // held, not written: going back to change it leaves nothing to take back (or to synchronize)
+    if (JSON.stringify(r1) !== '[["sp",true],["sci",false]]' || q1.join() !== ',,,false')
+      fails.push(`names step: the answer is written before the tour closes ${JSON.stringify([r1, q1])}`);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(400);
+    const back = await p.evaluate(() => ({
+      pressed: [...document.querySelectorAll('#tour [data-names][aria-pressed="true"]')].map(x => x.dataset.names).join(),
+      next: !!document.querySelector('#tour .tnext')
+    }));
+    if (back.pressed !== 'sci' || !back.next) fails.push(`names step: Back ${JSON.stringify(back)}`);
+    // changed to "Scientific names only" then, the tour closed (Escape): that answer, the last, is written
+    await tap(p, '#tour [data-names="both"]', 'names step changed');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-names="sci"]', 'names step changed again');
+    await p.waitForTimeout(500);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step: Escape kept the tour'));
+    const r2 = await rows(),
+      q2 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (JSON.stringify(r2) !== '[["sp",false],["sci",true]]' || q2.join() !== 'true,false,true,false')
+      fails.push(`names step: scientific names only, at the close ${JSON.stringify([r2, q2])}`);
+    await c.close();
+  }
+  {
+    // Back to the question and "I'm at IMR": the held choice goes with the step (8 steps again), nothing is written
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, IMR');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step, IMR: not asked after "know"'));
+    await tap(p, '#tour [data-names="sci"]', 'names step, IMR');
+    await p.waitForTimeout(400);
+    await tap(p, '#tour .tback', 'names step, IMR back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step, IMR back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-start="imr"]', 'names step, IMR');
+    await p.waitForTimeout(600);
+    const s3 = await bub(p);
+    if (!s3 || s3.n !== '3 / 8' || !/, any time$/.test(s3.h))
+      fails.push(`names step: changed to IMR ${JSON.stringify(s3 && [s3.n, s3.h])}`);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step, IMR: Escape kept the tour'));
+    const q3 = await p.evaluate(() => ['sp', 'spO', 'sci', 'sciO', 'sciT', 'spT'].map(k => (k in Q ? Q[k] : null)));
+    if (q3.some(x => x !== null)) fails.push(`names step: changed to IMR, but written ${JSON.stringify(q3)}`);
+    await c.close();
+  }
+  {
+    // A device that has not heard the sheet script at the species level: one row on offer, no choice, the tour as before.
+    const [c, p] = await open('all');
+    await tap(p, '#tour [data-pick="fish"]', 'names step, old sheet');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, old sheet');
+    await p.waitForTimeout(600);
+    const s = await bub(p);
+    if (!s || s.n !== '3 / 8' || !/, any time$/.test(s.h)) fails.push(`names step, sheet not heard: ${JSON.stringify(s && [s.n, s.h])}`);
+    await c.close();
+  }
   if (errs.length) fails.push(`subject tour: page errors ${errs.slice(0, 3).join(' | ')}`);
+  return fails;
+}
+
+// The tour's arrows (tour.js arrows) never cover readable page text: at every step of the tour, phone and desktop, no
+// arrow's box meets a text line of the page behind the dim; and with text put under each arrow (a probe, as the quiz's
+// "Show the corallites (hint)" link sits under the Practice arrow), the arrow moves, shortens or goes: none stays over it.
+// Fish photos are not fetched (every other host is aborted). Returns the failures.
+async function tourArrowsCheck(b, base) {
+  const fails = [],
+    errs = [];
+  // The arrows now on screen and the page's text lines they meet (the tour itself left out).
+  const measure = () => {
+    const tour = document.getElementById('tour'),
+      arrows = [...document.querySelectorAll('#tour .tarw')].map(a => a.getBoundingClientRect()),
+      rg = document.createRange(),
+      walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT),
+      hits = [];
+    for (let n; (n = walk.nextNode());) {
+      const e = n.parentElement;
+      if (!n.nodeValue.trim() || tour.contains(n) || !e || /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(e.tagName)) continue;
+      if (!e.checkVisibility({visibilityProperty: true, opacityProperty: true})) continue;
+      rg.selectNodeContents(n);
+      for (const q of rg.getClientRects())
+        for (const a of arrows)
+          if (q.width > 0 && q.height > 0 && a.left < q.right && a.right > q.left && a.top < q.bottom && a.bottom > q.top)
+            hits.push(n.nodeValue.trim().slice(0, 30));
+    }
+    return {arrows: arrows.length, hits};
+  };
+  // Text lines laid exactly over each arrow now on screen (the tour is then re-placed by a resize).
+  const probe = () => {
+    const boxes = [...document.querySelectorAll('#tour .tarw')].map(a => a.getBoundingClientRect());
+    let made = 0;
+    for (const r of boxes)
+      for (let y = r.top; y < r.bottom; y += 14) {
+        const d = document.createElement('div');
+        d.className = 'arwprobe';
+        d.textContent = 'W'.repeat(Math.ceil(r.width / 7) + 2);
+        d.style.cssText = `position:fixed;z-index:1;left:${r.left}px;top:${y}px;font:12px/14px monospace;white-space:nowrap;pointer-events:none`;
+        document.body.appendChild(d);
+        made++;
+      }
+    return made;
+  };
+  for (const w of [390, 1280]) {
+    const c = await b.newContext({
+      viewport: {width: w, height: w < 600 ? 844 : 800},
+      serviceWorkers: 'block',
+      hasTouch: w < 600,
+      isMobile: w < 600
+    });
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => localStorage.setItem('reefid-nudge', '1'));
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(`${w}: ${e.message}`));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000});
+    let games = 0;
+    for (let k = 0; k < 12; k++) {
+      const pick = await p.$('#tour [data-pick="coral"]'),
+        start = pick ? null : await p.$('#tour [data-start="imr"]'),
+        before = await p.evaluate(() => (document.querySelector('#tour .tstep') || {}).textContent);
+      if (pick || start) {
+        await (pick || start).click();
+        await p
+          .waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, before, {timeout: 10000})
+          .catch(() => {});
+        await p.waitForTimeout(500);
+        continue;
+      }
+      await p.waitForTimeout(900); // the page behind the dim (photos, layout) settles; the tour places itself every 400 ms
+      const h = await p.evaluate(() => (document.querySelector('#tour .tbub h3') || {}).textContent || '');
+      const m = await p.evaluate(measure);
+      if (m.hits.length) fails.push(`tour arrows ${w} px, step "${h}": an arrow covers text ${JSON.stringify(m.hits)}`);
+      if (h === 'Four games') {
+        games++;
+        if (!m.arrows) fails.push(`tour arrows ${w} px: the Four games step shows no arrow`);
+        const n = await p.evaluate(probe);
+        await p.evaluate(() => dispatchEvent(new Event('resize')));
+        await p.waitForTimeout(300);
+        const m2 = await p.evaluate(measure);
+        if (n && m2.hits.length)
+          fails.push(`tour arrows ${w} px, text under the arrows: one still covers ${JSON.stringify([...new Set(m2.hits)].slice(0, 3))}`);
+        await p.evaluate(() => document.querySelectorAll('.arwprobe').forEach(e => e.remove()));
+      }
+      const next = await p.$('#tour .tnext');
+      if (!next) break;
+      if (/Start playing|Coral basics/.test(await next.textContent())) break;
+      await next.click();
+      await p
+        .waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, before, {timeout: 10000})
+        .catch(() => {});
+    }
+    if (games !== 1) fails.push(`tour arrows ${w} px: the Four games step was met ${games} times`);
+    await c.close();
+  }
+  if (errs.length) fails.push(`tour arrows: page errors ${errs.slice(0, 3).join(' | ')}`);
   return fails;
 }
 
@@ -6370,7 +6667,7 @@ async function comparedLayoutCheck(b, base) {
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
 // (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
-// the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck);
+// the tour, for a player with one subject and with two (subjTour), and no tour arrow over page text (tourArrowsCheck); install: the offer to install the app (installCheck);
 // fishkey: the Fish ID Key in the Lab (fishKeyCheck); noupscale: an IMR lecture photo never drawn past its own pixels
 // (noUpscaleCheck).
 const PARTS = [
@@ -7355,7 +7652,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('tips')) for (const f of await customLeftCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
-  if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
+  if (run.has('subjtour')) for (const f of [...(await subjTour(b, base)), ...(await tourArrowsCheck(b, base))]) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);

@@ -105,6 +105,39 @@ test('fishUnitPhases: the IMR phases from the phase lines the family carries (as
   assert.deepStrictEqual(A.fishUnitPhases(fam(T.Damselfish)), []);
 });
 
+test('hasPhaseRow: the admin’s Phase row for IMR phase lines or dimorph, and for a species the cited list flags (phs), nothing else', () => {
+  const F = read('fish.json'),
+    T = Object.fromEntries(F.teach.map(t => [t.name, t]));
+  assert.strictEqual(A.hasPhaseRow(null, null), false);
+  assert.strictEqual(A.hasPhaseRow({}, {}), false);
+  assert.strictEqual(A.hasPhaseRow({phase: [], dimorph: false}, {name: 'x'}), false);
+  assert.strictEqual(A.hasPhaseRow({phase: ['Juveniles differ']}, null), true, 'IMR phase lines');
+  assert.strictEqual(A.hasPhaseRow({dimorph: true}, undefined), true, 'dimorph');
+  assert.strictEqual(A.hasPhaseRow(null, {phs: {k: 'sex', src: []}}), true, 'the cited list alone');
+  assert.strictEqual(A.hasPhaseRow(undefined, {phs: {k: 'phase', src: []}}), true);
+  // The real file: every species with phs shows the row, with or without a phased entry; the others as before.
+  const entryOf = Object.fromEntries(F.teach.flatMap(t => (t.species || []).map(s => [s, t]))),
+    imr = s => !!entryOf[s.id] && ((entryOf[s.id].phase || []).length > 0 || !!entryOf[s.id].dimorph),
+    flagged = F.species.filter(s => s.phs);
+  assert.ok(flagged.length >= 90, 'the cited list flags 97 species');
+  assert.ok(
+    flagged.some(s => !imr(s)),
+    'some flagged species has no IMR phase line: only phs shows its row'
+  );
+  flagged.forEach(s => assert.strictEqual(A.hasPhaseRow(entryOf[s.id], s), true, `${s.name}: its Phase row`));
+  F.species
+    .filter(s => !s.phs)
+    .forEach(s => assert.strictEqual(A.hasPhaseRow(entryOf[s.id], s), imr(s), `${s.name}: the row as the IMR entry says`));
+  assert.strictEqual(A.hasPhaseRow(T.Parrotfish, null), true);
+  assert.strictEqual(A.hasPhaseRow(T.Damselfish, null), false);
+  // Wired at the three places that draw the row: the Candidates card and a photo tile (admin-fish.js fishRows), the Photo review tile.
+  const src = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+  assert.ok(src('admin-fish.js').includes('if (hasPhaseRow(entry, species))'), 'fishRows');
+  assert.ok(src('admin-fish.js').includes('FISHC.entry[sid], FTAGS_OPEN, FISHC.species[sid]'), 'the Candidates card gives its species');
+  assert.ok(src('admin.js').includes('true, sid && FISHC.species[sid])'), 'a photo tile gives its species');
+  assert.ok(src('admin.js').includes("${hasPhaseRow(u, s) ? segRow('Phase'"), 'the Photo review tile');
+});
+
 test('fishUnits: families by key group, genera with their species, the IMR tag on families and genera', () => {
   const J = {
     species: [

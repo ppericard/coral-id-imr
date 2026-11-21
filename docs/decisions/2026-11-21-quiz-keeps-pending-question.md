@@ -31,3 +31,6 @@ surprise cards and the Lab's tools are not kept.
 `quiz.js` `PEND` and its functions keep and restore the question; `app.js` `route` writes the clock at each leave; the
 key `reefid-<dev>pending` is cleared at sign-out (`sync.js`, rule D7). Specified in [docs/spec/quiz.md](../spec/quiz.md#the-pending-question)
 and [storage.md](../spec/storage.md). Tests: `tests/pending.test.js`, `tests/pending.smoke.js`.
+
+Changed by: [2026-11-22-pending-question-other-card.md](2026-11-22-pending-question-other-card.md) (a question that came with
+another genus's card is kept; only a question about its own card's genus is not).
