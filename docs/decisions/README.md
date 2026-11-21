@@ -65,6 +65,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
+| 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |
 | 2026-11-21 | [Rule W27: no fixed number of Codex rounds; a part whose findings keep coming back leaves the PR](2026-11-21-w27-no-round-count.md) | #1355 |
 | 2026-11-20 | [A level opens in a group: at least 4 close units together, no question before](2026-11-20-a-level-opens-in-a-group.md) | #1331 |
 | 2026-11-20 | [Admin opening on a phone: the scripts a visit to Activity does not need wait for their page](2026-11-20-admin-lazy-loads.md) | #1336 |

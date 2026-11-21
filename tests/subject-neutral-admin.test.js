@@ -107,7 +107,7 @@ const COUNTS = {
     'admin-heatmap.js': 3,
     'admin-journey.js': 2,
     'admin-visits.js': 4,
-    'admin.js': 30,
+    'admin.js': 29,
     'analysis.js': 2
   },
   '.admin.cur': {'admin-content.js': 8, 'admin-covers.js': 2, 'admin-demo.js': 1, 'admin-light.js': 2, 'admin.js': 24},
@@ -138,7 +138,7 @@ const COUNTS = {
 const WHOLE = ['admin-fish.js'],
   FAMILY = /^(?:fu|frev|ct|fam|FU|FREV|FMONT|FSCOPE|FDIFF|CTREES|FTREE)(?=[A-Z_]|$)/,
   NAMES = [
-    ['admin-coraltree.js', 'Dup-1', 'ctLeaves ctKeyOf ctWormsOf ctFilters CTREES ctTrees ctTree ctOn ctRow'],
+    ['admin-coraltree.js', 'Dup-1', 'ctFilters CTREES ctTrees ctTree ctOn ctRow'],
     [
       'admin-fish.js',
       'Dup-3',
@@ -150,7 +150,7 @@ const WHOLE = ['admin-fish.js'],
     [
       'admin.js',
       'Dup-1',
-      'FUNSURE FUT fuJ FU_IMR FU_WALL fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuTreeOf fuGenusRef fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters famHref'
+      'FUNSURE FUT fuJ FU_IMR FU_WALL fuRankOf fuImr fuP fuHref fuData fuFam fuName FUD fuDataM fuFamM fuJt fuWink fuSection fuGlLeaves fuTreeOf fuWormsOf fuNodePhotos FU_CIRC fuCircle fuRow fuFilters famHref'
     ],
     ['admin.js', 'Dup-2', 'FISHS FISHA fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
     ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo'],

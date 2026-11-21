@@ -2389,111 +2389,103 @@ function bindFishTiles(scope, o = {}) {
 const fuWink = (u, cover) =>
   `<section class="adm-row adm-wink"><h3>Wink <small>a surprise card, never counted</small></h3><div class="adm-winkc">${cover && cover.src ? `<img ${crSrc(fuP(cover), 1)} alt="">` : '<span class="none"></span>'}<div><p class="adm-winkq">Which ${esc(ASUBJ.one)}? <span class="adm-src">Surprise</span></p><div class="adm-winka">${[[u.id, u.name], ...(u.wink.choices || [])].map(([id, l]) => `<span class="${id === u.id ? 'ok' : ''}">${esc(l)}</span>`).join('')}</div>${u.wink.right ? `<p><b>✓</b> ${esc(u.wink.right)}</p>` : ''}${u.wink.wrong ? `<p><b>✗</b> ${esc(u.wink.wrong)}</p>` : ''}</div></div></section>`;
 // ---- Photos › Tree (docs/ROADMAP.md "The Tree tab") ----
-// The Key view: the identification key's classification as a tree (taxtree.js, any depth and any ranks), built once per
-// fish.json from the units the page reads (autosort.js fishUnits): each key group (k:<its number>, k:none for a family
-// with none), its families (their unit ids, f:…), their genera (g:…) and species (fish.json ids), the species in the game
-// only and the genera holding one, as the family's page shows them. This adapter is the one place that knows the fish
-// key; the node pages (renderTree, TREE_BUILD tree) read the tree and these fields only: rank, the small grey word of a row (the
-// subject's sheet ranks, SUBJECTS sheets, broadest first; the key's group); unit, a node of the game's unit rank (a
-// family: its page holds the choices of everything under it, featured photos and ✓ Validated, curation.json fish genera
-// under its id); sci, its scientific name or names; it, a name set in italics (a genus); tag, its IMR tag.
+// The tree subjects' classifications are read from the section their build wrote (tools/tree_section.py: data/<subject id>-tree.json,
+// TSEC; taxtree.js ttSection), never built here (the study's step 13: one place that knows each subject's references).
+// The Key view: the identification key's classification as a tree (taxtree.js, any depth and any ranks): each key group
+// (k:<its number>, k:none for a family with none), its families (their unit ids, f:…), their genera (g:…) and species
+// (fish.json ids), the species in the game only and the genera holding one, as the family's page shows them. The node pages
+// (renderTree, TREE_BUILD tree) read the tree and these fields only: rank, the small grey word of a row (the subject's sheet
+// ranks, SUBJECTS sheets, broadest first; the key's group); unit, a node of the game's unit rank (a family: its page holds
+// the choices of everything under it, featured photos and ✓ Validated, curation.json fish genera under its id); sci, its
+// scientific name or names; it, a name set in italics (a genus); imr, imrWith, its IMR tag (the section's: tag, its words as
+// the rows show them, is made here). The section holds what the sources give; what comes from the photos is added at load:
+// the genus-level leaves (fuGlLeaves) and each node's unit record (u, g), read from the units the page holds.
 let TT = null; // {units, T}
-// The leaf of a genus's genus-level photos (fuTreeOf), and the unit a leaf's photos are in play for (its sid: a species,
+// The builds' tree sections by subject id ({} when a file is missing), and the one read of a subject's file.
+const TSEC = {},
+  treeSecLoad = S =>
+    TSEC[S.id]
+      ? Promise.resolve(TSEC[S.id])
+      : fetch(`data/${S.id}-tree.json`, {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : {}))
+          .catch(() => ({}))
+          .then(x => (TSEC[S.id] = x));
+// A view of the section of the subject whose units these are (FISHS: FISHC's), never the page's (the trees are kept per units,
+// and another subject's page may build them first: Covers, a third subject); null while it is not read.
+const fuSection = view => ttSection(TSEC[(FISHS || ASUBJ).id], view);
+// The leaf of a genus's genus-level photos (fuGlLeaves), and the unit a leaf's photos are in play for (its sid: a species,
 // or the genus of a genus-level leaf; the node's own id for any other).
 const glId = g => 'gl:' + g,
   leafSid = (T, x) => (T.node.get(x) || {}).sid || x;
+// The genus-level leaves of a view's nodes N, in place: for each genus of GL (the genera with genus-level photos: gl, sp the
+// genus's id; the sea slugs' observations agreed at the genus only; in play or candidates), a leaf of their own after the
+// genus's species, its photos the genus's (sid its id), never a species (core.js treeGlOf). genus(n): is n a genus of the
+// key; leaf(genus node) → the leaf's node; its place in this view.
+function fuGlLeaves(N, GL, genus, leaf) {
+  const last = new Map();
+  N.forEach((n, i) => {
+    if (genus(n) && GL.has(n.id)) last.set(n.id, {i, n});
+    else if (last.has(n.up)) last.get(n.up).i = i;
+  });
+  [...last.values()].sort((a, b) => b.i - a.i).forEach(({i, n}) => N.splice(i + 1, 0, leaf(n)));
+}
 function fuTreeOf(U) {
   if (TT && TT.units === U) return TT.T;
-  const sp = FISHC.species,
-    ok = s => sp[s] && !sp[s].out,
-    // the ranks of the subject whose units these are (FISHS: FISHC's), never the page's (the tree is kept per units, and
-    // another subject's page may build it first: Covers, a third subject)
-    R = Object.keys((FISHS || ASUBJ).sheets || {}),
-    N = [],
-    K = new Set(),
-    // the genera with genus-level photos (gl: sp the genus's id; the sea slugs' observations agreed at the genus only),
-    // in play or candidates
+  const sec = fuSection('key'),
+    N = sec ? sec.nodes : [],
+    unit = new Map(U.map(u => [u.id, u])),
+    // the genera with genus-level photos
     GL = new Set([...(FISHC.plays || []).filter(p => p && p.gl).map(p => p.sp), ...Object.keys(FISHC.cand).filter(k => FISHC.genera[k])]);
-  U.forEach(u => {
-    const k = u.group == null ? 'k:none' : 'k:' + u.group;
-    if (!K.has(k)) {
-      K.add(k);
-      N.push(u.group == null ? {id: k, name: 'No key group'} : {id: k, name: `${u.group} · ${FISHC.groups[u.group] || ''}`, rank: 'group'});
+  N.forEach(n => {
+    if (n.unit) {
+      n.u = unit.get(n.id);
+      n.tag = fuImr(n);
+    } else if (!n.sid && unit.has(n.up)) {
+      n.g = unit.get(n.up).genera.find(g => g.id === n.id);
+      n.tag = fuImr(n);
     }
-    N.push({id: u.id, name: u.name, sci: u.sci.join(', '), rank: R[0] || ASUBJ.one, up: k, unit: true, tag: fuImr(u), u});
-    u.genera.forEach(g => {
-      const S = g.species.filter(ok);
-      if (!S.length) return;
-      N.push({id: g.id, name: g.name, it: true, rank: R[1], up: u.id, tag: fuImr(g), g});
-      // a species with no common name (the sea slugs) by its scientific name alone, in italics
-      S.forEach(s =>
-        N.push({
-          id: s,
-          name: sp[s].common || sp[s].name,
-          sci: sp[s].common ? sp[s].name : '',
-          it: !sp[s].common,
-          rank: R[2],
-          up: g.id,
-          sid: s
-        })
-      );
-      // its genus-level photos: a leaf of their own after its species (glId), its photos the genus's (sid its id), never
-      // a species (core.js treeGlOf)
-      if (GL.has(g.id))
-        N.push({id: glId(g.id), name: `${g.name} sp.`, sci: '', it: true, rank: 'genus level', up: g.id, sid: g.id, gl: true});
-    });
   });
+  fuGlLeaves(
+    N,
+    GL,
+    n => !!n.g,
+    g => ({id: glId(g.id), name: `${g.name} sp.`, sci: '', it: true, rank: 'genus level', up: g.id, sid: g.id, gl: true})
+  );
   TT = {units: U, T: ttBuild(N)};
   return TT.T;
 }
-// The WoRMS view (views Key | WoRMS, one parent per classification): the reference taxonomy's classification as a tree
-// (taxtree.js ttFromRef), from fish.json ref (WoRMS's AphiaIDs, each {name, rank, parent}: tools/build_fish.py) above
-// the same leaves as the Key view's, in its order: the species in the game, under the parent of their reference
-// (fish.json species ref), at any depth and any WoRMS rank (class, order, suborder, family, subfamily, tribe, genus…; the
-// rank's word in lower case, as the Key's). Ids: a species keeps its id (one node in both views: its page, its cover,
-// its choices are the same); every taxon above it is w:<AphiaID> (a namespace of its own: never a key id, since the
-// key's families and genera are not WoRMS's: Labridae holds the Wrasses and the Parrotfishes, Pycnochromis five of the
-// key's Chromis). A w: node stores nothing (no data shape is decided for it): its page is read-only, its cover the
-// default by the rule. Its tags are read in the Key (fuFilters): a filter passes the Key's leaves
-// (taxtree.js ttPass), shown here with their WoRMS ancestors (ttReach), so the same species in both views. Its problems (a
-// reference or a parent missing, a cycle) are the tree's. A leaf with no reference of its own (a genus's genus-level
-// photos, gl; a species with no published name yet) sits under its genus's WoRMS node (fuGenusRef), its id the Key's.
+// The WoRMS view (views Key | WoRMS, one parent per classification): the reference taxonomy's classification as a tree,
+// from the section's worms view (tools/tree_section.py: fish.json ref, WoRMS's AphiaIDs each {name, rank, parent}, above the
+// same leaves as the Key view's, in its order: the species in the game, under the parent of their reference (fish.json species
+// ref), at any depth and any WoRMS rank: class, order, suborder, family, subfamily, tribe, genus…; the rank's word in lower
+// case, as the Key's). Ids: a species keeps its id (one node in both views: its page, its cover, its choices are the same);
+// every taxon above it is w:<AphiaID> (a namespace of its own: never a key id, since the key's families and genera are not
+// WoRMS's: Labridae holds the Wrasses and the Parrotfishes, Pycnochromis five of the key's Chromis). A w: node stores
+// nothing (no data shape is decided for it): its page is read-only, its cover the default by the rule. Its tags are read in
+// the Key (fuFilters): a filter passes the Key's leaves (taxtree.js ttPass), shown here with their WoRMS ancestors (ttReach),
+// so the same species in both views. Its problems (a leaf with no reference, a reference or a parent missing: the build's;
+// a cycle: the tree's) are the bar's. A genus-level leaf (gl, added at load as in the Key) sits under its genus's WoRMS node
+// (the section's `at`), its id the Key's.
 let TW = null; // {units, T}
-// The WoRMS node of a genus of the tree (gid): its own reference (seaslug.json genera ref), else the WoRMS genus above the
-// first of its species with a reference; '' for none.
-const fuGenusRef = gid => {
-  const g = FISHC.genera[gid] || {},
-    R = FISHC.ref || {};
-  if (g.ref != null) return g.ref;
-  for (const s of g.species || []) {
-    for (let x = (FISHC.species[s] || {}).ref; x != null && R[x]; x = R[x].parent)
-      if (String(R[x].rank).toLowerCase() === 'genus') return x;
-  }
-  return '';
-};
 function fuWormsOf(U) {
   if (TW && TW.units === U) return TW.T;
-  const K = fuTreeOf(U),
-    L = [...K.node.values()]
-      .filter(n => n.sid)
-      .map(n => {
-        const s = n.gl ? null : FISHC.species[n.sid],
-          ref = s ? s.ref : null;
-        return {
-          id: n.id,
-          name: n.name,
-          sci: n.sci,
-          rank: n.rank,
-          it: !!n.it,
-          sid: n.sid,
-          ...(n.gl ? {gl: true} : {}),
-          ref,
-          ...(ref == null || ref === '' ? {at: fuGenusRef(n.gl ? n.sid : s.genus)} : {})
-        };
-      }),
-    {nodes, problems} = ttFromRef(L, FISHC.ref || {}, {id: k => 'w:' + k, rank: r => String(r).toLowerCase()});
-  nodes.forEach(n => n.ref && !n.sid && n.rank === 'genus' && (n.it = true));
-  const T = ttBuild(nodes);
+  const sec = fuSection('worms'),
+    K = fuTreeOf(U),
+    N = sec ? sec.nodes : [],
+    problems = sec ? sec.problems : [],
+    gl = [...K.node.values()].filter(n => n.gl);
+  // each genus-level leaf after the last species of its genus, under the genus's WoRMS node
+  gl.forEach(n => {
+    const mine = new Set(K.kids.get(n.sid).filter(x => x !== n.id)),
+      at = sec && sec.at[n.sid],
+      leaf = {id: n.id, name: n.name, sci: n.sci, rank: n.rank, it: true, sid: n.sid, gl: true, ref: null};
+    if (at) leaf.up = at;
+    else problems.push({id: n.id, why: 'no reference'});
+    let i = N.length - 1;
+    while (i >= 0 && !mine.has(N[i].id)) i--;
+    N.splice(i < 0 ? N.length : i + 1, 0, leaf);
+  });
+  const T = ttBuild(N);
   T.problems = [...problems, ...T.problems];
   TW = {units: U, T};
   return T;
@@ -2795,13 +2787,13 @@ const TREE_BUILD = {
   // centre) needs observers per genus the coral data does not hold.
   flat: {
     help: 'ctree',
-    ready: () => true,
-    load: () => Promise.resolve(),
+    ready: () => !!TSEC[ASUBJ.id],
+    load: () => treeSecLoad(ASUBJ),
     tree: v => ctTree(v),
     open(S, view) {
       const T = ctTree(TREE),
         TV = ctTree(view);
-      if (!TV.node.size) return {note: 'No genera yet.'};
+      if (!TV.node.size) return {note: `No genera in the tree section yet (python3 tools/tree_section.py writes data/${S.id}-tree.json).`};
       const RG = reg(S),
         R = ctRow(TV);
       return {
@@ -2811,15 +2803,18 @@ const TREE_BUILD = {
         base: DATA,
         word: 'genera',
         // the base's classic pairs and the draft's pair entries (ctFilters rows), the shared photo lists' counts
-        filters: ctFilters(DATA, {
-          pairs: classicPairs(),
-          rows: typeof pairRows === 'function' ? pairRows(S, DATA, contentOf(DRAFT, S)) : [],
-          needs,
-          waiting: m => pending(m).length,
-          draft: changed(),
-          removed: npCount.removed,
-          excluded: npCount.excluded
-        }),
+        filters: ctFilters(
+          [...T.node.values()].filter(n => n.genus),
+          {
+            pairs: classicPairs(),
+            rows: typeof pairRows === 'function' ? pairRows(S, DATA, contentOf(DRAFT, S)) : [],
+            needs,
+            waiting: m => pending(m).length,
+            draft: changed(),
+            removed: npCount.removed,
+            excluded: npCount.excluded
+          }
+        ),
         imr: {on: x => !!x.slate, tip: {all: 'Every genus', imr: 'The IMR slate'}},
         preview: (sel, n) => (n.genus ? `./?draft#${routeOut('g-' + sel)}` : './?draft'),
         // A genus: its cover and why, what it needs and every tool of the former Photos › Genera › Live page (the shared
@@ -2864,6 +2859,7 @@ const TREE_BUILD = {
       const T = fuTreeOf(U),
         TV = view === TREE_W ? fuWormsOf(U) : T,
         RK = ranksOf(S);
+      if (!T.node.size) return {note: `No tree section yet (python3 tools/tree_section.py writes data/${S.id}-tree.json).`};
       if (!TV.node.size) return {note: 'No reference taxonomy in fish.json yet.'};
       const D = fuData(),
         E = Object.fromEntries(U.map(x => [x.id, fuFam(x, D)])),
@@ -7036,7 +7032,8 @@ async function fishLoad(withGame, S = FISHS) {
   if (!T.C)
     await (T.L =
       T.L ||
-      Promise.all([get(W.cand), get(W.f)]).then(([C, F]) => {
+      // (with its tree section, the build's classification: tools/tree_section.py, treeSecLoad)
+      Promise.all([get(W.cand), get(W.f), treeSecLoad(S)]).then(([C, F]) => {
         // Its candidate lists by the unit they are candidates of (tools/fetch_fish.py keys them by species id;
         // tools/fetch_seaslugs.py by iNaturalist taxon id, genus name for a genus-level list, an informal species' key):
         // each key read through the tree's own ids (a species' inat, a genus's name, an id's part after its prefix).
@@ -7049,9 +7046,8 @@ async function fishLoad(withGame, S = FISHS) {
         });
         (F.genera || []).forEach(g => (unit[g.name] = unit[g.name] || g.id));
         const cand = Object.fromEntries(Object.entries(C.cand || {}).map(([k, L]) => [unit[k] || k, L])),
-          // its families' groups: the identification key's (fish.json key), else the taxonomic groups its tree sits in
-          // (seaslug.json taxa, each family's tgroup), in their order
-          G = (F.key || F.taxa || {}).groups || [],
+          // a family with no key group sits in the taxonomic group its tree puts it in (seaslug.json taxa, each family's
+          // tgroup), in their order (the Tree's key groups are the section's: tools/tree_section.py)
           tg = Object.fromEntries((F.families || []).filter(f => f.tgroup != null).map(f => [f.id, f.tgroup]));
         T.C = {
           units: fishUnits(F)
@@ -7061,14 +7057,11 @@ async function fishLoad(withGame, S = FISHS) {
           raw: F,
           // The instance's centre (fish.json centre: tools/instance.json), named in Cover proposals' why line (admin-covers.js).
           centre: F.centre || null,
-          groups: Object.fromEntries(G.map(g => [g.n, g.title])),
           cand,
           // {id: species record}, a wink family's species marked wink (autosort.js fishSpecies: its own target, FISHT.wink).
           species: fishSpecies(F, S.admin.target),
           // {id: genus record}: a genus-level photo's unit (gl, sp its genus id), named by its genus (fuName).
           genera: Object.fromEntries((F.genera || []).map(g => [g.id, g])),
-          // The reference taxonomy (WoRMS: {AphiaID: {name, rank, parent}}), the Tree's WoRMS view (fuWormsOf).
-          ref: F.ref || {},
           // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
           entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
           // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
