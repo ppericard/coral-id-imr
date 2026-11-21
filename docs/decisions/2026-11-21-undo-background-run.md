@@ -1,6 +1,6 @@
 # Admin: an auto-sort run that lands after the admin's clicks is laid onto his Undo steps, not one of its own
 
-Date: 2026-11-21. PR: #1393. Rules or docs touched: docs/spec/admin-photos.md (the auto-sort's Undo), rule A1 applied.
+Date: 2026-11-21. PR: #1408. Rules or docs touched: docs/spec/admin-photos.md (the auto-sort's Undo), rule A1 applied.
 
 ## Context
 
