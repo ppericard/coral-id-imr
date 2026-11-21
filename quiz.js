@@ -317,10 +317,10 @@ const typeStep = (m, text, sp, t) => {
 const QCLOCK = {n: 0, t0: null, off: 0, hid: null, zm: 0, pre: 0};
 const qclockStart = () => {
   const t = performance.now();
-  Object.assign(QCLOCK, {t0: t, off: 0, hid: document.hidden ? t : null, pre: 0});
+  Object.assign(QCLOCK, {t0: t, off: 0, hid: document.hidden ? t : null});
 };
 const qclockGo = () => QCLOCK.t0 === null && qclockStart();
-const qclockAgain = () => QCLOCK.t0 !== null && qclockStart();
+const qclockAgain = () => QCLOCK.t0 !== null && (qclockStart(), (QCLOCK.pre = 0));
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) ((QCLOCK.hid = performance.now()), pendClock());
   else if (QCLOCK.hid !== null) ((QCLOCK.off += performance.now() - QCLOCK.hid), (QCLOCK.hid = null));
@@ -2102,11 +2102,12 @@ function pendRec(cur, q) {
 // The question of a record r, built from the current data; null when anything of it is gone or not as expected.
 function pendBuild(cur, r) {
   const unit = n => typeof n === 'string' && !!GX(n),
-    // The photo of unit n by its file, as the draw made it ({...record, view}); one hidden or moved since is gone.
+    // The photo of unit n by its file, as the draw made it ({...record, view}); one hidden or moved since is gone. A mastery
+    // exam question may show a photo the player's reserve holds back from the games (core.js heldOf: model.js examPics).
     pic = (n, x) => {
       const p =
         Array.isArray(x) && typeof x[0] === 'string'
-          ? VIEWS.flatMap(([v]) => gamePics(n, v)).find(y => y.f === x[0] && gamePhotoOk(n, y))
+          ? VIEWS.flatMap(([v]) => [...gamePics(n, v), ...(r.ex ? heldOf(GX(n), v) : [])]).find(y => y.f === x[0] && gamePhotoOk(n, y))
           : null;
       return p ? {...p, view: typeof x[1] === 'string' ? x[1] : ''} : null;
     };

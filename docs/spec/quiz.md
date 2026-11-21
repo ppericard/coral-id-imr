@@ -226,7 +226,7 @@ comeback question, a mastery exam question). One engine (`quiz.js` `PEND`, `pend
   never kept, reloaded after its feedback or not.
 - **Taken** first thing in `quizPhoto` / `quizDuel` (`pendTake`, before the first-launch question, the surprise and the
   plan): built again from the current data, so the photos are the draw's own records (`pendBuild`: a photo hidden or
-  moved since is gone), and valid only while its genus (and each choice) is in play and met, in the custom quiz still
+  moved since is gone; an exam question's reserved photos are found where the exam draws them, `heldOf`), and valid only while its genus (and each choice) is in play and met, in the custom quiz still
   among the genera picked, in the Duel tab unlocked, an exam question still due (`pendOk`). Otherwise the record is
   dropped and a new question is drawn, quietly, as it always was.
 - **The draw's state** is that of a question that never left: the questions planned behind it stay (keyed on the same

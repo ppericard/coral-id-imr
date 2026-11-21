@@ -30,7 +30,8 @@ function world({
   open = play,
   sel = null,
   examOk = true,
-  hidden = []
+  hidden = [],
+  held = [] // photos the player's reserve holds back from the games (core.js heldOf), asked by the mastery exam only
 } = {}) {
   const saved = {},
     ctx = {
@@ -43,8 +44,9 @@ function world({
       ],
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))},
       sDev: name => core.subjDev(S.id, name),
-      GX: n => (['A', 'B', 'C', 'D', 'E'].includes(n) ? {one: 'genus', views: unitPics(n)} : undefined),
-      gamePics: (n, v) => (unitPics(n)[v] || []).filter(p => !hidden.includes(p.f)),
+      GX: n => (['A', 'B', 'C', 'D', 'E'].includes(n) ? {n, one: 'genus', views: unitPics(n)} : undefined),
+      gamePics: (n, v) => (unitPics(n)[v] || []).filter(p => !hidden.includes(p.f) && !held.includes(p.f)),
+      heldOf: (g, v) => (unitPics(g.n)[v] || []).filter(p => held.includes(p.f)).map(p => ({...p, ho: 1})),
       gamePhotoOk: () => true,
       uname: n => n,
       pool: () => play,
@@ -177,6 +179,15 @@ test('a kept question is built from the current data: a photo or a genus gone en
   assert.strictEqual(world().L.pendBuild('quiz-duel', r), null, 'a Quiz question in the Duel tab');
 });
 
+test('a mastery exam question on a photo the player reserve holds back comes back; no other question may show one', () => {
+  const ex = make('exam'), // its photo: C-w1
+    held = {held: ['C-w1']},
+    r = world(held).L.pendRec('quiz', ex);
+  assert.ok(world(held).L.pendBuild('quiz', r), 'an exam question on a held photo');
+  assert.strictEqual(world({hidden: ['C-w1']}).L.pendBuild('quiz', r), null, 'hidden, it is gone');
+  assert.strictEqual(world(held).L.pendBuild('quiz', {...r, ex: 0}), null, 'a question that is not an exam one never shows a held photo');
+});
+
 test('still askable: the genus in play and met, the custom selection, the Duel tab unlocked, the exam due', () => {
   const q = make('which'),
     ok = (o, cur = 'quiz', x = q) => world(o).L.pendOk(cur, x);
@@ -280,8 +291,8 @@ test('response time: the clock adds the seconds looked before to those since, st
     $v: {querySelectorAll: () => []}
   };
   vm.createContext(ctx);
-  vm.runInContext(src + 'this.L = {QCLOCK, qclockStart, qclockRead, qclockArm};', ctx);
-  const {QCLOCK, qclockStart, qclockRead, qclockArm} = ctx.L;
+  vm.runInContext(src + 'this.L = {QCLOCK, qclockStart, qclockRead, qclockArm, qclockGo, qclockAgain};', ctx);
+  const {QCLOCK, qclockStart, qclockRead, qclockArm, qclockGo, qclockAgain} = ctx.L;
   qclockStart();
   t.now += 4000;
   assert.strictEqual(qclockRead(), 4);
@@ -291,12 +302,19 @@ test('response time: the clock adds the seconds looked before to those since, st
   QCLOCK.pre = 700;
   assert.strictEqual(qclockRead(), 600, 'capped as it was');
   QCLOCK.pre = 7.3;
-  qclockStart();
+  qclockAgain();
   assert.strictEqual(QCLOCK.pre, 0, 'a card closing starts the reading over');
   QCLOCK.pre = 3;
   qclockArm();
   assert.strictEqual(QCLOCK.pre, 0, 'a new question starts at zero');
   assert.strictEqual(qclockRead(), null, 'not started before its first photo is in');
+  // a kept question whose photos are not in yet: the seconds carried wait for the first of them (qclockGo)
+  QCLOCK.pre = 7.3;
+  t.now += 1000;
+  qclockGo();
+  assert.strictEqual(QCLOCK.pre, 7.3, 'the first photo starting the clock keeps the seconds carried');
+  t.now += 2000;
+  assert.strictEqual(qclockRead(), 9.3);
 });
 
 test('the photos of a kept question replace the window entry of their first showing, never repeat it', () => {
