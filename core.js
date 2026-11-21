@@ -1054,14 +1054,14 @@
   const startText = (s, c) => ((subjectOf(s).start || {}).opts || {})[c] || null;
 
   // Fish (fish.json, built by tools/build_fish.py; docs/spec/fish.md "The game's units: families, genera, species"):
-  // treeGen makes each of the book's families a record the engine reads like a coral genus's (app.js GX): {id
-  // (f:Damselfishes), name (the book's English name), fam (the line under it), imr, look (family ids), lk (how to tell
-  // each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, rule S3), forms
-  // (that group: the wrong choices start in other groups, as coral growth forms), ig, cm (how common near Dauin), views
-  // {wide} (easyRank order; cover its first, easyCover), levels 1, circle, wink, names (accepted when typed)}. It also
-  // returns photos (treePhotos), key and groups (the key in force, null for a region with none), c1 / c2 / c3 (each
-  // circle's families), winks, first (the starter core) and sheet ({species id: [photo]}): a use: 'ref' photo never
-  // joins a game (docs/spec/fish-photos.md "Sheet-only photos").
+  // treeGen(F, photos, sheet) makes each of the book's families a record the engine reads like a coral genus's (app.js
+  // GX): {id (f:Damselfishes), name (the book's English name), fam (the line under it), imr, look (family ids), lk (how
+  // to tell each apart, IMR's words), qt (the IMR cues), group and forms (its group in the identification key in force,
+  // rule S3: the wrong choices start in other groups, as coral growth forms), ig, cm, views {wide} (easyRank order;
+  // cover its first), levels 1, circle, wink, names (accepted when typed), first (the starter core)}. Returns {gen, c1
+  // / c2 / c3 (each circle's families, all on the path and in the progress), winks (surprise cards, never questions),
+  // key ({id, region, cite, short}, null for none), groups, sheet ({species id: [photo]}: a use: 'ref' photo never
+  // joins a game, docs/spec/fish-photos.md "Sheet-only photos")}.
   const sheetOnly = p => !!p && p.use === 'ref';
   // The rights a photo comes with (docs/ARCHITECTURE.md "Photo rights tie-break"): 'imr' an IMR lecture photo, 'book' a
   // Coral Finder book photo, 'own' Pierre's own (whatever its licence), 'open' CC0 or CC BY, 'nc' the rest (CC BY-NC, or
@@ -4767,10 +4767,10 @@
   // them up. T, the subject's tree (app.js UNITS tree, treeScoreTree): f [[family unit, weight, circle]]; s [[weight,
   // genus unit, species unit, [common-name units], circle]] ('' and [] for units that do not exist yet; null common
   // names: a species with none, which counts its scientific value alone). K, the subject's constants (SUBJECTS score:
-  // entries, a, b, half, pow). Returns {pct (the % shown, 0-100, rounded), raw, entries, genera, common, scientific (no
-  // genus credit), S (the genus credit included), credit, each a weighted mean from 0 to 1; by: the same per circle;
-  // units: every unit of the tree with its own bar}. A rule that reads a score reads one of these (app.js treeGate:
-  // by[1].entries).
+  // entries, a, b, half, pow). Returns {pct (the % shown, 0-100, rounded), raw, entries (the families), genera (each
+  // weighted by its species), common (C over the species), scientific (the species' own, no genus credit), S (the genus
+  // credit included), credit, each a weighted mean from 0 to 1; by: the same per circle; units: every unit of the tree
+  // with its own bar}. A rule that reads a score reads one of these (app.js treeGate: by[1].entries).
   function treeScore(P, T, K) {
     const F = (T && T.f) || [],
       S = (T && T.s) || [],
@@ -4943,9 +4943,10 @@
   // The false-alarm correction (docs/LEARNING.md "The domain-score bar", the unit given in a mix-up): naming n for
   // another unit's photo is a false alarm, a response bias, not a failure on n's own photos, so it never enters n's
   // posterior; faOf(P, n) gives n's false-alarm rate, the times n was given for another unit's photo over the questions
-  // where n was a possible answer, 0 without P or without such a question, and barOf takes Pr = H - FA. Rule L2's count
-  // of the unit given (recent results, run) and the ability are untouched. rankKey: a unit's rank as its id says it (a
-  // fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
+  // where n was a possible answer (offered among the choices, or any typed question on another unit of its rank), 0
+  // without P or without such a question, and barOf takes Pr = H - FA. Rule L2's count of the unit given (recent
+  // results, run) and the ability are untouched. rankKey: a unit's rank as its id says it (a fish family f:, a
+  // scientific genus g:; a coral genus, or an id without a prefix: '').
   const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
   // The typed questions on other units of n's rank, where the chances to give n start (above).
   const faTyped = (P, n) => Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
@@ -5429,11 +5430,12 @@
   }
   // What a typed text that is no unit of the rank asked names instead, for a nudge that gives nothing away
   // (docs/spec/quiz.md "Another rank or a common name"; quiz.js typeBind). other: the names of the units of the other
-  // ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the scientific names at the rank asked, in the game or not;
-  // x.common: the common names at the rank asked; x.rank(g): the rank word of unit g; x.own(g): IMR's name for it, each
-  // part too. Returns x.rank(g) for a unit's own name or a scientific name of it (Damselfishes, Pomacentridae),
-  // 'common' for any other name it goes by or a common name at the rank asked, '' otherwise. The lists' names are read
-  // once per norm and name (TYPE_NORMED).
+  // ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the scientific names at the rank asked, in the game or not (one
+  // of them, or another name of a unit that is one, is no common name: the spelling message); x.common: the common
+  // names at the rank asked; x.rank(g): the rank word of unit g; x.own(g): IMR's name for it, each part too. Returns
+  // x.rank(g) for a unit's own name or a scientific name of it (Damselfishes, Pomacentridae; Scarinae for the book's
+  // Parrotfishes), 'common' for any other name it goes by or a common name at the rank asked, '' otherwise. The lists'
+  // names are read once per norm and name (TYPE_NORMED).
   const TYPE_NORMED = new Map();
   const typeNormed = norm => {
     let c = TYPE_NORMED.get(norm);
@@ -5869,10 +5871,11 @@
   // The scoring record logged with each answer (docs/spec/sync.md "The Answers tab", Scoring; docs/LEARNING.md "One
   // scorer"): the inputs scoreAnswer had that the replay cannot rebuild from the log (quiz.js answer's sc; the replay
   // rows' index LOG_SC), so a replay scores what the game scored. d d0, f fam, c cf, l the look-alike test (1 or 0), r
-  // R, g Rc, h the hint revealed after the answer, o df (f, c, r, g, h and o left out at their default: 0, 0, 1, 1,
-  // none, 0); m, n, t, s the domain-score bar's; z the kind of a smaller fault (PART: 'cn' or 'g'); i the photos' time
-  // term the answer's time was netted of (kept even at 0; absent: a row logged before it). Numbers to 3 decimals, as
-  // the game rounds them before scoring (scoreIn). x: the record as an object or its JSON; null when it has no d.
+  // R, g Rc, h the hint revealed after the answer, o df (the sheet's fmt as the game had it, so a replay never takes
+  // today's offsets for an answer scored with others; f, c, r, g, h and o left out at their default: 0, 0, 1, 1, none,
+  // 0); m, n, t, s the domain-score bar's; z the kind of a smaller fault (PART: 'cn' or 'g'); i the photos' time term
+  // the answer's time was netted of (kept even at 0; absent: a row logged before it). Numbers to 3 decimals, as the
+  // game rounds them before scoring (scoreIn). x: the record as an object or its JSON; null when it has no d.
   const SC_MAX = 50;
   const r3 = x => Math.round(x * 1000) / 1000;
   const scNum = x => (typeof x === 'number' && isFinite(x) && Math.abs(x) <= SC_MAX ? r3(x) : null);
@@ -6239,15 +6242,16 @@
   // (13 to 21: unused here), the scoring record (LOG_SC: scoreRec, null without)]). o: gen (the units: look-alikes
   // look, family fam), mem (?stats=1 mem; the prior without), conf (?stats=1 conf), since ({id: time ms}: only the
   // answers after a reset), memory false (no photo memory) and time false (no response time) for a what-if, fmt
-  // (?stats=1 fmt, for a row without a scoring record), start ({id: player}: a replay to go on from, as returned here;
-  // copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}), dom false (the moving average instead of the bar),
-  // gd (the genus offsets for rows logged without them), vars (the variant table), starts (the first-launch records by
-  // player). Returns {id: {P: {unit: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm},
-  // '~level': {ok, ko, th, vr, at, rt}}, n, used, rep}}: pg in place of dp and ds with dom false or from a start record
-  // that holds one; u the answers that moved the bar, du a look-alike duel won, lx the last miss on it shown or given,
-  // lm the last that took it below the keep rule (keepsMark); n the rows read, used those replayed, rep those on a
-  // photo already shown. MEM_LOGGED, CF_LOGGED: from then the logged e includes the photo memory, then the mix-ups
-  // term, taken out again for an older row's difficulty. The mastery exam is not replayed (replayedOf).
+  // (?stats=1 fmt, for a row without a scoring record; one with it replays its own o), start ({id: player}: a replay to
+  // go on from, as returned here, the sheet's with this device's unconfirmed answers on top; copied, never changed),
+  // onAnswer(row, {d, fam, cf, k, w, look}), dom false (the moving average instead of the bar), gd (the genus offsets
+  // for rows logged without them), vars (the variant table), starts (the first-launch records by player). Returns {id:
+  // {P: {unit: {dp, ds, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr,
+  // at, rt}}, n, used, rep}}: pg in place of dp and ds with dom false or from a start record that holds one; u the
+  // answers that moved the bar, du a look-alike duel won, lx the last miss on it shown or given, lm the last that took
+  // it below the keep rule (keepsMark); n the rows read, used those replayed, rep those on a photo already shown.
+  // MEM_LOGGED, CF_LOGGED: from then the logged e includes the photo memory, then the mix-ups term, taken out again for
+  // an older row's difficulty. The mastery exam is not replayed (replayedOf).
   const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // from then the app's logged e includes the photo memory
   // From then the app's logged e includes its mix-ups term (model.js confTerm; the instant tools/abilityeval.js CF_FROM
   // reads on the sheet's wall clock), taken out again here. An app not yet updated logs a few answers without it after.
@@ -7153,10 +7157,10 @@
   }
 
   // The one-tap question's bank (docs/spec/cards.md "One-tap questions", which gives the items, their scales and their
-  // sources; quiz.js pulseAsk, admin Errors). Each item [code, label, d, f]: d felt difficulty (-1 too easy, 0 right,
-  // +1 too hard), f how the play feels (-1 bad, 0 neutral, +1 good), null says nothing on that scale. Every prompt also
-  // logs its showing (PULSE_SHOWN) and, when it ends without an answer, a "Not now" (PULSE_SKIP) or moving on without a
-  // tap (PULSE_NONE).
+  // sources; quiz.js pulseAsk, admin Errors). Each item {id, q: its question, a: its answers}, each answer [code,
+  // label, d, f]: d felt difficulty (-1 too easy, 0 right, +1 too hard), f how the play feels (-1 bad, 0 neutral, +1
+  // good), null says nothing on that scale. Every prompt also logs its showing (PULSE_SHOWN) and, when it ends without
+  // an answer, a "Not now" (PULSE_SKIP) or moving on without a tap (PULSE_NONE).
   const PULSE_SHOWN = 'shown',
     PULSE_SKIP = 'skip',
     PULSE_NONE = 'none';

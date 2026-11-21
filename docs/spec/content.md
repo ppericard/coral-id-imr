@@ -183,8 +183,9 @@ a specialist source names).
 
 - The apply is the corals' (`core.js` `lookStructure`, by id in the `genera` list: `srcsStructure`): a withdrawn pair
   leaves both `look` lists and both `lsrc` lines; an added one joins both `look` lists, leaves `dlook` (a data
-  look-alike it was: never both, as in the build, `tools/seaslug_game.py` `genus_looks`), and its line is the record's own for that genus (a data pair's
-  iNaturalist counts) with the editor's source after it, else his source, else `EDITOR_PAIR` as its one source.
+  look-alike it was: never both, as in the build, `tools/seaslug_game.py` `genus_looks`), and its line is the record's
+  own for that genus (a data pair's iNaturalist counts) with the editor's source after it, else his source, else
+  `EDITOR_PAIR` as its one source.
 - **What a pair edit does to players**: the duels, the confusion groups' declared pairs and the sheet's Don't confuse
   with follow (`app.js` `treeGenera` `look`, `decl`; `UNITS` seaslug `pairs`), and every sea-slug player's progress is
   replayed under the pairs in force at their next sync (the structure stamp; their board follows, rule D8). A family's

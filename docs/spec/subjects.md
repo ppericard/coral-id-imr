@@ -38,8 +38,9 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
 - `ach`, `achs` and `board`: every subject has its own achievements (`core.js` `ACH`, `FISH_ACH`, `SEASLUG_ACH`, in the
   shared record under ids of its own) and its own leaderboard; `achFeats` (the corals) keeps the shared record's feats
   (runs, corallites, hard photos); `achs()` gives a subject's list, all in the one synced record (`progress.js` `ACHK`);
-  a board (`Code.gs` `board_`, `&s=<id>`) ranks by the subject's % then its Elo; `boardSheet`, the sync script from which
-  a subject's board is served when later than the first boards (the sea slugs'; `progress.js` `boardLive`, rule D4);
+  a board (`Code.gs` `board_`, `&s=<id>`) ranks by the subject's % then its Elo; `boardSheet`, the sync script from
+  which a subject's board is served when later than the first boards (the sea slugs'; `progress.js` `boardLive`, rule
+  D4);
 - `pages`, its Learn and Practice pages: the corals' `basics`, `genera`, `sheet` (a genus sheet), `cmp`, `quiz`,
   `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets),
   `cmp`, `quiz`, `quiz-custom`, `quiz-duel` and `pairs`; the sea slugs' `genera`, `sheet`, `cmp`, `quiz`, `quiz-custom`, `quiz-duel`, `pairs`. `closed`: each `MODES` Learn or
@@ -68,25 +69,26 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   file, `file`, else its pool's first; `rvs()` its rules versions; `tree(F)` its board's tree, for a subject with a
   score; `sheet` the script version that replays it, `sync.js` `rpOn`;
   [Sync and replay per subject](#sync-and-replay-per-subject));
-- features of their own, the corals' (rule S1): `offsets` (the sheet's photo memory and format offsets: `model.js`
-  `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`); `offsets` stays on `replay`'s subject while the sheet
-  computes them for it alone (`tests/subject-neutral.test.js`). The opening hold is no such field: every subject adopts
-  its own from the sheet ([sync.md › The opening hold](sync.md#the-opening-hold));
+- features of their own, the corals' (rule S1; split out of `replay`, each at the value `replay` gave, by the
+  [one-engine audit](../reviews/2026-11-19-one-engine-audit.md)'s step 2): `offsets` (the sheet's photo memory and
+  format offsets: `model.js` `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`); `offsets` stays on `replay`'s
+  subject while the sheet computes them for it alone (`tests/subject-neutral.test.js`). The opening hold is no such
+  field: every subject adopts its own from the sheet ([sync.md › The opening hold](sync.md#the-opening-hold));
 - `gate` (the fish and the sea slugs: `TREE_GATE`): circle 3 at circle 1's Entries component `c3.entries` (0.55), or
   with no global score its plain mean `c3.mean` (0.5) (`app.js` `treeC3`);
 - `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
   its own, [sync.md › Pooled photo statistics](sync.md#pooled-photo-statistics); also the sheet's photo exposure per
-  player, `Code.gs` `pools_`, `unitPool`, and its own statistics tab, `statsSubjects_`, `?stats=1&s=<id>`): `files`,
-  the site's files it reads (fetched from main, in this order), `of`, the `core.js` `POOLS` builder that turns them into
-  its units' game photos as the app's games draw them, `as`, what each file is to that builder (`f` its tree, `ph` its
-  first photos, `gm` its game photos, `cur` curation.json); `stats` (the sea slugs': the script from which the app reads
-  theirs, `sync.js` `loadOwnStats`, `model.js` `statsJoin`, rule D4; the corals' are read as `replay`'s; a subject with a
-  pool and no `stats` draws on its priors in the app), `calib` (the draw's calibration over `core.js` `CALIB`, `calibOf`:
-  `ease`, `ref`, `early`, `u`, `pool`, [LEARNING.md › Fish: the starter core and judged
+  player, `Code.gs` `pools_`, `unitPool`, and its own statistics tab, `statsSubjects_`, `?stats=1&s=<id>`): `files`, the
+  site's files it reads (fetched from main, in this order), `of`, the `core.js` `POOLS` builder that turns them into its
+  units' game photos as the app's games draw them, `as`, what each file is to that builder (`f` its tree, `ph` its first
+  photos, `gm` its game photos, `cur` curation.json); `stats` (the sea slugs': the script from which the app reads
+  theirs, `sync.js` `loadOwnStats`, `model.js` `statsJoin`, rule D4; the corals' are read as `replay`'s; a subject with
+  a pool and no `stats` draws on its priors in the app), `calib` (the draw's calibration over `core.js` `CALIB`,
+  `calibOf`: `ease`, `ref`, `early`, `u`, `pool`, [LEARNING.md › Fish: the starter core and judged
   photos](../LEARNING.md#fish-the-starter-core-and-judged-photos)), `analyses` (its Analyses report), `score` (the
-  fish's global score, [fish-game.md › The global score](fish-game.md#the-fish-global-score)), `content` and
-  `structure` (what the content editor may change, [content.md](content.md)), `start` (its first-launch question,
-  [cards.md › One per subject](cards.md#one-per-subject));
+  fish's global score, [fish-game.md › The global score](fish-game.md#the-fish-global-score)), `content` and `structure`
+  (what the content editor may change, [content.md](content.md)), `start` (its first-launch question, [cards.md › One
+  per subject](cards.md#one-per-subject));
 - `progress`, its My progress views, the first shown by default (`progress.js` `quizBoard`; the corals' `slate`,
   `photos`, `groups`; `photos` for the others);
 - `open` and `beta`, who sees it and its label ([Who sees a subject](#who-sees-a-subject)); `sheet`, the sync script

@@ -222,11 +222,11 @@ the engine's notes after them still come in the subject on screen. A later recal
 note at the end of `RECALC.L` (a `subj` if it speaks of one subject), no code; a recalculation of progress is
 otherwise silent (rule D6).
 
-**The rules version's card** (`core.js` `RVS` `msg`, rule D6): a rules version may carry a card `{t: title, p: paragraph,
-in plain words}` that every device which skipped that version shows once; with `only: 'changed'`, only when the
-adoption moved the player's progress % by `min` points or more, `{from}` and `{to}` in `p` being the two %. The standard
-recalculation card (`core.js` `RV_CARD`, rule D5, kind `update`) is shown to a player whose % the adoption moved by 5
-points or more, either way (`progress.js` `rvNoticeAdd`), with the two %.
+**The rules version's card** (`core.js` `RVS` `msg`, rule D6): a rules version may carry a card `{t: title, p:
+paragraph, in plain words}` that every device which skipped that version shows once; with `only: 'changed'`, only when
+the adoption moved the player's progress % by `min` points or more, `{from}` and `{to}` in `p` being the two %. The
+standard recalculation card (`core.js` `RV_CARD`, rule D5, kind `update`) is shown to a player whose % the adoption
+moved by 5 points or more, either way (`progress.js` `rvNoticeAdd`), with the two %.
 
 **The apology card** (`progress.js` `sorryNotice`, `core.js` `SORRY`, `sorryOf`, `sorryFelt`, `sorryText`): one card,
 at app open, to the players who played through a run of the draw that was not right, shown only until `SORRY.UNTIL`
