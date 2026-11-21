@@ -326,10 +326,9 @@ document.addEventListener('visibilitychange', () => {
   else if (QCLOCK.hid !== null) ((QCLOCK.off += performance.now() - QCLOCK.hid), (QCLOCK.hid = null));
 });
 addEventListener('pagehide', () => pendClock());
-const qclockRead = () =>
-  QCLOCK.t0 === null
-    ? null
-    : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000 + QCLOCK.pre)) * 10) / 10;
+// at: the reading's moment (performance.now()); a page being closed while hidden reads at the moment it was hidden.
+const qclockRead = (at = performance.now()) =>
+  QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (at - QCLOCK.t0 - QCLOCK.off) / 1000 + QCLOCK.pre)) * 10) / 10;
 // A new question's clock (question(), winkShow): stopped and not enlarged; the first of its photos to be in starts it,
 // whichever (one cached or quicker than the first in the page would otherwise be looked at off the clock).
 function qclockArm() {
@@ -2161,7 +2160,11 @@ function pendBuild(cur, r) {
 function pendOk(cur, q) {
   const [, t, c, , set] = q,
     play = pool();
-  if (!play.includes(t) || !introduced(t) || !c.every(n => play.includes(n))) return false;
+  // The target is in play, met and among its choices. The choices of a question with several are known units: the wrong ones
+  // may be a rank's fallback outside the units in play (model.js distractors, rankUnits); the choices of a pair (an Again, a
+  // duel) and the four of a Find the X are drawn among the units in play.
+  if (!play.includes(t) || !introduced(t) || !c.includes(t)) return false;
+  if ((c.length === 2 || q.findx) && !c.every(n => play.includes(n))) return false;
   if (cur === CUSTOM_H) return (customSel() || []).includes(t);
   if (cur.startsWith('quiz-duel')) {
     const open = unlocked(play);
@@ -2213,7 +2216,8 @@ function pendClock() {
   if (!PENDQ || !PENDQ.el || !PENDQ.el.isConnected) return;
   const all = pendAll(PENDQ.key),
     r = all[PENDQ.cur],
-    rt = qclockRead();
+    // closed while hidden: the time since it was hidden is not looked time (QCLOCK.off adds it when the page shows again)
+    rt = qclockRead(QCLOCK.hid === null ? undefined : QCLOCK.hid);
   if (!r) return;
   if (rt !== null) r.rt = rt;
   r.zm = QCLOCK.zm ? 1 : 0;

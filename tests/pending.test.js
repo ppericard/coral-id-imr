@@ -60,7 +60,7 @@ function world({
         return set.find ? set.find.map(x => x.p) : [...set.shown, ...(set.hint ? [set.hint] : []), ...(set.reveal || [])];
       },
       QCLOCK: {zm: 0, pre: 0},
-      qclockRead: () => ctx.NOW,
+      qclockRead: at => ((ctx.AT = at), ctx.NOW),
       NOW: 4.2,
       $v: {
         querySelector: () => ({
@@ -193,7 +193,16 @@ test('still askable: the genus in play and met, the custom selection, the Duel t
     ok = (o, cur = 'quiz', x = q) => world(o).L.pendOk(cur, x);
   assert.strictEqual(ok({}), true);
   assert.strictEqual(ok({play: ['B', 'C', 'D', 'E']}), false, 'its genus left the genera in play (a setting, Open all off)');
-  assert.strictEqual(ok({play: ['A', 'C', 'D', 'E']}), false, 'a choice left them');
+  assert.strictEqual(
+    ok({play: ['A', 'C', 'D', 'E']}),
+    true,
+    'a wrong choice outside the units in play (a rank fallback) is still a choice'
+  );
+  const pair = make('again');
+  assert.strictEqual(ok({}, 'quiz', pair), true);
+  assert.strictEqual(ok({play: ['A', 'C', 'D', 'E']}, 'quiz', pair), false, 'a pair (an Again) is drawn among the units in play');
+  assert.strictEqual(ok({play: ['A', 'B', 'D', 'E']}, 'quiz', make('find')), false, 'the four of a Find the X too');
+  assert.strictEqual(ok({}, 'quiz', Object.assign(make('which'), {1: 'E'})), false, 'the target is among the choices');
   assert.strictEqual(ok({met: ['B', 'C', 'D', 'E']}), false, 'its genus closed again (One at a time) or reset');
   const cu = make('custom', 'quiz-custom|play');
   assert.strictEqual(ok({sel: ['A', 'B']}, 'quiz-custom|play', cu), true);
@@ -273,6 +282,13 @@ test('response time: the seconds looked before leaving come back, the time away 
   L.pendClock();
   assert.strictEqual(L.pendTake('quiz').rt, 7.3, 'the seconds carried are not overwritten by a clock that has not started');
   w.NOW = 7.3;
+  // closed while hidden: read at the moment it was hidden, never later (QCLOCK.hid; shown on screen, now)
+  L.pendClock();
+  assert.strictEqual(w.AT, undefined, 'on screen: read now');
+  w.QCLOCK.hid = 5123;
+  L.pendClock();
+  assert.strictEqual(w.AT, 5123, 'hidden: read as it was when hidden, the time since is not looked time');
+  w.QCLOCK.hid = null;
   // another page: no write (the question is not on screen, its clock would count the time away)
   w.ON = false;
   w.NOW = 99;
@@ -320,6 +336,7 @@ test('response time: the clock adds the seconds looked before to those since, st
   assert.strictEqual(QCLOCK.pre, 7.3, 'the first photo starting the clock keeps the seconds carried');
   t.now += 2000;
   assert.strictEqual(qclockRead(), 9.3);
+  assert.strictEqual(qclockRead(t.now - 1000), 8.3, 'read at an earlier moment (a page closed while hidden)');
 });
 
 test('the photos of a kept question replace the window entry of their first showing, never repeat it', () => {
