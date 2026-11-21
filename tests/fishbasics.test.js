@@ -189,9 +189,46 @@ test('Fish basics: its own record and feat, the corals’ left alone', () => {
   assert.match(app, /const basicsKey = \(S = SUBJ\) => subjDev\(S\.id, 'basics'\);/);
   assert.match(app, /\[\(S\.basics \|\| \{\}\)\.feat \|\| '_basics'\]/);
   assert.match(prog, /function achBasics\(feat = \(SUBJ\.basics \|\| \{\}\)\.feat \|\| '_basics'\)/);
-  // The fish's feat grants no achievement yet (the list waits for the admin's name for it), the corals' still does.
+  // Each subject's feat grants its own achievement: the corals' "basics", the fish's "fbasics" (the sea slugs' has none).
   assert.ok(C.ACH.some(a => a.id === 'basics'));
-  assert.ok(!C.FISH_ACH.some(a => /basics/i.test(a.id + a.title)), 'no fish achievement for Fish basics yet');
+  assert.ok(C.FISH_ACH.some(a => a.id === 'fbasics'));
+  assert.ok(!C.ACH.some(a => a.id === 'fbasics') && !C.FISH_ACH.some(a => a.id === 'basics'));
+});
+
+// progress.js achSnap reads the feat of the subject on screen (SUBJECTS basics.feat), so Fish basics done earns fbasics and
+// never the corals' achievement, and the corals' feat never earns the fish's.
+test('Fish basics: achSnap reads the subject’s own feat, so fbasics comes with Fish basics only', () => {
+  const cut = require('./block.js'),
+    snapOf = (id, feats) => {
+      const ctx = {
+        ...C,
+        SUBJ: C.subjectOf(id),
+        P: {},
+        LEVEL: '~level',
+        ELO_MIN: 200,
+        GX: () => ({}),
+        slateGenera: () => [],
+        lvStep: () => 0,
+        shownGroup: () => '',
+        bonusList: () => [],
+        introduced: () => false,
+        eloScore: () => 0,
+        headPct: () => 0,
+        UNITS: {coral: {}, fish: {core: () => [], circles: () => [], sets: []}},
+        store: {get: (k, d) => d, set: () => {}}
+      };
+      vm.createContext(ctx);
+      vm.runInContext(cut(read('progress.js'), 'const achList = ', '\n// Full recount') + '\nthis.achSnap = achSnap;', ctx);
+      return JSON.parse(JSON.stringify(ctx.achSnap(feats)));
+    };
+  const fishDone = snapOf('fish', {_fbasics: 1}),
+    fishCoral = snapOf('fish', {_basics: 1}),
+    coralDone = snapOf('coral', {_basics: 1}),
+    coralFish = snapOf('coral', {_fbasics: 1});
+  assert.deepStrictEqual(C.newAch(fishDone, {}, C.FISH_ACH), ['fbasics'], 'Fish basics done earns fbasics');
+  assert.deepStrictEqual(C.newAch(fishCoral, {}, C.FISH_ACH), [], 'the corals’ feat earns the fish nothing');
+  assert.ok(C.newAch(coralDone, {}, C.ACH).includes('basics'), 'Coral basics done still earns basics');
+  assert.ok(!C.newAch(coralFish, {}, C.ACH).includes('basics'), 'the fish feat earns the corals nothing');
 });
 
 test('Fish basics: the Lab list, the service worker and the page key', () => {
