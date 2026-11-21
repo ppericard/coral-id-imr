@@ -453,8 +453,9 @@ mark of One at a time with no time) until the path opens it on its card, with it
 ### The first-launch question
 
 One forced choice per subject (`SUBJECTS` `start`: its words), in the welcome tour before the first question, or on a
-card before the next quiz question for a player who skipped the tour. It sets a few variables of the model, never a
-path (rule L10): `core.js` `CHOICE.opts` new {p: 0, basics: 1}, imr {p: 0.5, basics: 0}, know {p: 1.25, basics: 0}.
+card before the next quiz question for a player who skipped the tour (the fish add a names step right after it, which
+sets the What I learn rows and no model variable: [cards.md](spec/cards.md#the-names-step-at-the-welcome)). It sets a few
+variables of the model, never a path (rule L10): `core.js` `CHOICE.opts` new {p: 0, basics: 1}, imr {p: 0.5, basics: 0}, know {p: 1.25, basics: 0}.
 p is the level the answers are shrunk towards in `core.js` `playerStart` (hence the first questions on each new unit
 and, through shaky, the pace of the opening); basics offers the subject's basics module first. "new" is the default
 player (a new player is a beginner). A player with `CHOICE.ASK` (50) answers or more is not asked: the answer is
@@ -549,6 +550,16 @@ It is a format of its own, `find` (`core.js` `fmtOf`, `analysis.js` `FORMATS`): 
 offset and the answer scored with it, and the sheet fits that offset on Find the X answers alone, never in `k4`. Today
 it counts 0 wherever it is played, as every format offset does for a subject the sheet does not rate (`model.js`
 `pfmt`); it applies once that subject's format offsets are read.
+
+**On the species** (`quiz.js` `planFind`, `findRank`): Find the X is also asked on a species (rank `species`), by its
+common name or by its scientific name, once it is a unit in play, met and with a tile. The unit and its three others
+are of its own kind of name (`model.js` `rankKind`: never a species by its common name beside one by its scientific
+name, nor a family or a genus), each from the units in play (`distractors` with `wide` false, so no unit of the rank
+outside the pool or the custom selection takes a place). The scientific genera keep their usual questions. The prompt
+is the one name; a scientific name's question shows no common name (the quiz's `sc` display is a choice's label, and
+this format has none). The share stays `FIND.P` of the questions that could be one; the draw, the scoring, the log
+(`quiz|f` at the rank `species`) and the exam are unchanged. The format offset `find` is the subject's one, fitted on
+the families' and the species' Find the X answers together.
 
 ### The Duel tab when the hold sets in
 
