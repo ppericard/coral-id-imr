@@ -23,6 +23,7 @@ Conventions that hold across them:
 | `check_json.py` | Every JSON file git tracks parses. **CI**, and before each deploy |
 | `check_versions.py` | Cache-busting consistency (`?v=`, the service worker's lists) and the sheet script's version rules; `--dir` checks a built copy. **CI** |
 | `datajson.py` | The one writer of `data.json` and `data/cand.json` (one genus per line); `--check` is the layout check. **CI** |
+| `tree_section.py` | The builds' generic `tree` section: each subject's Key and WoRMS classifications, written to `data/<subject>-tree.json` for the admin's Tree tab; `--check` fails on a section out of date with its sources (`tests/treesection.test.js`). The builds that write a source run it |
 | `sync_core.py` | Copies `core.js` into `sync/Code.gs`; `--check` fails when the copy is stale, `--fix` rewrites it. **CI** |
 | `sheet_version.py` | The sheet script's version rules; `--assign` gives the next version at merge (the integrator) |
 | `stack.json`, `stack_check.py` | The pins of the whole stack (runtimes, tools, APIs); `--check` offline is **CI**, `--latest` lists what is behind |
@@ -101,6 +102,7 @@ Conventions that hold across them:
 | `photo_measure.py` | Measured photo values into `data/measured.json` |
 | `r2_sync.sh` | Copies photos to the Cloudflare R2 bucket; never deletes. Run by workflows |
 | `r2_move.py` | Lists what leaves `img/` for R2 and verifies the bucket |
+| `r2_list.sh`, `r2_unused.py` | Read only: the bucket's listing, and the objects nothing in the repository uses (`r2-unused.yml`). Delete nothing |
 | `photo_quality.py`, `quality_eye.json` | Automatic quality rating into `quality.json` |
 | `photo_metrics.py` | Objective metrics into `data/metrics.json` |
 | `find_dups.py` | Near-duplicate photos into `data/dups.json` |

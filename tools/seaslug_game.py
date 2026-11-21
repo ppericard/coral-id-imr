@@ -122,6 +122,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from presence import label_confirmed  # noqa: E402  the label rule beside C8
 import seaslug_cues  # noqa: E402  the sourced ID marks (study §9 step 7)
+import tree_section  # noqa: E402  the subject's tree section (the admin's Tree tab), written with the tree
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
 CAND = os.path.join(ROOT, 'data/seaslug-cand.json')
@@ -640,6 +641,8 @@ def write(root, tree, game):
         if not os.path.exists(p) or open(p, encoding='utf-8').read() != s:
             with open(p, 'w', encoding='utf-8') as fh:
                 fh.write(s)
+    if os.path.realpath(root) == os.path.realpath(ROOT):  # the repository's own: its tree section (the admin's Tree tab) follows
+        tree_section.write('seaslug')
 
 
 def run(out='r2-upload', root=ROOT, get=None, pause=None, workers=6, limit=None):
