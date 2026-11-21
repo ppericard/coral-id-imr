@@ -44,6 +44,8 @@ function engine(U, refused) {
     LEVEL: '_level',
     P: {},
     PSTAT: {},
+    PTM: {},
+    ptimeOff: C.ptimeOff,
     PGD: {},
     PMEM: [0, -0.45, -1.1, -1.7],
     memOf: C.memOf,
