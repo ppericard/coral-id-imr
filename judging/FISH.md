@@ -51,7 +51,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **not a live fish seen in the water**: out of water (a fish on a net, in a hand, dead), a photo of a screen or a print, an aquarium, a capture from a video player (its interface is not a `w`) |
 | | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing and leaves the games as they are; Home skips it and the default covers avoid it (below, "Watermark") |
-| | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
+| | `p` | **phase**: added by the tool, never typed: every photo of a species whose sexes or colour phases look different by a cited source (`tools/fish_judge.py` `phase_flag`): its entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines: Parrotfish, Anthias), or its `sex` or `ip_tp` verdict `yes` in the cited phase list `tools/fish_phases.json` (97 species, 2026-11-21; a sub-adult alone or a conflict adds no flag) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
 
@@ -125,7 +125,9 @@ seen in the water (`a`), the night livery (`n`), a strong colour loss (`2`), a h
 **The phase flag caps nothing** (rubric 3, Pierre, 2026-11-04): a sex or colour phase is a species-level difficulty. An
 Anthias is easy to call an Anthias whatever its sex, a parrotfish easy to call a parrotfish (its family-level difficulty
 is telling it from a wrasse, a look-alike pair); it gets hard only when the species is asked. The flag stays on the
-photos for the species questions and the explanation cards.
+photos for the species questions and the explanation cards: a photo judged male, female or in a colour phase brings
+the sex or colour phase card only on a flagged species, the card naming the list's sources (`fish.json` species `phs`;
+[the decision](../docs/decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
 
 **Juveniles** (`j`) are judged on the photo like any other and cap nothing, whatever their class (Pierre, 2026-11-19,
 Q435: the judged ease is the starting point, the players' answers decide;
@@ -409,7 +411,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    - `phase` (optional): the sex or colour phase a solid, cited source documents for the species (the IMR fish
      presentation, `fish.json` `teach[].phase`, is one such source among others; Pierre, 2026-11-20 19:29) when the
      photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile is the code's `j` flag;
-     an adult needs no tag.
+     an adult needs no tag. The cited phase list `tools/fish_phases.json` says which (its quotes); a phase the quote
+     does not let the photo show is left untagged, never marked `unsure` (the re-judge of 2026-11-21:
+     [the decision](../docs/decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
    - `crop` (optional): as "A proposed crop" above.
    - `bb` (for a photo whose code passes the tile rule): the fish's box, as "The fish's box" above.
    - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`, `bb`) and `note` (140 characters at most; required with
