@@ -1,6 +1,6 @@
 # The draw's few easiest before Open Water are counted by observation the draw can show, not by photo
 
-Date: 2026-11-21. PR: #0000. Rules or docs touched: LEARNING.md "Rarely under ease 4 before Open Water".
+Date: 2026-11-21. PR: #1376. Rules or docs touched: LEARNING.md "Rarely under ease 4 before Open Water".
 
 ## Context
 
