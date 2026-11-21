@@ -16,7 +16,7 @@ the PRs.
   pairs of the IMR fish presentation, `UNITS.fish.pairs`), progress per family with the levels and the silent mastery
   exam, typed questions accepting the family's names, and the comeback after a break. Fish basics is step 0 of the Learn
   path.
-- **Learn** = the fish families page (`learn.js` `viewFishList`: by the groups of the identification key in force, in
+- **Learn** = the fish families page (`learn.js` `viewList`, its tree builder: by the groups of the identification key in force, in
   its order, only those holding a family, the key credited in full under the list; cues, look-alike lines; each family one
   card that opens its sheet, `app.js` `listCard`: [front-end.md](front-end.md)), and the sheets ([fish-sheets.md](fish-sheets.md)).
 - **My progress**: the photo wall, levels, review, mix-ups, the headline % with its three bars

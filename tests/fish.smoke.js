@@ -2250,7 +2250,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       t0.hdr[1] !== h1.hdr[1]
     )
       ui.push(`${width}px Tools with Fish on: ${JSON.stringify({...tl, ...t0, home: [h1.at, h1.hdr]})}`);
-    // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
+    // The families page (learn.js viewList): the groups of the identification key in force (fish.json key,
     // rule S3), in the key's order, only those that hold a family of the slate (every circle),
     // each under its number and title as the key prints them, every family under its own group; the key credited in full
     // under the list.

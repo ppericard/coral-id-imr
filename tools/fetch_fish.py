@@ -130,6 +130,10 @@ OLD_LIMIT = 4  # the former limit of photos per observation: --topup completes t
 # The cap per species: 30 photos for a stable species, +10 per extra phase, at most 60; each extra phase aims at
 # PER_PHASE photos of its own, the rest is free.
 BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
+# A teaching entry (a family) the game covers with few species (Pierre, 2026-11-21 18:12: «rajouter dynamiquement des
+# photos pour des familles qui globalement ont très peu d'espèces»): its species share at least FAMILY_FLOOR photos, so
+# a one-species family holds 90 and a two-species one 45 each, each species' own cap (cap_of) when larger (family_cap).
+FAMILY_FLOOR = 90
 # The cap of a species met only on the surprise cards (fish.json teach wink): 5 photos, the
 # 5 tools/fish_game.py keeps in play for it (WINK_KEEP) and the admin's target (autosort.js FISHT.wink).
 WINK_CAP = 5
@@ -166,9 +170,10 @@ LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
 STAGE = {(1, 2): "adult", (1, 8): "juvenile", (9, 10): "female", (9, 11): "male"}
 DEAD = (17, 19)
+SPECIES_RANKS = ("species", "subspecies", "variety", "form")  # the ranks a photo's observation may name (usable_obs)
 # The automatic refill (--refill; docs/spec/photos.md "No more candidates is no more candidates"). A species short of easy photos has fewer than EASY_NEED
-# observations with a very easy photo (ease >= EASY_E) in play or sure to come: model.js easyFirst shows a unit's very
-# easy photos (PDIFF.EARLY, 4) until it reaches Open Water, or its PICKD.VARIETY (3) easiest when it has fewer.
+# observations with a very easy adult photo (ease >= EASY_E) in play or sure to come: until its unit reaches Open Water,
+# model.js RARE keeps the photos under ease 4 (or under its RARE.FEW, 3, easiest observations) to about 1 in 10.
 EASY_E, EASY_NEED = 4, 3
 REFILL_MAX = 40  # species refilled per run at most (rule C7: about 2 requests each, the general searches batched; the shortest first)
 RECHECK_DAYS = 30  # a part of a species' room searched to the end is searched again after this many days
@@ -395,7 +400,7 @@ def queries(tid):
 def usable_obs(o, used, excl):
     """An observation as a selection item, or None: its usable photos (licensed, or Pierre's own; not used or excluded),
     its licence class (the best of its photos), source tier, life stage. Dead fish and genus-level IDs are left out."""
-    if [*DEAD] in o.get("an", []) or o.get("rk") not in ("species", "subspecies", "variety", "form"):
+    if [*DEAD] in o.get("an", []) or o.get("rk") not in SPECIES_RANKS:
         return None
     own = o.get("u") == PIERRE
     if not own and o.get("g") != "research":
@@ -550,6 +555,14 @@ def cap_of(phases):
     return min(MAX_CAP, BASE_CAP + PER_PHASE * len(set(phases) & set(PHASES)))
 
 
+def family_cap(c, t):
+    """The cap c of one species of teaching entry t, raised so the entry's species share at least FAMILY_FLOOR photos (a
+    family the game covers with few species: REE-189): ceil(FAMILY_FLOOR / its number of species), when larger. An
+    entry that lists no species (a test's) keeps c."""
+    n = len((t or {}).get("species") or [])
+    return max(c, -(-FAMILY_FLOOR // n)) if n else c
+
+
 def written_phases(s, t):
     """{phase: [sources]} from what is written about species s of teaching entry t (fish.json): the IMR presentation's phase
     lines (teach phase: "Males colourful, females dark or dull", "Juvenile, sub-adult and adult look different"...) and
@@ -654,14 +667,16 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
     """Everything the cap of Q36 says about species s (entry t), shared by tools/fetch_fish.py and tools/fetch_fishbase.py:
     {"cap", "phases" (species_phases), "have" (photos still usable, weighted per observation: obs_cost), "held"
     ({phase: photos kept of it, counted the same way}), "obs" ({observation: photos still usable}), "room", "rooms",
-    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of. An
+    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of, raised for
+    a family the game covers with few species (family_cap). An
     observation's first usable photo in list order counts 1, the others EXTRA_W. A species of a wink entry (met only on
     the surprise cards) never holds more than WINK_CAP, whatever the cap (Q372)."""
     sug = sug or {}
     phases = species_phases(s, t, L, sug, game, fb, moved)
-    c = cap_of(phases) if cap is None else cap
+    base = cap_of(phases) if cap is None else cap
+    c = family_cap(base, t) if cap is None else cap
     if is_wink(t):
-        c = min(c, WINK_CAP)
+        c, base = min(c, WINK_CAP), min(base, WINK_CAP)
     held, obs = Counter(), Counter()
     for p in L:
         if not gone(p["f"]):
@@ -669,7 +684,7 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
             x = photo_phase(p, sug.get(p["f"]))
             held[x if x in phases else ""] += obs_cost(obs[o], 1)
             obs[o] += 1
-    return {"cap": c, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, "obs": dict(obs),
+    return {"cap": c, "base": base, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, "obs": dict(obs),
             **phase_room(phases, c, held)}
 
 
@@ -1057,23 +1072,28 @@ def run(args):
 
 
 def easy_obs(sid, L, F, sug, game, gone):
-    """The observations of species sid with a very easy photo (ease >= EASY_E) in play or sure to come: a candidate
-    Pierre added to it (his ease, else the pre-sort's), a candidate the pre-sort adds for sure (sure_add: the auto-sort
-    applies it at the next admin load), a game photo of fish-photos.json. One observation counts once."""
+    """The observations of species sid with a very easy adult photo (ease >= EASY_E, no extra phase: photo_phase) in play
+    or sure to come: a candidate Pierre added to it (his ease, tags and phase, else the pre-sort's), a candidate the
+    pre-sort adds for sure (sure_add: the auto-sort applies it at the next admin load), a game photo of fish-photos.json.
+    One observation counts once. A juvenile or a sex or colour phase is no easy observation: before Open Water the draw
+    holds it back until its unit's bar reaches it (model.js varOf; REE-189, a family whose third easy photo was a
+    juvenile showed its two easy adults about 9 questions in 10)."""
     add, ease, out = F.get("add") or {}, F.get("ease") or {}, set()
+    tags, phase = F.get("tags") or {}, F.get("phase") or {}
     for p in L:
         f, j = p["f"], sug.get(p["f"]) or {}
         if gone(f):
             continue
         if add.get(f) == sid:
             e = ease.get(f, j.get("e"))
+            j = {**j, **({"jt": tags[f]} if f in tags else {}), **({"ph": phase[f]} if f in phase else {})}
         elif f not in add and sure_add(j):
             e = j["e"]
         else:
             continue
-        if (e or 0) >= EASY_E:
+        if (e or 0) >= EASY_E and not photo_phase(p, j):
             out.add(p.get("o") or f)
-    out |= {p.get("o") or p.get("f") for p in game if (p.get("e") or 0) >= EASY_E}
+    out |= {p.get("o") or p.get("f") for p in game if (p.get("e") or 0) >= EASY_E and not photo_phase({}, {"jt": p.get("jt")})}
     return len(out)
 
 
@@ -1089,12 +1109,13 @@ def shortness(s, t, L, gone, F, sug, game=(), fb=(), moved=frozenset(), cap=None
              **{ph: r for ph, r in R["rooms"].items() if ph in INAT_PHASE}}
     easy = easy_obs(s["id"], L, F, sug, game, gone)
     unjudged = sum(1 for p in L if not gone(p["f"]) and p["f"] not in add and p["f"] not in sug)
-    return {"cap": R["cap"], "have": R["have"], "room": R["room"], "parts": {k: v for k, v in parts.items() if v > 0},
-            "easy": easy, "unjudged": unjudged, "short": R["room"] > 0 or easy < EASY_NEED}
+    return {"cap": R["cap"], "base": R["base"], "have": R["have"], "room": R["room"],
+            "parts": {k: v for k, v in parts.items() if v > 0}, "easy": easy, "unjudged": unjudged,
+            "short": R["room"] > 0 or easy < EASY_NEED}
 
 
 def fresh(e, today):
-    """An exhaustion record ({"at": day, "parts": [...]}) less than RECHECK_DAYS old."""
+    """An exhaustion record ({"at": day, "parts": [...], "cap"}) less than RECHECK_DAYS old."""
     try:
         return (today - datetime.date.fromisoformat(e["at"])).days < RECHECK_DAYS
     except (KeyError, TypeError, ValueError):
@@ -1105,14 +1126,17 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
     """(pick, skip) from {sid: shortness} in teaching order: the species with room, less those whose every open part was
     searched to the end less than RECHECK_DAYS ago (mem); the shortest first: short of easy photos with nothing waiting
     for the judging pass (more candidates are their only way to easy photos), then the largest share of the cap
-    missing, then teaching order; at most n."""
+    missing, then teaching order; at most n. A record made under a smaller cap than the species has now (its "cap"; a
+    record without one, under the species' own cap of Q36, "base") does not hold: the raised cap opened room its searches
+    never looked for (family_cap)."""
     order = {sid: i for i, sid in enumerate(rows)}
     want, skip = [], []
     for sid, r in rows.items():
         if r["room"] <= 0:
             continue
         e = mem.get(sid)
-        if e and fresh(e, today) and set(r["parts"]) <= set(e.get("parts") or []):
+        same = (e or {}).get("cap", r.get("base", r["cap"])) >= r["cap"]
+        if e and fresh(e, today) and same and set(r["parts"]) <= set(e.get("parts") or []):
             skip.append(sid)
             continue
         want.append(sid)
@@ -1145,8 +1169,8 @@ def load_mem(path):
 def save_mem(path, mem):
     doc = ("tools/fetch_fish.py --refill (Pierre, 2026-11-06, Q171): per fish.json species id, the parts of its candidate "
            "room searched to the end on iNaturalist (at: the day; parts: free = the general searches, juvenile / male / "
-           "female = the phase searches); skipped while every open part was searched to the end less than "
-           f"{RECHECK_DAYS} days ago. Written by the Candidate photos workflow.")
+           "female = the phase searches; cap: the species' cap then); skipped while every open part was searched to the end "
+           f"less than {RECHECK_DAYS} days ago under a cap at least the one it has now. Written by the Candidate photos workflow.")
     body = ",\n".join(f" {json.dumps(k)}: {json.dumps(mem[k], sort_keys=True)}" for k in sorted(mem))
     Path(path).write_text("{\"_doc\": " + json.dumps(doc) + ",\n\"end\": {" + ("\n" + body + "\n" if body else "") + "}}\n", encoding="utf-8")
 
@@ -1184,7 +1208,7 @@ def refill(args):
     for sid in pick:
         ended = exhausted(plan[sid]) if sid in plan else []
         if ended:
-            mem[sid] = {"at": today.isoformat(), "parts": ended}
+            mem[sid] = {"at": today.isoformat(), "parts": ended, "cap": rows[sid]["cap"]}
         else:
             mem.pop(sid, None)
     save_mem(args.memory, mem)

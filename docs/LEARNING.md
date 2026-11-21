@@ -722,11 +722,14 @@ pool of 30 does.
 
 ### Rarely under ease 4 before Open Water
 
-Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` (or its `RARE.FEW` easiest when it has
-fewer) make at most `RARE.SHARE` of the photos drawn, whatever their number (`model.js` `rareCap`, applied last, to the
-choice of the observation and of its photo): no wall, they still come, rarely. `model.js`
-`RARE = {E: 4, FEW: 3, SHARE: 0.1}`. Only on units of the subject's own rank (the fish families, the sea slug genera:
-`model.js` `rareOn`); photos with no judged ease (every coral photo) are never capped.
+Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` (or under its `RARE.FEW` easiest
+observations when it has fewer) make at most `RARE.SHARE` of the photos drawn, whatever their number (`model.js`
+`rareCap`, applied last, to the choice of the observation and of its photo): no wall, they still come, rarely. The
+`RARE.FEW` easiest are observations the draw can show at full weight, each by its easiest such photo: a variant its unit
+still holds back and a second photo of one observation do not count (REE-189:
+docs/decisions/2026-11-21-rare-few-by-observation.md). `model.js` `RARE = {E: 4, FEW: 3, SHARE: 0.1}`. Only on units of
+the subject's own rank (the fish families, the sea slug genera: `model.js` `rareOn`); photos with no judged ease (every
+coral photo) are never capped.
 
 ### Juveniles and colour phases on their unit's mastery
 
@@ -1025,7 +1028,11 @@ judged"); a photo nobody has answered is its prior, and every prior is 0 before 
 time term is added on top of that blend ("The photo's time term", below). A unit's difficulty is read from the same
 offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
 Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one
-difficulty split into rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review".
+difficulty split into rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review"; its
+offline fit on the real log and the replay of the step-2 candidates (2026-11-21) are in
+[reviews/2026-11-21-q316-offline-fit.md](reviews/2026-11-21-q316-offline-fit.md): the coral genus SD and the fish family
+SD measured (about 0.8 logits each), the photo, the fish genus and species and Q136's τ not estimable yet; whether the
+shared chain predicts the fish answers better or worse than today: the measure cannot tell.
 
 ### The photo's time term
 

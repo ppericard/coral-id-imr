@@ -102,6 +102,7 @@ Conventions that hold across them:
 | `photo_measure.py` | Measured photo values into `data/measured.json` |
 | `r2_sync.sh` | Copies photos to the Cloudflare R2 bucket; never deletes. Run by workflows |
 | `r2_move.py` | Lists what leaves `img/` for R2 and verifies the bucket |
+| `photo_recheck.py` | Read only: asks iNaturalist again for every game photo's observation and reports the photos that no longer pass their fetcher's rule (deleted, casual, other taxon, ID lost); weekly in `photo-recheck.yml` |
 | `r2_list.sh`, `r2_unused.py` | Read only: the bucket's listing, and the objects nothing in the repository uses (`r2-unused.yml`). Delete nothing |
 | `photo_quality.py`, `quality_eye.json` | Automatic quality rating into `quality.json` |
 | `photo_metrics.py` | Objective metrics into `data/metrics.json` |
@@ -171,7 +172,7 @@ learning change" (rule L11).
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
 | `perf.js` | Speed from a player's side: cold and warm start, throttled phone and network |
 | `studies/q351/` | The scripts of one batch-model study |
-| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, and the Q136 centring check on the real log (2B is its follow-up); read-only, one 40-minute clock ([README](studies/q316/README.md)) |
+| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, the Q136 centring check (2C) and the step-2 candidates replayed against today's engine (2B, `replay2b.js`) on the real log; read-only, one 40-minute clock ([README](studies/q316/README.md)) |
 
 ## Archive
 

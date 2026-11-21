@@ -43,7 +43,7 @@ and `tax` (each taxonomic group, `tg`, its units met and at Advanced), with thei
 
 Their files (`UNITS` `get`: `seaslug.json` and `seaslug-game.json`, no first photos, unversioned and out of the `sw.js`
 shell) have `fish.json`'s and `fish-game.json`'s shapes (`tools/seaslug_game.py`), so `treeGen`, `treeGenera`,
-`treeCurate`, the sheets (`viewFishList`, `viewFishSheet`) and the draw read them unchanged.
+`treeCurate`, the list and the sheets (`viewList`, `viewFishSheet`) and the draw read them unchanged.
 
 **Each tree subject has its own state** (`TREE_OF`, `treeOf`: its units `TREEU`, its raw files `TREERAW`, the content
 laid over them, the loads on their way); the globals `TREEU`, `TREERAW`… are the copy of the tree in force (`TREE_AT`).
@@ -74,7 +74,7 @@ species, and the species sheet shows them in `learn.js` `marksBox` with "Draft, 
 
 **The families stay structure only**: in `TREEU.gen` (no rank of their own, `app.js` `rankOf` reads them as `family`,
 never asked), their sheets, a genus's family line and parent, and the Learn page: the genus tiles shown directly,
-grouped by family (`UNITS.seaslug` `listBy: 'family'`, `learn.js` `viewFishList`: a block per family), the families under
+grouped by family (`UNITS.seaslug` `listBy: 'family'`, `learn.js` `viewList`, `byRank`: a block per family), the families under
 their taxonomic groups: the true nudibranchs apart, Nudibranchia · Doridina then Nudibranchia · Cladobranchia, then the
 other sea slugs by order: Sacoglossa, Cephalaspidea, Aplysiida, Pleurobranchida. The groups are WoRMS's classification
 of each family (rule C2), hand-kept in `tools/seaslug_groups.json` (AphiaIDs), written by `tools/seaslug_game.py` into
@@ -137,7 +137,7 @@ a subject without `vern`, the fish, gets none and keeps its own common names):
 
 - under the scientific name on the family, genus and species sheets (the first, the others on an "Also" line, a
   nickname said so; every name with its linked sources under More details: `learn.js` `vernHead`, `vernMore`);
-- on the Learn page (a genus tile, a family's heading: `viewFishList`; a genus row and a species tile on the sheets);
+- on the Learn page (a genus tile, a family's heading: `viewList`; a genus row and a species tile on the sheets);
 - in the quiz **after the answer only** (the verdict names the genus with its English name, `quiz.js` `fbBody`; the
   photo's species line, `UNITS.seaslug` `taxon`: its scientific name, the WoRMS name beside it and its first English
   name).

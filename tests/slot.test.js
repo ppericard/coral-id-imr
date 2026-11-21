@@ -429,7 +429,16 @@ test('every Playwright launch in tests/ and tools/ takes the slot; the heavy too
   }
   assert.deepStrictEqual(bad, []);
   const guarded = {
-    js: ['analyses', 'abilityeval', 'fallbackeval', 'realcheck', 'memreplay', 'studies/q316/checks', 'studies/sharefree/arm'],
+    js: [
+      'analyses',
+      'abilityeval',
+      'fallbackeval',
+      'realcheck',
+      'memreplay',
+      'studies/q316/checks',
+      'studies/q316/replay2b',
+      'studies/sharefree/arm'
+    ],
     py: [
       'photo_metrics',
       'photo_quality',

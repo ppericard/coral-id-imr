@@ -2188,7 +2188,7 @@ const tipsList = (g, cls = '', bare = false) =>
         .map(x => `<li>${x}</li>`)
         .join('')}</ul>${!bare && g.qsrc && g.qsrc.t ? `<p class="note esrc">Source: ${esrcHtml(g.qsrc)}</p>` : ''}`
     : `<p class="keyid">${gloss(g.sum)}${bare ? '' : esrcTag(g, 'sum')}</p>`;
-// A unit's card on a Learn list, for every subject (the corals' ID tips view, learn.js viewFishList; rule S1): its photo,
+// A unit's card on a Learn list, for every subject (the corals' ID tips view, learn.js viewList; rule S1): its photo,
 // its name and the line under it, its ID cues (bare: no heading, no source; those are on the sheet, rule C2), then the
 // subject's notes. The whole card opens the unit's sheet (Pierre, 2026-11-20): one link, its name, stretched over the
 // card (.lcard .tipsheet::after), the card a tappable surface with a chevron; the photo opens the sheet, not the photo
@@ -2463,7 +2463,7 @@ const TREE_UNITS = {
   norm: typeNormAll,
   // A genus question's typed text that names no genus of the game (treeTypeOther).
   typeOther: rk => treeTypeOther(rk),
-  list: () => viewFishList(),
+  list: () => viewList(),
   // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
   // name line for each.
   sheet: id => viewFishSheet(id),
@@ -2595,8 +2595,9 @@ const UNITS = {
     // The tile photos of unit n (Find the X, quiz.js planPhoto): none, so the corals never play it (coral photos do not
     // read as small thumbnails).
     tiles: () => [],
-    // The Learn page (#learn/genera): the Genera page (learn.js), and a genus's sheet (#learn/genus/Acropora).
-    list: () => viewGenera(),
+    // The Learn page (#learn/genera): the list (learn.js viewList, one page for every subject), and a genus's sheet
+    // (#learn/genus/Acropora).
+    list: () => viewList(),
     sheet: n => viewGenus(n),
     sets: [
       {
@@ -3036,7 +3037,7 @@ const UNITS = {
       nophoto:
         '<svg viewBox="0 0 64 40" aria-hidden="true"><path class="np-t" d="M5 31c4-8 14-12 27-12s22 4 27 12c-7 3-16 4-27 4S12 34 5 31z"/><path d="M15 21l-3-9M20 20l1-9M45 20c0-4 2-7 6-8M45 20c3-3 6-4 9-3"/><circle class="eye" cx="13" cy="11" r="1.5"/><circle class="eye" cx="21" cy="10" r="1.5"/></svg>'
     },
-    // The Genera page's line, and its genera grouped by family (learn.js viewFishList listBy; docs/ARCHITECTURE.md
+    // The Genera page's line, and its genera grouped by family (learn.js viewList listBy; docs/ARCHITECTURE.md
     // "Subjects"). The fish group theirs by the key.
     lede: 'The sea slug genera, by their scientific names, in their families. Photos: iNaturalist.',
     // The achievements page's ? text (progress.js viewAch).
