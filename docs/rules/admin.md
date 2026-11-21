@@ -32,7 +32,7 @@ hand choices only, 2026-11-20 05:39 («je valide», on his words of 2026-11-19 2
 
 **The admin is for Pierre only, and minimal**: no explanatory text on the page (tooltips = bare names; help behind the
 admin "?"), one-click segmented controls (reuse the existing segmented style, no default browser buttons, no lone ✓
-marks), header on one line. Everyday per-photo actions (× exclude, Reject, Remove) are one click with **no
+marks), header on one line. Everyday per-photo actions (Remove, Reject) are one click with **no
 confirmation**: Undo is the safety net (#265); confirmations only for bulk or site-wide actions (Publish, Validate N, CF
 book switch). Same information = a filter; different information = a separate view (#242).
 *Source:* Pierre, by 2026-11-01 (#242, #265).

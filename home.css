@@ -331,6 +331,20 @@
     font-size: var(--fs-xl);
   }
 }
+/* The "soon" tag on a door whose key is not built (home.js: the subject's declared UNITS door.soon). */
+.hdsoon {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.15em;
+  color: var(--accent);
+}
 .hdbtn b em {
   font-style: normal;
   opacity: 0.6;

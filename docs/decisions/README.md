@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-22 | [A kept question is lost only when it is about its own first-meeting card's genus](2026-11-22-pending-question-other-card.md) | #1428 |
 | 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
@@ -68,6 +69,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The fish phase flag comes from the cited phase list too, and the phase card names the list's sources](2026-11-21-fish-phase-flag-from-cited-list.md) | #1395 |
 | 2026-11-21 | [The fish welcome's names step: common names, scientific names or both, right after the first-launch question](2026-11-21-fish-welcome-names-step.md) | #1396 |
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
+| 2026-11-21 | [One Remove in the admin: one click, out for good, an Undo just after, one list to put a photo back](2026-11-21-one-remove.md) | #1393 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
 | 2026-11-21 | [The quiz keeps its question when the player leaves and comes back](2026-11-21-quiz-keeps-pending-question.md) | #1375 |
 | 2026-11-21 | [R2 is given up for a visit after three photos fail in a row, not after one](2026-11-21-r2-given-up-after-three.md) | #1416 |
