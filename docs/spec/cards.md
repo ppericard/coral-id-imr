@@ -320,11 +320,10 @@ once a player uses it, how often is their choice. A small generic system with th
   for a player with 150 questions or more here who never opened the Duel tab (counter `u.d`). In the Quiz only; its
   moment, the Next right after a miss (a mix-up just made), else any break from 20 questions later; twice at most, the
   second 150 questions after the first; after the zoom and Custom quiz tips when several are due (one tip a visit).
-  Checked on the answer log first (2026-11-21, aggregates only): corals, of 8 players with 150 questions or more, 5 had
-  never played the Duel tab; fish, 6 of 6; all with mix-ups on record (pairs missed 3 times or more: 1 to 18 each), so
-  the target exists and no extra "mix-ups on record" counter is kept: the Next right after a miss is its preferred
-  moment. The counter is per device and not per subject, as the other tips'; a signed-in device holds only its unsent
-  answers, so a player who used the Duel tab here before the counter existed may get the tip once. Card: "Did you know?", "Practise the genera you mix up" (the
+  There is no counter of mix-ups: the Next right after a miss is the preferred moment. The counter is per device and not
+  per subject, as the other tips'; a signed-in device holds only its unsent answers, so a player who used the Duel tab
+  here before the counter existed may get the tip once ([record](../decisions/2026-11-21-tip-b-look-alike-duels.md)).
+  Card: "Did you know?", "Practise the genera you mix up" (the
   subject's own word, `SUBJECTS` `many`), "Look-alike duels show photos of one of two look-alike genera and ask which one
   it is. The ones you still mix up come up most." (the Duel tab's own pick, `duelPick`), **Show me** (opens the
   Duel tab, `#practice/duels`) and **Got it**.
