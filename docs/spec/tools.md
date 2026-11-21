@@ -68,7 +68,13 @@ written with `tools/datajson.py`.
   force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
 - **The session hooks** (`.claude/settings.json`) run main's copy of their tool, never the checkout's; with no
   `origin/main` ref they fetch it (`+refs/heads/main:refs/remotes/origin/main`, about 1 s once), else the guards refuse
-  with that fix and the brief says it (`tests/hooks.test.js`).
+  with that fix and the brief says it (`tests/hooks.test.js`). An existing ref is never refreshed by them, so the brief
+  checks it: one bounded `git ls-remote origin refs/heads/main` (3 s, no prompt, no fetch) against the ref, on the time
+  line of `--short` and as a line of the full brief: "= remote main", or "⚠ local origin/main A differs from remote
+  main B" (or "N commits behind" when the commits are here) with the fetch command, or "remote freshness unknown (why)" with when the ref last moved
+  (reflog; else the age of its commit). Report only: nothing is fetched, reset or merged, and the local work is left
+  as it is; a stale ref also means the hooks run an old copy of the brief, hence the fetch command in the line
+  (`tests/brief_fresh.test.js`).
 - **`guard_bash.py`**: the Bash guard (PreToolUse, given with `-c`: the JSON stays on stdin): refuses at once, with the
   way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`,
   `bash -c`, code piped into an interpreter). Quoted text is not read as a command; a command
