@@ -3153,6 +3153,7 @@ async function lazyPart(b, base, fails) {
       const tr = await p.evaluate(() => {
         const c = document.getElementById('anc-along-each-player-s-history'),
           T = document.getElementById('anc-the-typical-player-window-by-window');
+        if (T && T.classList.contains('folded')) T.querySelector('[data-anfold]').click();
         return {
           charts: c ? c.querySelectorAll('figure svg').length : 0,
           players: c ? c.querySelectorAll('figure:first-child path.an-line.pl').length : 0,
@@ -3160,10 +3161,16 @@ async function lazyPart(b, base, fails) {
           words: c ? c.querySelectorAll('.adm-an-says-l li').length : 0,
           rows: T ? T.querySelectorAll('tbody tr').length : 0,
           small: c ? [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length : 0,
-          wide: document.documentElement.scrollWidth - innerWidth
+          wide: document.documentElement.scrollWidth - innerWidth,
+          // the table is wider than a phone's card: it scrolls inside its box and the box shows the edge (admin.css .adm-an
+          // .adm-tscroll), never a column cut off with no sign of it
+          cue: (() => {
+            const s = T && T.querySelector('.adm-tscroll');
+            return !s || s.scrollWidth <= s.clientWidth || getComputedStyle(s).backgroundImage.includes('radial-gradient');
+          })()
         };
       });
-      if (tr.charts !== 7 || tr.players < 3 || tr.typical < 5 || tr.words < 3 || tr.rows < 2 || tr.small || tr.wide > 0)
+      if (tr.charts !== 7 || tr.players < 3 || tr.typical < 5 || tr.words < 3 || tr.rows < 2 || tr.small || tr.wide > 0 || !tr.cue)
         fails.push(`${w}px Analyses player trajectories: ${JSON.stringify(tr)}`);
     }
     // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their
