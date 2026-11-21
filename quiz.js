@@ -2207,12 +2207,16 @@ function pendDone() {
   PENDQ = null;
 }
 // The seconds looked at the question on screen, written when the player leaves the page (app.js route), hides it or closes it.
+// A clock not started yet (no photo in: qclockRead is null) leaves what the record holds, the seconds a kept question
+// came back with included.
 function pendClock() {
   if (!PENDQ || !PENDQ.el || !PENDQ.el.isConnected) return;
   const all = pendAll(PENDQ.key),
-    r = all[PENDQ.cur];
+    r = all[PENDQ.cur],
+    rt = qclockRead();
   if (!r) return;
-  ((r.rt = qclockRead() || 0), (r.zm = QCLOCK.zm ? 1 : 0));
+  if (rt !== null) r.rt = rt;
+  r.zm = QCLOCK.zm ? 1 : 0;
   store.set(PENDQ.key, all);
 }
 // The photos of a kept question are the window's latest (model.js SEENQ): the entry of its first showing is replaced, not repeated.

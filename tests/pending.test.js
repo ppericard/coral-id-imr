@@ -268,6 +268,11 @@ test('response time: the seconds looked before leaving come back, the time away 
   L.pendShow('quiz', k.q, k);
   assert.strictEqual(w.QCLOCK.pre, 7.3);
   assert.strictEqual(w.QCLOCK.zm, 1);
+  // left again before its first photo is in (the clock has not started: qclockRead is null): the seconds carried stay
+  w.NOW = null;
+  L.pendClock();
+  assert.strictEqual(L.pendTake('quiz').rt, 7.3, 'the seconds carried are not overwritten by a clock that has not started');
+  w.NOW = 7.3;
   // another page: no write (the question is not on screen, its clock would count the time away)
   w.ON = false;
   w.NOW = 99;
