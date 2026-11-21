@@ -1721,6 +1721,7 @@ function signIn(name, pin, j) {
   SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
   groupsSeen(j, name, false); // the account's beta groups, before the reload below opens the app with them
   markSeen(j, name);
+  store.set('reefid-board-new', j.found ? 0 : 1); // an account made here never meets the leaderboard as news (progress.js boardShow)
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
   if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
