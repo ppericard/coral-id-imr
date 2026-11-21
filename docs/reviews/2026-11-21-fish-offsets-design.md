@@ -88,7 +88,8 @@ offsets, from the script that serves them, and its replay reads the same.
    `ownRead` and `loadOwnStats` (`admin.js:13087`, today the photos and `gd` for the photo-difficulty views) also keep
    `mem` and `fmt` of a reply at or above the subject's `offsets` version; `statsFor(S)` gives a subject with `offsets`
    exactly what `rplMake_` passes it (its own `mem` and `fmt`, nothing of the corals'); Players and Journey load the
-   subject's statistics before they replay, and the `progOf` and `sessProg` memos key on them (today on `SMEM`, the corals').
+   subject's statistics before they replay, and the `progOf` and `sessProg` memos key on them (today on `SMEM`, the
+   corals').
 
 Files: `core.js`, `sync.js`, `model.js`, `Code.gs` (with its `tools/sync/changes/<branch>.md`, the version assigned
 at merge: rule D3), `admin.js`, `admin-journey.js`, and tests: `tests/fishstats.test.js` (the subject's offsets read
@@ -113,7 +114,8 @@ Players and Journey replay a fish history with a row without a record as `rplMak
   order the leaderboard after the %) carry the change into every later answer, whose record keeps its inputs but not
   the ability its Elo steps start from (`eloStep`, `core.js:6113` and the level's step after it); the bar of the unit
   answered in that row carries it through that unit's later answers. The other units' bars read no ability (`barOf`,
-  `core.js:5274`). How far it goes is not measured: the build replays every fish player with the offsets off and on and reports the difference before it merges (section 5).
+  `core.js:5274`). How far it goes is not measured: the build replays every fish player with the offsets off and on
+  and reports the difference before it merges (section 5).
 - **The sea slugs change at once too, a little:** their fitted offsets are already nonzero (section 2: k4 +0.13, k2
   −0.22, again +0.09, right once −0.71), so switching them on moves their scoring and draw from the first answer, by
   less than a quarter logit except the right-once bucket (corrected after review: an earlier version said nothing
