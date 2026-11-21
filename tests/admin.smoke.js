@@ -10593,12 +10593,15 @@ async function lazyPart(b, base, fails) {
           }
         } else fails.push(`${w}px Rotate: no lecture photo with an original online`);
         await goGenus(G);
-        const f = await p.evaluate(() => {
-          const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
-            x => !crOf(x.closest('[data-f]').dataset.f)
-          );
+        // Not a lecture photo: its editor starts on the lecture's framing, tested above.
+        const f = await p.evaluate(n => {
+          const own = new Set(photos(n).filter(x => !x.imr).map(x => x.f)),
+            b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(x => {
+              const t = x.closest('[data-f]').dataset.f;
+              return own.has(t) && !crOf(t);
+            });
           return b && b.closest('[data-f]').dataset.f;
-        });
+        }, G);
         const tile = `#view .adm-tile[data-f="${f}"]`,
           st0 = await p.evaluate(() => ({title: document.getElementById('save').title, sum: pubSummary(), h: HIST.length}));
         if (!f) fails.push(`${w}px Rotate: no photo with the Crop tool on ${G}`);
