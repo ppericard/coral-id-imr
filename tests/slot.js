@@ -9,7 +9,8 @@
 //    The slots are files in one directory every session and every user of the machine sees; a slot whose process is
 //    gone (by PID and start time on Linux; elsewhere by PID, or no refresh for 10 minutes) is taken back. Waiters are
 //    served in arrival order: each takes a ticket in the same directory, and a free slot goes to the oldest live one (a
-//    dead waiter's ticket is skipped; see ticket(), below). No-op on CI,
+//    dead waiter's ticket is skipped; see ticket(), below). Every taker also clears what killed takers left in the
+//    directory (`.hold-<pid>`, `.new-*`: sweep()). No-op on CI,
 //    where each smoke has its own runner. Call it before chromium.launch(); the slot is given back when the process
 //    ends. A holder's children run in its slot (REEFID_SLOT, below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
 //
@@ -168,6 +169,40 @@ function reap(f) {
   }
 }
 
+// True when the process pid is gone (by PID alone: the name of a temp file holds no start time).
+function gone(pid) {
+  if (started(pid) === null) return true;
+  try {
+    process.kill(pid, 0);
+  } catch (e) {
+    return e.code === 'ESRCH';
+  }
+  return false;
+}
+
+// Clears what killed takers left in DIR: a `.hold-<pid>` lock whose taker is gone (reap(): the same pid + start time
+// check as a slot's, and the very file judged dead is the one removed), a `.new-<pid>-*` temp file whose process is gone
+// (or, the PID being a live process's now, untouched for STALE: a live taker unlinks its own within milliseconds), and a
+// `*.reap` directory left by a crashed reaper. Live files are never touched; any state of the directory is tolerated.
+function sweep() {
+  let names = [];
+  try {
+    names = fs.readdirSync(DIR);
+  } catch (e) {
+    return;
+  }
+  for (const n of names) {
+    const f = path.join(DIR, n),
+      m = /^\.new-(\d+)-/.exec(n);
+    try {
+      if (/^\.hold-\d+$/.test(n)) reap(f);
+      else if (m) {
+        if (gone(+m[1]) || Date.now() - fs.statSync(f).mtimeMs > STALE) fs.unlinkSync(f);
+      } else if (/^(\.hold-\d+|slot\d+)\.reap$/.test(n) && Date.now() - fs.statSync(f).mtimeMs > 30e3) fs.rmdirSync(f);
+    } catch (e) {} // gone meanwhile, or not ours to remove
+  }
+}
+
 // The queue (rule W24): each waiter takes a ticket in DIR, a file "ticket-<ms>-<pid>-<random>" (fixed widths: the names
 // sort in arrival order) holding a record like a slot's, published whole the same way. A free slot goes to the oldest
 // live ticket: a waiter tries the slots only while fewer live tickets are older than its own than slots are free. A ticket
@@ -288,6 +323,7 @@ async function slot(name, o = {}) {
     fs.mkdirSync(DIR, {recursive: true});
     fs.chmodSync(DIR, 0o777);
   } catch (e) {}
+  sweep();
   // This waiter's place in the queue, dropped whenever it stops waiting (a slot, a timeout, a refusal, an exit).
   const tk = ticket(name),
     drop = () => {
@@ -307,9 +343,14 @@ async function slot(name, o = {}) {
 // The waiting loop of slot(): tries the slots whenever the load allows and the queue gives this waiter its turn.
 async function take(name, o, n, t0, roomy, tk) {
   let touched = Date.now(),
+    swept = Date.now(),
     queue = 0;
   for (let said = 0; ;) {
     roomy();
+    if (Date.now() - swept > 60e3) {
+      sweep();
+      swept = Date.now();
+    }
     if (o.pid && slotsOf(o.pid).length) return () => {};
     if (tk && Date.now() - touched > 60e3) {
       try {
@@ -523,7 +564,7 @@ function testGuard() {
 }
 
 module.exports = slot;
-Object.assign(slot, {slot, parts, widths, partial, held, run, guard, testGuard, testFiles, diskOk, maxLoad, LOAD, MIN_FREE_GB, DIR});
+Object.assign(slot, {slot, parts, widths, partial, held, run, guard, testGuard, testFiles, diskOk, sweep, maxLoad, LOAD, MIN_FREE_GB, DIR});
 
 // node tests/slot.js [--name N] -- cmd [args]        node tests/slot.js --name N --hold PID  (testGuard's helper)
 if (require.main === module) {
