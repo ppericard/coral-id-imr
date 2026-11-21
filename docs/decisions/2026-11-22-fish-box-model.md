@@ -52,6 +52,6 @@ question (REE-202), not decided here.
 - Wave 1 (#1426): 84 boxes for the six M2, M3 and M5 species (5 photos left without one: hidden, or cut by the frame);
   drift redo 4 of 4 agree. Three earlier boxes that cut the fish (found by the bench's eye check) are replaced by Opus 5.5
   high's, checked by eye: their tiles are cut again.
-- Wave 2 (batches 03-14, #1430): 600 photos of 155 species with no tile, 567 boxed, 33 left without a box (5.5%, tiles
+- Wave 2 (batches 03-14, #1440): 600 photos of 155 species with no tile, 567 boxed, 33 left without a box (5.5%, tiles
   lost); drift redo 24 of 24 agree.
 - The bench, its threshold files and every run stay in the session's scratch folder; the figures are here and in the PR.
