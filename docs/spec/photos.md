@@ -153,7 +153,7 @@ files, `curation.json`, a data file or the docs. Deleting is a separate step, af
 
 A candidate filter looks at an observation once, when it fetches it. An identification withdrawn on iNaturalist later,
 a deleted observation or a species changed since stayed in the game until a player met it (the RA session review,
-PR #1374, §4: 9 fish photos had drifted). Linear
+[2026-11-21-ra-session-review.md](../reviews/2026-11-21-ra-session-review.md) §4: 9 fish photos had drifted). Linear
 REE-195, the integrator's call (it enforces the identity rules P1 to P6; nothing is new for players).
 
 `tools/photo_recheck.py` asks iNaturalist again, paced (rule C7, observation ids only), for every photo in play that has
