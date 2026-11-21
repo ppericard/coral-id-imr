@@ -43,7 +43,20 @@ PARTS = [
     'elo.js',  # who rates the photos (trust), the photos' Elo and memory, the pooled confusions
     'apology.js',  # the apology card, reserved names and the admin mark, the shared admin draft (takeTab)
     'curation.js',  # Pierre's curation applied and the photos per context (applyCuration, applySlots)
-    'rest.js',  # everything not split out yet (R6 lists the parts to come), then the exports (CORE)
+    'start.js',  # the global level, the first-launch question, an existing account at sign-in, common first
+    'achievements.js',  # the achievement lists, photo contributions, the answers to reports (helped), their merge
+    'score.js',  # the former moving average, the domain-score bar
+    'photos.js',  # the genera the games play, photos on R2 and out of the repo, a photo's retry
+    'typing.js',  # typed answers: their normalising and fuzzy matching
+    'ability.js',  # what one answer proves, ability per unit (Elo), response time, the one scorer
+    'rules.js',  # the rules versions (RVS), gates on the sheet script's version, answer ids, the content version
+    'replay.js',  # the full replay (replayProgress)
+    'pages.js',  # pages opened in a visit: what the summary counts, the screen it was sent from
+    'routes.js',  # the app's addresses (routeOut, routeIn, page names) and the move from the old ones
+    'visits.js',  # the visit summary: page names read back, the tally, its owner, what the sheet keeps
+    'pulse.js',  # the one-tap question's bank
+    'stats.js',  # quantile and distOf (admin Photo stats)
+    'exports.js',  # the exports (CORE): module.exports in Node and the sheet script, the page's globals in a browser
 ]
 # The wrapper around the parts: core.js's first three lines and its last.
 OPEN = ("// Pure functions shared by the app (app.js), the admin (admin.js) and the tests (node --test tests/*.test.js).\n"
