@@ -63,6 +63,10 @@ the circle-1 entries (`--circle` for the other circles).
   juvenile flag `j` or the rubric's `phase`, candidates and game photos), the iNaturalist Life Stage or Sex annotation of
   at least 2 distinct candidate observations (`inat:N`, `MIN_ANNOT`: one stray annotation is not a phase), and FishBase's
   life stage on its underwater photos (`fishbase:N`).
+- **A family the game covers with few species** holds at least `FAMILY_FLOOR` (90) photos, shared over its species
+  (`family_cap`): 90 for a one-species family, 45 each for a two-species one, each species' own cap above when larger;
+  from three species on, nothing changes. Pierre, 2026-11-21 18:12 («rajouter dynamiquement des photos pour des
+  familles qui globalement ont très peu d'espèces»; REE-189, [the review](../reviews/2026-11-21-photo-diversity.md)).
 - A species met only on the surprise cards (a `wink` entry's) holds at most `WINK_CAP` (5) whatever its phases
   (`species_room`, so the refill and FishBase find no room once it holds 5; `--topup` skips it).
 - **Each extra phase holds 10 of them for photos of that phase** (`phase_room`: the room of a phase = 10 minus the photos
@@ -127,8 +131,9 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
 
 - **Short** (`shortness`): a species under its cap (the room of `species_room`: the cap net of what Pierre rejected,
   excluded or sent elsewhere and of the pre-sort's sure set-asides), or with fewer than `EASY_NEED` (3) observations
-  holding a very easy photo (ease ≥ `EASY_E`, 4, the ease under which `model.js` `RARE` holds a unit's photos back
-  before Open Water; 3 as `RARE.FEW`) in play or
+  holding a very easy adult photo (ease ≥ `EASY_E`, 4, the ease under which `model.js` `RARE` holds a unit's photos back
+  before Open Water; 3 as `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
+  reads the judged tags, Pierre's, and a candidate source's life stage; a game photo by its tags only) in play or
   sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `fishSure`'s adds, the game photos of
   `fish-photos.json`). Only room is refilled: a species short of easy photos at its cap stays as it is (the cap holds;
   its waiting candidates need the pass or Pierre), listed as `at_cap` by `--refill --plan`.
@@ -141,11 +146,13 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   rejected, excluded or marked Not this); each general search is asked afresh (no stale cache) and read on (`pages`,
   `id_below`, up to `GEN_PAGES` = 5 pages of 200) while it brings fewer usable photos than the room; then FishBase
   (`fetch_fishbase.py`, offline) fills what iNaturalist left and `--rep` tags the covers, for the refilled species only.
-- **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts}}): a part of the room ("free",
-  the general searches; `juvenile`, `male`, `female`, the phase searches) still open after the run whose searches were
-  read to their end (`ends`), or which got nothing, is searched to the end that day; the species is skipped while every
-  open part of its room is in a record less than `RECHECK_DAYS` (30) old (a part opened since, a juvenile room for
-  instance, is searched); a species filled loses its record.
+- **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts, cap}}): a part of the room
+  ("free", the general searches; `juvenile`, `male`, `female`, the phase searches) still open after the run whose
+  searches were read to their end (`ends`), or which got nothing, is searched to the end that day, under the cap the
+  species had then (`cap`); the species is skipped while every open part of its room is in a record less than
+  `RECHECK_DAYS` (30) old made under a cap at least its cap now (`pick_short`; a record without `cap` reads as the cap
+  of Q36 alone, so a family floor raised since opens it). A part opened since, a juvenile room for instance, is
+  searched; a species filled loses its record.
 - **Judging**: nothing is judged in the workflow (the pass is visual): the new candidates wait in `data/fish-cand.json` for
   the judging pass (`python3 tools/judging_fish.py todo`; the full `tools/brief.py` prints how many wait), whose sure
   decisions the admin's fish auto-sort applies at the next load, then Pierre's Publish (rule A1).
