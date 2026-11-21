@@ -8,8 +8,8 @@ Date: 2026-11-21. PR: #1390. Rules or docs touched: `tests/treenames.test.js`, `
 
 Architecture step 3 ([2026-11-18-architecture-steps-3-4.md](2026-11-18-architecture-steps-3-4.md)) left, under (a),
 the admin's `fish*` names of tree code, `autosort.js` among them: the auto-sort of the candidate photos of every tree
-subject (the fish's and the sea slugs'), whose 71 per-subject names the S1 ratchet held as "named fish before the
-rename".
+subject (the fish's and the sea slugs'), whose per-subject names the S1 ratchet held, 71 of them, as "named fish before
+the rename": 70 `fish*` / `FISH*` names and `FMONT_V`.
 
 ## Decision
 
@@ -19,7 +19,8 @@ cites in the admin's files, the app's comments, the tests, the tools' comments a
 where the plain one is another function already (`app.js` `treeSet`, `treeAt`, `treeRec`; `learn.js`'s sheet helpers;
 `admin.js`'s own `fishState`; a test's `treeUnits`): `fishMine` → `treeKeepOf`, `fishSpecies` → `treeSpeciesOf`,
 `fishState` → `treeStateOf`, `fishSet` → `treePhotoSet`, `fishAt` → `treePhotoAt`, `fishRec` → `treePhotoRec`,
-`fishUnits` → `treeUnitsOf`. The fish's winks keep theirs (`fishWinkFold`). `tests/treenames.test.js` retires the old
+`fishUnits` → `treeUnitsOf`. The fish's winks keep theirs (`fishWinkFold`), and `FMONT_V` (the look-alike montage's
+views, a prefix the admin's montage code shares) is no `fish*` name and stays: the ratchet's two left. `tests/treenames.test.js` retires the old
 names.
 
 ## Consequences
