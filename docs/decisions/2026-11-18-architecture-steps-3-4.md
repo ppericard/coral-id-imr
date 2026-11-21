@@ -45,4 +45,6 @@ Not built now (ROADMAP row):
 - Open PRs written against the old names conflict or fail `tests/treenames.test.js`; they rebase onto the new names
   (the table in the test is the rename's).
 
-Changed by: [2026-11-19-rules-wordings.md](2026-11-19-rules-wordings.md) ((d): the `slow` tag's wording, approved).
+Changed by: [2026-11-19-rules-wordings.md](2026-11-19-rules-wordings.md) ((d): the `slow` tag's wording, approved);
+[2026-11-22-core-parts.md](2026-11-22-core-parts.md) ((c): both comment passes merged, #1121 and #1449; the split
+started, `core/*.js` joined into `core.js`).
