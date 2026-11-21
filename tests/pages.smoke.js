@@ -5738,7 +5738,8 @@ async function subjTour(b, base) {
   const fails = [],
     errs = [];
   // mode: 'plain' (no group), 'group' (signed in, in the fish group), 'late' (signed out; signing in to their existing
-  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out).
+  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out), 'names'
+  // ('all' on a device that has heard a sheet script with the species level: the fish names step is on offer, rule D4).
   const open = async mode => {
     const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
     await c.route(
@@ -5754,7 +5755,7 @@ async function subjTour(b, base) {
           t = await res.text();
         if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
         // every subject but the corals back to a group (fish and the sea slugs open to all)
-        await r.fulfill({response: res, body: mode === 'all' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
+        await r.fulfill({response: res, body: mode === 'all' || mode === 'names' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
       }
     );
     await c.addInitScript(mode => {
@@ -5764,13 +5765,14 @@ async function subjTour(b, base) {
           localStorage.setItem('reefid-nudge', '1');
           localStorage.setItem('reefid-board-told', '1');
           localStorage.setItem('reefid-board-sent14', '1');
+          if (mode === 'names') localStorage.setItem('reefid-sheet-v', '300');
           if (mode === 'group') {
             localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234'}));
             localStorage.setItem('reefid-groups', JSON.stringify({n: 'Ana', g: ['fish']}));
           }
         }
       } catch (e) {}
-      const g = mode === 'plain' || mode === 'all' ? [] : ['fish'];
+      const g = mode === 'plain' || mode === 'all' || mode === 'names' ? [] : ['fish'];
       window.SHEET_STUB = (url, o) =>
         Promise.resolve({
           json: () =>
@@ -5949,6 +5951,111 @@ async function subjTour(b, base) {
       k = await p.evaluate(() => [SUBJ.start.q, localStorage.getItem('reefid-sync-subject')]);
     if (!s1 || s1.h !== k[0] || s1.subj !== 'coral' || k[1] !== '"coral"')
       fails.push(`subject tour, open to all: Corals ${JSON.stringify({s1, k})}`);
+    await c.close();
+  }
+  // 5. The fish names step (app.js UNITS namesStep; Pierre, 2026-11-04): after "I know reef fish well" a forced step, one more
+  // step in the count, whose answer sets the What I learn rows when the tour closes (held until then); Back shows it marked
+  // and a changed answer replaces it; changed to "I'm at IMR" it goes, nothing written; a device that has not heard the
+  // sheet (rule D4) gets no step.
+  {
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'step');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step: not asked after "know"'));
+    await p.waitForTimeout(300);
+    const rows = () => p.evaluate(() => learnRows().map(r => [r.k, rowOn(r)]));
+    const n0 = await p.evaluate(() => {
+      const b = document.querySelector('#tour .tbub');
+      return {
+        n: (b.querySelector('.tstep') || {}).textContent.trim(),
+        h: (b.querySelector('h3') || {}).textContent,
+        opts: [...b.querySelectorAll('[data-names]')].map(x => x.dataset.names),
+        next: !!b.querySelector('.tnext'),
+        skip: !!b.querySelector('.tskip')
+      };
+    });
+    if (n0.n !== '3 / 9' || n0.h !== 'Which names do you want to learn?' || n0.opts.join() !== 'common,sci,both' || n0.next || n0.skip)
+      fails.push(`names step: ${JSON.stringify(n0)}`);
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    if (((await p.evaluate(() => (document.querySelector('#tour .tstep') || {}).textContent)) || '').trim() !== '3 / 9')
+      fails.push('names step: the arrow key passed the forced choice');
+    await tap(p, '#tour [data-names="sci"]', 'names step');
+    await p.waitForTimeout(500);
+    const s1 = await bub(p),
+      r1 = await rows(),
+      q1 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (!s1 || s1.n !== '4 / 9' || !/, any time$/.test(s1.h))
+      fails.push(`names step: after the answer ${JSON.stringify(s1 && [s1.n, s1.h])}`);
+    // held, not written: going back to change it leaves nothing to take back (or to synchronize)
+    if (JSON.stringify(r1) !== '[["sp",true],["sci",false]]' || q1.join() !== ',,,false')
+      fails.push(`names step: the answer is written before the tour closes ${JSON.stringify([r1, q1])}`);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(400);
+    const back = await p.evaluate(() => ({
+      pressed: [...document.querySelectorAll('#tour [data-names][aria-pressed="true"]')].map(x => x.dataset.names).join(),
+      next: !!document.querySelector('#tour .tnext')
+    }));
+    if (back.pressed !== 'sci' || !back.next) fails.push(`names step: Back ${JSON.stringify(back)}`);
+    // changed to "Scientific names only" then, the tour closed (Escape): that answer, the last, is written
+    await tap(p, '#tour [data-names="both"]', 'names step changed');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-names="sci"]', 'names step changed again');
+    await p.waitForTimeout(500);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step: Escape kept the tour'));
+    const r2 = await rows(),
+      q2 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (JSON.stringify(r2) !== '[["sp",false],["sci",true]]' || q2.join() !== 'true,false,true,false')
+      fails.push(`names step: scientific names only, at the close ${JSON.stringify([r2, q2])}`);
+    await c.close();
+  }
+  {
+    // Back to the question and "I'm at IMR": the held choice goes with the step (8 steps again), nothing is written
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, IMR');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step, IMR: not asked after "know"'));
+    await tap(p, '#tour [data-names="sci"]', 'names step, IMR');
+    await p.waitForTimeout(400);
+    await tap(p, '#tour .tback', 'names step, IMR back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step, IMR back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-start="imr"]', 'names step, IMR');
+    await p.waitForTimeout(600);
+    const s3 = await bub(p);
+    if (!s3 || s3.n !== '3 / 8' || !/, any time$/.test(s3.h))
+      fails.push(`names step: changed to IMR ${JSON.stringify(s3 && [s3.n, s3.h])}`);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step, IMR: Escape kept the tour'));
+    const q3 = await p.evaluate(() => ['sp', 'spO', 'sci', 'sciO', 'sciT', 'spT'].map(k => (k in Q ? Q[k] : null)));
+    if (q3.some(x => x !== null)) fails.push(`names step: changed to IMR, but written ${JSON.stringify(q3)}`);
+    await c.close();
+  }
+  {
+    // A device that has not heard the sheet script at the species level: one row on offer, no choice, the tour as before.
+    const [c, p] = await open('all');
+    await tap(p, '#tour [data-pick="fish"]', 'names step, old sheet');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, old sheet');
+    await p.waitForTimeout(600);
+    const s = await bub(p);
+    if (!s || s.n !== '3 / 8' || !/, any time$/.test(s.h)) fails.push(`names step, sheet not heard: ${JSON.stringify(s && [s.n, s.h])}`);
     await c.close();
   }
   if (errs.length) fails.push(`subject tour: page errors ${errs.slice(0, 3).join(' | ')}`);
