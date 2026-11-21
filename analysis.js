@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 15;
+  const AV = 16;
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -525,7 +525,10 @@
   const RANKS = ['family', 'genus', 'species'],
     RK_PRE = {f: 'family', g: 'genus', s: 'species'},
     RK_MIN = 20,
-    LOG_RANK = 18;
+    LOG_RANK = 18,
+    LOG_SC = 22; // core.js LOG_SC: the scoring record (an object, null without) in the sheet's readAnswers rows
+  // The recall R of a comeback question from its scoring record, null when the record has none (R is logged under 1 only).
+  const rowRecall = sc => (sc && typeof sc === 'object' && sc.r > 0 && sc.r < 1 ? Number(sc.r) : null);
   const rankOfUnit = (g, logged, ref) => {
     const m = /^([fgs]):/.exec(String(g || ''));
     if (m) return RK_PRE[m[1]];
@@ -618,6 +621,9 @@
           f: fmtOf(m, ch.length),
           typed: TYPED_RE.test(m) ? 1 : 0,
           back: /\|c(\||$)/.test(m) ? 1 : 0,
+          // the recall the app gave a comeback question (the scoring record's r, core.js scoreRec: logged under 1 only),
+          // else null (Comeback by genus)
+          R: rowRecall(r[LOG_SC]),
           // an exam question (|x), typed or not (a typed exam question is logged quiz|t|x)
           exam: /\|x(\||$)/.test(m) ? 1 : 0,
           qv: !ph.length
@@ -2602,11 +2608,162 @@
       {off: Float64Array.from(D.map(a => a.prev.x)), g: Float64Array.from(D.map(a => a.g0))}
     );
   }
+  /* Comeback by genus: the app's FSRS stabilities against the comeback questions' answers (ROADMAP "Analyses: next
+     views", the comeback fit against the stability per genus). A rusty comeback question carries the recall R the app
+     gave it, R = (1 + F t / S)^C (model.js recallOf, FSRS.C = -0.5; t the days since the unit's last answer, S its
+     stability), and its logged expectation e = g + (1 - g) R σ(ability part). Had the player's stability been κ S, the
+     recall would be (1 + (R^(1/C) - 1) / κ)^C: t and S cancel, so the fit needs only the logged R. κ = 1 is the app's
+     stabilities, above 1 players remember longer, below 1 they forget faster. Maximum likelihood on log κ with the
+     ability part as the app had it (cbFit); a genus's own κ is shrunk towards the pooled one (a normal prior of SD
+     CB.TAU on log κ), its range the player bootstrap's. Descriptive, no verdict, outside the multiple-testing correction.
+     Biased towards less forgetting until the comeback's stopping rule is corrected for (about +0.09 on right − expected,
+     docs/reviews/2026-11-14-comeback-study.md (c)): read as an upper bound. */
+  const FSRS_C = -0.5,
+    CB = {MIN: 200, PLAYERS: 20, GEN: 5, TAU: 1, LK: 4, HW: 0.3, EDGE: 3.99};
+  const cbRec = (b, lk) => (1 + b / Math.exp(lk)) ** FSRS_C;
+  // The rusty comeback questions of A as the fit reads them: y right, g0 the guess rate, b = R^(1/C) - 1, q the ability
+  // part of the expectation (the app's, recall taken out), g the genus, p the player (boot's cluster).
+  function cbRows(A) {
+    return A.filter(a => a.back && a.R != null && a.E != null && a.g0 < 1).map(a => ({
+      y: a.y,
+      g0: a.g0,
+      b: a.R ** (1 / FSRS_C) - 1,
+      q: clamp((a.E - a.g0) / ((1 - a.g0) * a.R), 0.001, 0.999),
+      e: a.E,
+      g: a.g,
+      p: a.p,
+      gone: a.gone
+    }));
+  }
+  function cbLL(Z, lk, mu, tau) {
+    let s = 0;
+    for (const z of Z) {
+      const p = clamp(z.g0 + (1 - z.g0) * cbRec(z.b, lk) * z.q, 1e-6, 1 - 1e-6);
+      s += z.y ? Math.log(p) : Math.log(1 - p);
+    }
+    return tau ? s - (lk - mu) ** 2 / (2 * tau * tau) : s;
+  }
+  // log κ at the maximum of the (penalised) likelihood: a grid over ±CB.LK, then a golden-section search around its best.
+  function cbFit(Z, mu = 0, tau = 0) {
+    if (!Z.length) return mu;
+    const L = CB.LK,
+      N = 40;
+    let best = 0,
+      bv = -Infinity;
+    for (let i = 0; i <= N; i++) {
+      const lk = -L + (2 * L * i) / N,
+        v = cbLL(Z, lk, mu, tau);
+      if (v > bv) ((bv = v), (best = lk));
+    }
+    const W = (2 * L) / N,
+      phi = (Math.sqrt(5) - 1) / 2;
+    let lo = Math.max(-L, best - W),
+      hi = Math.min(L, best + W),
+      x1 = hi - phi * (hi - lo),
+      x2 = lo + phi * (hi - lo),
+      f1 = cbLL(Z, x1, mu, tau),
+      f2 = cbLL(Z, x2, mu, tau);
+    for (let i = 0; i < 30; i++) {
+      if (f1 < f2) {
+        lo = x1;
+        x1 = x2;
+        f1 = f2;
+        x2 = lo + phi * (hi - lo);
+        f2 = cbLL(Z, x2, mu, tau);
+      } else {
+        hi = x2;
+        x2 = x1;
+        f2 = f1;
+        x1 = hi - phi * (hi - lo);
+        f1 = cbLL(Z, x1, mu, tau);
+      }
+    }
+    const m = (lo + hi) / 2;
+    // the grid's best itself when it beats the search (a maximum on the edge of the range)
+    return cbLL(Z, m, mu, tau) >= bv ? m : best;
+  }
+  const cbBy = Z => {
+    const by = new Map();
+    Z.forEach(z => (by.get(z.g) || by.set(z.g, []).get(z.g)).push(z));
+    return by;
+  };
+  function backGenus(A, B, seed) {
+    const Z = cbRows(A),
+      out = {
+        n: Z.length,
+        players: new Set(Z.filter(z => !z.gone).map(z => z.p)).size,
+        min: CB.MIN,
+        minPlayers: CB.PLAYERS,
+        hw: CB.HW
+      };
+    if (Z.length < 10) return out;
+    const lk = cbFit(Z),
+      by = cbBy(Z),
+      keep = [...by.keys()].filter(g => by.get(g).length >= CB.GEN),
+      bi = boot(
+        Z,
+        S => {
+          const p = cbFit(S),
+            R = {p},
+            bs = cbBy(S);
+          keep.forEach(g => bs.has(g) && (R['g:' + g] = cbFit(bs.get(g), p, CB.TAU)));
+          return R;
+        },
+        B,
+        seed
+      ),
+      // A fit or a bootstrap limit at the end of the searched range (±CB.LK on log κ) is the range's end, not a
+      // measurement: the likelihood is still rising (or falling) there, as when every answer is right. edge: the
+      // estimate itself is there (no finite estimate); open: the range's side(s) that run to the end ('hi', 'lo').
+      rg = (key, v) => {
+        const r = {
+            est: Math.exp(v),
+            lo: bi && bi[key] ? Math.exp(bi[key][0]) : null,
+            hi: bi && bi[key] ? Math.exp(bi[key][1]) : null
+          },
+          open = [];
+        if (bi && bi[key] && bi[key][0] <= -CB.EDGE) open.push('lo');
+        if (bi && bi[key] && bi[key][1] >= CB.EDGE) open.push('hi');
+        if (Math.abs(v) >= CB.EDGE) {
+          r.edge = 1;
+          if (!open.includes(v > 0 ? 'hi' : 'lo')) open.push(v > 0 ? 'hi' : 'lo');
+        }
+        if (open.length) r.open = open;
+        return r;
+      };
+    out.right = mean(Z.map(z => z.y));
+    out.E = mean(Z.map(z => z.e));
+    Object.assign(out, rg('p', lk));
+    // the answers the pooled range would need to be no wider than ±CB.HW on log κ (a stability known to about a third),
+    // from its current width (it narrows as 1/sqrt(n)); 0 when it is that narrow already; none for a range that runs to
+    // the end of the searched range (its width says nothing)
+    if (out.lo != null && !out.open) {
+      const h = Math.log(out.hi / out.lo) / 2;
+      out.need = h > CB.HW ? nice(Z.length * (h / CB.HW) ** 2) : 0;
+    }
+    out.g = keep
+      .map(g => {
+        const L = by.get(g);
+        return {
+          k: g,
+          n: L.length,
+          players: new Set(L.filter(z => !z.gone).map(z => z.p)).size,
+          right: mean(L.map(z => z.y)),
+          E: mean(L.map(z => z.e)),
+          ...rg('g:' + g, cbFit(L, lk, CB.TAU))
+        };
+      })
+      .sort((a, b) => a.est - b.est);
+    out.other = sum([...by.keys()].filter(g => !keep.includes(g)).map(g => by.get(g).length));
+    return out;
+  }
   function comeback(A, B, seed) {
     // Answers whose previous answer on the same genus (same player) was right and had an expectation.
     const D = A.filter(a => a.prev && a.prev.y && a.prev.x != null),
       far = D.filter(a => a.t - a.prev.t >= GAP);
-    if (D.length < 100 || far.length < 20) return thin(far.length, 20, {all: D.length});
+    // the forgetting slope needs these; the stability fit (backGenus) reads every rusty comeback question, so it stays
+    // when the slope has too few (Codex review, #1401)
+    if (D.length < 100 || far.length < 20) return thin(far.length, 20, {all: D.length, stab: backGenus(A, B, seed + 2)});
     const M = backFit(D),
       n = D.length,
       C = A.filter(a => a.back && a.E != null),
@@ -2655,6 +2812,7 @@
       typ: typOf(D),
       effects,
       bands,
+      stab: backGenus(A, B, seed + 2),
       b0: M.b[0],
       b1: M.b[1],
       chk: checkOf(D, backFit, a => a.g0, seed, true)
@@ -4710,6 +4868,9 @@
     confusions,
     learning,
     comeback,
+    backGenus,
+    cbRows,
+    cbFit,
     sessions,
     colCorr,
     entOf,
