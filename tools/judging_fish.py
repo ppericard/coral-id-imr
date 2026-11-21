@@ -72,15 +72,16 @@ def load(p, d=None):
 
 
 # The subjects this pass judges (use() switches; fish by default). Each: its candidates, its judging files, its rubric
-# (tools/fish_judge.py RUBRICS), the fields a judgement may hold, its phases, and the keep a judgement without one reads
-# (None: keep is required). Sea slugs (Pierre, 2026-11-15, Q369, Q377): one photo per observation (tools/fetch_seaslugs.py),
+# (tools/fish_judge.py RUBRICS), the fields a judgement may hold, its phases, the keep a judgement without one reads
+# (None: keep is required), and flag, its phase flag p by species (the fish's tools/fish_judge.py phase_flag; None: none). Sea slugs (Pierre, 2026-11-15, Q369, Q377): one photo per observation (tools/fetch_seaslugs.py),
 # so keep reads best; no phase (rule C2: no presentation names one); the animal's box bb as the fish's, for the Find the X
 # tile (Pierre, 2026-11-19, Q437: judging/SEASLUG.md "The animal's box"); egg, #970's filter 2 (judging/SEASLUG.md "Egg masses").
 SUBJECTS = {
     "fish": {"dir": os.path.join("judging", "fish"), "cand": "data/fish-cand.json", "doc": "judging/FISH.md", "eg": "p1g0sm14",
-             "fields": {"code", "keep", "phase", "crop", "bb", "unsure", "note"}, "keep": None},
+             "fields": {"code", "keep", "phase", "crop", "bb", "unsure", "note"}, "keep": None, "flag": phase_flag},
     "seaslug": {"dir": os.path.join("judging", "seaslug"), "cand": "data/seaslug-cand.json", "doc": "judging/SEASLUG.md",
-                "eg": "d1g0sl15", "fields": {"code", "keep", "crop", "bb", "egg", "unsure", "note"}, "keep": "best"},
+                "eg": "d1g0sl15", "fields": {"code", "keep", "crop", "bb", "egg", "unsure", "note"}, "keep": "best",
+                "flag": None},
 }
 SUBJECT = "fish"
 CFG = SUBJECTS[SUBJECT]
@@ -371,7 +372,8 @@ def entry(sid, x, rep=None):
     if x.get("egg"):
         return {"egg": 1, **({"n": x["note"]} if x.get("note") else {})}
     t = ENTRY.get(sid) or {}
-    ease, tags = cap(x["code"], SUBJECT == "fish" and phase_flag(sid, t), rep, subject=SUBJECT)
+    flag = CFG.get("flag")  # the subject's phase flag (SUBJECTS "flag": the fish's phase_flag; none for the sea slugs)
+    ease, tags = cap(x["code"], bool(flag and flag(sid, t)), rep, subject=SUBJECT)
     e = {"jt": tags, "e": ease, "k": x.get("keep", CFG["keep"])}
     if x.get("phase"):
         e["ph"] = x["phase"]

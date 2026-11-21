@@ -92,6 +92,19 @@ print(json.dumps([G.phased('p1g0sm1', 's1'), G.phased('p1g0sm1jr', 's1'), G.phas
   assert.deepStrictEqual(out, ['p1g0sm1p', 'p1g0sm1jpr', 'p1g0sm1pr', 'p1g0sm1', 'p1g0sm1p', null, 'p1g0sm1wpr']);
 });
 
+test('judging_fish.py: the phase flag is declared per subject (SUBJECTS flag; rule S1): the fish’s, none for the sea slugs', () => {
+  const out = J(
+    `import fish_judge as J, judging_fish as JF
+J._PHASE_SP[J.PHASE_LIST] = {'s1': ('sex',)}
+JF.ENTRY = {}
+a = JF.entry('s1', {'code': 'p1g0sm14', 'keep': 'best'})['jt']
+JF.use('seaslug')
+b = JF.entry('s1', {'code': 'p1g0sm14', 'keep': 'best'})['jt']
+print(json.dumps([JF.SUBJECTS['fish']['flag'] is J.phase_flag, JF.SUBJECTS['seaslug']['flag'], a, b]))`
+  );
+  assert.deepStrictEqual(out, [true, null, 'p1g0sm1p', 'p1g0sm1']);
+});
+
 test('build_fish.phase_sources: fish.json species phs {k, src}, each source named once, its page when the list gives one', () => {
   const f = tmp(LIST);
   try {
