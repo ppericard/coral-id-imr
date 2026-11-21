@@ -1781,7 +1781,9 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
     try {
       dueled = ((SYNC && SYNC.log) || store.get(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
     } catch (e) {}
-  return dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
+  const d = dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
+  // The view the Custom quiz kept (CQ.VIEW) is the last one the player chose: My mix-ups shows it was seen before m was counted.
+  return !d.u.m && store.get(CQ.VIEW, '') === 'mix' ? {...d, u: {...d.u, m: 1}} : d;
 };
 // One more open of a feature of a tip (k: a counter of u): that tip is not for this player.
 const tipOpened = k => store.set(TIPR.KEY, tipUse(tipsLoad(), k));
@@ -1802,7 +1804,14 @@ function tipAfter(nb, cur, miss, zm, hold) {
   st = tipNote(st, Date.now());
   if (!raw && q0) st = {...st, u: {...st.u, q: q0}}; // just seeded from the log, this answer included
   store.set(TIPR.KEY, st);
-  const b = {ctx: cur.split('|')[0], miss, zm: !!zm};
+  // mix: the pairs of genera the player mixed up TIPR.MIX times or more (the My mix-ups view's edges), counted only for a
+  // player the My mix-ups tip can still target.
+  const b = {
+    ctx: cur.split('|')[0],
+    miss,
+    zm: !!zm,
+    mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0
+  };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
     // The next question is planned 50 ms after the answer (answer, planNext): a Next tapped sooner plans it now, so its
@@ -1825,6 +1834,11 @@ const TIP_ACT = {
   custom: () => (location.hash = hr('quiz-custom')),
   // The Duel tab (look-alike duels).
   duels: () => (location.hash = hr('quiz-duel')),
+  // The Custom quiz's picking page on its My mix-ups view (the view the page keeps is the last one chosen).
+  mixups: () => {
+    store.set(CQ.VIEW, 'mix');
+    location.hash = hr('quiz-custom');
+  },
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -3353,6 +3367,7 @@ function viewCustom() {
     show();
   };
   const draw = () => {
+    if (view === 'mix') tipOpened('m'); // the My mix-ups view is on screen: its "Did you know?" tip is not for this player
     const {note, G} = cqGroups(view, play);
     box.innerHTML =
       (note ? `<p class="note cqnote">${esc(note)}</p>` : '') +
