@@ -31,5 +31,8 @@ test("statsFor: the replayed subject's stats with the genus offsets, as the shee
   same(ctx.statsFor({replay: true}).photos, {});
   // The sheet's replay passes the same names (Code.gs replay_).
   const gs = fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
-  assert.match(gs, /CORE_\.replayProgress\(rows, \{gen: gen, mem: st\.mem, conf: st\.conf, fmt: st\.fmt \|\| \{\}, gd: st\.gd, photos: st\.photos/);
+  assert.match(
+    gs,
+    /CORE_\.replayProgress\(rows, \{gen: gen, mem: st\.mem, conf: st\.conf, fmt: st\.fmt \|\| \{\}, gd: st\.gd, photos: st\.photos/
+  );
 });
