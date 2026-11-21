@@ -971,7 +971,8 @@ Code: `Code.gs` `stats_` (one pass over a subject's answers, oldest first) and `
 a few rows at a time by `statsFold_`; the browser's copy for the admin and the tests is `core.js` `eloReplay`
 (`trustOf`, `eloOf`, `genusOffsetsOf`, `confusionOf`), kept in step with the sheet (`tests/core.test.js` compares them).
 How the statistics are built, cached and served (the fold, the snapshot, one fold per subject): docs/spec/sync.md
-"Pooled photo statistics". `?stats=1` serves `photos`, `gd`, `mem`, `memn`, `conf` and `fmt`. They set how hard each
+"Pooled photo statistics". `?stats=1` serves `photos` (with each photo's time term: "The photo's time term"), `gd`,
+`mem`, `memn`, `conf` and `fmt`. They set how hard each
 photo is in every player's game and which choices are traps, so they count only players who really play.
 
 ### Who counts and how much an answer weighs
@@ -1014,10 +1015,110 @@ offset and keeps the photo's own P (`model.js` `photoDiff`).
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
-judged"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. A unit's
-difficulty is read from the same offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
+judged"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
+time term is added on top of that blend ("The photo's time term", below). A unit's difficulty is read from the same
+offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
 Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one
 difficulty split into rank, family, genus, species and photo components, is in ROADMAP "Engine coherence review".
+
+### The photo's time term
+
+Pierre, 2026-11-20: the time of an answer carries difficulty, experts included, even when the answer is right; 2026-11-21
+(Q449-Q451): a separate time term per photo that fades by the information of its answers, not by their number, checked
+without wrong answers, the enlargement its own term; 06:20, option A: each answer weighs by how steady the times of
+players of its level are. Decision record: docs/decisions/2026-11-21-photo-time-term.md. Code: `core.js` `PTIME`,
+`ptimeStep`, `ptimeOut`, `ptimeInto`, `ptimeOff` (one implementation, called by `Code.gs` `statsStep_` and by `eloReplay`).
+
+- **z** of a right answer: its log seconds against the player's own median as `rtWeight` takes it ("Response time"), but
+  over their earlier timed right answers only (a player who misses often has slow misses in an all-answer median, which
+  would make every right answer of theirs look fast: a bias that follows the level), less the mean z of the earlier
+  right answers of the same format (`core.js` `fmtCell`: the game, `fmtOf`, the photos shown,
+  the rank asked; a fish genus question is slower than a family one), clipped at ±1 (`PTIME.CLIP`). Only right, timed,
+  not typed, not enlarged answers of a player who rates the photos ("Who counts and how much an answer weighs").
+- **Each answer's weight** is its trust weight over V(L), the variance of z at the player's level L (the sheet's own
+  rating before the answer), fitted on the subject's answers so far: V(L) = V̄ exp(β (L − L̄)), β the slope of z² on L
+  over its mean, shrunk by its own uncertainty with the players as clusters (max(0, 1 − se² / b²)); β is 0 with fewer
+  than 5 players or 500 answers (`PTIME.MIN_P`, `MIN_N`), and the weights' spread is capped at 3 either way (`BMAX`). So
+  a steadier player's hesitation weighs more, continuously, with no categories; where the data show no slope the weights
+  are equal. One code path for every subject.
+- **The time term** = Σ w z / V(L) over (Σ w / V(L) + 1 / `TAU2`), `TAU2` 0.06: the photo's share of the variance, set so
+  that a player's own z regresses on the other players' term with a slope near 1 (below).
+- **The enlargement term**: enlarged (0/1) less the player's own rate so far ((enlarged + 0.1 × 10) / (answers + 10)), any
+  rating answer that logged the mark, right or wrong, weighed by trust, shrunk by 10 answers (`PTIME.E0`, `EM`, `NE`): a
+  player who enlarges every photo says little about one, one who never does says more (Bolsinova et al. 2022: a personal
+  propensity to take a hint).
+- **The fade** (`ptimeOff`): the app adds `PTIME.C` (0.5 logit) × (time term + enlargement term) × I₀ / (I + I₀) to the
+  photo's difficulty (`model.js` `photoDiff`, after the blend), I the Fisher information the photo's rating has gathered
+  (every rating answer, on the photo Elo's own expectation), I₀ = `PDIFF.W` answers at the game's target. An expert's
+  right answer brings almost no information, so a photo answered only by players who never miss keeps its term; a photo
+  whose rating has learned from misses lets it go.
+- **Served** as the 6th to 8th numbers of the photo's `?stats=1` entry, from sheet `PTIME_SHEET` (rule D4; docs/spec/sync.md
+  "Pooled photo statistics"). The draw's targeting, the scoring's d0 (logged in each answer's scoring record), the mastery
+  exam's hardest photo and the fish cards' photo order read it through `photoDiff`; the counts (`nAnswers`, the hard-photo
+  achievement) do not. The progress replay never reads it (rule D5: no rules version; `tests/ptime.test.js`).
+
+**The checks** (declared before running; the real log read-only, the Answers tab to 2026-11-20 15:50, no row after it on
+2026-11-21 06:45; the branch's own `core.js` run in Node on it; players as the unit, per-player means, 95% t, sign-flip
+p). W: as built; EQ: the slope forced to 0 (equal weights); NONE: no term. The third run is the one reported; between
+the first two, diagnostics changed `TAU2` (0.03 over-shrank: slope 1.95 corals, 1.45 fish; 0.06 gives 1.15 and 0.94),
+the fit's support (5 players, 500 answers: the corals' slope swung to −0.41 at 300 answers, then to 0), the rank in the
+format cell, and served only the photos with a term; before the third, the rated world (below) led to the habit over
+right answers only (`TAU2` 0.06 still gives 1.10 and 0.96). `PTIME.C` stayed at 0.5 (below).
+
+| Check | Corals (12 players) | Fish (9 players) |
+| --- | --- | --- |
+| The fit: β at the end (weights at L's 10th / 50th / 90th percentile) | 0 after shrinking (raw −0.042): equal weights, the fallback | −0.239 (0.76 / 1 / 1.21) |
+| Guardrail G, the app's logged Expected with the term, online, W − NONE (log-loss) | −0.00034 [−0.00071, +0.00004], 11 of 12 better, p 0.076: held | −0.00016 [−0.00041, +0.00008], 5 of 8 better: held |
+| C1 agreement: r of a player's own z with the other players' term, W | +0.162 [+0.097, +0.228], 10 of 10 | +0.142 [+0.063, +0.222], 7 of 7 |
+| C1, W − EQ | at its fallback (β 0) | +0.0006 [−0.0148, +0.0161]: no worse, the measure cannot tell better |
+| C2 the others' term on a player's misses beyond Expected, W − NONE (log-loss) | −0.00093 [−0.00128, −0.00057], 12 of 12 | −0.00023 [−0.00052, +0.00005], 6 of 8 |
+| C2, W − EQ | at its fallback (β 0) | +0.00004 [−0.00002, +0.00009]: no worse (bound +0.00007 under +0.002), the measure cannot tell |
+| C3 stability, first half of a photo's answers against the second (photos with 4+) | +0.19 [+0.04, +0.31], 201 photos | +0.31 [−0.17, +0.69], 13 photos |
+
+- **What it can conclude.** A photo's time is shared by the players (C1) and carries the misses the other players make
+  beyond today's Expected (C2, corals clearly: the others' term, from their right answers only, predicts a player's
+  misses in all 12 players), and adding it to what the app predicted does not make the next answer worse (G). This is
+  Pierre's fact measured the way Q450 asked, without counting the experts' own misses. Exploratory: fed only by the
+  answers at or above the median level, the term still predicts the corals' misses (−0.00068, 11 of 12).
+- **What it cannot.** Whether weighing by the level helps: the corals' slope shrinks to 0 (their variance does not fall
+  clearly with the level, as in the multifactor study), and the fish's weights move 0.8 to 1.2, too little to show in 9
+  players; both "the measure cannot tell", no worse. Sea slugs: one player, "Not enough data yet" (their term is served,
+  from that player's answers, shrunk).
+- **The size.** At C 0.5 the term moves a question's difficulty by about 0.03 logits (sd over the answers): players will
+  hardly meet it yet. Exploratory, after the first run: G keeps improving up to C 6-8 in the mean, but less consistently
+  over the players, and a C chosen by leaving one player out is not clear (corals p 0.28, fish p 0.77): C stays 0.5, its
+  re-fit in ROADMAP "Time in the photo rating".
+- The term's mean over the answers is about 0 (corals −0.0009, fish −0.0004 logits), so no Expected shifts as a whole.
+
+**The rated world** (rule L11 level 2: the draw changes; `--app sheet`, the corals, the four profiles as one population,
+3,000 answers; before = `main`, after = the term; declared before running). The world's time noise is the same for every
+player, so the weighting sits at its fallback there: these runs test the term and its fade, not option A's weighting. A
+first run (A) had the habit over all answers; its guardrails led to the habit over right answers (above), and run B is
+the one reported, against the same `main` files.
+
+| Case | Primary: rating error with the term, at 3,000 (down) | Guardrails not held |
+| --- | --- | --- |
+| `--times rho25` (time intensity correlated 0.25 with difficulty), normal photos, 20 seeds, two looks | 0.6670 → 0.6673, p 0.96: no clear difference | the strong RA's shown score at 1,000: −1.1 points [bound −1.8], breached; held at 3,000 (+0.1) |
+| `--times rho0 --gap -0.22` (the time says only the knowledge gap), 20 seeds, two looks; declared cost: rating error +0.02 at most | +0.0064 [+0.0153]: within the declared cost | the strong RA's score at 1,000: −1.4 [−2.6], breached; three other profiles there unclear; all held at 3,000 |
+| `--times rho25`, heavy-tailed photos, 10 seeds (declared: guardrails only) | 0.8003 → 0.7832, 9 of 10 seeds down, p 0.033 (exploratory, uncorrected; run A 0.066) | the beginner's score at 1,000: −2.4 [−3.5] and first Open Water, breached; held at 3,000 |
+
+- **What it can conclude.** With normal photos the term neither helps nor harms the ratings, and when the time says only
+  the player's knowledge gap, the cost stays inside the bound declared. Exploratory: with heavy-tailed photos the rating
+  error went down in 9 of 10 seeds.
+- **What it costs.** The strong RA's shown score at 1,000 answers is 1.1 to 1.4 points lower (cases 1 and 2, which share
+  one `main` arm: one finding seen twice), and the beginner's 2.4 points lower with heavy-tailed photos; back by 3,000
+  answers; every other guardrail holds. The cause is not known. A breach goes to Pierre (rule L11). Run A, with the
+  habit over all answers, had the strong RA's breach at −1.8.
+- C1 and C2 (above) use the other players' whole log, before and after the answer (a lasting difficulty); only G is
+  online, as the app would have read it.
+
+**The app world** (level 1's leg; `node tools/learnsim.js --stats` (the corals' statistics rebuilt from the real log with
+the terms, at `PTIME_SHEET`) `--truth gen`, the four profiles, 300 questions; before = `main`). 5 seeds: nothing
+breached, 7 cells unclear; one step up to 20 seeds (two looks): nothing breached, 4 cells unclear (the beginner's true
+knowledge at 300, −0.011 [−0.024]; the beginner's first Open Water, +15 answers [+49]; the lecture and strong RAs'
+longest plateau, +3 and +1 answers): "the measure cannot tell". The fish cannot run there: learnsim feeds only the
+corals' statistics, so the fish rest on the real log's guardrail G and the unit tests.
+- Compute: about 5 minutes a run of 10 seeds; within the 40-minute cap per case.
 
 ### Photo memory
 
@@ -1213,16 +1314,18 @@ replay".
 
 ### What the photo ratings do not use
 
-**Response time: genus and photo** and **Response time as information on difficulty**: the photo ratings, the unit
-offsets and the opening order take no answer time; only a right answer's ability steps do ("Response time"). Two
-studies measured what the time could add on the unit and the photo side, and one option was tried in three simulated
-rounds and not adopted; their records are in the notebook, and the next step is ROADMAP "Time in the photo rating".
+**Response time: genus and photo** and **Response time as information on difficulty**: the photo Elo's ratings, the
+unit offsets and the opening order take no answer time; a right answer's ability steps do ("Response time"), and a
+photo's difficulty in the app takes its time term beside its rating ("The photo's time term"). Two studies measured what
+the time could add on the unit and the photo side, and one option (time inside the photo Elo's step) was tried in three
+simulated rounds and not adopted; their records are in the notebook, and the next step is ROADMAP "Time in the photo
+rating".
 
 ### Response time, re-measured over every subject
 
 Pierre, 2026-11-20: response time carries difficulty, experts included, even when the answer is right (either the
-photo's or the question's difficulty for that player); a fact to integrate, not a hypothesis. How the engine takes it
-waits on a design study (ROADMAP "Time in the photo rating"). This is the read-only re-measure of the same day, on the
+photo's or the question's difficulty for that player); a fact to integrate, not a hypothesis. How the engine takes it:
+"The photo's time term" (step 1) and ROADMAP "Time in the photo rating" (step 2). This is the read-only re-measure of the same day, on the
 sheet's Answers tab (6,653 rows, 2026-11-01 to 2026-11-20; players P1, P2…; the subject from `core.js` `rowSubject`; z
 exactly as `rtWeight`; players are the statistical unit; the plan was declared before the runs). Nothing in the game
 changed. Timed answers are those with seconds, not typed:
@@ -1476,8 +1579,9 @@ photo statistics, as the fish today); `--app sheet` (`runPop`; the corals only: 
 with two true difficulties): the sheet's photo Elo simulated. The profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
 log t = log 6.5 + the photos' time intensity β − the player's speed τ − 0.4 if right + log 1.5 if typed + `--gap` × the
 learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
-and served to every player's app (`PSTAT`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
-against the truth at each checkpoint (`rateErr`, the centred root mean square error; weighed by answers; the
+and served to every player's app (`PSTAT`, `PTM`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
+(each with its photo's time term as the app adds it, `core.js` `ptimeOff`) against the truth at each checkpoint
+(`rateErr`, the centred root mean square error; weighed by answers; the
 correlation; the genus offsets' `gdErr`), which learncmp reads as population measures, one value per seed (an exact
 sign-flip over the seeds). `--dist normal|tail|t3`. Circle 3 stays
 closed unless `--beyond yes`, as in the app world (its offer left unanswered). The scientific names' offer, once a family

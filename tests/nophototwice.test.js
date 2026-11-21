@@ -70,6 +70,8 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
     LEVEL: '~level',
     P: Object.fromEntries(names.map(n => [n, {ok: 1, ko: 0}])),
     PSTAT,
+    PTM: {},
+    ptimeOff: C.ptimeOff,
     PGD: {},
     PMEM: [0, -0.45, -1.1, -1.7],
     memOf: C.memOf,
