@@ -11,8 +11,8 @@ What the integrator does day to day, as it stands now. Rules live in AGENTS.md a
 below, the rule wins. Dated stories behind a habit are in git and the PRs.
 
 - **Work comes from the whole queue.** The turn an agent reports, the next decided item starts, before any merge work;
-  every check-in counts the running agents first. The source is [ROADMAP.md](ROADMAP.md) and
-  `docs/reviews/2026-11-18-backlog-inventory.md`, never a short list half marked "after Pierre" (AGENTS.md "Working
+  every check-in counts the running agents first. The source is Linear ("Linear" below), then the
+  [ROADMAP.md](ROADMAP.md) rows not transferred yet, never a short list half marked "after Pierre" (AGENTS.md "Working
   mode": as many agents as useful; rule W27).
 - **Every turn ends with the next `send_later` check-in.** An agent waiting on a permission prompt is reported to Pierre
   in one line and told how to do without it.
@@ -136,7 +136,7 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   resolution, one species) before looking, and judge the species under target first. A photo in doubt is looked at
   in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
 - **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
-  runs out, take the next decided ROADMAP rows the agents can move alone; never invent a study to fill the time.
+  runs out, take the next decided Linear issues (Todo) the agents can move alone; never invent a study to fill the time.
 - **A large judging or boxing pass is measured first, without asking him** (Pierre, 2026-11-20 06:42-06:44: «Il faut
   faire des tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; «Je ne devrais pas
   devoir te le suggérer»): a bench of 50-100 items, lighter configurations beside a reference, the threshold written
@@ -327,15 +327,38 @@ Never copied here, so it cannot go stale:
 
 - **PRs in flight, questions waiting, what runs and what is next**: [STATUS.md](STATUS.md) ("Now", "Next", "Questions
   for Pierre", "Pierre's hands"), and the PR list `python3 tools/brief.py` prints.
-- **Ideas agreed but not built, and their order**: [ROADMAP.md](ROADMAP.md) ("Backlog in priority order" is the one
-  list; Pierre, 2026-11-08: first everything that speeds up development, then the rest).
-- **Where the next task comes from: the ROADMAP, not STATUS** (Pierre, 2026-11-20 16:44). STATUS "Next" is a short
-  pointer (the file stays near 100 lines so that every session start reads it cheaply); it never holds the whole
-  backlog. At every check-in, and whenever agents finish, go through the ROADMAP's rows and launch every row that is
-  decided (his words, or an integrator's call) and blocked by no open PR's file (rule W27).
+- **Open work, ideas agreed but not built, and their order**: Linear (below), by project and priority; the subjects not
+  transferred yet keep their [ROADMAP.md](ROADMAP.md) rows (Pierre, 2026-11-08: first everything that speeds up
+  development, then the rest).
+- **Where the next task comes from: the tracker, not STATUS** (Pierre, 2026-11-20 16:44, then of the ROADMAP; Linear
+  since 2026-11-21). STATUS "Next" is a short pointer (the file stays near 100 lines so that every session start reads
+  it cheaply); it never holds the whole backlog. At every check-in, and whenever agents finish, go through the Todo
+  issues (and the rows not transferred) and launch every one that is decided (his words, or an integrator's call) and
+  blocked by no open PR's file (rule W27).
 - **Why something is as it is**: the rule's *Source* line, then [decisions/](decisions/README.md), then the LEARNING.md
   or ARCHITECTURE.md section the rule or record names.
 - **Branches without a PR**: `python3 tools/brief.py` lists them. Two keep a design note on the branch only:
   `claude/admin-signout-seal` (`docs/reviews/2026-11-09-admin-signout-seal.md`) and `claude/level-count-from-log`
   (ROADMAP "The level's answer count follows the log"). A branch that is moot is deleted with the "Clean branches and
   Actions" workflow (docs/HANDOVER.md); a clone made before the 2026-11-08 rewrite never pushes one.
+
+## Linear
+
+Open work is tracked in Linear (Pierre, 2026-11-21 14:41; [decision](decisions/2026-11-21-linear-tracking.md)):
+workspace reef-id, team REE, nine projects P-REE-1 to P-REE-9 (outcomes). Views:
+[active](https://linear.app/reef-id/team/REE/active), [backlog](https://linear.app/reef-id/team/REE/backlog),
+[all](https://linear.app/reef-id/team/REE/all), [projects](https://linear.app/reef-id/projects/all). Agents reach it
+through the Linear MCP tools. ROADMAP.md keeps a pointer for each subject transferred and the rows not transferred yet.
+
+- **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
+  opens, Done at merge; a new issue (label Idea) for every idea discussed and not built; an issue's description holds
+  the outcome, current understanding, next action, completion evidence and references (the team template), agent
+  detail in its collapsible "Agent notes". Todo means ready: permitted by a decision of his or the integrator's
+  mandate, never approved by the status alone.
+- **Pierre never enters tickets**, relays a subagent's result or approves ordinary bookkeeping. Subagents report; the
+  integrator updates Linear, unless the brief tells the subagent to.
+- **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in
+  the chat in French (AGENTS.md "Questions to Pierre"); the issue holds its context. Blocked, Study, Idea, Waiting,
+  Parked as named.
+- **The free plan**: 250 active issues (archived ones unlimited). Basic (USD 10 a user a month, billed yearly) only if
+  the limit blocks useful work, and then asked to him with its price first (money: AGENTS.md "Always ask first").

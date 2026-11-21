@@ -91,7 +91,7 @@ touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
 | [docs/LEARNING.md](docs/LEARNING.md) | The learning model and the research behind it |
 | [docs/FISH_PATH.md](docs/FISH_PATH.md), [docs/FORMATS.md](docs/FORMATS.md) | The fish naming path; question formats and why |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens and components |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Ideas not built yet, open questions, declined ideas |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Orientation: pointers to the open work tracked in Linear (team REE, <https://linear.app/reef-id/team/REE/active>) and the subjects not transferred yet |
 | [docs/PAGES.md](docs/PAGES.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/BACKUP.md](docs/BACKUP.md) | Deploy and recovery; what is exposed and protected; the sheet's backup |
 | [docs/reviews/](docs/reviews/README.md), [docs/reference/](docs/reference/), [docs/archive/](docs/archive/) | Dated studies and reviews, literature notes, frozen history (with [the learning notebook](docs/archive/learning-notebook.md), the studies behind LEARNING.md) |
 | [judging/](judging/BRIEF.md) | Briefs for an outside agent that judges photos (`judging/PROMPT.md`: what to paste) |

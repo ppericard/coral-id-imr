@@ -8,6 +8,12 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 asking him anything (`tools/asked.py` also searches the open PR branches' copies since #1225). This file only cites
 answers.
 
+**Where the work is tracked: Linear**, team REE (Pierre, 2026-11-21 14:41; [INTEGRATOR "Linear"](INTEGRATOR.md#linear)):
+open points, priorities, delegated work and the next action of each subject are there:
+[active](https://linear.app/reef-id/team/REE/active), [backlog](https://linear.app/reef-id/team/REE/backlog),
+[all](https://linear.app/reef-id/team/REE/all), [projects](https://linear.app/reef-id/projects/all). A subject not
+transferred yet keeps its [ROADMAP.md](ROADMAP.md) row. This file keeps the active discussion and the handover.
+
 Written 2026-11-21, about 09:00 Manila, by the integrator, **at Pierre's stop** (06:25: «ne lances plus de nouvelles PR
 ou ouvre de nouvelles taches … Tu termines tout ce que t'as démarré. Tu fait une passation propre»; he is preparing a
 change of method from a study). **A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**

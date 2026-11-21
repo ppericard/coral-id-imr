@@ -3,9 +3,11 @@ tools/train.py checks the two sections below "Choices I made" and "Players see".
 
 ## What and why
 
+Linear: <!-- REE-N, the issue this PR carries out, or "none" (rule W19; the integrator moves it: In Review, then Done at merge) -->
+
 ## Decisions (where each choice in this PR was decided)
 
-<!-- One line per choice: a standing rule (AGENTS.md), a ROADMAP row, Pierre's words quoted with their date, a decided process, or "integrator's call" for a choice without impact. -->
+<!-- One line per choice: a standing rule (AGENTS.md), a spec he agreed (linked from its Linear issue, or a ROADMAP row not transferred yet), Pierre's words quoted with their date, a decided process, or "integrator's call" for a choice without impact. -->
 
 ## Choices I made (need Pierre)
 
