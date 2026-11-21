@@ -1,13 +1,15 @@
 # Q316's offline fit (with Q136)
 
 A read-only study tool: it fits Q316's componential difficulty model on an answer log, tests its own estimator before
-reporting any value, and runs one of the two side checks the study planned (2C: whether the app's per-unit ability is
-centred across players, Q136; 2B, the step-2 candidates against today's engine, is a follow-up, below). It changes
-nothing in the app, the sheet or the rules, and sends nothing anywhere. The plan it builds is section 5 of
+reporting any value, and runs the two side checks the study planned (2C: whether the app's per-unit ability is centred
+across players, Q136; 2B, the step-2 candidates against today's engine). It changes nothing in the app, the sheet or the
+rules, and sends nothing anywhere. The plan it builds is section 5 of
 [the literature review](../../../docs/reference/lit-componential-difficulty.md) and the study of 2026-11-20 (the
 decision's order: the offline fit first, then the sheet, then the app).
 
-**Status: built, not run on the real log yet.** The figures below are on simulated answers only.
+**Status: run on the real log on 2026-11-21** (the answers to 2026-11-20 15:50): the results are in
+[docs/reviews/2026-11-21-q316-offline-fit.md](../../../docs/reviews/2026-11-21-q316-offline-fit.md). The figures below
+are on simulated answers only.
 
 ## Files
 
@@ -107,8 +109,8 @@ meeting units. **Clearly negative** (not centred) = below 0 at p < 0.05, and bel
 uses the centred δ or stays on the chain. Otherwise the choice rests on 2B's replay.
 With fewer than 8 units: "the measure cannot tell". Who reaches which unit is a confound (practice raises δ): an association, not a cause.
 **Limit**: the player replay passes no starting prior (`p` 0; core.js `startPriorAt` needs each player's first-launch
-choice), so a player's δ is that of one who started at the default; say so with the result. The follow-up's replay
-through `core.js` with the players' `starts` removes the limit.
+choice), so a player's δ is that of one who started at the default; say so with the result. 2B's scorer does not have
+the limit (it uses the ability the app logged); its arms 4b and 4c take δ from this replay and keep it.
 
 **The clock**: 40 minutes for everything (rule L11), from when the machine slot is held; `--budget` and `--deadline`
 can shorten it, never lengthen it (each step caps its own clock too). Past it each step stops,
@@ -138,32 +140,27 @@ how).
 It can say, each value with its 95% interval, on today's players, for a value that passed its acceptance test: the rank
 offsets; the SDs that pass (the simulations below suggest the family SD, the coral genus SD and the player SD); and
 which SDs are **not estimable** on today's log, itself a result: step 2 must not treat them as known. It can say whether
-the app's per-unit ability is centred (an association). It cannot say yet whether the shared chain predicts the next
-answer no worse than today's engine, nor how much each rating compresses the difficulty scale: both are the follow-up's.
+the app's per-unit ability is centred (an association); whether the shared chain predicts the next answer better or
+worse than today's engine (2B), and how much each rating compresses the difficulty scale.
 
 It cannot say anything causal, or about players unlike today's 10-15; how the online update behaves under adaptive
 selection over time (the rated world's job in step 2); anything about the sea slugs; or which draw would follow (the
 replay sees only the questions that were asked).
 
-## Follow-up: 2B, the step-2 candidates against today's engine (not built)
+## 2B: how it answers #1310's three findings
 
-Planned by the study and cut from this tool (rule W27: Codex round 3's three findings on the replay, all one class: the
-shared arm's re-implementation of the engine's replay differing from the engine's own). Not built here, kept for the
-follow-up PR:
+Cut from #1310 (rule W27: Codex round 3's three findings on the shared arm's re-implementation of the engine's replay),
+built in `replay2b.js` (rules above) so that the class of mismatch goes:
+- **today's engine is the engine's own code**: core.js `eloReplay` (run from its source with the function added to the
+  export list) on each prefix of the log, model.js `photoDiff` run from its source; one replay per prefix serves what
+  `eloOf` and `genusOffsetsOf` serve (a test checks it);
+- **answers without photos** move nothing in arm 2, as in `eloReplay` (a test);
+- **trust is the prefix's** for the arms' updates and for the primary's coverage (a test);
+- **the player's starting prior**: the scorer uses the ability the app logged with each answer, so the player's own
+  first-launch prior is in it and no start record is needed; the formula reproduces the logged expected values.
 
-- **What it tests**: each answer scored before it moves anything, with the arms sharing the person term, memory, mix-ups,
-  format terms and trust; arm 1 today's engine, arm 2 the shared chain (the review's Kalman / TrueSkill split of the
-  surprise among family, genus, species and photo, by the levels' variances), arm 3 with the sibling term, arms 4b and 4c
-  (Q136's variants: the item rated against the chain plus the app's delta, or the centred delta). Primary: next-answer
-  log-loss on fish answers whose photos each had fewer than 3 earlier trusted answers, arm 2 against arm 1, a sign-flip
-  over the players; exploratory: the other cuts, calibration and the compression of each arm's unit offsets. The SDs of
-  the candidates from a fit on the other half of the players. Its decision rule is declared again, in the code and here,
-  before the follow-up runs on the real log.
-- **How it differs**: the follow-up replays through `core.js`'s own `eloReplay` / `replayProgress` (with the players'
-  `starts`), not a re-implementation: this removes the class of mismatch (answers without photos moving the state,
-  trust read from the whole log instead of the prefix, the player's starting prior).
-- **With a Gibbs sampler** for the photo SD and τ (the player × unit SD): the Laplace fit above cannot estimate them on
-  today's cluster sizes (the table below), and 2B's arms are built on those SDs.
+    python3 tools/studies/q316/run.py /path/outside/log.json /path/outside/q316-out
+    node tools/studies/q316/replay2b.js /path/outside/q316-out /path/outside/log.json --python <python3 with scipy>
 
 ## The estimator on simulated answers (no player)
 

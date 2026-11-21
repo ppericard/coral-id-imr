@@ -209,7 +209,7 @@ test('checks.js: the whole run on a small made-up log; a deadline already past c
   assert.ok(!out.cut);
   assert.deepStrictEqual(out.done, ['live units', 'centring']);
   assert.ok(out.centring.primary && typeof out.centring.verdict === 'string');
-  assert.ok(!('primary' in out) && !('exploratory' in out), 'check 2B is not in this tool (the README follow-up)');
+  assert.ok(!('primary' in out) && !('exploratory' in out), 'check 2B is not in checks.js (replay2b.js)');
   assert.ok(K.run(X, {full: fit}, null, 1).cut);
   // the clock: never past 40 minutes from now, whatever deadline is given (rule L11)
   const now = Date.now() / 1000;
@@ -404,7 +404,10 @@ test("replay2b.js: the primary counts only the earlier answers of players truste
   assert.ok(R.prim[23], "the untrusted player's 3 answers do not count");
   assert.ok(R.prim[25] && !R.prim[26], '3 earlier trusted answers: no longer new');
   assert.ok(R.E.a1.every(x => x > 0 && x < 1) && R.E.a2.every(x => x > 0 && x < 1));
-  assert.ok(R.E.log.every((x, i) => Math.abs(x - B2.expected(X.rows[i], 0.2)) < 1e-12), "the logged arm: the scoring record's d");
+  assert.ok(
+    R.E.log.every((x, i) => Math.abs(x - B2.expected(X.rows[i], 0.2)) < 1e-12),
+    "the logged arm: the scoring record's d"
+  );
   const T = B2.tables(X, R, null, null);
   assert.strictEqual(T.primary.verdict, 'the measure cannot tell', 'two players: no test');
 });

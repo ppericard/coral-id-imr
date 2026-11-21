@@ -1,8 +1,7 @@
 // Q316's side check 2C on the real log (tools/studies/q316/README.md), read-only, its decision rule declared here before
 // any real run (RULES, printed at the head of every run):
 //   2C  Q136: is the app's per-unit ability centred across players? (the app's own delta, the corals; descriptive)
-// (2B, the step-2 candidates replayed against today's engine, is not here: it is the follow-up in the README, which
-// replays through core.js's own replay.)
+// (2B, the step-2 candidates replayed against today's engine, is replay2b.js.)
 //
 //   node tools/studies/q316/checks.js <export.json> <out.json> --fit fit.json [--stats stats.json] [--deadline <epoch s>]
 //
@@ -16,7 +15,7 @@
 // The person term: the app's unit ability replayed per player (core.js scoreAnswer, as tools/studies/q351/refit.js
 // replays it, from each answer's scoring record, else its logged expected and ability), before the answer. Limit: the
 // player's own starting prior (core.js startPriorAt, from the first-launch choice) is not passed (p 0), so a delta here
-// is the one of a player who started at the default; the follow-up replays through core.js with the players' starts.
+// is the one of a player who started at the default (replay2b.js's scorer uses the ability the app logged instead).
 const fs = require('fs'),
   path = require('path');
 const ROOT = path.join(__dirname, '..', '..', '..');
@@ -242,7 +241,7 @@ function centring(rows, delta, gd, D, rule = RULES.centring) {
   if (c2.verdict === CANNOT) verdict = CANNOT;
   else if (c2.rho < 0 && c2.p < rule.alpha && halves.every(h => typeof h.rho === 'number' && h.rho < 0))
     verdict = 'not centred: a Q136 rating uses the centred delta or stays on the chain';
-  else verdict = 'centring not rejected: the choice rests on the follow-up replay (README, 2B)';
+  else verdict = 'centring not rejected: the choice rests on 2B (replay2b.js)';
   return {units: Object.keys(all).length, C1: dersimonian(all), C2: c2, C2offline: corr(all, D), halves, verdict};
 }
 
