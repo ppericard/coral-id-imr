@@ -4,8 +4,8 @@
 Pierre, 2026-11-17: had we looked at every look-alike and confusion group already published online? This tool gathers
 them from two kinds of source and writes one file of candidates, tools/seaslug_lookalikes_cand.json. Pierre, 2026-11-17,
 Q390 D: tools/seaslug_game.py genus_looks reads its genus pairs into seaslug.json, those a literature set names as
-declared look-alikes, those only iNaturalist shows as data look-alikes; the species pairs wait for the species level (the
-decided species pair stays in tools/seaslugs.json lookalikes).
+declared look-alikes, those only iNaturalist shows as data look-alikes; its species pairs stay candidates (the decided
+species pairs are in tools/seaslugs.json lookalikes, the species units' declared look-alikes).
 
 Sources:
   - iNaturalist's "similar species" (v1/identifications/similar_species): for a taxon, the taxa of the same rank that its
