@@ -174,7 +174,28 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
   // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
   assert.match(out, /reports and events last checked .+: read them/);
+  // Where open work is tracked (docs/INTEGRATOR.md "Linear"): on the questions line, which the 5-line cut never drops.
+  assert.match(
+    out,
+    /^Questions for Pierre: .*Open work: Linear team REE, active https:\/\/linear\.app\/reef-id\/team\/REE\/active · backlog /m
+  );
   assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
+});
+
+// The brief links Linear's views, never queries Linear: the hooks have about 5 s and no Linear credentials.
+test('tools/brief.py names where open work is tracked: links to the Linear team views, no call to Linear', () => {
+  const src = read('tools/brief.py');
+  assert.ok(!/urlopen\([^)]*linear|api\.linear\.app|mcp\.linear\.app/i.test(src), 'tools/brief.py calls Linear');
+  const {execFileSync} = require('child_process');
+  const tl = execFileSync('python3', ['-B', '-c', 'import sys; sys.path.insert(0, "tools"); import brief; print(brief.tracker_line())'], {
+    cwd: ROOT
+  })
+    .toString()
+    .trim();
+  assert.strictEqual(
+    tl,
+    'Open work: Linear team REE, active https://linear.app/reef-id/team/REE/active · backlog https://linear.app/reef-id/team/REE/backlog'
+  );
 });
 
 // AGENTS.md is the short constitution every agent reads (Codex reads only its first 32 KiB by default), and every
@@ -223,7 +244,8 @@ test('AGENTS.md stays under 30 KB (Codex reads its first 32 KiB); past its 20 KB
 // AGENTS.md is the core every agent loads (#1200, Q425 B: a short core): each line is read in every task.
 test('AGENTS.md, the core: past its line mark it warns', t => {
   const n = AGENTS.split('\n').length - 1;
-  if (n > 160) warnMark(t, 'AGENTS.md has ' + n + ' lines, past its mark of 160 (the core; details go to docs/rules/)');
+  // 162: + where open work is tracked (Linear, 2026-11-21)
+  if (n > 162) warnMark(t, 'AGENTS.md has ' + n + ' lines, past its mark of 162 (the core; details go to docs/rules/)');
 });
 
 // A retired rule ID is never reused nor cited alone; a range that spans it (W12-W27) skips it.

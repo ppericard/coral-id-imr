@@ -33,14 +33,14 @@ elsewhere; he uses the app on his phone a lot, prefers visuals to text and judge
 **No work sleeps on a branch.** A branch with work worth keeping gets a PR the same day (a draft PR only while an agent is still building it; a PR that waits only for
 Pierre's decision is opened ready, with the `needs-pierre` label, never as a draft: the integrator may not mark a draft
 ready, so a draft would wait for Pierre's click, Pierre 2026-11-06), and an
-active line of work (a "track": the fish mode, the analyses…) is named in `docs/ROADMAP.md` with its branch or PR and its
-next step, so a reader of `main` alone sees it. Before ending a session or a night, list the branches with commits not
+active line of work (a "track": the fish mode, the analyses…) is on its Linear issue (or its `docs/ROADMAP.md` row while
+not transferred) with its branch or PR and its next step, so a successor sees it without the chat. Before ending a session or a night, list the branches with commits not
 in `main` and no PR (`python3 tools/brief.py` lists them), and open or close each one. The `needs-pierre` label is the
 integrator's own reminder (Pierre does not browse GitHub), not the source of truth: before merging, read the PR's open
 questions themselves, and remove the label in the same step that records his answer (`tools/train.py` refuses a PR
 that still has it).
 *Why:* the fish mode, built on branches that never got a PR, went silent for a day although beta players had been
-promised it. *Source:* Pierre, 2026-11-04.
+promised it. *Source:* Pierre, 2026-11-04; the track on its Linear issue, 2026-11-21 (#1360).
 
 ### W7
 
@@ -266,21 +266,24 @@ consequences). History stays in git and the PRs, never in the docs.** **A code c
 in the present tense, in a few lines; a decision links its record in docs/decisions/; no version tags, dates, quotes or
 Q-numbers.** A change is not done until the docs say what the
 code now does: `AGENTS.md` and `docs/rules/` (a new lasting rule from Pierre, a changed workflow), the map or spec the
-change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`, `docs/ROADMAP.md`: ship = delete the row it ships, or update
-its status; deferred = add a row inside its section; new "don't do X" = Declined; **every idea discussed but not built
-goes into `docs/ROADMAP.md`**, with its source and status, inside its section next to related rows, development ideas
-only, rule W10), `README.md` (anything a newcomer
-sees), the admin help. Say "Docs: none needed" in the PR description when nothing applies. The records' format is in
-[docs/decisions/README.md](../decisions/README.md). **No "done" list or changelog in any doc**: the squash title
-` (#N)`, the PR description and git are the record of what shipped, the docs say what the code does now; a shared list
-that every PR appends to made every two open PRs conflict, so never start one again (ROADMAP's old list is frozen in
-`docs/archive/`). `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
+change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`), `README.md` (anything a newcomer sees), the admin help.
+Say "Docs: none needed" in the PR description when nothing applies. The records' format is in
+[docs/decisions/README.md](../decisions/README.md). **Open work is tracked in Linear** (team REE; the integrator keeps
+it, [INTEGRATOR.md](../INTEGRATOR.md#linear)): **every idea discussed but not built goes into a Linear issue** (label
+Idea, with its source; development ideas only, rule W10); deferred = label Parked. A PR names its issue (REE-N in its description) and the integrator moves it: In Review when the PR opens,
+Done at merge. `docs/ROADMAP.md` keeps orientation, a pointer for each subject transferred to Linear, and the rows of
+the subjects not transferred yet (ship = delete the row, or update its status) until they move. **No "done" list or
+changelog in any doc**: the squash title ` (#N)`, the PR description and git are the record of what shipped, the docs
+say what the code does now; a shared list that every PR appends to made every two open PRs conflict, so never start
+one again (ROADMAP's old list is frozen in `docs/archive/`). Linear keeps its closed issues (Done, Canceled): that is
+the tracker's record, not a doc. `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
 rule, no reference to the retired rule numbers, the living docs' relative links and anchors resolving, every
 ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow, and the identifiers the governing docs (AGENTS.md, `docs/rules/`, ARCHITECTURE, HANDOVER, INTEGRATOR, LEARNING) cite in backticks still existing: a path, or a file followed by a name it holds (`core.js` `faOf`); the test's `ID_ALLOW` lists, with a reason each, the few a doc names on purpose though they are gone (a retired tool, a branch's note): fix the doc first.
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory; ARCHITECTURE.md and LEARNING.md had grown past 700 KB each as changelogs (docs audit, PR
 #1089). *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05; decision records and no
-history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409); ideas not built into ROADMAP, by 2026-11-01.
+history in the docs, 2026-11-18; code comments, 2026-11-19 (Q409); ideas not built into ROADMAP, by 2026-11-01; Linear
+as the tracker, 2026-11-21 (#1360).
 
 ### W21
 

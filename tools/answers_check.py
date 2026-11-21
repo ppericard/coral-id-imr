@@ -18,7 +18,7 @@
    number, and a question of docs/STATUS.md "Questions for Pierre" (the integrator's file).
 3. The ROADMAP holds every decision: an entry from 2026-11-19 21:00 on (ROADMAP_SINCE; the head's time) that names a
    ROADMAP item, a row's bold title of three words or more or an inventory ID ("inventory C12"), says after "Applied"
-   the ROADMAP or the PR that changed the row (#1234), and never "(to update)" or "(to do)" there; a later "Applied in
+   the ROADMAP, the PR that changed the row (#1234) or the subject's Linear issue (REE-12), and never "(to update)" or "(to do)" there; a later "Applied in
    #N:" entry that closes it (as in 1) does as well. The entries before
    were written before this check; the 2026-11-19 recount applied theirs (Pierre, 2026-11-19 20:45).
 Offline, standard library only.
@@ -183,7 +183,7 @@ def check_roadmap(entries, titles):
     "Applied"."""
     fails = []
     closers = closers_of(entries)
-    ok = lambda tail: bool(tail) and re.search(r'\bROADMAP\b|#\d+', tail) and not TO_DO.search(tail)
+    ok = lambda tail: bool(tail) and re.search(r'\bROADMAP\b|#\d+|\bREE-\d+\b', tail) and not TO_DO.search(tail)
     for date, n, head, text in entries:
         t = re.match(r'(\d\d:\d\d)\b', head)
         if (date, t.group(1) if t else '') < ROADMAP_SINCE:
