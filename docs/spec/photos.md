@@ -132,6 +132,23 @@ R2-only photo (`photos.py --r2-list`), failing otherwise. The `photos` job of `a
 `tools/fetch_approved.py` downloaded (`tools/r2_sync.sh r2-upload`, which fails without the secrets) before it makes its
 commit (pushed by `photos-push`).
 
+## Listing the unused R2 files
+
+Pierre said the files nothing uses any more can go from the bucket (2026-11-21 05:40, with the list shown to him
+first). Agents cannot list R2 (the keys live in GitHub Actions only), so `r2-unused.yml` (by hand, `contents: read`)
+runs `tools/r2_list.sh` (rclone `lsjson` of the whole bucket) and `tools/r2_unused.py`, and uploads the artifact
+`r2-unused`: the report (totals, per prefix, the unused, the doubtful with why, a check that every wanted file is
+there), the unused list and the doubtful list (tab-separated: object, bytes, reason), the figures (JSON) and the
+listing. It deletes nothing and cannot.
+
+An object is **used** when it is one of the files `tools/r2_sync.sh` wants (the four sizes of each photo that lives on
+R2 only, a tile when its record has `xc`, every file name in git's `img/`). Anything else is **unused** only when it
+is an old tile of a live photo, or a photo that no record and no tracked text file names. It stays **doubtful**, off
+the list, when it is recent (72 h: an upload comes before its data commit), oddly named, its photo is in
+`data/excluded.json` (the admin's Restore puts that record back and expects the files, so deleting them breaks a
+Restore until they are uploaded again), a record names it with `r: 1`, or its name appears in the app, the judging
+files, `curation.json`, a data file or the docs. Deleting is a separate step, after Pierre has seen the list.
+
 ## Coral photo sources
 
 - **The IMR Lecture 6 deck** (internal use at IMR only): cut from the full-resolution PowerPoint media
