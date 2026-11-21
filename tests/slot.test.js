@@ -739,3 +739,62 @@ test('node tests/slot.js -- cmd: a slots directory that cannot be used runs the 
     fs.rmSync(dir, {recursive: true, force: true});
   }
 });
+
+// REE-212: what killed takers left (`.hold-<pid>`, `.new-*`) is removed once its process is gone; live ones are kept.
+test('slot: sweep() removes dead .hold-<pid> locks and .new-* temp files, keeps live ones, in a temp directory only', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-sweep-')),
+    S = path.join(dir, 's'),
+    stat = fs.existsSync('/proc/self/stat') ? fs.readFileSync('/proc/self/stat', 'utf8').split(') ').pop().split(' ')[19] : '-',
+    live = `${process.pid} ${stat} someone 2026-01-01T00:00:00Z alive\n`,
+    dead = '999999999 1 someone 2026-01-01T00:00:00Z gone\n',
+    put = (n, text) => fs.writeFileSync(path.join(S, n), text),
+    has = n => fs.existsSync(path.join(S, n));
+  fs.mkdirSync(S);
+  try {
+    put('.hold-999999999', dead);
+    put('.hold-' + process.pid, live);
+    put('.new-999999999-hold-abc', dead);
+    put('.new-999999999-0-abc', ''); // a taker killed before it wrote anything
+    put('.new-' + process.pid + '-hold-abc', live);
+    put('slot0', live); // a slot is never the sweep's business
+    put('ticket-00000000000001-0999999999-aaaaaaaa', dead); // nor a ticket (the queue skips those)
+    put('stranger.txt', 'not ours');
+    fs.mkdirSync(path.join(S, '.hold-999999997.reap')); // a crashed reaper's directory, recent: left for now
+    const old = new Date(Date.now() - 15 * 60e3);
+    fs.mkdirSync(path.join(S, '.hold-1.reap'));
+    fs.utimesSync(path.join(S, '.hold-1.reap'), old, old);
+    // A live PID's temp file left for minutes is a reused PID's: taken back.
+    put('.new-' + process.pid + '-old-abc', live);
+    fs.utimesSync(path.join(S, '.new-' + process.pid + '-old-abc'), old, old);
+    await withEnv({CI: undefined, SMOKE_SLOT_DIR: S}, async () => fresh().sweep());
+    assert.deepStrictEqual(fs.readdirSync(S).sort(), [
+      '.hold-' + process.pid,
+      '.hold-999999997.reap',
+      '.new-' + process.pid + '-hold-abc',
+      'slot0',
+      'stranger.txt',
+      'ticket-00000000000001-0999999999-aaaaaaaa'
+    ]);
+    // A directory that is missing, or a file, is tolerated.
+    await withEnv({SMOKE_SLOT_DIR: path.join(dir, 'missing')}, async () => fresh().sweep());
+    await withEnv({SMOKE_SLOT_DIR: path.join(S, 'stranger.txt')}, async () => fresh().sweep());
+    // slot() sweeps on its way in, and still takes the slot.
+    put('.hold-999999998', dead);
+    fs.unlinkSync(path.join(S, 'slot0')); // the live record above held the only slot
+    const la = os.loadavg;
+    os.loadavg = () => [0, 0, 0];
+    try {
+      const free = await withEnv({CI: undefined, SMOKE_SLOT_DIR: S, SMOKE_SLOTS: '1', SLOT_MIN_FREE_GB: '0'}, () =>
+        fresh()('t', {timeout: 3000})
+      );
+      assert.ok(free, 'the slot is taken');
+      assert.ok(!has('.hold-999999998'), 'and the dead lock is gone');
+      assert.ok(has('.hold-' + process.pid), 'a live one stays');
+      free();
+    } finally {
+      os.loadavg = la;
+    }
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
