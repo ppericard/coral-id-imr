@@ -1,6 +1,6 @@
 # About lists the sources the sea slugs' data cites, by a declaration in the subject's entry
 
-Date: 2026-11-22. PR: #PRNUM. Rules or docs touched: C2, S1; `app.js` `UNITS` `about.cites`, `home.js` `aboutCites`,
+Date: 2026-11-22. PR: #1442. Rules or docs touched: C2, S1; `app.js` `UNITS` `about.cites`, `home.js` `aboutCites`,
 spec/subjects.md; Linear REE-213.
 
 ## Context
