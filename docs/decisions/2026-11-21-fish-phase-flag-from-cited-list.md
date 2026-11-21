@@ -87,9 +87,44 @@ configuration was measured (docs/INTEGRATOR.md "A large judging or boxing pass i
     initial-phase tags where the observer wrote male.
   - Every unit these species belong to (species, genus, family) already had a sex or colour phase photo in play, from
     the observers' annotations. So no unit gains a new variant group, and no "Learned" mark can be taken by this batch.
-- **Left**: about 2,600 photos of the bulk list (the other newly flagged species, then the IMR dimorph entries'
-  photos with no phase judged), the 18 above included.
-  - At 30 per sheet, about 90 sheet reads and 5% drift.
+- **The bulk list from batch 2 on** skips every photo the ledger lists and every species its `untagged` names: 2,432
+  photos. A species whose unit (the species, its genus or its family) had no sex or colour phase photo in play would
+  gain a new variant group with its first tag, so its photos come last and their tags wait for the integrator (25
+  species, 654 photos; Q391 b: "Learned" asks a right answer on each group).
+- **Batch 2**: the 927 photos of the other newly flagged species, mostly wrasses (31 sheets).
+  - The first reading (2026-11-21, 252 tags) failed its drift check: 4 to 5 of 53 sampled tags wrong at 1024 px (7.5
+    to 9.4%, above the 5% the reading was accepted on), so none was written (#1421).
+  - **Re-read** (2026-11-22, written): the same reading, blind to the first, one effort level up (AGENTS.md: a miss of
+    thoroughness). The re-read takes a tag only where the tile shows a mark the quote names; where a quote describes
+    one side only, only that side is tagged (*Thalassoma amblycephalum*: the initial phase's stripe; *Synchiropus
+    morrisoni*: the male's striped fin). 184 tags read; the 9 *Iniistius pentadactylus* tags dropped (below); **175
+    phases written** in 19 judging files (male 99, female 49, intermediate 17, subadult 7, terminal 3). Then
+    `judging_fish.py codes` (only `ph` changed in `data/suggest.json`, for 175 photos), `one` and `rep`.
+  - Drift, the rule written before each sample was drawn: 20 tags (10%, so that 5% is a whole tag) re-read on 12
+    tiles of 480 px a few minutes later, then 20 more about 1 h 45 min later, never a photo seen otherwise: 38 the same,
+    0 different, 2 abstentions, both settled at 1024 px as the bulk's tag. 0 of 40 wrong.
+  - Against the observers' sex annotations: 53 of 56 agree. The 3 others are female where the observer wrote male
+    (*Coris gaimard*, *Hologymnosus doliatus*, *Halichoeres biocellatus*); at 1024 px each shows the quote's female
+    marks. 3 more are initial-phase tags where the observer wrote a sex.
+  - Against the first reading: 156 of the 175 the same, 18 tagged by the re-read only, 1 different (a *Labroides
+    bicolor* the first called intermediate: at 1024 px its head and front are deep blue, the quote's male).
+  - The nine species the first reading found untaggable from a tile were looked at again: still none. *Iniistius
+    pentadactylus* joins them: its photos with the female's white patch with red scale margins also show a row of
+    small spots along the lateral line, which the quote says females lack (plain on 4 of the 5 looked at at 1024 px).
+  - Every unit of these 19 species already had a sex or colour phase photo in play: no new variant group.
+  - The ledger's batch 2 is the re-read (the first reading stays in #1421).
+- **Batch 3** (2026-11-21): the IMR `dimorph` entries' photos (Parrotfishes, Anthias) with no phase judged, then the
+  18 photos of batch 1's unopened sheets: 806 photos (27 sheets), 430 phases written in 27 judging files (terminal
+  253, female 166, male 11), in the words those files already use (`terminal` and `female` for the parrotfishes,
+  `male` and `female` for the Anthias). Then `judging_fish.py codes` (only `ph` changed in `data/suggest.json`, for
+  430 photos) and `one`.
+  - Drift: 44 tags (10%, so that 5% is more than one photo) re-read on 480 px tiles after a gap: 40 the same, 1
+    different, 3 abstentions. Settled at 1024 px, the bulk was right on 3 and undecided on 1 (a *Scarus niger*), whose
+    tag was dropped: 0 of 44 wrong.
+  - Against the observers' sex annotations: 163 of 167 agree.
+  - Every unit of these 27 species already had a sex or colour phase photo in play: no new variant group.
+- **Left**: the 25 species that would gain a new variant group (654 photos); 45 photos of *Ostracion cubicus* and
+  *Antennarius striatus*, whose judging files #1402 held (merged since).
   - The 384 reference photos with no candidate copy have no phase field in `tools/fish_judge.json`, so a judged phase
     cannot be written for them yet.
 

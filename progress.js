@@ -1340,7 +1340,11 @@ function boardStep() {
 function boardShow() {
   store.set('reefid-board-told', 1);
   const t = appToast(
-      '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+      '🏆 ' +
+        (store.get('reefid-board-new', 0) ? 'There is a' : 'New: a') +
+        ' <a href="' +
+        esc(hr('board')) +
+        '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
       BOARD_MS
     ),
     // Told for the account once closed or gone by itself; not when a switch of subject takes it away (toastsOff: due again).

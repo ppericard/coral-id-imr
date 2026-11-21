@@ -163,7 +163,8 @@ def genus_looks(cand, genera):
         game shows were never mixed up on, a rename or a slip at the genus rank, says nothing of their look); its source
         the counts. A pair inside one family is left out: the family's genera are already each other's look-alikes
         (core.js fishGenUnits).
-    The species pairs wait for the species level (Q390 D)."""
+    The candidates' species pairs are not taken: the species pairs are the decided ones (tools/seaslugs.json lookalikes,
+    each species' look; Q377, Q390 D)."""
     gid = {g['name']: g['id'] for g in genera}
     fam = {g['name']: g['family'] for g in genera}
     decl, data = {}, {}

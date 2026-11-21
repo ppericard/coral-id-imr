@@ -88,7 +88,8 @@
     0.35,
     0.8,
     0.75
-   ]
+   ],
+   "phase": "male"
   },
   "fish-s244-cand-552020514": {
    "code": "p1g0sl14",
@@ -98,7 +99,8 @@
     0.4,
     0.95,
     0.8
-   ]
+   ],
+   "phase": "male"
   },
   "fish-s244-cand-552020521": {
    "code": "o1g1bmo1",
@@ -196,11 +198,13 @@
     0.3,
     0.8,
     0.65
-   ]
+   ],
+   "phase": "male"
   },
   "fish-s244-cand-592316921": {
    "code": "o1g1sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s244-cand-514018391": {
    "code": "p1g0sl1j4",
@@ -208,7 +212,8 @@
   },
   "fish-s244-cand-580482534": {
    "code": "o0g0sl13",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "male"
   },
   "fish-s244-cand-580482535": {
    "code": "o1g0sl13",
@@ -218,7 +223,8 @@
     0.15,
     0.8,
     0.95
-   ]
+   ],
+   "phase": "male"
   },
   "fish-s244-cand-727600349": {
    "code": "p1g2ml12",
@@ -282,7 +288,8 @@
   },
   "fish-s244-cand-586575877": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s244-cand-532827800": {
    "code": "p1g0mm1j3",
@@ -346,7 +353,8 @@
   },
   "fish-s244-cand-536430526": {
    "code": "o1g2sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   }
  }
 }

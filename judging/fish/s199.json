@@ -2,11 +2,13 @@
  "photos": {
   "fish-s199-cand-531665981": {
    "code": "p1g2ss12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-577217716": {
    "code": "p1g2sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-663998061": {
    "code": "p1g2bm11",
@@ -30,11 +32,13 @@
   },
   "fish-s199-cand-701659865": {
    "code": "p1g2sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-717594786": {
    "code": "p0g2bl11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-717595264": {
    "code": "p1g2bmm1",
@@ -54,7 +58,8 @@
   },
   "fish-s199-cand-758076428": {
    "code": "p1g2bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-664975283": {
    "code": "p1g2bs11",
@@ -74,7 +79,8 @@
   },
   "fish-s199-cand-637587653": {
    "code": "d1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-725490884": {
    "code": "p1g3bsx1",
@@ -98,7 +104,8 @@
   },
   "fish-s199-cand-659448531": {
    "code": "p1g2sl13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-642119193": {
    "code": "d1g0sm1a2",
@@ -126,15 +133,18 @@
   },
   "fish-s199-cand-fb-Scgho_u0": {
    "code": "p1g0sl15",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-fb-Scgho_u2": {
    "code": "p1g0sl15",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-fb-Scgho_u3": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-425850875": {
    "code": "p1g1sm1j3",
@@ -300,7 +310,8 @@
   },
   "fish-s199-cand-330805154": {
    "code": "p1g1bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-710899343": {
    "code": "o1d2mm12",
@@ -308,7 +319,8 @@
   },
   "fish-s199-cand-434088592": {
    "code": "o1g3bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s199-cand-434088593": {
    "code": "p1g3bs11",
