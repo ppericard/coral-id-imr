@@ -956,7 +956,10 @@ Learning milestones only, never time (rule L8), in each subject's own list (`cor
 corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 70%,
 the scientific genera, the species named by their common names, and by their scientific names (fspsci1 "Binomial";
 fboth25 "Bilingual", 25 species by both names; fdauin20 "Local legend", Dauin's top 20 of circle 1, Q261; at Advanced,
-Q262). Still to come: fpct100 (with the ultimate exam, Q395) and fbasics. Only those that rest on learned marks (`core.js`
+Q262), and fbasics "Fin to tail" (Fish basics done, one 📖 bronze like the corals' Coral basics; earned when the last of the
+module's six steps is seen (27 screens, 21 taps on Next, measured on the real page at 390 and 1280 px), never after a
+number of answers or an amount of time; its name, tier and words are the
+integrator's call, easy to correct). Still to come: fpct100 (with the ultimate exam, Q395). Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
 their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
 

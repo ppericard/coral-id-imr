@@ -4686,12 +4686,14 @@ async function fishBasicsCheck(b, base) {
         fin: !!st.fin,
         seen: Object.keys(st.seen || {}).length,
         feat: !!a._fbasics,
+        ach: !!a.fbasics, // earned with the last step (Fin to tail), no answer needed
+        achCoral: !!a.basics,
         coralFeat: !!a._basics,
         coralKey: localStorage.getItem('reefid-basics'),
         done: basicsDone()
       };
     });
-    if (!done.fin || done.seen !== STEPS.length || !done.feat || !done.done)
+    if (!done.fin || done.seen !== STEPS.length || !done.feat || !done.done || !done.ach || done.achCoral)
       fails.push(`${W} not done after every step: ${JSON.stringify(done)}`);
     if (done.coralFeat || done.coralKey) fails.push(`${W} Coral basics touched by Fish basics: ${JSON.stringify(done)}`);
     await p.evaluate(() => (location.hash = 'home'));
