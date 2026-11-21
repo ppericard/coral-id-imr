@@ -148,8 +148,8 @@ const fishInPlay = (F, sid) => {
   return L;
 };
 // One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (the admin's ✕
-// Reject on it: off the species, a correction when the auto-sort had proposed it). A photo leaving play here or on the card
-// (Reject, ×, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
+// Reject on it: off the species, a correction when the auto-sort had proposed it; it stays a candidate). A photo leaving play
+// here or on the card (Reject, Remove, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
 function fishZoom(p, sid, inPlay, blind) {
   const lb = $('lightbox'),
     n = fishName(sid),
@@ -261,14 +261,16 @@ function bindFishAuto(scope) {
 // subject's candidates through autosort.js fishQueue, a species' (or a genus-level list's) target the unit of the cap, the
 // pass's judgment and the rubric's rows, the species' photos in play beside the card, Not this → another species.
 CAND_BUILD.tree = (() => {
-  // After his answer to a Check: what the auto-sort had said.
-  const told = c => {
-      if (!c.chk) return;
-      const x = fishIdx(DRAFT[TK])[c.p.f];
-      if (x)
-        toast(
-          `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
-        );
+  // After his answer to a Check: what the auto-sort had said ('' for any other card).
+  const toldMsg = c => {
+      const x = c.chk && fishIdx(DRAFT[TK])[c.p.f];
+      return x
+        ? `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
+        : '';
+    },
+    told = c => {
+      const m = toldMsg(c);
+      if (m) toast(m);
     },
     // The photo as the card shows it: the pass's judgment, never on a Check (blind).
     shownPhoto = c => ({...c.p, j: c.chk ? null : c.j}),
@@ -352,10 +354,10 @@ CAND_BUILD.tree = (() => {
       fishEdit(G => fishReject(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
       told(c);
     },
+    // The card's × is the one Remove of every photo tile (admin.js treeRemove): out for good, Undo in its toast, beside a
+    // Check's answer.
     exclude(Q, c) {
-      fishEdit(G => fishExclude(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
-      if (!c.chk) toast('Excluded. Undo (Ctrl+Z) brings it back.');
-      told(c);
+      treeRemove(fishFamOf(c.sid), c.p.f, null, () => toldMsg(c));
     },
     zoom: (Q, c) => fishZoom(shownPhoto(c), c.sid, false, c.chk),
     // The crop (fishCrop): the admin's, else the pass's (never on a Check).

@@ -323,7 +323,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   leads the genus's row on the family sheet (then the first photo of its other species) and its card among the sibling
   genera on a genus sheet (the genus sheet has no hero), and `treeSpPhotos` puts the species' cover first (then his
   featured photos, then the game's order): its tile, the first photo of its sheet.
-- A photo leaving play (Remove, ×, Not this, a count that takes it out, Out of play and Reject in Candidates:
+- A photo leaving play (Remove, Not this, a count that takes it out, Out of play and Reject in Candidates:
   `autosort.js` `fishDrop`) leaves every cover and featured list it was in, one Undo step. Neither touches the games'
   photos or their order. `ok` (✓ Validated) is the admin's own. A candidate he adds and picks at once shows in the app
   once the Candidate photos workflow has put it in `fish-game.json`; until then the card keeps the cover as before.
