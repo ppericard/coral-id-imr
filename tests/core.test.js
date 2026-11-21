@@ -200,6 +200,18 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     Object.values(tm).some(o => o[1] !== 0),
     'the enlargement term moved: ' + JSON.stringify(tm)
   );
+  // The same with the level weighting's thresholds lowered so these two players reach its fit (core.js ptimeBeta).
+  const P = require('../core.js').PTIME,
+    vm = require('vm'),
+    keep = [P.MIN_P, P.MIN_N];
+  try {
+    [P.MIN_P, P.MIN_N] = [2, 20];
+    vm.runInContext('CORE_.PTIME.MIN_P = 2; CORE_.PTIME.MIN_N = 20; ROWS_ = null;', s.ctx);
+    delete s.cache[vm.runInContext('statsKey17_()', s.ctx)];
+    assert.deepStrictEqual(eloOf(rows), s.get({stats: '1'}).photos);
+  } finally {
+    [P.MIN_P, P.MIN_N] = keep;
+  }
 });
 
 test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the direction', () => {

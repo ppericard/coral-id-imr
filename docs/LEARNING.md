@@ -1100,14 +1100,24 @@ the one reported, against the same `main` files.
 | --- | --- | --- |
 | `--times rho25` (time intensity correlated 0.25 with difficulty), normal photos, 20 seeds, two looks | 0.6670 → 0.6673, p 0.96: no clear difference | the strong RA's shown score at 1,000: −1.1 points [bound −1.8], breached; held at 3,000 (+0.1) |
 | `--times rho0 --gap -0.22` (the time says only the knowledge gap), 20 seeds, two looks; declared cost: rating error +0.02 at most | +0.0064 [+0.0153]: within the declared cost | the strong RA's score at 1,000: −1.4 [−2.6], breached; three other profiles there unclear; all held at 3,000 |
-| `--times rho25`, heavy-tailed photos, 10 seeds | 0.8003 → 0.7832, 9 of 10 seeds down, p 0.033: **clear, down** | the beginner's score at 1,000: −2.4 [−3.5] and first Open Water, breached; held at 3,000 |
+| `--times rho25`, heavy-tailed photos, 10 seeds (declared: guardrails only) | 0.8003 → 0.7832, 9 of 10 seeds down, p 0.033 (exploratory, uncorrected; run A 0.066) | the beginner's score at 1,000: −2.4 [−3.5] and first Open Water, breached; held at 3,000 |
 
-- **What it can conclude.** Where photos have heavy tails (a few photos far harder than their unit), the term brings the
-  difficulty the app uses clearly closer to the truth; with normal photos it neither helps nor harms the ratings, and when
-  the time says only the player's knowledge gap, the cost stays inside the bound declared.
-- **What it costs.** In every case the shown score at 1,000 answers moves by one to two points for one profile, a
-  different one in each case, the strong RA most often, and is back by 3,000 answers; every other guardrail holds. A
-  breach goes to Pierre (rule L11). Run A, with the habit over all answers, had the strong RA's breach at −1.8.
+- **What it can conclude.** With normal photos the term neither helps nor harms the ratings, and when the time says only
+  the player's knowledge gap, the cost stays inside the bound declared. Exploratory: with heavy-tailed photos the rating
+  error went down in 9 of 10 seeds.
+- **What it costs.** The strong RA's shown score at 1,000 answers is 1.1 to 1.4 points lower (cases 1 and 2, which share
+  one `main` arm: one finding seen twice), and the beginner's 2.4 points lower with heavy-tailed photos; back by 3,000
+  answers; every other guardrail holds. The cause is not known. A breach goes to Pierre (rule L11). Run A, with the
+  habit over all answers, had the strong RA's breach at −1.8.
+- C1 and C2 (above) use the other players' whole log, before and after the answer (a lasting difficulty); only G is
+  online, as the app would have read it.
+
+**The app world** (level 1's leg; `node tools/learnsim.js --stats` (the corals' statistics rebuilt from the real log with
+the terms, at `PTIME_SHEET`) `--truth gen`, the four profiles, 300 questions; before = `main`). 5 seeds: nothing
+breached, 7 cells unclear; one step up to 20 seeds (two looks): nothing breached, 4 cells unclear (the beginner's true
+knowledge at 300, −0.011 [−0.024]; the beginner's first Open Water, +15 answers [+49]; the lecture and strong RAs'
+longest plateau, +3 and +1 answers): "the measure cannot tell". The fish cannot run there: learnsim feeds only the
+corals' statistics, so the fish rest on the real log's guardrail G and the unit tests.
 - Compute: about 5 minutes a run of 10 seeds; within the 40-minute cap per case.
 
 ### Photo memory
@@ -1314,8 +1324,8 @@ rating".
 ### Response time, re-measured over every subject
 
 Pierre, 2026-11-20: response time carries difficulty, experts included, even when the answer is right (either the
-photo's or the question's difficulty for that player); a fact to integrate, not a hypothesis. How the engine takes it
-waits on a design study (ROADMAP "Time in the photo rating"). This is the read-only re-measure of the same day, on the
+photo's or the question's difficulty for that player); a fact to integrate, not a hypothesis. How the engine takes it:
+"The photo's time term" (step 1) and ROADMAP "Time in the photo rating" (step 2). This is the read-only re-measure of the same day, on the
 sheet's Answers tab (6,653 rows, 2026-11-01 to 2026-11-20; players P1, P2…; the subject from `core.js` `rowSubject`; z
 exactly as `rtWeight`; players are the statistical unit; the plan was declared before the runs). Nothing in the game
 changed. Timed answers are those with seconds, not typed:
@@ -1569,8 +1579,9 @@ photo statistics, as the fish today); `--app sheet` (`runPop`; the corals only: 
 with two true difficulties): the sheet's photo Elo simulated. The profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
 log t = log 6.5 + the photos' time intensity β − the player's speed τ − 0.4 if right + log 1.5 if typed + `--gap` × the
 learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
-and served to every player's app (`PSTAT`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
-against the truth at each checkpoint (`rateErr`, the centred root mean square error; weighed by answers; the
+and served to every player's app (`PSTAT`, `PTM`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
+(each with its photo's time term as the app adds it, `core.js` `ptimeOff`) against the truth at each checkpoint
+(`rateErr`, the centred root mean square error; weighed by answers; the
 correlation; the genus offsets' `gdErr`), which learncmp reads as population measures, one value per seed (an exact
 sign-flip over the seeds). `--dist normal|tail|t3`. Circle 3 stays
 closed unless `--beyond yes`, as in the app world (its offer left unanswered). The scientific names' offer, once a family

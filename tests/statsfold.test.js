@@ -51,10 +51,10 @@ const MODES = ['quiz', 'quiz|k2', 'quiz|k3', 'quiz-duel', 'quiz|t', 'quiz|x', 'q
 
 // Who plays: their chance of a right answer (by day for Dee, who starts at random and then learns: trusted only later).
 const WHO = [
-  {name: 'Ana', pin: '1111', p: () => 0.85},
+  {name: 'Ana', pin: '1111', p: () => 0.85, steady: 0.25},
   {name: 'Ben', pin: '2222', p: () => 0.8},
   {name: 'Cal', pin: '3333', p: () => 0.3},
-  {name: 'Dee', pin: '4444', p: d => (d < 2 ? 0.05 : 0.95)},
+  {name: 'Dee', pin: '4444', p: d => (d < 2 ? 0.05 : 0.95), steady: 0.15},
   {name: 'Eve', pin: '5555', p: () => 0.8},
   {anon: 'device0001', p: () => 0.8},
   {anon: 'device0002', p: () => 0.9, bot: true}
@@ -97,7 +97,8 @@ function session(R, w, t, day, subj) {
     // generator of the answer's own, so the fixture's other draws stay as they were.
     const R2 = rng(ID * 7919 + 17),
       x = R2();
-    if (x < 0.8) a.rt = Math.round((1 + R2() * 20) * 10) / 10;
+    // The steadier players scatter less around their habit (the level weighting has something to fit).
+    if (x < 0.8) a.rt = Math.round(Math.exp(Math.log(6) + (w.steady || 0.9) * (R2() + R2() + R2() - 1.5) * 2) * 10) / 10;
     if (x > 0.1 && x < 0.9) a.zm = R2() < 0.15 ? 1 : 0;
     if (fish) Object.assign(a, {s: 'fish', rk: U === SPE ? 'species' : 'family'});
     if (R() < 0.03) a.m = 'wink';
@@ -214,6 +215,33 @@ test('the fold serves what the whole log gives, after every run, at any number o
       ['missing', 'late answer', 'trust changed'].every(w => causes.has(sid + ' ' + w)),
       [...causes].join(', ')
     );
+});
+
+// The photos' time terms with the level weighting fitted (core.js PTIME, ptimeBeta): its thresholds lowered so the small
+// fixture reaches them; the fold still serves what the whole log gives, and the weights are not the equal ones.
+test('with the level weighting fitted, the fold serves what the whole log gives, and the terms differ from equal weights', () => {
+  const posts = fixture(7),
+    s = load();
+  run(s, 'CORE_.PTIME.MIN_P = 2; CORE_.PTIME.MIN_N = 30;');
+  let now = BASE;
+  posts.forEach((p, i) => {
+    post(s, p);
+    now = Math.max(now, p.at);
+    if (i % 9 === 8 || i === posts.length - 1)
+      SUBJ.forEach(sid => {
+        let r = fold(s, now + H, {sid});
+        while (!r.caught) r = fold(s, now + H, {sid});
+        same(s, sid + ' weighted, after post ' + i, sid);
+      });
+  });
+  const W = SUBJ.map(sid => full(s, sid));
+  run(s, 'CORE_.PTIME.MIN_P = 1e9;');
+  const E = SUBJ.map(sid => full(s, sid));
+  const moved = SUBJ.some((sid, k) =>
+    Object.keys(W[k].photos).some(f => W[k].photos[f].length === 8 && E[k].photos[f] && W[k].photos[f][5] !== E[k].photos[f][5])
+  );
+  assert.ok(moved, 'the level weighting moved some photo’s time term');
+  run(s, 'CORE_.PTIME.MIN_P = 5; CORE_.PTIME.MIN_N = 500;');
 });
 
 test('a run is bounded: it stops after its rows and the next run goes on; nothing is served before the end', () => {
