@@ -113,7 +113,10 @@ was kept.
   content for a file fetched without one, the sea slugs', and for what the app makes from one, `FORMS`, `AUTOQ`:
   `fileVer`), its part of the curation the units were built under (`curPart`: a tree subject's own key and the shared
   `exclude`; the corals' the root without the other subjects' keys, so another subject's Publish leaves it as it is)
-  and the structure stamp in force. Made once per build at the subject's first answer (`app.js` `contentVer`, from the
+  and the structure stamp in force (`''` on the base's circles and pairs, and while the sheet does not replay under the
+  structure yet, which the units then do not follow). So it changes whenever the photos in play, the units, the
+  structure or the curation do, and a text edit in a data file changes it too; it starts with a letter so the sheet
+  never reads it as a number. Made once per build at the subject's first answer (`app.js` `contentVer`, from the
   inputs `build` and `treeBuild` keep on the units they make, `DATA` and a tree subject's `TREEU`, as a property no copy
   or key list meets: `cvIn`), on the device, because the copy in force is the device's (a kept curation, a draft
   preview). 'c' and up to 15 lower-case letters and digits, else blank. Sent only once the replies say `v` ≥ `core.js`
@@ -483,7 +486,9 @@ Progress).
   brings the right replay). The reply to an anonymous send is ignored when the device signed in or changed anonymous id
   while it was on its way (`sendAnon` keeps the id it sent).
 - After an adoption the merge baseline `SYNC.base` is the sheet's replay itself, without this device's own uncounted
-  answers (`core.js` `replayBase`), so this device's unsent answers stay on top at the next merge.
+  answers (`core.js` `replayBase`), so this device's unsent answers stay on top at the next merge (otherwise two devices
+  adopting the same log count it twice, an older app's answers are dropped, or an unsent answer is taken into the
+  baseline and lost).
 - `mergeSaved` keeps the device's progress over a saved copy whose `reefid-sync-coral-rv` is below the device's (an app
   from before the replay saved it, or a copy older than the replay): the copy is not merged, and the device's version
   goes back to the copy's, so its next save (`syncPull` asks for one) brings the replay of the whole log again. The

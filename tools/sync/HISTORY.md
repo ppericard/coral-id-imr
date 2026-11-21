@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v220 (2026-11-22)
+
+Comments only: the embedded `core.js` copy's long comment blocks are cut to their contract and a pointer to the doc section that explains them (the facts they held moved into `docs/LEARNING.md` and `docs/spec/` first). No behaviour change: the code is token-identical (integrator's call, Q406 / REE-29, architecture steps 3-4 decision (c))
+
 ## v219 (2026-11-22)
 
 Comments only: the embedded `core.js` copy now cites the tree names the player app uses (`viewTreeSheet`, `viewList`) and the script's own `subjGen_` where it cited the gone `fishGen_`. No behaviour change (integrator's call, Q406 / REE-29)
