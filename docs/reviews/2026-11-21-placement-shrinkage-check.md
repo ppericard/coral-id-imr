@@ -16,7 +16,8 @@ model, known truth (a mechanics check: docs/reviews/2026-11-21-simulation-scope.
 
 ## 1. Declared before running (2026-11-21 18:30 Manila)
 
-This section was committed and pushed (e3dc326cf) before any outcome below was computed; the only change since is this commit reference.
+This section was committed and pushed (e3dc326cf) before any outcome below was computed; the only change since is
+this commit reference.
 
 ### What I had seen before declaring
 
@@ -114,24 +115,27 @@ left out.
 
 Node, under the machine slot (`node tests/slot.js --`), well under the 40-minute cap (rule L11).
 
-## 2. Short answer (run 2026-11-21 18:35-18:50 Manila)
+## 2. Short answer (run 2026-11-21 18:35-19:20 Manila, within the compute cap)
 
 - **Verdict, by the declared rule: not decidable on this log, so wait.** The genus-only error's interval runs from 0.16
-  to 1.70 logits, across every tier; the point estimates point to "wait" too (s\* = 1.16 at the upper bound, about
-  0.86 at the estimate, genus misfit included).
-- **Photos do differ within a genus, probably by more than the gate allows**: the spread of photo difficulty within a genus
-  is about **0.86** (profile interval 0.49 to 1.21) [measured], against 0.61 for the 20-answer gate. A test on genus
-  offsets alone would be off by about **0.93** a photo (genus misfit 0.36 included).
-- **The residual helps a little, the shrunk ones a little more**: on held-out log-loss, S5 and S10 beat genus-only
-  (−0.0038 and −0.0031 per answer, intervals below 0); E (today's served form) and S2 do not clearly [measured].
-- **Today's answer counts are too few for the residual to close the gap**: on the real design with a known spread of
-  0.8, the best ratings on the 379 photos with 5+ answers are off by about 0.78, barely better than genus-only (0.83);
-  at a spread of 0.61, about 0.62 [planted].
+  to 1.70 logits, across every tier, and s\* (the error of the best rating on the test's pool, at the upper bound) is
+  1.16, over 0.80. At the point estimates it would be about 0.86, still over 0.80.
+- **This log cannot tell a within-genus spread of 0.4 from one of 1.2.** The fit finds photos of one genus differing in
+  difficulty by **0.86** (profile interval 0.49 to 1.21) [measured]; but on the real design a log like this one gives
+  0.86 or more in 1 draw in 8 when the true spread is 0.4, in 1 in 4 at 0.61, in 6 in 10 at 0.8 [planted]. The
+  likeliest spread is about 0.8, over the gate's 0.61, but a spread under it is not excluded.
+- **The photo's own residual helps only a little**: on held-out log-loss, S5 and S10 beat genus-only (−0.0038 and
+  −0.0031 per answer, intervals below 0); E (today's served form), S2 and a direct fit (D, added after the run) do not
+  clearly [measured].
+- **At today's answer counts no rating method closes the gap**: on the real design, the best ratings (Elo residual,
+  shrunk, or a direct fit) on the 379 photos with 5+ answers are off by about the spread itself: 0.78 at a spread of
+  0.8 (genus only 0.83), 0.62 at 0.61, and the same on the 50 photos with 10 to 17 answers [planted].
 - **What it does to the test** [model]: at 20-25 adaptive questions, an error of 1.16 instead of the gate's 0.61 places
-  the middle player right about 0.31-0.35 times in 10 instead of 0.35-0.40, and a strong player 0.74-0.76 instead of
-  0.83-0.85.
-- **Recommendation: wait for the calibration set; do not lower the bar.** Before it is used, rate its members with a
-  direct fit rather than the Elo residual (section 5).
+  the middle player right about 3.1 to 3.5 times in 10 instead of 3.5 to 4.0, and a strong player 7.4 to 7.6 times
+  instead of 8.3 to 8.5 (the study's placement of the error; the other placement costs the strong player 0.3 in 10).
+- **Recommendation: wait for the calibration set; do not lower the bar, and a subset of the members would not help.**
+  When the members reach 20 answers, check their error held-out as here before the test reads them: today's counts
+  gain far less than the gate's arithmetic assumes (section 5).
 
 ## 3. Results
 
@@ -144,7 +148,7 @@ Node, under the machine slot (`node tests/slot.js --`), well under the 40-minute
   0.83, 0.83 / 0.37 / 0.86, 0.87 / 0.42 / 0.89); ±0.8: 0.81 / 0.30 / 0.78, 0.86 / 0.35 / 0.81, 0.90 / 0.41 / 0.83
   (study 0.81 / 0.30 / 0.76, 0.86 / 0.35 / 0.80, 0.90 / 0.39 / 0.83), 3,000 tests a cell. The other reading (the
   question's true difficulty off, its rating at the estimate) did not reproduce them (beginners 0.07 lower, strong
-  players 0.06 higher at ±0.8); it is not used.
+  players 0.06 higher at ±0.8); it is shown apart in 3.5.
 - The 12-node quadrature integrates N(0, 1) exactly to the 4th moment.
 
 ### 3.2 The held-out answers [measured]
@@ -159,15 +163,18 @@ the fit of section 1 on the held-out answers; ± the jackknife over the 15 playe
 | S2 | 0 | 0.21 | 0.21 | 0 to 0.91 | −0.0040 (−0.0091 to +0.0011) |
 | S5 | 0.21 | 0.25 | 0.32 | 0 to 1.48 | **−0.0038 (−0.0073 to −0.0003)** |
 | S10 | 0.50 | 0.29 | 0.58 | 0 to 1.71 | **−0.0031 (−0.0055 to −0.0008)** |
+| D, direct fit (added after the run, 3.7) | 0 | 0.21 | 0.21 | 0 to 0.92 | −0.0027 (−0.0083 to +0.0029) |
 
 - **G's σv is the figure the 11-18 study lacked**: photos of one genus differ in difficulty by about 0.86 for a new
-  player. Its profile interval (0.49 to 1.21) excludes 0 but holds both 0.61 and 0.80.
-- **E's and S's σv near 0 are not a precision**: the fit treats the held-out players of one photo as seeing the same
-  prediction, but each saw a prediction made partly from the other's answer, which pulls their residuals apart and the
-  photo variance to 0. That is why the declaration kept them out of the verdict (their true error is in 3.3).
+  player. Its profile interval (0.49 to 1.21) excludes 0 but holds both 0.61 and 0.80, and the planted runs (3.7) show
+  that even its lower end is not firm.
+- **E's, S's and D's σv near 0 are not a precision**: the fit treats the held-out players of one photo as seeing the same
+  prediction, but each saw a prediction made partly from the other's answer. The planted runs confirm it: at every
+  known spread from 0.4 to 1.0, the same fit returns 0 for E (3.7). That is why the declaration kept them out of the
+  verdict; their true error is in 3.3 and 3.7.
 - By the photo's answer count without the player, genus-only: 1-4 answers, σv 0.34 (1,726 answers); 5 or more, σv 1.41
-  (475 answers). The photos the test would draw spread more within their genus than the rest, not less.
-- The global shift μ is −0.16 for G (the held-out answers a little easier than predicted), −0.04 to −0.08 for the
+  (475 answers); no interval was computed for these two.
+- The global shift μ is −0.16 for G (the held-out answers a little easier than predicted), −0.02 to −0.08 for the
   others.
 
 ### 3.3 The planted check on the real design [planted]
@@ -175,7 +182,7 @@ the fit of section 1 on the held-out answers; ± the jackknife over the 15 playe
 20 redrawn logs per spread τ; the fit of σv on the leave-one-player-out held-out answers, and the true error of each
 predictor on the 379 photos with 5+ answers (ratings on the whole redrawn log, error centred).
 
-| Planted τ | σv found: mean (5-95%) | G | E | S2 | S5 | S10 |
+| Planted τ | σv found: mean (lowest to highest of 20) | G | E | S2 | S5 | S10 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 0.32 (0 to 0.68) | 0.25 | 0.45 | 0.38 | 0.32 | 0.29 |
 | 0.4 | 0.58 (0 to 0.94) | 0.47 | 0.55 | 0.51 | 0.48 | 0.47 |
@@ -185,27 +192,29 @@ predictor on the 379 photos with 5+ answers (ratings on the whole redrawn log, e
 | 1.207 | 1.25 (0.94 to 1.61) | 1.20 | 1.07 | 1.09 | 1.11 | 1.13 |
 
 - **Recovery**: the fit finds τ within 0.08 on average at 0.61 and 0.8 (rule: within 0.15), a little high at small
-  spreads (it cannot go below 0). But one log cannot tell 0.61 from 0.8: their 5-95% ranges overlap almost entirely.
-- **The genus offsets carry their own error, about 0.25** (τ = 0 row, G): the floor of any rating here.
+  spreads (it cannot go below 0). But one log cannot tell 0.4 from 1.2: the ranges overlap widely (3.7 has the shares).
+- **The genus offsets carry their own error, about 0.25** (τ = 0 row, G): a floor under any rating here.
 - **The residual buys little at today's counts**: the best predictor beats genus-only by 0.05 at τ = 0.8 and 0.13 at
   τ = 1.2, and does worse at small τ (E's raw residual adds noise: 0.45 against 0.25 at τ = 0). The 50 calibration
   members (48 with an answer) show the same within 0.03.
-- So, whatever the true spread, today's best ratings on the test's pool are off by about the spread itself.
 
 ### 3.4 The verdict, as declared
 
 - U, the upper bound of G's total error: 1.70 (the jackknife's; σv's profile bound gives 1.26).
-- A residual predictor beats G (S5, S10), so s\* = the smaller of U and the planted error of the best of them on the
-  pool at τ = 1.207 (σv's profile upper bound), σu added: S5, 1.105 → √(1.105² + 0.36²) = **1.16**. Tier: over 0.80,
-  **wait**.
+- A residual predictor beats G on held-out log-loss (S5, S10), so s\* = the smaller of U and the planted error of the
+  best of them on the pool at τ = 1.207 (σv's profile upper bound), σu added: S5, 1.105 → √(1.105² + 0.36²) = **1.16**.
+  Tier: over 0.80, **wait**.
 - And G's interval (0.16 to 1.70) spans every tier: **not decidable on this log**, which also says wait.
-- At the point estimate instead of the upper bound (τ about 0.8, the fit running about 0.07 high), the pool's error
-  would be about 0.78, 0.86 with the genus misfit: still over the gate's 0.61 and the 0.80 tier [planted, a reading,
-  not the declared rule].
+- Readings made after the run, none of which changes the tier: "the best of them" taken as the one with the lowest
+  planted error (S5 1.105, S10 1.127); E, the lowest of all (1.069) but not better than G on held-out, gives 1.13;
+  the jackknife drops a player's held-out answers only (the replays keep that player's answers rating the photos for
+  the others); at the point estimate instead of the upper bound (τ about 0.8), the pool's error is about 0.78, 0.86
+  with the genus misfit [planted].
 
 ### 3.5 What it does to the test's right-band rate [model]
 
-20,000 tests a cell, players at −0.5 / 0.56 / 1.5 (beginner / IMR course / knows well), adaptive, four choices.
+20,000 tests a cell, players at −0.5 / 0.56 / 1.5 (beginner / IMR course / knows well), adaptive, four choices; the
+error placed as in the study (validated in 3.1, a choice made after the run).
 
 | Rating error s | 20 questions | 25 questions |
 | --- | --- | --- |
@@ -217,8 +226,11 @@ predictor on the 379 photos with 5+ answers (ratings on the whole redrawn log, e
 | 1.70 (U) | 0.91 / 0.28 / 0.63 | 0.93 / 0.29 / 0.64 |
 
 - Against the gate, today's ratings at s\* cost the middle player about 0.04-0.05 and the strong player about 0.09; the
-  beginner's rate rises a little (as in the study's own ±0.8 column). The strong player loses most, and is the one
-  the request behind REE-112's raised priority is about (a newcomer who already knows the corals, placed higher).
+  beginner's rate rises a little (as in the study's own ±0.8 column).
+- **The other placement of the error** (the question's true difficulty off, its rating at the estimate): gate 0.81 /
+  0.34 / 0.85 and 0.85 / 0.39 / 0.87, s\* 0.77 / 0.30 / 0.82 and 0.81 / 0.33 / 0.84 at 20 and 25 questions: every
+  band loses 0.03-0.05. Which player loses most depends on that modelling choice; that the middle and strong players
+  lose 0.03-0.09 against the gate does not.
 - These differences are the size the simulation-scope note warns about; they illustrate the verdict, they do not make
   it.
 
@@ -229,29 +241,53 @@ predictor on the 379 photos with 5+ answers (ratings on the whole redrawn log, e
   1.15; E's log-loss −0.0022 against G. The genus misfit grows when the fit stops early (offsets frozen at half the log).
 - Leaving one player out moves a genus offset on 50+ weighed answers by up to 0.39: a few players carry much of the log.
 
+### 3.7 Added after the results (not declared)
+
+Three questions the results raised, run on the same design after section 3.3: how often a log like this one gives 0.86
+whatever the true spread; whether the photos with 10+ answers (a subset of the pool) are rated better; and whether a
+**direct fit** (D: each photo's residual fitted by maximum likelihood on its answers, the players' levels and memory
+terms from the replay, a N(0, 0.86²) prior toward the genus offset) does better than the Elo residual. 40 redrawn logs
+per spread; D also on the real held-out answers (3.2). Errors on the pool, by the photo's answer count today (329
+photos with 5-9 answers, 50 with 10-17):
+
+| Planted τ | σv found: mean (10-90%) | Share of logs with σv ≥ 0.86 | E's σv found | 5-9 answers: G / best S / D | 10-17 answers: G / best S / D |
+| --- | --- | --- | --- | --- | --- |
+| 0.4 | 0.54 (0.15 to 0.87) | 0.13 | 0 | 0.47 / 0.47 / 0.52 | 0.44 / 0.45 / 0.49 |
+| 0.61 | 0.71 (0.43 to 1.04) | 0.23 | 0 | 0.65 / 0.62 / 0.64 | 0.64 / 0.62 / 0.63 |
+| 0.8 | 0.88 (0.70 to 1.08) | 0.58 | 0 | 0.83 / 0.78 / 0.78 | 0.82 / 0.78 / 0.77 |
+| 1.0 | 1.03 (0.85 to 1.27) | 0.85 | 0 | 1.01 / 0.93 / 0.92 | 0.99 / 0.92 / 0.91 |
+
+- **The real 0.86 is not rare under a spread of 0.4 or 0.61** (1 log in 8, 1 in 4); the spread is likeliest near 0.8.
+- **The photos with 10-17 answers are rated no better than those with 5-9**: within 0.02 at every spread.
+- **A direct fit does no better than the shrunk Elo residual**: within 0.01 at 0.8 and 1.0, worse at 0.4 and 0.61; on the real
+  held-out answers its log-loss gain over genus-only is not clear (−0.0027, −0.0083 to +0.0029).
+- So the little the ratings gain over the genus offset is a matter of information, not of method: 5 to 17 answers a
+  photo say little about it here. Why so much less than the textbook figure behind the gate (0.135 of information an
+  answer, ±0.61 at 20 answers in the 11-18 study) [guess]: the counts include each player's repeat answers on a photo, which say
+  little about it for a new viewer; the players' levels are themselves uncertain; and the genus offsets carry their
+  own 0.25.
+
 ## 4. What this can conclude (rule A5)
 
-- It can say that coral photos differ within their genus by about as much as the gate allows or more (0.86, at least
-  0.49), so a test on genus offsets alone would carry an error over the gate's; that today's residuals, at 1-17 answers
-  a photo, recover little of it; and that one log of 3,920 answers from 15 players cannot pin the spread between 0.6 and
-  1.2.
-- It cannot say what the test would do on real players (none has taken one), nor whether the Elo residual reaches the
-  gate's ±0.61 at 20 answers: the planted check only reaches today's counts (up to 17). The population is narrow (15
-  players, IMR people and the owner's account).
+- It can say that coral photos differ within their genus, most likely by about 0.8 (a spread under 0.61 is not
+  excluded), so a test on genus offsets alone would most likely carry an error over the gate's; that at today's 5 to
+  17 answers a photo no rating method recovers much of it; and that one log of 3,920 answers from 15 players cannot
+  pin the spread between 0.4 and 1.2.
+- It cannot say what the test would do on real players (none has taken one), nor whether 20 answers a photo reach
+  the gate's ±0.61: the planted check only reaches today's counts (up to 17). The population is narrow (15 players,
+  IMR people and the owner's account).
 
 ## 5. Recommendation [guess, from the measures above]
 
 - **Wait for the calibration set; do not lower the 20-answer bar.** Today's ratings on the photos that have 5+
-  answers are off by about the within-genus spread itself (0.8 at the estimate, up to 1.2), over the gate's 0.61. A
-  subset (the members nearest 20) would not change that: at 10-17 answers the residual still recovers little [planted].
-- **Before the test uses the members, rate them with a direct fit**: each member's difficulty fitted by maximum
-  likelihood on its answers with the players' levels known (as `core.js` `levelFit` does for a player), shrunk toward its
-  genus by τ ≈ 0.86, and checked held-out as here. The Elo residual, damped by design for the game, uses the answers
-  less fully: at τ = 0.8 its error on 5-17 answers is 0.78, where an efficient estimate would be about 0.6 at 10
-  answers [model: 1 / √(1 / 0.8² + 10 × 0.135)]. Whether 20 answers then reach ±0.61 can be checked the same way when
-  the members get there.
-- **What brings the gate nearer is answers on the members**: REE-112's option of a coordinated RA playing week
-  (about 30 member answers a day in the training week against 4.5-7.6 lately) is the lever; the photos' rating method
-  is not. Pierre's call (REE-112 next action (3)).
+  answers are most likely off by 0.8 or more, over the gate's 0.61, and a better rating method would not change that.
+- **A subset would not help**: the photos with 10 to 17 answers are rated no better than those with 5 to 9 [planted].
+- **Check the gate itself before the test reads the members**: the 11-18 study's ±0.61 at 20 answers is the textbook
+  figure, and at today's counts the real gain is far below it. When the members reach 20 answers, measure their error
+  held-out as here (first-time answers of players who did not rate them); if it is still over 0.61, the members need
+  more answers from new players, or the test more questions.
+- **What brings the gate nearer is answers on the members, from players seeing them for the first time**: REE-112's
+  option of a coordinated RA playing week (about 30 member answers a day in the training week against 4.5-7.6 lately)
+  is the lever. Pierre's call (REE-112 next action (3)).
 - The genus-level part matters too (σu 0.36, 0.89 with an early cut): keep the test's members across many genera and
   refit the offsets at the time the test is built.
