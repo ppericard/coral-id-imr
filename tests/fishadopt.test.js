@@ -154,7 +154,7 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
       progData +
       groups +
       fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8') +
-      '\nbindSync = () => {};\nthis.A = {replayAdopt, replaysAdopt, rvApplied, rvKey, syncGet, syncPush, syncPull, store};',
+      '\nbindSync = () => {};\nthis.A = {replayAdopt, replaysAdopt, rvApplied, rvKey, syncGet, syncPush, syncPull, sendAnon, store};',
     ctx
   );
   const A = ctx.A;
@@ -294,6 +294,70 @@ test('a fish reset made on this device while the save was on its way: its replay
   assert.strictEqual(a.replaysAdopt(j, [], {fish: ''}), false, 'sent before the reset');
   assert.strictEqual(a.rvApplied(FS), 0);
   assert.strictEqual(a.replaysAdopt(j, [], {fish: T(30)}), true);
+});
+
+// A device that never signed in (ROADMAP "Fish progress replayed", REE-59): its anonymous send asks for the fish
+// replay as a signed-in save does (rvs, its reset sreset), and adopts the replay of its own answers since that reset.
+const settle = () => new Promise(r => setImmediate(r)).then(() => new Promise(r => setImmediate(r)));
+test('a device that never signed in: its anonymous send asks for its fish replay and adopts it (no floor), since its fish reset', async () => {
+  const s = loadCodeGs(withFiles()),
+    id = 'abcdefghij';
+  assert.ok(s.post({anon: id, anonAnswers: F}).log, 'nine fish answers logged under the anonymous id');
+  const queued = [{...fa('q1', 40), a: 'f:Damselfishes', ok: 1}],
+    a = app({
+      sheet: atv(s),
+      ls: {
+        'reefid-anon-id': JSON.stringify(id),
+        'reefid-anonq': JSON.stringify(queued),
+        'reefid-sync-fish-progress': JSON.stringify(today),
+        'reefid-sync-coral-rv': String(C.RV)
+      }
+    });
+  a.sendAnon();
+  await settle();
+  const b = a.sent[0];
+  assert.deepStrictEqual([b.anon, b.rvs && b.rvs.fish, b.sreset], [id, 0, undefined], 'asked with its fish rules version, no reset');
+  assert.strictEqual(a.rvApplied(FS), FRV, 'adopted under its own rules version');
+  const P = a.fish(),
+    want = C.replayProgress(
+      F.map(x => C.logRow(x, '~anon ' + id)),
+      {gen: FGEN}
+    )['~anon ' + id].P;
+  assert.ok(
+    Math.abs(
+      bar(P, 'f:Damselfishes') -
+        bar(
+          C.replayProgress(
+            [...F, ...queued].map(x => C.logRow(x, 'z')),
+            {gen: FGEN}
+          ).z.P,
+          'f:Damselfishes'
+        )
+    ) < 1e-9,
+    'the log, the queued answer on top'
+  );
+  assert.ok(bar(want, 'f:Damselfishes') < bar(today, 'f:Damselfishes'), 'no floor (Q330)');
+  assert.ok(!P['f:Angelfishes'], 'no logged answer: its saved answers go (rule D9)');
+  assert.deepStrictEqual(
+    a.cards.map(c => c.slice(0, 3)),
+    [['fish', 0, FRV]]
+  );
+
+  // A fish reset on this device: the send says it, and the replay starts there (the queued answer alone).
+  const c = app({
+    sheet: atv(s),
+    ls: {
+      'reefid-anon-id': JSON.stringify(id),
+      'reefid-anonq': JSON.stringify([{...fa('q2', 60), a: 'f:Damselfishes', ok: 1}]),
+      'reefid-sync-fish-reset': JSON.stringify(T(50)),
+      'reefid-sync-coral-rv': String(C.RV)
+    }
+  });
+  c.sendAnon();
+  await settle();
+  assert.deepStrictEqual(c.sent[0].sreset, {fish: T(50)});
+  assert.strictEqual(c.rvApplied(FS), FRV);
+  assert.deepStrictEqual([c.fish()['f:Damselfishes'].ok, c.fish()['f:Damselfishes'].ko], [1, 0], 'only the answer since the reset');
 });
 
 test('answers logged from a refused save (SYNC.lg): the replay of every subject is adopted again until a save carries them', () => {

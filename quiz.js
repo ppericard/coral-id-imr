@@ -687,6 +687,18 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
+// The player's time net of the photo's (core.js rtWeight ti, ptimeQ; docs/LEARNING.md "The player's time net of the
+// photo's"): a question's time term, the mean of its photos' served time terms (model.js PTM; a photo without one: 0),
+// which the scorer takes off a right answer's z and the scoring record keeps (i). Only with a script whose replay does
+// the same (core.js RTNET_SHEET, rule D4); otherwise undefined: the answer weighs and is logged as before.
+const ptNetOn = () => typeof sheetV === 'function' && sheetV() >= RTNET_SHEET;
+const photoTimeQ = ph =>
+  ptNetOn()
+    ? ptimeQ(
+        ph.map(p => p.f),
+        f => (PTM[f] || [])[0]
+      )
+    : undefined;
 // One answer recorder (docs/spec/quiz.md "What each mode counts"): what every counted answer does to the player's record
 // and the answer log, whatever its game: the photo quiz, the custom quiz and the Duel tab (answer, below) and a live game
 // (live.js liveLog). No screen: the caller keeps its own (the feedback, the prompts, the session's tally).
@@ -752,8 +764,10 @@ function recordAnswer({
     Rc,
     p: startP(),
     sec: tm.rt,
-    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does.
+    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does, net of the photos' time term
+    // (photoTimeQ above: the photos d0 averages; logged in sc as i; undefined before the script that replays it).
     timed: true,
+    ti: photoTimeQ(ph),
     // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
     df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
     // A smaller fault's kind (Q394 A: typeBind z, a species' common name or its genus alone typed for its scientific
@@ -1767,7 +1781,9 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
     try {
       dueled = ((SYNC && SYNC.log) || store.get(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
     } catch (e) {}
-  return dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
+  const d = dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
+  // The view the Custom quiz kept (CQ.VIEW) is the last one the player chose: My mix-ups shows it was seen before m was counted.
+  return !d.u.m && store.get(CQ.VIEW, '') === 'mix' ? {...d, u: {...d.u, m: 1}} : d;
 };
 // One more open of a feature of a tip (k: a counter of u): that tip is not for this player.
 const tipOpened = k => store.set(TIPR.KEY, tipUse(tipsLoad(), k));
@@ -1788,7 +1804,14 @@ function tipAfter(nb, cur, miss, zm, hold) {
   st = tipNote(st, Date.now());
   if (!raw && q0) st = {...st, u: {...st.u, q: q0}}; // just seeded from the log, this answer included
   store.set(TIPR.KEY, st);
-  const b = {ctx: cur.split('|')[0], miss, zm: !!zm};
+  // mix: the pairs of genera the player mixed up TIPR.MIX times or more (the My mix-ups view's edges), counted only for a
+  // player the My mix-ups tip can still target.
+  const b = {
+    ctx: cur.split('|')[0],
+    miss,
+    zm: !!zm,
+    mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0
+  };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
     // The next question is planned 50 ms after the answer (answer, planNext): a Next tapped sooner plans it now, so its
@@ -1811,6 +1834,11 @@ const TIP_ACT = {
   custom: () => (location.hash = hr('quiz-custom')),
   // The Duel tab (look-alike duels).
   duels: () => (location.hash = hr('quiz-duel')),
+  // The Custom quiz's picking page on its My mix-ups view (the view the page keeps is the last one chosen).
+  mixups: () => {
+    store.set(CQ.VIEW, 'mix');
+    location.hash = hr('quiz-custom');
+  },
   zoom: () => {
     const z = $v.querySelector('.q.done .qstage .zoom');
     if (!z) return route();
@@ -2072,7 +2100,9 @@ const QPROMPT = {
 // answered, so leaving the page (Learn, My progress, anywhere) or reloading it brings back the same question, its photos
 // and its choices, never a new draw. It is stored as units and photo files, never as HTML or photo records: a kept
 // question is built again from the current data (pendBuild), so a photo or a genus that left the draw ends it (pendOk) and a
-// new question is drawn. A question shown with a first-meeting card is not kept (its card is the genus's meeting).
+// new question is drawn. A question about the genus its own first-meeting card introduces is not kept (its card is the
+// genus's meeting); one shown with another genus's card is kept (introAdd marks that genus met when its card shows, so the
+// card does not come back).
 // The seconds already looked at it travel with it (rt, QCLOCK.pre): the time away is not counted, the time before is.
 const PEND = {KEY: 'pending', MAX: 6};
 const pendKey = () => sDev(PEND.KEY); // reefid-<dev>pending: stays on this device, cleared at sign-out (sync.js)
@@ -2082,10 +2112,11 @@ const pendAll = (key = pendKey()) => {
 };
 let PENDQ = null; // the kept question on screen: {key, cur, el}
 let PENDSCI = null; // the name display ('sc' / 'so', app.js sciShow) the next question is shown with, when it comes back
-// The record of question q of game cur: null when it is not kept (a card's question, a photo with no file name).
+// The record of question q of game cur: null when it is not kept (a question about the genus its own card introduces, a photo
+// with no file name).
 function pendRec(cur, q) {
   const [, t, c, , set, kq] = q;
-  if (q.intro || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
+  if ((q.intro || []).includes(t) || !set || !Array.isArray(set.shown) || !Array.isArray(c)) return null;
   const ph = p => (p && p.f ? [p.f, String(p.view || '')] : null),
     sh = set.shown.map(ph),
     hi = set.hint ? ph(set.hint) : null,
@@ -2279,12 +2310,14 @@ const pump = () => {
     while (pfLive < 2 && x.urls.length) {
       const i = new Image();
       pfLive++;
-      // Once R2 has failed, a URL queued before goes to its online original or the site straight away.
-      const u = AWAY ? photoAway(x.urls.shift(), photoLook) : x.urls.shift();
-      i.onload = () => (pfLive--, pump());
+      // Once R2 is given up, or this file failed on it already, a URL queued before goes to its online original or the
+      // site straight away.
+      const v = x.urls.shift(),
+        u = AWAY || r2Missed(v) ? photoAway(v, photoLook) : v;
+      i.onload = () => (pfLive--, r2Loaded(u), pump());
       // A preload is no element of the page (app.js photoFail): failed on R2, it is asked from R2 once more after
       // PHOTO_RETRY ms (core.js photoRetry; under a service worker, the worker did), then its online original or its file
-      // on the site (core.js photoAway), and so are the next photos when no service worker controls the page.
+      // on the site (core.js photoAway); with no service worker it counts toward giving R2 up (app.js r2Failed).
       i.onerror = () => {
         pfLive--;
         if (photoLocal(u) !== u) {
@@ -2293,7 +2326,7 @@ const pump = () => {
             x.r2try.add(u);
             return setTimeout(() => (x.urls.unshift(u), PF.includes(x) || PF.push(x), pump()), PHOTO_RETRY);
           }
-          if (!swOn()) r2Out();
+          if (!swOn()) r2Failed(u);
           x.urls.unshift(photoAway(u, photoLook));
         }
         pump();
@@ -3337,6 +3370,7 @@ function viewCustom() {
     show();
   };
   const draw = () => {
+    if (view === 'mix') tipOpened('m'); // the My mix-ups view is on screen: its "Did you know?" tip is not for this player
     const {note, G} = cqGroups(view, play);
     box.innerHTML =
       (note ? `<p class="note cqnote">${esc(note)}</p>` : '') +
