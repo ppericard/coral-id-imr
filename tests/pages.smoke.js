@@ -106,7 +106,9 @@ const left = (p, from, timeout = 10000) =>
     .waitForFunction(f => location.hash !== f, from, {timeout})
     .then(() => drawn(p))
     .catch(() => false);
-const TIPS_OFF = () => localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+// (3 photos enlarged ends the zoom tip; the basics tip's two showings used, since "new", this page's default player, is its audience.)
+const TIPS_OFF = () =>
+  localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
 // One overlay at a time, and each one closable. Returns the failures.
 async function overlays(b, base) {
   const fails = [];
@@ -3150,19 +3152,27 @@ async function startSmoke(b, base) {
 // before 20 questions; never with 3 photos enlarged. Nothing wider than the screen. Returns the failures.
 async function tipsCheck(b, base) {
   const fails = [];
-  const open = async (w, h, u, at = '#practice/quiz', intro = false) => {
+  // x: what the page's player has besides the counters: start, the first-launch record (default "new": the corals' default
+  // player, whom the basics tip is for), s, the tips shown (default: the basics tip's two showings used, so only the tip
+  // under test is in play), basics and ach, the Coral basics record and the achievements (default none).
+  const open = async (w, h, u, at = '#practice/quiz', intro = false, x = {}) => {
     const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
     await c.route(
       x => !x.href.startsWith(base),
       r => r.abort()
     );
-    await c.addInitScript(u => {
-      localStorage.setItem('reefid-tour', '"done"');
-      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('reefid-nudge', '1');
-      if (!localStorage.getItem('reefid-tips'))
-        localStorage.setItem('reefid-tips', JSON.stringify({u, s: {}, v: {t: Date.now(), n: 12, tip: 0}}));
-    }, u);
+    await c.addInitScript(
+      ([u, x]) => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', x.start || '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        if (x.basics) localStorage.setItem('reefid-basics', x.basics);
+        if (x.ach) localStorage.setItem('reefid-sync-ach', x.ach);
+        if (!localStorage.getItem('reefid-tips'))
+          localStorage.setItem('reefid-tips', JSON.stringify({u, s: x.s || {basics: [0, 0]}, v: {t: Date.now(), n: 12, tip: 0}}));
+      },
+      [u, x]
+    );
     const p = await c.newPage();
     const errs = [];
     p.on('pageerror', e => errs.push(String(e)));
@@ -3304,7 +3314,7 @@ async function tipsCheck(b, base) {
       const [c, p] = await open(w, h, {q: 25, z: 0});
       await p.evaluate(() => {
         const t = Date.now();
-        localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
+        localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {basics: [0, 0]}, v: {t, n: 2, tip: 0}}));
         // The one-tap question's session in the corals: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
         localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7, s: 'coral'}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
@@ -3509,6 +3519,88 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} mix-ups tip: page errors ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
+    // The basics tip (d): the corals' default player ("new": the first-launch answer the basics module is offered first
+    // to) with 30 questions who never opened Coral basics gets it at the Next right after a miss in the Quiz; the card
+    // speaks the subject's own words (UNITS basics), fits the screen; Show me opens Coral basics (its page records the step it
+    // opens, which ends the audience); the tip is marked shown and logged.
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {}});
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p);
+      if (!r.next) fails.push(`${W} basics tip: not shown to a "new" player who never opened Coral basics`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'New to corals? Try Coral basics' ||
+          !/^Coral basics shows, on real photos, the few words the ID tips use.* It is in Learn, any time\.$/.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} basics tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p
+          .waitForFunction(() => location.hash.startsWith('#learn/basics') && document.querySelector('.bx-step, .bx'), null, {
+            timeout: 8000
+          })
+          .catch(() => {});
+        const st = await tips(p),
+          at = await p.evaluate(() => ({hash: location.hash, rec: JSON.parse(localStorage.getItem('reefid-basics') || 'null')})),
+          ev = await p.evaluate(() =>
+            JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+              .filter(x => /^tip:/.test(x.src || ''))
+              .map(x => `${x.k}:${x.src}:${x.r}`)
+          );
+        if (!at.hash.startsWith('#learn/basics') || !at.rec || !at.rec.last || (st.s.basics || []).length !== 1)
+          fails.push(`${W} basics tip Show me: ${JSON.stringify({at, st})}`);
+        if (ev.join() !== 'pulse:tip:basics:shown,pulse:tip:basics:show') fails.push(`${W} basics tip events: ${JSON.stringify(ev)}`);
+      }
+      if (errs.length) fails.push(`${W} basics tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these: said "IMR course" or "know well" (the "lower" fallback card's players, who get its offer of the same
+    // module), a "new" player the "higher" card was shown to, one whose Coral basics page was opened (or done on another
+    // device: the synced achievement), 5 questions (still under 30 after 12 misses).
+    for (const [u, x] of [
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, start: '{"c":"imr","t":1}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, start: '{"c":"know","t":1}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, start: '{"c":"new","t":1,"fb":{"new-hi":[40,1]}}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, basics: '{"last":"colony"}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, ach: '{"_basics":1}'}
+      ],
+      [{q: 5, z: 3, c: 1, d: 1, m: 1}, {s: {}}]
+    ]) {
+      const [c, p] = await open(w, h, u, '#practice/quiz', false, x);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} basics tip shown to ${JSON.stringify({u, x})}`);
+      await c.close();
+    }
     // Not for these: one pair only, no pair, the view seen before (m 1). Right answers only: a miss makes a pair of its own,
     // and the tip, past 120 questions, takes any break.
     for (const [u, pairs] of [
@@ -3564,7 +3656,8 @@ async function customLeftCheck(b, base) {
         localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-nudge', '1');
         // Not a "Did you know?" tip's player (3 photos enlarged): only this card may take a break.
-        localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {}, v: {}}));
+        localStorage.getItem('reefid-tips') ||
+          localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {basics: [0, 0]}, v: {}}));
         if (intro) {
           localStorage.getItem('reefid-sync-coral-intro') ||
             localStorage.setItem('reefid-sync-coral-intro', JSON.stringify(Object.fromEntries(M.map(n => [n, [0, 1, 1, 's']]))));
@@ -6442,7 +6535,7 @@ async function noUpscaleCheck(b, base) {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
       // The player's id seeds the per-player reserve (core.js reserveOf: photos kept off this player's sheets and games).
       // The app makes a random id, so each run was another player: the Tubastraea sheet, whose only lecture photos sit
       // behind the "more" fold and can be reserved, had none for about 1 id in 1000 ("shows no IMR lecture photo", the
@@ -6612,7 +6705,7 @@ async function comparedLayoutCheck(b, base) {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
     });
     const p = await c.newPage();
     await p.goto(base);
