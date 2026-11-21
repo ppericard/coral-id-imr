@@ -2996,6 +2996,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
           WINK.AT[0] = answersSoFar();
           delete WINKS[SUBJ.id];
           localStorage.removeItem('reefid-sync-fish-wink');
+          pendDrop('quiz'); // the question on screen is not kept: a wink is decided before a new question is drawn
           quizPhoto();
           ok({wink: !!document.querySelector('#view .q.wink'), seen: Object.keys(WINKS[SUBJ.id] || {}).length});
         }, 300)

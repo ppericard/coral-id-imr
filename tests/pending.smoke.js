@@ -119,12 +119,21 @@ const look = p =>
   });
 const stored = (p, key) => p.evaluate(k => JSON.parse(localStorage.getItem(k) || '{}'), key);
 
+// The question's clock runs (QCLOCK.t0: its first photo, a Find the X's four tiles, are in).
+const started = p =>
+  p
+    .waitForFunction(() => QCLOCK.t0 !== null, null, {timeout: 15000})
+    .then(
+      () => true,
+      () => false
+    );
 // One game, one format: leave to Learn and back, reload, answer. at: the page key of the game; kept: its key in the store.
 async function keep(p, S, label, at, kept) {
   const key = C.subjDev(S.id, 'pending'),
     a = await look(p);
   if (!ok(a && !a.done, `${label}: no question on screen`)) return null;
-  await p.waitForTimeout(2000); // looked at for a while (a slow photo starts the clock late)
+  ok(await started(p), `${label}: the clock never started (its photos are not in)`);
+  await p.waitForTimeout(2000); // looked at for a while
   await go(p, S, 'genera');
   const rec = (await stored(p, key))[kept];
   ok(rec && rec.t === a.t, `${label}: the question is kept when the player leaves (${JSON.stringify(rec)})`);
@@ -137,6 +146,7 @@ async function keep(p, S, label, at, kept) {
     JSON.stringify(a) === JSON.stringify(b),
     `${label}: back from Learn, the same question\n  ${JSON.stringify(a)}\n  ${JSON.stringify(b)}`
   );
+  await started(p); // its first photo in: the clock runs, with the seconds carried
   const clock = await p.evaluate(() => ({pre: QCLOCK.pre, read: qclockRead()}));
   ok(rec && Math.abs(clock.pre - rec.rt) < 0.06, `${label}: the clock carries ${rec && rec.rt} s (pre ${clock.pre})`);
   ok(
@@ -257,6 +267,7 @@ async function more(p, S, L) {
           return false;
         });
         if (ok(got, `${L} find the X: one was drawn`)) {
+          await qa.ready(p); // the four tiles are in: the answers are open
           const f = await keep(p, S, `${L} find the X`, 'quiz', 'quiz');
           ok(f && f.find, `${L} find the X: the four tiles after the reload`);
           await answered(p, S, `${L} find the X`, 'quiz');
