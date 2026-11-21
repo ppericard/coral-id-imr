@@ -2490,7 +2490,7 @@ const TREE_UNITS = {
   sheet: id => viewTreeSheet(id),
   // The sections of each sheet, in their order on the page (learn.js sheetBody; each is the sheet's own builder of that
   // name): the names, my progress, the first photo with the ID tips, the look-alikes, the genus rows or species, the
-  // juveniles, the report line.
+  // juveniles, a species' sexes or colour phases (phases: only where the cited phase list gives them), the report line.
   sheetParts: {
     family: ['names', 'prog', 'hero', 'looks', 'genera', 'juveniles', 'report'],
     genus: ['names', 'prog', 'hero', 'genusMarks', 'note', 'roots', 'moved', 'species', 'looks', 'more', 'report'],
@@ -2505,6 +2505,7 @@ const TREE_UNITS = {
       'rank',
       'photos',
       'juvenile',
+      'phases',
       'siblings',
       'looks',
       'more',
