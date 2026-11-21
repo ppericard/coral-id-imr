@@ -35,6 +35,14 @@ PARTS_DIR = 'core'
 # core.js's parts, in order (core/<name>): each a run of whole statements of the one function's body.
 PARTS = [
     'keys.js',  # the app's name (ORG) and the storage keys: their prefixes, the names before the rename, their migration
+    'delta.js',  # lighter saves: a player's data as a delta and its checksum (dataDelta, dataPatch, dataSum, hash53)
+    'subjects.js',  # the subject registry (SUBJECTS, FISH_RENAMED) and what reads it
+    'tree.js',  # the tree subjects' build (treeGen and its helpers), genera by name, renamed unit ids
+    'content.js',  # the content editor's edits, the structure (circles, look-alike pairs)
+    'merge.js',  # merges: a saved copy's subjects, the curation draft, two admin tabs, two devices, two accounts
+    'elo.js',  # who rates the photos (trust), the photos' Elo and memory, the pooled confusions
+    'apology.js',  # the apology card, reserved names and the admin mark, the shared admin draft (takeTab)
+    'curation.js',  # Pierre's curation applied and the photos per context (applyCuration, applySlots)
     'rest.js',  # everything not split out yet (R6 lists the parts to come), then the exports (CORE)
 ]
 # The wrapper around the parts: core.js's first three lines and its last.
