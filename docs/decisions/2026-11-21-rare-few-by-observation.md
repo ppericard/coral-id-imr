@@ -28,6 +28,10 @@ pour certains genres ou familles qui typiquement sont couverts par très peu d'e
   of practice, so for some players other thin families move the same way.
 - The real app, a player under Open Water asked Remoras once every 20 questions: 7 questions showed 2.8 distinct photos
   before (the most shown 3.9 times, the two adults 89%), 6.7 after (the most shown 1.3 times).
+- The fallback has a cliff: with 2 easy adults a family rotates every observation at ease 3 or more, with exactly 3
+  it rotates only those 3. So a third easy adult judged for Remoras would take it back to 3 photos before Open Water
+  (the measures: docs/reviews/2026-11-21-photo-diversity.md "The cliff", REE-189's second part). Whether `RARE.FEW`
+  rises is left to the integrator.
 - Families with 3 or 4 easy observations still rotate those before Open Water (Flying gurnards, Tunas and mackerels,
   Trumpetfishes, Eel-tailed catfishes); more easy photos for them come through the candidate pipeline (REE-189's second
   part), not through the draw.
