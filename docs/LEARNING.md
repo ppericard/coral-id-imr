@@ -968,7 +968,8 @@ leaderboard ranks by it, and the circle-3 gate reads its circle-1 Entries compon
 The sheet replays each fish player's progress from their fish answers with the same engine (`SUBJECTS` fish
 `replayed`: `core.js` `treeReplayGen`, the units and look-alikes from fish.json, and `treeVarTable`), under the fish's
 own rules versions (`core.js` `FISH_RVS`), so a fish change never replays the corals; the sea slugs the same way
-(`SEASLUG_RVS`). The log is the only reference ("The log, the only reference for progress").
+(`SEASLUG_RVS`). The log is the only reference ("The log, the only reference for progress"). A device that never
+signed in gets these replays too, from its anonymous answers since each subject's reset (`sync.js` `sendAnon`).
 
 ### Fish achievements, around the global score
 

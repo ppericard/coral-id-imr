@@ -3443,13 +3443,90 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} duels tip: page errors ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
+    // The My mix-ups tip: a player with 100 questions, 3 photos enlarged, the Custom quiz and the Duel tab opened, who
+    // mixed up two pairs 3 times and never saw the My mix-ups view, gets it at the Next right after a miss in the Quiz; the
+    // card says what the view does, fits the screen; Show me opens the Custom quiz on that view and counts as a view, so it
+    // never comes again. (The pairs are set on the player's record in the page: the genera in play, mixed up 3 times.)
+    const mixed = (p, n) =>
+      p.evaluate(n => {
+        const L = unlocked();
+        for (const [a, b] of [
+          [L[0], L[1]],
+          [L[2], L[3]]
+        ].slice(0, n))
+          P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        return L.length;
+      }, n);
+    {
+      const [c, p, errs] = await open(w, h, {q: 100, z: 3, c: 1, d: 1});
+      if ((await mixed(p, 2)) < 4) fails.push(`${W} mix-ups tip: fewer than 4 genera in play`);
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p);
+      if (!r.next) fails.push(`${W} mix-ups tip: not shown to a player with two pairs mixed up who never saw the view`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Quiz yourself on your mix-ups' ||
+          !/^The Custom quiz's My mix-ups view groups the genera you confuse with each other, the most confused first\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} mix-ups tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p
+          .waitForFunction(
+            () => location.hash === '#practice/custom' && document.querySelector('[data-cv="mix"][aria-pressed="true"]'),
+            null,
+            {
+              timeout: 5000
+            }
+          )
+          .catch(() => {});
+        const st = await tips(p),
+          view = await p.evaluate(() => ({
+            hash: location.hash,
+            mix: !!document.querySelector('[data-cv="mix"][aria-pressed="true"]'),
+            groups: document.querySelectorAll('.cqg').length
+          }));
+        if (view.hash !== '#practice/custom' || !view.mix || !view.groups || !(st.u.m >= 1) || (st.s.mixups || []).length !== 1)
+          fails.push(`${W} mix-ups tip Show me: ${JSON.stringify({view, st})}`);
+      }
+      if (errs.length) fails.push(`${W} mix-ups tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these: one pair only, no pair, the view seen before (m 1). Right answers only: a miss makes a pair of its own,
+    // and the tip, past 120 questions, takes any break.
+    for (const [u, pairs] of [
+      [{q: 150, z: 3, c: 1, d: 1}, 1],
+      [{q: 150, z: 3, c: 1, d: 1}, 0],
+      [{q: 150, z: 3, c: 1, d: 1, m: 1}, 2]
+    ]) {
+      const [c, p] = await open(w, h, u);
+      await mixed(p, pairs);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p, {right: true})).next) n++;
+      if (n) fails.push(`${W} mix-ups tip shown to ${JSON.stringify({u, pairs})}`);
+      await c.close();
+    }
     // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened, the
-    // Duel tab opened.
+    // Duel tab opened, the My mix-ups view seen (the misses make pairs of their own, so m 1 where 100 questions are past).
     for (const u of [
-      {q: 100, z: 3, c: 1},
+      {q: 100, z: 3, c: 1, m: 1},
       {q: 5, z: 0},
       {q: 80, z: 3},
-      {q: 200, z: 3, c: 1, d: 1}
+      {q: 200, z: 3, c: 1, d: 1, m: 1}
     ]) {
       const [c, p] = await open(w, h, u);
       let n = 0;
@@ -4150,12 +4227,15 @@ async function credits(b, base) {
         licences: !!a && /CC BY/.test(a.textContent),
         // the lecture photos traced to Corals of the World: the site and its terms named
         cotw: !!(a && a.querySelector('a[href="https://www.coralsoftheworld.org/page/terms-of-use/"]')),
+        // REE-50: the app's version line and the link to the source
+        ver: !!a && /Version \S+/.test(a.querySelector('.abver')?.textContent || ''),
+        src: !!(a && a.querySelector('.abver a[href="https://github.com/ppericard/coral-id-imr"]')),
         // The book may be cited under References only, never in the credits around it.
         credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
         bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
       };
     });
-    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || !r.ver || !r.src || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
     // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
@@ -4715,6 +4795,14 @@ async function fishBasicsCheck(b, base) {
     });
     if (JSON.stringify(grp.picks) !== JSON.stringify(grp.key) || !grp.tiles || !grp.cite)
       fails.push(`${W} the groups are not the key's: ${JSON.stringify(grp)}`);
+    // A step of several views names the term of its official line: under "Locking spines" the deck's scalpel line says it
+    // is about the scalpel (new-RA review, 2026-11-22). Its last view shown, as a player reaches it.
+    await p.evaluate(() => (location.hash = 'fish/learn/basics/features'));
+    await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
+    await p.click('.bx .bx-picks button:last-child');
+    const feat = await p.evaluate(() => [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent));
+    const scal = feat.find(t => /scalpel on caudal/.test(t));
+    if (!scal || !/^Scalpel · /.test(scal)) fails.push(`${W} features: the scalpel line does not name its term: ${JSON.stringify(feat)}`);
     // Done = every step seen: its own record and feat, the corals' untouched; the Home line goes; the corals still due.
     for (const st of STEPS) {
       await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);

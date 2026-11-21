@@ -182,5 +182,5 @@ test('the species sheet: its marks in the genus marks box, each line with its so
   assert.strictEqual(c2.genMarks(g, 'g:Cheilinus'), c2.marksBox(g));
   assert.strictEqual(c2.genMarks(g, 'f:Wrasses'), '');
   assert.doesNotMatch(c2.marksBox(g), /mdraft/, 'the genus marks carry no draft flag');
-  assert.ok(block(LEARN, 'function treeSpecies(s) {', '\n}\n').includes('${marksBox(s)}'));
+  assert.ok(block(LEARN, 'function treeSpecies(s) {', '\n}\n').includes('marks: () => marksBox(s)'));
 });
