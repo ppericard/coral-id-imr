@@ -178,7 +178,8 @@ typed where a species' scientific name is asked, or its genus alone) is a miss w
 says its kind (`z`: `cn`, `g`), `core.js` `PART` its size (half, a quarter: starting values, read on the real answers
 later), and `partOf` scales the miss's bar likelihood (a tempered one), its moving average and its two Elo steps (the
 unit and the level); its counts and recent results take a miss, so it is never a gain. The kind is logged, not the size,
-so a new size is one rules version and the whole log replays with it. What only the game knows (the exam, the cards, the
+so a new size is one rules version and the whole log replays with it. The record also keeps the photos' time term a
+right answer's time was netted of (`i`, "The player's time net of the photo's"). What only the game knows (the exam, the cards, the
 hold) is kept by one recorder, `quiz.js` `recordAnswer`, which every game's answer takes (`quiz.js` `answer`, `live.js`
 `liveLog`).
 
@@ -191,7 +192,8 @@ w = clamp(1 − K · z, LO, HI), z = log(seconds) − the median log(seconds) of
 answer without seconds, a typed answer, and before `RTIME.MIN` timed answers. The seconds are those logged (tenths, at
 most 600); the earlier times live in the level's record (`P['~level'].rt`, a count per tenth of a second: `core.js`
 `rtAdd`), so two devices' records add up and a replay rebuilds them. The answer's own time never changes its
-expectation, only the step after it.
+expectation, only the step after it. z is taken net of the question's photo time term ("The player's time net of the
+photo's", below).
 
 ### Beginners and experts
 
@@ -408,7 +410,10 @@ grouped the same way for every player, recomputed with the pooled statistics: fi
 merge, the most confused first, while a group stays at `GROUP.MAX` (3) units or fewer; then average linkage on the
 pooled confusion score, while the two groups' mean is `CONF.TRAP` or more and the group stays at `GROUP.MAX`. Once a
 group has a member open, its other members are the next openings, one at a time. A unit's mastery exam waits until its
-group partners that can open are met (`model.js` `matesLeft`, `examOn`).
+group partners that can open are met (`model.js` `matesLeft`, `examOn`). A species unit's declared pairs are the species
+its record's `look` names (`core.js` `treeSpUnits` `decl`: the sea slugs' decided species pairs, `tools/seaslug_source.json`
+`lookalikes`; none for the fish), so the two species of a pair open close together; its `look`, which the confusion prior
+and the sheet's replay read, already holds them (the other species of its family).
 
 ### An opening only after a right answer
 
@@ -963,7 +968,8 @@ leaderboard ranks by it, and the circle-3 gate reads its circle-1 Entries compon
 The sheet replays each fish player's progress from their fish answers with the same engine (`SUBJECTS` fish
 `replayed`: `core.js` `treeReplayGen`, the units and look-alikes from fish.json, and `treeVarTable`), under the fish's
 own rules versions (`core.js` `FISH_RVS`), so a fish change never replays the corals; the sea slugs the same way
-(`SEASLUG_RVS`). The log is the only reference ("The log, the only reference for progress").
+(`SEASLUG_RVS`). The log is the only reference ("The log, the only reference for progress"). A device that never
+signed in gets these replays too, from its anonymous answers since each subject's reset (`sync.js` `sendAnon`).
 
 ### Fish achievements, around the global score
 
@@ -1079,7 +1085,8 @@ players of its level are. Decision record: docs/decisions/2026-11-21-photo-time-
 - **Served** as the 6th to 8th numbers of the photo's `?stats=1` entry, from sheet `PTIME_SHEET` (rule D4; docs/spec/sync.md
   "Pooled photo statistics"). The draw's targeting, the scoring's d0 (logged in each answer's scoring record), the mastery
   exam's hardest photo and the fish cards' photo order read it through `photoDiff`; the counts (`nAnswers`, the hard-photo
-  achievement) do not. The progress replay never reads it (rule D5: no rules version; `tests/ptime.test.js`).
+  achievement) do not. The time term alone (not the enlargement term) also nets a right answer's time weight, which
+  the progress replay reads ("The player's time net of the photo's", below; rules version 13).
 
 **The checks** (declared before running; the real log read-only, the Answers tab to 2026-11-20 15:50, no row after it on
 2026-11-21 06:45; the branch's own `core.js` run in Node on it; players as the unit, per-player means, 95% t, sign-flip
@@ -1143,6 +1150,72 @@ knowledge at 300, −0.011 [−0.024]; the beginner's first Open Water, +15 answ
 longest plateau, +3 and +1 answers): "the measure cannot tell". The fish cannot run there: learnsim feeds only the
 corals' statistics, so the fish rest on the real log's guardrail G and the unit tests.
 - Compute: about 5 minutes a run of 10 seeds; within the 40-minute cap per case.
+
+### The player's time net of the photo's
+
+Pierre, 2026-11-21 (Q452): «si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui. […] il
+faut recalculer la progression de tous. On peut le faire en silence, c'est pas grave.» Decision record:
+docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`), `ptimeQ`, `ptimeAt`; `quiz.js`
+`photoTimeQ`; rules version 13 (fish 6, sea slugs 3).
+
+- **The rule.** A right answer's time weight ("Response time") takes its z net of the question's photo time term:
+  w = clamp(1 − K (z − ti), LO, HI), ti the mean over its photos of their time term ("The photo's time term": the
+  first of the three served numbers; a photo without one counts 0). Both are in log seconds against a player's own
+  habit, and the term is already a shrunk estimate of the photo's part of z, so it is taken off once: no `PTIME.C`, no
+  fade, no V(L) (they turn the terms into a difficulty), no enlargement term (a rate, not seconds). Symmetric: a fast
+  answer on a photo fast for everyone earns less. A miss, a typed answer, an answer without seconds: w 1 as before.
+- **Logged and replayed.** The game nets by the terms it holds (`PTM`) and logs the term in the scoring record (`i`,
+  kept even at 0), only from sheet `RTNET_SHEET` (rule D4). The full replay takes the logged term, else the photos'
+  terms served when it replays (`replayProgress` photos: the corals' replays in `Code.gs` `rplMake_`, `replayedAll_`,
+  the admin), so every coral answer of the log is netted, silently (rule D6). The device's own answers replayed on top
+  of the sheet's replay (`sync.js`) are passed no photos yet: a pending answer logged before the gate replays there at 0,
+  as the game scored it. The fish and sea slug replays
+  read no pooled photo numbers, so there only the answers logged with the term are netted; their earlier answers keep
+  their weight. A re-fit of the term (`PTIME`) now moves the corals' replayed progress, so it takes a rules version.
+- **What moves.** The bars (the domain score) do not read the time weight, only the ability steps do. On the real log
+  to 2026-11-21 17:17 (corals, 15 players, the branch's replay with the terms served from the whole log against
+  without): no player's slate % moves; the global level moves by −0.03 to +0.001 (11 of 15 down, the largest −0.027).
+  1,200 of 1,439 rated photos have a term; over the 2,566 right timed answers with one, its mean is −0.024 log seconds
+  (sd 0.104, −0.31 to +0.28), so on average the net weights are slightly smaller; why the mean is below 0 is not
+  established (the term is measured against the habit over right answers in the same format, `rtWeight`'s z against
+  the habit over all timed answers).
+- **The real log** (rule L12; declared before running; declared level 1: the rule changes only a right answer's step
+  size, though the paths that follow can differ, below; within
+  [0.5, 1.5]). `tools/abilityeval.js` on the corals (15 players with 20+ answers, 3,920 answers), the app as it is
+  (`e+X+M+A`) against the time netted (`+P`: the terms before each answer, as the live game reads them, from
+  `core.js` `eloReplay`'s own pass; `+Q`: the whole log's terms, as the replay nets a past answer, the answer's own time
+  in them; `+R`: the whole log's without the player's own answers). Next-answer log-loss, players as the unit:
+
+  | Arm against the app as it is | Mean of the players' differences [95%] | Sign-flip p | Verdict (declared) |
+  | --- | --- | --- | --- |
+  | `+P` (online) | +0.000 [−0.000, +0.000] (per answer +0.0001) | 0.84 | guardrail held (bound under +0.002); better: the measure cannot tell |
+  | `+Q` (whole log) | +0.000 [−0.000, +0.000] (per answer +0.0002) | 0.83 | guardrail held; better: the measure cannot tell |
+  | `+R` (whole log, own answers out; exploratory) | +0.000 [−0.000, +0.000] (per answer +0.0002) | 0.99 | no difference |
+
+  Calibration by level band and format: unchanged to two decimals in every group. Exploratory, uncorrected (14 group
+  rows): after a fast right answer, `+P` +0.000 [+0.000, +0.001], p 0.02. The change is too small to show on 15
+  players either way; it is built because the direction is decided (Q452) and its logic holds, not because the log
+  shows a gain (docs/reviews/2026-11-21-simulation-scope.md). Fish and sea slugs: not measured (`abilityeval` replays
+  the corals).
+- **Equivalence.** With no terms passed and none logged, the replay of every player of the log (corals, fish, sea
+  slugs; the corals also with the sheet's other numbers) is identical to `main`'s.
+- **The app world** (level 1; `node tools/learnsim.js --stats` (the corals' statistics rebuilt from the real log with
+  the terms, at `RTNET_SHEET`) `--truth gen`, the default profiles, 5 seeds, 300 questions; before = `main`): its
+  simulated seconds do not depend on the photo, so it can show only that no learning path breaks, never a gain. One
+  look, guardrails only (declared): no path breaks; held everywhere but the beginner's E = bar − D* at 300 answers,
+  −0.508 → −0.461 (+0.047, bound +0.082 against a margin of +0.030): breached on the side the margin guards, though the
+  bar moved toward the true knowledge (it stays 0.46 under it), with the beginner meeting 3.4 more units and true
+  knowledge +0.027; the lecture RA's and the expert's longest plateau unclear (the measure cannot tell). The paths
+  moved (no margin: the expert's right % since the previous checkpoint at 300 −2.0 [−2.5, −1.5], the beginner's
+  −2.2), the cause not established. The arms differ only by this change on the same seeds, so the netting ran.
+- **Level 2** (GitHub runners, `learncheck.yml`, declared before dispatching; before = the merge base). The step up in
+  the app world (corals, 20 seeds, two looks, the live sheet's statistics `--stats live`): nothing breached. The
+  beginner's E at 300 is −0.011 [+0.007], held. Four cells are unclear (the beginner's true knowledge at 300
+  −0.009 [−0.027], their first Open Water, their units met at 300 −0.7 [−2.4], the strong RA's longest plateau): the
+  measure cannot tell. The 5-seed signals do not repeat: the expert's right % is −0.3 [−1.2, +0.6]. The rated world
+  scores its answers untimed (`tools/ratedworld.js` `timed: false`), so it cannot see this change. Its runs confirm
+  that nothing else moves: the corals with the sheet's terms (`--app sheet --times rho25`, 10 seeds × 3,000) and the
+  fish (10 seeds × 3,000, cut at the budget, 22 pairs) both give identical arms.
 
 ### Photo memory
 
@@ -1309,9 +1382,10 @@ adopted by every device: how it is asked for, kept in the Replayed tabs, adopted
 replay".
 
 - **One engine.** The sheet embeds `core.js` (`tools/sync_core.py`), and every answer is scored by `core.js`
-  `scoreAnswer`, the game's own scorer ("One scorer"), with the sheet's photo memory offsets and pooled pairs for the
-  corals and none for the other subjects. An answer logged with its scoring record replays exactly as the game scored
-  it. An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
+  `scoreAnswer`, the game's own scorer ("One scorer"), with the sheet's photo memory offsets, pooled pairs and photos'
+  time terms for the corals and none for the other subjects. An answer logged with its scoring record replays exactly as the game scored
+  it, but for a coral right answer logged before its time term was (no `i`): its time weight is netted by the terms
+  served at each replay, so it follows them ("The player's time net of the photo's"). An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
   memory and the mix-ups term taken out of the logged `e` from `MEM_LOGGED` and `CF_LOGGED`, the replay's own put
   back); a comeback answer's recall counts as 1, and a row with no `e` and `th` counts in the counts only.
 - **What the replay gives and what the device keeps** (`core.js` `replayedOf`): per unit the log has answers on, the
@@ -1325,7 +1399,7 @@ replay".
   either.
 - **Rules versions** (`core.js` `RVS` for the corals, `FISH_RVS`, `SEASLUG_RVS`; rule D5): every change to a progress
   rule appends `{v, at, why, msg}`; a change to how `Code.gs` `stats_` computes what the corals' replay reads from it
-  (`mem`, `conf`, `fmt`, `gd`) is one. A version is not a frozen engine: the sheet always replays with the code's
+  (`mem`, `conf`, `fmt`, `gd`, the photos' time terms) is one. A version is not a frozen engine: the sheet always replays with the code's
   current rules, and a new version only makes every device take the replay once. The latest version of each list has no card (`msg` null; the cards of
   the earlier versions stay for the record, and `core.js` `rvMsgs` shows none for a jump that ends on a version without
   one), and a learned mark the replay takes away is not told (rule D6).

@@ -18,17 +18,17 @@ const MISS = {ctx: 'quiz', miss: true, zm: false},
   RIGHT = {ctx: 'quiz', miss: false, zm: false};
 
 test('tipsInit: empty, malformed, and seeded once from the device answers', () => {
-  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, c: 0, d: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
-  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, c: 0, d: 0});
+  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, c: 0, d: 0, m: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
+  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, c: 0, d: 0, m: 0});
   assert.deepStrictEqual(tipsInit({u: {q: -3, z: 'a'}, s: {zoom: 'x'}, v: 5}, null), {
-    u: {q: 0, z: 0, c: 0, d: 0},
+    u: {q: 0, z: 0, c: 0, d: 0, m: 0},
     s: {zoom: []},
     v: {t: 0, n: 0, tip: 0}
   });
   // The seed: the answers' count and their zm flags; never once a state exists.
   const log = [{zm: 1}, {zm: 0}, {}, {zm: 1}, null];
-  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, c: 0, d: 0});
-  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0});
+  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, c: 0, d: 0, m: 0});
+  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0});
 });
 
 test('tipNote: a visit is answers less than 30 minutes apart; a tip shown holds for the visit only', () => {
@@ -185,6 +185,53 @@ test('look-alike duels tip: once a visit, twice ever 150 questions apart, after 
 });
 const fresh150 = () => played(150, 0, tipsInit({u: {c: 1, z: 3}}));
 
+// The My mix-ups tip: b.mix is the pairs mixed up TIPR.MIX times or more, counted by quiz.js from the player's record.
+test('my mix-ups tip: several pairs mixed up, never saw the view, from 100 questions, in the Quiz or the Custom quiz', () => {
+  assert.strictEqual(TIPR.MIX, 3);
+  const fresh = n => played(n, 0, tipsInit({u: {c: 1, d: 1, z: 3}})),
+    MIXED = {...MISS, mix: 2};
+  assert.strictEqual(tipDue(fresh(99), MIXED), null);
+  assert.strictEqual(tipDue(fresh(100), MIXED).id, 'mixups'); // a miss: a mix-up just made, the moment
+  assert.strictEqual(tipDue(fresh(100), {...RIGHT, mix: 2}), null); // a right answer before 120: not the moment
+  assert.strictEqual(tipDue(fresh(119), {...RIGHT, mix: 2}), null);
+  assert.strictEqual(tipDue(fresh(120), {...RIGHT, mix: 2}).id, 'mixups'); // any break from 20 questions later
+  // One pair, none, or not counted (b.mix missing): not for this player.
+  for (const mix of [0, 1, undefined]) assert.strictEqual(tipDue(fresh(200), {...MISS, mix}), null, String(mix));
+  assert.strictEqual(tipDue(fresh(200), {...MISS, mix: 5}).id, 'mixups');
+  // Its games: the Quiz and the Custom quiz; not the Duel tab nor another page.
+  assert.strictEqual(tipDue(fresh(200), {...MIXED, ctx: 'quiz-custom'}).id, 'mixups');
+  for (const ctx of ['quiz-duel', 'genera']) assert.strictEqual(tipDue(fresh(200), {...MIXED, ctx}), null, ctx);
+  // The view drawn once (a count, or a saved choice folded in by quiz.js): never; a malformed m counts as 0.
+  assert.strictEqual(tipDue(tipUse(fresh(200), 'm'), MIXED), null);
+  assert.strictEqual(tipDue(played(200, 0, tipsInit({u: {c: 1, d: 1, z: 3, m: 1}})), MIXED), null);
+  assert.strictEqual(tipsInit({u: {m: 'x'}}).u.m, 0);
+  assert.strictEqual(tipsInit(null, [{}, {}]).u.m, 0);
+});
+
+test('my mix-ups tip: once a visit, twice ever 150 questions apart, after the zoom, Custom quiz and duels tips', () => {
+  const MIXED = {...MISS, mix: 3},
+    visit = (st, n) => played(n, 0, st, st.v.t + TIPR.GAP);
+  let st = tipShown(played(100, 0, tipsInit({u: {c: 1, d: 1, z: 3}})), 'mixups');
+  assert.deepStrictEqual(st.s.mixups, [100]);
+  assert.strictEqual(tipDue(st, MIXED), null); // same visit
+  st = visit(st, 149);
+  assert.strictEqual(st.u.q, 249);
+  assert.strictEqual(tipDue(st, MIXED), null);
+  st = played(1, 0, st, st.v.t + MIN);
+  assert.strictEqual(tipDue(st, MIXED).id, 'mixups'); // 250
+  st = tipShown(st, 'mixups');
+  assert.strictEqual(tipDue(visit(st, 500), MIXED), null); // never a third time
+  // With all four due, zoom, Custom quiz, duels, then this one at later visits.
+  const all = played(150, 0, tipsInit({}));
+  assert.strictEqual(tipDue(all, MIXED).id, 'zoom');
+  const z = visit(tipShown(all, 'zoom'), 12),
+    c = visit(tipShown(z, 'custom'), 12),
+    d = visit(tipShown(c, 'duels'), 12);
+  assert.strictEqual(tipDue(z, MIXED).id, 'custom');
+  assert.strictEqual(tipDue(c, MIXED).id, 'duels');
+  assert.strictEqual(tipDue(d, MIXED).id, 'mixups');
+});
+
 // The card speaks the subject on screen: a fish player is never told to look at the corallites. Every subject gets a
 // text; a fish player's never names a coral part. The wording is the subject's (core.js SUBJECTS zoom): tips.js never
 // names a subject (rule S1).
@@ -204,6 +251,10 @@ test('registry: the card text follows the subject on screen', () => {
   for (const S of SUBJECTS) assert.ok(c.card.title({subj: S}).includes(S.many), S.id);
   const d = TIPS.find(t => t.id === 'duels');
   for (const S of SUBJECTS) assert.ok(d.card.title({subj: S}).includes(S.many) && d.card.body({subj: S}).includes(S.many), S.id);
+  const m = TIPS.find(t => t.id === 'mixups');
+  for (const S of SUBJECTS) assert.ok(m.card.body({subj: S}).includes(S.many), S.id);
+  assert.match(m.card.body({mouse: true, subj: SUBJECTS[0]}), /Click All on a group/);
+  assert.match(m.card.body({mouse: false, subj: SUBJECTS[0]}), /Tap All on a group/);
   const z = TIPS.find(t => t.id === 'zoom');
   assert.match(z.card.body({subj: subjectOf('coral')}), /corallites/);
   assert.match(z.card.body({subj: subjectOf('fish')}), /markings/);

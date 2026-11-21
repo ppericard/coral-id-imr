@@ -112,7 +112,8 @@ function session(seed, n) {
       fmtOff: C.fmtOff,
       pfmt: () => pfmt, // model.js pfmt: the device's offsets (this session plays a subject the sheet rates)
       // The domain-score bar's genus offsets (model.js genusDiff), which the device's ?stats=1 replies move too.
-      genusDiff: t => pgd[t] || 0
+      genusDiff: t => pgd[t] || 0,
+      photoTimeQ: () => undefined // quiz.js photoTimeQ: no photo time term (before RTNET_SHEET)
     };
     // The recalls quiz.js answer hands quiz.js recordAnswer: a comeback question's, else 1.
     env.R = warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1;

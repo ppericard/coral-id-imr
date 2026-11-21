@@ -272,6 +272,19 @@ const GATES = {
       tm = ptmOf({a: [0.1, 4, 3, 4, 'Acropora', 0.2, 0, 1.1], b: [0.3, 2, 1, 2, 'Acropora']}, v);
     assert.ok(!('b' in tm), 'a photo without a term has none');
     return 'a' in tm && JSON.stringify(tm.a) === '[0.2,0,1.1]';
+  },
+  // The player's time net of the photo's (quiz.js ptNetOn, photoTimeQ; core.js rtWeight ti, scoreRec i, rules version
+  // 13): from the script whose replay nets it the same way and keeps the term; before, no term (undefined): the answer
+  // weighs and is logged as before.
+  RTNET_SHEET: (v, N) => {
+    const q = fn('quiz.js', 'const ptNetOn = ', '\n// One answer recorder', 'photoTimeQ', {
+      sheetV: () => (v === undefined ? 0 : v),
+      RTNET_SHEET: N,
+      ptimeQ: C.ptimeQ,
+      PTM: {a: [0.4, 0, 1], b: [0.2, 0.1, 2]}
+    })([{f: 'a'}, {f: 'b'}, {f: 'c'}]);
+    assert.ok(q === undefined || Math.abs(q - 0.2) < 1e-9, String(q));
+    return q !== undefined;
   }
 };
 

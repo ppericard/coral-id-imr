@@ -43,8 +43,9 @@ module.exports = ROOT => {
       break;
     }
   }
-  // A tile stands in as the 480 px file. A file R2 holds must be answered: one 404 here is R2 out of reach for the page
-  // (app.js r2Out), whose next photos then go to their online originals, FishBase's among them, a host every smoke cuts off.
+  // A tile stands in as the 480 px file. A file R2 holds must be answered: a 404 here sends that photo to its online
+  // original (FishBase's among them, a host every smoke cuts off), and R2_OUT of them in a row give R2 up for the page
+  // (app.js r2Failed).
   const file = name => {
     const own = path.join(IMG, name);
     if (fs.existsSync(own)) return own;
