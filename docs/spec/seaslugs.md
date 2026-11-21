@@ -43,7 +43,7 @@ and `tax` (each taxonomic group, `tg`, its units met and at Advanced), with thei
 
 Their files (`UNITS` `get`: `seaslug.json` and `seaslug-game.json`, no first photos, unversioned and out of the `sw.js`
 shell) have `fish.json`'s and `fish-game.json`'s shapes (`tools/seaslug_game.py`), so `treeGen`, `treeGenera`,
-`treeCurate`, the list and the sheets (`viewList`, `viewFishSheet`) and the draw read them unchanged.
+`treeCurate`, the list and the sheets (`viewList`, `viewTreeSheet`) and the draw read them unchanged.
 
 **Each tree subject has its own state** (`TREE_OF`, `treeOf`: its units `TREEU`, its raw files `TREERAW`, the content
 laid over them, the loads on their way); the globals `TREEU`, `TREERAW`… are the copy of the tree in force (`TREE_AT`).
