@@ -1,6 +1,6 @@
 # "Did you know?" tip (c): My mix-ups, for players with several pairs mixed up who never saw the view
 
-Date: 2026-11-21. PR: #1388. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; REE-13.
+Date: 2026-11-21. PR: #1420. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; REE-13.
 
 ## Context
 
