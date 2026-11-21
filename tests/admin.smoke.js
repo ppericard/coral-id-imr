@@ -8206,13 +8206,20 @@ async function lazyPart(b, base, fails) {
                 first: T.length ? T[0].dataset.f : '',
                 n: T.length,
                 cap: me ? (me.querySelector('.adm-hnum') || {}).textContent || '' : '',
+                prior: me ? (me.querySelector('.adm-hprior') || {}).textContent || '' : '',
                 not: !!(me && me.querySelector('[data-fu="not"]')),
                 removed: T.filter(e => seen.includes(e.dataset.f)).length,
                 rec: /recognised by/.test(document.getElementById('view').textContent),
                 wide: document.documentElement.scrollWidth - innerWidth
               };
             }, pre.f);
+          // The prior beside the answers (REE-62): read behind the page (the subject's own ratings), then on every tile that has
+          // a judged ease or its family's offset: "prior 61% · ease 4", its own line under the answers.
+          await fq
+            .waitForFunction(() => document.querySelector('.adm-fdiffg .adm-hprior'), null, {timeout: 20000})
+            .catch(() => fe.push('By difficulty: no prior drawn'));
           const d0 = await dv();
+          if (!/^prior \d+%( · ease [1-5])?$/.test(d0.prior)) fe.push(`By difficulty, the prior ${JSON.stringify(d0.prior)}`);
           if (
             d0.views.slice(0, 3).join() !== 'ease,phase-framing,by-difficulty' ||
             d0.first !== pre.f ||
@@ -9569,6 +9576,27 @@ async function lazyPart(b, base, fails) {
         const head = await sq.evaluate(s => (document.querySelector(s + ' .adm-mhead b') || {}).textContent || '', mrow(KA));
         if (mr.length !== n0 + 1 || !/ \(added\)$/.test(head) || mr.filter(t => /\(added\)/.test(t)).length !== 1)
           se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, head})}`);
+        // Species pairs (REE-46), read only under the families': every pair fish.json declares, with the sources that state it,
+        // every cue sourced, the players' confusion line (read behind the page) and the photo strips, which enlarge.
+        await swait(() =>
+          /^Players’ confusion: (mixed|never|needs)/.test((document.querySelector('#view .adm-spair .adm-spconf') || {}).textContent || '')
+        );
+        const spp = await sq.evaluate(() => ({
+          n: document.querySelectorAll('#view .adm-spairs .adm-spair').length,
+          want: speciesPairs(FISHC.raw).length,
+          says: [...document.querySelectorAll('#view .adm-spair .adm-says')].every(e => e.querySelector('a')),
+          unsourced: document.querySelectorAll('#view .adm-spair .adm-marks .warnc').length,
+          marks: document.querySelectorAll('#view .adm-spair .adm-marks li').length,
+          thumbs: document.querySelectorAll('#view .adm-spair [data-spz]').length,
+          rows: document.querySelectorAll('#view .adm-fishmont .adm-spair').length
+        }));
+        if (!spp.want || spp.n !== spp.want || !spp.says || spp.unsourced || !spp.marks || spp.rows)
+          se.push(`Species pairs ${JSON.stringify(spp)}`);
+        if (spp.thumbs) {
+          await sq.click('#view .adm-spair [data-spz]');
+          if (!(await sq.$('#lightbox:not([hidden]) .lb-cap'))) se.push('Species pairs: a photo does not enlarge');
+          await sq.evaluate(() => document.querySelector('#lightbox [data-x]') && document.querySelector('#lightbox [data-x]').click());
+        }
         const fa = await pickIn(KA, 'a');
         x = await mont(KA);
         if (fa && (!x || x.a !== fa || KA !== (await sq.evaluate(([a, b]) => contentPairKey(b, a), [FAM, ids.add]))))
