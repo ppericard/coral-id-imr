@@ -3351,6 +3351,75 @@ async function namesCard(b, base, errs) {
       return r;
     });
     if (!bt2.shown || bt2.after || bt2.told) ui.push(`${width}px leaderboard toast and a subject switch: ${JSON.stringify(bt2)}`);
+    // REE-210: the leaderboard notice never sits over a question's answers or Next (at 390 px it covered two of four
+    // answers for 15 s). It waits while a question is on screen, answered or not; it shows on the first page without one,
+    // its ✕ at least 44 px; a question that opens while it shows takes it away at once, not told (an observer of the
+    // test's own, registered after the app's, sees the toast gone in the very change that draws the question). Light and
+    // dark, the question unanswered and answered (Next on screen). The sync is stubbed in memory only after the answer
+    // (rule D1: no call to the sheet).
+    for (const theme of ['light', 'dark']) {
+      await q.evaluate(() => (location.hash = '#practice/quiz'));
+      // A card due is out of the way first: the start question (answered by its first choice), then any other.
+      await q.waitForFunction(() => document.querySelector('.unlock.startq, #view .q'), null, {timeout: 15000});
+      if (await q.$('.unlock.startq [data-start]'))
+        await q.click(`.unlock.startq [data-start="${(await q.$('.unlock.startq [data-start="know"]')) ? 'know' : 'imr'}"]`);
+      const st = await settle(q);
+      if (st) ui.push(`${width}px leaderboard notice and a question: ${st}`);
+      await qa.ready(q);
+      const bq = await q.evaluate(async theme => {
+        document.documentElement.dataset.theme = theme;
+        const s0 = SYNC,
+          wait = ms => new Promise(r => setTimeout(r, ms)),
+          toast = () => [...document.querySelectorAll('.apptoast')],
+          r = {};
+        store.set('reefid-board-sent14', 1);
+        store.set('reefid-board-told', 0);
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice(); // a question unanswered
+        await wait(300);
+        r.open = toast().length || store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        smokeAnswer(); // the feedback state, Next on screen
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice();
+        await wait(300);
+        r.feedback = toast().length || store.get('reefid-board-told', 0);
+        location.hash = '#about';
+        for (let i = 0; i < 20 && !toast().length; i++) await wait(100);
+        const t = toast()[0],
+          b = t && t.querySelector('button').getBoundingClientRect();
+        r.shown = toast().length; // exactly one
+        r.close = b ? [Math.round(b.width), Math.round(b.height)] : null;
+        r.fits = t ? t.getBoundingClientRect().right <= innerWidth + 1 && t.getBoundingClientRect().left >= -1 : false;
+        let over = 0;
+        new MutationObserver(() => document.querySelector('#view .q') && toast().length && over++).observe($v, {
+          childList: true,
+          subtree: true
+        });
+        location.hash = '#practice/quiz'; // a question opens under it: taken away, not told, never painted over it
+        for (let i = 0; i < 40 && !document.querySelector('#view .q'); i++) await wait(100);
+        r.over = over;
+        r.pulled = !toast().length && !store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        toast().forEach(x => x.remove());
+        return r;
+      }, theme);
+      if (
+        bq.open ||
+        bq.feedback ||
+        bq.shown !== 1 ||
+        !bq.close ||
+        bq.close[0] < 44 ||
+        bq.close[1] < 44 ||
+        !bq.fits ||
+        bq.over ||
+        !bq.pulled
+      )
+        ui.push(`${width}px ${theme} leaderboard notice and a question on screen: ${JSON.stringify(bq)}`);
+    }
+    await q.evaluate(() => delete document.documentElement.dataset.theme);
     await q.evaluate(() => (location.hash = '#about'));
     await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
     // From the keyboard: Tab reaches each side, Enter switches, and the focus stays on the side chosen once the header is
@@ -3509,10 +3578,12 @@ async function namesCard(b, base, errs) {
       return {
         title: d ? d.querySelector('h2').textContent : '',
         links: d ? [...new Set([...d.querySelectorAll('a')].map(a => a.getAttribute('href')))].join() : '',
-        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
+        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true,
+        // REE-211: the tag shows on the door while the subject's key is not built, visible at every width.
+        soon: d && d.querySelector('.hdsoon') ? (e => !!e.offsetParent && /soon/i.test(e.textContent))(d.querySelector('.hdsoon')) : false
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral || !door.soon)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
     await q.evaluate(() => (location.hash = '#identify/key'));
@@ -3569,6 +3640,14 @@ async function namesCard(b, base, errs) {
     const d = await page();
     if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // REE-211: the corals' Identify door has no "soon" tag (their key is built).
+    await q.evaluate(() => (location.hash = '#home'));
+    await q.waitForSelector('#view .hdoor.identify', {timeout: 15000}).catch(() => {});
+    const ct = await q.evaluate(() => ({
+      door: !!document.querySelector('#view .hdoor.identify'),
+      tag: !!document.querySelector('#view .hdoor.identify .hdsoon')
+    }));
+    if (!ct.door || ct.tag) ui.push(`${width}px Home's Identify door, Coral on, has a "soon" tag: ${JSON.stringify(ct)}`);
     // A fish page linked straight (the subject prefix in the app's addresses): a new tab on a fish
     // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
     for (const [h, key] of [

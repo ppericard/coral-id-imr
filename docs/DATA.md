@@ -29,7 +29,7 @@ Everything else is written by a tool that a pull request runs and commits. A too
 | `curation-play.json` | `curation.json` without what the app never reads, its fish part read as the fish game's build reads it (the auto-sort's proposals read the newer judgement: `tools/fish_game.py` `read_cur`). Not in git | `tools/curplay.py`, at deploy | The app, the service worker |
 | `data.json` | The coral content: one record per genus (`gen`), the lecture photos (`course`), the Coral ID Key (`key`), glossary, traits, the extra Dauin genera (`x`) and the few candidates `curation.json` names | `tools/datajson.py` (the one writer, rule W16), through the `tools/apply_*.py` scripts and the fetch scripts | The app, the admin, the sheet script, the service worker |
 | `data/cand.json` | The coral candidate photos still waiting (same layout, top key `cand`) | The fetch scripts (`tools/fetch_local.py`, `tools/fetch_approved.py`), through `datajson.dump_all()` | The admin, the app's `?draft` preview |
-| `data/excluded.json` | Photos Pierre excluded, kept so Restore can put them back | `tools/excluded.py` | The admin, the fetch scripts |
+| `data/excluded.json` | Photos Pierre excluded, kept so the admin's Put back can bring them back | `tools/excluded.py` | The admin, the fetch scripts |
 | `forms.json` | The growth-form definitions and a first guess of each photo's form | `tools/judging_import.py`, `tools/game_forms.js`, `tools/apply_imr_forms.py` | The app, the admin |
 | `quality.json` | The automatic quality rating of each photo | `tools/photo_quality.py`, `tools/judging_import.py` | The app, the admin |
 | `picks.json` | Suggested featured photos per genus and view | `tools/judging_import.py` | The app, the admin |
