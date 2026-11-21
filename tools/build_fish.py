@@ -124,6 +124,7 @@ WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own phot
 LOOKS = ROOT / "tools" / "fish_lookalikes.json"  # the species look-alike pairs and the regional species (lookalikes)
 JUVS = ROOT / "tools" / "fish_juveniles.json"  # the juveniles per species: class label, sheet line, sources (juveniles)
 JUVD = ROOT / "tools" / "fish_juv_differs.json"  # whether the young look clearly different, sourced (juv_differs)
+PHASES = ROOT / "tools" / "fish_phases.json"  # the cited phase list: whose sexes or colour phases differ (phase_sources)
 OUT = ROOT / "fish.json"
 CUR = ROOT / "curation.json"  # read only, for show_rootless: the content editor's circle edits
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
@@ -805,6 +806,7 @@ def add_families(o, key, declared=()):
     species_marks(o)
     juveniles(o)
     juv_differs(o)
+    phase_sources(o)
     return o
 
 
@@ -1049,6 +1051,52 @@ def juv_differs(o, path=None):
     for n in doc.get("unknown") or []:
         if n not in by or n in (doc.get("species") or {}):
             sys.exit(f"{p.name}: unknown {n}: not a species of fish.json, or also in species")
+
+
+def phase_sources(o, path=None):
+    """The sources that say a species' sexes or colour phases look different (tools/fish_phases.json, the cited phase
+    list: its sex or ip_tp verdict "yes"; docs/decisions/2026-11-20-fish-phases-sourced.md), written into fish.json
+    species phs {k ("sex": its males and females differ; "phase": its initial and terminal phases, with no sex verdict),
+    src [{t (the source's name), u (its https page, when the list gives one)}]}; a species the list does not flag has no
+    phs. The same species carry the phase flag p on their photos (tools/fish_judge.py phase_flag); the sex or colour
+    phase card shows these sources where the unit has no IMR phase lines, and picks its title by k (quiz.js phaseShow;
+    rule C2). Stops on a species not in fish.json or a "yes" without its source and quote."""
+    p = Path(path) if path else PHASES
+    doc = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    for s in o["species"]:
+        s.pop("phs", None)
+    by = {s["id"]: s for s in o["species"]}
+
+    def names(text):
+        out = []
+        for part in re.split(r"\s*[;|]\s*", str(text or "")):
+            m = re.match(r"^(.*?)\s*<(https://[^>\s]+)>", part)
+            t = re.split(r"\s+\(", m.group(1) if m else part)[0].strip()
+            if t:
+                out.append((t, m.group(2) if m else None))
+        return out
+
+    for n, v in doc.items():
+        if n.startswith("_") or not isinstance(v, dict):
+            continue
+        kinds = [k for k in ("sex", "ip_tp") if v.get(k) == "yes"]
+        if not kinds:
+            continue
+        s = by.get(v.get("sp"))
+        if not s:
+            sys.exit(f"{p.name} {n}: sp {v.get('sp')!r} is not a species of fish.json")
+        urls = {}
+        for t, u in (x for txt in (v.get("src") or {}).values() for x in names(txt)):
+            if u and t not in urls:
+                urls[t] = u
+        src = []
+        for k in kinds:
+            if not str((v.get("quote") or {}).get(k) or "").strip() or not names((v.get("src") or {}).get(k)):
+                sys.exit(f"{p.name} {n}: {k} yes without its source and quote")
+            for t, u in names(v["src"][k]):
+                if t not in [x["t"] for x in src]:
+                    src.append({"t": t, **({"u": u or urls[t]} if (u or urls.get(t)) else {})})
+        s["phs"] = {"k": "sex" if "sex" in kinds else "phase", "src": src}
 
 
 def lookalikes(o, path=None):
