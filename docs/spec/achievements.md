@@ -30,7 +30,8 @@ admin's Journey).
   bonus genus met; Coral basics done (every step seen: `proto/basics.js` calls `achBasics()`, which sets the feat
   `_basics`);
 - the fish's (`FISH_ACH`): families met, the families at each level, Instructor, the circles at Advanced, the global
-  fish score every 10 points, the scientific genera at Open Water and Advanced, species by their common names;
+  fish score every 10 points, the scientific genera at Open Water and Advanced, species by their common names and by their
+  scientific names, Fish basics done (fbasics, "Fin to tail": the fish's feat `_fbasics`, set by the same `achBasics()`);
 - the sea slugs' (`SEASLUG_ACH`): genera met, genera at each level, families with every genus at Advanced, the taxonomic
   groups (the nudibranchs first), the first circle, the sea slug % every 10 points.
 
