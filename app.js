@@ -3136,27 +3136,24 @@ function learnSet(k, on) {
 // The names step at the welcome (UNITS namesStep; Pierre, 2026-11-04): asked after the first-launch answer c, in the tour and on
 // its card, unless that answer skips it or the player said "I'm at IMR" (imrNow: an answer given earlier here counts), every
 // row it sets is on offer (learnRows: the species level, rule D4) and no row was chosen yet (Q404 A: the players who already
-// play keep what they have). again: it was asked already in this tour, so a row it set does not hide it when the answer is
-// changed.
+// play keep what they have).
 const namesDecl = () => UNITS[SUBJ.id].namesStep || null;
 const namesKeys = () => Object.keys(namesDecl().opts[0].rows);
-function namesAsk(c, again) {
+// No row of the step set yet (a record no switch was tapped on).
+const namesFresh = () => namesKeys().every(k => Q[k] === undefined && !Q[k + 'O']);
+function namesAsk(c) {
   const N = namesDecl();
   if (!N || !c || N.skip.includes(c) || imrNow()) return false;
   const rows = learnRows();
-  return namesKeys().every(k => rows.some(r => r.k === k) && (again || (Q[k] === undefined && !Q[k + 'O'])));
+  return namesKeys().every(k => rows.some(r => r.k === k)) && namesFresh();
 }
 // An answer of the step: each row it names on or off as the answer says (learnSet), only where the row is not so already,
 // so "common names" on a record no switch was tapped on writes nothing and the scientific names stay offered at Advanced.
+// Written once, when the answer is final (the card's click; the tour's close, which holds it meanwhile so that going back
+// to change it, or the first-launch answer, leaves nothing to take back or to synchronize).
 function namesSet(id) {
   const o = namesDecl().opts.find(x => x.id === id);
   if (o) learnRows().forEach(r => r.k in o.rows && rowOn(r) !== o.rows[r.k] && learnSet(r.k, o.rows[r.k]));
-}
-// A choice of the step taken back (the tour: the first-launch answer changed to one that skips it): the rows read as they
-// play again.
-function namesClear() {
-  namesKeys().forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
-  saveQ();
 }
 // The step's answers as big buttons, like the first-launch question's (startOptsHtml); cur: the one in force, marked.
 const namesOptsHtml = cur =>

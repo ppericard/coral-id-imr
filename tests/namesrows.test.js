@@ -61,11 +61,11 @@ function run({imr = false, q = {}, sp = true} = {}) {
     [
       block(APP, 'const namesDecl = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const namesKeys = ', '\n', {through: 1, file: 'app.js'}),
-      block(APP, 'function namesAsk(c, again) {', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const namesFresh = ', '\n', {through: 1, file: 'app.js'}),
+      block(APP, 'function namesAsk(c) {', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'function namesSet(id) {', '\n}\n', {through: 1, file: 'app.js'}),
-      block(APP, 'function namesClear() {', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const namesOptsHtml = ', '</div>`;\n', {through: 1, file: 'app.js'}),
-      'this.namesAsk = namesAsk; this.namesSet = namesSet; this.namesClear = namesClear; this.namesOptsHtml = namesOptsHtml;',
+      'this.namesAsk = namesAsk; this.namesSet = namesSet; this.namesOptsHtml = namesOptsHtml;',
       block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const learnRows = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const rowOn = ', '\n', {through: 1, file: 'app.js'}),
@@ -245,15 +245,17 @@ test('the names step: scientific names only, and both', () => {
   assert.deepStrictEqual(B.pool().sort(), ['g:Acanthurus', 's:one']);
 });
 
-test('the names step: a changed answer in the tour (Back) replaces the earlier one', () => {
+test('the names step: written only where a row differs, once (the tour holds the answer until it closes)', () => {
   const X = run();
-  X.namesSet('sci');
-  X.namesSet('common');
-  assert.ok(X.rowOn(X.row('sp')) && !X.rowOn(X.row('sci')), 'common names on, scientific names off');
   X.namesSet('both');
-  assert.ok(X.rowOn(X.row('sp')) && X.rowOn(X.row('sci')));
-  X.namesClear();
-  assert.deepStrictEqual(X.Q, {}, 'taken back: every key of both rows gone');
+  const once = JSON.stringify(X.Q);
+  X.namesSet('both');
+  assert.strictEqual(JSON.stringify(X.Q), once, 'the same answer again writes nothing');
+  // the tour (tour.js close) writes only while no row was set since, so what the step set is never replaced there
+  const T = block(read('tour.js'), 'if (OPEN && OPEN.c && OPEN.n === SUBJ.id', '\n', {through: 1, file: 'tour.js'});
+  assert.match(T, /namesFresh\(\)/);
+  assert.match(T, /!imrNow\(\)/);
+  assert.match(T, /namesSet\(OPEN\.c\)/);
 });
 
 test('the names step is asked of a new player only, once, when both rows are on offer (rule D4, Q404 A)', () => {
@@ -267,7 +269,6 @@ test('the names step is asked of a new player only, once, when both rows are on 
     assert.strictEqual(run({q: {[k]: false}}).namesAsk('new'), false, 'a player who already chose ' + k + ' keeps it');
     assert.strictEqual(run({q: {[k + 'O']: true}}).namesAsk('new'), false);
   });
-  assert.strictEqual(run({q: {sci: true}}).namesAsk('new', true), true, 'asked already in this tour: stays on a changed answer');
 });
 
 test('the names step is declared in one place, in the player words, its answers naming only rows that exist', () => {

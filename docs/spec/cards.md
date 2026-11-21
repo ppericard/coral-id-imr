@@ -118,7 +118,7 @@ A subject may declare a second step right after its question (`app.js` `UNITS[id
 `name`, `line`, `rows`: each What I learn row, by its set `k`, on or off) and `skip`, the first-launch answers that skip it);
 the fish do ([decision](../decisions/2026-11-21-fish-welcome-names-step.md), docs/FISH_PATH.md "Which names a player
 learns"): "Which names do you want to learn?", **Common names**, **Scientific names**, **Both**, as the same big buttons.
-`namesAsk(c, again)` says whether it is asked: the answer `c` is not in `skip` (the fish: `imr`) and no earlier "I'm at IMR"
+`namesAsk(c)` says whether it is asked: the answer `c` is not in `skip` (the fish: `imr`) and no earlier "I'm at IMR"
 (`imrNow`), every row it sets is on offer (`learnRows`: the species level, rule D4, so a device that has not yet heard the
 sheet script at that version gets no step) and none was chosen yet (`Q[k]`, `Q[k + 'O']` unset: a player who already plays
 keeps what they have). `namesSet(id)` turns each named row on or off through `learnSet`, only where it is not so already:
@@ -129,8 +129,10 @@ it plays, and it is not asked again; the choice is the What I learn card's, chan
 
 - **In the tour** (`tour.js`): a `names` step (forced, like `ask`: no Skip, no Next until answered) right after the last
   `ask`, planned from the answer just clicked (`OPEN.n`, the subject it is planned for, kept in `sessionStorage` across a
-  sign-in's reload; the record is saved a moment later). Going back and changing the question's answer to one that skips it
-  takes the names choice back (`namesClear`).
+  sign-in's reload; the record is saved a moment later). Its answer is held (`OPEN.c`) and written when the tour closes
+  (`close`: `namesSet`, only while no row was set meanwhile and no "I'm at IMR" said), so going back to change it, or the
+  question's answer to one that skips the step, leaves nothing to take back (nor to synchronize: the sheet's merge restores a
+  saved row from a device that has none).
 - **On the card** (`quiz.js` `namesAskShow`): after the question's card, before the basics offer or the quiz; its own class
   `namesq` (not `startq`, the card the sync closes); Escape goes on with the record as it plays.
 

@@ -5954,8 +5954,9 @@ async function subjTour(b, base) {
     await c.close();
   }
   // 5. The fish names step (app.js UNITS namesStep; Pierre, 2026-11-04): after "I know reef fish well" a forced step, one more
-  // step in the count, whose answer sets the What I learn rows; Back shows it marked and a changed answer replaces it;
-  // changed to "I'm at IMR" it goes (the choice taken back); a device that has not heard the sheet (rule D4) gets no step.
+  // step in the count, whose answer sets the What I learn rows when the tour closes (held until then); Back shows it marked
+  // and a changed answer replaces it; changed to "I'm at IMR" it goes, nothing written; a device that has not heard the
+  // sheet (rule D4) gets no step.
   {
     const [c, p] = await open('names');
     await tap(p, '#tour [data-pick="fish"]', 'step');
@@ -5989,8 +5990,9 @@ async function subjTour(b, base) {
       q1 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
     if (!s1 || s1.n !== '4 / 9' || !/, any time$/.test(s1.h))
       fails.push(`names step: after the answer ${JSON.stringify(s1 && [s1.n, s1.h])}`);
-    if (JSON.stringify(r1) !== '[["sp",false],["sci",true]]' || q1.join() !== 'true,false,true,false')
-      fails.push(`names step: scientific names only ${JSON.stringify([r1, q1])}`);
+    // held, not written: going back to change it leaves nothing to take back (or to synchronize)
+    if (JSON.stringify(r1) !== '[["sp",true],["sci",false]]' || q1.join() !== ',,,false')
+      fails.push(`names step: the answer is written before the tour closes ${JSON.stringify([r1, q1])}`);
     await tap(p, '#tour .tback', 'names step back');
     await p.waitForTimeout(400);
     const back = await p.evaluate(() => ({
@@ -5998,21 +6000,49 @@ async function subjTour(b, base) {
       next: !!document.querySelector('#tour .tnext')
     }));
     if (back.pressed !== 'sci' || !back.next) fails.push(`names step: Back ${JSON.stringify(back)}`);
-    await tap(p, '#tour [data-names="common"]', 'names step changed');
+    // changed to "Scientific names only" then, the tour closed (Escape): that answer, the last, is written
+    await tap(p, '#tour [data-names="both"]', 'names step changed');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-names="sci"]', 'names step changed again');
     await p.waitForTimeout(500);
-    const r2 = await rows();
-    if (JSON.stringify(r2) !== '[["sp",true],["sci",false]]') fails.push(`names step: changed to common names ${JSON.stringify(r2)}`);
-    // Back twice: the question; "I'm at IMR" takes the choice back and the step goes (8 steps again)
-    await tap(p, '#tour .tback', 'names step back');
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step: Escape kept the tour'));
+    const r2 = await rows(),
+      q2 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (JSON.stringify(r2) !== '[["sp",false],["sci",true]]' || q2.join() !== 'true,false,true,false')
+      fails.push(`names step: scientific names only, at the close ${JSON.stringify([r2, q2])}`);
+    await c.close();
+  }
+  {
+    // Back to the question and "I'm at IMR": the held choice goes with the step (8 steps again), nothing is written
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, IMR');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step, IMR: not asked after "know"'));
+    await tap(p, '#tour [data-names="sci"]', 'names step, IMR');
+    await p.waitForTimeout(400);
+    await tap(p, '#tour .tback', 'names step, IMR back');
     await p.waitForTimeout(300);
-    await tap(p, '#tour .tback', 'names step back');
+    await tap(p, '#tour .tback', 'names step, IMR back');
     await p.waitForTimeout(300);
-    await tap(p, '#tour [data-start="imr"]', 'names step imr');
+    await tap(p, '#tour [data-start="imr"]', 'names step, IMR');
     await p.waitForTimeout(600);
-    const s3 = await bub(p),
-      q3 = await p.evaluate(() => ['sp', 'spO', 'sci', 'sciO', 'sciT', 'spT'].map(k => (k in Q ? Q[k] : null)));
-    if (!s3 || s3.n !== '3 / 8' || !/, any time$/.test(s3.h) || q3.some(x => x !== null))
-      fails.push(`names step: changed to IMR ${JSON.stringify([s3 && [s3.n, s3.h], q3])}`);
+    const s3 = await bub(p);
+    if (!s3 || s3.n !== '3 / 8' || !/, any time$/.test(s3.h))
+      fails.push(`names step: changed to IMR ${JSON.stringify(s3 && [s3.n, s3.h])}`);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step, IMR: Escape kept the tour'));
+    const q3 = await p.evaluate(() => ['sp', 'spO', 'sci', 'sciO', 'sciT', 'spT'].map(k => (k in Q ? Q[k] : null)));
+    if (q3.some(x => x !== null)) fails.push(`names step: changed to IMR, but written ${JSON.stringify(q3)}`);
     await c.close();
   }
   {

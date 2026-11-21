@@ -81,7 +81,8 @@
   // brings pick and swap right after the sign-in step, the steps before it unchanged so the step number stays right, and
   // the new subject's question when it is not the one already asked. OPEN: what the tour started with ({two, s}: two
   // subjects or more, the subject on screen), kept across that reload. OPEN.n: the subject whose names step the answer just
-  // given asks (app.js namesAsk), which then follows the last question; none for an answer that skips it.
+  // given asks (app.js namesAsk), which then follows the last question; none for an answer that skips it. OPEN.c: the names
+  // step's answer, held here and written when the tour closes (app.js namesSet), so a step taken back leaves nothing behind.
   let OPEN = null;
   function plan() {
     const two = subjMine().length > 1,
@@ -112,7 +113,6 @@
     step = 0,
     token = 0,
     picking = false, // a subject picked is loading (pick): the tour waits, buttons and keys alike
-    named = null, // the names step's answer in this tour (names), marked when the step is shown again
     saving = Promise.resolve(), // the first-launch answer being saved (ask), for the subject it was asked for
     target = null,
     tick = null;
@@ -195,7 +195,13 @@
       b = root.querySelector('.tbub'),
       // The answer already given: the subject's question, or the subject picked (a saved choice: this tour's, or the
       // account's once signed in), so Back shows it and Next goes on.
-      cur = s.pick ? (store.get(SUBJECT_KEY, null) ? SUBJ.id : null) : s.names ? named : (store.get(startKey(SUBJ.id), null) || {}).c,
+      cur = s.pick
+        ? store.get(SUBJECT_KEY, null)
+          ? SUBJ.id
+          : null
+        : s.names
+          ? OPEN.c || null
+          : (store.get(startKey(SUBJ.id), null) || {}).c,
       forced = s.ask || s.pick || s.names,
       // The last step of a player new to corals: Coral basics first (5 min), the quiz beside it.
       bas = last && cur && startVars(cur).basics && basicsDue();
@@ -240,7 +246,7 @@
               my = token;
             // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's.
             picking = true;
-            named = null; // the names step is the picked subject's own
+            OPEN.c = null; // the names step is the picked subject's own
             all.forEach(x => {
               if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
               x.disabled = true;
@@ -270,9 +276,9 @@
             // model.js comes with the quiz tier; the answer is kept as soon as it is in (a first visit on a slow line).
             if (c !== cur) saving = need(2).then(() => startSet(c, 'tour'));
             // The names step follows (app.js namesAsk, from the answer just clicked: the record is saved a moment later);
-            // an answer that skips it takes back a choice made on a first go.
-            OPEN.n = namesAsk(c, named !== null) ? SUBJ.id : null;
-            if (named && !OPEN.n) (namesClear(), (named = null));
+            // an answer that skips it drops a choice made on a first go (held, not written yet).
+            OPEN.n = namesAsk(c) ? SUBJ.id : null;
+            if (!OPEN.n) OPEN.c = null;
             keepOpen();
             show(step + 1);
           })
@@ -282,7 +288,8 @@
         o =>
           (o.onclick = () => {
             b.querySelectorAll('[data-names]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
-            namesSet((named = o.dataset.names));
+            OPEN.c = o.dataset.names; // written when the tour closes (close)
+            keepOpen();
             show(step + 1);
           })
       );
@@ -455,6 +462,9 @@
   function close(to, skipped) {
     if (!root) return;
     const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step + 1).some(s => s.signin);
+    // The names step's answer, final now (a step taken back changed nothing meanwhile): written to the subject it was asked
+    // for, unless a row was set or "I'm at IMR" said since.
+    if (OPEN && OPEN.c && OPEN.n === SUBJ.id && namesFresh() && !imrNow()) namesSet(OPEN.c);
     token++;
     picking = false;
     try {
@@ -502,7 +512,6 @@
       if (at) OPEN = JSON.parse(sessionStorage.getItem(KEY + '-open'));
     } catch (e) {}
     if (!OPEN || typeof OPEN !== 'object') OPEN = {two: subjMine().length > 1, s: SUBJ.id};
-    named = null;
     keepOpen();
     $helpbox.hidden = true;
     $help.setAttribute('aria-expanded', 'false');
