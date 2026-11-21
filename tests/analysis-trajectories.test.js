@@ -141,6 +141,26 @@ test('trajectories: sessions a week count the break up to the next window, a win
   });
 });
 
+test('trajectories: a session that ended before the log’s last answer is over, even in the last window before a discarded tail (Codex)', () => {
+  // two sessions of 100 answers, each ending on two misses in a row, and one answer the next day (a short block the windows
+  // drop): the two windows are alike, so the stops after misses read the same; read against the retained answers' own last
+  // moment, the second window's session end would still look open and its value would drop out
+  const rows = ['a', 'b', 'c'].flatMap((id, k) =>
+      player(id, 201, {ses: 100, seed: 3 + k}).map((r, i) => {
+        // two misses in a row in the middle of each session (no stop) and at its end (a stop)
+        const miss = [50, 51, 98, 99, 150, 151, 198, 199].includes(i);
+        return [r[0], r[1], r[2], miss ? 'Gen9' : r[2], miss ? 0 : 1, ...r.slice(5)];
+      })
+    ),
+    T = A.trajectories(A.prep(rows), 0, 1),
+    f = T.feats.findIndex(x => x.k === 'stop') + 2;
+  assert.ok(!T.thin);
+  T.who.forEach(p => {
+    assert.strictEqual(p.w.length, 2, p.k);
+    assert.ok(p.w[0][f] != null && p.w[0][f] === p.w[1][f], `${p.k}: ${p.w.map(r => r[f])}`);
+  });
+});
+
 test('trajectories: right beyond the expectation rises along a history planted to rise, and stays with none; evening play follows the hour', () => {
   const T = A.trajectories(
       log({
