@@ -5209,11 +5209,26 @@ async function lazyPart(b, base, fails) {
           said.push(d.type() + ': ' + d.message());
           return d.type() === 'confirm' && !/^Give Carla Demo/.test(d.message()) ? d.accept() : d.dismiss();
         });
-        const calm = () =>
+        // Settled: no demo call in flight, no "Loading…", and no Groups write on its way (admin.js rPend, given back once
+        // the players read after the write is in and drawn), for three frames in a row, then 300 ms. A write's answer and
+        // the players read it starts are two demo calls with a gap between them: one sample of DEMO_PENDING could land in
+        // it and read the page before the read drew the answer (REE-183: "saved in part" with no note, on a slow runner).
+        // held: a write the test holds on purpose (its fetch not yet made) is not waited for.
+        const calm = (held = false) =>
           q
-            .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
-              timeout: 20000
-            })
+            .evaluate(() => (window.__calm = 0))
+            .then(() =>
+              q.waitForFunction(
+                held => {
+                  const busy =
+                    window.DEMO_PENDING > 0 || /^\s*Loading/.test(document.getElementById('view').innerText) || (!held && rPend !== null);
+                  window.__calm = busy ? 0 : (window.__calm || 0) + 1;
+                  return window.__calm >= 3;
+                },
+                held,
+                {timeout: 20000, polling: 'raf'}
+              )
+            )
             .then(() => q.waitForTimeout(300))
             .catch(() => fails.push(`${w}px rights groups: never settled`));
         const page = () =>
@@ -5344,10 +5359,10 @@ async function lazyPart(b, base, fails) {
           });
           await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
           await q.evaluate(() => (location.hash = '#players/list'));
-          await calm();
+          await calm(true); // the write held
           await q.evaluate(() => (location.hash = '#players/groups'));
           await q.waitForSelector('.adm-gcard', {timeout: 20000}).catch(() => {});
-          await calm();
+          await calm(true);
           const pend = () =>
             q.evaluate(() => {
               const c = document.querySelector('.adm-gcard');
