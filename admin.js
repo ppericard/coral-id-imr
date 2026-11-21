@@ -347,7 +347,12 @@ const keepHist = () => {
 addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
-function saveDraft() {
+// auto: a save nobody clicked (the startup import of the site's flags, importFlags; the auto-sorts, saveRun). Any other
+// save is the admin's action (ACTED), from which on a background run is no Undo step of its own (saveRun).
+// docs/decisions/2026-11-21-undo-background-run.md.
+let ACTED = false;
+function saveDraft(auto = false) {
+  if (!auto) ACTED = true;
   memoReset();
   sweepFlags();
   if (snap !== null) {
@@ -358,6 +363,49 @@ function saveDraft() {
   FUT = [];
   snap = JSON.stringify(DRAFT);
   if (ASIG) ASIG_OF = snap;
+  if (!TOKEN) return;
+  putDraft();
+  draftAt = new Date();
+  keepHist();
+}
+// What a background run changed (run: the draft now, against before: the draft it started from), laid onto one Undo or
+// Redo step (onto), key by key down the maps: a value the step holds other than before stays the step's (the admin's
+// click there wins), a map the step lacks is made for the run's entries (so undoing the click that made it keeps them),
+// and a map the run empties stays {} (merge3 reads a missing map as removed).
+const layRun = (before, run, onto) => {
+  const O = o => !!o && typeof o === 'object' && !Array.isArray(o),
+    J = v => JSON.stringify(v === undefined ? null : v),
+    B = before || {},
+    R = run || {},
+    T = onto || {},
+    out = {...T};
+  new Set([...Object.keys(B), ...Object.keys(R)]).forEach(k => {
+    if (J(R[k]) === J(B[k])) return;
+    if (O(R[k]) && (O(B[k]) || B[k] === undefined) && (O(T[k]) || T[k] === undefined)) out[k] = layRun(B[k], R[k], T[k]);
+    else if (J(T[k]) === J(B[k])) {
+      if (R[k] === undefined) delete out[k];
+      else out[k] = R[k];
+    }
+  });
+  return out;
+};
+// An auto-sort's run saved (autoRun, fishAutoRun). Before the admin's first action of this visit (ACTED): one Undo step,
+// as at every load. After it, the run lands among his steps: it is laid onto every Undo and Redo step (layRun) and onto
+// the draft, and is no step of its own, so Undo and Redo move his clicks only and never take the run back (its decisions
+// are taken back one by one: Auto › Undo).
+function saveRun() {
+  if (!ACTED || snap === null) return saveDraft(true);
+  memoReset();
+  const before = JSON.parse(snap),
+    lay = L =>
+      L.map(x => {
+        const m = layRun(before, DRAFT, JSON.parse(x));
+        m.genera = m.genera || {};
+        return JSON.stringify(m);
+      });
+  HIST = lay(HIST);
+  FUT = lay(FUT);
+  snap = JSON.stringify(DRAFT);
   if (!TOKEN) return;
   putDraft();
   draftAt = new Date();
@@ -521,7 +569,7 @@ function importFlags() {
     n++;
   });
   store.set('reefid-photo-flags', null);
-  if (n) saveDraft();
+  if (n) saveDraft(true);
   return n;
 }
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
@@ -7005,7 +7053,7 @@ function autoRun() {
   });
   if (!(R.add + R.reject + R.exclude + R.check)) return R;
   DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
-  saveDraft();
+  saveRun();
   return R;
 }
 // The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (data/fish-cand.json, judged in
@@ -7102,7 +7150,7 @@ async function fishAutoRun() {
     {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => passAt(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
-  saveDraft();
+  saveRun();
   render();
   return R;
 }
@@ -8598,6 +8646,8 @@ async function start() {
     const f = x => JSON.stringify(base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
     HIST = kept.hist.map(f);
     FUT = kept.fut.map(f);
+    // Steps kept from before the reload are the admin's: this load's runs land after them (saveRun).
+    ACTED = HIST.length + FUT.length > 0;
   }
   snap = JSON.stringify(DRAFT);
   if (TOKEN) {
@@ -8614,14 +8664,15 @@ async function start() {
   });
   const keep = changed().length;
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
-  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
+  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run
+  // before the admin's first action, else laid onto his steps (saveRun).
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const sugRun = () => {
     const ar = TOKEN && autoRun();
     if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar), 3500, true), keep ? 4000 : 0);
     // The fish auto-sort once the first page is drawn and the page is idle (an admin who opened on a Players page: once its
     // suggestions are in, sugLater): it reads data/fish-cand.json, 9 million characters, which would share the line and the
-    // main thread with the first page. One Undo step. At every admin load (rule A1), whatever page the admin stays on; a
+    // main thread with the first page. One Undo step, or laid onto his steps once he acted (saveRun). At every admin load (rule A1), whatever page the admin stays on; a
     // Publish that comes before the idle time runs it first (asortDone), so its proposals are in what is sent.
     const fishLater = () =>
       (ASORT_P =
