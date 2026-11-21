@@ -6250,7 +6250,8 @@ async function lazyPart(b, base, fails) {
       if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
       await settle();
       a = await tools(rsel);
-      if (!/^Ease,.*View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
+      // Its species is a wrasse the cited phase list flags (fish.json phs; REE-201): the Phase row, wrapped inside the tile.
+      if (!/^Ease,Phase,View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
         fails.push(`${w}px To do › Reports, a fish photo's tag rows: ${JSON.stringify(a)}`);
       // The Count row in plain words, each with its meaning on hover (Pierre, 2026-11-09: "Others" did not say several
       // species); other species split by the risk of confusion (Q323): k takes a photo in play out, o keeps it.

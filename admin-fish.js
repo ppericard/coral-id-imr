@@ -21,9 +21,9 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
 // fishCoverOf, fishSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
 fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
-// its tooltip ([value, label, title]).
-const fRow = (name, at, opts, v, auto) =>
-  `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
+// its tooltip ([value, label, title]). wrap: a row of long labels (the phase words) that wraps, never clips nor widens its tile.
+const fRow = (name, at, opts, v, auto, wrap = false) =>
+  `<span class="adm-qseg adm-ftag${wrap ? ' adm-fwrap' : ''}${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
     .map(
       ([k, t, tip]) =>
         `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</button>`
@@ -56,7 +56,7 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN, species = null) {
   // Spadefish, Parrotfish, Sweetlips, Anthias) or the cited phase list's phs (fish.json species; autosort.js hasPhaseRow):
   // elsewhere a phase tag has nothing to say.
   if (hasPhaseRow(entry, species))
-    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined);
+    h += fRow('Phase', 'data-fph', tagList(S, 'phase'), ph === undefined ? null : ph, V.phase.mine === undefined, true);
   if (open)
     h +=
       `<div class="adm-ftags">` +
