@@ -407,11 +407,13 @@ const layPhoto = (path, P) => {
   for (let i = path.length - 1; i >= 0; i--) if (P.has(photoOfKey(path[i]))) return photoOfKey(path[i]);
   return null;
 };
+// In place: T is the step's own fresh copy (saveRun parses each step), so no map is copied (Codex on #1408: copying
+// fish.add, 5,803 entries, at every leaf froze the page for seconds).
 const layPut = (T, path, v) => {
   let o = T;
   for (let i = 0; i < path.length - 1; i++) {
     const k = path[i];
-    o[k] = o[k] && typeof o[k] === 'object' && !Array.isArray(o[k]) ? {...o[k]} : {};
+    if (!(o[k] && typeof o[k] === 'object' && !Array.isArray(o[k]))) o[k] = {};
     o = o[k];
   }
   if (v === undefined) delete o[path[path.length - 1]];
@@ -437,8 +439,9 @@ const layPlan = (before, run) => {
   return {by, rest, P, was: layLeaves(before, P), before};
 };
 const layAt = (o, path) => path.reduce((x, k) => (x && typeof x === 'object' ? x[k] : undefined), o);
+// onto: the step's own fresh copy, changed in place and returned.
 const layRun = (plan, onto) => {
-  const out = {...(onto || {})},
+  const out = onto || {},
     has = layLeaves(out, plan.P),
     J = o => JSON.stringify(Object.entries(o || {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))),
     V = v => JSON.stringify(v === undefined ? null : v);

@@ -122,3 +122,21 @@ test('a whole photo decision: an Add undone, then the run rejects that photo; Re
   C.redo();
   assert.ok(!(C.draft().seen || {})['cand:p'], 'his Add of p stays alone');
 });
+
+test('a big run onto many steps stays fast: no map copied at each entry (Codex #1408: 500 adds took 2.6 s a step)', () => {
+  const add = Object.fromEntries(Array.from({length: 6000}, (_, i) => ['p' + i, 'colony'])),
+    M = page({genera: {}, fish: {add, seen: {}}});
+  for (let i = 0; i < 10; i++) M.click(D => (D.fish.seen['c' + i] = 1));
+  const t = Date.now();
+  M.run(D => {
+    D.fish.auto = {d1: {}};
+    for (let i = 0; i < 500; i++) {
+      D.fish.add['n' + i] = 'colony';
+      D.fish.auto.d1['n' + i] = 'a1';
+    }
+  });
+  const ms = Date.now() - t;
+  assert.ok(ms < 2000, `${ms} ms for 500 decisions onto 10 steps`);
+  for (let i = 0; i < 10; i++) M.undo();
+  assert.strictEqual(Object.keys(M.draft().fish.add).length, 6500, 'every step holds the run');
+});
