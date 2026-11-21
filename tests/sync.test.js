@@ -1066,11 +1066,23 @@ test('readAlerts (rule D7): a deleted, merged or archived account leaves no line
   s.post({userDelete: 'Ben', token: T});
   s.post({userMerge: {from: 'Ana B', into: 'Ana', data: prog(3)}, token: T});
   s.post({userArchive: {from: 'Cat', into: 'Cat-old'}, token: T});
-  const kept = ['ana', 'keep', 'outAna', 'sdAna', 'anon', 'a', 'ev', 'other'].map(k => line[k]).reverse();
+  // Ana B's id line followed the merge: its id became Ana's (redact_ rewrites the ids as it does the names), so it reads as Ana's.
+  const anaB = line.anaB.replace(id('Ana B'), id('Ana')),
+    kept = ['ana', anaB, 'keep', 'outAna', 'sdAna', 'anon', 'a', 'ev', 'other'].map(k => line[k] || k).reverse();
   assert.deepStrictEqual(seen(), kept, 'only the live accounts, the device still not signed in, and the lines that name nobody');
   const tab = JSON.stringify(s.sheets.Alerts.rows);
   assert.ok(/n:~deleted [^ ]+ \(3000/.test(tab) && /n:cat-old \(3000/i.test(tab), 'redact_ rewrote the names in the tab');
-  ['anaB', 'ben', 'sign', 'gone', 'outBen', 'sdCat'].forEach(k => assert.ok(tab.includes(line[k]), `the tab keeps ${k}`));
+  // The ids of the removed accounts were rewritten in the tab (never a name in an id slot): Ben's to his "~deleted" id, Cat's to
+  // Cat-old's, Ana B's to Ana's; the devices' lines stay as they are.
+  const delB = id('~deleted ' + id('Ben'));
+  ['ben', 'outBen', 'sdCat', 'anaB'].forEach(k => assert.ok(!tab.includes(line[k]), `the tab no longer holds the old id of ${k}`));
+  [`photos not of the unit shown: ${delB} (`, `signed in as ${delB},`, `limit reached: sd:${id('Cat-old')} (`].forEach(x =>
+    assert.ok(tab.includes(x), `the tab holds ${x}`)
+  );
+  ['sign', 'gone'].forEach(k => assert.ok(tab.includes(line[k]), `the tab keeps ${k}`));
+  // A new account takes a deleted, merged-away or archived name again: the old account's lines are not its lines.
+  ['Ben', 'Ana B', 'Cat'].forEach((n, i) => s.post({name: n, pin: '1234', data: prog(1), summary: {}, answers: [ans('d7again' + i)]}));
+  assert.deepStrictEqual(seen(), kept, 'a name taken again shows none of the old account lines');
 });
 
 test('new accounts are capped per 6 hours', () => {
