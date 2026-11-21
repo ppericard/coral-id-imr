@@ -336,12 +336,19 @@ or turned.
 
 ## Look-alikes
 
-`#photos/look-alikes` (`renderMont`): one row per classic pair (the same list and automatic pick as `learn.js`
-`classics()` / `montage()`). Per pair: View Colony / Close-up / Corallites / **All** (photos of every zoom, the automatic
-pick preferring the nearest zooms), **Auto | Manual** (clicking a photo makes it Manual; Auto drops his view and photo
-picks but keeps a hide), **Shown | Hidden** (Hidden keeps the comparison off the public Look-alikes page until good
-examples exist). Stored in `curation.json` `mont`. These pages read the base's pairs (`classicPairs`); the content
-editor's pair entries are edited on the Tree ([admin-tree.md](admin-tree.md#the-corals-tree)).
+`#photos/look-alikes` (`renderMont`): one row per classic pair in force on the draft (the same list, order and automatic
+pick as `learn.js` `classics()` / `montage()`; `admin-content.js` `montPairs`, by the shape the subject declares: for
+the corals `classicPairsOf` over `data.json` with the draft's pairs laid over it, `sheetFile`, the same as the fish's
+page below). The IMR lecture's and the Coral Finder text's pairs, less those he withdrew on the Tree (a withdrawal the
+★ rule holds changes nothing), plus those he added there, marked **(added)** with the source he gave or the editor's
+tag; an added pair no IMR lecture or Coral Finder source compares is not in the public Look-alikes list, and its row
+says so (the corals' Compare page shows no montage, as the corals have three views, so its picks show nowhere public until a
+source of that kind names the pair). Per pair: View Colony / Close-up / Corallites / **All** (photos of
+every zoom, the automatic pick preferring the nearest zooms), **Auto | Manual** (clicking a photo makes it Manual; Auto
+drops his view and photo picks but keeps a hide), **Shown | Hidden** (Hidden keeps the comparison off the public
+Look-alikes page until good examples exist). Stored in `curation.json` `mont`, a withdrawn pair's picks kept, unused,
+for its return (rule A1). The pairs themselves are edited on the Tree
+([admin-tree.md](admin-tree.md#the-corals-tree)).
 
 On the fish side, `#fish/photos/look-alikes` (`renderFishMont`): one row per look-alike pair of families in force on the
 draft (`admin-content.js` `montPairs`: `autosort.js` `fishPairs` over `fish.json` `families` `look` with the content
