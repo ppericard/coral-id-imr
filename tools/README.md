@@ -102,6 +102,7 @@ Conventions that hold across them:
 | `photo_measure.py` | Measured photo values into `data/measured.json` |
 | `r2_sync.sh` | Copies photos to the Cloudflare R2 bucket; never deletes. Run by workflows |
 | `r2_move.py` | Lists what leaves `img/` for R2 and verifies the bucket |
+| `photo_recheck.py` | Read only: asks iNaturalist again for every game photo's observation and reports the photos that no longer pass their fetcher's rule (deleted, casual, other taxon, ID lost); weekly in `photo-recheck.yml` |
 | `r2_list.sh`, `r2_unused.py` | Read only: the bucket's listing, and the objects nothing in the repository uses (`r2-unused.yml`). Delete nothing |
 | `photo_quality.py`, `quality_eye.json` | Automatic quality rating into `quality.json` |
 | `photo_metrics.py` | Objective metrics into `data/metrics.json` |

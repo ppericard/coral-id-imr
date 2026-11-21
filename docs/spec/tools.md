@@ -278,6 +278,12 @@ written with `tools/datajson.py`.
   the unused R2 files"). `r2_list.sh` writes rclone's `lsjson` of the whole bucket (the rclone release pinned in
   `r2_sync.sh`); `r2_unused.py --listing FILE --out DIR` compares it with the repository and writes the report, the
   unused and doubtful lists and the figures in DIR. Neither can modify the bucket; `tests/r2unused.test.js` keeps it so.
+- **`photo_recheck.py`**: the read-only re-check of the photos in play ([photos.md](photos.md) "Re-checking the photos
+  in play"). `python3 tools/photo_recheck.py [--root DIR] [--out DIR] [--only coral,fish,seaslug] [--cache FILE]` asks
+  iNaturalist (ids only, 200 a request, `inat.py`) for every game photo's observation, judges it with the fetchers' own
+  predicates (`fetch_local.accepted`, `fetch_fish.usable_obs`, `fish_refs.passes`, `fetch_seaslugs.usable` and
+  `usable_gl`) and writes the report (markdown), the failing photos (tab-separated) and the figures (JSON) in DIR. It writes nowhere else and exits 1 only
+  when the run cannot be trusted; `tests/photo_recheck.test.js` keeps it so.
 - **`photo_quality.py`**: the automatic quality rating → `quality.json`.
 - **`photo_metrics.py`**: objective metrics (sharpness, size, colour cast) of live photos and iNaturalist candidates →
   `data/metrics.json`, the auto-sort's tie-breakers and sanity flags (`--live`, `--cand`, `--calib` against Pierre's ratings).

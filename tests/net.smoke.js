@@ -830,7 +830,7 @@ const server = http.createServer((req, res) => {
     else await p.evaluate(() => smokeAnswer());
     await go('progress');
     await p.waitForSelector('#view .pring', {timeout: 20000}).catch(() => fails.push('learn.js held: My progress did not open'));
-    const late = await p.evaluate(() => typeof viewGenera);
+    const late = await p.evaluate(() => typeof viewList);
     if (late !== 'undefined') fails.push(`learn.js held: it ran all the same (${late})`);
     await go('genera');
     await p
@@ -854,7 +854,7 @@ const server = http.createServer((req, res) => {
     await p.goto(base + '#' + require('../core.js').routeOut('genera'), {waitUntil: 'commit'});
     const shown = await p
       .waitForSelector('#tierwarn:not([hidden]) button', {timeout: 30000})
-      .then(() => p.evaluate(() => ({late: typeof viewGenera, text: document.getElementById('tierwarn').textContent})))
+      .then(() => p.evaluate(() => ({late: typeof viewList, text: document.getElementById('tierwarn').textContent})))
       .catch(() => null);
     if (!shown) fails.push('learn.js failed: no Try again offered');
     else {

@@ -17,7 +17,7 @@ test('listPhoto is the photo the list card shows, null when the id is not a list
   const ctx = {GX: n => GEN[n], cover: g => g.coverP || {f: 'default.jpg'}};
   vm.createContext(ctx);
   vm.runInContext(
-    block(learn, 'const listPhoto = id => {', '\nfunction viewFishList', {file: 'learn.js'}) + '\nthis.listPhoto = listPhoto;',
+    block(learn, 'const listPhoto = id => {', '\n/* ---------- Fish sheets', {file: 'learn.js'}) + '\nthis.listPhoto = listPhoto;',
     ctx
   );
   assert.deepStrictEqual(ctx.listPhoto('fam1'), {f: 'list.jpg'});
@@ -32,6 +32,8 @@ test('the family and genus sheets lead with it, in the viewer list first', () =>
   const gen = block(learn, 'function treeGenus(g) {', '\n}\n', {file: 'learn.js'});
   assert.match(gen, /hero = listPhoto\(g\.id\)/);
   // pushed before the page is drawn, so the hero is the viewer's photo 0 (data-z="0")
-  assert.ok(gen.indexOf('if (hero) flat.push(hero)') < gen.indexOf('$v.innerHTML'), 'the hero enters flat before the page');
-  assert.match(gen, /class="zoom hero-ph" data-z="0"/);
+  assert.ok(gen.indexOf('if (hero) flat.push(hero)') < gen.indexOf('sheetPage('), 'the hero enters flat before the page');
+  assert.match(gen, /heroBtn\(0, g\.name,/);
+  assert.match(block(learn, 'const heroBtn = ', '\n', {file: 'learn.js'}), /^const heroBtn = \(i, name, pic\) =>$/);
+  assert.match(block(learn, 'const heroBtn = (i, name, pic) =>\n', ';\n', {file: 'learn.js'}), /class="zoom hero-ph" data-z="\$\{i\}"/);
 });

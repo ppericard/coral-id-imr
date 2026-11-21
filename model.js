@@ -12,8 +12,9 @@
 // colonies stay in rotation. All photos of a question come from one observation.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
-// Until a unit reaches Open Water (LV_AT[0]), its photos under ease RARE.E (or its RARE.FEW easiest when it has fewer)
-// make at most RARE.SHARE of the photos drawn, whatever their number (rareCap): no wall, they still come, rarely. The
+// Until a unit reaches Open Water (LV_AT[0]), its photos under ease RARE.E (or under its RARE.FEW easiest observations
+// the draw can show at full weight, when it has fewer) make at most RARE.SHARE of the photos drawn, whatever their
+// number (rareCap): no wall, they still come, rarely. The
 // factor applies to the choice of the observation (by the hard share of its weight) and of its photo. Photos with no
 // judged ease (every coral photo) are never capped. docs/LEARNING.md "Rarely under ease 4 before Open Water".
 const RARE = {E: 4, FEW: 3, SHARE: 0.1};
@@ -259,17 +260,23 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   };
   const sc = Object.fromEntries(keys.map(k => [k, score(k)]));
   // Rarely under ease 4 before Open Water (RARE): each observation's hard part, the share of its photos' weight under
-  // the bar (its photo is drawn on those weights); the cap itself comes last, below.
+  // the bar (its photo is drawn on those weights); the cap itself comes last, below. The bar's RARE.FEW easiest are
+  // observations the draw can show at full weight, each by its easiest such photo: a variant the unit still holds back
+  // (V) and a second photo of one observation are no easy observation of their own. Counted by photo, a family with two
+  // easy adults, an easy juvenile held back and the rest at ease 3 kept its bar at 4, so 90% of its questions went to
+  // those two photos (REE-189, a remora photo seen 3 times in 14 minutes).
   const ph = k => phs[k],
-    es = keys
-      .flatMap(ph)
-      .map(p => p.e || 0)
-      .filter(Boolean)
-      .sort((a, b) => b - a),
+    ease = L =>
+      L.map(p => p.e || 0)
+        .filter(Boolean)
+        .sort((a, b) => b - a),
+    es = ease(keys.flatMap(ph)),
     rare = es.length > 0 && rareOn(n) && genScore(n) + 1e-9 < LV_AT[0],
     hs = {};
   if (rare) {
-    const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
+    const eo = ease(keys.filter(k => sc[k] > 0 && phMul(k) >= 1).map(k => ({e: Math.max(0, ...ease(ph(k).filter(p => V.f(p) >= 1)))}))),
+      few = eo.length ? eo : es,
+      bar = Math.min(RARE.E, few[Math.min(RARE.FEW, few.length) - 1]),
       sum = L => L.reduce((t, p) => t + w(p), 0);
     hard = p => p.e > 0 && p.e < bar;
     keys.forEach(k => {
