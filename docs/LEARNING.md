@@ -538,8 +538,8 @@ achievement as one in the Duel tab or a right Again does (`core.js` `contrastQ`)
 ### Find the X slipped into the fish quiz
 
 One name, four photos: the player taps the one that shows it. Only for a subject whose units have tiles (the fish's
-square crops around the fish, `UNITS` tiles; none for the corals; the sea slugs declare the same `tiles` and will play it
-once their photos carry the animal's box, Q437) and only on units of the subject's own rank
+square crops around the fish, `UNITS` tiles; none for the corals; the sea slugs declare the same `tiles`, and play it
+since their photos carry the animal's box and its tile, Q437: 2,037 tiles in 79 genera on 2026-11-21) and only on units of the subject's own rank
 (`quiz.js` `planFind`). It takes the contrast slot: the chance `FIND.P` (0.05), spaced as the contrast questions,
 never with a card, in a comeback or with a mix-up queued. The unit and its three others are met and ready, the
 look-alikes first (`model.js` `distractors` with every trap); each photo drawn as the quiz draws a unit's, among its
