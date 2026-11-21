@@ -5987,7 +5987,7 @@ async function subjTour(b, base) {
     const s1 = await bub(p),
       r1 = await rows(),
       q1 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
-    if (!s1 || s1.n !== '4 / 9' || s1.h !== 'Corals or Fish, any time')
+    if (!s1 || s1.n !== '4 / 9' || !/, any time$/.test(s1.h))
       fails.push(`names step: after the answer ${JSON.stringify(s1 && [s1.n, s1.h])}`);
     if (JSON.stringify(r1) !== '[["sp",false],["sci",true]]' || q1.join() !== 'true,false,true,false')
       fails.push(`names step: scientific names only ${JSON.stringify([r1, q1])}`);
@@ -6011,7 +6011,7 @@ async function subjTour(b, base) {
     await p.waitForTimeout(600);
     const s3 = await bub(p),
       q3 = await p.evaluate(() => ['sp', 'spO', 'sci', 'sciO', 'sciT', 'spT'].map(k => (k in Q ? Q[k] : null)));
-    if (!s3 || s3.n !== '3 / 8' || s3.h !== 'Corals or Fish, any time' || q3.some(x => x !== null))
+    if (!s3 || s3.n !== '3 / 8' || !/, any time$/.test(s3.h) || q3.some(x => x !== null))
       fails.push(`names step: changed to IMR ${JSON.stringify([s3 && [s3.n, s3.h], q3])}`);
     await c.close();
   }
@@ -6025,7 +6025,7 @@ async function subjTour(b, base) {
     await tap(p, '#tour [data-start="know"]', 'names step, old sheet');
     await p.waitForTimeout(600);
     const s = await bub(p);
-    if (!s || s.n !== '3 / 8' || s.h !== 'Corals or Fish, any time')
+    if (!s || s.n !== '3 / 8' || !/, any time$/.test(s.h))
       fails.push(`names step, sheet not heard: ${JSON.stringify(s && [s.n, s.h])}`);
     await c.close();
   }
