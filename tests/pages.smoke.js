@@ -3402,11 +3402,54 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} custom tip: page errors ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
-    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened.
+    // The look-alike duels tip: a player with 150 questions, 3 photos enlarged, the Custom quiz opened and the Duel tab never
+    // opened gets it at the Next right after a miss in the Quiz; the card says what the duels are, fits the screen; Show me
+    // opens the Duel tab and counts as an open, so it never comes again.
+    {
+      const [c, p, errs] = await open(w, h, {q: 150, z: 3, c: 1});
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p);
+      if (!r.next) fails.push(`${W} duels tip: not shown to a player who never opened the Duel tab`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Practise the genera you mix up' ||
+          !/^Look-alike duels show photos of one of two look-alike genera and ask which one it is\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} duels tip card: ${JSON.stringify(k)}`);
+        await p.click('.tipcard [data-b="1"]');
+        await p
+          .waitForFunction(() => location.hash === '#practice/duels' && JSON.parse(localStorage.getItem('reefid-tips')).u.d >= 1, null, {
+            timeout: 5000
+          })
+          .catch(() => {});
+        const st = await tips(p);
+        if ((await p.evaluate(() => location.hash)) !== '#practice/duels' || !(st.u.d >= 1) || (st.s.duels || []).length !== 1)
+          fails.push(`${W} duels tip Show me: ${JSON.stringify({hash: await p.evaluate(() => location.hash), st})}`);
+      }
+      if (errs.length) fails.push(`${W} duels tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened, the
+    // Duel tab opened.
     for (const u of [
       {q: 100, z: 3, c: 1},
       {q: 5, z: 0},
-      {q: 80, z: 3}
+      {q: 80, z: 3},
+      {q: 200, z: 3, c: 1, d: 1}
     ]) {
       const [c, p] = await open(w, h, u);
       let n = 0;

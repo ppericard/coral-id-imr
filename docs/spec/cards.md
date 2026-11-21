@@ -276,8 +276,8 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with one tip built (the candidates are in
-ROADMAP "Did you know? tips").
+once a player uses it, how often is their choice. A small generic system with three tips built (the others are in
+[REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
   tip's `id`, `ctx` (the games whose break may show it), `target(u)` (who it is for, on the usage counters), `from` (the
@@ -292,7 +292,8 @@ ROADMAP "Did you know? tips").
 - **State, per device** (`reefid-tips`, outside the `reefid-sync-*` progress keys, so not synced and kept on sign-out,
   like `reefid-zoomhint`): `u` the usage counters (`q` game questions answered here: photo quiz, custom quiz, duels; `z`
   quiz photos the player enlarged here, on a question or its mix-up montage, `quiz.js` `tipZoomed`; a tip's own Show me
-  is not counted; `c` times the Custom quiz was opened here), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
+  is not counted; `c` times the Custom quiz was opened here; `d` times the Duel tab was opened here, `quiz.js`
+  `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`), seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
   a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
@@ -315,6 +316,18 @@ ROADMAP "Did you know? tips").
   due (one tip a visit). Card: "Did you know?", "Quiz yourself on just the genera you pick" (the subject's own word,
   `SUBJECTS` `many`), "The Custom quiz asks only the genera you choose. Quick picks choose for you: your weakest, or those
   you missed lately.", **Show me** (opens the Custom quiz's picking page) and **Got it**.
+- **The look-alike duels tip** (`id` `duels`, tip (b) of [REE-13](https://linear.app/reef-id/issue/REE-13)):
+  for a player with 150 questions or more here who never opened the Duel tab (counter `u.d`). In the Quiz only; its
+  moment, the Next right after a miss (a mix-up just made), else any break from 20 questions later; twice at most, the
+  second 150 questions after the first; after the zoom and Custom quiz tips when several are due (one tip a visit).
+  Checked on the answer log first (2026-11-21, aggregates only): corals, of 8 players with 150 questions or more, 5 had
+  never played the Duel tab; fish, 6 of 6; all with mix-ups on record (pairs missed 3 times or more: 1 to 18 each), so
+  the target exists and no extra "mix-ups on record" counter is kept: the Next right after a miss is its preferred
+  moment. The counter is per device and not per subject, as the other tips'; a signed-in device holds only its unsent
+  answers, so a player who used the Duel tab here before the counter existed may get the tip once. Card: "Did you know?", "Practise the genera you mix up" (the
+  subject's own word, `SUBJECTS` `many`), "Look-alike duels show photos of one of two look-alike genera and ask which one
+  it is. The ones you still mix up come up most." (the Duel tab's own pick, `duelPick`), **Show me** (opens the
+  Duel tab, `#practice/duels`) and **Got it**.
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,
