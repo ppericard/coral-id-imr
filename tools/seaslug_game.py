@@ -28,7 +28,7 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     study §8), tgroup (its taxonomic group's number in taxa)}, in the order of their first species (by circle, then by
     commonness rank);
   - taxa {cite, short, groups [{n, title}]}: the taxonomic groups of tools/seaslug_groups.json, which the Learn page
-    shows the families under (learn.js viewFishList); a family in no group fails the build, naming it;
+    shows the families under (learn.js viewList); a family in no group fails the build, naming it;
   - genera {id g:<genus>, name, family, circle (its best species'), species, ref (the AphiaID of the WoRMS genus of that
     name, tools/seaslug_worms.json genera), look, dlook, lsrc}: look, the other genera
     a specialist source names as its look-alikes (declared: they stay look-alikes whatever the players answer), dlook,
