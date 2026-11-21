@@ -2619,7 +2619,7 @@
      Biased towards less forgetting until the comeback's stopping rule is corrected for (about +0.09 on right − expected,
      docs/reviews/2026-11-14-comeback-study.md (c)): read as an upper bound. */
   const FSRS_C = -0.5,
-    CB = {MIN: 200, PLAYERS: 20, GEN: 5, TAU: 1, LK: 4, HW: 0.3};
+    CB = {MIN: 200, PLAYERS: 20, GEN: 5, TAU: 1, LK: 4, HW: 0.3, EDGE: 3.99};
   const cbRec = (b, lk) => (1 + b / Math.exp(lk)) ** FSRS_C;
   // The rusty comeback questions of A as the fit reads them: y right, g0 the guess rate, b = R^(1/C) - 1, q the ability
   // part of the expectation (the app's, recall taken out), g the genus, p the player (boot's cluster).
@@ -2689,7 +2689,13 @@
   };
   function backGenus(A, B, seed) {
     const Z = cbRows(A),
-      out = {n: Z.length, players: new Set(Z.filter(z => !z.gone).map(z => z.p)).size, min: CB.MIN, minPlayers: CB.PLAYERS};
+      out = {
+        n: Z.length,
+        players: new Set(Z.filter(z => !z.gone).map(z => z.p)).size,
+        min: CB.MIN,
+        minPlayers: CB.PLAYERS,
+        hw: CB.HW
+      };
     if (Z.length < 10) return out;
     const lk = cbFit(Z),
       by = cbBy(Z),
@@ -2706,17 +2712,32 @@
         B,
         seed
       ),
-      rg = (key, v) => ({
-        est: Math.exp(v),
-        lo: bi && bi[key] ? Math.exp(bi[key][0]) : null,
-        hi: bi && bi[key] ? Math.exp(bi[key][1]) : null
-      });
+      // A fit or a bootstrap limit at the end of the searched range (±CB.LK on log κ) is the range's end, not a
+      // measurement: the likelihood is still rising (or falling) there, as when every answer is right. edge: the
+      // estimate itself is there (no finite estimate); open: the range's side(s) that run to the end ('hi', 'lo').
+      rg = (key, v) => {
+        const r = {
+            est: Math.exp(v),
+            lo: bi && bi[key] ? Math.exp(bi[key][0]) : null,
+            hi: bi && bi[key] ? Math.exp(bi[key][1]) : null
+          },
+          open = [];
+        if (bi && bi[key] && bi[key][0] <= -CB.EDGE) open.push('lo');
+        if (bi && bi[key] && bi[key][1] >= CB.EDGE) open.push('hi');
+        if (Math.abs(v) >= CB.EDGE) {
+          r.edge = 1;
+          if (!open.includes(v > 0 ? 'hi' : 'lo')) open.push(v > 0 ? 'hi' : 'lo');
+        }
+        if (open.length) r.open = open;
+        return r;
+      };
     out.right = mean(Z.map(z => z.y));
     out.E = mean(Z.map(z => z.e));
     Object.assign(out, rg('p', lk));
     // the answers the pooled range would need to be no wider than ±CB.HW on log κ (a stability known to about a third),
-    // from its current width (it narrows as 1/sqrt(n)); 0 when it is that narrow already
-    if (out.lo != null) {
+    // from its current width (it narrows as 1/sqrt(n)); 0 when it is that narrow already; none for a range that runs to
+    // the end of the searched range (its width says nothing)
+    if (out.lo != null && !out.open) {
       const h = Math.log(out.hi / out.lo) / 2;
       out.need = h > CB.HW ? nice(Z.length * (h / CB.HW) ** 2) : 0;
     }
