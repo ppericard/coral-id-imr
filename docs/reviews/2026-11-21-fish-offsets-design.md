@@ -18,9 +18,11 @@ progress, rule D5)". The same holds for the sea slugs, which run on the same eng
   every other subject with none. An answer logged with its scoring record (`core.js` `scoreRec`: `m` the memory term,
   `o` the format offset, among others) replays exactly as the game scored it, whatever the statistics.
 - **The log holds the scoring record on almost every fish answer**: 3,348 of 3,357 fish rows (the first on
-  2026-11-06 13:07 Manila), and all 168 sea slug rows. So switching the offsets on moves mainly the scoring of answers
-  to come; the replay of answers already logged moves only for the fish players who hold one of the nine rows without a
-  record (section 4; corrected after review: an earlier version said the replay did not move).
+  2026-11-06 13:07 Manila), and all 168 sea slug rows. The nine fish rows without one are all surprise-card answers
+  (mode `wink`, five players, 2026-11-08 to 11-21, no logged expectation or ability), which no replay reads (`core.js`
+  `subjRows`, `Code.gs` `subjRows_`). So every fish answer the replay reads replays from its record, and switching the
+  offsets on moves the scoring of answers to come, not the replay of answers already logged (section 4; corrected after
+  review: a live read-only count on 2026-11-22, which settles a doubt a reviewer raised).
 
 ## 2. What the real log says (read-only, 2026-11-21)
 
@@ -75,16 +77,17 @@ offsets, from the script that serves them, and its replay reads the same.
    `memOf` and `fmtsOf` as the corals' are. Before a reply, or offline, it uses the prior and none, as today.
 4. **`Code.gs` `rplMake_`:** a subject with `offsets` replays with its own served `mem` and `fmt` (`statsServed_(sid)`),
    so a row without a scoring record is replayed as the app would score it now. Rows with a record keep their logged
-   inputs (their outcome can still follow an earlier row's change: section 4).
+   inputs (a row without one could otherwise carry a change into later rows' abilities: section 4).
 5. **Rules versions (rule D5):** one entry appended to `FISH_RVS` and one to `SEASLUG_RVS`, no card (rule D6). They
-   change the scoring of answers to come. The replay they trigger re-scores only the 9 fish rows without a record, and
-   what follows from them for their players (section 4). The sea slugs' 168 rows all have one: their replay does not
-   move.
+   change the scoring of answers to come. On today's log the replay they trigger re-scores nothing: the only fish rows
+   without a record are surprise-card answers, which the replay leaves out, and the sea slugs' 168 rows all have one
+   (section 1; corrected after review).
 6. **The admin, wired to the same offsets** (corrected after review: an earlier version said nothing to add). Its
    Players (`admin.js` `progOf`) and Journey (`admin-journey.js` `sessProg`) replay each player on the page with
    `statsFor(S)` (`admin.js:10630`), which returns `{}` for every subject without `SUBJECTS` `replay` (the fish, the sea
    slugs), and `loadStats` (`admin.js:10139`) reads `?stats=1` without `&s=`, the corals' statistics alone. Built as
-   items 1-5 only, the admin would replay a fish history holding one of the nine rows differently from the sheet. So:
+   items 1-5 only, the admin would replay a fish row without a record differently from the sheet (none in today's
+   replayed log, section 1, but the two must agree on any such row: one engine, rule S1). So:
    `ownRead` and `loadOwnStats` (`admin.js:13087`, today the photos and `gd` for the photo-difficulty views) also keep
    `mem` and `fmt` of a reply at or above the subject's `offsets` version; `statsFor(S)` gives a subject with `offsets`
    exactly what `rplMake_` passes it (its own `mem` and `fmt`, nothing of the corals'); Players and Journey load the
@@ -104,18 +107,19 @@ Players and Journey replay a fish history with a row without a record as `rplMak
   right about 88% of the time where the app expects 82%, come back toward the aim the corals already play at.
 - **Fish progress grows a little more slowly per right answer.** The ability step expects the question with its offset,
   so an answer the app now expects to be right counts for less, and a miss for more.
-- **Progress already reached moves only for the players with a fish answer logged without its scoring record**
-  (corrected after review: an earlier version said bars already reached do not move). A player whose every fish answer
-  has its record replays as before. Each of the nine rows without one is re-scored with today's offsets if it carries
-  the logged expectation and ability (`replayProgress` rebuilds such a row only then, `core.js:6834`): its format
-  offset (`core.js:6863`) enters the unit's bar step and the ability steps (`dm − df`, `core.js:6102`, `6113`); its
+- **Progress already reached does not move: on today's log, no fish answer the replay reads lacks its scoring record**
+  (corrected after review, twice: a reviewer showed that a row without a record would move it; the live count then
+  showed none is replayed). The nine fish rows without a record are surprise-card answers (mode `wink`), left out of
+  every replay (`core.js` `subjRows`, `Code.gs:596` `subjRows_`), and none carries the logged expectation and ability
+  that `replayProgress` needs to rebuild a row (`core.js:6834`). What a replayed row without a record would do, for the
+  record and for the parity test (section 3, item 6): it would be re-scored with today's offsets; its format
+  offset (`core.js:6863`) would enter the unit's bar step and the ability steps (`dm − df`, `core.js:6102`, `6113`); its
   memory offset only for a row logged before 2026-11-03 12:46 Manila (`MEM_LOGGED`: after it the logged expectation
   already holds the memory, `core.js:6861`). From that row on, the player's abilities (unit and level Elo, which also
-  order the leaderboard after the %) carry the change into every later answer, whose record keeps its inputs but not
+  order the leaderboard after the %) would carry the change into every later answer, whose record keeps its inputs but not
   the ability its Elo steps start from (`eloStep`, `core.js:6113` and the level's step after it); the bar of the unit
   answered in that row carries it through that unit's later answers. The other units' bars read no ability (`barOf`,
-  `core.js:5274`). How far it goes is not measured: the build replays every fish player with the offsets off and on
-  and reports the difference before it merges (section 5).
+  `core.js:5274`). The build's before/after replay checks that no fish player moves (section 5).
 - **The sea slugs change at once too, a little:** their fitted offsets are already nonzero (section 2: k4 +0.13, k2
   −0.22, again +0.09, right once −0.71), so switching them on moves their scoring and draw from the first answer, by
   less than a quarter logit except the right-once bucket (corrected after review: an earlier version said nothing
@@ -133,8 +137,9 @@ Players and Journey replay a fish history with a row without a record as `rplMak
   app world as level 1 (300 questions × 5 seeds, the fish profiles), since the photos shown change; every guardrail.
 - **Real log (rule L12):** the leave-one-player-out table above, re-run on the build's day, by level band and format;
   and the before/after replay (corrected after review): every fish player's answers replayed as `rplMake_` does, with
-  the offsets off (today) and on, each player's %, learned units and level Elo compared, the players who move listed by
-  anonymous id with how much. The admin's replay (section 3, item 6) gives the same figures as the sheet's.
+  the offsets off (today) and on, each player's %, learned units and level Elo compared; expected identical (section 1),
+  and any player who moves listed by anonymous id with how much. The admin's replay (section 3, item 6) gives the same
+  figures as the sheet's.
 
 ## 6. Step plan and what it waits for
 
@@ -150,10 +155,9 @@ Players and Journey replay a fish history with a row without a record as `rplMak
 
 **The fish at the same aim as the corals.** Fish players answer right 88% of the time where the app expects 82%.
 With their own format offsets, as the corals have since rules version 6, the fish draw would show photos a bit harder
-and a right answer would count a little less, to come back to the aim. Progress already reached does not move, except
-for the players who have one of the nine fish answers logged without their scoring record: theirs may move (not measured
-yet; expected small, a guess), measured and listed in the build's PR before it merges (section 4, corrected after
-review).
+and a right answer would count a little less, to come back to the aim. Progress already reached does not move: every
+fish answer the replay reads carries its scoring record (the nine without one are surprise-card answers, which no
+replay reads), and the build's PR checks it on the real log before it merges (section 4, corrected after review).
 - **A**: switch the fish and the sea slugs to their own offsets, as designed here (the sea slugs' are small but already
   nonzero, section 2).
 - **B**: keep the fish on no offset until the photo difficulty prior is re-examined (REE-10).
