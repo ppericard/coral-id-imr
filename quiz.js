@@ -1621,6 +1621,11 @@ function phaseArm(nb, cur, L, hold) {
     return true;
   });
 }
+// The cited phase list's sources (fish.json species phs src: [{t, u}]) in words: "Source: A" or "Sources: A, B", each
+// a link when the list gives its page. One line for the sex or colour phase card and the species sheet's phases
+// (learn.js spPhases).
+const phaseSrcs = L =>
+  `Source${L.length > 1 ? 's' : ''}: ${L.map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t))).join(', ')}`;
 // c: {p, k, q} (phaseCardFor; q the photo beside it, else phasePair's from n's photos); n: the unit asked; brk: shown at
 // the break, so its close goes on to the next question.
 function phaseShow({p, k, q: q0}, n, brk) {
@@ -1637,7 +1642,6 @@ function phaseShow({p, k, q: q0}, n, brk) {
     // the list's sources. The juvenile card has none: the two photos say it.
     lines = juv ? [] : (g.phase || []).filter(l => !phs || /\b(?:fe)?males?\b|phases?\b/i.test(l)),
     srcs = phs && (phs.src || []).length ? phs.src : [],
-    srcLink = x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)),
     w = phaseOf(p),
     word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
@@ -1653,7 +1657,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">Source${srcs.length > 1 ? 's' : ''}: ${srcs.map(srcLink).join(', ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',

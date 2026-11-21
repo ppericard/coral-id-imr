@@ -533,7 +533,7 @@ test('a right variant answer the log lacks does not bring the mark back: the exa
 // an edit of them (app.js treeGenera psrc), else IMR's. The juvenile card has none (tests/fishjuvdiff.test.js).
 test('the phase card shows its lines under their recorded source, else IMR', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8'),
-    fn = require('./block.js')(src, 'function phaseShow(', '\n}\n', {through: 1, file: 'quiz.js'}),
+    fn = require('./block.js')(src, 'const phaseSrcs = ', '\n}\n', {through: 1, file: 'quiz.js'}),
     p0 = {f: 'm', ph: 'male'},
     T = {title: ''},
     show = (g, sps = {}, p = p0) => {
