@@ -744,10 +744,10 @@ on families only to an IMR RA with every species open:
     scientific genera), their timing simulated (docs/LEARNING.md "Fish achievements, simulated"); species named and Fish basics
     come with those features;
   - **redesigned around the global score** (2026-11-08, Pierre's Q259-Q264; the full list, its names and timings in docs/LEARNING.md
-    "Fish achievements, around the global score"): 33, of which 31 are built (the score every 10 points to 70%, fpct25
+    "Fish achievements, around the global score"): 33, of which 32 are built (the score every 10 points to 70%, fpct25
     retired; families; scientific genera at Open Water and at Advanced; the circles at Advanced; since the species level's
-    step 1, fsp1, fsp10 and fsp50; since step 2, fspsci1, fboth25, fdauin20 and fpct70) and 2 wait (fpct100 for the
-    ultimate exam, fbasics). **At the species level**:
+    step 1, fsp1, fsp10 and fsp50; since step 2, fspsci1, fboth25, fdauin20 and fpct70; fbasics "Fin to tail", Fish basics
+    done) and 1 waits (fpct100 for the ultimate exam). **At the species level**:
     fsp1, fsp10, fsp50 (species named by a common name, at Advanced; built),
     fspsci1 (a first species named by its scientific name: its bar at Advanced, Q262), fboth25 (25 species with both
     names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, `present.dauinU`, by their

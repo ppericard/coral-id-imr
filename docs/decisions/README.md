@@ -61,9 +61,11 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
 | 2026-11-21 | [The answer feedback no longer says "(IMR)" as its line's source](2026-11-21-feedback-no-imr-label.md) | #1353 |
+| 2026-11-21 | [Fish basics earns an achievement, "Fin to tail"](2026-11-21-fish-basics-achievement.md) | #1369 |
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
 | 2026-11-21 | [The photo's time term: a separate term per photo, faded by information, each answer weighed by its level's steadiness](2026-11-21-photo-time-term.md) | #1357 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
+| 2026-11-21 | ["Did you know?" tip (b): the look-alike duels, for players who never opened the Duel tab](2026-11-21-tip-b-look-alike-duels.md) | #1370 |
 | 2026-11-21 | [The builds write each subject's tree section, a file of its own the Tree tab reads](2026-11-21-tree-section.md) | #1368 |
 | 2026-11-21 | [Rule W27: no fixed number of Codex rounds; a part whose findings keep coming back leaves the PR](2026-11-21-w27-no-round-count.md) | #1355 |
 | 2026-11-20 | [A level opens in a group: at least 4 close units together, no question before](2026-11-20-a-level-opens-in-a-group.md) | #1331 |

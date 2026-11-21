@@ -851,8 +851,11 @@ in place of species by common name), not the families' own share (64% against 64
 Beyond reach of these runs: whether a real player's genus answers also teach the family (each simulated unit has its own
 knowledge, so any delay seen is dilution) and the app world (the run was cut at its budget). An IMR player's genera
 without the offer sit outside the rank share (`app.js` `shareFree`); they take 15% of the lecture RA's answers 301-1,000
-and 9% of 1,001-2,000, mostly before the 5th family is at Advanced, and the arms do not vary that (ROADMAP
-"learnsim: long runs crash, and the genus share").
+and 9% of 1,001-2,000, mostly before the 5th family is at Advanced. Against an arm with `shareFree` empty (10 paired
+seeds x 3,000 answers), they delay the lecture RA's 10th family at Advanced by 99 answers [59, 139], the 15th-25th by
+about 150-200, consistent with their taking those answers (other effects not ruled out), the shown score unchanged;
+where both arms got there by 3,000 answers, the IMR genera reach Open Water 500-850 answers earlier
+(docs/reviews/2026-11-21-sharefree-arm.md).
 
 ### Fish: the species level, step 1, by common name
 
@@ -954,7 +957,10 @@ Learning milestones only, never time (rule L8), in each subject's own list (`cor
 corals' `ACH`): families met, families at each level, exams passed, the circles, the fish % every 10 points up to 70%,
 the scientific genera, the species named by their common names, and by their scientific names (fspsci1 "Binomial";
 fboth25 "Bilingual", 25 species by both names; fdauin20 "Local legend", Dauin's top 20 of circle 1, Q261; at Advanced,
-Q262). Still to come: fpct100 (with the ultimate exam, Q395) and fbasics. Only those that rest on learned marks (`core.js`
+Q262), and fbasics "Fin to tail" (Fish basics done, one 📖 bronze like the corals' Coral basics; earned when the last of the
+module's six steps is seen (27 screens, 21 taps on Next, measured on the real page at 390 and 1280 px), never after a
+number of answers or an amount of time; its name, tier and words are the
+integrator's call, easy to correct). Still to come: fpct100 (with the ultimate exam, Q395). Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
 their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
 
