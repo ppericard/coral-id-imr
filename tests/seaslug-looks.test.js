@@ -236,6 +236,33 @@ test('the decided species pairs are the species units declared look-alikes, both
   // model.js declaredOf (its record's decl, else its look): each pair declared both ways
   const declaredOf = n => X.gen[n].decl || X.gen[n].look || [];
   want.forEach(([a, b]) => assert.ok(declaredOf(a).includes(b) && declaredOf(b).includes(a), a + '|' + b));
+  // model.js groupsOfRank (the confusion groups the opening reads: openPick's group partners) on the real species units
+  // of the three families, no answers pooled: each pair is a group of its own; with decl emptied (as before), none is.
+  const groups = gen => {
+      const c = {
+        PCONF: {},
+        CONF: C.CONF,
+        confScore: C.confScore,
+        GX: n => gen[n],
+        imrFormsOf: () => [],
+        dataSeed: () => false
+      };
+      vm.createContext(c);
+      vm.runInContext(
+        block(src('model.js'), 'const GROUP = {MAX: 3};', '\n// The groups of the units in play', {file: 'model.js'}) +
+          block(src('model.js'), 'const confPrior = (t, n, look) =>', '\nfunction pooledConf', {file: 'model.js'}) +
+          '\nthis.groupsOfRank = groupsOfRank;',
+        c
+      );
+      return c.groupsOfRank;
+    },
+    fams = new Set(Object.keys(of).map(id => U.find(u => u.id === id).family)),
+    L = U.filter(u => fams.has(u.family)).map(u => u.id),
+    G = groups(X.gen)(L);
+  want.forEach(([a, b]) => assert.deepStrictEqual(plain(G[a]), [a, b].sort(), a));
+  assert.deepStrictEqual(Object.keys(G).sort(), Object.keys(of).sort(), 'no other species grouped');
+  const before = Object.fromEntries(L.map(n => [n, {...X.gen[n], decl: []}]));
+  assert.deepStrictEqual(plain(groups(before)(L)), {});
 });
 
 test('the fish species units declare no look-alike: fish.json species carry no look', () => {
