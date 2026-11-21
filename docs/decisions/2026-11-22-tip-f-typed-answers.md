@@ -1,6 +1,6 @@
 # "Did you know?" tip (f): typed answers, a close spelling counts, for the player who answers "I don't know" every time
 
-Date: 2026-11-22. PR: #0000. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/DESIGN.md "Cards"; REE-13.
+Date: 2026-11-22. PR: #1454. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/DESIGN.md "Cards"; REE-13.
 
 ## Context
 
