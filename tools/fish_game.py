@@ -324,13 +324,14 @@ def marked(mine, passed, auto):
     return mine[:7] + ''.join(x for x in FLAGORD if x in fl)
 
 
-def judged_sure(jt, e):
+def judged_sure(jt, e, tags=None):
     """The rubric's part of a sure judgement, the same for a candidate and a reference photo: valid tags and ease (any
     ease 1-5: the judged ease is the photo's prior difficulty), never an unclear subject (count x) nor a fish out of the
     water (flag a; autosort.js fishSure), and a count an automatic route may put in play (PLAY_COUNT: one fish, several
-    of its kind, other species with no risk of confusion; never k nor the unsorted m: rule P3, Q323)."""
+    of its kind, other species with no risk of confusion; never k nor the unsorted m: rule P3, Q323). tags: the tree
+    subject's own pattern of the tags (TAGS, the fish's, by default: tools/seaslug_game.py passes the sea slugs')."""
     jt = jt or ''
-    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
+    return bool((tags or TAGS).match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
 
 
 def unsure(j):
@@ -339,13 +340,14 @@ def unsure(j):
     return [x for x in ((j or {}).get('u') or []) if x != 'bb']
 
 
-def cand_sure(j):
+def cand_sure(j, tags=None, k=None):
     """A judged candidate that enters play by itself (data/suggest.json "fish" {jt, e, k, ph, c, bb, u}; Pierre, 2026-11-06, Q180):
     autosort.js fishSure's add (no unsure field but the box, keep best or alt, never dup) on a sure judgement
-    (judged_sure)."""
-    if not j or unsure(j) or j.get('k') not in ('best', 'alt'):
+    (judged_sure). tags: the subject's pattern of the tags (judged_sure); k: the keep a judgement without one counts as
+    (the fish's judgements always carry it: none; the sea slugs' count as best)."""
+    if not j or unsure(j) or j.get('k', k) not in ('best', 'alt'):
         return False
-    return judged_sure(j.get('jt'), j.get('e'))
+    return judged_sure(j.get('jt'), j.get('e'), tags)
 
 
 def copy_of(p, j, mine=False):
@@ -461,6 +463,20 @@ def ref_play(fish, refs, codes):
     return out
 
 
+def decided_of(F):
+    """The photos Pierre decided on in his part F of the curation: added, rejected, excluded or moved (the automatic routes
+    never take them again). The same for every tree subject (tools/seaslug_game.py reads it too)."""
+    return {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
+
+
+def add_ok(F, f, sid, top, sug):
+    """Whether Pierre's add of photo f for unit sid is in play: still his (fish_on), not excluded for good (top: the
+    top-level exclude, by name or photo id), and not a count in force of other species one could take for its subject or not
+    sorted yet (other_out: rule P3). Whether the candidate exists is the caller's. The same for every tree subject."""
+    return (fish_on(F, f, sid) and f not in top and pid(f) not in {pid(x) for x in top}
+            and not other_out((F.get('tags') or {}).get(f), ((sug or {}).get(f) or {}).get('jt')))
+
+
 def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
     """[(species id, record, its data/fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
     Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that data/fish-cand.json still
@@ -482,12 +498,10 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
         have.add(pid(p['f']))
         obs.add(p.get('o'))
     for f, sid in sorted((F.get('add') or {}).items()):
-        if not fish_on(F, f, sid) or f in top or pid(f) in {pid(x) for x in top} or f not in rec or not rec[f][0].get('src'):
-            continue
-        if other_out((F.get('tags') or {}).get(f), ((sug or {}).get(f) or {}).get('jt')):
-            continue  # other species one could take for its subject, or not sorted yet: out (rule P3)
+        if f not in rec or not rec[f][0].get('src') or not add_ok(F, f, sid, top, sug):
+            continue  # not a candidate, or other species one could take for its subject, or not sorted yet: out (rule P3)
         put(sid, *rec[f], None)
-    decided = {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
+    decided = decided_of(F)
     for s, L in ((cand or {}).get('cand') or {}).items():
         for p in L:
             f = p.get('f')
