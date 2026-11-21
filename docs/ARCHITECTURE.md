@@ -116,7 +116,7 @@ and the player switches between the subjects open to them.
 **Main files.** `core.js` `SUBJECTS` (the registry, shared with the admin and the sheet script), `unitRankOf`,
 `subjGroup`, `treeGen`, `treeScore`; `app.js` `UNITS` (what the app reads each subject's units and pages through),
 `setSubject`, `inSubject`, `subjOpen`, `treeGenera`, the tree state (`treeAt`, `treeLoad`); `progress.js` `subjHello`;
-`learn.js` `viewList`, `viewFishSheet`; `sync.js` `mergeSubject`; `tools/seaslug_game.py` and the fish build tools
+`learn.js` `viewList`, `viewTreeSheet`; `sync.js` `mergeSubject`; `tools/seaslug_game.py` and the fish build tools
 (Data files).
 
 **How it connects.** Each subject's data comes from its own files (Data files); its progress syncs and replays per

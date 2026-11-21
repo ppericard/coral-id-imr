@@ -134,7 +134,7 @@ from `data.json` `imrg`) instead of reading the corals' data themselves.
   Tests: `tests/answertaxon.test.js`, `tests/fish.smoke.js`. `species(p)` gives the species logged with an answer.
 - **Pages.** `memory` (how a Memory pair is made: `views` for the corals, `photos` for the tree subjects, in
   `TREE_UNITS`; `proto/pairs.js` `MEMORY`), `pairs()` (the duels), `winks()` (the surprise cards), `tiles(n)` (Find the X), `list()` (the Learn page:
-  `viewList`, one page for every subject), `sheet(id)` (a sheet: `viewGenus` / `viewFishSheet`), `bar(id)` (a tree subject's page
+  `viewList`, one page for every subject), `sheet(id)` (a sheet: `viewGenus` / `viewTreeSheet`), `bar(id)` (a tree subject's page
   bar on its sheets, `learn.js` `treeBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
   `progHelp` and `achHelp` (the ? texts of the quiz, My progress and the achievements; the corals keep theirs inline),
   `hello` (the cards that introduce the subject, [below](#the-subjects-card)), `about` (its lines in About and credits,
