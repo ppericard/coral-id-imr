@@ -397,7 +397,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       // The sheet's photo numbers are the corals' (Code.gs stats_): another subject's replay reads none, nor does this
       // device's on top of it (its answers carry their scoring record).
-      st = S.replay ? {mem: PMEM, conf: PCONF, fmt: PFMT, gd: typeof PGD === 'object' ? PGD : {}, photos: PSTAT} : {},
+      st = S.replay ? {mem: PMEM, conf: PCONF, fmt: PFMT, gd: typeof PGD === 'object' ? PGD : {}} : {},
       // This device's answers on top, under the rules of the script that sent the replay, as the live game.
       R = rows.length
         ? replayProgress(rows, {
@@ -409,8 +409,6 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             // The genus offsets for an answer logged without them (an older app's).
             gd: st.gd,
-            // The photos' time terms for an answer logged without its own (core.js replayProgress photos, rtWeight ti).
-            photos: st.photos,
             // The first-launch answer (core.js startPriorAt), as the live game.
             starts: {[me]: store.get(startKey(SUBJ.id), null)},
             // The variant groups left (vl) recomputed with this device's answers, as the sheet's replay (rules D8, D9).

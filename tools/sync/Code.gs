@@ -4708,7 +4708,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // 13) and keeps the term in the scoring record (scoreRec i): the app nets it, and logs it, only with this script or
   // later (quiz.js ptNetOn), so an older script, which would drop the field and replay without it, never meets an
   // answer the app weighed otherwise.
-  const RTNET_SHEET = 215;
+  const RTNET_SHEET = 217;
   // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.

@@ -1152,15 +1152,18 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
 - **Logged and replayed.** The game nets by the terms it holds (`PTM`) and logs the term in the scoring record (`i`,
   kept even at 0), only from sheet `RTNET_SHEET` (rule D4). The full replay takes the logged term, else the photos'
   terms served when it replays (`replayProgress` photos: the corals' replays in `Code.gs` `rplMake_`, `replayedAll_`,
-  `sync.js`, the admin), so every coral answer of the log is netted, silently (rule D6). The fish and sea slug replays
+  the admin), so every coral answer of the log is netted, silently (rule D6). The device's own answers replayed on top
+  of the sheet's replay (`sync.js`) are passed no photos yet: a pending answer logged before the gate replays there at 0,
+  as the game scored it. The fish and sea slug replays
   read no pooled photo numbers, so there only the answers logged with the term are netted; their earlier answers keep
   their weight. A re-fit of the term (`PTIME`) now moves the corals' replayed progress, so it takes a rules version.
 - **What moves.** The bars (the domain score) do not read the time weight, only the ability steps do. On the real log
   to 2026-11-21 17:17 (corals, 15 players, the branch's replay with the terms served from the whole log against
   without): no player's slate % moves; the global level moves by −0.03 to +0.001 (11 of 15 down, the largest −0.027).
   1,200 of 1,439 rated photos have a term; over the 2,566 right timed answers with one, its mean is −0.024 log seconds
-  (sd 0.104, −0.31 to +0.28): on average the photos answered are slightly fast against the players' all-answer habit,
-  so the net weights are slightly smaller.
+  (sd 0.104, −0.31 to +0.28), so on average the net weights are slightly smaller; why the mean is below 0 is not
+  established (the term is measured against the habit over right answers in the same format, `rtWeight`'s z against
+  the habit over all timed answers).
 - **The real log** (rule L12; declared before running; level 1: only a right answer's step size changes, within
   [0.5, 1.5]). `tools/abilityeval.js` on the corals (15 players with 20+ answers, 3,920 answers), the app as it is
   (`e+X+M+A`) against the time netted (`+P`: the terms before each answer, as the live game reads them, from
