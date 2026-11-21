@@ -1,6 +1,6 @@
 # The machine slot serves its waiters in arrival order
 
-Date: 2026-11-21. PR: (this PR). Linear: REE-206. Rules or docs touched: rule W24 (docs/rules/ship.md), `tests/slot.js`.
+Date: 2026-11-21. PR: #1424. Linear: REE-206. Rules or docs touched: rule W24 (docs/rules/ship.md), `tests/slot.js`.
 
 ## Context
 
