@@ -12,8 +12,8 @@ the remote branches with commits not in main and no PR (rule W6), the sheet scri
 the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), the
 infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
 of a limit; in the short brief only when one warns or the check failed), the open questions for Pierre from docs/STATUS.md,
-and where open work is tracked (Linear's team views, as links: the brief never queries Linear; in the short brief on the
-questions line); the full brief adds the fish candidates waiting for the judging pass.
+and where to start (Linear's Project Home and the Drive Reef_ID folder, links read from docs/INTEGRATOR.md "Linear": the
+brief never queries Linear; in the short brief its own second line, REE-230); the full brief adds the fish candidates waiting for the judging pass.
 It always says whether the local origin/main ref is the remote's main (one bounded `git ls-remote`, no fetch, nothing
 moved; "remote freshness unknown" when it fails; on the time line in the short brief), since the tools, the drift check
 and the VERSION on main are all read from that ref (REE-180).
@@ -51,8 +51,7 @@ DEADLINE = 5.0  # seconds for every network call together
 START = time.monotonic()
 MANILA = timezone(timedelta(hours=8))  # Asia/Manila, UTC+8 all year (no daylight saving)
 # Where open work is tracked (docs/INTEGRATOR.md "Linear"): links only, never a call to Linear (the hooks have ~5 s).
-LINEAR_ACTIVE = 'https://linear.app/reef-id/team/REE/active'
-LINEAR_BACKLOG = 'https://linear.app/reef-id/team/REE/backlog'
+LINK_LABELS = ('Project Home', 'Drive Reef_ID')  # the link texts in INTEGRATOR.md "Linear": its one source of the links
 
 
 def left():
@@ -512,8 +511,15 @@ def questions():
 
 
 def tracker_line():
-    """Where open work is tracked: Linear's team views, as links (offline: the brief never queries Linear)."""
-    return 'Open work: Linear team REE, active %s · backlog %s' % (LINEAR_ACTIVE, LINEAR_BACKLOG)
+    """Where to start: Linear's Project Home and the Drive Reef_ID folder, as links read from docs/INTEGRATOR.md "Linear"
+    (offline: the brief never queries Linear; REE-230)."""
+    try:
+        text = open(os.path.join(ROOT, 'docs/INTEGRATOR.md'), encoding='utf8').read()
+        sec = re.search(r'^## Linear\n(.*?)(?=^## |\Z)', text, re.M | re.S).group(1)
+        links = [re.search(r'\[%s\]\((https://[^)\s]+)\)' % re.escape(k), sec).group(1) for k in LINK_LABELS]
+    except (OSError, AttributeError):
+        return 'Start: Project Home, Drive Reef_ID, Linear views: docs/INTEGRATOR.md "Linear"'
+    return 'Start: Project Home %s · Drive Reef_ID %s · views Now/Next/Decisions/Waiting' % tuple(links)
 
 
 # --- What loads here, and the agents launched today (the rules core trial; AGENTS.md "The right model and effort") -----
@@ -741,14 +747,19 @@ def brief(short, at):
     # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
     # "Working mode", reports and events): remind of the check, with when it was last done.
     remind = 'reports and events last checked %s: read them (sheet tabs Reports, Events; Sheets connector)' % (checked or 'never')
-    # Where open work is tracked: in the short brief (5 lines) on the questions line, which always survives the cut.
+    # Where to start (Project Home, Drive): in the short brief its own line right after the time line, and the PRs and
+    # branches share one line to keep the 5-line cut.
     tl = tracker_line()
     if q_open is None:
-        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + (tl + ' · ' if short else '') + remind)
+        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + remind)
     else:
         q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
-        lines += [q + ' · ' + tl + ' · ' + remind] if short else [q, 'Players: ' + remind]
-    if not short:
+        lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
+    if short:
+        lines.insert(1, tl)
+        if len(lines) > 3 and lines[2].startswith('PRs:') and lines[3].startswith('Branches'):
+            lines[2:4] = [lines[2] + ' · ' + lines[3]]
+    else:
         lines.append(tl)
     al = launches(at)
     if al and short:

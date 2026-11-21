@@ -352,10 +352,30 @@ Never copied here, so it cannot go stale:
 ## Linear
 
 Open work is tracked in Linear (Pierre, 2026-11-21 14:41; [decision](decisions/2026-11-21-linear-tracking.md)):
-workspace reef-id, team REE, nine projects P-REE-1 to P-REE-9 (outcomes). Views:
-[active](https://linear.app/reef-id/team/REE/active), [backlog](https://linear.app/reef-id/team/REE/backlog),
-[all](https://linear.app/reef-id/team/REE/all), [projects](https://linear.app/reef-id/projects/all). Agents reach it
-through the Linear MCP tools. ROADMAP.md keeps a pointer for each subject transferred and the rows not transferred yet.
+workspace reef-id, team REE, nine projects P-REE-1 to P-REE-9 (outcomes). Agents reach it through the Linear MCP tools.
+ROADMAP.md keeps a pointer for each subject transferred and the rows not transferred yet. The arrangement adopted
+2026-11-21 (REE-181; study by ChatGPT in the Drive folder, [editable doc](https://docs.google.com/document/d/1d2jgPBNZBF5P62fu3_Tn4O6N0h-u4c-h7JuWKQWPgtg/edit)):
+Linear is the front door, Drive holds the substantial studies. Start from these links (`tools/brief.py --short` prints
+the first and last at every session start and after a compaction, reading them from this section):
+
+- [Project Home](https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc): the front page of the project.
+- Saved views: [Now](https://linear.app/reef-id/view/0be7e66e-2e7b-4832-9386-1bf6e4f76a59),
+  [Next (ready to start)](https://linear.app/reef-id/view/1c09d0dd-02bb-4fd1-bde2-a6919f2d6418),
+  [Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d),
+  [Waiting and blockers](https://linear.app/reef-id/view/15709acb-356b-40bd-84b8-1932ba877566).
+- [Drive Reef_ID](https://drive.google.com/drive/folders/1EHqtC9iINaYrb0zalE7FpX1F01DrskIp): shared studies and
+  cross-cutting explanations.
+
+**Where each kind of information lives** (Pierre, 2026-11-22 06:20: other humans or AI agents such as ChatGPT or Codex
+Desktop must be able to pick up the work; they read GitHub, Drive and Linear, never Claude's chat):
+
+| Kind | Home |
+| --- | --- |
+| Tasks and their state | Linear (team REE) |
+| Questions for Pierre | Linear issues labelled Decision for Pierre (the Decisions view), still asked in the chat in French |
+| Substantial studies, cross-cutting explanations | Drive Reef_ID, linked both ways with their Linear issue |
+| Code, specs, code-coupled studies, decisions | This repo (GitHub) |
+| Conversation | The integrator's chat: never the only copy of anything another collaborator needs |
 
 - **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
   opens, Done at merge; a new issue (label Idea) for every idea discussed and not built; an issue's description holds
