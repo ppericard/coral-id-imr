@@ -49,7 +49,11 @@ question (REE-202), not decided here.
 - `tools/fish_judge.json` `boxes` gets the bulk boxes, wave by wave, with a `passes` entry each; nothing else (no
   `curation.json`, rule A1; no `fish-game.json`: the Candidate photos workflow, which watches `tools/fish_judge.json`,
   gives the photos their `bb`, cuts the tiles `{f}-x.webp` and uploads them to R2).
-- Wave 1 (this PR): 84 boxes for the six M2, M3 and M5 species (5 photos left without one: hidden, or cut by the frame);
+- Wave 1 (#1426): 84 boxes for the six M2, M3 and M5 species (5 photos left without one: hidden, or cut by the frame);
   drift redo 4 of 4 agree. Three earlier boxes that cut the fish (found by the bench's eye check) are replaced by Opus 5.5
   high's, checked by eye: their tiles are cut again.
+- Wave 2 (batches 03-14, #1440): 600 photos of 155 species with no tile, 567 boxed, 33 left without a box (5.5%, tiles
+  lost); drift redo 24 of 24 agree.
+- Wave 3 (batches 15-26, #1444): 600 photos of 157 species with no tile, 546 boxed, 54 left without a box (9.0%, tiles
+  lost); drift redo 22 of 24 agree (both disagreements Sonnet's "no box" where Opus 5.5 high boxed).
 - The bench, its threshold files and every run stay in the session's scratch folder; the figures are here and in the PR.

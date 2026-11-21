@@ -93,7 +93,11 @@ one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their un
 `gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `sheetParts`, `bar`); each entry adds only
 its words, its files and its own settings and differences. The Look-alikes deck and Compare read `deck` (the pairs of
 the deck), `inGame` (a unit Compare may show) and `cmp` (`src`, `clues`, `tag`, `line`, `more`: what each says of a unit
-beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes).
+beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes). Home reads `named` (true where
+the units have names of their own: set once in `TREE_UNITS`, so for the fish and the sea slugs) to draw its Learn band
+from the slate's units and to say the subject's words (`home.js`; the corals' band reads data.json's genera), and My
+progress' Groups view and the custom quiz's first view read `group(k)` (the corals': the IMR lecture group `k`, `{n, t}`,
+from `data.json` `imrg`) instead of reading the corals' data themselves.
 
 - **Loading.** `load()`, its data before its pages open (the corals' is in from start-up; a tree subject's is `treeLoad`:
   its tree, its first photos and its game photos), and `home()`, what start-up waits for when it differs: the fish's is

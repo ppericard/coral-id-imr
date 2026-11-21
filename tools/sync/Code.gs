@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 218 (2026-11-22). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 219 (2026-11-22). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 218;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 219;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -4980,7 +4980,7 @@ const CORE_ = (function () { const module = {exports: {}};
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       closed: CLOSED_TREE,
       basics: {feat: '_fbasics'},
-      // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
+      // Its sheets (learn.js viewTreeSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
       // f:Damselfishes, g:Chromis; a species by its name, s:Chromis ternatensis): #fish/learn/genus/Chromis.
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
@@ -5298,7 +5298,7 @@ const CORE_ = (function () { const module = {exports: {}};
           'inbox/todo/health',
           'players/list',
           // Photos › Tree › Key: the fish's node pages and photo tools on
-          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus, its sheets'
+          // its tree (admin.js renderFishUnits and its tiles), its genus-level photos (gl) a leaf of their genus, its sheets'
           // text slots (content above). WoRMS: the reference taxonomy's tree (seaslug.json ref, tools/seaslug_worms.py;
           // admin.js fuWormsOf), as the fish's.
           'photos/tree/key',
@@ -5801,7 +5801,7 @@ const CORE_ = (function () { const module = {exports: {}};
         },
         ...(start.has(t.id) ? {first: 1} : {}),
         // its taxonomic group's number in the tree's taxa (the sea slugs': tools/seaslug_groups.json), the Learn page's
-        // heading above its block (learn.js viewFishList); display only
+        // heading above its block (learn.js viewList); display only
         ...(t.tgroup ? {tg: t.tgroup} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         // Its juvenile classes and its variant thresholds, when it has them (fish.json juv, varAt): the kind of each
@@ -5851,7 +5851,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The fish units as the full replay reads them (replayProgress gen: each unit's look-alikes and family line, for the
   // look-alike prior of a mix-up and the unit wrongly given): the families of treeGen, the scientific genera of app.js
   // treeGenera (treeGenSets: each with its sibling genera as look-alikes and its family's line) and the species units,
-  // from fish.json alone (no photo changes them). The sync sheet builds it from fish.json (Code.gs fishGen_);
+  // from fish.json alone (no photo changes them). The sync sheet builds it from fish.json (Code.gs subjGen_);
   // tests/fishreplay.test.js checks it against the app's units. unit 'genus' (the sea slugs): the genus units treeGen
   // plays from the start (treeGenUnits), and no scientific genera or common-name species units.
   // Both: the species by their scientific names (treeSpUnits 'sci', under their genus units), so the sheet replays an

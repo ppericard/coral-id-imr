@@ -76,7 +76,7 @@ const APP = {
 };
 // The tree sheets' helpers of learn.js: retired in the player app's own scripts. The admin keeps functions of its own
 // under some of the old names (admin.js fishTile, fishFamOf; autosort.js fishMine, fishSpecies), so the admin's files and
-// the tests are not read for these, nor core.js, whose comments cite them until its next change (rule D3).
+// the tests are not read for these; core.js is read, comments included (it cites the tree names).
 const LEARN = {
   fishMine: 'treeMine',
   fishFamOf: 'treeFamOf',
@@ -85,7 +85,7 @@ const LEARN = {
   fishMarks: 'treeMarks',
   viewFishSheet: 'viewTreeSheet'
 };
-const learnScope = f => /^(?:proto\/)?[\w-]+\.js$/.test(f) && !/^(?:admin|autosort\.js$|core\.js$)/.test(f);
+const learnScope = f => /^(?:proto\/)?[\w-]+\.js$/.test(f) && !/^(?:admin|autosort\.js$)/.test(f);
 // Every JS file of the repo and the sheet script, as paths from the root.
 const files = (() => {
   const out = [],
@@ -140,7 +140,7 @@ test('the new names exist where the code declares them', () => {
   for (const n of Object.values(LEARN)) assert.ok(word(n).test(app), `learn.js declares ${n}`);
   // the scope of the learn.js table: the player app's scripts, never the admin's (whose own functions keep those names)
   assert.ok(['learn.js', 'app.js', 'quiz.js', 'reports.js', 'proto/fishbasics.js'].every(learnScope));
-  assert.ok(!['admin.js', 'admin-fish.js', 'autosort.js', 'core.js', 'tests/fishunits.test.js'].some(learnScope));
+  assert.ok(!['admin.js', 'admin-fish.js', 'autosort.js', 'tests/fishunits.test.js'].some(learnScope));
   const C = require('../core.js');
   for (const n of ['treeGen', 'treePhotos', 'treeGameRead', 'treeReplayGen', 'treePid', 'treeSheets'])
     assert.strictEqual(typeof C[n], 'function', `core.js exports ${n}`);

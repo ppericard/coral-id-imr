@@ -39,6 +39,31 @@ test('the stub answers the Find the X tile of every fish game photo that has one
   assert.deepStrictEqual(miss.slice(0, 5), [], `${miss.length} tiles R2 holds left a 404`);
 });
 
+// Every subject's game file (SUBJECTS admin.files.gm, rule S1: the fish and the sea slugs alike).
+const gameFiles = C.SUBJECTS.map(s => s.admin && s.admin.files && s.admin.files.gm).filter(Boolean);
+const gameOf = f => {
+  const out = [];
+  const walk = o => {
+    if (!o || typeof o !== 'object') return;
+    if (Array.isArray(o)) return o.forEach(walk);
+    if (typeof o.f === 'string' && typeof o.src === 'string' && !o.r) out.push(o);
+    Object.values(o).forEach(walk);
+  };
+  walk(C.treeGameRead(JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))));
+  return out;
+};
+
+test('the stub answers the downloaded photos and tiles of every subject game file, the sea slugs included', () => {
+  assert.ok(gameFiles.includes('seaslug-game.json'), 'the sea slugs have a game file');
+  for (const f of gameFiles) {
+    const ps = gameOf(f);
+    assert.ok(ps.length > 0, `${f} read: ${ps.length} photos`);
+    const names = ps.flatMap(p => ['', '-t', '-s', '-m'].map(s => `${p.f}${s}.webp`).concat(Array.isArray(p.xc) ? [`${p.f}-x.webp`] : []));
+    const miss = names.filter(n => !stub.file(n));
+    assert.deepStrictEqual(miss.slice(0, 5), [], `${f}: ${miss.length} files R2 holds left a 404`);
+  }
+});
+
 test('a file R2 does not hold stays a 404', () => {
   assert.strictEqual(stub.file('gone-from-the-data-s.webp'), null);
   assert.strictEqual(stub.file('gone-from-the-data-x.webp'), null);

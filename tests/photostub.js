@@ -28,7 +28,14 @@ module.exports = ROOT => {
     }
     Object.values(o).forEach(walk);
   };
-  ['data.json', 'data/cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
+  // The photo files of every subject, from SUBJECTS (rule S1: no subject named here): its photos (ph), game file (gm)
+  // and candidates (cand); the corals' own are data.json and data/cand.json.
+  const files = ['data.json', 'data/cand.json'];
+  require(path.join(ROOT, 'core.js')).SUBJECTS.forEach(s => {
+    const a = (s.admin && s.admin.files) || {};
+    ['ph', 'gm', 'cand'].forEach(k => a[k] && !files.includes(a[k]) && files.push(a[k]));
+  });
+  files.forEach(f => {
     const p = path.join(ROOT, f);
     if (fs.existsSync(p)) walk(require(path.join(ROOT, 'core.js')).treeGameRead(JSON.parse(fs.readFileSync(p, 'utf8')))); // its records whole
   });

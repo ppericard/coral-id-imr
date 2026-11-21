@@ -272,7 +272,30 @@ green checks; refactors of this size probably run longer.
    in both). Nothing visible changed.
 7. **One montage and one coverage page** (Dup-6, Dup-7; admin M each). The montage also does the Tree tab row's "coral
    Look-alikes page reading the pairs in force".
+   **Done** (spec/admin.md "Each subject's admin part", spec/admin-photos.md, `tests/montcovtile.test.js`): `admin.js`
+   `renderMont(S)` draws every subject's Look-alikes (a row per pair: its title and source, the switch, Auto | Manual,
+   Shown | Hidden, the two photos and a strip of each unit's, the note when there is no pair or no photo in common, the
+   controls and the scroll kept after a write) and `renderCov(S)` draws every subject's Coverage › Games (the section, the
+   table); `MONT_BUILD` (`// mont build: begin/end`) and `COV_BUILD` (`// cov build: begin/end`) hold the two builders each,
+   picked by the declared shape (`SUBJECTS` `flat`: `treeShape`, as `TREE_BUILD`, `CAND_BUILD`, `REVIEW_BUILD`): `flat` (the
+   corals' pairs with their View, `covFlatPage`) and `tree` (the pairs in force with their Phase, `covTreePage`: a row per
+   family, genus or species by the level switch, the phases shown). The montage's builders have the same ten members, the
+   coverage's three (`ready`, `load`, `page`); the data attributes the smoke test and the styles read (`data-mv` and
+   `data-fmv`, `data-mauto` and `data-fmauto`...) are the builder's, so the HTML is unchanged. No `SUBJECTS` field, no
+   draft write, `curation.json` key or browser key changed. Gone: `renderFishMont`, `FMONT_T`, `renderFishCov`, and the
+   dispatch's two `ASUBJ.rank === 'family'` proxies. **Not done**: one coverage table whose columns come from `views` or
+   phases: the corals' grid (a cell per genus and view, the legend, the sources bar, the Where to look banner) and the tree
+   subjects' (a level switch, the To do chips, the phases) share only the frame, so each builder keeps its own rows.
 8. **One tile** (Dup-8; admin M). It falls out of 3-5.
+   **Done in part** (same spec and test): the two photo tiles, the corals' genus-page tile (`tile`) and the tree subjects'
+   family-page tile (`fishTile`), are drawn through one frame, `tileFrame` (the figure, the photo's button, the corner tools,
+   the number, the cover mark, the caption, the actions), each filling its own parts; a photo's tile outside its page (To do's
+   reports and flags, Health's photos everyone misses) is drawn through one door, `repTile(f, o)`, which asks the registries
+   of `TILE_BUILD` in turn (`tree`, `read`, `flat`: `has`, `tile`, `bind`) and is bound by `repBind(scope)`; the pages no
+   longer pick the tile by the subject on screen. Gone: Reports' own `repTile`, `unitFlagTile`, Health's `fishHTile` and
+   `coralTile`, the `ASUBJ.sheets` proxy of Health's tiles and of its binding. **Not done**: one tile that holds both sets
+   of tools (the corals' Quality, Growth form and views; the tree subjects' Ease, Phase and tag rows): they are different
+   tools of different photo processes (study §6 c), and each tile's tools stay its own function's.
 9. **Learn: one list** (Dup-13; feature M). Acceptance: the same HTML as today for each subject (snapshot tests), so
    players see nothing new and it stays out of Pierre's queue.
    **Done** (spec/front-end.md "Learn › Genera", `tests/listbuild.test.js`): `learn.js` `viewList` draws every subject's
@@ -310,6 +333,17 @@ green checks; refactors of this size probably run longer.
    species with no name yet; each first sheet at 390 px and with the species filter on All), progress seeded, the
    clock, the random numbers and the player's reserve fixed: identical byte for byte, before and after.
 11. **Small Learn, home and progress readers** (Dup-16, Dup-17; fix S).
+   **Done** (spec/subjects.md "What reads the subject's data", `tests/homeread.test.js`): Home no longer tells a subject
+   whose units have names from the corals by testing the data (`!!GX(slateGenera()[0]).name`): `UNITS` has a member
+   `named`, set once in `TREE_UNITS` (so for the fish and the sea slugs), and `home.js` follows it for its Learn band, its
+   Identify door and its words; the corals' band reads its genus through `GX` like the others. My progress' Groups view
+   and the custom quiz's first view read the group of a genus through a new member, `UNITS group(k)` (the corals': the IMR
+   lecture's group `k`, `data.json` `imrg`), instead of reading `DATA.imrg` themselves. The progress record, the feats and
+   every stored key are untouched (the readers only). The ratchet: `DATA.gen` in `home.js` 2 to 1, `DATA.imrg` in
+   `progress.js` and `quiz.js` 1 to 0 each, and the `home.js` entry of `LINES` gone. Not changed: the corals' band still
+   draws from every genus of `data.json` (Millepora, a slate genus read from the extra part, is not in it: the slate is not
+   the same list), the corals' door words stay in `home.js`, and the `DATA.gen` and `DATA.imrg` reads of the Learn list and
+   sheets (`learn.js`: the flat builders and the compare pages, step 12's) and of the ID Key stay where they are.
 12. **Compare pages made generic** (Dup-15; feature M): the code only. Opening them to other subjects is Pierre's
     call.
 13. **Tools: one tree-game builder** (Dup-20; tooling, probably L): `seaslug_game.py` on `fish_game.py`'s functions,

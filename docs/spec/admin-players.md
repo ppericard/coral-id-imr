@@ -23,7 +23,7 @@ misses, its families and genera players are stuck on, `#fish/inbox/todo/health`)
 sections, its **photo work as counts that open their pages** (`fishTodoLines`, `bindFishTodo`): the candidates the fish
 Candidates swiper shows by default (`autosort.js` `fishCandTodo`: never the auto-sort's Checks, nor those of a species at
 its target or set aside), the open cover and light proposals (Photo review), and Coverage › Games' To do counts
-(`autosort.js` `FISHCOV_TODO`, `fishCovTodo`, shared with `renderFishCov`, under the same All | IMR filter, so a count is
+(`autosort.js` `FISHCOV_TODO`, `fishCovTodo`, shared with `covTreePage` (Coverage › Games), under the same All | IMR filter, so a count is
 the chip it opens: a click opens Coverage › Games with that chip pressed). The corals' out of the presence rule,
 share-alike, Featured but rated Poor and the judging agent's suggestions have no fish counterpart (the fish candidates
 carry the pass's judgment in Candidates). The switch's and the tab's counts stay the reports and flags (`subjTodo`,

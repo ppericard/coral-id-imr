@@ -343,13 +343,16 @@ test('R2 failed: the published rotation is drawn on the original with its crop (
     ev = t => ({target: t, stopImmediatePropagation: () => (ev.stopped = (ev.stopped || 0) + 1)});
   T.H.error(ev(i));
   assert.deepStrictEqual([i.A.src, i.st['object-view-box'], i.dataset.rot], [iN(1, 'large'), 'inset(0% 50% 0% 0%)', 90]);
-  assert.deepStrictEqual({...T.state()}, {R2: false, AWAY: true});
+  // One failed photo falls back alone; R2 is given up once 3 different photos failed in a row (r2out.test.js).
+  assert.deepStrictEqual({...T.state()}, {R2: true, AWAY: false}, 'one photo');
   const j = el(`${PHOTO_BASE}img/b-m.webp`, '180');
   T.H.error(ev(j));
   assert.deepStrictEqual([j.A.src, j.st['object-view-box'], j.dataset.rot], [iN(2, 'large'), undefined, '180']);
+  assert.deepStrictEqual({...T.state()}, {R2: true, AWAY: false}, 'two photos');
   const k = el(`${PHOTO_BASE}img/c-m.webp`);
   T.H.error(ev(k));
   assert.deepStrictEqual([k.st['object-view-box'], k.dataset.rot], ['inset(0% 50% 0% 0%)', undefined]);
+  assert.deepStrictEqual({...T.state()}, {R2: false, AWAY: true}, 'three photos in a row');
 });
 
 // The coral workflow (tools/fetch_approved.py) and the fish one (tools/fish_game.py) both make their files with

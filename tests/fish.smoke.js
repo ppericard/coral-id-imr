@@ -471,6 +471,29 @@ async function findTheXSpecies(b, base, errs) {
     }
     ok(seen.cn >= 3, `Find the X on species by common name: ${seen.cn}`);
     ok(seen.sci >= 3, `Find the X on species by scientific name: ${seen.sci}`);
+    // The mimicry pair (REE-45, Q416 c): the class's photos carry no tile on the data today (no box on a juvenile Acanthurus
+    // pyroferus), so they are given one here, in the page only. "Find the Angelfishes" then has the Surgeonfishes' juvenile
+    // as its decoy tile, one of its three others, whatever the draw; the question's own photo is the species resembled.
+    {
+      const E = ((GX('f:Surgeonfishes') || {}).mim || [])[0];
+      ok(!!E, 'a mimicry entry on the Surgeonfishes');
+      if (E) {
+        GX('f:Surgeonfishes').views.wide.forEach(p => mimIn([E], p) === E && (p.xc = [0, 0, 1, 1]));
+        ok(UNITS.fish.tiles('f:Angelfishes').length > 0, 'the Angelfishes have a tile');
+        for (let i = 0; i < 12; i++) {
+          const Q0 = planFind('quiz', 'f:Angelfishes', pool(), 0, null);
+          if (!Q0) {
+            ok(false, 'no Find the X on the Angelfishes');
+            break;
+          }
+          const dec = Q0[4].find.filter(x => x.n !== 'f:Angelfishes' && mimUnit(x.n, x.p) === 'f:Angelfishes');
+          ok(
+            dec.length === 1 && dec[0].n === 'f:Surgeonfishes' && Q0[2].length === 4,
+            `the class's decoy tile: ${Q0[2]} ${dec.map(x => x.n)}`
+          );
+        }
+      }
+    }
     // The ordinary draw with FIND.P back at 0: none (the family and species draws alike).
     FIND.P = 0;
     let none = 0;
@@ -802,6 +825,67 @@ async function matrixGame(b, base, errs) {
   await c.close();
   return fails.map(m => `matrix: ${m}`);
 }
+// (21) Life stages matched (proto/lifestages.js, the Lab) on the fish: the six families holding the most species whose phases the cited
+// list documents (fish-phases.json) unlocked, the photos stubbed (its tiles are its choices); tests/lifestages.check.js plays the
+// rounds at 390 and 1280 px (the stage shown outlined and no button, three choices of three species, the stages the list documents,
+// a wrong tap crossed and the right one ticked, the source said, one screen in every state, no progress, log or answer count
+// changes).
+async function lifeStages(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-ls')) {
+        sessionStorage.setItem('fish-ls', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`life stages: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  await q.evaluate(() => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove())));
+  const list = await q.evaluate(async () => {
+    const ph = (await UNITS[SUBJ.id].phases()).species,
+      ok = (P, s) => !!P && (s === 'juvenile' ? !!P.juv : !!(P.sex || P.ip_tp)),
+      by = pool()
+        .filter(n => !rankOf(n))
+        .map(n => {
+          const sp = {};
+          gamePics(n, 'wide').forEach(p => p.sp && p.ph && ok(ph[p.sp], p.ph) && ((sp[p.sp] = sp[p.sp] || new Set()).add(p.ph), 0));
+          return [n, Object.values(sp).filter(s => s.size >= 2).length];
+        })
+        .sort((a, b) => b[1] - a[1]);
+    return {species: Object.keys(ph).length, by: by.slice(0, 6)};
+  });
+  if (list.species < 50) return [`life stages: ${list.species} species in fish-phases.json`];
+  if (list.by.filter(([, k]) => k).length < 3) return [`life stages: ${JSON.stringify(list.by)} families with documented stages`];
+  await q.evaluate(
+    L => introAdd(L, true),
+    list.by.map(([n]) => n)
+  );
+  await q.evaluate(() => (location.hash = hr('lab'))); // the game is drawn afresh by the check, with the families now unlocked
+  await q.waitForTimeout(300);
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./lifestages.check.js')(q, w, fails, 'fish', 8);
+  }
+  await c.close();
+  return fails.map(m => `life stages: ${m}`);
+}
+
 // (20) Down the tree (proto/downtree.js, the Lab) on the fish: twelve families, their scientific genera and species unlocked
 // (the sheet's version at the species level, Scientific names on), the photos stubbed; tests/downtree.check.js plays the rounds
 // at 390 and 1280 px (one photo, the steps from the family down, each unlocked and under the one above, names of one rank, a
@@ -4350,6 +4434,8 @@ async function namesCard(b, base, errs) {
   const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
   // (20) Down the tree: downTree, above.
   const dt = run.has('main') ? await downTree(b, base, errs) : [];
+  // (21) Life stages matched: lifeStages, above.
+  const ls = run.has('main') ? await lifeStages(b, base, errs) : [];
   // (16) Type the family, Blur reveal and the Look-alike web: labGames, above.
   const lg = run.has('main') ? await labGames(b, base, errs) : [];
   // (17) The custom quiz: customQuiz, above.
@@ -4702,6 +4788,7 @@ async function namesCard(b, base, errs) {
     ...oo,
     ...mx,
     ...dt,
+    ...ls,
     ...lg,
     ...cqz,
     ...la,

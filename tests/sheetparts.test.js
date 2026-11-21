@@ -93,6 +93,53 @@ test("sheetBody: the subject's declared parts, in its order, one to a line; a de
   assert.strictEqual(P.sheetBody('genus', S), '\n    B\n    A\n  ');
   assert.deepStrictEqual(built, ['b', 'a'], 'built in the declared order, an undeclared part never');
   assert.throws(() => P.sheetBody('family', S), /no family part "zz"/);
+  // null: the sheet has no such part, no line at all; '' keeps its empty line (the sheets drawn before null existed)
+  ctx.UNITS = {x: {sheetParts: {genus: ['a', 'n', 'e', 'b']}}};
+  assert.strictEqual(P.sheetBody('genus', {...S, n: () => null, e: () => ''}), '\n    A\n    \n    B\n  ');
+});
+
+// A species' sexes or colour phases (learn.js spPhases, REE-54): only for a species the cited phase list flags with a
+// source (fish.json phs), its words and sources as the phase card's (quiz.js phaseSrcs), then up to two photos of each
+// judged phase in the list's order, each photo's place among the sheet's photos (added when not there yet).
+test('spPhases: the cited list says it, with its sources, then two photos of each judged phase', () => {
+  const QUIZ = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
+    c = vm.createContext({
+      esc: ctx.esc,
+      safeUrl: u => u,
+      phaseOf: p => p.ph || '',
+      PHASEC: {WORD: {juvenile: 'Juvenile', male: 'Male', female: 'Female', intermediate: 'Intermediate'}}
+    });
+  vm.runInContext(
+    block(QUIZ, 'const phaseSrcs = ', ';\n', {through: 1, file: 'quiz.js'}) +
+      block(LEARN, 'const SP_PHASES = ', '\nfunction treeSpecies(s) {', {file: 'learn.js'}) +
+      '\nthis.spPhases = spPhases;',
+    c
+  );
+  const fig = (p, i, big, w) => `[${p.f}:${i}:${w}]`,
+    ph = (f, w) => ({f, ph: w}),
+    P = [ph('a', ''), ph('m1', 'male'), ph('j', 'juvenile'), ph('f1', 'female'), ph('m2', 'male'), ph('m3', 'male'), ph('t', 'terminal')],
+    flat = P.slice(0, 5),
+    src = [{t: 'Reef Life Survey', u: 'https://rls.example/s'}, {t: 'FishBase <x>'}];
+  assert.strictEqual(c.spPhases({}, P, flat, fig), null, 'not on the list: no section');
+  assert.strictEqual(c.spPhases({phs: {k: 'sex', src: []}}, P, flat, fig), null, 'no source: no section (rule C2)');
+  const h = c.spPhases({phs: {k: 'sex', src}}, P, flat, fig);
+  assert.strictEqual(
+    h,
+    '<section class="fphases"><h3>Males and females</h3><p class="fjuv">This species’ males and females can look very different.</p>' +
+      '<p class="note refs">Sources: <a href="https://rls.example/s" target="_blank" rel="noopener">Reef Life Survey</a>, FishBase &lt;x></p>' +
+      '<div class="strip">[f1:3:Female][m1:1:Male][m2:4:Male][t:5:Terminal]</div></section>'
+  );
+  assert.deepStrictEqual(
+    flat.map(p => p.f),
+    ['a', 'm1', 'j', 'f1', 'm2', 't'],
+    'a phase photo not among the sheet photos is added once'
+  );
+  const k = c.spPhases({phs: {k: 'phase', src: [{t: 'Fishes of Australia'}]}}, [ph('a', '')], [], fig);
+  assert.strictEqual(
+    k,
+    '<section class="fphases"><h3>Colour phases</h3><p class="fjuv">This species’ colour phases can look very different.</p><p class="note refs">Source: Fishes of Australia</p></section>',
+    'no phase photo: the words and the source only'
+  );
 });
 
 // The declared parts (app.js UNITS sheetParts) and each sheet's builders (its sheetBody call: `name: () =>`).
