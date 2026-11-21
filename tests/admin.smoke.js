@@ -10179,6 +10179,14 @@ async function lazyPart(b, base, fails) {
         // The time of his answer is logged, and his answer is the latest comparison (Codex review #400).
         if (!(res.t > Date.now() / 1000 - 600) || res.last !== CHK)
           fails.push(`${w}px Auto: Check answer not timed (${JSON.stringify(res)})`);
+        // A Remove that answers a Check (Codex review, #1393): the agent's answer and the toast's Undo button together.
+        const rm = await p.evaluate(C => {
+          checkToast(C, true);
+          const t = document.querySelector('.adm-toast');
+          return {text: t.textContent, undo: !!t.querySelector('button.adm-toast-undo')};
+        }, CHK);
+        if (!/^Removed\. Check: the agent said/.test(rm.text) || !rm.undo)
+          fails.push(`${w}px Auto: a Remove answering a Check lost its Undo or the agent's answer (${JSON.stringify(rm)})`);
       }
       // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
       await p.evaluate(() => {

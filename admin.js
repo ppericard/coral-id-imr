@@ -7186,15 +7186,18 @@ const evid = f => {
     .filter(Boolean)
     .join(' · ');
 };
-// After the admin answers a Check: the agent's answer, and where they differ.
-function checkToast(f) {
+// After the admin answers a Check: the agent's answer, and where they differ. undo: the answer was a Remove, whose toast
+// keeps its Undo button beside the agent's answer (Codex review, #1393).
+function checkToast(f, undo) {
   const x = aOf(f);
   if (!x || !x.d.check) return;
   memoReset();
   const n = (PHOTOS[f] || {}).genus,
     D = aCmp().filter(c => c.f === f),
     bad = D.filter(c => !c.ok).map(c => FIELD[c.field].toLowerCase());
-  toast(`Check: the agent said ${autoText(x.d, n)}${D.length ? (bad.length ? ` (differs: ${bad.join(', ')})` : ' (same)') : ''}.`);
+  const msg = `Check: the agent said ${autoText(x.d, n)}${D.length ? (bad.length ? ` (differs: ${bad.join(', ')})` : ' (same)') : ''}.`;
+  if (undo) toastUndo(`Removed. ${msg}`);
+  else toast(msg);
 }
 // The Auto chip at the end of the swiper's toggles: unfolds the agreement line (AOPEN). Folded by default, so the photo
 // and the decision buttons fit one phone screen; off = a field (or the fish keep) turned off.
@@ -7678,7 +7681,7 @@ const CAND_BUILD = {
       exclude(Q, c) {
         CDONE++;
         ACT.remove(c.n, c.p.f);
-        if (c.chk) checkToast(c.p.f);
+        if (c.chk) checkToast(c.p.f, true);
       },
       zoom: (Q, c) => zoomOne({...(c.chk ? {...c.p, j: null} : c.p), genus: c.n}),
       // Blind on a Check too: the editor starts from the admin's own crop or the full photo, not the agent's.
