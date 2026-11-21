@@ -244,8 +244,8 @@ test('AGENTS.md stays under 30 KB (Codex reads its first 32 KiB); past its 20 KB
 // AGENTS.md is the core every agent loads (#1200, Q425 B: a short core): each line is read in every task.
 test('AGENTS.md, the core: past its line mark it warns', t => {
   const n = AGENTS.split('\n').length - 1;
-  // 162: + where open work is tracked (Linear, 2026-11-21)
-  if (n > 162) warnMark(t, 'AGENTS.md has ' + n + ' lines, past its mark of 162 (the core; details go to docs/rules/)');
+  // 162: + where open work is tracked (Linear, 2026-11-21); 167: + a found answer is evidence, the integrator's role (#1361)
+  if (n > 167) warnMark(t, 'AGENTS.md has ' + n + ' lines, past its mark of 167 (the core; details go to docs/rules/)');
 });
 
 // A retired rule ID is never reused nor cited alone; a range that spans it (W12-W27) skips it.
