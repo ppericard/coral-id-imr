@@ -1192,8 +1192,15 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
   bar moved toward the true knowledge (it stays 0.46 under it), with the beginner meeting 3.4 more units and true
   knowledge +0.027; the lecture RA's and the expert's longest plateau unclear (the measure cannot tell). The paths
   moved (no margin: the expert's right % since the previous checkpoint at 300 −2.0 [−2.5, −1.5], the beginner's
-  −2.2), the cause not established. The arms differ only by this change on the same seeds, so the netting ran. This
-  world does not model a photo's time shared by its players; the rated world does (level 2), not run.
+  −2.2), the cause not established. The arms differ only by this change on the same seeds, so the netting ran.
+- **Level 2** (GitHub runners, `learncheck.yml`, declared before dispatching; before = the merge base). The step up in
+  the app world (corals, 20 seeds, two looks, the live sheet's statistics `--stats live`): nothing breached. The
+  beginner's E at 300 is −0.011 [+0.007], held. Four cells are unclear (the beginner's true knowledge at 300
+  −0.009 [−0.027], their first Open Water, their units met at 300 −0.7 [−2.4], the strong RA's longest plateau): the
+  measure cannot tell. The 5-seed signals do not repeat: the expert's right % is −0.3 [−1.2, +0.6]. The rated world
+  scores its answers untimed (`tools/ratedworld.js` `timed: false`), so it cannot see this change. Its runs confirm
+  that nothing else moves: the corals with the sheet's terms (`--app sheet --times rho25`, 10 seeds × 3,000) and the
+  fish (10 seeds × 3,000, cut at the budget, 22 pairs) both give identical arms.
 
 ### Photo memory
 
