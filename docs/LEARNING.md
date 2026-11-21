@@ -1090,7 +1090,25 @@ right answers only (`TAU2` 0.06 still gives 1.10 and 0.96). `PTIME.C` stayed at 
   re-fit in ROADMAP "Time in the photo rating".
 - The term's mean over the answers is about 0 (corals −0.0009, fish −0.0004 logits), so no Expected shifts as a whole.
 
-RATED_WORLD_PLACEHOLDER
+**The rated world** (rule L11 level 2: the draw changes; `--app sheet`, the corals, the four profiles as one population,
+3,000 answers; before = `main`, after = the term; declared before running). The world's time noise is the same for every
+player, so the weighting sits at its fallback there: these runs test the term and its fade, not option A's weighting. A
+first run (A) had the habit over all answers; its guardrails led to the habit over right answers (above), and run B is
+the one reported, against the same `main` files.
+
+| Case | Primary: rating error with the term, at 3,000 (down) | Guardrails not held |
+| --- | --- | --- |
+| `--times rho25` (time intensity correlated 0.25 with difficulty), normal photos, 20 seeds, two looks | 0.6670 → 0.6673, p 0.96: no clear difference | the strong RA's shown score at 1,000: −1.1 points [bound −1.8], breached; held at 3,000 (+0.1) |
+| `--times rho0 --gap -0.22` (the time says only the knowledge gap), 20 seeds, two looks; declared cost: rating error +0.02 at most | +0.0064 [+0.0153]: within the declared cost | the strong RA's score at 1,000: −1.4 [−2.6], breached; three other profiles there unclear; all held at 3,000 |
+| `--times rho25`, heavy-tailed photos, 10 seeds | 0.8003 → 0.7832, 9 of 10 seeds down, p 0.033: **clear, down** | the beginner's score at 1,000: −2.4 [−3.5] and first Open Water, breached; held at 3,000 |
+
+- **What it can conclude.** Where photos have heavy tails (a few photos far harder than their unit), the term brings the
+  difficulty the app uses clearly closer to the truth; with normal photos it neither helps nor harms the ratings, and when
+  the time says only the player's knowledge gap, the cost stays inside the bound declared.
+- **What it costs.** In every case the shown score at 1,000 answers moves by one to two points for one profile, a
+  different one in each case, the strong RA most often, and is back by 3,000 answers; every other guardrail holds. A
+  breach goes to Pierre (rule L11). Run A, with the habit over all answers, had the strong RA's breach at −1.8.
+- Compute: about 5 minutes a run of 10 seeds; within the 40-minute cap per case.
 
 ### Photo memory
 
