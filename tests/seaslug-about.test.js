@@ -21,7 +21,7 @@ const aboutOf = who =>
     '(' + block(app, `    about: {\n      who: '${who}',`, '\n    },\n', {file: 'app.js'}).replace(/^ {4}about: /, '') + '\n    })'
   );
 const SEA = aboutOf('sea slug genera'),
-  FISH = aboutOf('reef fish families');
+  FISHES = aboutOf('reef fish families');
 
 const norm = u => u.replace(/^https?:\/\/(?:www\.)?/i, ''),
   host = u => norm(u).split('/')[0];
@@ -123,7 +123,7 @@ test('aboutCites: nothing for a file or a part with no source, never a throw', (
 
 test('the sea slugs declare what their data cites; the corals and the fish keep their lists', () => {
   assert.ok(SEA.cites && SEA.cites.lead && Array.isArray(SEA.cites.in) && SEA.cites.in.length, 'seaslug about.cites');
-  assert.ok(!FISH.cites, 'the fish list stays the one written by hand');
+  assert.ok(!FISHES.cites, 'the fish list stays the one written by hand');
   assert.strictEqual((app.match(/\n {6}cites: \{\n/g) || []).length, 1, 'one subject declares it, the sea slugs');
   // every part of seaslug.json that holds a source is one the subject declares (a new part cannot hide its sources)
   const holds = [];
@@ -237,11 +237,11 @@ test('viewAbout: the sea slugs list their sources under References once the file
   p.c.window.viewAbout();
   assert.ok(!/abcites/.test(p.out.innerHTML));
   // corals and fish: the fish's line written by hand, no declared sources, no fetch of its file
-  p = page([{id: 'coral'}, {id: 'fish', about: FISH, f: {}}]);
+  p = page([{id: 'coral'}, {id: 'fish', about: FISHES, f: {}}]);
   p.c.window.viewAbout();
   assert.ok(!/abcites/.test(p.out.innerHTML) && /Reef Fish Identification/.test(p.out.innerHTML));
   // with the sea slugs: WoRMS stays, a placeholder, then the list in it, each line a link or a name
-  p = page([{id: 'coral'}, {id: 'fish', about: FISH, f: {}}, {id: 'seaslug', about: SEA, f: SLUG}]);
+  p = page([{id: 'coral'}, {id: 'fish', about: FISHES, f: {}}, {id: 'seaslug', about: SEA, f: SLUG}]);
   p.c.window.viewAbout();
   assert.match(p.out.innerHTML, /World Register of Marine Species/);
   assert.match(p.out.innerHTML, /<ul class="abcites" data-cites="seaslug"><li>Loading the sources…<\/li><\/ul>/);
