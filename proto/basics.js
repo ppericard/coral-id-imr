@@ -655,6 +655,9 @@
       const i = STEPS.findIndex(s => s.id === id),
         s = STEPS[i],
         next = STEPS[i + 1];
+      // The step's official line (its term). A step of several views (walls, shapes, features) shows it beside every view,
+      // so there it names its term, as the "also" lines do: under "Locking spines" a bare quote about the scalpel read as
+      // that feature's source (new-RA review, 2026-11-22).
       const o = s.term && official(s.term);
       const also = (s.also || [])
         .map(official)
@@ -669,7 +672,7 @@
         <figure class="bx-fig">${s.walls || s.views ? '' : s.forms ? '' : s.fig()}</figure>
         <div class="bx-side"><h3 class="bx-t"><small>Step ${i + 1} of ${STEPS.length}</small>${esc(s.t)}</h3>
           <div class="bx-say">${s.draw || s.walls ? `<span class="bx-draw">${s.draw ? s.draw() : ''}</span>` : ''}<div class="bx-txt"><p>${esc(s.say)}</p>${more}${s.walls || s.views ? '<p class="bx-wsay" aria-live="polite"></p>' : ''}</div></div>
-          ${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}${also}${s.src ? `<small class="bx-off">${esc(s.src)}</small>` : ''}
+          ${o ? `<small class="bx-off">${s.views || s.walls ? `<b>${esc(o[0])}</b> · ` : ''}${esc(o[2])}: “${esc(o[1])}”</small>` : ''}${also}${s.src ? `<small class="bx-off">${esc(s.src)}</small>` : ''}
           <details class="bx-check"${done[s.id] || (s.walls && Object.keys(st.walls || {}).length < Object.keys(WALLS).length) || (s.views && s.all !== false && Object.keys((st.views || {})[s.id] || {}).length < s.views.length) ? '' : ' open'}><summary>Check yourself${done[s.id] ? ' <span class="ok">✓</span>' : ''}</summary><div class="bx-q"></div></details>
           <p class="bx-nav">${nextA}</p></div></div></div>`;
       const fig = root.querySelector('.bx-fig'),
