@@ -4691,16 +4691,18 @@ body:has(.ikstart:not([hidden])) main {
   padding: 0;
   list-style: none;
 }
+/* The chips share the row equally, each never narrower than its longest word (a name wraps between its words, never inside
+   one; the mark is glued to it: downtree.js chip); a second row only when the longest words cannot fit side by side. */
 .dtsteps li {
   flex: 1 1 0;
-  min-width: 0;
+  min-width: min-content;
   padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   font-size: var(--fs-s);
   line-height: 1.25;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .dtsteps li b {
   display: block;
@@ -4723,6 +4725,18 @@ body:has(.ikstart:not([hidden])) main {
 .dtsteps li small {
   color: var(--muted);
 }
+/* On a phone or tablet a missed chip keeps the right name only: the name given is in the verdict right under the names, and
+   the photo above keeps more height for the walk (downtree.js hold reserves the column's tallest state). */
+@media (max-width: 1023px) {
+  .dtsteps li small {
+    display: none;
+  }
+  /* ...and the verdict is one size smaller: the column's tallest state, which the photo makes room for at every step,
+     stays short. */
+  .q.dtq .dtst .fb h3 {
+    font-size: var(--fs-m);
+  }
+}
 .dtst:empty,
 .dtscore:empty {
   display: none;
@@ -4730,8 +4744,9 @@ body:has(.ikstart:not([hidden])) main {
 .dtst .fb {
   padding: 8px 12px;
 }
-.dtst .fb h3 {
-  margin-bottom: 0;
+/* The verdict's line alone in its box: no margin above it (it took 18 px, an empty band over the text). */
+.q.dtq .dtst .fb h3 {
+  margin: 0;
   font-size: var(--fs-l);
 }
 .dtscore {

@@ -83,6 +83,10 @@ module.exports = async function downTreeCheck(p, w, fails, tag = '', rounds = 6)
     if (!pre.unlockedAll) fails.push(`${at}, round ${k + 1}: a step on a unit not unlocked ${JSON.stringify(pre.chain)}`);
     if (!pre.distinctRanks) fails.push(`${at}, round ${k + 1}: two steps of one rank ${JSON.stringify(pre.ranks)}`);
     await screen('fresh', k);
+    // The photo keeps its height from the first step to the last (the visual check of #1387: on a phone it shrank from ~460 to
+    // ~330 px as the chips filled in and the verdict appeared, the names moving under the thumb).
+    const photoH = () => p.evaluate(() => Math.round(document.querySelector('#view .dtq .qstage').getBoundingClientRect().height)),
+      h0 = await photoH();
     // Which step is missed: none in round 1, the first in round 2, the last in round 3, then by turns.
     const miss = k === 0 ? -1 : k % 3 === 1 ? 0 : k % 3 === 2 ? pre.n - 1 : -1;
     let right = 0;
@@ -134,6 +138,8 @@ module.exports = async function downTreeCheck(p, w, fails, tag = '', rounds = 6)
           fails.push(`${at}, round ${k + 1}, step ${i + 1} answered: ${JSON.stringify(chip)}`);
         if (!(await open())) fails.push(`${at}, round ${k + 1}: no names for step ${i + 2}`);
         await screen(`after step ${i + 1}`, k);
+        const h = await photoH();
+        if (Math.abs(h - h0) > 1) fails.push(`${at}, round ${k + 1}: the photo went from ${h0} to ${h} px high at step ${i + 2}`);
       }
     }
     await p.waitForSelector('#view .dtq.done #next', {timeout: 5000}).catch(() => fails.push(`${at}, round ${k + 1}: no end sheet`));

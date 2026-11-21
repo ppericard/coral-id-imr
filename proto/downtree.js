@@ -172,9 +172,30 @@ LAB.add({
         ans = q.querySelector('.dtans'),
         st = q.querySelector('#dtst'),
         lis = [...q.querySelectorAll('.dtsteps li')],
-        fit = () => fitStage();
-      fit();
+        side = q.querySelector('.qside'),
+        // hold first (below), then the quiz's layout; show() runs it for the first step
+        fit = () => {
+          const w = hold();
+          fitStage();
+          // measured at another width (the page's intro put away by fitStage, a scroll bar gone): measured again
+          if (w && w !== side.offsetWidth) {
+            hold();
+            fitStage();
+          }
+        };
       addEventListener('resize', fit, {signal: sig});
+      // measured again once the web fonts are in: measured with the fallback font, the column came out taller at the first
+      // step than at the next ones, and the photo grew under the thumb
+      // (a font starts loading only once text uses it, after this draw: so each font load that ends, not fonts.ready)
+      if (document.fonts) document.fonts.addEventListener('loadingdone', () => document.body.contains(q) && fit(), {signal: sig});
+      // A step's chip once answered, and its verdict under the names: the mark glued to the name (a line breaks between words,
+      // never between the mark and the name).
+      const chip = (s, c) =>
+          `<span aria-hidden="true">${c === s.u ? '✓' : '✗'}</span>&nbsp;${uname(s.u)}${c === s.u ? '' : ` <small>(not ${uname(c)})</small>`}`,
+        verdict = (s, c) =>
+          `<div class="fb fbs"><h3 class="${c === s.u ? 'ok cheer' : 'ko'}"><span class="v">${c === s.u ? '✓ Yes,' : '✗ No,'}</span> ${
+            c === s.u ? uname(s.u) : `${uname(s.u)}, not ${uname(c)}`
+          }</h3></div>`;
       const name = (c, i) =>
         `<button type="button" data-n="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${
           GX(c).rank === 'species' && GX(c).cn
@@ -183,6 +204,51 @@ LAB.add({
               ? `<span class="csn">${esc(unameT(c))}<small>${esc(GX(c).sci)}</small></span>`
               : esc(unameT(c))
         }</button>`;
+      // On a phone or tablet the photo takes the height the column under it leaves (quiz.js fitStage). The column is held at
+      // its tallest for the whole walk (each step's names, each chip and the verdict at their longest), so the photo keeps one
+      // height from the first step to the last instead of shrinking under the thumb as the chips fill in and the verdict
+      // appears. Measured on a hidden copy of the column (nothing read aloud); let go once the walk is over (the sheet's turn).
+      const hold = () => {
+        side.style.minHeight = '';
+        if (done || !isStacked()) return;
+        const m = side.cloneNode(true),
+          tallest = (el, set, L) => {
+            let best = L[0],
+              h = -1;
+            L.forEach(x => {
+              set(x);
+              if (el.offsetHeight > h) [h, best] = [el.offsetHeight, x];
+            });
+            set(best);
+          };
+        m.querySelectorAll('[id], [role], [aria-current]').forEach(e => ['id', 'role', 'aria-current'].forEach(a => e.removeAttribute(a)));
+        m.setAttribute('aria-hidden', 'true');
+        m.style.cssText = `position: absolute; visibility: hidden; left: 0; top: 0; width: ${side.offsetWidth}px; min-height: 0`;
+        q.appendChild(m);
+        const mans = m.querySelector('.dtans'),
+          mst = m.querySelector('.dtst');
+        [...m.querySelectorAll('.dtsteps li')].forEach((li, j) => {
+          const sp = li.querySelector('span');
+          tallest(
+            li,
+            x => (sp.innerHTML = x),
+            steps[j].ch.map(c => chip(steps[j], c))
+          );
+        });
+        tallest(
+          mst,
+          x => (mst.innerHTML = x),
+          steps.flatMap(s => s.ch.map(c => verdict(s, c)))
+        );
+        let h = 0;
+        steps.forEach(s => {
+          mans.innerHTML = s.ch.map(name).join('');
+          h = Math.max(h, m.offsetHeight);
+        });
+        m.remove();
+        side.style.minHeight = h + 'px';
+        return side.offsetWidth;
+      };
       const show = () => {
         const s = steps[at];
         lis[at].setAttribute('aria-current', 'step');
@@ -207,9 +273,8 @@ LAB.add({
         li.removeAttribute('aria-current');
         li.className = good ? 'ok' : 'ko';
         li.setAttribute('aria-label', `${word(s.u)}: ${good ? 'right' : 'missed'}`);
-        li.querySelector('span').innerHTML =
-          `<span aria-hidden="true">${good ? '✓' : '✗'}</span> ${uname(s.u)}${good ? '' : ` <small>(not ${uname(c)})</small>`}`;
-        st.innerHTML = `<div class="fb fbs"><h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '✓ Yes,' : '✗ No,'}</span> ${good ? uname(s.u) : `${uname(s.u)}, not ${uname(c)}`}</h3></div>`;
+        li.querySelector('span').innerHTML = chip(s, c);
+        st.innerHTML = verdict(s, c);
         if (++at < steps.length) return show();
         over();
       };

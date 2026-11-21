@@ -26,7 +26,11 @@ version, no sheet change. Choices made while building, none decided with Pierre,
   branch, so each step is a credit of its own. The end sheet is the quiz's own, headed "Yes", "Partly" or "No" with "N of M
   steps right"; a running tally of the steps (kept nowhere) sits under the names.
 - **The photo**: drawn from an unlocked genus or species unit (so its species fixes the chain), the draw's own choice
-  (`photoSet`). Nothing is named, no source shown, the enlarged view blind until the walk is over (rule P5).
+  (`photoSet`). Nothing is named, no source shown, the enlarged view blind until the walk is over (rule P5). On a phone the
+  photo keeps one height through the walk: the column under it is held at its tallest state (every step's names, each chip
+  and the verdict at their longest, measured on a hidden copy), so nothing moves under the thumb as the chips fill in (the
+  visual check of #1387 saw ~460 px, then ~330 px after the first answer). There a missed chip shows the right name only
+  (the verdict under the names says the one given). The chips wrap between words, never inside one.
 - **Names per step**: 3 or 4 of one rank, no two of one label (`choiceNames`): the siblings under the same parent first
   (declared look-alikes before the others), then other units of the rank.
 
