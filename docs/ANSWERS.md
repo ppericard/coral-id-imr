@@ -1817,3 +1817,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   before subscribing.» Open work is tracked in Linear (team REE); ROADMAP.md keeps pointers and the subjects not transferred yet.
   Applied: AGENTS.md, rules W6 and W19, INTEGRATOR.md "Linear", STATUS.md, tools/brief.py,
   decisions/2026-11-21-linear-tracking.md (#1360).
+- **16:10, Slack.** «On laisse tomber Slack», after the integrator reported that the Slack connector acts as his own
+  account and a Slack message cannot wake the session (the study's §7 trial). Applied: Linear REE-181 (now the
+  document home only); reviews/2026-11-21-integrator-continuity-study.md's filing note.
