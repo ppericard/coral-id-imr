@@ -1307,19 +1307,49 @@ function boardNotice() {
   // Said only on a subject with a live leaderboard; elsewhere it waits for a later load. A switch of subject while it
   // shows takes it away and it is due again (app.js setSubject, toastsOff). Told on another device of the account
   // (core.js TOLD 'board'): checked after the visit's first sync (sync.js noticeLater).
-  if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board')) return;
+  if (boardMo || !SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board'))
+    return;
+  boardMo = new MutationObserver(boardStep); // one wait at a time: a second call while one waits or shows does nothing
+  boardMo.observe(document.body, {childList: true}); // a toast closed or gone, a card or the tour opened
+  boardMo.observe($v, {childList: true, subtree: true}); // a page or a question drawn
+  boardStep();
+}
+// The notice never sits over a question's answers or Next (on a 390 px phone it covered two of four answers for 15 s;
+// REE-210): it waits while a game's question is on screen, answered or not, and shows on the first page without one
+// (Home, Learn, My progress); one on screen when a question opens is taken back, not told, and waits again, at once
+// (a page change is seen before it is painted, as achBlocked's toasts). act: what to do now, from whether the notice
+// is up (shown) and a question is (open).
+const noticeHold = (shown, open) => (open ? (shown ? 'pull' : 'wait') : shown ? 'keep' : 'show');
+const questionOpen = () => !!$v.querySelector('.q');
+const BOARD_MS = 15000;
+let boardMo = null,
+  boardEl = null;
+const boardStop = () => (boardMo && boardMo.disconnect(), (boardMo = boardEl = null));
+// One step of the notice's wait, run at each change of the page (toastsOff stops it).
+function boardStep() {
+  if (!boardMo) return;
+  if (!SYNC || !boardLive(SUBJ) || (boardEl && !boardEl.isConnected)) return boardStop(); // or closed by the player, or gone by itself: told, done
+  const act = noticeHold(!!boardEl, questionOpen());
+  if (act === 'pull') {
+    boardEl.dataset.off = 1; // not told: it comes back at the next break
+    store.set('reefid-board-told', 0);
+    boardEl.remove();
+    boardEl = null;
+  } else if (act === 'show') boardEl = boardShow();
+}
+function boardShow() {
   store.set('reefid-board-told', 1);
-  const ms = 15000,
-    t = appToast(
+  const t = appToast(
       '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
-      ms
+      BOARD_MS
     ),
     // Told for the account once closed or gone by itself; not when a switch of subject takes it away (toastsOff: due again).
     told = () => !t.dataset.off && toldAdd('board');
   t.dataset.again = 'reefid-board-told';
   t.querySelector('a').onclick = () => (told(), t.remove());
   t.querySelector('button').addEventListener('click', told);
-  setTimeout(told, ms);
+  setTimeout(told, BOARD_MS);
+  return t;
 }
 // The announcement card of the notes in RECALC.L: the past progress recalculations and a new game mode (a new
 // recalculation is not announced: docs/rules/sheet.md). Once per device, to a player who already has answers, at the
@@ -1759,6 +1789,7 @@ function toldSeed() {
 // The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
 // data-again (its "told" key) is due again later.
 function toastsOff() {
+  boardStop(); // the leaderboard note waiting for a break is due again at a later load, as one shown
   document.querySelectorAll('.apptoast').forEach(t => {
     if (t.dataset.again) (store.set(t.dataset.again, 0), (t.dataset.off = 1));
     t.remove();

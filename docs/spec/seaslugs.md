@@ -124,7 +124,8 @@ are no box: cut by the frame, two animals, hidden, or a square that would show a
 `judging/SEASLUG.md` "The animal's box" and imported as `bb` in the judging files (checked by `tools/judging_fish.py
 --subject seaslug --check`, imported with the codes: `--subject seaslug codes`). A record has `bb` at once; its tile (`xc`)
 is cut by the next R2 run (the Candidate photos workflow, `SEASLUG_R2`), and the format is drawn (`planFind` finds tiles)
-as the tiles exist. The pass's model and figures: `docs/decisions/2026-11-20-seaslug-box-model.md`.
+as the tiles exist. Since 2026-11-21 it does: 2,037 photos carry a tile (`xc`), in 79 genera (77 with two or more), and a
+genus met is asked with three others (`tests/seaslug.smoke.js` part 11, `tests/findx.test.js` "the sea slug data"). The pass's model and figures: `docs/decisions/2026-11-20-seaslug-box-model.md`.
 
 ## English names as information
 

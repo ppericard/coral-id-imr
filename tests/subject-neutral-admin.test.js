@@ -118,7 +118,7 @@ const COUNTS = {
     'admin-coraltree.js': 1,
     'admin-journey.js': 1,
     'admin-nodephotos.js': 2,
-    'admin.js': 45,
+    'admin.js': 44,
     'home.js': 1,
     'learn.js': 14,
     'progress.js': 1,

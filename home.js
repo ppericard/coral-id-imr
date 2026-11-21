@@ -128,7 +128,7 @@
             <h2>${esc(W.title)}</h2>
             <p class="hddesc">${esc(W.desc)}</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}</b><small>${esc(W.soon)}</small></a>
+              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}${W.soon ? '<span class="hdsoon">soon</span>' : ''}</b></a>
             </div>
           </div>
         </section>`
@@ -184,7 +184,10 @@ ${idoor}
   // The Coral Finder book is cited as a reference (References), never credited as a source of the app's content: its
   // content is not reproduced (a rights question). The Home credit line does not name it.
   window.viewAbout = function () {
-    const inat = 'https://www.inaturalist.org',
+    // The version line: what the deploy stamped on this page, "<build>-<hash>" (sync.js appVer, the one the admin's Errors
+    // page shows), read, never edited (rule W15); a copy never deployed shows its ?v only.
+    const ver = typeof appVer === 'function' ? appVer() : '',
+      inat = 'https://www.inaturalist.org',
       ab = subjMine() // the other subjects open to this player add their lines (app.js UNITS about); the corals' are below
         .map(S => UNITS[S.id].about)
         .filter(Boolean);
@@ -222,6 +225,7 @@ ${idoor}
         <p>A mistake, a bug or an idea? It goes straight to Pierre. ${typeof repBtn === 'function' ? repBtn({k: 'page'}, 'Send feedback') : ''}</p>
       </section>
       <p class="note">Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).</p>
+      <p class="note abver">${ver ? `Version ${esc(ver)} · ` : ''}<a href="https://github.com/ppericard/coral-id-imr" target="_blank" rel="noopener">Source on GitHub</a></p>
     </div>`;
   };
 })();

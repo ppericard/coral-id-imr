@@ -6882,7 +6882,7 @@ html.touring .unlock {
   width: max-content; /* centred by left 50%: without it the note shrinks to half the screen (a 4-line note on phones) */
   max-width: min(92vw, 520px);
   box-sizing: border-box;
-  padding: 10px 8px 10px 16px;
+  padding: 4px 4px 4px 16px;
   border-radius: var(--r);
   background: linear-gradient(to right, var(--kt), var(--surface) 70%);
   color: var(--ink);
@@ -6895,8 +6895,8 @@ html.touring .unlock {
 }
 .apptoast button {
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 44px; /* the 44 px touch target (REE-210; was 32) */
+  height: 44px;
   border: 0;
   border-radius: 50%;
   background: none;
