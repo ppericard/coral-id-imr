@@ -122,6 +122,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from presence import label_confirmed  # noqa: E402  the label rule beside C8
 import seaslug_cues  # noqa: E402  the sourced ID marks (study §9 step 7)
+import tree_section  # noqa: E402  the subject's tree section (the admin's Tree tab), written with the tree
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
 CAND = os.path.join(ROOT, 'data/seaslug-cand.json')
@@ -703,6 +704,7 @@ def main():
               f'{n} photos in seaslug-game.json' + (f'; {wait} more wait for the next run' if wait else ''))
         return
     write(ROOT, tree, game)
+    tree_section.write('seaslug')  # its tree section, from the file just written (the admin's Tree tab reads it)
     n = sum(len(x) for x in game['photos'].values())
     sp = len({p['sp'] for x in game['photos'].values() for p in x})
     print(f'seaslug.json: {len(tree["families"])} families, {len(tree["genera"])} genera, {len(tree["species"])} species; '

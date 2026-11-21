@@ -24,6 +24,9 @@ const glue = (ctx = {}) => {
     TREE_W: 'photos/tree/worms',
     ASUBJ: null,
     FISHC: null,
+    // the builds' tree sections by subject id, and the one read of a subject's file (admin.js)
+    TSEC: {},
+    treeSecLoad: S => Promise.resolve('section of ' + S.id),
     ctTree: v => ({coral: v}),
     fuTreeOf: U => ({key: U}),
     fuWormsOf: U => ({worms: U}),
@@ -73,6 +76,10 @@ test("a view's tree comes from the subject on screen's builder; a tree subject's
     c = glue({ASUBJ: flatS});
   assert.deepStrictEqual({...c.tvTree(c.TREE)}, {coral: c.TREE});
   assert.deepStrictEqual({...c.tvTree(c.TREE_W)}, {coral: c.TREE_W});
+  // the corals' tree is the section their build wrote (tools/tree_section.py), as a tree subject's: ready once it is read
+  assert.strictEqual(c.TREE_BUILD.flat.ready(), false, 'no section read yet');
+  assert.strictEqual(await c.TREE_BUILD.flat.load(), 'section of ' + flatS.id);
+  c.TSEC[flatS.id] = {v: 1, views: {}};
   assert.strictEqual(c.TREE_BUILD.flat.ready(), true);
   c.ASUBJ = treeS;
   assert.strictEqual(c.tvTree(c.TREE), null, 'no files read yet');

@@ -106,6 +106,16 @@
     });
     return {nodes, problems};
   }
+  // A classification the subject's build wrote (tools/tree_section.py: data/<subject id>-tree.json, {v, views: {<view>: {nodes,
+  // problems, at}}}): the view's nodes as ttBuild takes them (copies: the section as read stays whole), the problems the build
+  // found hanging the leaves on the reference ({id, why}), and `at` ({genus id: the node a genus-level leaf of its own hangs
+  // under in this view}); null for a section, or a view of it, that is not there. The admin builds no classification itself
+  // (ttFromRef is the reference of the build's own, kept for tests/treesection.test.js).
+  function ttSection(sec, view) {
+    const V = sec && sec.views && sec.views[view];
+    if (!V || !Array.isArray(V.nodes)) return null;
+    return {nodes: V.nodes.map(n => ({...n})), problems: (V.problems || []).map(p => ({...p})), at: {...(V.at || {})}};
+  }
   // Its ancestors and itself, the root first ([] for an id not in the tree).
   const ttPath = (T, id) => {
     const out = [];
@@ -226,7 +236,22 @@
         return null;
     }
   }
-  const API = {ttBuild, ttFromRef, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttPass, ttReach, ttShown, ttRows, ttKey};
+  const API = {
+    ttBuild,
+    ttFromRef,
+    ttSection,
+    ttPath,
+    ttUnder,
+    ttLeaves,
+    ttRoll,
+    ttFirst,
+    ttNearest,
+    ttPass,
+    ttReach,
+    ttShown,
+    ttRows,
+    ttKey
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

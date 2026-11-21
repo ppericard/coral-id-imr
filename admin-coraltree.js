@@ -1,9 +1,10 @@
 // Photos › Tree on the corals' side (#photos/tree/key/<node id>, #photos/tree/worms/<node id>; docs/ROADMAP.md "The Tree
-// tab": one tree for any subject, the corals included). The corals'
-// builder of the generic tree (taxtree.js): its trees, rows and tags, which admin.js TREE_BUILD flat reads (the tree
-// subjects' are in admin.js: fuTreeOf, fuWormsOf); the page, the tree at the left and its keys are the same for every
-// subject (admin.js renderTree, ttMount, treeMount).
+// tab": one tree for any subject, the corals included). The corals' reader of the generic tree (taxtree.js): its trees, rows
+// and tags, which admin.js TREE_BUILD flat reads (the tree subjects' are in admin.js: fuTreeOf, fuWormsOf); the page, the tree
+// at the left and its keys are the same for every subject (admin.js renderTree, ttMount, treeMount).
 //
+// The two trees are the section the corals' build wrote (tools/tree_section.py: data/coral-tree.json, from data.json and
+// data/names.json), read as every subject's is (taxtree.js ttSection); this file builds none:
 // - Key: the IMR course's own grouping of the genera, the IMR lecture groups (data.json imrg, 1-11, the genus's ig), each
 //   genus under the group the app shows it in (core.js lectureGroup: a ★ genus the lecture does not group sits with most
 //   of its look-alikes, rule L5); the genera in no lecture group (Millepora, the bonus and Coral Finder key genera of
@@ -14,80 +15,14 @@
 //   wording: Pachyseris is in Pachyseridae for WoRMS, Agariciidae in the lecture). The file holds each genus's AphiaID
 //   but no family's, so a family node's id is wf:<its name> (never w:, the namespace of an AphiaID).
 // - The leaves are the genera, the corals' playable rank: every genus the admin has a page for (data.json gen and x.gen),
-//   its id its name, one node in both views. Their photos are chosen per genus (curation.json genera[<genus>]: the cover,
+//   its id its name, one node in both views; each carries what the rows read: genus (its name), grp (its lecture group, 0 for
+//   none), num (its slate number), slate, star. Their photos are chosen per genus (curation.json genera[<genus>]: the cover,
 //   the featured photos, the views); a photo's species (its t) is only a name, never curated: so no species rank.
 //
-// The pure part (ctKeyOf, ctWormsOf, ctFilters) runs in Node too: tests/coraltree.test.js. admin.html loads this file
-// before admin.js (a Tree address opened cold finds ctTree); its admin part reads admin.js's state and helpers only when
-// called.
+// The pure part (ctFilters) runs in Node too: tests/coraltree.test.js. admin.html loads this file before admin.js (a Tree
+// address opened cold finds ctTree); its admin part reads admin.js's state and helpers only when called.
 (function (root) {
-  const inNode = typeof module !== 'undefined' && module.exports,
-    {ttFromRef} = inNode ? require('./taxtree.js') : root,
-    {lectureGroup, slateOf} = inNode ? require('./core.js') : root;
-  // The leaves of both views, in the Key's order: the IMR lecture groups in their order, in each the numbered genera by
-  // their number, then the ★ genera in data.json's order; then the genera in no group, the slate's first (Millepora),
-  // then A-Z. d: data.json as the admin holds it (its x genera merged into gen, d.x kept: core.js xGen).
-  function ctLeaves(d) {
-    const G = (d && d.gen) || {},
-      slate = new Set(slateOf(d)),
-      names = Object.keys(G),
-      grp = n => lectureGroup(d, n) || 0,
-      ord = n => (G[n].n ? G[n].n : 1000 + names.indexOf(n)),
-      none = names.filter(n => !grp(n)).sort((a, b) => !slate.has(a) - !slate.has(b) || a.localeCompare(b));
-    return [
-      ...((d && d.imrg) || []).flatMap(x =>
-        names
-          .filter(n => grp(n) === x.n)
-          .sort((a, b) => ord(a) - ord(b))
-          .map(n => [n, x])
-      ),
-      ...none.map(n => [n, null])
-    ].map(([n, x]) => ({
-      id: n,
-      name: n,
-      it: true,
-      rank: 'genus',
-      genus: n,
-      grp: x ? x.n : 0,
-      num: G[n].n || 0,
-      slate: slate.has(n),
-      star: slate.has(n) && !G[n].n && !((d.x || {}).gen || {})[n]
-    }));
-  }
-  // The Key's nodes: each IMR lecture group that holds a genus (k:<its number>, rank group, its lecture line as its
-  // name), k:none (no rank) for the genera in no group, and the genera under them. Built once per data.json (cache).
-  let KC = null;
-  function ctKeyOf(d) {
-    if (KC && KC.d === d) return KC.nodes;
-    const L = ctLeaves(d),
-      N = [],
-      seen = new Set();
-    L.forEach(l => {
-      const k = l.grp ? 'k:' + l.grp : 'k:none';
-      if (!seen.has(k)) {
-        seen.add(k);
-        const x = (d.imrg || []).find(y => y.n === l.grp);
-        N.push(x ? {id: k, name: `${x.n} · ${x.t}`, rank: 'group'} : {id: k, name: 'No IMR group'});
-      }
-      N.push({...l, up: k});
-    });
-    KC = {d, nodes: N};
-    return N;
-  }
-  // The WoRMS view's nodes and problems: each genus (a leaf, its own id) under the family WoRMS gives it (wf:<family>,
-  // rank family), from W = data/names.json coral worms {genus: {id: AphiaID, fam}}, through taxtree.js ttFromRef: a genus the
-  // extract lacks is reported (no reference), never placed. The families come in the order the Key's leaves meet them.
-  function ctWormsOf(d, W) {
-    const R = {};
-    Object.entries(W || {}).forEach(([n, w]) => {
-      if (!w || !w.id || !w.fam) return;
-      R['wf:' + w.fam] = {name: w.fam, rank: 'family', parent: null};
-      R[String(w.id)] = {name: n, rank: 'genus', parent: 'wf:' + w.fam};
-    });
-    const L = ctLeaves(d).map(l => ({...l, ref: W && W[l.id] && W[l.id].id ? String(W[l.id].id) : null}));
-    // ids: only the families become nodes (the genera are the leaves, each its own id), keyed wf:<name> already
-    return ttFromRef(L, R, {id: k => String(k)});
-  }
+  const inNode = typeof module !== 'undefined' && module.exports;
   // The Tree's tags as filters (beside All | IMR, as the fish's admin.js fuFilters): each a test on a node of the Key's
   // tree (here, on the genera: every coral tag is a genus's), read through the leaves (taxtree.js ttPass), so both views
   // show the same genera. Offered: ★ (the slate's starred genera, rule L5); the look-alikes, the pairs Photos ›
@@ -97,12 +32,12 @@
   // the content editor's pairs (admin-content.js pairRows), needs(n) → [what], waiting(n) → count, draft: [genera]}.
   // [{k, grp, t, on(node)}]. The look-alikes, as the fish's (admin.js fuFilters): the base's, then each pair the draft
   // holds an entry for (one he added with + Pair, a withdrawal), so its tools in the bar (structBar) can be reached; each
-  // says when he added or withdrew it; Any look-alike, the pairs in force.
-  function ctFilters(d, c) {
+  // says when he added or withdrew it; Any look-alike, the pairs in force. L: the genera (the Key's leaf nodes).
+  function ctFilters(L, c) {
     const P0 = (c && c.pairs) || [],
       PR = (c && c.rows) || [],
       byK = new Map(PR.map(r => [r.key, r])),
-      ids = new Set(ctLeaves(d).map(l => l.id)),
+      ids = new Set(L.map(l => l.id)),
       P = [
         ...P0,
         ...PR.filter(r => r.e && !P0.some(p => p.k === r.key) && ids.has(r.a) && ids.has(r.b)).map(r => ({k: r.key, A: r.a, B: r.b}))
@@ -116,7 +51,7 @@
       dr = new Set((c && c.draft) || []),
       g = n => !!n.genus,
       out = [];
-    if (ctLeaves(d).some(l => l.star)) out.push({k: 'star', grp: 'Slate', t: '★ Starred', on: n => g(n) && !!n.star});
+    if (L.some(l => l.star)) out.push({k: 'star', grp: 'Slate', t: '★ Starred', on: n => g(n) && !!n.star});
     if (P.length) out.push({k: 'look', grp: 'Look-alikes', t: 'Any look-alike', on: n => g(n) && inP.has(n.id)});
     P.forEach(p => out.push({k: 'look:' + p.k, grp: 'Look-alikes', t: `${p.A} · ${p.B}${word(p)}`, on: n => n.id === p.A || n.id === p.B}));
     out.push(
@@ -130,22 +65,25 @@
     if (c && c.excluded) out.push({k: 'excluded', grp: 'Photos', t: 'Excluded photos', on: n => g(n) && !!c.excluded(n.id)});
     return out;
   }
-  const API = {ctLeaves, ctKeyOf, ctWormsOf, ctFilters};
+  const API = {ctFilters};
   if (inNode) module.exports = API;
   else Object.assign(root, API);
 })(this);
 
 // ---- The admin view (browser only: admin.js state and helpers) ----
-// The two trees, built once per data.json and data/names.json: the Key (ctKeyOf) and WoRMS (ctWormsOf, its problems with the
-// tree's: a genus with no WoRMS record in data/names.json, reported in the bar).
+// The two trees, built once per section (the build's: tools/tree_section.py, data/coral-tree.json, read through admin.js
+// treeSecLoad): the Key and WoRMS (its problems, the build's with the tree's: a genus with no WoRMS record in data/names.json,
+// reported in the bar). Empty trees while the section is not there.
 let CTREES = null;
 function ctTrees() {
-  if (CTREES && CTREES.d === DATA && CTREES.w === NAMES) return CTREES;
-  const K = ttBuild(ctKeyOf(DATA)),
-    r = ctWormsOf(DATA, (NAMES || {}).worms),
-    W = ttBuild(r.nodes);
-  W.problems = [...r.problems, ...W.problems];
-  return (CTREES = {d: DATA, w: NAMES, K, W});
+  const S = TSEC[ASUBJ.id];
+  if (CTREES && CTREES.s === S) return CTREES;
+  const k = ttSection(S, 'key'),
+    w = ttSection(S, 'worms'),
+    K = ttBuild(k ? k.nodes : []),
+    W = ttBuild(w ? w.nodes : []);
+  W.problems = [...(w ? w.problems : []), ...W.problems];
+  return (CTREES = {s: S, K, W});
 }
 // The tree of a Tree view (admin.js TREE, TREE_W).
 const ctTree = v => (v === TREE_W ? ctTrees().W : ctTrees().K);
