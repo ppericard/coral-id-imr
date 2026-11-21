@@ -1375,6 +1375,14 @@
     else delete o[f];
     return o;
   }
+  // The framing in force for an IMR lecture photo traced to its original (REE-60): [crop, rotation]. Pierre's own when the
+  // crop map has an entry for it (the crop editor always writes one for a lecture photo, [0, 0, 1, 1] for Full photo), his
+  // rotation then from the rotation map alone (none when it has no entry), else how the lecture framed it (cr, ro of its
+  // record). tools/photos.py lecture_frame is the same rule (tests/lectureframe.test.js).
+  function lectureFrame(f, cr, ro, crop, rot) {
+    if (crop && Object.prototype.hasOwnProperty.call(crop, f)) return [crop[f], rotNorm((rot || {})[f])];
+    return [cr || null, rotNorm(ro)];
+  }
   // A photo's prior difficulty before any answer on it, in logits (+ = harder), as model.js photoDiff starts it: its unit's
   // offset (the sheet's gd, 0 when unknown) plus (PRIOR_MID - its judged ease) x ce, the subject's calibration of one ease step
   // (core.js calibOf(S).ease); a photo with no judged ease (the corals') has the offset alone. PRIOR_MID is model.js
@@ -1594,6 +1602,7 @@
     rotNorm,
     rotStep,
     rotSet,
+    lectureFrame,
     PRIOR_MID,
     photoPrior,
     photoAt,

@@ -11,7 +11,8 @@ For each photo of tools/imr_frames.json (the lecture photos traced to Corals of 
 `imr: true`, `a` and `pg` (the credit, tools/apply_imr_sources.py) stay as they are: the file name never changes, so the
 curation and the players' records keep their key. With --files, the old screenshots leave img/ (git keeps them in its
 history): `tools/photos.py --check` fails on a photo with an online original in img/.
-Idempotent: a record that already has the address is left as it is.
+Idempotent: a record that already has the address is left as it is (its cr, ro, ar and iv then follow Pierre's crop:
+tools/fetch_approved.py remakes the photo when he crops it).
 
     python3 tools/apply_imr_originals.py           # write
     python3 tools/apply_imr_originals.py --check   # exit 1 when a file differs from what it would write
@@ -46,12 +47,15 @@ def apply(d, X, S, F):
         if f not in F:
             continue
         url = S[f]['source']['image']
-        if p.get('src') != url:
-            p['iv'] = p.get('iv', 0) + 1
+        done.add(f)
+        # Already applied: left as it is. Its cr, ro, ar and iv are what its files were last made with, which is Pierre's
+        # own crop once he has cropped it (tools/fetch_approved.py), not the lecture's framing.
+        if p.get('src') == url:
+            continue
+        p['iv'] = p.get('iv', 0) + 1
         p['src'] = url
         photos.mark(p, F[f].get('cr'), F[f].get('ro', 0))
         p['ar'] = shape(F[f]['px'])
-        done.add(f)
     return done
 
 
