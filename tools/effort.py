@@ -53,7 +53,7 @@ def file_kind(path):
         return 'docs'
     if path.endswith('Code.gs'):
         return 'sheet'
-    if path in ENGINE_FILES:
+    if path in ENGINE_FILES or path.startswith('core/'):  # core/: core.js's parts (tools/sync_core.py)
         return 'engine'
     if path.startswith('admin'):
         return 'admin'
