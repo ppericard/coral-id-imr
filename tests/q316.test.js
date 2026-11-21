@@ -438,6 +438,34 @@ test('replay2b.js: a typed answer is scored; the end-of-log states hold every an
   fs.rmSync(d, {recursive: true});
 });
 
+test('replay2b.js: the export left-out players stay out; a rank one half never saw gets its online part; a cut replay reports no compression', () => {
+  const ch = ['Acropora', 'Porites', 'Favia', 'Montipora'],
+    rows = [];
+  for (let i = 0; i < 30; i++)
+    rows.push(ra(['w1', 'w2', 'gone'][i % 3], i, ch[i % 4], ['c' + (i % 4)], i % 5 !== 0, ch, {d: 0.1, f: 0, o: 0}));
+  // the export made without "gone" (as run.py --exclude does); the log read again in full
+  const X = Pr.prepare(
+      rows.filter(r => r[0] !== 'gone'),
+      'coral',
+      {coralTax: () => ({})}
+    ),
+    raw = B2.rawOf(rows, 'coral', X.map);
+  assert.strictEqual(raw.length, X.rows.length);
+  assert.ok(raw.every((r, i) => r[0] === X.rows[i].p && r[1] === X.rows[i].t));
+  const fit = {sd: {gen: [0.4], photo: [0.4]}, fixed: {}};
+  assert.doesNotThrow(() => B2.replay(raw, X, {A: fit, B: fit}, null));
+  // a genus rank asked only by one half: the other half's fit has no estimate, its state still learns it online
+  const H = {sd: {fam: [0.5], gen: [0.3], sp: [0.3], photo: [0.4]}, fixed: {}};
+  assert.strictEqual(B2.variances('fish', H, null, ['genus']).v.r_genus, 'online');
+  assert.ok(!('r_species' in B2.variances('fish', H, null, ['genus']).v), 'a rank no answer asks: none');
+  assert.strictEqual(B2.variances('fish', H, {report: {r_genus: {verdict: 'pass'}}}, ['genus']).v.r_genus, 'online');
+  // a replay cut at the deadline: no end-of-log compression from its partial state
+  const R = B2.replay(raw, X, {A: fit, B: fit}, null, {deadline: 1}),
+    T = B2.tables(X, R, null, {fit: {effects: {}, fixed: {}}});
+  assert.ok(R.cut);
+  assert.strictEqual(T.compression.verdict, 'the measure cannot tell');
+});
+
 test("the rules the README declares for 2B are replay2b.js's", () => {
   const P = B2.RULES.primary;
   assert.deepStrictEqual([P.minPlayers, P.minAnswers, P.alpha, B2.RULES.minutes], [6, 20, 0.05, 40]);

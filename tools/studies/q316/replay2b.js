@@ -101,7 +101,9 @@ const V31 = {photo: 0.8 / aStar, unit: 0.4 / aStar};
 
 // The prior variance of each level: vars {fam, gen, sp, photo, r_genus, r_species: number | 'online'}, from the half
 // fit H (fit.py fit --no-accept), the full fit's report (fit-<s>.json report, report_shared) and RULES.fallback.
-function variances(subject, H, full) {
+// ranks: the ranks other than the family's that the subject's answers ask (from the whole export), so a rank whose
+// answers all fall in one half still gets its part in the other half's state (Codex #1373).
+function variances(subject, H, full, ranks = []) {
   const rep = (full && full.report) || {},
     shr = (full && full.report_shared) || {},
     pass = k => rep[k] && rep[k].verdict === 'pass',
@@ -118,9 +120,10 @@ function variances(subject, H, full) {
   if (pass('photo') && H.sd.photo) ((out.photo = H.sd.photo[0] ** 2), (src.photo = 'half fit'));
   else ((out.photo = V31.photo), (src.photo = 'v31-equivalent'));
   ['r_genus', 'r_species'].forEach(k => {
-    if (!(H.fixed || {})[k]) return;
-    if (pass(k)) ((out[k] = H.fixed[k][0]), (src[k] = 'half fit (fixed)'));
-    else ((out[k] = 'online'), (src[k] = 'online, v31-equivalent'));
+    const has = (H.fixed || {})[k];
+    if (!has && !ranks.includes(k.slice(2)) && !rep[k]) return; // a rank no answer asks
+    if (pass(k) && has) ((out[k] = H.fixed[k][0]), (src[k] = 'half fit (fixed)'));
+    else ((out[k] = 'online'), (src[k] = has ? 'online, v31-equivalent' : 'online, v31-equivalent (no half-fit estimate)'));
   });
   return {v: out, src};
 }
@@ -282,8 +285,9 @@ function replay(raw, X, fits, full, {deadline = null, ER = engine(), S = null} =
     if (raw[i][1] !== r.t || raw[i][0] !== r.p) throw new Error('replay2b: the log and the export are not in the same order at row ' + i);
     r.mu = r.ph.map((f, j) => (subject === 'fish' && r.ez && r.ez[j] ? r.ez[j] * ez : 0)); // today's photo prior (RULES.shared)
   });
-  const VA = variances(subject, fits.A, full),
-    VB = variances(subject, fits.B, full);
+  const ranks = [...new Set(rows.map(r => r.rk).filter(k => k && k !== 'family'))],
+    VA = variances(subject, fits.A, full, ranks),
+    VB = variances(subject, fits.B, full, ranks);
   // Each half is scored by the state fitted on the other half: a half-A player by the B-fit state.
   const mk = person => ({A: chainState(subject, VA.v, {person}), B: chainState(subject, VB.v, {person})});
   const st = {c2: mk('chain'), b4: mk('delta'), c4: mk('centred')};
@@ -391,7 +395,9 @@ function tables(X, Rp, full, ref) {
       band: calibration(rows, Ek, all, r => band(r.th))
     };
   // compression: each arm's end-of-log unit offsets against the offline D(u) (the reference fit), units with 20+ answers
-  if (ref && ref.fit) {
+  // a replay cut by the deadline holds only a prefix: no end-of-log compression from it (Codex #1373)
+  if (Rp.cut) out.compression = {verdict: CANNOT, reason: 'the replay was cut at the deadline'};
+  else if (ref && ref.fit) {
     const eff = ref.fit.effects || {},
       get = (lv, id) => ((eff[lv] || {})[id] != null ? eff[lv][id] : 0),
       fx = Object.fromEntries(Object.entries(ref.fit.fixed || {}).map(([k, v]) => [k, v[0]])),
@@ -421,6 +427,17 @@ function tables(X, Rp, full, ref) {
   return out;
 }
 
+// The subject's log rows for the engine's replay, in prep.js's order, the names replaced by the export's labels (map:
+// label -> name, labels-<s>.json); a player the export left out (run.py --exclude) is left out here too (Codex #1373).
+function rawOf(all, s, map) {
+  const lab = new Map(Object.entries(map).map(([l, w]) => [w, l]));
+  return C.subjRows(all, s)
+    .filter(r => lab.has(r[0]))
+    .map((r, i) => ({r, i}))
+    .sort((a, b) => a.r[1] - b.r[1] || a.i - b.i)
+    .map(x => [lab.get(x.r[0]), ...x.r.slice(1)]);
+}
+
 // The half fits (fit.py fit --no-accept on each half's rows): a fit is kept only from a run that exited 0 and wrote its
 // file now (a former run's file is removed first), so a failed run never leaves a stale fit to be read (Codex #1373).
 function halfFits(DIR, s, X, py, deadline, spawn = spawnSync) {
@@ -441,7 +458,7 @@ function halfFits(DIR, s, X, py, deadline, spawn = spawnSync) {
   return fits;
 }
 
-module.exports = {RULES, V31, aStar, engine, halfFits, photoDiffOf, served, variances, chainState, chainStep, chainD, expected, scorable, compare, verdict, replay, tables};
+module.exports = {RULES, V31, aStar, engine, halfFits, rawOf, photoDiffOf, served, variances, chainState, chainStep, chainD, expected, scorable, compare, verdict, replay, tables};
 
 // ---- The run: half fits (fit.py), then the replay per subject, under one clock.
 function main(argv) {
@@ -472,11 +489,7 @@ function main(argv) {
     if (!fs.existsSync(path.join(DIR, `export-${s}.json`))) continue;
     const X = rd(`export-${s}.json`),
       map = rd(`labels-${s}.json`),
-      lab = new Map(Object.entries(map).map(([l, w]) => [w, l])),
-      raw = C.subjRows(L.rows, s)
-        .map((r, i) => ({r, i}))
-        .sort((a, b) => a.r[1] - b.r[1] || a.i - b.i)
-        .map(x => [lab.get(x.r[0]), ...x.r.slice(1)]);
+      raw = rawOf(L.rows, s, map);
     const fits = halfFits(DIR, s, X, py, deadline);
     if (!fits.A || !fits.B) {
       console.log(`${s}: the half fits did not finish: ${CANNOT}`);
@@ -496,7 +509,8 @@ function main(argv) {
     if (T.corals) console.log(`  corals (exploratory): ${f(T.corals)}`);
     console.log(`  4b - 2 (exploratory): ${f(T.arm4b)}; 4c - 2: ${f(T.arm4c)}`);
     console.log(`  arm 1 - logged (descriptive): ${f(T.armLog)}`);
-    if (T.compression) console.log(`  compression on D(u), ${T.compression.units} units: arm 1 ${T.compression.arm1.toFixed(2)}, arm 2 ${T.compression.arm2.toFixed(2)}`);
+    if (T.compression && T.compression.verdict) console.log(`  compression: ${T.compression.verdict} (${T.compression.reason})`);
+    else if (T.compression) console.log(`  compression on D(u), ${T.compression.units} units: arm 1 ${T.compression.arm1.toFixed(2)}, arm 2 ${T.compression.arm2.toFixed(2)}`);
   }
   console.log(`${((Date.now() - t0) / 60000).toFixed(1)} minutes`);
   return 0;
