@@ -122,6 +122,7 @@ Conventions that hold across them:
 | `fish_names.py` | The kind words of common names, written into `fish.json` |
 | `fish_facts.py` | Size and depth facts for species sheets, with their sources |
 | `fish_genus_roots.json`, `fish_genus_marks.json` | Name roots and ID marks of fish genera, read by `build_fish.py` |
+| `fish_phases.json` | The colour phases a cited source documents per fish species in play (juvenile, sub-adult, initial/terminal, female/male), with quotes; no tool reads it yet |
 | `fish_lookalikes.json` | Species look-alike pairs and regional species, quoted from their sources; `build_fish.py` `lookalikes` writes `fish.json` `lookalikes` and `region` |
 | `fetch_fish.py`, `fish_refill.json` | Fish candidate photos into `data/fish-cand.json`; `--refill` for short species |
 | `fetch_fishbase.py`, `fishbase_src.json` | Fish candidates from FishBase |

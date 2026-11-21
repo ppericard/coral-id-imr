@@ -1088,12 +1088,12 @@ const genusOfPhoto = f => {
 // retried after another player signs in is never credited to them. One batch per sender, at most 50 (the script's cap).
 function sendReports() {
   const L = store.get('reefid-reports', []);
+  // An image waits in memory for its report only (never in the queue, which is localStorage): one whose report left the
+  // queue (the account deleted, the report sent) goes with it.
+  Object.keys(repImgPend).forEach(id => L.some(x => x.id === id) || delete repImgPend[id]);
   if (!SYNC_URL || LOCAL || !L.length || navigator.onLine === false) return;
-  // A report keeps the account generation it was written under (ra): a record archived since, its name taken again,
-  // never gets it under the new account.
-  const k = x => JSON.stringify([x.rn || '', x.rp || '', x.ra || '']),
-    first = L.filter(x => k(x) === k(L[0])).slice(0, 50);
-  const reports = first.map(({rn, rp, ra, ...x}) => x);
+  const {batch, reports} = repBatch(L, repImgPend),
+    first = batch;
   fetch(SYNC_URL, {
     method: 'POST',
     body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', ...(first[0].ra ? {racct: first[0].ra} : {}), reports})
@@ -1104,9 +1104,89 @@ function sendReports() {
       const sent = new Set(first.map(x => x.id)),
         left = store.get('reefid-reports', []).filter(x => !sent.has(x.id));
       store.set('reefid-reports', left);
+      sent.forEach(id => delete repImgPend[id]);
+      // The script kept the image (1) or refused it (0: too large, not a JPEG, over its cap); the report itself is logged.
+      if (j.img && Object.values(j.img).includes(0)) ev('sync', {msg: 'report image refused'});
       if (left.length) sendReports();
     })
     .catch(() => {});
+}
+// A screenshot or photo sent with a report (Pierre, 2026-11-21, Q446): the player picks one in the report dialog, the app
+// reduces it on the device (about 800 px on the long side, JPEG, quality 0.6: a canvas re-encode, which drops the EXIF and
+// the GPS) and the script keeps it in its "Report images" tab (Code.gs REPIMG). From REPIMG_SHEET only (rule D4); before,
+// the dialog has no such input.
+const REPIMG_SHEET = 212;
+const repImgOn = () => sheetV() >= REPIMG_SHEET;
+// The sizes tried in turn until the JPEG is small enough (REPIMG.MAX bytes decoded, under the script's 200,000), and the
+// longest side of each; a photo of any size ends at about 60-120 kB at the first.
+const REPIMG = {
+  STEPS: [
+    [800, 0.6],
+    [640, 0.5],
+    [480, 0.4]
+  ],
+  MAX: 180000
+};
+const repImgSize = (w, h, max) => {
+  const s = Math.min(1, max / Math.max(w, h, 1));
+  return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
+};
+// Report id → {t, d}: the reduced image (base64) waiting for its report to be sent. In memory only: if the report is
+// queued while offline or the page closes first, the report goes without it.
+const repImgPend = {};
+// The requests' reports: one sender at a time, at most 50 (the script's cap), a report with an image alone in its request
+// (it weighs as much as many reports). A report keeps the account generation it was written under (ra): a record archived
+// since, its name taken again, never gets it under the new account.
+function repBatch(L, pend) {
+  const k = x => JSON.stringify([x.rn || '', x.rp || '', x.ra || '']),
+    first = L.filter(x => k(x) === k(L[0])).slice(0, 50),
+    j = first.findIndex(x => pend[x.id]),
+    batch = j < 0 ? first : first.slice(0, Math.max(j, 1));
+  return {batch, reports: batch.map(({rn, rp, ra, ...x}) => (pend[x.id] ? {...x, img: pend[x.id]} : x))};
+}
+// The picked file as a JPEG {d: base64, bytes, url} or null (not an image the browser reads, or too large at every
+// size). createImageBitmap applies the photo's own rotation; the canvas is painted white first (a transparent PNG).
+async function repImgReduce(file) {
+  let src, w, h;
+  try {
+    src = await createImageBitmap(file);
+    [w, h] = [src.width, src.height];
+  } catch (e) {
+    try {
+      src = await new Promise((ok, no) => {
+        const u = URL.createObjectURL(file),
+          i = new Image();
+        i.onload = () => (URL.revokeObjectURL(u), ok(i));
+        i.onerror = () => (URL.revokeObjectURL(u), no());
+        i.src = u;
+      });
+      [w, h] = [src.naturalWidth, src.naturalHeight];
+    } catch (e2) {
+      return null;
+    }
+  }
+  if (!w || !h) return null;
+  for (const [max, q] of REPIMG.STEPS) {
+    const [cw, ch] = repImgSize(w, h, max),
+      cv = document.createElement('canvas');
+    cv.width = cw;
+    cv.height = ch;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, cw, ch);
+    g.drawImage(src, 0, 0, cw, ch);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', q));
+    if (!blob || blob.size > REPIMG.MAX) continue;
+    const url = await new Promise(r => {
+      const fr = new FileReader();
+      fr.onload = () => r(String(fr.result));
+      fr.onerror = () => r('');
+      fr.readAsDataURL(blob);
+    });
+    const m = /^data:image\/jpeg;base64,(.+)$/.exec(url);
+    if (m) return {d: m[1], bytes: blob.size, url};
+  }
+  return null;
 }
 window.addEventListener('online', sendReports);
 setTimeout(sendReports, 4000);
@@ -1140,6 +1220,13 @@ function reportDialog(c, btn) {
     <label class="repf" data-for="wrong">Right ${esc(SUBJ.one)}, if you know<input name="fix" list="repgen" autocomplete="off" maxlength="60" placeholder="e.g. ${esc(names.find(n => n !== unameT(c.g)) || '')}"></label>
     <datalist id="repgen">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
     <label class="repf"><span>Note <small>(optional)</small></span><textarea name="note" rows="2" maxlength="1000"></textarea></label>
+    ${
+      repImgOn()
+        ? `<div class="repf repimg"><label><span>Screenshot or photo <small>(optional)</small></span><input type="file" name="img" accept="image/*"></label>
+      <div class="repimgbox" hidden><img alt="Your picture, reduced" width="72" height="72"><button type="button" class="linkish" data-rm>Remove</button></div>
+      <small class="repimgst" role="status"></small></div>`
+        : ''
+    }
     ${SYNC ? '' : `<label class="repf">Your name<input name="who" maxlength="40" autocomplete="name" value="${esc(store.get('reefid-report-name', ''))}"></label>`}
     <div class="repbtns"><button type="button" class="next sec" value="cancel">Cancel</button><button type="submit" class="next" value="send">Send</button></div>
   </form>`;
@@ -1151,6 +1238,53 @@ function reportDialog(c, btn) {
   };
   f.querySelectorAll('[name="why"]').forEach(r => (r.onchange = upd));
   upd();
+  // The picture: reduced as soon as it is picked (a busy flag holds the Send button back for the moment it takes), kept
+  // in `pic` until Send puts it in repImgPend (in memory only, never in the queue).
+  let pic = null,
+    busy = 0;
+  const fi = f.img,
+    st = d.querySelector('.repimgst'),
+    box = d.querySelector('.repimgbox'),
+    go = d.querySelector('[type="submit"]'),
+    say = t => st && (st.textContent = t),
+    clear = () => {
+      pic = null;
+      if (fi) fi.value = '';
+      if (box) box.hidden = true;
+    };
+  if (fi) {
+    fi.onchange = async () => {
+      const file = fi.files && fi.files[0],
+        n = ++busy;
+      pic = null;
+      box.hidden = true;
+      say('');
+      if (!file) return;
+      go.disabled = true;
+      say('Reducing the picture…');
+      const r = await repImgReduce(file).catch(() => null);
+      if (n !== busy) return; // another picture was picked meanwhile
+      go.disabled = false;
+      if (!r) {
+        clear();
+        say('That picture could not be used (not an image, or too large). The report goes without it.');
+        return;
+      }
+      pic = r;
+      box.querySelector('img').src = r.url;
+      box.hidden = false;
+      say(
+        navigator.onLine === false
+          ? 'No connection: the report will be sent without the picture.'
+          : `Picture ready (${Math.max(1, Math.round(r.bytes / 1000))} kB).`
+      );
+    };
+    d.querySelector('[data-rm]').onclick = () => {
+      busy++;
+      clear();
+      say('');
+    };
+  }
   d.querySelector('[value="cancel"]').onclick = () => d.close();
   d.addEventListener('close', () => d.remove());
   d.addEventListener('keydown', e => e.stopPropagation()); // Escape closes this dialog only, not the photo under it
@@ -1172,6 +1306,9 @@ function reportDialog(c, btn) {
         note: f.note.value.trim()
       };
     store.set('reefid-reports', [...store.get('reefid-reports', []), {...who, ...r}].slice(-200));
+    // Offline, the report is queued as it is, without the picture (it would not survive the queue: localStorage).
+    const lost = pic && (navigator.onLine === false || !SYNC_URL);
+    if (pic && !lost) repImgPend[r.id] = {t: 'image/jpeg', d: pic.d};
     d.close();
     sendReports();
     // The Contributions achievement counts it as it is sent (progress.js). progress.js comes with tier 2 (index.html): a
@@ -1179,7 +1316,8 @@ function reportDialog(c, btn) {
     (typeof achReport === 'function' ? Promise.resolve() : need(2)).then(() => typeof achReport === 'function' && achReport(r));
     // The button stays live: a tap opens a fresh dialog (empty fields) and its send makes a new report id, so a second
     // report on the same page or answer goes through as its own.
-    btn.textContent = kind === 'page' ? 'Thank you' : '⚑ Reported, thank you';
+    btn.textContent =
+      (kind === 'page' ? 'Thank you' : '⚑ Reported, thank you') + (lost ? ' (no connection: sent without the picture)' : '');
   };
   d.showModal();
   d.querySelector('input[name="why"]').focus();

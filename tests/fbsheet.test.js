@@ -130,7 +130,17 @@ test('both halves of a pair, the unit shown first, their sources once each', () 
 test('a miss: the pair line, both halves, its source small after it', () => {
   const h = fbLine('f:Butterflyfishes', 'f:Angelfishes', false, ['f:Butterflyfishes', 'f:Angelfishes']);
   assert.match(h, /^<p class="vs fbline">Butterflyfish: no opercular spine/);
-  assert.match(h, / · Angelfish: spine on the gill cover, iridescent blue <small class="esrc">\(IMR; a made-up source\)<\/small><\/p>$/);
+  // IMR's own name is not said on the line (Pierre, 2026-11-21 05:53); the editor's source stays
+  assert.match(h, / · Angelfish: spine on the gill cover, iridescent blue <small class="esrc">\(a made-up source\)<\/small><\/p>$/);
+  assert.ok(!/IMR/.test(h), 'no IMR label on the line');
+  // IMR alone (no editor's source): no source at all, so no "(IMR)" line of its own; pairLine still reports IMR as the
+  // source (the Compare page and the More panel say it, rule C2)
+  const lks = GEN['f:Angelfishes'].lksrc;
+  delete GEN['f:Angelfishes'].lksrc;
+  const alone = fbLine('f:Butterflyfishes', 'f:Angelfishes', false, []);
+  assert.ok(alone.endsWith('iridescent blue</p>') && !/esrc|IMR/.test(alone), 'IMR alone says nothing: ' + alone);
+  assert.strictEqual(pairLine('f:Butterflyfishes', 'f:Angelfishes').s, 'IMR');
+  GEN['f:Angelfishes'].lksrc = lks;
   // a pair of ours (apart): the family's sources, not IMR
   assert.match(
     fbLine('f:Surgeonfishes', 'f:Rabbitfishes', false, []),
@@ -144,10 +154,10 @@ test('a miss: the pair line, both halves, its source small after it', () => {
 
 test('a miss with no pair line: the unit shown, its first tip with its source; never a line made from trait tags', () => {
   const h = fbLine('f:Damselfishes', 'f:Butterflyfishes', false, []);
-  assert.strictEqual(text(h), 'f:Damselfishes: ~Small to medium size (IMR)');
+  assert.strictEqual(text(h), 'f:Damselfishes: ~Small to medium size');
   assert.ok(!h.includes('Often a dark band'), 'the first tip only');
   // corals: the first tip, whatever the pair's source label (lsrc) or trait tags (tr) say
-  assert.strictEqual(text(fbLine('Porites', 'Montipora', false, [])), 'Porites: ~Small corallites, shared walls (IMR)');
+  assert.strictEqual(text(fbLine('Porites', 'Montipora', false, [])), 'Porites: ~Small corallites, shared walls');
   // the tips' source from their label, and the editor's after it
   GEN['f:Rabbitfishes'].qsrc = {t: 'an editor source'};
   assert.strictEqual(
@@ -156,7 +166,7 @@ test('a miss with no pair line: the unit shown, its first tip with its source; n
   );
   delete GEN['f:Rabbitfishes'].qsrc;
   // "I don't know" and a typed unit (no choices): the same
-  assert.strictEqual(text(fbLine('Porites', '', false, [])), 'Porites: ~Small corallites, shared walls (IMR)');
+  assert.strictEqual(text(fbLine('Porites', '', false, [])), 'Porites: ~Small corallites, shared walls');
 });
 
 test('a right answer: the line telling it from a look-alike among the choices, else the first tip', () => {
@@ -165,13 +175,10 @@ test('a right answer: the line telling it from a look-alike among the choices, e
   // no look-alike among the choices (or none with a line): the first tip
   assert.strictEqual(
     text(fbLine('f:Butterflyfishes', 'f:Butterflyfishes', true, ['f:Damselfishes', 'f:Rabbitfishes', 'f:Butterflyfishes'])),
-    'f:Butterflyfishes: ~Disc-shaped body, small mouth (IMR)'
+    'f:Butterflyfishes: ~Disc-shaped body, small mouth'
   );
   // a typed answer has no choices
-  assert.strictEqual(
-    text(fbLine('f:Butterflyfishes', 'f:Butterflyfishes', true, [])),
-    'f:Butterflyfishes: ~Disc-shaped body, small mouth (IMR)'
-  );
+  assert.strictEqual(text(fbLine('f:Butterflyfishes', 'f:Butterflyfishes', true, [])), 'f:Butterflyfishes: ~Disc-shaped body, small mouth');
   // a choice that is no unit is skipped, not read
   assert.doesNotThrow(() => fbLine('f:Butterflyfishes', 'f:Butterflyfishes', true, ['nobody', 'f:Butterflyfishes']));
 });
@@ -433,4 +440,19 @@ test('fbBody: a mimicry mix-up keeps one line; its other marks and the families�
   // An ordinary miss and a right answer: no marks anywhere
   assert.ok(!/mimmarks|scalpel/.test(C.fbBody(...args)));
   assert.ok(!/mimmarks|scalpel/.test(C.fbBody('f:Butterflyfishes', 'f:Butterflyfishes', true, ...args.slice(3), ENTRY())));
+});
+
+test('fbBody: the sheet’s visible part has no "(IMR)" line; IMR stays named behind More (rule C2)', () => {
+  const C = bodyCtx();
+  for (const [t, c, good] of [
+    ['f:Butterflyfishes', 'f:Angelfishes', false],
+    ['f:Damselfishes', 'f:Butterflyfishes', false],
+    ['f:Butterflyfishes', 'f:Butterflyfishes', true]
+  ]) {
+    const [top, more] = C.fbBody(t, c, good, false, false, [{}], '', null, null, ['f:Angelfishes', 'f:Damselfishes', t], '').split(
+      '<div class="fbmore" id="fbmore" hidden>'
+    );
+    assert.ok(!/\(IMR\)/.test(top), `${t} / ${c}: no (IMR) on the visible lines: ${top}`);
+    assert.match(more, /<p class="label">ID tips \(IMR\)<\/p>/, `${t} / ${c}: the tips behind More still say IMR`);
+  }
 });

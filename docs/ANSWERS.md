@@ -1624,6 +1624,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 
 ## 2026-11-21
 
+- **05:53, the "(IMR)" line of the answer feedback (on #1351's screenshots, fish at 390 px).** «Alors tu vois sur les
+  captures de réponses fausses que tu me montres, le fait que IMR entre parenthèses ça prenne une ligne entière, moi je
+  trouve ça assez fou quoi. Donc faut le dégager en fait, ça n'a pas de sens. C'est pas grave qu'on ne dise pas que
+  cette manière de l'identifier c'est lié à IMR, là ça prend trop de place en fait.» Applied: `quiz.js` `fbLine` leaves
+  IMR's own name out of its sources (other sources and the photo credits stay; IMR stays named behind More and on the
+  Compare page, rule C2), docs/spec/quiz.md, docs/DESIGN.md,
+  decisions/2026-11-21-feedback-no-imr-label.md, #1353.
 - **05:32, the two compared photos stacked on phones (on #1316).** «la PR 1316 avec les deux photos comparées qui
   s'affichent entières sur téléphone, pour les poissons, je me demande si au lieu de les mettre côte à côte, c'est-à-dire
   droite et gauche, il ne vaut pas mieux les mettre au-dessus et en dessous, parce que maintenant on a la place, on avait
@@ -1767,3 +1774,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   enters the photo's term weighed by 1 / V(L), the variance of right-answer times at the player's level, fitted
   continuously on the players' own answers. Applied: docs/LEARNING.md "The photo's time term", ROADMAP "Time in the
   photo rating", docs/decisions/2026-11-21-photo-time-term.md.
+- **06:21, rule W27's "two Codex rounds" (on the integrator's «Ses deux tours de relecture sont épuisés»).** «Quels 2
+  tours????» He questions the round count. Applied: rules/ship.md W27 (#1355).
+- **06:22, rule W27's "two Codex rounds" (on «règle W27 dit : au maximum deux tours de relecture Codex par PR»).** «Je
+  suis à peu près sur de ne jamais avoir explicitement validé ça. Par contre, réduire les périmètres des PR pour
+  faciliter l'intégration, oui c'est une bonne idée. Est-ce que c'est une bonne pratique validée de faire ça?» He never
+  validated the number (it came from #843, not from his words); cutting PRs' scope to ease integration is a good idea.
+  His question was answered in the chat by the integrator (small focused PRs and stopping to patch a part that keeps
+  failing are recognised practice, a fixed round count less so). Applied: rules/ship.md W27, AGENTS.md,
+  rules/README.md, CONTRIBUTING.md, decisions/2026-11-21-w27-no-round-count.md (#1355).
+- **06:23, rule W27's structural problem (on «Quand les défauts reviennent sans cesse au même endroit, la règle dit
+  aussi que le problème vient de la conception, pas d'un cas à corriger de plus»).** «ça je suis effectivement
+  complètement d'accord» He agrees: findings that keep coming back on the same part point to its design, not to one
+  more case to fix. Applied: rules/ship.md W27 (the point kept; #1355).

@@ -119,7 +119,7 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 - **No work sleeps on a branch**; a PR waiting for Pierre is opened ready with `needs-pierre` (rule W6). **Work
   autonomously; fix by default; never re-ask what was answered** (rule W7). **Never list Pierre's curation choices
   item by item; remind once, never nag** (rule W10).
-- **No two open PRs on the same sensitive file; two Codex rounds, then cut the scope** (rule W27).
+- **No two open PRs on the same sensitive file; a part whose findings keep coming back leaves the PR** (rule W27).
 
 ## The rules
 

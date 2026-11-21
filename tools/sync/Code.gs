@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 211 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 212 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 211;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 212;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -1524,9 +1524,63 @@ function statsFoldRun_(log){
 // from an enlarged photo, a genus sheet or any page (Mode = game, photo, sheet or page; Where = the page).
 // One row per report in the "Reports" tab. The reporter is the sync name when its code matches ("Verified" 1),
 // else the name typed or nothing ("Verified" 0). Nothing here changes the photos: Pierre decides in the admin Triage.
-const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Where', 'Id'];
+// The last column, Image (from v212), holds the report's image key (its id) when a screenshot or photo is attached
+// in the "Report images" tab (repImgPut_), else nothing; a Reports tab made before it gets the header at the first image.
+const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Where', 'Id', 'Image'];
+const REP_ID = REP.indexOf('Id'), REP_IMG = REP.indexOf('Image');
 const WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', info: 'Wrong information', bug: 'Bug', idea: 'Suggestion', other: 'Other'};
 const text_ = (x, n) => safe_(String(x == null ? '' : x).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, n));
+// An image sent with a report (docs/spec/sync.md "Report images"; Pierre, 2026-11-21, Q446): a screenshot or photo the app
+// reduced on the device (about 800 px, JPEG, no EXIF), at most one a report, in `img` {t: 'image/jpeg', d: base64}.
+// Kept in the "Report images" tab, one row a report: Id (the report's), Time, Player (the reporter's anonymous id, aid_;
+// empty when the report has no name), Type, Bytes (decoded), then the base64 text in chunks of CHUNK characters (a cell
+// holds at most 50,000). MAX decoded bytes (a larger one is refused, the report is still logged), PER images a player
+// can send in 6 hours (over_) and ALL in all. The tab only keeps an image while its report exists (repImgSweep_, rule D7);
+// the integrator reads it through the Sheets connector (tools/report_image.py) and clears it when the report is handled.
+const REPIMG = {TAB: 'Report images', HEAD: ['Id', 'Time', 'Player', 'Type', 'Bytes'], MAX: 200000, PER: 6, ALL: 120};
+const repImgBytes_ = d => {
+  if (typeof d !== 'string' || d.length < 8 || d.length > Math.ceil(REPIMG.MAX / 3) * 4 + 4 || !/^[A-Za-z0-9+\/]+={0,2}$/.test(d)) return null;
+  let b; try { b = Utilities.base64Decode(d); } catch (e) { return null; }
+  return b.length >= 4 && b.length <= REPIMG.MAX && (b[0] & 255) === 0xFF && (b[1] & 255) === 0xD8 && (b[2] & 255) === 0xFF ? b.length : 0;  // 0: not a JPEG, null: unreadable or too large
+};
+// The one row of an image (the report's id, who, the base64 text), written under the script lock.
+function repImgPut_(id, who, d, bytes){
+  const sh = sheet_(REPIMG.TAB, REPIMG.HEAD), parts = [];
+  for (let i = 0; i < d.length; i += CHUNK) parts.push(safe_(d.slice(i, i + CHUNK)));  // a chunk starting with + must not become a formula
+  const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [], k = ids.indexOf(String(id));
+  const row = [id, new Date(), who ? safe_(aid_(who)) : '', 'image/jpeg', bytes].concat(parts), at = k >= 0 ? k + 2 : sh.getLastRow() + 1;
+  if (k >= 0) while (row.length < sh.getLastColumn()) row.push('');  // the chunks of the row replaced
+  const extra = at - sh.getMaxRows();
+  if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
+  sh.getRange(at, 1, 1, row.length).setValues([row]);
+}
+// Every image whose report is gone is deleted (a deleted account's reports, the sweep of reports of removed accounts):
+// an image never outlives its report (rule D7). Returns how many rows went.
+function repImgSweep_(){
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), im = ss.getSheetByName(REPIMG.TAB); if (!im || im.getLastRow() < 2) return 0;
+  const re = ss.getSheetByName('Reports'), ids = new Set(re && re.getLastRow() > 1 ? re.getRange(2, REP_ID + 1, re.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : []);
+  const v = im.getRange(2, 1, im.getLastRow() - 1, 1).getValues(); let n = 0;
+  for (let i = v.length - 1; i >= 0; i--) if (!ids.has(String(v[i][0]))) { im.deleteRow(i + 2); n++; }
+  return n;
+}
+// The image of each report in `ids` goes (its row, and the mark in the Reports row): the reports of an account deleted
+// "keeping its answers" stay without the image, which could show its owner.
+function repImgDrop_(ids){
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), im = ss.getSheetByName(REPIMG.TAB); if (!im || im.getLastRow() < 2 || !ids.size) return 0;
+  const v = im.getRange(2, 1, im.getLastRow() - 1, 1).getValues(); let n = 0;
+  for (let i = v.length - 1; i >= 0; i--) if (ids.has(String(v[i][0]))) { im.deleteRow(i + 2); n++; }
+  return n;
+}
+// A merge or archive renames the reporter: the images' Player column follows (the old anonymous id leaves no trace).
+function repImgRelabel_(from, into){
+  const im = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(REPIMG.TAB); if (!im || im.getLastRow() < 2) return 0;
+  const rg = im.getRange(2, 3, im.getLastRow() - 1, 1), v = rg.getValues(), a = aid_(from), b = aid_(into); let n = 0;
+  // getValues returns an escaped id without its apostrophe: every cell written back goes through safe_ again, so an
+  // unrelated id that starts with + stays text, not only the renamed ones
+  v.forEach(r => { if (String(r[0]) === a) { r[0] = b; n++; } r[0] = safe_(r[0]); });
+  if (n) rg.setValues(v);
+  return n;
+}
 function logReports_(p){
   const L = p.reports.filter(r => r && /^[a-z0-9]{1,20}$/.test(String(r.id)) && WHY[r.why]).slice(0, 50);
   if (!L.length) return {ok: true, rep: true};
@@ -1551,17 +1605,28 @@ function logReports_(p){
       let d = {}; if (r) try { d = JSON.parse(readData_(String(ra.getRange(r, 1).getValue()), String(ra.getRange(r, 8).getValue() || '')).json || '{}') || {}; } catch (e) {}
       if (!r || (d._acct && d._acct !== p.racct)) { who = ''; ok = 0; } }
     const sh = sheet_('Reports', REP), n = sh.getLastRow() - 1;
-    const seen = new Set(n > 0 ? sh.getRange(2, REP.length, n, 1).getValues().map(r => String(r[0])) : []);
+    const seen = new Set(n > 0 ? sh.getRange(2, REP_ID + 1, n, 1).getValues().map(r => String(r[0])) : []);
+    // An image rides with its report (img): kept only for a report logged now, one at a time (the flood cap, per player
+    // and in all); refused with its reason in the reply's img (id → 1 kept, 0 refused), the report itself logged anyway.
+    const imgs = {}, keep = {};
+    L.forEach(r => { if (!r.img || typeof r.img !== 'object' || seen.has(String(r.id))) return;
+      const d = r.img.d, size = r.img.t === 'image/jpeg' ? repImgBytes_(d) : null;
+      imgs[r.id] = 0;
+      if (!size || over_('repimg', REPIMG.ALL) || over_('ri:' + (who ? aid_(who) : '~'), REPIMG.PER)) return;
+      // Written before the report's row, and refused (not thrown) when the tab cannot take it: a report is never lost nor
+      // its retry made to skip the image (an image row left by a failed report is replaced by the retry, same id).
+      try { repImgPut_(r.id, who, d, size); keep[r.id] = 1; imgs[r.id] = 1; } catch (e) {} });
     // A unit is a genus name, a scientific genus (g:Platax) or a family (f:Damselfishes; an old entry id renamed to
     // it): letters first, then letters, digits, spaces or dashes.
     const G = /^([fg]:)?[A-Za-z][A-Za-z0-9 -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
     const un = x => CORE_.SUBJECTS.reduce((y, S) => CORE_.renamedId(S, y), x);
     const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(who), ok, WHY[r.why], word_(un(r.g), G, 40), word_(un(r.a), G, 40),
-      text_(r.fix, 60), text_(r.note, 1000), word_(r.m, M, 40), word_(r.ph, PH, 400), text_(r.w, 120), String(r.id)]);
+      text_(r.fix, 60), text_(r.note, 1000), word_(r.m, M, 40), word_(r.ph, PH, 400), text_(r.w, 120), String(r.id), keep[r.id] ? String(r.id) : '']);
     if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
       if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
+      if (Object.keys(keep).length && sh.getLastColumn() < REP.length) sh.getRange(1, REP.length).setValue(REP[REP_IMG]).setFontWeight('bold');  // a tab from before the Image column
       sh.getRange(at, 1, rows.length, REP.length).setValues(rows); }
-    return {ok: true, rep: true};
+    return Object.keys(imgs).length ? {ok: true, rep: true, img: imgs} : {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }
 // For "Your feedback helped" (core.js helpedDue: the player who sent a report the admin marks done is told once):
@@ -1579,8 +1644,8 @@ function repsOf_(name){
   if (rm && rm.getLastRow() > 1) rm.getRange(2, 1, rm.getLastRow() - 1, REMOVED.length).getValues()
     .forEach(r => { if (lc_(r[0]) === me) cut = Math.max(cut, new Date(r[3]).getTime() || 0); });
   return sh.getRange(2, 1, n, REP.length).getValues()
-    .filter(r => lc_(r[1]) === me && Number(r[2]) === 1 && r[REP.length - 1] && (new Date(r[0]).getTime() || 0) > cut)
-    .map(r => String(r[REP.length - 1])).slice(-REPS_MAX);
+    .filter(r => lc_(r[1]) === me && Number(r[2]) === 1 && r[REP_ID] && (new Date(r[0]).getTime() || 0) > cut)
+    .map(r => String(r[REP_ID])).slice(-REPS_MAX);
 }
 // POST {readReports: 1, token} → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
 // suggested genus, note, mode, photos, where]]}, newest first. Names are shown, so only the app's admins get them:
@@ -2879,6 +2944,7 @@ function dropRows_(tab, name, col){
   for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) { sh.deleteRow(i + 2); n++; }
   if (tab === 'Answers') dropHold_(name);
   if (tab === 'Answers' && n) statsDirty_();  // the pooled stats' fold starts again
+  if (tab === 'Reports' && n) repImgSweep_();  // the images of the reports that went (rule D7)
   return n;
 }
 // Renames the name in column `col` of tab `tab` (answers, reports): one write of the whole column.
@@ -2887,6 +2953,7 @@ function relabel_(tab, col, from, into){
   const rg = sh.getRange(2, col, sh.getLastRow() - 1, 1), v = rg.getValues(), k = lc_(from); let n = 0;
   v.forEach(r => { if (lc_(r[0]) === k) { r[0] = safe_(into); n++; } });
   if (n) rg.setValues(v);
+  if (n && tab === 'Reports') repImgRelabel_(from, into);  // the images' Player column follows the reporter
   if (n && tab === 'Answers') { dropHold_(from); dropHold_(into); statsDirty_(); }  // their opening hold (hold_) is computed again, the pooled stats' fold starts again
   return n;
 }
@@ -3274,9 +3341,14 @@ function selfDelete_(p){
 // The reports of a name become another reporter's (a deleted account's "~deleted <id>"), never verified.
 function anonReports_(name, into){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'); if (!sh || sh.getLastRow() < 2) return 0;
-  const rg = sh.getRange(2, 2, sh.getLastRow() - 1, 2), v = rg.getValues(), k = lc_(name); let n = 0;
-  v.forEach(r => { if (lc_(r[0]) === k) { r[0] = safe_(into); r[1] = 0; n++; } });
+  const rg = sh.getRange(2, 2, sh.getLastRow() - 1, 2), v = rg.getValues(), k = lc_(name), hit = []; let n = 0;
+  v.forEach((r, i) => { if (lc_(r[0]) === k) { r[0] = safe_(into); r[1] = 0; hit.push(i); n++; } });
   if (n) rg.setValues(v);
+  if (n) {  // their report images go (rule D7): a screenshot could show its owner, and no one reads it any more
+    const ig = sh.getRange(2, REP_IMG + 1, v.length, 1), w = ig.getValues(), ids = new Set();
+    hit.forEach(i => { if (w[i][0]) { ids.add(String(w[i][0])); w[i][0] = ''; } });  // the Image cell is the report's id
+    if (ids.size) { ig.setValues(w); repImgDrop_(ids); }
+  }
   return n;
 }
 // A removed name in the log tabs: Events' Message names a player in brackets ("app before 2026-11-03: load
@@ -4618,7 +4690,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The sync script version that serves the photos' time terms (rule D4; PTIME, ptimeInto: three more numbers in a photo's
   // ?stats=1 entry): the app reads them only from a reply of this version or later (model.js ptmOf), so with an older
   // script every photo's difficulty stays as it was.
-  const PTIME_SHEET = 212;
+  const PTIME_SHEET = 213;
   // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.

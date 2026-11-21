@@ -379,16 +379,16 @@ the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to
 
 ### W27
 
-**Bounded cost, no conflicts: small PRs, no two open PRs on the same sensitive file, two Codex rounds, then cut.** The
-integrator holds to these, each checked before it launches or relaunches an agent:
+**Bounded cost, no conflicts: small PRs, no two open PRs on the same sensitive file, a part whose findings keep coming
+back leaves the PR.** The integrator holds to these, each checked before it launches or relaunches an agent:
 - **Each agent is on one PR or one study with one subject**; a finished agent is stopped, not kept waiting. Heavy
   agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js` (rule W24). Branches:
   rule W22.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
   until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
-- **Two Codex rounds at most per PR.** If Codex still finds something after the second round's fixes, the integrator
-  cuts the PR's scope (the part that keeps failing moves to a branch of its own) and tells Pierre, instead of a third
-  round. Findings that keep coming on the same part point to a structural problem: that part restarts from a short
+- **Codex findings are fixed while they are new and small; a part whose findings keep coming back leaves the PR.** When
+  findings keep coming back on the same part (say twice in a row), the integrator cuts the PR's scope (that part moves
+  to a branch of its own) and tells Pierre; there is no fixed number of rounds. Findings that keep coming on the same part point to a structural problem: that part restarts from a short
   design note (the need, the model that removes the whole class of cases, e.g. one writer instead of locks around many),
   not from a fix of the latest case. Spotting the structural problem and choosing the model is the agents' and the
   integrator's job, not Pierre's (Pierre, 2026-11-09: "c'est pas à moi de trouver les solutions"; "ça reste vous, les
@@ -404,4 +404,5 @@ integrator holds to these, each checked before it launches or relaunches an agen
 *Why:* on 2026-11-09 about a dozen agents ran at once with very large contexts, stacked PRs and parallel trains caused
 conflicts and red trains, one PR (#798) went through six Codex rounds in a day, a three-hour simulation read 10,000
 answers where the guardrails read 3,000, and misread requests were built twice; more than half of a week's quota went
-on a handful of PRs. *Source:* Pierre, 2026-11-09; the agent cap lifted and the ask-back, 2026-11-18 (rules audit decisions 1 and 2).
+on a handful of PRs. *Source:* Pierre, 2026-11-09; the agent cap lifted and the ask-back, 2026-11-18 (rules audit decisions 1 and 2); no
+fixed number of Codex rounds, reworded 2026-11-21 (#1355).

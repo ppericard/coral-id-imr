@@ -421,7 +421,7 @@
   // The sync script version that serves the photos' time terms (rule D4; PTIME, ptimeInto: three more numbers in a photo's
   // ?stats=1 entry): the app reads them only from a reply of this version or later (model.js ptmOf), so with an older
   // script every photo's difficulty stays as it was.
-  const PTIME_SHEET = 212;
+  const PTIME_SHEET = 213;
   // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.
