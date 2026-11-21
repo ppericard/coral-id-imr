@@ -7,7 +7,9 @@
 //    and none starts with less than MIN_FREE_GB (5 GB) free on the repository's disk: it refuses, with what to clean.
 //    Several agent sessions share one machine, and an overloaded one slows every smoke until fixed timeouts fail.
 //    The slots are files in one directory every session and every user of the machine sees; a slot whose process is
-//    gone (by PID and start time on Linux; elsewhere by PID, or no refresh for 10 minutes) is taken back. No-op on CI,
+//    gone (by PID and start time on Linux; elsewhere by PID, or no refresh for 10 minutes) is taken back. Waiters are
+//    served in arrival order: each takes a ticket in the same directory, and a free slot goes to the oldest live one (a
+//    dead waiter's ticket is skipped; see ticket(), below). No-op on CI,
 //    where each smoke has its own runner. Call it before chromium.launch(); the slot is given back when the process
 //    ends. A holder's children run in its slot (REEFID_SLOT, below): a smoke or a full unit-test run that starts a guarded tool never waits for its own slot.
 //
@@ -166,6 +168,63 @@ function reap(f) {
   }
 }
 
+// The queue (rule W24): each waiter takes a ticket in DIR, a file "ticket-<ms>-<pid>-<random>" (fixed widths: the names
+// sort in arrival order) holding a record like a slot's, published whole the same way. A free slot goes to the oldest
+// live ticket: a waiter tries the slots only while fewer live tickets are older than its own than slots are free. A ticket
+// whose waiter is gone is skipped and taken back (dead(), the holders' check); a waiter drops its ticket when it stops
+// waiting, whatever the reason. A directory with no tickets (or one where a ticket cannot be made) works as before.
+const TICKET = /^ticket-\d{14}-\d{10}-[0-9a-z]{8}$/;
+function ticket(name) {
+  const key = `ticket-${String(Date.now()).padStart(14, '0')}-${String(process.pid).padStart(10, '0')}-${Math.random()
+      .toString(36)
+      .slice(2, 10)
+      .padEnd(8, '0')}`,
+    f = path.join(DIR, key),
+    tmp = path.join(DIR, `.new-${process.pid}-ticket-${Math.random().toString(36).slice(2)}`),
+    text = record(name);
+  try {
+    fs.writeFileSync(tmp, text, {mode: 0o666});
+    fs.linkSync(tmp, f);
+    return {key, f, text};
+  } catch (e) {
+    return null;
+  } finally {
+    try {
+      fs.unlinkSync(tmp);
+    } catch (e) {}
+  }
+}
+// The live tickets older than key (the dead ones are taken back on the way).
+function ahead(key) {
+  let k = 0;
+  let names = [];
+  try {
+    names = fs.readdirSync(DIR);
+  } catch (e) {}
+  for (const t of names) {
+    if (!TICKET.test(t) || t >= key) continue;
+    const f = path.join(DIR, t);
+    try {
+      if (dead(fs.readFileSync(f, 'utf8'), fs.statSync(f))) reap(f);
+      else k++;
+    } catch (e) {} // gone meanwhile
+  }
+  return k;
+}
+// How many of the n slots are free: no file, or a holder that is gone (taken back by the next try).
+function freeSlots(n) {
+  let k = 0;
+  for (let i = 0; i < n; i++) {
+    const f = path.join(DIR, 'slot' + i);
+    try {
+      if (dead(fs.readFileSync(f, 'utf8'), fs.statSync(f))) k++;
+    } catch (e) {
+      if (e.code === 'ENOENT') k++;
+    }
+  }
+  return k;
+}
+
 // Taking a slot for the process o.pid (see slot): one taker at a time per process (a lock file made atomically, taken back
 // when its taker is gone), so two files racing for one runner never end with two slots.
 async function holdFor(name, o) {
@@ -227,11 +286,38 @@ async function slot(name, o = {}) {
     fs.mkdirSync(DIR, {recursive: true});
     fs.chmodSync(DIR, 0o777);
   } catch (e) {}
+  // This waiter's place in the queue, dropped whenever it stops waiting (a slot, a timeout, a refusal, an exit).
+  const tk = ticket(name),
+    drop = () => {
+      try {
+        if (tk && fs.readFileSync(tk.f, 'utf8') === tk.text) fs.unlinkSync(tk.f);
+      } catch (e) {}
+    };
+  process.on('exit', drop);
+  try {
+    return await take(name, o, n, t0, roomy, tk);
+  } finally {
+    drop();
+    process.removeListener('exit', drop);
+  }
+}
+
+// The waiting loop of slot(): tries the slots whenever the load allows and the queue gives this waiter its turn.
+async function take(name, o, n, t0, roomy, tk) {
+  let touched = Date.now(),
+    queue = 0;
   for (let said = 0; ;) {
     roomy();
     if (o.pid && slotsOf(o.pid).length) return () => {};
+    if (tk && Date.now() - touched > 60e3) {
+      try {
+        fs.utimesSync(tk.f, new Date(), new Date()); // alive (dead() without /proc)
+      } catch (e) {}
+      touched = Date.now();
+    }
     const load = os.loadavg()[0];
-    if (load <= maxLoad())
+    queue = tk ? ahead(tk.key) : 0;
+    if (load <= maxLoad() && queue < freeSlots(n))
       for (let i = 0; i < n; i++) {
         const f = path.join(DIR, 'slot' + i),
           tmp = path.join(DIR, `.new-${process.pid}-${i}-${Math.random().toString(36).slice(2)}`);
@@ -298,6 +384,7 @@ async function slot(name, o = {}) {
       console.error(
         `${name}: waiting for a smoke slot (${n} on this machine, ${DIR}; load ${load.toFixed(1)}, budget ${maxLoad()} on ${cores()} cores)` +
           (said > 1 ? `, ${Math.round((Date.now() - t0) / 1000)} s so far` : '') +
+          (queue ? `, ${queue} ahead in the queue` : '') +
           '…'
       );
     await new Promise(r => setTimeout(r, POLL));
