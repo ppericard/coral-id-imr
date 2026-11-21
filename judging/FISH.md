@@ -310,7 +310,9 @@ choices per family in the app" has the details.
   ease-only change that does not make the photo reference-level (`core.js` `refLevel`). Look as the second pass
   did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
   photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
-  (nothing to download: the flag is its only change).
+  (nothing to download: the flag is its only change). The two exclusions hold only while every unit keeps a clean
+  band-kind photo and a clean reference-level adult: after tagging, count them per unit against the previous pass's
+  files, and look at the fallback photos of any unit that lost its last one (as the third pass did).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
