@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v214 (2026-11-21)
+
+The embedded `core.js` gains the fish achievement `fbasics` ("Fin to tail", tier 1, 📖) in `FISH_ACH`, earned when the Fish basics module is done (the fish's done feat `_fbasics`, already held in the synced achievements record since v182); `achSnap` now reads the feat of the subject on screen (`SUBJECTS` `basics.feat`) instead of the corals' alone. It moves no progress and takes no rules version (rule D5), and the sheet needs nothing new: `achs_` counts any id of the saved records. The fish list becomes 32 achievements (the name, tier and words are the integrator's call; the achievement itself was decided with the fish achievements' redesign)
+
 ## v213 (2026-11-21)
 
 The photo statistics now hold each photo's time term (Pierre, 2026-11-21, Q449-Q451 and option A at 06:20): how much longer than their own habit trusted players take to answer it right (each answer weighed by how steady the times of players of its level are, `core.js` `PTIME`, `ptimeStep`) and how much more often than their habit they enlarge it, faded in the app by the information its rating has gathered. Served as three more numbers in a photo's `?stats=1` entry (`ptimeInto`); the fold reads each answer's seconds, enlarged mark and rank, and keeps each player's timed answers and enlarging habit by admin id (`STATS.FMT` 4: every snapshot is rebuilt once). The progress replay is unchanged
