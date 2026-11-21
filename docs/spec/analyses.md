@@ -83,7 +83,7 @@ point takes as many as the newest milestone.
 
 `analysis.js` `report` gives
 `{AV, made, answers, M: [milestones], R: {milestone: {n, players, at, fp, B, bse, mt, A: {…}}}}`, where `A` holds the
-analyses `{rt, zoom, photo, fmt, conf, learn, back, sess, who, tdiff}`: `B` its bootstrap draws, `bse` 1 for normal
+analyses `{rt, zoom, photo, fmt, conf, learn, back, sess, who, tdiff, traj}`: `B` its bootstrap draws, `bse` 1 for normal
 bootstrap intervals, `mt` `{m1, m2, a, q}` the number of primary and secondary tests and their levels.
 
 Each analysis has:
@@ -130,7 +130,12 @@ stable (1, 0, or null when no run could be compared)}, `close`, `far`; no effect
 correction. `tdiff` (Time and difficulty, `analysis.js` `tdiff`): `timed`, `photos`, `bins` [{k, label, n, y right, E
 expected}] by how fast others answered the photo right, `agree` {photo, photos, genus, genera} the correlation of time
 intensity and difficulty, `genus` and `slowest` [{k or f, n timed answers, t time intensity in log seconds, d difficulty
-in logits, + = harder}].
+in logits, + = harder}]. `traj` (Player trajectories, `analysis.js` `trajectories`): `win` the window (100 answers
+at least, ending with a session), `feats` the behaviours (the profiles', no learning slope), `who` [{k anonymous id, n
+answers, w [[the window's ordinal from the player's first, the answers given by its end, a value or null per
+behaviour]]}] the 60 players with the most answers, `med` the typical player by window ([ordinal, the median of the
+answers given by its end, the median of each behaviour from 3 players]),
+`chg` {up, down, flat, n} per behaviour, `more` the players not listed; no effects, so outside the correction.
 
 Players are the sheet's anonymous ids; the admin shows the names from Players (`USERS`), else P1, P2…. `compact` keeps
 the report under the sheet's cap: the oldest milestones lose their tables first (`ix` levels and `map` among them), then
@@ -238,6 +243,11 @@ unless said, so outside the multiple-testing correction.
   of players (`biplot`) beside it on a desktop, in a card of its own below (folded on a phone, its 8 points furthest from
   the centre labelled); a table of every number. Admin only: the report keeps anonymous ids, the names come from Players
   in the page, the Action prints counts only, the demo and the tests use made-up players.
+- **Player trajectories** (Learning › Trajectories, `#analyses/learning/trajectories`, `anTraj`; the corals only until the
+  fish and sea slug pages list it in `core.js` `SUBJECTS` `admin`): the profiles' behaviours on successive windows of 100
+  answers or more (each ends with a session) of each player's whole history, one small chart a behaviour (a thin line a player, the typical player over
+  them), in words how many players rose, fell or stayed from their first window to their last, a table of the typical
+  player by window. Descriptive, no verdict. Admin only: the report keeps anonymous ids, the names come from Players.
 - **Sessions in figures** (`analysis.js` `sessDesc`; `desc` in the Sessions result, also on a thin one): every session
   (newest first, at most 300: player and their session number, start, minutes, answers, games, right, right − expected,
   new genera, comeback answers, the last 3 answers, hours since the player's previous session, still going); when

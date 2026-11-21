@@ -4490,6 +4490,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-an-svg .an-line.dash {
   stroke-dasharray: 5 4;
 }
+/* Player trajectories: each player a thin line, the typical one over them in the accent */
+.adm-an-svg .an-line.pl {
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+.adm-an-svg .an-line.med {
+  stroke-width: 3;
+}
 .adm-an-svg .an-band {
   fill: color-mix(in srgb, var(--accent) 18%, transparent);
 }
