@@ -752,8 +752,10 @@ function recordAnswer({
     Rc,
     p: startP(),
     sec: tm.rt,
-    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does.
+    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does, net of the photos' time term
+    // (model.js photoTimeQ: the photos d0 averages; logged in sc as i; undefined before the script that replays it).
     timed: true,
+    ti: photoTimeQ(ph),
     // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
     df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
     // A smaller fault's kind (Q394 A: typeBind z, a species' common name or its genus alone typed for its scientific

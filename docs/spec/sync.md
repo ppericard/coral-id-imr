@@ -91,7 +91,9 @@ was kept.
 - **Scoring**: what the app scored the answer with, `core.js` `scoreRec` as JSON (photo difficulty, memory, mix-ups
   term, look-alike test, recalls, the corallites hint revealed after the answer, the format's offset `o`, the kind of a
   smaller fault `z`: `cn` a common name typed for a species' scientific name, `g` its genus alone, `core.js` `PART`,
-  Q394 A; a miss weighed half or a quarter, never a gain); read by its
+  Q394 A; a miss weighed half or a quarter, never a gain; the photos' time term `i` a right answer's time was netted of,
+  `core.js` `rtWeight` ti, kept even at 0, from sheet `RTNET_SHEET`: a row without it is netted by the terms served
+  when it is replayed, LEARNING.md "The player's time net of the photo's"); read by its
   name (`SC_COL`, column W); `readAnswers` index 22, an object, and the same index in the replay's rows (`rowOf_`,
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
 - **Rejected tries**: the texts a typed answer refused before it, a JSON list. Logged only.

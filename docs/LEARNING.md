@@ -178,7 +178,8 @@ typed where a species' scientific name is asked, or its genus alone) is a miss w
 says its kind (`z`: `cn`, `g`), `core.js` `PART` its size (half, a quarter: starting values, read on the real answers
 later), and `partOf` scales the miss's bar likelihood (a tempered one), its moving average and its two Elo steps (the
 unit and the level); its counts and recent results take a miss, so it is never a gain. The kind is logged, not the size,
-so a new size is one rules version and the whole log replays with it. What only the game knows (the exam, the cards, the
+so a new size is one rules version and the whole log replays with it. The record also keeps the photos' time term a
+right answer's time was netted of (`i`, "The player's time net of the photo's"). What only the game knows (the exam, the cards, the
 hold) is kept by one recorder, `quiz.js` `recordAnswer`, which every game's answer takes (`quiz.js` `answer`, `live.js`
 `liveLog`).
 
@@ -191,7 +192,8 @@ w = clamp(1 − K · z, LO, HI), z = log(seconds) − the median log(seconds) of
 answer without seconds, a typed answer, and before `RTIME.MIN` timed answers. The seconds are those logged (tenths, at
 most 600); the earlier times live in the level's record (`P['~level'].rt`, a count per tenth of a second: `core.js`
 `rtAdd`), so two devices' records add up and a replay rebuilds them. The answer's own time never changes its
-expectation, only the step after it.
+expectation, only the step after it. z is taken net of the question's photo time term ("The player's time net of the
+photo's", below).
 
 ### Beginners and experts
 
@@ -1068,7 +1070,8 @@ players of its level are. Decision record: docs/decisions/2026-11-21-photo-time-
 - **Served** as the 6th to 8th numbers of the photo's `?stats=1` entry, from sheet `PTIME_SHEET` (rule D4; docs/spec/sync.md
   "Pooled photo statistics"). The draw's targeting, the scoring's d0 (logged in each answer's scoring record), the mastery
   exam's hardest photo and the fish cards' photo order read it through `photoDiff`; the counts (`nAnswers`, the hard-photo
-  achievement) do not. The progress replay never reads it (rule D5: no rules version; `tests/ptime.test.js`).
+  achievement) do not. The time term alone (not the enlargement term) also nets a right answer's time weight, which
+  the progress replay reads ("The player's time net of the photo's", below; rules version 13).
 
 **The checks** (declared before running; the real log read-only, the Answers tab to 2026-11-20 15:50, no row after it on
 2026-11-21 06:45; the branch's own `core.js` run in Node on it; players as the unit, per-player means, 95% t, sign-flip
@@ -1298,8 +1301,8 @@ adopted by every device: how it is asked for, kept in the Replayed tabs, adopted
 replay".
 
 - **One engine.** The sheet embeds `core.js` (`tools/sync_core.py`), and every answer is scored by `core.js`
-  `scoreAnswer`, the game's own scorer ("One scorer"), with the sheet's photo memory offsets and pooled pairs for the
-  corals and none for the other subjects. An answer logged with its scoring record replays exactly as the game scored
+  `scoreAnswer`, the game's own scorer ("One scorer"), with the sheet's photo memory offsets, pooled pairs and photos'
+  time terms for the corals and none for the other subjects. An answer logged with its scoring record replays exactly as the game scored
   it. An older row has its question's difficulty recovered from what the app logged (`e`, `th`, the choices; the
   memory and the mix-ups term taken out of the logged `e` from `MEM_LOGGED` and `CF_LOGGED`, the replay's own put
   back); a comeback answer's recall counts as 1, and a row with no `e` and `th` counts in the counts only.
@@ -1314,7 +1317,7 @@ replay".
   either.
 - **Rules versions** (`core.js` `RVS` for the corals, `FISH_RVS`, `SEASLUG_RVS`; rule D5): every change to a progress
   rule appends `{v, at, why, msg}`; a change to how `Code.gs` `stats_` computes what the corals' replay reads from it
-  (`mem`, `conf`, `fmt`, `gd`) is one. A version is not a frozen engine: the sheet always replays with the code's
+  (`mem`, `conf`, `fmt`, `gd`, the photos' time terms) is one. A version is not a frozen engine: the sheet always replays with the code's
   current rules, and a new version only makes every device take the replay once. The latest version of each list has no card (`msg` null; the cards of
   the earlier versions stay for the record, and `core.js` `rvMsgs` shows none for a jump that ends on a version without
   one), and a learned mark the replay takes away is not told (rule D6).

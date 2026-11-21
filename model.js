@@ -1722,6 +1722,18 @@ function photoDiff(n, p) {
   const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
   return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W) + tm;
 }
+// The player's time net of the photo's (core.js rtWeight ti, ptimeQ; docs/LEARNING.md "The player's time net of the
+// photo's"): a question's time term, the mean of its photos' served time terms (PTM; a photo without one: 0), which the
+// scorer takes off a right answer's z and the scoring record keeps (i). Only with a script whose replay does the same
+// (core.js RTNET_SHEET, rule D4); otherwise undefined: the answer weighs and is logged as before.
+const ptNetOn = () => typeof sheetV === 'function' && sheetV() >= RTNET_SHEET;
+const photoTimeQ = ph =>
+  ptNetOn()
+    ? ptimeQ(
+        ph.map(p => p.f),
+        f => (PTM[f] || [])[0]
+      )
+    : undefined;
 // Progress of a genus (s.pg, a moving average of its answers; core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress
 // (moving average) and mastery"): each answer weighs what it proves, w from 0 to 1, by core.js pgRightW, pgMissW and
 // pgMemW (shared with the sheet's replay): the plausible choices k ((1 − 1/k) / (1 − 1/4): 4 weigh 1, 2 weigh 0.67;
