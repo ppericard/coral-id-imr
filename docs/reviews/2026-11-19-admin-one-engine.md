@@ -298,12 +298,11 @@ green checks; refactors of this size probably run longer.
    **Done in part** (spec/front-end.md, `tests/sheetparts.test.js`): the four sheets (the corals' genus sheet; a tree's
    family, genus and species sheets) are drawn through one frame, `sheetPage(lede, cls, body)`, and the lines they
    share are one part each: `sheetRep` (the report line), `moreDetails` (the fold), `heroBtn` and `heroPic` (the first
-   photo's button), `cuesBox` (the IMR cues box), `looksSection` ("Don't confuse with" for the tree sheets). The
-   sheets' own sections stay in their functions, in their order. **Not done**: the sheets as lists of declared parts
-   (`UNITS sheetParts`) built from the node: each sheet function is a template of its own sections and about ten
-   tests read those templates by their text (the order of the marks and roots, the juvenile line, the hero's place
-   in the viewer's list), so it is a rewrite of the four sheets and of those tests, with the same HTML as its
-   acceptance. No `UNITS` field was added. Checked: the app's `#view`, help box and page bar HTML of 116 states (a coral
+   photo's button), `cuesBox` (the IMR cues box), `looksSection` ("Don't confuse with" for the tree sheets). **Then**
+   the sheets are lists of declared parts: `UNITS sheetParts` names each sheet's sections in their order (the
+   corals' `genus`; the tree subjects' `family`, `genus`, `species`), and `sheetBody` draws them from the sheet's
+   builders of those names (`tests/sheetparts.test.js`: every declared part has its builder, every builder is
+   declared; the tests that read a section's place now read the declared order). Checked: the app's `#view`, help box and page bar HTML of 116 states (a coral
    genus of the lecture, a starred one, a bonus one and one of two levels, and a look-alike view switch; the fish's and
    the sea slugs' families with several genera, with one genus, with one species, with and without IMR cues, a wink
    family sent to the list, genera with and without cues and roots, one sent on to its one species, species with
