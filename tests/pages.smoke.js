@@ -4150,12 +4150,15 @@ async function credits(b, base) {
         licences: !!a && /CC BY/.test(a.textContent),
         // the lecture photos traced to Corals of the World: the site and its terms named
         cotw: !!(a && a.querySelector('a[href="https://www.coralsoftheworld.org/page/terms-of-use/"]')),
+        // REE-50: the app's version line and the link to the source
+        ver: !!a && /Version \S+/.test(a.querySelector('.abver')?.textContent || ''),
+        src: !!(a && a.querySelector('.abver a[href="https://github.com/ppericard/coral-id-imr"]')),
         // The book may be cited under References only, never in the credits around it.
         credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
         bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
       };
     });
-    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || !r.ver || !r.src || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
     // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
