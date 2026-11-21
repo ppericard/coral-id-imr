@@ -15,7 +15,8 @@ Build it as a view of the Learning tab (rule A3: no new tab). Pierre, 2026-11-05
 learning trajectories from first answer to now as a later analysis level".
 
 - The profiles' behaviours but the learning slope (a slope needs the whole range of practice) on successive windows of
-  100 answers, every window of every player a unit of one fit, so each window is read against all windows. A player needs
+  100 answers or more that end with a session (a window cut inside a session would end it at the cut: Codex's review of
+  #1401), every window of every player a unit of one fit, so each window is read against all windows. A player needs
   two windows, 3 players are needed; the 60 players with the most answers, the newest 40 windows each, are kept.
 - Descriptive, no verdict, outside the correction; the typical player is the median over the players that have the
   window (from 3); up or down is a last window against the first beyond half a standard deviation. Admin only, names from

@@ -132,9 +132,11 @@ stable (1, 0, or null when no run could be compared)}, `close`, `far`; no effect
 correction. `tdiff` (Time and difficulty, `analysis.js` `tdiff`): `timed`, `photos`, `bins` [{k, label, n, y right, E
 expected}] by how fast others answered the photo right, `agree` {photo, photos, genus, genera} the correlation of time
 intensity and difficulty, `genus` and `slowest` [{k or f, n timed answers, t time intensity in log seconds, d difficulty
-in logits, + = harder}]. `traj` (Player trajectories, `analysis.js` `trajectories`): `win` the window (100 answers),
-`feats` the behaviours (the profiles', no learning slope), `who` [{k anonymous id, n answers, w [[answers given at the
-window's end, a value or null per behaviour]]}] the 60 players with the most answers, `med` the typical player by window,
+in logits, + = harder}]. `traj` (Player trajectories, `analysis.js` `trajectories`): `win` the window (100 answers
+at least, ending with a session), `feats` the behaviours (the profiles', no learning slope), `who` [{k anonymous id, n
+answers, w [[the window's ordinal from the player's first, the answers given by its end, a value or null per
+behaviour]]}] the 60 players with the most answers, `med` the typical player by window ([ordinal, the median of the
+answers given by its end, the median of each behaviour from 3 players]),
 `chg` {up, down, flat, n} per behaviour, `more` the players not listed; no effects, so outside the correction.
 
 Players are the sheet's anonymous ids; the admin shows the names from Players (`USERS`), else P1, P2…. `compact` keeps
@@ -245,7 +247,7 @@ unless said, so outside the multiple-testing correction.
   in the page, the Action prints counts only, the demo and the tests use made-up players.
 - **Player trajectories** (Learning › Trajectories, `#analyses/learning/trajectories`, `anTraj`; the corals only until the
   fish and sea slug pages list it in `core.js` `SUBJECTS` `admin`): the profiles' behaviours on successive windows of 100
-  answers of each player's whole history, one small chart a behaviour (a thin line a player, the typical player over
+  answers or more (each ends with a session) of each player's whole history, one small chart a behaviour (a thin line a player, the typical player over
   them), in words how many players rose, fell or stayed from their first window to their last, a table of the typical
   player by window. Descriptive, no verdict. Admin only: the report keeps anonymous ids, the names come from Players.
 - **Sessions in figures** (`analysis.js` `sessDesc`; `desc` in the Sessions result, also on a thin one): every session

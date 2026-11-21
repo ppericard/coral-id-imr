@@ -1304,9 +1304,9 @@ function anProfiles(a) {
 }
 
 // Player trajectories (Learning › Trajectories, analysis.js trajectories; Pierre, 2026-11-05, Q78): the profile's
-// behaviours on successive windows of 100 answers of each player's whole history. One small chart a behaviour (answers
-// given along the bottom): a thin line a player, the typical player (the median over the players at each window) over
-// them; in words, how many players rose, fell or stayed from their first window to their last; a table of the typical
+// behaviours on successive windows of about 100 answers (whole sessions) of each player's whole history. One small chart
+// a behaviour (the window's ordinal along the bottom): a thin line a player, the typical player (the median over the
+// players at each window) over them; in words, how many players rose, fell or stayed from their first window to their last; a table of the typical
 // player by window. Descriptive, no verdict. Names come from Players (the report keeps anonymous ids).
 const AN_TRAJ = {
   pace: ['Answer time', v => Math.round((Math.exp(v) - 1) * 100) + '%', 'Time to answer, against the average window (+ slower)'],
@@ -1330,9 +1330,9 @@ function anTraj(a) {
           label: nm[j],
           title: `${nm[j]}: ${T[0].toLowerCase()}`,
           cls: 'pl',
-          pts: p.w.filter(r => r[i + 1] != null).map(r => [r[0], r[i + 1]])
+          pts: p.w.filter(r => r[i + 2] != null).map(r => [r[0], r[i + 2]])
         })).filter(S => S.pts.length > 1),
-        med = {label: 'Typical player', cls: 'med', pts: (a.med || []).filter(r => r[i + 1] != null).map(r => [r[0], r[i + 1]])},
+        med = {label: 'Typical player', cls: 'med', pts: (a.med || []).filter(r => r[i + 2] != null).map(r => [r[0], r[i + 2]])},
         V = [...lines0.flatMap(S => S.pts.map(p => p[1])), ...med.pts.map(p => p[1])],
         lo = V.length ? Math.min(...V) : 0,
         hi = V.length ? Math.max(...V) : 1,
@@ -1351,7 +1351,8 @@ function anTraj(a) {
               xmin: xs[0],
               xmax: xs[xs.length - 1],
               xticks: xs.length > 6 ? xs.filter((_, k) => k % Math.ceil(xs.length / 5) === 0) : xs,
-              xlab: 'Answers given'
+              xlab: 'Window (about 100 answers)',
+              xf: v => String(v)
             })
           : '<p class="note">No value yet.</p>'
       };
@@ -1362,12 +1363,12 @@ function anTraj(a) {
         ? `<li><b>${esc((AN_TRAJ[f.k] || [f.label])[0])}</b>: from the first window to the last, up for ${k.up} of ${k.n} players, down for ${k.down}, about the same for ${k.flat}.</li>`
         : '';
     }).join(''),
-    words = `<ul class="adm-an-says-l"><li>${a.players} player${a.players === 1 ? '' : 's'} with ${a.win * 2} answers or more${a.more ? `; the ${W.length} with the most answers are drawn` : ''}. A line is a player; the thick one is the typical player. A change counts as up or down from half a standard deviation of the behaviour’s windows.</li>${say}</ul>`,
+    words = `<ul class="adm-an-says-l"><li>${a.players} player${a.players === 1 ? '' : 's'} with two windows or more (${a.win} answers or more each, ending with a session)${a.more ? `; the ${W.length} with the most answers are drawn` : ''}. A line is a player; the thick one is the typical player. A change counts as up or down from half a standard deviation of the behaviour’s windows.</li>${say}</ul>`,
     table = anTable(
-      ['Answers given', ...F.map(f => '#' + ((AN_TRAJ[f.k] || [f.label])[0] || f.label))],
+      ['Window', '#Answers by its end', ...F.map(f => '#' + ((AN_TRAJ[f.k] || [f.label])[0] || f.label))],
       (a.med || []).map(
         r =>
-          `<tr><td>${anInt(r[0] - a.win + 1)}–${anInt(r[0])}</td>${F.map((f, i) => `<td class="n">${r[i + 1] == null ? '–' : (AN_TRAJ[f.k] || [0, v => anNum(v, 2)])[1](r[i + 1])}</td>`).join('')}</tr>`
+          `<tr><td>${anInt(r[0])}</td><td class="n">${anInt(r[1])}</td>${F.map((f, i) => `<td class="n">${r[i + 2] == null ? '–' : (AN_TRAJ[f.k] || [0, v => anNum(v, 2)])[1](r[i + 2])}</td>`).join('')}</tr>`
       )
     );
   return [
@@ -2799,7 +2800,7 @@ Object.assign(HELP, {
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
   'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,
   'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. <b>Slope</b>, the player's own learning slope (the Learning model's, fitted on these answers): the extra right answers twice as many answers on a genus bring, for a typical question. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`,
-  'an-traj': `<p><b>Player trajectories</b> (Pierre, 2026-11-05: learning trajectories from the first answer to now, a later level of the profiles). The behaviours of Player profiles, except the learning slope, on successive windows of 100 answers of each player's whole history instead of their last 300: where a player started and where they are now. Each window is read against all the windows of all the players, not against the players at the same stage (answer time: its effect in one answer time model fitted on every window; stops after misses: the rates pooled over every window). <b>Charts</b>: answers given along the bottom, a thin line a player, the thick line the typical player (the median over the players that have that window, from 3 players). <b>Up or down</b>: a player's last window against their first, beyond half a standard deviation of that behaviour's windows. A player needs 200 answers (two windows) and 3 players are needed; with many players the 60 with the most answers are drawn. A description of these players, not a test: no verdict. Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
+  'an-traj': `<p><b>Player trajectories</b> (Pierre, 2026-11-05: learning trajectories from the first answer to now, a later level of the profiles). The behaviours of Player profiles, except the learning slope, on successive windows of about 100 answers of each player's whole history instead of their last 300 (a window ends with a session, so no session is cut in two): where a player started and where they are now. Each window is read against all the windows of all the players, not against the players at the same stage (answer time: its effect in one answer time model fitted on every window; stops after misses: the rates pooled over every window). <b>Charts</b>: the window's number along the bottom (1 is a player's first), a thin line a player, the thick line the typical player (the median over the players that have that window, from 3 players). <b>Up or down</b>: a player's last window against their first, beyond half a standard deviation of that behaviour's windows. A player needs 200 answers (two windows) and 3 players are needed; with many players the 60 with the most answers are drawn. A description of these players, not a test: no verdict. Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in. (cur is null while admin.js
 // start still awaits the draft store, after DATA: it renders then itself.)
