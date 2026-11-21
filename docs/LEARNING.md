@@ -818,6 +818,15 @@ so the trap arrives with its explanation. Why and who decided: the
     other the species resembled at its stage (`model.js` `mimSide`, `mimKeep`), never, as on the card, a photo taken
     outside the region of a species flagged regional; only while that side's draw holds one now (`drawHas`), else any
     photo of the unit.
+  - **Its Find the X** (Q416 c; `quiz.js` `mimDecoys`, `planFind`): on the unit of the species a pair resembles (the
+    model's: Angelfishes, or its species unit), one of the three others is the unit of the species that resembles it, its
+    tile a photo of the class, in the place of the weakest trap (`model.js` `mimTrap`); the model's own tile is the species
+    resembled at its stage while its draw holds one now (`mimSide`, `drawHas`), else any tile. Only with the resembling unit
+    in the list, met and ready, with a tile of the class its draw holds now, and no pair inside the unit asked; the
+    pair's card is not waited for (as the trap's: the first question that shows a photo of the class brings it). The
+    decoy counts as a look-alike among the four (`pgLook`, logged in `sc`: no rules version), and a decoy tapped queues
+    the pair's id with its Again (`quiz.js` `answer`, `mimUnit` on the four tiles). Dormant until photos of the class
+    carry a tile (`fish-game.json` on 2026-11-21: the resembling species of M1-M5 and M7 have none, M6's two).
 - **Its marks after a mix-up** ([decision](decisions/2026-11-19-mimicry-marks-feedback.md)): a miss that takes a photo
   of one species of the pair, at the stage that resembles, for the other species' unit at the rank asked, either way
   (`model.js` `mimMix`; in Find the X, the photo tapped taken for the name asked), makes the feedback sheet's one line
@@ -828,7 +837,7 @@ so the trap arrives with its explanation. Why and who decided: the
   of the cheek", their sources small after it (`mimSrc`); a side with no mark left out, a pair with no marks keeps
   the usual line. More opens on the pair's other marks, then the units' own pair line. The feedback only: the draw, the
   scoring, the Again and the log stay as above (no rules version). Any tree subject's pairs take this path (`mimLay`).
-- **Not built yet** (ROADMAP "Look-alike pairs between species"): the reverse trap, Find the X on the pair, family
+- **Not built yet** (ROADMAP "Look-alike pairs between species"): the reverse trap, family
   pairs, the Look-alikes deck for every subject, the admin's ⚠ badge and its lift, the feature frames' default.
 
 Its level-1 checks are in the [notebook](archive/learning-notebook.md) ("The mimicry class: the level-1 check", "The
