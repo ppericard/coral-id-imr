@@ -25,9 +25,10 @@ Last checked: reports and events: 2026-11-21 ~04:30 Manila (no new report since 
 Main: sheet script **v213** (#1357, the photo's time term). Merged since 11-20 17:30: about 47 PRs (the list:
 `python3 tools/night.py`, `git log`). Nothing runs: no agent, no queue, no open PR once this one is in.
 
-- **The backlog's reference is the inventory** [docs/reviews/2026-11-20-backlog-inventory.md](reviews/2026-11-20-backlog-inventory.md)
-  (#1326, refreshed 2026-11-21): every open point against Pierre's words; §1.3 "Ready to launch now" is where the next
-  work comes from; §1.4 the questions still open.
+- **The open work is in Linear** (team REE, [backlog](https://linear.app/reef-id/team/REE/backlog); ROADMAP.md keeps
+  pointers and the rows not transferred yet); the inventory
+  [docs/reviews/2026-11-20-backlog-inventory.md](reviews/2026-11-20-backlog-inventory.md) (#1326, refreshed 2026-11-21)
+  is the migration's source, kept as history.
 - **Open points per day** (his ask, 06:27), counted as the inventories count (Done and Obsolete rows left out):
   - 2026-11-18: 148 open (151 items, 3 obsolete; no Done state; blocked rows inside "Decided"; some sources not
     counted, its §1.1).
