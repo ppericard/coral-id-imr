@@ -177,7 +177,7 @@ test(
     // Pierre's crop: the left half of a 4:3 photo is 2:3; the whole-photo crop [0, 0, 1, 1] is no crop.
     assert.deepStrictEqual([by['fish-s001-cand-101'].ar, by['fish-s001-cand-101'].cr], [0.67, [0, 0, 0.5, 1]]);
     assert.deepStrictEqual([by['fish-s003-cand-fb-Fiwra_u0'].ar, by['fish-s003-cand-fb-Fiwra_u0'].cr], [1.33, undefined]);
-    // Tags and ease: Pierre's (fish.tags, fish.ease), else the pass's; the phase as the admin's fishPhase.
+    // Tags and ease: Pierre's (fish.tags, fish.ease), else the pass's; the phase as the admin's treePhase.
     assert.deepStrictEqual([by['fish-s001-cand-102'].e, by['fish-s001-cand-102'].jt, by['fish-s001-cand-102'].own], [5, 'p1g0sl1', true]);
     assert.deepStrictEqual([by['fish-s002-cand-201'].e, by['fish-s002-cand-201'].ph], [2, 'juvenile']);
     assert.deepStrictEqual(
@@ -431,7 +431,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
 );
 
 // Pierre's word stands over a photo in play by itself: an automatic add of the auto-sort he undid
-// (log code '-a...', autosort.js fishUndo) keeps the photo out, and his explicit full-photo crop [0, 0, 1, 1] beats the
+// (log code '-a...', autosort.js treeUndo) keeps the photo out, and his explicit full-photo crop [0, 0, 1, 1] beats the
 // pass's proposed crop.
 test("fish_game.py: an undone auto add stays out, and Pierre's full-photo crop beats the proposal", () => {
   const dir = autoWorld(),
@@ -747,8 +747,8 @@ print(json.dumps([G.cand_sure(j) for j in ${JSON.stringify(['1', 's', 'o', 'k', 
 
 // A doubt on the fish's box only withholds the photo's tile; the candidate stays sure (in play by itself, proposed by
 // the auto-sort) when nothing else is doubted; any other doubt keeps it out.
-test('unsure bb: the tile withheld, the candidate still in play by itself (fish_game.py cand_sure, autosort.js fishSure)', () => {
-  const {fishSure} = require('../autosort.js'),
+test('unsure bb: the tile withheld, the candidate still in play by itself (fish_game.py cand_sure, autosort.js treeSure)', () => {
+  const {treeSure} = require('../autosort.js'),
     j = u => ({jt: 'p1g0sm1', e: 4, k: 'best', bb: [0.1, 0.1, 0.9, 0.9], ...(u ? {u} : {})}),
     cases = [null, ['bb'], ['code'], ['bb', 'crop']];
   const got = JSON.parse(
@@ -763,7 +763,7 @@ print(json.dumps([[G.cand_sure(c), G.box_of('f', {}, {'f': c})] for c in cases])
     [false, null]
   ]);
   assert.deepStrictEqual(
-    cases.map(u => !!fishSure(j(u))),
+    cases.map(u => !!treeSure(j(u))),
     [true, true, false, false]
   );
 });
@@ -880,7 +880,7 @@ print(json.dumps(G.first_photos({'t52': json.loads(sys.argv[1])}, json.loads(sys
       )
     ).map(p => p.f);
   const got = first(L, cur);
-  // His cover on a juvenile: after the adults, unless he confirmed it (coverJ: autosort.js fishCoverJ).
+  // His cover on a juvenile: after the adults, unless he confirmed it (coverJ: autosort.js treeCoverJ).
   const LJ = L.map(p => (p.f === 'fish-s1-cand-300' ? {...p, jt: 'p1g0sm1j'} : p));
   assert.notStrictEqual(first(LJ, cur)[0], 'fish-s1-cand-300', 'a juvenile cover not confirmed: not first');
   const curJ = {fish: {genera: {'f:A': {cover: 'fish-s1-cand-300', coverJ: 'fi300'}}}};

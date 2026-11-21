@@ -20,7 +20,7 @@ way if you touch `save()` in `admin.js`.
   puts the candidate pass's sure judgments into his draft, for photos he has not decided, never replacing a value he
   gave, each one logged as auto (`curation.json` `auto`) and undoable one by one; his Publish sends them. Never make it
   write `curation.json` any other way.
-- The fish auto-sort (`autosort.js` `fishRun`) takes the same path into `curation.json` `fish`; it never writes
+- The fish auto-sort (`autosort.js` `treeRun`) takes the same path into `curation.json` `fish`; it never writes
   `fish.out`, Pierre's "Not this" (the iNaturalist experts got the species wrong: his click only, never an agent's), and
   never proposes again a photo he marked so.
 

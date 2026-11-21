@@ -656,7 +656,7 @@ async function lazyPart(b, base, fails) {
       CF = [CF0, ...FREE.filter(x => x !== CF0 && !autoCheck(x.f)).slice(0, 3)].map(x => x && x.f),
       CHK = (FREE.find(x => autoCheck(x.f)) || {}).f;
     if (CF.some(f => !f) || !CHK) throw new Error(`not enough undecided candidates for the auto-sort test: ${CF} ${CHK}`);
-    // The fish auto-sort (admin plan PR 4, autosort.js fishRun): FF[0] a sure add, FF[1] a sure near-duplicate, FF[2] a
+    // The fish auto-sort (admin plan PR 4, autosort.js treeRun): FF[0] a sure add, FF[1] a sure near-duplicate, FF[2] a
     // sure add Pierre marked Not this (curation.json fish out, his click only): never proposed again.
     // FC: a sure add drawn as a Check (autoCheck): logged, not applied, Pierre's to answer blind in the fish Candidates.
     // FF[3]: a photo the auto-sort set aside earlier (log r), judged since a sure add with a crop: brought back (Q438, b).
@@ -1152,14 +1152,14 @@ async function lazyPart(b, base, fails) {
         const dkT = await darkCards(p, '#view .adm-tile');
         if (dkT) fails.push(`${w}px Tree, dark theme: still light ${dkT}`);
         // The Chromis heading's default thumb (no genus cover of his): its species most seen around the instance's centre
-        // among the species with a reference-level adult photo in play, else with an adult photo (autosort.js fishCoverOf,
+        // among the species with a reference-level adult photo in play, else with an adult photo (autosort.js treeCoverOf,
         // the species records admin-fish.js registers; Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864).
         const cs = await p.evaluate(() => {
           const t = document.querySelector('.adm-fgen[data-gen="g:Chromis"] > .adm-fgenh .adm-hthumb'),
-            k = sid => fishNear(FISHC.species[sid])[0] * 1e6 + fishNear(FISHC.species[sid])[1],
+            k = sid => treeNear(FISHC.species[sid])[0] * 1e6 + treeNear(FISHC.species[sid])[1],
             rows = [...document.querySelectorAll('.adm-fgen[data-gen="g:Chromis"] .adm-row[data-sid]')].map(r => r.dataset.sid),
-            adult = q => !fishJuv(q, fuJ(q.f), DRAFT.fish),
-            withRef = rows.filter(sid => FISHC.plays.some(q => q.sp === sid && adult(q) && refLevel(fishRec(q, DRAFT.fish, fuJ)))),
+            adult = q => !treeJuv(q, fuJ(q.f), DRAFT.fish),
+            withRef = rows.filter(sid => FISHC.plays.some(q => q.sp === sid && adult(q) && refLevel(treePhotoRec(q, DRAFT.fish, fuJ)))),
             sids = withRef.length ? withRef : rows.filter(sid => FISHC.plays.some(q => q.sp === sid && adult(q)));
           if (((DRAFT.fish || {}).genera || {})['g:Chromis'] || !sids.length) return {skip: 1};
           return {
@@ -1432,7 +1432,7 @@ async function lazyPart(b, base, fails) {
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: an unknown node ${JSON.stringify(u)}`);
         // A species met only on the surprise cards (a wink family's; Pierre, 2026-11-08, ROADMAP "Surprise-only species"):
-        // its target is FISHT.wink and its section shows that many of its photos in play (or its featured ones), the rest
+        // its target is TREET.wink and its section shows that many of its photos in play (or its featured ones), the rest
         // behind "N more"; the heading still counts every photo; the chip opens them all, a redraw (as every tile click
         // makes) keeps them open, and it folds them again. Relations only: fish-game.json changes at each Publish.
         {
@@ -1444,7 +1444,7 @@ async function lazyPart(b, base, fails) {
                   c = s.querySelector('[data-fuwall]');
                 return {
                   sid: s.dataset.sid,
-                  wink: FISHT.wink,
+                  wink: TREET.wink,
                   tgt: (/\/(\d+)/.exec(t) || [])[1],
                   n: +((/(\d+) photos?/.exec(t) || [])[1] || 0),
                   feat: s.querySelectorAll('.adm-grid .adm-tile .adm-num, .adm-grid .adm-tile [data-num]').length,
@@ -1456,7 +1456,7 @@ async function lazyPart(b, base, fails) {
               })
             );
           if (!wids.length) fails.push(`${w}px Tree: no surprise-card family`);
-          // Every surprise-card family's page: its species at FISHT.wink; one with few photos (Pierre may bring the stock
+          // Every surprise-card family's page: its species at TREET.wink; one with few photos (Pierre may bring the stock
           // down at any Publish) has no fold, every photo shown; one with more than it shows has the chip.
           let W = [];
           for (const wid of wids) {
@@ -1639,7 +1639,7 @@ async function lazyPart(b, base, fails) {
             const U = FISHC.units,
               imr = u => !!(u.imr || u.imrWith || u.genera.some(g => g.imr)),
               c3 = U.filter(u => u.circle === 3),
-              P = fishPairs(U)[0];
+              P = treePairs(U)[0];
             return {
               all: U.map(u => u.id),
               c3: c3.map(u => u.id),
@@ -1760,8 +1760,8 @@ async function lazyPart(b, base, fails) {
               if (!on().pass.has(sid)) miss.push(k);
             });
             [
-              ['remove', fishReject],
-              ['exclude', fishExclude]
+              ['remove', treeReject],
+              ['exclude', treeExclude]
             ].forEach(([k, fn]) => {
               DRAFT.fish = fn(JSON.parse(F0), f);
               if (!on().pass.has(sid)) miss.push(k);
@@ -1845,8 +1845,8 @@ async function lazyPart(b, base, fails) {
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
         // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js treePid), the
         // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
-        // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
-        // admin.js has its own fishState, of a photo's words) and not in play.
+        // total against a count made here: the units' species' candidates nobody decided (autosort.js treeStateOf, on window:
+        // admin.js has a fishState of its own, of a photo's words) and not in play.
         const pw = await p.evaluate(() => {
           const D = fuData(),
             F = D.F,
@@ -1860,7 +1860,7 @@ async function lazyPart(b, base, fails) {
             all = 0;
           Object.entries(FISHC.cand).forEach(([orig, L]) =>
             L.forEach(x => {
-              const s = window.fishState(F, x.f, orig);
+              const s = window.treeStateOf(F, x.f, orig);
               if (s.st !== null || !sp.has(s.sid)) return;
               all++;
               if (!inPlay.has(treePid(x.f))) n++;
@@ -2458,7 +2458,7 @@ async function lazyPart(b, base, fails) {
           // (Juvenile: confirm as cover?), which makes it the cover in force, one Undo step.
           const jf = gc.t[3] || gc.t[0];
           await p.evaluate(f => {
-            DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', fishTag(fuJt(DRAFT.fish, f) || 'p1g0sl1', 'j'));
+            DRAFT.fish = treePhotoSet(DRAFT.fish, f, 'tags', treeTag(fuJt(DRAFT.fish, f) || 'p1g0sl1', 'j'));
             saveDraft();
             render();
           }, jf);
@@ -2490,7 +2490,7 @@ async function lazyPart(b, base, fails) {
             fails.push(`${w}px Families: ★ Cover on a juvenile ${JSON.stringify(d)}`);
           await p.evaluate(
             ([f, sid]) => {
-              DRAFT.fish = fishCover(DRAFT.fish, sid, f);
+              DRAFT.fish = treeCover(DRAFT.fish, sid, f);
               saveDraft();
               render();
             },
@@ -2539,8 +2539,8 @@ async function lazyPart(b, base, fails) {
           await p.evaluate(
             ([f, fam]) => {
               const t = fuJt(DRAFT.fish, f) || 'p1g0sl1';
-              DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', t.slice(7).includes('w') ? t : fishTag(t, 'w'));
-              DRAFT.fish = fishPick(DRAFT.fish, fam, k => {
+              DRAFT.fish = treePhotoSet(DRAFT.fish, f, 'tags', t.slice(7).includes('w') ? t : treeTag(t, 'w'));
+              DRAFT.fish = treePick(DRAFT.fish, fam, k => {
                 k.cover = f;
                 delete k.coverJ;
                 delete k.coverW;
@@ -6282,7 +6282,7 @@ async function lazyPart(b, base, fails) {
         const s = FISHC.byF[f].sid,
           u = FISHC.units.find(x => x.id === 'f:Wrasses'),
           to = u.species.find(x => x !== s && FISHC.species[x] && !FISHC.species[x].out);
-        DRAFT.fish = fishAdd(fishNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
+        DRAFT.fish = treeAdd(treeNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
         saveDraft();
         render();
         return to;
@@ -6300,7 +6300,7 @@ async function lazyPart(b, base, fails) {
         const s = FISHC.byF[f].sid,
           u = FISHC.units.find(y => y.id === 'f:Damselfishes'),
           to = u.species.find(y => FISHC.species[y] && !FISHC.species[y].out);
-        DRAFT.fish = fishAdd(fishNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
+        DRAFT.fish = treeAdd(treeNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
         saveDraft();
         render();
         return to;
@@ -7192,8 +7192,8 @@ async function lazyPart(b, base, fails) {
             .filter(g => new RegExp(`\\b${g}\\b`).test(V.textContent))
             .slice(0, 3),
           words: /Colon|recognised by|Far harder/.test(V.textContent),
-          // Coverage › Games' "+" total (autosort.js fishWaiting through fishCov): the same candidates waiting
-          cov: fishCov(FISHC.units, fuData().play, FISHC.species, FISHC.cand, DRAFT.fish || {}, fuJ).fam.reduce((t, r) => t + r.wait, 0),
+          // Coverage › Games' "+" total (autosort.js treeWaiting through treeCov): the same candidates waiting
+          cov: treeCov(FISHC.units, fuData().play, FISHC.species, FISHC.cand, DRAFT.fish || {}, fuJ).fam.reduce((t, r) => t + r.wait, 0),
           wide: document.documentElement.scrollWidth - innerWidth
         };
       });
@@ -7310,7 +7310,7 @@ async function lazyPart(b, base, fails) {
     // Photo stats › Taxa (admin-taxa.js; admin plan row 12), every subject's page: the taxa out of play with their reasons,
     // against a count made here from the files as the admin holds them (the corals' Key-only genera and game genera with no
     // photo in play; the tree subjects' species with an `out`, and those in the game with no photo in play or under their
-    // target, from autosort.js fishCov), a reason on every row, the corals' and the fish's lists not empty on the demo, a
+    // target, from autosort.js treeCov), a reason on every row, the corals' and the fish's lists not empty on the demo, a
     // reason chip narrowing the list and All bringing it back, a page on the Tree for a species in the game and none for
     // one out, no sideways scroll, dark in the dark theme. The sea slugs' list may be empty: the page then says None.
     for (const [h, subj] of [
@@ -7329,7 +7329,7 @@ async function lazyPart(b, base, fails) {
         let want, outIds;
         if (S.sheets) {
           const D = fuData(),
-            C = fishCov(FISHC.units, D.play, FISHC.species, FISHC.cand, DRAFT[S.admin.cur] || {}, fuJ);
+            C = treeCov(FISHC.units, D.play, FISHC.species, FISHC.cand, DRAFT[S.admin.cur] || {}, fuJ);
           outIds = FISHC.raw.species.filter(s => s.out).map(s => s.id);
           want = outIds.length + C.sp.filter(r => !r.n || r.obs < r.tgt).length;
         } else {
@@ -9030,8 +9030,8 @@ async function lazyPart(b, base, fails) {
           const out = {};
           for (const u of FISHC.units) {
             const e = fuFamM(u),
-              r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
-              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+              r = treeCoverRule(e.all, DRAFT.fish, u.id, fuJ),
+              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !treeJuv(q, fuJ(q.f), DRAFT.fish));
             if (p) out[u.id] = {cover: p.f};
             if (Object.keys(out).length === 3) break;
           }
@@ -9589,7 +9589,7 @@ async function lazyPart(b, base, fails) {
           };
         await sq.evaluate(() => (location.hash = '#fish/photos/look-alikes'));
         await swait(() => document.querySelector('#view .adm-fishmont .adm-mrow'));
-        const n0 = await sq.evaluate(() => fishPairs(FISHC.units).length);
+        const n0 = await sq.evaluate(() => treePairs(FISHC.units).length);
         let mr = await rowsOf();
         const head = await sq.evaluate(s => (document.querySelector(s + ' .adm-mhead b') || {}).textContent || '', mrow(KA));
         if (mr.length !== n0 + 1 || !/ \(added\)$/.test(head) || mr.filter(t => /\(added\)/.test(t)).length !== 1)
@@ -10414,7 +10414,7 @@ async function lazyPart(b, base, fails) {
           ADET = false;
           AOPEN = false;
         });
-        // The fish swiper's clicks (admin plan PR 5a, admin-fish.js; autosort.js fishAdd, fishReject, fishExclude): the
+        // The fish swiper's clicks (admin plan PR 5a, admin-fish.js; autosort.js treeAdd, treeReject, treeExclude): the
         // Check FC answered + Add (in play for its species with the pass's tags and ease, its log code timed, the
         // auto-sort's answer told: same), a photo in play taken out of play from its enlarged view, a candidate rejected
         // with ←, the next one excluded with ×, Undo taking the last click back; never "out" (Not this is Pierre's, PR
@@ -10532,7 +10532,7 @@ async function lazyPart(b, base, fails) {
               out: (DRAFT.fish.out || {})[f],
               add: f in (DRAFT.fish.add || {}),
               q: (x => x && {sid: x.sid, from: x.from})(
-                fishQueue(FISHC.cand, SUG.fish || {}, FISHC.species, DRAFT.fish).find(x => x.p.f === f)
+                treeQueue(FISHC.cand, SUG.fish || {}, FISHC.species, DRAFT.fish).find(x => x.p.f === f)
               ),
               toast: (document.querySelector('.adm-toast') || {}).textContent || ''
             }),

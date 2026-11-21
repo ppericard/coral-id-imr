@@ -149,7 +149,7 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   keys, the photo that does not load) is one; the queue, the card's parts and what each button writes come from the
   subject's builder in `CAND_BUILD`, picked by the same declared shape (`candBuild`): `flat` in `admin.js` (the corals'
   `candQueue`, quality and growth form, the cells' cap and the colony a photo replaces, Retest), `tree` in `admin-fish.js`
-  (`fishQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
+  (`treeQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
   listed above `CAND_BUILD`; the draft writes stay where they were (the corals' top level, a tree subject's part) and so
   do `cand.json` and every browser key (`tests/candbuild.test.js`; [admin-photos.md](admin-photos.md)). **One band review
   for every subject** (`admin.js` `renderReview`, and `renderDiff` for By difficulty): the gate, the bar, the bands and

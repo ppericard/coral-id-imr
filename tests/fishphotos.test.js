@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Fish candidate photos (tools/fetch_fish.py, data/fish-cand.json, tools/judging_fish.py, autosort.js fishSure): sources
+// Fish candidate photos (tools/fetch_fish.py, data/fish-cand.json, tools/judging_fish.py, autosort.js treeSure): sources
 // nearest first and abroad only when the Philippines are exhausted, free licences first, Pierre's own species-level
 // observations confirmed (rule S2), the pre-sort's sure decisions, the stricter "confirmed near Dauin" rule
 // (tools/build_fish.py near_dauin). Offline fixtures only: nothing here asks iNaturalist (the whole script runs on a
@@ -10,7 +10,7 @@ const test = require('node:test'),
   os = require('os'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {fishSure, autoCheck, AUTO} = require('../autosort.js');
+const {treeSure, autoCheck, AUTO} = require('../autosort.js');
 const ROOT = path.join(__dirname, '..');
 const py = (code, ...args) =>
   execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\nfrom fetch_fish import *\n${code}`, ...args], {
@@ -223,7 +223,7 @@ print(json.dumps([[x for x in 'abcdefgh' if gone(x)], sorted(excl)]))`);
   ]);
 });
 
-test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard photos go in; python sure_out is its rejects', () => {
+test('autosort.js treeSure: one visual vocabulary, sure decisions only; hard photos go in; python sure_out is its rejects', () => {
   // data/suggest.json "fish": jt the rubric's tags after the caps (judging/FISH.md), e the ease, k best / alt / dup.
   const J0 = [
     null,
@@ -242,7 +242,7 @@ test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard pho
     {jt: 'p1g0sm1', e: 4, k: 'best', c: [0, 0, 0.6, 1]},
     {jt: 'p1g0smk', e: 4, k: 'best', c: [0, 0, 0.6, 1]}
   ];
-  const S = J0.map(fishSure);
+  const S = J0.map(treeSure);
   assert.deepStrictEqual(S, [
     null,
     {keep: 'add', tags: 'p1g0sm1', ease: 5, phase: null, crop: null},
@@ -258,7 +258,7 @@ test('autosort.js fishSure: one visual vocabulary, sure decisions only; hard pho
     {keep: 'add', tags: 'p1g0sm1', ease: 4, phase: null, crop: [0, 0, 0.6, 1]},
     {keep: 'reject', why: 'other species'}
   ]);
-  // fetch_fish.py frees the room of what the pass sets aside for sure: exactly fishSure's rejects.
+  // fetch_fish.py frees the room of what the pass sets aside for sure: exactly treeSure's rejects.
   const pyv = J(`print(json.dumps([sure_out(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0));
   assert.deepStrictEqual(
     pyv,
@@ -1092,7 +1092,7 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   w('mem.json', {end: {s5: {at: '2026-11-01', parts: ['juvenile']}}});
   assert.deepStrictEqual(plan().skip, []);
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')), C, '--plan writes nothing');
-  // python sure_add is exactly autosort.js fishSure's adds.
+  // python sure_add is exactly autosort.js treeSure's adds.
   const J0 = [
     null,
     easy(5),
@@ -1106,7 +1106,7 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   ];
   assert.deepStrictEqual(
     J(`print(json.dumps([sure_add(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0)),
-    J0.map(j => !!fishSure(j) && fishSure(j).keep === 'add')
+    J0.map(j => !!treeSure(j) && treeSure(j).keep === 'add')
   );
   fs.rmSync(dir, {recursive: true, force: true});
 });

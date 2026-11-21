@@ -337,9 +337,9 @@ print(json.dumps([0, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbas
   assert.strictEqual(out[7], 1);
   assert.deepStrictEqual(out[8], ['inaturalist', null, 'fishbase'], 'the cover tagged, a stale tag removed, FishBase keeps its own');
   assert.deepStrictEqual(out[9], {jt: 'p1g0sm1r', e: 3, k: 'best'});
-  // autosort.js fishSure takes the flag (the fish auto-sort reads data/suggest.json "fish").
-  const {fishSure} = require('../autosort.js');
-  assert.deepStrictEqual(fishSure({jt: 'p1g0sm1r', e: 4, k: 'best'}), {keep: 'add', tags: 'p1g0sm1r', ease: 4, phase: null, crop: null});
+  // autosort.js treeSure takes the flag (the fish auto-sort reads data/suggest.json "fish").
+  const {treeSure} = require('../autosort.js');
+  assert.deepStrictEqual(treeSure({jt: 'p1g0sm1r', e: 4, k: 'best'}), {keep: 'add', tags: 'p1g0sm1r', ease: 4, phase: null, crop: null});
 });
 
 test('data/suggest.json: every tagged judged candidate carries the flag r, and only those', () => {

@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // Photo review › Light proposals (admin-light.js): the light re-judge's proposals (judging/fish-light-q308.json
-// curation) go into the admin's fish draft only through Accept (the re-judged tags and ease, fishSet) or Keep mine
+// curation) go into the admin's fish draft only through Accept (the re-judged tags and ease, treePhotoSet) or Keep mine
 // (fish.kept), and a proposal is open only while the admin's tags and ease are still the ones it was made against,
 // the photo still the admin's add in play and not kept; never written to curation.json by a tool (rule A1).
 const test = require('node:test'),
@@ -21,7 +21,7 @@ const test = require('node:test'),
     lightDiff,
     lightCounts
   } = require('../admin-light.js'),
-  {fishRun, fishUndo, autoCheck} = require('../autosort.js'),
+  {treeRun, treeUndo, autoCheck} = require('../autosort.js'),
   {merge3} = require('../core.js');
 
 const P = [
@@ -51,7 +51,7 @@ test('a proposal accepted into the draft sets its re-judged tags and ease, and i
 
 // A proposal that tags one of the admin's ★ covers juvenile: Accept asks whether to keep it as the cover (lightCovers
 // names its nodes); kept, the confirmation goes with the tags in one step (the confirmed juvenile cover,
-// docs/spec/fish.md; autosort.js fishCoverJ); a cover already confirmed is not asked about again.
+// docs/spec/fish.md; autosort.js treeCoverJ); a cover already confirmed is not asked about again.
 test('a proposal that makes his ★ cover a juvenile: its nodes named, the cover kept with the Accept', () => {
   const x = {photo: 'fish-s1-cand-1', curated: ['p1g0sl1', 3], rejudged: ['o1g0sl1j', 4]},
     F = {...draft(), tags: {...draft().tags, 'fish-s1-cand-1': 'p1g0sl1'}, genera: {'f:A': {cover: 'fi1'}, 'g:B': {cover: 'fi2'}}};
@@ -100,12 +100,12 @@ test('done detection: re-judged values, a later choice of his, a photo no longer
 
 test('an Accept on a photo the fish auto-sort put in play makes the fields his (an Undo of the auto decision keeps them)', () => {
   const f = [...Array(50).keys()].map(i => `fish-s9-cand-${i}`).find(x => !autoCheck(x)),
-    {F} = fishRun({s9: [{f}]}, {[f]: {jt: 'p1n0sl1', e: 3, k: 'best'}}, {s9: {id: 's9'}}, {}, '2026-11-14', true);
+    {F} = treeRun({s9: [{f}]}, {[f]: {jt: 'p1n0sl1', e: 3, k: 'best'}}, {s9: {id: 's9'}}, {}, '2026-11-14', true);
   assert.strictEqual(F.add[f], 's9');
   const x = {photo: f, curated: ['p1n0sl1', 3], rejudged: ['p1g0sl1', 5]};
   assert.deepStrictEqual(lightOpen([x], F).length, 1);
   const N = lightAccept(F, x),
-    U = fishUndo(N, f, 's9');
+    U = treeUndo(N, f, 's9');
   assert.strictEqual(U.add[f], undefined);
   assert.deepStrictEqual([U.tags[f], U.ease[f]], ['p1g0sl1', 5]);
 });

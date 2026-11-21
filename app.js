@@ -570,7 +570,7 @@ const cover = g =>
   (g.views.medium || [])[0] ||
   allPhotos(g)[0];
 // A juvenile photo (its phase ph, or the j flag of its tags: judging/FISH.md) is never a cover (docs/ARCHITECTURE.md
-// "Fish content"), but Pierre's ★ cover he confirmed on one (coverJ, autosort.js fishCoverJ): coverOk(k, p), photo p may
+// "Fish content"), but Pierre's ★ cover he confirmed on one (coverJ, autosort.js treeCoverJ): coverOk(k, p), photo p may
 // be node k's cover (k: its curation record). adultFirst(L): L's first adult photo, else its first.
 const JUV_PH = 'juvenile';
 const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7)));
@@ -578,7 +578,7 @@ const coverOk = (k, p) =>
   !!p && (!juvP(p) || !!(k && k.cover && k.coverJ && treePid(k.coverJ) === treePid(k.cover) && treePid(p.f) === treePid(k.cover)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
 // A watermarked photo (flag w: judging/FISH.md "Watermark") is a default cover only when the node has no other adult one;
-// Pierre's ★ cover on one stays his (rule A1, autosort.js fishCoverW; Home skips it: home.js homeOk).
+// Pierre's ★ cover on one stays his (rule A1, autosort.js treeCoverW; Home skips it: home.js homeOk).
 // coverFirst(L): the first of L that is neither a juvenile nor watermarked, else adultFirst(L).
 const wmP = p => !!p && /w/.test(String(p.jt || '').slice(7));
 const coverFirst = L => (L || []).find(p => !juvP(p) && !wmP(p)) || adultFirst(L);
@@ -591,7 +591,7 @@ const nearSeen = r => {
 // The default cover of a node with leaves (docs/ARCHITECTURE.md "The default cover of a node with leaves"): the leaf
 // most seen (seen, nearSeen; ties: observations, the easy order) among those with an adult reference photo (refLevel),
 // else an adult one, never watermarked while another exists; then his ★ cover of that leaf, else its easiest. L: the
-// photos in play (p.sp: the leaf), d: easyRank's difficulty, pick(leaf): his cover or null. autosort.js fishCoverOf is
+// photos in play (p.sp: the leaf), d: easyRank's difficulty, pick(leaf): his cover or null. autosort.js treeCoverOf is
 // the admin's copy (tests/fishcovers.test.js).
 function seenCover(L, seen, d, pick = () => null) {
   const R = easyRank(L, d),
@@ -1428,7 +1428,7 @@ function structSeen() {
 }
 // Pierre's choices per fish unit (docs/ARCHITECTURE.md "Pierre's choices per family in the app"; curation.json fish
 // genera {id: {cover, feat, ok}}) on the built units X: ★ Cover, the card's photo (coverP) while in play (by treePid),
-// else seenCover's; featP {species id: [photo]} (up to autosort.js FISHFEAT, his order), the sheets' first photos;
+// else seenCover's; featP {species id: [photo]} (up to autosort.js TREEFEAT, his order), the sheets' first photos;
 // neither changes the games (ok, ✓ Validated, is the admin's own). A genus with no
 // unit or a species gets its cover in X.covers {id: photo} while in play (learn.js genCover, treeSpPhotos).
 // F: fish.json; cur: the subject's part of the curation (core.js treeCur).

@@ -295,7 +295,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 ### Pierre's choices per family in the app
 
 `curation.json` `fish` `genera` `{unit id: {cover, feat: {species id: [f]}, ok}}` (the admin's Tree page, `autosort.js`
-`fishPick`) is applied after the build (`app.js` `treeBuild` → `treeCurate`, run again whenever the curation is):
+`treePick`) is applied after the build (`app.js` `treeBuild` → `treeCurate`, run again whenever the curation is):
 
 - **★ Cover** becomes the unit's `coverP`, which `cover()` reads first (as a coral genus's), so the Learn families list,
   the family sheet's hero and its look-alike cards, the first-meeting cards, My progress, a wink's surprise card and
@@ -304,7 +304,7 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   `landPool`, `bandPhoto`, `dayPick`), while it is among the unit's game photos (`views.wide`, matched by photo id:
   `core.js` `treePid`), else the default cover (below); `rankPhotos` never takes his pick back.
 - **Feature** becomes `featP` `{species id: [photo]}`, the photos still in play of that species in his order, which lead
-  that species' photos on the sheets (`learn.js` `treeSpPhotos`), as the admin's page shows them (`fishOrder`).
+  that species' photos on the sheets (`learn.js` `treeSpPhotos`), as the admin's page shows them (`treeOrder`).
 - **A genus's and a species' ★ Cover** sit in the same map under their `fish.json` ids, `{cover}` only (`g:Chromis`,
   `s091`), set on the Tree tab's node pages: ★ Cover on a genus's or a species' own page sets that node's cover; ★ Cover
   elsewhere (a report, Health) sets the family's. The rank words are read from `core.js` `SUBJECTS` `sheets`, broadest
@@ -313,8 +313,8 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   `renderTree`, its node pages `TREE_BUILD` `tree`); Publish counts them apart, rank by rank (`pubSummary`: fish family, fish genus cover, fish species
   cover).
 - **Another subject** (a nudibranch or plant key, or the corals at more than one rank) needs only data: its ranks in
-  `SUBJECTS` `sheets`, its tree on its unit page (the fish page's `fishUnits`: units, then nodes, then leaves), and its
-  covers read by node id at build (as `treeCurate` does from `fish.json`); the keys, `fishCover`, `fishDrop` and the
+  `SUBJECTS` `sheets`, its tree on its unit page (the fish page's `treeUnitsOf`: units, then nodes, then leaves), and its
+  covers read by node id at build (as `treeCurate` does from `fish.json`); the keys, `treeCover`, `treeDrop` and the
   Publish summary take any rank. The corals today have one rank (the genus: their covers are `curation.json`
   `genera[n].cover`) and no unit page of this kind.
 - In the app a genus unit (circle 1) takes its cover as its `coverP`, as a family (`cover()`: its Learn card,
@@ -324,14 +324,14 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   genera on a genus sheet (the genus sheet has no hero), and `treeSpPhotos` puts the species' cover first (then his
   featured photos, then the game's order): its tile, the first photo of its sheet.
 - A photo leaving play (Remove, ×, Not this, a count that takes it out, Out of play and Reject in Candidates:
-  `autosort.js` `fishDrop`) leaves every cover and featured list it was in, one Undo step. Neither touches the games'
+  `autosort.js` `treeDrop`) leaves every cover and featured list it was in, one Undo step. Neither touches the games'
   photos or their order. `ok` (✓ Validated) is the admin's own. A candidate he adds and picks at once shows in the app
   once the Candidate photos workflow has put it in `fish-game.json`; until then the card keeps the cover as before.
 - Tests: `tests/fishcovers.test.js`; `tests/fish.smoke.js` (the Learn cards and the family sheet's hero).
 
 ### A juvenile is never a cover
 
-At any rank, picked or not: juvenile = its phase word (`autosort.js` `fishJuv`: `fishPhase`, his phase and tags, else
+At any rank, picked or not: juvenile = its phase word (`autosort.js` `treeJuv`: `treePhase`, his phase and tags, else
 the pass's, else the source's life stage; in the app a record's `ph`, which `tools/fish_game.py` writes the same way, or
 its tags' juvenile flag: `app.js` `juvP`). Only the juvenile phase is barred: a male, female or intermediate photo is a
 cover like any other. The default rule alone never takes a juvenile.
@@ -340,24 +340,24 @@ cover like any other. The default rule alone never takes a juvenile.
   popular and recognisable than the adults, the Boxfishes' yellow juvenile for one). The confirmation sits next to the
   cover, `curation.json` `fish` `genera` `{node id: {cover: f, coverJ: f}}` (through the draft and Publish, rule A1;
   `core.js` `merge3` merges it key by key), and holds while `coverJ` names the cover's photo under either name
-  (`autosort.js` `fishCoverJ`), whatever the photo's tags say since, so it can be given before a judgement tags the photo
-  juvenile; a new pick, taking it off, Remove or an accepted Cover proposal drop it (`fishCover`, `fishDrop`,
+  (`autosort.js` `treeCoverJ`), whatever the photo's tags say since, so it can be given before a judgement tags the photo
+  juvenile; a new pick, taking it off, Remove or an accepted Cover proposal drop it (`treeCover`, `treeDrop`,
   `admin-covers.js` `coverAccept`).
-- Every reader takes a confirmed one as his cover in force: `fishCoverOf`, `fishLeafCover` and the species ★ inside
-  `fishCoverRule`; `nodeCover` (`by: 'mine'`, `jok`), the Cover proposals; the app's `treeCurate` (`app.js` `coverOk`:
+- Every reader takes a confirmed one as his cover in force: `treeCoverOf`, `treeLeafCover` and the species ★ inside
+  `treeCoverRule`; `nodeCover` (`by: 'mine'`, `jok`), the Cover proposals; the app's `treeCurate` (`app.js` `coverOk`:
   `coverP` and `TREEU.covers` marked `cj`), `seenCover`'s species pick, `learn.js` `spPhoto` and `spSheetPhotos`, Home's
   landscape tile (`home.js` `landOk`) and `tools/fish_game.py` `first_photos`.
 - In the admin, ★ Cover on a juvenile tile asks first ("This photo is a juvenile. Use it as the cover anyway?":
-  `admin-covers.js` `JUV_Q`; yes sets the cover with its confirmation, `fishCoverYes`, one Undo step). A pick on one he
-  has not confirmed (a judgement made after his pick tagged it) is ignored (`fishCoverOf`, the headings) and flagged:
+  `admin-covers.js` `JUV_Q`; yes sets the cover with its confirmation, `treeCoverYes`, one Undo step). A pick on one he
+  has not confirmed (a judgement made after his pick tagged it) is ignored (`treeCoverOf`, the headings) and flagged:
   "cover ignored" on the tile; "your ★ cover is now judged a juvenile: ignored until you confirm it" in its node's bar
-  with the one-click "Juvenile: confirm as cover?" (`fishCoverJOk`); and "N ★ covers now juvenile" in the bar of every
+  with the one-click "Juvenile: confirm as cover?" (`treeCoverJOk`); and "N ★ covers now juvenile" in the bar of every
   Tree page, linking to one (`admin-covers.js` `juvCovers`), its button then taking it off. The bar offers the same click
   while an open Light proposal would tag his ★ juvenile (`admin-light.js` `lightJOf`), and Accept on such a proposal
   asks the same question, naming the node (`lightCovers`; yes keeps the cover, confirmed in the same Undo step,
   `lightAccept`'s `keep`; no accepts the tags and leaves the cover ignored until he confirms it).
 - The admin finds his pick as the app does, under its name, else the same photo under its other name (`autosort.js`
-  `fishAt`, `core.js` `treePid`: a reference photo `fi<id>` and its candidate copy `fish-<species>-cand-<id>` are one
+  `treePhotoAt`, `core.js` `treePid`: a reference photo `fi<id>` and its candidate copy `fish-<species>-cand-<id>` are one
   photo, and the game plays one copy). In the app `treeCurate` ignores an unconfirmed juvenile pick (no `coverP`, no
   `TREEU.covers`), and every default skips juveniles while the unit has another photo (the card's cover in `treeCurate`
   and `rankPhotos`, the family hero and look-alike cards, the sibling genus cards: `seenCover`; `adultFirst`: a species'
@@ -369,13 +369,13 @@ cover like any other. The default rule alone never takes a juvenile.
 Its flag `w` (`judging/FISH.md` "Watermark"), at any level, while the node has an adult photo without one: the app's
 `seenCover` (the leaves compete on those, and his ★ cover of the leaf chosen is taken only without a watermark, kept or
 not), `learn.js` `spPhoto` (`app.js` `coverFirst`, his species ★ first all the same) and the sheet's first photo, the
-admin's `fishCoverRule` and `fishLeafCover` (`autosort.js` `fishWm`: the tags as the game reads them, `fishTagsMine`).
+admin's `treeCoverRule` and `treeLeafCover` (`autosort.js` `treeWm`: the tags as the game reads them, `treeTagsMine`).
 
 - His ★ cover on one stays his choice (rule A1), in force everywhere but Home (`home.js` `homeOk` skips it, kept or
   not).
 - Its node page asks "Watermark: keep as cover?" (`admin-covers.js` `nodeCover`'s `wm`, `WM_ASK`): **Keep** records
   `curation.json` `fish` `genera` `{node id: {cover: f, coverW: f}}` beside the cover, as `coverJ` (`autosort.js`
-  `fishCoverW`, `fishCoverWOk`; dropped with the pick by `fishCover`, `fishDrop`, `coverAccept`), and answers the node's
+  `treeCoverW`, `treeCoverWOk`; dropped with the pick by `treeCover`, `treeDrop`, `coverAccept`), and answers the node's
   open Cover proposal in the same Undo step (`coverWKeep`); **Choose another** opens Cover proposals, where the proposal
   of a watermarked cover he has not kept (`wm`) offers the rule's photo without one and stays open whatever an earlier
   Keep mine of the pair said (its Keep mine records `coverW` too). The app never reads `coverW`. A leaf has no proposal:
@@ -395,14 +395,14 @@ order's first (ROADMAP "The Tree tab").
 
 - The species most seen is read from `fish.json` `present` (`nearU` distinct Research Grade observers and `nearN`
   observations within the centre's radius, under their first names `dauinU` and `dauin` until the build writes the
-  generic ones: `app.js` `nearSeen`, `autosort.js` `fishNear`). The counts are computed once, at build (rule L13); the
+  generic ones: `app.js` `nearSeen`, `autosort.js` `treeNear`). The counts are computed once, at build (rule L13); the
   app only compares them. A genus's "Most met here" line (`app.js` `treeGenera`) follows the commonness index, not
   these counts.
 - One rule in two copies: the app's `app.js` `seenCover` (the card's photo: `treeCurate` without his pick, `rankPhotos`
   on the rated order; `learn.js` `nodeCover` over the species' photos in play, the sheet-only ones only when none is:
   the family sheet's hero, its look-alike cards, a genus sheet's sibling genus cards) and the admin's `autosort.js`
-  `fishCoverOf` (the family's and the genus headings' default thumbs on the Tree page; the species records it reads
-  registered by `admin-fish.js` through `fishSeenFrom`, since `admin.js` calls it with four arguments).
+  `treeCoverOf` (the family's and the genus headings' default thumbs on the Tree page; the species records it reads
+  registered by `admin-fish.js` through `treeSeenFrom`, since `admin.js` calls it with four arguments).
   `tests/fishcovers.test.js` holds them together on fixtures and, on the real files, checks that every unit without a
   pick shows its most seen species in the app and the admin alike.
 - A species' own cover is its one leaf: his pick, else its easiest photo; his node picks stay as they are (the default
