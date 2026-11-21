@@ -91,7 +91,8 @@ function question(subject, F, {mode, chs, k}) {
     fmtOf: C.fmtOf,
     fmtOff: C.fmtOff,
     pfmt,
-    genusDiff: () => 0
+    genusDiff: () => 0,
+    photoTimeQ: () => undefined // quiz.js photoTimeQ: no photo time term (before RTNET_SHEET)
   };
   vm.createContext(env);
   return vm.runInContext(QSRC + '\nq;', env);

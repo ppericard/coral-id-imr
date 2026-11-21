@@ -16,6 +16,14 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v217 (2026-11-22)
+
+the player's time net of the photo's (Pierre, 2026-11-21, Q452: «si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui […] il faut recalculer la progression de tous. On peut le faire en silence»): the embedded core.js weighs a right answer's ability steps by its time net of its photos' time term (`rtWeight` ti: z less the mean of the photos' served time terms, `ptimeQ`), and the scoring record keeps that term (`scoreRec` i, so this version stores it in the Scoring column); the full replay (`replay_`, `replayedAll_`) passes the corals' photos with their terms (`photos: st.photos`), so an answer logged without its term is netted by the terms served now; core.js rules version 13 replays every coral player once, silently, and fish rules version 6 and sea slug rules version 3 likewise (their replays read no pooled photo numbers: only answers logged with the term are netted); the app nets and logs the term only from this version (core.js `RTNET_SHEET`)
+
+## v216 (2026-11-21)
+
+The Alerts lines of a removed account no longer show under a new account that takes its name (rule D7, REE-36, the integrator's call, found in the Codex review of #996). An admin id is the name's, so after a delete, a merge or an archive the old account's lines that name it by id (the photos line, the left-out line's account, the self-delete cap's `sd:` line) read as the new account's. `redact_` now rewrites those ids in the Alerts tab as it already rewrites the names: to the admin id of what the account became (`aid_(into)`: its `~deleted <id>`, the name it joined, the archive's name), never a name written into an id slot. A deleted or archived account's lines are then no current writer's and stay left out; a merged-away account's lines read as the account it joined, as its `n:` line does. Lines of an account already deleted, merged or archived before this version are not rewritten
+
 ## v215 (2026-11-21)
 
 The embedded `core.js` gains `SUBJECTS` `admin.circles` on the fish and the sea slugs, the words the admin's Tree names each circle in beside its number (the fish: IMR course, After the course, Beyond the course; the sea slugs: Stars and most common, Next most common, Less common). The script's replays, boards and stamp read nothing of it: no player's progress moves and no new script version is needed by the app (integrator's call, easy to correct: the words of the admin's Tree, REE-186)

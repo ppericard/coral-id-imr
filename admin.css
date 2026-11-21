@@ -1479,6 +1479,34 @@ kbd {
   flex-wrap: wrap;
   gap: 4px;
 }
+/* Fish Look-alikes, species pairs (REE-46): read-only cards under the families' pairs; the two species' strips side by side
+   once there is room, the sources as links. */
+.adm-spairs > h3 {
+  margin: 20px 0 8px;
+}
+.adm-spairs > h3 small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.adm-spair .adm-marks {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+.adm-spair .adm-marks small,
+.adm-spair .adm-says {
+  color: var(--muted);
+}
+.adm-spair .adm-spconf {
+  margin: 0 0 8px;
+}
+.adm-spair .adm-msides {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.adm-spair .adm-msides > div {
+  min-width: 0;
+}
 .adm-mth {
   position: relative;
   padding: 0;
@@ -2561,6 +2589,23 @@ td.cov-c .cov-off {
 }
 .adm-tscroll {
   overflow-x: auto;
+}
+/* Analyses tables wider than a phone's card (the forgetting card's genus table, the trajectories' window table, Confusions' tables): the box scrolls
+   sideways and shows it does. A shadow on the edge that has more beyond it (the card's colour fades the shadow out at the
+   end of the scroll, `local`; the shadow itself stays with the box), in the ink colour so it reads in light and dark. The
+   header of a table that does not scroll up and down carries no background of its own, which would hide it; a `tall`
+   table's sticky header keeps one. */
+.adm-an .adm-tscroll {
+  --adm-tcard: var(--surface);
+  --adm-tsh: color-mix(in srgb, var(--ink) 42%, transparent);
+  background:
+    linear-gradient(to right, var(--adm-tcard) 30%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--adm-tcard) 30%, transparent) right center / 32px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--adm-tsh), transparent) left center / 16px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--adm-tsh), transparent) right center / 16px 100% no-repeat scroll;
+}
+.adm-an .adm-tscroll:not(.tall) .adm-tbl th {
+  background: transparent;
 }
 /* Errors & feedback, one-tap questions (admin.js pulseView): compact tables, numbers under right-aligned headers, each
    item's wording as written heading its answers, the share beside a count quiet. */
@@ -3861,13 +3906,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-htile figcaption > span {
   color: var(--muted);
 }
-.adm-hphotos .adm-hnum {
+.adm-hphotos .adm-hnum,
+.adm-fdiffg .adm-hnum {
   display: block;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-/* The photo's difficulty reading (recBadge) on its own line under right · answers. */
-.adm-hphotos .adm-hnum + .adm-hnum {
+/* The photo's difficulty reading (recBadge) on its own line under right · answers (Health's photos; By difficulty's prior, REE-62). */
+.adm-hphotos .adm-hnum + .adm-hnum,
+.adm-fdiffg .adm-hnum + .adm-hnum {
   margin-top: 2px;
 }
 /* Health's photos carry the tools of their page (Q309): the To do tiles' grid (adm-qgrid), one tile a row on a phone. */

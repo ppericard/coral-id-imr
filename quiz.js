@@ -687,6 +687,18 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
+// The player's time net of the photo's (core.js rtWeight ti, ptimeQ; docs/LEARNING.md "The player's time net of the
+// photo's"): a question's time term, the mean of its photos' served time terms (model.js PTM; a photo without one: 0),
+// which the scorer takes off a right answer's z and the scoring record keeps (i). Only with a script whose replay does
+// the same (core.js RTNET_SHEET, rule D4); otherwise undefined: the answer weighs and is logged as before.
+const ptNetOn = () => typeof sheetV === 'function' && sheetV() >= RTNET_SHEET;
+const photoTimeQ = ph =>
+  ptNetOn()
+    ? ptimeQ(
+        ph.map(p => p.f),
+        f => (PTM[f] || [])[0]
+      )
+    : undefined;
 // One answer recorder (docs/spec/quiz.md "What each mode counts"): what every counted answer does to the player's record
 // and the answer log, whatever its game: the photo quiz, the custom quiz and the Duel tab (answer, below) and a live game
 // (live.js liveLog). No screen: the caller keeps its own (the feedback, the prompts, the session's tally).
@@ -752,8 +764,10 @@ function recordAnswer({
     Rc,
     p: startP(),
     sec: tm.rt,
-    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does.
+    // The answer time weighs the steps (core.js rtWeight), as the sheet's replay does, net of the photos' time term
+    // (photoTimeQ above: the photos d0 averages; logged in sc as i; undefined before the script that replays it).
     timed: true,
+    ti: photoTimeQ(ph),
     // The format's offset (core.js fmtOff; 0 before the first ?stats=1 reply), logged in sc (o) with the rest.
     df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
     // A smaller fault's kind (Q394 A: typeBind z, a species' common name or its genus alone typed for its scientific
@@ -1559,7 +1573,8 @@ const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || to
 // the species' young look clearly different (sps[p.sp].jd.d: tools/fish_juv_differs.json; jd.sub is information only);
 // false, or no source either way (no jd, as on a subject without them), and no adult of its species in L: no card. The
 // photo's phase is Pierre's in the admin when he set one (core.js phaseOf; rule A1). The sex or colour phase card (core.js
-// phaseKind 'phase', an entry marked dimorph) is as before.
+// phaseKind 'phase': the phase flag p, on a species whose sexes or colour phases differ by a cited source, its entry
+// marked dimorph or the cited phase list: tools/fish_judge.py phase_flag) is as before.
 function juvCard(p, sps, L) {
   if (!p) return null;
   if (phaseKind(p) === 'phase') return {p, k: 'phase', q: phasePair(p, L)};
@@ -1603,10 +1618,16 @@ function phaseShow({p, k, q: q0}, n, brk) {
     q = q0 !== undefined ? q0 : phasePair(p, phasePool(n)),
     tx = photoTaxon([p], n),
     juv = k === 'juvenile',
+    // The cited phase list's word on the photo's species (fish.json species phs, tools/build_fish.py phase_sources): k
+    // 'sex' (its males and females differ) or 'phase' (its initial and terminal phases), src its sources ({t, u}).
+    phs = juv ? null : (((TREEU && TREEU.sps) || {})[p.sp] || {}).phs || null,
     // The sex or colour phase card's lines, under their source: the one the content editor gave with an edit of them
-    // (app.js treeGenera psrc, core.js contentApply esrc; rule C2), else IMR's, the presentation's own words. The juvenile
-    // card has none: the two photos say it.
-    lines = juv ? [] : g.phase || [],
+    // (app.js treeGenera psrc, core.js contentApply esrc; rule C2), else IMR's, the presentation's own words; for a species
+    // the cited list flags, only the lines on sexes or phases (an IMR family's juvenile line is not this card's), then
+    // the list's sources. The juvenile card has none: the two photos say it.
+    lines = juv ? [] : (g.phase || []).filter(l => !phs || /\b(?:fe)?males?\b|phases?\b/i.test(l)),
+    srcs = phs && (phs.src || []).length ? phs.src : [],
+    srcLink = x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)),
     w = phaseOf(p),
     word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
@@ -1614,7 +1635,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     credits = [p, q].filter(Boolean).map(credit).join('<br>'),
     title = juv
       ? `${word(p)} and ${q ? word(q).toLowerCase() : 'adult'}`
-      : w === 'intermediate'
+      : w === 'intermediate' || (phs && phs.k === 'phase')
         ? 'Careful: this species’ colour phases can look very different'
         : 'Careful: this species’ males and females can look very different';
   const d = cardShow({
@@ -1622,7 +1643,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">Source${srcs.length > 1 ? 's' : ''}: ${srcs.map(srcLink).join(', ')}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
@@ -1999,7 +2020,8 @@ const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target
 // mix-up, CONTRAST.GAP apart, from the first answers on.
 const CONTRAST = {P: 0.1, GAP: 2, Q: 3};
 // Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): one name, four photos, tap the one that shows
-// it. Where UNITS tiles exist (the fish), with the chance P (planPhoto), in the contrast slot: spaced as the duels.
+// it. Where UNITS tiles exist (the fish, the sea slugs), on the units of the subject's own rank and on its species, with
+// the chance P (planPhoto), in the contrast slot: spaced as the duels.
 const FIND = {P: 0.05};
 let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answers so far when the missed question showed}
   twoAt = -Infinity, // answers so far when the last contrast question (an Again, a duel or a Find the X) showed
@@ -2418,11 +2440,39 @@ function startAskShow(cur) {
           (b.onclick = () => {
             startSet(b.dataset.start, 'card');
             d.close('pick');
-            startBasicsOffer(cur) || quizPhoto(cur);
+            const next = () => startBasicsOffer(cur) || quizPhoto(cur);
+            namesAskShow(b.dataset.start, next) || next();
           })
       )
   });
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
+}
+// The names step (app.js UNITS namesStep, namesAsk): right after the first-launch answer c on its card, common names, scientific
+// names or both; go: what comes next (the basics offer, the quiz). An answer sets the What I learn rows (namesSet); Escape
+// leaves them as they play. Its own card class, not startq: the question's card is the one the sync closes (model.js
+// startMerge). Returns whether it showed.
+function namesAskShow(c, go) {
+  if (!namesAsk(c)) return false;
+  const N = namesDecl();
+  const d = cardShow({
+    kind: 'feature',
+    cls: 'namesq',
+    kick: 'Before you start',
+    title: N.q,
+    label: N.q,
+    body: `<p>${esc(N.lede)}</p>${namesOptsHtml(null)}`,
+    esc: () => (d.close('esc'), go()),
+    bind: d =>
+      d.querySelectorAll('[data-names]').forEach(
+        b =>
+          (b.onclick = () => {
+            namesSet(b.dataset.names);
+            d.close('pick');
+            go();
+          })
+      )
+  });
+  return true;
 }
 // "I'm new to corals" (CHOICE v.basics): the subject's basics module (Coral basics, Fish basics) offered first, about 5
 // minutes, then the quiz. Only while the module is not done, and only for a subject that has one (app.js basicsDue), in
@@ -2704,16 +2754,21 @@ function introStart(list) {
     L.push(openPick(fresh, fresh, met, {first: true}));
   return L.length ? L : levelTop(list);
 }
-// Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of the subject's own rank,
-// met and ready, have tiles (UNITS tiles); the others its look-alikes first (distractors), each photo drawn by photoSet
-// among its tiles. Scored as a 4-choice answer (another unit's photo tapped is that unit given, rule L2), logged |f. The
-// chance is drawn last, so a subject with no tile draws exactly as without it.
+// Find the X (FIND) is asked on the units of the subject's own rank and on its species, by common names or by scientific
+// names; a scientific genus keeps its usual questions (docs/LEARNING.md "Find the X slipped into the fish quiz").
+const findRank = n => !rankOf(n) || rankOf(n) === 'species';
+// Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of its class (findRank; the
+// class is rankKind: a species by its common name never stands with one by its scientific name), met and ready, have
+// tiles (UNITS tiles); the others its look-alikes first (distractors, among the units in play only: wide false, so no unit
+// of the rank outside them takes a place), each photo drawn by photoSet among its tiles. Scored as a 4-choice answer
+// (another unit's photo tapped is that unit given, rule L2), logged |f. The chance is drawn last, so a unit or a subject
+// with no tile draws exactly as without it.
 function planFind(cur, t, list, ease = 0, sel = null) {
   const tiles = UNITS[SUBJ.id].tiles;
-  if (rankOf(t) || !introReady(t) || !tiles(t).length) return null;
-  const others = list.filter(n => n !== t && !rankOf(n) && introReady(n) && tiles(n).length);
+  if (!findRank(t) || !introReady(t) || !tiles(t).length) return null;
+  const others = list.filter(n => n !== t && rankKind(n) === rankKind(t) && introReady(n) && tiles(n).length);
   if (others.length < 3 || !(Math.random() < FIND.P)) return null;
-  const ch = shuffle([t, ...distractors(t, others, 3, introReady)]),
+  const ch = shuffle([t, ...distractors(t, others, 3, introReady, false)]),
     tile = p => !!p.xc,
     set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', tile),
     find = ch.map(n => ({n, p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', tile).shown || [])[0]}));
@@ -3206,7 +3261,7 @@ function cqByIMR(play) {
     });
 }
 // The fish's groups: the identification groups of the regional key (TREEU.groups), in its order, as the Families page
-// shows them (learn.js viewFishList); a unit under a family (a species, a scientific genus) is in its family's group.
+// shows them (learn.js viewList); a unit under a family (a species, a scientific genus) is in its family's group.
 function cqByKey(play) {
   const gOf = n => {
       for (let u = GX(n), i = 0; u && i < 4; u = GX(u.parent), i++) if (u.group) return u.group;

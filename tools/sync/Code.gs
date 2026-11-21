@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 215 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 217 (2026-11-22). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 215;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 217;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -751,8 +751,9 @@ function rplMake_(who, mine, since, start, sid, g){
   // rules D8, D9); none made without the table (the app keeps its own and asks again).
   const vars = main ? null : subjVar_(sid);
   if (!main && !vars) return null;
-  // The corals' pooled stats from the snapshot (statsServed_), else stats_; other subjects replay without.
-  const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
+  // The corals' pooled stats from the snapshot (statsServed_), else stats_; other subjects replay without. photos: the
+  // photos' time terms for an answer logged without its own (core.js replayProgress photos, rtWeight ti; rules version 13).
+  const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
   return {rec: rep ? rep.P : {}};
 }
 // Writes the record at row at (0: a new row) of tab sh, in CHUNK-character parts.
@@ -2413,9 +2414,11 @@ function readEvents_(token, pages){
 // Players shows beside the name), so the page shows no name.
 // Rule D7: a line that names an account or a device (alertId_) is
 // served only while that id is a current writer's (alertIds_): a live account, or a device not signed in that still has
-// its answers. So a deleted ("~deleted <id>", redact_), merged-away or archived account's line is left out, as
+// its answers. So a deleted ("~deleted <id>", redact_) or archived account's line is left out, as
 // readEvents_ leaves out an archive's page summaries, and so is a device's once it signed in (its answers are the
 // account's then) or was deleted (anonDelete). The lines that name nobody (a: and ev: device keys, the global caps) stay.
+// redact_ rewrites a removed account's id lines (an id is its name's) to the id of what it became, so a merged-away
+// account's lines read as the account it joined, and a name taken again shows none of the old account's lines.
 // The tab itself is never changed here.
 function readAlerts_(token){
   if (!gate_(token, 'players', 'readAlerts')) return {ok: false, error: 'token'};
@@ -3354,14 +3357,24 @@ function anonReports_(name, into){
 // A removed name in the log tabs: Events' Message names a player in brackets ("app before 2026-11-03: load
 // (<name>)", oldApp_), Alerts names a capped name as "n:<name> (" (over_). Each mention becomes `into` (a deleted
 // account's "~deleted <id>", or the name a merged one joined). Case-blind, as names are.
+// Alerts also names an account by its admin id (aid_: the id is the name's, so a new account under the same name has the
+// same id): the photos line, the left-out line by the account the device signed in as, the self-delete cap's "sd:" line.
+// Those ids become the admin id of `into` (aid_(into): never a name in an id slot). A deleted account's lines then carry
+// the id of its "~deleted <id>", no current writer's (rule D7, readAlerts_), so a player who takes the name again does not
+// get the old account's lines; a merge or an archive carries them to the account it joined, as the "n:" lines go. The ids
+// are base64, case-sensitive: matched as written.
 function redact_(name, into){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), esc = String(name).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (!esc) return 0;
+  const a0 = aid_(name).replace(/[+/]/g, '\\$&'), a1 = aid_(into),
+    id = pre => [new RegExp('^(' + pre + ')' + a0 + '(?=[ ,])'), (m, p) => p + a1];
   let n = 0;
-  [['Events', 4, new RegExp('\\(' + esc + '\\)', 'gi'), '(' + into + ')'], ['Alerts', 2, new RegExp('n:' + esc + ' \\(', 'gi'), 'n:' + into + ' (']].forEach(([tab, col, re, to]) => {
+  [['Events', 4, [[new RegExp('\\(' + esc + '\\)', 'gi'), () => '(' + into + ')']]],
+    ['Alerts', 2, [[new RegExp('n:' + esc + ' \\(', 'gi'), () => 'n:' + into + ' ('], id('photos not of the unit shown: '),
+      id('left out of the statistics: device \\S+ signed in as '), id('limit reached: sd:')]]].forEach(([tab, col, rules]) => {
     const sh = ss.getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return;
     const rg = sh.getRange(2, col, sh.getLastRow() - 1, 1), v = rg.getValues(); let k = 0;
-    const nv = v.map(r => { const x = String(r[0]), y = x.replace(re, () => to); if (y !== x) { k++; return [safe_(y)]; } return [r[0]]; });
+    const nv = v.map(r => { const x = String(r[0]), y = rules.reduce((t, [re, f]) => t.replace(re, f), x); if (y !== x) { k++; return [safe_(y)]; } return [r[0]]; });
     if (k) rg.setValues(nv);
     n += k;
   });
@@ -3814,7 +3827,7 @@ function replayedAll_(users, dcol){
     }
     if (!rec) {
       // The player's own entry only (a player named constructor never takes the map's inherited member).
-      const R = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}}),
+      const R = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[k]: start} : {}}),
         rep = Object.prototype.hasOwnProperty.call(R, k) ? R[k] : null;
       rec = rep ? rep.P : {};
       const json = JSON.stringify(rec), parts = [];
@@ -4691,6 +4704,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // ?stats=1 entry): the app reads them only from a reply of this version or later (model.js ptmOf), so with an older
   // script every photo's difficulty stays as it was.
   const PTIME_SHEET = 213;
+  // The sync script version whose replay nets a right answer's time of its photos' time term (rtWeight ti, rules version
+  // 13) and keeps the term in the scoring record (scoreRec i): the app nets it, and logs it, only with this script or
+  // later (quiz.js ptNetOn), so an older script, which would drop the field and replay without it, never meets an
+  // answer the app weighed otherwise.
+  const RTNET_SHEET = 217;
   // The circle thresholds of the tree subjects (SUBJECTS gate; app.js treeGate): circle 3 at circle 1's Entries component
   // 55%, which simulated players reach at a 50% plain mean (docs/LEARNING.md "Fish: the global score, built"); without
   // that score, the plain mean.
@@ -7862,14 +7880,19 @@ const CORE_ = (function () { const module = {exports: {}};
   // The terms per photo: {photo: [time term, enlargement term, information]}, for the photos with either term not 0 to two
   // decimals (a photo left out counts 0). ?stats=1 serves them as the 6th to 8th elements of the photo's entry in photos
   // (ptimeInto), so a photo with no term keeps its five and the reply grows by a few bytes a photo.
+  const ptR2 = v => Math.round(v * 100) / 100 || 0;
+  // A photo's time term in the state T, as served (0 for a photo without answers).
+  const ptimeTerm = (T, f) => {
+    const p = T.P[f];
+    return p && p[1] > 0 ? ptR2(p[0] / (p[1] + 1 / PTIME.TAU2)) : 0;
+  };
   function ptimeOut(T) {
-    const out = {},
-      r2 = v => Math.round(v * 100) / 100 || 0;
+    const out = {};
     Object.keys(T.P).forEach(f => {
       const p = T.P[f],
-        a = r2(p[1] > 0 ? p[0] / (p[1] + 1 / PTIME.TAU2) : 0),
-        b = r2(p[3] > 0 ? p[2] / (p[3] + PTIME.NE) : 0);
-      if (a || b) out[f] = [a, b, r2(p[4])];
+        a = ptimeTerm(T, f),
+        b = ptR2(p[3] > 0 ? p[2] / (p[3] + PTIME.NE) : 0);
+      if (a || b) out[f] = [a, b, ptR2(p[4])];
     });
     return out;
   }
@@ -7888,6 +7911,22 @@ const CORE_ = (function () { const module = {exports: {}};
     Array.isArray(o) && o.length >= 3 && o.slice(0, 3).every(v => typeof v === 'number' && isFinite(v)) && o[2] >= 0
       ? (PTIME.C * (o[0] + o[1]) * W * infoAt(1, 4)) / (o[2] + W * infoAt(1, 4))
       : 0;
+  // A question's time term for the player's side (rtWeight ti; docs/LEARNING.md "The player's time net of the photo's"):
+  // the mean over its photos fs of each one's time term at(f), the first of the three served numbers (a photo without
+  // one: 0), in log seconds as z; neither C, the fade nor the enlargement term (they turn the terms into a difficulty).
+  // Rounded to 3 decimals as the scoring record keeps it (scoreRec i).
+  function ptimeQ(fs, at) {
+    const v = (fs || []).map(f => {
+      const x = at(f);
+      return typeof x === 'number' && isFinite(x) ? x : 0;
+    });
+    return v.length ? Math.round((v.reduce((t, x) => t + x, 0) / v.length) * 1000) / 1000 || 0 : 0;
+  }
+  // The time term of photo f in ?stats=1 photos (the 6th number of its entry, ptimeInto; none: 0).
+  const ptimeAt = photos => f => {
+    const o = photos && Object.prototype.hasOwnProperty.call(photos, f) ? photos[f] : null;
+    return Array.isArray(o) && o.length >= 6 ? o[5] : 0;
+  };
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf),
@@ -7897,7 +7936,9 @@ const CORE_ = (function () { const module = {exports: {}};
   // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
   // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
   // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule P4).
-  function eloReplay(rows) {
+  // on (optional, tools/abilityeval.js +P): called with each row and the time terms' state TM before the row moves them
+  // (the terms as the app read them then, ptimeTerm).
+  function eloReplay(rows, on) {
     const P = {},
       PG = {},
       G = {},
@@ -7928,6 +7969,7 @@ const CORE_ = (function () { const module = {exports: {}};
           e = g + (1 - g) * s,
           d = ok - e,
           n = ra[1];
+        if (on) on(r, TM);
         ptimeStep(TM, {
           w: r[0],
           fs,
@@ -10213,10 +10255,15 @@ const CORE_ = (function () { const module = {exports: {}};
     return n % 2 ? at((n - 1) / 2) : (at(n / 2 - 1) + at(n / 2)) / 2;
   }
   // The weight of a right answer's ability steps from its seconds, against the player's earlier times (G: P[LEVEL]).
-  function rtWeight(G, sec, k, good) {
+  // ti (step 2 of the time in the photo rating, Q452; docs/LEARNING.md "The player's time net of the photo's"): the
+  // question's photo time term (ptimeQ: how much longer than their habit everyone takes on its photos, in the same log
+  // seconds), taken off z, so a slowness the photo explains no longer counts against the player (and a speed it explains
+  // no longer counts for them); 0 by default, the rule before.
+  function rtWeight(G, sec, k, good, ti = 0) {
     const x = rtTenths(sec, k),
-      m = good && x > 0 ? rtMedian(G && G.rt) : null;
-    return m === null ? 1 : Math.min(RTIME.HI, Math.max(RTIME.LO, 1 - RTIME.K * (Math.log(x / 10) - m)));
+      m = good && x > 0 ? rtMedian(G && G.rt) : null,
+      t = typeof ti === 'number' && isFinite(ti) ? ti : 0;
+    return m === null ? 1 : Math.min(RTIME.HI, Math.max(RTIME.LO, 1 - RTIME.K * (Math.log(x / 10) - m - t)));
   }
   // The answer's seconds added to the player's times (after its own steps: z is against the earlier answers only).
   function rtAdd(G, sec, k) {
@@ -10328,8 +10375,8 @@ const CORE_ = (function () { const module = {exports: {}};
       delete s.L; // BKT's knowledge, before s.pg
       s.u = (s.u || 0) + 1;
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
-      // step weighed by its time against the player's earlier ones.
-      const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
+      // step weighed by its time against the player's earlier ones, net of its photos' time term (q.ti; 0 without).
+      const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok, Number(q.ti) || 0);
       eloStep(P, t, s, ok, dm - df, k, rw * zw, p, slopeOf(q), q.from);
       Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(slopeOf(q) * (th0 - dm))});
     }
@@ -10392,7 +10439,9 @@ const CORE_ = (function () { const module = {exports: {}};
   // recall R, g the recall Rc of the genus given, h the hint revealed after the answer, o the format's offset df (the
   // sheet's fmt as the game had it, so a replay never takes today's offsets for an answer scored with others); f, c, r,
   // g, h and o left out at their default (0, 0, 1, 1, none, 0); m, n, t, s the domain-score bar's (below); z the kind of a
-  // smaller fault (PART, Q394: 'cn' or 'g', left out for any other answer). Numbers to 3
+  // smaller fault (PART, Q394: 'cn' or 'g', left out for any other answer); i the photos' time term the answer's time was
+  // netted of (rtWeight ti, ptimeQ; kept even at 0: absent means a row logged before, whose replay takes the photos'
+  // terms served now, replayProgress photos). Numbers to 3
   // decimals: the game rounds them before scoring (scoreIn), so the replay meets exactly what it used. x: the record as
   // an object or its JSON (a sheet cell); null when it has no d (a row logged before the scorer, or broken).
   const SC_MAX = 50;
@@ -10426,6 +10475,7 @@ const CORE_ = (function () { const module = {exports: {}};
     if (scNum(o.s) !== null && o.s > 0 && scNum(o.s) !== 1) out.s = scNum(o.s);
     // z: the kind of a smaller fault (PART: cn, g; Q394), left out for any other answer.
     if (typeof o.z === 'string' && Object.prototype.hasOwnProperty.call(PART, o.z)) out.z = o.z;
+    if (scNum(o.i) !== null) out.i = scNum(o.i);
     return out;
   }
   // The game's inputs rounded as they are logged (scoreRec), before it scores with them.
@@ -10440,7 +10490,8 @@ const CORE_ = (function () { const module = {exports: {}};
     ...(typeof q.mu === 'number' ? {mu: r3(q.mu)} : {}),
     ...(typeof q.muc === 'number' ? {muc: r3(q.muc)} : {}),
     ...(typeof q.dt === 'number' ? {dt: r3(q.dt)} : {}),
-    ...(typeof q.S === 'number' ? {S: r3(q.S)} : {})
+    ...(typeof q.S === 'number' ? {S: r3(q.S)} : {}),
+    ...(typeof q.ti === 'number' && isFinite(q.ti) ? {ti: r3(q.ti)} : {})
   });
   // The record of a question scored by scoreAnswer (q after scoreIn, res its result): what quiz.js answer logs as sc.
   const scoreLog = (q, res) =>
@@ -10457,7 +10508,8 @@ const CORE_ = (function () { const module = {exports: {}};
       o: q.df,
       t: q.dt,
       s: q.S,
-      z: q.z
+      z: q.z,
+      i: q.ti
     });
 
   // Rules versions: progress is recalculated from the whole answer log, by the sheet, whenever the progress engine
@@ -10576,6 +10628,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "Live answers on units not opened count (rule L4, Pierre, 2026-11-18: live answers \"count without unlocking\"; the modes audit, step 3): a signed-in student's live answer on a unit the path has not opened is scored and logged like any answer, the unit staying closed until its card (it was dropped, never logged); its answers before the card are evidence, never the card's question (model.js askedOpen: the opening's pace, the card's question, readiness, the circles' gate). A log replays as before; every device takes the replay once",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 13,
+      at: '2026-11-21',
+      why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21: \"si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui [...] il faut recalculer la progression de tous. On peut le faire en silence\"): a right answer's time weight takes off z its photos' time term (rtWeight ti: the mean of the photos' served terms, ptimeQ), so a slowness the photo explains no longer counts against the player; the game logs the term in the scoring record (i), and the sheet's replay nets every answer logged without it by the photos' terms served now (replayProgress photos), so every player's progress is recalculated, silently",
+      // No card (rule D6; Q452: "en silence").
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -10619,6 +10678,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "The species by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md; Q397, Q398, Pierre, 2026-11-18) and the smaller faults (Q394 A, Pierre, 2026-11-17): the sheet's replay reads every species in play under its genus unit as a unit (treeSpUnits 'sci', sci:<species id>: the other scientific species of its family as its look-alikes, its genus the unit it starts from), so a wrong pick of one counts against it (rule L2); a common name typed for a species' scientific name counts as half a miss, its genus alone as a quarter, never a gain (core.js PART, the scoring record's z); the leaderboard's tree gives each of those species its own entry (treeBoardTree). A log with no such answer replays as before; every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 6,
+      at: '2026-11-21',
+      why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21), as the corals' rules version 13: a right answer's time weight takes off z its photos' time term as the game logged it (the scoring record's i, rtWeight ti). The sheet's replay of this subject reads no pooled photo numbers, so an answer logged before the term was logged keeps its weight: a log with no such answer replays as before; every player replayed at once, silently (rule D6)",
+      // No card (rule D6).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -10634,6 +10700,12 @@ const CORE_ = (function () { const module = {exports: {}};
       v: 2,
       at: '2026-11-19',
       why: "The species by their scientific names (docs/reviews/2026-11-18-species-step2-plan.md §2.6, §2.7; Q397, Q398, Pierre, 2026-11-18) and the smaller faults (Q394 A, Pierre, 2026-11-17): the sheet's replay reads every species under its genus unit as a unit (treeSpUnits 'sci', sci:<species id>, Goniobranchus sp. 5 as sci:xgoniobranchussp5; the other species of its family as its look-alikes, its genus the unit it starts from), so a wrong pick of one counts against it (rule L2); its genus alone typed counts as a quarter of a miss, never a gain (core.js PART). A log with no such answer replays as before; every player replayed at once, the leaderboard included (rules D8, D9), silently (rule D6)",
+      msg: null
+    },
+    {
+      v: 3,
+      at: '2026-11-21',
+      why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21), as the corals' rules version 13 and the fish's 6: a right answer's time weight takes off z its photos' time term as the game logged it (the scoring record's i). The replay reads no pooled photo numbers, so an answer logged before keeps its weight: a log with no such answer replays as before; every player replayed at once, silently (rule D6)",
       msg: null
     }
   ];
@@ -10955,6 +11027,9 @@ const CORE_ = (function () { const module = {exports: {}};
       conf = o.conf || {},
       since = o.since || {},
       fmt = o.fmt || {},
+      // photos: the ?stats=1 photos with their time terms (ptimeInto), for a row logged without its term (scoring record
+      // i): its time netted of the terms served now (rtWeight ti, ptimeQ); without them, 0 (the rule before).
+      tAt = ptimeAt(o.photos),
       memory = o.memory !== false,
       time = o.time !== false,
       // dom: false, the moving average; gd: the genus offsets ({genus: [offset, weighed answers]}, ?stats=1 gd) for the
@@ -11025,6 +11100,8 @@ const CORE_ = (function () { const module = {exports: {}};
         const pr = startPriorAt(own(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
+        // The photos' time term the answer's time is netted of: as the game logged it (sc i), else the terms served now.
+        q.ti = sc && typeof sc.i === 'number' ? sc.i : ptimeQ(fs, tAt);
         // the units a species shown or given starts from (treeReplayGen from: its family), as the game does (abilityOf)
         if ((gen[t] || {}).from) q.from = gen[t].from;
         if (wrong && gen[c].from) q.cfrom = gen[c].from;
@@ -11966,6 +12043,7 @@ const CORE_ = (function () { const module = {exports: {}};
     SEASLUGPAIRS_SHEET,
     FISHST_SHEET,
     PTIME_SHEET,
+    RTNET_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,
@@ -12100,6 +12178,10 @@ const CORE_ = (function () { const module = {exports: {}};
     ptimeOut,
     ptimeInto,
     ptimeOff,
+    ptimeQ,
+    ptimeAt,
+    ptimeTerm,
+    eloReplay,
     photoTimeOf,
     memRecalc,
     confAdd,

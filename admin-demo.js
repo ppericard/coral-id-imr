@@ -334,7 +334,7 @@
         '',
         'fish/learn/species/Chromis%20ternatensis'
       ),
-      // The fish ID marks' "Report or correct a line" (learn.js fishMarks): a sheet's report, not a game's.
+      // The fish ID marks' "Report or correct a line" (learn.js treeMarks): a sheet's report, not a game's.
       rp(
         9,
         'Eli Demo',
@@ -1115,7 +1115,7 @@
     // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd};
+      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos};
     // Each player's first-launch answer, as the admin's replay takes it (admin.js progOf starts; without it a rounding
     // can read a genus as stale).
     const starts = Object.fromEntries(
@@ -1382,7 +1382,7 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];

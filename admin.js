@@ -347,7 +347,12 @@ const keepHist = () => {
 addEventListener('pagehide', () => histT && histWrite());
 document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft.
-function saveDraft() {
+// auto: a save nobody clicked (the startup import of the site's flags, importFlags; the auto-sorts, saveRun). Any other
+// save is the admin's action (ACTED), from which on a background run is no Undo step of its own (saveRun).
+// docs/decisions/2026-11-21-undo-background-run.md.
+let ACTED = false;
+function saveDraft(auto = false) {
+  if (!auto) ACTED = true;
   memoReset();
   sweepFlags();
   if (snap !== null) {
@@ -358,6 +363,112 @@ function saveDraft() {
   FUT = [];
   snap = JSON.stringify(DRAFT);
   if (ASIG) ASIG_OF = snap;
+  if (!TOKEN) return;
+  putDraft();
+  draftAt = new Date();
+  keepHist();
+}
+// What a background run changed (run: the draft now, against before: the draft it started from), laid onto one Undo or
+// Redo step (onto), photo by photo. A run decides whole photos: its entries for one photo (an add, a rejection `seen`
+// under the photo's own name or its check key CK, an exclusion, a rating, its log line) are its decision on that photo.
+// They are laid onto the step only when the step holds exactly what before held for that photo, in every map the run
+// touched; else the step keeps the admin's own decision on it (an Add he made, then undid, stays an Add when redone).
+// A map the step lacks is made for the run's entries (undoing the click that made it keeps them), and a map the run
+// empties stays {} (merge3 reads a missing map as removed).
+const photoOfKey = k => String(k).replace(/^cand:/, ''); // CK's inverse
+const layDiff = (B, R, path = [], out = []) => {
+  const O = o => !!o && typeof o === 'object' && !Array.isArray(o),
+    J = v => JSON.stringify(v === undefined ? null : v);
+  new Set([...Object.keys(B || {}), ...Object.keys(R || {})]).forEach(k => {
+    const b = (B || {})[k],
+      r = (R || {})[k];
+    if (J(r) === J(b)) return;
+    if (O(r) && (O(b) || b === undefined)) layDiff(b, r, [...path, k], out);
+    else out.push({path: [...path, k], v: r});
+  });
+  return out;
+};
+// Everything the draft D holds under a key naming one of the photos P, whatever map it sits in: {photo: {path: value}}.
+const layLeaves = (D, P) => {
+  const out = {},
+    walk = (o, path) =>
+      Object.keys(o).forEach(k => {
+        const v = o[k],
+          p = [...path, k],
+          f = photoOfKey(k);
+        if (P.has(f)) (out[f] = out[f] || {})[JSON.stringify(p)] = v;
+        else if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, p);
+      });
+  if (D && typeof D === 'object') walk(D, []);
+  return out;
+};
+// The photo a change is about: the last key of its path naming one of the photos P, else none.
+const layPhoto = (path, P) => {
+  for (let i = path.length - 1; i >= 0; i--) if (P.has(photoOfKey(path[i]))) return photoOfKey(path[i]);
+  return null;
+};
+// In place: T is the step's own fresh copy (saveRun parses each step), so no map is copied (Codex on #1408: copying
+// fish.add, 5,803 entries, at every leaf froze the page for seconds).
+const layPut = (T, path, v) => {
+  let o = T;
+  for (let i = 0; i < path.length - 1; i++) {
+    const k = path[i];
+    if (!(o[k] && typeof o[k] === 'object' && !Array.isArray(o[k]))) o[k] = {};
+    o = o[k];
+  }
+  if (v === undefined) delete o[path[path.length - 1]];
+  else o[path[path.length - 1]] = v;
+};
+// The run's change (layPlan, once per run), laid onto each step (layRun). The photos it decided are those of its log
+// lines (an auto map's day: {photo: code}, autosort.js: the corals' auto, the tree subject's part's auto); a change about
+// none of them (a counter, a stamp) is laid key by key: only where the step holds what before held.
+const layPlan = (before, run) => {
+  const D = layDiff(before, run),
+    P = new Set();
+  D.forEach(d => {
+    const i = d.path.lastIndexOf('auto');
+    if (i >= 0 && d.path.length > i + 2) P.add(photoOfKey(d.path[i + 2]));
+  });
+  const by = {},
+    rest = [];
+  D.forEach(d => {
+    const f = layPhoto(d.path, P);
+    if (f) (by[f] = by[f] || []).push(d);
+    else rest.push(d);
+  });
+  return {by, rest, P, was: layLeaves(before, P), before};
+};
+const layAt = (o, path) => path.reduce((x, k) => (x && typeof x === 'object' ? x[k] : undefined), o);
+// onto: the step's own fresh copy, changed in place and returned.
+const layRun = (plan, onto) => {
+  const out = onto || {},
+    has = layLeaves(out, plan.P),
+    J = o => JSON.stringify(Object.entries(o || {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))),
+    V = v => JSON.stringify(v === undefined ? null : v);
+  Object.entries(plan.by).forEach(([f, L]) => {
+    if (J(has[f]) !== J(plan.was[f])) return; // the step's own decision on this photo stays
+    L.forEach(d => layPut(out, d.path, d.v));
+  });
+  plan.rest.forEach(d => V(layAt(out, d.path)) === V(layAt(plan.before, d.path)) && layPut(out, d.path, d.v));
+  return out;
+};
+// An auto-sort's run saved (autoRun, fishAutoRun). Before the admin's first action of this visit (ACTED): one Undo step,
+// as at every load. After it, the run lands among his steps: it is laid onto every Undo and Redo step (layRun) and onto
+// the draft, and is no step of its own, so Undo and Redo move his clicks only and never take the run back (its decisions
+// are taken back one by one: Auto › Undo).
+function saveRun() {
+  if (!ACTED || snap === null) return saveDraft(true);
+  memoReset();
+  const plan = layPlan(JSON.parse(snap), DRAFT),
+    lay = L =>
+      L.map(x => {
+        const m = layRun(plan, JSON.parse(x));
+        m.genera = m.genera || {};
+        return JSON.stringify(m);
+      });
+  HIST = lay(HIST);
+  FUT = lay(FUT);
+  snap = JSON.stringify(DRAFT);
   if (!TOKEN) return;
   putDraft();
   draftAt = new Date();
@@ -521,7 +632,7 @@ function importFlags() {
     n++;
   });
   store.set('reefid-photo-flags', null);
-  if (n) saveDraft();
+  if (n) saveDraft(true);
   return n;
 }
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
@@ -3604,7 +3715,18 @@ function renderFishMont() {
       }</article>`;
         }).join('')
       : '<p class="note">No look-alike pairs.</p>'
-  }</section>`;
+  }</section>${speciesPairsHtml(D, ph, UB)}`;
+  $v.querySelectorAll('[data-spz]').forEach(
+    b =>
+      (b.onclick = () => {
+        const B = [...b.closest('.adm-spstrip').querySelectorAll('[data-spz]')];
+        zoomSet(
+          B.map(x => SPZ[x.dataset.spz]),
+          B.indexOf(b),
+          q => lbCap(fuName(q.sid), q, '')
+        );
+      })
+  );
   const curE = k => ({...((DRAFT[TK] || {}).mont || {})[k]});
   const keep = e2 => {
     const y = window.scrollY;
@@ -3652,6 +3774,64 @@ function renderFishMont() {
         if (!!e.hide !== h) keep([b.dataset.k, {...e, hide: h}]);
       })
   );
+}
+// Fish Look-alikes, species pairs (REE-46, plan PR 10), read-only under the families' pairs: each pair the data declares
+// (fish.json lookalikes: tools/fish_lookalikes.json, autosort.js speciesPairs; the IMR course's lines are among the marks'
+// sources), the stage that resembles, the sources that state the resemblance, what tells the two apart on a photo (our words,
+// each with its sources: a mark with none is flagged, rule C2), the players' confusion of the two (the pooled [offered, mixed
+// up] at the species units of the answer log, as Pairs counts it: autosort.js speciesPairConf; read behind the page) and a
+// strip of each species' photos in play (the stage that resembles first). Adding or withdrawing a species pair is a question
+// of its own (ROADMAP); the file is hand-kept with its sources.
+const SPZ = {};
+let SPAIR_BUSY = false; // the answers are being read for the page (one read at a time; read again once ANS is dropped)
+function speciesPairsHtml(D, ph, UB) {
+  const SP = speciesPairs(FISHC.raw);
+  if (!SP.length) return '';
+  const S = ASUBJ;
+  if (!ANS && !SPAIR_BUSY) {
+    SPAIR_BUSY = true;
+    Promise.resolve(loadStats())
+      .catch(() => {})
+      .then(() => {
+        SPAIR_BUSY = false;
+        // drawn again only once the answers (or their refusal) are there: a read that leaves ANS empty never loops
+        if (ANS && cur === 'photos/look-alikes') render();
+      });
+  }
+  const conf =
+      ANS && !ANS.old
+        ? ofAns('conf:' + S.id, () => confusionOf(ofAns('rows-all:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id)))).pair
+        : null,
+    link = s => (/^https:\/\//.test(s.u) ? `<a href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${esc(s.t)} ↗</a>` : esc(s.t)),
+    sp = id => FISHC.species[id] || {},
+    nm = id => `${esc(sp(id).common || sp(id).name || id)} <i>${esc(sp(id).name || '')}</i>`,
+    famName = id => (UB[sp(id).family] || {}).name || '',
+    strip = (id, st) => {
+      const L = (D.play[id] || []).map(p => ({...p, sid: id})),
+        first = st === 'juvenile' ? [...L.filter(p => ph(p) === 'juvenile'), ...L.filter(p => ph(p) !== 'juvenile')] : L;
+      return first
+        .slice(0, 4)
+        .map(p => {
+          SPZ[p.f] = fuP(p);
+          return `<button type="button" class="adm-mth" data-spz="${esc(p.f)}" data-sp="${esc(id)}" title="${esc(fuName(id))}"><img ${crSrc(SPZ[p.f], 1)} alt="" loading="lazy"></button>`;
+        })
+        .join('');
+    },
+    conf1 = p => {
+      if (!ANS) return 'Players’ confusion: reading the answers…';
+      if (ANS.old) return 'Players’ confusion: needs this page’s GitHub token (per-player answers are admin-only).';
+      const c = speciesPairConf(p, conf);
+      return c
+        ? `Players’ confusion: mixed up ${c[1]} of ${c[0]} times offered together (species units).`
+        : 'Players’ confusion: never offered together at a species unit yet.';
+    };
+  return `<section class="adm-quality adm-mont adm-spairs"><h3>Species pairs <small>${SP.length} declared, read only</small></h3>${SP.map(
+    p => `<article class="adm-mrow adm-spair" data-pair="${esc(p.id)}"><div class="adm-mhead"><b>${nm(p.a)} / ${nm(p.b)}</b><small>${esc(famName(p.a))}${famName(p.a) === famName(p.b) ? '' : ' / ' + esc(famName(p.b))} · ${p.kind === 'confused' ? 'plain confusion' : `${esc(sp(p.a).common || sp(p.a).name)} resembles ${esc(sp(p.b).common || sp(p.b).name)}`}${p.st.a === 'juvenile' || p.st.b === 'juvenile' ? ` (${p.st.a === 'juvenile' ? esc(sp(p.a).common || sp(p.a).name) + ' juvenile' : ''}${p.st.a === 'juvenile' && p.st.b === 'juvenile' ? ', ' : ''}${p.st.b === 'juvenile' ? esc(sp(p.b).common || sp(p.b).name) + ' juvenile' : ''})` : ''}</small></div>
+      <p class="note adm-says">Stated by: ${p.says.map(link).join(' · ') || '<span class="warnc">no source</span>'}</p>
+      <ul class="adm-marks">${p.marks.map(m => `<li><b>${esc(sp(m.side === 'b' ? p.b : p.a).common || sp(m.side === 'b' ? p.b : p.a).name)}</b>: ${esc(m.t)} ${m.sourced ? `<small>(${m.src.map(link).join(', ')})</small>` : '<small class="warnc">no source</small>'}</li>`).join('')}</ul>
+      <p class="note adm-spconf">${conf1(p)}</p>
+      <div class="adm-msides"><div>${nm(p.a)}<div class="adm-mstrip adm-spstrip">${strip(p.a, p.st.a) || '<span class="note">No photo in play.</span>'}</div></div><div>${nm(p.b)}<div class="adm-mstrip adm-spstrip">${strip(p.b, p.st.b) || '<span class="note">No photo in play.</span>'}</div></div></div></article>`
+  ).join('')}</section>`;
 }
 // Scripts only some pages need are fetched when a page asks, not by every visit (the admin opens on Players › Activity,
 // which needs none of them): admin.html lists them as inert tags (type text/plain, data-lazy="group group"), kept there so
@@ -4266,7 +4446,7 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   fishtodo: `<p>Everything on the fish side that needs your eye, most urgent first: a red <b>Health</b> line when Health finds fish photos everyone misses or families or genera players are stuck on (nothing when all is well), the players' <b>reports</b> about fish (and those about no subject), the fish photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days, and last the fish <b>photos</b> work as counts, each opening its page: the <b>candidates</b> waiting in Candidates (the auto-sort's Checks apart, and those of a species at its target or set aside, as the swiper hides them), the open <b>cover proposals</b> and <b>light proposals</b> (Photo review), and Coverage's To do (under its All | IMR filter; a click opens Coverage › Games on those rows). The corals' photo sections (out of the presence rule, share-alike, Featured rated Poor, the judging agent's suggestions) have no fish counterpart here: the fish candidates already carry the pass's judgment. Each part works as in its own view: <b>Reports</b>, <b>Errors</b>, <b>Health</b>.</p>`,
-  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the photos' difficulty is on Photo stats › Difficulty). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
+  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the photos' difficulty is on Photo stats › Difficulty). Under each photo: the share right, its answers and the players who miss it out of those who answered it, then its <b>prior</b>: how hard the game expected it before any answer, read as the share of starting players who would recognise it, from its judged ease (yours, else the judging pass's) and its family's offset in the sheet's ratings (hover for both; the ease alone while the ratings are not read), to set beside what the answers say. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>data/points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} more, whoever took them): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
@@ -4304,7 +4484,7 @@ const HELP = {
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo. <b>Far harder than their genus</b> (Pierre, 2026-11-06, Q192; the photo exposure study): the photos in play whose own part of the difficulty (the photo's difficulty minus its genus's offset) is ${FAR.D} logits or more after ${FAR.N} answers or more, the farthest first: where a typical photo of the genus is recognised 4 times in 5, such a photo is about 1 time in 2. Look at each: unclear, mislabelled, or the wrong view (Photo review). Per-photo ratings stay rough at this traffic (the study: about 50 answers rate one photo to ±0.5), so the goal is the first 3 to 5 answers per photo, enough for this flag; a photo shown with other views shares each answer with them, so it needs more answers to stand out.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
-  diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
+  diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Beside it, <b>prior</b>: the share of starting players who would recognise a typical photo of its genus before any answer (the genus's offset in the same ratings; the corals' photos have no judged ease), to set against what the answers made of this photo. Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. <b>Crop</b> (a photo with an online original): drag the frame or its corners; ⟲ and ⟳ turn the photo a quarter left or right, 0° puts it back upright; Save keeps both, one Undo step. The site's files are cut, then turned, after Publish (the Candidates' Crop is the same). An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
@@ -4322,7 +4502,7 @@ const HELP = {
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
   lightprop: `<p>The light re-judge's proposals (rubric 6, Q308: a fish lit by a flash or a lamp on a dark background is good light, not a night shot): the photos you added whose tags and ease still hold the earlier judgement (<code>judging/fish-light-q308.json</code>). Each shows what would change, in words: struck through yours, in bold the re-judged value (light <b>g</b> good, <b>d</b> dim: the fish itself poorly lit, <b>n</b> night livery: a night colour pattern; the full codes in the tooltip). <b>One judgement per photo</b>, last: a photo judged twice (as a reference photo and as a candidate) whose two judgements disagreed was judged again once (<code>judging/fish-one-judgement.json</code>); where you added it with the earlier tags and ease, the new ones are proposed the same way. <b>Accept</b> writes the re-judged tags and ease into your draft (when they make one of your ★ covers a juvenile, it first asks whether to keep it as the cover anyway: yes keeps it, confirmed; no takes the tags and the cover is ignored until you confirm it on its Tree page); <b>Keep mine</b> keeps yours and the proposal goes; <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that photo's tags or ease elsewhere. The view leaves the switch once none is left.</p>`,
   coverprop: `<p>Your covers of a family or a genus (★ Cover on the Tree tab) where the default cover rule now picks another photo: the node's species with a reference photo most seen around the instance's centre by distinct observers, then your ★ cover of that species, else its easiest reference photo, never a juvenile, never a photo with a watermark while the node has an adult photo without one. Each shows yours and the rule's, with the species each shows and why the rule picks it. A cover of yours with a watermark says <b>Watermark</b>: its proposal (a photo without one) stays until you answer it, even if you kept that pair before. <b>Accept</b> makes the rule's photo your cover in your draft; <b>Keep mine</b> keeps yours, and that pair of photos is not proposed again (if the rule later picks another photo, it may come back; on a watermarked cover it is also the Tree page's <b>Keep</b>); <b>Accept all</b> takes every one shown (one step). Undo steps back; Publish sends them. A proposal also goes when you change that cover or the rule comes to agree. Nodes without a cover of yours get the rule anyway. The view leaves the switch once none is left.</p>`,
-  fishmont: `<p>The look-alike pairs of families in force, one row each: the pairs the IMR course compares (its lines, from fish.json), less those you withdrew on the Tree, plus those you added there, marked <b>(added)</b> (your draft's, as on the Tree). A withdrawn pair's photos stay chosen and come back with it. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in its Tree page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
+  fishmont: `<p>The look-alike pairs of families in force, one row each: the pairs the IMR course compares (its lines, from fish.json), less those you withdrew on the Tree, plus those you added there, marked <b>(added)</b> (your draft's, as on the Tree). A withdrawn pair's photos stay chosen and come back with it. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in its Tree page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p><p><b>Species pairs</b> (below, read only): the pairs between two species the data declares (tools/fish_lookalikes.json, read 2026-11-18), each with the species and their families, the stage that resembles, the sources that state the resemblance, what tells the two apart on a photo (our words, each with its sources; one with none shows <b>no source</b>), the players' confusion of the two (how often they were mixed up when offered together at their species units, from the answer log; it needs this page's GitHub token) and a strip of each species' photos in play, the stage that resembles first (click to enlarge). Adding or withdrawing a species pair is not done here yet.</p>`,
   units: `<p><b>Key</b> | <b>WoRMS</b> (at the top right): the same species in two classifications, each with one parent per node. <b>WoRMS</b>: the reference taxonomy (WoRMS, from fish.json), its classes, orders, suborders, families, subfamilies, genera and species as WoRMS names and ranks them, which are not always the key's (Labridae holds the wrasses and the parrotfishes; Pycnochromis five of the key's Chromis). A species is the same page in both views (its photos, its ★ cover, its tools); the switch keeps it. A WoRMS taxon's page is read-only for now: its cover is the default by the rule (its species with a reference photo most seen near the centre), and its children's cards show theirs; ★ Cover on a WoRMS taxon waits for your decision on how to store it. A count of tree problems in the bar (a missing parent) says fish.json's taxonomy needs a refresh.</p><p><b>Key</b>: the key's classification as a tree at the left (Allen et al. 2015, the key in force): its groups, the book's families, their genera and species, each with its rank in grey, its species and photos in play. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. Every node opens a page of its own: a group, its families' cards; a family, a genus or a species, its photos in play. Above the bar, the path from the group (each step a link); in the bar, the select of the node's children (its genera, its species: the way down on a phone, where the tree is hidden) and the family select. The families: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. <b>Tag…</b> beside it shows only what carries one tag, combined with All / IMR, in both views: a <b>Circle</b>, the <b>Look-alikes</b> (every family in a pair the IMR course compares, or one pair), <b>Needs photos</b> (species under their target), <b>Needs work</b> (families not ready to validate), <b>Draft</b> (what changed since your last Publish); each option says how many species it shows, the tree, the family select, the cards and the drill-down follow it, and it is remembered in this browser. <b>Tag…</b> again shows everything. Each page's bar shows its cover in force and why: your ★, else the default (for a family or a genus, its species with a reference photo most seen near the centre, then your ★ cover of that species, else its easiest reference photo; for a species, its first photo: featured, then the easiest), with a link to Cover proposals when the rule picks another photo than yours. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (${FISHT.obs}, ${FISHT.top} for the PDF's most sighted, ${FISHT.wink} for a species met only on the surprise cards) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). A surprise-card species shows ${FISHT.wink} photos, its featured ones first, then the surprise card's own; <b>N more</b> shows the rest, still in play. <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the cover of the page's node: the family's on its page, the genus's on the genus's, the species' on the species'; each genus and species heading shows its cover in force, ringed when it is yours, and its name opens its page; a photo shows which covers it is; the family's card and sheet, the genus's card, row and sheet cards, the species' first photo on the sheets; a juvenile only once you confirm it: on a juvenile photo it asks first; a pick on one you have not confirmed is ignored and flagged, its page offers <b>Juvenile: confirm as cover?</b> (also while a Light proposal would tag your cover juvenile), and it is counted in the bar of every page: <b>N ★ covers now juvenile</b> opens one; a photo with a watermark is never a default cover, but your ★ on one stays yours: its page asks <b>Watermark: keep as cover?</b>, <b>Keep</b> records your answer, <b>Choose another</b> opens its Cover proposal (a photo without one), and Home skips it either way), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> (on the family's page) once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. A species whose candidates come from another iNaturalist taxon (the Pacific form iNaturalist splits off) says so under its name, here and on its Candidates card; its IMR name is kept. Each species heading counts its candidates still waiting; they are added in Candidates. Publish sends it all (curation.json fish).</p><p><b>Sheet</b> (above the photos, on a family, a genus or a species the app gives a sheet; not on a genus the app opens as its species or its family, a surprise-card family or a WoRMS taxon): every text of its sheet you may edit, as the content editor (Pierre, 2026-11-15, Q359), with the text players see. <b>IMR</b> marks the IMR course's words: editable, the original kept; the sheet keeps their label. <b>✎</b> opens the text (a list one line per item; an empty box hides it), with an optional <b>Source</b> and <b>Link</b> shown with it on the sheet; when you fill an empty text with no source, Save asks once (<b>Save without source</b> then saves). <b>⊘</b> hides it, <b>↺</b> brings the original back (<b>Original</b> shows it beside yours). When the built text changed after your edit (<b>Base changed</b>), players keep yours and the box shows the three: when you edited, now, yours; <b>Keep mine</b>, <b>Take the new</b> or <b>Edit</b>. <b>In the base</b>: the build now says what you wrote; <b>Remove</b> drops your copy. An edit that cannot apply (its node gone, a text the page no longer has, the wrong kind) shows its text with <b>Remove</b>. <b>N sheet edits to check</b> in the bar of every Tree page opens the first. One click each, Undo steps back; Publish sends them (curation.json fish content) and counts them per rank.</p><p><b>Structure</b> (above the Sheet, on a family's page; not a surprise-card family): its <b>Circle</b> and its <b>Look-alikes</b>, as the content editor (Pierre, 2026-11-15, Q359). <b>1</b>, <b>2</b>, <b>3</b> (the subject's own words for each circle under its number, and in the rows and the Circle tag: the fish's are the IMR course, After the course and Beyond the course) or <b>None</b> (off the game: its species leave the game and the score) sets the circle in force; <b>↺</b> brings the built one back (<b>Original</b> says which). Each look-alike pair of the family: <b>Withdraw</b> takes it out (traps, duels, the exam's comparisons and the progress's look-alike weight), <b>↺</b> brings it back; <b>Add a look-alike…</b> picks the other family, then an optional <b>Source</b> and <b>Link</b> (left empty, Save asks once; <b>Save without source</b> then saves); its words are each sheet's Look-alike line, which shows at once. In the <b>Tag…</b> filter, <b>Any look-alike</b> offers <b>+ Pair</b> (both families chosen), one pair its state and the same tools; the pairs you withdrew or added say so, and <b>No circle</b> lists the families you took off the game. A built value changed since your edit (<b>Base changed</b>): yours stays in force; <b>Keep mine</b> or <b>Take the new</b>. One click each, Undo steps back. Publish asks once, saying it changes every player's path and progress: each player's progress is recalculated from their answers (Q363), and the leaderboard follows. Where the units are genera and the pairs join genera, the Structure box is on each genus's page (a genus the app opens as its family or its one species included), with no Circle, and <b>Tag…</b> › <b>Any look-alike</b> lists the genus pairs; there, each look-alike line on the Sheet (<b>Look-alike: …</b>) is the list of the sources that name the pair, one a line, its words then <b>|</b> and its link.</p><p><b>Names</b> (on a family's page, folded; where the subject has a name index, the fish: a name typed on a family question is read as the family it names): the names this family carries that another family carries too, and the kind words (razorfish, toby), each with the families it reaches. <b>Accepted</b> gives the name to the whole family, whatever part of it the name designates; <b>Often</b> the same, and the feedback names the family gently; <b>Off</b> takes it away from this family (it stays known, never a slip of another family). A click on the pressed one brings the built reading back. In the <b>Tag…</b> filter, <b>Shared names</b> shows the families with at least one such name. One click each, Undo steps back; Publish sends them (curation.json fish names). The lists of a species' names are not edited here yet.</p>`,
   ctree: `<p>The genera as a tree, in two classifications, each with one parent per node; a genus is the same node in both, and the switch at the top right keeps it. <b>Key</b>: the IMR lecture groups (1 to 11), each with its genera, numbered first, then the ★ genera with the group of their look-alikes, as the app shows them; <b>No IMR group</b> holds Millepora, the bonus genera and the genera of the Coral Finder book (never its growth-form boxes: genera are never grouped by growth form). <b>WoRMS</b>: the family WoRMS gives each genus (data/names.json, refreshed by tools/taxonomy.py), which is not always the lecture's (Pachyseris, Plerogyra); a count of tree problems in the bar means a genus WoRMS has no record of. ▸ unfolds a node (remembered in this browser); with the keyboard, ↑ ↓ move, → unfolds, ← folds or goes up, Enter opens. A group or a family opens its genera's cards (each as on the genus list: cover, number or ★, photos on the site, what it needs, ✓ and the draft's dot); a genus, its cover and why, what it needs, and all its photo tools (the former Photos › Genera tab, folded into the Tree, 19 Nov 2026): its photos per view with ★ Cover, Feature, Remove, Not this, × and the rest (see the notes below), Validated, and, when there are any, <b>Removed from the site</b> (<b>Put back</b> returns one) and <b>Excluded</b> (<b>Restore</b> puts one back; the ones that name no genus any more wait on the first page of the view). A group or a family lists those of its genera. No cover above the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only; <b>Tag…</b> beside it shows only the genera with one tag, in both views: ★ Starred, the <b>Look-alikes</b> (any, or one pair of Photos › Look-alikes), <b>Needs work</b>, <b>Candidates waiting</b>, <b>Draft</b> (changed since your last Publish); each option says how many genera it shows, and it is remembered in this browser.</p>`,
   mont: `<p>The classic look-alikes in force (pairs the IMR lecture or the Coral Finder text compare, less those you withdrew on the Tree, plus those you added there, marked <b>(added)</b>; a withdrawn pair's photos stay chosen and come back with it), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
@@ -4737,7 +4917,7 @@ const REVIEW_BUILD = {
                 const [d, n, r] = R[p.f];
                 return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${photo(p)}</button>
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${genusPrior(p.genus)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
               },
               bind(scope) {
@@ -4965,10 +5145,23 @@ const REVIEW_BUILD = {
               PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
               rows = diffByAnswers(PH, SF.min, DIFF_ORDER);
             if (rows.length && !FISHC) fishLoad().then(again);
-            const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
+            // The prior beside the answers (REE-62): the photo's ease in force (the admin's, else the pass's) and its unit's
+            // offset from the subject's own ratings (?stats=1&s=, read once behind the page: the page draws without it).
+            // (read once: DIFF_TRY, which sheetAgain('stats') empties with the ratings, so new offsets are read again)
+            const tried = (DIFF_TRY[S.id] = DIFF_TRY[S.id] || {});
+            if (rows.length && !OWNST[S.id] && !tried.prior) {
+              tried.prior = 1;
+              loadOwnStats(S).then(again);
+            }
+            const V = FISHC ? readView(fuData().F) : null,
+              easeOf = f => (V ? ((V.ease || {})[f] != null ? V.ease[f] : (fuJ(f) || {}).e) : null),
+              plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
               num = o => {
                 const m = missedBy(PH[o.f]);
-                return `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>`;
+                return (
+                  `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>` +
+                  priorHnum(treePrior(S, easeOf(o.f), OWNST[S.id], FISHA.ph[o.f].entry))
+                );
               };
             return {
               cls: ' adm-fdiff',
@@ -6994,7 +7187,7 @@ function autoRun() {
   });
   if (!(R.add + R.reject + R.exclude + R.check)) return R;
   DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
-  saveDraft();
+  saveRun();
   return R;
 }
 // The fish auto-sort (autosort.js fishRun): the same path for the fish candidates (data/fish-cand.json, judged in
@@ -7091,7 +7284,7 @@ async function fishAutoRun() {
     {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn, f => passAt(C, f));
   if (F === DRAFT[AK]) return R;
   DRAFT[AK] = F;
-  saveDraft();
+  saveRun();
   render();
   return R;
 }
@@ -8587,6 +8780,8 @@ async function start() {
     const f = x => JSON.stringify(base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
     HIST = kept.hist.map(f);
     FUT = kept.fut.map(f);
+    // Steps kept from before the reload are the admin's: this load's runs land after them (saveRun).
+    ACTED = HIST.length + FUT.length > 0;
   }
   snap = JSON.stringify(DRAFT);
   if (TOKEN) {
@@ -8603,14 +8798,15 @@ async function start() {
   });
   const keep = changed().length;
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
-  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
+  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run
+  // before the admin's first action, else laid onto his steps (saveRun).
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const sugRun = () => {
     const ar = TOKEN && autoRun();
     if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar), 3500, true), keep ? 4000 : 0);
     // The fish auto-sort once the first page is drawn and the page is idle (an admin who opened on a Players page: once its
     // suggestions are in, sugLater): it reads data/fish-cand.json, 9 million characters, which would share the line and the
-    // main thread with the first page. One Undo step. At every admin load (rule A1), whatever page the admin stays on; a
+    // main thread with the first page. One Undo step, or laid onto his steps once he acted (saveRun). At every admin load (rule A1), whatever page the admin stays on; a
     // Publish that comes before the idle time runs it first (asortDone), so its proposals are in what is sent.
     const fishLater = () =>
       (ASORT_P =
@@ -9056,6 +9252,34 @@ function diffByAnswers(PH, min, order) {
     .filter(([, o]) => o && o.n >= min)
     .map(([f, o]) => ({f, n: o.n, ok: o.ok, r: o.ok / o.n}))
     .sort((a, b) => s * (a.r - b.r) || b.n - a.n || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0));
+}
+// The prior beside the answers on By difficulty (REE-62, plan PR 9): a photo's difficulty before any answer on it, as the
+// app starts it (autosort.js photoPrior: its unit's offset in the subject's own ratings + (3 - ease) x calib.ease), read as
+// "recognised by N%" like the learned reading. treePrior(S, ease, own, unit): {d, ease, off} or null when there is neither a
+// judged ease nor an offset; own is OWNST[S.id] (loadOwnStats; none or old: the ease alone, off null). Pure: tests/priordiff.test.js.
+// The corals' prior on their tile: the genus's offset (GD, the sheet's ?stats=1 gd), the photos having no judged ease; nothing
+// before the genus has one.
+function genusPrior(genus) {
+  const o = (GD[genus] || [])[0],
+    d = photoPrior(null, o, 0);
+  return d === null
+    ? ''
+    : `<span class="adm-src" title="Before any answer on it: its genus's offset (the corals' photos have no judged ease)">prior</span>${recBadge(d, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}`;
+}
+function treePrior(S, ease, own, unit) {
+  const off = ((own && !own.old && own.gd) || {})[unit],
+    o = off ? off[0] : null,
+    d = photoPrior(ease, o, calibOf(S).ease);
+  return d === null ? null : {d, ease: ease > 0 ? ease : null, off: Number.isFinite(o) ? o : null};
+}
+// Its caption line: the prior as a reading, with the ease it comes from (the same shape as Health's reading line).
+function priorHnum(P) {
+  if (!P) return '';
+  const why = [
+    P.ease ? `judged ease ${P.ease} of 5` : 'no judged ease',
+    P.off != null ? `unit offset ${rawNum(P.off)}` : 'unit offset not read'
+  ].join(', ');
+  return `<span class="adm-hnum adm-hprior">prior ${recBadge(P.d, {short: 1, raw: 'prior difficulty', more: why})}${P.ease ? ` · ease ${P.ease}` : ''}</span>`;
 }
 
 /* ---------- Photo stats › Overview ---------- */
@@ -10405,8 +10629,9 @@ function unitRpl(S, f, ph, gm, cur) {
 const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).pct : pctOf(P, M.slate));
 // replay units: end
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
-// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's.
-const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD} : {});
+// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's; and the photos with
+// their time terms (photos: st.photos, core.js replayProgress photos: an answer logged without its term).
+const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD, photos: STATS || {}} : {});
 // One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
 // rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
 function progOf(u, full, S = replayS()) {

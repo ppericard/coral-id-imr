@@ -58,7 +58,7 @@ test('every sheet draws through the frame and uses the shared parts, none its ow
     viewGenus: block(LEARN, 'function viewGenus(name) {', '\n}\n', {file: 'learn.js'}),
     treeFamily: block(LEARN, 'function treeFamily(f) {', '\n}\n', {file: 'learn.js'}),
     treeGenus: block(LEARN, 'function treeGenus(g) {', '\n}\n', {file: 'learn.js'}),
-    fishSpecies: block(LEARN, 'function fishSpecies(s) {', '\n}\n', {file: 'learn.js'})
+    treeSpecies: block(LEARN, 'function treeSpecies(s) {', '\n}\n', {file: 'learn.js'})
   };
   for (const [fn, body] of Object.entries(sheets)) {
     assert.ok(body.includes('sheetPage('), `${fn} draws through sheetPage`);
@@ -78,7 +78,7 @@ test('every sheet draws through the frame and uses the shared parts, none its ow
   );
   assert.ok(sheets.treeGenus.includes('cuesBox(g,') && sheets.treeGenus.includes('looksSection('), 'a genus: the cues and the look-alikes');
   assert.ok(
-    sheets.fishSpecies.includes('looksSection(') && sheets.fishSpecies.includes('moreDetails('),
+    sheets.treeSpecies.includes('looksSection(') && sheets.treeSpecies.includes('moreDetails('),
     'a species: the look-alikes and the fold'
   );
 });
