@@ -9068,13 +9068,18 @@ async function lazyPart(b, base, fails) {
         await cwait(() => /No cover proposal left/.test(document.getElementById('view').textContent));
         let s = await cst();
         if (s.views.includes('Cover proposals') || s.tiles.length) ce.push(`no cover of his: ${JSON.stringify(s)}`);
-        // Three families with a default, each given as his cover an adult photo in play that is not the rule's.
+        // Three families with a default, each given as his cover an adult photo in play that is not the rule's, nor
+        // watermarked (a watermarked cover's card adds its own "Watermark" line, checked at Choose another).
         const picks = await cq.evaluate(() => {
           const out = {};
           for (const u of FISHC.units) {
             const e = fuFamM(u),
               r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
-              p = r && e.all.find(q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+              p =
+                r &&
+                e.all.find(
+                  q => q.src && treePid(q.f) !== treePid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish) && !fishWm(q, fuJ(q.f), DRAFT.fish)
+                );
             if (p) out[u.id] = {cover: p.f};
             if (Object.keys(out).length === 3) break;
           }
