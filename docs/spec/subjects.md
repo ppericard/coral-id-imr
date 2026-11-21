@@ -166,7 +166,9 @@ from `data.json` `imrg`) instead of reading the corals' data themselves.
   bar on its sheets, `learn.js` `treeBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
   `progHelp` and `achHelp` (the ? texts of the quiz, My progress and the achievements; the corals keep theirs inline),
   `hello` (the cards that introduce the subject, [below](#the-subjects-card)), `about` (its lines in About and credits,
-  shown only to a player it is open to, `subjMine`), `door` and `land` (Home's words and tiles), `pick` and `tour` (the
+  shown only to a player it is open to, `subjMine`; `about.cites`, `{lead, in}`, makes References list the sources its
+  data file cites, from the parts `in`, by `home.js` `aboutCites`: the sea slugs; the corals' and the fish's lines are
+  written by hand), `door` and `land` (Home's words and tiles), `pick` and `tour` (the
   welcome tour's words), `basics` (its basics module), `mystery` (who sees the ? tiles), `startFb` (false: no
   level-change card), `photo(f)` (a photo by its name, for the admin's "Bad photo" flag), `gen`, `vars` and `st` (its
   units, variant table and structure stamp for the sheet's replay).
