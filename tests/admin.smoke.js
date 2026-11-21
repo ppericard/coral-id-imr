@@ -3048,6 +3048,16 @@ async function lazyPart(b, base, fails) {
         ).length
       }));
       if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+      // The app's forgetting, genus by genus (ROADMAP "Analyses: next views"): the demo's players have no rusty comeback
+      // question, so its card is there, folded, and says what it waits for (rule A5)
+      if (h === 'analyses/learning/after-a-break') {
+        const cb = await p.evaluate(() => {
+          const c = document.getElementById('anc-the-app-s-forgetting-genus-by-genus');
+          return c && {folded: c.classList.contains('folded'), text: c.textContent.replace(/\s+/g, ' ').slice(0, 200)};
+        });
+        if (!cb || !cb.folded || !/Not enough data yet\. \d/.test(cb.text) || !/about 200 from 20 players/.test(cb.text))
+          fails.push(`${w}px Analyses #${h} forgetting by genus: ${JSON.stringify(cb)}`);
+      }
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
       if (h !== 'analyses/learning/after-a-break' && h !== 'analyses/learning/profiles') {
