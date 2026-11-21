@@ -194,3 +194,45 @@ test('Look-alikes lists the pairs in force: a withdrawn pair gone, an added one 
     ab = montPairs(S, Fb, {pairs: {[N]: e(1, null)}}).find(p => p.k === N);
   assert.ok(ab && !ab.added);
 });
+
+// The Tree names each circle in its subject's own words (SUBJECTS admin circles; admin-content.js circleWord, circleLab).
+test('circle words: the number first and the subject’s words with it, the number alone where none are declared', () => {
+  const {circleWord, circleLab} = require('../admin-content.js');
+  assert.deepStrictEqual(
+    [1, 2, 3].map(c => circleLab(S, c)),
+    ['1 · IMR course', '2 · After the course', '3 · Beyond the course']
+  );
+  assert.strictEqual(circleLab(S, null), 'None');
+  assert.strictEqual(circleWord(S, 4), '');
+  // a subject with no words, or none for that circle, is its number (never a made-up word)
+  assert.strictEqual(circleLab({admin: {}}, 2), '2');
+  assert.strictEqual(circleLab(undefined, 2), '2');
+  assert.strictEqual(circleLab({admin: {circles: {2: 'Second'}}}, 1), '1');
+  assert.strictEqual(circleLab({admin: {circles: {2: 'Second'}}}, 2), '2 · Second');
+});
+
+test('circle words: every circle a subject’s units carry, and every circle it lets the editor set, has words', () => {
+  const {circleWord} = require('../admin-content.js'),
+    seaslug = JSON.parse(fs.readFileSync(path.join(ROOT, 'seaslug.json'), 'utf8')),
+    files = {fish: F, seaslug};
+  C.SUBJECTS.forEach(s => {
+    const W = s.admin && s.admin.circles;
+    if (s.structure && s.structure.circle) assert.ok(W, `${s.id}: its editor sets circles, so it names them`);
+    if (!W) return;
+    // words are real, short and told apart
+    const w = Object.keys(W).map(c => W[c]);
+    assert.ok(
+      w.every(x => typeof x === 'string' && x.trim() && x.length <= 24),
+      `${s.id}: words`
+    );
+    assert.strictEqual(new Set(w).size, w.length, `${s.id}: two circles with the same words`);
+    if (s.structure && s.structure.circle) s.structure.circle.of.forEach(c => assert.ok(circleWord(s, c), `${s.id}: circle ${c}`));
+    // the circle values of its built file's units
+    const R = files[s.id],
+      seen = new Set();
+    assert.ok(R, `${s.id}: a built file to check`);
+    ['families', 'genera', 'species'].forEach(k => (R[k] || []).forEach(u => u.circle != null && seen.add(u.circle)));
+    assert.ok(seen.size, `${s.id}: circles in its file`);
+    seen.forEach(c => assert.ok(circleWord(s, c), `${s.id}: circle ${c} of its units has no words`));
+  });
+});
