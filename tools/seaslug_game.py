@@ -136,9 +136,8 @@ CUR = 'seaslug'
 CIRCLES = (1, 2, 3)
 # The sea slugs' rubric code without its ease digit, as data/suggest.json keeps it (tools/fish_judge.py RUBRICS "seaslug").
 TAGS = re.compile(r'^[pohtdv][01][gd][0-3][smb][lms][1sokx][jcawf]*$')
-# The counts an automatic route may put in play (core.js TREE_COUNT.play): one sea slug, several of its kind, another
-# species that cannot be taken for it (rule P3).
-PLAY_COUNT = '1so'
+# The counts an automatic route may put in play (core.js TREE_COUNT.play) are the fish's (tools/fish_game.py PLAY_COUNT): one
+# animal, several of its kind, another species that cannot be taken for it (rule P3).
 # At most this many downloads a run (--max; the fish's FISH_MAX), circle 1 first.
 MAX = int(os.environ.get('SEASLUG_MAX', '5000'))
 
@@ -202,10 +201,7 @@ def sure(j):
     """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric): no
     unsure field but the box, whose doubt only withholds the photo's tile (fish_game.unsure; box_of)."""
     import fish_game as FG
-    if not j or j.get('egg') or FG.unsure(j) or j.get('k', 'best') not in ('best', 'alt'):
-        return False
-    jt, e = j.get('jt') or '', j.get('e')
-    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
+    return not (j or {}).get('egg') and FG.cand_sure(j, TAGS, 'best')
 
 
 def juv(jt):
@@ -231,7 +227,8 @@ def tile_tags(jt):
 def phase(jt):
     """The photo's phase as a fish record's (tools/fish_game.py phase: the juvenile flag, with no phase of Pierre's nor
     of the pass, which the sea slugs' rubric never names, and no source stage on a sea-slug candidate)."""
-    return 'juvenile' if juv(jt) else ''
+    import fish_game as FG
+    return FG.phase({}, '', {}, {'jt': jt})
 
 
 def on_r2(o):
@@ -241,8 +238,9 @@ def on_r2(o):
 
 def stale(o, c, ro=0):
     """Whether a photo's files on R2 lack its crop c or its rotation ro (Pierre's, curation.json seaslug rot: tools/photos.py
-    stale)."""
-    return o.get('cr') != c or (o.get('ro') or 0) != (ro or 0)
+    stale, the fish's rule)."""
+    import photos
+    return photos.stale(o, c, ro)
 
 
 def part(cur):
@@ -254,10 +252,11 @@ def part(cur):
 def crop_mine(F, f):
     """(set, crop): whether Pierre cropped photo f (his full-photo [0, 0, 1, 1] included: the judge's crop then never
     applies, as tools/fish_game.py plan reads his), and the crop the files are made with (None for the whole photo)."""
+    import fish_game as FG
     c = (F.get('crop') or {}).get(f)
     if not (isinstance(c, list) and len(c) == 4):
         return False, None
-    return True, (list(c) if list(c) != [0, 0, 1, 1] else None)
+    return True, FG.crop_of(F, f)
 
 
 def taxa(groups, fams):
@@ -333,7 +332,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     F = part(cur)
     top = set((cur or {}).get('exclude') or {})
     gone = FG.gone_ids(cur, CUR)
-    decided = {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
+    decided = FG.decided_of(F)
     V_ = names_of(names)
     vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
@@ -511,9 +510,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     adds, have = {}, set()
     for f, unit in sorted((F.get('add') or {}).items()):
         p = by_f.get(f)
-        if (not p or not FG.fish_on(F, f, unit) or (unit not in sp_of and unit not in gens) or f in top
-                or FG.pid(f) in {FG.pid(x) for x in top}
-                or FG.other_out((F.get('tags') or {}).get(f), (sug.get(f) or {}).get('jt'))):
+        if not p or (unit not in sp_of and unit not in gens) or not FG.add_ok(F, f, unit, top, sug):
             continue
         adds.setdefault(unit, []).append(rec(p, unit, sug.get(f), False))
         have.add(FG.pid(f))
