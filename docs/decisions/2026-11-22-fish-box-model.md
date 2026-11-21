@@ -58,7 +58,7 @@ question (REE-202), not decided here.
   lost); drift redo 22 of 24 agree (both disagreements Sonnet's "no box" where Opus 5.5 high boxed).
 - Wave 4 (batches 27-37, #1448): 512 photos of 142 species with no tile, 440 boxed, 72 left without a box (14.1%, tiles
   lost); drift redo 20 of 22 agree (both disagreements Sonnet's "no box" where Opus 5.5 high boxed).
-- Recovery (#PR5): Opus 5.5 high redid the 159 photos of waves 2-4 left without a box, blind to Sonnet's answers, under a
+- Recovery (#1451): Opus 5.5 high redid the 159 photos of waves 2-4 left without a box, blind to Sonnet's answers, under a
   rule written before the run. It boxed 41 and left 118 without one: **on the hardest photos, Sonnet 5.5 medium's "no
   box" was right 74% of the time** (by Opus 5.5 high's answer). Every one of the 41 was looked at blind: 28 ok, 7 unsure,
   5 two fish, 1 cut. The rule's safeguard (more than a quarter failing) triggered at 13 of 41 (31.7%); the integrator
