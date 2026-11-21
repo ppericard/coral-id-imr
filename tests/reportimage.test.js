@@ -35,6 +35,15 @@ const signedIn = () => {
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
   return s;
 };
+// Rule D2's intent: the name is never written. Checked on the cells, not on the whole JSON: the random 8-character
+// anonymous id may contain the name's letters by chance (REE-203).
+const noName = (I, player, name) => {
+  assert.ok(
+    I.rows.flat().every(c => c !== name),
+    'no cell is the name'
+  );
+  assert.notStrictEqual(player, name, 'the Player cell is the anonymous id, not the name');
+};
 const post = (s, reports, who = {rname: 'Ana', rpin: '1234'}) => s.post({...who, reports});
 
 test('Code.gs: an image is kept in its own tab, in chunks under the cell limit, the report row names it', () => {
@@ -51,12 +60,23 @@ test('Code.gs: an image is kept in its own tab, in chunks under the cell limit, 
   assert.deepStrictEqual(I.getRange(1, 1, 1, 5).getValues()[0], ['Id', 'Time', 'Player', 'Type', 'Bytes']);
   assert.deepStrictEqual([v[0], v[3], v[4]], ['r1', 'image/jpeg', size + 4]);
   assert.match(String(v[2]), /^[A-Za-z0-9+/]{8}$/, 'the anonymous id, never the name');
-  assert.ok(!JSON.stringify(I.rows).includes('Ana'));
+  noName(I, v[2], 'Ana');
   const parts = v.slice(5).filter(x => x !== '');
   assert.strictEqual(parts.length, 3);
   assert.ok(parts.every(p => p.length <= 45000));
   // The rows as the connector hands them back decode to the same bytes (tools/report_image.js)
   assert.deepStrictEqual(tool.decode(I.getRange(1, 1, 2, 9).getValues(), 'r1'), jpeg(size));
+});
+
+test('Code.gs: an anonymous id that contains the name by chance is not a leak (REE-203)', () => {
+  const s = signedIn();
+  require('vm').runInContext("aid_ = () => 'xAnaYz12'", s.ctx); // the id pinned to one containing «Ana»
+  assert.strictEqual(post(s, [rep('n1', {img: img(40)})]).img.n1, 1);
+  const I = s.sheets['Report images'],
+    player = I.getRange(2, 3, 1, 1).getValues()[0][0];
+  assert.strictEqual(player, 'xAnaYz12');
+  assert.ok(JSON.stringify(I.rows).includes('Ana'), 'the old whole-JSON check would have failed here');
+  noName(I, player, 'Ana');
 });
 
 test('Code.gs: a chunk that starts with + is kept as text, never a formula (Codex review)', () => {

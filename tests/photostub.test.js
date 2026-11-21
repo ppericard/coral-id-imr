@@ -1,8 +1,9 @@
 require('./slot.js').testGuard();
 // tests/photostub.js, the photo hosts the smokes answer from the local files: every file the app asks R2 for, for a fish
-// game photo, is answered. One file it leaves a 404 is R2 out of reach for the page (app.js r2Out): the page's next
-// photos go to their online originals, FishBase's among them, a host every smoke cuts off, and a question then loses its
-// photo (tests/pending.smoke.js lost its kept question and its clock that way when a Find the X tile came first).
+// game photo, is answered. A file it leaves a 404 sends that photo to its online original (FishBase's among them, a host
+// every smoke cuts off), so a question then loses its photo (tests/pending.smoke.js lost its kept question and its clock
+// that way when a Find the X tile came first, back when one 404 gave R2 up for the page: app.js r2Failed now needs
+// R2_OUT photos in a row).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),

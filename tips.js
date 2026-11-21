@@ -10,21 +10,25 @@
 //   u  usage counters: q game questions answered here (photo quiz, custom quiz, duels), z quiz photos enlarged here (on
 //      a question or its mix-up montage; a tip's own "Show me" is not counted), c times the Custom quiz was opened here
 //      (its picking page or its quiz, quiz.js quizCustom; the log cannot tell its answers from the Quiz's), d times the Duel
-//      tab was opened here (quiz.js quizDuel; a Duel tab answer in the device's log folds in as one, tipsLoad). Seeded once, when the state is first made,
+//      tab was opened here (quiz.js quizDuel; a Duel tab answer in the device's log folds in as one, tipsLoad), m times the
+//      Custom quiz's My mix-ups view was drawn here (quiz.js viewCustom; a saved choice of that view folds in as one,
+//      tipsLoad). Seeded once, when the state is first made,
 //      from the answers the device still holds (LOG0 / SYNC.log: their count and their zm flags), so a player who has
 //      played here before is not counted from zero; a signed-in device holds only its unsent answers, so it starts low.
 //   s  per tip, the value of u.q at each showing: {zoom: [212, 318]}
 //   v  the visit: {t: time of its last answer, n: answers in it, tip: 1 once a tip showed in it}. A gap of TIPR.GAP (30
 //      minutes, as model.js SESSION.GAP) starts a new one; a reload does not.
-// A tip in TIPS: id; ctx, the games whose break at Next may show it (the hash before any "|"); target(u), who it is for,
-// on the counters; from, the u.q from which it can first show; now(b), its preferred moment at a break (b: {ctx, miss,
-// zm}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
+// A tip in TIPS: id; ctx, the games whose break at Next may show it (the hash before any "|"); target(u, b), who it is
+// for, on the counters (and, for the one whose audience is the player's own record, on b); from, the u.q from which it
+// can first show; now(b), its preferred moment at a break (b: {ctx, miss, zm, mix: the pairs of units the player mixed up
+// TIPR.MIX times or more, counted by quiz.js only while a tip needs it}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
 // the questions between two; card (kick, title(o) and body(o), o: {mouse, subj: the SUBJECTS record on screen}), the text of its card; act, its "Show me" action
 // (quiz.js TIP_ACT), or none.
 (function (root) {
   // Global rules: at most one tip a visit, never in its first FLOOR answers (plus, in quiz.js: one card a break, within
   // the prompt spacing, never over another card, the tour or a toast).
-  const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10};
+  // MIX: how many times a pair must have been mixed up (both ways added, as the My mix-ups view weighs it) to count.
+  const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10, MIX: 3};
   const TIPS = [
     {
       // Photo enlargement (in the early logged answers one player enlarged a quiz photo on ~20-25% of questions, the
@@ -93,6 +97,31 @@
           `Look-alike duels show photos of one of two look-alike ${(o && o.subj && o.subj.many) || 'genera'} and ask which one it is. The ones you still mix up come up most.`
       },
       act: 'duels'
+    },
+    {
+      // My mix-ups (c): the Custom quiz's view that groups the genera the player confuses with each other, the most
+      // confused first. For a player with 100 questions or more here, with several pairs (2 or more) mixed up TIPR.MIX
+      // times or more (b.mix, from the player's own record), who never saw that view (m counts its draws; a saved
+      // choice of it folds in as one, quiz.js tipsLoad). Shown in the Quiz and the Custom quiz; best right after a miss
+      // (a mix-up just made), else at any break from 20 questions later; twice at most, the second 150 questions after
+      // the first, after the zoom, Custom quiz and duels tips when several are due. Show me opens the Custom quiz's
+      // picking page on that view. (My progress's "Your tricky pairs" shows itself, with no page to open: no tip.)
+      id: 'mixups',
+      ctx: ['quiz', 'quiz-custom'],
+      target: (u, b) => u.m < 1 && ((b && b.mix) || 0) >= 2,
+      from: 100,
+      now: b => !!b.miss,
+      wait: 20,
+      max: 2,
+      every: 150,
+      card: {
+        kick: 'Did you know?',
+        // The words of the subject (o.subj: its many field), as the Custom quiz page says them (quiz.js viewCustom).
+        title: () => 'Quiz yourself on your mix-ups',
+        body: o =>
+          `The Custom quiz's My mix-ups view groups the ${(o && o.subj && o.subj.many) || 'genera'} you confuse with each other, the most confused first. ${o && o.mouse ? 'Click' : 'Tap'} All on a group, then Start.`
+      },
+      act: 'mixups'
     }
   ];
   const num = x => (typeof x === 'number' && isFinite(x) && x >= 0 ? Math.floor(x) : 0);
@@ -105,7 +134,7 @@
       s = o && o.s && typeof o.s === 'object' ? o.s : {},
       v = o && o.v && typeof o.v === 'object' ? o.v : {};
     return {
-      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, ...u}).map(([k, x]) => [k, num(x)])),
+      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, m: 0, ...u}).map(([k, x]) => [k, num(x)])),
       s: Object.fromEntries(Object.entries(s).map(([k, L]) => [k, Array.isArray(L) ? L.map(num) : []])),
       v: {t: num(v.t), n: num(v.n), tip: v.tip ? 1 : 0}
     };
@@ -118,14 +147,14 @@
   // One more use of a feature (k: a counter of u).
   const tipUse = (st, k) => ({...st, u: {...st.u, [k]: (st.u[k] || 0) + 1}});
   // The tip due at this break, or null. b: {ctx: the game (hash before "|"), miss: the answer was wrong, zm: a photo of
-  // the question was enlarged before answering}.
+  // the question was enlarged before answering, mix: the pairs mixed up TIPR.MIX times or more, 0 when not counted}.
   function tipDue(st, b, L = TIPS) {
     if (st.v.tip || st.v.n < TIPR.FLOOR) return null;
     return (
       L.find(t => {
         const sh = st.s[t.id] || [],
           from = sh.length ? sh[sh.length - 1] + t.every : t.from;
-        return t.ctx.includes(b.ctx) && sh.length < t.max && t.target(st.u) && st.u.q >= from && (t.now(b) || st.u.q >= from + t.wait);
+        return t.ctx.includes(b.ctx) && sh.length < t.max && t.target(st.u, b) && st.u.q >= from && (t.now(b) || st.u.q >= from + t.wait);
       }) || null
     );
   }
