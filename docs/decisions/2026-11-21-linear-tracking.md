@@ -23,14 +23,15 @@ results or approve ordinary bookkeeping. Keep the dev, review and merge workflow
 
 The wording of the rules and docs that carry it out is the integrator's call (easy to correct): a closed issue stays in
 Linear (Done, Canceled) as the tracker's record, while the docs still keep no done list; a deferred idea gets the label
-Parked, a declined one is Canceled with its reason; the paid plan is asked to him with its price first.
+Parked; the paid plan is asked to him with its price first.
 
 ## Consequences
 
 - Open work, ideas not built and their order are Linear issues (rule W19); a subject not transferred yet keeps its
   ROADMAP.md row until it moves, and a transferred one leaves a pointer there. An active track is on its issue (W6).
-- The merge contract's "ROADMAP row he agreed with its spec" becomes a spec he agreed, linked from its Linear issue (or
-  its ROADMAP row while not transferred): the issue points to the decision, its status permits nothing by itself.
+- The merge contract's "ROADMAP row he agreed with its spec" becomes a linked Linear issue (or a ROADMAP row not
+  transferred yet) with the decision that permits it (his words, a standing rule, a spec he agreed): the decision
+  permits, the issue links it.
 - The integrator keeps Linear current (In Progress at launch, In Review at PR, Done at merge; an issue for every idea
   discussed); subagents report; Pierre enters no ticket. "Decision for Pierre" marks a real unresolved choice, still
   asked in the chat (docs/INTEGRATOR.md "Linear").

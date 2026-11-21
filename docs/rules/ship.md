@@ -270,8 +270,7 @@ change touches (`docs/ARCHITECTURE.md`, `docs/LEARNING.md`), `README.md` (anythi
 Say "Docs: none needed" in the PR description when nothing applies. The records' format is in
 [docs/decisions/README.md](../decisions/README.md). **Open work is tracked in Linear** (team REE; the integrator keeps
 it, [INTEGRATOR.md](../INTEGRATOR.md#linear)): **every idea discussed but not built goes into a Linear issue** (label
-Idea, with its source; development ideas only, rule W10); deferred = label Parked; a new "don't do X" = Canceled, with
-its reason. A PR names its issue (REE-N in its description) and the integrator moves it: In Review when the PR opens,
+Idea, with its source; development ideas only, rule W10); deferred = label Parked. A PR names its issue (REE-N in its description) and the integrator moves it: In Review when the PR opens,
 Done at merge. `docs/ROADMAP.md` keeps orientation, a pointer for each subject transferred to Linear, and the rows of
 the subjects not transferred yet (ship = delete the row, or update its status) until they move. **No "done" list or
 changelog in any doc**: the squash title ` (#N)`, the PR description and git are the record of what shipped, the docs

@@ -12,8 +12,7 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
 - Owner: **Pierre Pericard** (`ppericard`), IMR, Dauin. Users: Pierre and the Research Assistants (RAs) he trains, on
   phones mostly, who label photos to genus in **ReefCloud**: the app teaches genus recognition (**Learn → Practice →
   Identify**, **My progress**, Pierre's **admin**). ReefRecall is separate: nothing moves between the two unasked.
-- **Open work is tracked in Linear**, team REE (<https://linear.app/reef-id/team/REE/active>), kept by the integrator
-  (INTEGRATOR "Linear"); [docs/ROADMAP.md](docs/ROADMAP.md): orientation, pointers, the subjects not transferred yet.
+- **Open work is tracked in Linear** (team REE, INTEGRATOR "Linear"); ROADMAP.md: pointers, subjects not transferred yet.
 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
@@ -38,11 +37,12 @@ Core v1: what every agent holds in every task. Each rule's home is under `docs/r
   check is green on the current head, no failed job was re-run to get green (rule W23), its merge train is green (rule
   W26); (2) every Codex finding and security alert is fixed or answered, every review thread resolved; (3) every
   choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre: a standing rule,
-  a spec he agreed, linked from its Linear issue (or its ROADMAP row not transferred yet), his words (quoted with their
-  date in "Decisions"), or a decided process (once he agreed how a thing is done and checked the first results, its
-  outputs ship without asking him item by item, e.g. fish photo judging on the agreed rubric; only a change to the
-  process waits for him); "Choices I made" is empty; (4) it rides a green merge train as a squash merge `… (#N)`; a
-  `Code.gs` PR gets its `VERSION` from the integrator first (rule D3).
+  a linked Linear issue (or a ROADMAP row not transferred yet) with the decision that permits it (his words, a
+  standing rule, a spec he agreed), his words (quoted with their date in "Decisions"), or a decided process (once he
+  agreed how a thing is done and checked the first results, its outputs ship without asking him item by item, e.g.
+  fish photo judging on the agreed rubric; only a change to the process waits for him); "Choices I made" is empty; (4)
+  it rides a green merge train as a squash merge `… (#N)`; a `Code.gs` PR gets its `VERSION` from the integrator
+  first (rule D3).
 - **The integrator decides the small choices; Pierre the ones costly to undo.** **Easy to correct afterwards** ships
   under the contract, listed in Decisions as "integrator's call" ("easy to correct" when players see it): a layout, a
   wording players read, a visible setting or default, a design option, a name inside the code, a test, the fix of
