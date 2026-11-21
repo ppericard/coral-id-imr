@@ -13,6 +13,12 @@ written with `tools/datajson.py`.
 - **`datajson.py`**: the one writer of `data.json` (`load()`, `dump(d, path)`, one genus per line:
   [data.md › Layout](data.md#layout)). Run alone it rewrites the file in
   that layout with the instance's coral layer laid on; `--check` is the PR check (the layout and the layers).
+- **`tree_section.py`**: the builds' generic `tree` section (Pierre, 2026-11-13, Q339-Q341): each subject's Key and WoRMS
+  classifications as `data/<subject id>-tree.json`, built from its sources (`fish.json`, `seaslug.json`, or `data.json` and
+  `data/names.json`) by one module with one adapter per data shape (`SUBJECTS`), written by the tools that write the sources
+  (`build_fish.py`, `seaslug_game.py`, `taxonomy.py`, `datajson.py` `dump`) or by running it alone; `--check` fails on a section
+  that is missing or out of date (run by `tests/treesection.test.js`), `--print SUBJECT [FILE ...]` prints one from other
+  files. The admin reads them ([admin-tree.md › The tree section](admin-tree.md#the-tree-section-toolstree_sectionpy)).
 - **`sync_core.py`**: copies `core.js` into `tools/sync/Code.gs` between its BEGIN / END markers (`--fix`), or checks
   that the copy is current (`--check`, CI): the sheet script replays progress with the app's own engine
   ([sync.md › Full replay](sync.md#full-replay)); after a `--fix`, rule D3.

@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 213 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 214 (2026-11-21). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 213;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 214;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -8750,6 +8750,18 @@ const CORE_ = (function () { const module = {exports: {}};
   // diver-flavoured; descriptions plain and exact. fpct25 is retired: the recount (progress.js ACH_V, achMigrate)
   // removes it from every record. Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
   const FISH_ACH = [
+    // Fish basics done: every step of the module seen (proto/fishbasics.js; its feat SUBJECTS fish basics.feat, read by
+    // progress.js achSnap), the twin of the corals' "Basics" (one 📖 bronze). A learning milestone like the others, earned
+    // by finishing the module (a fixed number of screens), never after a number of answers or an amount of time; not in
+    // ACH_LEARN (nothing takes it back).
+    [
+      'fbasics',
+      'Fin to tail',
+      'You know what to look at first on a reef fish: body shape, the groups, fins, tails and markings',
+      1,
+      '📖',
+      s => s.basics
+    ],
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
     ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],

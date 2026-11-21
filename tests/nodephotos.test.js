@@ -7,7 +7,8 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const {npExcluded, npUnder} = require('../admin-nodephotos.js'),
-  {ctFilters} = require('../admin-coraltree.js');
+  {ctFilters} = require('../admin-coraltree.js'),
+  {ttSection} = require('../taxtree.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
@@ -77,8 +78,8 @@ test('npUnder: the items of the given units, in their own order', () => {
 });
 
 test('the Tree’s tags: Removed photos and Excluded photos come with the counts the adapter gives, and only then', () => {
-  const d = read('data.json');
-  Object.assign(d.gen, d.x.gen);
+  // the genera: the Key's leaves of the corals' tree section (tools/tree_section.py)
+  const d = ttSection(read('data/coral-tree.json'), 'key').nodes.filter(n => n.genus);
   assert.ok(!ctFilters(d, {}).some(x => x.k === 'removed' || x.k === 'excluded'));
   const F = ctFilters(d, {removed: n => (n === 'Acropora' ? 2 : 0), excluded: n => (n === 'Porites' ? 1 : 0)}),
     node = id => ({id, genus: id}),

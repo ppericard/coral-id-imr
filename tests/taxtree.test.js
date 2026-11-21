@@ -7,6 +7,7 @@ const test = require('node:test'),
 const {
   ttBuild,
   ttFromRef,
+  ttSection,
   ttPath,
   ttUnder,
   ttLeaves,
@@ -394,4 +395,34 @@ test('taxtree: a leaf placed by at, under the reference node it names', () => {
   assert.deepStrictEqual(ttPath(T, 's2'), ['w:1', 'w:9', 'w:10', 's2']);
   assert.ok(T.roots.includes('lost'));
   assert.ok(!('at' in T.node.get('x:sp1')) && T.node.get('gl:g:Pseudanthias').gl);
+});
+
+// A classification a build wrote (tools/tree_section.py: the file's `views`): a view's nodes as ttBuild takes them, as copies, with
+// the build's problems and `at`; null for a section or a view that is not there (tests/treesection.test.js: the real files).
+test('ttSection: a view of a build’s section, copied; none for a missing section or view', () => {
+  const sec = {
+    v: 1,
+    views: {
+      key: {
+        nodes: [
+          {id: 'a', name: 'A'},
+          {id: 'b', name: 'B', up: 'a'}
+        ]
+      },
+      worms: {nodes: [{id: 'w', name: 'W'}], problems: [{id: 'x', why: 'no reference'}], at: {a: 'w'}}
+    }
+  };
+  const k = ttSection(sec, 'key'),
+    w = ttSection(sec, 'worms');
+  assert.deepStrictEqual(k, {nodes: sec.views.key.nodes, problems: [], at: {}});
+  assert.deepStrictEqual(w, {nodes: sec.views.worms.nodes, problems: sec.views.worms.problems, at: {a: 'w'}});
+  k.nodes[0].name = 'changed';
+  k.nodes.push({id: 'c'});
+  w.problems.push({id: 'y'});
+  assert.strictEqual(sec.views.key.nodes[0].name, 'A', 'the section as read stays whole');
+  assert.strictEqual(sec.views.key.nodes.length, 2);
+  assert.strictEqual(sec.views.worms.problems.length, 1);
+  assert.deepStrictEqual(ttBuild(ttSection(sec, 'key').nodes).roots, ['a']);
+  [null, undefined, {}, {views: {}}, {views: {key: {}}}].forEach(x => assert.strictEqual(ttSection(x, 'key'), null));
+  assert.strictEqual(ttSection(sec, 'nope'), null);
 });

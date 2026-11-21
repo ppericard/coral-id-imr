@@ -56,7 +56,8 @@ data/names.json (the admin's extract, written with the file, never edited by han
   "sp": {species name: {now, iname?, inat?}}: the species rows; "gen": {former genus: the genus WoRMS (else iNaturalist)
   accepts now}: the `old` names that are no longer a genus of their own; "worms": {app genus: {id, fam}}: each genus's
   WoRMS AphiaID and the family WoRMS files it under (gen.<genus>.worms), for the WoRMS view of the admin's Photos › Tree
-  (admin-coraltree.js ctWormsOf; not for a subject whose Tree reads its own file: SUBJECTS names_worms)}}. The admin
+  (tools/tree_section.py builds that view from it, data/coral-tree.json, and the tool writes it again whenever this extract
+  is written; not for a subject whose Tree reads its own file: SUBJECTS names_worms)}}. The admin
   reads every subject's section (admin.js nameTag: the coral photos, the fish tiles and the fish Candidates card).
 
 Usage: python3 tools/taxonomy.py [--offline | --refresh] [--dry] [--subject S...]   (--dry: print the report, leave the
@@ -1033,6 +1034,16 @@ NAMES_DOC = ("The admin's extract of tools/taxonomy.json, written by tools/taxon
              "WoRMS id and family, for the WoRMS view of Photos › Tree.")
 
 
+def write_coral_tree():
+    """The corals' tree section (data/coral-tree.json: the Key and, from the extract's `worms`, the WoRMS view; the admin's Tree
+    tab), from the extract just written (tools/tree_section.py). Only for the repository's own extract."""
+    if NAMES == ROOT / "data/names.json":
+        sys.path.insert(0, str(ROOT / "tools"))
+        import tree_section
+
+        tree_section.write("coral")
+
+
 def names_extract(o):
     """data/names.json from taxonomy.json: per subject, its species rows ({now, iname?, inat?}) and its former genus names
     that are no longer a genus of their own ({name: the genus accepted now}: WoRMS's, else iNaturalist's single current
@@ -1123,6 +1134,7 @@ def main():
     if a.names:
         NAMES.write_text(render_names(names_extract(load())), encoding="utf-8")
         print(f"wrote {NAMES.relative_to(ROOT)}")
+        write_coral_tree()
         return
     if a.check:
         errs = check()
@@ -1151,6 +1163,7 @@ def main():
         OUT.write_text(render(o), encoding="utf-8")
         NAMES.write_text(render_names(names_extract(o)), encoding="utf-8")
         print(f"wrote {OUT.relative_to(ROOT)} ({len(render(o).encode()) // 1024} KB) and {NAMES.relative_to(ROOT)}")
+        write_coral_tree()
 
 
 if __name__ == "__main__":
