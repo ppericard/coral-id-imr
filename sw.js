@@ -77,6 +77,7 @@ const SHELL = [
     'samediff',
     'oddone',
     'matrixgame',
+    'lifestages',
     'downtree',
     'gallery',
     'cards'
