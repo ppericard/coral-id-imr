@@ -393,8 +393,8 @@ back leaves the PR.** The integrator holds to these, each checked before it laun
 - **Each agent is on one PR or one study with one subject**; a finished agent is stopped, not kept waiting. Heavy
   agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js` (rule W24). Branches:
   rule W22.
-- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
-  until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
+- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js` and its parts `core/*.js`, `sync.js`,
+  `model.js`): the second waits until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
 - **Codex findings are fixed while they are new and small; a part whose findings keep coming back leaves the PR.** When
   findings keep coming back on the same part (say twice in a row), the integrator cuts the PR's scope (that part moves
   to a branch of its own) and tells Pierre; there is no fixed number of rounds. Findings that keep coming on the same part point to a structural problem: that part restarts from a short

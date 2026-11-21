@@ -74,8 +74,11 @@ the live `v` about 15 minutes after the train that merged it, and the sheet's "D
   `tools/sync/appsscript.json` in step (a new Google service = a new scope there = Pierre must accept it once: tell him).
 - The app keeps working with an older script, so a change stays backward compatible (rule D4).
 - `Code.gs` embeds `core.js` between `// BEGIN core.js` and `// END core.js` (reached as `CORE_`; the sheet replays each
-  player's progress with it): after any change to `core.js`, run `python3 tools/sync_core.py --fix` and add the changes
-  file (CI runs `--check`), so the live script always runs the app's engine.
+  player's progress with it). `core.js` is built from its parts, `core/*.js`: write the change in its part
+  (`python3 tools/sync_core.py --where N` names the part holding `core.js` line N), then run
+  `python3 tools/sync_core.py --fix` (it writes `core.js` from the parts, or carries an edit made in `core.js` back into
+  its part, then the copy in `Code.gs`) and add the changes file (CI runs `--check`), so the live script always runs the
+  app's engine.
 - If you change the Elo in `stats_`, change its copy `eloOf()` in `core.js` too (with the photo memory estimate `MEM`
   and the per-unit offsets of the hierarchical photo Elo, `GENUS_K`, `genusOffsetsOf`), and likewise the pair counts
   `conf` in `stats_` and `confusionOf()` (`tests/core.test.js` checks both agree).
