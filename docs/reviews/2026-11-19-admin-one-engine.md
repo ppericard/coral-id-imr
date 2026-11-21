@@ -303,7 +303,13 @@ green checks; refactors of this size probably run longer.
    (`UNITS sheetParts`) built from the node: each sheet function is a template of its own sections and about ten
    tests read those templates by their text (the order of the marks and roots, the juvenile line, the hero's place
    in the viewer's list), so it is a rewrite of the four sheets and of those tests, with the same HTML as its
-   acceptance. No `UNITS` field was added.
+   acceptance. No `UNITS` field was added. Checked: the app's `#view`, help box and page bar HTML of 116 states (a coral
+   genus of the lecture, a starred one, a bonus one and one of two levels, and a look-alike view switch; the fish's and
+   the sea slugs' families with several genera, with one genus, with one species, with and without IMR cues, a wink
+   family sent to the list, genera with and without cues and roots, one sent on to its one species, species with
+   juveniles, with many photos, with none, with marks, with a juvenile line and with a size and a depth, a sea slug
+   species with no name yet; each first sheet at 390 px and with the species filter on All), progress seeded, the
+   clock, the random numbers and the player's reserve fixed: identical byte for byte, before and after.
 11. **Small Learn, home and progress readers** (Dup-16, Dup-17; fix S).
 12. **Compare pages made generic** (Dup-15; feature M): the code only. Opening them to other subjects is Pierre's
     call.
