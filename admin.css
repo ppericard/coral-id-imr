@@ -2236,6 +2236,18 @@ body.adm-cmode .adm-toast {
   width: 100%;
   margin: 0;
 }
+/* The phase row (six words, "Intermediate" the longest) wraps like Photo review's rows instead of clipping its labels or
+   pushing a narrow tile wider (REE-201: a flagged species shows it on Reports' tiles too). */
+.adm-ftrows {
+  min-width: 0;
+}
+.adm-acts .adm-qseg.adm-fwrap {
+  flex-wrap: wrap;
+  border-radius: var(--r-sm);
+}
+.adm-acts .adm-qseg.adm-fwrap button {
+  flex: 1 0 auto;
+}
 .adm-ftile .adm-acts > button[data-fu='tags'][aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
