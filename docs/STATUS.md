@@ -16,8 +16,8 @@ Last checked: reports and events: 2026-11-21 ~04:30 Manila (no new report since 
 
 ## Now
 
-Main: sheet script **v212** (#1354, a screenshot attached to a report). Merged since 11-20 17:30: about 45 PRs (the
-list: `python3 tools/night.py`, `git log`). Nothing runs: no agent, no queue (the last one in flight is named below).
+Main: sheet script **v213** (#1357, the photo's time term). Merged since 11-20 17:30: about 47 PRs (the list:
+`python3 tools/night.py`, `git log`). Nothing runs: no agent, no queue, no open PR once this one is in.
 
 - **The backlog's reference is the inventory** [docs/reviews/2026-11-20-backlog-inventory.md](reviews/2026-11-20-backlog-inventory.md)
   (#1326, refreshed 2026-11-21): every open point against Pierre's words; §1.3 "Ready to launch now" is where the next
@@ -33,11 +33,11 @@ list: `python3 tools/night.py`, `git log`). Nothing runs: no agent, no queue (th
 - **Stopped at his word (06:26), not started; relaunch from the inventory when he says**: R32 the R2 unused files (list
   shown to him before deleting; his yes 05:40), R102 Q316's fit on the real log, R31 learnsim's `shareFree` arm, R46
   the Tree tab's build section, R49 tip (b), R94 one-admin steps 9-10, R76 Fish basics.
-- **The one open PR**: #1357, the response-time step 1 (Q449-Q451, option A «ok» 06:20), green and Codex-clean,
-  `needs-pierre`: a rated-world guardrail was breached (the strong RA's shown score at 1,000 answers about 1-1.4 lower,
-  the beginner's -2.4 with heavy-tailed photos and a later first Open Water; all recovered by 3,000; cause unknown; the
-  term moves a question by about 0.03 logits). Asked 08:29 (question below). Its gate `PTIME_SHEET` 213: `--assign` at
-  merge (rule D3).
+- **The response-time step 1 is live** (#1357, sheet script v213; Q449-Q451, option A «ok» 06:20): its breached
+  rated-world guardrail was accepted by Pierre (13:23-13:27, «quoi que dise la simulation, c'est comme ça»); follow it
+  on the real answers (`C = 0` turns the term off). His reflection on what simulations can decide is recorded in
+  [reviews/2026-11-21-simulation-scope.md](reviews/2026-11-21-simulation-scope.md) (#1359), for his review of the
+  working method; rule L11 unchanged until then.
 
 ## Next
 
@@ -51,9 +51,6 @@ counted; ROADMAP); the response-time step 2 (Q452, after step 1); fish photos re
 
 ## Questions for Pierre
 
-- **#1357's breached guardrail** (asked 2026-11-21 08:29): rec. hold the merge, a short diagnosis of the cause first
-  when work restarts (no measurable benefit yet, a small visible score dip); or accept now (the term turns off with one
-  constant).
 - **The species order** (Q445's follow-up): he did not follow it; find what it settled before asking again, or drop it.
 - **Q439**: which Lab prototypes graduate, and the Fish ID Key into Identify; with the new-RA review's two options (My
   progress "Next step" line; the quiz photo's visible Colony / Close-up switch). He has not tested the Lab yet.
