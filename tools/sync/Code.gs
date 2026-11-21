@@ -10236,7 +10236,7 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // The weight of a right answer's ability steps from its seconds, against the player's earlier times (G: P[LEVEL]).
   // ti (step 2 of the time in the photo rating, Q452; docs/LEARNING.md "The player's time net of the photo's"): the
-  // question's photo time term (ptimeTermOf: how much longer than their habit everyone takes on its photos, in the same log
+  // question's photo time term (ptimeQ: how much longer than their habit everyone takes on its photos, in the same log
   // seconds), taken off z, so a slowness the photo explains no longer counts against the player (and a speed it explains
   // no longer counts for them); 0 by default, the rule before.
   function rtWeight(G, sec, k, good, ti = 0) {
