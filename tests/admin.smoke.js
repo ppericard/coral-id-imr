@@ -9745,20 +9745,21 @@ async function lazyPart(b, base, fails) {
         if (
           mr.length !== n0 + 1 ||
           ad.length !== 1 ||
-          !/not in the public Look-alikes list/.test(ad[0]) ||
+          !/not on the public Look-alikes page/.test(ad[0]) ||
           mr.filter(t => /\(added\)/.test(t)).length !== 1
         )
           se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, ad})}`);
+        // a classic pair of the base (the Coral Finder's, p. 8), not the Montipora one whose source is a shared box
         await sq.evaluate(() => {
-          DRAFT.content = contentPairSet(DRAFT.content || {}, 'Acropora|Montipora', null, 1, null, Date.now());
+          DRAFT.content = contentPairSet(DRAFT.content || {}, 'Acropora|Anacropora', null, 1, null, Date.now());
           saveDraft();
           render();
         });
-        await swait(() => !/Acropora \/ Montipora/.test(document.querySelector('#view .adm-mont').textContent));
+        await swait(() => !/Acropora \/ Anacropora/.test(document.querySelector('#view .adm-mont').textContent));
         mr = await mrows();
         if (mr.length !== n0) se.push(`Look-alikes: the withdrawn pair's row ${mr.length} of ${n0}`);
         await sq.evaluate(() => undo());
-        await swait(() => /Acropora \/ Montipora/.test(document.querySelector('#view .adm-mont').textContent));
+        await swait(() => /Acropora \/ Anacropora/.test(document.querySelector('#view .adm-mont').textContent));
         await wideAt('the coral Look-alikes page with an added pair');
         await sq.evaluate(h => (location.hash = h), gh);
         await swait(

@@ -333,7 +333,8 @@ the corals `classicPairsOf` over `data.json` with the draft's pairs laid over it
 page below). The IMR lecture's and the Coral Finder text's pairs, less those he withdrew on the Tree (a withdrawal the
 ★ rule holds changes nothing), plus those he added there, marked **(added)** with the source he gave or the editor's
 tag; an added pair no IMR lecture or Coral Finder source compares is not in the public Look-alikes list, and its row
-says so (its Compare page still shows its montage). Per pair: View Colony / Close-up / Corallites / **All** (photos of
+says so (the corals' Compare page shows no montage, as the corals have three views, so its picks show nowhere public until a
+source of that kind names the pair). Per pair: View Colony / Close-up / Corallites / **All** (photos of
 every zoom, the automatic pick preferring the nearest zooms), **Auto | Manual** (clicking a photo makes it Manual; Auto
 drops his view and photo picks but keeps a hide), **Shown | Hidden** (Hidden keeps the comparison off the public
 Look-alikes page until good examples exist). Stored in `curation.json` `mont`, a withdrawn pair's picks kept, unused,

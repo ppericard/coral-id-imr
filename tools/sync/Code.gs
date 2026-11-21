@@ -5239,9 +5239,10 @@ const CORE_ = (function () { const module = {exports: {}};
         // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
         // play up to it; tests/seaslugadmin.test.js keeps the two equal).
         target: 12,
-        // circles: the admin's words for its circles, beside their numbers (the fish's field): circles by commonness, the
-        // first the most common genera, then the next ones (tools/seaslugs.json; docs/spec/seaslugs.md "Their circles").
-        circles: {1: 'Most common', 2: 'Next most common', 3: 'Less common'},
+        // circles: the admin's words for its circles, beside their numbers (the fish's field), as Pierre decided them
+        // (2026-11-15, Q377): circle 1 the stars and the most common species, circles 2 and 3 the next ones by commonness
+        // (docs/reviews/2026-11-15-seaslug-list.md §1.6 and §4).
+        circles: {1: 'Stars and most common', 2: 'Next most common', 3: 'Less common'},
         // tags: its rubric (judging/SEASLUG.md "Tags"), as treeRubric lays it out: its six views (the dorsal, lateral and
         // oblique are the good ones: said by the judged line only), its light without night livery, and the flags Pierre
         // may set (the fish's j c w, and f, features hidden).

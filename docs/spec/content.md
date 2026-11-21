@@ -142,8 +142,8 @@ own writer).
 - **The words for the circles** (the design note's step 3, left for a second instance, built for the admin's Tree
   2026-11-21): `SUBJECTS` `admin.circles` `{circle: words}` on a subject that has circles (the fish: 1 IMR course, 2
   After the course, 3 Beyond the course, from what players already read, "the IMR course's families", "right after the
-  IMR course's", "beyond the IMR course"; the sea slugs: Most common, Next most common, Less common, from circles by
-  commonness), read by `admin-content.js` `circleWord` / `circleLab` ("1 · IMR course", the number alone where none are
+  IMR course's", "beyond the IMR course"; the sea slugs: Stars and most common, Next most common, Less common, from their circles' definition,
+  Pierre, 2026-11-15, Q377), read by `admin-content.js` `circleWord` / `circleLab` ("1 · IMR course", the number alone where none are
   declared). The admin's Tree only: the app's own words (the circle-3 offer card, the achievements) are unchanged
   ([admin-tree.md › Structure](admin-tree.md#structure-circles-and-look-alike-pairs)). Another instance's words are a
   data field, not built: it waits for a second instance.

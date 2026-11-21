@@ -168,8 +168,9 @@ every player's path and progress (`ST_PUBLISH`, in the one Publish dialog), and 
 **Each subject's own words for its circles.** One declaration, `SUBJECTS` `admin.circles` `{circle: words}`, one reader,
 `admin-content.js` `circleWord` / `circleLab`, for every subject that has circles (rule S1; the corals have none): the
 fish's (1 IMR course, 2 After the course, 3 Beyond the course: what players already read, "the IMR course's families",
-"right after the IMR course's", "beyond the IMR course"; the old "SVS" word is internal, Q182) and the sea slugs' (Most
-common, Next most common, Less common: their circles are by commonness). Shown beside the number wherever the Tree names
+"right after the IMR course's", "beyond the IMR course"; the old "SVS" word is internal, Q182) and the sea slugs' (Stars and
+most common, Next most common, Less common: circle 1 holds the stars and the most common species, the next circles the
+next ones by commonness, Pierre, 2026-11-15, Q377). Shown beside the number wherever the Tree names
 a circle: the Structure box's segments (the number, the words under it, the full "1 · IMR course" as its tooltip, in the
 stale view and in "Original"), the **Circle** tag's options ("Circle 1 · IMR course") and the rows and cards' line
 ("circle 1 · IMR course"). A circle with no words, or a subject with none, shows its number alone, never a made-up word
