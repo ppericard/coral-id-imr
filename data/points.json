@@ -1310,6 +1310,94 @@
       ]
     },
     {
+      "id": "fish-phase-plectorhinchus-lineatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Oblique-banded sweetlips: a sub-adult pattern of its own?",
+      "q": "One source describes a sub-adult of Plectorhinchus lineatus with a livery of its own; two others describe a gradual change, or give juveniles and subadults one pattern. Should a photo of this species be tagged sub-adult?",
+      "ctx": [
+        "Monaco Nature Encyclopedia: \"The subadult individuals keep the horizontal black bands, although they only extend down to the pectoral fins, leaving the ventral region white.\" Its juvenile is reddish brown with large white spots.",
+        "Fishes of Australia: \"Juveniles and subadult fish have black horizontal stripes along the body that become increasingly diagonal with growth.\"",
+        "FishBase: \"Colour of juveniles with few horizontal to slightly oblique dark brown bands which subdivide with age\".",
+        "Recorded as a conflict in tools/fish_phases.json (sub); nothing in play depends on it yet."
+      ],
+      "src": [
+        {"t": "Monaco Nature Encyclopedia, Plectorhinchus lineatus", "u": "https://monaconatureencyclopedia.com/plectorhinchus-lineatus/?lang=en"},
+        {"t": "Fishes of Australia, Plectorhinchus lineatus"},
+        {"t": "FishBase, Plectorhinchus lineatus", "u": "https://www.fishbase.se/summary/Plectorhinchus-lineatus.html"}
+      ]
+    },
+    {
+      "id": "fish-phase-plectorhinchus-vittatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Indian Ocean oriental sweetlips: which juvenile pattern?",
+      "q": "Fishes of Australia and FishBase describe the juvenile pattern of Plectorhinchus vittatus differently. Which pattern do the game's juvenile photos of this species show?",
+      "ctx": [
+        "FishBase: \"juveniles with connected black blotches and spots that gradually break up into horizontal stripes; pectoral fins black in juveniles becoming uniform yellow in adults\".",
+        "Fishes of Australia (as hand-read 2026-11-20, extraction not checked against the raw page): a yellow head and irregular broad black stripes; its subadults \"have broad stripes on the head, body and fins\".",
+        "The two sources describe the juvenile pattern differently. Recorded in tools/fish_phases.json (juv note); nothing in play depends on it yet. Listed, not settled (rule C5)."
+      ],
+      "src": [
+        {"t": "FishBase, Plectorhinchus vittatus", "u": "https://www.fishbase.se/summary/Plectorhinchus-vittatus.html"},
+        {"t": "Fishes of Australia, Plectorhinchus vittatus", "u": "https://fishesofaustralia.net.au/home/species/459"}
+      ]
+    },
+    {
+      "id": "fish-phase-rhinomuraena-quaesita",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Ribbon eel: the blue-and-yellow stage, sub-adult or male?",
+      "q": "Reef Life Survey calls the blue-and-yellow ribbon eel a sub-adult; FishBase and Fishes of Australia call it the male. Should these photos be tagged sub-adult or male?",
+      "ctx": [
+        "Reef Life Survey: \"Adults yellow, sub-adults blue and yellow, juveniles black and yellow.\"",
+        "FishBase (Biology): \"Juveniles all black, males have yellow dorsal fin and females change to a nearly all yellow color, but usually with blue in the posterior\"; Fishes of Australia: \"Males are bright blue with a yellow snout, lower jaw and dorsal fin.\"",
+        "Recorded as a conflict in tools/fish_phases.json (sub) and as yes for sex; nothing in play depends on it yet."
+      ],
+      "src": [
+        {"t": "Reef Life Survey, Rhinomuraena quaesita", "u": "https://reeflifesurvey.com/species/rhinomuraena-quaesita/"},
+        {"t": "FishBase, Rhinomuraena quaesita", "u": "https://www.fishbase.se/summary/Rhinomuraena-quaesita.html"},
+        {"t": "Fishes of Australia, Rhinomuraena quaesita", "u": "https://fishesofaustralia.net.au/home/species/3568"}
+      ]
+    },
+    {
+      "id": "fish-sex-macropharyngodon-ornatus",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Ornate leopard wrasse: do male and female differ in colour?",
+      "q": "FishBase's description says the male lacks the female's black humeral spot; FishBase's Morphology table says males alike females. Should a photo of this species be tagged male or female?",
+      "ctx": [
+        "FishBase, Short description: \"Males similar in colour to females, with no black humeral spot (Ref 9823).\"",
+        "FishBase Morphology table (rfishbase snapshot v25.04, SexColors): \"males alike females\".",
+        "Recorded as a conflict in tools/fish_phases.json (sex); nothing in play depends on it yet."
+      ],
+      "src": [
+        {"t": "FishBase, Macropharyngodon ornatus", "u": "https://www.fishbase.se/summary/Macropharyngodon-ornatus.html"},
+        {"t": "FishBase Morphology table, rfishbase snapshot v25.04"}
+      ]
+    },
+    {
+      "id": "fish-sex-scarus-ghoban",
+      "kind": "sources",
+      "subj": "fish",
+      "at": "2026-11-20",
+      "title": "Scarus ghoban: what does the female look like?",
+      "q": "Fishes of Australia and FishBase describe different female colour patterns for Scarus ghoban (FishBase writes ghobban). Which pattern do the game's female photos of this species show?",
+      "ctx": [
+        "Fishes of Australia: \"Females (Initial phase) are dull yellowish to orange-brown with 4-5 irregular indistinct darker bars along the side, blue bands around the mouth and eye\"; males are bluish to bluish-green with pinkish scale margins.",
+        "FishBase, Short description for S. ghobban: \"female red on head, belly and fins, side with wavy black and white stripes\" (the same text as its S. niger page).",
+        "Both sources say the sexes differ in colour; they disagree on the female's pattern. Recorded as a conflict on the pattern, not on the phase, in tools/fish_phases.json (sex); nothing in play depends on it yet. Listed, not settled (rule C5)."
+      ],
+      "src": [
+        {"t": "Fishes of Australia, Scarus ghobban", "u": "https://fishesofaustralia.net.au/home/species/2360"},
+        {"t": "FishBase, Scarus ghobban", "u": "https://www.fishbase.se/summary/Scarus-ghobban.html"}
+      ]
+    },
+    {
       "id": "fish-juv-hologymnosus-annulatus",
       "kind": "sources",
       "subj": "fish",
