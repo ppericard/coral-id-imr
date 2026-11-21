@@ -16,6 +16,7 @@ decision's order: the offline fit first, then the sheet, then the app).
 | `prep.js` | Reads the answer log (either form below), keeps one subject, labels the players P1, P2... and writes the rows the fit and the checks read |
 | `fit.py` | The model, fitted by maximum Laplace marginal likelihood (numpy, scipy), and its acceptance test; `synth` runs the study's synthetic designs |
 | `checks.js` | 2C on the real log |
+| `replay2b.js` | 2B on the real log: the half fits, then the replay of the arms (after `run.py`, on its out directory) |
 | `run.py` | Every step for both subjects under one 40-minute clock |
 
 Tests: `tests/q316.test.js` (the loader, check 2C, the declared rules; and, with numpy and scipy, `tests/q316fit_check.py`:
@@ -61,14 +62,49 @@ fails, the model with one SD shared by the genus and species levels is tested th
 estimator's fault (the next step would be the study's Gibbs sampler); one that passes there and fails at today's size is
 not estimable on that much data.
 
-**2B is not in this tool**: see "Follow-up" below.
+**2B** (`replay2b.js`, declared 2026-11-21 before its first real run; `RULES` in the code, printed at the head of each
+run). Each answer is scored before it moves anything, with one expectation for every arm, core.js `scoreAnswer`'s:
+e = g + (1 − g) R σ(S (th − (d + f + c))), th the ability the app logged with the answer (the player's real unit ability,
+their own first-launch prior in it: no start record needed), f, c, R, S from its scoring record; only d, the photo
+difficulty (solo + the mean over the photos, as quiz.js), differs:
+- **arm 1**, today's engine: model.js `photoDiff`, run from its source, on core.js `eloReplay` (the engine's own replay)
+  over the answers before this one, so trust, the memory offsets and the time term are the prefix's;
+- **arm 2**, the shared chain: rank offset + family + genus + species (corals: genus) + the mean of the photos' parts,
+  each a mean and a variance, the surprise of each trusted answer split by the variances (the review's section 5 rule),
+  against the arm's own sheet chain (a level stepped as `eloReplay` steps R), the prefix's memory offsets and trust; an
+  answer without photos moves nothing; when the prefix's trusted players change, the pass is made again from the first
+  answer, as the sheet's pass would;
+- **4b** and **4c** (Q136): arm 2 with the item rated against the chain plus the app's δ (checks.js's replay, its `p` 0
+  limit), or plus the centred δ (less the mean over the other players of their latest δ on the unit);
+- arm 3 (the sibling term) is not run: the fit does not estimate it by default.
+
+**The SDs of arm 2**: from a fit (`fit.py --no-accept`) on the other half of the players (odd labels P1, P3... half A,
+even half B), so no SD is fitted on the answers it scores. A level whose SD failed the full fit's acceptance test takes
+its **v31-equivalent** variance K / a*, a* the gradient of one answer at the game's target (ability 1 above, 4 choices),
+K today's step (photo 0.8, unit `GENUS_K` 0.4; the fish levels that fail share the unit's variance equally): today's
+constants written as variances (the review's "today's rule as a special case"), no new value. Genus or species failing
+with the shared SD passing: both take the full fit's shared SD. A rank offset that failed: an online part of its own,
+from 0, with the unit's v31-equivalent variance. The fish photo prior mean is today's ((3 − ease) × the subject's
+calibration), not the fit's κ; the prefix's time term is added in every arm.
+
+**Primary**: next-answer log-loss, arm 2 against arm 1, on fish answers with a scoring record and 2 or more plausible
+choices whose photos each had fewer than 3 earlier answers by players trusted at that moment; each player's mean
+difference d_p; exact two-sided sign-flip over the players with 20 or more such answers, α 0.05. Arm 2 better = mean
+below 0 at p < 0.05, worse = above 0 at p < 0.05, otherwise "the measure cannot tell"; fewer than 6 such players: "the
+measure cannot tell" without a test. **Exploratory** (uncorrected): all fish answers, genus-rank answers, the corals
+(answers with a scoring record), 4b and 4c against 2, calibration by rank, format and level band, and the compression
+(the slope of each arm's end-of-log unit offsets on the offline D(u), units with 20 or more answers). Its own 40-minute
+clock (rule L11), from when the machine slot is held.
+
+**Not built**: the study's Gibbs sampler for the photo SD and τ. A level the Laplace fit cannot estimate takes its
+v31-equivalent above, so 2B runs without it; the photo SD and τ stay "not estimable" until another estimator exists.
 
 **2C** (the corals; the fish exploratory). δ = the app's unit ability − its global level before each answer, counted from
 the player's 6th answer on the unit; per unit, the mean over players (one vote each), units with 3 or more such players.
 C1: the spread of those means beyond their noise (DerSimonian-Laird, exploratory). C2: their Spearman correlation with the
 live unit offset `gd`, permutation p over units (10,000, seeded), repeated within each half of the players' order of
 meeting units. **Clearly negative** (not centred) = below 0 at p < 0.05, and below 0 in both halves: then a Q136 rating
-uses the centred δ or stays on the chain. Otherwise the choice rests on the follow-up's replay (2B).
+uses the centred δ or stays on the chain. Otherwise the choice rests on 2B's replay.
 With fewer than 8 units: "the measure cannot tell". Who reaches which unit is a confound (practice raises δ): an association, not a cause.
 **Limit**: the player replay passes no starting prior (`p` 0; core.js `startPriorAt` needs each player's first-launch
 choice), so a player's δ is that of one who started at the default; say so with the result. The follow-up's replay
