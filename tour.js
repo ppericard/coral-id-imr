@@ -37,6 +37,8 @@
       d: 'Switch here, or with the button next to the logo on every other page. Each subject keeps its own progress.'
     },
     ask: {k: 'ask', h: '', ask: true},
+    // names: the names step of a subject that has one (app.js UNITS names), right after the question; a forced choice too.
+    names: {k: 'names', h: '', names: true},
     doors: {
       k: 'doors',
       h: '',
@@ -78,7 +80,8 @@
   // on a new device: the sheet's reply names the group, sync.js groupsSeen, and the page reloads back on the sign-in step)
   // brings pick and swap right after the sign-in step, the steps before it unchanged so the step number stays right, and
   // the new subject's question when it is not the one already asked. OPEN: what the tour started with ({two, s}: two
-  // subjects or more, the subject on screen), kept across that reload.
+  // subjects or more, the subject on screen), kept across that reload. OPEN.n: the subject whose names step the answer just
+  // given asks (app.js namesAsk), which then follows the last question; none for an answer that skips it.
   let OPEN = null;
   function plan() {
     const two = subjMine().length > 1,
@@ -87,8 +90,14 @@
         : OPEN && !OPEN.two
           ? ['ask', 'doors', 'signin', 'pick', ...(SUBJ.id !== OPEN.s ? ['ask'] : []), 'swap', 'games', 'progress', 'help']
           : ['pick', 'ask', 'swap', 'doors', 'signin', 'games', 'progress', 'help'];
+    if (OPEN && OPEN.n === SUBJ.id) ks.splice(ks.lastIndexOf('ask') + 1, 0, 'names');
     return ks.map(k => DEF[k]).filter(s => !s.signin || SYNC_URL);
   }
+  const keepOpen = () => {
+    try {
+      sessionStorage.setItem(KEY + '-open', JSON.stringify(OPEN));
+    } catch (e) {}
+  };
   let STEPS = [];
   // A step's title and text: the subject's own words for it (UNITS tour[k]: {t, d}), else the step's (the corals'); either
   // may be a function (d of "Tap" / "Click").
@@ -103,6 +112,7 @@
     step = 0,
     token = 0,
     picking = false, // a subject picked is loading (pick): the tour waits, buttons and keys alike
+    named = null, // the names step's answer in this tour (names), marked when the step is shown again
     saving = Promise.resolve(), // the first-launch answer being saved (ask), for the subject it was asked for
     target = null,
     tick = null;
@@ -185,8 +195,8 @@
       b = root.querySelector('.tbub'),
       // The answer already given: the subject's question, or the subject picked (a saved choice: this tour's, or the
       // account's once signed in), so Back shows it and Next goes on.
-      cur = s.pick ? (store.get(SUBJECT_KEY, null) ? SUBJ.id : null) : (store.get(startKey(SUBJ.id), null) || {}).c,
-      forced = s.ask || s.pick,
+      cur = s.pick ? (store.get(SUBJECT_KEY, null) ? SUBJ.id : null) : s.names ? named : (store.get(startKey(SUBJ.id), null) || {}).c,
+      forced = s.ask || s.pick || s.names,
       // The last step of a player new to corals: Coral basics first (5 min), the quiz beside it.
       bas = last && cur && startVars(cur).basics && basicsDue();
     // The sign-in step holds the real sign-in box (bindSync in app.js); its Next reads "Later" until the RA has signed in.
@@ -212,7 +222,9 @@
             .join('')}</div>`
         : s.ask
           ? `<h3>${esc(SUBJ.start.q)}</h3><p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(cur)}`
-          : `<h3>${esc(t)}</h3><p>${esc(d)}</p>`;
+          : s.names
+            ? `<h3>${esc(namesDecl().q)}</h3><p>${esc(namesDecl().lede)}</p>${namesOptsHtml(cur)}`
+            : `<h3>${esc(t)}</h3><p>${esc(d)}</p>`;
     b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${body}
       <div class="tnav">${forced ? '<span></span>' : `<button type="button" class="linkish tskip">${last ? (bas ? 'Start playing' : 'Close') : 'Skip tour'}</button>`}<span>
       ${step ? '<button type="button" class="chip tback">Back</button>' : ''}${forced && !cur ? '' : `<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? (bas ? basicsWords().name + ' (5 min)' : 'Start playing') : s.signin && !SYNC ? 'Later' : 'Next'}</button>`}</span></div>`;
@@ -228,6 +240,7 @@
               my = token;
             // Next, Back and the arrow keys wait too, so the question drawn next is the picked subject's.
             picking = true;
+            named = null; // the names step is the picked subject's own
             all.forEach(x => {
               if (x.dataset.pick) x.setAttribute('aria-pressed', String(x === o));
               x.disabled = true;
@@ -256,6 +269,20 @@
             b.querySelectorAll('[data-start]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
             // model.js comes with the quiz tier; the answer is kept as soon as it is in (a first visit on a slow line).
             if (c !== cur) saving = need(2).then(() => startSet(c, 'tour'));
+            // The names step follows (app.js namesAsk, from the answer just clicked: the record is saved a moment later);
+            // an answer that skips it takes back a choice made on a first go.
+            OPEN.n = namesAsk(c, named !== null) ? SUBJ.id : null;
+            if (named && !OPEN.n) (namesClear(), (named = null));
+            keepOpen();
+            show(step + 1);
+          })
+      );
+    if (s.names)
+      b.querySelectorAll('[data-names]').forEach(
+        o =>
+          (o.onclick = () => {
+            b.querySelectorAll('[data-names]').forEach(x => x.setAttribute('aria-pressed', String(x === o)));
+            namesSet((named = o.dataset.names));
             show(step + 1);
           })
       );
@@ -457,7 +484,7 @@
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       // The first-launch question is answered before the tour goes on (forced).
-      if ((STEPS[step].ask || STEPS[step].pick) && !root.querySelector('.tbub .tnext')) return;
+      if ((STEPS[step].ask || STEPS[step].pick || STEPS[step].names) && !root.querySelector('.tbub .tnext')) return;
       show(step + 1);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -475,9 +502,8 @@
       if (at) OPEN = JSON.parse(sessionStorage.getItem(KEY + '-open'));
     } catch (e) {}
     if (!OPEN || typeof OPEN !== 'object') OPEN = {two: subjMine().length > 1, s: SUBJ.id};
-    try {
-      sessionStorage.setItem(KEY + '-open', JSON.stringify(OPEN));
-    } catch (e) {}
+    named = null;
+    keepOpen();
     $helpbox.hidden = true;
     $help.setAttribute('aria-expanded', 'false');
     root = document.createElement('div');

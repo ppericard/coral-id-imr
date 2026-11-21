@@ -16,6 +16,13 @@ const test = require('node:test'),
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const APP = read('app.js'),
   PROG = read('progress.js');
+// The fish's names step as app.js declares it (UNITS fish names).
+const NAMES = JSON.parse(
+  JSON.stringify(
+    vm.runInNewContext('({' + block(APP, '    names: {\n      q:', "    // The What I learn card's names rows", {file: 'app.js'}) + '})')
+      .names
+  )
+);
 
 // autoOf, learnRows, rowOn, learnSet and bonusList as app.js has them, on stub sets: sci (offered, auto the IMR genera for
 // an IMR player), sp (auto only, the common-name species).
@@ -25,6 +32,9 @@ function run({imr = false, q = {}, sp = true} = {}) {
     saved: 0,
     imr,
     SUBJ: {id: 'fish'},
+    imrNow: () => ctx.imr,
+    saveQ: () => ctx.saved++,
+    esc: s => String(s),
     SETS: () => ctx.S,
     bonusSet(on, k) {
       ctx.Q[k] = !!on;
@@ -38,6 +48,7 @@ function run({imr = false, q = {}, sp = true} = {}) {
   ];
   ctx.UNITS = {
     fish: {
+      names: NAMES,
       learn: [
         {k: 'sp', name: 'Common names', when: () => sp, self: () => true, line: () => ''},
         {k: 'sci', name: 'Scientific names', self: () => ctx.imr, line: () => 'every genus', part: () => 'the IMR genera only'}
@@ -47,6 +58,13 @@ function run({imr = false, q = {}, sp = true} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     [
+      block(APP, 'const namesDecl = ', '\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const namesKeys = ', '\n', {through: 1, file: 'app.js'}),
+      block(APP, 'function namesAsk(c, again) {', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'function namesSet(id) {', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'function namesClear() {', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const namesOptsHtml = ', '</div>`;\n', {through: 1, file: 'app.js'}),
+      'this.namesAsk = namesAsk; this.namesSet = namesSet; this.namesClear = namesClear; this.namesOptsHtml = namesOptsHtml;',
       block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const learnRows = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const rowOn = ', '\n', {through: 1, file: 'app.js'}),
@@ -203,4 +221,72 @@ test('mergeUsers: a row turned off stays off only where both accounts have it of
   assert.ok(m(off, off).spO === true && m(off, off).sp === false, 'off on both: off');
   assert.ok(m(off, null).spO === true, 'only one account played the subject: its choice');
   assert.ok(m(off, {sp: true}).sp === true && m(off, {sp: true}).spO === undefined, 'on on either: on');
+});
+
+// The names step at the welcome (app.js UNITS names, namesAsk, namesSet; tour.js, quiz.js namesAskShow; Pierre, 2026-11-04).
+test('the names step: common names writes nothing, so scientific names are still offered at Advanced', () => {
+  const X = run();
+  X.namesSet('common');
+  assert.deepStrictEqual(X.Q, {}, 'the record as it plays: Q.sci stays unset, the offer (quiz.js bonusOfferDue) comes');
+  assert.strictEqual(X.saved, 0);
+  assert.deepStrictEqual(X.pool(), ['s:one']);
+});
+
+test('the names step: scientific names only, and both', () => {
+  const S = run();
+  S.namesSet('sci');
+  assert.ok(S.Q.sci === true && S.Q.sp === false && S.Q.spO === true && !('sciH' in S.Q) && !('sciO' in S.Q), JSON.stringify(S.Q));
+  assert.ok(S.rowOn(S.row('sci')) && !S.rowOn(S.row('sp')));
+  assert.deepStrictEqual(S.pool(), ['g:Acanthurus'], 'the genera, no common-name species; never by hand early (Q401 A)');
+  const B = run();
+  B.namesSet('both');
+  assert.ok(B.Q.sci === true && !('sp' in B.Q) && !('sciH' in B.Q), 'common names are on already: nothing written for them');
+  assert.deepStrictEqual(B.pool().sort(), ['g:Acanthurus', 's:one']);
+});
+
+test('the names step: a changed answer in the tour (Back) replaces the earlier one', () => {
+  const X = run();
+  X.namesSet('sci');
+  X.namesSet('common');
+  assert.ok(X.rowOn(X.row('sp')) && !X.rowOn(X.row('sci')), 'common names on, scientific names off');
+  X.namesSet('both');
+  assert.ok(X.rowOn(X.row('sp')) && X.rowOn(X.row('sci')));
+  X.namesClear();
+  assert.deepStrictEqual(X.Q, {}, 'taken back: every key of both rows gone');
+});
+
+test('the names step is asked of a new player only, once, when both rows are on offer (rule D4, Q404 A)', () => {
+  assert.strictEqual(run().namesAsk('new'), true);
+  assert.strictEqual(run().namesAsk('know'), true);
+  assert.strictEqual(run().namesAsk('imr'), false, '"I\'m at IMR" has both');
+  assert.strictEqual(run({imr: true}).namesAsk('new'), false, 'an answer "I\'m at IMR" given earlier counts');
+  assert.strictEqual(run().namesAsk(undefined), false);
+  assert.strictEqual(run({sp: false}).namesAsk('new'), false, 'the species level is not on yet: one row, no choice');
+  ['sp', 'sci'].forEach(k => {
+    assert.strictEqual(run({q: {[k]: false}}).namesAsk('new'), false, 'a player who already chose ' + k + ' keeps it');
+    assert.strictEqual(run({q: {[k + 'O']: true}}).namesAsk('new'), false);
+  });
+  assert.strictEqual(run({q: {sci: true}}).namesAsk('new', true), true, 'asked already in this tour: stays on a changed answer');
+});
+
+test('the names step is declared in one place, in the player words, its answers naming only rows that exist', () => {
+  assert.deepStrictEqual(
+    NAMES.opts.map(o => o.id),
+    ['common', 'sci', 'both']
+  );
+  assert.deepStrictEqual(NAMES.skip, ['imr']);
+  const rows = run()
+    .learnRows()
+    .map(r => r.k);
+  NAMES.opts.forEach(o => Object.keys(o.rows).forEach(k => assert.ok(rows.includes(k), `${o.id} sets a row that exists: ${k}`)));
+  assert.doesNotMatch(JSON.stringify(NAMES), /Latin/, '"scientific name", never "Latin"');
+  const h = run().namesOptsHtml('both');
+  assert.strictEqual((h.match(/data-names="/g) || []).length, 3);
+  assert.match(h, /data-names="both" aria-pressed="true"/);
+  // tour.js and quiz.js read the declaration and name no subject (rule S1)
+  const QUIZ = read('quiz.js'),
+    TOUR = read('tour.js');
+  const card = block(QUIZ, 'function namesAskShow(c, go) {', '\n}\n', {through: 1, file: 'quiz.js'});
+  assert.ok(!/'(fish|coral|seaslug)'/.test(card), 'the card names no subject');
+  assert.ok(!/'(fish|coral|seaslug)'/.test(TOUR.slice(TOUR.indexOf('names: {k:'))), 'the tour names no subject');
 });

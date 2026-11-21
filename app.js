@@ -2877,6 +2877,35 @@ const UNITS = {
       // scientific genera in play (sciUp), so the Scientific names row turns both.
       SCI_SP
     ],
+    // The names step at the welcome (namesAsk, namesSet; Pierre, 2026-11-04, docs/FISH_PATH.md "Which names a player
+    // learns"): right after the first-launch question, in the tour and on its card, common names, scientific names or
+    // both. rows: what each answer does to the What I learn rows below (k: on or off); skip: the first-launch answers
+    // that skip it ("I'm at IMR" has both already). Closing it leaves the rows as they play.
+    names: {
+      q: 'Which names do you want to learn?',
+      lede: 'Every fish starts with its family. You can change this any time: My progress, What I learn.',
+      skip: ['imr'],
+      opts: [
+        {
+          id: 'common',
+          name: 'Common names',
+          line: 'Each family’s species by their common names, as you reach Advanced on it. Scientific names are offered later.',
+          rows: {sp: true, sci: false}
+        },
+        {
+          id: 'sci',
+          name: 'Scientific names',
+          line: 'Each family’s genera, then their species, by their scientific names, as you reach Advanced on it. No common-name species.',
+          rows: {sp: false, sci: true}
+        },
+        {
+          id: 'both',
+          name: 'Both',
+          line: 'Common and scientific names, each as you reach Advanced on a family.',
+          rows: {sp: true, sci: true}
+        }
+      ]
+    },
     // The What I learn card's names rows (learnRows; Pierre, 2026-11-18, Q396, Q400 D, Q404 A): common names, scientific
     // names, each on or off, both off leaving the families; "I'm at IMR" has both (its IMR genera come by themselves).
     learn: [
@@ -3104,6 +3133,39 @@ function learnSet(k, on) {
   else Q[k + 'O'] = true;
   bonusSet(!!on, k);
 }
+// The names step at the welcome (UNITS names; Pierre, 2026-11-04): asked after the first-launch answer c, in the tour and on
+// its card, unless that answer skips it or the player said "I'm at IMR" (imrNow: an answer given earlier here counts), every
+// row it sets is on offer (learnRows: the species level, rule D4) and no row was chosen yet (Q404 A: the players who already
+// play keep what they have). again: it was asked already in this tour, so a row it set does not hide it when the answer is
+// changed.
+const namesDecl = () => UNITS[SUBJ.id].names || null;
+const namesKeys = () => Object.keys(namesDecl().opts[0].rows);
+function namesAsk(c, again) {
+  const N = namesDecl();
+  if (!N || !c || N.skip.includes(c) || imrNow()) return false;
+  const rows = learnRows();
+  return namesKeys().every(k => rows.some(r => r.k === k) && (again || (Q[k] === undefined && !Q[k + 'O'])));
+}
+// An answer of the step: each row it names on or off as the answer says (learnSet), only where the row is not so already,
+// so "common names" on a record no switch was tapped on writes nothing and the scientific names stay offered at Advanced.
+function namesSet(id) {
+  const o = namesDecl().opts.find(x => x.id === id);
+  if (o) learnRows().forEach(r => r.k in o.rows && rowOn(r) !== o.rows[r.k] && learnSet(r.k, o.rows[r.k]));
+}
+// A choice of the step taken back (the tour: the first-launch answer changed to one that skips it): the rows read as they
+// play again.
+function namesClear() {
+  namesKeys().forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
+  saveQ();
+}
+// The step's answers as big buttons, like the first-launch question's (startOptsHtml); cur: the one in force, marked.
+const namesOptsHtml = cur =>
+  `<div class="startopts" role="group" aria-label="${esc(namesDecl().q)}">${namesDecl()
+    .opts.map(
+      o =>
+        `<button type="button" class="startopt" data-names="${o.id}" aria-pressed="${o.id === cur}"><b>${esc(o.name)}</b><small>${esc(o.line)}</small></button>`
+    )
+    .join('')}</div>`;
 // The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once.
 const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it

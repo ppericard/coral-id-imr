@@ -95,7 +95,9 @@ is the design's shorthand, and internal identifiers may keep it.
   stops being asked and its units keep their bars (Q402 A). **Built** (the card's names rows,
   [spec](spec/fish-game.md#the-what-i-learn-card-names-rows)): the card on My progress with its Common names and Scientific
   names rows (the sea slugs: their Species row), "What I learn ›" on Home's Learn door, ⚙'s Scientific names row gone.
-  Not yet: the names step at the fish welcome, and the card's other levels (Bonus genera, Beyond the IMR course, Open all).
+  The welcome's **names step** ([decision](decisions/2026-11-21-fish-welcome-names-step.md),
+  [spec](spec/cards.md#the-names-step-at-the-welcome)): asked right after "How well do you know reef fish?", of "new" and
+  "know", not of "I'm at IMR"; it sets those rows. Not yet: the card's other levels (Bonus genera, Beyond the IMR course, Open all).
 - **"I'm at IMR (Research Assistant programme)"** = both, with scientific names early (EventMeasure takes scientific names).
 - **One score scale for everyone**, whatever the choice, so the leaderboards stay comparable ("My progress (fish)").
 

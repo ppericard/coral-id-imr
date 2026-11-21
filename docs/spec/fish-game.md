@@ -93,7 +93,8 @@ place, `app.js` `UNITS[id].learn`: `{name, line(), when(), self(), k}`, `k` the 
 `SUBJECTS` `optin`, so the choice syncs and merges). The fish: Common names (`sp`, shown from `SPECIES_SHEET`) and
 Scientific names (`sci`: the genera, and through `sciUp` their species); the sea slugs: Species (`ssp`, shown from
 `SCI_SHEET`); the corals: none, so no card and no Home link. `learnRows()` keeps the rows whose `when()` holds (rule
-D4).
+D4). The fish's welcome sets these rows once, in its names step right after the first-launch question
+([cards.md](cards.md#the-names-step-at-the-welcome): `UNITS[id].names`, `namesSet`).
 
 - **A row's state** (`rowOn`): on while not turned off on the card (`Q[k + 'O']`) and either turned on (`Q[k]` true) or
   bringing its units by itself (`self()`: the species; an IMR player's scientific genera, "I'm at IMR" meaning both). A
