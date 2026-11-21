@@ -65,24 +65,31 @@ configuration was measured (docs/INTEGRATOR.md "A large judging or boxing pass i
 - **The judge's rule**: a phase only where the species' quote lets the photo be read. Otherwise no tag, never `unsure`,
   which would take a photo in play out of the game.
   - No tag for species whose quote names no colour (*Genicanthus lamarck*: "different colors in mature adults only";
-    *Amphiprion frenatus*).
+    *Amphiprion frenatus*), or whose differences do not tell one photo (*Epibulus brevis*).
   - No tag where the difference is too fine for a tile (*Parapercis clathrata*'s gill spot), or a matter of degree
-    (*Thalassoma lunare*, "similar but more blue"; *T. hardwicke*'s brighter terminal males, except the clearest).
+    (*Thalassoma lunare*, "similar but more blue"; *T. hardwicke*, "similar with growth").
+  - No tag on a *Rhinomuraena quaesita* with a yellow head on a blue body: between male and female, and its
+    transitional stage is a point for Pierre (`data/points.json`, rule C5).
+  - The species left untagged and why: `judging/fish-phase-rejudge.json` `untagged`.
   - Where both the sex and the initial and terminal phases are sourced, female and male; but for *Halichoeres
     hortulanus* the chequered initial phase is tagged `intermediate`. The observers call 7 of these photos male, and
     the initial phase covers both sexes.
-- **Batch 1** (2026-11-21): the newly flagged species with the most photos first, 900 photos read (30 sheets), 17
-  species.
-  - 320 phases written in their judging files (female 129, male 155, intermediate 26, terminal 10), then
-    `judging_fish.py codes` (only `ph` changed in `data/suggest.json`).
-  - Drift: 5% of the tags (16 photos) re-read on 480 px tiles, all 16 the same.
-  - Against the observers' iNaturalist sex annotations where they name one: 145 of 148 agree (the hortulanus initial
-    phases aside).
+- **Batch 1** (2026-11-21): the newly flagged species with the most photos first. Of the first 900 photos of the bulk
+  list (30 sheets), 690 were read (23 sheets); 7 sheets (210 photos) were left unopened because their species get no tag
+  from a tile (above), 18 of them photos of *Stethojulis strigiventer* and *Oxycheilinus bimaculatus*, still to read.
+  - 314 phases written in 16 judging files (female 127, male 155, intermediate 24, terminal 8), then
+    `judging_fish.py codes` (only `ph` changed in `data/suggest.json`) and `one`.
+  - Every photo read, with its tag or none: `judging/fish-phase-rejudge.json`, so the next batch starts where this
+    one stopped.
+  - Drift: 5% of the tags (16 photos) re-read on 480 px tiles by the same reader soon after, all 16 the same (weak
+    evidence).
+  - Against the observers' iNaturalist sex annotations where they name one: 143 of 145 sex tags agree. 9 more are
+    initial-phase tags where the observer wrote male.
   - Every unit these species belong to (species, genus, family) already had a sex or colour phase photo in play, from
     the observers' annotations. So no unit gains a new variant group, and no "Learned" mark can be taken by this batch.
-- **Left**: about 2,400 photos of the bulk list (the other newly flagged species, then the IMR dimorph entries'
-  photos with no phase judged).
-  - At 30 per sheet, about 80 sheet reads and 5% drift.
+- **Left**: about 2,600 photos of the bulk list (the other newly flagged species, then the IMR dimorph entries'
+  photos with no phase judged), the 18 above included.
+  - At 30 per sheet, about 90 sheet reads and 5% drift.
   - The 384 reference photos with no candidate copy have no phase field in `tools/fish_judge.json`, so a judged phase
     cannot be written for them yet.
 
