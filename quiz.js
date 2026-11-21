@@ -2006,7 +2006,8 @@ const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target
 // mix-up, CONTRAST.GAP apart, from the first answers on.
 const CONTRAST = {P: 0.1, GAP: 2, Q: 3};
 // Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): one name, four photos, tap the one that shows
-// it. Where UNITS tiles exist (the fish), with the chance P (planPhoto), in the contrast slot: spaced as the duels.
+// it. Where UNITS tiles exist (the fish, the sea slugs), on the units of the subject's own rank and on its species, with
+// the chance P (planPhoto), in the contrast slot: spaced as the duels.
 const FIND = {P: 0.05};
 let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answers so far when the missed question showed}
   twoAt = -Infinity, // answers so far when the last contrast question (an Again, a duel or a Find the X) showed
@@ -2425,11 +2426,39 @@ function startAskShow(cur) {
           (b.onclick = () => {
             startSet(b.dataset.start, 'card');
             d.close('pick');
-            startBasicsOffer(cur) || quizPhoto(cur);
+            const next = () => startBasicsOffer(cur) || quizPhoto(cur);
+            namesAskShow(b.dataset.start, next) || next();
           })
       )
   });
   d.ulDone = () => (d.close('sync'), quizPhoto(cur));
+}
+// The names step (app.js UNITS namesStep, namesAsk): right after the first-launch answer c on its card, common names, scientific
+// names or both; go: what comes next (the basics offer, the quiz). An answer sets the What I learn rows (namesSet); Escape
+// leaves them as they play. Its own card class, not startq: the question's card is the one the sync closes (model.js
+// startMerge). Returns whether it showed.
+function namesAskShow(c, go) {
+  if (!namesAsk(c)) return false;
+  const N = namesDecl();
+  const d = cardShow({
+    kind: 'feature',
+    cls: 'namesq',
+    kick: 'Before you start',
+    title: N.q,
+    label: N.q,
+    body: `<p>${esc(N.lede)}</p>${namesOptsHtml(null)}`,
+    esc: () => (d.close('esc'), go()),
+    bind: d =>
+      d.querySelectorAll('[data-names]').forEach(
+        b =>
+          (b.onclick = () => {
+            namesSet(b.dataset.names);
+            d.close('pick');
+            go();
+          })
+      )
+  });
+  return true;
 }
 // "I'm new to corals" (CHOICE v.basics): the subject's basics module (Coral basics, Fish basics) offered first, about 5
 // minutes, then the quiz. Only while the module is not done, and only for a subject that has one (app.js basicsDue), in
@@ -2711,16 +2740,21 @@ function introStart(list) {
     L.push(openPick(fresh, fresh, met, {first: true}));
   return L.length ? L : levelTop(list);
 }
-// Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of the subject's own rank,
-// met and ready, have tiles (UNITS tiles); the others its look-alikes first (distractors), each photo drawn by photoSet
-// among its tiles. Scored as a 4-choice answer (another unit's photo tapped is that unit given, rule L2), logged |f. The
-// chance is drawn last, so a subject with no tile draws exactly as without it.
+// Find the X (FIND) is asked on the units of the subject's own rank and on its species, by common names or by scientific
+// names; a scientific genus keeps its usual questions (docs/LEARNING.md "Find the X slipped into the fish quiz").
+const findRank = n => !rankOf(n) || rankOf(n) === 'species';
+// Find the X (FIND) on unit t, or null: with the chance FIND.P when t and three other units of its class (findRank; the
+// class is rankKind: a species by its common name never stands with one by its scientific name), met and ready, have
+// tiles (UNITS tiles); the others its look-alikes first (distractors, among the units in play only: wide false, so no unit
+// of the rank outside them takes a place), each photo drawn by photoSet among its tiles. Scored as a 4-choice answer
+// (another unit's photo tapped is that unit given, rule L2), logged |f. The chance is drawn last, so a unit or a subject
+// with no tile draws exactly as without it.
 function planFind(cur, t, list, ease = 0, sel = null) {
   const tiles = UNITS[SUBJ.id].tiles;
-  if (rankOf(t) || !introReady(t) || !tiles(t).length) return null;
-  const others = list.filter(n => n !== t && !rankOf(n) && introReady(n) && tiles(n).length);
+  if (!findRank(t) || !introReady(t) || !tiles(t).length) return null;
+  const others = list.filter(n => n !== t && rankKind(n) === rankKind(t) && introReady(n) && tiles(n).length);
   if (others.length < 3 || !(Math.random() < FIND.P)) return null;
-  const ch = shuffle([t, ...distractors(t, others, 3, introReady)]),
+  const ch = shuffle([t, ...distractors(t, others, 3, introReady, false)]),
     tile = p => !!p.xc,
     set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', tile),
     find = ch.map(n => ({n, p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', tile).shown || [])[0]}));
@@ -3213,7 +3247,7 @@ function cqByIMR(play) {
     });
 }
 // The fish's groups: the identification groups of the regional key (TREEU.groups), in its order, as the Families page
-// shows them (learn.js viewFishList); a unit under a family (a species, a scientific genus) is in its family's group.
+// shows them (learn.js viewList); a unit under a family (a species, a scientific genus) is in its family's group.
 function cqByKey(play) {
   const gOf = n => {
       for (let u = GX(n), i = 0; u && i < 4; u = GX(u.parent), i++) if (u.group) return u.group;
