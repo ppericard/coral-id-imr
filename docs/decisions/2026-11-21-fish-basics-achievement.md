@@ -1,6 +1,6 @@
 # Fish basics earns an achievement, "Fin to tail"
 
-Date: 2026-11-21. PR: #NNNN. Rules or docs touched: L8, D3, D5; docs/LEARNING.md "Fish achievements, around the global score"; docs/FISH_PATH.md "Achievements"; docs/spec/achievements.md.
+Date: 2026-11-21. PR: #1369. Rules or docs touched: L8, D3, D5; docs/LEARNING.md "Fish achievements, around the global score"; docs/FISH_PATH.md "Achievements"; docs/spec/achievements.md.
 
 ## Context
 
