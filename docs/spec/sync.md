@@ -448,7 +448,7 @@ as `CORE_`. `tools/sync_core.py --fix` writes it, `--check` runs in CI, and the 
 
 **Asking.** Requests carry `rv`, the rules version this device applied (`sync.js` `rvApplied`, key
 `reefid-sync-coral-rv`, synced with the progress): `GET ?…&rv=N&pt=T`, `POST {…, rv, pt}` (a save) and
-`POST {anon, anonAnswers, rv, pt, reset}` (a device that never signed in). Signing in to an existing account takes the account's
+`POST {anon, anonAnswers, rv, pt, reset, rvs, sreset, sstart}` (a device that never signed in). Signing in to an existing account takes the account's
 `reefid-sync-coral-rv` (0 when its data has none), never the device's (`sync.js` `signIn`).
 
 **Replaying.** When `rv` < `CORE_.RV` (`core.js` `RVS`), `replay_` replays the player's rows of the Answers tab since
@@ -536,8 +536,10 @@ to the in-memory sheet and checks the replays it serves; the app's own units gai
   answers there, and a unit the log has no answer on loses the answers the device counts on it (the level's answer
   count keeps the larger of the two); no floor; no card for the recalculation (rules D5, D6); and the app never adopts
   a replay of a rules version newer than its own (`replayAdoptS`, `rvOf`), which it could not hold.
-- A device that never signed in does not ask for another subject's replay; signing in drops the device's fish rules
-  version as the corals' (`signIn`), and sign-out clears it.
+- A device that never signed in asks for the other subjects' replays as a save does (`sync.js` `sendAnon`: `rvs`, the
+  structure stamps, `sreset` and `sstart` by subject; `Code.gs` `anon_` `replays_`) and adopts them (`replaysAdopt`,
+  each subject's reset as sent the cutoff); signing in drops the device's fish rules version as the corals'
+  (`signIn`), and sign-out clears it.
 
 ### Replays under the content editor's structure
 
