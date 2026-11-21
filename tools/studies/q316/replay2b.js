@@ -207,7 +207,11 @@ const LL = (p, y) => {
   const q = Math.min(1 - 1e-6, Math.max(1e-6, p));
   return -Math.log(y ? q : 1 - q);
 };
-const scorable = r => r.sc && r.k != null && r.k > 1 && isFinite(r.th) && r.th != null && r.d0 != null && r.ph.length > 0;
+// A typed answer (core.js kOf Infinity, which prep.js's JSON keeps as null; guess rate 0) counts: it has unlimited
+// plausible choices (Codex #1373).
+const typedK = r => r.k == null && C.TYPED_RE.test(String(r.mode || ''));
+const scorable = r =>
+  r.sc && ((r.k != null && r.k > 1) || typedK(r)) && isFinite(r.th) && r.th != null && r.d0 != null && r.ph.length > 0;
 
 // The paired comparison, players as the unit (abilityeval.js signFlip, tQuantile), on the answers keep() holds.
 function compare(rows, A, B, keep, minAnswers = RULES.primary.minAnswers) {
@@ -339,6 +343,20 @@ function replay(raw, X, fits, full, {deadline = null, ER = engine(), S = null} =
     }
     r.ph.forEach(f => ((cnt[f] = cnt[f] || Object.create(null)), (cnt[f][raw[i][0]] = (cnt[f][raw[i][0]] || 0) + 1)));
   }
+  // The end of the log: the last answer into the arms, with the whole log's trust (the pass made again if it changed),
+  // so the end-of-log states (the compression) have the history the live offsets and the reference fit have
+  // (Codex #1373). The predictions above are untouched.
+  if (!cut && n) {
+    const tr = C.trustOf(raw),
+      key = Object.keys(tr)
+        .filter(w => tr[w])
+        .sort()
+        .join(',');
+    if (key !== trustKey) {
+      Object.keys(st).forEach(k => (st[k] = mk(st[k].A.person)));
+      for (let j = 0; j < n; j++) passRow(j, memAt[j], tr);
+    } else passRow(n - 1, memAt[n - 1], tr);
+  }
   return {E, prim, VA, VB, st, cut, rowsDone: memAt.length};
 }
 
@@ -358,6 +376,8 @@ function tables(X, Rp, full, ref) {
     out.allFish = compare(rows, E.a1, E.a2, all);
     out.genusRank = compare(rows, E.a1, E.a2, (r, i) => all(r, i) && r.rk === 'genus', 1);
   } else out.corals = compare(rows, E.a1, E.a2, all);
+  // descriptive: today's engine replayed against what the game logged (how far the replay is from what it used)
+  out.armLog = compare(rows, E.log, E.a1, all);
   out.arm4b = compare(rows, E.a2, E.b4, all);
   out.arm4c = compare(rows, E.a2, E.c4, all);
   out.calibration = {};
@@ -401,7 +421,27 @@ function tables(X, Rp, full, ref) {
   return out;
 }
 
-module.exports = {RULES, V31, aStar, engine, photoDiffOf, served, variances, chainState, chainStep, chainD, expected, scorable, compare, verdict, replay, tables};
+// The half fits (fit.py fit --no-accept on each half's rows): a fit is kept only from a run that exited 0 and wrote its
+// file now (a former run's file is removed first), so a failed run never leaves a stale fit to be read (Codex #1373).
+function halfFits(DIR, s, X, py, deadline, spawn = spawnSync) {
+  const fits = {};
+  for (const h of ['A', 'B']) {
+    const keep = r => (Number(String(r.p).slice(1)) % 2 ? 'A' : 'B') === h,
+      ex = path.join(DIR, `export-${s}-${h}.json`),
+      out = path.join(DIR, `fit-${s}-${h}.json`);
+    fs.writeFileSync(ex, JSON.stringify({...X, rows: X.rows.map(r => ({...r, use: r.use && keep(r)}))}));
+    fs.rmSync(out, {force: true});
+    if (deadline - Date.now() / 1000 <= 0) break;
+    const r = spawn(py, [path.join(__dirname, 'fit.py'), 'fit', ex, out, '--no-accept', '--deadline', String(deadline)], {stdio: 'inherit', cwd: ROOT});
+    if (!r || r.status !== 0 || !fs.existsSync(out)) break;
+    const F = JSON.parse(fs.readFileSync(out, 'utf8'));
+    if (!F.fit || F.cut) break;
+    fits[h] = F.fit;
+  }
+  return fits;
+}
+
+module.exports = {RULES, V31, aStar, engine, halfFits, photoDiffOf, served, variances, chainState, chainStep, chainD, expected, scorable, compare, verdict, replay, tables};
 
 // ---- The run: half fits (fit.py), then the replay per subject, under one clock.
 function main(argv) {
@@ -437,15 +477,7 @@ function main(argv) {
         .map((r, i) => ({r, i}))
         .sort((a, b) => a.r[1] - b.r[1] || a.i - b.i)
         .map(x => [lab.get(x.r[0]), ...x.r.slice(1)]);
-    const fits = {};
-    for (const h of ['A', 'B']) {
-      const keep = r => (Number(String(r.p).slice(1)) % 2 ? 'A' : 'B') === h;
-      fs.writeFileSync(path.join(DIR, `export-${s}-${h}.json`), JSON.stringify({...X, rows: X.rows.map(r => ({...r, use: r.use && keep(r)}))}));
-      const left = deadline - Date.now() / 1000;
-      if (left <= 0) break;
-      spawnSync(py, [path.join(__dirname, 'fit.py'), 'fit', path.join(DIR, `export-${s}-${h}.json`), path.join(DIR, `fit-${s}-${h}.json`), '--no-accept', '--deadline', String(deadline)], {stdio: 'inherit', cwd: ROOT});
-      if (fs.existsSync(path.join(DIR, `fit-${s}-${h}.json`))) fits[h] = rd(`fit-${s}-${h}.json`).fit;
-    }
+    const fits = halfFits(DIR, s, X, py, deadline);
     if (!fits.A || !fits.B) {
       console.log(`${s}: the half fits did not finish: ${CANNOT}`);
       continue;
@@ -463,6 +495,7 @@ function main(argv) {
     if (T.genusRank) console.log(`  genus-rank answers (exploratory): ${f(T.genusRank)}`);
     if (T.corals) console.log(`  corals (exploratory): ${f(T.corals)}`);
     console.log(`  4b - 2 (exploratory): ${f(T.arm4b)}; 4c - 2: ${f(T.arm4c)}`);
+    console.log(`  arm 1 - logged (descriptive): ${f(T.armLog)}`);
     if (T.compression) console.log(`  compression on D(u), ${T.compression.units} units: arm 1 ${T.compression.arm1.toFixed(2)}, arm 2 ${T.compression.arm2.toFixed(2)}`);
   }
   console.log(`${((Date.now() - t0) / 60000).toFixed(1)} minutes`);

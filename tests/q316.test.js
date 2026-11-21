@@ -412,6 +412,32 @@ test("replay2b.js: the primary counts only the earlier answers of players truste
   assert.strictEqual(T.primary.verdict, 'the measure cannot tell', 'two players: no test');
 });
 
+test('replay2b.js: a typed answer is scored; the end-of-log states hold every answer; a failed half fit leaves no stale fit', () => {
+  const base = {sc: true, th: 1, d0: 0.2, ph: ['x']};
+  assert.ok(B2.scorable({...base, k: null, mode: 'quiz|t'}), 'typed: unlimited choices (kOf Infinity, null in the JSON)');
+  assert.ok(!B2.scorable({...base, k: null, mode: 'quiz'}), 'an unknown number of choices: not scored');
+  assert.ok(!B2.scorable({...base, k: 1, mode: 'quiz'}));
+  // the end of the log: every answer with photos is in the chain's level counts (the last one included)
+  const ch = ['Acropora', 'Porites', 'Favia', 'Montipora'],
+    rows = [];
+  for (let i = 0; i < 24; i++) rows.push(ra('w' + (i % 2), i, ch[i % 4], ['c' + (i % 4)], (i * 7) % 10 < 7, ch, {d: 0.1, f: 0, o: 0}));
+  const L = Pr.load({ok: true, rows}),
+    X = Pr.prepare(L.rows, 'coral', {coralTax: () => ({})}),
+    lab = new Map(Object.entries(X.map).map(([l, w]) => [w, l])),
+    raw = L.rows.map(r => [lab.get(r[0]), ...r.slice(1)]);
+  const fit = {sd: {gen: [0.4], photo: [0.4]}, fixed: {}},
+    R = B2.replay(raw, X, {A: fit, B: fit}, null);
+  const counted = Object.values(R.st.c2.A.R).reduce((t, x) => t + x[1], 0);
+  assert.strictEqual(counted, 24, 'the last answer is in the end-of-log state');
+  // half fits: a run that fails leaves nothing to read, even with a former run's file in place
+  const d = tmp();
+  fs.writeFileSync(path.join(d, 'fit-coral-A.json'), JSON.stringify({fit: fit}));
+  const got = B2.halfFits(d, 'coral', X, 'python3', Date.now() / 1000 + 60, () => ({status: 1}));
+  assert.deepStrictEqual(got, {});
+  assert.ok(!fs.existsSync(path.join(d, 'fit-coral-A.json')), 'the stale fit removed');
+  fs.rmSync(d, {recursive: true});
+});
+
 test("the rules the README declares for 2B are replay2b.js's", () => {
   const P = B2.RULES.primary;
   assert.deepStrictEqual([P.minPlayers, P.minAnswers, P.alpha, B2.RULES.minutes], [6, 20, 0.05, 40]);
