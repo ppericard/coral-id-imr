@@ -1,6 +1,6 @@
 # The fish phase flag comes from the cited phase list too, and the phase card names the list's sources
 
-Date: 2026-11-21. PR: #?. Rules or docs touched: judging/FISH.md "Tags", "The phase flag caps nothing"; docs/FISH_PATH.md
+Date: 2026-11-21. PR: #1395. Rules or docs touched: judging/FISH.md "Tags", "The phase flag caps nothing"; docs/FISH_PATH.md
 "Juveniles and colour phases"; tools/fish_phases.json `_doc`
 
 ## Context
