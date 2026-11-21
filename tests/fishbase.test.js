@@ -238,7 +238,9 @@ test('fetch_fishbase.py with phases (Q36): a phase room takes the photos FishBas
       {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
       {id: 's2', name: 'Fishus parvus', inat: 502, circle: 1, present: {ph: true, near: true}}
     ],
-    teach: [{id: 't1', name: 'Fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1', 's2']}]
+    // Three species listed (one not in this fixture), so no family floor raises the caps of Q36 (fetch_fish.py
+    // family_cap: tests/familyfloor.test.js).
+    teach: [{id: 't1', name: 'Fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1', 's2', 'sx1']}]
   };
   const row = (n, k = {}) => ({
     n,
