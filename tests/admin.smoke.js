@@ -2216,43 +2216,50 @@ async function lazyPart(b, base, fails) {
           await settle();
           if ((await p.evaluate(() => location.hash)) !== '#photos/tree/key/Stylophora' || !(await p.$('[data-lv]')))
             fails.push(`${w}px Coral Tree: a card's link`);
-          // Removed from the site and Excluded are lists on a genus's page: Remove lists the photo (Put back returns it, one
-          // click each), × lists it as excluded (Restore); a group's page lists those of its genera; the Tag… filters count
-          // the genera that have any; Undo steps back
+          // Removed is one list on a genus's page (Pierre, 2026-11-21 05:48, option A): the one Remove takes the photo out for good
+          // and lists it (a toast with an Undo button, Put back returns it, one click each); a group's page lists those of its
+          // genera; the Tag… filter counts the genera that have any (no Excluded filter any more); Undo steps back
           await go('photos/tree/key/Acropora');
           const lists = () =>
             p.evaluate(() => ({
-              rm: [...document.querySelectorAll('[data-np-sec="back"] figure')].map(x => x.dataset.f),
-              ex: [...document.querySelectorAll('[data-np-sec="restore"] figure')].map(x => x.dataset.f),
+              rm: [...document.querySelectorAll('[data-np-sec] figure[data-np-kind="restore"]')].map(x => x.dataset.f),
+              old: [...document.querySelectorAll('[data-np-sec] figure[data-np-kind="back"]')].map(x => x.dataset.f),
+              heads: [...document.querySelectorAll('[data-np-sec] h3')].map(x => x.firstChild.textContent.trim()),
+              rmbtns: document.querySelectorAll('[data-drop] .adm-tile [data-act="remove"]').length,
+              crosses: document.querySelectorAll('.adm-tile .adm-x, .adm-tile [data-act="exclude"], .adm-tile [data-act="hide"]').length,
               tags: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean)
             }));
           c = await lists();
           // (the real curation already excludes some of Acropora's photos: the list shows them, nothing else)
-          const ex0 = c.ex.length;
-          if (c.rm.length || !c.tags.includes('removed') || !c.tags.includes('excluded'))
-            fails.push(`${w}px Coral Tree: lists on a genus with nothing removed ${JSON.stringify(c.rm)}`);
+          const rm0 = c.rm.length;
+          if (c.old.length || !c.tags.includes('removed') || c.tags.includes('excluded') || !c.rmbtns || c.crosses)
+            fails.push(`${w}px Coral Tree: one Remove per tile, one list ${JSON.stringify(c)}`);
+          if (rm0 && c.heads[0] !== 'Removed') fails.push(`${w}px Coral Tree: the list is not called Removed ${JSON.stringify(c.heads)}`);
           const f0 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
-          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="hide"]`);
+          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="remove"]`);
           await settle();
           c = await lists();
-          if (c.rm.join() !== f0) fails.push(`${w}px Coral Tree: Remove listed ${JSON.stringify(c)}`);
+          if (c.rm.length !== rm0 + 1 || !c.rm.includes(f0) || !(await p.evaluate(f => !!(DRAFT.exclude || {})[f], f0)))
+            fails.push(`${w}px Coral Tree: Remove listed ${JSON.stringify(c)}`);
+          const tu = await p.evaluate(() => {
+            const t = document.querySelector('.adm-toast');
+            return !t.hidden && /^Removed\./.test(t.textContent) && !!t.querySelector('button.adm-toast-undo');
+          });
+          if (!tu) fails.push(`${w}px Coral Tree: Remove's toast has no Undo button`);
+          await p.click('.adm-toast .adm-toast-undo');
+          await settle();
+          c = await lists();
+          if (c.rm.length !== rm0 || c.rm.includes(f0)) fails.push(`${w}px Coral Tree: the toast's Undo ${JSON.stringify(c)}`);
+          await p.click(`[data-drop] .adm-tile[data-f="${f0}"] [data-act="remove"]`);
+          await settle();
           await go('photos/tree/key/' + encodeURIComponent('k:1'));
           c = await lists();
           if (!c.rm.includes(f0)) fails.push(`${w}px Coral Tree: a group page lists its genera's removed photos ${JSON.stringify(c)}`);
           await go('photos/tree/key/Acropora');
-          await p.click(`[data-np-sec="back"] figure[data-f="${f0}"] [data-np="back"]`);
+          await p.click(`[data-np-sec] figure[data-f="${f0}"] [data-np="restore"]`);
           await settle();
           c = await lists();
-          if (c.rm.length) fails.push(`${w}px Coral Tree: Put back ${JSON.stringify(c)}`);
-          const f1 = await p.evaluate(() => document.querySelector('[data-drop] .adm-tile[data-f]').dataset.f);
-          await p.click(`[data-drop] .adm-tile[data-f="${f1}"] [data-act="exclude"]`);
-          await settle();
-          c = await lists();
-          if (c.ex.length !== ex0 + 1 || !c.ex.includes(f1)) fails.push(`${w}px Coral Tree: × listed ${JSON.stringify(c.ex)}`);
-          await p.click(`[data-np-sec="restore"] figure[data-f="${f1}"] [data-np="restore"]`);
-          await settle();
-          c = await lists();
-          if (c.ex.length !== ex0 || c.ex.includes(f1)) fails.push(`${w}px Coral Tree: Restore ${JSON.stringify(c.ex)}`);
+          if (c.rm.length !== rm0 || c.rm.includes(f0)) fails.push(`${w}px Coral Tree: Put back ${JSON.stringify(c.rm)}`);
           if (once) {
             // Opened cold at a coral Tree address (a bookmark, a reload): the page draws, with no error.
             const nc = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
@@ -3701,19 +3708,21 @@ async function lazyPart(b, base, fails) {
         JSON.stringify(all.pr) !== JSON.stringify([['handled in #577', 'https://github.com/ppericard/coral-id-imr/pull/577']])
       )
         fails.push(`${w}px To do › All, a report handled in a PR: ${JSON.stringify(all)}`);
-      // Tree › a genus › Removed from the site: Put back takes a removed photo back.
+      // Tree › a genus › Removed: a photo the old Remove took off the site (a published hide entry; nothing writes one now) is
+      // in the same list, and Put back takes it back.
       const hid = await p.evaluate(() => {
         const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
           f = photos(n)[0].f;
-        ACT.hide(n, f);
+        DRAFT.genera[n] = {...entry(n), hide: [f]};
+        saveDraft();
         location.hash = 'photos/tree/key/' + encodeURIComponent(n);
         return {n, f};
       });
       await settle();
-      if (!(await p.$(`#view [data-np-sec="back"] [data-f="${hid.f}"] [data-np="back"]`)))
+      if (!(await p.$(`#view [data-np-sec] [data-f="${hid.f}"][data-np-kind="back"] [data-np="back"]`)))
         fails.push(`${w}px Removed: the removed photo is not listed`);
       else {
-        await p.click(`#view [data-np-sec="back"] [data-f="${hid.f}"] [data-np="back"]`);
+        await p.click(`#view [data-np-sec] [data-f="${hid.f}"][data-np-kind="back"] [data-np="back"]`);
         await settle();
         if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid))
           fails.push(`${w}px Removed: Put back left the photo removed`);
@@ -6173,7 +6182,7 @@ async function lazyPart(b, base, fails) {
       const hw = await p
         .waitForFunction(
           () => {
-            const t = document.querySelector('[data-health="photos"] .adm-tile [data-act="hide"]');
+            const t = document.querySelector('[data-health="photos"] .adm-tile [data-act="remove"]');
             return t ? String(document.documentElement.scrollWidth - innerWidth) : false;
           },
           null,
@@ -6343,7 +6352,7 @@ async function lazyPart(b, base, fails) {
             page: a('[data-rp]') && a('[data-rp]').getAttribute('href'),
             attach: !!a('[data-ratt]'),
             tiles: [...c.querySelectorAll('.adm-tile')].map(t => t.dataset.f),
-            coralTools: !!a('.adm-tile [data-act="hide"]'),
+            coralTools: !!a('.adm-tile [data-act="remove"]'),
             pick: c.querySelectorAll('[data-rpf]').length,
             unitSel: !!a('[data-rpunit]'),
             where: (a('.adm-where') || {}).textContent || '',
@@ -6505,7 +6514,7 @@ async function lazyPart(b, base, fails) {
         let s = await st();
         if (JSON.stringify(s.open) !== JSON.stringify([seed.f]) || s.tiles.includes('zz-gone-1') || !s.tiles.includes(seed.f))
           fails.push(`${w}px To do › Flagged: a flag on a missing photo listed or counted ${JSON.stringify(s)}`);
-        await p.click(`#view .adm-flagged [data-f="${seed.f}"] [data-act="hide"]`);
+        await p.click(`#view .adm-flagged [data-f="${seed.f}"] [data-act="remove"]`);
         await settle();
         s = await st();
         if (s.kept.length || s.tiles.length)
@@ -7018,10 +7027,7 @@ async function lazyPart(b, base, fails) {
         want: [String(play), String(cols), String(per.filter(Boolean).length), String(wait)],
         pool,
         rej,
-        sum: ['In play', 'Not in games', 'Comparison only', 'Removed', 'Candidates', 'Rejected', 'Excluded'].reduce(
-          (t, k) => t + pool[k],
-          0
-        ),
+        sum: ['In play', 'Not in games', 'Comparison only', 'Removed', 'Candidates', 'Rejected'].reduce((t, k) => t + pool[k], 0),
         genus: cells('[data-pov="genus"] tbody tr')[0],
         wantMed: txt(med(per)),
         wantRange: `${Math.min(...per)}–${Math.max(...per)}`,
@@ -10198,16 +10204,16 @@ async function lazyPart(b, base, fails) {
         const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
         await goGenus(g);
         if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
-        // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
-        // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
-        await p.$eval(`[data-f="${CF[0]}"] [data-act="hide"]`, b => b.click());
+        // Remove on the genus page of a photo the auto-sort added: removed for good (curation exclude), a Keep disagreement, timed as
+        // the latest comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is the same.
+        await p.$eval(`[data-f="${CF[0]}"] [data-act="remove"]`, b => b.click());
         await settle();
         const rm = await p.evaluate(
           ([F, g]) => {
             const K = aCmp().filter(c => c.field === 'keep');
             return {
               added: !!(entry(g).add || {})[F],
-              rej: rejected(F),
+              rej: !!(DRAFT.exclude || {})[F],
               fix: K.some(c => c.f === F && !c.ok && c.how === 'fix'),
               last: (K.slice(-1)[0] || {}).f,
               t: !!aOf(F).d.t
@@ -10219,20 +10225,23 @@ async function lazyPart(b, base, fails) {
           fails.push(`${w}px Auto: Remove of an auto-added photo is not a Keep disagreement ${JSON.stringify(rm)}`);
         await p.click('#undo');
         await settle();
-        const back = await p.evaluate(([F, g]) => ({added: !!(entry(g).add || {})[F], rej: rejected(F), t: !!aOf(F).d.t}), [CF[0], g]);
+        const back = await p.evaluate(
+          ([F, g]) => ({added: !!(entry(g).add || {})[F], rej: !!(DRAFT.exclude || {})[F], t: !!aOf(F).d.t}),
+          [CF[0], g]
+        );
         if (!back.added || back.rej || back.t) fails.push(`${w}px Auto: Undo of that Remove ${JSON.stringify(back)}`);
         const own = await p.evaluate(g => {
-          const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f));
+          const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f) && !(DRAFT.exclude || {})[x.f]);
           if (!c) return null;
           ACT.addc(g, c.f, null, 'wide');
-          ACT.hide(g, c.f);
-          const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
+          ACT.remove(g, c.f);
+          const r = {rej: !!(DRAFT.exclude || {})[c.f], added: !!(entry(g).add || {})[c.f]};
           undo();
           undo();
-          r.after = rejected(c.f) || !!(entry(g).add || {})[c.f]; // both Undos: neither mark left
+          r.after = !!(DRAFT.exclude || {})[c.f] || !!(entry(g).add || {})[c.f]; // both Undos: neither mark left
           return r;
         }, g);
-        // Remove of a candidate Pierre added himself: rejected as well (no return to Candidates, no new auto add); two Undos restore.
+        // Remove of a candidate Pierre added himself: removed as well (no return to Candidates, no new auto add); two Undos restore.
         if (own && (!own.rej || own.added || own.after)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
       }
       // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.

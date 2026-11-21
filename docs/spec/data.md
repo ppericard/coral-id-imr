@@ -258,8 +258,8 @@ The admin loads it (`side('data/presence.json', 'sp')`), and `presence.js` `outO
 (`srcTag`), and a part of To do (Reports) listing the game and sheet photos so flagged. Nothing is removed
 automatically: Pierre keeps the rule strict and sorts them himself from that part of To do:
 
-- **Remove** per photo: the × of every photo, `ACT.exclude` (excluded for good, from every genus, game and candidate
-  list, and the imports skip it; no confirmation, Undo works, the genus's Excluded list in the Tree restores it).
+- **Remove** per photo: the one Remove of every photo, `ACT.remove` (out for good, from every genus, game and candidate
+  list, and the imports skip it; no confirmation, Undo works from the toast, the genus's Removed list in the Tree puts it back).
 - **Keep** per photo: an exception (curation `seen` `rule:f`, `admin.js` `ruleKept`). The photo stays on the site and
   moves down to a **Kept** subsection at the bottom of the part, folded with its count (`ruleKeptList`; `presence.js`
   `ruleQueue`'s `kept` leaves it out of the photos to handle), out of the part's count and of Remove all. There Remove
@@ -284,7 +284,7 @@ The share-alike photos already on the site are never removed automatically. `pre
 `lic`, else the credit line, as `fetch_local.py` `licence()`; `tests/coralcand.test.js` checks both agree on every
 photo) and `shareAlike(p)` give a **share-alike** tag next to the source on every admin page (`admin.js` `saTag`, in
 `srcTag`), and To do (Reports) has a **Share-alike** part (`saQueue`: every photo a genus page lists, not removed, not
-kept) with exactly the actions of the presence part above: Remove (the ×), Keep (curation `seen` `sa:f`, `saKept`;
+kept) with exactly the actions of the presence part above: Remove, Keep (curation `seen` `sa:f`, `saKept`;
 down to the folded Kept subsection, tag "share-alike · kept"), un-keep, and Remove all (asks first, only the photos
 still to handle). One function draws both parts, `decSec(key)` / `bindDecide(key)` with `DECIDE[key]` (the attributes
 carry the key: `data-rule…`, `data-sa…`).

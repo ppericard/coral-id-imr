@@ -655,6 +655,23 @@ body.adm-dragging * {
 .adm-toast[hidden] {
   display: none;
 }
+/* The Undo of a Remove (admin.js toastUndo): on the toast's dark ground, in its colours turned round. */
+.adm-toast-undo {
+  margin-left: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.adm-toast-undo:hover,
+.adm-toast-undo:focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: 2px;
+}
 /* Sign out sealing the draft: the page is read-only under it (admin.js sealing) */
 .adm-sealing {
   position: fixed;

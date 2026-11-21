@@ -145,7 +145,7 @@ An object is **used** when it is one of the files `tools/r2_sync.sh` wants (the 
 R2 only, a tile when its record has `xc`, every file name in git's `img/`). Anything else is **unused** only when it
 is an old tile of a live photo, or a photo that no record and no tracked text file names. It stays **doubtful**, off
 the list, when it is recent (72 h: an upload comes before its data commit), oddly named, its photo is in
-`data/excluded.json` (the admin's Restore puts that record back and expects the files, so deleting them breaks a
+`data/excluded.json` (the admin's Put back puts that record back and expects the files, so deleting them breaks a
 Restore until they are uploaded again), a record names it with `r: 1`, or its name appears in the app, the judging
 files, `curation.json`, a data file or the docs. Deleting is a separate step, after Pierre has seen the list.
 
@@ -265,8 +265,8 @@ neither shown nor counted as waiting.
 
 Each record Pierre's exclusion removes is kept in **`data/excluded.json`** (`{photos: {f: {in, g, k, v, i, p}}}`: which list,
 genus, views or more, view, position and the record; one photo per line, written through `datajson.py`; seeded from git
-history by `tools/apply_excluded_archive.py` for the photos removed before it existed), so that his **Restore** (admin
-Tree, genus page) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
+history by `tools/apply_excluded_archive.py` for the photos removed before it existed), so that his **Put back** (admin
+Tree, Removed list) brings the photo back by itself at the next run, at its place (`restore_unexcluded`). A candidate comes
 back marked `restored: 1`, which the share-alike drop spares (a share-alike one he restores stays a candidate he can
 add). A photo with no online original (an IMR lecture photo, whose file left `img/` with its exclusion) is held in
 `data/excluded.json` until its file is back: the workflow (whole history, `fetch-depth: 0`, `filter: blob:none`) runs

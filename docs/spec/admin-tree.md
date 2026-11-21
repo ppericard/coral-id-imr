@@ -25,7 +25,7 @@ and one render's context: the Key's tree and the view's, the rows, the Tag… op
 some node), the content editor's data, and the node's own page (its cover, name, tools, why, body and binder) or none for
 a page of its children's cards. The page draws the rest the same for every subject: the tree at the left, the bar (the
 path, the selects, All | IMR, Tag…, the drill-down, the edits to check, the tree's problems), the + Pair box, the
-Structure and Sheet boxes, the cards and the shared Removed and Excluded lists. Its views, in the tab's view switch, are
+Structure and Sheet boxes, the cards and the shared Removed list. Its views, in the tab's view switch, are
 two classifications of the same leaves, one parent per node in each:
 
 - **Key** `#fish/photos/tree/key/<node id>` (`#fish/photos/tree/key/f%3ADamselfishes`, `…/g%3AChromis`, `…/s091`; an
@@ -187,10 +187,11 @@ format ([ROADMAP "Fish common names"](../ROADMAP.md)).
 
 One implementation for every tree (`admin-nodephotos.js`; Pierre, 2026-11-19: "un code commun entre les matières",
 subject differences as parameters or specialised pieces), which replaced the corals' Photos › Genera tab. Shared: a
-node's **Removed from the site** (**Put back**) and **Excluded** (**Restore**) lists, one tile, one click and one Undo
-step each (`npLists`, `npBind`): a leaf's own, a group's or a family's those of its leaves; the first root of a view
-also lists the excluded photos no leaf has any more; the Tag… filters **Removed photos** and **Excluded photos**
-(`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by the data shape the
+node's **Removed** list (Pierre, 2026-11-21 05:48: one Remove, one click, an Undo just after, a list of the removed photos
+to put one back): the photos removed for good (curation `exclude`) and the ones an earlier Remove took off the site (a published
+`hide` entry), one tile and one **Put back** each, one click and one Undo step (`npLists`, `npBind`): a leaf's own, a group's or
+a family's those of its leaves; the first root of a view also lists the removed photos no leaf has any more; the Tag… filter
+**Removed photos** (`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by the data shape the
 subject declares (`SUBJECTS` `flat`, `admin.js` `treeShape`, as the Tree's builders):
 
 - **`live`**, the photos in play: the corals' `coralLive` (a section per view, 3 featured each, 2 or 3 zooms,
@@ -225,9 +226,9 @@ species rank).
   rule needs observers per genus near the centre that the coral data does not hold).
 - **A genus's page**: its cover and why (his ★ or the automatic one), what it needs, and every tool its own page
   had in the former Photos › Genera › Live (`admin-nodephotos.js` `coralLive`: its photos per view with Feature, ★
-  Cover, Remove, Not this, ×, Crop, quality and growth form, the zooms, ✓ Validated, the view filter, Candidates, Not
+  Cover, Remove, Not this, Crop, quality and growth form, the zooms, ✓ Validated, the view filter, Candidates, Not
   this genus; [admin-photos.md › A genus's page](admin-photos.md#a-genuss-page-in-the-tree)), above them its Structure and
-  Sheet (below), under them the shared Removed and Excluded lists. Its address is `genusHref`.
+  Sheet (below), under them the shared Removed list. Its address is `genusHref`.
 - **Filters**: All \| IMR (the slate, `core.js` `slateOf`) and Tag… (`ctFilters`: ★ Starred, Look-alikes any or one pair
   of `admin.js` `classicPairs` and of the draft's pair entries, `pairRows`, each saying added or withdrawn, as the
   fish's, Needs work, Candidates waiting, Draft, Removed photos, Excluded photos; never a growth form), read through the leaves as the fish's; the tag in

@@ -252,7 +252,7 @@ P1-P6 ([rules/photos.md](rules/photos.md)) govern them.
 - **Sources** of the coral photos: [photos.md](spec/photos.md#coral-photo-sources).
 - **New candidates are not stored**, the Candidate photos workflow, the **Key-only genus** cap:
   [photos.md](spec/photos.md#the-candidate-photos-workflow).
-- **Excluded photos** (`tools/excluded.py`, `data/excluded.json`, **Restore**): [photos.md](spec/photos.md#excluded-photos).
+- **Excluded photos** (`tools/excluded.py`, `data/excluded.json`, the admin's **Put back**): [photos.md](spec/photos.md#excluded-photos).
 - **Measured values** of each game photo (contrast, brightness, saturation, warm share, sharpness; `data/measured.json`,
   `tools/photo_measure.py`): [spec/measured.md](spec/measured.md).
 
