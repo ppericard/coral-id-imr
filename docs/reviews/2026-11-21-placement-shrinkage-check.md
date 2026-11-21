@@ -117,25 +117,26 @@ Node, under the machine slot (`node tests/slot.js --`), well under the 40-minute
 
 ## 2. Short answer (run 2026-11-21 18:35-19:20 Manila, within the compute cap)
 
-- **Verdict, by the declared rule: not decidable on this log, so wait.** The genus-only error's interval runs from 0.16
-  to 1.70 logits, across every tier, and s\* (the error of the best rating on the test's pool, at the upper bound) is
-  1.16, over 0.80. At the point estimates it would be about 0.86, still over 0.80.
+- **Verdict, by the declared rule: not decidable on this log, so wait.** The genus-only error's interval runs from 0.35
+  to 1.51 logits, across every tier, and s\* (the error of the best rating on the test's pool, at the upper bound) is
+  1.51, over 0.80. At the point estimates it would be about 0.86, still over 0.80.
 - **This log cannot tell a within-genus spread of 0.4 from one of 1.2.** The fit finds photos of one genus differing in
   difficulty by **0.86** (profile interval 0.49 to 1.21) [measured]; but on the real design a log like this one gives
   0.86 or more in 1 draw in 8 when the true spread is 0.4, in 1 in 4 at 0.61, in 6 in 10 at 0.8 [planted]. The
   likeliest spread is about 0.8, over the gate's 0.61, but a spread under it is not excluded.
-- **The photo's own residual helps only a little**: on held-out log-loss, S5 and S10 beat genus-only (−0.0038 and
-  −0.0031 per answer, intervals below 0); E (today's served form), S2 and a direct fit (D, added after the run) do not
-  clearly [measured].
+- **The photo's own residual does not clearly help**: on held-out log-loss every residual predictor does a little
+  better than genus-only (−0.0019 to −0.0040 per answer), but no interval excludes 0 once a deleted player is removed
+  everywhere (S5 −0.0092 to +0.0016, S10 −0.0069 to +0.0007) [measured].
 - **Photo by photo, today's ratings are off by about the spread itself**: on the real design, the best ratings (Elo
   residual, shrunk, or a direct fit) on the 379 photos with 5+ answers are off by 0.78 at a spread of 0.8 (genus only
   0.83), 0.62 at 0.61 [planted]. A rating gains mainly from answers that show the same photo or the same set of views:
   59% of these photos' answers show them beside other views. **As shown** (the photo sets of the log), the 17 items
   answered 10+ times are off by about 0.57 at a spread of 0.8, under the gate's 0.61, but 17 items are far from the
   40-60 a test needs; the 183 answered 5-9 times, about 0.68 [planted].
-- **What it does to the test** [model]: at 20-25 adaptive questions, an error of 1.16 instead of the gate's 0.61 places
-  the middle player right about 3.1 to 3.5 times in 10 instead of 3.5 to 4.0, and a strong player 7.4 to 7.6 times
-  instead of 8.3 to 8.5 (the study's placement of the error; the other placement costs the strong player 0.3 in 10).
+- **What it does to the test** [model]: at 20-25 adaptive questions, an error of 1.51 instead of the gate's 0.61 places
+  the middle player right about 2.9 to 3.1 times in 10 instead of 3.5 to 4.0, and a strong player 6.6 to 6.8 times
+  instead of 8.3 to 8.5 (the study's placement of the error; the other placement costs every band 0.6 to 0.8 in 10).
+  At the point estimate (0.93, genus only), 3.3 to 3.7 and 7.8 to 8.0.
 - **Recommendation: wait for the calibration set; do not lower the bar; a subset of today's best-answered items is too
   small for a test.** Count the members' answers, and measure their error held-out, **as the test will show them**
   (one view alone or the same set of views): an answer showing a member beside other views rates the colony, not the
@@ -158,16 +159,23 @@ Node, under the machine slot (`node tests/slot.js --`), well under the 40-minute
 ### 3.2 The held-out answers [measured]
 
 2,464 answers on 1,139 photos (leave one player out, after each player's 20th answer). Ratings without the player;
-the fit of section 1 on the held-out answers; ± the jackknife over the 15 players.
+the fit of section 1 on the held-out answers. Intervals: the delete-one-player jackknife over the 15 players, **each
+replicate with the deleted player removed everywhere** (as a rater of every prediction and as a held-out player), t
+with 14 degrees of freedom.
 
-| Predictor | σv (photo, within genus) | σu (genus) | total s | s, 95% interval | Log-loss vs G, per answer (95%) |
-| --- | --- | --- | --- | --- | --- |
-| **G**, genus offset only | **0.86** (profile 0.49 to 1.21) | 0.36 | **0.93** | 0.16 to 1.70 | (reference, 0.460) |
-| E, + residual as rated | 0 (profile to 0.35) | 0.13 | 0.13 | 0 to 0.95 | −0.0019 (−0.0095 to +0.0058) |
-| S2 | 0 | 0.21 | 0.21 | 0 to 0.91 | −0.0040 (−0.0091 to +0.0011) |
-| S5 | 0.21 | 0.25 | 0.32 | 0 to 1.48 | **−0.0038 (−0.0073 to −0.0003)** |
-| S10 | 0.50 | 0.29 | 0.58 | 0 to 1.71 | **−0.0031 (−0.0055 to −0.0008)** |
-| D, direct fit (added after the run, 3.7) | 0 | 0.21 | 0.21 | 0 to 0.92 | −0.0027 (−0.0083 to +0.0029) |
+| Predictor | σv (photo, within genus) | σu (genus) | total s (95%) | Log-loss vs G, per answer (95%) |
+| --- | --- | --- | --- | --- |
+| **G**, genus offset only | **0.86** (0.34 to 1.37; profile 0.49 to 1.21) | 0.36 (0 to 0.79) | **0.93 (0.35 to 1.51)** | (reference, 0.460) |
+| E, + residual as rated | 0 (profile to 0.35) | 0.13 | 0.13 | −0.0019 (−0.0141 to +0.0104) |
+| S2 | 0 | 0.21 | 0.21 | −0.0040 (−0.0117 to +0.0037) |
+| S5 | 0.21 | 0.25 | 0.32 | −0.0038 (−0.0092 to +0.0016) |
+| S10 | 0.50 | 0.29 | 0.58 | −0.0031 (−0.0069 to +0.0007) |
+| D, direct fit (added after the run, 3.7) | 0 | 0.21 | 0.21 | −0.0027 (−0.0115 to +0.0061) |
+
+The first push of this review used a lighter jackknife (a player's held-out answers dropped, their answers still
+rating the photos for the others); Codex pointed out on #1380 that it leaves out each player's influence on the
+ratings. With it, G's s ran from 0.16 to 1.70 and S5 and S10 beat G (−0.0073 to −0.0003, −0.0055 to −0.0008). The
+full version above replaces it; the verdict's tier is the same (3.4).
 
 - **G's σv is the figure the 11-18 study lacked**: photos of one genus differ in difficulty by about 0.86 for a new
   player. Its profile interval (0.49 to 1.21) excludes 0 but holds both 0.61 and 0.80, and the planted runs (3.7) show
@@ -205,17 +213,18 @@ predictor on the 379 photos with 5+ answers (ratings on the whole redrawn log, e
 
 ### 3.4 The verdict, as declared
 
-- U, the upper bound of G's total error: 1.70 (the jackknife's; σv's profile bound gives 1.26).
-- A residual predictor beats G on held-out log-loss (S5, S10), so s\* = the smaller of U and the planted error of the
-  best of them on the pool at τ = 1.207 (σv's profile upper bound), σu added: S5, 1.105 → √(1.105² + 0.36²) = **1.16**.
-  Tier: over 0.80, **wait**.
-- And G's interval (0.16 to 1.70) spans every tier: **not decidable on this log**, which also says wait.
-- Readings made after the run, none of which changes the tier: "the best of them" taken as the one with the lowest
-  planted error (S5 1.105, S10 1.127); E, the lowest of all (1.069) but not better than G on held-out, gives 1.13;
-  the jackknife drops a player's held-out answers only (the replays keep that player's answers rating the photos for
-  the others); at the point estimate instead of the upper bound (τ about 0.8), the pool's error is about 0.78, 0.86
-  with the genus misfit [planted]. The pool's error is scored photo by photo, as declared; scored per item as shown
-  (3.7) it is lower, about 0.97 for S5 on the items answered 5-9 times at τ = 1.207 (1.03 with σu): the same tier.
+- U, the upper bound of G's total error: 1.51 (the jackknife's; σv's profile bound gives √(0.36² + 1.21²) = 1.26).
+- No residual predictor beats G on held-out log-loss (every interval reaches above 0), so **s\* = U = 1.51**. Tier:
+  over 0.80, **wait**.
+- And G's interval (0.35 to 1.51) spans every tier: **not decidable on this log**, which also says wait.
+- With the first, lighter jackknife (3.2), S5 and S10 beat G and the rule gave s\* = the planted error of the best of
+  them (S5) on the pool at τ = 1.207 (σv's profile upper bound), σu added: √(1.105² + 0.36²) = 1.16, the same tier
+  (reading made after the run: "the best" taken as the lowest planted error; E, 1.069 but not better than G on
+  held-out, would give 1.13).
+- At the point estimate instead of the upper bound (τ about 0.8), the pool's error is about 0.78, 0.86 with the genus
+  misfit [planted, a reading made after the run]. The pool's error is scored photo by photo, as declared; per item as
+  shown (3.7) it is lower for the items that show several views, without changing the tier at τ = 1.207 (S5 0.97 on
+  the items answered 5-9 times, 1.03 with σu).
 
 ### 3.5 What it does to the test's right-band rate [model]
 
@@ -228,15 +237,15 @@ error placed as in the study (validated in 3.1, a choice made after the run).
 | 0.61 (the gate) | 0.85 / 0.35 / 0.83 | 0.89 / 0.40 / 0.85 |
 | 0.80 | 0.86 / 0.35 / 0.80 | 0.89 / 0.39 / 0.82 |
 | 0.93 (genus only, estimate) | 0.87 / 0.33 / 0.78 | 0.90 / 0.37 / 0.80 |
-| 1.16 (s\*) | 0.88 / 0.31 / 0.74 | 0.91 / 0.35 / 0.76 |
-| 1.70 (U) | 0.91 / 0.28 / 0.63 | 0.93 / 0.29 / 0.64 |
+| 1.16 (s\* with the lighter jackknife) | 0.88 / 0.31 / 0.74 | 0.91 / 0.35 / 0.76 |
+| 1.51 (s\* = U) | 0.90 / 0.29 / 0.66 | 0.93 / 0.31 / 0.68 |
 
-- Against the gate, today's ratings at s\* cost the middle player about 0.04-0.05 and the strong player about 0.09; the
-  beginner's rate rises a little (as in the study's own ±0.8 column).
+- Against the gate, today's ratings at s\* cost the middle player about 0.06-0.08 and the strong player about 0.17
+  (0.04-0.05 and 0.09 at 1.16); the beginner's rate rises a little (as in the study's own ±0.8 column).
 - **The other placement of the error** (the question's true difficulty off, its rating at the estimate): gate 0.81 /
-  0.34 / 0.85 and 0.85 / 0.39 / 0.87, s\* 0.77 / 0.30 / 0.82 and 0.81 / 0.33 / 0.84 at 20 and 25 questions: every
-  band loses 0.03-0.05. Which player loses most depends on that modelling choice; that the middle and strong players
-  lose 0.03-0.09 against the gate does not.
+  0.34 / 0.85 and 0.85 / 0.39 / 0.87, s\* 0.74 / 0.28 / 0.79 and 0.77 / 0.31 / 0.81 at 20 and 25 questions: every
+  band loses 0.06-0.08. Which player loses most depends on that modelling choice; that the middle and strong players
+  lose against the gate does not.
 - These differences are the size the simulation-scope note warns about; they illustrate the verdict, they do not make
   it.
 
