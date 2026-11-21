@@ -514,14 +514,16 @@ function sheetPage(lede, cls, body) {
 }
 // A sheet's body: the parts its subject declares for this kind of sheet (app.js UNITS sheetParts: {genus: [...]} for the
 // corals, {family, genus, species} for the tree subjects), in that order, each drawn by the sheet's builder of that name
-// (S: {part: () => HTML}), one to a line. A declared part the sheet has no builder for throws: a subject declares only the
-// parts its sheets build.
+// (S: {part: () => HTML}), one to a line. A builder returns null for a part this sheet does not have: no line at all (''
+// keeps its empty line, as the parts drawn before null existed do). A declared part the sheet has no builder for throws:
+// a subject declares only the parts its sheets build.
 function sheetBody(kind, S) {
   return (
     UNITS[SUBJ.id].sheetParts[kind]
       .map(k => {
         if (typeof S[k] !== 'function') throw new Error(`sheetBody: no ${kind} part "${k}"`);
-        return `\n    ${S[k]()}`;
+        const h = S[k]();
+        return h === null ? '' : `\n    ${h}`;
       })
       .join('') + '\n  '
   );
@@ -1652,6 +1654,30 @@ function spSheetPhotos(P, lead = null) {
   const main = [...(lead ? [lead] : []), ...P.filter(p => p !== lead && !juvP(p))];
   return {shown: [...main.slice(0, 3), ...P.filter(p => p !== lead && juvP(p)).slice(0, 2)], more: main.slice(3)};
 }
+// A species' sexes or colour phases (REE-54; the fish sheets study §5.1 S5, §5.2; Pierre's answers of 2026-11-06, Q3, Q4,
+// Q12): only for a species the cited phase list flags (fish.json species phs {k, src}: tools/build_fish.py phase_sources,
+// tools/fish_phases.json), with at least one source, else null (no section: sheetBody). What it says is what the list
+// records and the phase card says (quiz.js phaseShow): k 'sex', its males and females look different; k 'phase', its
+// colour phases do; then the list's sources (quiz.js phaseSrcs, rule C2). Then up to SP_PHASE_N photos of each phase
+// judged on its photos (core.js phaseOf: the judge's, or Pierre's in the admin), in SP_PHASES' order, each phase's in its
+// photos' order (P: treeSpPhotos, the easiest and most reference-like first, Q3), under the card's word for it (quiz.js
+// PHASEC.WORD). No phase of our own, no description line: the list gives none (rule C2). fig(p, i, word): a photo's
+// figure, i its place among the sheet's photos (flat, the lightbox's list; a photo not in it yet is added).
+const SP_PHASES = ['intermediate', 'female', 'male', 'terminal'],
+  SP_PHASE_N = 2;
+function spPhases(s, P, flat, fig) {
+  const phs = s.phs;
+  if (!phs || !(phs.src || []).length) return null;
+  const what = phs.k === 'phase' ? 'colour phases' : 'males and females',
+    word = w => (PHASEC.WORD || {})[w] || w[0].toUpperCase() + w.slice(1),
+    at = p => (flat.includes(p) ? flat.indexOf(p) : flat.push(p) - 1),
+    figs = SP_PHASES.flatMap(w =>
+      P.filter(p => phaseOf(p) === w)
+        .slice(0, SP_PHASE_N)
+        .map(p => fig(p, at(p), false, word(w)))
+    );
+  return `<section class="fphases"><h3>${what[0].toUpperCase() + what.slice(1)}</h3><p class="fjuv">This species’ ${what} can look very different.</p><p class="note refs">${phaseSrcs(phs.src)}</p>${figs.length ? `<div class="strip">${figs.join('')}</div>` : ''}</section>`;
+}
 function treeSpecies(s) {
   const T = ftree(),
     f = T.fam[s.family],
@@ -1668,8 +1694,9 @@ function treeSpecies(s) {
     gto = g ? treeGo(g.id) : '',
     // its genus's look-alikes when its genus opens this sheet (one species: treeGenusLooksOn)
     glooks = treeGenusLooksOn(g, T, 's:' + s.name);
-  const fig = (p, i, big) =>
-    `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
+  // word: the caption's phase word (spPhases), else Juvenile for a juvenile
+  const fig = (p, i, big, word) =>
+    `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${word ? `<b>${esc(word)}</b> · ` : isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
   const links = spLinks(s);
   sheetPage(
     `${sheetWord('spLede') || 'One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.'}${isPhone() ? '' : ' ← / → go to the previous / next species.'}`,
@@ -1704,6 +1731,7 @@ function treeSpecies(s) {
             }`
           : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`,
       juvenile: () => (s.jv && s.jv.line ? juvNote(s.jv.line, s.jv.src, {lead: '<b>Juvenile:</b> '}) : ''),
+      phases: () => spPhases(s, P, flat, fig),
       siblings: () =>
         sib.length
           ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(treeTile).join('')}</div>`

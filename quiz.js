@@ -936,8 +936,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
     seenPh = ph.filter(p => p !== unseen),
     // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
-    // given instead, the mix-up its Again drills on the pair's species (rematchAdd).
-    mu = mimUnit(target, seenPh[0]);
+    // given instead, the mix-up its Again drills on the pair's species (rematchAdd). In a Find the X, the decoy tile of
+    // the class (planFind mimDecoys): the unit whose tile is a photo of the class resembling the name asked, with its photo.
+    fd =
+      photoQuiz(cur) && FINDX && SHOWNQ && SHOWNQ[4] && SHOWNQ[4].find
+        ? SHOWNQ[4].find.find(x => x.n !== target && mimUnit(x.n, x.p) === target) || null
+        : null,
+    mu = mimUnit(target, seenPh[0]) || (fd ? fd.n : null);
   // No exam question in the custom quiz.
   const exq = EXAMQ === target && cur !== CUSTOM_H;
   // The mode's suffixes (docs/spec/sync.md "Mode"), the sheet reading |kN at the end:
@@ -1029,7 +1034,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
       fitStage();
     }
     // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
-    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1, mu && mu === c ? mimOf(target, seenPh[0]).pair.id : '');
+    if (photoQuiz(cur))
+      again = rematchAdd(
+        [target, c],
+        answersSoFar() - 1,
+        mu && mu === c ? (mimUnit(target, seenPh[0]) ? mimOf(target, seenPh[0]) : mimOf(fd.n, fd.p)).pair.id : ''
+      );
   }
   // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
   // popping, ~400 ms, none with prefers-reduced-motion): the reward is on the action, not in a pop-up. It never holds the
@@ -1611,6 +1621,11 @@ function phaseArm(nb, cur, L, hold) {
     return true;
   });
 }
+// The cited phase list's sources (fish.json species phs src: [{t, u}]) in words: "Source: A" or "Sources: A, B", each
+// a link when the list gives its page. One line for the sex or colour phase card and the species sheet's phases
+// (learn.js spPhases).
+const phaseSrcs = L =>
+  `Source${L.length > 1 ? 's' : ''}: ${L.map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t))).join(', ')}`;
 // c: {p, k, q} (phaseCardFor; q the photo beside it, else phasePair's from n's photos); n: the unit asked; brk: shown at
 // the break, so its close goes on to the next question.
 function phaseShow({p, k, q: q0}, n, brk) {
@@ -1627,7 +1642,6 @@ function phaseShow({p, k, q: q0}, n, brk) {
     // the list's sources. The juvenile card has none: the two photos say it.
     lines = juv ? [] : (g.phase || []).filter(l => !phs || /\b(?:fe)?males?\b|phases?\b/i.test(l)),
     srcs = phs && (phs.src || []).length ? phs.src : [],
-    srcLink = x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)),
     w = phaseOf(p),
     word = x => phaseWord(x, k),
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
@@ -1643,7 +1657,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">Source${srcs.length > 1 ? 's' : ''}: ${srcs.map(srcLink).join(', ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
@@ -2788,6 +2802,35 @@ function introStart(list) {
     L.push(openPick(fresh, fresh, met, {first: true}));
   return L.length ? L : levelTop(list);
 }
+// The decoys of the mimicry class for a Find the X on unit t (docs/LEARNING.md "The mimicry class", Q416 c: a photo of the
+// class is the decoy tile on "Find the Angelfish"): for each pair whose model's species t holds (an entry's m, app.js
+// mimLay, on the family of the species that resembles it), the unit d at t's own rank of the species that resembles it,
+// when d is in the list, met and ready, and its draw holds a tile of the class now (model.js mimSide, drawHas: a photo the
+// unit still holds back never shows). dk keeps d's tiles to the class's photos; tk keeps t's to the species resembled at
+// its stage when its draw holds such a tile now, null otherwise (any tile of t). A pair inside the unit asked is none.
+function mimDecoys(t, list, tile) {
+  const tiles = UNITS[SUBJ.id].tiles,
+    out = [];
+  for (const a of new Set(list.map(varHome)))
+    for (const m of (GX(a) || {}).mim || []) {
+      if (!m.m.includes(t) || m.u.includes(t)) continue;
+      const d = m.u.find(x => GX(x) && rankKind(x) === rankKind(t)),
+        dk = d && (p => tile(p) && mimSide(m, d)(p)),
+        tk = p => tile(p) && mimSide(m, t)(p);
+      if (
+        d &&
+        d !== t &&
+        !choiceNames(d, t) &&
+        !choiceNames(t, d) &&
+        list.includes(d) &&
+        introReady(d) &&
+        tiles(d).some(dk) &&
+        drawHas(d, dk)
+      )
+        out.push({m, d, dk, tk: drawHas(t, tk) && tiles(t).some(tk) ? tk : null});
+    }
+  return out;
+}
 // Find the X (FIND) is asked on the units of the subject's own rank and on its species, by common names or by scientific
 // names; a scientific genus keeps its usual questions (docs/LEARNING.md "Find the X slipped into the fish quiz").
 const findRank = n => !rankOf(n) || rankOf(n) === 'species';
@@ -2802,10 +2845,18 @@ function planFind(cur, t, list, ease = 0, sel = null) {
   if (!findRank(t) || !introReady(t) || !tiles(t).length) return null;
   const others = list.filter(n => n !== t && rankKind(n) === rankKind(t) && introReady(n) && tiles(n).length);
   if (others.length < 3 || !(Math.random() < FIND.P)) return null;
-  const ch = shuffle([t, ...distractors(t, others, 3, introReady, false)]),
-    tile = p => !!p.xc,
-    set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', tile),
-    find = ch.map(n => ({n, p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', tile).shown || [])[0]}));
+  const tile = p => !!p.xc,
+    // The mimicry class's decoy (mimDecoys), when t is the unit of the species a pair resembles: its tile is a photo of the
+    // class, in the place of the weakest trap (model.js mimTrap), and t's own photo is the species resembled at its stage.
+    dcs = mimDecoys(t, list, tile),
+    dc = dcs.length > 1 ? pick(dcs) : dcs[0] || null,
+    ch0 = shuffle([t, ...distractors(t, others, 3, introReady, false)]),
+    ch = dc ? mimTrap(t, ch0, dc.d) : ch0,
+    set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', dc && dc.tk ? dc.tk : tile),
+    find = ch.map(n => ({
+      n,
+      p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', dc && n === dc.d ? dc.dk : tile).shown || [])[0]
+    }));
   if (ch.length !== 4 || !find.every(x => x.p)) return null;
   return Object.assign([cur, t, ch, `Find the ${uname(t)}`, {...set, reveal: [], find}], {findx: 1, ...(sel ? {custom: 1} : {})});
 }
@@ -3283,7 +3334,7 @@ function cqByIMR(play) {
   return [...new Set(play.map(gk))]
     .sort((a, b) => ord(a) - ord(b))
     .map(k => {
-      const gr = DATA.imrg.find(x => x.n === k),
+      const gr = UNITS[SUBJ.id].group(k),
         L = play.filter(n => gk(n) === k);
       return gr
         ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
