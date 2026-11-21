@@ -394,78 +394,85 @@ async function findTheXSpecies(b, base, errs) {
     ok(cn.length >= 4, `species by common name in play with a tile: ${cn.length}`);
     ok(sc.length >= 4, `species by scientific name in play with a tile: ${sc.length}`);
     FIND.P = 1;
-    const seen = {cn: 0, sci: 0};
+    const seen = {cn: 0, sci: 0},
+      notMet = pool().filter(n => !introReady(n));
     let kept = false;
-    for (let i = 0; i < 400 && (seen.cn < 5 || seen.sci < 5); i++) {
-      const notMet = pool().filter(n => !introReady(n));
-      NEXTQ = null;
-      twoAt = -Infinity;
-      quizPhoto();
-      closeCards();
-      const Q0 = SHOWNQ;
-      if (!Q0 || !Q0.findx || rankOf(Q0[1]) !== 'species') {
-        smokeAnswer();
-        continue;
-      }
-      const [, t, ch, prompt, set] = Q0,
-        k = kindOf(t),
-        tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
-      seen[k]++;
-      ok(prompt === `Find the ${uname(t)}`, `the prompt: ${prompt}`);
-      ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four units: ${ch}`);
-      ok(
-        ch.every(n => rankOf(n) === 'species' && kindOf(n) === k && introReady(n) && !notMet.includes(n) && pool().includes(n)),
-        `four species of one kind of name, met, in play: ${ch}`
-      );
-      ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
-      ok(!document.querySelector('#view .ans'), 'no name buttons');
-      ok(
-        set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
-        'each photo a tile of its own species'
-      );
-      ok(
-        [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
-        'the tile files'
-      );
-      ok(!document.querySelector('#view .csn'), 'no scientific name under a tile before the answer');
-      // The pending question (quiz.js PEND, #1375): a species Find the X on screen is kept as units and photo files, and built
-      // again from the data (pendBuild): the same species, four units and four tiles, still askable (pendOk: all four in play).
-      if (!kept) {
-        kept = true;
-        const rec = pendAll(pendKey()).quiz,
-          q2 = rec && pendBuild('quiz', rec);
+    // planFind asked on species of each kind, shown as the quiz shows a question (quiz.js quizPhoto: the planners' own
+    // draw through planPhoto is covered by tests/findx.test.js; a species pool is too heavy to draw hundreds of questions)
+    for (const k of ['cn', 'sci']) {
+      for (const t of by(k).slice(0, 6)) {
+        const Q0 = planFind('quiz', t, pool(), 0, null);
+        if (!Q0) {
+          ok(false, `no Find the X on ${t}`);
+          continue;
+        }
+        SHOWNQ = Q0;
+        AUTOD = false;
+        FINDX = true;
+        PENDSCI = null;
+        question(...Q0);
+        pendShow('quiz', Q0, null);
+        const [, , ch, prompt, set] = Q0,
+          tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
+        seen[k]++;
+        ok(Q0.findx && rankOf(t) === 'species' && kindOf(t) === k, `a species Find the X: ${t}`);
+        ok(prompt === `Find the ${uname(t)}`, `the prompt: ${prompt}`);
+        ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four units: ${ch}`);
         ok(
-          q2 &&
-            q2.findx &&
-            q2[1] === t &&
-            q2[2].join() === ch.join() &&
-            q2[4].find.map(x => x.p.f).join() === set.find.map(x => x.p.f).join(),
-          `kept: the same species Find the X built again from its record: ${rec && JSON.stringify(rec).slice(0, 120)}`
+          ch.every(n => rankOf(n) === 'species' && kindOf(n) === k && introReady(n) && !notMet.includes(n) && pool().includes(n)),
+          `four species of one kind of name, met, in play: ${ch}`
         );
-        ok(q2 && pendOk('quiz', q2), 'kept: still askable');
+        ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+        ok(!document.querySelector('#view .ans'), 'no name buttons');
+        ok(
+          set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
+          'each photo a tile of its own species'
+        );
+        ok(
+          [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
+          'the tile files'
+        );
+        ok(!document.querySelector('#view .csn'), 'no scientific name under a tile before the answer');
+        // The pending question (quiz.js PEND, #1375): a species Find the X on screen is kept as units and photo files, and
+        // built again from the data (pendBuild): the same species, four units and four tiles, still askable (pendOk: all four
+        // in play).
+        if (!kept) {
+          kept = true;
+          const rec = pendAll(pendKey()).quiz,
+            q2 = rec && pendBuild('quiz', rec);
+          ok(
+            q2 &&
+              q2.findx &&
+              q2[1] === t &&
+              q2[2].join() === ch.join() &&
+              q2[4].find.map(x => x.p.f).join() === set.find.map(x => x.p.f).join(),
+            `kept: the same species Find the X built again from its record: ${rec && JSON.stringify(rec).slice(0, 120)}`
+          );
+          ok(q2 && pendOk('quiz', q2), 'kept: still askable');
+        }
+        const pick = seen[k] % 2 ? ch.find(n => n !== t) : t,
+          before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
+        smokeAnswer(pick);
+        const log = SYNC ? SYNC.log : store.get(LOG0, []),
+          a = log[log.length - 1];
+        ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
+        if (a) {
+          ok(a.m === 'quiz|f', `mode ${a.m}, a species Find the X has no |sc or |so`);
+          ok(a.rk === 'species', `rank ${a.rk}`);
+          ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
+          ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
+          ok(a.pa === set.find.find(x => x.n === pick).p.f, `the photo tapped: ${a.pa}`);
+          ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
+        }
+        ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
       }
-      const pick = seen[k] % 2 ? ch.find(n => n !== t) : t,
-        before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
-      smokeAnswer(pick);
-      const log = SYNC ? SYNC.log : store.get(LOG0, []),
-        a = log[log.length - 1];
-      ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
-      if (a) {
-        ok(a.m === 'quiz|f', `mode ${a.m}, a species Find the X has no |sc or |so`);
-        ok(a.rk === 'species', `rank ${a.rk}`);
-        ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
-        ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
-        ok(a.pa === set.find.find(x => x.n === pick).p.f, `the photo tapped: ${a.pa}`);
-        ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
-      }
-      ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
     }
     ok(seen.cn >= 3, `Find the X on species by common name: ${seen.cn}`);
     ok(seen.sci >= 3, `Find the X on species by scientific name: ${seen.sci}`);
-    // Back to 0: none, on a species either.
+    // The ordinary draw with FIND.P back at 0: none (the family and species draws alike).
     FIND.P = 0;
     let none = 0;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 6; i++) {
       NEXTQ = null;
       quizPhoto();
       closeCards();
