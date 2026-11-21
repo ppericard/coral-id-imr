@@ -3035,7 +3035,8 @@ async function lazyPart(b, base, fails) {
       'analyses/learning/practice',
       'analyses/learning/after-a-break',
       'analyses/learning/sessions',
-      'analyses/learning/profiles'
+      'analyses/learning/profiles',
+      'analyses/learning/trajectories'
     ]) {
       await go(h);
       const v = await p.evaluate(() => ({
@@ -3060,7 +3061,7 @@ async function lazyPart(b, base, fails) {
       }
       // Effects hard to tell apart (the multifactor visualisation study, 2026-11-05): a folded card in every analysis with
       // two effects or more from one model (After a break has one); opened, its heatmap or table, no sideways scroll
-      if (h !== 'analyses/learning/after-a-break' && h !== 'analyses/learning/profiles') {
+      if (!['analyses/learning/after-a-break', 'analyses/learning/profiles', 'analyses/learning/trajectories'].includes(h)) {
         const ent = await p.evaluate(() => {
           const c = document.getElementById('anc-effects-hard-to-tell-apart');
           if (!c) return null;
@@ -3109,6 +3110,26 @@ async function lazyPart(b, base, fails) {
       const greyLast = pr && pr.dim.every((d, i) => !d || pr.dim.slice(i).every(Boolean));
       if (!pr || pr.rows < 7 || pr.cells < 7 * pr.rows || !pr.links || !pr.tree || !pr.stab || !pr.map || pr.wide > 0 || !greyLast)
         fails.push(`${w}px Analyses player profiles: ${JSON.stringify(pr)}`);
+    }
+    // Player trajectories (Pierre, 2026-11-05, Q78): one small chart a behaviour (seven), a thin line a made-up player and
+    // the typical player over them, the words and the table of the typical player by window; no sideways scroll
+    {
+      await go('analyses/learning/trajectories');
+      const tr = await p.evaluate(() => {
+        const c = document.getElementById('anc-along-each-player-s-history'),
+          T = document.getElementById('anc-the-typical-player-window-by-window');
+        return {
+          charts: c ? c.querySelectorAll('figure svg').length : 0,
+          players: c ? c.querySelectorAll('figure:first-child path.an-line.pl').length : 0,
+          typical: c ? c.querySelectorAll('figure svg path.an-line.med').length : 0,
+          words: c ? c.querySelectorAll('.adm-an-says-l li').length : 0,
+          rows: T ? T.querySelectorAll('tbody tr').length : 0,
+          small: c ? [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length : 0,
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (tr.charts !== 7 || tr.players < 3 || tr.typical < 5 || tr.words < 8 || tr.rows < 2 || tr.small || tr.wide > 0)
+        fails.push(`${w}px Analyses player trajectories: ${JSON.stringify(tr)}`);
     }
     // The Wright map and the genus × player residuals (Learning › Practice): players and genera on one scale with their
     // names, the second-skill biplot with its words; no sideways scroll
