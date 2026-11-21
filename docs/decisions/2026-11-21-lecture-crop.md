@@ -1,6 +1,6 @@
 # The admin's Crop works on an IMR lecture photo traced to its original
 
-Date: 2026-11-21. PR: #1393. Rules or docs touched: `docs/spec/photos.md`, `admin.js`, `autosort.js`, `tools/photos.py`,
+Date: 2026-11-21. PR: #1400. Rules or docs touched: `docs/spec/photos.md`, `admin.js`, `autosort.js`, `tools/photos.py`,
 `tools/fetch_approved.py`, `tools/fetch_imr_originals.py`, `tools/apply_imr_originals.py`, `tests/rotate.test.js`,
 `tests/imrsources.test.js`, `tests/admin.smoke.js`.
 
