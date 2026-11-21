@@ -227,6 +227,94 @@
   "fish-s495-cand-459753459": {
    "code": "o1g1sms2",
    "keep": "best"
+  },
+  "fish-s495-cand-488373164": {
+   "code": "p1g2ml13",
+   "keep": "best"
+  },
+  "fish-s495-cand-556971198": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s495-cand-358204049": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s495-cand-574306414": {
+   "code": "p1d3bss1",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306432": {
+   "code": "p1d3bss2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306435": {
+   "code": "p1d3bms2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306454": {
+   "code": "p1d3bms2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306456": {
+   "code": "p1d3bss1",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306460": {
+   "code": "p1d3bss1",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306481": {
+   "code": "p1d3bls2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306488": {
+   "code": "p1d3bls2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306490": {
+   "code": "p1d3bms2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306502": {
+   "code": "p1d3bms2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306513": {
+   "code": "p1d3bls2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306519": {
+   "code": "p1d3bls2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-574306526": {
+   "code": "p1d3bls2",
+   "keep": "best"
+  },
+  "fish-s495-cand-357230269": {
+   "code": "o1g2mms2",
+   "keep": "best"
+  },
+  "fish-s495-cand-764848066": {
+   "code": "p1g2mls3",
+   "keep": "best"
+  },
+  "fish-s495-cand-764847934": {
+   "code": "p1g2mls3",
+   "keep": "dup"
+  },
+  "fish-s495-cand-561215090": {
+   "code": "p1d2bmk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Small dark fish of another kind among the school: k or o not settled at this size."
+  },
+  "fish-s495-cand-604461006": {
+   "code": "o1g2bssw2",
+   "keep": "best"
   }
  }
 }
