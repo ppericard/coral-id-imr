@@ -2716,7 +2716,8 @@ function anRecompute() {
           : pk
             ? {ph: ANALYSIS.photoMeta(DATA, DRAFT, {q: AUTOQ}, {m: METRICS})}
             : {ph: {}}),
-        ...(rk ? {rk} : {})
+        ...(rk ? {rk} : {}),
+        ...(ANMOD[S.id] && Object.keys(ANMOD[S.id]).length ? {mod: ANMOD[S.id]} : {})
       };
     const src = (document.querySelector('script[src^="analysis.js"]') || {}).getAttribute?.('src') || 'analysis.js';
     try {
@@ -2747,7 +2748,8 @@ function anRecompute() {
   };
   Promise.all([
     ANS && ANS.all && ANS.all.length ? Promise.resolve() : loadStats(),
-    (S.analyses || {}).photos === 'judged' ? anGame(S) : null
+    (S.analyses || {}).photos === 'judged' ? anGame(S) : null,
+    ANALYSIS.rankRef(S) ? anMods(S) : null
   ]).then(go);
 }
 // A tree subject's game file (core.js SUBJECTS admin files gm: fish-game.json, seaslug-game.json), its records whole
@@ -2763,6 +2765,19 @@ const anGame = S =>
           .then(r => (r.ok ? r.json() : {}))
           .catch(() => ({}))
           .then(G => (ANGAME[S.id] = treeGameRead(G) || {})));
+// The common-name modifier words of a tree subject's species units (analysis.js modMeta, from its tree file, SUBJECTS admin
+// files f), fetched once per subject for Recompute here's Confusions (ANMOD, by subject id), as the Action's metaOf has them.
+const ANMOD = {},
+  ANMODP = {};
+const anMods = S =>
+  ANMOD[S.id]
+    ? Promise.resolve(ANMOD[S.id])
+    : (ANMODP[S.id] =
+        ANMODP[S.id] ||
+        fetch((S.admin.files || {}).f, {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : {}))
+          .catch(() => ({}))
+          .then(F => (ANMOD[S.id] = ANALYSIS.modMeta(F))));
 // The charts are drawn at the page's width: draw again when it changes.
 let anRz = null;
 addEventListener('resize', () => {
