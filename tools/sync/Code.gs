@@ -5905,12 +5905,14 @@ const CORE_ = (function () { const module = {exports: {}};
   //   (fish.json cn) in a family in play (never a wink family's), in each family's species order (the commonness order,
   //   cmi), the order they open in. Each with: s, its fish.json record; family, its family unit; look, the other species
   //   units of its family (the traps of its choices, rule L7); fam, its family's line; from, the unit a species never
-  //   answered starts from, its family (docs/FISH_PATH.md "Unlock rules"; abilityOf).
+  //   answered starts from, its family (docs/FISH_PATH.md "Unlock rules"; abilityOf); decl, its declared look-alikes
+  //   (spDecl, below: the species its record's look names).
   // - 'sci' (docs/reviews/2026-11-18-species-step2-plan.md §2.1; Q397, Q398): one unit per species by its scientific name,
   //   every species under a genus unit of a family in play (treeGenSets: the fish's scientific genera of every circle, the
   //   sea slugs' genus units), a common name or none, in each family's species order; its id sci: + the species id in
   //   letters and digits (spUnitId); look, the other scientific species units of its family; genus and from, its genus
-  //   unit (the scientific tree: never the common-name unit). X must then be treeGen's units at the subject's unit rank.
+  //   unit (the scientific tree: never the common-name unit); decl, as at 'cn'. X must then be treeGen's units at the
+  //   subject's unit rank.
   // The app's units (app.js treeGenera) and the sheet's replay (treeReplayGen) read this one list. X: treeGen's units,
   // when built already.
   function treeSpUnits(F, X, lv = 'cn') {
@@ -5928,7 +5930,7 @@ const CORE_ = (function () { const module = {exports: {}};
           out.push({id: ids[i], s, family: f.id, genus: gOf.get(s.id), look: ids.filter(o => o !== ids[i]), fam, from: gOf.get(s.id)})
         );
       });
-      return out;
+      return spDecl(out, lv);
     }
     ((F && F.families) || []).forEach(f => {
       const E = G[f.id];
@@ -5937,6 +5939,19 @@ const CORE_ = (function () { const module = {exports: {}};
         ids = L.map(s => spUnitId('cn', s.id)),
         fam = E.name + (E.fam ? ' · ' + E.fam : '');
       L.forEach((s, i) => out.push({id: ids[i], s, family: f.id, look: ids.filter(o => o !== ids[i]), fam, from: f.id}));
+    });
+    return spDecl(out, lv);
+  }
+  // A species unit's declared look-alikes (decl; model.js declaredOf), as a genus unit's are (app.js treeGenera decl): the
+  // species its record's look names (the decided species pairs a specialist source names, tools/seaslug_source.json
+  // lookalikes: Q377, Q390 D; a row [id, words] or the id), at the same level, those with a unit of their own only. Its
+  // look holds them too, after the other species of its family: the same set when the pair is inside one family, as every
+  // decided pair is, so the sheet's replay (treeReplayGen, which reads look, never decl) is unchanged. No look: decl empty.
+  function spDecl(out, lv) {
+    const has = new Set(out.map(u => u.id));
+    out.forEach(u => {
+      u.decl = [...new Set(((u.s && u.s.look) || []).map(y => spUnitId(lv, pairIdOf(y))))].filter(o => o !== u.id && has.has(o));
+      u.look = [...new Set([...u.look, ...u.decl])];
     });
     return out;
   }

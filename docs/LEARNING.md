@@ -410,7 +410,10 @@ grouped the same way for every player, recomputed with the pooled statistics: fi
 merge, the most confused first, while a group stays at `GROUP.MAX` (3) units or fewer; then average linkage on the
 pooled confusion score, while the two groups' mean is `CONF.TRAP` or more and the group stays at `GROUP.MAX`. Once a
 group has a member open, its other members are the next openings, one at a time. A unit's mastery exam waits until its
-group partners that can open are met (`model.js` `matesLeft`, `examOn`).
+group partners that can open are met (`model.js` `matesLeft`, `examOn`). A species unit's declared pairs are the species
+its record's `look` names (`core.js` `treeSpUnits` `decl`: the sea slugs' decided species pairs, `tools/seaslug_source.json`
+`lookalikes`; none for the fish), so the two species of a pair open close together; its `look`, which the confusion prior
+and the sheet's replay read, already holds them (the other species of its family).
 
 ### An opening only after a right answer
 

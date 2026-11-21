@@ -2,7 +2,8 @@ require('./slot.js').testGuard();
 // The sea slugs' genus look-alikes (the survey docs/reviews/2026-11-17-seaslug-lookalikes-survey.md): the genus pairs
 // a specialist source names (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers) enter as declared
 // look-alikes, kept whatever the players answer; the genus pairs only iNaturalist's identifications show enter as data
-// look-alikes, which the players' answers can drop; the species pairs wait for the species level.
+// look-alikes, which the players' answers can drop; the decided species pairs (tools/seaslugs.json lookalikes) are the
+// species units' declared look-alikes (core.js treeSpUnits decl).
 // - tools/seaslug_game.py genus_looks writes them into seaslug.json (genus look, dlook, lsrc) from
 //   tools/seaslug_lookalikes_cand.json;
 // - app.js treeGenera reads them (look, decl, lsrc, dl), model.js seeds the data look-alikes (dataSeed, isDataLook,
@@ -191,6 +192,57 @@ test('app.js treeGenera: the declared look-alikes join the siblings and the conf
   const want = F.genera.flatMap(G => (G.look || []).filter(o => G.id < o).map(o => [G.id, o]));
   assert.deepStrictEqual(plain(pairs).sort(), want.sort());
   assert.ok(want.some(p => p.join() === 'g:Goniobranchus,g:Phyllidiella'));
+});
+
+// The decided species pairs (tools/seaslug_source.json lookalikes: Q377, Q390 D) in play as the species units' declared
+// look-alikes (core.js treeSpUnits spDecl, app.js treeGenera decl; model.js declaredOf reads them: the confusion groups).
+test('the decided species pairs are the species units declared look-alikes, both ways; no other species gains one', () => {
+  const sci = n => C.spUnitId('sci', F.species.find(s => s.name === n).id),
+    want = [
+      ['Hexabranchus lacer', 'Hexabranchus sanguineus'],
+      ['Thecacera pacifica', 'Thecacera pikachu'],
+      ['Chromodoris alcalai', 'Chromodoris dianae']
+    ].map(p => p.map(sci));
+  // the pairs the source records
+  assert.deepStrictEqual(
+    json('tools/seaslugs.json')
+      .lookalikes.map(p => p.pair.map(sci).sort())
+      .sort(),
+    want.map(p => [...p].sort()).sort()
+  );
+  const of = Object.fromEntries(
+      want.flatMap(([a, b]) => [
+        [a, [b]],
+        [b, [a]]
+      ])
+    ),
+    U = C.treeSpUnits(F, X, 'sci');
+  assert.ok(U.length > 100);
+  Object.keys(of).forEach(id => assert.ok(X.gen[id], id + ': a unit in play'));
+  U.forEach(u => {
+    assert.deepStrictEqual(plain(u.decl), of[u.id] || [], u.id);
+    // the app's unit carries them (model.js declaredOf: the confusion groups)
+    assert.deepStrictEqual(plain(X.gen[u.id].decl), of[u.id] || [], u.id);
+    // the other species of its family stay its look-alikes, the pair among them: look is unchanged
+    assert.deepStrictEqual(
+      plain(u.look),
+      U.filter(o => o.family === u.family && o.id !== u.id).map(o => o.id),
+      u.id
+    );
+  });
+  // the sheet's replay reads look only: its species units read as before
+  const R = C.treeReplayGen(F, 'genus');
+  U.forEach(u => assert.deepStrictEqual(plain(R[u.id].look), plain(u.look), u.id));
+  // model.js declaredOf (its record's decl, else its look): each pair declared both ways
+  const declaredOf = n => X.gen[n].decl || X.gen[n].look || [];
+  want.forEach(([a, b]) => assert.ok(declaredOf(a).includes(b) && declaredOf(b).includes(a), a + '|' + b));
+});
+
+test('the fish species units declare no look-alike: fish.json species carry no look', () => {
+  const FI = json('fish.json'),
+    XF = C.treeGen(FI, {});
+  assert.ok(FI.species.every(s => !('look' in s)));
+  [...C.treeSpUnits(FI, XF), ...C.treeSpUnits(FI, XF, 'sci')].forEach(u => assert.deepStrictEqual(plain(u.decl), [], u.id));
 });
 
 // model.js's data look-alikes, on made-up units: A and B a seeded pair, A and C declared, A and D neither.

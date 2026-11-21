@@ -838,8 +838,8 @@ function treeGenera(X, F) {
   X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
   // The fish species level, step 1 (docs/ARCHITECTURE.md "Fish species, step 1: by common name"): one unit per species
   // with a listed common name (core.js treeSpUnits: s:s091), its scientific name in small type under each choice. In its
-  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl empty (its pairs
-  // come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
+  // record: from, a never-answered species starting at its family's ability (core.js abilityOf); decl, the species its record's
+  // look names (core.js spDecl: none for the fish; the other pairs come from the players' mix-ups); noex (no exam yet: its bar tops at 95%); name, the player's first common name
   // (cnFirst, read when shown); also, every listed name (model.js choiceKeys). X.spl: every species unit, families' order.
   const imr = () => typeof imrNow === 'function' && imrNow(),
     first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr()) : ((s.cn || [])[0] || [])[0]) || s.common || s.name;
@@ -867,7 +867,7 @@ function treeGenera(X, F) {
       ig: E.ig,
       forms: E.forms,
       look: u.look,
-      decl: [],
+      decl: u.decl,
       lk: [],
       lsrc: {},
       also: (s.cn || []).flat(),
@@ -923,7 +923,7 @@ function treeGenera(X, F) {
       ig: G.ig,
       forms: G.forms,
       look: u.look,
-      decl: [],
+      decl: u.decl,
       lk: [],
       lsrc: {},
       also: [],
