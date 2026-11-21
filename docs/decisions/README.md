@@ -61,6 +61,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
 | 2026-11-22 | [A kept question is lost only when it is about its own first-meeting card's genus](2026-11-22-pending-question-other-card.md) | #1428 |
+| 2026-11-22 | [About lists the sources the sea slugs' data cites, by a declaration in the subject's entry](2026-11-22-seaslug-about-sources.md) | #1442 |
 | 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [Comeback by genus: a stability multiplier fitted from the logged recall, descriptive, an upper bound](2026-11-21-comeback-by-genus.md) | #1398 |
