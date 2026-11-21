@@ -48,7 +48,8 @@ the ⚙ Settings; and the service worker that serves it offline and brings each 
 
 **Main files.** `index.html` (the inline tier loader, the ⚙ panel), `app.css`, `home.css`; `app.js` (routing, `build()`,
 the shared helpers, Settings, the install card), `core.js` (the engine shared with the admin and the sheet script:
-`SUBJECTS`, `routeOut` / `routeIn`, `scoreAnswer`, the achievement lists), `model.js` (the learning model), `quiz.js`
+`SUBJECTS`, `routeOut` / `routeIn`, `scoreAnswer`, the achievement lists; written in its parts, `core/*.js`, which
+`tools/sync_core.py` joins into the one `core.js` the pages load), `model.js` (the learning model), `quiz.js`
 (the games, typed questions, the feedback sheet), `learn.js` (the Learn pages), `progress.js` (My progress,
 achievements, the leaderboard), `home.js`, `tour.js`, `tips.js`, `flag.js`, `sync.js` (Progress sync), `live.js`;
 `proto/` (the Lab and the basics modules); `sw.js`.
@@ -355,8 +356,8 @@ the same script serves the pooled photo statistics, the leaderboard, the admin's
 rights, live games and player groups (which carry an instance's rights), and updates itself from GitHub.
 
 **Main files.** `sync.js` (signing in, saving and loading, the three-way merge, adopting a replay, the events queue);
-`core.js` (the shared engine: merges, `replayProgress`, the formats stored, `SUBJECTS`; embedded in the sheet script by
-`tools/sync_core.py`); [`tools/sync/Code.gs`](../tools/sync/Code.gs) (the script: `doGet` / `doPost`, `replay_`,
+`core.js` (the shared engine: merges, `replayProgress`, the formats stored, `SUBJECTS`; joined from its parts,
+`core/*.js`, and embedded in the sheet script by `tools/sync_core.py`); [`tools/sync/Code.gs`](../tools/sync/Code.gs) (the script: `doGet` / `doPost`, `replay_`,
 `hold_`, `stats_` and its fold, `board_`, `autoUpdate`); `progress.js` and `quiz.js` (the cards that tell a player about
 a change, the prompts at a break); `app.js` `SYNC_URL`.
 
