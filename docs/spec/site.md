@@ -11,7 +11,9 @@ side (bots, floods, the sheet script's protections, the Candidate photos workflo
 - Served by GitHub Pages from `main` through `pages.yml` (the Actions source; the workflows and the recovery in
   [PAGES.md](../PAGES.md)). No framework and no npm dependency in the app; development has no build step (the files are
   what a local server shows), and the deploy builds its own copy: it minifies the scripts and stamps the versions
-  ([PAGES.md › The build at deploy](../PAGES.md#the-build-at-deploy)).
+  ([PAGES.md › The build at deploy](../PAGES.md#the-build-at-deploy)). One file is generated in the repository and
+  committed, as the sheet script's copy of the engine is: `core.js`, its parts `core/*.js` joined by
+  `python3 tools/sync_core.py --fix` (which also carries an edit made in `core.js` back into its part).
 - Everything runs in the browser. The only backend is the Google Apps Script web app that stores the players' progress
   in a Google Sheet ([sync.md](sync.md)); the photos are served from a Cloudflare R2 bucket ([photos.md](photos.md)).
 - A service worker (`sw.js`) keeps the app shell and the photos viewed for offline use and brings each new version in

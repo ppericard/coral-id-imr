@@ -7,10 +7,12 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const ROOT = path.join(__dirname, '..'),
+  {rotNorm} = require('../autosort.js'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const S = read('tools/imr_sources.json'),
   D = read('data.json'),
-  X = read('data/excluded.json');
+  X = read('data/excluded.json'),
+  CUR = read('curation.json');
 const FOUND = new Set(['original', 'copy-only', 'none']);
 
 // Pierre's Publish can exclude a lecture photo (it leaves data.json course for data/excluded.json) or restore one: a record
@@ -91,9 +93,13 @@ test('lecture originals: every traced photo is framed, recorded and off img/; th
   assert.deepStrictEqual(Object.keys(F).sort(), traced.sort(), 'a frame for every traced original, and only those');
   for (const [f, fr] of Object.entries(F)) {
     const p = by[f];
-    assert.deepStrictEqual(p.cr, fr.cr, f + ': cr');
-    assert.strictEqual(p.ro, fr.ro, f + ': ro');
-    assert.ok(Math.abs(p.ar - fr.px[0] / fr.px[1]) < 0.02, f + ': ar matches the cut');
+    // Cut as the lecture framed it, or as Pierre's Crop on it says (curation.json crop and rot, REE-60: his crop entry with
+    // his rotation alone, tools/photos.py lecture_frame), once tools/fetch_approved.py has made its files again.
+    const sameJ = (a, b) => JSON.stringify(a) === JSON.stringify(b),
+      lecture = sameJ(p.cr, fr.cr) && (p.ro || 0) === (fr.ro || 0),
+      his = f in (CUR.crop || {}) && sameJ(p.cr, CUR.crop[f]) && (p.ro || 0) === rotNorm((CUR.rot || {})[f]);
+    assert.ok(lecture || his, f + ': cr, ro are the lecture’s framing or Pierre’s crop');
+    if (lecture) assert.ok(Math.abs(p.ar - fr.px[0] / fr.px[1]) < 0.02, f + ': ar matches the cut');
     assert.ok(fr.px[0] >= 500 && fr.px[1] >= 500 * 0.5, f + ': a real picture size');
     for (const s of ['', '-m', '-s', '-t']) assert.ok(!fs.existsSync(path.join(ROOT, 'img', `${f}${s}.webp`)), f + ': lives on R2 only');
   }
@@ -101,6 +107,54 @@ test('lecture originals: every traced photo is framed, recorded and off img/; th
     if (r.found !== 'original' && by[f] && by[f].imr) assert.ok(fs.existsSync(path.join(ROOT, 'img', `${f}.webp`)), f + ': stays in img/');
   require('child_process').execFileSync('python3', ['tools/apply_imr_originals.py', '--check'], {cwd: ROOT});
   require('child_process').execFileSync('python3', ['tools/fetch_imr_originals.py', '--plan'], {cwd: ROOT});
+});
+
+// tools/fetch_approved.py remakes a lecture photo's files when its framing in force (photos.lecture_frame: Pierre's crop
+// entry, else the lecture's) differs from what its record says they were made with (photos.stale): none on the real data
+// until he crops one (a photo never remade for nothing, the 79 framed ones not remade uncropped), and exactly that one then.
+test('fetch_approved: a lecture photo is remade only when his crop or rotation differs from the framing its files have', () => {
+  const run = cur =>
+    JSON.parse(
+      require('child_process').execFileSync(
+        'python3',
+        [
+          '-c',
+          `import sys, json; sys.path.insert(0, 'tools')
+import photos, fetch_imr_originals as imr
+d = json.load(open('data.json'))
+cur = json.loads(sys.argv[1])
+L = {f: (u, cr, ro, px) for f, u, cr, ro, px in imr.plan()}
+print(json.dumps(sorted(p['f'] for l in d['course'].values() for p in l if p.get('f') in L
+    and photos.stale(p, *photos.lecture_frame(p['f'], L[p['f']][1], L[p['f']][2], cur.get('crop'), cur.get('rot'))))))`,
+          JSON.stringify(cur)
+        ],
+        {cwd: ROOT, encoding: 'utf8'}
+      )
+    );
+  const framed = Object.values(D.course)
+      .flat()
+      .filter(p => p.imr && p.src && p.cr)
+      .map(p => p.f)
+      .sort(),
+    f = framed[0],
+    p = Object.values(D.course)
+      .flat()
+      .find(x => x.f === f);
+  assert.ok(f, 'a framed lecture photo');
+  // The framings the files have: nothing to remake (his crop and rotation when he has cropped them, as baked).
+  const now = {crop: CUR.crop, rot: CUR.rot};
+  assert.deepStrictEqual(
+    run(now).filter(x => !(x in (CUR.crop || {}))),
+    [],
+    'no lecture photo is remade for nothing'
+  );
+  // A crop entry that is not what its files were cut with: that photo, and only it.
+  const other = [p.cr[0] > 0.3 ? 0 : 0.5, 0, 1, 1];
+  assert.deepStrictEqual(run({crop: {...(CUR.crop || {}), [f]: other}, rot: CUR.rot}), [f]);
+  // The same crop entry as its files were cut with, and no rotation, while the lecture turned none: not remade.
+  if (!p.ro) assert.ok(!run({crop: {...(CUR.crop || {}), [f]: p.cr}, rot: CUR.rot}).includes(f));
+  // Full photo on a framed photo is remade whole; the key gone brings the lecture's framing back.
+  assert.ok(run({crop: {...(CUR.crop || {}), [f]: [0, 0, 1, 1]}, rot: CUR.rot}).includes(f));
 });
 
 // A traced photo Pierre excludes (its record archived in data/excluded.json by tools/excluded.py) keeps its credit, so a

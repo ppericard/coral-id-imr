@@ -58,11 +58,14 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-22 | [core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte](2026-11-22-core-parts.md) | #1452 |
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
 | 2026-11-22 | [A kept question is lost only when it is about its own first-meeting card's genus](2026-11-22-pending-question-other-card.md) | #1428 |
+| 2026-11-22 | [Tasks that only come back on a date or a trigger are labelled Scheduled and left out of every list](2026-11-22-scheduled-tasks.md) | #1453 |
 | 2026-11-22 | [About lists the sources the sea slugs' data cites, by a declaration in the subject's entry](2026-11-22-seaslug-about-sources.md) | #1442 |
 | 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
+| 2026-11-22 | ["Did you know?" tip (f): typed answers, a close spelling counts, for the player who answers "I don't know" every time](2026-11-22-tip-f-typed-answers.md) | #1454 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [Comeback by genus: a stability multiplier fitted from the logged recall, descriptive, an upper bound](2026-11-21-comeback-by-genus.md) | #1398 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
@@ -74,6 +77,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [A family the game covers with few species gets at least 90 candidate photos](2026-11-21-fish-family-floor.md) | #1379 |
 | 2026-11-21 | [The fish phase flag comes from the cited phase list too, and the phase card names the list's sources](2026-11-21-fish-phase-flag-from-cited-list.md) | #1395 |
 | 2026-11-21 | [The fish welcome's names step: common names, scientific names or both, right after the first-launch question](2026-11-21-fish-welcome-names-step.md) | #1396 |
+| 2026-11-21 | [The admin's Crop works on an IMR lecture photo traced to its original](2026-11-21-lecture-crop.md) | #1400 |
 | 2026-11-21 | [Life stages matched: a Lab prototype on the documented phases only, a stage shown and the same species at another stage among three, the source said](2026-11-21-life-stages-lab.md) | #1388 |
 | 2026-11-21 | [Linear is where open work is tracked; ROADMAP.md keeps pointers and the subjects not transferred yet](2026-11-21-linear-tracking.md) | #1360 |
 | 2026-11-21 | [Name modifiers in Confusions: a shared common-name word as an exploratory effect, with the genus and look-alikes held](2026-11-21-name-modifiers-in-confusions.md) | #1403 |

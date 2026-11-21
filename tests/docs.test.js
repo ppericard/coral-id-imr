@@ -174,10 +174,10 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
   // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
   assert.match(out, /reports and events last checked .+: read them/);
-  // Where open work is tracked (docs/INTEGRATOR.md "Linear"): on the questions line, which the 5-line cut never drops.
+  // Where to start (docs/INTEGRATOR.md "Linear"): its own line, second, so the 5-line cut never drops it (REE-230).
   assert.match(
-    out,
-    /^Questions for Pierre: .*Open work: Linear team REE, active https:\/\/linear\.app\/reef-id\/team\/REE\/active · backlog /m
+    out.split('\n')[1],
+    /^Start: Project Home https:\/\/linear\.app\/reef-id\/document\/\S+ · Drive Reef_ID https:\/\/drive\.google\.com\/drive\/folders\/\S+ · views Now\/Next\/Decisions\/Waiting$/
   );
   assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
 });
@@ -192,10 +192,14 @@ test('tools/brief.py names where open work is tracked: links to the Linear team 
   })
     .toString()
     .trim();
-  assert.strictEqual(
-    tl,
-    'Open work: Linear team REE, active https://linear.app/reef-id/team/REE/active · backlog https://linear.app/reef-id/team/REE/backlog'
-  );
+  // One source: the links are the ones of INTEGRATOR.md's "Linear" section, the four saved views named there too.
+  const sec = read('docs/INTEGRATOR.md').split('\n## Linear\n')[1];
+  const home = sec.match(/\[Project Home\]\((\S+?)\)/)[1],
+    drive = sec.match(/\[Drive Reef_ID\]\((\S+?)\)/)[1];
+  assert.strictEqual(tl, `Start: Project Home ${home} · Drive Reef_ID ${drive} · views Now/Next/Decisions/Waiting`);
+  for (const v of ['Now', 'Next', 'Decisions for Pierre', 'Waiting and blockers'])
+    assert.match(sec, new RegExp(`\\[${v}[^\\]]*\\]\\(https://linear\\.app/reef-id/view/[0-9a-f-]{36}\\)`), v);
+  assert.ok(read('AGENTS.md').includes(home), 'AGENTS.md points to the Project Home');
 });
 
 // AGENTS.md is the short constitution every agent reads (Codex reads only its first 32 KiB by default), and every

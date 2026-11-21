@@ -324,7 +324,7 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with six tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with seven tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
@@ -337,7 +337,7 @@ once a player uses it, how often is their choice. A small generic system with si
   screen, basics the `app.js` `UNITS` `basics` words of the subject, key its `UNITS` `idtip` words: the text follows the
   subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
   `zoom`: corallites for coral players, markings and fins for fish players) and `act` (its "Show me", `quiz.js`
-  `TIP_ACT`). `tipDue(state, b, L, now)` picks the tip of a break (a page outside the games passes the time); `TIPR`: at
+  `TIP_ACT`; a tip with none shows only **Got it**). `tipDue(state, b, L, now)` picks the tip of a break (a page outside the games passes the time); `TIPR`: at
   most one tip a visit, never in its first `FLOOR` (10) answers of a game (a page has no answers to wait for: `out: true`
   tips skip the floor); a visit is answers less than `GAP` (30 min, as `model.js` `SESSION.GAP`) apart, and a reload is
   no new visit. On a page the visit counted is the last one, over when its last answer is `GAP` or more before the time
@@ -350,9 +350,10 @@ once a player uses it, how often is their choice. A small generic system with si
   `quizDuel`, a Duel tab answer (mode `quiz-duel…`) in the device's log also folding in as one, `tipsLoad`; `m` times the
   Custom quiz's My mix-ups view was drawn here, `quiz.js` `viewCustom`, a saved choice of that view also folding in as one;
   `i` times the Identify tool's page (the Coral ID Key) was drawn here, `app.js` `route()` through `quiz.js` `tipRoute`, a
-  choice the key saved on the device, `reefid-idkey-start2`, `-lay` or `-pv`, also folding in as one),
-  seeded once from the answers the device still holds (`LOG0` / `SYNC.log`: their count and `zm` flags;
-  a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
+  choice the key saved on the device, `reefid-idkey-start2`, `-lay` or `-pv`, also folding in as one; `k` the run of typed
+  questions answered "I don't know" here since the last typed answer that was not one, `tipNote` through `tipAfter`, the
+  log's trailing run folding in, `tipIdkRun`), seeded once from the answers the device still holds (`LOG0` /
+  `SYNC.log`: their count, `zm` flags and trailing run; a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
 - **At the break**: `answer()` arms the one-tap question first (`pulseArm`), then the tips (`tipAfter`: when the
@@ -426,6 +427,20 @@ once a player uses it, how often is their choice. A small generic system with si
   leaves the page as it is (no redraw, no next question). Logged as the others (`m` is `home` or `progress`). The log
   cannot say who opened the key before the counter existed, so `i` counts from the device on, plus a choice the key saved
   ([record](../decisions/2026-11-21-tip-e-identify.md)).
+- **The typed-answers tip** (`id` `typed`, tip (f) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  whose **last 3** (`TIPR.IDK`) typed questions here were all answered "I don't know" (counter `u.k`, the run of typed
+  "I don't know" since a typed answer that was not one; `quiz.js` `answer()` passes `tipAfter` how a typed question was
+  answered, `tipNote` counts it). A text typed ends the run, even a wrong one, a text the game refused before giving up, or
+  a close one retyped; a question not typed leaves it as it is; the exam's typed questions count like the others. The
+  progress record counts typed questions but not how they were answered, so a counter: the log's trailing run (`tipIdkRun`:
+  mode `…|t`, no text in `ty`, no refused try in `rj`) seeds it and folds into it (`tipsLoad`), so a player who answered
+  so before the counter existed is counted. In the Quiz and the Custom quiz (the games with typed questions; any subject
+  that has them: the card's unit word is the subject's `one`); no moment to prefer, so the first break is the Next right
+  after the third "I don't know"; twice at most, the second 150 questions after the first; last of the six when several
+  are due. Card: "Did you know?", "Not sure how to spell it? Type it anyway", "A close spelling counts as right: you just
+  retype the genus once to learn its spelling. “I don't know” counts as a miss." and **Got it** only (nothing to open:
+  no `act`, so no **Show me**; Escape is Got it). The typed form says it again at the moment itself ("So close!").
+  ([record](../decisions/2026-11-22-tip-f-typed-answers.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,

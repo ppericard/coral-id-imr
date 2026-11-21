@@ -1116,7 +1116,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
   allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
-  tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
+  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run.
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '');
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
@@ -1780,7 +1781,8 @@ function mimShow({n, p, m}, brk) {
 }
 // "Did you know?" tips (tips.js): this device's counters (reefid-tips), the break at Next, the card.
 // The device's answers seed the counters once (tips.js tipsInit): the log of a signed-in player, else LOG0.
-const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
+// run: false for the answer being noted (tipAfter): the log already holds it, the counter does not yet.
+const tipsLoad = (raw = store.get(TIPR.KEY, null), run = true) => {
   let seed = [];
   if (!raw)
     try {
@@ -1800,7 +1802,18 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
   const m = !d.u.m && store.get(CQ.VIEW, '') === 'mix' ? {...d, u: {...d.u, m: 1}} : d;
   // What the Coral ID Key keeps once the player changed one of its choices (its start view, layout or photos, proto/idkey.js):
   // one on the device shows it was opened before i was counted.
-  return !m.u.i && IDKEY_SAVED.some(k => store.get(k, null) !== null) ? {...m, u: {...m.u, i: 1}} : m;
+  const i = !m.u.i && IDKEY_SAVED.some(k => store.get(k, null) !== null) ? {...m, u: {...m.u, i: 1}} : m;
+  return run ? tipRun(i) : i;
+};
+// The log's typed answers (mode …|t, the text typed in ty) show the run of "I don't know" they end with, from before k was
+// counted (or an answer the counter missed): the longer of the two, read only while the run is short.
+const tipRun = st => {
+  let k = 0;
+  if (st.u.k < TIPR.IDK)
+    try {
+      k = tipIdkRun((SYNC && SYNC.log) || store.get(LOG0, []));
+    } catch (e) {}
+  return k > st.u.k ? {...st, u: {...st.u, k}} : st;
 };
 const IDKEY_SAVED = ['reefid-idkey-start2', 'reefid-idkey-lay', 'reefid-idkey-pv'];
 // One more open of a feature of a tip (k: a counter of u): that tip is not for this player.
@@ -1827,11 +1840,15 @@ const tipBasics = () => {
   const r = store.get(basicsKey(), {}) || {};
   return !r.last && !Object.keys(r.seen || {}).length;
 };
-function tipAfter(nb, cur, miss, zm, hold) {
+function tipAfter(nb, cur, miss, zm, hold, ty = '') {
   const raw = store.get(TIPR.KEY, null);
-  let st = tipsLoad(raw);
-  const q0 = st.u.q;
-  st = tipNote(st, Date.now());
+  let st = tipsLoad(raw, false);
+  const q0 = st.u.q,
+    k0 = st.u.k;
+  st = tipNote(st, Date.now(), ty);
+  // Just seeded from the log, this answer included: its own count of the run (the seed ends with this answer already).
+  if (!raw && q0 && ty) st = {...st, u: {...st.u, k: ty === 'idk' ? k0 : 0}};
+  st = tipRun(st); // after the note: the log holds this answer, so the run it shows now is compared with the counter's
   if (!raw && q0) st = {...st, u: {...st.u, q: q0}}; // just seeded from the log, this answer included
   store.set(TIPR.KEY, st);
   // mix: the pairs of genera the player mixed up TIPR.MIX times or more (the My mix-ups view's edges), counted only for a
