@@ -166,6 +166,7 @@ LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
 STAGE = {(1, 2): "adult", (1, 8): "juvenile", (9, 10): "female", (9, 11): "male"}
 DEAD = (17, 19)
+SPECIES_RANKS = ("species", "subspecies", "variety", "form")  # the ranks a photo's observation may name (usable_obs)
 # The automatic refill (--refill; docs/spec/photos.md "No more candidates is no more candidates"). A species short of easy photos has fewer than EASY_NEED
 # observations with a very easy photo (ease >= EASY_E) in play or sure to come: model.js easyFirst shows a unit's very
 # easy photos (PDIFF.EARLY, 4) until it reaches Open Water, or its PICKD.VARIETY (3) easiest when it has fewer.
@@ -395,7 +396,7 @@ def queries(tid):
 def usable_obs(o, used, excl):
     """An observation as a selection item, or None: its usable photos (licensed, or Pierre's own; not used or excluded),
     its licence class (the best of its photos), source tier, life stage. Dead fish and genus-level IDs are left out."""
-    if [*DEAD] in o.get("an", []) or o.get("rk") not in ("species", "subspecies", "variety", "form"):
+    if [*DEAD] in o.get("an", []) or o.get("rk") not in SPECIES_RANKS:
         return None
     own = o.get("u") == PIERRE
     if not own and o.get("g") != "research":
