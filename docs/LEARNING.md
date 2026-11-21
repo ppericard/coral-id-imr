@@ -1185,8 +1185,12 @@ docs/decisions/2026-11-21-rt-net-photo.md. Code: `core.js` `rtWeight` (its `ti`)
   slugs; the corals also with the sheet's other numbers) is identical to `main`'s.
 - **The app world** (level 1; `node tools/learnsim.js --stats` (the corals' statistics rebuilt from the real log with
   the terms, at `RTNET_SHEET`) `--truth gen`, the default profiles, 5 seeds, 300 questions; before = `main`): its
-  simulated seconds do not depend on the photo, so it can show only that no learning path breaks, never a gain.
-  Results: see the PR (#1414).
+  simulated seconds do not depend on the photo, so it can show only that no learning path breaks, never a gain. One
+  look, guardrails only (declared): no path breaks; held everywhere but the beginner's E = bar − D* at 300 answers,
+  −0.508 → −0.461 (+0.047, bound +0.082 against a margin of +0.030): breached on the side the margin guards, though the
+  bar moved toward the true knowledge (it stays 0.46 under it), with the beginner meeting 3.4 more units and true
+  knowledge +0.027; the lecture RA's and the expert's longest plateau unclear (the measure cannot tell). The arms
+  differ only by this change on the same seeds, so the netting ran.
 
 ### Photo memory
 
