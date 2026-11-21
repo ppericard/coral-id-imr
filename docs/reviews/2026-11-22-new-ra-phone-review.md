@@ -22,13 +22,18 @@ findings 4 and 5 wait on Pierre in REE-70 and are not raised again here.
   A few photos enlarged early, as a curious RA would.
 - **Light and dark**: the first half of the answers in light, the second half in dark (the app's ⚙ Theme), then Home,
   My progress, Learn, the Duel tab and Achievements in both.
-- **Runs**: corals 100 answers, signed in during the tour as a made-up "Testa B"; fish 100 answers, signed out; sea
+- **Runs**: corals 100 answers, signed in during the tour as a made-up "Testa B" (meant to go to 170 for the duels
+  tip; my script tapped the Custom quiz tip's "Show me" at answer 101 and left the quiz); fish 100 answers, signed out; sea
   slugs twice, signed out: 50 answers (my script then tried to reach ⚙ behind a new-genus card, a script fault, not
   the app's), then a new player for 100 answers (screenshots `seaslug2-…`). At every question and every feedback, a
   probe checked for sideways scrolling, the answer buttons and Next off screen or covered, and those buttons under 40
   px tall.
 - **Screenshots**: not committed (as the earlier reviews). They are named `<subject>-<nnn>-<what>.png` and the
-  integrator has them; each finding names its files.
+  integrator has them; each finding names its files. Read by eye (about 50 of 282, on contact sheets and one by
+  one): the coral tour's steps (the fish and sea slug tours by their text only), the fish and coral basics, the first
+  questions and feedback of each subject, a sample of later questions and feedback in light and dark, and a sample of
+  the end pages (Home, My progress, Learn, the Duel tab, Achievements) in both themes. The others were checked by the
+  probe only.
 
 What held everywhere: no page error, no sideways scrolling, no card that would not close, no answer button or Next
 under 40 px, every photo loaded, the feedback and Next always on one screen above the tab bar (but for finding 4).
@@ -40,7 +45,7 @@ under 40 px, every photo loaded, the feedback and Next always on one screen abov
 | #1375, the quiz keeps its question | **Leaving and coming back** (My progress, then Learn, then the quiz) kept the same question, photo and choices in all three subjects (`coral-035-back-hash.png`, `fish-037-back-hash.png`, `seaslug-033-back-hash.png`). **A reload**: kept in fish and in the second sea slug run (`fish-045-back-reload.png`, `seaslug2-041-back-reload.png`), **not kept** in corals and in the first sea slug run (finding 2). |
 | #1376 and #1379, fewer repeated photos | **Fish**: 100 questions on 98 different photo files (counted by file: 40 of them are not mapped to their observation by my script); the 2 repeats are Moorish Idol (a one-species family), 40 and 51 questions apart. **Sea slugs**: 50 photos in the first 50 questions; 89 in the second run's 100, 2 observations back within 20 questions. **Corals** (not in the scope of #1379): finding 3. |
 | #1370, the duels tip | **Not reached**: it needs 150 questions, and a visit shows one tip; the Custom quiz tip took this visit's at answer 101 (`coral-061-card-tip.png`). As designed. |
-| #1369, Fish basics' achievement | "Fin to tail" pops up on the last basics step, with its bronze badge (`fish-021-basics-end.png`); it is in the achievements list after. |
+| #1369, Fish basics' achievement | "Fin to tail" pops up on the last basics step, with its bronze badge (`fish-021-basics-end.png`); the Achievements page lists it, dated (`fish-078-page-leaderboard_achievements-light.png`). |
 
 ## Findings
 
@@ -89,34 +94,34 @@ integrator (`repro.js`).
 
 ### 3. Design: a new coral player sees the same photos again within a few minutes
 
-**Seen** (corals, 100 answers): 112 photo files on 87 observations; 6 times an observation came back within 20
-questions. *Porites* showed the same two photos (one observation) at questions 7, 20 and 35; *Plerogyra* one photo at
-12, 30 and 60; *Pocillopora* two observations twice each, 13 questions apart. Fish (98 photos in 100) and sea slugs (50
-in 50, then 89 in 100 with 2 back within 20) had few. A likely reading, not measured here: a new player meets few
-genera, the "Again" pairs come back often, and before Open Water a genus shows mostly its easiest photos, so the few
-easy observations of a genus rotate fast.
+**Seen** (corals, 100 answers): 112 photo files on 87 observations; 5 times an observation came back within 20
+questions (a sixth, *Pectinia* at 33 and 43, is my log's artefact: question 33 was replaced by the reload of finding
+2). *Porites* showed the same two photos (one observation) at questions 7, 20 and 35; *Plerogyra* one photo at 12, 30
+and 60; *Pocillopora* two observations twice each, 13 and 20 questions apart. Three of the five (7 → 20, 13 → 26, 17 →
+37) come after a miss on that very photo, so the app may bring a missed photo back on purpose: not checked. Fish (98
+photos in 100) and sea slugs (50 in 50, then 89 in 100 with 2 back within 20) had few.
 
 **Already known**: `docs/reviews/2026-11-21-photo-diversity.md` measured it on the real log (corals' thin genera repeat
-most: 234 near repeats in 3,920 answers) and left corals as report only, since coral photos come through Pierre's own
-curation.
+most: 234 near repeats in 3,920 answers, a lower bound) and left corals as report only, since coral candidates go
+through Pierre's own curation. #1376's fix does not reach corals (coral photos have no judged ease, its PR says).
 
-**Options**: (a) keep; (b) count the corals' easiest photos by observation in the draw, as #1376 did for fish (the
-engine is one, so it may already apply: to check on the log); (c) more easy coral candidates for the thin genera,
-through Pierre's curation.
-**Recommendation**: (b) checked first on the real log (no player-visible change if it already applies), then (c) for
-the genera still short. Not built: the draw's rules and the curation are Pierre's.
+**Nothing new to decide here**: this is one more data point for that study's coral line. **Recommendation**: when the
+coral candidates are next looked at with Pierre, start from the genera this run repeated (*Porites*, *Plerogyra*,
+*Pocillopora*); first check whether a missed photo coming back is by design, since that would explain three of the
+five. Not built.
 
 ### 4. Design: the leaderboard note covers two answers on the phone quiz
 
-**Seen**: after signing in, at the next visit, "🏆 New: a leaderboard. Your name shows there; to leave it, ⚙
+**Seen** (the signed-in coral run only, with the made-up sheet): after signing in, at the next visit, "🏆 New: a
+leaderboard. Your name shows there; to leave it, ⚙
 Settings, Leaderboard: Off." slides up above the tab bar for 15 seconds (`coral-041-back-reload.png`,
 `coral-043-q40.png`). On a phone it sits over the bottom row of the quiz's four answers (two of four hidden) and, on
 the feedback, over Next. Its ✕ is 32 px, under the 40 px the answers have. A new RA also reads "New:" about something
 that was never old to them.
 
-**Cause**: `progress.js` `boardNotice`, written for players already signed in when the leaderboard came, shows to
-every account that has not been told yet, so to every new one; `appToast` sits at the bottom on phones, above the tab
-bar.
+**Cause** (read in the code): `progress.js` `boardNotice`, written for players already signed in when the leaderboard
+came, shows to every account that has not been told yet, so, as I read it, to every new one; `appToast` sits at the
+bottom on phones, above the tab bar (`app.css` `.apptoast`), which is what puts it over the answers.
 
 **Options**: (a) keep (✕ closes it, 15 s); (b) hold the note while a question is open, show it on a page without one
 (Home, My progress); (c) for a player who signed in after the leaderboard came, a plain line "Your name shows on the
@@ -144,10 +149,11 @@ so a new entry is his call.
 **Options**: (a) keep (the sea slugs are in beta); (b) a sea slug basics achievement, as #1369 did for fish (one
 `core.js` entry, a name to choose). **Recommendation**: (b), with the next look at the sea slug achievements.
 
-### 7. For REE-70: the progress figure goes down as families open
+### 7. For REE-70: the fish progress figure went down
 
 Not a new finding: evidence for REE-70's finding 4. In the fish run, the tab bar's Progress read 0% for 3 answers,
-climbed to 8% at answer 27, then fell to 0-5% as new families opened, ending at 3% after 100 answers at 67% right.
+climbed to 8% at answer 27, then fell to 0-5%, ending at 3% after 100 answers at 67% right (why it fell is a guess:
+new families opening at that time, not measured).
 The corals, with the same pattern, climbed from 1% at answer 52 to 5-6% at answer 100. My answers do not learn (right
 or wrong by a fixed pattern), so this says nothing about a real learner's figure; it shows that a new RA's fish number
 can fall while they answer two in three right, which REE-70's "next step" line would help explain.
