@@ -18,17 +18,17 @@ const MISS = {ctx: 'quiz', miss: true, zm: false},
   RIGHT = {ctx: 'quiz', miss: false, zm: false};
 
 test('tipsInit: empty, malformed, and seeded once from the device answers', () => {
-  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
-  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0});
+  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
+  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0});
   assert.deepStrictEqual(tipsInit({u: {q: -3, z: 'a'}, s: {zoom: 'x'}, v: 5}, null), {
-    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0},
+    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0},
     s: {zoom: []},
     v: {t: 0, n: 0, tip: 0}
   });
   // The seed: the answers' count and their zm flags; never once a state exists.
   const log = [{zm: 1}, {zm: 0}, {}, {zm: 1}, null];
-  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, c: 0, d: 0, m: 0, i: 0});
-  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0});
+  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, k: 0, c: 0, d: 0, m: 0, i: 0});
+  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0});
 });
 
 test('tipNote: a visit is answers less than 30 minutes apart; a tip shown holds for the visit only', () => {
@@ -248,7 +248,7 @@ test('basics tip: only for b.bx, from 30 questions, at the Next after a miss, in
   // Its game: the Quiz; not the Custom quiz, the Duel tab nor another page.
   for (const ctx of ['quiz-custom', 'quiz-duel', 'genera']) assert.strictEqual(tipDue(fresh(100), {...BX, ctx}), null, ctx);
   // No counter of its own: the state holds no basics count (the module's page records its opening); the Identify tip's is i.
-  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'i', 'm', 'q', 'z']);
+  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'i', 'k', 'm', 'q', 'z']);
 });
 
 test('basics tip: once a visit, twice ever 150 questions apart, after the other four tips', () => {
@@ -362,6 +362,104 @@ test('identify tip: the card speaks the subject’s Identify words and names no 
   // The words are declared by the one subject whose Identify tool works (rule S1: one place, no test on the subject).
   const app = require('fs').readFileSync(require('path').join(__dirname, '..', 'app.js'), 'utf8');
   assert.strictEqual((app.match(/^\s+idtip: \{/gm) || []).length, 1);
+});
+
+// The typed-answers tip (f): the run of typed questions answered "I don't know" (u.k), counted by tipNote's third argument.
+const K = {c: 1, d: 1, z: 3, m: 1, i: 1};
+test('typed run: tipNote counts the typed "I don\'t know" in a row; a text typed ends it; other questions leave it', () => {
+  let st = tipsInit({u: K});
+  const run = (...tys) => tys.forEach(ty => (st = tipNote(st, 1e12 + st.u.q * MIN, ty)));
+  run('idk', '', 'idk');
+  assert.deepStrictEqual([st.u.q, st.u.k], [3, 2]); // a question not typed between changes nothing
+  run('typed');
+  assert.deepStrictEqual([st.u.q, st.u.k], [4, 0]); // a wrong, a refused or a close text ends the run
+  run('idk', 'idk', 'idk', 'idk');
+  assert.strictEqual(st.u.k, 4);
+  // No third argument: as before (no run touched).
+  assert.strictEqual(tipNote(st, st.v.t + MIN).u.k, 4);
+});
+
+test('typed run: tipIdkRun reads the run a log ends with, typed questions only (core.js TYPED_RE, ty, rj)', () => {
+  const idk = {m: 'quiz|t', ty: ''},
+    txt = {m: 'quiz|t', ty: 'porites'},
+    refused = {m: 'quiz|t', ty: '', rj: ['poritez']}, // tried a text the game refused, then gave up: a typed answer
+    pick = {m: 'quiz|k2', ty: undefined},
+    exam = {m: 'quiz|t|x', ty: ''},
+    other = {m: 'quiz|tx'}; // no |t token
+  const {tipIdkRun} = require('../tips.js');
+  assert.strictEqual(tipIdkRun([]), 0);
+  assert.strictEqual(tipIdkRun(null), 0);
+  assert.strictEqual(tipIdkRun([pick, pick]), 0);
+  assert.strictEqual(tipIdkRun([txt, idk, pick, idk, pick, exam]), 3); // picks between are no typed question
+  assert.strictEqual(tipIdkRun([idk, idk, txt]), 0);
+  assert.strictEqual(tipIdkRun([idk, idk, refused]), 0);
+  assert.strictEqual(tipIdkRun([idk, other, null, idk]), 2);
+  // The seed of a state made from the log.
+  assert.strictEqual(tipsInit(null, [txt, idk, idk, idk]).u.k, 3);
+  assert.strictEqual(tipsInit({u: {q: 4}}, [txt, idk, idk, idk]).u.k, 0); // a state that exists is never reseeded
+});
+
+test('typed tip: the last 3 typed questions all "I don\'t know"; any break while the run holds; Quiz and Custom quiz', () => {
+  const fresh = (n, k, u = K) => played(n, 0, tipsInit({u: {...u, k}})),
+    st = fresh(40, 3);
+  assert.strictEqual(TIPR.IDK, 3);
+  assert.strictEqual(tipDue(fresh(40, 2), MISS), null); // two in a row are no pattern
+  assert.strictEqual(tipDue(st, MISS).id, 'typed');
+  assert.strictEqual(tipDue(st, RIGHT).id, 'typed'); // no better moment: the first break is the one after the third
+  assert.strictEqual(tipDue(fresh(40, 9), MISS).id, 'typed');
+  // From the first question: a typed question needs a unit well on its way, and the run needs three of them (the visit's
+  // floor of 10 answers holds as for every tip).
+  assert.strictEqual(tipDue(fresh(12, 3), MISS).id, 'typed');
+  assert.strictEqual(tipDue(played(9, 0, tipsInit({u: {...K, k: 3}})), MISS), null);
+  // Its games: the Quiz and the Custom quiz, not the Duel tab (no typed question there) nor a page.
+  assert.strictEqual(tipDue(st, {...MISS, ctx: 'quiz-custom'}).id, 'typed');
+  for (const ctx of ['quiz-duel', 'home', 'progress', 'genera']) assert.strictEqual(tipDue(st, {...MISS, ctx}), null, ctx);
+  assert.strictEqual(tipDue(st, OUT), null);
+  // A text typed ends the audience at once.
+  assert.strictEqual(tipDue(tipNote(st, st.v.t + MIN, 'typed'), MISS), null);
+  assert.ok(!TIPS.find(t => t.id === 'typed').out);
+});
+
+test('typed tip: once a visit, twice ever 150 questions apart, after the other five tips', () => {
+  const ALL = {...MISS, mix: 3, bx: 1}, // every other tip's audience too
+    IDK = MISS,
+    visit = (st, n) => played(n, 0, st, st.v.t + TIPR.GAP);
+  let st = tipShown(played(30, 0, tipsInit({u: {...K, k: 3}})), 'typed');
+  assert.deepStrictEqual(st.s.typed, [30]);
+  assert.strictEqual(tipDue(st, IDK), null); // same visit
+  st = visit(st, 149);
+  assert.strictEqual(tipDue(st, IDK), null); // 179
+  st = played(1, 0, st, st.v.t + MIN);
+  assert.strictEqual(tipDue(st, IDK).id, 'typed'); // 180
+  st = tipShown(st, 'typed');
+  assert.strictEqual(tipDue(visit(st, 500), IDK), null); // never a third time
+  // With every tip due, the others first, one a visit.
+  let all = played(150, 0, tipsInit({u: {k: 3}}));
+  const order = [];
+  for (let i = 0; i < 8; i++) {
+    const t = tipDue(all, ALL);
+    if (!t) break;
+    order.push(t.id);
+    all = visit(tipShown(all, t.id), 12);
+  }
+  assert.deepStrictEqual(order, ['zoom', 'custom', 'duels', 'mixups', 'basics', 'typed']);
+});
+
+test('typed tip: the card names the subject’s own unit and no subject; nothing to open', () => {
+  const {SUBJECTS} = require('../core.js'),
+    t = TIPS.find(x => x.id === 'typed');
+  assert.strictEqual(t.card.kick, 'Did you know?');
+  for (const S of SUBJECTS) {
+    const b = t.card.body({subj: S});
+    assert.ok(b.includes(`retype the ${S.one} once`), S.id);
+    assert.match(b, /close spelling counts as right/);
+    assert.match(b, /“I don't know” counts as a miss/);
+  }
+  assert.match(t.card.body({}), /retype the name once/);
+  assert.doesNotMatch(t.card.title({}) + t.card.body({}), /coral|fish|genus|genera|slug/i);
+  assert.strictEqual(t.act, undefined); // Got it only: the typed form says it again at a close spelling
+  // Every subject that has typed questions is served by the same entry: the unit's word is a field of the subject (S1).
+  for (const S of SUBJECTS) assert.ok(typeof S.one === 'string' && S.one, S.id);
 });
 
 // The card speaks the subject on screen: a fish player is never told to look at the corallites. Every subject gets a
