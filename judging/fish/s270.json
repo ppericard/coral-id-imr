@@ -2,7 +2,8 @@
  "photos": {
   "fish-s270-cand-552607406": {
    "code": "p1g1ss12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-597649260": {
    "code": "o1g2bm11",
@@ -10,7 +11,8 @@
   },
   "fish-s270-cand-553617595": {
    "code": "o1g2sms2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-554519997": {
    "code": "p1g1ssx1",
@@ -26,7 +28,8 @@
   },
   "fish-s270-cand-654690575": {
    "code": "p1g1slo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-455427214": {
    "code": "o1g0smk2",
@@ -42,7 +45,8 @@
   },
   "fish-s270-cand-540148639": {
    "code": "p1g1mlo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-480278146": {
    "code": "p1g1ssx1",
@@ -70,7 +74,8 @@
   },
   "fish-s270-cand-519653948": {
    "code": "o1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-519653977": {
    "code": "p1g2ss11",
@@ -169,7 +174,8 @@
     0.52,
     0.48
    ],
-   "note": "crop: the parrotfish at left and the wrasse below leave the frame (Q430)"
+   "note": "crop: the parrotfish at left and the wrasse below leave the frame (Q430)",
+   "phase": "male"
   },
   "fish-s270-cand-626136920": {
    "code": "o1g1ssx1",
@@ -181,11 +187,13 @@
   },
   "fish-s270-cand-655330550": {
    "code": "o1g1mm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-655330654": {
    "code": "p1g1smo2",
-   "keep": "alt"
+   "keep": "alt",
+   "phase": "male"
   },
   "fish-s270-cand-655330717": {
    "code": "p1g1mm12",
@@ -213,7 +221,8 @@
   },
   "fish-s270-cand-583071010": {
    "code": "p1g1mm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-459834384": {
    "code": "o1g1ssx1",
@@ -265,7 +274,8 @@
     0.95,
     0.6
    ],
-   "note": "crop: the dark fishes and the other cleaner wrasse leave the frame (Q430)"
+   "note": "crop: the dark fishes and the other cleaner wrasse leave the frame (Q430)",
+   "phase": "male"
   },
   "fish-s270-cand-729414607": {
    "code": "p1g1smk2",
@@ -281,7 +291,8 @@
   },
   "fish-s270-cand-566538996": {
    "code": "p1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-606878129": {
    "code": "o1g0ss12",
@@ -297,7 +308,8 @@
   },
   "fish-s270-cand-666265069": {
    "code": "o1g1smo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-656500349": {
    "code": "o1g1smk1",
@@ -305,27 +317,33 @@
   },
   "fish-s270-cand-430595743": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-480450135": {
    "code": "p1g0sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-547467045": {
    "code": "o1g2mm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-747834131": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-720615267": {
    "code": "p1g0sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-755901073": {
    "code": "p1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-581660823": {
    "code": "p1g0ml1j4",
@@ -333,7 +351,8 @@
   },
   "fish-s270-cand-430595676": {
    "code": "o1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s270-cand-593262082": {
    "code": "p1g0sm1j3",

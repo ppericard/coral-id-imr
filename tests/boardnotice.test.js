@@ -153,6 +153,24 @@ test('closed by the player or gone by itself: the wait ends; told elsewhere, sig
   assert.strictEqual(u.toasts.length, 0, 'a switch of subject takes the wait away');
 });
 
+test('an account made after the leaderboard shipped: the notice without "New:"; an existing one keeps it', () => {
+  const run = flag => {
+    const p = page();
+    if (flag !== undefined) p.saved['reefid-board-new'] = flag;
+    let said = '';
+    const base = p.ctx.appToast;
+    p.ctx.appToast = m => ((said = m), base(m));
+    p.ctx.boardNotice();
+    return said;
+  };
+  assert.ok(!/New:/.test(run(1)), 'new account: no "New:"');
+  assert.match(run(1), /^🏆 There is a <a .*leaderboard<\/a>\. Your name shows there/);
+  assert.match(run(0), /^🏆 New: a /, 'existing account: unchanged');
+  assert.match(run(undefined), /^🏆 New: a /, 'no flag: unchanged');
+  const sync = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8');
+  assert.match(sync, /store\.set\('reefid-board-new', j\.found \? 0 : 1\)/, 'signIn sets the flag from j.found');
+});
+
 test('the close button of every note is a 44 px target', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', 'app.css'), 'utf8'),
     b = /\n\.apptoast button \{([^}]*)\}/.exec(css)[1];
