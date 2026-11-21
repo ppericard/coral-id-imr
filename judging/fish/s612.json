@@ -78,11 +78,13 @@
   },
   "fish-s612-cand-606726637": {
    "code": "p1g1mm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-694476437": {
    "code": "o1g2bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-694476495": {
    "code": "o1g2bs11",
@@ -104,7 +106,8 @@
     0.3,
     0.7,
     0.7
-   ]
+   ],
+   "phase": "male"
   },
   "fish-s612-cand-615719897": {
    "code": "o1g0sm14",
@@ -134,7 +137,8 @@
   },
   "fish-s612-cand-583179937": {
    "code": "o1g1mm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-548260919": {
    "code": "p1g1mm13",
@@ -146,15 +150,18 @@
   },
   "fish-s612-cand-420838627": {
    "code": "o1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-650441884": {
    "code": "p1g1mmo2",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-330343133": {
    "code": "p1g1ml13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-581565583": {
    "code": "o1g2sm12",
@@ -168,7 +175,8 @@
     0.35,
     0.75,
     0.6
-   ]
+   ],
+   "phase": "male"
   },
   "fish-s612-cand-545648361": {
    "code": "p1g1sm13",
@@ -182,15 +190,18 @@
   },
   "fish-s612-cand-603170578": {
    "code": "o1g0smo3",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-597731494": {
    "code": "o1g2bl11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-582457957": {
    "code": "o1g2bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   },
   "fish-s612-cand-525889421": {
    "code": "p1g1bm11",
@@ -206,7 +217,8 @@
   },
   "fish-s612-cand-585467182": {
    "code": "p1g2sm12",
-   "keep": "best"
+   "keep": "best",
+   "phase": "female"
   },
   "fish-s612-cand-606187333": {
    "code": "p1g1mm12",
@@ -214,7 +226,8 @@
   },
   "fish-s612-cand-329799996": {
    "code": "o1g1bm11",
-   "keep": "best"
+   "keep": "best",
+   "phase": "male"
   }
  }
 }

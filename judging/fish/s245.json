@@ -2,7 +2,8 @@
  "photos": {
   "fish-s245-cand-756242647": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s245-cand-597648677": {
    "code": "p1g1sl1j3",
@@ -36,7 +37,8 @@
   },
   "fish-s245-cand-129404201": {
    "code": "p1g1sm14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s245-cand-711055565": {
    "code": "p1g1sm1j3",
@@ -165,7 +167,8 @@
   },
   "fish-s245-cand-63538126": {
    "code": "o1g1sm13",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s245-cand-330082659": {
    "code": "o1g1bl11",
@@ -212,7 +215,8 @@
   },
   "fish-s245-cand-738775827": {
    "code": "p1g1sl14",
-   "keep": "best"
+   "keep": "best",
+   "phase": "intermediate"
   },
   "fish-s245-cand-738775859": {
    "code": "d1g1ssk1",
