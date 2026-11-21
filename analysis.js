@@ -3552,14 +3552,14 @@
 
   /* ---------- 11. Player trajectories: the profile's behaviours along each player's whole history ---------- */
   // Pierre, 2026-11-05 (Q78): player learning trajectories from the first answer to now, a later analysis level. The
-  // behaviours of Player profiles (profFeat, written to run on any set of answers) on successive windows of TR.W answers
-  // of each player's whole history instead of their last PROF_N: where a player started, and where they are now, on each
-  // behaviour. Every window of every player is a unit of its own in one fit (the answer time model, the stops' pooled
+  // behaviours of Player profiles (profFeat, written to run on any set of answers) on successive windows of about TR.W
+  // answers of each player's whole history (whole sessions: trBlocks) instead of their last PROF_N: where a player
+  // started, and where they are now, on each behaviour. Every window of every player is a unit of its own in one fit (the answer time model, the stops' pooled
   // rates), so a window's values are read against all windows, not against the players of its own stage. The learning
   // slope is left out: a slope needs the whole range of practice, not a window of it. Descriptive, no verdict, outside the
   // multiple-testing correction; admin only (the report keeps anonymous ids).
   const TR = {
-    W: 100, // answers in a window
+    W: 100, // answers in a window, at least: it ends with the session that reaches them
     MIN: 2, // windows a player needs to have a trajectory
     PLAYERS: 3, // players with a trajectory before the view draws anything
     MAXW: 40, // newest windows kept a player
@@ -3573,60 +3573,64 @@
     const by = new Map();
     A.forEach(a => !a.gone && (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
     const pl = [...by.entries()]
-        .map(([id, L]) => {
-          const k = Math.floor(L.length / TR.W);
-          return {id, L, k, from: Math.max(0, k - TR.MAXW)};
-        })
-        .filter(x => x.k >= TR.MIN)
+        .map(([id, L]) => ({id, L, B: trBlocks(L)}))
+        .filter(x => x.B.length >= TR.MIN)
         .sort((a, b) => b.L.length - a.L.length || (a.id < b.id ? -1 : 1)),
       feats = PROF_F.filter(f => f[0] !== 'slope').map(([k, label]) => ({k, label})),
       fx = feats.map(f => PROF_F.findIndex(g => g[0] === f.k));
     if (pl.length < TR.PLAYERS) return thin(pl.length, TR.PLAYERS, {of: 'players', at: TR.MIN * TR.W, win: TR.W, feats, effects: []});
-    // each window as a unit: the answers of the window, the player renamed id + window
+    // each window as a unit: the answers of the window, the player renamed id + window's ordinal (from 1)
     const D = [];
-    pl.forEach(({id, L, k, from}) => {
-      for (let w = from; w < k; w++) L.slice(w * TR.W, (w + 1) * TR.W).forEach(a => D.push({...a, p: id + TR_SEP + w}));
-    });
+    let used = 0;
+    pl.forEach(({id, L, B}) =>
+      B.forEach(([a, b], w) => {
+        if (w < B.length - TR.MAXW) return;
+        used += b - a;
+        L.slice(a, b).forEach(x => D.push({...x, p: id + TR_SEP + (w + 1)}));
+      })
+    );
     const V = profFeat(D, null),
-      val = (id, w) => {
-        const r = V[id + TR_SEP + w];
-        return r ? fx.map(f => (r[f] == null || !isFinite(r[f]) ? null : r[f])) : fx.map(() => null);
+      val = (id, o) => {
+        const r = V[id + TR_SEP + o];
+        return fx.map(f => (r && r[f] != null && isFinite(r[f]) ? r3(r[f]) : null));
       },
       shown = pl.slice(0, TR.SHOW),
-      who = shown.map(({id, L, k, from}) => ({
+      // a window: [its ordinal from the player's first, the answers given by its end, then each behaviour's value or null]
+      who = shown.map(({id, L, B}) => ({
         k: id,
         n: L.length,
-        w: Array.from({length: k - from}, (_, i) => [(from + i + 1) * TR.W, ...val(id, from + i).map(v => (v == null ? null : r3(v)))])
+        w: B.map(([, b], w) => [w + 1, b, ...val(id, w + 1)]).slice(-TR.MAXW)
       }));
-    // the typical trajectory: the median of each behaviour over the players with a value at that window, from 3 players
-    const ends = [...new Set(who.flatMap(p => p.w.map(r => r[0])))].sort((a, b) => a - b),
-      med = ends
-        .map(to => {
-          const R = who.map(p => p.w.find(r => r[0] === to)).filter(Boolean);
+    // the typical trajectory: by window ordinal, the median of the answers given by its end and of each behaviour over the
+    // players with a value at that window, from 3 players
+    const ords = [...new Set(who.flatMap(p => p.w.map(r => r[0])))].sort((a, b) => a - b),
+      med = ords
+        .map(o => {
+          const R = who.map(p => p.w.find(r => r[0] === o)).filter(Boolean);
           return [
-            to,
-            ...feats.map((_, f) =>
-              R.filter(r => r[f + 1] != null).length >= 3
-                ? r3(
-                    q(
-                      R.filter(r => r[f + 1] != null).map(r => r[f + 1]),
-                      0.5
-                    )
-                  )
-                : null
-            )
+            o,
+            Math.round(
+              q(
+                R.map(r => r[1]),
+                0.5
+              )
+            ),
+            ...feats.map((_, f) => {
+              const L = R.map(r => r[f + 2]).filter(v => v != null);
+              return L.length >= 3 ? r3(q(L, 0.5)) : null;
+            })
           ];
         })
-        .filter(r => r.slice(1).some(v => v != null)),
+        .filter(r => r.slice(2).some(v => v != null)),
       // each behaviour: the players whose last window is above, below or within TR.FLAT SD of the behaviour's windows of
       // their first (SD over every window of every player shown)
       chg = feats.map((_, f) => {
-        const all = who.flatMap(p => p.w.map(r => r[f + 1])).filter(v => v != null),
+        const all = who.flatMap(p => p.w.map(r => r[f + 2])).filter(v => v != null),
           m = mean(all),
           sd = Math.sqrt(mean(all.map(v => (v - m) ** 2))),
           o = {up: 0, down: 0, flat: 0, n: 0};
         who.forEach(p => {
-          const L = p.w.map(r => r[f + 1]).filter(v => v != null);
+          const L = p.w.map(r => r[f + 2]).filter(v => v != null);
           if (L.length < 2 || !sd) return;
           const d = (L[L.length - 1] - L[0]) / sd;
           o.n++;
@@ -3635,7 +3639,7 @@
         return o;
       });
     return {
-      n: sum(pl.map(x => (x.k - x.from) * TR.W)),
+      n: used,
       players: pl.length,
       win: TR.W,
       effects: [],
@@ -3645,6 +3649,22 @@
       chg,
       more: pl.length - shown.length
     };
+  }
+  // A player's windows: from one session's start, the answers up to the first session's end that makes TR.W answers or
+  // more, so a window holds whole sessions (a window cut inside a session would end it at the cut: its length and its
+  // stops after misses would be those of the cut, not the player's). [from, to) in the player's answers, in order; the
+  // answers after the last window, under TR.W, are left out.
+  function trBlocks(L) {
+    const out = [];
+    let from = 0;
+    for (let i = 0; i < L.length; i++) {
+      const last = i === L.length - 1 || L[i + 1].sess !== L[i].sess;
+      if (last && i + 1 - from >= TR.W) {
+        out.push([from, i + 1]);
+        from = i + 1;
+      }
+    }
+    return out;
   }
 
   /* ---------- 10. Time and difficulty: what the time to answer and enlarging say about a photo ---------- */

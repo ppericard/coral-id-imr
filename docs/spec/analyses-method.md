@@ -194,9 +194,11 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
     not the features' sources). A unit's time intensity is not tested: beside the unit's own effect it is not
     identified with a few dozen units.
 11. **Player trajectories** (`trajectories`, `TR`; Pierre, 2026-11-05, Q78: learning trajectories from the first answer
-    to now): the behaviours of Player profiles but the learning slope, on successive windows of `TR.W` 100 answers of
-    each player's whole history (a player needs two windows, 3 players in all; the newest `TR.MAXW` 40 windows a player,
-    the `TR.SHOW` 60 players with the most answers in the report). `profFeat` runs once on every window of every player,
+    to now): the behaviours of Player profiles but the learning slope, on successive windows of each player's whole
+    history: from a session's start, the answers up to the first session's end that makes `TR.W` 100 answers or more
+    (`trBlocks`; a window cut inside a session would end it at the cut, and its session length and stops after misses
+    would be the cut's), the answers after the last window left out. A player needs two windows, 3 players in all; the
+    newest `TR.MAXW` 40 windows a player, the `TR.SHOW` 60 players with the most answers in the report. `profFeat` runs once on every window of every player,
     each window a unit of its own (the answer time model, the stops' pooled rates), so a window is read against all the
     windows, not against the players of its own stage. The typical player: each behaviour's median over the players with a
     value at that window, from 3 players. Up, down or about the same: a player's last window against their first, beyond
