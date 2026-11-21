@@ -358,7 +358,7 @@ test("repBind binds the tools of every registry's tiles in the scope", () => {
 test('every photo tile is one frame: the figure, the zoom button, the tools, the number, the mark, the caption and the actions', () => {
   const c = vm.createContext({});
   vm.runInContext(
-    block(ADMIN, 'const tileFrame = t =>', '\n// Small × on each photo', {file: 'admin.js'}) + '\nthis.tileFrame = tileFrame;',
+    block(ADMIN, 'const tileFrame = t =>', "\n// The one Remove of a photo's tile", {file: 'admin.js'}) + '\nthis.tileFrame = tileFrame;',
     c
   );
   assert.strictEqual(
