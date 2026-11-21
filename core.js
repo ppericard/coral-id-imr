@@ -760,6 +760,10 @@
         // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
         // the candidates judged sure that the game does not take in by itself.
         autosort: true,
+        // circles: the words the admin's Tree names each circle in, beside its number (admin-content.js circleLab): the
+        // players' own, "the IMR course's families", "the family that opens right after the IMR course's" and "the
+        // families beyond the IMR course" (docs/spec/fish.md "Circles"). A circle with no words is its number alone.
+        circles: {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'},
         // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
         // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
         tags: treeRubric('fish', 'fish', {
@@ -966,6 +970,9 @@
         // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
         // play up to it; tests/seaslugadmin.test.js keeps the two equal).
         target: 12,
+        // circles: the admin's words for its circles, beside their numbers (the fish's field): circles by commonness, the
+        // first the most common genera, then the next ones (tools/seaslugs.json; docs/spec/seaslugs.md "Their circles").
+        circles: {1: 'Most common', 2: 'Next most common', 3: 'Less common'},
         // tags: its rubric (judging/SEASLUG.md "Tags"), as treeRubric lays it out: its six views (the dorsal, lateral and
         // oblique are the good ones: said by the judged line only), its light without night livery, and the flags Pierre
         // may set (the fish's j c w, and f, features hidden).

@@ -152,8 +152,8 @@ built, `FISHC.raw`).
 Above the Sheet on a family's page (not a wink family; `admin-content.js` `structBox`):
 
 - its **Circle**: one segment per circle `SUBJECTS` `structure` declares, and None (in no circle); the one in force
-  pressed (`circleRow`); ↺ Restore, Original says the base; stale: Keep mine, Take the new; absorbed or never applied:
-  Remove;
+  pressed (`circleRow`), each circle's number with its words under it (below); ↺ Restore, Original says the base;
+  stale: Keep mine, Take the new; absorbed or never applied: Remove;
 - its **Look-alikes** (`pairRows`): the base's pairs, either side's line, and his entries; Withdraw, ↺, Remove; Add a
   look-alike…: the other family, then Source and Link, asked once when left empty, never required.
 
@@ -164,6 +164,19 @@ state and tools under its tag). A Publish that changes the structure (`structCha
 every player's path and progress (`ST_PUBLISH`, in the one Publish dialog), and counts "N fish circle edits" and
 "N fish look-alike pair edits" apart from the sheet edits (`contentSummary`). What the structure does to the game:
 [content.md › Structure](content.md#structure-circles-and-look-alike-pairs).
+
+**Each subject's own words for its circles.** One declaration, `SUBJECTS` `admin.circles` `{circle: words}`, one reader,
+`admin-content.js` `circleWord` / `circleLab`, for every subject that has circles (rule S1; the corals have none): the
+fish's (1 IMR course, 2 After the course, 3 Beyond the course: what players already read, "the IMR course's families",
+"right after the IMR course's", "beyond the IMR course"; the old "SVS" word is internal, Q182) and the sea slugs' (Most
+common, Next most common, Less common: their circles are by commonness). Shown beside the number wherever the Tree names
+a circle: the Structure box's segments (the number, the words under it, the full "1 · IMR course" as its tooltip, in the
+stale view and in "Original"), the **Circle** tag's options ("Circle 1 · IMR course") and the rows and cards' line
+("circle 1 · IMR course"). A circle with no words, or a subject with none, shows its number alone, never a made-up word
+(rule C2); `tests/structeditor.test.js` checks every circle the units of each subject carry has words. The app's own words
+(the circle-3 offer card, the achievements) and the admin's other pages (Coverage, Players, Photo stats) are unchanged. The
+words belong to the admin for now: another instance's own words are a data field for a second instance
+([content.md › Structure](content.md#structure-circles-and-look-alike-pairs)).
 
 ## Names: the shared names of the name index
 
@@ -240,8 +253,10 @@ species rank).
   fish's Tree. A pair of the base whose withdrawal the ★ rule would hold (`core.js` `starHold`, rule L5: a starred
   genus's last surveyed look-alike) has its **Withdraw** off, titled "★ rule"; a held withdrawal reaching the draft by a
   merge shows "★ rule" with Remove and is counted to check. Publish counts "N coral genus sheet edits" and "N coral
-  look-alike pair edits". Photos › Look-alikes still reads the base's pairs (`classicPairs`), as the fish's Look-alikes
-  page reads the IMR course's with the editor's laid over
+  look-alike pair edits". Photos › Look-alikes reads the pairs in force, as the fish's page does (`admin-content.js`
+  `montPairs`, by the shape the subject declares: the corals' `classicPairsOf` over `data.json` with the draft's pairs
+  laid over it, `sheetFile`); the Look-alikes filter above lists the base's classic pairs (`classicPairs`) and the
+  editor's entries, so a withdrawn pair's ↺ is reached
   ([admin-photos.md › Look-alikes](admin-photos.md#look-alikes)).
 
 ## The sea slugs
