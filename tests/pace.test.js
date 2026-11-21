@@ -305,12 +305,7 @@ test('the Duel tab: its photo eased by the opening hold, as every question of th
       holdEase: () => ctx.ease
     };
   vm.createContext(ctx);
-  vm.runInContext(
-    /const QPROMPT = \{[\s\S]*?\n\};\n/.exec(src)[0] +
-      /function planDuel\(a, b\) \{[\s\S]*?\n\}\n/.exec(src)[0] +
-      'this.planDuel = planDuel;',
-    ctx
-  );
+  vm.runInContext(/function planDuel\(a, b\) \{[\s\S]*?\n\}\n/.exec(src)[0] + 'this.planDuel = planDuel;', ctx);
   for (const [ease, args] of [
     [0, []],
     [-0.8, []],

@@ -72,7 +72,7 @@ function world({
     };
   vm.createContext(ctx);
   vm.runInContext(
-    block(SRC, '// The prompts of the formats (planPhoto', "// The planned questions' photos,", {file: 'quiz.js'}) +
+    block(SRC, '// The prompts of the formats as the planners', "// The planned questions' photos,", {file: 'quiz.js'}) +
       'this.L = {QPROMPT, PEND, pendKey, pendAll, pendRec, pendBuild, pendOk, pendTake, pendDrop, pendShow, pendDone, pendClock, pendSeen, get PENDQ() {return PENDQ;}};',
     ctx
   );
@@ -134,6 +134,16 @@ test('a kept question comes back as it was: every format, its flags, photos and 
     assert.ok(back, kind + ': built again');
     assert.strictEqual(flat(back), flat(q), kind);
   }
+});
+
+test('the prompts a kept question is built with are the planners: planPhoto, planFind and planDuel write the same words', () => {
+  const qp = block(SRC, 'const QPROMPT = {', '\n};\n', {file: 'quiz.js'}),
+    rest = SRC.replace(qp, ''),
+    lits = [...qp.matchAll(/=> (`[^`]*`)/g)].map(m =>
+      m[1].replace(/uname\(a\)/g, 'uname(pair[0])').replace(/uname\(b\)/g, 'uname(pair[1])')
+    );
+  assert.strictEqual(lits.length, 6, 'the six prompts: which, type, find, again, look, duel');
+  for (const l of lits) assert.ok(rest.includes(l), `a planner no longer writes ${l}`);
 });
 
 test('a question with a first-meeting card, or a photo with no file name, is not kept', () => {

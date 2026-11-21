@@ -2037,7 +2037,8 @@ function dropPlans() {
   NEXTQ = null;
 }
 const plain = q => !q.intro && !q.auto && !q.findx && !q[4].exam && q[2].length > 2;
-// The prompts of the formats (planPhoto, planFind, planDuel; a kept question builds the same, pendBuild).
+// The prompts of the formats as the planners write them (planPhoto, planFind, planDuel), for a kept question built again
+// (pendBuild): tests/pending.test.js reads the planners' source and fails when one of them changes its words.
 const QPROMPT = {
   which: t => `Which ${GX(t).one || SUBJ.one}?`,
   type: t => `Which ${GX(t).one || SUBJ.one}? Type it`,
@@ -2690,7 +2691,7 @@ function planFind(cur, t, list, ease = 0, sel = null) {
     set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', tile),
     find = ch.map(n => ({n, p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', tile).shown || [])[0]}));
   if (ch.length !== 4 || !find.every(x => x.p)) return null;
-  return Object.assign([cur, t, ch, QPROMPT.find(t), {...set, reveal: [], find}], {findx: 1, ...(sel ? {custom: 1} : {})});
+  return Object.assign([cur, t, ch, `Find the ${uname(t)}`, {...set, reveal: [], find}], {findx: 1, ...(sel ? {custom: 1} : {})});
 }
 // cur: 'quiz', or the custom quiz (CUSTOM_H): its genus asked and its choices come from the player's selection (model.js
 // customOf, customDraw, customChoices), with no opening path; everything else is the photo quiz's.
@@ -2728,7 +2729,13 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       // The Again of a mix-up on a photo of the mimicry class (rematchAdd mim) shows the pair's species on either side
       // (model.js mimKeep), when that side's draw holds one now.
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), QPROMPT.again(...pair), photoSet(t, null, Math.log(R) + ease, 2, 'again', mimKeep(mim, pair, t))],
+        [
+          cur,
+          t,
+          shuffle(pair.slice()),
+          `Again: ${uname(pair[0])} or ${uname(pair[1])}?`,
+          photoSet(t, null, Math.log(R) + ease, 2, 'again', mimKeep(mim, pair, t))
+        ],
         {again: 1, pr: pair.slice(), ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
@@ -2791,11 +2798,10 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
         k = mimKeep(pair.mim, pair, t); // a pair of the mimicry class (duelPick): its species
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
-      return Object.assign([cur, t, shuffle(pair.slice()), QPROMPT.look(...pair), photoSet(t, null, ease, 2, 'qduel', k)], {
-        auto: twoPair,
-        pr: pair.slice(),
-        ...(sel ? {custom: 1} : {})
-      });
+      return Object.assign(
+        [cur, t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, ease, 2, 'qduel', k)],
+        {auto: twoPair, pr: pair.slice(), ...(sel ? {custom: 1} : {})}
+      );
     }
   }
   // Find the X (FIND, planFind): like a duel, never with a card, in a comeback or with a mix-up queued, and spaced as
@@ -2844,7 +2850,14 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     chm = mimTrap(t, ch, mu),
     fewm = sel ? chm.filter(n => n !== t && (n === mu || confusable(t, n))).length < 2 : few,
     // The question asked with its genus's card never shows the card's own photo again.
-    q = [cur, t, chm, typed ? QPROMPT.type(t) : QPROMPT.which(t), typed ? {...set, typed: 1} : set, fewm ? plausibleK(t, chm, mu) : 0];
+    q = [
+      cur,
+      t,
+      chm,
+      typed ? `Which ${GX(t).one || SUBJ.one}? Type it` : `Which ${GX(t).one || SUBJ.one}?`,
+      typed ? {...set, typed: 1} : set,
+      fewm ? plausibleK(t, chm, mu) : 0
+    ];
   if (cards.length) Object.assign(q, {intro: cards, start}, lvl ? {lvl: 1} : {});
   if (typed) q.typed = 1;
   if (warm) Object.assign(q, {warm: 1, cb: Math.round(R * 1000) / 1000});
@@ -2930,7 +2943,7 @@ function planDuel(a, b) {
   // lower (photoSet's shift; a duel has its two choices, no traps). The expectation logged is the photo's own (answer),
   // so it stays that of the photo shown.
   const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, holdEase(), 2, 'duel', mimKeep(pair.mim, pair, t));
-  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, QPROMPT.duel(...pair), set];
+  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `${uname(pair[0])} or ${uname(pair[1])}?`, set];
 }
 // The Duel tab's relief card (docs/ARCHITECTURE.md "The Duel tab's relief card"): the Duel tab keeps drilling one pair
 // while the photo quiz eases, so the first time in a duel run (DUELRUN: from the page's opening, quizDuel fresh) an
