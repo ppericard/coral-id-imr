@@ -6284,7 +6284,7 @@ async function lazyPart(b, base, fails) {
       const rsel = card('demorep11') + ' .adm-ftile';
       await p.waitForFunction(s => document.querySelector(s + '[data-play]'), rsel, {timeout: 15000}).catch(() => {});
       let a = await tools(rsel);
-      const want = 'cover,crop,exclude,feat,not,remove,tags,zoom';
+      const want = 'cover,crop,feat,not,remove,tags,zoom'; // one Remove, no corner × (REE-44)
       if (!a || !a.play || a.fu !== want) return fails.push(`${w}px To do › Reports, a fish photo in play: its tools ${JSON.stringify(a)}`);
       if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
       await settle();
@@ -8965,10 +8965,12 @@ async function lazyPart(b, base, fails) {
         await sq.goto(base + 'admin.html?demo#seaslug/inbox/todo/reports');
         await swait(() => !!document.querySelector('.adm-rep .adm-ftile [data-fu="remove"]'), 'a sea-slug report with its tools');
         const s2 = await sq.evaluate(() => ({
-          seen: Object.keys((DRAFT.seaslug || {}).seen || {}).length,
+          // the draft as it was: the one photo Remove took out (their part's exclude, REE-44)
+          removed: Object.keys((DRAFT.seaslug || {}).exclude || {}).length,
           open: [...document.querySelectorAll('.adm-rep a[data-ru]')].map(a => a.getAttribute('href'))
         }));
-        if (s2.seen !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h))) se.push(`the report ${JSON.stringify(s2)}`);
+        if (s2.removed !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h)))
+          se.push(`the report ${JSON.stringify(s2)}`);
         await sq.goto(base + 'admin.html?demo#seaslug/photos/stats/overview');
         await swait(() => /genera in play/i.test(document.querySelector('#view').textContent), 'Photo stats by genus');
         // The rest of their admin at parity (Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin, c'est
