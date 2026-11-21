@@ -91,6 +91,7 @@ def world():
             rec("fish-s001-cand-12", 212, t="Fishus unus", sp="s001"),  # its licence closed, a sibling's still open
             rec("fish-s001-cand-13", 213, t="Fishus unus", sp="s001"),  # taken off its observation, a sibling stays
             rec("fi3040", 304, t="Fishus unus", sp="s001", **{"from": "taxon"}),  # a reference photo taken off its observation
+            rec("fi3050", 305, t="Fishus unus", sp="s001", **{"from": "taxon"}),  # a reference photo whose licence closed
             {"f": "fbAcnig_u0", "o": "https://www.fishbase.se/photos/PicturesSummary.php?ID=1", "t": "Fishus unus", "sp": "s001"}]
     F = {
         201: obs(201, S1), 202: obs(202, S1, "needs_id", user="ppericard"), 203: obs(203, S1, "needs_id"), 204: obs(204, S2),
@@ -101,6 +102,7 @@ def world():
         212: obs(212, S1, photos=[{"id": 12, "url": PH % 12, "license_code": None}, {"id": 9999, "url": PH % 9999, "license_code": "cc-by"}]),
         213: obs(213, S1, photos=[{"id": 9999, "url": PH % 9999, "license_code": "cc-by"}]),
         301: obs(301, S1), 302: obs(302, S1, "needs_id"), 303: obs(303, S2), 304: obs(304, S1, photos=[{"id": 1, "url": PH % 1}]),
+        305: obs(305, S1, photos=[{"id": 3050, "url": PH % 3050, "license_code": "cc-by-nc-nd"}]),
     }
     # sea slugs (the tools' own seaslugs.json / seaslug_informal.json are read)
     inf = json.loads((ROOT / "tools" / "seaslug_informal.json").read_text())["species"][0]
@@ -153,6 +155,7 @@ def world():
         "fish-s001-cand-6": ["casual"], "fish-s001-cand-7": ["dead"], "fish-s001-cand-8": ["id_lost"],
         "fish-s001-cand-10": ["captive"], "fish-s001-cand-11": ["rule"], "fish-s001-cand-12": ["rule"],
         "fish-s001-cand-13": ["photo_gone"], "fi3020": ["id_lost"], "fi3030": ["other_taxon"], "fi3040": ["photo_gone"],
+        "fi3050": ["rule"],
         "acropora-wide-10": ["photo_gone"], "seaslug-5001-cand-11": ["photo_gone"],
         "seaslug-5001-cand-2": ["other_taxon"], "seaslug-5001-cand-3": ["egg"],
         "seaslug-Nudi-cand-6": ["id_lost"], "seaslug-Nudi-cand-7": ["other_taxon"],

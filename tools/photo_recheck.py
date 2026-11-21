@@ -347,15 +347,18 @@ def check_fish(r, o, X):
     want = X.fish_taxa(*{sid, r["sp"]} - {None})
     if re.match(r"fi\d", r["f"]):  # a reference photo: the unit's taxon page photo (fish_refs)
         rec = fr.keep_obs({"results": [o]}).get(photo_id(r["f"]))
-        if rec is None:
+        mine = next((p for p in o.get("photos") or [] if str(p.get("id")) == photo_id(r["f"])), None)
+        if rec is None or mine is None:
             return order(why + ["photo_gone"]), "fish_refs.passes"
-        if fr.passes(rec, want or {rec["sp"]}):
+        # The observation's rules (passes), and the photo's own licence and host (usable), which the reference fetcher
+        # asks of the taxon page's photo apart.
+        if fr.passes(rec, want or {rec["sp"]}) and fr.usable(fr.ph(mine)):
             return order(why), "fish_refs.passes"
-        if rec and want and rec["rank"] in fr.SPECIES_RANKS and rec["sp"] not in want:
+        if want and rec["rank"] in fr.SPECIES_RANKS and rec["sp"] not in want:
             why.append("other_taxon")
-        if rec and rec["dead"]:
+        if rec["dead"]:
             why.append("dead")
-        if rec and (rec["rank"] not in fr.SPECIES_RANKS or rec["q"] != "research"):
+        if rec["rank"] not in fr.SPECIES_RANKS or rec["q"] != "research":
             why.append("id_lost")
         return order(why or ["rule"]), "fish_refs.passes"
     tr, there = own_photo(ff.trim(o), r["f"])

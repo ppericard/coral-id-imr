@@ -41,8 +41,8 @@ test('every reason is found on its photo, and only there: the rest of the game p
   const S = R.summary;
   assert.strictEqual(S.coral.in_play, 10); // the skeleton photo is not in play
   assert.strictEqual(S.coral.with_observation, 9);
-  assert.strictEqual(S.fish.in_play, 17); // the excluded photo is not in play
-  assert.strictEqual(S.fish.with_observation, 16); // FishBase's has none
+  assert.strictEqual(S.fish.in_play, 18); // the excluded photo is not in play
+  assert.strictEqual(S.fish.with_observation, 17); // FishBase's has none
   assert.strictEqual(S.coral.failing + S.fish.failing + S.seaslug.failing, Object.keys(R.want).length);
   assert.deepStrictEqual(R.summary.fish.by_reason, {
     id_lost: 3,
@@ -51,7 +51,7 @@ test('every reason is found on its photo, and only there: the rest of the game p
     casual: 1,
     dead: 1,
     captive: 1,
-    rule: 2,
+    rule: 3,
     photo_gone: 2
   });
   assert.deepStrictEqual(R.unchecked, []);
@@ -85,7 +85,7 @@ test('the report says what failed, in markdown, tab-separated and JSON', () => {
   assert.deepStrictEqual(R.files, ['failing.tsv', 'report.json', 'report.md']);
   assert.match(R.md, /Read only: nothing is changed/);
   assert.match(R.md, /## deleted \(2\)/);
-  assert.match(R.md, /\| fish \| 17 \| 16 \| 1 \| 13 \| 0 \|/);
+  assert.match(R.md, /\| fish \| 18 \| 17 \| 1 \| 14 \| 0 \|/);
   assert.match(R.md, /`fish-s001-cand-6` \(Pierre's own\)/);
   assert.match(R.md, /\[205\]\(https:\/\/www\.inaturalist\.org\/observations\/205\)/);
   const rows = R.tsv.trim().split('\n');
@@ -132,6 +132,7 @@ test("the tool calls the fetchers' predicates: patch one and the verdicts follow
   assert.ok(!('fish-s001-cand-12' in R.lenient));
   assert.deepStrictEqual(R.lenient['fish-s001-cand-13'], ['photo_gone']);
   assert.deepStrictEqual(R.lenient['fi3040'], ['photo_gone']);
+  assert.deepStrictEqual(R.lenient['fi3050'], ['rule']); // a reference photo's own licence is fish_refs.usable's, asked beside passes
   assert.deepStrictEqual(R.lenient['seaslug-5001-cand-11'], ['photo_gone']);
   assert.deepStrictEqual(R.lenient['acropora-wide-10'], ['photo_gone']);
   assert.deepStrictEqual(R.lenient['fish-s001-cand-6'], ['casual']);
