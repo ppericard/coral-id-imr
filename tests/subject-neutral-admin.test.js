@@ -98,7 +98,7 @@ const PROXIES = [
 ];
 // The counts today: proxy -> file -> occurrences on non-comment lines.
 const COUNTS = {
-  'ASUBJ.rank': {'admin-journey.js': 1, 'admin.js': 15, 'analysis.js': 1},
+  'ASUBJ.rank': {'admin-journey.js': 1, 'admin.js': 13, 'analysis.js': 1},
   "rank: 'family' view option": {'admin.js': 2},
   '.sheets': {
     'admin-analyses.js': 1,
@@ -107,7 +107,7 @@ const COUNTS = {
     'admin-heatmap.js': 3,
     'admin-journey.js': 2,
     'admin-visits.js': 4,
-    'admin.js': 29,
+    'admin.js': 27,
     'analysis.js': 2
   },
   '.admin.cur': {'admin-content.js': 8, 'admin-covers.js': 2, 'admin-demo.js': 1, 'admin-light.js': 2, 'admin.js': 24},
@@ -131,7 +131,7 @@ const COUNTS = {
 // 2. The names. [file, the study's row, the names]. admin-fish.js is one subject's file: every top-level name in it is
 // listed. In the other files a name is listed when it carries a subject word (SUBJECTS ids) or starts with a known family
 // (fu, frev, ct, fam: the fish units, the fish review, the corals' tree, the fish family sheet), plus, by hand, the other
-// half of a duplicate whose name says nothing (renderMont, viewGenus...). autosort.js is the tree subjects' auto-sort, all
+// half of a duplicate whose name says nothing (viewGenus...). autosort.js is the tree subjects' auto-sort, all
 // of it named fish before the rename (ROADMAP "Architecture review, steps 3 and 4"): it has no twin, so only its number of
 // such names is held (NAME_COUNTS), not each name; likewise the basics modules, already one engine whose content
 // each subject registers into (Dup-18).
@@ -154,8 +154,7 @@ const WHOLE = ['admin-fish.js'],
     ],
     ['admin.js', 'Dup-2', 'FISHS FISHA fishPtx fishFamOf fishState fishAdmin UNITA unitAdmin FISHC fishLoad fishToast fishOut fishUnitRec'],
     ['admin.js', 'Dup-3', 'fishAutoRun fishAutoUndo'],
-    ['admin.js', 'Dup-6', 'FMONT_T renderFishMont renderMont'],
-    ['admin.js', 'Dup-7', 'FISHCOV renderFishCov fishTodoLines bindFishTodo FSCOPE renderCov'],
+    ['admin.js', 'Dup-7', 'FISHCOV fishTodoLines bindFishTodo FSCOPE'],
     ['admin.js', 'Dup-8', 'fishTile fuTile bindFishTiles repPhotoSubj coralRepTile fishRepTile'],
     ['admin.js', 'Precedent', 'pstatsCoral pstatsFish'],
     ['analysis.js', 'Dup-21', 'photoMetaFish'],
