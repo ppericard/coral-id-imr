@@ -243,8 +243,8 @@ On the tree subjects' side, `#fish/photos/review/by-difficulty` (after the axes 
 on Ease): the fish photos players answered, by their answers alone since the sheet rates the corals' photos only
 (`diffByAnswers` over `photoAnswers` and `rowsOf`, as fish Health counts them: every answer that showed the photo,
 family and genus questions alike), Hardest (lowest share right) or Easiest first, more answers first on a tie, the
-corals' ≥1 / ≥3 / ≥10 answers; each photo a family-page tile (`fishRepTile`: Tags with its ease, Remove, Not this, Crop,
-×) with its share right, answers and players who miss it; a photo already out (excluded, Not this, removed) left out, as
+corals' ≥1 / ≥3 / ≥10 answers; each photo a family-page tile (`fishRepTile`: Tags with its ease, Remove, Not this,
+Crop) with its share right, answers and players who miss it; a photo already out (removed, Not this, rejected) left out, as
 on Health; the first 48 shown (the tree builder's `max`), the rest counted; its own ? (`fishdiff`, no photo-difficulty
 note).
 
@@ -417,8 +417,10 @@ over `fuData`: per family, genus and species), in the fish data's words (`SUBJEC
 `admin.origins`, the circles of `structure`):
 
 - headline photos and observations in play, families in play, candidates waiting;
-- **All photos**, every photo the fish data hold, once by `core.js` `treePid` (in play first, then excluded, Not this,
-  removed by `fishState`, another species one could take for it out of play, a candidate waiting, else not in games);
+- **All photos**, every photo the fish data hold, once by `core.js` `treePid` (in play first, then removed, Not this,
+  rejected by `fishState`, another species one could take for it out of play, a candidate waiting, else not in games):
+  one **Removed** row (the one Remove, `exclude`, as the corals'), **Rejected** apart (`seen`: ✕ Reject, Out of play, a
+  P3 count and the old Remove's mark, still candidates), no Excluded row;
 - **Per family** photos and observations, then the photos in play per genus and per species; **Fewest and most**
   families (their Tree pages); **Circles** in the Views card's place (photos per circle, the spread over its families,
   families without); **Sources** (the fish origins);

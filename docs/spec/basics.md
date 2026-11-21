@@ -37,6 +37,12 @@ framed alike; `mxPlan` four units, from a declared pair outward, and a fifth nam
 Matrix: a right pair names its tile and ticks its name, a wrong one is kept nowhere and the retry is free; its names are
 `data-n`, not `data-c` (`qAnswers` opens every `[data-c]`).
 
+`downtree` ([Down the tree](../decisions/2026-11-21-down-the-tree-lab.md), `proto/downtree.js`): one photo named step by
+step, the unit's lineage read from the records' `parent` and `rank` (`dtLineage`), asked only while each step's unit is
+unlocked (`dtSteps`, rule L4), the names of a step of one rank (`dtChoices`); each step is a point on the screen only
+(the end sheet says "N of M steps right"), nothing is recorded. Offered (`on()`) to a subject whose tree has species
+units (`TREEU.ssl`), so not to the corals.
+
 `type`, `reveal` and `web` follow the subject on screen too ([decision](../decisions/2026-11-20-lab-tools-every-subject.md)),
 each in the subject's own words (`SUBJ.one`, `SUBJ.what`, `SUBJ.many`: Type the genus is "Type the family" for the fish),
 through getters on the tool (`title`, `blurb`, `lede`), and none of them calls the quiz's recorders
