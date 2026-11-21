@@ -476,6 +476,8 @@ $v.addEventListener(
       if (q && (q.querySelector('.qstage.qfx') || ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth))) {
         q.classList.add('qnone');
         qAnswers(q, false);
+        // A question that cannot be answered is not kept for the player's return (quiz.js pendDone): the next is drawn.
+        if (typeof pendDone === 'function') pendDone();
       }
       if (typeof fitStage === 'function') fitStage();
     }

@@ -241,7 +241,8 @@ comeback question, a mastery exam question). One engine (`quiz.js` `PEND`, `pend
   no fast answer. A card over the question closes the reading as before.
 - **Not kept**: the surprise cards (`wink`, they count nowhere), the Lab's tools (Memory, Same or different?, Odd one out,
   Matrix: no current question, no score) and the live game (its own session).
-- **A photo that will not load** ("Another question", `app.js`) forgets the question (`pendDone`), so the next is new.
+- **A question that cannot be answered** (its photos gave up: the answers close, `app.js`) and "Another question" forget
+  the question (`pendDone`), so the next is new.
 
 ## Bonus genera
 

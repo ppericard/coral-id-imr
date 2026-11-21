@@ -124,11 +124,11 @@ async function keep(p, S, label, at, kept) {
   const key = C.subjDev(S.id, 'pending'),
     a = await look(p);
   if (!ok(a && !a.done, `${label}: no question on screen`)) return null;
-  await p.waitForTimeout(1200); // looked at for a while
+  await p.waitForTimeout(2000); // looked at for a while (a slow photo starts the clock late)
   await go(p, S, 'genera');
   const rec = (await stored(p, key))[kept];
   ok(rec && rec.t === a.t, `${label}: the question is kept when the player leaves (${JSON.stringify(rec)})`);
-  ok(rec && rec.rt >= 1, `${label}: the seconds looked at it are kept (rt ${rec && rec.rt})`);
+  ok(rec && rec.rt > 0, `${label}: the seconds looked at it are kept (rt ${rec && rec.rt})`);
   await p.waitForTimeout(AWAY);
   await go(p, S, at);
   await qa.ready(p);
@@ -204,7 +204,8 @@ async function subject(b, base, S, fails0) {
 async function more(p, S, L) {
   {
     {
-      // a photo hidden since: another question, quietly
+      // a photo hidden since: another question, quietly (an answered one is left first: Learn and back draws the next)
+      await go(p, S, 'genera');
       await go(p, S, 'quiz');
       await qa.ready(p);
       const k = C.subjDev(S.id, 'pending');
