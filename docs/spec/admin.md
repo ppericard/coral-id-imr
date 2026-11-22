@@ -395,8 +395,9 @@ The draft button carries the status: "● Publish" with a draft (its title lists
 - **Admin tables never scroll sideways for one long cell**: every `.adm-tbl` cell stops at `--cut` (9 em on phones,
   16 em from tablets; `admin.css`) and ends in "…", its full text in the title (set on hover by one listener on `#view`,
   or written by `cut()` / `pname()` for names); player names are capped by `.adm-cut` itself (an inline block, which
-  every browser honours), genus links are never cut (known length), error messages wrap within a wider cap (13 / 36 em).
-  Tables with many columns still scroll, column by column.
+  every browser honours), genus links are never cut (known length), error messages wrap within a wider cap (13 / 36 em),
+  and the first column of an Analyses table (a pair of genera, a format, a range) wraps in full, at least 7 em wide
+  (REE-222). Tables with many columns still scroll, column by column.
 - **Every account counts**: no page leaves anyone's answers out (`playerRows` = the whole log, `rowsOf` a subject's,
   `photoStats` = the sheet's `?stats=1`); a leaderboard "hidden" (Board −1) changes only the public leaderboard. "you"
   marks the account this browser is signed in with (`isMe`, `MEID` = the anonymous id the sheet derives from the

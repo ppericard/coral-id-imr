@@ -3179,9 +3179,14 @@ async function lazyPart(b, base, fails) {
         wide: document.documentElement.scrollWidth - innerWidth,
         cards: [...document.querySelectorAll('.adm-an .adm-scard')].filter(
           c => c.scrollWidth > c.clientWidth + 1 && !c.querySelector('.adm-tscroll')
-        ).length
+        ).length,
+        // a table's first column (a pair of genera, a format, a range) wraps, never cut with "…" (REE-222)
+        cut: [...document.querySelectorAll('.adm-an .adm-tbl tbody tr > td:first-child')]
+          .filter(td => td.offsetParent && td.scrollWidth > td.clientWidth + 1)
+          .map(td => td.textContent.trim().slice(0, 40))
+          .slice(0, 3)
       }));
-      if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+      if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards || v.cut.length) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
       // The app's forgetting, genus by genus (ROADMAP "Analyses: next views"): the demo's players have no rusty comeback
       // question, so its card is there, folded, and says what it waits for (rule A5)
       if (h === 'analyses/learning/after-a-break') {
