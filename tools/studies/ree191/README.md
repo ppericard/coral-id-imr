@@ -1,8 +1,9 @@
 # REE-191 pace for fast learners: the study scripts (recovered, reference)
 
 Recovered on 2026-11-22 from the Claude Code integrator's temporary workspace (Linear REE-231). The study is the Google
-Doc "Study: Pace for fast learners" (Drive Reef_ID folder, linked from REE-191), written from this folder's `doc.md`
-on 2026-11-21 about 21:35 Manila. **These scripts were not reviewed or tested as tools**; they are kept so the study's
+Doc "Pace for fast learners — study (2026-11-22)"
+(https://docs.google.com/document/d/13zgH3xFHoMy646wm2MEANwPGDh9MOuSU3rJSCYiUvUE/edit, Drive Reef_ID folder, linked
+from REE-191), created on 2026-11-21 about 21:35 Manila from the workspace's `doc.md` (its source, not kept here). **These scripts were not reviewed or tested as tools**; they are kept so the study's
 figures can be traced and recomputed. They are not wired into CI.
 
 **Engine:** `origin/main` at `7ede594` (2026-11-21 20:53 Manila), passed as `<main worktree>` (scripts `require` its
