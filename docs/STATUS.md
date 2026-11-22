@@ -5,7 +5,7 @@ integrator. Follow [Project Home][home] for work and decisions.
 Use `python3 tools/brief.py --short` for current GitHub and sheet version signals.
 Search [ANSWERS.md](ANSWERS.md) for historical evidence and use git and PRs for what shipped.
 
-Last checked: reports and events: 2026-11-22 ~06:00 Manila (Claude handoff)
+Last checked: reports and events: 2026-11-22 ~15:10 Manila (Claude, REE-222 mission)
 
 ## Now
 
@@ -15,7 +15,13 @@ Last checked: reports and events: 2026-11-22 ~06:00 Manila (Claude handoff)
   brought the [queue reference scripts](../tools/queue/recovered/README.md) and study code for
   [REE-112](../tools/studies/ree112/README.md) and [REE-191](../tools/studies/ree191/README.md) onto main.
   The recovered queue scripts were unreviewed and untested. Exact study input extracts were unavailable in shared storage.
-- [Health #1458](https://github.com/ppericard/coral-id-imr/issues/1458) is open. The check reported served sheet
+- On 2026-11-22 at 14:37 Manila Pierre gave a new Claude Code integrator one bounded mission,
+  [REE-222](https://linear.app/reef-id/issue/REE-222): done, [#1462](https://github.com/ppericard/coral-id-imr/pull/1462)
+  merged through a green train. The general resumption of the backlog waits for his end-of-mission review; the
+  takeover notes are in [REE-230](https://linear.app/reef-id/issue/REE-230).
+- [Health #1458](https://github.com/ppericard/coral-id-imr/issues/1458) is open. The hourly "Analyses report" workflow
+  has also failed at every run since 2026-11-22 00:46 UTC ("The sheet did not store the report (no reply)"), likely
+  the same stuck sheet script; not tracked elsewhere yet. The check reported served sheet
   script v218 against v220 on main. Use the brief for current signals. Scheduled workflows and triggers
   can still run during the pause. The incident is tracked on GitHub.
 
@@ -55,8 +61,9 @@ None carried over from the handoff.
 
 ## Last stop
 
-2026-11-22 Manila. The Claude Code side returned to the pause after #1460. The workspace observations are in the
-Drive handoff addendum. Check current work and live status through the sources above.
+2026-11-22 ~15:20 Manila, after the REE-222 mission (#1462). Before it, the Claude Code side had returned to the pause
+after #1460; the workspace observations are in the Drive handoff addendum. Check current work and live status through
+the sources above.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
 [handoff]: https://docs.google.com/document/d/1agtmEbHc6f3QD1qdFWMxkCts9QciYT1FEdRuHah3kWM/edit
