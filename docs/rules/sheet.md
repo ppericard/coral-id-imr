@@ -37,7 +37,7 @@ committed file. Raw data holding names (sheet exports) stays out of the repo and
   analyses it, and the integrator puts the real names back against the results for Pierre (he knows the players and
   matches results to people). Real-data checks (rule L12) may be run by any agent; their data and named results are
   never committed.
-- **Reports and events, the details** (AGENTS.md "Reports and events"): the tabs are "Reports" (the players' reports)
+- **Reports and events, the details** ([Integrator startup](../INTEGRATOR.md#integrator-startup)): the tabs are "Reports" (the players' reports)
   and "Events" (`err`, sync "save failed", old app versions); the last check's time is in STATUS; `tools/brief.py`
   cannot read the sheet, it only reminds. Rule 0 decides when the summary reaches Pierre.
 *Why:* he knows the players, and real names help him understand and find problems; work kept only on one machine is

@@ -51,9 +51,10 @@ search the ledger ([docs/ANSWERS.md](../ANSWERS.md)), the rules and `docs/decisi
 its scope, later amendments and whether it still applies; a decision that settles the point is applied, never asked
 again; on incomplete or contradictory evidence, say what is unsure, leave that point open and go on with the work
 already allowed.
-- **Questions, the details** (AGENTS.md "Questions to Pierre" has the rule): an open numbered question waits in STATUS
-  "Questions for Pierre" (number, context, question, recommendation, PR) until he answers; past numbers stay as they
-  are, never renumbered; he does not remember everything as an agent does and may ask for more context.
+- **Questions, the details** (AGENTS.md "Working with Pierre"): keep open decisions in Linear's Decisions for Pierre
+  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, park what must wait
+  in STATUS, using the existing issue link when available. Past numbers stay as they are. When asking, include enough
+  context for Pierre to place the question.
 *Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19; a hit as
 evidence, 2026-11-21 (#1361).
 

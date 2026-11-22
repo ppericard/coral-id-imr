@@ -1,9 +1,31 @@
 # Integrator handover
 
-**For the next integrator** (the main agent of a Claude Code session; AGENTS.md "Working mode"). Read AGENTS.md first,
-then [STATUS.md](STATUS.md) for where things stand, then this page for how the work is actually run day to day. Keep it
-current: it is the working knowledge that is not a rule (rules live in AGENTS.md and docs/rules/) and not state (state
-lives in STATUS.md).
+## Integrator startup
+
+Start with [AGENTS.md](../AGENTS.md) and [STATUS.md](STATUS.md). Use the short brief for Manila time, GitHub, main
+freshness and live version signals. Claude Code imports AGENTS.md through CLAUDE.md and runs the reviewed
+`origin/main` brief via its session hook, including after compaction. Codex loads AGENTS.md through its own
+instruction discovery. If the brief did not run, run `python3 tools/brief.py --short`.
+
+Recover the active discussion and any stop from STATUS. Check [Linear](#linear) for work already started, the next
+permitted work and decisions or blockers. Read the selected issue's recent comments and relevant linked evidence
+before choosing a next action. At session start and each morning, read Reports and Events since the last check
+and summarize new items for Pierre with real names under Rule 0. Check Scheduled issues at session start.
+If access is missing, record what remains unchecked.
+Use [the procedures below](#procedures-by-task) when the relevant operation comes up.
+
+## Procedures by task
+
+Open the relevant section when the operation comes up.
+
+| When you are about to | Read |
+| --- | --- |
+| Choose or launch work, or recover running jobs | [Habits](#habits), [where open work sits](#where-open-work-sits) and [Linear](#linear) |
+| Choose a Claude model or effort, or measure a large judging pass | [Working with Pierre](#working-with-pierre) |
+| Ask Pierre, record an answer or repair a mistaken assumption | [Questions and corrections](#questions-and-corrections) and [Rule W7](rules/ship.md#w7) |
+| Identify players, inspect the sheet or handle reports and events | [Hard limits](#sheet-photos-data-the-hard-limits) and [D1–D2](rules/sheet.md#d1) |
+| Screen PRs, assign a sheet version or run a train | [Merge mechanics](#the-merge-mechanics-what-bites) and [the reviewed queue helpers](../tools/queue/README.md) |
+| Schedule a large wave or long-running checks | [Quota](#quota-rule-w25-lessons-of-2026-11-20) and [machine slots](rules/ship.md#w24) |
 
 ## Habits
 
@@ -16,9 +38,11 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   mode": as many agents as useful; rule W27).
 - **Every turn ends with the next `send_later` check-in.** An agent waiting on a permission prompt is reported to Pierre
   in one line and told how to do without it.
-- **The session runs in auto mode** (Pierre, 2026-11-12): a classifier judges each command, and the repo's allow rules
-  (`.claude/settings.json`: resolving review threads) pass before it. A refusal: find the narrow allow rule and propose
-  it once. GitHub chores (resolving fixed threads, labels, branch updates) are the integrator's, never Pierre's.
+- **The Claude Code session runs in auto mode** (Pierre, 2026-11-12). A classifier judges each command, and the
+  repository's narrow allow rules pass before it. **No permission prompts for Pierre.** Use Write and Edit for files.
+  Use the host's file-editing tools in other environments. Write a script with the editing tool and run it by name.
+  The Bash guard (`tools/guard_bash.py`) refuses forms that embed code in shell commands or edit files in place.
+  A routine command refused by the classifier gets a narrow allow rule proposed once. GitHub chores stay with the integrator.
 - **Pierre's follow-ups go to the running agent** with `SendMessage`, not to a new agent: he corrects the shape of a
   subject quickly.
 - **An interruption to ask a question is not a stop**: answer, then carry on.
@@ -40,15 +64,6 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   does on every head), and say so.
 - **The Candidate photos run moves `main`** after any judging merge, and a train started meanwhile stops ("main moved"):
   wait for that workflow's run to end, then train.
-- **Before any question to Pierre**: `python3 tools/asked.py <terms>` (open PRs' ledgers included). A hit is evidence,
-  not an instruction: read its scope, the later entries and docs that amend it, and whether it still applies; a
-  decision that settles the point is applied without asking again; if the evidence is incomplete or contradictory, say
-  what is unsure, leave that point open and go on with the work already allowed (AGENTS.md "Every answer reaches its
-  doc"). Its last line ("searched: … — N hits") goes under the question.
-- **A correction repairs the work and what caused it**: the work itself, and the doc, brief or subject note that held
-  the wrong assumption. When it helps Pierre judge the repair, one line names the assumption corrected ("I had taken
-  the storage option as agreed; the later answer chooses a sheet tab; the design and the brief are corrected"). A cause
-  still unknown is said so: no invented explanation, no promise, no rule added only to show the feedback was heard.
 - **Generated files are rebuilt, never hand-merged**: `seaslug-game.json` (`tools/seaslug_game.py --check` fails
   otherwise), `data/suggest.json` (re-import the PR's species over `main`'s file), the decisions index
   (`python3 tools/decisions_index.py --fix`; it also deletes the retired OLDER.md of the split index, which a branch may carry).
@@ -63,7 +78,7 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 - **After merging `main` into a PR**, check for conflict markers (`git diff --check`, `grep -n '^<<<<<<<'`) before the
   commit and resolve per hunk, never `git checkout --ours` on a whole file; commit the merge before
   `sheet_version.py --assign` (it refuses otherwise).
-- **The integrator's helpers are in `tools/queue/`**, not in the session scratchpad, which goes with the session: a PR
+- **The reviewed helpers are in `tools/queue/`**: a PR
   state line (head, checks, Codex receipt on the head, open threads via `pulls/N/ccr/review_threads`, "Choices I made"
   None), a train queue that never starts `tools/train.py` while one runs, and the sheet VERSION step (`assignver.sh`).
   A docs-only PR has 5 checks, not 17.
@@ -74,7 +89,7 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 
 ## Working with Pierre
 
-**The right model and effort for each task** (the Agent tool's `model` and `effort`, set at every agent launch;
+**The right model and effort for each task** (the Claude Code Agent tool's `model` and `effort`, set at every launch;
 Pierre, 2026-11-18: "C'est une bonne idée, et qui doit être bien documenté dans les règles hautes données aux agents
 (et notamment à l'intégrateur)"; the named models: "ok, applique ce tableau"):
 
@@ -98,7 +113,7 @@ Each launch names one level, never a range (in Claude Code a launch without one 
 session's model, and at the model's own default, `medium` for all four, on another). Where no row fits: Opus 5.5 at
 medium, Anthropic's starting point. A task that failed for want of thoroughness (stopped early, skipped a check, missed
 a file) is relaunched one effort level up; one that had its context, tried, and was still wrong, one model up. `xhigh`
-and `max` only where a gain is measured.
+and `max` only where a gain is measured. Change a table row on a measurement or current Anthropic guidance, cited.
 `tools/agent_guard.py` (a PreToolUse hook) refuses a launch without both; `brief.py` prints the day's count by model
 and effort, `python3 tools/agent_guard.py --report` lists the launches.
 
@@ -117,16 +132,6 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
   first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
   commits) in English.
-- **Questions** go to him numbered, never reset: the last number used is in [STATUS.md](STATUS.md) ("Last question number"; `python3 tools/brief.py` prints it). Each with its context in one or two
-  sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
-  PR's Decisions ("Pierre, date time (QN)"), empty "Choices I made", remove `needs-pierre`, merge.
-  **What gets a number** (Pierre, 2026-11-08, replacing the line of that afternoon; the definition is in AGENTS.md
-  "Working mode"): two tests, both needed. (1) The answer commits the future: the players' learning or game, the
-  engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost. (2) The answer will
-  be cited later, to show how a point was reached. **Not numbered**, asked plainly: a confirmation or a fact, the wording
-  of a rule already decided (his OK goes in the rule's *Source* line). Every answer, numbered or not, is quoted in the
-  PR's Decisions; small questions go in batches. Past numbers are not renumbered. Subagents prepare their questions
-  with the same tests and say in their report which ones would be numbered.
 - **Keep the integrator's context for integrating** (Pierre, 2026-11-08: "a good idea"). Delegate to a subagent any task
   that would pour raw material into it (sheet dumps, large data files, many files read or many API calls, long logs):
   give the subagent a precise brief and ask for the conclusion, the numbers and the evidence, not the material. Keep in
@@ -146,9 +151,9 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   never invent a study to fill the time.
 - **A large judging or boxing pass is measured first, without asking him** (Pierre, 2026-11-20 06:42-06:44: «Il faut
   faire des tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; «Je ne devrais pas
-  devoir te le suggérer»): a bench of 50-100 items, lighter configurations beside a reference, the threshold written
-  before, the cheapest that passes does the bulk, a random sample redone by the strong one (AGENTS.md "Model choice by
-  measurement"); the figures go in the PR, never a cost question to him first. The strong model is not the truth by
+  devoir te le suggérer»): a bench of 50-100 items, lighter configurations beside the strongest model, the threshold
+  set first, the cheapest that passes does the bulk, a random sample redone by the strongest. The figures go in the PR.
+  Use the same measurement for other tasks proposed for a lighter model. The strong model is not the truth by
   itself (Pierre, 06:48-06:50: «ce n'est pas toujours le plus juste […] des fois c'est la calibration qui n'est pas
   bonne»; «ça dépend des sujets/taches. Mais parfois ya effectivement besoin d'une recalibration»): how the reference
   is checked depends on the task, and a recalibration is made when the task needs one, e.g. against a gold set of his
@@ -169,7 +174,23 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   check-in at most an hour apart, night and day, re-starts them (`tools/queue/`).
 - **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
   The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
-  2026-11-18: no morning report); the session-start summary of reports and events (AGENTS.md "Working mode") stands.
+  2026-11-18: no morning report); the [session-start summary of reports and events](#integrator-startup) stands.
+
+## Questions and corrections
+
+- **Before any question to Pierre**: run `python3 tools/asked.py <terms>` (open PRs' ledgers included). Use the
+  evidence as described in AGENTS.md. Its last line ("searched: … — N hits") goes under the question.
+- **What gets a number** (Pierre, 2026-11-08): the answer commits the future and will be cited. This includes the
+  players' learning or game, the engine's model, data or privacy, rights, a rule's substance, an irreversible
+  action or a big cost. Ask facts, confirmations and wording for a rule already decided plainly. Add his wording
+  approval to the rule's *Source* line. Keep numbers in sequence. [STATUS.md](STATUS.md) and the brief give the
+  last number. Subagents use the same tests and report which questions would be numbered.
+- **Record the answer** in the PR's Decisions ("Pierre, date time (QN)" when numbered). Clear the answered choice
+  and remove `needs-pierre` before merging under the contract. A decision without an open PR goes into the ledger
+  at the next check-in in a small PR, without waiting for implementation (Pierre, 2026-11-20 17:53).
+- **A correction repairs the work and what caused it**. Fix the doc, brief or subject note that held the wrong
+  assumption. Name the assumption when it helps Pierre judge the repair. Say when the cause is unknown. Keep
+  the rule's scope and the evidence for the change.
 
 ## Real people (pseudonyms on GitHub, names only in chat)
 
@@ -278,9 +299,6 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   2026-11-20 17:33 on the response-time change, decided too fast): a fact he states (answer time carries difficulty) is
   decided; how the engine integrates it was not, and the response-time design got a study first. For other engine work,
   weigh the same way how much study the change needs.
-- **Every answer reaches the ledger the same day** (Pierre, 2026-11-20 17:53): a decision he gives in the chat that no
-  open PR records goes into `docs/ANSWERS.md` at the next check-in, in a small PR of its own, without waiting for the
-  work it decides.
 - **The queue glue lives in `tools/queue/`** (README there): a loop per PR (merge main, push, `@codex review`, wait for
   CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a wait so that only one
   wave runs. Its log and state go to `QUEUE_DIR` (default `~/.cache/reefid-queue`), never into the repo. A container
@@ -337,14 +355,13 @@ Pierre asked where a third of the quota went in a few hours.
 
 Never copied here, so it cannot go stale:
 
-- **PRs in flight, questions waiting, what runs and what is next**: [STATUS.md](STATUS.md) ("Now", "Next", "Questions
-  for Pierre", "Pierre's hands"), and the PR list `python3 tools/brief.py` prints.
+- **Handoff, active discussions and parked questions**: [STATUS.md](STATUS.md). Check GitHub for live PRs and open
+  review state, and Linear for work already started, tasks, priorities and decisions.
 - **Open work, ideas agreed but not built, and their order**: Linear (below), by project and priority; the subjects not
   transferred yet keep their [ROADMAP.md](ROADMAP.md) rows (Pierre, 2026-11-08: first everything that speeds up
   development, then the rest).
 - **Where the next task comes from: the tracker, not STATUS** (Pierre, 2026-11-20 16:44, then of the ROADMAP; Linear
-  since 2026-11-21). STATUS "Next" is a short pointer (the file stays near 100 lines so that every session start reads
-  it cheaply); it never holds the whole backlog. At every check-in, and whenever agents finish, go through the Todo
+  since 2026-11-21). STATUS "Next" points to the tracker. At every check-in, and whenever agents finish, go through the Todo
   issues (and the rows not transferred) and launch every one that is decided (his words, or an integrator's call) and
   blocked by no open PR's file (rule W27).
 - **Why something is as it is**: the rule's *Source* line, then [decisions/](decisions/README.md), then the LEARNING.md

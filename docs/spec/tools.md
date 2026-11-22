@@ -95,9 +95,9 @@ written with `tools/datajson.py`.
   SubagentStart gives the Manila time and main's core line. `--report [--since HH:MM]`, `--expect [REF]`;
   `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main, and
   names the docs past their size mark (read from `tests/docs.test.js` `DOC_MARKS`;
-  [decision](../decisions/2026-11-19-doc-size-marks.md)). It links where open work is tracked (Linear's team REE
-  active and backlog views; in `--short` on the questions line), never querying Linear
-  ([decision](../decisions/2026-11-21-linear-tracking.md)).
+  [decision](../decisions/2026-11-19-doc-size-marks.md)). The second line of `--short` links Project Home and
+  Drive Reef_ID. The questions line points to Linear's Decisions for Pierre view and reads the last question
+  number from STATUS. The brief never queries Linear ([decision](../decisions/2026-11-21-linear-tracking.md)).
 - **`night.py`**: the night report (Rule 0's night, 17:30 to Pierre's first message after 04:00, Manila): PRs merged in
   it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
   holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing

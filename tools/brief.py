@@ -11,7 +11,7 @@ It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
 the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), the
 infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
-of a limit; in the short brief only when one warns or the check failed), the open questions for Pierre from docs/STATUS.md,
+of a limit; in the short brief only when one warns or the check failed), the last question number from docs/STATUS.md,
 and where to start (Linear's Project Home and the Drive Reef_ID folder, links read from docs/INTEGRATOR.md "Linear": the
 brief never queries Linear; in the short brief its own second line, REE-230); the full brief adds the fish candidates waiting for the judging pass.
 It always says whether the local origin/main ref is the remote's main (one bounded `git ls-remote`, no fetch, nothing
@@ -497,17 +497,14 @@ def infra_line(snap, ago=None):
 # --- docs/STATUS.md ------------------------------------------------------------------------------------------------------
 
 
-def questions():
+def status_notes():
     try:
         text = open(os.path.join(ROOT, 'docs/STATUS.md'), encoding='utf8').read()
     except OSError:
-        return None, None, None
-    sec = re.search(r'^## Questions for Pierre\n(.*?)(?=^## |\Z)', text, re.M | re.S)
-    body = sec.group(1) if sec else ''
-    n = len(re.findall(r'^- \*\*Q\d+', body, re.M))
+        return None, None
     last = re.search(r'Last question number: Q(\d+)', text)
     checked = re.search(r'^Last checked: reports and events: (.+)$', text, re.M)
-    return n, (int(last.group(1)) if last else None), (checked.group(1).strip() if checked else None)
+    return (last.group(1) if last else None), (checked.group(1).strip() if checked else None)
 
 
 def tracker_line():
@@ -682,7 +679,7 @@ def brief(short, at):
     f_stack = pool.submit(stack_get)
     f_infra = pool.submit(infra_read) if have_gh else None
     v_main, v_where = main_version()
-    q_open, q_last, checked = questions()
+    q_last, checked = status_notes()
 
     # GitHub: PRs, then the branches (the open PRs' heads are skipped)
     pr_list, gh_err = (None, 'gh not found') if not have_gh else result(f_prs)
@@ -745,16 +742,15 @@ def brief(short, at):
 
     # Questions
     # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
-    # "Working mode", reports and events): remind of the check, with when it was last done.
+    # "Integrator startup"): remind of the check, with when it was last done.
     remind = 'reports and events last checked %s: read them (sheet tabs Reports, Events; Sheets connector)' % (checked or 'never')
     # Where to start (Project Home, Drive): in the short brief its own line right after the time line, and the PRs and
     # branches share one line to keep the 5-line cut.
     tl = tracker_line()
-    if q_open is None:
-        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + remind)
-    else:
-        q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
-        lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
+    # STATUS holds the last number and may hold parked questions. Linear holds the open decisions.
+    number = 'last number Q%s' % q_last if q_last is not None else 'last number unknown'
+    q = 'Questions for Pierre: Linear Decisions for Pierre · %s (docs/STATUS.md)' % number
+    lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
     if short:
         lines.insert(1, tl)
         if len(lines) > 3 and lines[2].startswith('PRs:') and lines[3].startswith('Branches'):
