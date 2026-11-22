@@ -14,7 +14,9 @@ and summarize new items for Pierre with real names under Rule 0. Check Scheduled
 If access is missing, record what remains unchecked.
 On Pierre's confirmed first message after 04:00 Manila, lead with the night report from `python3 tools/night.py` in
 French if the conversation or handoff confirms it has yet to be sent. A new session or a technical notification
-does not establish either fact. If the evidence is missing, leave the report's status unknown.
+does not establish either fact. The handoff's evidence is the "Night report" line of STATUS (the Manila day of the
+last report sent): a new session reads it, and the integrator updates it at the next handoff after sending one. If
+the evidence is missing, leave the report's status unknown.
 Use [the procedures below](#procedures-by-task) when the relevant operation comes up.
 
 ## Procedures by task
