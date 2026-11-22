@@ -10,7 +10,7 @@ reserved ([LICENSE](LICENSE)).
    when), the rules every task holds; the index of every rule is [docs/rules/README.md](docs/rules/README.md).
 2. The file of [docs/rules/](docs/rules/README.md) that your change touches. AGENTS.md's "Read on demand" table says
    which. A rule has a stable ID (`C3`, `D4`, `W19`…), a *Why* and a *Source*; follow it over your own taste.
-3. [docs/STATUS.md](docs/STATUS.md): where things stand, and what is already being built.
+3. Read the issue, its recent comments and linked evidence. For a handoff, follow your role's path in AGENTS.md.
 4. [docs/GLOSSARY.md](docs/GLOSSARY.md), [docs/DATA.md](docs/DATA.md) and [tools/README.md](tools/README.md) when a
    word, a data file or a script is unfamiliar.
 
@@ -41,7 +41,7 @@ reserved ([LICENSE](LICENSE)).
    [decision record](docs/decisions/README.md). History stays in git and the PRs, never in the docs.
 8. **Open a PR** from `origin/main` with the [template](.github/pull_request_template.md): what and why, where each
    choice was decided, the choices that still need Pierre, what changes for players, the tests, the sheet script, the
-   docs. Rebase on `origin/main` before each push; never force-push `main` (rule W18).
+   docs. When bringing a PR up to date, merge `origin/main`. Never rebase a pushed branch or force-push (rule W18).
 
 ## Review and merge
 

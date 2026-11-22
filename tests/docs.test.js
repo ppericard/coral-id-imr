@@ -171,7 +171,7 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   };
   const out = execFileSync('python3', ['-I', '-', '--short'], {input: read('tools/brief.py'), env, cwd: '/', timeout: 10000}).toString();
   assert.match(out, /^Manila /);
-  assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
+  assert.match(out, /Questions for Pierre: Linear Decisions for Pierre · last number Q\d+ \(docs\/STATUS.md\)/);
   // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
   assert.match(out, /reports and events last checked .+: read them/);
   // Where to start (docs/INTEGRATOR.md "Linear"): its own line, second, so the 5-line cut never drops it (REE-230).
@@ -610,7 +610,7 @@ test('the decisions index is what tools/decisions_index.py writes from the recor
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
 });
 
-// Every answer reaches its doc (AGENTS.md "Every answer reaches its doc, and the answers ledger"): each ledger entry from
+// Every answer reaches its doc (AGENTS.md "Working with Pierre"): each ledger entry from
 // 2026-11-19 names where it is applied, and no ROADMAP or reviews index status waits on an answered question.
 test('every answer in the ledger names its doc, and nothing answered is cited as waiting (tools/answers_check.py)', () => {
   const {spawnSync} = require('child_process');

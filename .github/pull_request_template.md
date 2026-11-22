@@ -17,11 +17,11 @@ None
 
 ## Players see or play differently?
 
-<!-- "No", or "Yes:" then one item per change players will see, each in one sentence with its source (AGENTS.md "What
-players will see comes from Pierre"; tools/train.py refuses an item without one):
+<!-- "No", or "Yes:" then one item per change players will see, each in one sentence with its source (AGENTS.md
+"Working mode", "Easy to correct"; tools/train.py refuses an item without a source):
 - Pierre's words, quoted verbatim and dated: "(Pierre, 2026-11-18: «Je pensais qu'on gardait des photos pour la fin»)";
   a paraphrase is not a source; or
-- "integrator's call, easy to correct" (a layout, a wording, a default: AGENTS.md "Easy to correct afterwards").
+- "integrator's call, easy to correct" (a layout, a wording, a default).
 If none of his decisions says it and it is not easy to correct, ask him one question before building it.
 Pierre is told in one line after the merge. -->
 

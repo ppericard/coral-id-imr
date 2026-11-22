@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// tools/guard_bash.py, the PreToolUse Bash guard (AGENTS.md "No permission prompts for Pierre"; Pierre, 2026-11-18): it
+// tools/guard_bash.py, the PreToolUse Bash guard (docs/INTEGRATOR.md "Habits"; Pierre, 2026-11-18): it
 // refuses at once the shell commands that carry code or edit files in place, and lets everything else through.
 const test = require('node:test'),
   assert = require('node:assert'),
