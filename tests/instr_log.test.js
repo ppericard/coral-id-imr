@@ -125,16 +125,20 @@ test("SubagentStart: the subagent gets the Manila time and origin/main's core li
   assert.match(ctx(repo('# AGENTS.md: the constitution\n\nRead first.\n')), /none yet \(AGENTS\.md before the core\)/);
 });
 
-test('never fails the session: bad input writes nothing and exits 0', () => {
+test('bad input produces a recording diagnostic, with no event contents in the message', () => {
   const d = repo();
-  assert.strictEqual(hook(d, 'not json'), '');
-  assert.strictEqual(hook(d, ''), '');
+  for (const input of ['not json', '']) {
+    const r = spawnSync('python3', ['-I', '-c', SRC], {input, cwd: d, encoding: 'utf8'});
+    assert.strictEqual(r.status, 1);
+    assert.strictEqual(r.stdout, '');
+    assert.strictEqual(r.stderr.trim(), 'Instructions log: could not record hook event (JSONDecodeError).');
+  }
   assert.ok(!fs.existsSync(path.join(d, '.git', 'claude-instructions.jsonl')));
 });
 
-test('--report: per session and agent, what loaded and why; an empty log says the hooks did not run', () => {
+test('--report: per session and agent, what loaded and why; an empty log points to diagnostics', () => {
   const d = repo();
-  assert.match(run(d, '--report'), /No record: the hooks did not run here/);
+  assert.match(run(d, '--report'), /No record\. Check Claude hook diagnostics/);
   const wt = path.join(d, '.claude', 'worktrees', 'w2');
   hook(d, {hook_event_name: 'SessionStart', session_id: 'sess-abcdef12', cwd: d, source: 'startup'});
   hook(d, {
@@ -210,10 +214,10 @@ test(".claude/settings.json runs main's copy of the log on InstructionsLoaded, S
   for (const ev of ['InstructionsLoaded', 'SessionStart', 'SubagentStart']) {
     const cmd = (hooks[ev] || []).flatMap(h => h.hooks.map(x => x.command)).find(c => c.includes('tools/instr_log.py'));
     assert.ok(cmd, ev + ' runs tools/instr_log.py');
-    // Without origin/main the hook fetches it, or fails visibly: tests/hooks.test.js.
-    assert.match(cmd, /F=tools\/instr_log\.py; .*git show "origin\/main:\$F".*python3 -I -c "\$S"/, ev);
+    assert.match(cmd, /git show "\$R:tools\/instr_log\.py"/, ev);
+    assert.match(cmd, /REEF_HOOK_MAIN="\$R" python3 -I -c "\$S"/, ev);
     assert.ok(!/exit 2/.test(cmd), ev + ': never blocks the session');
   }
   const start = hooks.SessionStart.flatMap(h => h.hooks.map(x => x.command)).find(c => c.includes('instr_log'));
-  assert.match(start, />\/dev\/null 2>&1/, "SessionStart's output would go into the session's context");
+  assert.match(start, /python3 -I -c "\$S" >\/dev\/null/, 'the successful logger adds no context');
 });

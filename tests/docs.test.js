@@ -154,9 +154,10 @@ test("the session hooks run main's tools/brief.py, never the checked-out copy", 
     ['SessionStart', '--short'],
     ['UserPromptSubmit', '--time']
   ]) {
-    // Without origin/main the hook fetches it, or says so with the Manila time: tests/hooks.test.js.
-    assert.match(cmd(ev), new RegExp('F=tools/brief\\.py; .*git show "origin/main:\\$F".*\\| python3 -I - ' + flag), ev);
-    assert.ok(!/python3 [^|]*tools\/brief\.py/.test(cmd(ev)), ev + ' runs the checked-out tools/brief.py');
+    const ref = ev === 'SessionStart' ? '"$R:tools/brief.py"' : 'refs/remotes/origin/main:tools/brief.py';
+    assert.ok(cmd(ev).includes('git show ' + ref), ev);
+    assert.ok(cmd(ev).includes('| python3 -I - ' + flag), ev);
+    assert.doesNotMatch(cmd(ev), /python3(?:[ \t]+-\S+)*[ \t]+(?:\.\/)?tools\/brief\.py/, ev);
   }
 });
 
