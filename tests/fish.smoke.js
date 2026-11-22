@@ -28,7 +28,6 @@ const C = require('../core.js'),
 const http = require('http'),
   fs = require('fs'),
   path = require('path');
-const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const qa = require('./answer.js'); // waits for and answers the question on screen, whatever its format
 const ROOT = path.join(__dirname, '..');
@@ -76,9 +75,6 @@ async function done(b, fails, run) {
   }
   console.log('fish smoke: OK' + slot.partial(PARTS, run));
 }
-// The parts of this smoke (tests/slot.js parts): SMOKE_PART=main|fresh is the shard CI runs on one runner, SMOKE_ONLY the
-// same names (default: both). fresh: (9), the brand-new fish players (freshPlayers); main: everything else.
-const PARTS = ['main', 'fresh'];
 // Start-up's one-time cards out of the way (progress.js window.CARDS_SAID: every card due on screen or decided): each
 // card on screen but the ones kept (a selector) is closed by its first button, until start-up has nothing more to show.
 // A card that was due before or after a sync (the recalculation notes: never held, rule D6) then never covers a click.
@@ -1153,8 +1149,7 @@ async function memoryGame(b, base, errs) {
   await c.close();
   return fails.map(m => `memory: ${m}`);
 }
-// (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
-// errors in errs.
+// (9) The brand-new players (SMOKE_PART=fresh). Returns their failures and adds their page errors to errs.
 async function freshPlayers(b, base, errs) {
   // (9) A brand-new fish player: the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
@@ -1570,17 +1565,8 @@ async function namesCard(b, base, errs) {
   return fails;
 }
 
-(async () => {
-  const run = slot.parts(PARTS, {main: ['main'], fresh: ['fresh']});
-  await slot('fish.smoke');
-  await new Promise(ok => server.listen(0, '127.0.0.1', ok));
-  const base = `http://127.0.0.1:${server.address().port}/`;
-  const b = await chromium.launch();
-  if (!run.has('main')) {
-    const pe = [],
-      f = await freshPlayers(b, base, pe);
-    return done(b, pe.length ? [...f, 'page errors: ' + pe.join(' | ')] : f, run);
-  }
+// These checks build on one page's answers and progress. Keep the whole sequence in one part.
+async function quizAndProgress(b, base, errs) {
   const ctx = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
   await ctx.route(
     u => !u.href.startsWith(base),
@@ -1601,8 +1587,7 @@ async function namesCard(b, base, errs) {
     let s = 777;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
   }, CORAL);
-  const p = await ctx.newPage(),
-    errs = [];
+  const p = await ctx.newPage();
   p.on('pageerror', e => errs.push(e.message));
   await p.goto(base + '#practice/quiz');
   await p.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
@@ -2460,6 +2445,13 @@ async function namesCard(b, base, errs) {
     await setSubject('coral');
     return {subj: SUBJ.id, slate: slateGenera().length, ac: (P.Acropora || {}).ok, fish: localStorage.getItem('reefid-sync-subject')};
   });
+  if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
+    out.push('switch back to corals: ' + JSON.stringify(back));
+  await ctx.close();
+  return out;
+}
+
+async function uiAndAccess(b, base, errs) {
   // The screens the admin sees in the fish beta, at 390 and 1280 px (light theme): the subject switch in its two places,
   // one state (docs/DESIGN.md "Subject switch"): a Corals | Fish row at the top of Home and a switch
   // next to the logo in the header, on every page but Home, the chip and its menu with three subjects; the header keeps its size and Home
@@ -4130,6 +4122,10 @@ async function namesCard(b, base, errs) {
     if ((await q.evaluate(() => SUBJ.id)) !== 'coral') all.push('Corals did not switch back');
     await c9.close();
   }
+  return [...ui, ...grp, ...all];
+}
+
+async function mainScenarios(b, base, errs) {
   // Sync with two subjects, on the real app with a sheet stub (rule D1: window.SHEET_STUB, nothing sent):
   // (1) the sheet's opening hold is the corals': a pull with Fish on screen leaves the fish hold alone;
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
@@ -4422,32 +4418,28 @@ async function namesCard(b, base, errs) {
       rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
     await c4.close();
   }
-  // (9) A brand-new fish player: freshPlayers, above (its own CI shard).
-  const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
   // (11) Find the X: findTheX, above.
   const fx = [...(await findTheX(b, base, errs)), ...(await findTheXSpecies(b, base, errs))];
   // (13) Same or different?: sameDifferent, above.
-  const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
+  const sd = await sameDifferent(b, base, errs);
   // (14) Odd one out: oddOne, above.
-  const oo = run.has('main') ? await oddOne(b, base, errs) : [];
+  const oo = await oddOne(b, base, errs);
   // (15) Matrix: matrixGame, above.
-  const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
+  const mx = await matrixGame(b, base, errs);
   // (20) Down the tree: downTree, above.
-  const dt = run.has('main') ? await downTree(b, base, errs) : [];
+  const dt = await downTree(b, base, errs);
   // (21) Life stages matched: lifeStages, above.
-  const ls = run.has('main') ? await lifeStages(b, base, errs) : [];
+  const ls = await lifeStages(b, base, errs);
   // (16) Type the family, Blur reveal and the Look-alike web: labGames, above.
-  const lg = run.has('main') ? await labGames(b, base, errs) : [];
+  const lg = await labGames(b, base, errs);
   // (17) The custom quiz: customQuiz, above.
-  const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
+  const cqz = await customQuiz(b, base, errs);
   // (18) The Look-alikes deck and Compare: lookAlikes, above.
-  const la = run.has('main') ? await lookAlikes(b, base, errs) : [];
-  // (19) Memory: memoryGame, above.
-  const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
+  const la = await lookAlikes(b, base, errs);
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
   // (10b) The names step on the welcome card: namesCard, above.
-  const names = run.has('main') ? await namesCard(b, base, errs) : [];
+  const names = await namesCard(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -4778,11 +4770,8 @@ async function namesCard(b, base, errs) {
         );
     }
   }
-  const fails = [
-    ...out,
-    ...ui,
+  return [
     ...rv,
-    ...fresh,
     ...fx,
     ...sd,
     ...oo,
@@ -4792,21 +4781,51 @@ async function namesCard(b, base, errs) {
     ...lg,
     ...cqz,
     ...la,
-    ...mem,
     ...cold,
-    ...grp,
-    ...all,
     ...welcome,
     ...names,
     ...hello,
     ...flag,
     ...early
   ];
-  if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
-    fails.push('switch back to corals: ' + JSON.stringify(back));
+}
+
+const SCENARIOS = {quiz: quizAndProgress, access: uiAndAccess, main: mainScenarios, fresh: freshPlayers, memory: memoryGame};
+const PARTS = Object.keys(SCENARIOS);
+
+function fishParts() {
+  return slot.parts(PARTS, {main: ['main'], fresh: ['fresh', 'quiz', 'access', 'memory']});
+}
+
+async function runFishScenarios(run, execute) {
+  for (const name of run) await execute(name, SCENARIOS[name]);
+}
+
+async function smoke() {
+  const run = fishParts();
+  const {chromium} = require('./calm.js'); // Playwright; contexts in reduced motion by default
+  await slot('fish.smoke');
+  await new Promise(ok => server.listen(0, '127.0.0.1', ok));
+  const base = `http://127.0.0.1:${server.address().port}/`;
+  const b = await chromium.launch();
+  const fails = [],
+    errs = [];
+  await runFishScenarios(run, async (name, scenario) => {
+    const start = performance.now();
+    try {
+      fails.push(...(await scenario(b, base, errs)));
+    } catch (err) {
+      fails.push(`${name}: ${err.stack || err}`);
+    }
+    console.log(`fish.smoke part ${name}: ${((performance.now() - start) / 1000).toFixed(1)} s`);
+  });
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
   await done(b, fails, run);
-})().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+}
+
+module.exports = {fishParts, runFishScenarios};
+if (require.main === module)
+  smoke().catch(e => {
+    console.error(e);
+    process.exit(1);
+  });
