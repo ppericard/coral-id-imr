@@ -11,20 +11,19 @@ Night report: last sent 2026-11-22 (15:25 Manila, late: a hook's false reminder,
 
 ## Now
 
-- Pierre paused the Claude Code integrator on 2026-11-22 at 07:27 Manila. The last in-flight product PR,
-  [#1390](https://github.com/ppericard/coral-id-imr/pull/1390), has merged. The handoff was received (REE-231, Done).
-  [#1460](https://github.com/ppericard/coral-id-imr/pull/1460)
-  brought the [queue reference scripts](../tools/queue/recovered/README.md) and study code for
-  [REE-112](../tools/studies/ree112/README.md) and [REE-191](../tools/studies/ree191/README.md) onto main.
-  The recovered queue scripts were unreviewed and untested. Exact study input extracts were unavailable in shared storage.
-- On 2026-11-22 at 14:37 Manila Pierre gave a new Claude Code integrator one bounded mission,
-  [REE-222](https://linear.app/reef-id/issue/REE-222): done, [#1462](https://github.com/ppericard/coral-id-imr/pull/1462)
-  merged through a green train. The general resumption of the backlog waits for his end-of-mission review; the
-  takeover notes are in [REE-230](https://linear.app/reef-id/issue/REE-230).
-- A second bounded mission (REE-230) integrated Codex's [#1464](https://github.com/ppericard/coral-id-imr/pull/1464):
-  the startup hooks refresh `origin/main` (bounded, 3 s) before running the reviewed brief and instructions log, and
-  no hook says the night report is due any more (the "Night report" line above is the evidence). Checked for real in
-  the cloud container from this morning's stale ref. Still to observe: a real compaction with these hooks.
+- Pierre paused the Claude Code integrator on 2026-11-22 at 07:27 Manila; the handoff was received (REE-231, Done).
+  [#1460](https://github.com/ppericard/coral-id-imr/pull/1460) brought the
+  [queue reference scripts](../tools/queue/recovered/README.md) (unreviewed, untested) and the study code for
+  [REE-112](../tools/studies/ree112/README.md) and [REE-191](../tools/studies/ree191/README.md) onto main; the exact
+  study input extracts were unavailable in shared storage.
+- Since 14:37 Pierre has given a new Claude Code integrator bounded missions, each reported in Linear: REE-222
+  (#1462), the startup hooks of [#1464](https://github.com/ppericard/coral-id-imr/pull/1464) (#1465 added the "Night
+  report" line above), and the queue's security-review gate (REE-232,
+  [#1466](https://github.com/ppericard/coral-id-imr/pull/1466): `nightq.sh` trains only once Codex's security review
+  is completed for the full head SHA; for a later head it turns the PR to draft and back to ready to get one).
+  [REE-230](https://linear.app/reef-id/issue/REE-230) is back in Backlog: a real compaction with the new hooks is
+  still to observe, apart from the hook tests. A PR for it says "Part of REE-230" and keeps the identifier out of
+  its title (a title identifier closes the issue at merge). The general resumption of the backlog waits for Pierre.
 - [Health #1458](https://github.com/ppericard/coral-id-imr/issues/1458) is open. The hourly "Analyses report" workflow
   has also failed at every run since 2026-11-22 00:46 UTC ("The sheet did not store the report (no reply)"), likely
   the same stuck sheet script; not tracked elsewhere yet. The check reported served sheet
@@ -67,9 +66,9 @@ None carried over from the handoff.
 
 ## Last stop
 
-2026-11-22 ~17:15 Manila, after the REE-230 hooks mission (#1464); before it, the REE-222 mission (#1462). Before
-those, the Claude Code side had returned to the pause after #1460; the workspace observations are in the Drive handoff addendum. Check current work and live status through
-the sources above.
+2026-11-22 ~18:15 Manila, after the queue's security-review gate (REE-232, #1466); before it the hooks (#1464) and
+REE-222 (#1462) missions. Before those, the Claude Code side had returned to the pause after #1460; the workspace
+observations are in the Drive handoff addendum. Check current work and live status through the sources above.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
 [handoff]: https://docs.google.com/document/d/1agtmEbHc6f3QD1qdFWMxkCts9QciYT1FEdRuHah3kWM/edit
