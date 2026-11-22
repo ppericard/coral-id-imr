@@ -237,7 +237,7 @@ test('a PR not ready (needs-pierre, a draft, red checks, a sheet changes file) s
   }
 });
 
-// AGENTS.md "What players will see comes from Pierre" (Pierre, 2026-11-18): from TRAIN_BODY_FROM on, the description is
+// AGENTS.md "Working mode", "Easy to correct" (Pierre, 2026-11-18): from TRAIN_BODY_FROM on, the description is
 // part of the contract. PRs 1-6 stand for PRs past that number here.
 const BODY = (players, choices = 'None') =>
   `## What and why\n\nX.\n\n## Choices I made (need Pierre)\n\n<!-- a comment -->\n\n${choices}\n\n` +

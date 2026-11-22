@@ -6,6 +6,13 @@ task (the merge contract, how to work with Pierre, the rules that apply to any t
 [docs/decisions/](../decisions/README.md) (rule W19). Retired IDs are never reused: W2 (into W7), W5 (into W19), W20
 (to [spec/photos.md](../spec/photos.md) "No more candidates is no more candidates").
 
+## Writing a rule
+
+Keep the scope and meaning of Pierre's words as described in [AGENTS.md](../../AGENTS.md#the-rules).
+Use an imperative, a short *Why* in our words, and a *Source* with Pierre, the date and PR. Give his words and their
+context in the PR description. A friction first gets a guard (hook, test or tool check). Use prose when a guard
+cannot express the requirement.
+
 ## Words the rules use
 
 The rules are written for every subject (corals, fish…) unless they say otherwise.

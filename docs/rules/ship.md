@@ -51,9 +51,10 @@ search the ledger ([docs/ANSWERS.md](../ANSWERS.md)), the rules and `docs/decisi
 its scope, later amendments and whether it still applies; a decision that settles the point is applied, never asked
 again; on incomplete or contradictory evidence, say what is unsure, leave that point open and go on with the work
 already allowed.
-- **Questions, the details** (AGENTS.md "Questions to Pierre" has the rule): an open numbered question waits in STATUS
-  "Questions for Pierre" (number, context, question, recommendation, PR) until he answers; past numbers stay as they
-  are, never renumbered; he does not remember everything as an agent does and may ask for more context.
+- **Questions, the details** (AGENTS.md "Working with Pierre"): keep open decisions in Linear's Decisions for Pierre
+  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, park what must wait
+  in STATUS, using the existing issue link when available. Past numbers stay as they are. When asking, include enough
+  context for Pierre to place the question.
 *Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19; a hit as
 evidence, 2026-11-21 (#1361).
 
@@ -358,11 +359,11 @@ automatic lock of the unit tests"; the load budget of twice the cores and the di
 ### W25
 
 **Use the quota with care, never at the cost of the result.** Precise briefs, query instead of reading, no subagent for a
-small task, stop agents when done, one wake-up per wait, local checks before each push. The model and
-effort of each agent follow the table in docs/INTEGRATOR.md (AGENTS.md "Working mode"): ordinary code runs on the
-intermediate model; the lightest model only for mechanical work, after the sample test against a strong model ("Model
-choice by measurement": the threshold set beforehand counts agreement and serious errors; example tasks: framing,
-sorting photos, conversions); never for a judgment (photo judging included).
+small task, stop agents when done, one wake-up per wait, local checks before each push. Use the model and effort
+table in [INTEGRATOR.md, Working with Pierre](../INTEGRATOR.md#working-with-pierre). Ordinary code runs on the
+intermediate model; the lightest model only for mechanical work, after the sample test against a strong model (the
+threshold set beforehand counts agreement and serious errors; example tasks: framing, sorting photos, conversions).
+Use a stronger model for judgment, including photo judging.
 
 *Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
 2026-11-08.

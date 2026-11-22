@@ -10,7 +10,7 @@ nothing is re-run):
 1. Each PR, in the order given: open, based on main, not a draft, no `needs-pierre` label, from this repository, every
    check green on its head, no file left in tools/sync/changes/ (a PR that changes Code.gs gets its VERSION first:
    tools/sheet_version.py --assign on its branch, and that head is green and Codex-clean like any other). From PR
-   BODY_FROM on, its description too (AGENTS.md "What players will see comes from Pierre"; Pierre, 2026-11-18):
+   BODY_FROM on, its description too (AGENTS.md "Working mode", "Easy to correct"; Pierre, 2026-11-18):
    "Choices I made" starts with None, and "Players see or play differently?" says No, or gives each change with Pierre's
    words quoted and dated ("Pierre, 2026-11-18: «…»") or marked "integrator's call"; a STATUS handover ("STATUS: …")
    and Dependabot's PRs are exempt. The rest of the merge contract

@@ -1,6 +1,6 @@
 'use strict';
 require('./slot.js').testGuard();
-// tools/agent_guard.py, the agent-launch guard (AGENTS.md "The right model and effort for each task"; the rules core
+// tools/agent_guard.py, the agent-launch guard (docs/INTEGRATOR.md "Working with Pierre"; the rules core
 // proposal's G5, with a log): a PreToolUse hook on the Agent tool refuses a launch without `model` or `effort` (a fork
 // excepted), logs every launch in the git common dir, and tools/brief.py counts today's by model and effort. Also
 // brief.py's line when this checkout's instructions differ from origin/main (the proposal's G13).
