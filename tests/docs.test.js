@@ -708,7 +708,6 @@ const DOC_MARKS = {
   'tools/studies/ree191/README.md': [6, 400], // new, 2026-11-22: REE-191's study scripts kept as reference (REE-231)
   'tools/queue/README.md': [3, 300],
   'tools/queue/codex.md': [1, 80],
-  'tools/queue/codex-security.md': [1, 80], // new, 2026-11-22: the queue asks Codex for a security review of a later head (REE-232)
   'tools/studies/q316/README.md': [15, 170], // new, 2026-11-20: the Q316 tool's model, declared rules and figures
   'tools/sync/changes/README.md': [2, 130]
 };

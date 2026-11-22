@@ -11,7 +11,7 @@ Update worktrees go to `.claude/worktrees/` (rule W22, git-ignored).
 
 | Script | What it does |
 |---|---|
-| `nightq.sh N…` | One PR at a time: merge `origin/main` into it (`uptodate.sh`), wait for every check, Codex's receipt and Codex's completed security review for the full head SHA (`secreview.py`; asking `@codex security review` once for a head that has none, since Codex reviews security by itself only when a PR opens), then `TRAIN_REPO=$QUEUE_REPO tools/train.py N`. A PR that is red, has a Codex finding, a security review not completed for that exact head (running, absent, on another commit, failed, with findings or unreadable), an open thread, a finding or security-bot comment on the head nobody answered (`headfind.py`) or a pending VERSION assign is skipped and logged. |
+| `nightq.sh N…` | One PR at a time: merge `origin/main` into it (`uptodate.sh`), wait for every check, Codex's receipt and Codex's completed security review for the full head SHA (`secreview.py`; for a head that has none, once per head, the PR turned to draft and back to ready, since Codex reviews security by itself only when a PR opens or a draft is marked ready, and `@codex security review` started a code review instead on #1466), then `TRAIN_REPO=$QUEUE_REPO tools/train.py N`. A draft is skipped (never marked ready by the queue). A PR that is red, has a Codex finding, a security review not completed for that exact head (running, absent, on another commit, failed, with findings or unreadable), an open thread, a finding or security-bot comment on the head nobody answered (`headfind.py`) or a pending VERSION assign is skipped and logged. |
 | `uptodate.sh N` | Merge `origin/main` into the PR's branch, settling only the decisions index, append-only files and generated data; anything else aborts ("needs a hand"). Pushes and asks `@codex review`. |
 | `assignver.sh N` | Code.gs PR: update it, then assign the sheet VERSION (rule D3). Takes only main's line 1 and `VERSION`, keeps the branch's own `Code.gs`; a `Code.gs` conflict outside the version lines and the core.js block (`resolve_gs.py`) is "needs a hand". Pushes and asks Codex (`codex.md`). |
 | `seqver.sh N…` | Code.gs PRs one after another: `assignver.sh`, then `nightq.sh`, for each. |
@@ -21,7 +21,7 @@ Update worktrees go to `.claude/worktrees/` (rule W22, git-ignored).
 | `pushwait.sh DIR BRANCH` | Push once no train runs. |
 | `failjobs.sh REF` | The failing jobs of a commit or train branch, with their error lines. |
 | `thr.py`, `resolve_block.py`, `resolve_append.py`, `resolve_gs.py`, `mainver.py`, `headfind.py` | Helpers: unresolved threads, conflict-block, append-only and `Code.gs` metadata resolution, main's version line, unanswered findings on the head. |
-| `codex.md`, `codex-security.md` | The `@codex review` and `@codex security review` comments with their footer. |
+| `codex.md` | The `@codex review` comment with its footer. |
 
 ## Trusted tools
 

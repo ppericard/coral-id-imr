@@ -8,12 +8,23 @@ log() { echo "$(TZ=Asia/Manila date +%H:%M) $*" | tee -a "$LOG"; }
 # Codex's security review from a prstate line: "<state> <full sha>" (secreview.py), read from the first field that starts
 # with "security@head: " (the line ends with the PR's own "Choices I made" text, which could imitate the field)
 security_of() { echo "$1" | awk -F' [|] ' '{for (i = 1; i <= NF; i++) if (index($i, "security@head: ") == 1) {print substr($i, 16); exit}}'; }
+# Codex reviews security by itself only when a PR opens or a draft is marked ready; "@codex security review" started a
+# code review instead (#1466, 2026-11-22). So for a head with no security review: draft, then ready (CCR routes, REST
+# only). A PR left a draft is logged: train.py refuses drafts, so nothing merges unseen.
+ask_security() {
+  gh api -X POST $R/pulls/$1/ccr/convert_to_draft >/dev/null 2>&1 || return 1
+  gh api -X POST $R/pulls/$1/ccr/ready_for_review >/dev/null 2>&1 ||
+    gh api -X POST $R/pulls/$1/ccr/ready_for_review >/dev/null 2>&1 ||
+    { log "#$1: left as a draft (ready_for_review refused twice): mark it ready by hand"; return 1; }
+}
 cd "$REPO_DIR" || exit 1
 for n in "$@"; do
   # wait for any running train (never the waiter's own line: match the python process)
   while train_running; do sleep 30; done
   state=$(gh api $R/pulls/$n --jq .state)
   if [ "$state" != "open" ]; then log "#$n: $state, skipped"; continue; fi
+  # a draft is its author's work in progress: never marked ready by the queue (ask_security)
+  if [ "$(gh api $R/pulls/$n --jq .draft)" != "false" ]; then log "#$n: draft (or unreadable), skipped"; continue; fi
   up=$(bash "$Q/uptodate.sh" "$n" 2>&1 | tail -1)
   log "#$n: $up"
   case "$up" in *"needs a hand"*|*"local changes"*) log "#$n: SKIPPED (update needs a hand)"; continue;; esac
@@ -32,12 +43,12 @@ for n in "$@"; do
     echo "$(TZ=Asia/Manila date +%H:%M) #$n wait $i pend=$pend codex=$codex security=$sec" >> "$QUEUE_DIR/nightq.debug"
     # the security review settled (completed, findings or failed); running, absent, stale and "?" are waited for
     case "${sec%% *}" in completed|findings|failed:*) secdone=1;; *) secdone=0;; esac
-    # Codex reviews security by itself only when a PR opens: a later head (an agent's push, uptodate.sh's merge of
-    # main, a VERSION assign) gets none unless asked. Ask once per head, once its checks are done (REE-232).
+    # a later head (an agent's push, uptodate.sh's merge of main, a VERSION assign) gets no security review by itself:
+    # once per head, once its checks are done, draft then ready (ask_security; REE-232)
     case "${sec%% *}" in stale|absent)
       if [ "$pend" = "0" ] && [ "$asked" != "${sec#* }" ]; then
-        gh api -X POST $R/issues/$n/comments -F body=@"$Q/codex-security.md" >/dev/null &&
-          asked=${sec#* } && log "#$n: asked Codex for a security review of ${asked:0:7}"
+        asked=${sec#* }
+        ask_security "$n" && log "#$n: draft then ready, so Codex reviews the security of ${asked:0:7}"
       fi;;
     esac
     if [ "$pend" = "0" ] && [ "$codex" != "none" ] && [ "$codex" != "summary" ] && [ $secdone = 1 ]; then break; fi
