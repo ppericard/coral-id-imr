@@ -7,6 +7,8 @@ Search [ANSWERS.md](ANSWERS.md) for historical evidence and use git and PRs for 
 
 Last checked: reports and events: 2026-11-22 ~15:10 Manila (Claude, REE-222 mission)
 
+Night report: last sent 2026-11-22 (15:25 Manila, late: a hook's false reminder, fixed in #1464)
+
 ## Now
 
 - Pierre paused the Claude Code integrator on 2026-11-22 at 07:27 Manila. The last in-flight product PR,
@@ -19,6 +21,10 @@ Last checked: reports and events: 2026-11-22 ~15:10 Manila (Claude, REE-222 miss
   [REE-222](https://linear.app/reef-id/issue/REE-222): done, [#1462](https://github.com/ppericard/coral-id-imr/pull/1462)
   merged through a green train. The general resumption of the backlog waits for his end-of-mission review; the
   takeover notes are in [REE-230](https://linear.app/reef-id/issue/REE-230).
+- A second bounded mission (REE-230) integrated Codex's [#1464](https://github.com/ppericard/coral-id-imr/pull/1464):
+  the startup hooks refresh `origin/main` (bounded, 3 s) before running the reviewed brief and instructions log, and
+  no hook says the night report is due any more (the "Night report" line above is the evidence). Checked for real in
+  the cloud container from this morning's stale ref. Still to observe: a real compaction with these hooks.
 - [Health #1458](https://github.com/ppericard/coral-id-imr/issues/1458) is open. The hourly "Analyses report" workflow
   has also failed at every run since 2026-11-22 00:46 UTC ("The sheet did not store the report (no reply)"), likely
   the same stuck sheet script; not tracked elsewhere yet. The check reported served sheet
@@ -61,8 +67,8 @@ None carried over from the handoff.
 
 ## Last stop
 
-2026-11-22 ~15:20 Manila, after the REE-222 mission (#1462). Before it, the Claude Code side had returned to the pause
-after #1460; the workspace observations are in the Drive handoff addendum. Check current work and live status through
+2026-11-22 ~17:15 Manila, after the REE-230 hooks mission (#1464); before it, the REE-222 mission (#1462). Before
+those, the Claude Code side had returned to the pause after #1460; the workspace observations are in the Drive handoff addendum. Check current work and live status through
 the sources above.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
