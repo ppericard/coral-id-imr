@@ -2636,6 +2636,16 @@ td.cov-c .cov-off {
 .adm-an .adm-tscroll:not(.tall) .adm-tbl th {
   background: transparent;
 }
+/* Analyses tables: the first column names the row (a pair of genera, a question format, a range of answers) and wraps
+   instead of ending in "…" under the cell cap below (REE-222); the other columns keep the cap and a wide table scrolls
+   inside its card. The minimum keeps a long label to a few lines when the table is squeezed on a phone. A player's name
+   keeps its own cap (.adm-cut). */
+.adm-an .adm-tbl td:first-child {
+  max-width: none;
+  min-width: 7em;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
 /* Errors & feedback, one-tap questions (admin.js pulseView): compact tables, numbers under right-aligned headers, each
    item's wording as written heading its answers, the share beside a count quiet. */
 .adm-pulse .adm-tbl {
