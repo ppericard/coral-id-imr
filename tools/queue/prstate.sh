@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# PR state line for the integrator: head, checks, Codex receipt on head, unresolved threads, findings and security
-# comments on the head nobody answered (headfind.py; "?" when they could not be read), Choices I made.
+# PR state line for the integrator: head, checks, Codex receipt on head, Codex's security review for the full head
+# (secreview.py), unresolved threads, findings and security comments on the head nobody answered (headfind.py; "?"
+# when they could not be read), Choices I made.
 # Usage: bash prstate.sh N [N...]
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 d=$(mktemp -d "$QUEUE_DIR/prstate.XXXXXX") || exit 1
@@ -15,7 +16,12 @@ for n in "$@"; do
   short=${sha:0:10}
   # every page of the issue comments (a receipt can sit past the first 100), then the latest one for this head
   ok=1  # any page that could not be read leaves unanswered@head at "?", which nightq.sh treats as not clean
-  gh api --paginate "$R/issues/$n/comments?per_page=100" > "$d/issue.json" 2>/dev/null || ok=0
+  iok=1
+  gh api --paginate "$R/issues/$n/comments?per_page=100" > "$d/issue.json" 2>/dev/null || { ok=0; iok=0; }
+  # Codex's security review for the exact full head (secreview.py): "<state> <sha>"; nightq.sh trains only on
+  # "completed" for the head it is about to train, so unread comments leave "?" (REE-232)
+  sec="? $sha"
+  if [ $iok = 1 ]; then sec=$(python3 -I "$Q/secreview.py" "$sha" "$d/issue.json" 2>/dev/null | head -1); fi
   codex=$(jq -rs --arg short "$short" '(add // []) | [.[]|select(.user.login=="chatgpt-codex-connector[bot]" and .user.type=="Bot")|select(.body|test($short))|.body|capture("Codex Review: (?<v>[^\\n]*)").v // "summary"]|last // "none"' "$d/issue.json" 2>/dev/null || echo none)
   gh api --paginate "$R/pulls/$n/comments?per_page=100" > "$d/review.json" 2>/dev/null || ok=0
   rc=$(jq -rs --arg sha "$sha" '(add // []) | [.[]|select(.commit_id==$sha)]|length' "$d/review.json" 2>/dev/null || echo "?")
@@ -26,5 +32,5 @@ for n in "$@"; do
   un="?"
   if [ $ok = 1 ]; then un=$(python3 -I "$Q/headfind.py" "$sha" "$hd" "$d/review.json" "$d/threads.json" "$d/issue.json" 2>/dev/null | head -1); fi
   ch=$(echo "$j" | jq -r '.body' | awk '/^## Choices I made/{f=1;next} /^## /{f=0} f' | grep -v '^\s*$' | head -1 | cut -c1-50)
-  echo "#$n $st ${sha:0:7} merge=$ms [$labels] checks: $checks | codex@head: $codex | head comments: $rc | open threads: $th | unanswered@head: ${un:-?} | choices: ${ch:-<empty>}"
+  echo "#$n $st ${sha:0:7} merge=$ms [$labels] checks: $checks | codex@head: $codex | security@head: ${sec:-? $sha} | head comments: $rc | open threads: $th | unanswered@head: ${un:-?} | choices: ${ch:-<empty>}"
 done
