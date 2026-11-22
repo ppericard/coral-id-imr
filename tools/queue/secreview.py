@@ -8,14 +8,14 @@ Codex keeps one summary comment per PR up to date. Its hidden markers carry the 
 Only comments by the Codex bot account count (a PR's own text or a person's comment can quote the markers).
 
 Prints one line: "<state> <SHA>", the state being one of
-  completed      both markers name this commit, say completed, and no unresolved finding is left
+  completed      both markers are present, name this commit, say completed, and no unresolved finding is left
   findings       completed with unresolved findings
   running        under way (running, queued, pending, in_progress)
   failed:<s>     any other status s (failed, error, cancelled, ...)
   stale          the latest state is for another commit (a review of this one has not reported yet)
   absent         no state from Codex at all
-  ?              unreadable: a bad SHA argument, a file that does not parse, a marker that does not parse or lacks its
-                 fields, or the two markers disagreeing
+  ?              unreadable: a bad SHA argument, a file that does not parse, a marker named but malformed, that does not
+                 parse or lacks its fields, the two markers disagreeing, or "completed" from one marker alone
 Usage: secreview.py SHA ISSUE_COMMENTS   (SHA: the full 40-character head; ISSUE_COMMENTS: a file of `gh api --paginate`
 output, one JSON array per page, concatenated)"""
 import html
@@ -47,9 +47,12 @@ def pages(path):
         items.extend(page if isinstance(page, list) else [page])
 
 
-def marker(rx, body):
-    """The one JSON object of this marker in the body, None when the body has none."""
+def marker(rx, name, body):
+    """The one JSON object of this marker in the body, None when the body has none. A marker named but not matched (a
+    malformed or partly written one) is unreadable, never skipped."""
     found = rx.findall(body)
+    if body.count(name) != len(found):
+        raise Unreadable('marker not well formed')
     if not found:
         return None
     if len(found) > 1:
@@ -64,9 +67,10 @@ def marker(rx, body):
 
 
 def review_of(body):
-    """(sha, status, unresolved) of the security review this comment reports, None when it reports none."""
+    """(sha, status, unresolved, both) of the security review this comment reports, None when it reports none; both:
+    the two markers named it (only then can "completed" be checked for agreement and unresolved findings)."""
     body = html.unescape(body or '')
-    st, sec = marker(STATE, body), marker(SECURITY, body)
+    st, sec = marker(STATE, 'codex-review-state:v1', body), marker(SECURITY, 'codex-security-review:v1', body)
     if st is None and sec is None:
         return None
     found = []
@@ -88,7 +92,7 @@ def review_of(body):
     if len({(s, t) for s, t, _ in found}) > 1:
         raise Unreadable('markers disagree')
     sha, status = found[0][0], found[0][1]
-    return sha, status, any(u is True for _, _, u in found)
+    return sha, status, any(u is True for _, _, u in found), len(found) == 2
 
 
 def state(sha, comments):
@@ -107,8 +111,10 @@ def state(sha, comments):
     mine = [r for _, r in sorted(reports, key=lambda x: x[0]) if r[0] == sha]
     if not mine:
         return 'stale'
-    _, status, unresolved = mine[-1]
+    _, status, unresolved, both = mine[-1]
     if status == 'completed':
+        if not both:
+            return '?'  # one marker alone cannot show the two agree nor that no finding is left unresolved
         return 'findings' if unresolved else 'completed'
     if status in RUNNING:
         return 'running'

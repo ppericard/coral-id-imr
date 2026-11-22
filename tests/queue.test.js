@@ -335,6 +335,31 @@ test('secreview: running, absent, another commit, failed or with findings is not
   assert.strictEqual(secreview([[c(summary(SHA, 'completed', {unresolved: true}))]]), `findings ${SHA}`);
 });
 
+test('secreview: "completed" needs both markers, well formed (REE-232, Codex review of #1466)', () => {
+  const lines = s => s.split('\n');
+  const only = (s, name) =>
+    lines(s)
+      .filter(l => !l.includes(name))
+      .join('\n');
+  // the security marker alone says completed: the unresolved findings and the agreement cannot be checked
+  assert.strictEqual(secreview([[c(only(summary(SHA, 'completed'), 'codex-review-state:v1'))]]), `? ${SHA}`);
+  assert.strictEqual(secreview([[c(only(summary(SHA, 'completed'), 'codex-security-review:v1'))]]), `? ${SHA}`);
+  // one marker alone may still say a review is under way
+  assert.strictEqual(secreview([[c(only(summary(SHA, 'running'), 'codex-review-state:v1'))]]), `running ${SHA}`);
+  // a state marker that is named but malformed (no JSON object) is never skipped
+  const broken = summary(SHA, 'completed').replace(
+    /<!-- codex-review-state:v1 \{.*\} -->/,
+    '<!-- codex-review-state:v1 {"security_review": -->'
+  );
+  assert.strictEqual(secreview([[c(broken)]]), `? ${SHA}`);
+  // #1466 itself: a code review under way and no security review at all (its state all null, no security marker)
+  const codeOnly = `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify({
+    code_review: {commit_sha: SHA, has_any_findings: null, has_unresolved_findings: null, status: 'running'},
+    security_review: {commit_sha: null, has_any_findings: null, has_unresolved_findings: null, status: null}
+  })} -->\n| 📝 **Code Review** | 🔄 **Running** |`;
+  assert.strictEqual(secreview([[c(codeOnly)]]), `absent ${SHA}`);
+});
+
 test("secreview: markers that are not the Codex bot's, or that cannot be read, never pass (REE-232)", () => {
   // a person, or another bot, quoting a completed summary
   assert.strictEqual(secreview([[c(summary(SHA, 'completed'), {login: 'someone', type: 'User'})]]), `absent ${SHA}`);
