@@ -138,9 +138,9 @@ only docs skips the smokes** (every file under `docs/`, a `*.md` at the root, th
 still runs on it, `tests/docs.test.js` included. A merge train's push runs both workflows in full (rule W26). A new push
 cancels the run still going on the PR. **Session hooks**
 (`.claude/settings.json`) print the Manila time and the Rule 0 window at each session start and prompt
-(`tools/brief.py --short`, `--time`), running main's reviewed copy of the script
-(`git show origin/main:tools/brief.py | python3 -I -`), never the checked-out branch's (a branch could put any code
-there): a change to `tools/brief.py` reaches the hooks once merged.
+(`tools/brief.py --short`, `--time`). The startup hook refreshes `origin/main` before selecting the reviewed script.
+The prompt clock uses the cached ref offline. Both pass the trusted script to `python3 -I -`. A branch's own
+`tools/brief.py` reaches the hooks once merged and fetched. See [the hooks](../spec/tools.md#working-with-the-repository).
 *Source:* repository practice, by 2026-11-01; hooks, 2026-11-05; docs-only PRs skip the smokes, Pierre, 2026-11-08
 (Q305); one answerer for the smokes, Pierre, 2026-11-13 (fix the structure, not the one spot: a typed question hung the
 overlays smoke on #855).

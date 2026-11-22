@@ -4,9 +4,9 @@
   python3 tools/night.py                 the last night (17:30 to 04:00 Manila; before 04:00: the night so far)
   python3 tools/night.py --json FILE     the report of a saved snapshot (tests; no network)
 
-The night is Rule 0's: it runs from 17:30 to Pierre's first message after 04:00 (AGENTS.md Rule 0; Pierre, 2026-11-19).
-At the first message of a Manila day between 04:00 and 17:30 the UserPromptSubmit hook says the report is due
-(`tools/brief.py --night-due`, once a day per checkout), and the integrator gives him this report before anything else.
+Rule 0 ends the quiet period at Pierre's first message after 04:00. The integrator sends the report in French at
+that confirmed first message if it has not already been sent. The hook cannot establish either fact. The report's
+calculation uses the clock window above.
 It lists:
 - the PRs merged during the night and their agent time (tools/effort.py's measure: the branch's first commit to its
   head's checks going green), with the total;
