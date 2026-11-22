@@ -209,7 +209,7 @@ test('applySlots: equal quality, an open photo or his own is featured before an 
   );
 });
 
-test('fishRun and fishQueue: between equal candidates, an open licence or his own first; the ease still first', () => {
+test('treeRun and treeQueue: between equal candidates, an open licence or his own first; the ease still first', () => {
   const ph = (f, lic, own) => ({f, o: 'obs-' + f, lic, ...(own ? {own: true} : {})});
   const cands = {
     s1: [ph('a-nc', 'cc-by-nc'), ph('b-nc', 'cc-by-nc'), ph('c-open', 'cc-by'), ph('d-own', 'cc-by-nc', true), ph('e-nc5', 'cc-by-nc')]
@@ -217,34 +217,34 @@ test('fishRun and fishQueue: between equal candidates, an open licence or his ow
   const j = e => ({k: 'best', jt: 'p1g1sm1', e});
   const sug = {'a-nc': j(4), 'b-nc': j(4), 'c-open': j(4), 'd-own': j(4), 'e-nc5': j(5)};
   // Room for two observations: the easiest first (an NC photo of ease 5), then an open photo among the equals of ease 4.
-  const T = A.FISHT.obs;
-  A.FISHT.obs = 2;
+  const T = A.TREET.obs;
+  A.TREET.obs = 2;
   try {
-    const {F} = A.fishRun(cands, sug, {s1: {id: 's1'}}, {}, '2026-11-08', true);
+    const {F} = A.treeRun(cands, sug, {s1: {id: 's1'}}, {}, '2026-11-08', true);
     // None of these names is a Check (autoCheck): the easiest, then the first open or own photo of ease 4 (c before d).
     ['a-nc', 'b-nc', 'c-open', 'd-own', 'e-nc5'].forEach(f => assert.strictEqual(A.autoCheck(f), false, f));
     assert.deepStrictEqual(Object.keys(F.add).sort(), ['c-open', 'e-nc5']);
   } finally {
-    A.FISHT.obs = T;
+    A.TREET.obs = T;
   }
-  const Q = A.fishQueue(cands, sug, {s1: {id: 's1'}}, {}).map(x => x.p.f);
+  const Q = A.treeQueue(cands, sug, {s1: {id: 's1'}}, {}).map(x => x.p.f);
   assert.strictEqual(Q[0], 'e-nc5');
   assert.deepStrictEqual(Q.slice(1, 3).sort(), ['c-open', 'd-own']);
   assert.deepStrictEqual(Q.slice(3), ['a-nc', 'b-nc']);
 });
 
-test('fishOrder and fishCoverOf (the admin): the rights break a tie; his cover pick wins', () => {
+test('treeOrder and treeCoverOf (the admin): the rights break a tie; his cover pick wins', () => {
   const L = [
     {f: 'a', lic: 'cc-by-nc'},
     {f: 'b', lic: 'cc0'}
   ];
   const j = () => ({e: 4, jt: 'p1g1sm1'});
   assert.deepStrictEqual(
-    A.fishOrder(L, {}, 'f:X', 's1', j).rest.map(p => p.f),
+    A.treeOrder(L, {}, 'f:X', 's1', j).rest.map(p => p.f),
     ['b', 'a']
   );
-  assert.strictEqual(A.fishCoverOf(L, {}, 'f:X', j).f, 'b');
-  assert.strictEqual(A.fishCoverOf(L, {genera: {'f:X': {cover: 'a'}}}, 'f:X', j).f, 'a');
+  assert.strictEqual(A.treeCoverOf(L, {}, 'f:X', j).f, 'b');
+  assert.strictEqual(A.treeCoverOf(L, {genera: {'f:X': {cover: 'a'}}}, 'f:X', j).f, 'a');
 });
 
 test('fetch_local tie_key: Research Grade first, then more votes, then an open or own observation; no votes count, the old order', () => {

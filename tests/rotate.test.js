@@ -299,7 +299,7 @@ const adminVm = (extra = '') => {
 test('the fish Candidates: a photo in play with no judgment shows its published crop (review #793)', () => {
   const T = adminVm(),
     o = 'https://inaturalist-open-data.s3.amazonaws.com/photos/7/original.jpg',
-    // A sure candidate fishGameIn put in play from fish-game.json: no j, the pass's crop baked into its R2 file.
+    // A sure candidate treeGameIn put in play from fish-game.json: no j, the pass's crop baked into its R2 file.
     p = {f: 'fish-s016-cand-7', sp: 't01', src: o, cr: [0.1, 0.2, 0.9, 0.8], ar: 1.33},
     vb = 'object-view-box:inset(20% 10% 20% 10%)';
   // The admin has no crop of their own: its R2 file, as the game shows it (never the original uncropped).

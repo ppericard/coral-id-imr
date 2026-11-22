@@ -1,7 +1,7 @@
 // Photos › Photo stats › Taxa (#photos/stats/taxa; docs/spec/admin-photos.md "Photo stats › Taxa"): for the subject on
 // screen, every taxon that is out of play or not ready to be asked, and why, read from what the admin already holds:
 // the fish and the sea slugs' species from their tree file (fish.json, seaslug.json: `out`, the reason the build wrote,
-// and the family's circle in force, the draft's), the photos in play the family pages count (autosort.js fishCov), the
+// and the family's circle in force, the draft's), the photos in play the family pages count (autosort.js treeCov), the
 // corals' genera from data.json (core.js gameOf: the Key-only genera) and their photos in play (Coverage's covOf). No new
 // sheet call, no file of its own. A reason is always a field somebody recorded; a taxon no field explains says "Reason
 // not recorded", never a guess. Read-only: nothing here writes the draft or curation.json (rule A1).
@@ -16,7 +16,7 @@
 //     unknown   nothing records why
 //   in the game, but not ready
 //     nophoto   no photo in play: nothing to ask it with yet (the candidates waiting counted)
-//     under     fewer observations in play than its target (autosort.js fishTarget); it still plays
+//     under     fewer observations in play than its target (autosort.js treeTarget); it still plays
 // A species `out` may carry several reasons, joined by "; " (tools/build_fish.py): each is listed.
 //
 // The pure part (taxaFish, taxaGenera, taxaCounts, TAXA_WHY) runs in Node too: tests/taxa.test.js.
@@ -59,7 +59,7 @@
   //   unitOf    {species id: its family {id, name, circle}} (the family pages' units)
   //   circleOf  a family's circle in force (the draft's, admin.js fuCircle): null for in no circle
   //   rows      {species id: {n photos, obs observations, tgt target, wait candidates}} for the species in the game
-  //             (autosort.js fishCov's species rows)
+  //             (autosort.js treeCov's species rows)
   //   link      (species, family) the address of its page, '' when it has none
   // Each row {id, name, common, unit, href, why: [{code, text, detail}], out (the game does not ask it), n, obs, tgt}.
   function taxaFish({species, unitOf = {}, circleOf = x => x.circle, rows = {}, link = () => ''}) {
@@ -154,7 +154,7 @@ function taxaRows(S, here) {
     return null;
   }
   const D = fuDataM().D,
-    C = fishCov(FISHC.units, D.play, FISHC.species, FISHC.cand, D.F, fuJ),
+    C = treeCov(FISHC.units, D.play, FISHC.species, FISHC.cand, D.F, fuJ),
     unitOf = {};
   FISHC.units.forEach(u => u.species.forEach(s => (unitOf[s] = unitOf[s] || u)));
   return taxaFish({

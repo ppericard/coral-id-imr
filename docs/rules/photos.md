@@ -19,7 +19,7 @@ question, in any mode; the answers decide it, never an a priori view rule.
   when they are themselves the easiest (`core.js` `easyRank`). IMR photos are never auto-rated Poor and never
   auto-excluded: they are always evaluated for entry. **A default cover** (a family's or a genus's, any node with leaves,
   when he has picked none) is a photo of its leaf **most seen around the instance's centre by distinct observers**, that
-  leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `fishCoverOf`). **One exception for his own photos:** every photo of his that is
+  leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `treeCoverOf`). **One exception for his own photos:** every photo of his that is
   compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
   included in the fish photo pool. Never left out, never boosted (the candidates: `tools/fetch_fish.py` `select` takes his
   observations first, within the species' room, then the judging puts them in play; the stopgap's `tools/fish_photos.py`

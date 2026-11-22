@@ -185,11 +185,11 @@ reverse).
 
 `#fish/inbox/coverage/games` (`renderCov`, the content `covTreePage`, the `tree` builder of `COV_BUILD`): per family, genus or species (switch), the species at target,
 the photos in play, easy (ease 4-5) and reference-level photos (`refLevel`, as the tile's badge: rule P1), the phases
-shown (an IMR phase still missing marked ?), the candidates waiting (the "+" column: `autosort.js` `fishWaiting`, the
+shown (an IMR phase still missing marked ?), the candidates waiting (the "+" column: `autosort.js` `treeWaiting`, the
 candidates nobody decided and not in play under any of their names, `treePid`: a sure candidate the game plays itself
-is in play) and what is missing (`autosort.js` `fishCov`); All \| IMR and Thinnest \| Book. **To do**: species under target
+is in play) and what is missing (`autosort.js` `treeCov`); All \| IMR and Thinnest \| Book. **To do**: species under target
 with candidates waiting, species with no photo in play, families validated but incomplete, families not ready.
-**Where to look** (`fishLook`): species under target whose waiting candidates cannot fill the gap, IMR's first;
+**Where to look** (`treeLook`): species under target whose waiting candidates cannot fill the gap, IMR's first;
 `?look=all` lists all.
 
 ## Photo review
@@ -263,8 +263,8 @@ The tree builder's axes (`REVIEW_BUILD` `tree`; the `GROUPS` view option `axis`)
 Phase & framing `#fish/photos/review/phase-framing`, one family's photos in play at a time (`reefid-admin-fishrev`), each
 in the row of its value now; one click sets Pierre's ease, juvenile flag, phase word (a family with IMR phase lines, or
 a photo of a species the cited phase list flags, `fish.json` species `phs`: `autosort.js` `hasPhaseRow`, also on the fish
-Candidates card and a photo's tag rows) or view (`autosort.js` `fishSet`, `fishTag`, as the fish Candidates); the agreement line, the draft's values against the
-judging pass's (`fishAgree`).
+Candidates card and a photo's tag rows) or view (`autosort.js` `treePhotoSet`, `treeTag`, as the fish Candidates); the agreement line, the draft's values against the
+judging pass's (`treeAgree`).
 
 ### Light proposals
 
@@ -276,7 +276,7 @@ the site; the demo answers it from the local copy).
 
 - One tile each: the photo, its species, what would change in words (each tag and flag that differs, his value struck
   through, the re-judged one in bold, the codes in the tooltip; then the ease), **Accept** (the re-judged tags and ease
-  into the draft, `fishSet`: one Undo step), **Keep mine** (`curation.json` `fish.kept`), **Accept all N** (one step,
+  into the draft, `treePhotoSet`: one Undo step), **Keep mine** (`curation.json` `fish.kept`), **Accept all N** (one step,
   confirmed: bulk); rows by the light change.
 - A proposal is open (`lightOpen`) while the photo is his add in play, its draft tags and ease both still the ones it
   was made against, and not kept; so an accepted one, a kept one or one whose tags or ease he changed since is done. A
@@ -290,14 +290,14 @@ the site; the demo answers it from the local copy).
 
 `#fish/photos/review/cover-proposals` (`admin-covers.js`; tests `tests/fishcoverprop.test.js` and the admin smoke's
 photos part). Pierre's ★ Cover of a family or a genus (`fish.genera[node].cover`) is never replaced by the default cover
-rule ([fish.md › Covers](fish.md#covers)); where it is in force (in play, not a juvenile: `fishCoverOf`) and the rule now
-picks another photo (`autosort.js` `fishCoverRule`, the default part of `fishCoverOf`, on the photos the node's Tree page
+rule ([fish.md › Covers](fish.md#covers)); where it is in force (in play, not a juvenile: `treeCoverOf`) and the rule now
+picks another photo (`autosort.js` `treeCoverRule`, the default part of `treeCoverOf`, on the photos the node's Tree page
 chooses from: `fuNodePhotos` over `fuFamM`; compared by `treePid`), the rule proposes it.
 
 - One card per node, families then genera: the node's name, his photo and the rule's, each with the species it shows,
   the rule's why in a line ("Most seen near <centre>: N observers", the centre's name from `fish.json` `centre`; "no
   reference photo" when its species competed without one; "your ★ species cover" when the photo is his cover of that
-  species), **Accept** (the rule's photo as his cover in the draft, `fishPick`: one Undo step), **Keep mine**
+  species), **Accept** (the rule's photo as his cover in the draft, `treePick`: one Undo step), **Keep mine**
   (`fish.kept[node]` = the pair, `coverKey`), **Accept all N** (one step, confirmed: bulk).
 - Proposals are live, from the draft (`coverProposal`, `coverOpen`): one is done once answered (Accept makes the rule
   agree), once his cover changes (a new cover of his that still differs is a new pair, listed again), or once the rule
@@ -359,12 +359,12 @@ for its return (rule A1). The pairs themselves are edited on the Tree
 ([admin-tree.md](admin-tree.md#the-corals-tree)).
 
 On the fish side, `#fish/photos/look-alikes` (`renderMont`, the `tree` builder): one row per look-alike pair of families in force on the
-draft (`admin-content.js` `montPairs`: `autosort.js` `fishPairs` over `fish.json` `families` `look` with the content
+draft (`admin-content.js` `montPairs`: `autosort.js` `treePairs` over `fish.json` `families` `look` with the content
 editor's pairs laid over it, `sheetFile`; the IMR course's pairs, less those he withdrew on the Tree, plus those he added
 there, marked "(added)" as in the Tree's Look-alikes filter; the circles leave every pair in; IMR's lines shown as their
-source, none on an added pair), a phase switch (Adult = every photo not of a juvenile, Juvenile, All: `fishMontPick`),
+source, none on an added pair), a phase switch (Adult = every photo not of a juvenile, Juvenile, All: `treeMontPick`),
 Auto / Manual and Shown / Hidden as the coral pairs, the two photos and a strip of each family's photos in play; picks in
-`curation.json` `fish` `mont` `{pair: {v, a, b, hide}}` (`fishMontSet`), the pair key `core.js` `contentPairKey` (an
+`curation.json` `fish` `mont` `{pair: {v, a, b, hide}}` (`treeMontSet`), the pair key `core.js` `contentPairKey` (an
 added pair's picks stored as a base pair's; a withdrawn pair's kept, unused, back with the pair).
 
 **Species pairs** (REE-46, plan PR 10), read only, under the families' pairs on the same page (`speciesPairsHtml`): the pairs
@@ -412,7 +412,7 @@ the browser from what the admin already has, with no new sheet call (the photo r
 **One renderer for every subject**: `pstatsHtml` draws the cards from one shape of numbers, each subject's made by its
 adapter (`pstatsCoral`: `poolStats` and the sheet's ratings, as above; `pstatsFish` for a subject the sheet does not
 rate). **On the fish side** `#fish/photos/stats/overview` (`pstatsFish`, help `fishpstats`; the sea slugs' too, their
-genus-level photos counted at their genus): the photos in play as Coverage › Games counts them (`autosort.js` `fishCov`
+genus-level photos counted at their genus): the photos in play as Coverage › Games counts them (`autosort.js` `treeCov`
 over `fuData`: per family, genus and species), in the fish data's words (`SUBJECTS` `one`, `many`, `admin.obs`,
 `admin.origins`, the circles of `structure`):
 
@@ -473,8 +473,8 @@ recorded**.
     no photo count reaches, **Reason not recorded**;
   - a species not out whose family is in no circle in force, **Outside the circles** with "its family is in no circle in
     the draft" (the draft's Structure › None, `fuCircle`);
-  - a species in the game, by the photos in play the family pages count (`autosort.js` `fishCov`): **No photo in play**,
-    with the candidates waiting; **Under target**, with its observations in play against its target (`fishTarget`: it
+  - a species in the game, by the photos in play the family pages count (`autosort.js` `treeCov`): **No photo in play**,
+    with the candidates waiting; **Under target**, with its observations in play against its target (`treeTarget`: it
     still plays).
 - **The corals' genera** (`taxaGenera`): **Key only**, a genus `data.json` holds for the Coral ID Key that no game
   asks (`core.js` `gameOf`), and **No photo in play** for a game genus with nothing in play in any view (Coverage's `covOf`).

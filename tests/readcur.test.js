@@ -52,18 +52,18 @@ test('read_cur: the fields the auto-sort copied read the newer judgement; his ow
   assert.deepStrictEqual([out.tags.f1, out.ease.f1, 'f1' in out.crop], ['p1g1sl1', 4, false]);
   // f2: an add whose tags and ease were already his (the run wrote none of them): his stand
   assert.deepStrictEqual([out.tags.f2, out.ease.f2], ['p1g1sl1', 2]);
-  // fj: a juvenile by its source: the copy keeps the j flag as the auto-sort writes it (autosort.js fishCopy)
+  // fj: a juvenile by its source: the copy keeps the j flag as the auto-sort writes it (autosort.js treeCopy)
   assert.deepStrictEqual([out.tags.fj, out.ease.fj], ['p1g1sl1j', 4]);
   // He moved f1 with Not this and added it to its new species: the first species' judgement no longer reads on it.
-  const moved = A.fishAdd(A.fishNotThis(cur.fish, 'f1', 's2', 's1'), 'f1', 's2', null),
+  const moved = A.treeAdd(A.treeNotThis(cur.fish, 'f1', 's2', 's1'), 'f1', 's2', null),
     mv = readCur({fish: moved}, cand, {...sug, f1: {jt: 'p1g1slk', e: 4, k: 'best'}}, by('2026-11-19')).fish;
   assert.deepStrictEqual([mv.add.f1, mv.tags.f1, mv.ease.f1, 'f1' in (mv.seen || {})], ['s2', 'p1d1sl1', 2, false]);
-  // An edit of his takes the letter off (autosort.js fishOwn): his value stands.
+  // An edit of his takes the letter off (autosort.js treeOwn): his value stands.
   const mine = {
     fish: {
       ...cur.fish,
       ease: {...cur.fish.ease, f1: 1},
-      auto: {[old]: {...cur.fish.auto[old], f1: A.fishOwn(cur.fish, 'f1', 'ease').auto[old].f1}}
+      auto: {[old]: {...cur.fish.auto[old], f1: A.treeOwn(cur.fish, 'f1', 'ease').auto[old].f1}}
     }
   };
   assert.strictEqual(mine.fish.auto[old].f1, 'atc');
@@ -88,7 +88,7 @@ test('read_cur and the admin route back: a reject of the auto-sort a newer sure 
   assert.deepStrictEqual(Object.keys(out.seen).sort(), ['f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8']);
   assert.deepStrictEqual(readCur({fish: F}, cand, sug, by('2026-11-10')), {fish: F}, 'judged before the reject: nothing');
   // The admin's route back brings back the same photo, in his draft.
-  const R = A.fishRun({s1: cand.cand.s1}, sug, {}, F, '2026-11-20', true, () => '2026-11-19');
+  const R = A.treeRun({s1: cand.cand.s1}, sug, {}, F, '2026-11-20', true, () => '2026-11-19');
   assert.deepStrictEqual(Object.keys(R.F.auto['2026-11-20']), ['f1']);
   assert.ok(!('f1' in R.F.seen));
 });

@@ -3,7 +3,7 @@ require('./slot.js').testGuard();
 // text (a photographer's name, a logo) carries the judged flag w. Home skips it (home.js homeOk: the band, its tiles and
 // the Identify door's art); the games keep it as it is (no cap, no ease, no reference level, no order changes), so a
 // watermark is never a reason to leave play. The pass's w reaches tags the auto-sort copied into the curation, never the
-// tags the admin set by hand, so the admin's Watermark off is kept (autosort.js fishMarked, tools/fish_game.py marked);
+// tags the admin set by hand, so the admin's Watermark off is kept (autosort.js treeMarked, tools/fish_game.py marked);
 // a reference photo's tags and ease in the curation count too. tools/judging_fish.py watermark writes the flags of
 // judging/fish-watermark.json into each photo's single judgement. Offline: fixtures and the repository's own files.
 const test = require('node:test'),
@@ -28,9 +28,9 @@ const py = (code, ...args) =>
   );
 
 test('the code: w is a typed flag, in the order j c a w, before the tool-made p and r; the admin toggles it', () => {
-  assert.strictEqual(A.fishTag('p1g0sl1jpr', 'w'), 'p1g0sl1jwpr');
-  assert.strictEqual(A.fishTag('p1g0sl1jwpr', 'w'), 'p1g0sl1jpr', 'his tap takes it off');
-  assert.strictEqual(A.fishTag('p1g0sl1w', 0, 'o'), 'o1g0sl1w', 'a tag change keeps it (the code is valid)');
+  assert.strictEqual(A.treeTag('p1g0sl1jpr', 'w'), 'p1g0sl1jwpr');
+  assert.strictEqual(A.treeTag('p1g0sl1jwpr', 'w'), 'p1g0sl1jpr', 'his tap takes it off');
+  assert.strictEqual(A.treeTag('p1g0sl1w', 0, 'o'), 'o1g0sl1w', 'a tag change keeps it (the code is valid)');
   const out = py(`from fish_judge import with_flag, cap, CODE
 print(json.dumps([with_flag('p1g0sl15', 'w'), with_flag('p1g0sl1jc3', 'w'), with_flag('p1g0sl1w5', 'w'), cap('p1g0sl1jw5', True, 'fishbase'), bool(CODE.match('p1g0sl1wj5'))]))`);
   // A typed flag out of order still reads (the data holds aj and cj); with_flag writes the rubric's order.
@@ -39,7 +39,7 @@ print(json.dumps([with_flag('p1g0sl15', 'w'), with_flag('p1g0sl1jc3', 'w'), with
 
 test('games unchanged: w caps nothing and moves no ease, reference level, order, tile or sure decision', () => {
   const codes = ['p1g0sl1', 'p1g0sm1r', 'o1g1sl1', 'p1g0sl1j', 'h1g0sl1', 'p1g0sls'];
-  const addW = jt => A.fishTag(jt, 'w');
+  const addW = jt => A.treeTag(jt, 'w');
   for (const jt of codes)
     for (const e of [2, 4, 5]) {
       const p = {f: 'x', jt, e, rep: /r/.test(jt) ? 'inaturalist' : undefined},
@@ -47,7 +47,7 @@ test('games unchanged: w caps nothing and moves no ease, reference level, order,
       assert.strictEqual(C.refLevel(q), C.refLevel(p), `refLevel ${jt} ${e}`);
       assert.strictEqual(C.refScore(q.jt), C.refScore(p.jt), `refScore ${jt}`);
       const sure = x => JSON.stringify(x && x.tags ? {...x, tags: x.tags.replace('w', '')} : x);
-      assert.strictEqual(sure(A.fishSure({jt: q.jt, e, k: 'best'})), sure(A.fishSure({jt, e, k: 'best'})), `fishSure ${jt}`);
+      assert.strictEqual(sure(A.treeSure({jt: q.jt, e, k: 'best'})), sure(A.treeSure({jt, e, k: 'best'})), `treeSure ${jt}`);
     }
   const L = codes.map((jt, i) => ({f: 'p' + i, jt, e: 5 - (i % 3)})),
     W = L.map(p => ({...p, jt: addW(p.jt)}));
@@ -66,7 +66,7 @@ print(json.dumps([[G.tile_tags(c) == G.tile_tags(G.marked(c, c + 'w', True)), G.
   out.forEach((x, i) => assert.ok(Array.isArray(x) ? x.every(Boolean) : x, `case ${i}`));
 });
 
-// The auto-sort's copy of the pass's tags (log code with t) takes the pass's w; tags the admin set (t gone: fishOwn) stand.
+// The auto-sort's copy of the pass's tags (log code with t) takes the pass's w; tags the admin set (t gone: treeOwn) stand.
 const CASES = [
   // [his tags, the pass's jt, his log code, expected]
   ['p1g0sl1', 'p1g0sl1w', 'ate', 'p1g0sl1w'],
@@ -79,7 +79,7 @@ const CASES = [
 ];
 test('the pass’s w on the auto-sort’s copy only, the same in the admin and in tools/fish_game.py', () => {
   const Fof = ([mine, , code]) => ({tags: {x: mine}, ...(code ? {auto: {'2026-11-05': {x: code}}} : {})});
-  const js = CASES.map(c => A.fishTagsMine(Fof(c), 'x', c[1]));
+  const js = CASES.map(c => A.treeTagsMine(Fof(c), 'x', c[1]));
   assert.deepStrictEqual(
     js,
     CASES.map(c => c[3])
@@ -95,9 +95,9 @@ print(json.dumps(out))`,
     JSON.stringify(CASES)
   );
   assert.deepStrictEqual(pyOut, js, 'python agrees');
-  // The latest day's code wins (autosort.js fishIdx): an edit of his after the copy keeps his tags.
+  // The latest day's code wins (autosort.js treeIdx): an edit of his after the copy keeps his tags.
   const F = {tags: {x: 'p1g0sl1'}, auto: {'2026-11-05': {x: 'ate'}, '2026-11-09': {x: 'ae'}}};
-  assert.strictEqual(A.fishTagsMine(F, 'x', 'p1g0sl1w'), 'p1g0sl1');
+  assert.strictEqual(A.treeTagsMine(F, 'x', 'p1g0sl1w'), 'p1g0sl1');
   assert.deepStrictEqual(
     py(`import fish_game as G\nprint(json.dumps(sorted(G.tags_auto(json.loads(sys.argv[1])))))`, JSON.stringify(F)),
     []
@@ -105,7 +105,7 @@ print(json.dumps(out))`,
   // A photo the auto-sort brought back (log b, Q438) carries its copy as an add does; a Check is never a b.
   const B = {tags: {x: 'p1g0sl1', y: 'p1g0sl1'}, auto: {'2026-11-12': {x: 'r', y: 'r'}, '2026-11-20': {x: 'btec', y: '?bt'}}};
   assert.deepStrictEqual(
-    ['x', 'y'].map(f => A.fishTagsAuto(B, f)),
+    ['x', 'y'].map(f => A.treeTagsAuto(B, f)),
     [true, false]
   );
   assert.deepStrictEqual(py(`import fish_game as G\nprint(json.dumps(sorted(G.tags_auto(json.loads(sys.argv[1])))))`, JSON.stringify(B)), [

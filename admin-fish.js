@@ -7,19 +7,19 @@
 // candidate file one at a time, with what the tree subjects' curation needs: the thinnest species first, stopping at each species' target, the pass's
 // judgment (data/suggest.json "fish", the judging/FISH.md rubric) and the fish auto-sort's Checks shown blind, the species'
 // photos in play beside the card (most of them the auto-sort's proposals, which the admin can take out of play), the
-// auto-sort's agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js fishAdd,
-// fishReject, fishExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
+// auto-sort's agreement and decisions (each undoable) below it. Every click goes into DRAFT[TK] (autosort.js treeAdd,
+// treeReject, treeExclude: pure, tested in tests/fishcand.test.js), one Undo step each, sent by Publish.
 //
 // On the same card: the rubric's tags as rows (ease always, the phase for an entry whose phases differ, the seven tags
 // and the juvenile and camouflage flags behind Tags), the crop, and Not this → another species or none (the admin's
-// click only, curation.json fish out: autosort.js fishNotThis), the missing phases first (fishQueue nph). His values
+// click only, curation.json fish out: autosort.js treeNotThis), the missing phases first (treeQueue nph). His values
 // are pressed; the pass's show dashed until he confirms or changes them (never on a Check: blind).
 
 let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the queue shown: every candidate, or the Checks only
   FTAGS_OPEN = store.get('reefid-admin-ftags', false) === true; // the tag rows unfolded (this browser)
 // The species records the default covers read their presence around the instance's centre from (autosort.js
-// fishCoverOf, fishSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
-fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
+// treeCoverOf, treeSeenFrom): fish.json's, once admin.js fishLoad has them (FISHC).
+treeSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not the admin's. An option may carry
 // its tooltip ([value, label, title]). wrap: a row of long labels (the phase words) that wraps, never clips nor widens its tile.
 const fRow = (name, at, opts, v, auto, wrap = false) =>
@@ -30,9 +30,9 @@ const fRow = (name, at, opts, v, auto, wrap = false) =>
     )
     .join('')}</span>`;
 // Pierre's values on a photo (the draft's fish part) and the pass's (j), for the rows: {mine, pass} per field.
-// His tags with the pass's watermark flag where they are the auto-sort's copy (autosort.js fishTagsMine).
+// His tags with the pass's watermark flag where they are the auto-sort's copy (autosort.js treeTagsMine).
 const fVals = (F, f, j) => ({
-  tags: {mine: fishTagsMine(F, f, j && j.jt), pass: j && j.jt},
+  tags: {mine: treeTagsMine(F, f, j && j.jt), pass: j && j.jt},
   ease: {mine: (F.ease || {})[f], pass: j && j.e},
   phase: {mine: f in (F.phase || {}) ? F.phase[f] : undefined, pass: (j && j.ph) || ''}
 });
@@ -78,17 +78,17 @@ function fishNotThisSel(sid, from) {
   return `<select data-fnot aria-label="Not this species"><option value="">Not this</option>${from ? `<option value="${esc(from)}">Back to ${esc(nm(from))}</option>` : ''}<option value="x">No game species</option>${same.length ? `<optgroup label="${esc(E.name)}">${same.map(id => `<option value="${esc(id)}">${esc(nm(id))}</option>`).join('')}</optgroup>` : ''}<optgroup label="Another species">${rest.map(id => `<option value="${esc(id)}">${esc(nm(id))}</option>`).join('')}</optgroup></select>`;
 }
 // The rows' clicks in scope S on photo f (the card's, a photo tile's): each one the admin's value through edit(fn, what), one
-// Undo step (autosort.js fishSet, fishTag: through fishOwn); base(): the code a tag changes (his, else the pass's). what:
+// Undo step (autosort.js treePhotoSet, treeTag: through treeOwn); base(): the code a tag changes (his, else the pass's). what:
 // {pos, v} of a tag row (pos 0-6), so a tile can act on the count it sets (admin.js bindFishTiles).
 function bindFishRows(S, f, base, edit) {
-  S.querySelectorAll('[data-fe]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'ease', +b.dataset.fe))));
-  S.querySelectorAll('[data-fph]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'phase', b.dataset.fph))));
+  S.querySelectorAll('[data-fe]').forEach(b => (b.onclick = () => edit(G => treePhotoSet(G, f, 'ease', +b.dataset.fe))));
+  S.querySelectorAll('[data-fph]').forEach(b => (b.onclick = () => edit(G => treePhotoSet(G, f, 'phase', b.dataset.fph))));
   S.querySelectorAll('[data-ft]').forEach(
     b =>
       (b.onclick = () =>
-        edit(G => fishSet(G, f, 'tags', fishTag(base(), +b.dataset.ft, b.dataset.fv)), {pos: +b.dataset.ft, v: b.dataset.fv}))
+        edit(G => treePhotoSet(G, f, 'tags', treeTag(base(), +b.dataset.ft, b.dataset.fv)), {pos: +b.dataset.ft, v: b.dataset.fv}))
   );
-  S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'tags', fishTag(base(), b.dataset.ff2)))));
+  S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => edit(G => treePhotoSet(G, f, 'tags', treeTag(base(), b.dataset.ff2)))));
 }
 // The crop editor of the corals (admin.js cropEditor) on a fish photo: the admin's crop, else start (the pass's suggestion, or
 // a photo's published crop); Full photo over a suggested crop (sug) is kept as an explicit no-crop. His rotation (fish
@@ -98,7 +98,7 @@ const fishCrop = (p, start, sug, edit) =>
     start: (readView(DRAFT[TK] || {}).crop || {})[p.f] || start || null,
     rot: fishRot(p.f),
     save: (v, full, ro) =>
-      edit(G => fishSet(fishSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
+      edit(G => treePhotoSet(treePhotoSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
   });
 const FKEEP = {best: 'best photo of its observation', alt: 'another angle of its observation', dup: 'near-duplicate'};
 // The pass's judgment above the card (never on a Check: blind), its ease as a chip (the prior the game starts from).
@@ -107,7 +107,7 @@ const fishJudged = j =>
     ? '<p class="adm-judge">Not judged yet</p>'
     : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (data/suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', tagText(j.jt, FISHS, true), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
 // A fish photo with its crop: the admin's (draft), else, outside a Check, the pass's, or for a record with no judgment (a
-// photo fishGameIn put in play from fish-game.json: a sure candidate, a reference photo) its published crop (cr, the one
+// photo treeGameIn put in play from fish-game.json: a sure candidate, a reference photo) its published crop (cr, the one
 // tools/fish_game.py baked in); and his rotation (fish rot). Through admin.js crSrc, as the family pages (fuP): a
 // candidate (remote) gets both drawn on its original; a photo in play from fish-game.json, whose R2 file has its
 // published crop and rotation baked in (cr, ro), is shown as it is while the draft keeps them, else from its original
@@ -130,7 +130,7 @@ const fishName = sid => {
     g = !FISHC.species[sid] && (FISHC.genera || {})[sid];
   return g ? {sci: g.name + ' sp.', sub: 'genus level'} : {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
 };
-// The records the queue reads its targets from (autosort.js fishQueue, fishTarget): the species', and for a subject with
+// The records the queue reads its targets from (autosort.js treeQueue, treeTarget): the species', and for a subject with
 // a target of its own (core.js SUBJECTS admin target) its genera's too, a genus-level list filling up to the same target.
 const candSpecies = () =>
   FISHS && FISHS.admin.target > 0
@@ -144,12 +144,12 @@ const fishInPlay = (F, sid) => {
       .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG[TK] || {})[f]}) || {f}),
     seen = new Set(L.map(p => treePid(p.f)));
   // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
-  fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(treePid(p.f)) && seen.add(treePid(p.f)) && L.push(p));
+  treeGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(treePid(p.f)) && seen.add(treePid(p.f)) && L.push(p));
   return L;
 };
 // One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (the admin's ✕
 // Reject on it: off the species, a correction when the auto-sort had proposed it; it stays a candidate). A photo leaving play
-// here or on the card (Reject, Remove, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
+// here or on the card (Reject, Remove, Not this) leaves the covers and featured photos it was too (autosort.js treeDrop), as on Families.
 function fishZoom(p, sid, inPlay, blind) {
   const lb = $('lightbox'),
     n = fishName(sid),
@@ -168,7 +168,7 @@ function fishZoom(p, sid, inPlay, blind) {
   if (o)
     o.onclick = () => {
       close();
-      fishEdit(F => fishReject(fishDrop(F, fishFamOf(sid), p.f), p.f));
+      fishEdit(F => treeReject(treeDrop(F, fishFamOf(sid), p.f), p.f));
       toast(`Out of play: ${n.sci}. Undo (Ctrl+Z) brings it back.`);
     };
   lbFull(lb);
@@ -186,16 +186,16 @@ function fishEdit(fn) {
 }
 // The fish auto-sort's line (above the card, folded behind the Auto chip as the corals': admin.js autoChip; chip: the
 // chip alone) and its details (below it): its decisions in and set aside, the Checks waiting, its keep agreement with
-// the admin (autosort.js fishCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
+// the admin (autosort.js treeCompare, autoState: off under 90% over the last 40), and in the details the disagreements and
 // every decision still standing (in, back in: a photo it had set aside, brought back by a newer judgement; set aside),
 // each with Undo (fishAutoUndo; rule A1).
 function fishAutoBlock(det, chip) {
   const F = DRAFT[TK] || {},
-    I = Object.entries(fishIdx(F)),
+    I = Object.entries(treeIdx(F)),
     FA = I.filter(([, x]) => !x.d.check && !x.d.undone),
     nIn = FA.filter(([, x]) => x.d.kind !== 'r').length,
-    nChk = I.filter(([f, x]) => x.d.check && !fishMine(F, f)).length,
-    CMP = fishCompare(F),
+    nChk = I.filter(([f, x]) => x.d.check && !treeKeepOf(F, f)).length,
+    CMP = treeCompare(F),
     K = autoState(CMP).keep;
   if (!I.length) return '';
   if (chip) return autoChip(!K.on);
@@ -258,14 +258,14 @@ function bindFishAuto(scope) {
 }
 // cand tree: begin
 // The tree subjects' builder of the Candidates swiper (admin.js renderCand, CAND_BUILD: its members are listed there): the
-// subject's candidates through autosort.js fishQueue, a species' (or a genus-level list's) target the unit of the cap, the
+// subject's candidates through autosort.js treeQueue, a species' (or a genus-level list's) target the unit of the cap, the
 // pass's judgment and the rubric's rows, the species' photos in play beside the card, Not this → another species.
 CAND_BUILD.tree = (() => {
   // After his answer to a Check: what the auto-sort had said ('' for any other card).
   const toldMsg = c => {
-      const x = c.chk && fishIdx(DRAFT[TK])[c.p.f];
+      const x = c.chk && treeIdx(DRAFT[TK])[c.p.f];
       return x
-        ? `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (fishMine(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
+        ? `Check: the auto-sort said ${x.d.kind === 'a' ? 'in' : 'out'}${(x.d.kind === 'a') === (treeKeepOf(DRAFT[TK], c.p.f) === 'add') ? ' (same)' : ' (differs)'}.`
         : '';
     },
     told = c => {
@@ -287,7 +287,7 @@ CAND_BUILD.tree = (() => {
     queue(S) {
       const F = DRAFT[TK] || {},
         SF = (SUG && SUG[TK]) || {},
-        Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+        Q0 = treeQueue(FISHC.cand, SF, candSpecies(), F, treeGameIn(FISHC.plays, {...DRAFT, fish: F})),
         chks = Q0.filter(x => x.chk),
         // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
         // (Checks chosen on one subject must not leave another an empty queue with no switch)
@@ -306,7 +306,7 @@ CAND_BUILD.tree = (() => {
         : `<span class="adm-chip" title="Every candidate, the thinnest species first">${Q.Q0.filter(shown).length} to sort</span>`,
       full: [
         'at target',
-        `of species at their target (${Q.S.admin.target > 0 ? `${Q.S.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`})`
+        `of species at their target (${Q.S.admin.target > 0 ? `${Q.S.admin.target} observations` : `${TREET.obs} observations, ${TREET.top} for the cheatsheet's, ${TREET.wink} for the surprise cards'`})`
       ],
       aside: 'the pass is sure go (near-duplicate, subject not obvious, out of the water or a screen, an egg mass), not applied',
       judge: `Ask your agent for the ${esc(Q.S.what.toLowerCase())} candidate pass (judging/)`
@@ -319,7 +319,7 @@ CAND_BUILD.tree = (() => {
         n = fishName(sid),
         play = fishInPlay(F, sid),
         inObs = new Set(play.map(q => q.o || q.f)).size,
-        s = chk ? null : fishSure(j),
+        s = chk ? null : treeSure(j),
         link = /^https?:/.test(p.o || '')
           ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="${p.via === 'fishbase' ? 'FishBase' : 'iNaturalist'}">${p.via === 'fishbase' ? 'FishBase' : 'iNat'} ↗</a>`
           : '';
@@ -346,12 +346,12 @@ CAND_BUILD.tree = (() => {
     },
     add(Q, c) {
       const {p, sid, chk, j} = c;
-      fishEdit(G => fishAdd(G, p.f, sid, j, p));
+      fishEdit(G => treeAdd(G, p.f, sid, j, p));
       if (!chk) toast(`Added: ${fishName(sid).sci} (${new Set(fishInPlay(DRAFT[TK], sid).map(q => q.o || q.f)).size}/${c.target}).`);
       told(c);
     },
     reject(Q, c) {
-      fishEdit(G => fishReject(fishDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
+      fishEdit(G => treeReject(treeDrop(G, fishFamOf(c.sid), c.p.f), c.p.f));
       told(c);
     },
     // The card's × is the one Remove of every photo tile (admin.js treeRemove): out for good, Undo in its toast, beside a
@@ -369,8 +369,8 @@ CAND_BUILD.tree = (() => {
           sw = scope.querySelector('.adm-sw'),
           st = cst(Q.S),
           play = fishInPlay(Q.F, sid);
-        // The rows: each click the admin's value, one Undo step (autosort.js fishSet, fishTag: through fishOwn).
-        bindFishRows(sw, f, () => fishTagsMine(readView(DRAFT[TK] || {}), f, j && j.jt) || (!chk && j && j.jt) || '', pin(Q, c));
+        // The rows: each click the admin's value, one Undo step (autosort.js treePhotoSet, treeTag: through treeOwn).
+        bindFishRows(sw, f, () => treeTagsMine(readView(DRAFT[TK] || {}), f, j && j.jt) || (!chk && j && j.jt) || '', pin(Q, c));
         sw.querySelector('[data-ftags]').onclick = () => {
           FTAGS_OPEN = !FTAGS_OPEN;
           store.set('reefid-admin-ftags', FTAGS_OPEN);
@@ -381,7 +381,7 @@ CAND_BUILD.tree = (() => {
           if (!to) return;
           st.skip.delete(f);
           st.pin = null;
-          fishEdit(G => fishNotThis(fishDrop(G, fishFamOf(sid), f), f, to, from || sid));
+          fishEdit(G => treeNotThis(treeDrop(G, fishFamOf(sid), f), f, to, from || sid));
           toast(
             to === 'x'
               ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.'

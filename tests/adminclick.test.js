@@ -36,18 +36,18 @@ test('the fish edits the admin runs leave the fish part they are given as it was
     sid = (F.add || {})[f],
     tid = Object.keys(F.genera || {})[0],
     out = [
-      A.fishReject(F, f),
-      A.fishExclude(F, f),
-      A.fishNotThis(F, f, 's999', sid),
-      A.fishSet(F, f, 'ease', 3),
-      A.fishSet(F, f, 'tags', A.fishTag((F.tags || {})[f] || 'p1g1sm1', 'j')),
-      A.fishSet(F, f, 'phase', 'juvenile'),
-      A.fishAdd(F, 'fish-s001-cand-1', 's001', {e: 4}, {f: 'fish-s001-cand-1'}),
-      A.fishCover(F, tid, f),
-      A.fishOk(F, tid),
-      A.fishDrop(F, tid, (F.genera[tid] || {}).cover),
-      A.fishMontSet(F, 'f:A|f:B', {v: 'adult'}),
-      A.fishUndo(F, f, sid)
+      A.treeReject(F, f),
+      A.treeExclude(F, f),
+      A.treeNotThis(F, f, 's999', sid),
+      A.treePhotoSet(F, f, 'ease', 3),
+      A.treePhotoSet(F, f, 'tags', A.treeTag((F.tags || {})[f] || 'p1g1sm1', 'j')),
+      A.treePhotoSet(F, f, 'phase', 'juvenile'),
+      A.treeAdd(F, 'fish-s001-cand-1', 's001', {e: 4}, {f: 'fish-s001-cand-1'}),
+      A.treeCover(F, tid, f),
+      A.treeOk(F, tid),
+      A.treeDrop(F, tid, (F.genera[tid] || {}).cover),
+      A.treeMontSet(F, 'f:A|f:B', {v: 'adult'}),
+      A.treeUndo(F, f, sid)
     ];
   assert.strictEqual(JSON.stringify(F), before, 'an edit wrote into its input');
   out.forEach((x, i) => assert.ok(x && x !== F, `edit ${i}: a new fish part`));
