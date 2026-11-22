@@ -181,7 +181,9 @@ and reports every failing one. Locally, run what your change can break, once:
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
   `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|overlays|rest|more` is the group CI runs
-  on one runner (`fish.smoke.js`: `main|fresh`, `fresh` the brand-new fish players). Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
+  on one runner. For `fish.smoke.js`, `SMOKE_PART=main` runs games, sync and load order, and `SMOKE_PART=fresh` runs the
+  brand-new players, quiz, beta access and Memory. Use `SMOKE_ONLY=quiz,access` to run just those two parts.
+  Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
 - **One Playwright run at a time per 2 cores**: every smoke and every Playwright tool (`tools/learnsim.js`,
   `tools/perf.js`, `tools/rtprep.js`, `tools/og/make_og.js`) takes a slot from `tests/slot.js` before it starts
   Chromium, waits while the machine's load is above twice its core count (rule W24), and gives the slot back when it ends
