@@ -1,6 +1,7 @@
 # Status
 
-Integrator handoff, rewritten at each stop. Follow [Project Home][home] for work and decisions.
+Only the integrator updates this handoff, rewriting it at each stop. Subagents report their updates to the
+integrator. Follow [Project Home][home] for work and decisions.
 Use `python3 tools/brief.py --short` for current GitHub and sheet version signals.
 Search [ANSWERS.md](ANSWERS.md) for historical evidence and use git and PRs for what shipped.
 

@@ -519,7 +519,7 @@ def tracker_line():
     return 'Start: Project Home %s · Drive Reef_ID %s · views Now/Next/Decisions/Waiting' % tuple(links)
 
 
-# --- What loads here, and the agents launched today (the rules core trial; AGENTS.md "The right model and effort") -----
+# --- What loads here and the agents launched today (the rules core trial; docs/INTEGRATOR.md "Working with Pierre") ---
 # Agents load this checkout's CLAUDE.md, AGENTS.md and .claude/, not origin/main's: a stale or changed copy is said in
 # one line (the proposal's G13). tools/agent_guard.py logs every Agent launch in the git common dir; the brief counts
 # today's (Manila) by model and effort. Counts only: a launch's description is never printed.

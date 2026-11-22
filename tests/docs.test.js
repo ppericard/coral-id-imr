@@ -610,7 +610,7 @@ test('the decisions index is what tools/decisions_index.py writes from the recor
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
 });
 
-// Every answer reaches its doc (AGENTS.md "Every answer reaches its doc, and the answers ledger"): each ledger entry from
+// Every answer reaches its doc (AGENTS.md "Working with Pierre"): each ledger entry from
 // 2026-11-19 names where it is applied, and no ROADMAP or reviews index status waits on an answered question.
 test('every answer in the ledger names its doc, and nothing answered is cited as waiting (tools/answers_check.py)', () => {
   const {spawnSync} = require('child_process');

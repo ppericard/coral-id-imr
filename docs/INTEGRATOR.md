@@ -247,7 +247,7 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   push, `@codex review`, wait for green and Codex, then send it in a train, alone or as that train's one Code.gs PR. A PR built under
   the old rule (its own VERSION bump) passes the check only if its number is still main+1 and HISTORY.md holds its entry on top:
   otherwise move its entry into a changes file and restore main's VERSION, line 1 and HISTORY.md. Rules versions (RVS)
-  run with no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
+  run with no gap. Use `python3 tools/brief.py` for the main and live versions, and for PRs in flight.
 - **The merge train** (rule W26; Pierre, 2026-11-08, Q305 b; every PR, 2026-11-16): when a PR is ready on its own head
   (green, Codex-clean, threads resolved, "Choices I made" empty, no `needs-pierre`), run `python3 tools/train.py
   --dry-run N` (several PRs ready at once: `N1 N2 …`, in merge order; it checks each PR and builds the train locally),
@@ -413,8 +413,9 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 - **Pierre never enters tickets**, relays a subagent's result or approves ordinary bookkeeping. Subagents report; the
   integrator updates Linear, unless the brief tells the subagent to.
 - **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in
-  the chat in French (AGENTS.md "Questions to Pierre"); the issue holds its context. Blocked, Study, Idea, Waiting,
-  Parked as named. **Scheduled** (Pierre, 2026-11-22; [decision](decisions/2026-11-22-scheduled-tasks.md)): a task
+  the chat in French ([AGENTS.md, Working with Pierre](../AGENTS.md#working-with-pierre)). The issue holds its context.
+  Blocked, Study, Idea, Waiting and Parked as named. **Scheduled** (Pierre, 2026-11-22;
+  [decision](decisions/2026-11-22-scheduled-tasks.md)): a task
   that only needs to come back on a date or a named trigger goes to Backlog with this label, its due date (or its
   trigger in the description's "Comes back" line); it stays out of every list, report, STATUS and question to Pierre
   until then. The integrator checks Scheduled issues at each session start and brings one back to Todo, telling Pierre

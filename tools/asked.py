@@ -9,9 +9,9 @@ Searched, in this order: docs/ANSWERS.md (the ledger), AGENTS.md, docs/rules/*.m
 the index README.md is left out: its rows repeat the records' titles). A hit is one entry: a ledger bullet with its
 wrapped lines, a paragraph, a bullet, a table row or a heading, printed with its file:line and the heading above it.
 A hit is an evidence match, not a current instruction: the reader checks its scope, the later entries that amend it
-and whether it still applies (AGENTS.md "Every answer reaches its doc"); this tool only finds, it never decides. The
-last line, "searched: … — N hits", goes under the question to Pierre (docs/INTEGRATOR.md "Habits"): it says what was
-searched and that nothing settled it. Also searched: docs/ANSWERS.md on the branch of every open PR (gh lists
+and whether it still applies (AGENTS.md "Working with Pierre"); this tool only finds, it never decides. The
+last line, "searched: … — N hits", goes under the question to Pierre (docs/INTEGRATOR.md "Questions and corrections").
+It says what was searched. Also searched: docs/ANSWERS.md on the branch of every open PR (gh lists
 them, git fetches the refs; an answer is often on a PR not merged yet), a hit naming its PR. Without network that is
 skipped with a one-line note (--no-prs skips it). Standard library only; exit 0 whatever the count.
 """

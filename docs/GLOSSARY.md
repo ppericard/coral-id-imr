@@ -85,8 +85,8 @@ each is listed. Rule IDs (C3, D4…) are in [the rules index](rules/README.md#th
 
 ## Working here
 
-- **Integrator**: the main agent of a session. It starts subagents, checks their work and merges (AGENTS.md "Working
-  mode").
+- **Integrator**: the main agent of the integration session. It starts subagents, checks their work and merges
+  (AGENTS.md "Working mode").
 - **Merge contract**: the conditions under which the integrator merges a PR on its own (AGENTS.md "Working mode").
 - **Merge train**: a temporary branch that holds `main` plus the ready PRs; the checks run on it once and the PRs merge
   from it (rule W26, `tools/train.py`).
