@@ -212,7 +212,7 @@ test('nightq skips a PR with unanswered head findings and passes the queue repos
   assert.match(p, /gh api --paginate "\$R\/pulls\/\$n\/comments\?per_page=100"/);
   assert.match(p, /unanswered@head: \$\{un:-\?\}/);
   // fails closed: a page, the threads or the head's date that could not be read leaves "?", which nightq.sh skips
-  assert.strictEqual((p.match(/\|\| ok=0/g) || []).length, 5);
+  assert.strictEqual((p.match(/\|\| (\{ )?ok=0/g) || []).length, 5);
   assert.match(p, /un="\?"\n\s*if \[ \$ok = 1 \]/);
 });
 
@@ -273,4 +273,180 @@ test('the assignver commit names no session', () => {
   const t = fs.readFileSync(path.join(DIR, 'assignver.sh'), 'utf8');
   assert.doesNotMatch(t, /Claude-Session: https|Co-Authored-By: Claude/);
   assert.match(t, /QUEUE_TRAILERS/);
+});
+
+// ---- Codex's security review on the head (REE-232) ----
+// Codex's summary comment, as the API returns it: two hidden markers with the review's state as JSON.
+const SHA = '33f0556dbc1a3bb0125730d2c02b3c6fa4925c10',
+  OTHER = '00956cfd4f53c53d42120597ec84ea5962a4a6b2',
+  CODEX = {login: 'chatgpt-codex-connector[bot]', type: 'Bot'};
+const summary = (sha, status, {state = status, stateSha = sha, unresolved = null, escape = false} = {}) => {
+  let s =
+    '<!-- codex-pull-request-review-summary -->\n' +
+    `<!-- codex-review-state:v1 ${JSON.stringify({
+      code_review: {commit_sha: sha, has_any_findings: false, has_unresolved_findings: false, status: 'completed'},
+      security_review: {commit_sha: stateSha, has_any_findings: unresolved, has_unresolved_findings: unresolved, status: state}
+    })} -->\n` +
+    `<!-- codex-security-review:v1 ${JSON.stringify({blockingSeverityThreshold: 'P0', headSha: sha, status, pullRequestNumber: 1})} -->\n` +
+    '<details><summary><strong>Codex Review Summary</strong></summary>\n| 🔒 **Security Review** | ✅ **Completed** |\n</details>';
+  if (escape) s = s.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
+  return s;
+};
+const secreview = (comments, sha = SHA, raw = null) =>
+  tmp(d => {
+    const f = path.join(d, 'issue.json');
+    fs.writeFileSync(f, raw !== null ? raw : comments.map(p => JSON.stringify(p)).join('\n')); // gh --paginate pages
+    const r = spawnSync('python3', ['-I', path.join(DIR, 'secreview.py'), sha, f], {encoding: 'utf8'});
+    assert.strictEqual(r.status, 0, r.stderr);
+    return r.stdout.trim();
+  });
+const c = (body, user = CODEX, at = '2026-11-22T09:10:29Z') => ({user, body, updated_at: at, created_at: at});
+const receipt = c(`Codex Review: Didn't find any major issues.\n\n**Reviewed commit:** \`${SHA.slice(0, 10)}\``);
+
+test('secreview: only a completed security review of the exact full head is "completed" (REE-232)', () => {
+  assert.strictEqual(secreview([[receipt, c(summary(SHA, 'completed'))]]), `completed ${SHA}`);
+  // the markers escaped as HTML entities read the same
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed', {escape: true}))]]), `completed ${SHA}`);
+  // on a second page, and the latest state wins when the summary was written twice
+  assert.strictEqual(
+    secreview([[c(summary(SHA, 'running'), CODEX, '2026-11-22T09:07:46Z')], [c(summary(SHA, 'completed'), CODEX, '2026-11-22T09:10:29Z')]]),
+    `completed ${SHA}`
+  );
+});
+
+test('secreview: running, absent, another commit, failed or with findings is not ready (REE-232)', () => {
+  assert.strictEqual(secreview([[receipt, c(summary(SHA, 'running'))]]), `running ${SHA}`);
+  assert.strictEqual(secreview([[c(summary(SHA, 'queued'))]]), `running ${SHA}`);
+  // the code review's clean receipt alone says nothing about the security review
+  assert.strictEqual(secreview([[receipt]]), `absent ${SHA}`);
+  assert.strictEqual(secreview([[]]), `absent ${SHA}`);
+  // a completed review of an older head is not this head's
+  assert.strictEqual(secreview([[c(summary(OTHER, 'completed'))]]), `stale ${SHA}`);
+  // a short SHA prefix is never enough, either way
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed'))]], SHA.slice(0, 10)), `? ${SHA.slice(0, 10)}`);
+  assert.strictEqual(secreview([[c(summary(SHA, 'failed'))]]), `failed:failed ${SHA}`);
+  assert.strictEqual(secreview([[c(summary(SHA, 'cancelled'))]]), `failed:cancelled ${SHA}`);
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed', {unresolved: true}))]]), `findings ${SHA}`);
+});
+
+test('secreview: "completed" needs both markers, well formed (REE-232, Codex review of #1466)', () => {
+  const lines = s => s.split('\n');
+  const only = (s, name) =>
+    lines(s)
+      .filter(l => !l.includes(name))
+      .join('\n');
+  // the security marker alone says completed: the unresolved findings and the agreement cannot be checked
+  assert.strictEqual(secreview([[c(only(summary(SHA, 'completed'), 'codex-review-state:v1'))]]), `? ${SHA}`);
+  assert.strictEqual(secreview([[c(only(summary(SHA, 'completed'), 'codex-security-review:v1'))]]), `? ${SHA}`);
+  // one marker alone may still say a review is under way
+  assert.strictEqual(secreview([[c(only(summary(SHA, 'running'), 'codex-review-state:v1'))]]), `running ${SHA}`);
+  // a state marker that is named but malformed (no JSON object) is never skipped
+  const broken = summary(SHA, 'completed').replace(
+    /<!-- codex-review-state:v1 \{.*\} -->/,
+    '<!-- codex-review-state:v1 {"security_review": -->'
+  );
+  assert.strictEqual(secreview([[c(broken)]]), `? ${SHA}`);
+  // #1466 itself: a code review under way and no security review at all (its state all null, no security marker)
+  const codeOnly = `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify({
+    code_review: {commit_sha: SHA, has_any_findings: null, has_unresolved_findings: null, status: 'running'},
+    security_review: {commit_sha: null, has_any_findings: null, has_unresolved_findings: null, status: null}
+  })} -->\n| 📝 **Code Review** | 🔄 **Running** |`;
+  assert.strictEqual(secreview([[c(codeOnly)]]), `absent ${SHA}`);
+});
+
+test("secreview: markers that are not the Codex bot's, or that cannot be read, never pass (REE-232)", () => {
+  // a person, or another bot, quoting a completed summary
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed'), {login: 'someone', type: 'User'})]]), `absent ${SHA}`);
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed'), {login: 'chatgpt-codex-connector[bot]', type: 'User'})]]), `absent ${SHA}`);
+  // the two markers disagree on the status or on the commit
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed', {state: 'running'}))]]), `? ${SHA}`);
+  assert.strictEqual(secreview([[c(summary(SHA, 'completed', {stateSha: OTHER}))]]), `? ${SHA}`);
+  // a marker whose JSON does not parse, or a file that does not
+  assert.strictEqual(
+    secreview([[c(summary(SHA, 'completed').replace('"status":"completed","pull', '"status":completed,"pull'))]]),
+    `? ${SHA}`
+  );
+  assert.strictEqual(secreview(null, SHA, '[{"user": '), `? ${SHA}`);
+  // a missing file
+  const r = spawnSync('python3', ['-I', path.join(DIR, 'secreview.py'), SHA, path.join(os.tmpdir(), 'no-such-queue-file.json')], {
+    encoding: 'utf8'
+  });
+  assert.strictEqual(r.stdout.trim(), `? ${SHA}`);
+});
+
+test('nightq trains only on a completed security review read for the very head it trains (REE-232)', () => {
+  const t = read('nightq.sh');
+  const gate = t.indexOf('case "$sec" in "completed "*) ;; *) log "#$n: SKIPPED (Codex security review not completed on the head');
+  assert.ok(gate > 0, 'the gate');
+  assert.ok(gate < t.indexOf('python3 tools/train.py'));
+  // the wait loop does not stop on a security review still running, absent or unreadable
+  assert.match(t, /case "\$\{sec%% \*\}" in completed\|findings\|failed:\*\) secdone=1;; \*\) secdone=0;; esac/);
+  assert.match(t, /\[ "\$codex" != "summary" \] && \[ \$secdone = 1 \]; then break; fi/);
+  // the full head SHA, not the line's short one
+  assert.match(t, /if \[ "\$cur" != "\$secsha" \]; then log "#\$n: SKIPPED \(the security review read is not for head/);
+  assert.ok(t.indexOf('"$cur" != "$secsha"') < t.indexOf('python3 tools/train.py'));
+  // Codex reviews security by itself only when a PR opens or a draft is marked ready ("@codex security review" started a
+  // code review on #1466): a later head with none is turned to draft and back to ready, once per head
+  assert.match(
+    t,
+    /case "\$\{sec%% \*\}" in stale\|absent\)\n\s*if \[ "\$pend" = "0" \] && \[ "\$asked" != "\$\{sec#\* \}" \]; then\n\s*asked=\$\{sec#\* \}\n\s*ask_security "\$n"/
+  );
+  assert.ok(t.indexOf('asked=""') < t.indexOf('while [ $i -lt 60 ]'), 'reset for each PR');
+  assert.doesNotMatch(t, /codex-security\.md|comments -[fF] body="?@codex security review/);
+  // a draft is never marked ready by the queue: drafts are skipped before anything else
+  assert.match(
+    t,
+    /if \[ "\$\(gh api \$R\/pulls\/\$n --jq \.draft\)" != "false" \]; then log "#\$n: draft \(or unreadable\), skipped"; continue; fi/
+  );
+  assert.ok(t.indexOf('--jq .draft)" != "false"') < t.indexOf('bash "$Q/uptodate.sh"'));
+  // prstate gives the field, "?" when the comments could not be read
+  const p = read('prstate.sh');
+  assert.match(p, /\| security@head: \$\{sec:-\? \$sha\} \|/);
+  assert.match(p, /sec="\? \$sha"\n\s*if \[ \$iok = 1 \]; then sec=\$\(python3 -I "\$Q\/secreview\.py" "\$sha" "\$d\/issue\.json"/);
+});
+
+test('ask_security: draft then ready through the CCR routes, a PR left a draft said loudly (REE-232)', () => {
+  const t = read('nightq.sh');
+  const fn = t.match(/^ask_security\(\) \{\n[\s\S]*?\n\}$/m)[0];
+  // a stand-in gh: logs each call, and refuses the routes named in FAIL
+  const run = fail =>
+    tmp(d => {
+      const bin = path.join(d, 'bin');
+      fs.mkdirSync(bin);
+      fs.writeFileSync(
+        path.join(bin, 'gh'),
+        '#!/bin/bash\necho "$*" >> "$CALLS"\nfor f in $FAIL; do case "$*" in *"$f"*) exit 1;; esac; done\necho \'{"draft":false}\'\n',
+        {mode: 0o755}
+      );
+      const calls = path.join(d, 'calls');
+      const r = spawnSync('bash', ['-c', `R=repos/o/r\nlog() { echo "LOG $*"; }\n${fn}\nask_security 7; echo "rc=$?"`], {
+        encoding: 'utf8',
+        env: {...process.env, PATH: `${bin}:${process.env.PATH}`, CALLS: calls, FAIL: fail}
+      });
+      return {out: r.stdout.trim(), calls: fs.existsSync(calls) ? fs.readFileSync(calls, 'utf8').trim().split('\n') : []};
+    });
+  let r = run('');
+  assert.deepStrictEqual(r.calls, [
+    'api -X POST repos/o/r/pulls/7/ccr/convert_to_draft',
+    'api -X POST repos/o/r/pulls/7/ccr/ready_for_review'
+  ]);
+  assert.strictEqual(r.out, 'rc=0');
+  // converting refused: nothing else is tried
+  r = run('convert_to_draft');
+  assert.strictEqual(r.calls.length, 1);
+  assert.strictEqual(r.out, 'rc=1');
+  // ready refused twice: the PR is left a draft and the log says so
+  r = run('ready_for_review');
+  assert.strictEqual(r.calls.length, 3);
+  assert.match(r.out, /LOG #7: left as a draft \(ready_for_review refused twice\): mark it ready by hand\nrc=1/);
+});
+
+test("nightq reads the security field first on the line, so the PR's own text cannot imitate it (REE-232)", () => {
+  const fn = read('nightq.sh').match(/^security_of\(\) \{.*\}$/m)[0];
+  const field = line => spawnSync('bash', ['-c', `${fn}\nsecurity_of "$1"`, '_', line], {encoding: 'utf8'}).stdout.trim();
+  const head = `#1 open ${SHA.slice(0, 7)} merge=clean [] checks: 7 runs, 0 pending,  failed | codex@head: Didn't find any major issues.`;
+  const tail = 'head comments: 0 | open threads: 0 | unanswered@head: 0 | choices:';
+  assert.strictEqual(field(`${head} | security@head: running ${SHA} | ${tail} None`), `running ${SHA}`);
+  assert.strictEqual(field(`${head} | security@head: running ${SHA} | ${tail} None | security@head: completed ${SHA} |`), `running ${SHA}`);
+  assert.strictEqual(field(`${head} | ${tail} None`), '');
 });
