@@ -746,6 +746,13 @@ function anSpark(rep, key, k) {
     Y = v => h - 3 - ((v - a) / (b - a || 1)) * (h - 6);
   return `<svg class="adm-an-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="M${P.map((v, i) => `${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('L')}"/><circle cx="${X(P.length - 1)}" cy="${Y(P[P.length - 1])}" r="2"/></svg>`;
 }
+// A pair of genera ("A|B") in a table's first column: both in italics, the dot kept with the first so a wrapped name
+// never starts a line with it (REE-222; admin.css lets that column wrap).
+const anPair = k =>
+  k
+    .split('|')
+    .map(g => `<i>${esc(g)}</i>`)
+    .join('&nbsp;· ');
 const anTable = (head, rows, cls = '') =>
   `<div class="adm-tscroll${cls === 'tall' ? ' tall' : ''}"><table class="adm-tbl${cls && cls !== 'tall' ? ' ' + cls : ''}"><thead><tr>${head.map(h => (h[0] === '#' ? `<th class="n">${h.slice(1)}</th>` : `<th>${h}</th>`)).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
 // The per-player lines of a stored report made before an account was removed (the next run refits it without those
@@ -1599,12 +1606,7 @@ const AN_IX_DRAW = {
         ['Pair', ...t.views.map(w => '#' + (AN_VW[w] || w))],
         t.pairs.map(
           p =>
-            `<tr><td>${p.k
-              .split('|')
-              .map(g => `<i>${esc(g)}</i>`)
-              .join(
-                ' · '
-              )}</td>${p.v.map(x => `<td class="n">${x[3] == null ? (x[1] ? `${anInt(x[2])}/${anInt(x[1])}` : '–') : `${anPc(sg(x[3]))} <small class="adm-an-ci">${anInt(x[2])}/${anInt(x[1])}</small>`}</td>`).join('')}</tr>`
+            `<tr><td>${anPair(p.k)}</td>${p.v.map(x => `<td class="n">${x[3] == null ? (x[1] ? `${anInt(x[2])}/${anInt(x[1])}` : '–') : `${anPc(sg(x[3]))} <small class="adm-an-ci">${anInt(x[2])}/${anInt(x[1])}</small>`}</td>`).join('')}</tr>`
         )
       )
     );
@@ -2219,12 +2221,7 @@ const ANV = {
             // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio
             const fr = u => ANALYSIS.freqRatio(anPairP(a, p), u),
               v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
-            return `<tr><td>${p.k
-              .split('|')
-              .map(g => `<i>${esc(g)}</i>`)
-              .join(
-                ' · '
-              )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How many times as often as a typical pair, at the typical mix-up rate">×${fr(p.u).toFixed(1)} <small class="adm-an-ci">×${fr(p.lo).toFixed(1)} – ×${fr(p.hi).toFixed(1)}</small></td></tr>`;
+            return `<tr><td>${anPair(p.k)}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How many times as often as a typical pair, at the typical mix-up rate">×${fr(p.u).toFixed(1)} <small class="adm-an-ci">×${fr(p.lo).toFixed(1)} – ×${fr(p.hi).toFixed(1)}</small></td></tr>`;
           })
         )
       ),
