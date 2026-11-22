@@ -72,15 +72,19 @@ written with `tools/datajson.py`.
   code runs), pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each PR at its tested head in
   order (stopping if `main` moved) and compares `main`'s tree with the train's. `gh api` GET and PUT only, no
   force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
-- **The session hooks** (`.claude/settings.json`) run main's copy of their tool, never the checkout's; with no
-  `origin/main` ref they fetch it (`+refs/heads/main:refs/remotes/origin/main`, about 1 s once), else the guards refuse
-  with that fix and the brief says it (`tests/hooks.test.js`). An existing ref is never refreshed by them, so the brief
-  checks it: one bounded `git ls-remote origin refs/heads/main` (3 s, no prompt, no fetch) against the ref, on the time
-  line of `--short` and as a line of the full brief: "= remote main", or "⚠ local origin/main A differs from remote
-  main B" (or "N commits behind" when the commits are here) with the fetch command, or "remote freshness unknown (why)" with when the ref last moved
-  (reflog; else the age of its commit). Report only: nothing is fetched, reset or merged, and the local work is left
-  as it is; a stale ref also means the hooks run an old copy of the brief, hence the fetch command in the line
-  (`tests/brief_fresh.test.js`).
+- **The session hooks** (`.claude/settings.json`) run tools from a trusted Git revision. SessionStart,
+  InstructionsLoaded and SubagentStart each fetch `origin/main` before selecting a script, because eager instruction
+  loads can run asynchronously before SessionStart. The fetch is non-interactive, bounded to three seconds and
+  updates only the named remote-tracking ref. The branch, index, working tree, tags and FETCH_HEAD stay as they were.
+  Each event pins the selected commit. A failed fetch or timeout makes freshness unknown and skips the affected
+  startup script. SessionStart supplies the Manila clock and recovery pointers on failure. InstructionsLoaded errors
+  appear in Claude hook diagnostics. The prompt clock works offline, with a direct Manila clock if its script is
+  unavailable. The tool guards retain their existing behavior on the cached ref, including recovery when it is absent.
+  This refresh cannot change instructions that Claude already loaded from the checkout (`tests/hooks.test.js`).
+- **Brief freshness** is still read-only. `brief.py` compares the local ref to remote main with a bounded
+  `git ls-remote`. This covers manual runs and main moving after a hook's fetch. It reports agreement, a different ref
+  with the fetch command, or unknown freshness. The local ref's age comes from its reflog or commit.
+  See `tests/brief_fresh.test.js`.
 - **`guard_bash.py`**: the Bash guard (PreToolUse, given with `-c`: the JSON stays on stdin): refuses at once, with the
   way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`,
   `bash -c`, code piped into an interpreter). Quoted text is not read as a command; a command
@@ -92,18 +96,19 @@ written with `tools/datajson.py`.
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
 - **`instr_log.py`**: the core trial's log (#1200 §3), `claude-instructions.jsonl` in the git common dir: InstructionsLoaded,
   SessionStart and SubagentStart hooks note which file loaded for which agent and why (with its hash and core line);
-  SubagentStart gives the Manila time and main's core line. `--report [--since HH:MM]`, `--expect [REF]`;
+  SubagentStart gives the Manila time and main's core line. Missing tools and recording failures are surfaced.
+  `--report [--since HH:MM]`, `--expect [REF]`;
   `tests/instr_log.test.js`. `brief.py` warns when CLAUDE.md, AGENTS.md or `.claude/` differ from origin/main, and
   names the docs past their size mark (read from `tests/docs.test.js` `DOC_MARKS`;
   [decision](../decisions/2026-11-19-doc-size-marks.md)). The second line of `--short` links Project Home and
   Drive Reef_ID. The questions line points to Linear's Decisions for Pierre view and reads the last question
   number from STATUS. The brief never queries Linear ([decision](../decisions/2026-11-21-linear-tracking.md)).
-- **`night.py`**: the night report (Rule 0's night, 17:30 to Pierre's first message after 04:00, Manila): PRs merged in
+- **`night.py`**: the night report (17:30 to 04:00 Manila): PRs merged in
   it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
   holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
-  merged" when the night was empty. `brief.py --time --night-due` (the UserPromptSubmit hook) says once a Manila day, at
-  the first prompt between 04:00 and 17:30, that it is due (marker `tools/.cache/night-report-day`: once per checkout).
-  `--json FILE` reports a saved snapshot; `tests/night.test.js`.
+  merged" when the night was empty. Follow [Integrator startup](../INTEGRATOR.md#integrator-startup) to decide when to
+  send it. UserPromptSubmit supplies the clock. It receives technical events too. The legacy `--night-due` flag reports
+  uncertainty and leaves the old local marker alone. `--json FILE` reports a saved snapshot. See `tests/night.test.js`.
 - **`effort.py`**: the measured agent effort of the last ~300 merged PRs: agent time is the branch's first
   commit to the head's checks going green, open-to-merge apart; commits, Codex rounds (the "@codex review" asks), files
   and lines; a type (fix, feature, study, content, engine, sheet, admin, docs, tooling; `a+b` for one touching both) and

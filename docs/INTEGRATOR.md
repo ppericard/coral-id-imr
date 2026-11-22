@@ -3,15 +3,18 @@
 ## Integrator startup
 
 Start with [AGENTS.md](../AGENTS.md) and [STATUS.md](STATUS.md). Use the short brief for Manila time, GitHub, main
-freshness and live version signals. Claude Code imports AGENTS.md through CLAUDE.md and runs the reviewed
-`origin/main` brief via its session hook, including after compaction. Codex loads AGENTS.md through its own
-instruction discovery. If the brief did not run, run `python3 tools/brief.py --short`.
+freshness and live version signals. Claude Code imports AGENTS.md through CLAUDE.md. Its session hook refreshes
+`origin/main` before running the reviewed brief, including after compaction. Codex loads AGENTS.md through its own
+instruction discovery. If the brief did not run, use `python3 tools/brief.py --short` and read its freshness line.
 
 Recover the active discussion and any stop from STATUS. Check [Linear](#linear) for work already started, the next
 permitted work and decisions or blockers. Read the selected issue's recent comments and relevant linked evidence
 before choosing a next action. At session start and each morning, read Reports and Events since the last check
 and summarize new items for Pierre with real names under Rule 0. Check Scheduled issues at session start.
 If access is missing, record what remains unchecked.
+On Pierre's confirmed first message after 04:00 Manila, lead with the night report from `python3 tools/night.py` in
+French if the conversation or handoff confirms it has yet to be sent. A new session or a technical notification
+does not establish either fact. If the evidence is missing, leave the report's status unknown.
 Use [the procedures below](#procedures-by-task) when the relevant operation comes up.
 
 ## Procedures by task
