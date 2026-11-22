@@ -57,11 +57,11 @@ jobs:
           - name: fish main
             smoke: fish
             part: main
-            what: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
+            what: Fish games, account sync and load-order tests
           - name: fish fresh
             smoke: fish
             part: fresh
-            what: Fish quiz test, the brand-new fish players (the starter core, the easy photos before Open Water, five seeds)
+            what: Fish quiz, beta access, Memory and five brand-new players
           - name: seaslug
             smoke: seaslug
             what: Sea slug subject test (its beta gate both ways, the admin's quiz, pages and switch on seaslug.json)
