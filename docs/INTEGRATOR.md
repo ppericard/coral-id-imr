@@ -237,6 +237,8 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   `merge_method=squash`, `sha=<head>`), once every check is green on that head (their number grows: CodeQL and other security checks run
   too), the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
   (`…/pulls/N/comments`, commit_id = head) even when the thread count is 0: a finding on the head may not be a thread yet.
+  Codex's security review must be completed for the full head SHA (`tools/queue/secreview.py`; `prstate.sh` shows it):
+  no findings is no proof that it ran (REE-232).
 - **Security bots** (Pierre turned on more automatic security audits in GitHub, 2026-11-08: CodeQL, secret scanning
   and push protection, possibly others): their alerts and comments on a PR count like Codex findings. Before a merge,
   each one is fixed, or the PR says in one line why it does not apply (false positive, test-only code), and its thread
@@ -276,7 +278,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   local merges (the train's build), not GitHub's: a PR can show a conflict there that the train does not
   ([record](decisions/2026-11-19-rules-tooling.md)).
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
-  assign are new heads, so `@codex review` and wait. The train adds no head.
+  assign are new heads, so `@codex review` and wait. Codex reviews security by itself only when a PR opens or a draft
+  is marked ready; `@codex security review` started a code review instead (#1466). For a later head, turn the PR to
+  draft and back to ready (`ccr/convert_to_draft`, `ccr/ready_for_review`; `nightq.sh` does it once per head). The
+  train adds no head.
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex
   caught this on #701).
 - **Prettier**: CI uses 3.10.1; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
