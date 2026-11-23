@@ -59,10 +59,12 @@ not redo that. It adds what REE-191's comments of 2026-11-23 ask for:
   - **Inside the game,** the Doc's lever 1 (typed questions keyed on the unit's ability) is still the lever. Typed
     questions are also the most informative format, and lever 1 claims knowledge of one unit only, so Pierre's
     objection does not apply to it.
-  - **Fish lower ranks earlier.** For fish experts the only questions that resist are the lower ranks: the Doc's
-    option 2 (Q382) comes back to Pierre with this evidence.
-  - **No evidence-only harder questions inside the quiz** (the integrator's idea). They are slower than the test and
-    cost a beginner with a good eye a miss every 15-22 answers.
+  - **Finer ranks earlier, for every subject whose path goes through several ranks** (one rule, rule S1; Pierre,
+    2026-11-23 21:22: «La règle doit être générale»). Measured in fish, where for the fast-right starters the only
+    questions that resist are the lower ranks: the Doc's option 2 (Q382) comes back to Pierre with this evidence.
+  - **No evidence-only harder questions inside the quiz now** (the integrator's idea). They are slower than the test
+    and cost a beginner with a good eye a miss every 15-22 answers. Pierre keeps the concept for other contexts
+    (2026-11-23 21:22; Linear REE-253).
   - **Response time.** It is not a pace lever today. A replay without it moves the group's median level by 0.1 at
     most. As a signal, it separated the coral experts from two slower players, but not in fish.
 
@@ -295,8 +297,8 @@ The others were at 0.72-0.78 expected and 0.76-0.86 right in both subjects.
   - **Cost to a beginner:** a beginner with a good eye meets typed questions on units she knows by sight, and may miss
     the names. A miss on a harder question costs little progress (`core.js` `pgMissW`). A player whose units stay
     under the threshold sees no change (the Doc's trigger counts).
-- **Lower ranks sooner in fish** (the Doc's option 2: a finer level's share counted from Open Water for a settled
-  high level; it touches Q382).
+- **Finer ranks sooner, in every subject with several ranks** (the Doc's option 2: a finer level's share counted from
+  Open Water for a settled high level; one rule for every subject, rule S1; it touches Q382; measured in fish).
   - **Where its questions come from:** genus and species questions, the only ones that resisted the fish fast-right
     starters (16/23, 70%).
   - **What it would tell:** they are where the fish experts' challenge and the separating evidence both are. Today
@@ -388,9 +390,10 @@ It needs iNaturalist and was not run here.
 2. **Inside the game, the Doc's lever 1 (typed questions keyed on the unit's ability, with its guard) stays the
    recommended trial.** This study adds two arguments: typed questions are the most informative format, and a
    per-unit trigger is not fooled by a good eye on a few units.
-3. **Fish: the lower ranks** are where experts meet resistance. The Doc's option 2 comes back as a question below.
-4. **No evidence-only probes inside the quiz,** and no change to the opening pace or the response-time weight for
-   this purpose.
+3. **The finer ranks** are where experts meet resistance (measured in fish). The Doc's option 2, as one rule for
+   every subject whose path goes through several ranks, comes back as a question below.
+4. **No evidence-only probes inside the quiz now** (the concept kept as an idea, REE-253), and no change to the
+   opening pace or the response-time weight for this purpose.
 5. **Measure again** when 6 players per subject have 200 answers: the section 2 table, and the response-time ratio of
    section 4.
 
@@ -399,7 +402,8 @@ It needs iNaturalist and was not run here.
 - **(a) The Doc's three questions on lever 1 still stand, unchanged.** Typed questions before a 50% bar as a reversible
   trial; rule L9's "level on a unit" read as the unit's ability; the threshold, 1.5 recommended. Nothing to add but the
   two arguments above.
-- **(b) Fish: genus and species questions sooner for a player whose level is settled high?**
+- **(b) Finer-rank questions sooner for a player whose level is settled high, in every subject whose path goes
+  through several ranks?** (One general rule, never a fish exception: Pierre, 2026-11-23 21:22.)
   - **Context.** The fish fast-right starters answered 94% of the photos judged hard right, and only the lower ranks
     resisted them (70%). Those made 1-5% of their first 300 answers, because a finer rank's share follows the families
     at Advanced (Q382).
