@@ -17,8 +17,9 @@ const MAX_MIN = 40;
 // reaches genera, species or the score's shape. Above either, the check is level 3.
 const LEVEL2 = {seeds: 20, answers: 10000};
 
-// The calibration run cannot be stopped once begun (a few seconds to a minute on a loaded machine): a budget under this
-// needs --per-job, so the calibration alone cannot overrun it.
+// The calibration run cannot be stopped once begun (a few seconds to a minute or two on a loaded machine: a fish app-world
+// calibration plays up to 1,000 answers, calibLength): a budget under this needs --per-job, so the calibration alone
+// cannot overrun it.
 const CALIBRATION_FLOOR_MIN = 1;
 
 // --budget MIN: minutes of compute, more than 0 and at most MAX_MIN; absent, MAX_MIN.
@@ -63,15 +64,54 @@ const estimate = (jobs, workers, perJobSec) => Math.ceil(jobs / Math.max(1, work
 // through the origin; the hard stop covers the rest).
 const scaled = (sec, N0, N) => (sec * N) / N0;
 
+// The app world's calibration (tools/learnsim.js; docs/LEARNING.md "The cap"). A fish job's time per answer grows with
+// the run: the app reads the bars and the exam state of every unit in play several times an answer, and units come into
+// play as the answers go (one lecture RA job alone: 4 s per 100 answers up to 300, 8 s at 600, 15 s at 1,200, 30 to 55 s
+// from 1,500 on). Its first questions, before any typed question, read the flat start only. So the calibration plays a
+// fifth of the run's length, at least 300 questions (a fish run's typed questions come from about answer 100 to 300; a
+// run of 300 or less is its own calibration) and at most 1,000, the first wave of jobs side by side as the run plays them
+// (the machine's load and the jobs' own contention in the measure), and its time is grown to the run's length (grown).
+const CALIB = {MIN: 300, MAX: 1000, SHARE: 5};
+const calibLength = N => Math.min(N, Math.max(CALIB.MIN, Math.min(CALIB.MAX, Math.ceil(N / CALIB.SHARE))));
+// A job's seconds at length N from a calibration run: setup, its seconds outside the page's questions (the browser
+// context, the page's load; once a job), tail, after its last question (once a job), and pts, the seconds in the page
+// at each count of answers, [answers, seconds], from the first question ([0, s]: the run's preparation, once a job) to
+// the calibration's last. Within the calibration, its own clock. Past it, the time of the questions grows as the square
+// of their number: a time per answer in proportion to the answers so far (one fish job alone: the time of N answers over
+// N squared stays within a fifth from 600 to 3,000 answers; docs/LEARNING.md "The cap" has the runs). Where the time per
+// answer grows more slowly it over-estimates (the corals, 2 to 3 times past 1,000 questions): give --per-job, a
+// measured time, there. The cut is the cap.
+function grown({setup = 0, tail = 0, pts}, N) {
+  const t0 = pts[0][1],
+    [nL, tL] = pts[pts.length - 1];
+  if (N >= nL) return setup + tail + t0 + (tL - t0) * (N / Math.max(1, nL)) ** 2;
+  const i = pts.findIndex(([n]) => n >= N),
+    [na, ta] = pts[Math.max(0, i - 1)],
+    [nb, tb] = pts[i];
+  return setup + tail + (nb > na ? ta + ((tb - ta) * (N - na)) / (nb - na) : tb);
+}
+
 // The options that would fit in leftSec: {flag, value} for fewer seeds, a shorter run, fewer profiles. P profiles x S
-// seeds (perSeed jobs a seed: P, or 1 for the sheet's population), N answers or questions, perJobSec a job's time at N.
-function fitOptions({P, S, N, perSeed = P, perJobSec, workers, leftSec, lengthFlag = 'questions'}) {
+// seeds (perSeed jobs a seed: P, or 1 for the sheet's population), N answers or questions, perJobSec a job's time at N;
+// perJobAt(n), a job's time at length n when it does not grow in a straight line (grown), else scaled from perJobSec.
+function fitOptions({P, S, N, perSeed = P, perJobSec, perJobAt, workers, leftSec, lengthFlag = 'questions'}) {
   const out = [],
     cap = Math.floor(leftSec / perJobSec) * workers; // jobs that fit at the full length
   const s = Math.floor(cap / perSeed);
   if (s >= 1 && s < S) out.push({flag: '--seeds', value: s});
   const waves = Math.ceil((perSeed * S) / workers);
   let n = Math.floor((N * leftSec) / (waves * perJobSec));
+  if (perJobAt) {
+    // The longest length that fits, by halving (the time grows with the length).
+    let lo = 0,
+      hi = N;
+    while (hi - lo > 1) {
+      const m = Math.floor((lo + hi) / 2);
+      if (waves * perJobAt(m) <= leftSec) lo = m;
+      else hi = m;
+    }
+    n = lo;
+  }
   if (n >= 200) n = Math.floor(n / 100) * 100;
   if (n >= 1 && n < N) out.push({flag: `--${lengthFlag}`, value: n});
   if (perSeed === P) {
@@ -84,12 +124,12 @@ function fitOptions({P, S, N, perSeed = P, perJobSec, workers, leftSec, lengthFl
 const minText = sec => `${(sec / 60).toFixed(sec < 600 ? 1 : 0)} min`;
 
 // The plan against what is left of the budget: {ok, estSec, text}. text is the line to print (the refusal lists the options).
-function plan({budget, jobs, workers, perJobSec, P, S, N, perSeed, lengthFlag, source}) {
+function plan({budget, jobs, workers, perJobSec, perJobAt, P, S, N, perSeed, lengthFlag, source}) {
   const leftSec = budget.leftMs() / 1000,
     estSec = estimate(jobs, workers, perJobSec),
     head = `Plan: ${jobs} jobs on ${workers} workers, ${perJobSec.toFixed(1)} s a job (${source}); estimated ${minText(estSec)} of the ${budget.minutes}-minute budget (${minText(leftSec)} left).`;
   if (estSec <= leftSec) return {ok: true, estSec, text: head};
-  const opts = fitOptions({P, S, N, perSeed, perJobSec, workers, leftSec, lengthFlag}),
+  const opts = fitOptions({P, S, N, perSeed, perJobSec, perJobAt, workers, leftSec, lengthFlag}),
     list = opts.length ? opts.map(o => `${o.flag} ${o.value}`).join(', or ') : 'none: even one seed of one profile does not fit';
   return {
     ok: false,
@@ -178,4 +218,4 @@ function level3Gate({reason, go, runner, subject, world, seeds, N}) {
   return null;
 }
 
-module.exports = {MAX_MIN, CALIBRATION_FLOOR_MIN, LEVEL2, parseBudget, Budget, estimate, scaled, fitOptions, plan, runPool, cutInfo, cutBanner, writeEmptyCut, level3Reason, level3Gate, dispatchCommand};
+module.exports = {MAX_MIN, CALIBRATION_FLOOR_MIN, LEVEL2, parseBudget, Budget, estimate, scaled, CALIB, calibLength, grown, fitOptions, plan, runPool, cutInfo, cutBanner, writeEmptyCut, level3Reason, level3Gate, dispatchCommand};
