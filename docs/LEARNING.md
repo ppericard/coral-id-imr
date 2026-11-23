@@ -1770,12 +1770,18 @@ the cost of a long run grows with the units met times the units read (the scan t
 time). The rated world arms a table for each answer
 (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds every unit's false alarms and chances in one
 pass over the records, in the scan's own order, so each value is the scan's to the last bit, and `scoreAnswer` empties
-it. The app and the sheet never arm it and scan as before. In the rated world the same seeds give byte-identical `--out` files (the date,
+it. The sheet never arms it and scans as before. In the rated world the same seeds give byte-identical `--out` files (the date,
 commit and run time aside) and reports, and every read of a run can be checked against the scan (`FA_CHECK`,
-`tests/faof.test.js`). The app world arms it too, in the page, at each question (`tools/learnsim.js` `ask`): without
-it the scan is most of a fish run's time (600 answers: 138 s, the sixth hundred fourteen times the first; 36 s with the
-table). The app itself never arms it. With every read checked against the scan (`FA_CHECK.on` in the page), a fish run
-of 600 answers gives the same `--out` file with the table as without it (the date, commit and run time aside).
+`tests/faof.test.js`). The app world holds it too, in the page, over each question and the run's reads after it
+(`tools/learnsim.js` `held`, through the app's own `faHeld` below, so the app's handlers inside keep that table):
+without it the scan is most of a fish run's time (600 answers: 138 s, the sixth hundred fourteen times the first; 36 s
+with the table). With every read checked against the scan (`--facheck`: `FA_CHECK.on` in the page), a fish run
+of 600 answers gives the same `--out` file with the table as without it (the date, commit and run time aside). The app
+arms it for each handler that reads the bars (`app.js` `faHeld`: `quiz.js` `answer`, `quizPhoto`, `planNext`,
+`progress.js` `achCheck`) and drops it when the handler ends, a throw included, so no table outlives one synchronous
+task: inside a handler only `scoreAnswer` writes the fields the table reads, and a sync reply, a reset or another
+device's progress writes the player's progress in a task of its own. Every smoke turns `FA_CHECK` on in its pages
+(`tests/facheck.js`), so a read that differs from the scan fails it.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `treeGen`, `treePhotos`, `app.js` `treeGenera`
