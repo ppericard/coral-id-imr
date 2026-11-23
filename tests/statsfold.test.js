@@ -410,7 +410,7 @@ test('a chance id that spells a name is no leak, and a name still is', () => {
           row = bad[1];
         row[5] = leak;
         assert.ok(LEAK.test(JSON.stringify(bad)), t + ': a leak is caught: ' + leak);
-        row[6] = '{"x":"' + leak.replace(/"/g, '\\"') + '"}';
+        row[6] = '{"x":' + JSON.stringify(leak) + '}';
         assert.ok(LEAK.test(JSON.stringify(bad)), t + ': a leak is caught in the data: ' + leak);
       }
     }
