@@ -59,21 +59,26 @@ exceptions**:
 We are closer to Duolingo (bring people who know nothing to knowledge, bringing items back until they are mastered)
 than to an exam on people who already know (Pierre). A new player is a beginner, not an average player.
 
-**The engine's guiding aims** (Pierre, 2026-11-23 20:40 Manila: «le moteur il doit pouvoir fonctionner aussi bien
-pour un débutant complet … à sa vitesse sans le faire confronter à des choses qui sont trop difficiles»; «faire jouer
-des gens qui sont très bons, des experts, sans que ils se retrouvent frustrés au début»). Every change to the draw, the
-opening or the photos is read against all three:
+**The engine's guiding aims** (the integrator's reading of Pierre's words of 2026-11-23 20:40, in docs/ANSWERS.md;
+his to correct). Every change to the draw, the opening, the formats or the photos is read against them:
 
-- **The complete beginner progresses at their own pace, never faced with what is too hard**, even if that means
-  advancing very slowly. So they do not always see the same photos, **the stock of easy photos must be fairly large**,
-  though at some point they will see photos again.
-- **The expert finds real challenges quickly**, not a start where everything is too easy and turns over the same few
-  photos. Two complementary sources: the engine finds their weaknesses and works on them, and photos that are
-  **objectively hard but identifiable** (a photo can be hard only because it cannot be identified). An absolute expert
-  answers even far, low-detail photos and can hardly be challenged; an expert with weaknesses of their own should be.
-- **Everyone in between** learns at their own speed, and their interest is kept by a balance of ease, challenge,
-  diversity of content and of game modes. Modes that can live inside the main quiz go there; bonus games are apart.
-  Content is limited, in particular by what iNaturalist offers.
+1. **Each player in their own zone, reached at their own speed.** One rule for everyone, inferred from what the player
+   does (right answers, response time), never declared: slow enough that a complete beginner is never faced with
+   what is too hard, even if they advance very slowly; fast enough that an expert meets real challenges within the
+   first answers, not a start where everything is easy and the same photos come round. How fast the engine finds a
+   player's zone, in both directions, is a property we measure (REE-250).
+2. **A good challenge is hard and identifiable.** A hard photo is worth showing when it separates those who know from
+   those who do not: strong players get it right more often than weak ones. A photo that strong players miss as often
+   as anyone is noise, not challenge. An expert's challenges come from their own weaknesses, which the engine finds,
+   and from such photos. An absolute expert answers even far, low-detail photos; we accept they can hardly be
+   challenged on identification.
+3. **Content is the binding constraint.** Every unit needs a stock at every level: a deep stock of easy photos for the
+   beginner, a stock of hard and identifiable photos for the expert. Seeing a photo again is acceptable for a
+   beginner; what counts is that what they learn holds on photos they have never seen (the exams and the reserve
+   check it). iNaturalist limits what we can find.
+4. **Variety multiplies scarce content.** The same photo asked another way (choices that get harder, look-alikes,
+   juveniles and phases, typed answers, the species) is a new challenge without a new photo. Formats that can live in
+   the main quiz go there; bonus games stay apart.
 
 ## Research we rely on
 
