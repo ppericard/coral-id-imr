@@ -1007,23 +1007,25 @@ def run(args):
     ctx = []
     try:
         S = species_list(fish, set(args.circle), only)
-        # The general searches of the species with room, asked together where that saves requests (rule C7).
-        prefetch(net, [photo_taxon(s) for s, t in S if species_room(s, t, have.get(s["id"], []), gone, sugf, game.get(s["id"], ()),
-                                                              (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap)["room"] > 0],
-                 ["own", *TIERS])
-        # 1. Per species: its cap, phases and room (species_room), and the general searches.
+        # 1. Per species: its cap, phases and room (species_room). A species short of easy adults, in a refill (REE-198):
+        # the most-faved first (select faves), so its searches are read on to GEN_PAGES pages whatever they bring, the
+        # faves of older observations counted too; and faved observations beyond its cap (beyond_cap, REE-243).
+        pre = []
         for s, t in S:
             sid = s["id"]
             L = have.setdefault(sid, [])
             R = species_room(s, t, L, gone, sugf, game.get(sid, ()), (fbsrc.get(sid) or {}).get("photos") or (), moved, args.cap)
-            held = R.pop("obs")
-            plan[sid] = {"name": s["name"], "entry": t["id"], **R}
-            # A species short of easy adults, in a refill (REE-198): the most-faved first (select faves), so its searches
-            # are read on to GEN_PAGES pages whatever they bring, the faves of older observations counted too; and faved
-            # observations beyond its cap (beyond_cap, REE-243).
             easy = easy_obs(sid, L, (cur or {}).get("fish") or {}, sugf, game.get(sid, ()), gone) if deep else 0
             fav = deep and easy < easy_need(t)
-            beyond = beyond_cap(R, t, easy, easy_need(t)) if fav else 0
+            pre.append((s, t, L, R, fav, beyond_cap(R, t, easy, easy_need(t)) if fav else 0))
+        # The general searches of the species with room, under the cap or beyond it, asked together where that saves
+        # requests (rule C7).
+        prefetch(net, [photo_taxon(s) for s, t, L, R, fav, beyond in pre if R["room"] > 0 or beyond > 0], ["own", *TIERS])
+        # Then the general searches of each.
+        for s, t, L, R, fav, beyond in pre:
+            sid = s["id"]
+            held = R.pop("obs")
+            plan[sid] = {"name": s["name"], "entry": t["id"], **R}
             plan[sid].update({"faves": fav, "beyond": beyond})
             if R["room"] <= 0 and beyond <= 0:
                 plan[sid]["add"] = {}
@@ -1225,9 +1227,10 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
         e = mem.get(sid)
         same = (e or {}).get("cap", r.get("base", r["cap"])) >= r["cap"]
         done = set((e or {}).get("parts") or [])
-        if "free" in done and r["room"] >= 1:
+        if "free" in done and (r.get("parts") or {}).get("free", 0) >= 1:
             # The room beyond the cap reads the same general searches: read to their end with room for a new observation
-            # (1), every usable one is taken. With less room left, the end only says nothing more fitted under the cap.
+            # (1) in what they fill (the free part, not the room the phases keep), every usable one is taken. With less
+            # free room left, the end only says nothing more fitted under the cap (Codex #1487).
             done.add("faves")
         if e and fresh(e, today) and same and set(r["parts"]) <= done:
             skip.append(sid)

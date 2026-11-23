@@ -197,6 +197,36 @@ print(json.dumps([[R[k] for k in ('have', 'bonus', 'room', 'rooms')], [R0[k] for
   ]);
 });
 
+test('beyond the cap: a species with room only beyond its cap is in the batched prefetch; one at its cap with none is not (Codex #1487, rule C7)', () => {
+  // s1: at its cap (5), short of easy adults (room beyond it); s2: room under the cap; s3: a wink entry's, at its cap
+  // (no room beyond it). The prefetch is recorded, not run: nothing is asked (a --plan run reads the cache only).
+  const out = J(`import argparse, contextlib, io, os, tempfile
+import fetch_fish
+seen = []
+fetch_fish.prefetch = lambda net, taxa, kinds: seen.append(sorted(taxa)) or 0
+d = tempfile.mkdtemp()
+w = lambda f, x: open(os.path.join(d, f), 'w').write(json.dumps(x))
+sp = lambda i: {'id': f's{i}', 'name': f'Fishus s{i}', 'inat': 500 + i, 'circle': 1, 'present': {'ph': True, 'near': True}}
+w('fish.json', {'species': [sp(1), sp(2), sp(3)], 'teach': [{'id': 't1', 'name': 'A', 'circle': 1, 'species': ['s1']},
+    {'id': 't2', 'name': 'B', 'circle': 1, 'species': ['s2']}, {'id': 't3', 'name': 'C', 'circle': 1, 'species': ['s3'], 'wink': True}]})
+rec = lambda s, i: {'f': f'fish-{s}-cand-{i}', 'o': f'https://www.inaturalist.org/observations/{i}', 'r': 1}
+w('cand.json', {'v': 1, 'cand': {'s1': [rec('s1', i) for i in range(1, 6)], 's2': [rec('s2', 10)], 's3': [rec('s3', i) for i in range(20, 25)]}})
+a = argparse.Namespace(fish=os.path.join(d, 'fish.json'), cand=os.path.join(d, 'cand.json'), cur=os.path.join(d, 'none.json'),
+    suggest=os.path.join(d, 'none.json'), fbsrc=os.path.join(d, 'none.json'), photos=os.path.join(d, 'none.json'),
+    cache=os.path.join(d, 'cache.json'), offline=False, refresh=False, plan=True, only='', deep=True, rep=False, circle=[1], cap=5)
+with contextlib.redirect_stdout(io.StringIO()):
+    P = fetch_fish.run(a)
+print(json.dumps([seen, [[P[s][k] for k in ('room', 'beyond')] for s in ('s1', 's2', 's3')]]))`);
+  assert.deepStrictEqual(out, [
+    [[501, 502]],
+    [
+      [0, 30],
+      [4, 30],
+      [0, 0]
+    ]
+  ]);
+});
+
 test('faved: faves > 0 and not annotated juvenile', () => {
   const out =
     J(`print(json.dumps([faved({'fv': 2, 'st': ''}), faved({'fv': 2, 'st': 'adult/male'}), faved({'fv': 2, 'st': 'adult/juvenile'}),
@@ -204,22 +234,28 @@ test('faved: faves > 0 and not annotated juvenile', () => {
   assert.deepStrictEqual(out, [true, true, false, false, false]);
 });
 
-test('pick_short: a species at its cap with room beyond it is picked; a fresh "free" record covers "faves" only with room for an observation', () => {
+test('pick_short: a species at its cap with room beyond it is picked; a fresh "free" record covers "faves" only with free room for an observation', () => {
   const out = J(`import datetime
 r = {'cap': 90, 'base': 30, 'room': 0, 'beyond': 30, 'parts': {'faves': 30}, 'easy': 2, 'need': 12, 'unjudged': 60}
 r2 = {**r, 'room': 2, 'parts': {'free': 2, 'faves': 30}}
 d = datetime.date(2026, 11, 23)
 free = {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free']}}
+# 10.5 of room, 10 of it kept for the juveniles: 0.5 free, too little for a new observation (Codex #1487).
+r3 = {**r, 'room': 10.5, 'parts': {'free': 0.5, 'juvenile': 10, 'faves': 30}}
+both = {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free', 'juvenile']}}
 print(json.dumps([pick_short({'s1': r}, {}, d), pick_short({'s1': {**r, 'beyond': 0, 'parts': {}}}, {}, d),
-    pick_short({'s1': r2}, free, d), pick_short({'s1': r}, free, d), pick_short({'s1': {**r2, 'room': 0.5}}, free, d),
-    pick_short({'s1': r}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['juvenile']}}, d)]))`);
+    pick_short({'s1': r2}, free, d), pick_short({'s1': r}, free, d), pick_short({'s1': {**r2, 'room': 0.5, 'parts': {'free': 0.5, 'faves': 30}}}, free, d),
+    pick_short({'s1': r}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['juvenile']}}, d),
+    pick_short({'s1': r3}, both, d), pick_short({'s1': {**r3, 'parts': {'free': 1, 'juvenile': 10, 'faves': 30}}}, both, d)]))`);
   assert.deepStrictEqual(out, [
     [['s1'], []],
     [[], []],
     [[], ['s1']], // room 2: its searches read to the end took every usable observation, faved ones included
     [['s1'], []], // at its cap, or under 1 of room: the end only says nothing more fitted under the cap
     [['s1'], []],
-    [['s1'], []]
+    [['s1'], []],
+    [['s1'], []], // room 10.5 but 0.5 free (the rest the juveniles'): the free part's end says nothing of the faves
+    [[], ['s1']] // 1 free: room for a new observation, so the end covers the faves
   ]);
 });
 
