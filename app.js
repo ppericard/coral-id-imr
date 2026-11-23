@@ -2048,6 +2048,27 @@ const save = () => {
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
+// The false-alarm table (core.js faArm; docs/LEARNING.md "Long rated runs: the false-alarm table") held on P for one
+// synchronous handler that reads the bars (quiz.js answer, quizPhoto, planNext; progress.js achCheck): every bar reads
+// faOf, which otherwise scans every record of P for each unit, so the work of an answer grew with the history. The table
+// gives the scan's values to the last bit; inside a handler only scoreAnswer writes the records' conf, off, ty or the
+// level's tyk, and it empties the table when it does. The table is dropped when the handler ends, a throw included, so
+// none outlives it: a sync reply, a reset or another device's progress writes P in a task of its own, scanned as before.
+// A handler inside another (achCheck after an answer) keeps the outer one's table; a P loaded meanwhile (inSubject) is
+// held by its own handler.
+const FA_HELD = new Set();
+function faHeld(fn) {
+  const p = P;
+  if (!p || typeof p !== 'object' || FA_HELD.has(p)) return fn();
+  FA_HELD.add(p);
+  faArm(p);
+  try {
+    return fn();
+  } finally {
+    FA_HELD.delete(p);
+    faDisarm(p);
+  }
+}
 const qLoad = () => {
   const q = Object.assign({view: 'any', level: 'auto'}, store.get(sKey('quiz'), {}), {stars: true}); // starred genera are always asked
   if (q.lvv !== 3) {

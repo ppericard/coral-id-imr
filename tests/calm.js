@@ -24,13 +24,16 @@ const curPlay = () => {
   if (mt('curation-play.json') < mt('curation.json'))
     execFileSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), ROOT], {stdio: 'ignore'});
 };
-// Each context also gets tests/lightstub.js first: a test's sheet stub reads the app's light saves as the script does.
-const LIGHTSTUB = path.join(__dirname, 'lightstub.js');
+// Each context also gets tests/lightstub.js first: a test's sheet stub reads the app's light saves as the script does;
+// and tests/facheck.js: every false-alarm rate read from the app's table checked against the scan (core.js FA_CHECK).
+const LIGHTSTUB = path.join(__dirname, 'lightstub.js'),
+  FACHECK = path.join(__dirname, 'facheck.js');
 const calm = b => {
   const nc = b.newContext.bind(b);
   b.newContext = async (o = {}) => {
     const c = await nc({reducedMotion: 'reduce', ...o});
     await c.addInitScript({path: LIGHTSTUB});
+    await c.addInitScript({path: FACHECK});
     return c;
   };
   return b;

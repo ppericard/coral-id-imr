@@ -502,7 +502,8 @@ A card shows once per answer and direction, never the opposite of the last move 
 inferred answer, and never for a subject whose units say `startFb` false (the fish and the sea slugs, until their
 level is better calibrated).
 
-**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md)):
+**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md);
+re-run on 2026-11-23 after REE-249's fix, the same readings but the beginner's level at 60, now 0.83: [review](reviews/2026-11-23-fish-sim-typed-bug-inventory.md)):
 the fish use the corals' `CHOICE.opts`. On the fish profiles of `tools/learnprof.js` (assumptions, not fits), the first
 20 answers' surprise under the truthful answer: "new" holds (beginner −0.01; corals 0.08); "imr" and "know"
 under-predict the lecture RA, strong RA and expert (0.11 to 0.12), as much as on the corals (0.09 to 0.14). The bands
@@ -1122,7 +1123,9 @@ module's six steps is seen (27 screens, 21 taps on Next, measured on the real pa
 number of answers or an amount of time; its name, tier and words are the
 integrator's call, easy to correct). Still to come: fpct100 (with the ultimate exam, Q395). Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
-their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
+their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md). Those runs
+predate the fix of REE-249 (no right typed answer recorded, so no fish exam could pass); the timings up to 1,500 answers
+re-run on 2026-11-23 are in [the review](reviews/2026-11-23-fish-sim-typed-bug-inventory.md).
 
 **Sea slug achievements**: the same kinds over the sea slugs' genera, families, taxonomic groups and first circle, and
 their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`); their species by their scientific names at Advanced (1, 10
@@ -1833,12 +1836,18 @@ the cost of a long run grows with the units met times the units read (the scan t
 time). The rated world arms a table for each answer
 (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds every unit's false alarms and chances in one
 pass over the records, in the scan's own order, so each value is the scan's to the last bit, and `scoreAnswer` empties
-it. The app and the sheet never arm it and scan as before. In the rated world the same seeds give byte-identical `--out` files (the date,
+it. The sheet never arms it and scans as before. In the rated world the same seeds give byte-identical `--out` files (the date,
 commit and run time aside) and reports, and every read of a run can be checked against the scan (`FA_CHECK`,
-`tests/faof.test.js`). The app world arms it too, in the page, at each question (`tools/learnsim.js` `ask`): without
-it the scan is most of a fish run's time (600 answers: 138 s, the sixth hundred fourteen times the first; 36 s with the
-table). The app itself never arms it. With every read checked against the scan (`FA_CHECK.on` in the page), a fish run
-of 600 answers gives the same `--out` file with the table as without it (the date, commit and run time aside).
+`tests/faof.test.js`). The app world holds it too, in the page, over each question and the run's reads after it
+(`tools/learnsim.js` `held`, through the app's own `faHeld` below, so the app's handlers inside keep that table):
+without it the scan is most of a fish run's time (600 answers: 138 s, the sixth hundred fourteen times the first; 36 s
+with the table). With every read checked against the scan (`--facheck`: `FA_CHECK.on` in the page), a fish run
+of 600 answers gives the same `--out` file with the table as without it (the date, commit and run time aside). The app
+arms it for each handler that reads the bars (`app.js` `faHeld`: `quiz.js` `answer`, `quizPhoto`, `planNext`,
+`progress.js` `achCheck`) and drops it when the handler ends, a throw included, so no table outlives one synchronous
+task: inside a handler only `scoreAnswer` writes the fields the table reads, and a sync reply, a reset or another
+device's progress writes the player's progress in a task of its own. Every smoke turns `FA_CHECK` on in its pages
+(`tests/facheck.js`), so a read that differs from the scan fails it.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `treeGen`, `treePhotos`, `app.js` `treeGenera`

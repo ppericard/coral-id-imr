@@ -360,6 +360,12 @@ test('every rebuild cause starts the fold again and it serves the whole log agai
     again({[sid]: 'late answer'}, () => post(s, {w: WHO[0], answers: session(rng(9), WHO[0], now - 3 * 24 * H, 4, sid)}));
 });
 
+// A name or a device id of the fixture's players, as a word of its own in the stored text. A substring test would also
+// match the admin ids, 8 base64 characters of a salted hash: an id such as "DeeTUOk8" spells a name by chance (about one
+// salt in 3,000; REE-264). A word is bounded by anything but a base64 character, so an id, a longer digest or a genus such
+// as Anacropora never matches, a key, a value or a name inside a sentence always does (case aside).
+const LEAK = /(?<![A-Za-z0-9+/])(?:Dee|Ana|device0001)(?![A-Za-z0-9+/])/i;
+
 // Rule D7: the fold holds per-player data by admin id; any delete, merge or archive blanks it at once.
 test('a deleted account leaves nothing in the snapshot, at once and after the rebuild', () => {
   for (const all of [false, true]) {
@@ -371,7 +377,7 @@ test('a deleted account leaves nothing in the snapshot, at once and after the re
       tabText = t => JSON.stringify(s.sheets[t].rows),
       aid = s.ctx.aid_('Dee');
     tabs.forEach(t => assert.ok(tabText(t).includes(aid), t + ': the fold keeps a player by admin id'));
-    tabs.forEach(t => assert.ok(!/Dee|Ana|device0001/.test(tabText(t)), t + ': never a name or a device'));
+    tabs.forEach(t => assert.ok(!LEAK.test(tabText(t)), t + ': never a name or a device'));
     s.post({userDelete: 'Dee', answers: all, token: TOK});
     tabs.forEach(t => assert.ok(!tabText(t).includes(aid), t + ': blanked by the delete itself'));
     SUBJ.forEach(sid => assert.strictEqual(snap(s, sid), null, sid + ': nothing served until the fold is rebuilt'));
@@ -379,6 +385,39 @@ test('a deleted account leaves nothing in the snapshot, at once and after the re
     tabs.forEach(t => assert.ok(!tabText(t).includes(aid), t + ': rebuilt without them'));
     sameAll(s, all ? 'everything deleted' : 'answers kept as ~deleted');
   }
+});
+
+// REE-264: the check above must be exact. Salts for which an admin id spells a name (found by trying random UUIDs; the
+// ids are base64(sha256(salt|anon|name))[0:8]): "DeeTUOk8" is Dee's, "2lAnaOQb" is Cal's.
+test('a chance id that spells a name is no leak, and a name still is', () => {
+  for (const [salt, spelled] of [
+    ['84ee7783-f0a2-4df7-9250-c2ed9fd3ec08', 'DeeTUOk8'],
+    ['7fd5ee8d-2c49-41f5-9d67-2a5977ea926c', '2lAnaOQb']
+  ]) {
+    const s = load(),
+      now = BASE + 9 * 24 * H;
+    s.props.ANON_SALT = salt;
+    fixture(5).forEach(p => post(s, p));
+    foldAll(s, now);
+    for (const t of ['Stats', 'Stats Fish']) {
+      const rows = s.sheets[t].rows,
+        text = JSON.stringify(rows);
+      assert.ok(text.includes(spelled), t + ': the fixture holds the id that spells a name: ' + spelled);
+      assert.ok(!LEAK.test(text), t + ': an id that spells a name is not a name');
+      // A name written into the stored text, in any place, is caught: a note, a key, a value, the device's own id.
+      for (const leak of ['run for Dee', '{"Ana":[1,2]}', '{"u":"Dee"}', '{"u":"ana|quiz"}', '~anon device0001', 'DEE']) {
+        const bad = rows.map(r => r.slice()),
+          row = bad[1];
+        row[5] = leak;
+        assert.ok(LEAK.test(JSON.stringify(bad)), t + ': a leak is caught: ' + leak);
+        row[6] = '{"x":' + JSON.stringify(leak) + '}';
+        assert.ok(LEAK.test(JSON.stringify(bad)), t + ': a leak is caught in the data: ' + leak);
+      }
+    }
+  }
+  // Words that are not a name stay clear: another genus that starts with one, an id that ends with one.
+  for (const ok of ['Anacropora', '"DeeTUOk8"', '"2lAnaOQb"', '"gJ+WAnad"', '"abcdeAna"', '"Dee/abcde"', 'Deep', 'Analysis'])
+    assert.ok(!LEAK.test(ok), 'not a name: ' + ok);
 });
 
 test('the 15-minute trigger folds and logs the build; ?stats=1 then serves the snapshot', () => {

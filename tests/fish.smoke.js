@@ -1597,6 +1597,8 @@ async function quizAndProgress(b, base, errs) {
       ok = (c, m) => c || fails.push(m);
     const closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
+    // The answers below read the bars from the false-alarm table (app.js faHeld), each read checked against the scan.
+    ok(FA_CHECK.on === true, 'FA_CHECK on in the page (tests/facheck.js)');
     ok(
       TREEU.c1.length === 28 &&
         TREEU.c2.length > 0 &&
