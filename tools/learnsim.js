@@ -24,6 +24,8 @@
 // --live N: N live-game answers on units the path has not opened, before the first question (rule L4: they count and
 // open nothing); --liveoff records them nowhere (the live mode's version 1), the learner taught the same: the two arms of
 // a paired comparison (tools/learncmp.js).
+// --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
+// against the scan, and a difference stops the run; the same --out as without it, slower.
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
 // --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js
@@ -183,6 +185,7 @@ const SEEDS = Number(arg('seeds', 5)),
   LIVEN = Number(arg('live', 0)),
   LIVEOFF = process.argv.includes('--liveoff'),
   ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
+  FACHECK = process.argv.includes('--facheck'), // every false-alarm rate read from the table checked against the scan
   BEYOND = arg('beyond', ''),
   // --rows sp:off,sci:off: the What I learn card's names rows, each k:on|off, switched before the first question.
   ROWS = arg('rows', '')
@@ -638,15 +641,17 @@ function play(cfg) {
     prevGood = null;
   const mill = {met: null, asked: null},
     bon = {offer: null, n: 0, q: 0};
+  // The false-alarm table held over one question and the run's reads after it (core.js faArm; docs/LEARNING.md "Long
+  // rated runs: the false-alarm table"), as the rated world does: every bar reads faOf, which otherwise scans every
+  // record of P for each unit, and the app and this loop read the bars of every unit in play several times an answer, so
+  // without it a long run's time per answer grows with its answers (a fish run's most of all). The app's own handler
+  // hold (app.js faHeld) is used, so the app's handlers inside keep this table rather than dropping it when they end;
+  // it is taken on the P in play at each question (a break's P is a new object). The table gives the scan's values to
+  // the last bit; scoreAnswer empties it when it writes P, and nothing else in a run writes the records' conf, off, ty
+  // or the level's tyk. An app without faHeld: armed at each question, as before.
+  const held = fn => (typeof faHeld === 'function' ? faHeld(fn) : (typeof faArm === 'function' && faArm(P), fn()));
   // One question, as the player sees it (pre: called once it shows, for the breaks).
-  const ask = (pre, i = -1, cur = 'quiz') => {
-    // The false-alarm table armed (core.js faArm; docs/LEARNING.md "Long rated runs: the false-alarm table"), as the
-    // rated world does: every bar reads faOf, which otherwise scans every record of P for each unit, and the app reads
-    // the bars of every unit in play several times an answer, so without it a long run's time per answer grows with its
-    // answers (a fish run's most of all). The table gives the scan's values to the last bit; scoreAnswer empties it when
-    // it writes P, and arming it again each question keeps it on the P in play (a break's P is a new object). Nothing
-    // else in a run writes the records' conf, off, ty or the level's tyk.
-    if (typeof faArm === 'function') faArm(P);
+  const ask = (pre, i = -1, cur = 'quiz') => held(() => {
     // Achievement toasts have gone by the next question (4 s in the app; no time passes in this loop), and the sign-in
     // card is closed: the out-of-game prompts (the bonus genera offer among them) wait for neither (quiz.js promptOk).
     document.querySelectorAll('.achpop').forEach(x => x.remove());
@@ -824,7 +829,7 @@ function play(cfg) {
     }
     T += L.STEP;
     return {q, t, good, set, e: lastE, first};
-  };
+  });
   // The field measures (both learners; docs/LEARNING.md "Field learner"): over the genera met, the bar shown (genScore)
   // against the learner's true whole-slate success pOpen; the share of Learned genera with pOpen >= PREC; the genera at the
   // exam's entry or above (bar 95% or more); and the custom selection's own (--custom).
@@ -951,7 +956,8 @@ function play(cfg) {
   // The budget's plan (tools/checkbudget.js grown): the seconds in the page at the first question, every cfg.clockEvery
   // answers and at the last, [answers, seconds]; tail, the seconds after the last question (the breaks, the measures).
   const clock = {pts: [[0, (performance.now() - clk0) / 1000]], tail: 0};
-  for (let i = 0; i < N; i++) {
+  // Each question and the measures after it read the bars from one table (held, above).
+  for (let i = 0; i < N; i++) held(() => {
     if (i && i % cfg.clockEvery === 0) clock.pts.push([i, (performance.now() - clk0) / 1000]);
     // --custom: once N genera are unlocked, they are the custom quiz's selection for --drill questions, then the Quiz again.
     if (cust && cust.sel === null && SL.filter(introReady).length >= cust.n) {
@@ -1106,7 +1112,7 @@ function play(cfg) {
       });
       blk = {n: 0, ok: 0};
     }
-  }
+  });
   clock.pts.push([N, (performance.now() - clk0) / 1000]);
   // The app's own answer log of the first session (LOG0: answers of a player not signed in), with the learner's chance
   // and time noise of each answer, for --rtlog.
@@ -1270,6 +1276,7 @@ async function run(browser, base, name, seed, n = QN) {
   // evaluate, and the browser's storage would queue about 1.5 MB an answer in the renderer until it crashed).
   await ctx.addInitScript(memStorage);
   await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
+  if (FACHECK) await ctx.addInitScript({path: path.join(ROOT, 'tests', 'facheck.js')}); // --facheck
   await ctx.addInitScript(require('../tests/answer.js').PAGE); // smokeAnswer: answers the question shown, as the smokes do
   await ctx.addInitScript(([st, sv, subj, aid]) => {
     localStorage.setItem('reefid-tour', '"done"');
