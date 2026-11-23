@@ -15,7 +15,8 @@ Integrator's call (REE-40: "C2 is the integrator's call, design first"; AGENTS.m
 with no player-facing effect). While the visit runs, the summary so far is also written to the device, under its visit
 id, as it would be queued: when a page opens and every 15 s while in view, at most five visits. The next page queues,
 once, a copy of another visit left two minutes unwritten (a page open in another window rewrites its own every 15 s).
-Queuing the summary drops the copy. A page whose copy was queued elsewhere starts its tally again; the copy and the
+Queuing the summary drops the copy. A page whose copy was queued elsewhere (its visit id noted as queued) starts its
+tally again, while a copy only pushed out by the five-visit limit is written again; the copy and the
 live summary share one event id, which the sheet keeps once. `pagehide` queues the summary too. No sheet change: the
 same event and fields, so an older sheet script takes it (rule D4).
 

@@ -690,13 +690,45 @@ test('a page killed without a hidden event: its summary queued by the next page,
   assert.ok(!live().includes('visitn'));
   LS.delete('reefid-evq');
   // At most PV_KEEP copies, the newest.
-  const N = Number(/PV_KEEP = (\d+)/.exec(src)[1]);
+  const N = Number(/PV_KEEP = (\d+)/.exec(src)[1]),
+    many = [];
+  Q.length = 0;
   for (let i = 0; i < N + 3; i++) {
     const P = page('many' + i);
+    many.push(P);
     P.open('quiz');
     clock += 1000;
     P.pvKeep();
   }
   assert.strictEqual(live().length, N);
   assert.ok(live().includes('many' + (N + 2)) && !live().includes('many0'));
+  // A copy only pushed out by that limit was never queued: its page keeps its tally, writes it again, sends it when left.
+  many[0].beat();
+  assert.ok(live().includes('many0') && many[0].kept());
+  many[1].pagesSend();
+  assert.deepStrictEqual(
+    Q.map(x => [x.vi, x.r['practice.quiz'][0]]),
+    [['many1', 1]],
+    'an evicted copy is not a queued one'
+  );
+  assert.strictEqual(Q.length, 1);
+  // The answer's feedback sheet on screen: its seconds so far are in each copy (quiz.js fbEnd(false), counted once).
+  Q.length = 0;
+  const FB = page('visitp');
+  let fbAt = clock,
+    fbCalls = 0;
+  FB.ctx.fbEnd = end => {
+    fbCalls++;
+    assert.strictEqual(end, false, 'the sheet stays open');
+    C.pagesFb(FB.ctx.PV, 'sec', Math.round((clock - fbAt) / 1000));
+    fbAt = clock;
+  };
+  FB.open('quiz');
+  C.pagesFb(FB.ctx.PV, 'shown');
+  clock += 20000;
+  FB.beat();
+  clock += 15000;
+  FB.beat();
+  assert.strictEqual(fbCalls, 2);
+  assert.deepStrictEqual(copies().visitp.fb, [1, 0, 35, 0]);
 });

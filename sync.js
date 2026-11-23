@@ -1706,19 +1706,26 @@ const pagesWho = batch =>
 // so far as pagesSend would queue it, written when a page opens and every PV_BEAT while in view (pvKeep), dropped when
 // the summary is queued (pvDone). A copy left by another visit and not written for PV_STALE is queued by the next page
 // (pvRecover, at load and each beat): that page was killed. Its id is the one the live summary would have had, and a page
-// that finds its own copy gone (pvClaimed: queued elsewhere, as after a computer's sleep) starts its tally again: never
-// counted twice. Same event, same fields: an older sheet script takes it as it is (rule D4).
+// that finds its own copy queued (pvClaimed: its visit id in PVDONE, as after a computer's sleep) starts its tally again:
+// never counted twice. A copy only pushed out by the PV_KEEP limit is written again. Same event, same fields: an older
+// sheet script takes it as it is (rule D4).
 const PVLIVE = 'reefid-pv-live',
+  PVDONE = 'reefid-pv-done', // the visit ids whose copy another page queued, the last PV_DONE_N
   PV_BEAT = 15000,
   PV_STALE = 120000,
-  PV_KEEP = 5;
+  PV_KEEP = 5,
+  PV_DONE_N = 20;
 let pvId = evId(),
   pvKept = false;
 const pvLive = () => {
   const L = store.get(PVLIVE, null);
   return L && typeof L === 'object' && !Array.isArray(L) ? L : {};
 };
-const pvClaimed = () => pvKept && !pvLive()[PVI];
+const pvDoneIds = () => {
+  const D = store.get(PVDONE, []);
+  return Array.isArray(D) ? D : [];
+};
+const pvClaimed = () => pvKept && !pvLive()[PVI] && pvDoneIds().includes(PVI);
 // The summary so far, taken from a copy of the tally: the tally goes on.
 function pvPeek(now) {
   const cp = O => Object.keys(O).reduce((o, k) => ((o[k] = O[k].slice()), o), Object.create(null));
@@ -1732,6 +1739,8 @@ function pvKeep(now = Date.now()) {
     if (at) pagesResume(PV, now);
     return pvDone();
   }
+  // The answer's feedback sheet still on screen: its seconds so far go in the tally (counted once, quiz.js fbEnd).
+  if (typeof fbEnd === 'function') fbEnd(false);
   const S = pvPeek(now),
     L = pvLive();
   if (S) L[PVI] = {...pvFields(S), k: 'pages', t: new Date(now).toISOString(), pg: (location.hash || '#home').slice(1, 60), av: appVer()};
@@ -1758,6 +1767,7 @@ function pvRecover(now = Date.now()) {
   const out = old.map(k => L[k]),
     q = new Set(store.get(EVQ, []).map(x => x && x.id)); // one already queued by another page at the same moment
   old.forEach(k => delete L[k]);
+  store.set(PVDONE, [...pvDoneIds().filter(k => !old.includes(k)), ...old].slice(-PV_DONE_N)); // its page, if alive, starts again
   store.set(PVLIVE, L); // out of the store first: another page never queues it again
   out.filter(x => x && typeof x === 'object' && x.r && typeof x.r === 'object' && !q.has(x.id)).forEach(x => ev('pages', x));
 }
