@@ -1928,3 +1928,24 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   typical-look families) and the head-on, tail and top views `h t d` at most 4 instead of 3; the blur cap kept,
   camouflage kept outside the typical-look families, monochrome left open. Applied: judging/FISH.md "Caps";
   tools/fish_judge.py `cap` (REE-242).
+- **17:22, #1391 as a stop-gap (REE-197).** «ok» to merging the shared-places floor now so the 387 waiting candidates
+  can be judged, a continuous weight replacing it later. Applied: #1391; Linear REE-245.
+- **17:22 and 18:37, faved candidates beyond the cap (REE-243).** «Dans un deuxième temps si le jugement ne rempli pas
+  assez»; then «on y est au "deuxième temps" c'était après la première étape.» Applied: Linear REE-243.
+- **19:14, the species exams (REE-27, #1489).** The ultimate exam «devrait plutôt être une forme d'examen par défaut,
+  sauf pour des matières où éventuellement on n'a pas assez de contenu … toutes les matières où on va jusqu'à
+  l'espèce»; the hidden box ticked on one photo «ça me paraît pas beaucoup» (open). Applied: Linear REE-27.
+- **19:23, the per-player reserve (REE-248).** «la réserve elle doit être définie à l'unité la plus petite, donc là en
+  l'occurrence l'espèce, pour celles qui peuvent se le permettre, et qu'ensuite progressivement on regroupe ces
+  réserves petites au niveau au-dessus»; «la réserve, elle n'est pas prioritaire … Elle ne doit pas venir impacter le
+  reste du jeu»; the exam draws on the reserve, else the least seen and hardest photos. Applied: Linear REE-248 (design).
+- **19:26, judging passes (rule P7).** «j'aimerais que tu évites de faire des grosses séries de jugements, de
+  rejugements sur des milliers, voire des dizaines de milliers de photos, sans mon accord explicite … ça prend
+  énormément de quotas … je préfère presque qu'on mette en stand-by du jugement jusqu'à ce que je dise OK, ou que je
+  recentre le jugement … et que par contre on puisse prioriser toutes les autres tâches de développement». Applied:
+  rules/photos.md P7; tools/checkin.md; Linear REE-246 on hold.
+- **19:28, the judging threshold (rule P7).** «chaque série de rejugement ou de jugement que tu envisages pour … plus
+  que 100 photos, ça nécessite une autorisation explicite de ma part dans laquelle tu me présentes le nombre de photos,
+  qu'est-ce que tu vas chercher à refaire comme jugement, pourquoi est-ce qu'on a besoin de le refaire, et de
+  justifier proprement l'utilisation d'un agent parfois coûteux sur des grandes quantités de photos». Applied:
+  rules/photos.md P7.
