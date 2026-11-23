@@ -5150,7 +5150,7 @@ const REVIEW_BUILD = {
                 const [d, n, r] = R[p.f];
                 return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge">${photo(p)}</button>
-    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}${genusPrior(p.genus)}${recBadge(d, {short: 1, raw: 'photo difficulty'})}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span></figcaption>
+    <figcaption><a class="adm-gen" href="${esc(genusHref(p.genus))}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Answers that rated it · right (weighed by experience)">${nAns(R[p.f])} · ${pct(r, n)} right</span><span class="adm-hnum">recognised by ${recBadge(d, {short: 1, raw: 'photo difficulty'})}</span>${genusPrior(p.genus)}</figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
               },
               bind(scope) {
@@ -9463,7 +9463,7 @@ function genusPrior(genus) {
     d = photoPrior(null, o, 0);
   return d === null
     ? ''
-    : `<span class="adm-src" title="Before any answer on it: its genus's offset (the corals' photos have no judged ease)">prior</span>${recBadge(d, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}`;
+    : `<span class="adm-hnum adm-hprior" title="Before any answer on it: its genus's offset (the corals' photos have no judged ease)">prior ${recBadge(d, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}</span>`;
 }
 function treePrior(S, ease, own, unit) {
   const off = ((own && !own.old && own.gd) || {})[unit],
