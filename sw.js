@@ -29,6 +29,7 @@ const SHELL = [
   'core.js?v=50',
   'app.js?v=212',
   'gloss.js?v=1',
+  'idtips.js?v=1',
   'install.js?v=1',
   'sync.js?v=30',
   'progress.js?v=25',

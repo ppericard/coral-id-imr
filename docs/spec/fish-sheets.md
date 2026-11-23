@@ -12,7 +12,7 @@ is the specification of what the code does now; why each part was decided is in
 ## The family sheet
 
 **One family sheet per family of the identification key** (`fish.json` `families`, `#fish/learn/family/<id>`), reached
-from the families page (each family's card opens its sheet, its photo too: `app.js` `listCard`) and from My progress:
+from the families page (each family's card opens its sheet, its photo too: `idtips.js` `listCard`) and from My progress:
 
 - the English name, the scientific name or names and IMR's name below, its group in the key;
 - my progress on it once the game asks the families (`myProg`);

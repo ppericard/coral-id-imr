@@ -105,7 +105,7 @@ test('replace, hide and add: the edits in force, the raw file untouched, the uni
     X0 = C.treeGen(F, {});
   assert.deepStrictEqual(X.gen[BF.id].qt, ['Tip one', 'Tip two']);
   assert.strictEqual(X.gen[BF.id].lk.find(([o]) => o === lk)[1], 'Words of my own');
-  // Their sources go with them into the units (rule C2): the tips' (app.js tipsList shows it wherever
+  // Their sources go with them into the units (rule C2): the tips' (idtips.js tipsList shows it wherever
   // the tips are shown), the look-alike line's after its own; none where nothing was edited.
   assert.deepStrictEqual(X.gen[BF.id].qsrc, {t: 'A field guide', u: 'https://example.org/guide'});
   assert.strictEqual(X.gen[BF.id].lsrc[lk], X0.gen[BF.id].lsrc[lk] + '; A look source');

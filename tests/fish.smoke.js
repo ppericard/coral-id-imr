@@ -2738,7 +2738,7 @@ async function uiAndAccess(b, base, errs) {
     if (!fcv.shown || fcv.bad.length)
       ui.push(`${width}px families page: the cards' photos are not the curated covers ${JSON.stringify(fcv)}`);
     await wide('the families page');
-    // Each family is one card that opens its sheet (app.js listCard; Pierre, 2026-11-20): one link, its name, no "Open
+    // Each family is one card that opens its sheet (idtips.js listCard; Pierre, 2026-11-20): one link, its name, no "Open
     // the sheet" line, no zoom button; a glossary term in it opens its definition, not the sheet.
     const lc = await q.evaluate(() => {
       const c = [...document.querySelectorAll('#view .lcard')];

@@ -1163,7 +1163,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
     more = fish
       ? `${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p>`
       : // the criteria cited by the source the content editor gave with his edit of them, else the Coral Finder pages
-        // (app.js critRef), and his summary's and mnemonic's with them (esrcTag; rule C2)
+        // (idtips.js critRef), and his summary's and mnemonic's with them (esrcTag; rule C2)
         `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length && g.sum ? `<p class="vs">${esc(g.sum)}${esrcTag(g, 'sum')}</p>` : ''}${(g.crit || []).length ? `<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">${critRef(g)}</p>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   // No tips box at all for a unit with no cue, summary or mnemonic (a fish family of circles 2-3 with no IMR cue: an
   // empty box draws a bare rounded bar).
