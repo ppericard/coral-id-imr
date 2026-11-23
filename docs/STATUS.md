@@ -56,12 +56,12 @@ REE-42's "Not now" on the clock).
 
 ## Questions for Pierre
 
-Morning batch (Rule 0), with the night report: #1493 and REE-246; REE-27 (a)–(g); REE-248; REE-245; REE-234 D3
-amendment; REE-61 Cycloseris line; Acropora/Cyphastrea (C5); REE-56 (a)–(f); REE-191 (b) finer ranks sooner, one rule
-for every subject; Q385 vs probes (REE-253); #1500's principles; REE-147 speed for experts (and "never rewards time"
-read on speed); REE-252 (a) another zoom: alt or dup, (b) sea slugs: every photo or a declared exception; REE-223:
-should species sheets skip watermark-flagged photos; the issue-search guard. See also
-[Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d).
+The list is Linear's [Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d) view,
+not this file (REE-258: questions kept here dropped out at the next rewrite). Every open question since 11-15 is
+there (29 issues, inventoried 2026-11-23 21:48), with the session document, blocking first (~110 min):
+[Questions for Pierre — session](https://docs.google.com/document/d/1-nDJdEg3NN49PdcKd7HBKU-8tbwnGBy9iuooKOypxqE/edit).
+A new question gets its issue and label when it is written. Pierre: a context-and-questions session on 11-24 afternoon
+or a day he does not dive (21:36). REE-192 needs a fresh Q number (Q453 is #1391's).
 
 Last question number: Q458
 
