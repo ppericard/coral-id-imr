@@ -1992,3 +1992,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   l'ensemble des matières, soit … il y a une exception dans le code … il y a du code qui a besoin d'être généralisé»;
   «est-ce que tu es sûr que ce bug, il est arrivé en pratique sur les simulations précédentes?» Applied: Linear
   REE-249 (general in the sim, hidden by the corals' bare ids; freezes only since #1375), REE-28.
+- **21:25, a rule never names the subjects it covers.** «c'est même pas tous les sujets à plusieurs rangs, parce qu'en
+  fait, tous les sujets sont susceptibles d'avoir plusieurs rangs … les coraux, on peut très bien imaginer que dans
+  un mois, je décide de rajouter les espèces … que ça soit pas une règle qui crée des exceptions elle-même par la
+  formulation de la règle.» Applied: rules/subjects.md S1; #1503's wording.
