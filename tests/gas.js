@@ -278,14 +278,20 @@ function bodyOf(t) {
   if (o && typeof o.z === 'string') return JSON.parse(require('zlib').gunzipSync(Buffer.from(o.z, 'base64')).toString('utf8'));
   return o && o.lt && typeof o.lt === 'object' ? o.lt : o;
 }
-// Accounts made before the sheet refused reserved names (Code.gs doPost_, core.js reservedName): f runs
-// with the script's check switched off (a test's players named constructor or __proto__), then it is on again.
+// Accounts made before the sheet refused reserved names (Code.gs doPost_, core.js reservedName) and, from REE-35, names
+// with an invisible character (nameHidden) or looking like a taken one (nameKeys: here each name its own), kept in the
+// form they came in (nameClean): f runs with the script's checks switched off (a test's players named constructor or
+// __proto__, two accounts whose names look alike), then they are on again.
 function madeBefore(s, f) {
-  vm.runInContext('CORE_.__rn = CORE_.reservedName; CORE_.reservedName = () => false', s.ctx);
+  vm.runInContext(
+    'CORE_.__nc = {reservedName: CORE_.reservedName, nameHidden: CORE_.nameHidden, nameKeys: CORE_.nameKeys, nameClean: CORE_.nameClean};' +
+      " CORE_.reservedName = () => false; CORE_.nameHidden = () => false; CORE_.nameKeys = n => ['\\u0000' + String(n)]; CORE_.nameClean = n => String(n)",
+    s.ctx
+  );
   try {
     return f();
   } finally {
-    vm.runInContext('CORE_.reservedName = CORE_.__rn; delete CORE_.__rn', s.ctx);
+    vm.runInContext('Object.assign(CORE_, CORE_.__nc); delete CORE_.__nc', s.ctx);
   }
 }
 module.exports = {loadCodeGs, makeSheet, bodyOf, madeBefore};
