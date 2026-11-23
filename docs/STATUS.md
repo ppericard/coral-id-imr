@@ -5,56 +5,52 @@ integrator. Follow [Project Home][home] for work and decisions.
 Use `python3 tools/brief.py --short` for current GitHub and sheet version signals.
 Search [ANSWERS.md](ANSWERS.md) for historical evidence and use git and PRs for what shipped.
 
-Last checked: reports and events: 2026-11-22 ~15:10 Manila (Claude, REE-222 mission)
+Last checked: reports and events: 2026-11-23 ~15:55 Manila (Claude integrator; nothing new: no report since 11-21,
+no `err` event)
 
 Night report: last sent 2026-11-22 (15:25 Manila, late: a hook's false reminder, fixed in #1464)
 
 ## Now
 
-- Pierre paused the Claude Code integrator on 2026-11-22 at 07:27 Manila; the handoff was received (REE-231, Done).
-  [#1460](https://github.com/ppericard/coral-id-imr/pull/1460) brought the
-  [queue reference scripts](../tools/queue/recovered/README.md) (unreviewed, untested) and the study code for
-  [REE-112](../tools/studies/ree112/README.md) and [REE-191](../tools/studies/ree191/README.md) onto main; the exact
-  study input extracts were unavailable in shared storage.
-- Since 14:37 Pierre has given a new Claude Code integrator bounded missions, each reported in Linear: REE-222
-  (#1462), the startup hooks of [#1464](https://github.com/ppericard/coral-id-imr/pull/1464) (#1465 added the "Night
-  report" line above), and the queue's security-review gate (REE-232,
-  [#1466](https://github.com/ppericard/coral-id-imr/pull/1466): `nightq.sh` trains only once Codex's security review
-  is completed for the full head SHA; for a later head it turns the PR to draft and back to ready to get one).
-  [REE-230](https://linear.app/reef-id/issue/REE-230) is back in Backlog: a real compaction with the new hooks is
-  still to observe, apart from the hook tests. A PR for it says "Part of REE-230" and keeps the identifier out of
-  its title (a title identifier closes the issue at merge). The general resumption of the backlog waits for Pierre.
-- [Health #1458](https://github.com/ppericard/coral-id-imr/issues/1458) is open. The hourly "Analyses report" workflow
-  has also failed at every run since 2026-11-22 00:46 UTC ("The sheet did not store the report (no reply)"), likely
-  the same stuck sheet script; not tracked elsewhere yet. The check reported served sheet
-  script v218 against v220 on main. Use the brief for current signals. Scheduled workflows and triggers
-  can still run during the pause. The incident is tracked on GitHub.
+- **The pause is over.** Since 2026-11-23 15:43 Manila a Claude Code integrator holds Pierre's durable mandate
+  («un mandat général pour poursuivre les travaux déjà décidés dans les limites d'autonomie du projet»): drain decided
+  work, delegate, integrate. A Codex session may work on REE-121 / REE-220 (queue latency); check its branches
+  (`codex/*`) before launching queue or CI work. The integrator alone merges.
+- **Incidents of the day, fixed.** The sheet script was stuck at v218: Apps Script's 200-version limit (REE-234;
+  Pierre deleted old versions, v220 deployed 16:19). The durable fix (a warning before the limit, fewer versions per
+  comment-only change) is REE-234's next action. The hourly Analyses report failed on a network reset after a long
+  compute: #1473 (REE-235); Done once an hourly run stores the fish report (a run was dispatched at 16:52).
+- **Merged today:** #1470 (Codex: the queue keeps the reviewed head), #1472 (REE-214), #1473 (REE-235), #1475 (rules
+  W24 and L11, ledger, the REE-85 study). Use `tools/queue/nightq.sh N` for every merge: it waits for the checks and both
+  Codex reviews, then trains the reviewed head.
+- **In the queue or in progress:** #1474 (REE-43, coral 45-genus scale, sheet v221 assigned), #1476 (REE-198, most-faved
+  refill), #1471 (REE-40: under W27 the claim mechanism was cut, then one storage key per visit; if Codex finds another
+  issue in its recovery part, ship without it), #1409 (REE-51, approved; blocked by the fish-fresh flake REE-238, an
+  agent investigates), REE-237 (admin counts Key use as activity), REE-238.
+- **Held:** #1391 (REE-197). Pierre prefers continuous mechanisms to thresholds; the draw's redesign waits for
+  REE-85's decisions. Asked 17:05: merge #1391 as a stop-gap so the 387 waiting candidates can be judged.
 
 ## Active discussion
 
-- [REE-229](https://linear.app/reef-id/issue/REE-229) carries the wider handoff and the question about when to open
-  an issue for an unresolved problem. The [Drive handoff][handoff]
-  includes the recovery inventory. The scope of that proposed rule and the pace of a later restart are open.
-- [REE-230](https://linear.app/reef-id/issue/REE-230) tracks recovery of the shared work arrangement. Options (a)
-  and (b) merged in [#1455](https://github.com/ppericard/coral-id-imr/pull/1455). Option (c), a rule for adopted
-  studies, is open. Recovery after Claude compaction still needs to be observed.
+- **Fish ease (REE-85):** [study](reviews/2026-11-23-fish-ease-vs-answers.md); its "experts and response time" section
+  (the over-performance on hard photos came from 3 strong players; time confirms ease; blur is a real difficulty) is
+  in the integrator's scratchpad and goes into the study by a follow-up PR. Q455–Q458 open, revised recommendations in
+  REE-85's comment of 16:49.
+- **A player who uses only the Key (REE-236):** Pierre asks the player himself; the desktop mode waits for the answer.
+- **REE-230:** no real compaction observed yet in this session.
 
 ## Next
 
-For the Claude Code side, see the pause above. For permitted work, use [Now][now]
-and [Next][next]. Check the issue's latest comments
-and linked PR before starting.
+Linear's [Now][now] and [Next][next]. The working-method project is ranked (2026-11-23): REE-229 study next when a
+machine slot frees, then REE-181's close at this handoff's merge (the successor recovery was observed: the only gaps
+were the Linear connector not yet connected on this account and this file still saying "paused").
 
 ## Questions for Pierre
 
-See [Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d). Also check PRs
-marked `needs-pierre`. [#1391](https://github.com/ppericard/coral-id-imr/pull/1391) (REE-197) and
-[#1409](https://github.com/ppericard/coral-id-imr/pull/1409) (REE-51) were still waiting at this handoff.
-The previous handoff also asked to confirm that “Delete, keep answers” removes report images.
-[#1354](https://github.com/ppericard/coral-id-imr/pull/1354) shipped that behaviour as an integrator's call.
-The PR records no separate answer from Pierre on this point.
+See [Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d). Open: Q455–Q458
+(REE-85), #1391 as a stop-gap, faved candidates beyond the cap (recommendation: not now).
 
-Last question number: Q452
+Last question number: Q458
 
 ## Pierre's hands
 
@@ -62,15 +58,12 @@ See the issues assigned to Pierre in Linear and the app's Admin → Inbox → To
 
 ## Parked after hours
 
-None carried over from the handoff.
+None.
 
 ## Last stop
 
-2026-11-22 ~18:15 Manila, after the queue's security-review gate (REE-232, #1466); before it the hooks (#1464) and
-REE-222 (#1462) missions. Before those, the Claude Code side had returned to the pause after #1460; the workspace
-observations are in the Drive handoff addendum. Check current work and live status through the sources above.
+2026-11-23 ~17:15 Manila, mid-session handoff (90-minute mark); the integrator keeps working.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
-[handoff]: https://docs.google.com/document/d/1agtmEbHc6f3QD1qdFWMxkCts9QciYT1FEdRuHah3kWM/edit
 [now]: https://linear.app/reef-id/view/0be7e66e-2e7b-4832-9386-1bf6e4f76a59
 [next]: https://linear.app/reef-id/view/1c09d0dd-02bb-4fd1-bde2-a6919f2d6418
