@@ -317,7 +317,10 @@ test('the sheet: an account keeps the spelling it was made with, whatever case l
       .filter(r => r[0] !== 'Bvob')
       .every(r => r[0] === made)
   );
-  assert.deepStrictEqual(s.sheets['Progress data'].rows.slice(1).map(r => r[0]), ['Bvob', made]);
+  assert.deepStrictEqual(
+    s.sheets['Progress data'].rows.slice(1).map(r => r[0]),
+    ['Bvob', made]
+  );
   const u = s.post({users: 1, token: TOK});
   assert.deepStrictEqual(u.users.map(x => x.name).sort(), ['Bvob', made].sort());
   // A plain name too: made as anna, saved as ANNA, still anna.
