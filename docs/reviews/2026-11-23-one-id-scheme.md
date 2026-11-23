@@ -109,9 +109,15 @@ Counts are from the files on `main` (a script in the scratchpad, not committed).
 
 One scheme for every subject: `core.js` `LEVELS`, a rank prefix and the subject's own stable id (`f:`, `g:`, `s:`,
 `sci:`). For a coral genus that is `g:<Genus>` (`g:Acropora`). When the corals become a tree, their families take
-`f:<Family>` by scientific name, as the sea slugs' do. The name shown stays the record's `name`. The addresses stay as
-they are: `#learn/genus/Acropora`, with the corals given `sheets` `{genus: 'g:'}` as the tree subjects have, so
-`routeIn` and `routeOut` translate.
+`f:<Family>` by scientific name, as the sea slugs' do. The name shown stays the record's `name`.
+
+**Addresses stay as they are.** A genus sheet stays `#learn/genus/Acropora`, with the corals given `sheets`
+`{genus: 'g:'}` as the tree subjects have, so `routeIn` and `routeOut` translate. `sheets` does not cover the pair pages
+(Codex on #1508). Today `routeOut` would turn the page key `cmp-g:Acropora|g:Porites` into
+`learn/compare/g%3AAcropora/g%3APorites`, and `routeIn` passes a pair's parameters through unchanged, so an old
+Compare, look-alike or duel bookmark would bring bare names that no unit answers to. So step 4 also translates the
+units of a pair page both ways: the name in the address, the id in the page key, an old bare name taken as the unit it
+names. This covers Compare, the look-alike pairs and the duels, with round-trip tests on every such route (§4 A9).
 
 Why this scheme:
 
@@ -183,7 +189,12 @@ and §4 counts those players before the switch.
   statistics in bare names. A new request field says it (named in the PR; `gid: 1` here). Without it, an old app on an
   account that a new device has already moved would show only its own recent answers until it updates itself (W3
   allows that, but the issue asks for nothing visible). Its answers keep landing in the log either way, mapped at read.
-- The replay needs no translation: an old app refuses it by its version.
+- The replay is translated too, in both directions (Codex on #1508). An old app refuses step 4's replay by its
+  version. But during step 4's deploy window an updated app can still reach step 2's script, whose rules version is
+  the old one. An app whose applied version is below it would then take that script's replay, under bare keys: a
+  fresh device, or after a reset or a sign-in. So step 2 gives the replay too in the asker's form (`gid`). As a second
+  guard, the updated app passes every replay record it adopts through `renameUnits`, as `Code.gs` already does for the
+  board, so a bare record can never reach its `g:` units.
 
 **The stored data rewritten once (step 6).** After the window, one sheet one-shot rewrites the coral rows of the
 Answers tab:
@@ -302,9 +313,9 @@ planned.
 |---|---|---|---|---|---|---|
 | 0 | This note | `docs/reviews/` | No | Nothing | No | `tests/docs.test.js` |
 | 1 | **The app reads coral units through their record.** No code reads `DATA.gen[n]` with a unit id or uses a unit id as a name (the REE-249 class): names via `GX(n)`, `unameT`, the record's `name`; `slateOf`/`gameOf` results mapped to units in one place. A test harness builds the coral units under a throw-away prefix and plays the quiz, duels, Learn and My progress, and fails on any `GX` miss. No id changes | `app.js`, `model.js`, `quiz.js`, `learn.js`, `progress.js`, `home.js`, `proto/lab.js`; `tools/learnsim.js` (cut in two if `app.js` and `model.js` are busy: REE-64) | No | Nothing | No | The harness; every existing test unchanged |
-| 2 | **The sheet reads both forms.** The coral table and its inverse in `core.js`; `Code.gs` takes every coral row, saved copy and summary to one internal form (bare for now); a request field (`gid`) and the replies that carry coral unit keys (the saved copy on load, the pooled statistics) in the asker's form; `By genus` columns by name. Current apps send no `gid`: their replies are byte for byte as today | `core.js`, `Code.gs` | Yes | Nothing | No | §4 A1-A3 |
+| 2 | **The sheet reads both forms.** The coral table and its inverse in `core.js`; `Code.gs` takes every coral row, saved copy and summary to one internal form (bare for now); a request field (`gid`) and the replies that carry coral unit keys (the saved copy on load, the replay, the pooled statistics) in the asker's form; `By genus` columns by name. Current apps send no `gid`: their replies are byte for byte as today | `core.js`, `Code.gs` | Yes | Nothing | No | §4 A1-A3 |
 | 3 | **The admin and the tools read both forms** (idempotent: each row through `renameLogEntry`, each record through `renameUnits`) | `admin*.js`, `analysis.js`, `tools/analyses.js`, `tools/abilityeval.js` `normalise` and its users, `tools/calibset.js` | No | Step 2 (the table) | No | Their tests on mixed fixtures |
-| 4 | **The switch.** `SUBJECTS` coral `renamed` and `sheets`; the coral `RVS` entry; the app's coral units `g:`; the device's stores renamed at load (§2.9); `gid` sent; `Code.gs` computes the corals in `g:` and replays at the new version under `g:` (down-mapped for `gid`-less apps); `calibration-set.json` rewritten | `core.js`, `Code.gs`, `app.js`, `sync.js`, `model.js` (alone on all five) | Yes | Step 2's version at `SHEET_FLOOR`; steps 1 and 3 merged; Pierre's OK (questions A, B) | No (proved) | §4 A4-A7, B1-B4 run before the merge |
+| 4 | **The switch.** `SUBJECTS` coral `renamed` and `sheets`; the coral `RVS` entry; the app's coral units `g:`; the device's stores renamed at load (§2.9), and every adopted replay record too; the pair pages' routes translated (§2.1); `gid` sent; `Code.gs` computes the corals in `g:` and replays at the new version under `g:` (down-mapped for `gid`-less apps); `calibration-set.json` rewritten | `core.js`, `Code.gs`, `app.js`, `sync.js`, `model.js` (alone on all five) | Yes | Step 2's version at `SHEET_FLOOR`; steps 1 and 3 merged; Pierre's OK (questions A, B) | No (proved) | §4 A3-A7, A9, B1-B4 run before the merge |
 | 5 | **The waiting window.** The sheet counts requests without `gid` (as `oldApp_` counts those without `av`) | Nothing to merge | No | Step 4 live | No | The count stays at zero for 14 days <!-- effort-ok: a waiting window, not an estimate --> |
 | 6 | **The stored data rewritten once.** `ONCE_` `coralunits` (§2.2): Answers, Reports, saved copies, the corals' Replayed rows dropped, the statistics rebuilt; the stored form is `g:` (step 4 already computes in it); the read-time mapping of stored data removed | `core.js`, `Code.gs` | Yes | Step 5; Pierre's OK (question B) | No | §4 B5, A8; the Deploy log's counts; a fresh extract checked again |
 | 7 | **Clean-up** (W3): the `gid` translation and the admin's and tools' dual reads removed; only the mapping at logging of late old ids stays, as the fish's | `Code.gs`, `core.js`, `admin*.js`, `tools/` | Yes | Step 6 and an extract with no bare coral id | No | The S1 test: `levelOf`'s `''` and `unitName`'s coral case gone |
@@ -328,8 +339,10 @@ Rule D1: no test reaches the real sheet. Rule D2: real names never enter the rep
 2. `renameUnits` and its inverse on progress records (with `conf`, `off`, `~level`, the feats) and on the cards seen:
    identity after a round trip; non-unit keys untouched.
 3. Step 2 is dormant: every existing sync test passes unchanged. A request without `gid` gets byte-identical replies.
-   A fake app with `gid` gets the same content under `g:` keys, and its `g:` rows, copy and summary are stored as an old
-   app's would be.
+   A fake app with `gid` gets the same content under `g:` keys (its saved copy, its replay, its statistics), and its
+   `g:` rows, copy and summary are stored as an old app's would be. The deploy window is also tested: an app of step 4
+   with an applied version below step 2's, talking to step 2's script, gets a `g:` replay. Fed a bare replay instead,
+   it renames it before adopting.
 4. `renameLogEntry` on coral rows: a duel's Mode `quiz-duel|A|B`, Choices, a typed answer (`|t`, Answered is the unit
    read, Choices empty), "I don't know" (empty), a surprise card's row (untouched).
 5. The replay: `replayProgress` on a multi-player synthetic log, (i) bare and renamed after, and (ii) renamed rows, and
@@ -341,6 +354,9 @@ Rule D1: no test reaches the real sheet. Rule D2: real names never enter the rep
    `By genus` cells and each subject's hold are unchanged.
 8. Step 6's one-shot: idempotent (run twice); only the renamed columns written, so no cell turns into a formula (as
    #654's Codex finding); the Reports cells; the corals' Replayed rows dropped; `statsDirty_` set.
+9. Addresses: every coral page key and address round-trips through `routeOut` and `routeIn`, the genus sheet and the
+   pair pages (Compare, the look-alike pairs, the duels) included. An address of today with bare names opens the same
+   page after the switch.
 
 **B. On a pseudonymised extract of the real log (read-only, outside the repository).** The integrator exports the
 Answers tab and the saved copies through the read-only connector, replaces each name with a pseudonym (P1, P2…, the
@@ -438,5 +454,5 @@ These are unnumbered here: the integrator numbers the ones that pass the two tes
 - The 14-day window is enough. The service worker updates an app at its next opening; a device left closed longer
   sends its queue late, and that is mapped at logging anyway.
 - The structure stamp does not change with the ids, because it is computed from the curation's pair keys, which stay
-  names. A4-7 must confirm it.
+  names. §4 A7 must confirm it.
 - Line references are to function names; their line numbers move.
