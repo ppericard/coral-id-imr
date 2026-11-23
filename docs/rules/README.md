@@ -42,7 +42,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **P4** A one-photo question shows one observation; a multi-photo format shows different observations.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
 - **P6** Corals: no photo of a coral skeleton anywhere.
-- **P7** No large judging or re-judging pass by agents without Pierre's explicit OK.
+- **P7** No judging or re-judging by agents over more than 100 photos without Pierre's explicit OK.
 
 **Learning** ([learning.md](learning.md))
 - **L1** Time between sessions never decays progress, mastery or ability.

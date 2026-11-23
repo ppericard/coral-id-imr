@@ -1944,3 +1944,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   énormément de quotas … je préfère presque qu'on mette en stand-by du jugement jusqu'à ce que je dise OK, ou que je
   recentre le jugement … et que par contre on puisse prioriser toutes les autres tâches de développement». Applied:
   rules/photos.md P7; tools/checkin.md; Linear REE-246 on hold.
+- **19:28, the judging threshold (rule P7).** «chaque série de rejugement ou de jugement que tu envisages pour … plus
+  que 100 photos, ça nécessite une autorisation explicite de ma part dans laquelle tu me présentes le nombre de photos,
+  qu'est-ce que tu vas chercher à refaire comme jugement, pourquoi est-ce qu'on a besoin de le refaire, et de
+  justifier proprement l'utilisation d'un agent parfois coûteux sur des grandes quantités de photos». Applied:
+  rules/photos.md P7.

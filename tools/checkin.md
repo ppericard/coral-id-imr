@@ -13,7 +13,7 @@ live signals.
    [INTEGRATOR "Linear"](../docs/INTEGRATOR.md#linear), "Drain the Todo column until he says stop": every decided Todo
    issue not assigned to Pierre gets an agent, High first, as far as the machine slots allow (rule W24). Sensitive
    files go one PR at a time (rule W27). A list of your own that is exhausted is not an empty queue. A judging or
-   re-judging pass waits for Pierre's explicit OK ([rule P7](../docs/rules/photos.md#p7)): development work first.
+   re-judging pass over more than 100 photos waits for Pierre's explicit OK ([rule P7](../docs/rules/photos.md#p7)): development work first.
 4. **Upkeep.** Linear states for what moved; STATUS about every 90 minutes of work
    ([Habits](../docs/INTEGRATOR.md#habits)).
 5. **Compaction.** If the context was compacted since the last check-in, note on REE-230 what was found again
