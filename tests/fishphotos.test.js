@@ -1180,10 +1180,11 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   // short of easy adults, kept their faved room beyond the cap (beyond_cap) and found no faved observation in
   // searches read to the end: "faves" is searched to the end too.
   const M = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8'));
-  // The record keeps the cap it was made under: a cap raised later (family_cap) opens it again.
+  // The record keeps the cap it was made under: a cap raised later (family_cap) opens it again; and, with "faves", the
+  // easy adults each lacked (gap: 12 over 2 species, none easy), so more missing later opens it again.
   assert.deepStrictEqual(M.end, {
-    s1: {at: '2026-11-06', parts: ['faves', 'free'], cap: 5},
-    s2: {at: '2026-11-06', parts: ['faves'], cap: 5}
+    s1: {at: '2026-11-06', parts: ['faves', 'free'], cap: 5, gap: 6},
+    s2: {at: '2026-11-06', parts: ['faves'], cap: 5, gap: 6}
   });
   assert.ok(M._doc);
   const P = JSON.parse(run('--plan'));

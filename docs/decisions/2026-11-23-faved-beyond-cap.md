@@ -27,7 +27,11 @@ pas assez». 18:37: «on y est au "deuxième temps" c'était après la première
   one base cap.
 - The room beyond the cap is a part of the exhaustion memory (`faves`). A fresh `free` record covers it while the
   species has room for a new observation (1 or more): its searches read to their end then took every usable
-  observation. With less room, the end only says that nothing more fitted under the cap.
+  observation. With less room, the end only says that nothing more fitted under the cap. A `faves` record keeps
+  `gap`, the easy adults the species lacked then; it holds while the species lacks no more (more missing since opens
+  more room beyond the cap). A record without `gap` is searched again.
+- `--topup` never completes an observation taken beyond the cap (`bc`): those are fetched since the old limit of 4
+  photos, and completing one would pass the bound and lose the mark.
 
 ## Consequences
 

@@ -542,7 +542,8 @@ def topup(args):
             continue  # a few very good photos, not a stock
         L = have.get(s["id"], [])
         recs = Counter(p["o"] for p in L)
-        bad = {p["o"] for p in L if p["f"] in moved}
+        # Moved photos, or taken beyond the cap (bc: fetched since the old limit, held to beyond_cap's bound).
+        bad = {p["o"] for p in L if p["f"] in moved or p.get("bc")}
         for o, k in recs.items():
             tail = o.rsplit("/", 1)[-1]
             if k == OLD_LIMIT and o not in bad and o.startswith(obs_url("")) and tail.isdigit():
@@ -1227,6 +1228,10 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
         e = mem.get(sid)
         same = (e or {}).get("cap", r.get("base", r["cap"])) >= r["cap"]
         done = set((e or {}).get("parts") or [])
+        if "faves" in done and (e.get("gap") is None or r.get("need", EASY_NEED) - r["easy"] > e["gap"]):
+            # A "faves" record holds while the species lacks no more easy adults than then (gap): more missing since (an
+            # ease corrected down) opens room beyond the cap its searches never looked for; a record without gap: rechecked.
+            done.discard("faves")
         if "free" in done and (r.get("parts") or {}).get("free", 0) >= 1:
             # The room beyond the cap reads the same general searches: read to their end with room for a new observation
             # (1) in what they fill (the free part, not the room the phases keep), every usable one is taken. With less
@@ -1311,7 +1316,9 @@ def refill(args):
     for sid in pick:
         ended = exhausted(plan[sid]) if sid in plan else []
         if ended:
-            mem[sid] = {"at": today.isoformat(), "parts": ended, "cap": rows[sid]["cap"]}
+            mem[sid] = {"at": today.isoformat(), "parts": ended, "cap": rows[sid]["cap"],
+                        # "faves": the easy adults it lacked then (pick_short: more missing since opens more room)
+                        **({"gap": rows[sid]["need"] - rows[sid]["easy"]} if "faves" in ended else {})}
         else:
             mem.pop(sid, None)
     save_mem(args.memory, mem)

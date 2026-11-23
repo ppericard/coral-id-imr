@@ -110,7 +110,7 @@ the circle-1 entries (`--circle` for the other circles).
   then at most one new `best`, none needed).
 - **`--topup`** (`topup`, run by every `--refill` first, over all the species of its circles, whatever their room): the
   observations fetched under the former limit of 4 photos per observation (`OLD_LIMIT`: exactly 4 candidate records,
-  none sent elsewhere) are asked again by id, 200 a request, and bring their other photos; one with exactly 4 photos on
+  none sent elsewhere and none taken beyond the cap, `bc`, fetched since that limit) are asked again by id, 200 a request, and bring their other photos; one with exactly 4 photos on
   iNaturalist is asked again at each refill (about 2-3 requests a run).
 - One function for both tools: `species_room` (cap, phases, photos kept per phase, room per phase).
 
@@ -169,7 +169,9 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   (`fetch_fishbase.py`, offline) fills what iNaturalist left and `--rep` tags the covers, for the refilled species only.
 - **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts, cap}}): a part of the room
   ("free", the general searches; `faves`, the room beyond the cap, read from the same searches, so a `free` record
-  covers it while the species has room for a new observation, 1 or more; `juvenile`, `male`, `female`, the phase searches) still open after the run whose
+  covers it while the species has free room for a new observation, 1 or more; a `faves` record keeps `gap`, the easy
+  adults the species lacked then, and holds while it lacks no more: an ease corrected down since opens more room beyond
+  the cap, so the species is searched again; `juvenile`, `male`, `female`, the phase searches) still open after the run whose
   searches were read to their end (`ends`), or which got nothing, is searched to the end that day, under the cap the
   species had then (`cap`); the species is skipped while every open part of its room is in a record less than
   `RECHECK_DAYS` (30) old made under a cap at least its cap now (`pick_short`; a record without `cap` reads as the cap

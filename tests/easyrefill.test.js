@@ -227,6 +227,24 @@ print(json.dumps([seen, [[P[s][k] for k in ('room', 'beyond')] for s in ('s1', '
   ]);
 });
 
+test('--topup leaves an observation taken beyond the cap (bc) alone, even cut to OLD_LIMIT photos (Codex #1487)', () => {
+  // s1: observation 70, 4 photos taken beyond the cap (bc); observation 80, 4 photos of the old limit. Only 80 is asked
+  // again (a --plan run: nothing is asked, the count is printed).
+  const out = J(`import argparse, contextlib, io, os, tempfile
+d = tempfile.mkdtemp()
+w = lambda f, x: open(os.path.join(d, f), 'w').write(json.dumps(x))
+w('fish.json', {'species': [{'id': 's1', 'name': 'Fishus s1', 'inat': 501, 'circle': 1}], 'teach': [{'id': 't1', 'name': 'A', 'circle': 1, 'species': ['s1']}]})
+rec = lambda o, k, bc: {'f': f'fish-s1-cand-{o}{k}', 'o': f'https://www.inaturalist.org/observations/{o}', 'r': 1, **({'bc': 1} if bc else {})}
+w('cand.json', {'v': 1, 'cand': {'s1': [rec(70, k, True) for k in range(4)] + [rec(80, k, False) for k in range(4)]}})
+a = argparse.Namespace(fish=os.path.join(d, 'fish.json'), cand=os.path.join(d, 'cand.json'), cur=os.path.join(d, 'none.json'),
+    suggest=os.path.join(d, 'none.json'), cache=os.path.join(d, 'cache.json'), offline=False, refresh=False, plan=True, only='', circle=[1])
+f = io.StringIO()
+with contextlib.redirect_stdout(f):
+    topup(a)
+print(json.dumps(f.getvalue().strip()))`);
+  assert.match(out, /^topup: 1 observations holding 4 photos asked again/);
+});
+
 test('faved: faves > 0 and not annotated juvenile', () => {
   const out =
     J(`print(json.dumps([faved({'fv': 2, 'st': ''}), faved({'fv': 2, 'st': 'adult/male'}), faved({'fv': 2, 'st': 'adult/juvenile'}),
@@ -246,7 +264,11 @@ both = {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free', 'juvenile']}}
 print(json.dumps([pick_short({'s1': r}, {}, d), pick_short({'s1': {**r, 'beyond': 0, 'parts': {}}}, {}, d),
     pick_short({'s1': r2}, free, d), pick_short({'s1': r}, free, d), pick_short({'s1': {**r2, 'room': 0.5, 'parts': {'free': 0.5, 'faves': 30}}}, free, d),
     pick_short({'s1': r}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['juvenile']}}, d),
-    pick_short({'s1': r3}, both, d), pick_short({'s1': {**r3, 'parts': {'free': 1, 'juvenile': 10, 'faves': 30}}}, both, d)]))`);
+    pick_short({'s1': r3}, both, d), pick_short({'s1': {**r3, 'parts': {'free': 1, 'juvenile': 10, 'faves': 30}}}, both, d),
+    # A "faves" record made when it lacked 10 easy adults (gap): it holds while 10 or fewer are missing; 11 (an ease
+    # corrected down) opens more room beyond the cap; a record without gap is rechecked (Codex #1487).
+    [pick_short({'s1': {**r, 'easy': e}}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['faves'], **g}}, d)
+     for e, g in ((2, {'gap': 10}), (3, {'gap': 10}), (1, {'gap': 10}), (2, {}))]]))`);
   assert.deepStrictEqual(out, [
     [['s1'], []],
     [[], []],
@@ -255,7 +277,13 @@ print(json.dumps([pick_short({'s1': r}, {}, d), pick_short({'s1': {**r, 'beyond'
     [['s1'], []],
     [['s1'], []],
     [['s1'], []], // room 10.5 but 0.5 free (the rest the juveniles'): the free part's end says nothing of the faves
-    [[], ['s1']] // 1 free: room for a new observation, so the end covers the faves
+    [[], ['s1']], // 1 free: room for a new observation, so the end covers the faves
+    [
+      [[], ['s1']],
+      [[], ['s1']],
+      [['s1'], []],
+      [['s1'], []]
+    ]
   ]);
 });
 
@@ -319,6 +347,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   // Searched to the end with room beyond the cap left: "faves" is remembered, so the next refill skips them.
   const mem = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8')).end;
   assert.deepStrictEqual([mem.s1.parts, mem.s2.parts], [['faves'], ['faves']]);
+  assert.deepStrictEqual([mem.s1.gap, mem.s2.gap], [12, 3]); // the easy adults each lacked (need - easy)
   const again = JSON.parse(run('--plan'));
   assert.deepStrictEqual([again.pick, again.skip], [[], ['s1', 's2']]);
   fs.rmSync(dir, {recursive: true, force: true});
