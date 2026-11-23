@@ -1881,3 +1881,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sert à rien de me le répéter, de le faire alors que c'est dans plus de 2 mois.» A working-method request, not a
   numbered question. Applied: INTEGRATOR.md "Linear" (label Scheduled);
   decisions/2026-11-22-scheduled-tasks.md; Linear label Scheduled on REE-75 and REE-73.
+
+## 2026-11-23
+
+- **16:34, the refill aimed at easy photos.** To "launch REE-198, the easy-photo refill for families with 1 to 3
+  species" (for species short of easy adult photos only, iNaturalist's most-faved observations first, still Research
+  Grade and judged on the rubric, the neutral order of Q284 everywhere else): «oui, définitivement». Amends Q284's
+  "no votes order" for those species only. Applied: tools/fetch_fish.py `easy_need`, `select` faves;
+  spec/fish-photos.md "Candidates from iNaturalist" and "Automatic refill" (REE-198).

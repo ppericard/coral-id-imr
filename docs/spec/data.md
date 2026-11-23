@@ -310,7 +310,8 @@ version could use grows; the CC BY-NC photos stay fully usable.
   `autosort.js` `treeRun` (which sure
   candidates fill a species' room) and `treeQueue` (the swiper's order within a species), `tools/fetch_local.py`
   `tie_key` (between coral observations of the same grade and as many iNaturalist votes), and `tools/fetch_fish.py`
-  `select`, after the distance and the observer and life-stage variety (the licence class, `lic_class`, is in
+  `select`, after the distance and the observer and life-stage variety (and the faves, for a species short of easy
+  adults in a refill: REE-198) (the licence class, `lic_class`, is in
   `tools/rights.py`).
 - Nothing else moves: what enters play (`tools/fish_game.py` `in_play`, the judging rules) and the draw.
   **The lists the draw reads keep no licence** (the fish `views.wide`, `easyRank(L, d, false)`; the corals' `sl.game`, `byQ0`, its
