@@ -199,6 +199,13 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **A correction repairs the work and what caused it**. Fix the doc, brief or subject note that held the wrong
   assumption. Name the assumption when it helps Pierre judge the repair. Say when the cause is unknown. Keep
   the rule's scope and the evidence for the change.
+- **A rule not followed gets an issue, not a new rule** (Pierre, 2026-11-23 20:51: «à chaque fois que tu dis "j'ai
+  pas suivi la règle" … que tu crées une issue … ça permet de digérer cette information sans pour autant créer de
+  manière automatique et de suite une nouvelle règle»). Whenever the integrator, or an agent's report, finds a
+  standing rule not followed, the integrator opens a Linear issue labelled "Rule not followed" in Working method and
+  project tracking: what happened, the context, what should have happened, what exists today (say so if the "rule"
+  turns out not to be written), the causes to look at. The issues are read together for common causes; a change of
+  rule or tool comes from that reading, never from one issue alone.
 
 ## Real people (pseudonyms on GitHub, names only in chat)
 
