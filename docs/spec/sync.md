@@ -761,7 +761,10 @@ player before (`P[g].ok + ko`).
 (`r`, `g`, capped at 30 pages and 30 genera), the visit id `vi` (random per page load), the answers so far `na`
 (`answersSoFar`), the screen `vp` once the replies say `v` ≥ `sync.js` `VIEWPORT_SHEET` (`viewportOn`, rule D4) and,
 once the answers' feedback was shown, the four feedback-sheet numbers `fb` (ARCHITECTURE.md "The More counter"); then it
-starts a fresh tally (coming back adds another summary with the same `vi`; the page still in view counts 0 times). The
+starts a fresh tally (coming back adds another summary with the same `vi`; the page still in view counts 0 times).
+`pagehide` does the same, for a browser that closes or reloads a page without a hidden event first; after a hidden
+event the tally is empty, so nothing is queued twice ([decision](../decisions/2026-11-23-pages-kept-copy.md)). A page
+killed with no event at all (the app or the phone stopped, a crash) still loses its summary so far. The
 screen `vp` is `{w, h, d, o, b}` (`core.js` `VIEWPORT`, `viewportOf`): `innerWidth` and `innerHeight` rounded to 10 px,
 `devicePixelRatio` to one decimal and clamped, `o` portrait or landscape, `b` the band of the exact short side (0 ≤360,
 1 361-390, 2 391-414, 3 415-600, 4 wider, since the 10 px grid cannot keep the edges); `pagesClean` rounds and clamps it

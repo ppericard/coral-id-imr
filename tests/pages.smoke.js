@@ -4690,6 +4690,9 @@ async function pagesVisit(b, base) {
       sent: !posts.length
     };
     if (Object.values(want).some(x => !x)) fails.push(`pages summary (phone): ${JSON.stringify({want, e})}`);
+    // pagehide after the hidden event (a reload, a close): nothing queued twice.
+    await p.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    if ((await queued(p)).length !== 1) fails.push(`pages summary queued again on pagehide: ${JSON.stringify(await queued(p))}`);
     // Back in the app: the rest of the visit goes on under the same visit id, the sheet in view counted again for its time only.
     await p.evaluate(() => {
       Object.defineProperty(document, 'visibilityState', {value: 'visible', configurable: true});
