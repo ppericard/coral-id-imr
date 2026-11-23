@@ -435,6 +435,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // until the whole game pool is in): not adopted, nor the version marked applied, so a partial table never clears a
     // group the sheet left; the next reply brings it again.
     if (rows.length && rvVars(S.id, rp.rv) && !vt) return false;
+    clockTick(); // the answers counted so far on the answer clock, before the log's count replaces the level's (rule D9)
     // A mark the replay took away: the former model's (a record learned with neither s.pg nor the domain-score bar,
     // core.js afterBkt), or a rule of the new version.
     mxRecalc(
@@ -468,6 +469,12 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     return false;
   }
 }
+// The answer clock (model.js tally: the answers counted on this device, never going down, which the checkpoints count
+// on) brought up to the level's answer count before a merge or a replay's adoption changes that count: a count that goes
+// up then down in one sync (another device's answers merged, then the log's count adopted), or a clock not started yet
+// (it starts at the count), loses no answer. Not before model.js is in (the quiz tier): the clock then starts at the count
+// it finds.
+const clockTick = () => typeof tally === 'function' && tally();
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (reefid-sync-coral-reset, a time) wins over older progress.
@@ -618,7 +625,7 @@ function mergeSubject(j, d, S, mine) {
   notesSeen(j);
   const recovered = !!(RO && lgFor(S) && rpS && replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre));
   // That replay not adoptable yet (units not in, no replay in the reply, an older queued answer): no merge, which would
-  // count those answers again for good (replayedOf keeps the larger count); version 0 until the replay comes.
+  // count those answers again until the next replay; version 0 until the replay comes.
   const waitRp = RO && lgFor(S) && !recovered;
   if (waitRp) store.set(RK, 0);
   if (!mine && !recovered && !waitRp) {
@@ -629,6 +636,7 @@ function mergeSubject(j, d, S, mine) {
       // whose mxRecalc tells it with its card (progress.js mxLostNotice); the merge would take it silently.
       if (RO && rvSaved > rvApplied(S))
         Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
+      clockTick(); // before the merge moves the level's count (another device's adoption may have lowered it)
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.

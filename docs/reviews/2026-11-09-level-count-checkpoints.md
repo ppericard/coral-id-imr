@@ -1,10 +1,10 @@
 # The level's answer count and the checkpoints that hang on it (2026-11-09)
 
-**Status: decided work, its readers built (2026-11-23, "Step 1 built", below), the count itself to come.** Written on
-2026-11-09 on the branch `claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and brought to
-`main` on 2026-11-17 (rule W6), checked again against `origin/main` at 2c6815ba. The branch also held `model.js`
-`countShift`, a shift this note shows is not enough (below, "The problem"); it is not brought over. On `main` the level's count still
-keeps the larger of the device's and the log's (`core.js` `replayedOf`, its comment names this note's branch).
+**Status: decided work, built (2026-11-23, "Step 1 built" and "Step 2 built", below) but for the opt-ins' "Not now".**
+Written on 2026-11-09 on the branch `claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and
+brought to `main` on 2026-11-17 (rule W6), checked again against `origin/main` at 2c6815ba. The branch also held
+`model.js` `countShift`, a shift this note shows is not enough (below, "The problem"); it is not brought over. Until
+step 2 (below) the level's count kept the larger of the device's and the log's (`core.js` `replayedOf`).
 
 Rule D9 (Pierre, 2026-11-09, Q322, Q330) wants the log's counts everywhere, the level's "answers so far" too, so answers
 counted twice leave the device. #840 does it for every unit but keeps the level's count as the larger of the two (main's
@@ -76,3 +76,24 @@ clock instead of one counter per checkpoint.
   D5). Not on the clock yet: the opt-ins' "Not now" (`app.js` writes `Q[k + 'A']` and the count `core.js` reads against
   it). A checkpoint written on another device carries that device's clock: the same as its count until the drops, after
   them off by the difference of the doubles the two devices dropped.
+
+## Step 2 built: the count follows the log (2026-11-23)
+
+- **The count** (`core.js` `replayedOf`, `replayBase`; the sheet's embedded copy, its changes file, rule D3): the level's
+  answer count (`ok`, `ko`) is the replay's, as every unit's already was, in the record adopted and in the merge
+  baseline. With no answer in the log at all, the level goes as a unit goes: dropped when the saved copy counts answers
+  there, kept (none of the log's fields) when it counts none (rule D9, Q330: no exception).
+- **Rules versions** (rule D5): the corals' 15, the fish's 7, the sea slugs' 4, no card (rule D6), so every device takes
+  the replay once and the doubles leave it; the leaderboards follow (rule D8). What moves, for whom: only a player whose
+  saved level counts more answers than the log (doubles from before #824, or answers from before a subject's log began)
+  sees that count come down to the log's: the thresholds on the count itself (`OPEN.STUCK_FROM`, `CHOICE.ASK`,
+  `WINK.AT`, `PULSE.FIRST`), the level's Elo step size in the game until the next replay (`core.js` `eloStep`, from the
+  count) and the leaderboard's `ELO_MIN` gate read the log's count. No bar, ability or learned mark moves: the
+  ability was already the log's. A player whose count agrees with the log sees nothing.
+- **The clock across a sync** (`sync.js` `clockTick`): `tally()` before a merge and before a replay's adoption, so a
+  count that goes up then down in one sync, or a clock not started before the drop, loses no answer
+  (`tests/trustlog.test.js`, the three clock tests). Before model.js is in (the quiz tier) there is no clock to tick: it
+  starts at the count it finds then.
+- **Left**: the opt-ins' "Not now" (`app.js` `Q[k + 'A']`, read by `core.js` `openState` against the count) is not on
+  the clock yet: a count that goes down delays that offer's second ask by the drop (at most once, `OPEN_AGAIN`
+  answers after a first "Not now"). `app.js` was held by another lane (REE-64); a follow-up.

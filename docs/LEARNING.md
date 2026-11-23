@@ -734,7 +734,9 @@ The answer log is the reference (rule D9). The sheet replays each player's whole
 (`core.js` `replayProgress`, `replayedOf`; "Full replay" below), whenever a rules version is added (`core.js` `RVS`, the
 fish's `FISH_RVS`, the sea slugs' `SEASLUG_RVS`; rule D5), and every device adopts the replay once (`sync.js`
 `replayAdopt`). The replay's record of a unit and its answer count win over the saved copy, also when the copy holds
-more answers; a unit the log has no answer on loses the answers the copy counts. There is no floor: a bar may go down.
+more answers; a unit the log has no answer on loses the answers the copy counts. The level's answer count follows the
+log the same way (rules version 15, fish 7, sea slugs 4); the app's checkpoints count on an answer clock of their own
+(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). There is no floor: a bar may go down.
 A recalculation is silent, a learned mark taken away included (rule D6), and every leaderboard follows at once (rule D8).
 
 ### Fish on the same model
@@ -1480,9 +1482,10 @@ replay".
   move and volatility, run, the later last answer `at`, a duel won on either side, variant groups left `vl`; the photos
   seen per photo the larger of the two sides, since the device also counts as shown a corallites hint revealed after the
   answer, which the log leaves out and the exam must not meet as new), `pm` 1 and the rules version (so `mergeProgress`
-  keeps it over an older copy of the same answers); for the global level, the replay's ability and the larger answer
-  count (`answersSoFar` keys the exam's gaps, the cards met and the prompts, so it never goes back) with the answer
-  times `rt` of the same side, and no ability when the log has no answer at all. A unit the log has answers on takes the
+  keeps it over an older copy of the same answers); for the global level, the replay's ability, typed opportunities,
+  answer times `rt` and answer count (rules version 15: the exam's gaps, the cards met and the prompts count on the
+  device's answer clock, `model.js` `tally`, which never goes back), and, when the log has no answer at all, no level
+  if the copy's counts answers (as a unit). A unit the log has answers on takes the
   replay's record and counts even when the saved copy holds more there (counted twice: a reply lost, then another
   device's save); the copy's counts and recent results only when none of its answers is replayable. From the device,
   what the log cannot give: the mastery exam passed or in course (the exam is not replayed), dropped when a miss logged

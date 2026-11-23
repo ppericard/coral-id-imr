@@ -9,9 +9,11 @@ require('./slot.js').testGuard();
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  vm = require('vm');
 const C = require('../core.js');
 const {page, SV, withData, loadCodeGs} = require('./syncpage.js');
+const clockSrc = require('./clock.js');
 
 const DATA = require('../data.json'),
   GEN = {...((DATA.x && DATA.x.gen) || {}), ...DATA.gen},
@@ -63,9 +65,9 @@ test('a whole record counted twice: the replay of the log wins, every unit and t
   const M = C.replayAdopted(rep.P, twice, C.RV);
   G.slice(0, 10).forEach(u => assert.strictEqual(n(M[u]), n(once[u]), u + ': as in the log'));
   assert.strictEqual(total(M), 30);
-  // The level's answer count keeps main's rule, the larger of the two (the app's checkpoints hang on it; the log's count
-  // there is a follow-up, branch claude/level-count-from-log); its ability is the replay's.
-  assert.strictEqual(n(M[C.LEVEL]), 60);
+  // The level's answer count is the log's too (rules version 15; the app's checkpoints count on their own answer clock,
+  // model.js tally), and its ability.
+  assert.strictEqual(n(M[C.LEVEL]), 30);
   assert.strictEqual(M[C.LEVEL].th, rep.P[C.LEVEL].th, "the replay's ability");
   // The merge baseline after the adoption is the replay's record.
   const B = C.replayBase(rep.P, M, C.RV, twice);
@@ -124,25 +126,30 @@ test('a unit the log has no answer on: its answers on the device go; a unit with
 });
 
 // A player with no answer in the log at all (an empty replay) keeps no unit with answers and no
-// ability; the level's count keeps main's rule (the larger).
-test('an empty replay: every unit with answers goes, the ability too; the level count kept', () => {
+// ability; the level, as a unit, goes when it counts answers (rules version 15), stays when it counts none.
+test('an empty replay: every unit with answers goes, the level with its count and ability too', () => {
   const M = C.replayAdopted({}, {'~level': {ok: 17, ko: 0, th: 2, vr: 0.1}, Acropora: {ok: 17, ko: 0, h: '11111'}}, 2);
   assert.ok(!M.Acropora);
-  assert.deepStrictEqual([M[C.LEVEL].ok, M[C.LEVEL].th, M[C.LEVEL].vr], [17, undefined, undefined]);
+  assert.ok(!(C.LEVEL in M), 'its 17 answers in no log: dropped');
+  const Z = C.replayAdopted({}, {'~level': {ok: 0, ko: 0, th: 2, h: ''}}, 2);
+  assert.deepStrictEqual(Z[C.LEVEL], {ok: 0, ko: 0, h: ''}, 'no answer either: kept, none of the log fields');
 });
 
-// When the sheet sent no level (an empty log), the merge baseline's level is the shared
-// copy's, never the adopted one, which holds this device's unsent answers: the next merge keeps every answer once.
-test("an empty replay with an unsent answer: the baseline's level is the shared copy's, the next merge counts each answer once", () => {
+// When the sheet sent no level (an empty log), the device's unsent answers are replayed on top (sync.js replayAdoptS):
+// the record adopted holds them alone, the merge baseline none of the shared copy's answers (in no log), and the next
+// merge with a device that adopted the same replay counts each answer once.
+test('an empty replay with an unsent answer: the baseline keeps no level, the next merge counts each answer once', () => {
   const shared = {'~level': {ok: 3, ko: 0, th: 1}},
     here = {'~level': {ok: 4, ko: 0, th: 1}, Acropora: {ok: 1, ko: 0, h: '1'}}, // one answer not sent yet
-    M = C.replayAdopted({}, here, 2),
+    mine = replay([ans('e0', 'Acropora', 1, CORAL + 48 * H)], GEN).P, // replayed on top of the empty replay
+    M = C.replayAdopted(mine, here, 2),
     B = C.replayBase({}, M, 2, shared);
-  assert.strictEqual(n(B[C.LEVEL]), 3, "the shared copy's level, not the adopted one with the unsent answer");
-  // Another device saved one more answer on the shared copy: 3 + 1 there, this device's own 1 on top.
-  const R = {'~level': {ok: 4, ko: 0, th: 1}, Porites: {ok: 1, ko: 0, h: '1'}},
-    merged = C.mergeProgress(B, M, R);
-  assert.strictEqual(n(merged[C.LEVEL]), 5, 'every answer once');
+  assert.strictEqual(n(M[C.LEVEL]), 1, 'the unsent answer only');
+  assert.ok(!B[C.LEVEL], "no baseline level: the shared copy's 3 answers are in no log");
+  // Another device adopted the same replay, then saved one answer of its own.
+  const there = replay([ans('e1', 'Porites', 1, CORAL + 49 * H)], GEN).P,
+    merged = C.mergeProgress(B, M, there);
+  assert.strictEqual(n(merged[C.LEVEL]), 2, 'every answer once');
 });
 
 // A unit whose shared answers are not in the log is discarded from the merge baseline
@@ -159,9 +166,9 @@ test("a unit absent from the log: no baseline record, this device's unsent answe
 });
 
 // The level as one rule: over a doubled save every progress field of the level (ability,
-// typed opportunities, answer times) is the log's, in the record adopted and in its merge baseline; only the plain count
-// (the checkpoints' clock) keeps the larger, until claude/level-count-from-log.
-test("the level over a doubled save: the log's ability, typed opportunities and times; only the count kept", () => {
+// typed opportunities, answer times) and its answer count are the log's, in the record adopted and in its merge baseline
+// (rules version 15; the checkpoints count on their own answer clock, model.js tally).
+test("the level over a doubled save: the log's ability, typed opportunities, times and count", () => {
   const rec = {'~level': {ok: 10, ko: 0, th: 1, vr: 0.2, tyk: {f: 10}, rt: {n: 10, s: 30}}, Acropora: {ok: 5, ko: 0, h: '11111', ty: 5}},
     saved = {
       '~level': {ok: 20, ko: 0, th: 2, vr: 0.1, lt: 5, tyk: {f: 20}, rt: {n: 20, s: 60}},
@@ -171,22 +178,22 @@ test("the level over a doubled save: the log's ability, typed opportunities and 
     B = C.replayBase(rec, M, 2, saved);
   for (const L of [M[C.LEVEL], B[C.LEVEL]]) {
     assert.deepStrictEqual([L.th, L.vr, L.lt, L.tyk, L.rt], [1, 0.2, undefined, {f: 10}, {n: 10, s: 30}]);
-    assert.strictEqual(n(L), 20, 'the count: the larger (the clock)');
+    assert.strictEqual(n(L), 10, "the count: the log's");
   }
 });
 
-// An empty log, the same rule: the baseline keeps the shared clock only, so two devices'
-// new typed answers both survive the next merge.
-test("an empty log: the baseline's level keeps the count only, no typed opportunities or times from the old save", () => {
+// An empty log, the same rule: no level in the record adopted nor in its baseline, so two devices' new typed answers
+// both survive the next merge, and none of the old save's answers, typed opportunities or times.
+test('an empty log: no level in the baseline, no answers, typed opportunities or times from the old save', () => {
   const shared = {'~level': {ok: 20, ko: 0, th: 1, tyk: {f: 20}, rt: {n: 20, s: 60}}},
     M = C.replayedOf({P: {}}, shared, 2),
     B = C.replayBase({}, M, 2, shared);
-  assert.strictEqual(n(B[C.LEVEL]), 20);
-  assert.deepStrictEqual([B[C.LEVEL].tyk, B[C.LEVEL].rt, B[C.LEVEL].th], [undefined, undefined, undefined]);
-  const here = {...M, '~level': {...M[C.LEVEL], ok: 21, tyk: {f: 1}}},
-    there = {...M, '~level': {...M[C.LEVEL], ok: 21, tyk: {f: 1}}},
+  assert.ok(!M[C.LEVEL] && !B[C.LEVEL]);
+  const here = {...M, '~level': {ok: 1, ko: 0, tyk: {f: 1}}},
+    there = {...M, '~level': {ok: 1, ko: 0, tyk: {f: 1}}},
     merged = C.mergeProgress(B, here, there);
   assert.deepStrictEqual(merged[C.LEVEL].tyk, {f: 2}, "both devices' typed opportunities");
+  assert.strictEqual(n(merged[C.LEVEL]), 2);
 });
 
 test('progress from before the coral log: dropped as any answer the log does not have', () => {
@@ -226,7 +233,8 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
     Object.keys(once)
       .filter(u => u !== C.LEVEL)
       .forEach(u => assert.strictEqual(n(M[u]), n(once[u]), `case ${k}: ${u}`));
-    assert.strictEqual(n(M[C.LEVEL]), Math.max(n(once[C.LEVEL]), n(saved[C.LEVEL])), `case ${k}: the level's count, the larger`);
+    assert.strictEqual(n(M[C.LEVEL]), n(once[C.LEVEL]), `case ${k}: the level's count, the log's`);
+    assert.strictEqual(n(M[C.LEVEL]), A.length, `case ${k}: the level counts every answer of the log once`);
     extra.forEach(u => assert.ok(!(u in M), `case ${k}: ${u} in no log, dropped`));
     assert.strictEqual(total(M), A.length, `case ${k}: every answer of the log once`);
     // Adopting the same replay again over the adopted record changes no count.
@@ -264,6 +272,75 @@ test('a device holding its record twice under the rules before: the next sync ta
     assert.strictEqual(n(D.ctx.P.Pavona), 1, `v${v}: the unsent answer kept`);
     assert.strictEqual(cards, 0, `v${v}: no card (Q330)`);
   }
+});
+
+// The answer clock across a sync (model.js tally, its own source; sync.js clockTick): the device counts its 12 logged
+// answers twice (24 on the level). other: the copy another device saved, under rules version r. clock: the clock as an
+// earlier visit left it ([c, n]; null: not started). Returns the page after one pull, its level's count and its clock.
+async function clockSync(other, r, clock, mine = 0) {
+  const s = loadCodeGs(withData()),
+    A = Array.from({length: 12}, (_, i) => ans('k' + i, G[i % 4], i % 3 !== 2, CORAL + 48 * H + i * 60000)),
+    rep = replay(A, GEN),
+    twice = inflate(C.replayedOf(rep, {}, C.RV - 1), (u, x) => [2 * (x.ok || 0), 2 * (x.ko || 0)]),
+    rv = JSON.stringify(C.RV - 1);
+  // This device's last save (revision 1), then the other device's (revision 2) with its answers in the log.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': JSON.stringify(twice), 'reefid-sync-coral-rv': rv},
+    summary: {},
+    answers: A
+  });
+  const O = other(twice, rep);
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    at: 1,
+    data: {'reefid-sync-coral-progress': JSON.stringify(O.P), 'reefid-sync-coral-rv': JSON.stringify(r)},
+    summary: {},
+    answers: O.A
+  });
+  const here = inflate(twice, (u, x) => (u === C.LEVEL ? [(x.ok || 0) + mine, x.ko || 0] : null)),
+    D = page(s, {
+      SYNC: {name: 'Ana', pin: '1234', log: [], base: JSON.parse(JSON.stringify(twice)), srv: 1},
+      P: JSON.parse(JSON.stringify(here)),
+      ls: {'reefid-sync-coral-progress': JSON.stringify(here), 'reefid-sync-coral-rv': rv}
+    });
+  vm.runInContext(`var CB = ${JSON.stringify(clock ? {c: clock[0], n: clock[1]} : {})}; var cbSave = () => {};` + clockSrc(), D.ctx);
+  D.ctx.answersSoFar = () => n(D.ctx.P[C.LEVEL]);
+  D.ctx.SYNC.dirty = false;
+  await D.syncPull();
+  return {D, count: n(D.ctx.P[C.LEVEL]), clock: D.ctx.tally(), rv: D.rvApplied()};
+}
+
+test("one sync: another device's answers merged raise the level's count, the log's count lowers it; the clock keeps both", async () => {
+  // The other device played 4 more answers on top of the shared copy (28 on its level), logged: the log holds 16.
+  const four = Array.from({length: 4}, (_, i) => ans('m' + i, 'Pavona', 1, CORAL + 50 * H + i * 60000)),
+    R = await clockSync(
+      twice => ({P: {...twice, Pavona: {ok: 4, ko: 0, h: '1111'}, '~level': {...twice[C.LEVEL], ok: twice[C.LEVEL].ok + 4}}, A: four}),
+      C.RV - 1,
+      null
+    );
+  assert.strictEqual(R.rv, C.RV, 'the replay adopted');
+  assert.strictEqual(R.count, 16, "the level's count: the log's 16 answers");
+  assert.strictEqual(R.clock, 28, 'the clock: the 24 counted here, then the 4 merged, never down');
+});
+
+test("one sync: a copy whose count another device's adoption lowered, merged, then the replay: the clock loses none of this device's answers", async () => {
+  // The other device adopted rules version RV and saved: the log's 12 on its level. This device last ticked its clock at
+  // 20 and has counted 4 answers since (24, then 2 more played: 26, those 2 not in the shared copy nor the log here).
+  const R = await clockSync((twice, rep) => ({P: C.replayedOf(rep, twice, C.RV), A: []}), C.RV, [20, 20], 2);
+  assert.strictEqual(R.rv, C.RV);
+  assert.strictEqual(R.count, 12, "the log's 12 (the 2 played here are not in the queue: the replay holds none of them)");
+  assert.strictEqual(R.clock, 26, 'the clock: 20, then the 6 counted here since, ticked before the merge lowered the count');
+});
+
+test("a device whose clock starts at the sync: it starts at the count before the log's replaces it", async () => {
+  const R = await clockSync((twice, rep) => ({P: C.replayedOf(rep, twice, C.RV), A: []}), C.RV, null);
+  assert.deepStrictEqual([R.count, R.clock], [12, 24]);
+  // The next answer moves the clock on by one from there.
+  R.D.ctx.P[C.LEVEL].ok++;
+  assert.strictEqual(R.D.ctx.tally(), 25);
 });
 
 // A replay of a rules version newer than the app's own (core.js rvOf) is never adopted: an app that does not know the
