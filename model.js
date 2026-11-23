@@ -1848,10 +1848,45 @@ const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 
 // of its declared look-alikes the player can be asked (the slate and the bonus genera turned on), either way, or mixed
 // up with it. examLooks: those look-alikes, declared on either side as isLook reads them (Acropora lists Montipora,
 // Montipora does not list Acropora: the pair is still one to compare); lookLeft: the ones not compared yet.
+// The look-alikes come first (n's own list and lookRev's units that list n); when all are on the slate, the list is
+// the slate's in its order, and the units in play (app.js bonusList, which reads every set's units: the costly part)
+// are read only when one is off the slate. The same list, in the same order, as filtering every unit in play.
 const examLooks = n => {
-  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]),
-    own = (GX(n) || {}).look || [];
+  const own = (GX(n) || {}).look || [],
+    R = Array.isArray(own) ? lookRev() : null,
+    sl = R && slateGenera();
+  if (R && sl.every(x => R.K.has(x) || !GX(x))) {
+    const C = new Set([...own, ...(R.by.get(n) || [])].filter(x => x !== n)),
+      S = new Set(sl);
+    if ([...C].every(x => S.has(x))) return [...S].filter(x => C.has(x));
+  }
+  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]);
   return [...on].filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
+};
+// For examLooks, the units whose record lists a unit as its look-alike, over every record app.js GX reads (DATA.gen,
+// DATA.x.gen, TREEU.gen; K their ids, by: a unit to the ids whose look lists it). Made at most once per task, again
+// when one of those maps is replaced; null outside the app (no TREEU: the rated world, a test's stubs) or when a
+// record's look is not a list, and examLooks then reads every unit in play.
+let LOOKREV = null;
+const lookRev = () => {
+  if (typeof TREEU === 'undefined' || typeof DATA !== 'object' || !DATA) return null;
+  const M = [DATA.gen, (DATA.x || {}).gen, TREEU && TREEU.gen];
+  if (LOOKREV && LOOKREV.M.every((G, i) => G === M[i])) return LOOKREV.R;
+  const K = new Set(M.flatMap(G => (G && typeof G === 'object' ? Object.keys(G) : []))),
+    by = new Map();
+  let ok = true;
+  K.forEach(x => {
+    const L = (GX(x) || {}).look;
+    if (!L) return;
+    if (!Array.isArray(L)) return void (ok = false);
+    L.forEach(y => (by.has(y) ? by.get(y).push(x) : by.set(y, [x])));
+  });
+  const R = ok ? {K, by} : null;
+  if (typeof queueMicrotask === 'function') {
+    LOOKREV = {M, R};
+    queueMicrotask(() => (LOOKREV = null));
+  }
+  return R;
 };
 const lookLeft = n => looksLeft(P, n, examLooks(n));
 // And its confusion group met (docs/LEARNING.md "Confusion groups"): the exam opens once the unit's group partners that
