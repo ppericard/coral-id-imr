@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 223 (2026-11-23). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 224 (2026-11-23). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 223;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 224;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -73,7 +73,21 @@ function find_(sh, name){
   const i = names.indexOf(name.toLowerCase());
   return i > 0 ? i + 1 : 0;
 }
-function clean_(p){ return {name: String(p.name || '').trim().slice(0, 40), pin: String(p.pin || '').trim()}; }
+// A name is cut at its last whole character within 40 UTF-16 code units (core.js nameCut: never inside an emoji; a name
+// within the limit is kept as it is). The app's form makes a new name NFC (core.js nameClean), as an admin archive name
+// is here (users_ userArchive); a save keeps the spelling it sent (doPost_), so an older app's account is its own.
+function clean_(p){ return {name: CORE_.nameCut(String(p.name || '').trim()), pin: String(p.pin || '').trim()}; }
+// Why a new account name is refused (REE-35), '' when it is not: 'invisible' when it holds an invisible character
+// (core.js nameHidden: zero-width, bidi control, other format characters), 'lookalike' when it looks like the name of an
+// account in the RAs tab (sh), archives included, in any case (core.js nameKeys: a Cyrillic a, U+0430, for a Latin a,
+// a decomposed accent, a zero-width space; another Unicode form of a taken name too). The app's form says it before
+// signing in (the load's taken); a save that would make the account is refused (doPost_).
+function nameIssue_(sh, name){
+  if (CORE_.nameHidden(name)) return 'invisible';
+  if (sh.getLastRow() < 2) return '';
+  const k = new Set(CORE_.nameKeys(name));
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().some(r => r[0] !== '' && CORE_.nameKeys(String(r[0])).some(x => k.has(x))) ? 'lookalike' : '';
+}
 // A user string never becomes a formula: a leading = + - @ gets Sheets' quote prefix (hidden, not part of the value read back).
 // Also used for the code hash, whose base64 can start with +.
 const safe_ = x => { const t = String(x == null ? '' : x); return /^[=+\-@]/.test(t) ? "'" + t : t; };
@@ -211,7 +225,10 @@ function doGet_(e){
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const sh = sheet_('RAs', HEAD), r = find_(sh, name);
-  if (!r) { const g = gone_(name, hash_(name, pin)); return json_(g ? {ok: false, error: 'gone', into: g.into} : {ok: true, found: false}); }
+  // No account: taken says why a new account under this name would be refused (nameIssue_), so the app's form says it
+  // before signing in. An app from before it signs in, and its first save is refused (doPost_).
+  if (!r) { const g = gone_(name, hash_(name, pin)), t = g ? '' : nameIssue_(sh, CORE_.nameClean(name));
+    return json_(g ? {ok: false, error: 'gone', into: g.into} : t ? {ok: true, found: false, taken: t} : {ok: true, found: false}); }
   if (blocked_(name)) return json_({ok: false, error: 'wait'});
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
@@ -294,13 +311,20 @@ function doPost_(e){
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // roles (roles_)
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop || p.mergePlan) return json_(users_(p));  // admin user management (see users_)
-  const {name, pin} = clean_(p);
+  let {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
   let out, held = true;
   try {
+    // A new name is kept as the request spells it (REE-35): the app's form sends it NFC (core.js nameClean), and an app
+    // from before keeps the spelling it typed as its account's name, so its later requests (self-delete, reports: find_)
+    // and the Removed tombstones (gone_) name the account exactly. The look-alike check below compares names by their
+    // skeletons, so another Unicode form of a taken name is never a new account. An existing account keeps the spelling
+    // it was made with (its RAs name; the same account in any case, find_): a save in another case never changes how
+    // it shows, so a name that passed the look-alike check as made cannot later show as a look-alike in a mix of cases.
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
     let r = find_(sh, name);
+    if (r) name = String(sh.getRange(r, 1).getValue()) || name;
     if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
     // The code is checked before anything is written (a wrong code must not move anonymous answers).
     if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
@@ -319,6 +343,10 @@ function doPost_(e){
     // No new account under a reserved name (core.js reservedName: a word such as constructor, __proto__ or toString),
     // refused before anything is logged or written; an account that has one already saves as any other.
     if (!r && CORE_.reservedName(name)) return json_({ok: false, error: 'reserved'});
+    // Nor under a name with an invisible character or one that looks like a taken name (nameIssue_, REE-35): refused as
+    // reserved, which every app stops on and says ("please choose another"); why says which.
+    const why = r ? '' : nameIssue_(sh, name);
+    if (why) return json_({ok: false, error: 'reserved', why: why});
     const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
     // A light save against another revision than the saved one (another device wrote since) is answered 'stale' before
     // anything is counted or logged, with the load of the copy there (load_), read once the lock is released: the app
@@ -3562,11 +3590,15 @@ function usersDo_(p, who){
       // to the name (hash_), so the app no longer opens it. The old name is not marked removed: a new sign-in may start a
       // new account there; a device still signed in with it is told the record was archived (sync.js).
       if (p.userArchive) {
-        const m = p.userArchive || {}, a = row_(String(m.from || '')), into = String(m.into || '').trim().slice(0, 40);
+        // The archive name is a new name (REE-35): NFC and cut whole (core.js nameClean), never with an invisible
+        // character (reserved, why invisible) nor looking like a taken name (exists, why lookalike: nameIssue_).
+        const m = p.userArchive || {}, a = row_(String(m.from || '')), into = CORE_.nameClean(m.into || '');
         if (!a || !into) return {ok: false, error: 'user'};
         if (CORE_.reservedName(into)) return {ok: false, error: 'reserved'};  // no archive under a reserved name either
+        if (CORE_.nameHidden(into)) return {ok: false, error: 'reserved', why: 'invisible'};
         if (archived_(a.v)) return {ok: false, error: 'archived'};
         if (row_(into)) return {ok: false, error: 'exists'};
+        if (nameIssue_(ra, into)) return {ok: false, error: 'exists', why: 'lookalike'};
         const from = String(a.v[0]);
         adminDrop_(a.v[6]);  // an archive is no longer the admin's account
         ra.getRange(a.r, 1).setValue(safe_(into));
@@ -8188,6 +8220,120 @@ const CORE_ = (function () { const module = {exports: {}};
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
+  // Look-alike account names (REE-35, the integrator's call): two names that look the same can no longer be two accounts.
+  // A name is at most NAME_MAX UTF-16 code units (the form's maxlength, Code.gs clean_), cut back to its last whole
+  // character (nameCut: a grapheme where the engine segments them, else a code point; never inside an emoji or a
+  // surrogate pair; a name within the limit is never touched). A new name is NFC (nameClean: the app's sign-in form, the admin's
+  // archive name; Code.gs doPost_ keeps the spelling a save sends, an older app's included), refused when it holds an
+  // invisible character (nameHidden), and
+  // refused as taken when it looks like an existing account's name in any case (nameSkeleton, nameKeys). An existing account is never renamed,
+  // merged or changed: these apply to new names only.
+  const NAME_MAX = 40;
+  const nameCut = (s, n = NAME_MAX) => {
+    s = String(s == null ? '' : s);
+    if (s.length <= n) return s;
+    const fit = parts => {
+      let out = '';
+      for (const x of parts) {
+        if (out.length + x.length > n) break;
+        out += x;
+      }
+      return out;
+    };
+    const Seg = typeof Intl === 'object' && Intl && typeof Intl.Segmenter === 'function' ? Intl.Segmenter : null;
+    // One grapheme longer than the limit (a letter under dozens of marks) leaves nothing whole: then code points.
+    return (Seg && fit(Array.from(new Seg(undefined, {granularity: 'grapheme'}).segment(s), x => x.segment))) || fit(Array.from(s));
+  };
+  const nameClean = s =>
+    nameCut(
+      String(s == null ? '' : s)
+        .trim()
+        .normalize('NFC')
+    );
+  // Invisible characters a new name may not hold: the format characters (Unicode category Cf: zero-width space, joiner and
+  // non-joiner, the bidi controls LRM RLM LRE RLE PDF LRO RLO and the isolates, the word joiner, the BOM, the soft
+  // hyphen, the tags), control characters (Cc), line and paragraph separators, and the letters and marks that draw
+  // nothing (the combining grapheme joiner, the Hangul fillers, the Khmer inherent vowels, the Mongolian variation
+  // selectors, the Braille blank). An emoji's own joiner stays: a zero-width joiner between two pictographs (woman
+  // scientist: woman, joiner, microscope) and the tags of a flag (England, Scotland, Wales) draw one emoji, not an
+  // invisible mark. A variation selector (and the reserved code points among the default-ignorable ones) is invisible
+  // too, except right after a symbol, a punctuation mark or a digit (an emoji's presentation: a red heart, a double
+  // exclamation mark, a keycap) or a letter of a script without case (an ideograph's variant). A name with nothing visible left (only marks, say) is refused too.
+  // (Escapes only, here and below: an invisible character written as it is would be invisible in the code too.)
+  const NAME_HIDDEN =
+    /[\p{Cf}\p{Cc}\u{2028}\u{2029}\u{034F}\u{115F}\u{1160}\u{17B4}\u{17B5}\u{180B}-\u{180F}\u{2800}\u{3164}\u{FE00}-\u{FE0F}\u{FFA0}\u{FFF0}-\u{FFF8}\u{E0000}-\u{E0FFF}]/u;
+  const NAME_EMOJI_ZWJ = /(\p{So}[\u{FE0F}\u{1F3FB}-\u{1F3FF}]?)\u{200D}(?=\p{So})/gu,
+    NAME_FLAG_TAGS = /\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F}/gu,
+    NAME_VS_OK = /([\p{S}\p{P}\p{N}\p{Lo}])[\u{FE00}-\u{FE0F}\u{E0100}-\u{E01EF}]/gu;
+  const nameHidden = name => {
+    const s = String(name == null ? '' : name)
+      .replace(NAME_FLAG_TAGS, '\u{1F3F4}')
+      .replace(NAME_EMOJI_ZWJ, '$1')
+      .replace(NAME_VS_OK, '$1');
+    return NAME_HIDDEN.test(s) || (s !== '' && !/[^\s\p{M}]/u.test(s.replace(NAME_IGNORED, '')));
+  };
+  // Greek and Cyrillic letters that look like a Latin letter, each with that letter: every entry of Unicode's
+  // confusables data (UTS #39, https://www.unicode.org/Public/security/latest/confusables.txt, version 18.0.0) whose source
+  // is a letter of U+0370-U+04FF and whose prototype is one ASCII letter. One change: the capital Greek iota Ι and the
+  // capital Ukrainian І, which the data map to l as it maps the Latin I, map to I here, since names are compared case
+  // aside (Ian and ian are one account, so the Latin I/l pair cannot be kept).
+  const NAME_LATIN = (() => {
+    const o = Object.create(null),
+      s =
+        'αaаaΑAАAЬbΒBВBϲcсcϹCСCеeҽeΕEЕEϜFһhҺhΗHНHιiіiϳjјjͿJЈJΚKКKΙIІIӏlӀlΜMϺMМMΝNοoσoϭoоoΟOОOρpϱpϸpрpΡPРPгrѕsЅSΤTТTυuνvѵvѴVѡwшwхxΧXХXγyуyүyΥYϒYУYҮYΖZ';
+    for (let i = 0; i < s.length; i += 2) o[s[i]] = s[i + 1];
+    return o;
+  })();
+  // Default-ignorable code points (Unicode's DerivedCoreProperties: they draw nothing) and the blanks above: left out of
+  // the skeleton, so a name with one looks like the name without it.
+  const NAME_IGNORED =
+    /[\p{Cf}\u{00AD}\u{034F}\u{061C}\u{115F}\u{1160}\u{17B4}\u{17B5}\u{180B}-\u{180F}\u{200B}-\u{200F}\u{202A}-\u{202E}\u{2060}-\u{206F}\u{2800}\u{3164}\u{FE00}-\u{FE0F}\u{FEFF}\u{FFA0}\u{FFF0}-\u{FFF8}\u{1BCA0}-\u{1BCA3}\u{1D173}-\u{1D17A}\u{E0000}-\u{E0FFF}]/gu;
+  // A name's skeleton, what it looks like (after UTS #39's skeleton: decomposed, mapped, composed): decomposed (NFD), the
+  // invisible characters dropped, each Greek or Cyrillic look-alike as its Latin letter, compatibility forms folded
+  // (NFKC: a full-width Ａ is A), case aside, every run of spaces one space. Two names with one skeleton look alike.
+  const nameSkeleton = name =>
+    Array.from(
+      String(name == null ? '' : name)
+        .normalize('NFD')
+        .replace(NAME_IGNORED, '')
+    )
+      .map(c => NAME_LATIN[c] || c)
+      .join('')
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim()
+      .normalize('NFC');
+  // A name's keys: the skeletons of the name as it is, in lower case and in upper case. An account is its name in any
+  // case (Code.gs find_), and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital
+  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key. A mix of cases no
+  // whole-name case covers never shows: an account keeps the spelling it was made with (Code.gs doPost_).
+  const nameKeys = name => {
+    const t = String(name == null ? '' : name);
+    return [...new Set([t, t.toLowerCase(), t.toUpperCase()].map(nameSkeleton))];
+  };
+  // The groups of names that look alike among the given ones (the admin's warning on Players): names joined by a shared
+  // key (nameKeys), each group sorted, the groups by their first name; one name in two spellings of case (one account) is
+  // one name.
+  const nameAlikePairs = names => {
+    const L = [],
+      up = [],
+      by = new Map(),
+      top = i => (up[i] === i ? i : (up[i] = top(up[i])));
+    (names || []).forEach(n => {
+      const t = String(n == null ? '' : n);
+      if (!t || L.some(x => x.toLowerCase() === t.toLowerCase())) return;
+      const i = L.push(t) - 1;
+      up[i] = i;
+      nameKeys(t).forEach(k => (by.has(k) ? (up[top(i)] = top(by.get(k))) : by.set(k, i)));
+    });
+    const G = new Map();
+    L.forEach((t, i) => G.set(top(i), (G.get(top(i)) || []).concat(t)));
+    return [...G.values()]
+      .filter(g => g.length > 1)
+      .map(g => g.slice().sort())
+      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  };
   const SEED = '\u{1F331}';
   // The admin's mark: the script knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its leaderboard
   // rows, admin: 1 in its load reply). markRow: whether a leaderboard row carries it. markHtml: the mark itself, plain
@@ -11850,6 +11996,13 @@ const CORE_ = (function () { const module = {exports: {}};
     RESERVED_NAMES,
     SEED_LOOKALIKES,
     reservedName,
+    NAME_MAX,
+    nameCut,
+    nameClean,
+    nameHidden,
+    nameSkeleton,
+    nameKeys,
+    nameAlikePairs,
     SEED,
     markRow,
     markHtml,
