@@ -445,6 +445,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
+    clockTick(); // and right after: the log's count the clock's baseline before another answer is counted
     store.set(rvKey(S), rp.rv);
     if (stamp !== null) store.set(stKey(S), stamp); // the structure it was replayed under ('' for the base's)
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself (core.js replayBase), never
@@ -472,9 +473,12 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
 // The answer clock (model.js tally: the answers counted on this device, never going down, which the checkpoints count
 // on) brought up to the level's answer count before a merge or a replay's adoption changes that count: a count that goes
 // up then down in one sync (another device's answers merged, then the log's count adopted), or a clock not started yet
-// (it starts at the count), loses no answer. Not before model.js is in (the quiz tier): the clock then starts at the count
-// it finds.
+// (it starts at the count), loses no answer; and right after, so the new count is its baseline before the next answer.
+// Not before model.js is in (the quiz tier): the clock then starts at the count it finds.
 const clockTick = () => typeof tally === 'function' && tally();
+// At the end of each subject's merge, the other devices' marks in (the progress's exams, the cards, the surprise cards):
+// the clock moved up to the latest of them if it is behind (model.js clockSync).
+const clockSeen = () => typeof clockSync === 'function' && clockSync();
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (reefid-sync-coral-reset, a time) wins over older progress.
@@ -610,6 +614,7 @@ function mergeSubject(j, d, S, mine) {
     if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
     notesSeen(j);
     if (RO) replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here
+    clockSeen();
     prog();
     return;
   }
@@ -639,6 +644,7 @@ function mergeSubject(j, d, S, mine) {
       clockTick(); // before the merge moves the level's count (another device's adoption may have lowered it)
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
+      clockTick(); // and right after: the merged count the clock's baseline
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
     } else store.set(RK, stOff ? 0 : rvSaved);
@@ -649,6 +655,7 @@ function mergeSubject(j, d, S, mine) {
   if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
   notesSeen(j);
   if (RO) replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here
+  clockSeen();
   prog();
 }
 // A save that fails (docs/ARCHITECTURE.md "A save that fails"): a passing failure is retried SAVE.RETRY seconds apart

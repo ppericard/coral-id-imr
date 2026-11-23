@@ -75,7 +75,8 @@ clock instead of one counter per checkpoint.
   answer; then `core.js` `replayedOf` and `replayBase` (the sheet's embedded copy too, rule D3) and a rules version (rule
   D5). Not on the clock yet: the opt-ins' "Not now" (`app.js` writes `Q[k + 'A']` and the count `core.js` reads against
   it). A checkpoint written on another device carries that device's clock: the same as its count until the drops, after
-  them off by the difference of the doubles the two devices dropped.
+  them off by the difference of the doubles the two devices dropped (step 2 keeps the clocks aligned on those marks,
+  below).
 
 ## Step 2 built: the count follows the log (2026-11-23)
 
@@ -91,9 +92,16 @@ clock instead of one counter per checkpoint.
   count) and the leaderboard's `ELO_MIN` gate read the log's count. No bar, ability or learned mark moves: the
   ability was already the log's. A player whose count agrees with the log sees nothing.
 - **The clock across a sync** (`sync.js` `clockTick`): `tally()` before a merge and before a replay's adoption, so a
-  count that goes up then down in one sync, or a clock not started before the drop, loses no answer
-  (`tests/trustlog.test.js`, the three clock tests). Before model.js is in (the quiz tier) there is no clock to tick: it
-  starts at the count it finds then.
+  count that goes up then down in one sync, or a clock not started before the drop, loses no answer, and right after
+  each, so the new count is the clock's baseline before the next answer (Codex, #1497). Before model.js is in (the quiz
+  tier) there is no clock to tick: it starts at the count it finds then.
+- **Two devices' clocks** (Codex, #1497): once a count goes down, two devices' clocks differ by the doubles each counted
+  (a new device's, or one after a sign-in, starts at the log's count), so a synced mark from a device ahead (an exam's
+  `s.ex.at`, a card's mark, a surprise card shown) would hold a gap back by the difference. The clock is kept as a
+  Lamport clock over those marks: it starts at the latest synced mark when that is ahead of the count (`model.js`
+  `clockMarks`), and after each subject's merge it moves up to the latest mark if it is behind (`clockSync`, from
+  `sync.js` `mergeSubject`). A mark of this device's is then due as much sooner; no mark is ever ahead of the clock.
+  Tests: `tests/trustlog.test.js` (the clock tests, a new device loading an exam in course), `tests/intro.test.js`.
 - **Left**: the opt-ins' "Not now" (`app.js` `Q[k + 'A']`, read by `core.js` `openState` against the count) is not on
   the clock yet: a count that goes down delays that offer's second ask by the drop (at most once, `OPEN_AGAIN`
   answers after a first "Not now"). `app.js` was held by another lane (REE-64); a follow-up.

@@ -277,7 +277,9 @@ test('a device holding its record twice under the rules before: the next sync ta
 // The answer clock across a sync (model.js tally, its own source; sync.js clockTick): the device counts its 12 logged
 // answers twice (24 on the level). other: the copy another device saved, under rules version r. clock: the clock as an
 // earlier visit left it ([c, n]; null: not started). Returns the page after one pull, its level's count and its clock.
-async function clockSync(other, r, clock, mine = 0) {
+// fresh: a device that holds nothing of the account yet (no progress, no clock), loading it. play: answers counted on the
+// level right after the pull, before anything reads the clock.
+async function clockSync(other, r, clock, mine = 0, {fresh = false, play = 0} = {}) {
   const s = loadCodeGs(withData()),
     A = Array.from({length: 12}, (_, i) => ans('k' + i, G[i % 4], i % 3 !== 2, CORAL + 48 * H + i * 60000)),
     rep = replay(A, GEN),
@@ -300,17 +302,19 @@ async function clockSync(other, r, clock, mine = 0) {
     summary: {},
     answers: O.A
   });
-  const here = inflate(twice, (u, x) => (u === C.LEVEL ? [(x.ok || 0) + mine, x.ko || 0] : null)),
+  const here = fresh ? {} : inflate(twice, (u, x) => (u === C.LEVEL ? [(x.ok || 0) + mine, x.ko || 0] : null)),
     D = page(s, {
-      SYNC: {name: 'Ana', pin: '1234', log: [], base: JSON.parse(JSON.stringify(twice)), srv: 1},
+      SYNC: {name: 'Ana', pin: '1234', log: [], base: fresh ? {} : JSON.parse(JSON.stringify(twice)), srv: fresh ? 0 : 1},
       P: JSON.parse(JSON.stringify(here)),
-      ls: {'reefid-sync-coral-progress': JSON.stringify(here), 'reefid-sync-coral-rv': rv}
+      ls: fresh ? {} : {'reefid-sync-coral-progress': JSON.stringify(here), 'reefid-sync-coral-rv': rv}
     });
   vm.runInContext(`var CB = ${JSON.stringify(clock ? {c: clock[0], n: clock[1]} : {})}; var cbSave = () => {};` + clockSrc(), D.ctx);
   D.ctx.answersSoFar = () => n(D.ctx.P[C.LEVEL]);
   D.ctx.SYNC.dirty = false;
   await D.syncPull();
-  return {D, count: n(D.ctx.P[C.LEVEL]), clock: D.ctx.tally(), rv: D.rvApplied()};
+  const count = n(D.ctx.P[C.LEVEL]);
+  if (play) D.ctx.P[C.LEVEL].ok += play;
+  return {D, count, clock: D.ctx.tally(), rv: D.rvApplied()};
 }
 
 test("one sync: another device's answers merged raise the level's count, the log's count lowers it; the clock keeps both", async () => {
@@ -341,6 +345,44 @@ test("a device whose clock starts at the sync: it starts at the count before the
   // The next answer moves the clock on by one from there.
   R.D.ctx.P[C.LEVEL].ok++;
   assert.strictEqual(R.D.ctx.tally(), 25);
+});
+
+// Codex, #1497: an answer counted right after the replay lowered the count, before anything read the clock, counts on
+// it (the lowered count is the clock's baseline at once, sync.js clockTick after the install).
+test('an answer right after the sync, before the clock is read: it counts on the clock', async () => {
+  const four = Array.from({length: 4}, (_, i) => ans('m' + i, 'Pavona', 1, CORAL + 50 * H + i * 60000)),
+    R = await clockSync(
+      twice => ({P: {...twice, Pavona: {ok: 4, ko: 0, h: '1111'}, '~level': {...twice[C.LEVEL], ok: twice[C.LEVEL].ok + 4}}, A: four}),
+      C.RV - 1,
+      null,
+      0,
+      {play: 1}
+    );
+  assert.deepStrictEqual([R.count, R.clock], [16, 29], 'the 28 before, then this answer');
+});
+
+// Codex, #1497: a mark synced from a device whose clock is ahead (it counted doubles the log took away) is never ahead
+// of this device's clock: a new device's clock starts at the latest synced mark (model.js clockMarks), and a clock
+// behind one after a merge moves up to it (clockSync), so an exam synced in course waits its gap, not the difference.
+const exAhead = (twice, rep) => {
+  const P = C.replayedOf(rep, twice, C.RV),
+    u = Object.keys(P).find(g => g !== C.LEVEL && C.afterBkt(P[g]));
+  // An exam in course on the other device, its last question at its clock 23 (it counted 24 before the log's 12).
+  P[u].ex = {k: 1, t: 0, v: [], ts: CORAL + 60 * H, at: 23};
+  return {P, A: []};
+};
+test('a new device loading an exam in course from a device whose clock is ahead: its clock starts at that mark', async () => {
+  const R = await clockSync(exAhead, C.RV, null, 0, {fresh: true});
+  assert.strictEqual(R.count, 12);
+  const u = Object.keys(R.D.ctx.P).find(g => (R.D.ctx.P[g] || {}).ex);
+  assert.ok(u, 'the exam in course came with the copy');
+  assert.strictEqual(R.clock, 23, 'the clock at the mark: the exam gap counts from now, not after 11 more answers');
+});
+test('a device whose clock is behind a synced mark after the merge: it moves up to it', async () => {
+  const R = await clockSync(exAhead, C.RV, [10, 24]);
+  assert.strictEqual(R.clock, 23, 'its own 10, moved up to the mark');
+  const S = await clockSync(exAhead, C.RV, [30, 24]);
+  assert.strictEqual(S.clock, 30, 'a clock ahead of every mark stays');
 });
 
 // A replay of a rules version newer than the app's own (core.js rvOf) is never adopted: an app that does not know the
