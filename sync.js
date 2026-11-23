@@ -1470,14 +1470,12 @@ const uaShort = () => {
     m = T.map(([b, re]) => [b, u.match(re)]).find(([, x]) => x);
   return `${m ? m[0] + ' ' + m[1][1] : 'other'}${/Mobi|Android/.test(u) ? ' mobile' : ''}`;
 };
-// An event's id: the sheet skips an id already in its tab (Code.gs events_).
-const evId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 function ev(k, o = {}) {
   const key = k + '|' + (o.msg || o.f || o.r || '');
   // The one-tap answers and the pages summaries (one a visit, or one each time the app is left) are never deduplicated.
   if (k !== 'pulse' && k !== 'pages' && (evSeen.has(key) || evSeen.size >= EV_MAX)) return;
   evSeen.add(key);
-  const id = evId();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   store.set(
     EVQ,
     [
@@ -1648,17 +1646,14 @@ function pagesRoute(h) {
       localStorage.removeItem(PVLINK);
     } catch (e) {}
   }
-  const s = genus && P[genus],
-    now = Date.now();
-  pvRoll(now); // a stale tally is sent first: this opening goes in the new one
-  pagesOpen(PV, h, now, {
+  const s = genus && P[genus];
+  pagesOpen(PV, h, Date.now(), {
     genus,
     from,
     asked: s && (s.ok || 0) + (s.ko || 0) > 0,
     hidden: document.visibilityState === 'hidden',
     pre: SUBJ.pv // a fish page is named fish.<page> (core.js pageName)
   });
-  pvKeep(now);
 }
 // The screen it was sent from, rounded (core.js VIEWPORT, viewportOf): only once the sheet script keeps it (rule D4).
 const VIEWPORT_SHEET = 177;
@@ -1670,29 +1665,12 @@ const pagesScreen = () => {
 // The feedback sheet's tally (core.js PAGES.FB; quiz.js fbShown, fbMoreBind, fbEnd): one count into the visit's summary, which
 // the app already sends when it is left (pagesSend; docs/decisions/2026-11-18-feedback-sheet.md). No gate (rule D4): a
 // sheet script from before it drops the field, as it drops any field it does not know (core.js pagesClean).
-const fbTally = (kind, n) => {
-  pvRoll(Date.now()); // a stale tally is sent first: the count goes in the new one
-  pagesFb(PV, kind, n);
-};
-// The fields of a summary as queued: its id (pvId, the one its kept copy carries), the visit, the answers so far, the screen,
-// the summary S and its owner.
-const pvFields = S => ({
-  id: pvId,
-  vi: PVI,
-  ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}),
-  ...pagesScreen(),
-  ...S,
-  o: pvOwner()
-});
-// The app left: the summary queued, its kept copy dropped (pvDone). A stale tally is sent first as it is (pvRoll), then
-// what came after it.
+const fbTally = (kind, n) => pagesFb(PV, kind, n);
 function pagesSend() {
-  const now = Date.now();
-  pvRoll(now);
   if (typeof fbEnd === 'function') fbEnd(false); // the sheet still on screen: its seconds so far go in this summary
-  const S = pagesTake(PV, now);
-  if (S) ev('pages', pvFields(S));
-  pvDone();
+  const S = pagesTake(PV, Date.now());
+  if (!S) return;
+  ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...pagesScreen(), ...S, o: pvOwner()});
 }
 // The player active now, as a summary's owner (core.js pagesOwner): no anonymous id is made for a signed-in player.
 const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesOwner(null, anonId()));
@@ -1706,106 +1684,6 @@ const pagesWho = batch =>
     : SYNC && SYNC.name && SYNC.pin
       ? {ename: SYNC.name, epin: SYNC.pin, ...(SYNC.acct ? {eacct: SYNC.acct} : {})}
       : {eanon: anonId()};
-// The visit's summary kept on the device while it runs (docs/decisions/2026-11-23-pages-kept-copy.md), so a page killed
-// without a hidden event (the app or the phone stopped, a crash) still sends it: each visit keeps its summary so far, as
-// pagesSend would queue it, under a key of its own (PVLIVE + visit id), written when a page opens and every PV_BEAT while
-// in view (pvKeep), dropped when the summary is queued (pvDone). One writer per key: a page writes only its own key, and
-// another page only reads and removes one, so no page ever rewrites another's copy. One local rule, with no knowledge of
-// other pages: a copy not written for PV_STALE is sent as it is, under its own event id, by whichever page takes it out
-// of the store first (another page: pvRecover, at load and each beat; its own page: pvRoll, back in view or before its
-// tally changes), and the live page never goes on with a stale tally: it starts a new one under a new event id. The key
-// is the token: a copy is sent by the page that removed it; two pages taking it at the same instant are absorbed by the
-// queue's and the sheet's checks of the id. Only the pages in view and the killed ones not yet found have a key. Same
-// event, same fields: an older sheet script takes it as it is (rule D4).
-const PVLIVE = 'reefid-pv-live-',
-  PV_BEAT = 15000,
-  PV_STALE = 120000;
-let pvId = evId(),
-  pvCopy = null, // this page's copy as last written, and when
-  pvAt = 0,
-  pvStored = false; // whether that write reached the store (else no other page can have it)
-const pvGet = vi => {
-  const x = store.get(PVLIVE + vi, null);
-  return x && typeof x === 'object' && !Array.isArray(x) ? x : null;
-};
-const pvDel = vi => {
-  try {
-    localStorage.removeItem(PVLIVE + vi);
-  } catch (e) {}
-};
-// The visit ids that have a copy on this device.
-function pvVisits() {
-  const out = [];
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(PVLIVE)) out.push(k.slice(PVLIVE.length));
-    }
-  } catch (e) {}
-  return out;
-}
-// A copy taken out of the store: read, then removed.
-function pvTake(vi) {
-  const x = pvGet(vi);
-  if (x) pvDel(vi);
-  return x;
-}
-// A copy queued, unless this device's queue already holds its id.
-function pvQueue(x) {
-  if (x && typeof x === 'object' && x.r && typeof x.r === 'object' && x.id && !store.get(EVQ, []).some(y => y && y.id === x.id))
-    ev('pages', x);
-}
-// The summary so far, taken from a copy of the tally: the tally goes on.
-function pvPeek(now) {
-  const cp = O => Object.keys(O).reduce((o, k) => ((o[k] = O[k].slice()), o), Object.create(null));
-  return pagesTake({r: cp(PV.r), g: cp(PV.g), cur: PV.cur, at: PV.at, fb: (PV.fb || [0, 0, 0, 0]).slice()}, now);
-}
-// This page's copy gone stale (asleep, frozen, hidden long): sent as it is if it is still in the store (taken out first;
-// gone, another page sent it), then a new tally under a new id; the page in view goes on counting. Called before the
-// tally changes (pagesRoute, fbTally, pvKeep, pagesSend) and back in view.
-function pvRoll(now) {
-  if (!pvCopy || now - pvAt < PV_STALE) return;
-  if (!pvStored) pvQueue(pvCopy);
-  else if ((pvGet(PVI) || {}).id === pvCopy.id) pvQueue(pvTake(PVI));
-  const at = PV.at;
-  pagesTake(PV, now);
-  if (at) pagesResume(PV, now);
-  pvDone();
-}
-function pvKeep(now = Date.now()) {
-  pvRoll(now);
-  // The answer's feedback sheet still on screen: its seconds so far go in the tally (counted once, quiz.js fbEnd).
-  if (typeof fbEnd === 'function') fbEnd(false);
-  const S = pvPeek(now);
-  pvCopy = S
-    ? {...pvFields(S), k: 'pages', t: new Date(now).toISOString(), pg: (location.hash || '#home').slice(1, 60), av: appVer()}
-    : null;
-  pvAt = now;
-  if (pvCopy) store.set(PVLIVE + PVI, pvCopy);
-  else pvDel(PVI);
-  pvStored = !!pvCopy && (pvGet(PVI) || {}).id === pvCopy.id;
-}
-function pvDone() {
-  pvDel(PVI);
-  pvCopy = null;
-  pvStored = false;
-  pvId = evId();
-}
-function pvRecover(now = Date.now()) {
-  pvVisits()
-    .filter(vi => vi !== PVI && !(now - Date.parse((pvGet(vi) || {}).t) < PV_STALE))
-    .forEach(vi => pvQueue(pvTake(vi)));
-}
-setInterval(() => {
-  if (document.visibilityState !== 'visible') return;
-  pvKeep();
-  pvRecover();
-}, PV_BEAT);
-window.addEventListener('pageshow', () => pvRoll(Date.now()));
-try {
-  localStorage.removeItem('reefid-pv-live'); // the one shared map of an earlier build
-} catch (e) {}
-pvRecover();
 // Load times (app.js loadMark): sent once a visit.
 function loadSend() {
   if (loadSent || !('t0' in LOADM)) return;
@@ -1835,13 +1713,10 @@ document.addEventListener('visibilitychange', () => {
     pagesSend();
     sendAnon();
     sendEvents();
-  } else {
-    pvRoll(Date.now()); // back after a long while: a stale tally is sent before this one goes on
-    pagesResume(PV, Date.now());
-  }
+  } else pagesResume(PV, Date.now());
 });
 // A page closed or reloaded where the browser gives no hidden event first: its summary goes as when the app is hidden
-// (after a hidden event, nothing is left to queue).
+// (after a hidden event, pagesTake has nothing left, so nothing is queued twice).
 window.addEventListener('pagehide', () => {
   pagesSend();
   sendEvents();
@@ -1854,17 +1729,7 @@ function signIn(name, pin, j) {
   markSeen(j, name);
   store.set('reefid-board-new', j.found ? 0 : 1); // an account made here never meets the leaderboard as news (progress.js boardShow)
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
-  if (SYNC.anon) {
-    const from = pagesOwner(null, SYNC.anon),
-      into = pagesOwner(SYNC);
-    store.set(EVQ, pagesOwn(store.get(EVQ, []), from, into));
-    // and the copies of summaries kept on the device (pvKeep), as they would have been queued
-    pvVisits().forEach(vi => {
-      const x = pvGet(vi);
-      if (x && x.o === from) store.set(PVLIVE + vi, pagesOwn([x], from, into)[0]);
-    });
-    if (pvCopy) pvCopy = pagesOwn([pvCopy], from, into)[0]; // and this page's own, as last written
-  }
+  if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
     [LOG0, ANONQ, ANONID].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
@@ -2012,10 +1877,6 @@ function signOutClear(all) {
     EVQ,
     store.get(EVQ, []).filter(x => !(x && x.k === 'pages'))
   );
-  // and their copies kept on the device (pvKeep); the visit's tally goes on, kept again at the next beat as the next player's.
-  pvVisits().forEach(pvDel);
-  pvCopy = null;
-  pvStored = false;
   // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
   // The first-meeting cards too: the next player meets their own genera.
   [

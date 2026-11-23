@@ -761,35 +761,15 @@ player before (`P[g].ok + ko`).
 (`r`, `g`, capped at 30 pages and 30 genera), the visit id `vi` (random per page load), the answers so far `na`
 (`answersSoFar`), the screen `vp` once the replies say `v` ≥ `sync.js` `VIEWPORT_SHEET` (`viewportOn`, rule D4) and,
 once the answers' feedback was shown, the four feedback-sheet numbers `fb` (ARCHITECTURE.md "The More counter"); then it
-starts a fresh tally (coming back adds another summary with the same `vi`; the page still in view counts 0 times);
-`pagehide` does the same where a browser closes or reloads a page without a hidden event first. The
+starts a fresh tally (coming back adds another summary with the same `vi`; the page still in view counts 0 times).
+`pagehide` does the same, for a browser that closes or reloads a page without a hidden event first; after a hidden
+event the tally is empty, so nothing is queued twice ([decision](../decisions/2026-11-23-pages-kept-copy.md)). A page
+killed with no event at all (the app or the phone stopped, a crash) still loses its summary so far. The
 screen `vp` is `{w, h, d, o, b}` (`core.js` `VIEWPORT`, `viewportOf`): `innerWidth` and `innerHeight` rounded to 10 px,
 `devicePixelRatio` to one decimal and clamped, `o` portrait or landscape, `b` the band of the exact short side (0 ≤360,
 1 361-390, 2 391-414, 3 415-600, 4 wider, since the 10 px grid cannot keep the edges); `pagesClean` rounds and clamps it
 again and keeps the band only when it agrees with the rounded size. It feeds admin Players › Visits › Screens
 (`admin-visits.js` `screensOf`), for designing multi-photo game formats on the screens players really use.
-
-**A page killed without a hidden event** (the app or the phone stopped, a crash, a computer asleep with the app in view;
-[decision](../decisions/2026-11-23-pages-kept-copy.md)). The summary so far is also kept on the device while the visit
-runs (`sync.js` `pvKeep`): each visit writes, under a key of its own, `reefid-pv-live-<visit id>`, the event as
-`pagesSend` would queue it now (its id, time, page, app version, owner and fields), when a page opens and every
-`PV_BEAT` (15 s) while in view, read from a copy of the tally (`pvPeek`, after the feedback sheet's seconds so far:
-`quiz.js` `fbEnd(false)`). **One writer per key**: a page writes only its own key; another page only reads one and
-removes it (`pvTake`), and finds them by listing the keys with that prefix (`pvVisits`), so no page ever rewrites
-another's copy (the shared map of an earlier build, `reefid-pv-live`, is removed at load). The copy and the
-summary carry one identity, the tally's event id (`pvId`); queuing the summary drops the copy (`pvDone`) and gives the
-next tally a new id. **One local rule, no page knowing what another sent: a copy not written for `PV_STALE` (2 min)
-is sent as it is, under its own id, by whichever page takes it out of the store first, and the live page never goes on
-with a stale tally.** Another page takes it at load and at each beat (`pvRecover`; a page still open in another window
-writes its copy every 15 s, so it is never taken for a killed one). Its own page (`pvRoll`, on its last write's time)
-takes it back in view (`visibilitychange` visible, `pageshow`) and before its tally changes (`pagesRoute` before the
-page opens, `fbTally`, `pvKeep`, `pagesSend`), sends it if it was still there, then starts a new tally under a new id:
-what follows goes in the new one. The key is the token, so each copy is sent by the page that removed it, whatever the
-sheet still remembers of recent ids; two pages taking one at the same instant are absorbed by the queue's check of its
-ids (`pvQueue`) and the sheet's; a device whose storage refuses the copy sends its own stale tally
-itself (no other page can have it). Copies are never pushed out: only the pages in view and the killed pages not yet
-found have one. Sign-in moves the anonymous copies to the account, this page's own included
-(`pagesOwn`), sign-out drops them. Same event, same fields: the sheet script takes it as any summary (rule D4).
 
 **Whose it is.** Each summary is queued with its owner (`o`, `core.js` `pagesOwner`: `n:<name>` signed in,
 `a:<anonymous answer id>` otherwise) and kept on the device: a request (`sync.js` `evBatch`, `core.js` `pagesBatch`)
