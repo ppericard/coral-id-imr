@@ -42,8 +42,10 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   every check-in counts the running agents first. The source is Linear ("Linear" below), then the
   [ROADMAP.md](ROADMAP.md) rows not transferred yet, never a short list half marked "after Pierre" (AGENTS.md "Working
   mode": as many agents as useful; rule W27).
-- **Every turn ends with the next `send_later` check-in.** An agent waiting on a permission prompt is reported to Pierre
-  in one line and told how to do without it.
+- **Every turn ends with the next `send_later` check-in.** Its prompt is the one line
+  "Check-in: run `python3 tools/brief.py --checkin` and follow it", never a list of items, so a compaction or a new
+  session keeps the same driver ([tools/checkin.md](../tools/checkin.md), REE-244). An agent waiting on a permission prompt is reported to
+  Pierre in one line and told how to do without it.
 - **The Claude Code session runs in auto mode** (Pierre, 2026-11-12). A classifier judges each command, and the
   repository's narrow allow rules pass before it. **No permission prompts for Pierre.** Use Write and Edit for files.
   Use the host's file-editing tools in other environments. Write a script with the editing tool and run it by name.
