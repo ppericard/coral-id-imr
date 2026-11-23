@@ -111,11 +111,13 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         forum: L.some(x => /^Sea Slug Forum: \d+ pages cited$/.test(x.textContent) && /seaslugforum\.net/.test(x.querySelector('a').href)),
         paper: L.some(x => /^Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs$/.test(x.textContent)),
         https: [...document.querySelectorAll('#view .abcites a')].every(a => /^https:\/\//.test(a.href) && a.target === '_blank'),
-        worms: /World Register of Marine Species/.test(document.querySelector('#view .about').textContent)
+        worms: /World Register of Marine Species/.test(document.querySelector('#view .about').textContent),
+        // REE-221: WoRMS and Wikipedia are the hand-written lines' (once each), never derived lines as well
+        twice: L.filter(x => /Wikipedia|World Register|WoRMS/.test(x.textContent)).length
       };
     });
     check(
-      ab.n >= 30 && !ab.loading && ab.forum && ab.paper && ab.https && ab.worms,
+      ab.n >= 30 && !ab.loading && ab.forum && ab.paper && ab.https && ab.worms && !ab.twice,
       `1: About does not list the sea slugs' cited sources: ${JSON.stringify(ab)}`
     );
     check(!errs.length, '1: page errors on About: ' + errs.join('; '));
