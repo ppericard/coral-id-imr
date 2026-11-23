@@ -25,7 +25,8 @@
 // open nothing); --liveoff records them nowhere (the live mode's version 1), the learner taught the same: the two arms of
 // a paired comparison (tools/learncmp.js).
 // --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
-// against the scan, and a difference stops the run; the same --out as without it, slower.
+// against the scan, and a difference stops the run; the same --out as without it, slower. Every storage value kept
+// parsed (sync.js KEPT_CHECK) is checked against a fresh read too.
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
 // --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js

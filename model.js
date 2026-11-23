@@ -773,12 +773,13 @@ function openRight(at = answersSoFar()) {
 // the fallback card; h: core.js startEvents, startUnion, merged as a union across devices), or a fallback card shown on
 // an imr answer (fb, keyed by the imr answer then its direction). An inferred answer (startInfer) and the ease events
 // are no answer.
+// Read for every unit: the stored record parsed once while it stays the same (sync.js keptBy).
+const imrOf = o =>
+  startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
+  Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr');
 const imrSaid = () => {
-  const o = store.get(startKey(SUBJ.id), null);
-  return (
-    startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
-    Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr')
-  );
+  const k = startKey(SUBJ.id);
+  return typeof keptBy === 'function' ? keptBy(k, null, 'imrSaid', imrOf) : imrOf(store.get(k, null));
 };
 // Families met first: while a unit of the slate in play is still to open (in fresh: those not met that may open now),
 // the units of a set that opens after the slate (app.js setLater: the fish scientific genera once accepted) wait. After
@@ -1212,16 +1213,20 @@ const introReset = at => {
 // model: the level a genus never answered starts from (ability, core.js playerStart).
 const startS = () => SUBJ || SUBJECTS[0]; // the subject on screen
 const startK = () => startKey(startS().id); // its record (core.js startKey)
-const startOf = () => {
-  const o = store.get(startK(), null);
-  return o && typeof o === 'object' && startOpt(o.c) ? o : null;
-};
+const startRec = o => (o && typeof o === 'object' && startOpt(o.c) ? o : null);
+const startOf = () => startRec(store.get(startK(), null));
 // A subject without a question of its own (no SUBJECTS start) plays as the default player.
 const startOn = () => !!startS().start;
 // The variables in force: the answer given, or the band below it once the gentle "lower" card's Coral basics was taken
 // (startEase: ease [c, answers, time], kept apart from the answer, which is never relabelled).
 const startEff = o => (o && Array.isArray(o.ease) && startOpt(o.ease[0]) ? o.ease[0] : o && o.c);
-const startV = () => startVars(startOn() ? startEff(startOf()) : null);
+// Read for every unit (ability, startP): the answer in force kept while the stored record stays the same (sync.js keptBy).
+const startEffOf = o => startEff(startRec(o));
+const startV = () => {
+  if (!startOn()) return startVars(null);
+  const k = startK();
+  return startVars(typeof keptBy === 'function' ? keptBy(k, null, 'startV', startEffOf) : startEffOf(store.get(k, null)));
+};
 // The gentle "lower" card's Coral basics (quiz.js startFbShow): the start variables move silently one band down from
 // those in force (know -> IMR course values, IMR course -> new: the prior); the answer stays.
 function startEase() {
@@ -1483,7 +1488,9 @@ const lastAt = () => {
   let L = [];
   try {
     L = subjEntries(
-      (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [],
+      (typeof SYNC !== 'undefined' && SYNC && SYNC.log) ||
+        (typeof LOG0 !== 'undefined' && (typeof keptGet === 'function' ? keptGet(LOG0, []) : store.get(LOG0, []))) || // read only
+        [],
       SUBJ.id
     );
   } catch (e) {}

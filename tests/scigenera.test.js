@@ -138,16 +138,21 @@ test('the back card: once, to a player who turned the set on under its earlier r
 });
 
 test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q227), the history or the fallback trail', () => {
+  // Read from the stored record directly (a store alone), and through sync.js keptBy (the storage read once,
+  // tests/kept.test.js) with KEPT_CHECK on: the same answer.
   const said = rec => {
-    const c = {
-      SUBJ: {id: 'fish'},
-      startKey: C.startKey,
-      startEventsOf: C.startEventsOf,
-      store: {get: k => (k === 'reefid-sync-fish-start' ? rec : null)}
+    const run = c => {
+      vm.createContext(c);
+      vm.runInContext(block(src('model.js'), 'const imrOf = o =>', '\n};\n', {through: 1, file: 'model.js'}) + '\nthis.r = imrSaid();', c);
+      return c.r;
     };
-    vm.createContext(c);
-    vm.runInContext(block(src('model.js'), 'const imrSaid = ', '\n};\n', {through: 1, file: 'model.js'}) + '\nthis.r = imrSaid();', c);
-    return c.r;
+    const base = {SUBJ: {id: 'fish'}, startKey: C.startKey, startEventsOf: C.startEventsOf},
+      plain = run({...base, store: {get: k => (k === 'reefid-sync-fish-start' ? rec : null)}}),
+      pg = require('./kept.js').keptPage({check: true});
+    if (rec !== null) pg.store.set('reefid-sync-fish-start', rec);
+    const kept = run({...base, store: pg.store, keptBy: pg.keptBy});
+    assert.strictEqual(kept, plain, 'kept as read directly');
+    return plain;
   };
   const ev = (...h) => C.startNorm({h});
   assert.strictEqual(said(null), false, 'never asked');
