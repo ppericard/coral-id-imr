@@ -1419,7 +1419,7 @@
         // editor gave with a rewording (contentApply esrc).
         lsrc: treeLookSrc(t),
         qt: t.cues && t.cues.length ? t.cues : null,
-        // The source given with an edit of its tips (contentApply esrc; rule C2), shown with them (app.js tipsList).
+        // The source given with an edit of its tips (contentApply esrc; rule C2), shown with them (idtips.js tipsList).
         ...(t.cues && t.cues.length && t.esrc && t.esrc.cues ? {qsrc: t.esrc.cues} : {}),
         sum: t.why || t.note || '',
         phase: t.phase || [],
