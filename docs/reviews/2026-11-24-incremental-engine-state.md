@@ -47,10 +47,11 @@ points of the bar's grid.
   counts: O(k) per answer, O(1) per read, rebuilt from the records in one pass whenever the records are replaced
   [prototype measured: 0 differences over 408,000 reads; a pass over every unit 28 µs against 5,125 µs]; (2) **one
   state version and one view per version** for what is read across units (the units in play, bars, levels, exam entry,
-  the tree's score), each computed once instead of once per reader; (3) settings and the answer queue **held in
-  memory**, written through. Per answer: O(k + G) for the state, O(k) for the counters, one O(V) pass and one O(T) pass
-  with O(1) reads for the views, a draw in O(V). The draw must still look at every unit met: every unit's weight moves
-  with the global level at each answer, and that pass costs microseconds once its reads are O(1).
+  the tree's score), each computed once instead of once per reader; (3) settings and the answer queue **parsed once
+  and kept**, not read and parsed at each use. Per answer: O(k + G) for the state, O(k) for the counters, one O(V)
+  pass and one O(T) pass with O(1) reads for the views, a draw in O(V). The draw still looks at every unit met: a
+  weighted draw has no index to keep here (which weights an answer moves is only known by computing them), and that
+  pass costs about a millisecond once its reads are O(1) [measured: 0.5 ms for 75 units met].
 - **It stays the log's projection** (rule D9): the counters and the views are never saved, sent or merged; they are a
   function of the records alone and are dropped whenever the records are replaced (an adopted replay, a merge, a
   reset), so a full replay gives the same state by construction; a check mode compares every kept value with its
@@ -163,10 +164,10 @@ Q352), not this study's subject; section 4.7 says what this design gives the she
    record for the unit *given* (`core.js` `faOf`). The column sums were never stored: the bar went from one field read
    to a scan of every record, and every loop over the units became a loop over the units squared without changing.
 3. **A global question asked once per unit** [read, measured]. `lvlNext` counts the met units of a whole level once
-   per parent (2,300 calls, each over 660 species: the 1.57 million `introduced`); `examLooks` asked for the units in
-   play once per unit (fixed for most units by #1521); `sharesNow` asks `mayOpen` per unit, and a circle-3 unit's gate
-   computes the whole tree's score (`treeC3`: 54 `treeScore` an answer). Each is a product of two sizes that are both
-   small for the corals.
+   per parent (2,300 calls, each over 660 species: the 1.57 million `introduced`; #1522 counts once per call);
+   `examLooks` asked for the units in play once per unit (fixed for most units by #1521); `sharesNow` asks `mayOpen`
+   per unit, and a circle-3 unit's gate computes the whole tree's score (`treeC3`: 54 `treeScore` an answer). Each is
+   a product of two sizes that are both small for the corals.
 4. **Three features multiplied the sizes within a week** [read: `git log`]: species by common name (#975, 2026-11-17),
    species by scientific name (#1273, 2026-11-20), a level opening as a group, `lvlNext` (#1331, 2026-11-21). The
    fish tree reached 1,625 units (237 scientific genera, 659 species by common name, 662 by scientific name, under 65
@@ -175,7 +176,8 @@ Q352), not this study's subject; section 4.7 says what this design gives the she
    `groupsNow` (a key made of the subject, the answer count and `JSON.stringify(Q)`), `genusDiff` (emptied when the
    statistics load), the intro map (parsed once, changed in place), `lookRev` (one microtask), `typeNames` (four
    identities and a key), the false-alarm table (one handler). A new reader cannot ask "is my last result still true?",
-   so the safe choice was always to compute again.
+   so the safe choice was always to compute again. The storage fix in progress adds an eighth, checked against the
+   stored text.
 6. **Rule D9 read as "trust nothing kept"** [read]. D9 says the answer log wins over the device *when a replay is
    adopted*; it does not forbid keeping derived values. But the bug behind it (answers counted twice and kept for good)
    made recomputation the cautious default, and `sync.js` refills `P` in place at two points (an adopted replay, a
@@ -234,9 +236,14 @@ revision for the inputs, views valid for a revision: what our seven caches each 
 refits: FSRS refits its parameters on the review log as our rules versions replay the answer log (rules D5, D9).
 
 **What does not.** A spaced-repetition app finds its next card with an index on the due date. Rule L1 forbids
-scheduling by time, and our draw is a weighted sample over every met unit, whose weights all move with the global
-level at each answer (`core.js` `levelMove`): there is no index to keep, and the draw stays a pass over the units met.
-At a few hundred units and O(1) per unit that is the right algorithm.
+scheduling by time, and our draw is a weighted sample over every met unit. Which weights an answer moves is not known
+before computing them: besides the unit asked, an answer moves the ability of other units through the global level
+(`core.js` `levelMove`) and the false-alarm rate of the units offered, given or of the rank typed. [measured, the
+simulated fish log replayed in Node] At 2,000 to 3,000 answers that is on average 4 other units' abilities and 11
+units' rates per answer, up to 53 and 56 of 113 on one answer (14 abilities of 35 units over the first 500 answers).
+And a weight also reads the question being planned (the last four units asked, the exam's gap). So there is no index
+to keep: the draw stays a pass over the units met, which at a few hundred units and O(1) per unit is the right
+algorithm (0.5 ms for the weights of 75 units met [measured, section 5]).
 
 ## 4. Proposed design
 
@@ -296,20 +303,24 @@ by the counters; their update costs a few µs an answer.
   or the planner's own short memory (`lastQs` in `weight`).
 - **Not incremental, on purpose**. A view is recomputed whole, once, from O(1) reads, in today's order: no running
   floating-point sum is kept (`treeC3` compares an unrounded mean with a threshold; a sum updated by differences would
-  round differently). Updating views by difference was weighed and left out: a typed answer moves the false-alarm rate
-  of every unit of its rank, and every answer moves every unit's ability through the global level, so "the units
-  touched" is often all of them, for a gain of microseconds (alternative E).
+  round differently). Updating views by difference was weighed and left out: the units an answer touches are not the
+  two it names (on average 4 other abilities and 11 other rates at 2,000 to 3,000 answers, up to half of the units on
+  one answer [measured, section 3]), and finding them costs about what the pass costs (alternative E).
 - **Static indexes**, made once per data load: a level's units by parent (regrouped today at every `spPlay` and
   `sciPlay` call), each parent's species order (sorted per call), the reverse look-alike index (#1521's, kept longer).
 - **Checked**: a `VIEW_CHECK` like `FA_CHECK`: in the tests every reused value is computed again and compared, order
   included; a difference throws. This is the guard for the one real risk here, an input written without a bump.
 
-### 4.4 Settings and the answer queue in memory (`sync.js`, `model.js`, `quiz.js`)
+### 4.4 Settings and the answer queue parsed once (`sync.js`, `model.js`, `quiz.js`)
 
-- The sheet's version, the first-launch record and the tips' record become variables, written through to storage and
-  refreshed by the `storage` event when another tab writes them (the storage fix in progress).
-- The queue of unconfirmed answers is held as an array in memory. First step: written whole as today, never parsed
-  again. Second step, if Pierre agrees (6 a): stored in blocks of 50 answers, so an answer writes one small block.
+- The sheet's version and the first-launch record are parsed once and kept while their stored text is the same. The
+  fix in progress does it this way [read: its worktree, not yet a PR; `sync.js` `keptGet`, `keptBy`, `keptPush`]: each
+  read still asks the storage for the text and compares it, so another tab's write is seen with no `storage` event,
+  and a `KEPT_CHECK` compares every kept value with a fresh read in the smokes. The reads themselves stay (12,600 an
+  answer) until the views put the per-unit readers behind one read per version.
+- The queue of unconfirmed answers is kept parsed the same way. First step (that fix): written whole as today, never
+  parsed again. Second step, if Pierre agrees (6 a): stored in blocks of 50 answers, so an answer writes one small
+  block.
 
 ### 4.5 What an answer costs then
 
@@ -320,11 +331,11 @@ by the counters; their update costs a few µs an answer.
 | Units in play | 22 × (O(T) + parents × level) | Once per version: O(T), or O(parents + their children) with the static index | The sets depend on every parent's bar |
 | Bars, levels, exam entry | 111,000 bar reads | Once per unit per version: O(V) | Each value is shown or drawn from |
 | Tree score | 54 × O(T) | Once per version: O(T) | A weighted mean over the tree |
-| The draw | O(units met) a question, each asking the exam entry again | O(units met) a question, O(1) a unit | Every weight moves with the global level |
+| The draw | O(units met) a question, each asking the exam entry again | O(units met) a question, O(1) a unit | A weighted draw reads every weight; which ones an answer moved is not known without computing them |
 | Achievements | O(T) levels and several unit lists | The same counts from the views: O(T) cheap reads | Counts over the tree's sets |
-| Settings | 12,600 storage reads | 0 | |
+| Settings | 12,600 storage reads, each parsed | A few tens of reads, none parsed (the per-unit readers behind a view) [guess] | |
 | Queue (signed out) | 4.7 M chars parsed, 1.6 M written | 0 parsed; the same written (first step), about 20,000 a key (second step) | An answer must be durable before the next |
-| Progress write | 185,000 chars | The same | One atomic write, under 1 ms |
+| Progress write | 185,000 chars | The same | One atomic write, about 1 ms |
 
 [measured, one call at 1× on this machine, the table held, fish 3,000] The passes the design keeps, each run once:
 see section 5's table. [guess] The fish answer then costs about what a coral answer costs today plus those passes.
@@ -377,10 +388,10 @@ see section 5's table. [guess] The fish answer then costs about what a coral ans
 | | Design | For | Against |
 | --- | --- | --- | --- |
 | A | Go on memoising per handler (#1516's fixes 2, 4, 5 as planned) | Small local PRs; already under way | A cache and a rule per fix (seven today); leaks at every entry nobody wrapped (4.4% of scans left); the work stays readers × passes |
-| **B** | **Counters in the scorer, one version and its views, settings in memory (this section)** | **O(k) + one pass; one invalidation rule; no format change; every value checked** | The version must see every writer: the check mode is mandatory |
+| **B** | **Counters in the scorer, one version and its views, settings parsed once (this section)** | **O(k) + one pass; one invalidation rule; no format change; every value checked** | The version must see every writer: the check mode is mandatory |
 | C | Store the derived values in the saved progress (`fa`, `op` per record) | No rebuild at load | The rebuild costs 0.2 ms: nothing to gain. Changes the saved format, the merge, the replay and the sheet: costly to undo |
 | D | Progress as `fold(log)` everywhere, sync by answers (the architecture review's question g) | Removes the record merges and rule D9's class of bugs | Changes what the sheet stores and what a device holds; the exam and the cards are not in the log; does nothing for the cost per answer, which is already a fold step |
-| E | Views updated by difference (dirty sets per unit, a tree of weights) | O(units touched) | Most answers touch every unit (the level, a typed answer); floating sums no longer bit-equal; much more code for microseconds (rule L11) |
+| E | Views updated by difference (dirty sets per unit, a tree of weights) | O(units touched) | An answer touches about 15 other units on average and up to half of them (the level, a typed answer), found only by computing them; floating sums no longer bit-equal; much more code to save a pass of about a millisecond (rule L11) |
 | F | The planning in a Web Worker | The tap never waits for the planning | Does not reduce the work; the state must be copied or shared |
 
 **Recommendation: B**, in the order of section 5. It is the smallest change that removes the class of problem: A
@@ -397,9 +408,9 @@ lines) 2.4 h, #1521 (engine, 250 lines) 1.7 h, #1514 (tooling, 201 lines) 33 min
 | Step | PR | Files (lanes) | Tests that prove equality | After it, at fish 3,000 |
 | --- | --- | --- | --- | --- |
 | 0 | The measure committed: the work counts of section 1 as `tools/answercost.js` (a slot guard, rule W24) and the fish ladder's states made by `tools/learnsim.js`; the budget check of 4.6 (5), first as a report | `tools/`, `tests/` (no lane) | Its own unit test on a small state | Nothing changes; every later step is measured the same way (about #1514's 33 min) |
-| 1 | `lvlNext` counts a level's met units once (in progress, #1516's fix 2) | `app.js` | `spPlay`, `sciPlay` equal on saved states | Calls per answer 9.4 M → 1.3 M; `introduced` 1.7 M → 0.1 M [measured on its worktree, the table below] |
-| 2 | Storage reads once (in progress, fix 5): settings and the queue in memory, written through | `quiz.js`, `model.js`, `sync.js` | Another tab's write refreshes the copy; an answer survives a reload at any point | Storage reads 12,600 → about 0; chars parsed 7.0 M → about 0 [guess from 1.3] |
-| 3 | The state version and the first view: the units in play once per version, the static parent index, `VIEW_CHECK` in every smoke | `app.js`, then `model.js`, `quiz.js`, `sync.js` for the bumps (after 1 and 2 merge) | `VIEW_CHECK`; same seed, same bytes | `bonusList` 22 → at most 2 an answer [measured: the versions an answer makes, below] |
+| 1 | `lvlNext` counts a level's met units once per call (#1522, open; #1516's fix 2) | `app.js` | `spPlay`, `sciPlay` equal on saved states | Calls per answer 9.4 M → 1.3 M; `introduced` 1.7 M → 0.1 M [measured on its worktree, the table below] |
+| 2 | Storage parsed once (in progress, fix 5, no PR yet): the sheet's version, the first-launch record and the queues kept parsed while their stored text is the same | `quiz.js`, `model.js`, `sync.js` | Its `KEPT_CHECK` in the smokes: every kept value against a fresh read | Chars parsed 7.0 M → about 0; the 12,600 reads stay, each a text comparison, until steps 3 and 4 [guess from 1.3 and its diff] |
+| 3 | The state version and the first view: the units in play once per version, the static parent index, `VIEW_CHECK` in every smoke | `app.js`, then `model.js`, `quiz.js`, `sync.js` for the bumps (after 1 and 2 merge) | `VIEW_CHECK`; same seed, same bytes | `bonusList` 22 → a few an answer [the versions an answer makes, below: 2 measured for the scorer and the saved keys, the in-place writes read] |
 | 4 | Bars, exam entry, levels and the tree score as views; `achSnap`, `showProg`, `sharesNow`, `groupsNow` read them | `model.js`, `progress.js` | The same | `scoreOf` 111,000 → a few hundred; `treeScore` 54 → about 2 [guess] |
 | 5 | The kept counters in the scorer; `faHeld` and its four call sites removed; the comment «the app and the sheet never arm» and LEARNING.md "Long rated runs" rewritten | `core/score.js`, `core/ability.js`, `core.js`, `Code.gs` (embed, changes file; **after #1519**), then `app.js`, `quiz.js`, `progress.js` | `FA_CHECK` everywhere; the property test and the replay's equality (4.6: 2, 3); `tests/faheld.test.js` becomes the lifetime's test | `faTable` 5 rebuilds → 0; no scan left anywhere; the sheet's replay about 12% less |
 | 6 | Measure the signed-in path with a stub sheet; then the queue in blocks if Pierre agrees (6 a) | `sync.js`, `quiz.js` | No answer lost or doubled at any kill point | Chars written 1.6 M → about 0.2 M [guess] |
@@ -420,8 +431,8 @@ each read of a rate is already O(1); `main` and the worktree of step 1]:
 | Step 1, 2,000 | 0.95 M | 79,000 | 3.5 ms | 0.1 ms | 3.9 ms | 4.7 ms | 4.8 ms | 0.9 ms | 0.3 ms |
 | Step 1, 3,000 | 1.34 M | 103,000 | 2.0 ms | 0.2 ms | 3.8 ms | 4.6 ms | 4.5 ms | 0.5 ms | 0.5 ms |
 
-"Step 1" is the worktree of the `lvlNext` fix in progress (its commit 166e5f8c, read only): **the calls per answer at
-3,000 answers fall from 9.4 to 1.3 million** [measured; the corals' are 0.035 million].
+"Step 1" is #1522's head (166e5f8c, its worktree served read only): **the calls per answer at 3,000 answers fall from
+9.4 to 1.3 million** [measured; the corals' are 0.035 million].
 
 Read: the bars of every unit in play cost 0.2 ms once a rate is one read. The exam entry, the weights and the levels
 cost 11 to 16 ms on `main` at 2,000 and 3,000 answers against 0.1 to 0.9 ms at 1,000: the size of one or two more
@@ -431,17 +442,20 @@ would cost about what they cost at 1,000 answers [guess]. So the engine's work f
 computation of the units in play (2 to 3.5 ms after step 1) plus 2 to 3 ms [guess from these passes], against 22
 computations of the units in play and the rest of 1.3 today.
 
-**How many versions an answer makes** [measured: `store.set` and the scorer wrapped in the page, 12 answers on each of
-the fish 1,000, 2,000 and 3,000 states and the corals' 3,000]: one scored answer and one write of an input (the
-progress) per answer; an answer's 12 other writes are not inputs. So a view is computed at most twice an answer, where
-`bonusList` runs 22 times today. Its value changed after 1 of the 36 fish answers and none of the 12 coral ones; the
-headline % changed after none of the 48.
+**How many versions an answer makes** [measured for two kinds of writer: `store.set` and the scorer wrapped in the
+page, 12 answers on each of the fish 1,000, 2,000 and 3,000 states and the corals' 3,000]: one scored answer and one
+write of an input key (the progress) per answer; an answer's 12 other writes are not inputs. [read] The in-place
+writes of 4.6's table (`recordAnswer`'s exam and learned mark, `answeredAt`) were not counted: they sit between the
+scorer and that same answer's `save`, so they add bumps inside one handler, not handlers. So a view is computed a few
+times an answer at most (twice if the bumps between the scorer and the `save` are one), where `bonusList` runs 22
+times today. Its value changed after 1 of the 36 fish answers and none of the 12 coral ones; the headline % changed
+after none of the 48.
 
 **The whole answer** [guess, to be re-measured at each step with step 0's tool]. Today at fish 3,000 an answer costs
 the main thread about 0.5 s at 1× and 1.5 to 2.2 s at 4× (#1520's table before #1521; the profile run after it, median
-of 6: 1.5 s at 4×). With steps 1 to 5 the engine's part is two versions of about 5 ms each at 1×; what is left is what
-a coral answer costs today (60 ms at 1×, 300 ms at 4×: storage and the page's drawing), and step 6 takes most of the
-storage out.
+of 6: 1.5 s at 4×). With steps 1 to 5 the engine's part is a few versions of about 5 ms each at 1×; what is left is
+what a coral answer costs today (60 ms at 1×, 300 ms at 4×: storage and the page's drawing), and step 6 takes most of
+the storage out.
 
 **What becomes of the memoisation fixes.**
 
@@ -449,8 +463,8 @@ storage out.
 | --- | --- |
 | #1520 `faHeld` (the table held per handler) | **Replaced** at step 5 by the counters that live with the records; `FA_CHECK`, its smoke wiring and learnsim's `--facheck` are **kept** as the check mode |
 | #1521 `examLooks`' reverse look-alike index | **Kept**; its one-microtask life becomes "once per data load" at step 3 |
-| `lvlNext` counted once (in progress) | **Kept**, then absorbed at step 3: the count becomes a view of the version |
-| Storage reads cached (in progress) | **Kept**: it is step 2 |
+| #1522 `lvlNext` counted once per call (open) | **Kept**, then absorbed at step 3: the count becomes a view of the version |
+| Storage parsed once (in progress: `keptGet`, `keptBy`, `keptPush`, `KEPT_CHECK`) | **Kept**: it is step 2, and its check by the stored text is the model for a kept value that needs no signal |
 | #1516's fix 4 (one list of the units in play per task) | **Replaced** by step 3's view, whose rule is the version, not the task |
 | `sharesNow`, `groupsNow`, `typeNames` keys | **Replaced** by the version at steps 3 and 4 (three private rules fewer) |
 
@@ -478,8 +492,8 @@ change but speed. These choices are his:
 ## 7. Scripts and what was not done
 
 The scratch scripts stayed outside the repository (the per-answer note's harness and saved states, a call counter by
-V8 coverage, a counter of the state versions, the counters' prototype against `core.js`, a replay timer): step 0
-commits the useful part. Every Chromium run and timed Node run took the machine slot (rule W24), each under the
+V8 coverage, a counter of the state versions, the counters' prototype against `core.js`, a count of the units an
+answer moves, a replay timer): step 0 commits the useful part. Every Chromium run and timed Node run took the machine slot (rule W24), each under the
 40-minute cap. Not done: a measure on a phone or on a real player's state; the signed-in path; a prototype of the
 views (their gain is estimated from single passes and the versions counted, section 5); timings of a whole answer
 after each step (the work counts are exact, the times are the per-answer note's); the sheet's time broken down beyond
