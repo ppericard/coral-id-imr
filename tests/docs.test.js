@@ -154,9 +154,10 @@ test("the session hooks run main's tools/brief.py, never the checked-out copy", 
     ['SessionStart', '--short'],
     ['UserPromptSubmit', '--time']
   ]) {
-    // Without origin/main the hook fetches it, or says so with the Manila time: tests/hooks.test.js.
-    assert.match(cmd(ev), new RegExp('F=tools/brief\\.py; .*git show "origin/main:\\$F".*\\| python3 -I - ' + flag), ev);
-    assert.ok(!/python3 [^|]*tools\/brief\.py/.test(cmd(ev)), ev + ' runs the checked-out tools/brief.py');
+    const ref = ev === 'SessionStart' ? '"$R:tools/brief.py"' : 'refs/remotes/origin/main:tools/brief.py';
+    assert.ok(cmd(ev).includes('git show ' + ref), ev);
+    assert.ok(cmd(ev).includes('| python3 -I - ' + flag), ev);
+    assert.doesNotMatch(cmd(ev), /python3(?:[ \t]+-\S+)*[ \t]+(?:\.\/)?tools\/brief\.py/, ev);
   }
 });
 
@@ -171,13 +172,13 @@ test('tools/brief.py fed on stdin finds the checkout through CLAUDE_PROJECT_DIR'
   };
   const out = execFileSync('python3', ['-I', '-', '--short'], {input: read('tools/brief.py'), env, cwd: '/', timeout: 10000}).toString();
   assert.match(out, /^Manila /);
-  assert.match(out, /Questions for Pierre: \d+ open, last number Q\d+/);
+  assert.match(out, /Questions for Pierre: Linear Decisions for Pierre · last number Q\d+ \(docs\/STATUS.md\)/);
   // brief.py cannot read the sheet (the connector is the agent's): it reminds of the reports and events check.
   assert.match(out, /reports and events last checked .+: read them/);
-  // Where open work is tracked (docs/INTEGRATOR.md "Linear"): on the questions line, which the 5-line cut never drops.
+  // Where to start (docs/INTEGRATOR.md "Linear"): its own line, second, so the 5-line cut never drops it (REE-230).
   assert.match(
-    out,
-    /^Questions for Pierre: .*Open work: Linear team REE, active https:\/\/linear\.app\/reef-id\/team\/REE\/active · backlog /m
+    out.split('\n')[1],
+    /^Start: Project Home https:\/\/linear\.app\/reef-id\/document\/\S+ · Drive Reef_ID https:\/\/drive\.google\.com\/drive\/folders\/\S+ · views Now\/Next\/Decisions\/Waiting$/
   );
   assert.ok(out.trim().split('\n').length <= 5, '--short: 5 lines at most');
 });
@@ -192,10 +193,14 @@ test('tools/brief.py names where open work is tracked: links to the Linear team 
   })
     .toString()
     .trim();
-  assert.strictEqual(
-    tl,
-    'Open work: Linear team REE, active https://linear.app/reef-id/team/REE/active · backlog https://linear.app/reef-id/team/REE/backlog'
-  );
+  // One source: the links are the ones of INTEGRATOR.md's "Linear" section, the four saved views named there too.
+  const sec = read('docs/INTEGRATOR.md').split('\n## Linear\n')[1];
+  const home = sec.match(/\[Project Home\]\((\S+?)\)/)[1],
+    drive = sec.match(/\[Drive Reef_ID\]\((\S+?)\)/)[1];
+  assert.strictEqual(tl, `Start: Project Home ${home} · Drive Reef_ID ${drive} · views Now/Next/Decisions/Waiting`);
+  for (const v of ['Now', 'Next', 'Decisions for Pierre', 'Waiting and blockers'])
+    assert.match(sec, new RegExp(`\\[${v}[^\\]]*\\]\\(https://linear\\.app/reef-id/view/[0-9a-f-]{36}\\)`), v);
+  assert.ok(read('AGENTS.md').includes(home), 'AGENTS.md points to the Project Home');
 });
 
 // AGENTS.md is the short constitution every agent reads (Codex reads only its first 32 KiB by default), and every
@@ -606,7 +611,7 @@ test('the decisions index is what tools/decisions_index.py writes from the recor
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
 });
 
-// Every answer reaches its doc (AGENTS.md "Every answer reaches its doc, and the answers ledger"): each ledger entry from
+// Every answer reaches its doc (AGENTS.md "Working with Pierre"): each ledger entry from
 // 2026-11-19 names where it is applied, and no ROADMAP or reviews index status waits on an answered question.
 test('every answer in the ledger names its doc, and nothing answered is cited as waiting (tools/answers_check.py)', () => {
   const {spawnSync} = require('child_process');
@@ -698,6 +703,9 @@ const DOC_MARKS = {
   'judging/PROMPT.md': [3, 160],
   'judging/SEASLUG.md': [17, 500],
   'tools/README.md': [13, 280],
+  'tools/queue/recovered/README.md': [5, 400], // new, 2026-11-22: the integrator's queue scripts kept as reference (REE-231)
+  'tools/studies/ree112/README.md': [5, 400], // new, 2026-11-22: REE-112's study scripts kept as reference (REE-231)
+  'tools/studies/ree191/README.md': [6, 400], // new, 2026-11-22: REE-191's study scripts kept as reference (REE-231)
   'tools/queue/README.md': [3, 300],
   'tools/queue/codex.md': [1, 80],
   'tools/studies/q316/README.md': [15, 170], // new, 2026-11-20: the Q316 tool's model, declared rules and figures

@@ -1369,6 +1369,20 @@ function sendAnon() {
   const batch = q.slice(0, 100),
     cut = store.get('reefid-sync-coral-reset', '') || '', // the replay's cutoff, as sent (replayAdopt)
     sk = startKey(replaySubject()), // the replayed subject's first-launch answer (the replay's)
+    // The other subjects the sheet replays (fish, sea slugs: Code.gs anon_ replays_), as a signed-in save asks them
+    // (rvsAsk): their rules versions, each one's reset (the cutoff, replaysAdopt) and first-launch answer, by subject.
+    rvs = rvsAsk(),
+    cuts = rpCuts(),
+    sreset = Object.fromEntries(
+      Object.keys(rvs)
+        .filter(id => cuts[id])
+        .map(id => [id, cuts[id]])
+    ),
+    sstart = Object.fromEntries(
+      Object.keys(rvs)
+        .map(id => [id, store.get(startKey(id), null)])
+        .filter(([, v]) => v)
+    ),
     who = anonId(); // the anonymous player the send is for
   anonBusy = true;
   fetch(SYNC_URL, {
@@ -1382,10 +1396,13 @@ function sendAnon() {
       anonAnswers: batch.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
       av: appVer(),
       rv: rvApplied(),
-      ...stsAsk({}), // its structure stamp (Code.gs stMain_)
+      ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
+      ...stsAsk(rvs), // the structure stamps (Code.gs stMain_, replays_)
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
       ...(cut ? {reset: cut} : {}),
       ...(store.get(sk, null) ? {start: store.get(sk, null)} : {}),
+      ...(Object.keys(sreset).length ? {sreset} : {}),
+      ...(Object.keys(sstart).length ? {sstart} : {}),
       dev: devId() // the device of its answers
     })
   })
@@ -1403,6 +1420,8 @@ function sendAnon() {
       store.set(ANONQ, left);
       // A device that never signed in gets its full replay too, its answers still queued on top.
       replayAdopt(j.replay, left, j.v, cut);
+      // And the other subjects' (Pierre, 2026-11-08, #776: every player's progress recalculated from their answers).
+      replaysAdopt(j, left, cuts);
       // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
       if (left.length) setTimeout(sendAnon, 1000);
     })
@@ -1702,6 +1721,7 @@ function signIn(name, pin, j) {
   SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
   groupsSeen(j, name, false); // the account's beta groups, before the reload below opens the app with them
   markSeen(j, name);
+  store.set('reefid-board-new', j.found ? 0 : 1); // an account made here never meets the leaderboard as news (progress.js boardShow)
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
   if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {

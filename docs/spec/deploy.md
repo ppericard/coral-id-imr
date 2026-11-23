@@ -62,8 +62,10 @@ The sync's tests: [sync.md › Tests](sync.md#tests).
     do › All (Health's line first, reports, errors), the Where to look banner, Put back in Hidden and the genus page's
     view filter, then opens a player, merges two names, deletes one, checks the reports in To do, Skip and Reject in
     Candidates and Publish, and fails if a call reaches the sync script or GitHub or a real admin storage key is written.
-  - `tests/fish.smoke.js` group `fresh` plays five brand-new fish players (one seed each, a context each) side by side:
-    all at once on CI, two at a time in a local slot.
+  - `tests/fish.smoke.js` uses two jobs. `main` runs games (including Find the X), sync and load order. `fresh` runs
+    the brand-new players, the quiz and progress sequence, the interface and beta access checks, and Memory. The five seeds
+    each get their own context, with all five running at once on CI and two at a time in a local slot.
+    Each job prints the time of its parts. `tests/smokeparts.test.js` checks the execution plan for both jobs.
 
 ## Repository attributes
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The agent-launch guard: a PreToolUse hook on the Agent tool (.claude/settings.json) that refuses a launch setting no
-`model` or no `effort`, and logs every launch (AGENTS.md "The right model and effort for each task": the integrator
-applies the table in docs/INTEGRATOR.md at every agent launch; the rules core proposal's guard G5, with a log).
+`model` or no `effort`, and logs every launch. The integrator applies the table in docs/INTEGRATOR.md "Working with
+Pierre" at every launch (the rules core proposal's guard G5, with a log).
 
 A launch with `subagent_type: "fork"` passes: a fork always runs on its parent's model and effort, both parameters are
 ignored there. Claude Code 2.1.327's Agent tool takes both as optional parameters; the refusal names the keys the
@@ -31,11 +31,9 @@ MANILA = timezone(timedelta(hours=8))  # Asia/Manila, UTC+8 all year
 LOG_NAME = 'claude-agent-launches.jsonl'
 TOOLS = ('Agent', 'Task')  # Task: the Agent tool's earlier name
 
-WHY = ('Refused by the project\'s agent-launch guard (tools/agent_guard.py; AGENTS.md "The right model and effort for '
-       'each task"): this launch sets no %s. Every Agent launch sets both `model` and `effort` from the table in '
-       'docs/INTEGRATOR.md (design, architecture, the learning engine, security, rule wording: opus, high; ordinary '
-       'code and docs: sonnet, medium to high; mechanical work after the sample test: haiku, low; in doubt, the '
-       'stronger). Launch again with both. Keys this launch carried: %s.')
+WHY = ('Refused by the project\'s agent-launch guard (tools/agent_guard.py): this launch sets no %s. '
+       'Set both `model` and `effort` using the table in docs/INTEGRATOR.md "Working with Pierre", then launch again. '
+       'Keys this launch carried: %s.')
 
 
 def reason(ti):

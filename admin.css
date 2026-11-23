@@ -655,6 +655,23 @@ body.adm-dragging * {
 .adm-toast[hidden] {
   display: none;
 }
+/* The Undo of a Remove (admin.js toastUndo): on the toast's dark ground, in its colours turned round. */
+.adm-toast-undo {
+  margin-left: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.adm-toast-undo:hover,
+.adm-toast-undo:focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: 2px;
+}
 /* Sign out sealing the draft: the page is read-only under it (admin.js sealing) */
 .adm-sealing {
   position: fixed;
@@ -1479,6 +1496,34 @@ kbd {
   flex-wrap: wrap;
   gap: 4px;
 }
+/* Fish Look-alikes, species pairs (REE-46): read-only cards under the families' pairs; the two species' strips side by side
+   once there is room, the sources as links. */
+.adm-spairs > h3 {
+  margin: 20px 0 8px;
+}
+.adm-spairs > h3 small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.adm-spair .adm-marks {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+.adm-spair .adm-marks small,
+.adm-spair .adm-says {
+  color: var(--muted);
+}
+.adm-spair .adm-spconf {
+  margin: 0 0 8px;
+}
+.adm-spair .adm-msides {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.adm-spair .adm-msides > div {
+  min-width: 0;
+}
 .adm-mth {
   position: relative;
   padding: 0;
@@ -2191,6 +2236,18 @@ body.adm-cmode .adm-toast {
   width: 100%;
   margin: 0;
 }
+/* The phase row (six words, "Intermediate" the longest) wraps like Photo review's rows instead of clipping its labels or
+   pushing a narrow tile wider (REE-201: a flagged species shows it on Reports' tiles too). */
+.adm-ftrows {
+  min-width: 0;
+}
+.adm-acts .adm-qseg.adm-fwrap {
+  flex-wrap: wrap;
+  border-radius: var(--r-sm);
+}
+.adm-acts .adm-qseg.adm-fwrap button {
+  flex: 1 0 auto;
+}
 .adm-ftile .adm-acts > button[data-fu='tags'][aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
@@ -2561,6 +2618,33 @@ td.cov-c .cov-off {
 }
 .adm-tscroll {
   overflow-x: auto;
+}
+/* Analyses tables wider than a phone's card (the forgetting card's genus table, the trajectories' window table, Confusions' tables): the box scrolls
+   sideways and shows it does. A shadow on the edge that has more beyond it (the card's colour fades the shadow out at the
+   end of the scroll, `local`; the shadow itself stays with the box), in the ink colour so it reads in light and dark. The
+   header of a table that does not scroll up and down carries no background of its own, which would hide it; a `tall`
+   table's sticky header keeps one. */
+.adm-an .adm-tscroll {
+  --adm-tcard: var(--surface);
+  --adm-tsh: color-mix(in srgb, var(--ink) 42%, transparent);
+  background:
+    linear-gradient(to right, var(--adm-tcard) 30%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--adm-tcard) 30%, transparent) right center / 32px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--adm-tsh), transparent) left center / 16px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--adm-tsh), transparent) right center / 16px 100% no-repeat scroll;
+}
+.adm-an .adm-tscroll:not(.tall) .adm-tbl th {
+  background: transparent;
+}
+/* Analyses tables: the first column names the row (a pair of genera, a question format, a range of answers) and wraps
+   instead of ending in "…" under the cell cap below (REE-222); the other columns keep the cap and a wide table scrolls
+   inside its card. The minimum keeps a long label to a few lines when the table is squeezed on a phone. A player's name
+   keeps its own cap (.adm-cut). */
+.adm-an .adm-tbl td:first-child {
+  max-width: none;
+  min-width: 7em;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 /* Errors & feedback, one-tap questions (admin.js pulseView): compact tables, numbers under right-aligned headers, each
    item's wording as written heading its answers, the share beside a count quiet. */
@@ -3861,13 +3945,18 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-htile figcaption > span {
   color: var(--muted);
 }
-.adm-hphotos .adm-hnum {
+.adm-hphotos .adm-hnum,
+.adm-fdiffg .adm-hnum,
+.adm-qt figcaption > .adm-hnum {
+  flex: 0 0 100%;
   display: block;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-/* The photo's difficulty reading (recBadge) on its own line under right · answers. */
-.adm-hphotos .adm-hnum + .adm-hnum {
+/* The photo's difficulty reading (recBadge) on its own line under right · answers (Health's photos; By difficulty's prior, REE-62). */
+.adm-hphotos .adm-hnum + .adm-hnum,
+.adm-fdiffg .adm-hnum + .adm-hnum,
+.adm-qt figcaption > .adm-hnum + .adm-hnum {
   margin-top: 2px;
 }
 /* Health's photos carry the tools of their page (Q309): the To do tiles' grid (adm-qgrid), one tile a row on a phone. */
@@ -4413,6 +4502,15 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 }
 .adm-an-svg .an-line.dash {
   stroke-dasharray: 5 4;
+}
+/* Player trajectories: each player a thin line, the typical one over them in the accent */
+.adm-an-svg .an-line.pl {
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+.adm-an-svg .an-line.med {
+  stroke-width: 3;
 }
 .adm-an-svg .an-band {
   fill: color-mix(in srgb, var(--accent) 18%, transparent);

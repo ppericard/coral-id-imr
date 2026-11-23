@@ -39,6 +39,8 @@ const ROUTES = [
   'tools/samediff',
   'tools/oddone',
   'tools/matrixgame',
+  'tools/lifestages', // the corals have no list of documented phases: not offered, the address goes to the Tools page
+  'tools/downtree', // the corals have no rank below the genus: not offered, the address goes to the Tools page
   'learn/basics/walls',
   'learn/basics/words',
   'about',
@@ -105,7 +107,10 @@ const left = (p, from, timeout = 10000) =>
     .waitForFunction(f => location.hash !== f, from, {timeout})
     .then(() => drawn(p))
     .catch(() => false);
-const TIPS_OFF = () => localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+// (3 photos enlarged ends the zoom tip; the basics tip's two showings used, since "new", this page's default player, is its
+// audience; the typed-answers tip's too, since a smoke that answers "I don't know" to typed questions meets its run.)
+const TIPS_OFF = () =>
+  localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0],"typed":[0,0]}}');
 // One overlay at a time, and each one closable. Returns the failures.
 async function overlays(b, base) {
   const fails = [];
@@ -2884,10 +2889,12 @@ async function startSmoke(b, base) {
       for (let i = 0; i < CHOICE.AT[0]; i++) startStep(0, 4, i % 4 === 0, true);
       return startDue();
     });
-    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).
+    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits). Each
+    // one is answered first (pendDone): a question left on screen is kept, and a kept question comes back with no offer.
     for (let k = 0; k < 6 && !(await p.$('.unlock.startfb')); k++) {
       await p.evaluate(() => {
         document.querySelectorAll('.unlock.intro').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        pendDone();
         quizPhoto();
       });
       await p.waitForTimeout(300);
@@ -2923,7 +2930,7 @@ async function startSmoke(b, base) {
     )
       fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
     if (fb) await p.click('.unlock.startfb [data-keep]');
-    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
+    const again = await p.evaluate(() => (pendDone(), quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
     if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
     // The "higher" card: no number either (it goes stale, or miscounts what is open).
@@ -3147,19 +3154,35 @@ async function startSmoke(b, base) {
 // before 20 questions; never with 3 photos enlarged. Nothing wider than the screen. Returns the failures.
 async function tipsCheck(b, base) {
   const fails = [];
-  const open = async (w, h, u, at = '#practice/quiz', intro = false) => {
+  // x: what the page's player has besides the counters: start, the first-launch record (default "new": the corals' default
+  // player, whom the basics tip is for), s, the tips shown (default: the basics tip's two showings used, so only the tip
+  // under test is in play), basics and ach, the Coral basics record and the achievements (default none), v, the visit
+  // (default: open, 12 answers, no tip yet). The player has opened the Coral ID Key (u.i 1) unless u says otherwise.
+  const open = async (w, h, u, at = '#practice/quiz', intro = false, x = {}) => {
     const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
     await c.route(
       x => !x.href.startsWith(base),
       r => r.abort()
     );
-    await c.addInitScript(u => {
-      localStorage.setItem('reefid-tour', '"done"');
-      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('reefid-nudge', '1');
-      if (!localStorage.getItem('reefid-tips'))
-        localStorage.setItem('reefid-tips', JSON.stringify({u, s: {}, v: {t: Date.now(), n: 12, tip: 0}}));
-    }, u);
+    await c.addInitScript(
+      ([u, x]) => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', x.start || '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        if (x.basics) localStorage.setItem('reefid-basics', x.basics);
+        if (x.ach) localStorage.setItem('reefid-sync-ach', x.ach);
+        if (!localStorage.getItem('reefid-tips'))
+          localStorage.setItem(
+            'reefid-tips',
+            JSON.stringify({
+              u: {i: 1, ...u},
+              s: x.s || {basics: [0, 0], typed: [0, 0]},
+              v: x.v ? {...x.v, t: Date.now()} : {t: Date.now(), n: 12, tip: 0}
+            })
+          );
+      },
+      [u, x]
+    );
     const p = await c.newPage();
     const errs = [];
     p.on('pageerror', e => errs.push(String(e)));
@@ -3301,7 +3324,7 @@ async function tipsCheck(b, base) {
       const [c, p] = await open(w, h, {q: 25, z: 0});
       await p.evaluate(() => {
         const t = Date.now();
-        localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
+        localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {basics: [0, 0]}, v: {t, n: 2, tip: 0}}));
         // The one-tap question's session in the corals: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
         localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7, s: 'coral'}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
@@ -3443,13 +3466,389 @@ async function tipsCheck(b, base) {
       if (errs.length) fails.push(`${W} duels tip: page errors ${errs.slice(0, 3).join(' | ')}`);
       await c.close();
     }
+    // The My mix-ups tip: a player with 100 questions, 3 photos enlarged, the Custom quiz and the Duel tab opened, who
+    // mixed up two pairs 3 times and never saw the My mix-ups view, gets it at the Next right after a miss in the Quiz; the
+    // card says what the view does, fits the screen; Show me opens the Custom quiz on that view and counts as a view, so it
+    // never comes again. (The pairs are set on the player's record in the page: the genera in play, mixed up 3 times.)
+    const mixed = (p, n) =>
+      p.evaluate(n => {
+        const L = unlocked();
+        for (const [a, b] of [
+          [L[0], L[1]],
+          [L[2], L[3]]
+        ].slice(0, n))
+          P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        return L.length;
+      }, n);
+    {
+      const [c, p, errs] = await open(w, h, {q: 100, z: 3, c: 1, d: 1});
+      if ((await mixed(p, 2)) < 4) fails.push(`${W} mix-ups tip: fewer than 4 genera in play`);
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p);
+      if (!r.next) fails.push(`${W} mix-ups tip: not shown to a player with two pairs mixed up who never saw the view`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Quiz yourself on your mix-ups' ||
+          !/^The Custom quiz's My mix-ups view groups the genera you confuse with each other, the most confused first\./.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} mix-ups tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p
+          .waitForFunction(
+            () => location.hash === '#practice/custom' && document.querySelector('[data-cv="mix"][aria-pressed="true"]'),
+            null,
+            {
+              timeout: 5000
+            }
+          )
+          .catch(() => {});
+        const st = await tips(p),
+          view = await p.evaluate(() => ({
+            hash: location.hash,
+            mix: !!document.querySelector('[data-cv="mix"][aria-pressed="true"]'),
+            groups: document.querySelectorAll('.cqg').length
+          }));
+        if (view.hash !== '#practice/custom' || !view.mix || !view.groups || !(st.u.m >= 1) || (st.s.mixups || []).length !== 1)
+          fails.push(`${W} mix-ups tip Show me: ${JSON.stringify({view, st})}`);
+      }
+      if (errs.length) fails.push(`${W} mix-ups tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // The basics tip (d): the corals' default player ("new": the first-launch answer the basics module is offered first
+    // to) with 30 questions who never opened Coral basics gets it at the Next right after a miss in the Quiz; the card
+    // speaks the subject's own words (UNITS basics), fits the screen; Show me opens Coral basics (its page records the step it
+    // opens, which ends the audience); the tip is marked shown and logged.
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {}});
+      let r = {};
+      for (let i = 0; i < 12 && !r.next; i++) r = await play(p);
+      if (!r.next) fails.push(`${W} basics tip: not shown to a "new" player who never opened Coral basics`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent, // the kicker is a p too
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'New to corals? Try Coral basics' ||
+          !/^Coral basics shows, on real photos, the few words the ID tips use.* It is in Learn, any time\.$/.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          k.wide
+        )
+          fails.push(`${W} basics tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p
+          .waitForFunction(() => location.hash.startsWith('#learn/basics') && document.querySelector('.bx-step, .bx'), null, {
+            timeout: 8000
+          })
+          .catch(() => {});
+        const st = await tips(p),
+          at = await p.evaluate(() => ({hash: location.hash, rec: JSON.parse(localStorage.getItem('reefid-basics') || 'null')})),
+          ev = await p.evaluate(() =>
+            JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+              .filter(x => /^tip:/.test(x.src || ''))
+              .map(x => `${x.k}:${x.src}:${x.r}`)
+          );
+        if (!at.hash.startsWith('#learn/basics') || !at.rec || !at.rec.last || (st.s.basics || []).length !== 1)
+          fails.push(`${W} basics tip Show me: ${JSON.stringify({at, st})}`);
+        if (ev.join() !== 'pulse:tip:basics:shown,pulse:tip:basics:show') fails.push(`${W} basics tip events: ${JSON.stringify(ev)}`);
+      }
+      if (errs.length) fails.push(`${W} basics tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Not for these: said "IMR course" or "know well" (the "lower" fallback card's players, who get its offer of the same
+    // module), a "new" player the "higher" card was shown to, one whose Coral basics page was opened (or done on another
+    // device: the synced achievement), 5 questions (still under 30 after 12 misses).
+    for (const [u, x] of [
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, start: '{"c":"imr","t":1}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, start: '{"c":"know","t":1}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, start: '{"c":"new","t":1,"fb":{"new-hi":[40,1]}}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, basics: '{"last":"colony"}'}
+      ],
+      [
+        {q: 60, z: 3, c: 1, d: 1, m: 1},
+        {s: {}, ach: '{"_basics":1}'}
+      ],
+      [{q: 5, z: 3, c: 1, d: 1, m: 1}, {s: {}}]
+    ]) {
+      const [c, p] = await open(w, h, u, '#practice/quiz', false, x);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} basics tip shown to ${JSON.stringify({u, x})}`);
+      await c.close();
+    }
+    // The Identify tip (e), outside the games: the corals' player with 200 questions who never opened the Coral ID Key (u.i 0)
+    // gets it on Home, a moment after the page is drawn (quiz.js tipOut), and on My progress; the card speaks the subject's own
+    // words (UNITS idtip), fits the screen, takes no tap at once; Show me opens the key (its page counts the open); logged
+    // (shown, show); Got it stays on the page; not again in the visit, even after a reload; never at a break of a game.
+    {
+      const U = {q: 200, z: 3, c: 1, d: 1, m: 1, i: 0};
+      const [c, p, errs] = await open(w, h, U, '', false);
+      const at = await p.evaluate(() => (location.hash || '#') + '|' + document.querySelectorAll('.tipcard').length);
+      if (at.endsWith('|1')) fails.push(`${W} identify tip: on Home at once, not after a calm moment: ${at}`);
+      await p.waitForSelector('.tipcard', {timeout: 10000}).catch(() => {});
+      const k = await p.evaluate(() => {
+        const d = document.querySelector('.tipcard');
+        if (!d) return null;
+        const card = d.querySelector('.ulcard').getBoundingClientRect();
+        return {
+          kick: d.querySelector('.ulkick').textContent,
+          title: d.querySelector('h3').textContent,
+          body: [...d.querySelectorAll('p')].pop().textContent,
+          btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+          dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+          wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth,
+          home: !!document.querySelector('.home-page')
+        };
+      });
+      if (!k) fails.push(`${W} identify tip: not shown on Home to a player with 200 questions who never opened the Coral ID Key`);
+      else {
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Stuck on a coral? Try the Coral ID Key' ||
+          !/^Tap the growth form and the clues you can see.* It is under Identify, any time\.$/.test(k.body) ||
+          k.btns.join() !== 'Show me,Got it' ||
+          !k.home ||
+          k.wide
+        )
+          fails.push(`${W} identify tip card: ${JSON.stringify(k)}`);
+        if (!k.dis) fails.push(`${W} identify tip: its buttons take a tap at once`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b="1"]');
+        await p.waitForFunction(() => location.hash.startsWith('#identify/key'), null, {timeout: 8000}).catch(() => {});
+        await p.waitForFunction(() => JSON.parse(localStorage.getItem('reefid-tips')).u.i === 1, null, {timeout: 8000}).catch(() => {});
+        const st = await tips(p),
+          hash = await p.evaluate(() => location.hash),
+          ev = await p.evaluate(() =>
+            JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+              .filter(x => /^tip:/.test(x.src || ''))
+              .map(x => `${x.k}:${x.src}:${x.r}:${x.m}`)
+          );
+        if (!hash.startsWith('#identify/key') || st.u.i !== 1 || (st.s.identify || []).length !== 1)
+          fails.push(`${W} identify tip Show me: ${JSON.stringify({hash, st})}`);
+        if (ev.join() !== 'pulse:tip:identify:shown:home,pulse:tip:identify:show:home')
+          fails.push(`${W} identify tip events: ${JSON.stringify(ev)}`);
+      }
+      if (errs.length) fails.push(`${W} identify tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Got it stays on Home (no redraw, no next question); no second card in the visit, a reload included (the visit was
+    // stamped); My progress gets it for another player the same way.
+    {
+      const [c, p] = await open(w, h, {q: 200, z: 3, c: 1, d: 1, m: 1, i: 0}, '', false);
+      await p.waitForSelector('.tipcard', {timeout: 10000}).catch(() => {});
+      await p
+        .waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000})
+        .catch(() => {});
+      await p.evaluate(() => (window.SMOKE_BAND = document.querySelector('.hdtiles')));
+      await p.click('.tipcard [data-b="2"]').catch(() => fails.push(`${W} identify tip: no Got it`));
+      const after = await p.evaluate(() => ({
+        gone: !document.querySelector('.tipcard'),
+        same: window.SMOKE_BAND === document.querySelector('.hdtiles'),
+        hash: location.hash
+      }));
+      if (!after.gone || !after.same || after.hash !== '') fails.push(`${W} identify tip Got it: ${JSON.stringify(after)}`);
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.waitForTimeout(3500);
+      if (await p.$('.tipcard')) fails.push(`${W} identify tip: a second card in the same visit`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 200, z: 3, c: 1, d: 1, m: 1, i: 0}, '#progress', false);
+      await p.waitForSelector('.tipcard', {timeout: 10000}).catch(() => {});
+      const t = await p.evaluate(() => (document.querySelector('.tipcard h3') || {}).textContent);
+      if (t !== 'Stuck on a coral? Try the Coral ID Key') fails.push(`${W} identify tip on My progress: ${JSON.stringify(t)}`);
+      await c.close();
+    }
+    // Not for these: it was opened (i 1), 199 questions, a tip already shown in this visit; nor at a break of a game; the
+    // subjects with no Identify tool declare no words (UNITS idtip is the corals' only).
+    for (const [u, x, at] of [
+      [{q: 400, z: 3, c: 1, d: 1, m: 1, i: 1}, {}, ''],
+      [{q: 199, z: 3, c: 1, d: 1, m: 1, i: 0}, {}, ''],
+      [{q: 400, z: 3, c: 1, d: 1, m: 1, i: 0}, {v: {n: 12, tip: 1}}, ''],
+      [{q: 400, z: 3, c: 1, d: 1, m: 1, i: 0}, {}, '#learn/genera']
+    ]) {
+      const [c, p] = await open(w, h, u, at, false, x);
+      await p.waitForTimeout(3500);
+      if (await p.$('.tipcard')) fails.push(`${W} identify tip shown to ${JSON.stringify({u, x, at})}`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 400, z: 3, c: 1, d: 1, m: 1, i: 0}, '#practice/quiz', false);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} identify tip shown at a break of the Quiz`);
+      const ids = await p.evaluate(() => Object.keys(UNITS).filter(k => UNITS[k].idtip));
+      if (ids.join() !== 'coral') fails.push(`${W} identify tip words declared by ${ids.join()}`);
+      await c.close();
+    }
+    // The typed-answers tip (f): typed questions forced (every next question typed: model.js TYPED, as the other smokes do), a
+    // player who answers "I don't know" three typed questions in a row gets the card at the Next after the third (the run
+    // is counted on the device, u.k), and not before; the card says a close spelling counts, in the subject's own word,
+    // with Got it only (nothing to open) and no tap at once; logged; Escape is Got it. A text typed (even a wrong one) ends
+    // the run: it takes three again.
+    // One typed question (a choice question before it is answered wrong, Next, as a player passing it by): "I don't know",
+    // or a wrong genus typed when text. Returns whether the tip is up after Next (null: no typed question came).
+    const typedStep = async (p, text) => {
+      for (let i = 0; i < 14; i++) {
+        await qa.ready(p, {timeout: 10000});
+        const typed = await p.evaluate(text => {
+          document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          // answer.js: only asks whether the question is typed, to choose what to answer; smokeAnswer answers it
+          const typed = !!document.querySelector('#view .q:not(.done) .tyform');
+          smokeAnswer(typed && text ? (qNow().g === 'Acropora' ? 'Porites' : 'Acropora') : false);
+          document.getElementById('next').click();
+          return typed;
+        }, text);
+        await p
+          .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {
+            timeout: 10000
+          })
+          .catch(() => {});
+        if (typed || (await p.$('.tipcard'))) return !!(await p.$('.tipcard'));
+      }
+      return null;
+    };
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
+      const up = [];
+      for (let i = 0; i < 3; i++) up.push(await typedStep(p, ''));
+      const st = await tips(p);
+      if (up.join() !== 'false,false,true' || st.u.k !== 3 || (st.s.typed || []).length !== 1)
+        fails.push(
+          `${W} typed tip: shown at the Next after the third "I don't know", not before: ${JSON.stringify({up, k: st.u.k, s: st.s})}`
+        );
+      const k = await p.evaluate(() => {
+        const d = document.querySelector('.tipcard');
+        if (!d) return null;
+        const card = d.querySelector('.ulcard').getBoundingClientRect();
+        return {
+          kick: d.querySelector('.ulkick').textContent,
+          title: d.querySelector('h3').textContent,
+          body: [...d.querySelectorAll('p')].pop().textContent,
+          btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+          dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+          wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+        };
+      });
+      if (!k) fails.push(`${W} typed tip: no card`);
+      else {
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Not sure how to spell it? Type it anyway' ||
+          k.body !==
+            "A close spelling counts as right: you just retype the genus once to learn its spelling. “I don't know” counts as a miss." ||
+          k.btns.join() !== 'Got it' ||
+          !k.dis ||
+          k.wide
+        )
+          fails.push(`${W} typed tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b]');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} typed tip: Got it did not go on to the next question`);
+        const ev = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+            .filter(x => /^tip:/.test(x.src || ''))
+            .map(x => `${x.k}:${x.src}:${x.r}`)
+        );
+        if (ev.join() !== 'pulse:tip:typed:shown,pulse:tip:typed:ok') fails.push(`${W} typed tip events: ${JSON.stringify(ev)}`);
+        // The same visit: no second tip, however many more "I don't know".
+        let again = 0;
+        for (let i = 0; i < 3; i++) if (await typedStep(p, '')) again++;
+        if (again) fails.push(`${W} typed tip: shown again in the same visit`);
+      }
+      if (errs.length) fails.push(`${W} typed tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
+      // Two "I don't know", a wrong text, two more: the text ended the run, so no tip and a run of 2 ...
+      const seq = ['', '', 'text', '', ''],
+        up = [];
+      for (const t of seq) up.push(await typedStep(p, t));
+      const st = await tips(p);
+      if (up.some(x => x !== false) || st.u.k !== 2 || (st.s.typed || []).length)
+        fails.push(`${W} typed tip: a typed text did not end the run: ${JSON.stringify({up, k: st.u.k, s: st.s})}`);
+      // ... and the next one makes three again: the card, closed by Escape (= Got it), then the game goes on.
+      if ((await typedStep(p, '')) !== true) fails.push(`${W} typed tip: not shown at three after a restart`);
+      else {
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.keyboard.press('Escape');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} typed tip: Escape did not go on to the next question`);
+      }
+      await c.close();
+    }
+    // Not for these: two in a row (k 2, and no typed answer), the Duel tab (no typed question).
+    {
+      const [c, p] = await open(w, h, {q: 60, z: 3, c: 1, d: 1, m: 1, k: 2}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} typed tip shown to a player with two "I don't know" in a row`);
+      await c.close();
+    }
+    // Not for these: one pair only, no pair, the view seen before (m 1). Right answers only: a miss makes a pair of its own,
+    // and the tip, past 120 questions, takes any break.
+    for (const [u, pairs] of [
+      [{q: 150, z: 3, c: 1, d: 1}, 1],
+      [{q: 150, z: 3, c: 1, d: 1}, 0],
+      [{q: 150, z: 3, c: 1, d: 1, m: 1}, 2]
+    ]) {
+      const [c, p] = await open(w, h, u);
+      await mixed(p, pairs);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p, {right: true})).next) n++;
+      if (n) fails.push(`${W} mix-ups tip shown to ${JSON.stringify({u, pairs})}`);
+      await c.close();
+    }
     // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened, the
-    // Duel tab opened.
+    // Duel tab opened, the My mix-ups view seen (the misses make pairs of their own, so m 1 where 100 questions are past).
     for (const u of [
-      {q: 100, z: 3, c: 1},
+      {q: 100, z: 3, c: 1, m: 1},
       {q: 5, z: 0},
       {q: 80, z: 3},
-      {q: 200, z: 3, c: 1, d: 1}
+      {q: 200, z: 3, c: 1, d: 1, m: 1}
     ]) {
       const [c, p] = await open(w, h, u);
       let n = 0;
@@ -3484,7 +3883,8 @@ async function customLeftCheck(b, base) {
         localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('reefid-nudge', '1');
         // Not a "Did you know?" tip's player (3 photos enlarged): only this card may take a break.
-        localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {}, v: {}}));
+        localStorage.getItem('reefid-tips') ||
+          localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {basics: [0, 0]}, v: {}}));
         if (intro) {
           localStorage.getItem('reefid-sync-coral-intro') ||
             localStorage.setItem('reefid-sync-coral-intro', JSON.stringify(Object.fromEntries(M.map(n => [n, [0, 1, 1, 's']]))));
@@ -4150,12 +4550,15 @@ async function credits(b, base) {
         licences: !!a && /CC BY/.test(a.textContent),
         // the lecture photos traced to Corals of the World: the site and its terms named
         cotw: !!(a && a.querySelector('a[href="https://www.coralsoftheworld.org/page/terms-of-use/"]')),
+        // REE-50: the app's version line and the link to the source
+        ver: !!a && /Version \S+/.test(a.querySelector('.abver')?.textContent || ''),
+        src: !!(a && a.querySelector('.abver a[href="https://github.com/ppericard/coral-id-imr"]')),
         // The book may be cited under References only, never in the credits around it.
         credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
         bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
       };
     });
-    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || !r.ver || !r.src || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
     // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
     // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only. The genus is the
@@ -4715,6 +5118,14 @@ async function fishBasicsCheck(b, base) {
     });
     if (JSON.stringify(grp.picks) !== JSON.stringify(grp.key) || !grp.tiles || !grp.cite)
       fails.push(`${W} the groups are not the key's: ${JSON.stringify(grp)}`);
+    // A step of several views names the term of its official line: under "Locking spines" the deck's scalpel line says it
+    // is about the scalpel (new-RA review, 2026-11-22). Its last view shown, as a player reaches it.
+    await p.evaluate(() => (location.hash = 'fish/learn/basics/features'));
+    await p.waitForSelector('.bx .bx-picks button', {timeout: 15000});
+    await p.click('.bx .bx-picks button:last-child');
+    const feat = await p.evaluate(() => [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent));
+    const scal = feat.find(t => /scalpel on caudal/.test(t));
+    if (!scal || !/^Scalpel · /.test(scal)) fails.push(`${W} features: the scalpel line does not name its term: ${JSON.stringify(feat)}`);
     // Done = every step seen: its own record and feat, the corals' untouched; the Home line goes; the corals still due.
     for (const st of STEPS) {
       await p.evaluate(s => (location.hash = 'fish/learn/basics/' + s), st);
@@ -5738,7 +6149,8 @@ async function subjTour(b, base) {
   const fails = [],
     errs = [];
   // mode: 'plain' (no group), 'group' (signed in, in the fish group), 'late' (signed out; signing in to their existing
-  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out).
+  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out), 'names'
+  // ('all' on a device that has heard a sheet script with the species level: the fish names step is on offer, rule D4).
   const open = async mode => {
     const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
     await c.route(
@@ -5754,7 +6166,7 @@ async function subjTour(b, base) {
           t = await res.text();
         if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
         // every subject but the corals back to a group (fish and the sea slugs open to all)
-        await r.fulfill({response: res, body: mode === 'all' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
+        await r.fulfill({response: res, body: mode === 'all' || mode === 'names' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
       }
     );
     await c.addInitScript(mode => {
@@ -5764,13 +6176,14 @@ async function subjTour(b, base) {
           localStorage.setItem('reefid-nudge', '1');
           localStorage.setItem('reefid-board-told', '1');
           localStorage.setItem('reefid-board-sent14', '1');
+          if (mode === 'names') localStorage.setItem('reefid-sheet-v', '300');
           if (mode === 'group') {
             localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234'}));
             localStorage.setItem('reefid-groups', JSON.stringify({n: 'Ana', g: ['fish']}));
           }
         }
       } catch (e) {}
-      const g = mode === 'plain' || mode === 'all' ? [] : ['fish'];
+      const g = mode === 'plain' || mode === 'all' || mode === 'names' ? [] : ['fish'];
       window.SHEET_STUB = (url, o) =>
         Promise.resolve({
           json: () =>
@@ -5951,7 +6364,212 @@ async function subjTour(b, base) {
       fails.push(`subject tour, open to all: Corals ${JSON.stringify({s1, k})}`);
     await c.close();
   }
+  // 5. The fish names step (app.js UNITS namesStep; Pierre, 2026-11-04): after "I know reef fish well" a forced step, one more
+  // step in the count, whose answer sets the What I learn rows when the tour closes (held until then); Back shows it marked
+  // and a changed answer replaces it; changed to "I'm at IMR" it goes, nothing written; a device that has not heard the
+  // sheet (rule D4) gets no step.
+  {
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'step');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step: not asked after "know"'));
+    await p.waitForTimeout(300);
+    const rows = () => p.evaluate(() => learnRows().map(r => [r.k, rowOn(r)]));
+    const n0 = await p.evaluate(() => {
+      const b = document.querySelector('#tour .tbub');
+      return {
+        n: (b.querySelector('.tstep') || {}).textContent.trim(),
+        h: (b.querySelector('h3') || {}).textContent,
+        opts: [...b.querySelectorAll('[data-names]')].map(x => x.dataset.names),
+        next: !!b.querySelector('.tnext'),
+        skip: !!b.querySelector('.tskip')
+      };
+    });
+    if (n0.n !== '3 / 9' || n0.h !== 'Which names do you want to learn?' || n0.opts.join() !== 'common,sci,both' || n0.next || n0.skip)
+      fails.push(`names step: ${JSON.stringify(n0)}`);
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    if (((await p.evaluate(() => (document.querySelector('#tour .tstep') || {}).textContent)) || '').trim() !== '3 / 9')
+      fails.push('names step: the arrow key passed the forced choice');
+    await tap(p, '#tour [data-names="sci"]', 'names step');
+    await p.waitForTimeout(500);
+    const s1 = await bub(p),
+      r1 = await rows(),
+      q1 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (!s1 || s1.n !== '4 / 9' || !/, any time$/.test(s1.h))
+      fails.push(`names step: after the answer ${JSON.stringify(s1 && [s1.n, s1.h])}`);
+    // held, not written: going back to change it leaves nothing to take back (or to synchronize)
+    if (JSON.stringify(r1) !== '[["sp",true],["sci",false]]' || q1.join() !== ',,,false')
+      fails.push(`names step: the answer is written before the tour closes ${JSON.stringify([r1, q1])}`);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(400);
+    const back = await p.evaluate(() => ({
+      pressed: [...document.querySelectorAll('#tour [data-names][aria-pressed="true"]')].map(x => x.dataset.names).join(),
+      next: !!document.querySelector('#tour .tnext')
+    }));
+    if (back.pressed !== 'sci' || !back.next) fails.push(`names step: Back ${JSON.stringify(back)}`);
+    // changed to "Scientific names only" then, the tour closed (Escape): that answer, the last, is written
+    await tap(p, '#tour [data-names="both"]', 'names step changed');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-names="sci"]', 'names step changed again');
+    await p.waitForTimeout(500);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step: Escape kept the tour'));
+    const r2 = await rows(),
+      q2 = await p.evaluate(() => [Q.sci, Q.sp, Q.spO, !!Q.sciH]);
+    if (JSON.stringify(r2) !== '[["sp",false],["sci",true]]' || q2.join() !== 'true,false,true,false')
+      fails.push(`names step: scientific names only, at the close ${JSON.stringify([r2, q2])}`);
+    await c.close();
+  }
+  {
+    // Back to the question and "I'm at IMR": the held choice goes with the step (8 steps again), nothing is written
+    const [c, p] = await open('names');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, IMR');
+    await p.waitForSelector('#tour [data-names]', {timeout: 10000}).catch(() => fails.push('names step, IMR: not asked after "know"'));
+    await tap(p, '#tour [data-names="sci"]', 'names step, IMR');
+    await p.waitForTimeout(400);
+    await tap(p, '#tour .tback', 'names step, IMR back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour .tback', 'names step, IMR back');
+    await p.waitForTimeout(300);
+    await tap(p, '#tour [data-start="imr"]', 'names step, IMR');
+    await p.waitForTimeout(600);
+    const s3 = await bub(p);
+    if (!s3 || s3.n !== '3 / 8' || !/, any time$/.test(s3.h))
+      fails.push(`names step: changed to IMR ${JSON.stringify(s3 && [s3.n, s3.h])}`);
+    await p.keyboard.press('Escape');
+    await p
+      .waitForFunction(() => !document.getElementById('tour'), null, {timeout: 5000})
+      .catch(() => fails.push('names step, IMR: Escape kept the tour'));
+    const q3 = await p.evaluate(() => ['sp', 'spO', 'sci', 'sciO', 'sciT', 'spT'].map(k => (k in Q ? Q[k] : null)));
+    if (q3.some(x => x !== null)) fails.push(`names step: changed to IMR, but written ${JSON.stringify(q3)}`);
+    await c.close();
+  }
+  {
+    // A device that has not heard the sheet script at the species level: one row on offer, no choice, the tour as before.
+    const [c, p] = await open('all');
+    await tap(p, '#tour [data-pick="fish"]', 'names step, old sheet');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    await tap(p, '#tour [data-start="know"]', 'names step, old sheet');
+    await p.waitForTimeout(600);
+    const s = await bub(p);
+    if (!s || s.n !== '3 / 8' || !/, any time$/.test(s.h)) fails.push(`names step, sheet not heard: ${JSON.stringify(s && [s.n, s.h])}`);
+    await c.close();
+  }
   if (errs.length) fails.push(`subject tour: page errors ${errs.slice(0, 3).join(' | ')}`);
+  return fails;
+}
+
+// The tour's arrows (tour.js arrows) never cover readable page text: at every step of the tour, phone and desktop, no
+// arrow's box meets a text line of the page behind the dim; and with text put under each arrow (a probe, as the quiz's
+// "Show the corallites (hint)" link sits under the Practice arrow), the arrow moves, shortens or goes: none stays over it.
+// Fish photos are not fetched (every other host is aborted). Returns the failures.
+async function tourArrowsCheck(b, base) {
+  const fails = [],
+    errs = [];
+  // The arrows now on screen and the page's text lines they meet (the tour itself left out).
+  const measure = () => {
+    const tour = document.getElementById('tour'),
+      arrows = [...document.querySelectorAll('#tour .tarw')].map(a => a.getBoundingClientRect()),
+      rg = document.createRange(),
+      walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT),
+      hits = [];
+    for (let n; (n = walk.nextNode());) {
+      const e = n.parentElement;
+      if (!n.nodeValue.trim() || tour.contains(n) || !e || /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(e.tagName)) continue;
+      if (!e.checkVisibility({visibilityProperty: true, opacityProperty: true})) continue;
+      rg.selectNodeContents(n);
+      for (const q of rg.getClientRects())
+        for (const a of arrows)
+          if (q.width > 0 && q.height > 0 && a.left < q.right && a.right > q.left && a.top < q.bottom && a.bottom > q.top)
+            hits.push(n.nodeValue.trim().slice(0, 30));
+    }
+    return {arrows: arrows.length, hits};
+  };
+  // Text lines laid exactly over each arrow now on screen (the tour is then re-placed by a resize).
+  const probe = () => {
+    const boxes = [...document.querySelectorAll('#tour .tarw')].map(a => a.getBoundingClientRect());
+    let made = 0;
+    for (const r of boxes)
+      for (let y = r.top; y < r.bottom; y += 14) {
+        const d = document.createElement('div');
+        d.className = 'arwprobe';
+        d.textContent = 'W'.repeat(Math.ceil(r.width / 7) + 2);
+        d.style.cssText = `position:fixed;z-index:1;left:${r.left}px;top:${y}px;font:12px/14px monospace;white-space:nowrap;pointer-events:none`;
+        document.body.appendChild(d);
+        made++;
+      }
+    return made;
+  };
+  for (const w of [390, 1280]) {
+    const c = await b.newContext({
+      viewport: {width: w, height: w < 600 ? 844 : 800},
+      serviceWorkers: 'block',
+      hasTouch: w < 600,
+      isMobile: w < 600
+    });
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => localStorage.setItem('reefid-nudge', '1'));
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(`${w}: ${e.message}`));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000});
+    let games = 0;
+    for (let k = 0; k < 12; k++) {
+      const pick = await p.$('#tour [data-pick="coral"]'),
+        start = pick ? null : await p.$('#tour [data-start="imr"]'),
+        before = await p.evaluate(() => (document.querySelector('#tour .tstep') || {}).textContent);
+      if (pick || start) {
+        await (pick || start).click();
+        await p
+          .waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, before, {timeout: 10000})
+          .catch(() => {});
+        await p.waitForTimeout(500);
+        continue;
+      }
+      await p.waitForTimeout(900); // the page behind the dim (photos, layout) settles; the tour places itself every 400 ms
+      const h = await p.evaluate(() => (document.querySelector('#tour .tbub h3') || {}).textContent || '');
+      const m = await p.evaluate(measure);
+      if (m.hits.length) fails.push(`tour arrows ${w} px, step "${h}": an arrow covers text ${JSON.stringify(m.hits)}`);
+      if (h === 'Four games') {
+        games++;
+        if (!m.arrows) fails.push(`tour arrows ${w} px: the Four games step shows no arrow`);
+        const n = await p.evaluate(probe);
+        await p.evaluate(() => dispatchEvent(new Event('resize')));
+        await p.waitForTimeout(300);
+        const m2 = await p.evaluate(measure);
+        if (n && m2.hits.length)
+          fails.push(`tour arrows ${w} px, text under the arrows: one still covers ${JSON.stringify([...new Set(m2.hits)].slice(0, 3))}`);
+        await p.evaluate(() => document.querySelectorAll('.arwprobe').forEach(e => e.remove()));
+      }
+      const next = await p.$('#tour .tnext');
+      if (!next) break;
+      if (/Start playing|Coral basics/.test(await next.textContent())) break;
+      await next.click();
+      await p
+        .waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, before, {timeout: 10000})
+        .catch(() => {});
+    }
+    if (games !== 1) fails.push(`tour arrows ${w} px: the Four games step was met ${games} times`);
+    await c.close();
+  }
+  if (errs.length) fails.push(`tour arrows: page errors ${errs.slice(0, 3).join(' | ')}`);
   return fails;
 }
 
@@ -6144,7 +6762,7 @@ async function noUpscaleCheck(b, base) {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
       // The player's id seeds the per-player reserve (core.js reserveOf: photos kept off this player's sheets and games).
       // The app makes a random id, so each run was another player: the Tubastraea sheet, whose only lecture photos sit
       // behind the "more" fold and can be reserved, had none for about 1 id in 1000 ("shows no IMR lecture photo", the
@@ -6314,7 +6932,7 @@ async function comparedLayoutCheck(b, base) {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3}}');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
     });
     const p = await c.newPage();
     await p.goto(base);
@@ -6370,7 +6988,7 @@ async function comparedLayoutCheck(b, base) {
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
 // (namesCheck) and Your tricky pairs on My progress (trickyCheck); subjtour: the subject to start with in
-// the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck);
+// the tour, for a player with one subject and with two (subjTour), and no tour arrow over page text (tourArrowsCheck); install: the offer to install the app (installCheck);
 // fishkey: the Fish ID Key in the Lab (fishKeyCheck); noupscale: an IMR lecture photo never drawn past its own pixels
 // (noUpscaleCheck).
 const PARTS = [
@@ -7355,7 +7973,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('tips')) for (const f of await customLeftCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
-  if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
+  if (run.has('subjtour')) for (const f of [...(await subjTour(b, base)), ...(await tourArrowsCheck(b, base))]) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   if (run.has('names')) for (const f of [...(await namesCheck(b, base)), ...(await trickyCheck(b, base))]) fails.push(f);

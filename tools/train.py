@@ -5,12 +5,14 @@ bringing each one up to date. The integrator's tool, run from its checkout of th
     python3 tools/train.py --dry-run 801 803 805   # check the PRs and build the train locally; pushes and merges nothing
     python3 tools/train.py 801 803 805             # the real run: in the background, it waits for CI (about 4 min)
 
+For one PR, the queue passes `--sha FULL_SHA` to both invocations to keep the head that passed its review gates.
+
 In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch and moves `release`, never a force-push;
 nothing is re-run):
 1. Each PR, in the order given: open, based on main, not a draft, no `needs-pierre` label, from this repository, every
    check green on its head, no file left in tools/sync/changes/ (a PR that changes Code.gs gets its VERSION first:
    tools/sheet_version.py --assign on its branch, and that head is green and Codex-clean like any other). From PR
-   BODY_FROM on, its description too (AGENTS.md "What players will see comes from Pierre"; Pierre, 2026-11-18):
+   BODY_FROM on, its description too (AGENTS.md "Working mode", "Easy to correct"; Pierre, 2026-11-18):
    "Choices I made" starts with None, and "Players see or play differently?" says No, or gives each change with Pierre's
    words quoted and dated ("Pierre, 2026-11-18: «…»") or marked "integrator's call"; a STATUS handover ("STATUS: …")
    and Dependabot's PRs are exempt. The rest of the merge contract
@@ -19,7 +21,7 @@ nothing is re-run):
    stops it (leave that PR out, or bring it up to date). The sheet rules are checked on it as on main, by main's copy
    of tools/sheet_version.py: no code from a PR's head runs on the integrator's machine.
 3. --dry-run stops here and says what it would do.
-4. Pushes the train as a new branch train/<UTC time> and waits for the Checks and Smokes workflows on it (their
+4. Rechecks the heads and main, pushes a new branch train/<UTC time> and waits for the Checks and Smokes workflows (their
    `push: train/*` trigger). Red: nothing is merged; it names the failing jobs (never re-run them, rule W23). The
    branch stays; the weekly "Clean branches and Actions" workflow (.github/workflows/clean.yml) deletes it after two days.
 5. Green: squash-merges each PR through the API in order, at the head the train tested, titled "<title> (#N)". Before
@@ -121,9 +123,12 @@ def main_sha():
     return api('git/ref/heads/main')['object']['sha']
 
 
-def ready(n, top):
+def ready(n, top, expected_sha=None):
     """The PR's (head sha, title), or the reasons it cannot ride the train."""
     p = api('pulls/%s' % n)
+    sha = p['head']['sha']
+    if expected_sha is not None and sha != expected_sha:
+        raise Stop('#%s head moved since its gates passed (%s -> %s): nothing built' % (n, expected_sha[:7], sha[:7]))
     why = []
     if p.get('state') != 'open':
         why.append('not open (%s)' % p.get('state'))
@@ -137,7 +142,6 @@ def ready(n, top):
         why.append('from another repository')
     if int(n) >= BODY_FROM and not exempt(p):
         why += body_problems(p.get('body'))
-    sha = p['head']['sha']
     runs = api('commits/%s/check-runs?per_page=100' % sha).get('check_runs', [])
     if not runs:
         why.append('no checks on its head %s yet' % sha[:7])
@@ -228,13 +232,13 @@ def move_release(top, sha):
     return '%s %s: the sheet script takes its code from here.' % (RELEASE, 'moved %s -> %s' % (old[:7], sha[:7]) if old else 'created at ' + sha[:7])
 
 
-def run(numbers, dry):
+def run(numbers, dry, expected_sha=None):
     top = git('rev-parse', '--show-toplevel')
     git('fetch', '-q', 'origin', 'main', cwd=top)
     base = git('rev-parse', 'origin/main', cwd=top)
     prs, refused = [], []
     for n in numbers:
-        sha, title, why = ready(n, top)
+        sha, title, why = ready(n, top, expected_sha)
         prs.append((n, sha, title))
         refused += ['#%s: %s' % (n, w) for w in why]
     if refused:
@@ -249,6 +253,12 @@ def run(numbers, dry):
             say('Dry run: would push %s, wait for %s on it, then squash-merge %s in this order, compare main\'s tree and move %s to the commit main ends on.'
                 % (branch, ' and '.join(WORKFLOWS), ', '.join('#%s' % n for n, _, _ in prs), RELEASE))
             return 0
+        for n, sha, _ in prs:
+            if api('pulls/%s' % n)['head']['sha'] != sha:
+                raise Stop('#%s head moved while building the train: nothing pushed' % n)
+        now = main_sha()
+        if now != base:
+            raise Stop('main moved to %s while building the train: nothing pushed' % now[:7])
         git('push', '-q', 'origin', 'HEAD:refs/heads/' + branch, cwd=wt)
         say('Pushed %s; waiting for %s.' % (branch, ' and '.join(WORKFLOWS)))
     finally:
@@ -285,11 +295,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('prs', nargs='+', help='the PR numbers, in merge order')
     ap.add_argument('--dry-run', action='store_true', help='check and build locally; push and merge nothing')
+    ap.add_argument('--sha', help='only accept this full, previously reviewed head SHA (one PR)')
     a = ap.parse_args()
     if not all(p.isdigit() for p in a.prs):
         ap.error('PR numbers only')
+    if a.sha is not None and (len(a.prs) != 1 or not re.fullmatch(r'[0-9a-f]{40}', a.sha)):
+        ap.error('--sha takes a full 40-character Git SHA and exactly one PR')
     try:
-        return run(a.prs, a.dry_run)
+        return run(a.prs, a.dry_run, a.sha)
     except Stop as e:
         say('✗ %s' % e)
         return 1

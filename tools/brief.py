@@ -4,19 +4,19 @@
   python3 tools/brief.py           full brief (the integrator runs it at each stop)
   python3 tools/brief.py --short   5 lines at most (the SessionStart hook in .claude/settings.json)
   python3 tools/brief.py --time    one line: Manila time and the Rule 0 window (the UserPromptSubmit hook; offline)
-  --time --night-due               and, once a Manila day between 04:00 and 17:30, the line saying the night report is due
+  --time --night-due               legacy hook flag: report that the first message and delivery status are unknown
   --at HH:MM                       pretend it is that Manila time (tests)
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
 the live one, the stack items behind their latest stable (tools/stack_check.py --latest, cached for the day), the
 infrastructure numbers against their free-tier limits (one line, from the hourly Health run's annotation; a warning past 70 %
-of a limit; in the short brief only when one warns or the check failed), the open questions for Pierre from docs/STATUS.md,
-and where open work is tracked (Linear's team views, as links: the brief never queries Linear; in the short brief on the
-questions line); the full brief adds the fish candidates waiting for the judging pass.
+of a limit; in the short brief only when one warns or the check failed), the last question number from docs/STATUS.md,
+and where to start (Linear's Project Home and the Drive Reef_ID folder, links read from docs/INTEGRATOR.md "Linear": the
+brief never queries Linear; in the short brief its own second line, REE-230); the full brief adds the fish candidates waiting for the judging pass.
 It always says whether the local origin/main ref is the remote's main (one bounded `git ls-remote`, no fetch, nothing
-moved; "remote freshness unknown" when it fails; on the time line in the short brief), since the tools, the drift check
-and the VERSION on main are all read from that ref (REE-180).
+moved by the brief; "remote freshness unknown" when it fails; on the time line in the short brief). The startup hooks
+refresh the ref before loading their scripts. The brief checks what its main-based signals refer to (REE-180).
 When this checkout's CLAUDE.md, AGENTS.md or .claude/ instructions differ from origin/main it says so (agents load this
 copy), it counts today's Agent launches by model and effort from tools/agent_guard.py's log, and it names the docs past
 their size mark (tests/docs.test.js DOC_MARKS; only when one is: a warning, never a block). The hooks run main's reviewed copy
@@ -51,8 +51,7 @@ DEADLINE = 5.0  # seconds for every network call together
 START = time.monotonic()
 MANILA = timezone(timedelta(hours=8))  # Asia/Manila, UTC+8 all year (no daylight saving)
 # Where open work is tracked (docs/INTEGRATOR.md "Linear"): links only, never a call to Linear (the hooks have ~5 s).
-LINEAR_ACTIVE = 'https://linear.app/reef-id/team/REE/active'
-LINEAR_BACKLOG = 'https://linear.app/reef-id/team/REE/backlog'
+LINK_LABELS = ('Project Home', 'Drive Reef_ID')  # the link texts in INTEGRATOR.md "Linear": its one source of the links
 
 
 def left():
@@ -68,7 +67,8 @@ def left():
 def window(hm):
     m = hm[0] * 60 + hm[1]
     if 4 * 60 <= m < 17 * 60 + 30:
-        return 'day', 'working day (Rule 0): Pierre may be asked from his first message after 04:00 until 17:30'
+        return ('day', "working day (Rule 0): Pierre may be asked from his first message after 04:00 until 17:30. "
+                       "The hook cannot verify his first message")
     return 'quiet', ('after 17:30 (Rule 0): ask Pierre nothing until his first message after 04:00; questions wait in '
                      'docs/STATUS.md; all else goes on')
 
@@ -85,37 +85,6 @@ def time_line(at):
     now = manila_now(at)
     name, what = window((now.hour, now.minute))
     return 'Manila %s · %s: %s' % (now.strftime('%a %d %b %H:%M'), name, what)
-
-
-# --- The night report, once a day (Pierre, 2026-11-18; the night ends with his first message after 04:00, Rule 0) ------
-# At the first prompt of a Manila day in Rule 0's day window (04:00 to 17:30), the UserPromptSubmit hook (--time
-# --night-due) adds one line: the integrator gives Pierre tools/night.py's report before anything else. In the evening
-# it says nothing (a fresh container then is no morning). Offline: a marker file in the checkout holds the day it was
-# said, so it is once a day per checkout: a second session's checkout says it again in the same day.
-
-NIGHT_MARK = os.path.join('tools', '.cache', 'night-report-day')
-NIGHT_DAY = (4 * 60, 17 * 60 + 30)  # Manila minutes of the day, end excluded: Rule 0's day window
-
-
-def night_due(at):
-    """The reminder line the first time it is called in the day window of a Manila day, else None. Never raises."""
-    now = manila_now(at)
-    if not NIGHT_DAY[0] <= now.hour * 60 + now.minute < NIGHT_DAY[1]:
-        return None
-    day, path = now.date().isoformat(), os.environ.get('BRIEF_NIGHT_MARK') or os.path.join(ROOT, NIGHT_MARK)
-    try:
-        if open(path, encoding='utf8').read().strip() == day:
-            return None
-    except OSError:
-        pass
-    try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf8') as f:
-            f.write(day)
-    except OSError:
-        return None  # cannot remember it was said: better silent than said at every prompt
-    return ('Night report due (first message of the day): integrator, run python3 tools/night.py and give Pierre its '
-            'result first, in French, in a few lines.')
 
 
 # --- GitHub (gh api, REST) -----------------------------------------------------------------------------------------------
@@ -229,10 +198,9 @@ def stray(pool, open_refs):
 
 
 # --- Is the local origin/main current? (REE-180; the integrator continuity study, E.2) ----------------------------------
-# The hooks fetch origin/main only when the ref is missing, and everything below (the drift check, the sheet script's
-# VERSION on main, the tools the hooks run) reads the local ref: an old ref must never pass as current. One bounded
-# `git ls-remote` (no fetch: nothing moves) tells whether the remote's main is the sha the local ref holds. Read-only:
-# the ref, the working tree and the local work are never touched; any failure is "remote freshness unknown".
+# The brief may be run manually, and main can move after the startup hooks refresh it. One bounded `git ls-remote`
+# tells whether the remote agrees with the local ref. The brief leaves refs and local work alone. Any check failure is
+# "remote freshness unknown".
 
 MAIN_BRANCH = 'refs/heads/main'
 MAIN_LOCAL = 'refs/remotes/origin/main'
@@ -322,8 +290,7 @@ def fresh_line(f, short, now=None):
     n = f.get('behind')
     how = ('%d commit%s behind' % (n, '' if n == 1 else 's')) if n else 'differs from' if f.get('local') else 'is missing against'
     head = '⚠ local origin/main %s %s remote main %s (%s)' % (loc or 'none', how, rem, moved)
-    return head + ('; instructions and tools here come from the old ref: ' if short else
-                   '; the drift check, the sheet script VERSION on main and the tools the hooks run come from the old ref: ') + FETCH_FIX
+    return head + '; main-based signals use the local ref: ' + FETCH_FIX
 
 
 # --- Sheet script version ------------------------------------------------------------------------------------------------
@@ -498,25 +465,29 @@ def infra_line(snap, ago=None):
 # --- docs/STATUS.md ------------------------------------------------------------------------------------------------------
 
 
-def questions():
+def status_notes():
     try:
         text = open(os.path.join(ROOT, 'docs/STATUS.md'), encoding='utf8').read()
     except OSError:
-        return None, None, None
-    sec = re.search(r'^## Questions for Pierre\n(.*?)(?=^## |\Z)', text, re.M | re.S)
-    body = sec.group(1) if sec else ''
-    n = len(re.findall(r'^- \*\*Q\d+', body, re.M))
+        return None, None
     last = re.search(r'Last question number: Q(\d+)', text)
     checked = re.search(r'^Last checked: reports and events: (.+)$', text, re.M)
-    return n, (int(last.group(1)) if last else None), (checked.group(1).strip() if checked else None)
+    return (last.group(1) if last else None), (checked.group(1).strip() if checked else None)
 
 
 def tracker_line():
-    """Where open work is tracked: Linear's team views, as links (offline: the brief never queries Linear)."""
-    return 'Open work: Linear team REE, active %s · backlog %s' % (LINEAR_ACTIVE, LINEAR_BACKLOG)
+    """Where to start: Linear's Project Home and the Drive Reef_ID folder, as links read from docs/INTEGRATOR.md "Linear"
+    (offline: the brief never queries Linear; REE-230)."""
+    try:
+        text = open(os.path.join(ROOT, 'docs/INTEGRATOR.md'), encoding='utf8').read()
+        sec = re.search(r'^## Linear\n(.*?)(?=^## |\Z)', text, re.M | re.S).group(1)
+        links = [re.search(r'\[%s\]\((https://[^)\s]+)\)' % re.escape(k), sec).group(1) for k in LINK_LABELS]
+    except (OSError, AttributeError):
+        return 'Start: Project Home, Drive Reef_ID, Linear views: docs/INTEGRATOR.md "Linear"'
+    return 'Start: Project Home %s · Drive Reef_ID %s · views Now/Next/Decisions/Waiting' % tuple(links)
 
 
-# --- What loads here, and the agents launched today (the rules core trial; AGENTS.md "The right model and effort") -----
+# --- What loads here and the agents launched today (the rules core trial; docs/INTEGRATOR.md "Working with Pierre") ---
 # Agents load this checkout's CLAUDE.md, AGENTS.md and .claude/, not origin/main's: a stale or changed copy is said in
 # one line (the proposal's G13). tools/agent_guard.py logs every Agent launch in the git common dir; the brief counts
 # today's (Manila) by model and effort. Counts only: a launch's description is never printed.
@@ -676,7 +647,7 @@ def brief(short, at):
     f_stack = pool.submit(stack_get)
     f_infra = pool.submit(infra_read) if have_gh else None
     v_main, v_where = main_version()
-    q_open, q_last, checked = questions()
+    q_last, checked = status_notes()
 
     # GitHub: PRs, then the branches (the open PRs' heads are skipped)
     pr_list, gh_err = (None, 'gh not found') if not have_gh else result(f_prs)
@@ -739,16 +710,20 @@ def brief(short, at):
 
     # Questions
     # The players' reports and the app's events live in the sheet, which only the agent's connector reads (AGENTS.md
-    # "Working mode", reports and events): remind of the check, with when it was last done.
+    # "Integrator startup"): remind of the check, with when it was last done.
     remind = 'reports and events last checked %s: read them (sheet tabs Reports, Events; Sheets connector)' % (checked or 'never')
-    # Where open work is tracked: in the short brief (5 lines) on the questions line, which always survives the cut.
+    # Where to start (Project Home, Drive): in the short brief its own line right after the time line, and the PRs and
+    # branches share one line to keep the 5-line cut.
     tl = tracker_line()
-    if q_open is None:
-        lines.append('Questions for Pierre: docs/STATUS.md not found · ' + (tl + ' · ' if short else '') + remind)
+    # STATUS holds the last number and may hold parked questions. Linear holds the open decisions.
+    number = 'last number Q%s' % q_last if q_last is not None else 'last number unknown'
+    q = 'Questions for Pierre: Linear Decisions for Pierre · %s (docs/STATUS.md)' % number
+    lines += [q + ' · ' + remind] if short else [q, 'Players: ' + remind]
+    if short:
+        lines.insert(1, tl)
+        if len(lines) > 3 and lines[2].startswith('PRs:') and lines[3].startswith('Branches'):
+            lines[2:4] = [lines[2] + ' · ' + lines[3]]
     else:
-        q = 'Questions for Pierre: %d open, last number Q%s (docs/STATUS.md)' % (q_open, q_last if q_last is not None else '?')
-        lines += [q + ' · ' + tl + ' · ' + remind] if short else [q, 'Players: ' + remind]
-    if not short:
         lines.append(tl)
     al = launches(at)
     if al and short:
@@ -779,16 +754,18 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--short', action='store_true', help='5 lines at most')
     ap.add_argument('--time', action='store_true', help='one line: Manila time and the Rule 0 window (offline)')
-    ap.add_argument('--night-due', action='store_true', help='with --time: once a Manila day between 04:00 and 17:30, the night report line')
+    ap.add_argument('--night-due', action='store_true', help='with --time: compatibility for older hooks, advisory only')
     ap.add_argument('--at', metavar='HH:MM', help='pretend it is this Manila time (tests)')
     a = ap.parse_args()
     if a.at and not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', a.at):
         ap.error('--at takes HH:MM')
     if a.time:
         print(time_line(a.at))
-        due = night_due(a.at) if a.night_due else None
-        if due:
-            print(due)
+        # Older checked-out settings may still pass this flag when their trusted brief has already been updated.
+        if a.night_due:
+            now = manila_now(a.at)
+            if window((now.hour, now.minute))[0] == 'day':
+                print("Night report: Pierre's first message and today's delivery status are unknown to this hook.")
         return
     print('\n'.join(brief(a.short, a.at)))
     sys.stdout.flush()

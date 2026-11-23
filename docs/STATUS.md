@@ -1,85 +1,76 @@
 # Status
 
-**The one place for where things stand.** Written by the integrator only (subagents report to it and never edit this
-file), overwritten at each stop, never appended; at most about 100 lines (`tests/docs.test.js`). What can be computed
-(open PRs and their checks, branches without a PR, the sheet script's live version, whether the local `origin/main` is
-the remote's) is printed by `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
-**Pierre's answers live in [ANSWERS.md](ANSWERS.md)** (append-only historical evidence: a hit is checked for its scope,
-later amendments and whether it still applies, AGENTS.md "Every answer reaches its doc"). This file only cites answers.
+Only the integrator updates this handoff, rewriting it at each stop. Subagents report their updates to the
+integrator. Follow [Project Home][home] for work and decisions.
+Use `python3 tools/brief.py --short` for current GitHub and sheet version signals.
+Search [ANSWERS.md](ANSWERS.md) for historical evidence and use git and PRs for what shipped.
 
-**Start here: the [Project Home](https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc)** (Linear): where
-each kind of information lives. **The work is tracked in Linear**, team REE (Pierre, 2026-11-21 14:41;
-[INTEGRATOR "Linear"](INTEGRATOR.md#linear)): [active](https://linear.app/reef-id/team/REE/active),
-[backlog](https://linear.app/reef-id/team/REE/backlog), [projects](https://linear.app/reef-id/projects/all). Substantial
-new studies go to the Drive folder [Reef_ID](https://drive.google.com/drive/folders/1EHqtC9iINaYrb0zalE7FpX1F01DrskIp).
-A subject not transferred yet keeps its [ROADMAP.md](ROADMAP.md) row. This file keeps the active discussion and the
-handover.
+Last checked: reports and events: 2026-11-22 ~15:10 Manila (Claude, REE-222 mission)
 
-Written 2026-11-21, about 21:00 Manila, by the integrator, after hours (Rule 0: nothing asked since 17:30). **A new
-integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
-
-Last checked: reports and events: 2026-11-21 ~18:20 Manila (an RA's 3 reports, all handled: REE-190). Linear comments:
-REE-181 (ChatGPT's handoff, answered 16:38).
-
-## Active discussion
-
-- **An RA's session of 2026-11-21** (Pierre 18:12-18:17, ANSWERS): the quiz keeps its question (#1375, live), the
-  near-repeat photos (#1376, #1379, live; the draw's cliff REE-197 in progress), her reports and the iNaturalist audit
-  ([review](reviews/2026-11-21-ra-session-review.md), #1374; the weekly photo re-check #1377). Open: **pace for fast
-  learners** (REE-191, a study) and the **placement test** (REE-112: today's ratings not precise enough,
-  [check](reviews/2026-11-21-placement-shrinkage-check.md), #1380).
-- **How Pierre and the agents work** (project "Working method and project tracking"): Linear (#1360), answers as
-  evidence (#1361), the brief's freshness line (#1363), the response-time note (#1362), the continuity study filed
-  (#1364), the Project Home and the Drive route verified. Open: the first real study in Drive (REE-181); where
-  simulations decide (REE-71). Slack dropped (16:10). ChatGPT and the integrator write to each other in Linear comments,
-  signed; read a subject's comments when resuming it (no wake-up).
-- **Response time** ([current understanding](reviews/2026-11-21-response-time-understanding.md)): step 1 live (v213);
-  step 2 next (REE-16), its implementation choices open, the direction (Q452) decided.
+Night report: last sent 2026-11-22 (15:25 Manila, late: a hook's false reminder, fixed in #1464)
 
 ## Now
 
-Main: sheet script **v214** (#1369, "Fin to tail"). Running: REE-197 (the draw's RARE.FEW cliff, then judging 387
-waiting fish candidates). Nothing else runs; no open PR. Merged today: about 75 PRs (`git log`).
+- Pierre paused the Claude Code integrator on 2026-11-22 at 07:27 Manila; the handoff was received (REE-231, Done).
+  [#1460](https://github.com/ppericard/coral-id-imr/pull/1460) brought the
+  [queue reference scripts](../tools/queue/recovered/README.md) (unreviewed, untested) and the study code for
+  [REE-112](../tools/studies/ree112/README.md) and [REE-191](../tools/studies/ree191/README.md) onto main; the exact
+  study input extracts were unavailable in shared storage.
+- Since 14:37 Pierre has given a new Claude Code integrator bounded missions, each reported in Linear: REE-222
+  (#1462), the startup hooks of [#1464](https://github.com/ppericard/coral-id-imr/pull/1464) (#1465 added the "Night
+  report" line above), and the queue's security-review gate (REE-232,
+  [#1466](https://github.com/ppericard/coral-id-imr/pull/1466): `nightq.sh` trains only once Codex's security review
+  is completed for the full head SHA; for a later head it turns the PR to draft and back to ready to get one).
+  [REE-230](https://linear.app/reef-id/issue/REE-230) is back in Backlog: a real compaction with the new hooks is
+  still to observe, apart from the hook tests. A PR for it says "Part of REE-230" and keeps the identifier out of
+  its title (a title identifier closes the issue at merge). The general resumption of the backlog waits for Pierre.
+- [Health #1458](https://github.com/ppericard/coral-id-imr/issues/1458) is open. The hourly "Analyses report" workflow
+  has also failed at every run since 2026-11-22 00:46 UTC ("The sheet did not store the report (no reply)"), likely
+  the same stuck sheet script; not tracked elsewhere yet. The check reported served sheet
+  script v218 against v220 on main. Use the brief for current signals. Scheduled workflows and triggers
+  can still run during the pause. The incident is tracked on GitHub.
 
-Went live tonight (tell Pierre in one line each, information only): the quiz keeps its question (#1375); fewer repeated
-photos and 125 new photos for thin fish families (#1376, #1379); the "Did you know?" tip on look-alike duels (#1370);
-Fish basics earns "Fin to tail" (#1369); one Learn list and sheet frame for every subject, HTML identical (#1378).
+## Active discussion
+
+- [REE-229](https://linear.app/reef-id/issue/REE-229) carries the wider handoff and the question about when to open
+  an issue for an unresolved problem. The [Drive handoff][handoff]
+  includes the recovery inventory. The scope of that proposed rule and the pace of a later restart are open.
+- [REE-230](https://linear.app/reef-id/issue/REE-230) tracks recovery of the shared work arrangement. Options (a)
+  and (b) merged in [#1455](https://github.com/ppericard/coral-id-imr/pull/1455). Option (c), a rule for adopted
+  studies, is open. Recovery after Claude compaction still needs to be observed.
 
 ## Next
 
-Ready issues in Linear (Todo, High first). In order: REE-197's judging pass; REE-16 (response time step 2, `core.js`);
-REE-112 part 1 (build the placement test behind its gate); REE-186 (Tree tab's rest); REE-184, REE-196 (flaky waits);
-REE-13 tip (c); REE-14's rest (sheet parts; the sea slugs' `build()` onto `in_play`).
+For the Claude Code side, see the pause above. For permitted work, use [Now][now]
+and [Next][next]. Check the issue's latest comments
+and linked PR before starting.
 
 ## Questions for Pierre
 
-Ask after his first message after 04:00, in one batch, in French; each issue holds the context (label "Decision for
-Pierre"):
-
-- **REE-194**: 9 fish photos whose iNaturalist identification changed (recommend: exclude 5, move or exclude 4), a
-  replaced Diploastrea photo (exclude), 8 coral photos the fetch rule would refuse (keep his own 6, exclude 2 Tubipora),
-  11 photos other players also miss (look in the admin). Ask the RA which genus she meant ("Issabstria").
-- **REE-112**: the placement test: recommend a coordinated RA playing week, not a lower bar.
-- **REE-192** (a numbered question, the next Q): Q316's fish genus/species spreads not estimable, recommendation A.
-- **REE-198**: refill by most-faved first for species short of easy photos (recommend yes, only those).
-- **REE-6**: R2 holds only 2 unused objects (36 KB); recommend deleting those two, keeping the rest.
-- **REE-70** (asked 15:35, no answer): the new-RA review's two options, recommend (b) for both.
-- **REE-7 (Q439)**, **REE-71**: when he has tested the Lab / reviews the working method.
-- One choice to confirm when he looks at #1354: "Delete, keep answers" also deletes the account's report images.
+See [Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d). Also check PRs
+marked `needs-pierre`. [#1391](https://github.com/ppericard/coral-id-imr/pull/1391) (REE-197) and
+[#1409](https://github.com/ppericard/coral-id-imr/pull/1409) (REE-51) were still waiting at this handoff.
+The previous handoff also asked to confirm that “Delete, keep answers” removes report images.
+[#1354](https://github.com/ppericard/coral-id-imr/pull/1354) shipped that behaviour as an integrator's call.
+The PR records no separate answer from Pierre on this point.
 
 Last question number: Q452
 
 ## Pierre's hands
 
-Assigned to him in Linear (REE-8, REE-72 to REE-75, REE-194): gold set 2 (42 photos); a `release` ruleset and the stray
-branch `claude/autosort-followups`; the trainer role for a live game; his curation waiting in the admin (one reminder,
-REE-74); the admin GitHub token before late January 2027; the photos of REE-194 in the admin.
+See the issues assigned to Pierre in Linear and the app's Admin → Inbox → To do → Points.
 
 ## Parked after hours
 
-- The questions above (Rule 0).
+None carried over from the handoff.
 
 ## Last stop
 
-2026-11-21 ~09:00 Manila, at Pierre's stop (06:25); work resumed at his 14:41 request and ran through the evening.
-Queue tooling: `tools/queue/` (README there). No real names.
+2026-11-22 ~18:15 Manila, after the queue's security-review gate (REE-232, #1466); before it the hooks (#1464) and
+REE-222 (#1462) missions. Before those, the Claude Code side had returned to the pause after #1460; the workspace
+observations are in the Drive handoff addendum. Check current work and live status through the sources above.
+
+[home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
+[handoff]: https://docs.google.com/document/d/1agtmEbHc6f3QD1qdFWMxkCts9QciYT1FEdRuHah3kWM/edit
+[now]: https://linear.app/reef-id/view/0be7e66e-2e7b-4832-9386-1bf6e4f76a59
+[next]: https://linear.app/reef-id/view/1c09d0dd-02bb-4fd1-bde2-a6919f2d6418

@@ -297,11 +297,14 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   // cues' box first, then them.
   const n = c2.genMarks(FG.Naso, 'g:Naso');
   assert.ok(FG.Naso.marks.every(m => n.includes(m)) && n.includes('y0870e29.pdf') && !/IMR/.test(n));
-  const tg = block(LEARN, 'function treeGenus(g) {', '\n}\n');
-  assert.ok(tg.indexOf('ID tips (IMR') < tg.indexOf('${genMarks(g, g.id)}'), 'the IMR cues first, then the marks');
+  // the genus page: the cues are in its hero part, the marks its genusMarks part, declared after it (app.js UNITS sheetParts)
+  const tg = block(LEARN, 'function treeGenus(g) {', '\n}\n'),
+    parts = block(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'), '    genus: [', ']', {file: 'app.js'});
+  assert.ok(tg.indexOf('ID tips (IMR') < tg.indexOf('genusMarks: () =>'), 'the IMR cues in the hero part');
+  assert.ok(parts.indexOf("'hero'") < parts.indexOf("'genusMarks'"), 'the IMR cues first, then the marks');
   for (const [fn, at] of [
-    ['function treeGenus(g) {', '${genMarks(g, g.id)}'],
-    ['function fishSpecies(s) {', "${genMarks(g, 's:' + s.name)}"],
+    ['function treeGenus(g) {', 'genusMarks: () => genMarks(g, g.id)'],
+    ['function treeSpecies(s) {', "genusMarks: () => genMarks(g, 's:' + s.name)"],
     ['function treeFamily(f) {', "${G.map(g => genMarks(g, f.id)).join('')}"]
   ])
     assert.ok(block(LEARN, fn, '\n}\n').includes(at), fn);

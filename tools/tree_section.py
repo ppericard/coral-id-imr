@@ -24,7 +24,7 @@ node a genus-level leaf of its own would hang under (the admin adds those leaves
 the game's photos, not from the sources).
 
 The admin reads the section (admin.js fuTreeOf, fuWormsOf; admin-coraltree.js ctTrees) and never builds a classification
-itself; tests/treesection.test.js checks the files against the shared JS functions (autosort.js fishUnits, core.js
+itself; tests/treesection.test.js checks the files against the shared JS functions (autosort.js treeUnitsOf, core.js
 lectureGroup, taxtree.js ttFromRef) on the real data.
 
     python3 tools/tree_section.py                  write every subject's section
@@ -164,7 +164,7 @@ def _tag(x):
 
 
 def units(F):
-    """autosort.js fishUnits as admin.js fishLoad lays it out: the families {id, name, sci, group, imr, imrWith, genera:
+    """autosort.js treeUnitsOf as admin.js fishLoad lays it out: the families {id, name, sci, group, imr, imrWith, genera:
     [{id, name, imr, species}]} in the book's order (the key's group, else the taxonomic group the family sits in, then the
     file's order). A genus's species come from its genus list, else each species' genus, else the species name's first word."""
     sp = {x['id']: x for x in F.get('species') or []}

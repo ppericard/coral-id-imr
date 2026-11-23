@@ -126,6 +126,26 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    log(wrong choices) + (pair) + (player): the views that confuse more, the 15 pairs most mixed up (of each rank where
    ranks are told apart), and each player's mix-ups observed / expected from the pooled rates (its interval from the
    count's Poisson spread), with the player's own effect as an odds ratio beside it.
+   **A common-name word shared with the option** (the name-confusion study's (h), Q124; `modWords`, `modMeta`, `mod`):
+   where a tree subject's species units are asked by their common name (core.js `LEVELS` `cn`, `s:` + the species id;
+   the options are the other species of the family), a column says whether the option shares a *modifier word* with the
+   right answer: a word of the name a question shows before the head noun (its last word), lower case, a hyphenated word
+   as its parts ("Three-lined wrasse": three, lined), no possessive (an eponym, "Bleeker's"), no word of 2 letters or fewer
+   or stop word ("Yellowtail", "Blackspot", "Bicolor" name a feature). The name shown is the main name (`cn[0][0]`) to
+   everyone and the IMR name (`cn[cni][0]`) to a player at IMR (`app.js` `cnFirst`), which the log does not say: a pair
+   that shares a word under one and not the other is left out of the contrast (`mo` 0), 31 of the 10,083 pairs of one
+   family on `fish.json`. It is exploratory (one test, Benjamini-Hochberg), read as the study's pre-declared first-letter
+   test was: against the pair's visual similarity, which is what a name often describes, so a clear effect says the pairs
+   that share a word are mixed up more, not that the name is the cause. Controls, each a column where it varies among
+   those rows: the same genus (`sg`), the declared look-alike species (`lk`, fish.json `lookalikes`), and whether both
+   units are such species units (`mo`, left out when it is a rank's indicator already, as in a log of families, genera
+   and species asked by common name only: `modCols`); without the controls the effect reads negative on planted data, as
+   the pairs sharing a word are never the declared look-alikes. These columns are a **second fit** beside the model, with
+   its own bootstrap draws: the pairs' relative rates, the mix-up map, the players' expected mix-ups and every other
+   effect read the model without them, as before (a pair's genus or modifier contribution is a pair-level one the pairs'
+   table would otherwise lose). The names come from the tree file (`meta.mod`: `tools/analyses.js` `metaOf`, the admin's
+   Recompute here), in the report's fingerprint; none without them (the corals, the sea slugs while no species is asked
+   by name).
 6. **Learning curves** (200 answers; `lnFit`): right ~ log(1 + answers on the unit) + after a miss (on the unit shown or
    given wrongly, as the app counts it) + Again asked after it + typed + exam + comeback + (player) + (unit) +
    (0 + practice | player) + (0 + practice | unit): each player's and each unit's own learning slope around the common
@@ -141,6 +161,17 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
    on a unit, right ~ offset (that answer's expectation) + log(1 + days since) + (player): the forgetting slope; and
    over every comeback question (10 or more), right − expected, with its own bootstrap (the app's forgetting curve,
    "Comeback after a break"). Right answers by the time since, in bands from under 30 minutes to 10 days or more.
+   **By genus** (`backGenus`, `stab`; descriptive, no verdict, outside the correction): a rusty comeback question
+   carries the recall R the app gave it, logged in the scoring record (`prep` `R`; `r`, under 1 only), and the logged
+   expectation e = g + (1 − g) R σ(ability part). Had the player's stability been κ times the app's, the recall would be
+   (1 + (R^(1/C) − 1) / κ)^C with C = −0.5 (`model.js` `FSRS.C`): the days and the unit's own stability cancel, so only
+   the logged R is needed. κ is fitted by maximum likelihood on log κ (`cbFit`: a grid over ±4, then a golden-section
+   search), the ability part as the app had it, pooled, and for each genus with `CB.GEN` 5 questions or more under a
+   normal prior of SD `CB.TAU` 1 on log κ centred on the pooled one (a genus with few questions is pulled in); the
+   ranges are the cluster bootstrap's percentiles (from 6 players). It reads *clear* of the app only from `CB.MIN` 200
+   questions and `CB.PLAYERS` 20 players (the comeback study's threshold) and says the answers the pooled range would
+   need for ±30% (`need`). Biased towards less forgetting until the comeback's stopping rule is corrected for (about
+   +0.09 on right − expected, the 2026-11-14 comeback study): an upper bound on remembering, said on the card.
 8. **Sessions** (100 answers, 10 session ends; a session ends after 30 minutes without an answer, `GAP`):
    Kaplan-Meier of the length (a session still open, its last answer under 30 minutes before the log's end, censored)
    and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (log
@@ -182,6 +213,16 @@ The analyses (`ANALYSES`, in this order; each says when it has too few answers, 
     their usual: ±0.1, `TD_ZB`). The others' features are fixed in the bootstrap (it resamples the answers' players,
     not the features' sources). A unit's time intensity is not tested: beside the unit's own effect it is not
     identified with a few dozen units.
+11. **Player trajectories** (`trajectories`, `TR`; Pierre, 2026-11-05, Q78: learning trajectories from the first answer
+    to now): the behaviours of Player profiles but the learning slope, on successive windows of each player's whole
+    history: from a session's start, the answers up to the first session's end that makes `TR.W` 100 answers or more
+    (`trBlocks`; a window cut inside a session would end it at the cut, and its session length and stops after misses
+    would be the cut's), the answers after the last window left out. A player needs two windows, 3 players in all; the
+    newest `TR.MAXW` 40 windows a player, the `TR.SHOW` 60 players with the most answers in the report. `profFeat` runs once on every window of every player,
+    each window a unit of its own (the answer time model, the stops' pooled rates), so a window is read against all the
+    windows, not against the players of its own stage. The typical player: each behaviour's median over the players with a
+    value at that window, from 3 players. Up, down or about the same: a player's last window against their first, beyond
+    `TR.FLAT` 0.5 SD of the behaviour's windows. Descriptive, no verdict, outside the multiple-testing correction.
 
 **The rank asked** (`rankOfUnit`, `rkLev`, `rankRef`). For a subject with a sheet per rank (`SUBJECTS` `sheets`: the
 fish, the sea slugs), a question asks a family (`f:` ids), a genus (`g:`) or a species unit (`s:`); each answer's rank

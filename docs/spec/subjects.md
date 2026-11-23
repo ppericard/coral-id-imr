@@ -22,16 +22,25 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   the corals, `fbase` / `fpending` for the fish, `sbase` / `spending` for the sea slugs;
 - its words: `name` (Corals, Fish, Sea slugs), `one` and `many` (genus / genera, family / families, genus / genera),
   `what`, `several` (the report dialog's reason for a photo with more than one in frame), `card` (the kind of its
-  cards), `lecture` (where its content comes from), `zoom` (what an enlarged photo shows); `pv` and `hash`, the prefix of
-  its page-view names and of its addresses (`''` for the corals, `fish/`, `seaslug/`); `icon`, its icon in the subject
-  switches, the app's and the admin's (one SVG set on a 24 px grid);
+  cards: `app.js` `CARD_KINDS` gives its emoji), `lecture` (where its content comes from), `zoom` (what an enlarged
+  photo shows: the "Did you know?" zoom tip's words, `tips.js`); `pv` and `hash`, the prefix of its page-view names
+  (`pageName`) and of its addresses in the app and the admin (`routeOut`, `routeIn`, `admin.js` `subjOfHash`) (`''`
+  for the corals, `fish/`, `seaslug/`); `icon`, its icon in the subject switches, the app's and the admin's (`app.js`
+  `subjIcon`: an SVG inside a 24 px viewBox, one set);
 - `views`: the corals' colony, close-up and corallites (`wide`, `medium`, `macro`), one photo (`wide`) for the others;
 - `optin`, the opt-in sets whose choices sync: the corals' `bon` (the bonus genera), the fish's `sci` (the scientific
   genera) and `beyond` (circle 3, by the player's choice); none for the sea slugs (`[]`). A stored `c2` / `c3` choice
-  of the former opt-in circles is not read;
+  of the former opt-in circles is not read. In the subject's quiz settings `Q`, for a set `k`: `Q[k]` true is on and
+  `Q[k + 'T']` the time it was chosen; for a part of the slate opened by choice, `Q[k + 'N']` its "Not now" count and
+  `Q[k + 'A']` the answer count at the last one; `Q[k + 'O']` turned off on the What I learn card (`app.js` `learnSet`:
+  the units the set brings by itself stop too). `app.js` `UNITS[id].sets` are the sets of units off the slate (a card, a
+  ⚙ row), `UNITS[id].opens` the slate units that open once on (a card, a My progress button);
 - `ach`, `achs` and `board`: every subject has its own achievements (`core.js` `ACH`, `FISH_ACH`, `SEASLUG_ACH`, in the
   shared record under ids of its own) and its own leaderboard; `achFeats` (the corals) keeps the shared record's feats
-  (runs, corallites, hard photos); `boardSheet`, the sync script from which a subject's board is served (the sea slugs');
+  (runs, corallites, hard photos); `achs()` gives a subject's list, all in the one synced record (`progress.js` `ACHK`);
+  a board (`Code.gs` `board_`, `&s=<id>`) ranks by the subject's % then its Elo; `boardSheet`, the sync script from
+  which a subject's board is served when later than the first boards (the sea slugs'; `progress.js` `boardLive`, rule
+  D4);
 - `pages`, its Learn and Practice pages: the corals' `basics`, `genera`, `sheet` (a genus sheet), `cmp`, `quiz`,
   `quiz-custom`, `quiz-duel`, `pairs`; the fish's `basics`, `genera`, `sheet` (its family, genus and species sheets),
   `cmp`, `quiz`, `quiz-custom`, `quiz-duel` and `pairs`; the sea slugs' `genera`, `sheet`, `cmp`, `quiz`, `quiz-custom`, `quiz-duel`, `pairs`. `closed`: each `MODES` Learn or
@@ -45,25 +54,43 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   null for an id that names none of the subject's sheets, so a coral genus sheet linked with Fish chosen stays the
   corals' (`app.js` `subjHas`, `hr`);
 - `rank`, the rank its records are at (`genus`, `family`, `family`), and `unitRank`, the rank its game units are at when
-  not its `rank` (the sea slugs' `genus`; `core.js` `unitRankOf`), logged with each answer; a tree subject's top rank,
-  the family, is what the admin reads as its tree's;
+  not its `rank` (the sea slugs' `genus`, from level 1: its genera are the units of its circles, its families structure
+  only; `core.js` `unitRankOf`); a unit's own rank (`app.js` `rankOf`) wins, and it is logged with each answer in the
+  sheet's Answers tab under the subject's id; a tree subject's top rank, the family, is what the admin reads as its
+  tree's;
+- `names`, a tree subject's kinds of name its species are asked by (`LEVELS` kind: `cn` its common names, `sci` its
+  scientific name; `app.js` `treeGenera`): a kind not listed has no units (the sea slugs: no common-name branch); unset,
+  none;
 - `renamed` (the fish: `FISH_RENAMED`, old unit ids to new), `typeDrop` (the fish: a word a typed name may leave out);
-- `replay` (the corals: the subject of the first replay, asked as `rv`; an answer row with no subject is theirs) and
-  `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers,
+- `replay` (the corals: the subject of the first replay, asked as `rv`, the full replay of its progress under `RVS`
+  that the sheet's first replay path computes from its rows alone, `Code.gs` `answerRows_`, sent as the reply's
+  unprefixed `replay`, `sync.js` `replayAdopt`; an answer row with no subject is theirs, `core.js` `replaySubject`) and
+  `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers: `gen(F)` its units from its
+  file, `file`, else its pool's first; `rvs()` its rules versions; `tree(F)` its board's tree, for a subject with a
+  score; `sheet` the script version that replays it, `sync.js` `rpOn`;
   [Sync and replay per subject](#sync-and-replay-per-subject));
-- features of their own, the corals' (rule S1): `offsets` (the sheet's photo memory and format offsets: `model.js`
-  `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`); `offsets` stays on `replay`'s subject while the sheet
-  computes them for it alone (`tests/subject-neutral.test.js`). The opening hold is no such field: every subject adopts
-  its own from the sheet ([sync.md › The opening hold](sync.md#the-opening-hold));
+- features of their own, the corals' (rule S1; split out of `replay`, each at the value `replay` gave, by the
+  [one-engine audit](../reviews/2026-11-19-one-engine-audit.md)'s step 2): `offsets` (the sheet's photo memory and
+  format offsets: `model.js` `pmem`, `pfmt`), `anonBase` (the sign-in baseline `ANONB`); `offsets` stays on `replay`'s
+  subject while the sheet computes them for it alone (`tests/subject-neutral.test.js`). The opening hold is no such
+  field: every subject adopts its own from the sheet ([sync.md › The opening hold](sync.md#the-opening-hold));
 - `gate` (the fish and the sea slugs: `TREE_GATE`): circle 3 at circle 1's Entries component `c3.entries` (0.55), or
   with no global score its plain mean `c3.mean` (0.5) (`app.js` `treeC3`);
 - `pool` (the files the sheet's pooled photo statistics read for it: every subject's photo ratings and confusions are
-  its own, [sync.md › Pooled photo statistics](sync.md#pooled-photo-statistics)), `stats` (the sea slugs': the script
-  from which the app reads theirs), `calib` (the draw's calibration), `analyses` (its Analyses report), `score` (the
-  fish's global score, [fish-game.md › The global score](fish-game.md#the-fish-global-score)), `content` and
-  `structure` (what the content editor may change, [content.md](content.md)), `start` (its first-launch question,
-  [cards.md › One per subject](cards.md#one-per-subject));
-- `progress`, its My progress views (the corals' `slate`, `photos`, `groups`; `photos` for the others);
+  its own, [sync.md › Pooled photo statistics](sync.md#pooled-photo-statistics); also the sheet's photo exposure per
+  player, `Code.gs` `pools_`, `unitPool`, and its own statistics tab, `statsSubjects_`, `?stats=1&s=<id>`): `files`, the
+  site's files it reads (fetched from main, in this order), `of`, the `core.js` `POOLS` builder that turns them into its
+  units' game photos as the app's games draw them, `as`, what each file is to that builder (`f` its tree, `ph` its first
+  photos, `gm` its game photos, `cur` curation.json); `stats` (the sea slugs': the script from which the app reads
+  theirs, `sync.js` `loadOwnStats`, `model.js` `statsJoin`, rule D4; the corals' are read as `replay`'s; a subject with
+  a pool and no `stats` draws on its priors in the app), `calib` (the draw's calibration over `core.js` `CALIB`,
+  `calibOf`: `ease`, `ref`, `early`, `u`, `pool`, [LEARNING.md › Fish: the starter core and judged
+  photos](../LEARNING.md#fish-the-starter-core-and-judged-photos)), `analyses` (its Analyses report), `score` (the
+  fish's global score, [fish-game.md › The global score](fish-game.md#the-fish-global-score)), `content` and `structure`
+  (what the content editor may change, [content.md](content.md)), `start` (its first-launch question, [cards.md › One
+  per subject](cards.md#one-per-subject));
+- `progress`, its My progress views, the first shown by default (`progress.js` `quizBoard`; the corals' `slate`,
+  `photos`, `groups`; `photos` for the others);
 - `open` and `beta`, who sees it and its label ([Who sees a subject](#who-sees-a-subject)); `sheet`, the sync script
   that knows a subject newer than the player groups (the sea slugs');
 - `admin`, its part of the admin: `cur` (its part of `curation.json`), `pages`, `todo`, `files`, `origins` (where its
@@ -90,10 +117,14 @@ one comes back. The corals are the one flat subject (`SUBJECTS` `flat`: their un
 
 `UNITS[id]` holds what the engine and the pages read for each subject. The tree subjects' entries start from
 `TREE_UNITS`, the members that read the tree in force the same way for each (`load`, `slate`, `core`, `circles`,
-`gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `bar`); each entry adds only
+`gate`, `gen`, `st`, `mystery`, `species`, `photo`, `norm`, `typeOther`, `list`, `sheet`, `sheetParts`, `bar`); each entry adds only
 its words, its files and its own settings and differences. The Look-alikes deck and Compare read `deck` (the pairs of
 the deck), `inGame` (a unit Compare may show) and `cmp` (`src`, `clues`, `tag`, `line`, `more`: what each says of a unit
-beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes).
+beside its tips) from every subject ([front-end.md](front-end.md) › Learn › Look-alikes). Home reads `named` (true where
+the units have names of their own: set once in `TREE_UNITS`, so for the fish and the sea slugs) to draw its Learn band
+from the slate's units and to say the subject's words (`home.js`; the corals' band reads data.json's genera), and My
+progress' Groups view and the custom quiz's first view read `group(k)` (the corals': the IMR lecture group `k`, `{n, t}`,
+from `data.json` `imrg`) instead of reading the corals' data themselves.
 
 - **Loading.** `load()`, its data before its pages open (the corals' is in from start-up; a tree subject's is `treeLoad`:
   its tree, its first photos and its game photos), and `home()`, what start-up waits for when it differs: the fish's is
@@ -130,11 +161,14 @@ beside its tips) from every subject ([front-end.md](front-end.md) › Learn › 
   Tests: `tests/answertaxon.test.js`, `tests/fish.smoke.js`. `species(p)` gives the species logged with an answer.
 - **Pages.** `memory` (how a Memory pair is made: `views` for the corals, `photos` for the tree subjects, in
   `TREE_UNITS`; `proto/pairs.js` `MEMORY`), `pairs()` (the duels), `winks()` (the surprise cards), `tiles(n)` (Find the X), `list()` (the Learn page:
-  `viewList`, one page for every subject), `sheet(id)` (a sheet: `viewGenus` / `viewFishSheet`), `bar(id)` (a tree subject's page
+  `viewList`, one page for every subject), `sheet(id)` (a sheet: `viewGenus` / `viewTreeSheet`), `sheetParts` (each sheet's sections in their order, `learn.js`
+  `sheetBody`: the corals' `genus`, the tree subjects' `family`, `genus`, `species`), `bar(id)` (a tree subject's page
   bar on its sheets, `learn.js` `treeBar`; the corals' is `ctxBar`'s own), `identify` (its Identify tool), `help`,
   `progHelp` and `achHelp` (the ? texts of the quiz, My progress and the achievements; the corals keep theirs inline),
   `hello` (the cards that introduce the subject, [below](#the-subjects-card)), `about` (its lines in About and credits,
-  shown only to a player it is open to, `subjMine`), `door` and `land` (Home's words and tiles), `pick` and `tour` (the
+  shown only to a player it is open to, `subjMine`; `about.cites`, `{lead, in}`, makes References list the sources its
+  data file cites, from the parts `in`, by `home.js` `aboutCites`: the sea slugs; the corals' and the fish's lines are
+  written by hand), `door` and `land` (Home's words and tiles), `pick` and `tour` (the
   welcome tour's words), `basics` (its basics module), `mystery` (who sees the ? tiles), `startFb` (false: no
   level-change card), `photo(f)` (a photo by its name, for the admin's "Bad photo" flag), `gen`, `vars` and `st` (its
   units, variant table and structure stamp for the sheet's replay).

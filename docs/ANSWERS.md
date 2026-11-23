@@ -1,14 +1,14 @@
 # Pierre's answers: the ledger
 
 Append-only. Every answer Pierre gives (numbered or not) gets one entry here, in the PR that applies it to the
-document it changes (AGENTS.md "Every answer reaches its doc"). Before asking Pierre anything, search this file, the
-rules (`docs/rules/`) and the decision records (`docs/decisions/`). STATUS only cites entries; it never holds an
-answer alone.
+document it changes ([AGENTS.md, Working with Pierre](../AGENTS.md#working-with-pierre)). Before asking Pierre
+anything, search this file, the rules (`docs/rules/`) and the decision records (`docs/decisions/`). STATUS only
+cites entries; it never holds an answer alone.
 
 This ledger is historical evidence: an entry keeps what was said and how it was read then, and a later entry may amend
 an earlier one. A match is not by itself a current instruction: before applying it, check its scope, the later entries
 and the subject's current home (its Linear issue or subject note, the rule or doc it was applied to); a decision that
-settles the point is applied, never asked again (AGENTS.md "Every answer reaches its doc").
+settles the point is applied, never asked again.
 
 An entry: the date and Manila time, the question number if any, his words as written (French kept), what it decides in
 one line, and where it is applied (the doc or the PR). A later answer that changes an earlier one is a new entry naming
@@ -1760,7 +1760,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pour supprimer les photos du jeu. Donc... il faut un bouton remove, là en un clic la photo ne revient jamais, avec un
   undo juste après, une liste des photos retirées pour en remettre si j'ai besoin. Oui, ça me va, ta proposition A me
   va.» Option A decided: one Remove, one click, the photo never comes back, an Undo just after, a list of the removed
-  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph).
+  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph); the corals' admin, #1393
+  (decisions/2026-11-21-one-remove.md); the fish and sea slugs wait for a second step.
 - **05:48, the read-only R2 token for the CI (answers the 05:40 entry): withdrawn.** «Pour le jeton R2 en lecture seule,
   ouais, ok, bon, tu retires la demande, très bien.» The integrator withdraws the request; he agreed. Applied: no doc
   change (the question only sits in STATUS, the integrator's).
@@ -1869,3 +1870,14 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   qu'il fallait commencer par de la priorité haute, ok, mais en fait, tant que j'ai pas dit qu'on s'arrêtait, il faut
   continuer, quoi. Et il faut écluser tout ce qu'il y a dans la roadmap qui est faisable sans moi, et déjà décidé.»
   Applied: INTEGRATOR.md "Linear" (drain the Todo column until he says stop) (#1384); the night's waves of agents.
+
+## 2026-11-22
+
+- **06:06, tasks scheduled for a date or a trigger stay out of sight.** «Il va falloir qu'on imagine un statut différent
+  pour certaines tâches parce que le fait de renouveler le jeton GitHub de l'admin avant fin janvier, j'ai pas envie de
+  l'avoir à chaque fois dans la liste des tâches alors que c'est quelque chose qui arrive dans plus de 2 mois et qui ne
+  sert à rien de me le redire maintenant en fait. Donc je pense qu'il va falloir créer une section pour les tâches
+  juste qui sont programmées et qui n'ont pas besoin de revenir avant une date précise ou un déclenchement précis. Ça
+  sert à rien de me le répéter, de le faire alors que c'est dans plus de 2 mois.» A working-method request, not a
+  numbered question. Applied: INTEGRATOR.md "Linear" (label Scheduled);
+  decisions/2026-11-22-scheduled-tasks.md; Linear label Scheduled on REE-75 and REE-73.

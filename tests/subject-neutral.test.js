@@ -69,13 +69,13 @@ const FLAGS = [
   // tests/subject-neutral-admin.test.js (docs/reviews/2026-11-19-admin-one-engine.md).
   [
     'admin.autosort',
-    'the fish auto-sort: writes its part of the curation at each admin load (admin.js fishAutoRun, autosort.js fishRun)',
+    'the fish auto-sort: writes its part of the curation at each admin load (admin.js fishAutoRun, autosort.js treeRun)',
     ONE_ENGINE
   ],
   ['admin.csrc', "the sources of the corals' Candidates swiper (admin.js FB.srcs, CSRC); the tree subjects read their own", ONE_ENGINE],
   [
     'admin.target',
-    "the sea slugs' photos in play per species that its Candidates fill up to (autosort.js fishTarget; the fish's by tier)",
+    "the sea slugs' photos in play per species that its Candidates fill up to (autosort.js treeTarget; the fish's by tier)",
     ONE_ENGINE
   ]
 ];

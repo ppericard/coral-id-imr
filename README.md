@@ -66,12 +66,11 @@ one machine; wrap any other heavy command as `node tests/slot.js -- <command>`. 
 
 ## How the project is worked on
 
-Pierre Pericard owns it and works with AI coding agents. One **integrator** (the main agent of a session) starts
+Pierre Pericard owns it and works with AI coding agents. One **integrator** starts
 subagents, each on its own branch and PR, and merges them through a green **merge train** (`tools/train.py`) under a
 written contract. Pierre's standing rules have stable IDs. [CONTRIBUTING.md](CONTRIBUTING.md) says how a change is
-made. Start with [AGENTS.md](AGENTS.md) (the constitution), then
-[docs/INTEGRATOR.md](docs/INTEGRATOR.md) for the integrator, and the [docs/rules/](docs/rules/README.md) file your task
-touches. Where things stand: [docs/STATUS.md](docs/STATUS.md).
+made. Start with [AGENTS.md](AGENTS.md) for the role, task and applicable rules. A successor integrator uses
+[Integrator startup](docs/INTEGRATOR.md#integrator-startup) and the handoff in [docs/STATUS.md](docs/STATUS.md).
 
 ## Documentation map
 

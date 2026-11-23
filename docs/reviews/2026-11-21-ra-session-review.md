@@ -1,4 +1,4 @@
-# An RA's session of 2026-11-21: reports, difficulties and the iNaturalist audit
+# A coral expert's session of 2026-11-21: reports, difficulties and the iNaturalist audit
 
 Review (read-only, [REE-190](https://linear.app/reef-id/issue/REE-190)). Pierre, 2026-11-21 18:12: «elle m'a dit
 qu'elle avait fait plusieurs retours, donc il faudrait que tu vérifies les flags et les retours sur l'app. Mais
@@ -9,7 +9,14 @@ qu'elle a fait globalement et voir les difficultés qu'elle a pu rencontrer.» A
 vraiment [experte]. Donc, potentiellement, là où elle a eu des erreurs ou des longtemps avant de répondre, c'est qu'il y
 avait possiblement des erreurs dans nos données ou une des vraies difficultés sur les photos.»
 
-The player is "the RA" here (rule D2); her real name is in the chat only.
+The player is "the coral expert" here (rule D2): one of the two IMR coral experts named in the sheet's Notes tab
+(`agent.expert.coral2`), not an RA; this review first called her an RA without reading that note (corrected
+2026-11-22). Her real name is in the chat only.
+
+**Follow-up, 2026-11-22:** the genus she named in section 5, question 3 is *Dipsastraea* (Pierre, 18:57). The three
+Dipsastraea photos she met on 11-21 are all Needs ID at the genus, identified only by their observer and
+`thamnasteroid`; she answered Favites on dipsastraea-cand-566690147 and Astrea on dipsastraea-cand-269242392, the
+likely mislabels to look at (REE-194, point 4). The app logs no opening of the observation link (idea REE-233).
 
 **Sources, read on 2026-11-21 around 18:30 Manila time:**
 - the sync sheet, read only: Reports, Events, Answers, and her Progress data record;
@@ -271,12 +278,12 @@ than the observer at the record's genus or below counts as a confirmation.
   do not meet it now (below). The candidate records keep no grade from fetch time, so *by inference only* they were
   Research Grade when fetched: the fetch asks for nothing else.
 
-### What this means for the RA's remark
+### What this means for the coral expert's remark
 
 **No coral or sea-slug game photo rests on another observer's unconfirmed identification.**
 - The 692 coral photos iNaturalist shows as "Needs ID" can still look unverified from the observation page: the page
   says "Needs ID" because no species was agreed, while the genus the game asks is agreed. This is the most likely
-  source of the RA's remark.
+  source of the coral expert's remark.
 - She did answer three of Pierre's own observer-only coral photos on 11-21, all of them right:
   - plerogyra-macro-552606630;
   - pavona-wide-745204920 with pavona-macro-745204888.
@@ -338,7 +345,7 @@ Pierre's (his admin exclusion, rule A1).
 2. **His own observations identified by him alone** (coral 4, fish 56, sea slugs 1): keep them as rule P1 says, or
    require a second identifier? Recommended: keep, since he is the expert who identified them. At most, list them in
    the admin so he can ask for confirmation on iNaturalist.
-3. **Which genus did the RA mean?** Ask her for the photo or the genus. If it is a Needs ID photo confirmed at the genus
+3. **Which genus did the coral expert mean?** (Answered 2026-11-22: *Dipsastraea*, see the follow-up at the top.) Ask her for the photo or the genus. If it is a Needs ID photo confirmed at the genus
    by the trusted identifier, the likeliest case, that is rule P1 as he decided it (2026-11-05, #568).
 4. **The 11 A leads of section 3:** review them in the admin, together with his own 11-05 Astrea reports, which are
    still open.

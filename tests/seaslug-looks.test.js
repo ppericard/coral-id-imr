@@ -2,7 +2,8 @@ require('./slot.js').testGuard();
 // The sea slugs' genus look-alikes (the survey docs/reviews/2026-11-17-seaslug-lookalikes-survey.md): the genus pairs
 // a specialist source names (the Sea Slug Forum, Nudi Pixel's look-alike index, the papers) enter as declared
 // look-alikes, kept whatever the players answer; the genus pairs only iNaturalist's identifications show enter as data
-// look-alikes, which the players' answers can drop; the species pairs wait for the species level.
+// look-alikes, which the players' answers can drop; the decided species pairs (tools/seaslugs.json lookalikes) are the
+// species units' declared look-alikes (core.js treeSpUnits decl).
 // - tools/seaslug_game.py genus_looks writes them into seaslug.json (genus look, dlook, lsrc) from
 //   tools/seaslug_lookalikes_cand.json;
 // - app.js treeGenera reads them (look, decl, lsrc, dl), model.js seeds the data look-alikes (dataSeed, isDataLook,
@@ -107,11 +108,51 @@ test('seaslug.json: the declared genus pairs across families of the survey, each
   // the pairs only iNaturalist shows, among them the survey's (§6.1)
   ['Hexabranchus', 'Phyllidia'].forEach(o => assert.ok(byName.Goniobranchus.dlook.includes(byName[o].id), o));
   assert.ok(byName.Chromodoris.dlook.includes('g:Nembrotha'));
-  // the species pairs wait: the one decided species pair is the only species look
+  // the species looks are the decided species pairs only (tools/seaslug_source.json lookalikes): the two Spanish dancers
+  // (Q377) and the two sourced pairs of #1164 (Q390 D); the survey's other species sets wait
   assert.deepStrictEqual(
-    F.species.filter(s => s.look).map(s => s.name),
-    ['Hexabranchus lacer', 'Hexabranchus sanguineus']
+    F.species
+      .filter(s => s.look)
+      .map(s => s.name)
+      .sort(),
+    [
+      'Chromodoris alcalai',
+      'Chromodoris dianae',
+      'Hexabranchus lacer',
+      'Hexabranchus sanguineus',
+      'Thecacera pacifica',
+      'Thecacera pikachu'
+    ]
   );
+  const sid = Object.fromEntries(F.species.map(s => [s.name, s.id])),
+    lk = n => F.species.find(s => s.name === n).look;
+  [
+    ['Thecacera pacifica', 'Thecacera pikachu'],
+    ['Chromodoris alcalai', 'Chromodoris dianae']
+  ].forEach(([a, b]) => assert.deepStrictEqual([lk(a), lk(b)], [[sid[b]], [sid[a]]], `${a} / ${b} both ways`));
+});
+
+// Each decided species pair that names a literature set (tools/seaslug_source.json lookalikes, set) is that set's two
+// members, its why that set's source and quote word for word (rules C2, C8): never a pair the survey did not source.
+test('the decided species pairs carry their literature set verbatim', () => {
+  const S = json('tools/seaslug_source.json').lookalikes,
+    sets = Object.fromEntries(json('tools/seaslug_lookalikes_source.json').sets.map(s => [s.id, s])),
+    L = S.filter(p => p.set);
+  assert.deepStrictEqual(
+    L.map(p => p.set),
+    ['pola2026-pacifica-pikachu', 'gosliner2021-alcalai-dianae']
+  );
+  L.forEach(p => {
+    const s = sets[p.set];
+    assert.ok(s, p.set);
+    assert.strictEqual(s.rank, 'species', p.set);
+    assert.deepStrictEqual([...p.pair].sort(), [...s.members].sort(), p.set);
+    assert.ok(p.why.startsWith(s.source + ': "' + s.quote + '"'), `${p.set}: its source and quote`);
+    assert.ok(p.why.includes('(read: ' + s.read + ')'), `${p.set}: what was read`);
+    assert.match(p.decided, /^Q390 D \(Pierre, 2026-11-17/);
+  });
+  // copied as they are into tools/seaslugs.json, which the game build reads
+  assert.deepStrictEqual(json('tools/seaslugs.json').lookalikes, S);
 });
 
 // app.js treeGenera as the app has it, on the real tree.
@@ -151,6 +192,84 @@ test('app.js treeGenera: the declared look-alikes join the siblings and the conf
   const want = F.genera.flatMap(G => (G.look || []).filter(o => G.id < o).map(o => [G.id, o]));
   assert.deepStrictEqual(plain(pairs).sort(), want.sort());
   assert.ok(want.some(p => p.join() === 'g:Goniobranchus,g:Phyllidiella'));
+});
+
+// The decided species pairs (tools/seaslug_source.json lookalikes: Q377, Q390 D) in play as the species units' declared
+// look-alikes (core.js treeSpUnits spDecl, app.js treeGenera decl; model.js declaredOf reads them: the confusion groups).
+test('the decided species pairs are the species units declared look-alikes, both ways; no other species gains one', () => {
+  const sci = n => C.spUnitId('sci', F.species.find(s => s.name === n).id),
+    want = [
+      ['Hexabranchus lacer', 'Hexabranchus sanguineus'],
+      ['Thecacera pacifica', 'Thecacera pikachu'],
+      ['Chromodoris alcalai', 'Chromodoris dianae']
+    ].map(p => p.map(sci));
+  // the pairs the source records
+  assert.deepStrictEqual(
+    json('tools/seaslugs.json')
+      .lookalikes.map(p => p.pair.map(sci).sort())
+      .sort(),
+    want.map(p => [...p].sort()).sort()
+  );
+  const of = Object.fromEntries(
+      want.flatMap(([a, b]) => [
+        [a, [b]],
+        [b, [a]]
+      ])
+    ),
+    U = C.treeSpUnits(F, X, 'sci');
+  assert.ok(U.length > 100);
+  Object.keys(of).forEach(id => assert.ok(X.gen[id], id + ': a unit in play'));
+  U.forEach(u => {
+    assert.deepStrictEqual(plain(u.decl), of[u.id] || [], u.id);
+    // the app's unit carries them (model.js declaredOf: the confusion groups)
+    assert.deepStrictEqual(plain(X.gen[u.id].decl), of[u.id] || [], u.id);
+    // the other species of its family stay its look-alikes, the pair among them: look is unchanged
+    assert.deepStrictEqual(
+      plain(u.look),
+      U.filter(o => o.family === u.family && o.id !== u.id).map(o => o.id),
+      u.id
+    );
+  });
+  // the sheet's replay reads look only: its species units read as before
+  const R = C.treeReplayGen(F, 'genus');
+  U.forEach(u => assert.deepStrictEqual(plain(R[u.id].look), plain(u.look), u.id));
+  // model.js declaredOf (its record's decl, else its look): each pair declared both ways
+  const declaredOf = n => X.gen[n].decl || X.gen[n].look || [];
+  want.forEach(([a, b]) => assert.ok(declaredOf(a).includes(b) && declaredOf(b).includes(a), a + '|' + b));
+  // model.js groupsOfRank (the confusion groups the opening reads: openPick's group partners) on the real species units
+  // of the three families, no answers pooled: each pair is a group of its own; with decl emptied (as before), none is.
+  const groups = gen => {
+      const c = {
+        PCONF: {},
+        CONF: C.CONF,
+        confScore: C.confScore,
+        GX: n => gen[n],
+        imrFormsOf: () => [],
+        dataSeed: () => false
+      };
+      vm.createContext(c);
+      vm.runInContext(
+        block(src('model.js'), 'const GROUP = {MAX: 3};', '\n// The groups of the units in play', {file: 'model.js'}) +
+          block(src('model.js'), 'const confPrior = (t, n, look) =>', '\nfunction pooledConf', {file: 'model.js'}) +
+          '\nthis.groupsOfRank = groupsOfRank;',
+        c
+      );
+      return c.groupsOfRank;
+    },
+    fams = new Set(Object.keys(of).map(id => U.find(u => u.id === id).family)),
+    L = U.filter(u => fams.has(u.family)).map(u => u.id),
+    G = groups(X.gen)(L);
+  want.forEach(([a, b]) => assert.deepStrictEqual(plain(G[a]), [a, b].sort(), a));
+  assert.deepStrictEqual(Object.keys(G).sort(), Object.keys(of).sort(), 'no other species grouped');
+  const before = Object.fromEntries(L.map(n => [n, {...X.gen[n], decl: []}]));
+  assert.deepStrictEqual(plain(groups(before)(L)), {});
+});
+
+test('the fish species units declare no look-alike: fish.json species carry no look', () => {
+  const FI = json('fish.json'),
+    XF = C.treeGen(FI, {});
+  assert.ok(FI.species.every(s => !('look' in s)));
+  [...C.treeSpUnits(FI, XF), ...C.treeSpUnits(FI, XF, 'sci')].forEach(u => assert.deepStrictEqual(plain(u.decl), [], u.id));
 });
 
 // model.js's data look-alikes, on made-up units: A and B a seeded pair, A and C declared, A and D neither.

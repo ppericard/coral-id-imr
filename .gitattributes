@@ -8,6 +8,8 @@ data/cand.json linguist-generated=true
 data/fish-cand.json linguist-generated=true
 fish-game.json linguist-generated=true
 data/suggest.json linguist-generated=true
+# core.js is its parts joined (core/*.js, tools/sync_core.py): reviewed in its parts, collapsed in GitHub diffs.
+core.js linguist-generated=true
 # Left out of the published site (pages.yml stages it with git archive): the docs, tests, tools, judging package and the
 # repository's own config are read from the repository, never from the site (Code.gs reads raw.githubusercontent.com).
 /docs/ export-ignore
@@ -16,3 +18,5 @@ data/suggest.json linguist-generated=true
 /judging/ export-ignore
 /.github/ export-ignore
 /.claude/ export-ignore
+# core.js's parts: the pages load core.js, built from them (tools/sync_core.py).
+/core/ export-ignore

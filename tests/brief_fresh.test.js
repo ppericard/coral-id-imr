@@ -243,5 +243,5 @@ test('--time (the UserPromptSubmit hook) stays offline: no freshness check', () 
   const src = fs.readFileSync(path.join(ROOT, 'tools', 'brief.py'), 'utf-8');
   const main = src.slice(src.indexOf('def main():'));
   assert.ok(main.indexOf('freshness') === -1 && main.indexOf('if a.time:') < main.indexOf('brief(a.short'), 'main(): --time returns first');
-  assert.ok(!/ls_remote_main|freshness\(/.test(src.slice(src.indexOf('def time_line'), src.indexOf('def night_due'))), 'time_line');
+  assert.ok(!/ls_remote_main|freshness\(/.test(src.slice(src.indexOf('def time_line'), src.indexOf('def gh('))), 'time_line');
 });

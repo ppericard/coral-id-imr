@@ -134,7 +134,7 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   holding a very easy adult photo (ease ≥ `EASY_E`, 4, the ease under which `model.js` `RARE` holds a unit's photos back
   before Open Water; 3 as `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
   reads the judged tags, Pierre's, and a candidate source's life stage; a game photo by its tags only) in play or
-  sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `fishSure`'s adds, the game photos of
+  sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `treeSure`'s adds, the game photos of
   `fish-photos.json`). Only room is refilled: a species short of easy photos at its cap stays as it is (the cap holds;
   its waiting candidates need the pass or Pierre), listed as `at_cap` by `--refill --plan`.
 - **Which**: at most `REFILL_MAX` (40) species a run (rule C7: a few requests each, the general searches batched, plus
@@ -252,7 +252,7 @@ is committed; the photos in play are downloaded (R2, the four sizes) when they e
 
 **`out` is Pierre's "Not this" only** (the iNaturalist experts can be wrong, and he must be able to say so): written by
 his click, never by an agent or the auto-sort; it wins over an add, and a photo he marked so is never proposed again
-(`fishRun` skips every photo he decided; `fetch_fish.py` keeps it known, so never fetches it again). Publish writes
+(`treeRun` skips every photo he decided; `fetch_fish.py` keeps it known, so never fetches it again). Publish writes
 `fish` with its maps sorted and empty ones left out (`admin.js` `fishOut`) and counts its changes (photos in play, set
 aside, not this species, fish auto-sort decisions). `fetch_fish.py` honours `add`, `seen`, `exclude`, `out` and the
 top-level `exclude` (by iNaturalist photo id) for its room count.
@@ -274,7 +274,7 @@ given, never judged by the pass.
   since Q435, [the decision](../decisions/2026-11-19-fish-juvenile-no-cap.md)) and phase flag
   (`tools/fish_judge.py` `cap`) and writes `data/suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
   photos, so a photo keeps its tags when it moves from the candidates to the game.
-- **Sure decisions** (`autosort.js` `fishSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
+- **Sure decisions** (`autosort.js` `treeSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
   phase and crop, whatever the ease; dup, the subject not obvious (count `x`), other species one could take for the
   subject (count `k`) or not a live fish seen in the water (flag `a`: out of the water, a screen or print, an aquarium,
   a video capture) → reject; the legacy count `m` (other species, not sorted yet) →
@@ -292,23 +292,23 @@ given, never judged by the pass.
 
 ## The fish auto-sort
 
-`autosort.js` `fishRun`, `fishCompare`; admin `fishAutoRun`. At each load of the admin by someone who can publish, when
-`data/suggest.json` `fish` has judged candidates (only then is `data/fish-cand.json` fetched), the sure judgments (`fishSure`) go
+`autosort.js` `treeRun`, `treeCompare`; admin `fishAutoRun`. At each load of the admin by someone who can publish, when
+`data/suggest.json` `fish` has judged candidates (only then is `data/fish-cand.json` fetched), the sure judgments (`treeSure`) go
 into the draft's `fish` part exactly as Pierre's clicks would write them, one Undo step, sent by his Publish.
 
-- Adds fill each species up to its target (`FISHT`: 8 observations, 12 for the PDF cheatsheet's 24 species, `fish.json`
-  `cs`; 5 for a species met only on the surprise cards, a wink family's, `FISHT.wink`: `fishSpecies` marks it `wink` in
+- Adds fill each species up to its target (`TREET`: 8 observations, 12 for the PDF cheatsheet's 24 species, `fish.json`
+  `cs`; 5 for a species met only on the surprise cards, a wink family's, `TREET.wink`: `treeSpeciesOf` marks it `wink` in
   the admin's species records, never stored; ROADMAP "Surprise-only species"; at most 20), one observation counting once,
   the easiest first, then the most reference-like (`core.js` `refScore`), whoever took the photo; the rest wait as
   candidates. Rejects are `seen`. A tag, ease, phase or crop Pierre gave stays his.
 - About 1 candidate in 20 (`autoCheck`) is logged as a Check, not applied (his answer comes on the fish Candidates
-  page). Agreement on keep (`fishCompare`: answered Checks and corrections of applied decisions), through the coral
+  page). Agreement on keep (`treeCompare`: answered Checks and corrections of applied decisions), through the coral
   `autoState` (90% over the last 40, after 10): off = nothing applied, Checks go on.
 - **Undo one by one** (rule A1): the Auto details (Candidates) list the fish auto decisions (the latest 30, then All),
-  each with Undo (`fishAutoUndo`, `autosort.js` `fishUndo`): what the run wrote leaves the draft, and only that: the add
+  each with Undo (`fishAutoUndo`, `autosort.js` `treeUndo`): what the run wrote leaves the draft, and only that: the add
   while it still names the candidate's species, and the fields its log code lists (`a` + `t` tags, `e` ease, `p` phase,
   `c` crop: a value Pierre gave before the run was never written, so never listed; any admin action that sets one of
-  these fields later goes through `fishOwn`, which takes the field off the list). Nothing is compared with the pass's
+  these fields later goes through `treeOwn`, which takes the field off the list). Nothing is compared with the pass's
   judgment, which a new judging pass may replace. The log marks the decision undone (`-`): never applied again, counted
   in no agreement. Emptied maps stay as `{}` in the draft, so the Publish merge removes these entries only, never what
   another device published in the same map.
@@ -319,13 +319,13 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   `tools/judging_fish.py codes` stamp; admin `passAt`). It is added like an add (code `b` and the fields it wrote)
   while its species has room, else it waits as a candidate (code `b` alone). Undo sets it aside again (`-b`). His own
   Reject of a photo the run had set aside (left waiting by a Not this taken back) marks its code `-r`, so it is never
-  taken for the run's (`fishReject`).
+  taken for the run's (`treeReject`).
 - **The route out** (Pierre, 2026-11-19 20:57; rule A1; `sortOut`): a photo the run put in leaves play, in his draft, when
   a judgement made since is a sure rejection (a near-duplicate, the subject unclear, other species one could take for it,
-  out of the water: `fishSure`). Only the run's own add or brought-back add (`a`, `b`: not a Check, not undone, no `@t`)
+  out of the water: `treeSure`). Only the run's own add or brought-back add (`a`, `b`: not a Check, not undone, no `@t`)
   whose code lists the tags (`t`: still the run's copy), still its add in that species, not rejected, excluded or moved
   with Not this, never one he answered Keep mine (`kept`), judged on or after the add's day (`passAt`). No new log letter:
-  the add and the fields its code lists leave (as `fishUndo` does; maps stay `{}` for the Publish merge), the photo is
+  the add and the fields its code lists leave (as `treeUndo` does; maps stay `{}` for the Publish merge), the photo is
   set aside and its code becomes the run's plain reject `r`, so one Undo (`-r`) leaves it waiting as a candidate and a
   later sure add brings it back by the route back. The room it frees is filled at the next load. Toast: "taken out by a
   newer judgement". The build does not read it: until Publish the photo stays in play as it was.
@@ -344,15 +344,15 @@ into the draft's `fish` part exactly as Pierre's clicks would write them, one Un
   and Candidates rows read a photo's tags, ease, phase and crop from a view of the draft where the fields read anew are
   left out, so the pass's value shows (dashed, as the pass's guess); the writers, the agreement, the Light proposals (made
   against the stored copy) and Publish read the draft itself, never the view (rule A1). For whether a photo is a juvenile
-  (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy (`autosort.js` `fishJuv`), as
+  (a cover's rule) it reads the game record's phase when the tags are the auto-sort's copy (`autosort.js` `treeJuv`), as
   the app does: his ★ cover on a photo a newer judgement calls a juvenile waits for his confirmation in both. The
   corals' proposals are not read anew, by the game or by the admin (ROADMAP "Fish photo judging, next").
 
 ## The Fish Candidates page
 
 `#fish/photos/candidates`, `#seaslug/photos/candidates`: the swiper every subject has (`admin.js` `renderCand`), with this
-page's part the `tree` builder of `CAND_BUILD` in `admin-fish.js`; the pure rules in `autosort.js` `fishQueue`,
-`fishPlay`, `fishAdd`, `fishReject`, `fishExclude`, tested in `tests/fishcand.test.js`. One candidate a screen, as the
+page's part the `tree` builder of `CAND_BUILD` in `admin-fish.js`; the pure rules in `autosort.js` `treeQueue`,
+`treePlay`, `treeAdd`, `treeReject`, `treeExclude`, tested in `tests/fishcand.test.js`. One candidate a screen, as the
 corals'.
 
 - **One phone screen**: at 390 × 844 the photo, its species and the decision buttons without scrolling, the demo banner
@@ -361,7 +361,7 @@ corals'.
   folded behind its chip (`autoChip`, open or closed remembered in this browser, `reefid-admin-autoline`), the photos in
   play in one row that swipes sideways; the coral swiper shares all but the tiles.
 - **Queue**: every candidate Pierre has not decided (added, rejected, excluded, Not this; an auto decision he undid comes
-  back), **the thinnest species first** (observations in play over the species' target, `fishTarget`; its photos
+  back), **the thinnest species first** (observations in play over the species' target, `treeTarget`; its photos
   together), within a species the pass's best photo of an observation, another angle, not judged, a near-duplicate,
   then the easiest, then a reference photo (flag `r`), whoever took the photo (his own photos are never forced).
 - **Stops at target**: a candidate that would add an observation to a species at its target waits (the chip "N at
@@ -380,12 +380,14 @@ corals'.
   (`fishLoad` `entry`).
 - **Buttons**: ✕ Reject (← key; `seen`), Skip (→; this tab only), + Add (1; dashed when the pass would add it): in
   play for the species with the pass's tags, ease, phase and crop written beside it where Pierre has none (as the
-  auto-sort writes its adds, so every photo in play carries its tags and ease for the game), and the × on the photo
-  (`exclude`, for good). Each click one Undo step in `DRAFT.fish`, sent by Publish; never a coral key.
+  auto-sort writes its adds, so every photo in play carries its tags and ease for the game), and the × on the photo,
+  titled Remove: the one Remove of every photo tile (`admin.js` `treeRemove`: `exclude`, for good; the toast's Undo
+  button, beside a Check's answer; the Tree's Removed list puts it back). Each click one Undo step in `DRAFT.fish`, sent
+  by Publish; never a coral key.
 - **Auto**: the fish auto-sort's line above the card (in, set aside, Checks to answer, keep agreement and whether it is
   on), folded behind the **Auto** chip at the end of the chips' row as the corals', and its Details below it
   (disagreements, every decision still standing with Undo, `fishAutoUndo`), here and not on the coral Candidates.
-- **Rows** under the judgment (`autosort.js` `fishSet`, `fishTag`, `fishNotThis`, `fishState`, `treePhotoOn`, `fishPhase`):
+- **Rows** under the judgment (`autosort.js` `treePhotoSet`, `treeTag`, `treeNotThis`, `treeStateOf`, `treePhotoOn`, `treePhase`):
   Ease (5 easy … 1 hard) always; Phase (`judging/FISH.md` words: none, subadult, intermediate, terminal, female, male)
   only for an entry whose phases differ (`fish.json` `teach` `phase` lines or `dimorph`); and behind **Tags** (folded,
   remembered in this browser, `reefid-admin-ftags`; unfolded, the swiper keeps its one screen: the photo gives up room
@@ -393,7 +395,7 @@ corals'.
   buttons in view) the seven rubric tags and the Juvenile and Camouflage flags (the tool's `p` and `r` kept as they
   were). Pierre's value is pressed, the pass's dashed until he confirms or changes it (never shown on a Check); each
   click writes `tags` (the whole code with that tag changed), `ease` or `phase` (`''` = none, over the pass's) through
-  `fishOwn`, so an Undo of the auto decision leaves his value; the card he is setting stays on screen until he decides,
+  `treeOwn`, so an Undo of the auto decision leaves his value; the card he is setting stays on screen until he decides,
   skips or moves it.
 - **Crop**: the coral crop editor (`cropEditor(p, {start, save})`) on `fish.crop` (Full photo over a suggested crop kept
   as `[0, 0, 1, 1]`).
@@ -403,13 +405,13 @@ corals'.
   to), `out {f: 'x'}` takes it out of every species.
 - **A photo is in play** for a species when `add` names it, it is neither rejected nor excluded, and its `out`, if any,
   names that same species (`treePhotoOn`: the convention the game reads; the fish auto-sort counts its target with it too);
-  `fishMine` stays the keep on its first species, so a Not this on an auto add counts as a correction in the agreement,
+  `treeKeepOf` stays the keep on its first species, so a Not this on an auto add counts as a correction in the agreement,
   and the auto-sort never proposes the photo again.
-- **Missing phases first**: a candidate whose phase (`fishPhase`, as `tools/fetch_fish.py` `photo_phase`: Pierre's
+- **Missing phases first**: a candidate whose phase (`treePhase`, as `tools/fetch_fish.py` `photo_phase`: Pierre's
   phase and tags when set, else the pass's phase tag, its juvenile flag, else the source's life stage or sex) none of
   its species' photos in play shows comes first in its species, tagged "new"; the copy of the pass's tags and phase that
   Add and the fish auto-sort write beside an add carries the source's phase when the pass gives none (`autosort.js`
-  `fishCopy`: the `j` flag for a juvenile, else the phase word), so a juvenile by its source still counts as one once in
+  `treeCopy`: the `j` flag for a juvenile, else the phase word), so a juvenile by its source still counts as one once in
   play.
 
 ## The photos in play (`fish-game.json`, `tools/fish_game.py`)
@@ -419,7 +421,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
 ### What is in play
 
 - **Pierre's adds**, and **in play by themselves** (`tools/fish_game.py` `in_play` adds them to his adds):
-  1. every candidate judged sure (`cand_sure`: `autosort.js` `fishSure`'s add, i.e. no `unsure`, keep `best` or `alt`,
+  1. every candidate judged sure (`cand_sure`: `autosort.js` `treeSure`'s add, i.e. no `unsure`, keep `best` or `alt`,
      on a sure judgement, `judged_sure`: valid tags, any ease 1-5, never count `x` nor flag `a`, and a count an
      automatic route may put in play, `core.js` `TREE_COUNT.play`: one fish `1`, several of its kind `s`, or other
      species in view with no risk of confusion `o`; never `k`, other species one could take for the subject, nor the
@@ -456,7 +458,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
 - **In play at play time** (`core.js` `treePhotoIn`, used by `treePhotos`; `fish_game.py` `fish_in` its copy,
   `tests/fishgame.test.js` checks they agree): his add (`treePhotoOn`), or an `auto` photo whose photo id (`treePid`) he did
   not reject, exclude or move with Not this (`treeGone`).
-- **The species met only on the surprise cards keep 5 photos** (`wink_trim`, `WINK_KEEP`, `autosort.js` `FISHT.wink`):
+- **The species met only on the surprise cards keep 5 photos** (`wink_trim`, `WINK_KEEP`, `autosort.js` `TREET.wink`):
   of their photos in play, his covers (at any rank), featured photos and own adds (not the auto-sort's) and the surprise
   card's photos (`fish.json` `wink.photos`, which `quiz.js` `winkPhoto` draws from) always, then the best in `core.js`
   `easyRank`'s order, a new observation first; the rest leaves `fish-game.json`. The candidate tools stop at 5 for them
@@ -486,7 +488,7 @@ Every fish photo in play is hosted on R2, whatever its route in; Pierre's curati
   observation, or the FishBase photo page; `src` the original (`core.js` `photoAway`'s fallback when R2 fails); `sp` the
   species it is in play for (after a Not this its new one), `t` then its `fish.json` name (WoRMS's, else the PDF's),
   never the identification Pierre corrected; `e` the ease (`fish.ease`, else `data/suggest.json` fish `e`); `jt` the tags
-  (`fish.tags`, else the pass's); `ph` its phase (as `autosort.js` `fishPhase`).
+  (`fish.tags`, else the pass's); `ph` its phase (as `autosort.js` `treePhase`).
 - **Layout**: by teaching entry (the level-1 entry whose `species` holds the species), entries in `fish.json` order, an
   entry's photos by its species order, the easiest, then by name (never Pierre's own by priority; the app orders them
   with `core.js` `easyRank`); one photo per line, and an unchanged run writes the same bytes.

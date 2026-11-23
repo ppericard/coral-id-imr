@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The Bash guard: a PreToolUse hook (.claude/settings.json) that refuses, at once and with the way out, a shell command
-that carries code or edits files in place (AGENTS.md "No permission prompts for Pierre"; Pierre, 2026-11-18).
+that carries code or edits files in place (docs/INTEGRATOR.md "Habits"; Pierre, 2026-11-18).
 
 Such commands (heredocs, `python -c`, `node -e`, `sed -i`, `bash -c`, code piped into an interpreter) trip the session's
 safety checks: Pierre was then asked to approve a command he cannot judge, and an agent once waited two hours on one.
@@ -40,7 +40,7 @@ PATTERNS = [
 REVIEWED = re.compile(r'\bgit\s+(?:-C\s+\S+\s+)?show\s+\S+:tools/[\w/.-]+\.py\s*\|\s*python[\d.]*\s+-I\s+-(?=\s|$)')
 
 WAY_OUT = (
-    "Refused by the project's Bash guard (tools/guard_bash.py; AGENTS.md \"No permission prompts for Pierre\"): %s in a "
+    "Refused by the project's Bash guard (tools/guard_bash.py; docs/INTEGRATOR.md \"Habits\"): %s in a "
     'shell command makes Pierre approve a prompt he cannot judge. Create or change files with the Write and Edit tools; '
     'search with Grep and Glob, read with Read; for a script, write it to a file (your scratchpad) with Write and run it '
     'by name (python3 path/to/script.py). Do not work around this refusal with another shell form, wrapper or tool: '

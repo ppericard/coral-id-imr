@@ -26,7 +26,7 @@
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     C = node ? require('./core.js') : root,
-    // autosort.js: the fish units and their look-alike pairs (fishUnits, fishPairs), for Photos › Look-alikes (montPairs)
+    // autosort.js: the fish units and their look-alike pairs (treeUnitsOf, treePairs), for Photos › Look-alikes (montPairs)
     A = node ? require('./autosort.js') : root,
     isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
   // The lines a keyed slot holds in record r (its other node ids, in the base's order).
@@ -88,9 +88,9 @@
     );
     return rows;
   }
-  // Whether node id of fish file R has a sheet of its own in the app (core.js treeSheets go, learn.js viewFishSheet): a family
+  // Whether node id of fish file R has a sheet of its own in the app (core.js treeSheets go, learn.js viewTreeSheet): a family
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
-  // viewFishSheet sends to the families list (the whale and thresher sharks' species). A subject with
+  // viewTreeSheet sends to the families list (the whale and thresher sharks' species). A subject with
   // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
   // viewGenus; design note v2, step 8): every node its slots reach. A subject whose game units are its genera (SUBJECTS
   // unitRank genus: the sea slugs) has every genus, one the app opens as its family or its one species included: each is a
@@ -234,8 +234,8 @@
     return out;
   }
   // ---- Photos › Look-alikes: the pairs in force (design note v2, after step 4) ----
-  // The look-alike pairs of fish file R under content map Cm, one photo pair each (admin.js renderFishMont, curation.json
-  // fish mont): autosort.js fishPairs over the units of R with the pairs in force (sheetFile, core.js structApply: the
+  // The look-alike pairs of fish file R under content map Cm, one photo pair each (admin.js renderMont, MONT_BUILD tree, curation.json
+  // fish mont): autosort.js treePairs over the units of R with the pairs in force (sheetFile, core.js structApply: the
   // base's less those he withdrew, plus those he added; the circles left out, as the Tree's Look-alikes filter), each one
   // the base does not declare marked added. A withdrawn pair has no row and keeps its photo pair in fish mont (nothing is
   // deleted on his behalf, rule A1), shown again when the pair is back (Undo, ↺). Keys as his pair entries' (core.js
@@ -286,9 +286,9 @@
       return MP.L;
     }
     if (!MP || MP.R !== R || MP.P !== P) {
-      const L = A.fishPairs(U0 || A.fishUnits(R)),
+      const L = A.treePairs(U0 || A.treeUnitsOf(R)),
         base = new Set(L.map(p => p.k));
-      MP = {R, P, L: P === R ? L : A.fishPairs(A.fishUnits(P)).map(p => (base.has(p.k) ? p : {...p, added: true}))};
+      MP = {R, P, L: P === R ? L : A.treePairs(A.treeUnitsOf(P)).map(p => (base.has(p.k) ? p : {...p, added: true}))};
     }
     return MP.L;
   }

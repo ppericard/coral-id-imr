@@ -4,7 +4,8 @@
     python3 tools/sheet_version.py --check [--base REF] [--main]    # what tools/check_versions.py runs
     python3 tools/sheet_version.py --assign [--date YYYY-MM-DD] [--dry-run]    # the integrator, at merge
 
-A PR that changes tools/sync/Code.gs (a core.js change does too: tools/sync_core.py --fix copies it there) never edits
+A PR that changes tools/sync/Code.gs (a core.js change does too: tools/sync_core.py --fix copies it there; core.js is
+built from its parts, core/*.js, where its gates are written and --assign edits them) never edits
 `const VERSION` nor line 1 (the header) nor tools/sync/HISTORY.md. It writes its history entry in a file of its own,
 tools/sync/changes/<branch>.md (one entry, tools/sync/changes/README.md); where its comments or docs name the new
 version they write the placeholder v + NEXT, and a new gate on the script's version (`const X_SHEET = N;` in the app's
@@ -208,13 +209,23 @@ def changes(root='.'):
     return sorted(f for f in os.listdir(d) if f != 'README.md' and not f.startswith('.'))
 
 
+def app_js(names):
+    """The app's script files among names (paths from the root): the root's .js, proto/ and core/; core.js left out when
+    core/ holds its parts (tools/sync_core.py builds core.js from them: a gate is written in its part)."""
+    out = [f for f in names if f.endswith('.js') and (f.count('/') == 0 or (f.count('/') == 1 and f.startswith(('proto/', 'core/'))))]
+    if any(f.startswith('core/') for f in out):
+        out = [f for f in out if f != 'core.js']
+    return sorted(out)
+
+
 def gates(root='.'):
-    """{name: (N, file)} of every gate on the script's version in the app's files (the root's .js and proto/)."""
+    """{name: (N, file)} of every gate on the script's version in the app's files (app_js)."""
     out = {}
-    files = [f for f in os.listdir(root) if f.endswith('.js')]
-    if os.path.isdir(os.path.join(root, 'proto')):
-        files += ['proto/' + f for f in os.listdir(os.path.join(root, 'proto')) if f.endswith('.js')]
-    for f in sorted(files):
+    files = os.listdir(root)
+    for d in ('proto', 'core'):
+        if os.path.isdir(os.path.join(root, d)):
+            files += [d + '/' + f for f in os.listdir(os.path.join(root, d))]
+    for f in app_js(files):
         for m in GATE.finditer(read(f, root)):
             out[m.group(1)] = (int(m.group(2)), f)
     return out
@@ -223,8 +234,8 @@ def gates(root='.'):
 def gates_at(ref, root='.'):
     """gates() as they are in commit ref (the base)."""
     out = {}
-    names = (git('ls-tree', '--name-only', ref, '--', '.', 'proto/', root=root) or '').split()
-    for f in sorted(x for x in names if x.endswith('.js') and x.count('/') <= 1 and (x.startswith('proto/') or '/' not in x)):
+    names = (git('ls-tree', '--name-only', ref, '--', '.', 'proto/', 'core/', root=root) or '').split()
+    for f in app_js(names):
         for m in GATE.finditer(git('show', '%s:%s' % (ref, f), root=root) or ''):
             out[m.group(1)] = (int(m.group(2)), f)
     return out
@@ -429,10 +440,15 @@ def assign(root='.', date=None, dry=False, base=None):
         body = edits.get(f, read(f, root))
         edits[f] = BARE.sub(lambda m: 'v%d' % n if m.group(0) == TOKEN else m.group(0), body)
         said.append('%s: %d x %s -> v%d' % (f, k, TOKEN, n))
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from sync_core import HEAD as C_HEAD, BEGIN as C_BEGIN, END as C_END, TAIL as C_TAIL, PARTS_DIR, PARTS, block, join
+    rels = [PARTS_DIR + '/' + p for p in PARTS]
+    if any(r in edits for r in rels):
+        # core.js is its parts joined (tools/sync_core.py): written again from the edited parts.
+        edits['core.js'] = join([edits.get(r, read(r, root)) for r in rels])
+        said.append('core.js: written again from its parts')
     if 'core.js' in edits and GS in edits:
         # Code.gs embeds core.js (tools/sync_core.py): its copy takes the edited gates too.
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        from sync_core import HEAD as C_HEAD, BEGIN as C_BEGIN, END as C_END, TAIL as C_TAIL, block
         gs = edits[GS]
         i = gs.find(C_HEAD + C_BEGIN)
         j = gs.find(C_END + C_TAIL, i) if i >= 0 else -1

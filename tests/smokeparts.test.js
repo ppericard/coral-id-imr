@@ -65,6 +65,44 @@ test('the guard reads what it guards: groups and jobs as written', () => {
   ]);
 });
 
+test('the fish jobs dispatch every scenario exactly once, as does the full local run', async t => {
+  const {fishParts, runFishScenarios} = require('./fish.smoke.js');
+  const env = process.env;
+  t.after(() => {
+    process.env = env;
+  });
+  process.env = {...env};
+  delete process.env.SMOKE_ONLY;
+  delete process.env.PAGES_ONLY;
+
+  const calls = async part => {
+    if (part) process.env.SMOKE_PART = part;
+    else delete process.env.SMOKE_PART;
+    const seen = [];
+    await runFishScenarios(fishParts(), async (name, scenario) => {
+      seen.push([name, scenario.name]);
+    });
+    return seen;
+  };
+  const expected = [
+    ['access', 'uiAndAccess'],
+    ['fresh', 'freshPlayers'],
+    ['main', 'mainScenarios'],
+    ['memory', 'memoryGame'],
+    ['quiz', 'quizAndProgress']
+  ];
+  const fishJobs = J.filter(j => j.smoke === 'fish');
+  assert.deepStrictEqual(fishJobs.map(j => j.part).sort(), ['fresh', 'main']);
+  const ci = [];
+  for (const j of fishJobs) {
+    const scenarios = await calls(j.part);
+    assert.ok(scenarios.length, `fish ${j.part} runs no scenarios`);
+    ci.push(...scenarios);
+  }
+  assert.deepStrictEqual(ci.sort(), expected);
+  assert.deepStrictEqual((await calls()).sort(), expected);
+});
+
 // The smokes are their own workflow, which a docs-only PR skips, so none may slip back into
 // checks.yml (it would run them on docs PRs again), and the skip lists docs only (never tools/, tests/ or data).
 test('the smokes live in smokes.yml only, skipped for docs-only PRs, always run on a merge train', () => {

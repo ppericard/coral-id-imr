@@ -587,3 +587,214 @@ test('tests/run.js: a space-separated option value is not taken for a file', () 
   assert.strictEqual(args(['--test-reporter', 'spec']).length, n + 3);
   assert.deepStrictEqual(args(['--test-reporter', 'spec', 'tests/a.test.js']), ['--test', '--test-reporter', 'spec', 'tests/a.test.js']);
 });
+
+// The queue (REE-206): waiters are served in arrival order, whatever their poll rate; a dead waiter's ticket is skipped.
+// (The tests above, with no ticket in the directory but their own, show a queue of one changes nothing.)
+const tickets = env => (fs.existsSync(env.SMOKE_SLOT_DIR) ? fs.readdirSync(env.SMOKE_SLOT_DIR).filter(n => n.startsWith('ticket-')) : []);
+const until = async (ok, what, ms = 10e3) => {
+  for (const t = Date.now(); !ok(); await new Promise(r => setTimeout(r, 20)))
+    if (Date.now() - t > ms) throw new Error('timed out waiting for ' + what);
+};
+// The processes the queue tests start, killed when each test ends (a failed test never leaves one waiting).
+const spawned = [],
+  reapAll = () => spawned.splice(0).forEach(p => p.exitCode === null && p.signalCode === null && p.kill('SIGKILL'));
+// A process that holds the only slot until its stdin closes.
+const holding = env => {
+  const h = spawn(
+    process.execPath,
+    [
+      '-e',
+      `require(${JSON.stringify(SLOT)})('holder').then(() => { console.log('held'); process.stdin.resume(); process.stdin.on('end', () => process.exit(0)); });`
+    ],
+    {env, stdio: ['pipe', 'pipe', 'inherit']}
+  );
+  spawned.push(h);
+  return new Promise(r => h.stdout.once('data', () => r(h)));
+};
+// A waiter that logs its name once it holds the slot, keeps it a moment, then ends (giving it back).
+const waiter = (env, name, log, poll) => {
+  const w = spawn(
+    process.execPath,
+    [
+      '-e',
+      `require(${JSON.stringify(SLOT)})(${JSON.stringify(name)}).then(() => {
+         require('fs').appendFileSync(${JSON.stringify(log)}, ${JSON.stringify(name + '\n')});
+         setTimeout(() => process.exit(0), 150);
+       });`
+    ],
+    {env: {...env, SMOKE_SLOT_POLL: String(poll)}, stdio: 'ignore'}
+  );
+  spawned.push(w);
+  return w;
+};
+
+test('slot: three waiters get the slot in arrival order, the fastest poller last', async () => {
+  const {dir, env, slots} = sandbox(),
+    log = path.join(dir, 'log');
+  try {
+    const holder = await holding(env),
+      kids = [];
+    // A polls slowest and C fastest: without the queue, C would take the freed slot first.
+    for (const [name, poll, n] of [
+      ['A', 300, 1],
+      ['B', 100, 2],
+      ['C', 20, 3]
+    ]) {
+      kids.push(waiter(env, name, log, poll));
+      await until(() => tickets(env).length === n, `${name}'s ticket`);
+    }
+    holder.stdin.end();
+    await Promise.all(kids.map(k => new Promise(r => k.on('exit', r))));
+    assert.deepStrictEqual(fs.readFileSync(log, 'utf8').trim().split('\n'), ['A', 'B', 'C']);
+    assert.deepStrictEqual(slots(), [], 'every slot and ticket given back');
+  } finally {
+    reapAll();
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test("slot: a dead waiter's ticket is skipped and taken back; a live older one keeps its turn", async () => {
+  const {dir, env, slots} = sandbox(),
+    S = env.SMOKE_SLOT_DIR,
+    la = os.loadavg,
+    take = ms =>
+      withEnv({CI: undefined, SMOKE_SLOT_DIR: S, SMOKE_SLOTS: '1', SMOKE_SLOT_POLL: '50', SLOT_MIN_FREE_GB: '0'}, () =>
+        fresh()('t', {timeout: ms})
+      );
+  fs.mkdirSync(S, {recursive: true});
+  os.loadavg = () => [0, 0, 0];
+  try {
+    const old = path.join(S, 'ticket-00000000000001-0999999999-aaaaaaaa');
+    fs.writeFileSync(old, '999999999 1 someone 2026-01-01T00:00:00Z gone\n'); // a waiter that is gone
+    const free = await take(3000);
+    assert.ok(free, 'the dead ticket does not hold the queue');
+    assert.ok(!fs.existsSync(old), 'and it is taken back');
+    free();
+    assert.deepStrictEqual(slots(), []);
+    // A live waiter's older ticket (this test process's own record) keeps the free slot for it.
+    const stat = fs.existsSync('/proc/self/stat') ? fs.readFileSync('/proc/self/stat', 'utf8').split(') ').pop().split(' ')[19] : '-';
+    fs.writeFileSync(old, `${process.pid} ${stat} someone 2026-01-01T00:00:00Z alive\n`);
+    assert.strictEqual(await take(300), null, 'a later waiter waits behind a live older ticket');
+    assert.deepStrictEqual(slots(), [path.basename(old)], 'the later waiter dropped its own ticket when it gave up');
+  } finally {
+    os.loadavg = la;
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('slot: when the oldest waiter dies while waiting, the next one gets the slot (no deadlock)', async () => {
+  const {dir, env, slots} = sandbox(),
+    log = path.join(dir, 'log');
+  try {
+    const holder = await holding(env),
+      a = waiter(env, 'A', log, 50);
+    await until(() => tickets(env).length === 1, "A's ticket");
+    const b = waiter(env, 'B', log, 50);
+    await until(() => tickets(env).length === 2, "B's ticket");
+    a.kill('SIGKILL');
+    await new Promise(r => a.on('exit', r));
+    holder.stdin.end();
+    await new Promise(r => b.on('exit', r));
+    assert.deepStrictEqual(fs.readFileSync(log, 'utf8').trim().split('\n'), ['B']);
+    assert.deepStrictEqual(slots(), [], "A's ticket taken back, B's slot given back");
+  } finally {
+    reapAll();
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test("slot: a holder's children never queue, even behind an older live ticket (nested holders, REEFID_SLOT)", async () => {
+  const {dir, env, slots} = sandbox();
+  try {
+    const code = `const fs = require('fs'), path = require('path'), slot = require(${JSON.stringify(SLOT)});
+      const S = process.env.SMOKE_SLOT_DIR, t = path.join(S, 'ticket-00000000000001-0000000001-aaaaaaaa');
+      const st = fs.existsSync('/proc/self/stat') ? fs.readFileSync('/proc/self/stat', 'utf8').split(') ').pop().split(' ')[19] : '-';
+      fs.writeFileSync(t, process.pid + ' ' + st + ' someone 2026-01-01T00:00:00Z older\\n');
+      slot('inner', {timeout: 300}).then(free => {
+        const names = fs.readdirSync(S).filter(n => n.startsWith('ticket-'));
+        fs.unlinkSync(t);
+        console.log(JSON.stringify({nested: !!free, names}));
+      });`;
+    const r = await exec(process.execPath, [SLOT, '--name', 'outer', '--', process.execPath, '-e', code], env),
+      o = JSON.parse(r.out);
+    assert.strictEqual(r.code, 0);
+    assert.ok(o.nested, 'the nested slot() resolves at once');
+    assert.deepStrictEqual(o.names, ['ticket-00000000000001-0000000001-aaaaaaaa'], 'and takes no ticket');
+    assert.deepStrictEqual(slots(), []);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// No queue without a usable directory: a slots path that is a file runs the command without a slot, as before.
+test('node tests/slot.js -- cmd: a slots directory that cannot be used runs the command without a slot, never waits', async () => {
+  const {dir, env} = sandbox(),
+    file = path.join(dir, 'not-a-dir');
+  fs.writeFileSync(file, '');
+  try {
+    const r = await exec(process.execPath, [SLOT, '--', process.execPath, '-e', "console.log('ran')"], {...env, SMOKE_SLOT_DIR: file});
+    assert.deepStrictEqual([r.code, r.out.trim()], [0, 'ran']);
+    assert.match(r.err, /running without one/);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// REE-212: what killed takers left (`.hold-<pid>`, `.new-*`) is removed once its process is gone; live ones are kept.
+test('slot: sweep() removes dead .hold-<pid> locks and .new-* temp files, keeps live ones, in a temp directory only', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-sweep-')),
+    S = path.join(dir, 's'),
+    stat = fs.existsSync('/proc/self/stat') ? fs.readFileSync('/proc/self/stat', 'utf8').split(') ').pop().split(' ')[19] : '-',
+    live = `${process.pid} ${stat} someone 2026-01-01T00:00:00Z alive\n`,
+    dead = '999999999 1 someone 2026-01-01T00:00:00Z gone\n',
+    put = (n, text) => fs.writeFileSync(path.join(S, n), text),
+    has = n => fs.existsSync(path.join(S, n));
+  fs.mkdirSync(S);
+  try {
+    put('.hold-999999999', dead);
+    put('.hold-' + process.pid, live);
+    put('.new-999999999-hold-abc', dead);
+    put('.new-999999999-0-abc', ''); // a taker killed before it wrote anything
+    put('.new-' + process.pid + '-hold-abc', live);
+    put('slot0', live); // a slot is never the sweep's business
+    put('ticket-00000000000001-0999999999-aaaaaaaa', dead); // nor a ticket (the queue skips those)
+    put('stranger.txt', 'not ours');
+    fs.mkdirSync(path.join(S, '.hold-999999997.reap')); // a crashed reaper's directory, recent: left for now
+    const old = new Date(Date.now() - 15 * 60e3);
+    fs.mkdirSync(path.join(S, '.hold-1.reap'));
+    fs.utimesSync(path.join(S, '.hold-1.reap'), old, old);
+    // A live PID's temp file left for minutes is a reused PID's: taken back.
+    put('.new-' + process.pid + '-old-abc', live);
+    fs.utimesSync(path.join(S, '.new-' + process.pid + '-old-abc'), old, old);
+    await withEnv({CI: undefined, SMOKE_SLOT_DIR: S}, async () => fresh().sweep());
+    assert.deepStrictEqual(fs.readdirSync(S).sort(), [
+      '.hold-' + process.pid,
+      '.hold-999999997.reap',
+      '.new-' + process.pid + '-hold-abc',
+      'slot0',
+      'stranger.txt',
+      'ticket-00000000000001-0999999999-aaaaaaaa'
+    ]);
+    // A directory that is missing, or a file, is tolerated.
+    await withEnv({SMOKE_SLOT_DIR: path.join(dir, 'missing')}, async () => fresh().sweep());
+    await withEnv({SMOKE_SLOT_DIR: path.join(S, 'stranger.txt')}, async () => fresh().sweep());
+    // slot() sweeps on its way in, and still takes the slot.
+    put('.hold-999999998', dead);
+    fs.unlinkSync(path.join(S, 'slot0')); // the live record above held the only slot
+    const la = os.loadavg;
+    os.loadavg = () => [0, 0, 0];
+    try {
+      const free = await withEnv({CI: undefined, SMOKE_SLOT_DIR: S, SMOKE_SLOTS: '1', SLOT_MIN_FREE_GB: '0'}, () =>
+        fresh()('t', {timeout: 3000})
+      );
+      assert.ok(free, 'the slot is taken');
+      assert.ok(!has('.hold-999999998'), 'and the dead lock is gone');
+      assert.ok(has('.hold-' + process.pid), 'a live one stays');
+      free();
+    } finally {
+      os.loadavg = la;
+    }
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});

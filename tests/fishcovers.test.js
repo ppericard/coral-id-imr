@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
-// autosort.js fishPick) reach the app: app.js treeBuild → treeCurate gives the unit his cover (coverP, read first by
+// autosort.js treePick) reach the app: app.js treeBuild → treeCurate gives the unit his cover (coverP, read first by
 // cover(): the Learn cards, the sheets, the first-meeting cards, Home) while it is among its game photos, else the
 // default cover; rankPhotos never takes it back; his featured photos of a species (featP) lead that species' photos on
 // the sheets. The blocks of app.js run in a vm on core.js.
@@ -131,7 +131,7 @@ test('fish Feature: his featured photos of a species, in his order, those in pla
 });
 
 // On the real files: every curated cover the game plays is the family's card photo, as the admin's page shows it
-// (autosort.js fishCoverOf over the photos in play, fishGameIn), and the admin's Tree bar gives the app's reason (his ★, a
+// (autosort.js treeCoverOf over the photos in play, treeGameIn), and the admin's Tree bar gives the app's reason (his ★, a
 // juvenile ignored, out of play: admin-covers.js nodeCover), the photo matched by its id under either name (core.js
 // treePid: his pick on a reference photo whose candidate copy the game plays, as on f:Damselfishes).
 test("real data: every curated fish cover in play is the card's photo, the admin's and the app's alike", () => {
@@ -143,9 +143,9 @@ test("real data: every curated fish cover in play is the card's photo, the admin
     FISH = X.run({f, ph: P, gm: gm.photos ? gm : {photos: {}}}, cu),
     G = (cu.fish || {}).genera || {},
     all = Object.values(gm.photos || {}).flat(),
-    play = A.fishGameIn(all, cu),
+    play = A.treeGameIn(all, cu),
     gj = new Map(all.map(p => [p.f, {e: p.e, jt: p.jt}])), // the admin's fuJ falls back on the game record's judgment
-    units = A.fishUnits(f),
+    units = A.treeUnitsOf(f),
     pid = C.treePid;
   let n = 0;
   Object.entries(G).forEach(([id, k]) => {
@@ -153,7 +153,7 @@ test("real data: every curated fish cover in play is the card's photo, the admin
       u = units.find(x => x.id === id);
     if (!k.cover || !g || !u) return;
     const rec = g.views.wide.find(p => pid(p.f) === pid(k.cover)),
-      why = !rec ? 'gone' : X.juvP(rec) && !A.fishCoverJ(cu.fish, id, rec) ? 'juv' : 'mine',
+      why = !rec ? 'gone' : X.juvP(rec) && !A.treeCoverJ(cu.fish, id, rec) ? 'juv' : 'mine',
       c = nodeCover(
         id,
         play.filter(p => u.species.includes(p.sp)),
@@ -168,8 +168,8 @@ test("real data: every curated fish cover in play is the card's photo, the admin
     if (!k.cover || !g) return;
     const rec = g.views.wide.find(p => C.treePid(p.f) === C.treePid(k.cover));
     // A pick on a juvenile is ignored, by the app and the admin alike (the next test): a judging pass can tag his pick
-    // juvenile after he made it. Unless he confirmed it (his exception: autosort.js fishCoverJ).
-    if (rec && X.juvP(rec) && !A.fishCoverJ(cu.fish, id, rec)) {
+    // juvenile after he made it. Unless he confirmed it (his exception: autosort.js treeCoverJ).
+    if (rec && X.juvP(rec) && !A.treeCoverJ(cu.fish, id, rec)) {
       assert.notStrictEqual(C.treePid(X.cover(g).f), C.treePid(k.cover), `${id}: a juvenile pick is ignored`);
       return;
     }
@@ -180,7 +180,7 @@ test("real data: every curated fish cover in play is the card's photo, the admin
     const u = units.find(x => x.id === id),
       adm =
         u &&
-        A.fishCoverOf(
+        A.treeCoverOf(
           play.filter(p => u.species.includes(p.sp)),
           cu.fish,
           id
@@ -193,7 +193,7 @@ test("real data: every curated fish cover in play is the card's photo, the admin
 
 // On the real files, Pierre's two juvenile ★ covers: the Damselfishes' (judged a juvenile, ignored until confirmed) and
 // the Boxfishes' (the yellow juvenile Ostracion cubicus, which a judging proposal may tag juvenile).
-// The Tree page's one click (autosort.js fishCoverJOk) makes each his cover in force, the admin's and the app's; the
+// The Tree page's one click (autosort.js treeCoverJOk) makes each his cover in force, the admin's and the app's; the
 // Boxfishes' holds whichever comes first, the confirmation or the Accept of the proposal (admin-light.js lightAccept with
 // the cover kept), and an Accept without it leaves the cover ignored until he confirms. Publish keeps the field (merge3).
 // In memory only: curation.json is never written (rule A1).
@@ -210,13 +210,13 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
     all = Object.values(gm.photos || {}).flat(),
     gj = new Map(all.map(p => [p.f, {e: p.e, jt: p.jt}])),
     j = x => gj.get(x) || null,
-    units = A.fishUnits(f),
+    units = A.treeUnitsOf(f),
     pid = C.treePid,
     X = app();
   // The admin's reason and the app's cover, for a fish part F.
   const admin = (F, id) => {
     const u = units.find(x => x.id === id),
-      play = A.fishGameIn(all, {...cu, fish: F});
+      play = A.treeGameIn(all, {...cu, fish: F});
     return nodeCover(
       id,
       play.filter(p => u.species.includes(p.sp)),
@@ -247,7 +247,7 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
   // Damselfishes: ignored while judged a juvenile, confirmed in one click.
   if (admin(F0, DAM).juv) {
     assert.notStrictEqual(pid(appCover(F0, DAM)), pid(G0[DAM].cover), 'ignored before');
-    mine(A.fishCoverJOk(F0, DAM), DAM, 'confirmed');
+    mine(A.treeCoverJOk(F0, DAM), DAM, 'confirmed');
   }
   // Boxfishes: the proposal that tags it juvenile, if still open.
   const S = L.lightSets([[], read('judging/fish-one-judgement.json').curation]),
@@ -257,10 +257,10 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
   assert.deepStrictEqual(L.lightCovers(F0, x), [BOX], 'the proposal makes his Boxfishes ★ a juvenile');
   // Accept, cover kept (the question answered yes): one step.
   const Fa = L.lightAccept(F0, x, L.lightCovers(F0, x));
-  assert.ok(A.fishJuv(A.fishAt(all, x.photo), j(x.photo), Fa), 'now a juvenile');
+  assert.ok(A.treeJuv(A.treePhotoAt(all, x.photo), j(x.photo), Fa), 'now a juvenile');
   mine(Fa, BOX, 'accepted, kept');
   // Confirmed first (the Tree page's button, offered while the proposal is open), then a plain Accept.
-  const Fc = A.fishCoverJOk(F0, BOX);
+  const Fc = A.treeCoverJOk(F0, BOX);
   mine(Fc, BOX, 'confirmed before the tag');
   assert.deepStrictEqual(L.lightCovers(Fc, x), [], 'Accept has nothing left to ask');
   mine(L.lightAccept(Fc, x), BOX, 'confirmed, then accepted');
@@ -268,7 +268,7 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
   const Fn = L.lightAccept(F0, x);
   assert.ok(admin(Fn, BOX).juv, 'accepted without: ignored');
   assert.notStrictEqual(pid(appCover(Fn, BOX)), pid(G0[BOX].cover), "accepted without: ignored by the app's next build too");
-  mine(A.fishCoverJOk(Fn, BOX), BOX, 'accepted, then confirmed');
+  mine(A.treeCoverJOk(Fn, BOX), BOX, 'accepted, then confirmed');
   // Publish (core.js merge3) keeps the confirmation beside the cover, onto a published file changed elsewhere meanwhile.
   const base = {...cu, fish: F0},
     theirs = {...cu, fish: {...F0, genera: {...G0, [BOX]: {...G0[BOX], ok: true}}}},
@@ -650,7 +650,7 @@ test('a juvenile cover he confirmed holds everywhere; the default still never ta
 
 // A watermarked photo is never a default cover, at any level (its flag w: app.js wmP): the card's default, rankPhotos,
 // the default's species pick, a species' one photo and its sheet's first photo skip it while the node has another adult
-// photo. His ★ cover on one stays his choice (rule A1) at every rank, kept in the admin (coverW: autosort.js fishCoverW)
+// photo. His ★ cover on one stays his choice (rule A1) at every rank, kept in the admin (coverW: autosort.js treeCoverW)
 // or not: the app never reads coverW. Home skips it all the same, kept or not, his ★ cover included (home.js homeOk).
 test('a watermarked photo is never a default cover; his ★ cover on one stays his, and Home skips it, kept or not', () => {
   const X = app(),
@@ -736,16 +736,16 @@ test('species sheet: the adults first, then the juveniles apart', () => {
   assert.deepStrictEqual([s.shown.map(p => p.f).join(), s.more.map(p => p.f).join()], ['a1,w1,a2,j1', 'a3']);
 });
 
-// The admin's ★ Cover at the genus or species level (autosort.js fishCover under that id) and the app agree on the real
+// The admin's ★ Cover at the genus or species level (autosort.js treeCover under that id) and the app agree on the real
 // files: a photo in play of a circle-1 genus and of one of its species, picked in memory (curation.json is never written:
-// rule A1), is the genus's card and the species' first photo; once it leaves play (Remove: fishDrop, fishReject) no key
+// rule A1), is the genus's card and the species' first photo; once it leaves play (Remove: treeDrop, treeReject) no key
 // points at it; Publish merges these keys like a family's (core.js merge3).
 test('real data: a genus and a species cover picked in the admin are the app’s, and leave with the photo', () => {
   const f = read('fish.json'),
     P = read('fish-photos.json'),
     gm = C.treeGameRead(read('fish-game.json')),
     cu = read('curation.json'),
-    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    play = A.treeGameIn(Object.values(gm.photos || {}).flat(), cu),
     X = app();
   const B0 = X.run({f, ph: P, gm}, cu),
     gid = Object.keys(B0.gen).find(id => B0.gen[id].rank && B0.gen[id].views.wide.length > 3 && !(cu.fish.genera || {})[id]),
@@ -756,15 +756,15 @@ test('real data: a genus and a species cover picked in the admin are the app’s
   assert.ok(pg, `a photo in play of ${gid}`);
   const sid = pg.sp,
     ps = inG.find(p => p.sp === sid && p.f !== pg.f) || pg;
-  let F = A.fishCover(A.fishCover(cu.fish, gid, pg.f), sid, ps.f);
-  assert.strictEqual(A.fishCoverOf(inG, F, gid).f, pg.f, "the admin's genus heading");
+  let F = A.treeCover(A.treeCover(cu.fish, gid, pg.f), sid, ps.f);
+  assert.strictEqual(A.treeCoverOf(inG, F, gid).f, pg.f, "the admin's genus heading");
   let B = X.run({f, ph: P, gm}, {...cu, fish: F});
   assert.strictEqual(C.treePid(X.cover(B.gen[gid]).f), C.treePid(pg.f), `${gid}: the app's genus card`);
   assert.strictEqual(C.treePid(B.covers[sid].f), C.treePid(ps.f), `${sid}: the species cover`);
   const M = C.merge3(cu, {...cu, fish: F}, cu);
   assert.deepStrictEqual([M.fish.genera[gid].cover, M.fish.genera[sid].cover], [pg.f, ps.f]);
-  // Remove on its family page: fishDrop then fishReject, one step.
-  F = A.fishReject(A.fishDrop(F, f.species.find(s => s.id === sid).family, ps.f), ps.f);
+  // Remove on its family page: treeDrop then treeReject, one step.
+  F = A.treeReject(A.treeDrop(F, f.species.find(s => s.id === sid).family, ps.f), ps.f);
   assert.ok(!Object.values(F.genera).some(k => k.cover === ps.f), 'no cover key left on the photo');
   B = X.run({f, ph: P, gm}, {...cu, fish: F});
   assert.ok(!B.covers[sid] || C.treePid(B.covers[sid].f) !== C.treePid(ps.f));
@@ -801,7 +801,7 @@ test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alon
 // (ties: observations, then the easy order), then his ★ cover of that species, else its easiest such reference photo;
 // with no reference photo under the node, the most seen species with an adult photo; a node with no presence keeps the
 // easy order's first. The app (app.js seenCover: treeCurate, rankPhotos;
-// learn.js nodeCover) and the admin (autosort.js fishCoverOf) alike.
+// learn.js nodeCover) and the admin (autosort.js treeCoverOf) alike.
 // f:A and g:Xus hold s1 (fi1 e5, fi2 e3) and s2 (fi3 e4, fi6 e2): fi1 leads the easy order; none is reference-level
 // unless a case makes it one (side profile, sharp, a reference source: core.js refLevel).
 const seenF = pres => ({...F2, species: F2.species.map(s => (pres[s.id] ? {...s, present: pres[s.id]} : s))});
@@ -882,8 +882,8 @@ test('default cover (Q339 (b)): the most seen species with a reference photo, th
   assert.strictEqual(sheets(X.run(seenRaw({}), cur2({}))).nodeCover(F2.species.slice(0, 2)).f, 'fi1', 'no presence: as before');
 });
 
-// The admin's copy (autosort.js fishCoverOf: the family's and the genus headings' default thumbs) picks as the app does.
-test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's seenCover", () => {
+// The admin's copy (autosort.js treeCoverOf: the family's and the genus headings' default thumbs) picks as the app does.
+test("default cover (Q339 (b)): the admin's treeCoverOf agrees with the app's seenCover", () => {
   const X = app(),
     E = {fi1: 5, fi2: 3, fi3: 4, fi6: 2};
   CASES.forEach(([what, pres, juv, ref, want, wm]) => {
@@ -893,16 +893,16 @@ test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's se
       // the judgment the admin reads (fuJ): the record's ease and tags
       jr = f => ({e: (rec[f] || {}).e || E[f], jt: (rec[f] || {}).jt}),
       L = r.ph.photos.t1.map(p => ({f: p.f, sp: p.sp, ...(p.ph ? {ph: p.ph} : {}), ...(p.rep ? {rep: p.rep} : {})}));
-    assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', jr, sid => A.fishNear(sp[sid])).f, want, `admin: ${what}`);
+    assert.strictEqual(A.treeCoverOf(L, {}, 'f:A', jr, sid => A.treeNear(sp[sid])).f, want, `admin: ${what}`);
     assert.strictEqual(X.seenCover(r.ph.photos.t1, sid => X.nearSeen(sp[sid])).f, want, `app: ${what}`);
     // the admin's own records carry the species as sid
     assert.strictEqual(
-      A.fishCoverOf(
+      A.treeCoverOf(
         L.map(({sp: s, ...p}) => ({...p, sid: s})),
         {},
         'f:A',
         jr,
-        sid => A.fishNear(sp[sid])
+        sid => A.treeNear(sp[sid])
       ).f,
       want
     );
@@ -911,10 +911,10 @@ test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's se
   // His ★ cover of the species the default shows; a juvenile one ignored (the admin reads his phase too).
   const spP = {s2: {present: {dauinU: 9}}},
     LP = ['fi1', 'fi2', 'fi3', 'fi6'].map(f => ({f, sp: f === 'fi1' || f === 'fi2' ? 's1' : 's2'}));
-  assert.strictEqual(A.fishCoverOf(LP, {genera: {s2: {cover: 'fi6'}}}, 'f:A', j, sid => A.fishNear(spP[sid])).f, 'fi6');
-  assert.strictEqual(A.fishCoverOf(LP, {genera: {s1: {cover: 'fi2'}}}, 'f:A', j, sid => A.fishNear(spP[sid])).f, 'fi3');
+  assert.strictEqual(A.treeCoverOf(LP, {genera: {s2: {cover: 'fi6'}}}, 'f:A', j, sid => A.treeNear(spP[sid])).f, 'fi6');
+  assert.strictEqual(A.treeCoverOf(LP, {genera: {s1: {cover: 'fi2'}}}, 'f:A', j, sid => A.treeNear(spP[sid])).f, 'fi3');
   assert.strictEqual(
-    A.fishCoverOf(LP, {genera: {s2: {cover: 'fi6'}}, phase: {fi6: 'juvenile'}}, 'f:A', j, sid => A.fishNear(spP[sid])).f,
+    A.treeCoverOf(LP, {genera: {s2: {cover: 'fi6'}}, phase: {fi6: 'juvenile'}}, 'f:A', j, sid => A.treeNear(spP[sid])).f,
     'fi3',
     'a juvenile species pick is ignored'
   );
@@ -925,22 +925,22 @@ test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's se
       {f: 'fi1', sid: 's1'},
       {f: 'fi3', sid: 's1'}
     ];
-  assert.strictEqual(A.fishCoverOf(M, {}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi1');
-  assert.strictEqual(A.fishCoverOf(M, {add: {fi3: 's2'}}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi3', 'its species is the add');
-  assert.strictEqual(A.fishCoverOf([{f: 'fi1'}, {f: 'fi3', sp: 's2'}], {}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi3');
-  // His pick wins; with no species registered (fishSeenFrom not called) every default keeps the game's order.
+  assert.strictEqual(A.treeCoverOf(M, {}, 'f:A', j, sid => A.treeNear(sp2[sid])).f, 'fi1');
+  assert.strictEqual(A.treeCoverOf(M, {add: {fi3: 's2'}}, 'f:A', j, sid => A.treeNear(sp2[sid])).f, 'fi3', 'its species is the add');
+  assert.strictEqual(A.treeCoverOf([{f: 'fi1'}, {f: 'fi3', sp: 's2'}], {}, 'f:A', j, sid => A.treeNear(sp2[sid])).f, 'fi3');
+  // His pick wins; with no species registered (treeSeenFrom not called) every default keeps the game's order.
   const sp = {s2: {present: {dauinU: 9}}},
     L = [
       {f: 'fi1', sp: 's1'},
       {f: 'fi3', sp: 's2'}
     ];
-  assert.strictEqual(A.fishCoverOf(L, {genera: {'f:A': {cover: 'fi1'}}}, 'f:A', j, sid => A.fishNear(sp[sid])).f, 'fi1');
-  assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j).f, 'fi1', 'nothing registered: as before');
-  A.fishSeenFrom(sid => sp[sid]);
+  assert.strictEqual(A.treeCoverOf(L, {genera: {'f:A': {cover: 'fi1'}}}, 'f:A', j, sid => A.treeNear(sp[sid])).f, 'fi1');
+  assert.strictEqual(A.treeCoverOf(L, {}, 'f:A', j).f, 'fi1', 'nothing registered: as before');
+  A.treeSeenFrom(sid => sp[sid]);
   try {
-    assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j).f, 'fi3', 'the registered records (admin-fish.js)');
+    assert.strictEqual(A.treeCoverOf(L, {}, 'f:A', j).f, 'fi3', 'the registered records (admin-fish.js)');
   } finally {
-    A.fishSeenFrom(null);
+    A.treeSeenFrom(null);
   }
 });
 
@@ -955,8 +955,8 @@ test('real data: his watermarked ★ covers stay his; each is kept or has an ope
     cu = read('curation.json'),
     B = app().run({f, ph: read('fish-photos.json'), gm}, cu),
     sp = Object.fromEntries(f.species.map(s => [s.id, s])),
-    seen = sid => A.fishNear(sp[sid]),
-    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    seen = sid => A.treeNear(sp[sid]),
+    play = A.treeGameIn(Object.values(gm.photos || {}).flat(), cu),
     rec = Object.fromEntries(play.map(p => [p.f, p])),
     j = fid => rec[fid] || null,
     F = cu.fish || {},
@@ -966,15 +966,15 @@ test('real data: his watermarked ★ covers stay his; each is kept or has an ope
     if (!k || !k.cover || !nodes[id]) return;
     const L = play.filter(p => nodes[id].has(p.sp)),
       c = nodeCover(id, L, F, j, false, seen);
-    if (c.by !== 'mine' || !A.fishWm(c.p, j(c.p.f), F)) return;
+    if (c.by !== 'mine' || !A.treeWm(c.p, j(c.p.f), F)) return;
     const g = B.gen[id];
     if (g) assert.strictEqual(g.coverP && C.treePid(g.coverP.f), C.treePid(k.cover), `${id}: his ★ stays the app's card`);
     if (c.wok) return out.push(`${id} kept`);
     assert.ok(c.wm, `${id}: the page asks`);
-    const clean = L.some(p => !A.fishJuv(p, j(p.f), F) && !A.fishWm(p, j(p.f), F)),
+    const clean = L.some(p => !A.treeJuv(p, j(p.f), F) && !A.treeWm(p, j(p.f), F)),
       x = coverProposal(id, L, F, j, seen);
     if (!clean) return out.push(`${id} no photo without a watermark`);
-    assert.ok(x && x.wm && !A.fishWm(x.rule, j(x.rule.f), F), `${id}: a proposal without a watermark`);
+    assert.ok(x && x.wm && !A.treeWm(x.rule, j(x.rule.f), F), `${id}: a proposal without a watermark`);
     assert.strictEqual(coverOpen([x], F).length, 1, `${id}: open`);
     out.push(`${id} → ${x.rule.f}`);
   });
@@ -994,7 +994,7 @@ test('real data: the default covers are of the most seen species with a referenc
     sp = Object.fromEntries(f.species.map(s => [s.id, s])),
     seen = sid => X.nearSeen(sp[sid]),
     key = sid => seen(sid)[0] * 1e6 + seen(sid)[1],
-    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    play = A.treeGameIn(Object.values(gm.photos || {}).flat(), cu),
     rec = Object.fromEntries(play.map(p => [p.f, p])),
     j = fid => rec[fid] || null,
     nodes = Object.fromEntries([...f.families, ...f.genera].map(u => [u.id, new Set(u.species)])),
@@ -1017,10 +1017,10 @@ test('real data: the default covers are of the most seen species with a referenc
       assert.strictEqual(c.f, B.covers[c.sp].f, `${id}: his ★ cover of ${sp[c.sp].name}`);
     else if (R0.some(p => p.sp === c.sp)) assert.ok(C.refLevel(c), `${id}: its reference photo`);
     const L = play.filter(p => nodes[id].has(p.sp)),
-      adm = A.fishCoverOf(L, cu.fish, id, j, sid => A.fishNear(sp[sid])),
-      ad0 = L.filter(p => !A.fishJuv(p, j(p.f), cu.fish)),
-      ad = ad0.some(p => !A.fishWm(p, j(p.f), cu.fish)) ? ad0.filter(p => !A.fishWm(p, j(p.f), cu.fish)) : ad0,
-      ar = ad.filter(p => C.refLevel(A.fishRec(p, cu.fish, j)));
+      adm = A.treeCoverOf(L, cu.fish, id, j, sid => A.treeNear(sp[sid])),
+      ad0 = L.filter(p => !A.treeJuv(p, j(p.f), cu.fish)),
+      ad = ad0.some(p => !A.treeWm(p, j(p.f), cu.fish)) ? ad0.filter(p => !A.treeWm(p, j(p.f), cu.fish)) : ad0,
+      ar = ad.filter(p => C.refLevel(A.treePhotoRec(p, cu.fish, j)));
     if (!adm || !ad.length) return;
     assert.ok(ad.includes(adm), `${id}: the admin's default never takes a watermarked photo while it has another adult one`);
     assert.strictEqual(key(adm.sp), Math.max(...(ar.length ? ar : ad).map(p => key(p.sp))), `${id}: the admin shows ${sp[adm.sp].name}`);
@@ -1034,13 +1034,13 @@ test('real data: the default covers are of the most seen species with a referenc
 // build reads from the newer judgement (tools/fish_game.py read_cur), says whether a photo is a juvenile, as the app's
 // juvP reads it; his own tags or phase stand. So his ★ cover on a photo the newer judgement calls a juvenile waits for
 // his confirmation, in the admin as in the app (the f:Boxfishes cover after #1259).
-test('fishJuv: the auto-sort copy of tags reads the game record, his own tags stand', () => {
+test('treeJuv: the auto-sort copy of tags reads the game record, his own tags stand', () => {
   const rec = {f: 'fx', sp: 's1', jt: 'o1g0sl1j', ph: 'juvenile'},
     adult = {f: 'fx', sp: 's1', jt: 'p1g1sm1'},
     auto = {tags: {fx: 'p1g1sm1'}, ease: {fx: 4}, add: {fx: 's1'}, auto: {'2026-11-04': {fx: 'ate'}}},
     his = {...auto, auto: {'2026-11-04': {fx: 'ae'}}};
-  assert.strictEqual(A.fishJuv(rec, null, auto), true, 'the copy is read anew: a juvenile');
-  assert.strictEqual(A.fishJuv(adult, null, {...auto, tags: {fx: 'p1g1sm1j'}}), false, 'the record says adult');
-  assert.strictEqual(A.fishJuv(rec, null, his), false, 'his own tags stand');
-  assert.strictEqual(A.fishJuv(rec, null, {tags: {fx: 'p1g1sm1'}}), false, 'no log: his');
+  assert.strictEqual(A.treeJuv(rec, null, auto), true, 'the copy is read anew: a juvenile');
+  assert.strictEqual(A.treeJuv(adult, null, {...auto, tags: {fx: 'p1g1sm1j'}}), false, 'the record says adult');
+  assert.strictEqual(A.treeJuv(rec, null, his), false, 'his own tags stand');
+  assert.strictEqual(A.treeJuv(rec, null, {tags: {fx: 'p1g1sm1'}}), false, 'no log: his');
 });

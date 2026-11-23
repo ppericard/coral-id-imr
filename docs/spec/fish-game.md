@@ -93,7 +93,8 @@ place, `app.js` `UNITS[id].learn`: `{name, line(), when(), self(), k}`, `k` the 
 `SUBJECTS` `optin`, so the choice syncs and merges). The fish: Common names (`sp`, shown from `SPECIES_SHEET`) and
 Scientific names (`sci`: the genera, and through `sciUp` their species); the sea slugs: Species (`ssp`, shown from
 `SCI_SHEET`); the corals: none, so no card and no Home link. `learnRows()` keeps the rows whose `when()` holds (rule
-D4).
+D4). The fish's welcome sets these rows once, in its names step right after the first-launch question
+([cards.md](cards.md#the-names-step-at-the-welcome): `UNITS[id].namesStep`, `namesSet`).
 
 - **A row's state** (`rowOn`): on while not turned off on the card (`Q[k + 'O']`) and either turned on (`Q[k]` true) or
   bringing its units by itself (`self()`: the species; an IMR player's scientific genera, "I'm at IMR" meaning both). A
@@ -119,11 +120,13 @@ D4).
 
 docs/FISH_PATH.md "Unlock rules", docs/LEARNING.md "Fish: the species level, step 1, by common name".
 
-- **Units**: `core.js` `treeSpUnits` lists one unit per species with a listed name, in a family in play (`s:` + its id,
-  `s:s091`; its family's other species as `look`; `from` its family). `app.js` `treeGenera` builds each record:
-  `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl: []`, `noex`,
-  its family's photos of that species, `sci` its scientific name, `also` its listed names, `name` the player's first
-  common name (a getter, `cnFirst`). `TREEU.spl` lists them.
+- **Units**: `core.js` `treeSpUnits` lists one unit per species with a listed name (fish.json `cn`), in a family in
+  play, never a wink family's, in each family's species order (the commonness order, `cmi`), the order they open in
+  (`s:` + its id, `s:s091`; its family's other species as `look`; `from` its family). `app.js` `treeGenera` builds each
+  record: `rank: 'species'`, `one: 'species'`, `parent` and `from` its family, its family's group and forms, `decl` (the
+  species its record's `look` names: none for the fish), `noex`, its family's photos of that species, `sci` its
+  scientific name, `also` its listed names, `name` the player's first common name (a getter, `cnFirst`). `TREEU.spl`
+  lists them.
 - **Opening** (the species): the set `sp` in `UNITS` fish `sets` (`auto` only: no offer, no switch). `app.js` `spPlay`
   gives each family at Advanced its species met and the next one, in its commonness order. **The rank share**
   (docs/LEARNING.md "The rank share"): `model.js` `SHARE`, one rule for every unit with a `parent` (the fish scientific
@@ -154,8 +157,12 @@ docs/reviews/2026-11-18-species-step2-plan.md, docs/LEARNING.md "Species by thei
 subjects, one code path (rule S1): `core.js` `SUBJECTS` `names` says which kinds of name a subject's species are asked by
 (fish `['cn', 'sci']`, sea slugs `['sci']`).
 
-- **Units**: `core.js` `treeSpUnits(F, X, 'sci')` (`sci:` + the species id in letters and digits: `sci:s091`,
-  `sci:xgoniobranchussp5`; the other scientific species of its family as `look`; `from` its genus). `app.js`
+- **Units**: `core.js` `treeSpUnits(F, X, 'sci')`, one per species under a genus unit of a family in play
+  (`treeGenSets`: the fish's scientific genera of every circle, the sea slugs' genus units), with a common name or none,
+  in each family's species order; X is then `treeGen`'s units at the subject's unit rank, and the species' `genus` and
+  `from` are its genus unit of the scientific tree, never a common-name unit. The app's units (`app.js` `treeGenera`)
+  and the sheet's replay (`treeReplayGen`) read this one list (`sci:` + the species id in letters and digits:
+  `sci:s091`, `sci:xgoniobranchussp5`; the other scientific species of its family as `look`; `from` its genus). `app.js`
   `treeGenera` builds each record for a subject with `sci` in its names (`X.kinds`): `kind: 'sci'`, `rank: 'species'`,
   `name` its scientific name, `parent` and `from` its genus, its genus's group and forms, `noex`, its genus's photos of
   that species (never a genus-level `gl` photo), `cn` the player's first common name (a getter; '' for the sea slugs),

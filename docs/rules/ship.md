@@ -51,9 +51,10 @@ search the ledger ([docs/ANSWERS.md](../ANSWERS.md)), the rules and `docs/decisi
 its scope, later amendments and whether it still applies; a decision that settles the point is applied, never asked
 again; on incomplete or contradictory evidence, say what is unsure, leave that point open and go on with the work
 already allowed.
-- **Questions, the details** (AGENTS.md "Questions to Pierre" has the rule): an open numbered question waits in STATUS
-  "Questions for Pierre" (number, context, question, recommendation, PR) until he answers; past numbers stay as they
-  are, never renumbered; he does not remember everything as an agent does and may ask for more context.
+- **Questions, the details** (AGENTS.md "Working with Pierre"): keep open decisions in Linear's Decisions for Pierre
+  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, park what must wait
+  in STATUS, using the existing issue link when available. Past numbers stay as they are. When asking, include enough
+  context for Pierre to place the question.
 *Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19; a hit as
 evidence, 2026-11-21 (#1361).
 
@@ -137,9 +138,9 @@ only docs skips the smokes** (every file under `docs/`, a `*.md` at the root, th
 still runs on it, `tests/docs.test.js` included. A merge train's push runs both workflows in full (rule W26). A new push
 cancels the run still going on the PR. **Session hooks**
 (`.claude/settings.json`) print the Manila time and the Rule 0 window at each session start and prompt
-(`tools/brief.py --short`, `--time`), running main's reviewed copy of the script
-(`git show origin/main:tools/brief.py | python3 -I -`), never the checked-out branch's (a branch could put any code
-there): a change to `tools/brief.py` reaches the hooks once merged.
+(`tools/brief.py --short`, `--time`). The startup hook refreshes `origin/main` before selecting the reviewed script.
+The prompt clock uses the cached ref offline. Both pass the trusted script to `python3 -I -`. A branch's own
+`tools/brief.py` reaches the hooks once merged and fetched. See [the hooks](../spec/tools.md#working-with-the-repository).
 *Source:* repository practice, by 2026-11-01; hooks, 2026-11-05; docs-only PRs skip the smokes, Pierre, 2026-11-08
 (Q305); one answerer for the smokes, Pierre, 2026-11-13 (fix the structure, not the one spot: a typed question hung the
 overlays smoke on #855).
@@ -176,11 +177,13 @@ and reports every failing one. Locally, run what your change can break, once:
   `sw.js`, the loader in `index.html`, photo sizes and fallbacks, R2 →
   `node tests/net.smoke.js`. In `tests/pages.smoke.js`, `SMOKE_ONLY=<part>[,<part>]` runs some of its parts: `tips`
   (`tips.js`), `relief` (the Duel tab's relief card, `quiz.js` `reliefShow`), `start` (the first-launch question, its
-  fallback cards: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `install` (the offer to install the app: `installCheck`), `fishkey` (the Fish ID Key in the Lab: `fishKeyCheck`), `noupscale` (an IMR lecture photo never drawn past its own pixels: `noUpscaleCheck`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
+  fallback cards: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`; no tour arrow over page text: `tourArrowsCheck`), `install` (the offer to install the app: `installCheck`), `fishkey` (the Fish ID Key in the Lab: `fishKeyCheck`), `noupscale` (an IMR lecture photo never drawn past its own pixels: `noUpscaleCheck`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
   `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|overlays|rest|more` is the group CI runs
-  on one runner (`fish.smoke.js`: `main|fresh`, `fresh` the brand-new fish players). Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
+  on one runner. For `fish.smoke.js`, `SMOKE_PART=main` runs games, sync and load order, and `SMOKE_PART=fresh` runs the
+  brand-new players, quiz, beta access and Memory. Use `SMOKE_ONLY=quiz,access` to run just those two parts.
+  Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
 - **One Playwright run at a time per 2 cores**: every smoke and every Playwright tool (`tools/learnsim.js`,
   `tools/perf.js`, `tools/rtprep.js`, `tools/og/make_og.js`) takes a slot from `tests/slot.js` before it starts
   Chromium, waits while the machine's load is above twice its core count (rule W24), and gives the slot back when it ends
@@ -346,6 +349,8 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
   on 4 cores); above, the run waits. At most `SMOKE_SLOTS` heavy runs at once (default one per 2 cores; `SMOKE_SLOTS=1`
   while several agents run). A holder's children run in its slot (`REEFID_SLOT`): a full run or a smoke that starts a
   guarded tool never waits for itself.
+- **Arrival order**: each waiter takes a ticket in the slots directory and a free slot goes to the oldest live ticket; a
+  dead waiter's ticket is skipped (the holders' PID and start-time check).
 - **Disk**: a heavy run refuses to start with less than 5 GB free on the repository's disk (`tests/slot.js` `diskOk()`,
   `MIN_FREE_GB`), and says what to clean. **Every agent cleans up behind itself**: its worktree once its PR is merged
   (`git worktree remove`), temporary downloads, venvs, screenshots it no longer needs.
@@ -356,11 +361,11 @@ automatic lock of the unit tests"; the load budget of twice the cores and the di
 ### W25
 
 **Use the quota with care, never at the cost of the result.** Precise briefs, query instead of reading, no subagent for a
-small task, stop agents when done, one wake-up per wait, local checks before each push. The model and
-effort of each agent follow the table in docs/INTEGRATOR.md (AGENTS.md "Working mode"): ordinary code runs on the
-intermediate model; the lightest model only for mechanical work, after the sample test against a strong model ("Model
-choice by measurement": the threshold set beforehand counts agreement and serious errors; example tasks: framing,
-sorting photos, conversions); never for a judgment (photo judging included).
+small task, stop agents when done, one wake-up per wait, local checks before each push. Use the model and effort
+table in [INTEGRATOR.md, Working with Pierre](../INTEGRATOR.md#working-with-pierre). Ordinary code runs on the
+intermediate model; the lightest model only for mechanical work, after the sample test against a strong model (the
+threshold set beforehand counts agreement and serious errors; example tasks: framing, sorting photos, conversions).
+Use a stronger model for judgment, including photo judging.
 
 *Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
 2026-11-08.
@@ -391,8 +396,8 @@ back leaves the PR.** The integrator holds to these, each checked before it laun
 - **Each agent is on one PR or one study with one subject**; a finished agent is stopped, not kept waiting. Heavy
   agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js` (rule W24). Branches:
   rule W22.
-- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
-  until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
+- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js` and its parts `core/*.js`, `sync.js`,
+  `model.js`): the second waits until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
 - **Codex findings are fixed while they are new and small; a part whose findings keep coming back leaves the PR.** When
   findings keep coming back on the same part (say twice in a row), the integrator cuts the PR's scope (that part moves
   to a branch of its own) and tells Pierre; there is no fixed number of rounds. Findings that keep coming on the same part point to a structural problem: that part restarts from a short

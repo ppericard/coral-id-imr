@@ -42,8 +42,8 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     Q377: never the opening order), present {area: distinct Research Grade observers in the subject's area, the
     Philippines (Q369 (b)), what the game's commonness reads (core.js fishGen cm); near, nearU, nearN: rule C8's near
     test and the observers and observations within the instance's radius of Dauin, what the default covers read (app.js
-    nearSeen)}, look (the decided look-alike pairs, tools/seaslugs.json lookalikes: the two Spanish dancers, for step
-    8)};
+    nearSeen)}, look (the decided look-alike pairs, tools/seaslugs.json lookalikes: the two Spanish dancers, Q377, and
+    the two sourced pairs of #1164, Q390 D; docs/decisions/2026-11-21-seaslug-species-pairs.md)};
   - on a family, genus or species some source names in English: en [{n, src, nick, web}], its English common names and
     nicknames, and ensrc {inat, worms, wiki}, where its sources hold it (tools/seaslug_names.json, names_of); the tree's
     own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
@@ -68,7 +68,10 @@ line:
     play, never out of the water), at most photoTarget.gameCap a species, the easiest first, plus up to
     photoTarget.perJuvenileForm juvenile photos for a species with a documented juvenile form (photoTarget.juvenile);
     a species with fewer than photoTarget.start such photos has none in play (it cannot be played yet). The same rule
-    for every circle;
+    for every circle. Which photos are in play and their records are the fish's (tools/fish_game.py in_play and record,
+    with the sea slugs' part of the curation, their sure rule and their lists): never the same photo twice (pid), the
+    species' lists read first, by circle and rank, then the genus-level ones, before the cap and start apply (a photo
+    in a species' list and a genus-level one plays for the species, or nowhere when that species does not play);
   - Pierre's curation (curation.json seaslug, the sea slugs' part: core.js SUBJECTS seaslug admin.cur; written by the
     admin's Photos › Tree and a report's photo tools, never here: rule A1), as a fish photo follows the fish part
     (tools/fish_game.py in_play, record): a photo he removed (seen), excluded (exclude, or the top-level exclude, by
@@ -78,9 +81,9 @@ line:
     the record's (fish_game.py mine_tags), and a count he set to other species one could take for its subject (k) or
     unclear keeps the photo out (rule P3); his crop (crop, his whole-photo [0, 0, 1, 1] included) replaces the judge's,
     and his rotation (rot) turns the files, both applied when the photo is downloaded for R2 (ro on the record);
-  - each record {f, o, src, a, lic, t, sp, loc, own, e, jt, ph, auto: "cand"} (no auto on Pierre's adds), ph "juvenile"
-    for a photo judged a
-    juvenile (as a fish record's phase: tools/fish_game.py phase), and then either
+  - each record {f, o, src, a, lic, t, sp, gl, loc, own, e, jt, ph, bb, auto: "cand"} (no auto on Pierre's adds), ph
+    a fish record's phase (tools/fish_game.py phase: Pierre's phase choice, else the judge's juvenile flag, else the
+    source's life stage, st); the cap counts a juvenile by the juvenile flag of its tags (juv); and then either
       r: 1, the photo read from iNaturalist (app.js img), until a run with --r2 has put it on R2; or
       ar, cr, ro, iv and no r: its four files on R2, as a fish game photo (study §9 step 6; tools/fish_game.py
       download: Pierre's crop, else the judge's proposed one, and his rotation applied, tools/photos.py's four sizes),
@@ -160,7 +163,8 @@ def genus_looks(cand, genera):
         game shows were never mixed up on, a rename or a slip at the genus rank, says nothing of their look); its source
         the counts. A pair inside one family is left out: the family's genera are already each other's look-alikes
         (core.js fishGenUnits).
-    The species pairs wait for the species level (Q390 D)."""
+    The candidates' species pairs are not taken: the species pairs are the decided ones (tools/seaslugs.json lookalikes,
+    each species' look; Q377, Q390 D)."""
     gid = {g['name']: g['id'] for g in genera}
     fam = {g['name']: g['family'] for g in genera}
     decl, data = {}, {}
@@ -205,6 +209,7 @@ def sure(j):
 
 
 def juv(jt):
+    """A juvenile for the photo target's cap (kept): the juvenile flag of the tags in force."""
     return 'j' in (jt or '')[7:]
 
 
@@ -222,13 +227,6 @@ def tile_tags(jt):
     import fish_game as FG
     jt = jt or ''
     return FG.tile_tags('p' + jt[1:] if jt[:1] == 'd' else jt)
-
-
-def phase(jt):
-    """The photo's phase as a fish record's (tools/fish_game.py phase: the juvenile flag, with no phase of Pierre's nor
-    of the pass, which the sea slugs' rubric never names, and no source stage on a sea-slug candidate)."""
-    import fish_game as FG
-    return FG.phase({}, '', {}, {'jt': jt})
 
 
 def on_r2(o):
@@ -330,9 +328,6 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     without it."""
     import fish_game as FG
     F = part(cur)
-    top = set((cur or {}).get('exclude') or {})
-    gone = FG.gone_ids(cur, CUR)
-    decided = FG.decided_of(F)
     V_ = names_of(names)
     vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
@@ -432,44 +427,28 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     old = {p['f']: p for P in ((prev or {}).get('photos') or {}).values() for p in P if isinstance(p, dict) and p.get('f')}
     byname = {s['name']: s for s in species}
     photos, todo = {}, []
-    C = cand.get('cand') or {}
 
-    def rec(p, unit, j, auto):
-        """The game record of candidate p in play for unit (a species id, or a genus id for a genus-level photo, gl), with
-        Pierre's ease and tags over the judgement j (tools/fish_game.py record, mine_tags), auto for a photo that entered
-        by itself. A photo he moved to another species (Not this, then his add) is named after it."""
-        f = p['f']
-        e = (F.get('ease') or {}).get(f, (j or {}).get('e'))
-        jt = FG.mine_tags(F, f, (j or {}).get('jt')) if f in (F.get('tags') or {}) else (j or {}).get('jt')
-        t = p['t']
-        if not auto and orig.get(f) != unit:
-            t = (sp_of.get(unit) or gens.get(unit) or {}).get('name') or t
-        ph = phase(jt)
-        # The animal's box, for the Find the X tile (the fish's rule and cut, tools/fish_game.py tile_tags, tile_crop): a
-        # judgement carrying one (bb: judging/SEASLUG.md "The animal's box") on a photo whose tags pass the tile rule.
-        bb = FG.box_of(f, None, sug) if tile_tags(jt) else None
-        return {'f': f, 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': t, 'sp': unit,
-                **({'gl': 1} if unit in gens else {}), 'loc': p.get('loc'), **({'own': True} if p.get('own') else {}),
-                **({'e': int(e)} if e else {}), **({'jt': jt} if jt else {}), **({'ph': ph} if ph else {}),
-                **({'bb': bb} if bb else {}),
-                **({'auto': 'cand'} if auto else {}), 'r': 1}
-
-    def judged(key, unit, gl=False):
-        """The photos in play for unit of the candidate list key: Pierre's adds (below, adds) and the sure photos he has
-        not decided on (fish_game.py in_play: not added, removed, excluded nor moved, by photo id too), as records."""
-        out = list(adds.get(unit) or [])
-        for p in C.get(key) or []:
-            f, j = p.get('f'), sug.get(p.get('f'))
-            if not f or f in decided or FG.pid(f) in gone or FG.pid(f) in have or not sure(j):
-                continue
-            r = rec(p, unit, j, True)
-            if not FG.other_out((F.get('tags') or {}).get(f), j.get('jt')):
-                out.append(r)
-        return out
+    def rec(p, unit, orig, route):
+        """The game record of candidate p in play for unit (a species id, or a genus id for a genus-level photo, gl): the
+        fish's (tools/fish_game.py record: Pierre's ease, tags and phase over the judgement, auto for a photo that entered
+        by itself, a photo he moved to another unit named after it), with the sea slugs' own fields: gl, the animal's box
+        for the Find the X tile (the fish's rule and cut, tools/fish_game.py tile_tags, tile_crop: a judgement carrying one,
+        judging/SEASLUG.md "The animal's box", on a photo whose tags pass the tile rule), and r: 1 until the photo is on R2
+        (place). The fields in the committed file's order."""
+        r = FG.record(unit, p, F, sug, orig, units, route)
+        bb = FG.box_of(p['f'], None, sug) if tile_tags(r.get('jt')) else None
+        out = {}
+        for k, v in r.items():
+            if k != 'auto':
+                out[k] = v
+            if k == 'sp' and unit in gens:
+                out['gl'] = 1
+        return {**out, **({'bb': bb} if bb else {}), **({'auto': r['auto']} if 'auto' in r else {}), 'r': 1}
 
     def kept(L1, documented_juvenile):
         """The photos in play of one list: Pierre's adds always (as a fish add), then at most cap adults with them, the
-        easiest first, then the juveniles (perJuvenileForm for a documented juvenile form, else what the cap leaves)."""
+        easiest first, then the juveniles (perJuvenileForm for a documented juvenile form, else what the cap leaves). A
+        juvenile: the juvenile flag of the record's tags (juv)."""
         order = lambda p: (-(p.get('e') or 0), p['f'])  # noqa: E731
         his = sorted((p for p in L1 if 'auto' not in p), key=order)
         room = max(0, cap - sum(1 for p in his if not juv(p.get('jt'))))
@@ -498,33 +477,35 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
                 todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0, ro))
         photos.setdefault(fid, []).extend(keep)
 
-    # The admin's adds (curation.json seaslug add {photo: unit}: core.js treePhotoOn, tools/fish_game.py fish_on): a candidate he
-    # put in play for a species, or for a genus (a genus-level photo), there whatever its judgement, never one excluded for
-    # good nor one whose count in force is other species one could take for its subject (rule P3); by unit.
-    by_f = {p['f']: p for P in C.values() for p in P if p.get('f') and p.get('src')}
+    # The photos in play, the fish's rule (tools/fish_game.py in_play) on the sea slugs' part of the curation and rubric:
+    # the admin's adds (curation.json seaslug add {photo: unit}: core.js treePhotoOn, tools/fish_game.py fish_on), a candidate
+    # he put in play for a species, or for a genus (a genus-level photo), there whatever its judgement, never one excluded
+    # for good nor one whose count in force is other species one could take for its subject (rule P3); and the sure photos
+    # he has not decided on (not added, removed, excluded nor moved, by photo id too). Never the same photo twice: the
+    # species' lists are read first, by circle and rank, then the genus-level ones. By unit, as records.
     sp_of = {s['id']: s for s in species}
+    # The units a photo plays for, by the name a moved photo takes (record): the sea slugs' own name, iNaturalist's, which
+    # their candidates and sheets carry, never the WoRMS accepted name a fish record takes (now).
+    units = {u: {'name': x['name']} for u, x in {**sp_of, **gens}.items()}
     # each candidate's own unit, by its list's key (an iNaturalist taxon id, a genus name, an informal species' key)
     key_unit = {**{str(s['inat']): sid[s['name']] for s in sp}, **{k: 'x:' + k for k, _ in extra},
                 **{G['name']: gid for gid, G in gens.items()}}
-    orig = {p['f']: key_unit.get(k) for k, P in C.items() for p in P if p.get('f')}
-    adds, have = {}, set()
-    for f, unit in sorted((F.get('add') or {}).items()):
-        p = by_f.get(f)
-        if not p or (unit not in sp_of and unit not in gens) or not FG.add_ok(F, f, unit, top, sug):
-            continue
-        adds.setdefault(unit, []).append(rec(p, unit, sug.get(f), False))
-        have.add(FG.pid(f))
+    lists = [str(s['inat']) for s in sp] + [k for k, _ in extra] + [G['name'] for G in gens.values()]
+    play = {}
+    for unit, p, orig, route in FG.in_play(cur, cand, sug, key=CUR, sure=sure, keys=lists, units=set(units)):
+        u = unit if route is None else key_unit[unit]
+        play.setdefault(u, []).append(rec(p, u, key_unit.get(orig, orig), route))
 
     for key, name in [(str(s['inat']), s['name']) for s in sp] + extra:
         me = byname[name]
-        keep = kept(judged(key, me['id']), name in documented)
+        keep = kept(play.get(me['id']) or [], name in documented)
         if len(keep) >= start:
             place(keep, me['family'])
     # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level): the sure
     # ones of each genus, sp its genus id and gl 1 (core.js treeGenUnits plays them for the genus, never for a species),
     # at most cap, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
     for gid, G in gens.items():
-        keep = kept(judged(G['name'], gid, gl=True), False)
+        keep = kept(play.get(gid) or [], False)
         mine = sum(1 for p in photos.get(G['family']) or [] if p['sp'] in G['species'])
         if keep and len(keep) + mine >= start:
             place(keep, G['family'])
