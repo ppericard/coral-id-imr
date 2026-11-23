@@ -96,8 +96,10 @@ test('rotation from what an older app stored, or a broken store', () => {
   assert.ok(pulseItem(pulsePick({left: 'x'}, rng(1)).q));
 });
 
-// quiz.js's prompt spacing, on stubs: the answers so far, this visit's answers, the page, what is on screen.
-function quiz() {
+// quiz.js's prompt spacing, on stubs: the answers so far, this visit's answers, the page, what is on screen. The answer
+// clock (model.js tally) is the count itself, as long as no count goes down; real: model.js's own, on a comeback
+// record per subject (CB, as model.js loads it at a subject switch).
+function quiz({real = false} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
     block = cut(src, '// Out-of-game prompts ("fewer, better pop-ups"', '// Response rate (Pierre');
   assert.ok(block.length > 500, 'the spacing block is found in quiz.js');
@@ -120,8 +122,18 @@ function quiz() {
   // quiz.js photoQuiz: the photo quiz and the custom quiz on the genera the player picks (CUSTOM_H).
   ctx.photoQuiz = h => h === 'quiz' || h === 'quiz-custom|play';
   ctx.document = {querySelector: sel => (sel.split(',').some(s => ctx.onScreen.has(s.trim())) ? {} : null)};
+  if (real) {
+    const cbs = {};
+    Object.defineProperty(ctx, 'CB', {get: () => (cbs[ctx.SUBJ.id] = cbs[ctx.SUBJ.id] || {}), set: v => (cbs[ctx.SUBJ.id] = v)});
+    ctx.cbSave = () => {};
+  } else ctx.tally = () => ctx.a;
   vm.createContext(ctx);
-  vm.runInContext(block + '\nthis.Q = {PROMPT, promptOk, promptMark, PULSE, PULSEK, pulseDue, pulseNote, pulseSess};', ctx);
+  vm.runInContext(
+    block +
+      (real ? require('./clock.js')() : '') +
+      '\nthis.Q = {PROMPT, promptOk, promptMark, PULSE, PULSEK, pulseDue, pulseNote, pulseSess, tally};',
+    ctx
+  );
   return {...ctx.Q, ctx};
 }
 
@@ -314,6 +326,44 @@ test('spacing: every out-of-game prompt PROMPT.GAP answers apart, never with the
   c.achBusy = false;
   c.a = 5; // the count went back
   assert.strictEqual(Q.promptOk(), true);
+});
+
+// The level's answer count follows the log (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md): both spacings
+// count on the answer clock (model.js tally), so a count gone down neither brings a prompt at once nor holds one back; a
+// progress reset starts the clock over (model.js introReset: a new comeback record), and the spacing with it.
+test('spacing on the answer clock: a count gone down (rule D9) moves no prompt; a reset starts it over', () => {
+  const Q = quiz({real: true}),
+    c = Q.ctx,
+    long = () =>
+      c.store.set(Q.PULSEK, {
+        ...c.store.get(Q.PULSEK, {}),
+        v: {t0: c.t - Q.PULSE.SESS_MS - 60000, t: c.t, n: Q.PULSE.SESS_N + 5, s: 'coral'}
+      });
+  c.a = 120;
+  Q.promptMark();
+  c.a = 60; // the log's count replaces one that counted 60 answers twice
+  assert.strictEqual(Q.promptOk(), false, 'no prompt at once');
+  for (let k = 1; k < Q.PROMPT.GAP; k++) {
+    c.a = 60 + k;
+    assert.strictEqual(Q.promptOk(), false, `${k} answers after the last prompt`);
+  }
+  c.a = 60 + Q.PROMPT.GAP;
+  assert.strictEqual(Q.promptOk(), true, 'PROMPT.GAP answers after it, as before');
+  // The one-tap question asked at 200 answers, then the count down to 150: due PULSE.EVERY answers after it.
+  c.a = 200;
+  c.store.set(Q.PULSEK, {at: Q.tally(), q: 'are', left: []});
+  long();
+  c.a = 150;
+  assert.strictEqual(Q.pulseDue(), false, 'no question at once');
+  c.a = 150 + Q.PULSE.EVERY - 1;
+  assert.strictEqual(Q.pulseDue(), false);
+  c.a = 150 + Q.PULSE.EVERY;
+  assert.strictEqual(Q.pulseDue(), true);
+  // A progress reset: the clock starts over with the count, both spacings with it.
+  c.CB = {};
+  c.a = Q.PULSE.FIRST;
+  assert.strictEqual(Q.promptOk(), true);
+  assert.strictEqual(Q.pulseDue(), true);
 });
 
 // Every subject asks it (Pierre, 2026-11-19, Q436), each paced on its own answers (answersSoFar is the subject on

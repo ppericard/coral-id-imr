@@ -161,6 +161,23 @@ test('the exam waits for the group partners that can open; one under way goes on
   assert.ok(!run(e, `missing(${JSON.stringify(n)})`).some(x => x.startsWith('meeting')));
 });
 
+// The level's answer count follows the log (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md): the gap
+// between two exam questions counts on the answer clock (model.js tally), at which quiz.js answer keeps the last (ex.at).
+test('the exam gap counts on the answer clock: a count gone down (rule D9) holds no exam question back', () => {
+  const e = coral(),
+    n = e.ctx.slateGenera()[0],
+    gap = run(e, 'EXAM.gap'),
+    at = a => ((e.ctx.P['~level'] = {ok: a, ko: 0}), run(e, `examReady(${JSON.stringify(n)})`));
+  e.ctx.examOpen = () => true;
+  e.ctx.looksLeft = () => [];
+  e.ctx.P['~level'] = {ok: 100, ko: 0};
+  e.ctx.P[n] = {ok: 5, ko: 0, ex: {k: 1, t: 0, v: [], at: run(e, 'tally()')}}; // an exam question at answer 100
+  assert.strictEqual(at(103), false, '3 answers after it');
+  assert.strictEqual(at(60), false, 'the log replaces a count of 43 answers counted twice: still 3');
+  assert.strictEqual(at(60 + gap - 4), false, `${gap - 1} answers after it`);
+  assert.strictEqual(at(60 + gap - 3), true, `${gap} answers after it, as before`);
+});
+
 test('the groups follow the pooled stats (a new PCONF object) and the units in play', () => {
   const e = coral(),
     a = groups(e);

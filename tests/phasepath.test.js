@@ -248,7 +248,7 @@ test('one rule for every subject (rule S1): a coral pool, with no photo judged a
 // exam step (cut out here and run as the game runs it) restarts it at a miss.
 const quiz = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8');
 const examStep = new Function(
-  's, good, exq, tq, ph, EXAM, TYPED, answersSoFar, examPassed, target, unameT, achPop',
+  's, good, exq, tq, ph, EXAM, TYPED, tally, examPassed, target, unameT, achPop', // tally: model.js's answer clock
   require('./block.js')(quiz, '  if (!good) delete s.ex;\n', '    } else s.ex = ex;\n  }\n', {through: 1, file: 'quiz.js'})
 );
 const examPool = () => {
