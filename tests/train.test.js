@@ -37,11 +37,15 @@ m = re.match(r'commits/(\w+)/check-runs', path)
 if m:
     out({'check_runs': st.get('checks', {}).get(m.group(1), [{'name': 'checks', 'status': 'completed', 'conclusion': 'success'}])})
 if path.startswith('actions/runs?'):
+    for ref, sha in st.get('move_during_ci', {}).items():
+        g('update-ref', ref, sha)
     out({'workflow_runs': st.get('train_runs', [])})
 m = re.match(r'actions/runs/(\d+)/jobs', path)
 if m:
     out({'jobs': st.get('jobs', {}).get(m.group(1), [])})
 if path == 'git/ref/heads/main':
+    if st.get('main_moved_during_build'):
+        g('update-ref', 'refs/heads/main', st['main_moved_during_build'])
     out({'object': {'sha': g('rev-parse', 'refs/heads/main')}})
 m = re.match(r'git/commits/(\w+)$', path)
 if m:
@@ -204,6 +208,99 @@ test('--dry-run checks the PRs and builds the train, pushes and merges nothing',
     noWorktreeLeft(f);
   } finally {
     f.done();
+  }
+});
+
+test('a reviewed head behind main can train without moving its PR branch', () => {
+  const f = fixture();
+  try {
+    const sha = f.heads[1];
+    const dry = f.train('--dry-run', '--sha', sha, '1');
+    assert.strictEqual(dry.status, 0, dry.stdout + dry.stderr);
+    f.og('update-ref', 'refs/heads/main', f.heads[2]); // main advances between the two invocations
+    const r = f.train('--sha', sha, '1');
+    assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+    const [branch] = f.trains();
+    assert.deepStrictEqual(f.og('show', '-s', '--format=%P', branch).split(' '), [f.heads[2], sha]);
+    assert.strictEqual(f.og('show', 'main:b.txt'), 'b one');
+    assert.strictEqual(f.og('show', 'main:c.txt'), 'c');
+    assert.strictEqual(f.og('rev-parse', 'refs/pull/1/head'), sha);
+    assert.strictEqual(f.og('rev-parse', 'main^{tree}'), f.og('rev-parse', branch + '^{tree}'));
+    assert.deepStrictEqual(
+      f.calls().filter(call => call.startsWith('PUT ')),
+      ['PUT pulls/1/merge']
+    );
+  } finally {
+    f.done();
+  }
+});
+
+test('a conflicting reviewed head behind main is left for the integrator', () => {
+  const f = fixture();
+  try {
+    f.og('update-ref', 'refs/heads/main', f.heads[3]); // main and #1 both change b.txt
+    const r = f.train('--dry-run', '--sha', f.heads[1], '1');
+    assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /#1 conflicts with main/);
+    assert.deepStrictEqual(f.trains(), []);
+    assert.strictEqual(f.og('rev-parse', 'refs/pull/1/head'), f.heads[1]);
+    assert.strictEqual(f.og('rev-parse', 'main'), f.heads[3]);
+    noWorktreeLeft(f);
+  } finally {
+    f.done();
+  }
+});
+
+test('the train refuses to substitute a new head after the pinned dry run', () => {
+  const f = fixture();
+  try {
+    const sha = f.heads[1];
+    const dry = f.train('--dry-run', '--sha', sha, '1');
+    assert.strictEqual(dry.status, 0, dry.stdout + dry.stderr);
+    f.og('update-ref', 'refs/pull/1/head', f.heads[2]);
+    const callCount = f.calls().length;
+    const r = f.train('--sha', sha, '1');
+    assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /#1 head moved since its gates passed/);
+    assert.deepStrictEqual(f.calls().slice(callCount), ['GET pulls/1']);
+    assert.deepStrictEqual(f.trains(), []);
+  } finally {
+    f.done();
+  }
+});
+
+test('main moving during the build stops the train before pushing', () => {
+  const f = fixture();
+  try {
+    f.setState({main_moved_during_build: f.heads[2]});
+    const r = f.train('--sha', f.heads[1], '1');
+    assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /main moved to \w+ while building the train: nothing pushed/);
+    assert.deepStrictEqual(f.trains(), []);
+    assert.strictEqual(f.release(), '');
+    noWorktreeLeft(f);
+  } finally {
+    f.done();
+  }
+});
+
+test('main or the pinned head moving during CI stops the train before any merge', () => {
+  for (const [ref, message] of [
+    ['refs/heads/main', /main moved to \w+ before #1/],
+    ['refs/pull/1/head', /#1 got a new head since the train was built/]
+  ]) {
+    const f = fixture();
+    try {
+      f.setState({move_during_ci: {[ref]: f.heads[2]}});
+      const r = f.train('--sha', f.heads[1], '1');
+      assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+      assert.match(r.stdout, message);
+      assert.strictEqual(f.trains().length, 1);
+      assert.ok(!f.calls().some(call => call.startsWith('PUT ')));
+      assert.strictEqual(f.release(), '');
+    } finally {
+      f.done();
+    }
   }
 });
 
