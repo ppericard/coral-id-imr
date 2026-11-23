@@ -88,7 +88,7 @@ test('index.html loader: a script that failed 4 times offers Try again, never go
 
 test('a script of the quiz’s tier needs no name that only a later tier declares, unless it asks typeof first', () => {
   const {scripts} = tiers();
-  const pre = ['core.js', 'app.js', 'install.js', 'sync.js', 'home-art.js', 'home.js', 'tour.js'];
+  const pre = ['core.js', 'app.js', 'gloss.js', 'install.js', 'sync.js', 'home-art.js', 'home.js', 'tour.js'];
   assert.ok(
     pre.every(f => new RegExp(`href="${reEsc(f)}\\?v=\\d+" as="script" data-tier="1"`).test(HTML)),
     'tier 1 as listed'
@@ -136,6 +136,7 @@ function mainMarkup() {
     'index.html',
     'core.js',
     'app.js',
+    'gloss.js',
     'install.js',
     'sync.js',
     'home-art.js',
