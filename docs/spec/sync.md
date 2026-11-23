@@ -320,7 +320,8 @@ before this change, which keeps the name as typed, names its account exactly in 
 reports) and in the Removed tombstones; only the look-alike check compares by skeleton, so another Unicode form of a
 taken name is never a new account. A new name is refused when it holds an invisible
 character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,
-plus control characters and the characters that draw nothing, such as the Hangul fillers; a zero-width joiner between two
+plus control characters and the characters that draw nothing, such as the Hangul fillers, a variation selector but
+right after a symbol, a punctuation mark, a digit or an ideograph, and a name with nothing visible left; a zero-width joiner between two
 pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when it looks like an existing
 account's name (the RAs tab, archives included: `Code.gs` `nameIssue_`). Two names look alike when they share a key
 (`nameKeys`): the skeletons of the name as it is, in lower case and in upper case, since an account is its name in any

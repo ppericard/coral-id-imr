@@ -129,6 +129,27 @@ test('nameHidden: zero-width, bidi controls and other invisible characters; an e
   ].forEach(n => assert.strictEqual(h(n), false, JSON.stringify(n)));
   // A joiner between letters, or after an emoji but before a letter, stays invisible.
   assert.strictEqual(h('\u{1F469}\u{200D}Anna'), true);
+  // A variation selector alone, or after a letter it changes nothing in, is invisible; a name of marks only shows
+  // nothing. After a symbol, a punctuation mark, a digit or an ideograph it selects a presentation: allowed.
+  [
+    '\u{FE0F}',
+    '\u{FE0F}\u{FE0F}',
+    'Anna\u{FE0F}',
+    'Ann\u{FE00}a',
+    'Ann\u{E0101}a',
+    '\u{E0101}',
+    '\u{301}',
+    '\u{301}\u{302}',
+    'Anna\u{FFF0}'
+  ].forEach(n => assert.strictEqual(h(n), true, JSON.stringify(n)));
+  [
+    'Kai 1\u{FE0F}\u{20E3}',
+    'Mia \u{263A}\u{FE0F}',
+    'Ben \u{203C}\u{FE0F}',
+    'Lin \u{845B}\u{E0100}',
+    'Zoe\u{301}',
+    'Ivy \u{2764}\u{FE0F}\u{200D}\u{1F525}'
+  ].forEach(n => assert.strictEqual(h(n), false, JSON.stringify(n)));
 });
 
 test('nameCut: at most 40 code units, cut at a whole character, never inside an emoji; a name within the limit is kept', () => {
@@ -193,7 +214,9 @@ test('the sheet: a new name that looks like a taken one, or holds an invisible c
     [ZWNJ, 'invisible'],
     [RLO, 'invisible'],
     [LRM, 'invisible'],
-    ['Xi\u{200B}ao', 'invisible'] // invisible, though like no taken name
+    ['Xi\u{200B}ao', 'invisible'], // invisible, though like no taken name
+    ['\u{FE0F}', 'invisible'], // a variation selector alone: no visible name at all
+    ['Tom\u{FE0F}', 'invisible']
   ].forEach(([name, why]) => {
     const g = s.get({name, pin: '1234'});
     assert.deepStrictEqual([g.ok, g.found, g.taken], [true, false, why], JSON.stringify(name) + ' load');

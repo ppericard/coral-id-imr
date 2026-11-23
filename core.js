@@ -3852,17 +3852,22 @@
   // nothing (the combining grapheme joiner, the Hangul fillers, the Khmer inherent vowels, the Mongolian variation
   // selectors, the Braille blank). An emoji's own joiner stays: a zero-width joiner between two pictographs (woman
   // scientist: woman, joiner, microscope) and the tags of a flag (England, Scotland, Wales) draw one emoji, not an
-  // invisible mark.
+  // invisible mark. A variation selector (and the reserved code points among the default-ignorable ones) is invisible
+  // too, except right after a symbol, a punctuation mark or a digit (an emoji's presentation: a red heart, a double
+  // exclamation mark, a keycap) or a letter of a script without case (an ideograph's variant). A name with nothing visible left (only marks, say) is refused too.
   // (Escapes only, here and below: an invisible character written as it is would be invisible in the code too.)
-  const NAME_HIDDEN = /[\p{Cf}\p{Cc}\u{2028}\u{2029}\u{034F}\u{115F}\u{1160}\u{17B4}\u{17B5}\u{180B}-\u{180F}\u{2800}\u{3164}\u{FFA0}]/u;
+  const NAME_HIDDEN =
+    /[\p{Cf}\p{Cc}\u{2028}\u{2029}\u{034F}\u{115F}\u{1160}\u{17B4}\u{17B5}\u{180B}-\u{180F}\u{2800}\u{3164}\u{FE00}-\u{FE0F}\u{FFA0}\u{FFF0}-\u{FFF8}\u{E0000}-\u{E0FFF}]/u;
   const NAME_EMOJI_ZWJ = /(\p{So}[\u{FE0F}\u{1F3FB}-\u{1F3FF}]?)\u{200D}(?=\p{So})/gu,
-    NAME_FLAG_TAGS = /\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F}/gu;
-  const nameHidden = name =>
-    NAME_HIDDEN.test(
-      String(name == null ? '' : name)
-        .replace(NAME_FLAG_TAGS, '\u{1F3F4}')
-        .replace(NAME_EMOJI_ZWJ, '$1')
-    );
+    NAME_FLAG_TAGS = /\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F}/gu,
+    NAME_VS_OK = /([\p{S}\p{P}\p{N}\p{Lo}])[\u{FE00}-\u{FE0F}\u{E0100}-\u{E01EF}]/gu;
+  const nameHidden = name => {
+    const s = String(name == null ? '' : name)
+      .replace(NAME_FLAG_TAGS, '\u{1F3F4}')
+      .replace(NAME_EMOJI_ZWJ, '$1')
+      .replace(NAME_VS_OK, '$1');
+    return NAME_HIDDEN.test(s) || (s !== '' && !/[^\s\p{M}]/u.test(s.replace(NAME_IGNORED, '')));
+  };
   // Greek and Cyrillic letters that look like a Latin letter, each with that letter: every entry of Unicode's
   // confusables data (UTS #39, https://www.unicode.org/Public/security/latest/confusables.txt, version 18.0.0) whose source
   // is a letter of U+0370-U+04FF and whose prototype is one ASCII letter. One change: the capital Greek iota Ι and the
