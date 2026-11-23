@@ -203,7 +203,7 @@ function doGet_(e){
   // for the hourly Health check; the app ignores it.
   if (e.parameter.stats) { TIM_.op = 'stats'; const sid = statsSid_(e.parameter.s), st = statsServed_(sid) || stats_(true, sid), vs = selfVersionsGet_();
     const out = {ok: st.ok, s: sid, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt};
-    if (vs && vs.n >= SELF_VERSIONS.WARN) out.vers = vs.n;
+    if (vs && typeof vs.n === 'number' && vs.n >= SELF_VERSIONS.WARN) out.vers = vs.n;
     return json_(out); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
@@ -3921,7 +3921,7 @@ function autoUpdate_(){
     deps.forEach(d => api('put', '/deployments/' + d.deploymentId, {deploymentConfig: {versionNumber: ver.versionNumber, manifestFileName: 'appsscript', description: 'v' + dv + ' (auto)'}}));
     props.deleteProperty('AUTO_PENDING');
     log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update') + ', from ' + branch);
-    try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { log('version count: ' + e.message); }  // the deploy itself is done
+    try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { log('version count: ' + e.message); selfVersionsFailed_(); }  // the deploy itself is done; the up-to-date runs try again
     return 'deployed v' + dv;
   } catch (e) {
     // Google's 429 at POST /versions is the version limit (RESOURCE_EXHAUSTED, "Cannot create more versions"): said plainly,
@@ -3947,15 +3947,15 @@ function selfApi_(method, path, body){
 // a day); at 200, POST /versions answers 429 and the script can no longer update itself (2026-11-22: 36 hours stuck at
 // v218 until old versions were deleted by hand). The API can list versions but not delete one (projects.versions:
 // create, get, list), so only a person can free them: the Apps Script editor, Project history. The script counts them
-// after each deploy, and again every RECOUNT while the count is at WARN or over (so a clean-up is seen without waiting
-// for the next deploy). At WARN or over it writes one line to the Alerts tab (the admin's To do > Alerts) and the
+// after each deploy, and from the up-to-date runs at most every RECOUNT while no count is kept, the last one failed, or
+// it is at WARN or over (so a clean-up is seen without waiting for the next deploy). At WARN or over it writes one line to the Alerts tab (the admin's To do > Alerts) and the
 // Deploy log, at most once every ALERT, with the count and what to do; a 429 at POST /versions is counted as MAX. The
-// last count is the Script Property AUTO_VERSIONS ({n, at, alerted}: times in ms), and while it is at WARN or over the
+// last count is the Script Property AUTO_VERSIONS ({n, at, alerted, failed}: times in ms, n null before a good count), and while it is at WARN or over the
 // public stats reply carries it as `vers` (doGet_), so the hourly Health check names the limit (tools/health.py): a
 // number of versions, nothing about anyone.
 const SELF_VERSIONS = {MAX: 200, WARN: 170, RECOUNT: 3600000, ALERT: 86400000, PAGE: 50, PAGES: 10};
 function selfVersionsGet_(){
-  try { const s = JSON.parse(PropertiesService.getScriptProperties().getProperty('AUTO_VERSIONS') || 'null'); return s && typeof s.n === 'number' ? s : null; } catch (e) { return null; }
+  try { const s = JSON.parse(PropertiesService.getScriptProperties().getProperty('AUTO_VERSIONS') || 'null'); return s && typeof s.at === 'number' ? s : null; } catch (e) { return null; }
 }
 // The number of versions the project keeps (GET /versions, page by page; PAGES pages at most, far past MAX).
 function selfVersionsCount_(){
@@ -3984,13 +3984,22 @@ function selfVersionsSave_(n, log){
   }
   PropertiesService.getScriptProperties().setProperty('AUTO_VERSIONS', JSON.stringify(s));
 }
-// From a run that finds the script up to date: counts again while the last count was at WARN or over and is RECOUNT old.
-// Never throws: a failed count waits RECOUNT too.
+// A count that failed: the last good count kept (n, null when none), the try's time, `failed`, so the next try waits
+// RECOUNT. Never throws.
+function selfVersionsFailed_(){
+  try { const was = selfVersionsGet_() || {}, s = {n: typeof was.n === 'number' ? was.n : null, at: Date.now(), failed: true};
+    if (was.alerted) s.alerted = was.alerted;
+    PropertiesService.getScriptProperties().setProperty('AUTO_VERSIONS', JSON.stringify(s)); } catch (e) {}
+}
+// From a run that finds the script up to date: counts when no count is kept yet (the install of the version that brought
+// the count was finished by the updater before it, which counts nothing), when the last count failed, or while it was at
+// WARN or over; never more than once every RECOUNT once a count or a try is kept (a failing API is not asked every run).
+// A good count under WARN is only renewed by the next deploy. Never throws.
 function selfVersionsRun_(log){
   const s = selfVersionsGet_();
-  if (!s || s.n < SELF_VERSIONS.WARN || Date.now() - s.at < SELF_VERSIONS.RECOUNT) return;
-  try { selfVersionsSave_(selfVersionsCount_(), log); }
-  catch (e) { try { s.at = Date.now(); PropertiesService.getScriptProperties().setProperty('AUTO_VERSIONS', JSON.stringify(s)); } catch (x) {} }
+  if (s && !s.failed && typeof s.n === 'number' && s.n < SELF_VERSIONS.WARN) return;
+  if (s && Date.now() - s.at < SELF_VERSIONS.RECOUNT) return;
+  try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { selfVersionsFailed_(); }
 }
 
 // One-shot data migrations (rule W3: no backward compatibility): the code that

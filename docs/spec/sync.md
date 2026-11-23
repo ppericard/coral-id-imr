@@ -984,8 +984,9 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
 - **The version limit** (`SELF_VERSIONS`; the 2026-11-22 incident): Google keeps at most 200 versions a project and
   each install saves one (about 10 a day); at 200 `POST /versions` answers 429 and the script cannot update itself. The
   API cannot delete a version, so only a person can free them (Apps Script editor, Project history). After each deploy
-  the script counts its versions (`selfVersionsCount_`), and again every hour while the count is 170 or more
-  (`selfVersionsRun_`, so a clean-up is seen without a deploy); from 170 it writes one line a day to the Alerts tab and
+  the script counts its versions (`selfVersionsCount_`), and an up-to-date run counts at most once an hour while no
+  count is kept (the install that brought the count was finished by the updater before it), the last count failed, or
+  it is 170 or more (`selfVersionsRun_`, so a clean-up is seen without a deploy); from 170 it writes one line a day to the Alerts tab and
   the Deploy log with the count and what to do (`selfVersionsSave_`). A 429 at `POST /versions` reads "error: version
   limit reached: delete old versions …" in the Deploy log (counted as 200; `AUTO_PENDING` finishes the update after the
   clean-up). While the count is 170 or more the public `?stats=1` reply carries it as `vers` (the app ignores it), for

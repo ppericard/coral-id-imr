@@ -336,6 +336,8 @@ const resp = (code, body) => ({
   getResponseCode: () => code,
   getContentText: () => (typeof body === 'string' ? body : JSON.stringify(body))
 });
+// An up-to-date run with no version count kept yet counts the versions (Code.gs selfVersionsRun_), nothing else.
+const COUNT_ONLY = 'get /versions?pageSize=50';
 function fakeGoogle(remote) {
   const calls = [];
   return {
@@ -370,7 +372,7 @@ test('autoUpdate: same version on GitHub does nothing', () => {
   const g = fakeGoogle(CODE),
     s = loadCodeGs({fetch: g.fetch});
   assert.match(s.ctx.autoUpdate(), /^up to date/);
-  assert.deepStrictEqual(g.calls, []);
+  assert.deepStrictEqual(g.calls, [COUNT_ONLY], 'nothing installed: only the version count (none kept yet)');
 });
 test('autoUpdate: a higher version is installed and the web app deployment repointed', () => {
   const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
@@ -398,7 +400,7 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
 
 // The Apps Script version limit (Code.gs SELF_VERSIONS; the 2026-11-22 incident: 200 versions kept, every POST /versions
 // answered 429 for 36 hours). `v.kept`: the versions the project keeps, served by GET /versions 50 a page; `v.full`: POST
-// /versions answers Google's 429 RESOURCE_EXHAUSTED. Both can change between runs (a person deleted old versions).
+// /versions answers Google's 429 RESOURCE_EXHAUSTED; `v.down`: GET /versions answers 503 (the count fails). All can change between runs (a person deleted old versions).
 function fakeVersions(remote, v) {
   const g = fakeGoogle(remote);
   return {
@@ -422,6 +424,7 @@ function fakeVersions(remote, v) {
       }
       if (api && m === 'get' && path === '/versions') {
         g.calls.push('get ' + p);
+        if (v.down) return resp(503, 'unavailable');
         const q = u.searchParams,
           from = Number(q.get('pageToken') || 0),
           to = Math.min(v.kept, from + Number(q.get('pageSize')));
@@ -523,12 +526,50 @@ test('versions: a 429 at POST /versions is said plainly, the update stays pendin
   assert.strictEqual(alerts(s).length, 1);
 });
 
+test('versions: with no count kept (the install was finished by the updater before), an up-to-date run counts', () => {
+  const v = {kept: 185},
+    g = fakeVersions(CODE, v),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.props.AUTO_VERSIONS, undefined);
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.strictEqual(g.calls.filter(c => c.startsWith('get /versions')).length, 4, 'counted at once');
+  assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).n, 185);
+  assert.match(alerts(s)[0], /^sheet script versions: 185 of 200 kept/);
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, 185);
+});
+
+test('versions: a failed count is tried again from the up-to-date runs, at most once an hour', () => {
+  const v = {kept: 175, down: true},
+    g = fakeVersions(CODE, v),
+    s = loadCodeGs({fetch: g.fetch});
+  const asked = () => g.calls.filter(c => c.startsWith('get /versions')).length;
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.strictEqual(asked(), 1, 'tried, failed');
+  const st = JSON.parse(s.props.AUTO_VERSIONS);
+  assert.strictEqual(st.failed, true);
+  assert.strictEqual(st.n, null, 'no count known yet');
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, undefined);
+  s.ctx.autoUpdate();
+  assert.strictEqual(asked(), 1, 'not asked again within the hour');
+  v.down = false;
+  s.props.AUTO_VERSIONS = JSON.stringify({...st, at: st.at - 3600000});
+  s.ctx.autoUpdate();
+  assert.strictEqual(asked(), 5, 'an hour later: counted (4 pages)');
+  assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).n, 175);
+  assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).failed, undefined);
+  // A failed count after a deploy is kept as failed too, with the last good count: the up-to-date runs then retry it.
+  v.down = true;
+  const t = loadCodeGs({fetch: fakeVersions(NEXT, v).fetch});
+  t.props.AUTO_VERSIONS = JSON.stringify({n: 120, at: Date.now() - 86400000});
+  assert.match(t.ctx.autoUpdate(), /^deployed v/);
+  assert.match(deployLog(t)[1], /^version count: GET \/versions\?pageSize=50 503/);
+  assert.deepStrictEqual((({n, failed}) => ({n, failed}))(JSON.parse(t.props.AUTO_VERSIONS)), {n: 120, failed: true});
+});
+
 test('versions: an up-to-date run counts again only while the count is high, at most once an hour', () => {
   const v = {kept: 150},
     g = fakeVersions(CODE, v),
     s = loadCodeGs({fetch: g.fetch});
-  assert.match(s.ctx.autoUpdate(), /^up to date/);
-  assert.deepStrictEqual(g.calls, [], 'no count known: nothing asked (counted after each deploy)');
   s.props.AUTO_VERSIONS = JSON.stringify({n: 120, at: Date.now() - 7200000});
   s.ctx.autoUpdate();
   assert.deepStrictEqual(g.calls, [], 'a low count is not counted again');
@@ -577,7 +618,7 @@ test('autoUpdate reads release, never main, once release exists: main is ahead o
     s = loadCodeGs({fetch: g.fetch});
   assert.match(s.ctx.autoUpdate(), /^up to date/);
   assert.deepStrictEqual(g.seen, ['release/Code.gs']);
-  assert.deepStrictEqual(g.calls, []);
+  assert.deepStrictEqual(g.calls, [COUNT_ONLY], 'nothing installed');
 });
 
 test('autoUpdate installs the release branch: its code and its manifest, the version says where from', () => {
@@ -613,7 +654,7 @@ test('autoUpdate with no release branch and main up to date: up to date, nothing
     s = loadCodeGs({fetch: g.fetch});
   assert.match(s.ctx.autoUpdate(), /^up to date/);
   assert.deepStrictEqual(g.seen, ['release/Code.gs', 'main/Code.gs']);
-  assert.deepStrictEqual(g.calls, []);
+  assert.deepStrictEqual(g.calls, [COUNT_ONLY], 'nothing installed');
   assert.ok(
     Object.keys(s.props).some(k => /^ONCE_/.test(k)),
     'the one-shot migrations ran: the up-to-date path was reached through the fallback'
