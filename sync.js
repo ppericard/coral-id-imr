@@ -1755,10 +1755,11 @@ function pvRecover(now = Date.now()) {
   const L = pvLive(),
     old = Object.keys(L).filter(k => k !== PVI && !(now - Date.parse((L[k] || {}).t) < PV_STALE));
   if (!old.length) return;
-  const out = old.map(k => L[k]);
+  const out = old.map(k => L[k]),
+    q = new Set(store.get(EVQ, []).map(x => x && x.id)); // one already queued by another page at the same moment
   old.forEach(k => delete L[k]);
   store.set(PVLIVE, L); // out of the store first: another page never queues it again
-  out.filter(x => x && typeof x === 'object' && x.r && typeof x.r === 'object').forEach(x => ev('pages', x));
+  out.filter(x => x && typeof x === 'object' && x.r && typeof x.r === 'object' && !q.has(x.id)).forEach(x => ev('pages', x));
 }
 setInterval(() => {
   if (document.visibilityState !== 'visible') return;

@@ -506,6 +506,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
         PVI: vi,
         pagesTake: C.pagesTake,
         pagesResume: C.pagesResume,
+        EVQ: 'reefid-evq',
         pagesScreen: () => ({}),
         answersSoFar: () => 3,
         pvOwner: () => owner,
@@ -676,6 +677,18 @@ test('a page killed without a hidden event: its summary queued by the next page,
     [['visitm', {'practice.quiz': [1, 2]}]]
   );
   refuse = false;
+  // Two pages opened at the same moment both find the copy: the one already in the shared queue is not queued again.
+  Q.length = 0;
+  const M = page('visitn');
+  M.open('quiz');
+  clock += 2000;
+  M.pvKeep();
+  LS.set('reefid-evq', JSON.stringify([{...copies().visitn, k: 'pages'}]));
+  clock += 300000;
+  page('visito');
+  assert.strictEqual(Q.length, 0);
+  assert.ok(!live().includes('visitn'));
+  LS.delete('reefid-evq');
   // At most PV_KEEP copies, the newest.
   const N = Number(/PV_KEEP = (\d+)/.exec(src)[1]);
   for (let i = 0; i < N + 3; i++) {
