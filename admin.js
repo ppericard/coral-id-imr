@@ -11616,6 +11616,21 @@ function bindGroups() {
   bulk('data-gall', true);
   bulk('data-gnone', false);
 }
+// Accounts whose names look alike (core.js nameAlikePairs: a Cyrillic a, U+0430, for a Latin a, a decomposed accent, a zero-width
+// space), players and archives, made before the sheet refused them (REE-35): a warning line above the players, '' when
+// none. Nothing is renamed or merged: Merge, Archive or Delete stay the admin's choice.
+// Each name as written, every character outside Latin's letters shown as its code point (‹U+0410›), so the two differ on
+// screen.
+const alikeLine = Us => {
+  const G = nameAlikePairs([...((Us && Us.users) || []), ...((Us && Us.archived) || [])].map(u => u.name)),
+    shown = n =>
+      Array.from(n, c =>
+        /[\u{20}-\u{7E}\u{A1}-\u{AC}\u{AE}-\u{24F}]/u.test(c) ? c : `‹U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}›`
+      ).join('');
+  return G.length
+    ? `<p class="warn adm-ualike">Names that look alike: ${G.map(g => g.map(n => `<b>${esc(shown(n))}</b>`).join(' and ')).join('; ')}</p>`
+    : '';
+};
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
@@ -11774,6 +11789,7 @@ function renderUsers() {
       ['Not signed in', anon.length]
     ]) +
     (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
+    alikeLine(USERS) +
     gLine +
     (cohortOn() && U.some(u => u.cohort)
       ? `<p class="adm-ugroup adm-ucoh"><span>${cohortsOf()
@@ -12005,10 +12021,12 @@ function bindUsers() {
     b =>
       (b.onclick = () => {
         const name = b.dataset.uarch,
-          into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
+          // A new name: NFC, cut at a whole character (core.js nameClean, as the sheet makes it: REE-35).
+          into = nameClean(prompt(`Archive "${name}" under which name?`, `${name}-test`) || '');
         if (!into || into === name) return;
-        // A reserved name (core.js reservedName) is refused here as the sheet refuses it.
+        // A reserved name (core.js reservedName) is refused here as the sheet refuses it, and an invisible character too.
         if (reservedName(into)) return toast(`"${into}" is a reserved name: please choose another.`);
+        if (nameHidden(into)) return toast(`"${into}" holds an invisible character: please type it again.`);
         if (
           !confirm(
             `Archive "${name}" as "${into}"?\n\nTheir answers, reports and progress are kept apart under "${into}", out of the leaderboard, the players, the beta groups and every count; their answers still rate the photos. Their devices are told the record was archived and asked to sign out.\n"${name}" is free again: its owner can sign in under it and start fresh.`
@@ -12018,7 +12036,7 @@ function bindUsers() {
         userPost({userArchive: {from: name, into}})
           .then(j =>
             j && j.error === 'exists'
-              ? toast(`"${into}" is already a player.`)
+              ? toast(j.why === 'lookalike' ? `"${into}" looks like a player's name.` : `"${into}" is already a player.`)
               : j && j.error === 'reserved'
                 ? toast(`"${into}" is a reserved name: please choose another.`)
                 : done(`"${name}" archived as "${into}".`, j)
