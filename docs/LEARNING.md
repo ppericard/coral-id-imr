@@ -734,7 +734,9 @@ The answer log is the reference (rule D9). The sheet replays each player's whole
 (`core.js` `replayProgress`, `replayedOf`; "Full replay" below), whenever a rules version is added (`core.js` `RVS`, the
 fish's `FISH_RVS`, the sea slugs' `SEASLUG_RVS`; rule D5), and every device adopts the replay once (`sync.js`
 `replayAdopt`). The replay's record of a unit and its answer count win over the saved copy, also when the copy holds
-more answers; a unit the log has no answer on loses the answers the copy counts. There is no floor: a bar may go down.
+more answers; a unit the log has no answer on loses the answers the copy counts. The level's answer count follows the
+log the same way (rules version 15, fish 7, sea slugs 4); the app's checkpoints count on an answer clock of their own
+(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). There is no floor: a bar may go down.
 A recalculation is silent, a learned mark taken away included (rule D6), and every leaderboard follows at once (rule D8).
 
 ### Fish on the same model
@@ -1480,9 +1482,10 @@ replay".
   move and volatility, run, the later last answer `at`, a duel won on either side, variant groups left `vl`; the photos
   seen per photo the larger of the two sides, since the device also counts as shown a corallites hint revealed after the
   answer, which the log leaves out and the exam must not meet as new), `pm` 1 and the rules version (so `mergeProgress`
-  keeps it over an older copy of the same answers); for the global level, the replay's ability and the larger answer
-  count (`answersSoFar` keys the exam's gaps, the cards met and the prompts, so it never goes back) with the answer
-  times `rt` of the same side, and no ability when the log has no answer at all. A unit the log has answers on takes the
+  keeps it over an older copy of the same answers); for the global level, the replay's ability, typed opportunities,
+  answer times `rt` and answer count (rules version 15: the exam's gaps, the cards met and the prompts count on the
+  device's answer clock, `model.js` `tally`, which never goes back), and, when the log has no answer at all, no level
+  if the copy's counts answers (as a unit). A unit the log has answers on takes the
   replay's record and counts even when the saved copy holds more there (counted twice: a reply lost, then another
   device's save); the copy's counts and recent results only when none of its answers is replayable. From the device,
   what the log cannot give: the mastery exam passed or in course (the exam is not replayed), dropped when a miss logged
@@ -1993,6 +1996,11 @@ learning change".
   JSON) and those below. Each run (profile × seed) gets a fresh browser context; seeds are 1..N (`--seed0` shifts them,
   for fresh seeds), and the app's `Math.random` and the learner's own generator are both seeded from the seed, so a run
   repeats and two versions of the app compare on paired seeds. The fish's surprise questions are left out of the path.
+  The learner's answer goes in through `tests/answer.js` (`smokeAnswer`), as in the smokes: a typed answer is the
+  unit's name, and an answer the app does not take stops the run with what is on screen. Fish runs before this
+  (REE-249) typed a family's id (`f:Damselfishes`): the form read it as "So close!" and never took it, so a typed
+  question the learner got right came back unanswered for up to about a thousand answers, counted right by the learner
+  and by nothing in the app.
 - **Photo ratings**: `--stats` loads a `?stats=1` reply of the sync sheet, a file (fetched with an `av`, or the sheet
   logs the read as an old app) or `live` (read at start with `av=learnsim`); without it every photo's difficulty is 0,
   as in CI. The learner meets the app's own `photoDiff` unless `--truth` fixes its world: a file
