@@ -431,9 +431,9 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     The new candidates wait unjudged and out of play for the judging pass (rule P7);
   - **Pierre's own observations: the fish's rule** (rule P1's fish exception, rule S2): identified to the species
     they are usable even when Needs ID (`ni`), his photos whatever their licence, read by `fetch_fish.usable_obs`
-    itself; asked on his own search (`--own`: that search only, every species together) and taken first within the room
-    the target leaves, as the fish's `select` takes them (a full list takes none until the judging frees room); never
-    boosted, judged on the rubric like any candidate;
+    itself; asked on his own search (`--own`: that search only, every species together) and taken first, so none is left
+    out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the
+    rubric like any candidate;
   - it reuses `fetch_fish.py`'s searches, cache and pacing (~1 request/s, cached in
     `tools/.cache/seaslug_photos.json`). The file has `data/fish-cand.json`'s shape and record fields, keyed by the species'
     iNaturalist taxon id, `f` = `seaslug-<taxon id>-cand-<photo id>` (the docstring lists the differences);

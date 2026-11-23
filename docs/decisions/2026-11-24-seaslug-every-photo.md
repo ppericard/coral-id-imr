@@ -23,11 +23,12 @@ do: «D'accord pour que par défaut on fasse partout pareil !».
   `TOPUP_MAX` 40 requests, rule C7). The first run: 5,162 observations, 26 requests, 2,563 photos added, none judged.
 - The new candidates stay unjudged and out of play. Judging them is a pass over more than 100 photos: it needs Pierre's
   explicit OK with the count (rule P7).
-- Same rule for what frees room and for Pierre's own observations (integrator's call on «par défaut on fasse partout
-  pareil»: a difference with no written reason is aligned, easy to correct): a candidate Pierre rejected, excluded
-  or sent elsewhere, or the judging set aside for sure (`dup`), frees its place as the fish's (`fetch_fish.state`,
-  `sure_out`), and his own observations come first within the room the target leaves, with no ceiling above it: the
-  fish keep none.
+- Same rule for what frees room (integrator's call on «par défaut on fasse partout pareil»: a difference with no
+  written reason is aligned, easy to correct): a candidate Pierre rejected, excluded or sent elsewhere, or the judging set
+  aside for sure (`dup`), frees its place as the fish's (`fetch_fish.state`, `sure_out`).
+- Pierre's own observations are not aligned here: the sea slugs keep room for them up to `max` (30) on a full list, the
+  fish keep none. Which way to align (both keep room, or neither) reduces or grows what his own photos get, so it waits
+  for his choice; it is an open difference in the PR.
 - Implementation details (his own observations not first in genus-level lists, as before; the 40-request stop) are the
   integrator's call, easy to correct.
 
@@ -35,6 +36,6 @@ do: «D'accord pour que par défaut on fasse partout pareil !».
 
 - `tools/fetch_seaslugs.py` `usable`, `usable_gl`, `pick`, `held`, `kept_of`, `stages`, `fill`, `eggs_back`, `topup`;
   tests `tests/seaslugcand.test.js`; `docs/spec/tools.md`, `judging/SEASLUG.md`.
-- `Gone`, `held`, `room_of` replace the egg-only `held` and the `max` ceiling for his own (`own_room`); `fetch_fish.state`
-  takes the subject's part of curation.json and data/suggest.json.
+- `Gone` replaces the egg-only count in `held`; `fetch_fish.state` takes the subject's part of curation.json and
+  data/suggest.json.
 - The judging files need an explicit `keep` for an observation with several candidates (exactly one `best`).

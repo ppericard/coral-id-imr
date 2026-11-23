@@ -28,8 +28,6 @@ sea-slug decisions:
   under the same rules as a new candidate (still that taxon, Research Grade or agreed, never annotated Egg or Dead, the
   licences); one without one leaves the place to the next observation. The egg-mass record stays (its judgement keeps it
   out).
-- Pierre's own observations come first within the room the target leaves, as the fish's (fetch_fish.select), never above
-  it: a list with no room takes none, and the room the judging frees goes to his first.
 - A photo of an observation Pierre sent elsewhere or out of a list (curation.json "seaslug" `out`) brings no other photo
   of that observation, as the fish's `known` (his identification is in doubt).
 - Identity: Research Grade at the species level (or below), never captive. Pierre's own observations (iNaturalist user
@@ -37,8 +35,9 @@ sea-slug decisions:
   ID"; rule P1's fish exception, rule S2): one identified to the species (the observation's taxon at species level or
   below, whoever named it) is usable even when Needs ID, and his photo even without a licence, as fetch_fish.usable_obs
   reads them (this tool calls it). They are asked on their own search (fetch_fish.queries "own": Research Grade and
-  Needs ID, any place, abroad kept inside the Indo-West Pacific) and taken first within the room the target leaves, as
-  fetch_fish.select takes them (the fish's room, no more: a full list takes none until the judging frees room). Never boosted: they wait
+  Needs ID, any place, abroad kept inside the Indo-West Pacific) and taken first, as fetch_fish.select takes them, so
+  none is left out: within the photo target on a new list, and on a list already full (filled before 2026-11-16) on
+  top of it, up to the ceiling `max` (30), since a candidate already there is never removed. Never boosted: they wait
   for the judging pass like any candidate, on the same rubric, and play by their judged ease. `own` marks them, `ni`
   the Needs ID ones (as fetch_fish.record).
 - Licences (rule P1): CC0, CC BY, CC BY-NC only, never share-alike nor ND (Pierre's own photos whatever their licence,
@@ -611,15 +610,16 @@ def topup_jobs(have, inf, only=()):
     return jobs
 
 
-def room_of(L, cap, gone=frozenset()):
-    """The room a list L has left under its target cap, as the fish's (fetch_fish.species_room): what the candidates still
-    usable take (held) is taken off; a full list has none, for Pierre's own observations too."""
-    return max(0, cap - held(L, gone))
+def own_room(L, T, gone=frozenset()):
+    """The room for Pierre's own observations in a list L: up to the ceiling `max`, so on a list the others already
+    filled to its target his still come (a candidate already there is never removed); his count in the target after.
+    A candidate that frees room does not count (held)."""
+    return max(0, T.get("max", 0) - held(L, gone))
 
 
 def fill(net, s, L, T, pairs, used, own_only=False, gone=frozenset(), known=frozenset(), taken=None):
     """The new candidates of species s (L: its candidates already there), in room as the fish's cap counts it (held): Pierre's
-    own first (his search, every one usable within the room left: the fish's select takes his first), then the juvenile
+    own first (his search, every one usable up to own_room: the fish's select takes his first), then the juvenile
     room (Life Stage: Juvenile observations, the Philippines then abroad), then the rest (the Philippines, then abroad
     when their search was read to its end and room is left). An observation among the candidates brings its other photos,
     at their weight. own_only: his only, nothing else asked. gone: the candidates that count against nothing (Gone:
@@ -636,9 +636,9 @@ def fill(net, s, L, T, pairs, used, own_only=False, gone=frozenset(), known=froz
     # The room the usable observations of a search would take, counted as pick takes it (obs_cost).
     cost = lambda res: sum(obs_cost(kept.get(obs_url(x["id"]), 0), len(x["P"])) for x in it(res))  # noqa: E731
     got = []
-    if room_of(L, cap, gone):
+    if own_room(L, T, gone):
         own_obs = pages(net, Q["own"], lambda res: False)
-        got += pick([x for x in it(own_obs["results"]) if x["own"]], room_of(L, cap, gone), n, used, kept)
+        got += pick([x for x in it(own_obs["results"]) if x["own"]], own_room(L, T, gone), n, used, kept)
     if own_only:
         return got, {}
     have = held(L, gone) + spent(got)
@@ -752,7 +752,7 @@ def run(args):
         back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp",
                                            s.get("genus"), None) for s in S])
         # The admin's own for every species with room for them (his search, asked together: rule C7), then the general one.
-        prefetch(net, [s["inat"] for s in S if room_of(have.get(str(s["inat"]), []), target(s, T)[0], gone)], ["own"])
+        prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T, gone)], ["own"])
         if not own_only:
             prefetch(net, [s["inat"] for s in S if held(have.get(str(s["inat"]), []), gone) < target(s, T)[0]], ["ph"])
         for s in S:
