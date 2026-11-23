@@ -31,6 +31,14 @@ refuses the copy sends its own stale tally itself (no other page can have it). N
 five-visit limit is gone): only the pages in view and the killed pages not yet found have one, so the store stays small
 and a copy is never lost to a limit.
 
+**One writer per key** (integrator's decision, the same day, on a further review finding). The copies first lived in
+one shared map that every page read, changed and wrote back: two windows in view could interleave, one writing back a
+map read before the other's write, and drop the other's copy, lost if that page was then killed. Each visit now has a
+key of its own (`reefid-pv-live-<visit id>`): a page writes only its own key, and another page only reads one and
+removes it, found by listing the keys with that prefix. That removes the shared read-modify-write, and with it the
+whole class. Two pages taking the same copy at the same instant both send it under one id; the device's queue and the
+sheet's check of recent ids absorb that rare case. The shared map of the earlier build is removed at load.
+
 **Why the rule replaced the claim mechanism.** The first design had the live page find out whether another page had
 already queued its copy (a "claim"), by the copy being gone, then by a list of recovered ids, then reconciled at each
 place the tally changes. Codex found four problems in a row in that part (a copy pushed out by the five-visit limit, a
@@ -40,8 +48,9 @@ recovered-ids list and the claim checks are gone.
 
 ## Consequences
 
-`sync.js` `pvKeep`, `pvRecover`, `pvRoll`, `pvQueue`, `pvDone`, `pagesSend`, `fbTally`; the storage key `reefid-pv-live`,
-moved to the account at sign-in (with the page's own copy in memory) and dropped at sign-out like the queued summaries. A killed visit's summary arrives
+`sync.js` `pvKeep`, `pvRecover`, `pvRoll`, `pvQueue`, `pvDone`, `pagesSend`, `fbTally`, `pvTake`, `pvVisits`; the storage keys
+`reefid-pv-live-<visit id>`, moved to the account at sign-in (with the page's own copy in memory) and dropped at
+sign-out like the queued summaries. A killed visit's summary arrives
 later, with the time of its last write. Up to one beat (15 s) before a kill or a sleep is lost; a page that misses its
 beats for two minutes while in view starts a new tally (its summary is split, nothing counted twice). Specified in
 docs/spec/sync.md "Events and pages"; tested in `tests/pages.test.js` and the `visit` part of `tests/pages.smoke.js`.

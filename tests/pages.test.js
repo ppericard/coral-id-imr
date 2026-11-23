@@ -494,9 +494,18 @@ test('a page killed without a hidden event: its summary sent by whichever page s
   FD.now = () => clock;
   FD.parse = Date.parse;
   const store = {
-    get: (k, d) => (LS.has(k) ? JSON.parse(LS.get(k)) : d),
-    set: (k, v) => refuse || LS.set(k, JSON.stringify(v))
-  };
+      get: (k, d) => (LS.has(k) ? JSON.parse(LS.get(k)) : d),
+      set: (k, v) => refuse || LS.set(k, JSON.stringify(v))
+    },
+    // localStorage over the same map; writes: every key a page writes or removes, in order
+    writes = [],
+    localStorage = {
+      get length() {
+        return LS.size;
+      },
+      key: i => [...LS.keys()][i] || null,
+      removeItem: k => (writes.push(k), LS.delete(k))
+    };
   // ev as sync.js has it: into the shared queue (reefid-evq); Q logs every event queued.
   const ev = (k, o) => {
     const x = {k, ...plain(o)};
@@ -509,7 +518,8 @@ test('a page killed without a hidden event: its summary sent by whichever page s
     const beats = [],
       shows = [],
       ctx = {
-        store,
+        store: {get: store.get, set: (k, v) => (writes.push(k), store.set(k, v))},
+        localStorage,
         Date: FD,
         PV: C.pagesNew(),
         PVI: vi,
@@ -545,7 +555,8 @@ test('a page killed without a hidden event: its summary sent by whichever page s
       ...ctx.M
     };
   };
-  const copies = () => (LS.has('reefid-pv-live') ? JSON.parse(LS.get('reefid-pv-live')) : {}),
+  const P0 = 'reefid-pv-live-',
+    copies = () => Object.fromEntries([...LS.keys()].filter(k => k.startsWith(P0)).map(k => [k.slice(P0.length), JSON.parse(LS.get(k))])),
     live = () => Object.keys(copies()).sort(),
     reset = () => {
       Q.length = 0;
@@ -556,8 +567,11 @@ test('a page killed without a hidden event: its summary sent by whichever page s
     vsrc = block(src, '  } else {\n    pvRoll(Date.now());', '});', {file: 'sync.js'});
   assert.ok(rsrc.indexOf('pvRoll(') >= 0 && rsrc.indexOf('pvRoll(') < rsrc.indexOf('pagesOpen('), 'pagesRoute rolls first');
   assert.ok(vsrc.indexOf('pvRoll(') < vsrc.indexOf('pagesResume('), 'back in view: rolled first');
+  // The shared map of an earlier build is removed once, at load.
+  LS.set('reefid-pv-live', '{}');
   // Page A: the quiz 10 s, Genera 5 s; its copy is kept when a page opens and at each beat (15 s, in view only).
   const A = page('visita');
+  assert.ok(!LS.has('reefid-pv-live'));
   assert.deepStrictEqual(
     A.beats.map(([, ms]) => ms),
     [15000]
@@ -715,8 +729,34 @@ test('a page killed without a hidden event: its summary sent by whichever page s
     J.beat();
   }
   assert.strictEqual(Q.length, 0);
+  // Codex's interleaving: one window's beat between the other's read and write could drop the other's copy with a shared
+  // map. Now a page's beat writes only its own key, so both copies survive any order, and the one killed is sent.
+  writes.length = 0;
+  I.beat();
+  assert.ok(
+    writes.every(k => k === P0 + 'visitk'),
+    JSON.stringify(writes)
+  );
+  writes.length = 0;
+  J.pvKeep();
+  I.pvKeep();
+  assert.ok(writes.every(k => k === P0 + 'visitk' || k === P0 + 'visitl'));
+  assert.deepStrictEqual(
+    live().filter(k => k === 'visitk' || k === 'visitl'),
+    ['visitk', 'visitl'],
+    'both copies survive'
+  );
+  const jCopy = copies().visitl;
+  for (let i = 0; i < 9; i++) {
+    clock += 15000; // J killed; I in view
+    I.beat();
+  }
+  assert.deepStrictEqual(
+    Q.map(x => [x.vi, x.id]),
+    [['visitl', jCopy.id]]
+  );
+  reset();
   I.pagesSend();
-  J.pagesSend();
   // A device whose storage refuses the copy: the app left sends its summary as before.
   reset();
   refuse = true;

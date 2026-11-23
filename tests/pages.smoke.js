@@ -4783,9 +4783,8 @@ async function pagesVisit(b, base) {
       pvKeep();
       // Frozen from here (no event): its beat writes nothing while the second page opens.
       Object.defineProperty(document, 'visibilityState', {value: 'hidden', configurable: true});
-      const L = JSON.parse(localStorage.getItem('reefid-pv-live') || '{}'),
-        x = L[PVI];
-      if (x) localStorage.setItem('reefid-pv-live', JSON.stringify({...L, [PVI]: {...x, t: new Date(Date.now() - 180000).toISOString()}}));
+      const x = JSON.parse(localStorage.getItem('reefid-pv-live-' + PVI) || 'null');
+      if (x) localStorage.setItem('reefid-pv-live-' + PVI, JSON.stringify({...x, t: new Date(Date.now() - 180000).toISOString()}));
       pvAt = Date.now() - 180000; // its own clock agrees: the copy was written 3 minutes ago
       return x || null;
     });
@@ -4794,7 +4793,11 @@ async function pagesVisit(b, base) {
     await p2.goto(base);
     await p2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const Q = (await queued(p2)).filter(x => copy && x.vi === copy.vi),
-      left = await p2.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')));
+      left = await p2.evaluate(() =>
+        Object.keys(localStorage)
+          .filter(k => k.startsWith('reefid-pv-live-'))
+          .map(k => k.slice('reefid-pv-live-'.length))
+      );
     if (!copy || Q.length !== 1 || Q[0].id !== copy.id || !(Q[0].r['learn.genera'] || [])[0] || left.includes(copy.vi))
       fails.push(`pages summary of a killed page: ${JSON.stringify({copy, Q, left})}`);
     // The first page awake: its tally is stale, already queued; it starts a new one.
@@ -4807,9 +4810,10 @@ async function pagesVisit(b, base) {
     if (again.length !== 1) fails.push(`pages summary counted twice after a killed page's copy was queued: ${JSON.stringify(again)}`);
     const own = await p2.evaluate(() => {
       pagesRoute('quiz');
-      const before = (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o;
+      const mine = () => (JSON.parse(localStorage.getItem('reefid-pv-live-' + PVI) || 'null') || {}).o,
+        before = mine();
       signIn('Ana', '1234', {found: false});
-      return [before, (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o, (pvCopy || {}).o];
+      return [before, mine(), (pvCopy || {}).o];
     });
     if (!/^a:[a-z0-9]{10}$/.test(own[0] || '') || own[1] !== 'n:ana' || own[2] !== 'n:ana')
       fails.push(`pages summary copy at sign-in (stored, in memory): ${JSON.stringify(own)}`);

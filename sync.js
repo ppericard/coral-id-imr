@@ -1707,26 +1707,49 @@ const pagesWho = batch =>
       ? {ename: SYNC.name, epin: SYNC.pin, ...(SYNC.acct ? {eacct: SYNC.acct} : {})}
       : {eanon: anonId()};
 // The visit's summary kept on the device while it runs (docs/decisions/2026-11-23-pages-kept-copy.md), so a page killed
-// without a hidden event (the app or the phone stopped, a crash) still sends it: PVLIVE holds, per visit id, the summary
-// so far as pagesSend would queue it, written when a page opens and every PV_BEAT while in view (pvKeep), dropped when
-// the summary is queued (pvDone). One local rule, with no knowledge of other pages: a copy not written for PV_STALE is
-// sent as it is, under its own event id, by whichever page takes it out of the store first (another page: pvRecover, at
-// load and each beat; its own page: pvRoll, back in view or before its tally changes), and the live page never goes on
-// with a stale tally: it starts a new one under a new event id. The store entry is the token: a copy is sent by the page
-// that removed it, once, so nothing rests on the sheet's own check of recent ids. A copy stays until it is sent or
-// dropped: only the pages in view and the killed ones not yet found have one. Same event, same fields: an older sheet
-// script takes it as it is (rule D4).
-const PVLIVE = 'reefid-pv-live',
+// without a hidden event (the app or the phone stopped, a crash) still sends it: each visit keeps its summary so far, as
+// pagesSend would queue it, under a key of its own (PVLIVE + visit id), written when a page opens and every PV_BEAT while
+// in view (pvKeep), dropped when the summary is queued (pvDone). One writer per key: a page writes only its own key, and
+// another page only reads and removes one, so no page ever rewrites another's copy. One local rule, with no knowledge of
+// other pages: a copy not written for PV_STALE is sent as it is, under its own event id, by whichever page takes it out
+// of the store first (another page: pvRecover, at load and each beat; its own page: pvRoll, back in view or before its
+// tally changes), and the live page never goes on with a stale tally: it starts a new one under a new event id. The key
+// is the token: a copy is sent by the page that removed it; two pages taking it at the same instant are absorbed by the
+// queue's and the sheet's checks of the id. Only the pages in view and the killed ones not yet found have a key. Same
+// event, same fields: an older sheet script takes it as it is (rule D4).
+const PVLIVE = 'reefid-pv-live-',
   PV_BEAT = 15000,
   PV_STALE = 120000;
 let pvId = evId(),
   pvCopy = null, // this page's copy as last written, and when
   pvAt = 0,
   pvStored = false; // whether that write reached the store (else no other page can have it)
-const pvLive = () => {
-  const L = store.get(PVLIVE, null);
-  return L && typeof L === 'object' && !Array.isArray(L) ? L : {};
+const pvGet = vi => {
+  const x = store.get(PVLIVE + vi, null);
+  return x && typeof x === 'object' && !Array.isArray(x) ? x : null;
 };
+const pvDel = vi => {
+  try {
+    localStorage.removeItem(PVLIVE + vi);
+  } catch (e) {}
+};
+// The visit ids that have a copy on this device.
+function pvVisits() {
+  const out = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(PVLIVE)) out.push(k.slice(PVLIVE.length));
+    }
+  } catch (e) {}
+  return out;
+}
+// A copy taken out of the store: read, then removed.
+function pvTake(vi) {
+  const x = pvGet(vi);
+  if (x) pvDel(vi);
+  return x;
+}
 // A copy queued, unless this device's queue already holds its id.
 function pvQueue(x) {
   if (x && typeof x === 'object' && x.r && typeof x.r === 'object' && x.id && !store.get(EVQ, []).some(y => y && y.id === x.id))
@@ -1743,15 +1766,7 @@ function pvPeek(now) {
 function pvRoll(now) {
   if (!pvCopy || now - pvAt < PV_STALE) return;
   if (!pvStored) pvQueue(pvCopy);
-  else {
-    const L = pvLive(),
-      x = L[PVI];
-    if (x && x.id === pvCopy.id) {
-      delete L[PVI];
-      store.set(PVLIVE, L);
-      pvQueue(x);
-    }
-  }
+  else if ((pvGet(PVI) || {}).id === pvCopy.id) pvQueue(pvTake(PVI));
   const at = PV.at;
   pagesTake(PV, now);
   if (at) pagesResume(PV, now);
@@ -1761,35 +1776,25 @@ function pvKeep(now = Date.now()) {
   pvRoll(now);
   // The answer's feedback sheet still on screen: its seconds so far go in the tally (counted once, quiz.js fbEnd).
   if (typeof fbEnd === 'function') fbEnd(false);
-  const S = pvPeek(now),
-    L = pvLive();
+  const S = pvPeek(now);
   pvCopy = S
     ? {...pvFields(S), k: 'pages', t: new Date(now).toISOString(), pg: (location.hash || '#home').slice(1, 60), av: appVer()}
     : null;
   pvAt = now;
-  if (pvCopy) L[PVI] = pvCopy;
-  else delete L[PVI];
-  store.set(PVLIVE, L);
-  pvStored = !!pvCopy && (pvLive()[PVI] || {}).id === pvCopy.id;
+  if (pvCopy) store.set(PVLIVE + PVI, pvCopy);
+  else pvDel(PVI);
+  pvStored = !!pvCopy && (pvGet(PVI) || {}).id === pvCopy.id;
 }
 function pvDone() {
-  const L = pvLive();
-  if (PVI in L) {
-    delete L[PVI];
-    store.set(PVLIVE, L);
-  }
+  pvDel(PVI);
   pvCopy = null;
   pvStored = false;
   pvId = evId();
 }
 function pvRecover(now = Date.now()) {
-  const L = pvLive(),
-    old = Object.keys(L).filter(k => k !== PVI && !(now - Date.parse((L[k] || {}).t) < PV_STALE));
-  if (!old.length) return;
-  const out = old.map(k => L[k]);
-  old.forEach(k => delete L[k]);
-  store.set(PVLIVE, L); // taken out first: the page that removed a copy is the one that sends it
-  out.forEach(pvQueue);
+  pvVisits()
+    .filter(vi => vi !== PVI && !(now - Date.parse((pvGet(vi) || {}).t) < PV_STALE))
+    .forEach(vi => pvQueue(pvTake(vi)));
 }
 setInterval(() => {
   if (document.visibilityState !== 'visible') return;
@@ -1797,6 +1802,9 @@ setInterval(() => {
   pvRecover();
 }, PV_BEAT);
 window.addEventListener('pageshow', () => pvRoll(Date.now()));
+try {
+  localStorage.removeItem('reefid-pv-live'); // the one shared map of an earlier build
+} catch (e) {}
 pvRecover();
 // Load times (app.js loadMark): sent once a visit.
 function loadSend() {
@@ -1851,7 +1859,10 @@ function signIn(name, pin, j) {
       into = pagesOwner(SYNC);
     store.set(EVQ, pagesOwn(store.get(EVQ, []), from, into));
     // and the copies of summaries kept on the device (pvKeep), as they would have been queued
-    store.set(PVLIVE, Object.fromEntries(Object.entries(pvLive()).map(([k, x]) => [k, pagesOwn([x], from, into)[0]])));
+    pvVisits().forEach(vi => {
+      const x = pvGet(vi);
+      if (x && x.o === from) store.set(PVLIVE + vi, pagesOwn([x], from, into)[0]);
+    });
     if (pvCopy) pvCopy = pagesOwn([pvCopy], from, into)[0]; // and this page's own, as last written
   }
   try {
@@ -2002,7 +2013,7 @@ function signOutClear(all) {
     store.get(EVQ, []).filter(x => !(x && x.k === 'pages'))
   );
   // and their copies kept on the device (pvKeep); the visit's tally goes on, kept again at the next beat as the next player's.
-  store.set(PVLIVE, {});
+  pvVisits().forEach(pvDel);
   pvCopy = null;
   pvStored = false;
   // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
