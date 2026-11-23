@@ -1077,15 +1077,18 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   const P = plan();
   const pick = r => r && [r.room, r.parts, r.easy, r.unjudged];
   assert.ok(!P.short.s1, 'full, with 3 easy observations sure to come: not short');
-  assert.deepStrictEqual(pick(P.short.s2), [0, {}, 0, 2]);
-  assert.deepStrictEqual(P.at_cap, ['s2'], 'short of easy photos at the cap: the cap holds, nothing is fetched');
-  assert.deepStrictEqual(pick(P.short.s3), [2, {free: 2}, 0, 2], 'what Pierre rejected or sent elsewhere frees room');
-  assert.deepStrictEqual(pick(P.short.s4), [1, {free: 1}, 0, 3], 'what the pre-sort set aside for sure frees room');
-  assert.deepStrictEqual(pick(P.short.s7), [4, {free: 4}, 0, 0]);
-  // s5 was searched to the end 10 days ago: skipped; s6, 40 days ago: searched again (RECHECK_DAYS). The shortest first:
-  // short of easy photos with nothing waiting for the judging pass (s7), then the largest share of the cap missing.
+  // Short of easy adults (0 of 3): each may also take faved observations beyond its cap, 3 x 3 = 9 of room
+  // (beyond_cap, REE-243; tests/easyrefill.test.js); s2, at its cap, only that room.
+  assert.deepStrictEqual(pick(P.short.s2), [0, {faves: 9}, 0, 2]);
+  assert.deepStrictEqual(P.at_cap, [], 'at the cap, short of easy photos: only the faved room beyond it is open');
+  assert.deepStrictEqual(pick(P.short.s3), [2, {free: 2, faves: 9}, 0, 2], 'what Pierre rejected or sent elsewhere frees room');
+  assert.deepStrictEqual(pick(P.short.s4), [1, {free: 1, faves: 9}, 0, 3], 'what the pre-sort set aside for sure frees room');
+  assert.deepStrictEqual(pick(P.short.s7), [4, {free: 4, faves: 9}, 0, 0]);
+  // s5 was searched to the end 10 days ago (its "free" record covers the faved room: the same searches): skipped; s6,
+  // 40 days ago: searched again (RECHECK_DAYS). The shortest first: short of easy photos with nothing waiting for the
+  // judging pass (s7), then the largest share of the cap missing (s2, at its cap, last).
   assert.deepStrictEqual(P.skip, ['s5']);
-  assert.deepStrictEqual(P.pick, ['s7', 's3', 's6', 's4']);
+  assert.deepStrictEqual(P.pick, ['s7', 's3', 's6', 's4', 's2']);
   assert.deepStrictEqual(plan('--max', '2').pick, ['s7', 's3'], 'at most --max species a run (rule C7)');
   assert.deepStrictEqual(plan('--today', '2026-12-01').skip, [], 'a month later every species is searched again');
   // A part of the room not searched to the end (a juvenile room opened since) is searched, whatever the memory says.
@@ -1173,15 +1176,20 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.deepStrictEqual(ids(got.s1).slice(0, 3), ['10', '20', '40'], 'the decided candidates stay, once each');
   assert.deepStrictEqual(ids(got.s1).slice(3).sort(), ['50', '60', '7', '8'], 'never what Pierre rejected, excluded or sent elsewhere');
   assert.strictEqual(got.s2.length, 5, 'filled to its cap from the first page');
-  // s1 is still short (room 1) and its searches were read to the end: searched to the end today; s2 is full.
+  // s1 is still short (room 1) and its searches were read to the end: searched to the end today; s2 is full. Both,
+  // short of easy adults, kept their faved room beyond the cap (beyond_cap) and found no faved observation in
+  // searches read to the end: "faves" is searched to the end too.
   const M = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8'));
   // The record keeps the cap it was made under: a cap raised later (family_cap) opens it again.
-  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', parts: ['free'], cap: 5}});
+  assert.deepStrictEqual(M.end, {
+    s1: {at: '2026-11-06', parts: ['faves', 'free'], cap: 5},
+    s2: {at: '2026-11-06', parts: ['faves'], cap: 5}
+  });
   assert.ok(M._doc);
   const P = JSON.parse(run('--plan'));
-  assert.deepStrictEqual([P.pick, P.skip], [[], ['s1']], 'no iNaturalist request for it until the re-check');
-  assert.deepStrictEqual(JSON.parse(run('--plan', '--today', '2026-12-06')).pick, ['s1']);
-  // A rerun asks nothing more: nothing short but s1, which is skipped.
+  assert.deepStrictEqual([P.pick, P.skip], [[], ['s1', 's2']], 'no iNaturalist request for them until the re-check');
+  assert.deepStrictEqual(JSON.parse(run('--plan', '--today', '2026-12-06')).pick, ['s1', 's2']);
+  // A rerun asks nothing more: s1 and s2 are skipped.
   run('--offline');
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand, got);
   // Per part of the room: a phase still open whose searches were read to the end, or which got nothing, is searched to
