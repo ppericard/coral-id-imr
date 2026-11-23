@@ -178,7 +178,9 @@ test('the gate on every photo in play: a card only where its source says so, alw
   // saying the young differ.
   // The judging pass REE-197's fix unblocked, Remoras and Stargazers: 8 more juveniles in play with no card (Echeneis
   // naucrates, the observer's stage), on a species with no source saying the young differ.
-  assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1166, juvOff: 1981, subOn: 15, subOff: 0, noAdult: 0});
+  // The same pass, Convict blennies and Jawfishes: 43 more juveniles in play with a card (Pholidichthys leucotaenia
+  // schools, 3 by the observer's stage and 40 read on the photo; FishBase: the juveniles differ), each beside an adult.
+  assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1209, juvOff: 1981, subOn: 15, subOff: 0, noAdult: 0});
   // the 15 sub-adults in play (14 Diagramma pictum and the Diagramma melanacrum sweetlips; their young sourced as
   // different), under the same rule
   const c = card('fish-s596-cand-552119382');
