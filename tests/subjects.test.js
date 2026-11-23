@@ -726,7 +726,9 @@ test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).pool, 30);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ref, 3);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).early, 1.5);
-  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.5);
+  // The judged ease's weight measured on the fish answers (tests/priordiff.test.js); the sea slugs keep the default.
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.3);
+  assert.strictEqual(C.calibOf(C.subjectOf('seaslug')).ease, C.CALIB.ease);
   assert.ok(!C.refLevel({f: 'x'}) && !C.refLevel({f: 'x', q: 3}), 'a photo with no judged ease is never reference level');
   assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'p1g0slm', rep: 'inaturalist'}), 'never one with other kinds of fish (rule P3)');
   // Read from the photo's ease (4 or 5) and look alone, never from its route in.
