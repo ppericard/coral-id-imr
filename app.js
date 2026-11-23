@@ -1258,6 +1258,8 @@ const sciTop = (L, n) =>
     .sort(([, a], [, b]) => ((b.present || {}).dauinU || 0) - ((a.present || {}).dauinU || 0) || (b.cmi || 0) - (a.cmi || 0))
     .slice(0, n)
     .map(([u]) => u);
+// The stars among L (sciSpAll): the species whose record carries star (seaslug.json: the stars set, Q369 (c)).
+const sciStars = L => L.filter(u => !!((TREEU && TREEU.sps && TREEU.sps[GX(u).sp]) || {}).star);
 // The units in play a species by its scientific name may hang from (sciPlay up): the slate and the units the other
 // sets have in play (the fish's scientific genera; a sea slug genus is on the slate).
 const sciUp = () =>
@@ -2925,7 +2927,7 @@ const UNITS = {
     lede: 'The sea slug genera, by their scientific names, in their families. Photos: iNaturalist.',
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your sea slug learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), families with every genus at Advanced, the nudibranch genera and those of the other groups, the genera the quiz opens first at Advanced, and your sea slug % every 10 points. Never time spent. They are the sea slugs’ own: your coral and fish achievements are on their own sides. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your sea slug learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), families with every genus at Advanced, the nudibranch genera and those of the other groups, the genera the quiz opens first at Advanced, your sea slug % every 10 points, and the species at Advanced by their scientific names, the stars among them. Never time spent. They are the sea slugs’ own: your coral and fish achievements are on their own sides. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     listBy: 'family',
     progHelp: () =>
       `<p class="lede"><b>To learn a sea slug genus</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a genus back, for the genus you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. A <b>?</b> tile is a genus you have not met yet: it shows once it opens. The sea slugs have their own leaderboard and achievements.</p>`,
@@ -2939,6 +2941,8 @@ const UNITS = {
     // names (SCI_SP, the fish's own set), and their first one's card in its words: a sea slug player always had scientific
     // names, so the milestone is the first species, not the names.
     sets: [SCI_SP],
+    // Its top species, for the achievements (progress.js achSnap top; core.js SEASLUG_ACH ssstars): its stars.
+    top: () => sciStars(sciSpAll()),
     // The What I learn card's one names row: its species, by their scientific names (its genera are the base, always on).
     learn: [
       {
