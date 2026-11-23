@@ -232,6 +232,8 @@ ${idoor}
     </div>`;
     // A subject that declares what its data cites (UNITS about.cites) lists the sources its data file names, filled in once
     // the file is in (the player's copy when the subject has been in force, else its file, as the subject's Home reads it).
+    // The addresses of the hand-written lines of References: a derived line naming the same work is folded into them.
+    const hand = [...$v.innerHTML.matchAll(/<a href="(https?:[^"]+)"/g)].map(m => m[1]);
     ab.filter(a => a.cites).forEach(a => {
       const T = typeof treeOf === 'function' ? treeOf(a.id) : null,
         fill = html => {
@@ -240,7 +242,7 @@ ${idoor}
         };
       Promise.resolve((T && T.TREERAW && T.TREERAW.f) || UNITS[a.id].get.f())
         .then(f => {
-          const L = window.aboutCites(f, a.cites.in);
+          const L = window.aboutCites(f, a.cites.in, hand);
           if (!L.length) throw new Error('no sources');
           fill(
             L.map(
@@ -258,9 +260,35 @@ ${idoor}
   // reference (a species named by a paper), linked by its `doi`. A site cited by several pages (the Sea Slug Forum's fact
   // sheets) is one line, linked to the site (the address of the host as most of its pages spell it) with its pages counted;
   // a work cited at several places (a paper, a page) is one line, named by what the places share and linked to the work.
+  // A source the page already lists by hand (`own`, the addresses of its hand-written lines: WoRMS, Wikipedia) is not listed
+  // twice: a derived line is folded into the hand-written one when it names the same work, by its web address on the same
+  // host, or, with none, by its name (WoRMS, World Register of Marine Species; Wikipedia, English Wikipedia).
   // Returns [{name, url, pages}] by name.
-  window.aboutCites = function (file, parts) {
-    const found = [],
+  window.aboutCites = function (file, parts, own) {
+    const ownHosts = new Set(
+        (own || []).map(u =>
+          String(u)
+            .replace(/^https?:\/\/(?:www\.)?/i, '')
+            .split('/')[0]
+            .toLowerCase()
+        )
+      ),
+      alias = [
+        [/^(?:world register of marine species|worms)\b/i, 'marinespecies.org'],
+        [/^(?:english )?wikipedia\b/i, 'en.wikipedia.org']
+      ],
+      folded = s => {
+        const h = s.u
+          ? String(s.u)
+              .replace(/^https?:\/\/(?:www\.)?/i, '')
+              .split('/')[0]
+              .toLowerCase()
+          : '';
+        if (h) return ownHosts.has(h);
+        const a = alias.find(x => x[0].test(s.t.trim()));
+        return !!a && ownHosts.has(a[1]);
+      },
+      found = [],
       walk = o => {
         if (Array.isArray(o)) o.forEach(walk);
         else if (o && typeof o === 'object') {
@@ -272,6 +300,7 @@ ${idoor}
         }
       };
     (parts || []).forEach(k => walk((file || {})[k]));
+    for (let i = found.length - 1; i >= 0; i--) if (folded(found[i])) found.splice(i, 1);
     const short = s => (s.whole ? s.t.trim() : s.t.trim().split(', ')[0]),
       // the work's own name: t without the place in it, cut after the title's venue "(Journal 12)" or before a ": place"
       work = s => {
