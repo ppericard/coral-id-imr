@@ -59,6 +59,64 @@ test('the estimate runs in waves of workers, and a calibration scales with the l
   assert.strictEqual(CB.scaled(5, 1000, 1000), 5);
 });
 
+// The app world's calibration: a fifth of the run, 300 to 1,000 questions, its time grown to the run's length.
+test('the calibration plays a fifth of the run, at least 300 questions and at most 1,000', () => {
+  assert.deepStrictEqual([50, 100, 300, 600, 1500, 3000, 4000, 10000].map(CB.calibLength), [50, 100, 300, 300, 300, 600, 800, 1000]);
+});
+
+// A clock as learnsim's play gives it: [answers, seconds] every 50 answers from the first question.
+const clockOf = (n0, t, every = 50) => Array.from({length: n0 / every + 1}, (_, i) => [i * every, t(i * every)]);
+
+test('grown: the questions grow as the square of their number; setup, preparation and tail count once', () => {
+  // 0.5 s before the first question (the preparation), then a time per answer in proportion to the answers so far.
+  const t = n => 0.5 + 0.0001 * n * n,
+    pts = clockOf(600, t);
+  for (const N of [600, 1000, 3000, 4000]) assert.ok(Math.abs(CB.grown({setup: 2, tail: 1, pts}, N) - (3 + t(N))) < 1e-6, `N ${N}`);
+  // From a calibration of 300: the same.
+  assert.ok(Math.abs(CB.grown({pts: clockOf(300, t)}, 3000) - t(3000)) < 1e-6);
+});
+
+test('grown: within the calibration, its own clock', () => {
+  const t = n => 0.5 + 0.04 * n,
+    pts = clockOf(300, t);
+  for (const N of [0, 50, 120, 300]) assert.ok(Math.abs(CB.grown({setup: 2, tail: 1, pts}, N) - (3 + t(N))) < 1e-9, `N ${N}`);
+});
+
+test('grown, on a measured fish run: near its time, where the old straight line from 100 questions gave a seventh', () => {
+  // tools/learnsim.js --subject fish --profiles lectureRA --seeds 1 --questions 3000 --ach --beyond yes --choice auto
+  // (one job alone on the shared 4-core machine, the false-alarm table armed): seconds per 100 answers.
+  const per100 = [
+      3.85, 3.42, 4.08, 5.64, 7.05, 8.06, 9.08, 9.08, 11.4, 10.48, 13.26, 15.13, 15.41, 23.63, 29.56, 35.1, 42.04, 48.47, 39.95, 46.74,
+      55.29, 50.95, 42.74, 31.41, 30.04, 36.11, 41.74, 50.45, 51.24, 49.5
+    ],
+    cum = [0];
+  per100.forEach(s => cum.push(cum[cum.length - 1] + s));
+  const at = n => cum[n / 100], // the clock every 100 answers
+    calib = n0 => ({pts: Array.from({length: n0 / 100 + 1}, (_, i) => [i * 100, at(i * 100)])});
+  // The old plan: 100 questions in a straight line, a seventh of the 821 s of 3,000 answers.
+  assert.ok(CB.scaled(at(100), 100, 3000) < 0.15 * at(3000));
+  // The calibration of a 3,000-answer run (600, calibLength) and of a 2,500 one (500): within a fifth of their time.
+  for (const [n0, N] of [
+    [CB.calibLength(3000), 3000],
+    [CB.calibLength(2500), 2500]
+  ]) {
+    const r = CB.grown(calib(n0), N) / at(N);
+    assert.ok(r > 0.8 && r < 1.2, `${n0} -> ${N}: ${r}`);
+  }
+});
+
+test('a refusal with a growing time per job offers a length that fits on that curve', () => {
+  const perJobAt = n => 0.01 * n + 0.0001 * n * n, // 930 s at 3,000
+    perJobSec = perJobAt(3000),
+    left = 40 * 60,
+    opts = CB.fitOptions({...{P: 4, S: 10, N: 3000, workers: 4}, perJobSec, perJobAt, leftSec: left}),
+    n = opts.find(o => o.flag === '--questions').value;
+  assert.ok(10 * perJobAt(n) <= left, `${n}`);
+  assert.ok(10 * perJobAt(n + 100) > left, `${n}: the longest, to the hundred`);
+  // A straight line from the full length would offer 700: a shorter job is cheaper than in proportion.
+  assert.strictEqual(n, 1500);
+});
+
 // LEARNING.md's level 2 on the rated world: 10 seeds x 4 profiles x 3,000 answers.
 const L2 = {P: 4, S: 10, N: 3000, workers: 4, lengthFlag: 'questions'};
 
