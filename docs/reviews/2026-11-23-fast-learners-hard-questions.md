@@ -3,7 +3,8 @@
 **Status: read-only study (docs).** Nothing in the app, the sheet, the data files or Linear changed. Written on
 2026-11-23 (Manila evening) on `origin/main` at `1ef2300c`. Players are P1, P2… (rule D2): the labels of the REE-85
 study, so P7, P14 and P4 are the same players as in
-[2026-11-23-fish-ease-vs-answers.md](2026-11-23-fish-ease-vs-answers.md). No photo was judged (rule P7), no simulation
+[2026-11-23-fish-ease-vs-answers.md](2026-11-23-fish-ease-vs-answers.md) (its experts section on PR #1499 until it
+merges). No photo was judged (rule P7), no simulation
 was run, and iNaturalist was not asked.
 
 **What this note completes.** REE-191's study already exists: the Google Doc "Pace for fast learners — study
@@ -22,11 +23,11 @@ not redo that. It adds what REE-191's comments of 2026-11-23 ask for:
 ## Summary
 
 - **A fast, right start did not mean expert in corals** [measured]. Four coral players had a replayed level of 1.9 or
-  more at answer 50. Two of them ended under 0.7. They had the same first 50 answers as the two who stayed high:
-  92-98% right, and for P8 2.3 seconds a median answer. Under the game's own one-level model, their first 50 answers
-  favoured "expert (level 2.0)" over "good eye (0.875)" by 3.3 to 6.7 nats. That is 27 to 800 to 1 odds, as strong as
-  for the real experts. The model was wrong because those answers came from 6 to 11 units. The gap showed when many
-  units were in play:
+  more at answer 50. Two of them ended under 0.7. Their first 50 answers were as right as those of the two who stayed
+  high (92-98%), and P8's as fast (2.3 seconds a median answer, against 2.0-2.5). Under the game's own one-level
+  model, their first 50 answers favoured "expert (level 2.0)" over "good eye (0.875)" by 3.3 to 6.7 nats. That is 27
+  to 800 to 1 odds, as strong as for the real experts. The model was wrong because those answers came from 6 to 11
+  units. The gap showed when many units were in play:
   - P10's units met went from 8 to 31 between answers 50 and 100. His right answers on informative questions fell from
     94% to 55%.
   - P8's evidence reversed between answers 200 and 300, at 25 to 33 units met.
@@ -63,8 +64,7 @@ not redo that. It adds what REE-191's comments of 2026-11-23 ask for:
   - **No evidence-only harder questions inside the quiz** (the integrator's idea). They are slower than the test and
     cost a beginner with a good eye a miss every 15-22 answers.
   - **Response time.** It is not a pace lever today. A replay without it moves the group's median level by 0.1 at
-    most. As a signal,
-    it separated the coral experts from two slower players, but not in fish.
+    most. As a signal, it separated the coral experts from two slower players, but not in fish.
 
 ## 1. Data and method
 
@@ -162,7 +162,7 @@ near 0 (+0.4 at 50, +0.6 at 100) until it turned negative by answer 200.
 - **What they were asked.**
   - P8's first 50 answers held 13 informative questions; P11 and P14 had 49 and 39. Most of P8's other early answers
     were duels (two look-alikes, the Duel tab or in the quiz), which this note counts apart.
-  - At answers 51-100, P8 got 84% of 37 look-alike questions right, P14 89% of 45, P11 90% of 48.
+  - At answers 51-100, P8 got 84% of 37 informative questions right, P14 89% of 45, P11 90% of 48.
   - At answers 201-300, P8 got 48% of 23 right, P14 82% of 97, P11 94% of 78.
 - **When the evidence turned.**
   - P10: when the units met went from 8 (answer 50) to 31 (answer 100). His right answers on informative questions
@@ -172,8 +172,9 @@ near 0 (+0.4 at 50, +0.6 at 100) until it turned negative by answer 200.
   50, 0.05; at answer 100, 0.55; right in the first 50, 0.33; median seconds in the first 50, −0.49 (6 players with
   times).
 - **Fish: it did predict, with one exception.** The same correlations were 0.86 for the level at 50 and for the
-  first-50 accuracy, and −0.86 for the median seconds (faster, higher; 7 players). P10's fish evidence stayed positive to answer 200 (+8.7). His level was 1.90 at
-  answer 50, and he ended at 1.11 with 74% right on informative questions at answers 151-300.
+  first-50 accuracy, and −0.86 for the median seconds (faster, higher; 7 players). P10's fish evidence stayed positive
+  to answer 200 (+8.7). His level was 1.90 at answer 50, and he ended at 1.11 with 74% right on informative questions
+  at answers 151-300.
 - **Reading** [inference].
   - The game's level treats a player as one number across units. Early on, the answers cover 6-11 units, mostly the
     easy, distinctive ones the opening brings first. What they prove about those units is real. What they suggest
@@ -216,7 +217,8 @@ The others were at 0.72-0.78 expected and 0.76-0.86 right in both subjects.
 | Fish, typed, 1-300 | 27/29 (0.78-0.98) | 9/10 |
 
 - **Share of easy questions.** Fast-right starters get the look-alike format almost at once: easy questions were 5%
-  of their first 200 coral answers (16% of answers 201-300) and 0-2% of their fish answers. For the others: 37-50% (corals) and 15-33% (fish).
+  of their first 200 coral answers (16% of answers 201-300) and 0-2% of their fish answers. For the others: 37-50%
+  (corals) and 15-33% (fish).
 - **Corals.** Look-alike questions begin to resist the fast-right starters at answers 51-100. They reach about the
   aim's neighbourhood (82%) only at answers 201-300, when 33-45 genera are in play.
 - **Fish families.**
@@ -274,8 +276,8 @@ The others were at 0.72-0.78 expected and 0.76-0.86 right in both subjects.
     took the game 100-300 answers to reach in section 2.
   - **What its result sets:** only the starting variables (rule L10). The replay with "know well" from the first
     answer, the highest start today, brings the aim to 75% 5-25 answers sooner in corals and 5-10 sooner in fish. The
-    median level from answer 100 on moves by 0.1 at most, and the shown % does not move: the bar uses only the player's own
-    answers on a unit (Q128).
+    median level from answer 100 on moves by 0.1 at most, and the shown % does not move: the bar uses only the
+    player's own answers on a unit (Q128).
   - **So:** the test brings the challenge sooner, not the %. Its answers count as evidence on locked units (rule L4),
     but 25 answers over 40 coral genera barely move a bar (as the Doc said).
   - **Cost to a beginner:** none for those who skip it. A beginner with a good eye who takes it would get about 56% of
@@ -334,8 +336,8 @@ The others were at 0.72-0.78 expected and 0.76-0.86 right in both subjects.
 
 ## 5. What the figures cannot say
 
-- **Few players.** Corals: 3 fast-right starters and 5 players with 150+ answers whose level fell or rose. Fish: 4
-  and 7. Sea slugs: 1. Every figure is descriptive. The correlations rest on 6-8 players and carry no test.
+- **Few players.** Corals: 3 fast-right starters, among 8 players with 150+ answers. Fish: 4, among 7. Sea slugs:
+  1. Every figure is descriptive. The correlations rest on 6-8 players and carry no test.
 - **The groups.** The fast-right rule was set by the Doc after seeing first-50 figures. "Expert" here means a high
   level reached late in the replay, not the Notes tab's experts, which were not matched (rule D2).
 - **The engine changed during the log.** Formats, the photo ratings (fish served ratings from 2026-11-19), RARE and
@@ -422,7 +424,8 @@ It needs iNaturalist and was not run here.
 ## Reproduce
 
 The scripts and their outputs stay in the session's scratchpad (`ree191/` there), not in the repository. The input
-holds pseudonymous labels only. The name map was never written (REE-85's `pseudo.py`, as `tools/studies/ree112/pseudo.py`).
+holds pseudonymous labels only. The name map was never written (REE-85's `pseudo.py`, the same as
+`tools/studies/ree112/pseudo.py`).
 
 1. Read the Answers tab read-only and pseudonymise it: `python3 -I pseudo.py <get_values.json> answers.json`. Here the
    REE-85 study's extract, checked against the live tab.
