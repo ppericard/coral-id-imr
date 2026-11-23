@@ -309,8 +309,30 @@ please choose another"; an admin archive name holding one is refused as well (`u
 covers a name holding anywhere the seedling or one of its look-alikes (`core.js` `SEED_LOOKALIKES`: 🌱 🌿 🪴 ☘ 🍀 🍃):
 the seedling is the admin's own mark, shown after the admin's account name on the leaderboard, so no player can show
 it. Otherwise a name is any text: trimmed, at most 40 UTF-16 code units (the form's `maxlength`, `Code.gs` `clean_`),
-matched case-blind (`toLowerCase`) with no Unicode normalisation. An account that already has a reserved name signs in,
+cut at its last whole character (`core.js` `nameCut`: a grapheme where the engine segments them, else a code point;
+never inside an emoji), matched case-blind (`toLowerCase`). An account that already has a reserved name signs in,
 loads and saves as any other; the sheet's maps by player have no prototype (`Object.create(null)`).
+
+**Look-alike names** (REE-35, the integrator's call; sheet vNEXT). Two names that look the same can no longer be two
+accounts. A new name (the form; `Code.gs` `doPost_` with no account yet; the admin's archive name) is NFC
+(`core.js` `nameClean`, in the form before it is sent and in the script). It is refused when it holds an invisible
+character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,
+plus control characters and the characters that draw nothing, such as the Hangul fillers; a zero-width joiner between two
+pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when its skeleton is an existing
+account's (`nameSkeleton`, after Unicode's UTS #39 skeleton: decomposed, invisible characters dropped, each Greek or
+Cyrillic letter that Unicode's confusables data maps to one Latin letter mapped to it, NFKC, lower case, runs of spaces as
+one; the RAs tab, archives included: `Code.gs` `nameIssue_`). The load of a name with no account says so beside
+`found: false` (`taken: 'invisible'|'lookalike'`), and the form says "This name holds an invisible character …" or
+"A name that looks the same is already taken. If it is yours, type it as you did the first time; if not, add your
+surname's initial …", focused on the name, nothing signed in or sent; the form checks the invisible characters itself
+too, whatever the script's version. A save that would make such an account answers `error: 'reserved'` with
+`why: 'invisible'|'lookalike'`, before anything is logged or written: every app stops on it and says "Not saved: this
+name is reserved, please choose another". An archive name with an invisible character is refused as `reserved`, one
+that looks like a taken name as `exists` (`why: 'lookalike'`). A name that is another Unicode form of an account's name
+(NFC, case aside: an é typed as e and its accent) opens that account, under the account's own spelling (`Code.gs`
+`acct_`, load and save). Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
+the players, the existing accounts (archives included) whose names look alike, every character outside Latin's letters
+shown as its code point (`admin.js` `alikeLine`, `core.js` `nameAlikePairs`).
 
 **Sign out clears the device's progress** (`reefid-sync-coral-progress`, `-quiz`, `-reset`, `reefid-log0`,
 `reefid-nudge`, `reefid-anon-base`, and the other subjects' and per-device records, `sync.js` `signOutClear`; a second

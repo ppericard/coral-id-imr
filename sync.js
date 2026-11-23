@@ -2012,7 +2012,9 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     }
     f.onsubmit = e => {
       e.preventDefault();
-      const name = f.n.value.trim(),
+      // NFC and cut at a whole character, as the sheet makes a new name (core.js nameClean, REE-35); an existing account
+      // typed in another form opens all the same (Code.gs acct_).
+      const name = nameClean(f.n.value),
         pin = f.p.value.trim();
       msg('Connecting…');
       syncGet({name, pin})
@@ -2034,6 +2036,17 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
           // would send it (the sheet refuses it too). An existing account that has one signs in.
           if (reservedName(name)) {
             msg('This name is reserved, please choose another.');
+            return f.n.focus({preventScroll: true});
+          }
+          // Nor under a name with an invisible character, or one that looks like a taken name (REE-35): the sheet says
+          // it (taken: Code.gs nameIssue_, from the sheet script vNEXT), the form checks the invisible characters itself
+          // (core.js nameHidden) whatever the sheet's version. An existing account that has such a name signs in.
+          if (j.taken === 'invisible' || nameHidden(name)) {
+            msg('This name holds an invisible character (a zero-width space or a text-direction mark): please type it again.');
+            return f.n.focus({preventScroll: true});
+          }
+          if (j.taken === 'lookalike') {
+            msg(`A name that looks the same is already taken. If it is yours, type it as you did the first time; if not, ${tail(name)}.`);
             return f.n.focus({preventScroll: true});
           }
           enter(name, pin, j);
