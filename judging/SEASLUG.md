@@ -147,9 +147,9 @@ annotated:
   left open, the photo goes. Its judgement is `{"egg": true}` (a note at most), never a code.
 - **Kept, judged as an animal photo**: the recognisable animal with its eggs beside it. The eggs are background; the count
   reads the sea slugs only.
-- Rule P4: the egg-only photo goes, not the observation's other photos. `tools/fetch_seaslugs.py` takes one photo per
-  observation; at its next run, an observation whose every candidate is judged an egg mass brings its next usable photo
-  as a new candidate (`eggs_back`), judged like any other, and the egg-mass one counts nothing against the target.
+- The egg-only photo goes, not the observation's other photos. `tools/fetch_seaslugs.py` takes every usable photo of an
+  observation; at its next run, an observation whose every candidate is judged an egg mass brings its next usable photos
+  as new candidates (`eggs_back`), judged like any other, and the egg-mass one counts nothing against the target.
 
 ## Watermark
 
@@ -210,8 +210,10 @@ later species level to check; the cues are the sources', never shown to players 
 `judging/seaslug/<taxon id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:
 
 - `code`: the code of "Tags" above, ease included (`d1g0sl15`). The tool applies the caps.
-- `keep` (optional): `best`, `alt` or `dup`, as the fish's. A sea-slug candidate is one observation (one photo each,
-  `tools/fetch_seaslugs.py`), so a judgement without `keep` reads `best`; exactly one `best` per observation still holds.
+- `keep`: `best`, `alt` or `dup`, as the fish's (judging/FISH.md). An observation brings every usable photo
+  (`tools/fetch_seaslugs.py`): a judgement without `keep` reads `best`, right for an observation with one candidate; an
+  observation with several names `keep` on each of them, and exactly one `best` per observation holds (the check fails
+  otherwise).
 - `crop` (optional): `[left, top, right, bottom]` fractions of the photo, as FISH.md "A proposed crop", Q430 aside.
 - `unsure` (the fields you doubt: `code`, `keep`, `crop`, `bb`) and `note` (140 characters at most; required with `unsure`).
 - An egg-mass photo: `{"egg": true}` and nothing else but a `note`.

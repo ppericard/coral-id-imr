@@ -56,9 +56,9 @@ print(json.dumps([u(ob(1)), u(ob(2, an=[(1, 7)])), u(ob(3, an=[(22, 30)])), u(ob
   ]);
 });
 
-test("licence and identity: CC0, CC BY, CC BY-NC only; the first usable photo of a mixed observation; Pierre's own as the fish's (Q386)", () => {
+test("licence and identity: CC0, CC BY, CC BY-NC only; every usable photo of a mixed observation; Pierre's own as the fish's (Q386)", () => {
   const out = J(`${OBS}
-it = lambda o: (lambda x: x and [x['p'][0], x['p'][2], x['cls'], x['own']])(usable(o, EGG))
+it = lambda o: (lambda x: x and [[p[0] for p in x['P']], [p[2] for p in x['P']], x['cls'], x['own']])(usable(o, EGG))
 P = 'ppericard'
 print(json.dumps([[it(ob(1, lic=x)) for x in ('cc0', 'cc-by', 'cc-by-nc', 'cc-by-sa', 'cc-by-nc-sa', 'cc-by-nd', 'cc-by-nc-nd', None)],
                   it(ob(2, lic=['cc-by-sa', 'cc-by-nc', 'cc-by'])), it(ob(3, lic=[None], u=P)), it(ob(4, u=P)),
@@ -69,44 +69,79 @@ print(json.dumps([[it(ob(1, lic=x)) for x in ('cc0', 'cc-by', 'cc-by-nc', 'cc-by
                   it(ob(14, g='needs_id', u=P, an=[(17, 19)])), it(ob(15, g='needs_id', u=P, ll=(27.9, 34.3), inph=False)),
                   it(ob(16, g='needs_id', u=P, ll=(-8.5, 115.2), inph=False)), it(ob(17, u=P, lic='cc-by-sa'))]))`);
   assert.deepStrictEqual(out, [
-    [[10, 'cc0', 0, false], [10, 'cc-by', 0, false], [10, 'cc-by-nc', 1, false], null, null, null, null, null],
-    [21, 'cc-by-nc', 1, false], // the share-alike first photo skipped: the next usable one
-    [30, null, 0, true], // Pierre's own photo without a licence: usable, as the fish's (fetch_fish.lic_ok)
-    [40, 'cc-by', 0, true], // his licensed Research Grade photo, marked own
+    // [photo ids, their licences, class (fetch_fish.lic_class: 0 his own, 1 open, 2 NC; the best photo's), own]
+    [[[10], ['cc0'], 1, false], [[10], ['cc-by'], 1, false], [[10], ['cc-by-nc'], 2, false], null, null, null, null, null],
+    [[21, 22], ['cc-by-nc', 'cc-by'], 1, false], // the share-alike first photo skipped: the others come, the best licence classes it
+    [[30], [null], 0, true], // Pierre's own photo without a licence: usable, as the fish's (fetch_fish.lic_ok)
+    [[40], ['cc-by'], 0, true], // his licensed Research Grade photo, marked own
     null, // someone else's Needs ID
     null, // genus level
-    [70, 'cc-by', 0, false], // abroad in the Indo-West Pacific (Bali)
+    [[70], ['cc-by'], 1, false], // abroad in the Indo-West Pacific (Bali)
     null, // abroad outside it (Red Sea)
-    [90, 'cc-by-nc', 0, true], // his Needs ID observation identified to the species: usable; his own ranks as open
+    [[90], ['cc-by-nc'], 0, true], // his Needs ID observation identified to the species: usable; his own ranks as open
     null, // his Needs ID at the genus: not a species photo
-    [120, 'cc-by', 0, true], // below the species (a subspecies) counts as the species
+    [[120], ['cc-by'], 0, true], // below the species (a subspecies) counts as the species
     null, // his, annotated Egg: the egg rule holds for him too
     null, // his, annotated Dead
     null, // his abroad outside the Indo-West Pacific
-    [160, 'cc-by', 0, true], // his abroad inside it
+    [[160], ['cc-by'], 0, true], // his abroad inside it
     null // his share-alike photo: never (lic_ok takes his photo without a licence, never a share-alike one)
   ]);
 });
 
-test('one photo per observation: an observation of 3 photos gives one candidate; a photo or an observation is taken once; variety, then licence', () => {
+test('every photo of an observation: 3 photos take 1 + 0.5 + 0.5 of room, the room cuts the last; a photo is taken once; variety, then licence', () => {
   const out = J(`${OBS}
 from collections import Counter
-used, taken = set(), set()
+used, kept = set(), Counter()
 items = [usable(o, EGG) for o in (ob(1, n=3, u='a'), ob(2, u='a'), ob(3, u='b', lic='cc-by-nc'), ob(4, u='c'))]
-first = pick(items, 3, Counter(), used, taken)
-# A photo iNaturalist lets two observations share (5's is 4's), and an observation already taken (1): neither comes again.
-again = pick([usable(ob(1, n=3, u='d'), EGG), {**usable(ob(5, u='e'), EGG), 'p': [40, 'x', 'cc-by', 'a']}], 5, Counter(), used, taken)
-print(json.dumps([[o['id'] for o in first], [o['p'][0] for o in first], sorted(taken), [o['id'] for o in again]]))`);
-  // Observers a, b, c once each before a second one of a: at room 3, a's other observation (2, after 1 in the fixed hash
-  // order) is left out, and b's NC one (3) still comes before it.
-  assert.deepStrictEqual(out[0].sort(), [1, 3, 4]);
-  assert.deepStrictEqual(out[1].sort(), [10, 30, 40]); // observation 1: its first photo only
-  assert.deepStrictEqual(out[2].length, 3);
+first = pick(items, 3, Counter(), used, kept)
+# A photo iNaturalist lets two observations share (5's is 4's), and the photos of an observation already taken (1): neither comes again.
+again = pick([usable(ob(1, n=3, u='d'), EGG), {**usable(ob(5, u='e'), EGG), 'P': [[40, 'x', 'cc-by', 'a']]}], 5, Counter(), used, kept)
+# The room cuts an observation: 4 photos, 2 of room: 1 + 0.5 + 0.5 = 2 for three. One already holding 2 photos brings 1 for 0.5.
+cut = pick([usable(ob(6, n=4), EGG)], 2, Counter(), set(), Counter())
+more = pick([usable(ob(7, n=3), EGG)], 0.5, Counter(), set(), Counter({'https://www.inaturalist.org/observations/7': 2}))
+print(json.dumps([[[o['id'], [p[0] for p in o['P']], o['cost']] for o in first], sorted(used), dict(kept), [o['id'] for o in again],
+                  [[[p[0] for p in o['P']], o['cost']] for o in cut], [[[p[0] for p in o['P']], o['cost']] for o in more]]))`);
+  // Observers a, b, c once each before a second one of a: at room 3, observation 4 (c), then 1 (a, three photos for 2);
+  // a's other observation (2) and b's NC one (3) are left out, the room is spent.
+  assert.deepStrictEqual(out[0], [
+    [4, [40], 1],
+    [1, [10, 11, 12], 2]
+  ]);
+  assert.deepStrictEqual(out[1], ['10', '11', '12', '40']);
+  assert.deepStrictEqual(out[2], {'https://www.inaturalist.org/observations/4': 1, 'https://www.inaturalist.org/observations/1': 3});
   assert.deepStrictEqual(out[3], []);
+  assert.deepStrictEqual(out[4], [[[60, 61, 62], 2]]);
+  assert.deepStrictEqual(out[5], [[[70], 0.5]]);
   const lic = J(`${OBS}
 from collections import Counter
-print(json.dumps([o['id'] for o in pick([usable(ob(i, lic=l), EGG) for i, l in ((1, 'cc-by-nc'), (2, 'cc-by-nc'), (3, 'cc0'))], 1, Counter(), set(), set())]))`);
+print(json.dumps([o['id'] for o in pick([usable(ob(i, lic=l), EGG) for i, l in ((1, 'cc-by-nc'), (2, 'cc-by-nc'), (3, 'cc0'))], 1, Counter(), set(), Counter())]))`);
   assert.deepStrictEqual(lic, [3], 'among equals in variety, an open licence first (the last tie-break)');
+});
+
+test('the room counts as the fish’s cap does: an observation’s first photo 1, each further one 0.5, an egg mass nothing', () => {
+  const out = J(`${OBS}
+rec = lambda i, k, **x: {'f': f'seaslug-601-cand-{i * 10 + k}', 'o': obs_url(i), **x}
+L = [rec(1, 0), rec(1, 1), rec(1, 2, st='juvenile'), rec(2, 0, st='juvenile'), rec(3, 0)]
+print(json.dumps([held(L), held(L, {'seaslug-601-cand-10'}), held(L, {'seaslug-601-cand-10', 'seaslug-601-cand-11'}),
+                  held(L, only=lambda p: p.get('st') == 'juvenile'), dict(kept_of(L, {'seaslug-601-cand-10'})), sorted(stages(L).items())]))`);
+  assert.deepStrictEqual(out[0], 4, '1 + 0.5 + 0.5 for observation 1, 1 each for 2 and 3');
+  assert.deepStrictEqual(out[1], 3.5, 'its first photo an egg mass: the next one counts 1, the third 0.5');
+  assert.deepStrictEqual(out[2], 3);
+  assert.deepStrictEqual(out[3], 1.5, 'the weights follow the observation, only the juvenile photos are summed');
+  assert.deepStrictEqual(out[4], {
+    'https://www.inaturalist.org/observations/1': 2,
+    'https://www.inaturalist.org/observations/2': 1,
+    'https://www.inaturalist.org/observations/3': 1
+  });
+  assert.deepStrictEqual(
+    out[5],
+    [
+      [['s', ''], 2],
+      [['s', 'juvenile'], 1]
+    ],
+    'one count per observation, not per photo'
+  );
 });
 
 test('fetch_seaslugs.py offline: Philippines first, abroad only when short, the juvenile room, data/fish-cand.json fields; a rerun changes nothing', () => {
@@ -114,7 +149,7 @@ test('fetch_seaslugs.py offline: Philippines first, abroad only when short, the 
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
   const src = {
-    photoTarget: {...T, candidates: 3, perJuvenileForm: 2, juvenile: {'Slugus juvenilis': 'a source'}},
+    photoTarget: {...T, candidates: 4, perJuvenileForm: 2, juvenile: {'Slugus juvenilis': 'a source'}},
     species: [
       {name: 'Slugus slugii', inat: 601, circle: 1},
       {name: 'Slugus juvenilis', inat: 602, circle: 1},
@@ -129,10 +164,11 @@ d = sys.argv[1]
 c = {}
 def put(q, obs, f=FIELDS): c[API + q + '&fields=' + f] = {'total': len(obs), 'results': obs}
 # 601: in the Philippines two egg observations, a share-alike one, a mixed one (share-alike then NC) and one of 3 photos:
-# 2 usable for 3 places, the search read to its end, so abroad: Red Sea (outside the box) and Bali.
+# 2 usable observations for 4 places (the one of 3 photos takes 2 of them), the search read to its end, so abroad: Red Sea
+# (outside the box) and Bali.
 put(queries(601)['ph'], [ob(1, an=[(1, 7)]), ob(2, an=[(22, 30)]), ob(3, lic='cc-by-sa'), ob(4, lic=['cc-by-sa', 'cc-by-nc']), ob(5, n=3)])
 put(queries(601)['world'], [ob(20, lic='cc0', ll=(27.9, 34.3), inph=False), ob(21, ll=(-8.5, 115.2), inph=False)])
-# 602 (a documented juvenile: 3 + 2): adults in the Philippines, one juvenile there (the phase search finds it too), none
+# 602 (a documented juvenile: 4 + 2): adults in the Philippines, one juvenile there (the phase search finds it too), none
 # abroad: one juvenile place stays open, never an adult in it; no general search abroad (the Philippines fill the rest).
 put(queries(602)['ph'], [ob(30), ob(31, an=[(1, 8)]), ob(32), ob(33), ob(34), ob(35, an=[(1, 8), (1, 7)])])
 put(phase_query('juvenile', [602], 'ph'), [ob(31, an=[(1, 8)], tx=[602, 60])], FIELDS + ',taxon.ancestor_ids')
@@ -152,21 +188,23 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const log = run();
   const doc = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')),
     C = doc.cand,
-    ids = L => L.map(p => +p.o.split('/').pop()).sort((a, b) => a - b);
+    ids = L => [...new Set(L.map(p => +p.o.split('/').pop()))].sort((a, b) => a - b);
   assert.deepStrictEqual(Object.keys(doc), ['v', 'cand']);
   assert.deepStrictEqual(Object.keys(C), ['601', '602'], 'circle 1 only, keyed by iNaturalist taxon id');
   assert.deepStrictEqual(ids(C['601']), [4, 5, 21]);
-  // 4: its NC photo (41), not the share-alike one before it; 5: the first of its 3 photos; 21 abroad (Bali), not the Red Sea.
+  // 4: its NC photo (41), not the share-alike one before it; 5: all 3 of its photos; 21 abroad (Bali), not the Red Sea.
   assert.deepStrictEqual(C['601'].map(p => [p.f, p.lic, p.loc]).sort(), [
     ['seaslug-601-cand-210', 'cc-by', 'world'],
     ['seaslug-601-cand-41', 'cc-by-nc', 'dauin'],
-    ['seaslug-601-cand-50', 'cc-by', 'dauin']
+    ['seaslug-601-cand-50', 'cc-by', 'dauin'],
+    ['seaslug-601-cand-51', 'cc-by', 'dauin'],
+    ['seaslug-601-cand-52', 'cc-by', 'dauin']
   ]);
-  // 602: the juvenile 31 in its room, 3 adults; 35 (juvenile but egg-annotated) never.
-  assert.strictEqual(C['602'].length, 4);
+  // 602: the juvenile 31 in its room, 4 adults; 35 (juvenile but egg-annotated) never.
+  assert.strictEqual(C['602'].length, 5);
   assert.ok(ids(C['602']).includes(31) && !ids(C['602']).includes(35));
   assert.deepStrictEqual(C['602'].filter(p => p.st === 'juvenile').length, 1);
-  assert.match(log, /Slugus juvenilis\s+4 \/ 5 .*short \{"juvenile": 1\}/);
+  assert.match(log, /Slugus juvenilis\s+5 \/ 6 .*short \{"juvenile": 1\}/);
   // The fields of data/fish-cand.json (tools/fetch_fish.py record), st only when annotated.
   const FIELDS = ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r'];
   for (const p of [...C['601'], ...C['602']]) {
@@ -428,9 +466,9 @@ print(json.dumps([T['maxGenera'], target({'name': 'Chromodoris annae', 'genus': 
   ]);
 });
 
-// The egg rule's filter 2 with rule P4: a candidate judged an egg mass frees its place, and its observation brings its
-// next usable photo, asked again by id (eggs_back), as it is now.
-test('egg masses: the observation of an egg-only candidate brings its next usable photo, within the target; the egg one counts nothing', () => {
+// The egg rule's filter 2: a candidate judged an egg mass frees its place, and an observation whose every candidate is one
+// brings its next usable photos, asked again by id (eggs_back), as they are now.
+test('egg masses: the observation of an egg-only candidate brings its next usable photos, within the target; the egg one counts nothing', () => {
   const out = J(`${OBS}
 from collections import Counter
 from fetch_fish import Net
@@ -455,7 +493,6 @@ L602 = [rec(602, 8), rec(602, 9)]
 egg = {'seaslug-601-cand-10', 'seaslug-601-cand-20', 'seaslug-601-cand-30', 'seaslug-601-cand-50', 'seaslug-Slugus-cand-70',
        'seaslug-602-cand-80'}
 used = {p['f'].rsplit('-', 1)[-1] for L in (L601, LG, L602) for p in L}
-taken = {p['o'] for L in (L601, LG, L602) for p in L}
 # never captive, as every search (Codex review #1046)
 assert 'captive=false' in egg_query([1])
 # asked once, every observation with an egg-mass candidate in these lists (5 and 8 included: the same set on a rerun)
@@ -464,17 +501,21 @@ c = {egg_query([1, 2, 3, 5, 7, 8]): {'results': [sp(1), sp(2, lic=['cc-by', 'cc-
 json.dump(c, open(d + '/c.json', 'w'))
 net = Net(d + '/c.json', offline=True)
 jobs = [('601', L601, 5, 'sp', 'Slugus', None), ('Slugus', LG, 20, 'gl', 'Slugus', None), ('602', L602, 1, 'sp', 'Slugus', None)]
-got = eggs_back(net, jobs, egg, EGG, used, taken)
-again = eggs_back(net, jobs, egg, EGG, used, taken)
+got = eggs_back(net, jobs, egg, EGG, used)
+again = eggs_back(net, jobs, egg, EGG, used)
 print(json.dumps([{k: [[r['f'], r['o'].rsplit('/', 1)[-1], r.get('gl')] for r in v] for k, v in got.items()}, again,
                   [held(L601, egg), held(LG, egg), held(L602, egg)], egg_only(L601, egg), sorted(egg_set(
                   {'seaslug': {'a': {'egg': 1}, 'b': {'jt': 'x', 'e': 3}, 'c': 'bad'}, 'fish': {'d': {'egg': 1}}}))]))`);
   assert.deepStrictEqual(out[0], {
-    601: [['seaslug-601-cand-11', '1', null]], // its next usable photo; 2 (share-alike only) and 3 (another species) none
+    // its next usable photos, 1 + 0.5 of the room; 2 (share-alike only) and 3 (another species) none
+    601: [
+      ['seaslug-601-cand-11', '1', null],
+      ['seaslug-601-cand-12', '1', null]
+    ],
     Slugus: [['seaslug-Slugus-cand-71', '7', 1]]
   });
-  assert.deepStrictEqual(out[1], {}, 'a rerun brings nothing: the observation has its photo now');
-  assert.deepStrictEqual(out[2], [3, 1, 1], 'the egg masses count against nothing (601: 4, 5, the new 11)');
+  assert.deepStrictEqual(out[1], {}, 'a rerun brings nothing: the observation has its photos now');
+  assert.deepStrictEqual(out[2], [3.5, 1, 1], 'the egg masses count against nothing (601: 4 and 5 for 1 each, the new 11 and 12 for 1.5)');
   assert.deepStrictEqual(
     out[3],
     ['https://www.inaturalist.org/observations/2', 'https://www.inaturalist.org/observations/3'],
@@ -553,7 +594,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
     ['seaslug-Slugus-cand-100', 'seaslug-Slugus-cand-110', 'seaslug-Slugus-cand-101']
   );
   assert.deepStrictEqual([L[2].o, L[2].gl], ['https://www.inaturalist.org/observations/10', 1]);
-  assert.match(log, /egg masses: 1 observations brought their next photo \(Slugus 1\)/);
+  assert.match(log, /egg masses: 1 observations brought their next photos \(Slugus 1\)/);
   assert.match(log, /Slugus\s+2 \/ 2 \(\+0;/);
   const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run();
@@ -581,8 +622,8 @@ egg = {p['f'] for p in L}
 c = {egg_query([1, 2, 3, 4, 5]): {'results': [gen(1, [[5, 'Slugus sp. 1?', 'yes']]), gen(2, [[None, 'Slugus sp. 1?', 'Yes']]),
                                              gen(3, [[6, 'Slugus sp. 2?', 'Yes']]), gen(4, []), gen(5, [[5, 'Slugus sp. 1?', 'No']])]}}
 json.dump(c, open(d + '/c.json', 'w'))
-used, taken = {p['f'].rsplit('-', 1)[-1] for p in L}, {p['o'] for p in L}
-got = eggs_back(Net(d + '/c.json', offline=True), [('slugus-sp1', L, 20, 'inf', 'Slugus', F)], egg, EGG, used, taken)
+used = {p['f'].rsplit('-', 1)[-1] for p in L}
+got = eggs_back(Net(d + '/c.json', offline=True), [('slugus-sp1', L, 20, 'inf', 'Slugus', F)], egg, EGG, used)
 print(json.dumps([[r['f'], 'gl' in r] for r in got.get('slugus-sp1', [])]))`);
   assert.deepStrictEqual(out, [
     ['seaslug-slugus-sp1-cand-11', false],
@@ -598,6 +639,161 @@ F = {'id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes'}
 print(json.dumps([o['of'], labelled(o, F), labelled(o, {**F, 'value': 'No'}), labelled({**o, 'of': []}, F),
                   'ofvs.value' in egg_query([9]) and 'ofvs.field_id' in egg_query([9])]))`);
   assert.deepStrictEqual(out, [[[5, 'Slugus sp. 1?', 'Yes']], true, false, false, true]);
+});
+
+// --topup: the sea slugs' counterpart of the fish's. Every observation among the candidates (a species', a genus-level
+// list's, a species with no name's) is asked again by id, and its other usable photos come, never blocking.
+test('fetch_seaslugs.py --topup offline: every list’s observations bring their other photos; gone, re-identified or moved ones nothing; a rerun adds nothing', () => {
+  const dir = mkTmp('slugtop-');
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(
+    at('src.json'),
+    JSON.stringify({photoTarget: {...T, candidates: 2}, species: [{name: 'Slugus slugii', genus: 'Slugus', inat: 601, circle: 1}]})
+  );
+  const F = {id: 5, name: 'Slugus sp. 1?', value: 'Yes'};
+  fs.writeFileSync(at('inf.json'), JSON.stringify({species: [{key: 'slugus-sp1', name: 'Slugus sp. 1', genus: 'Slugus', field: F}]}));
+  const rec = (key, i, x = {}) => ({
+    f: `seaslug-${key}-cand-${i * 10}`,
+    a: `(c) u${i}`,
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: 'Slugus slugii',
+    own: false,
+    loc: 'dauin',
+    src: 'x',
+    r: 1,
+    ...x
+  });
+  // The species 601 is full (target 2) with 5 candidates: a topup goes over the target, nothing is removed.
+  fs.writeFileSync(
+    at('data/cand.json'),
+    JSON.stringify({
+      v: 1,
+      cand: {
+        601: [1, 2, 3, 4, 5].map(i => rec(601, i)),
+        Slugus: [rec('Slugus', 7, {gl: 1, t: 'Slugus'})],
+        'slugus-sp1': [rec('slugus-sp1', 8, {t: 'Slugus'})]
+      }
+    })
+  );
+  fs.writeFileSync(at('cur.json'), JSON.stringify({seaslug: {out: {'seaslug-601-cand-50': 'x'}}}));
+  py(
+    `${OBS}
+d = sys.argv[1]
+def sp(i, tid=601, **k):  # as trim_id keeps it
+    o = ob(i, tx=[tid, 60, 1], **k)
+    o.update({'tid': tid, 'ag': 1, 'dg': 0})
+    return o
+def gen(i, of=(), **k):
+    o = ob(i, rk='genus', g='research', **k)
+    o.update({'t': 'Slugus', 'tid': 60, 'ag': 0, 'dg': 0, 'of': [list(x) for x in of]})
+    return o
+# asked: 1-4, 7, 8 (5 has a photo Pierre moved: not asked). 1: 3 photos (2 more), 2: one photo (complete), 3 re-identified
+# as another species, 4 not returned (deleted since), 7 a genus-level one with a second photo, 8 labelled, a second photo.
+c = {egg_query([1, 2, 3, 4, 7, 8]): {'results': [sp(1, n=3), sp(2), sp(3, tid=699, n=2), gen(7, n=2), gen(8, [(5, 'Slugus sp. 1?', 'Yes')], n=2)]}}
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const run = (...more) =>
+    execFileSync(
+      'python3',
+      [
+        'tools/fetch_seaslugs.py',
+        '--offline',
+        '--topup',
+        '--src',
+        at('src.json'),
+        '--informal-src',
+        at('inf.json'),
+        '--cand',
+        at('data/cand.json'),
+        '--cache',
+        at('cache.json'),
+        '--cur',
+        at('cur.json'),
+        ...more
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    );
+  const log = run();
+  const C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
+  assert.deepStrictEqual(
+    C['601'].map(p => p.f),
+    [10, 20, 30, 40, 50].map(i => `seaslug-601-cand-${i}`).concat(['seaslug-601-cand-11', 'seaslug-601-cand-12']),
+    'observation 1 brings its 2 other photos, appended; 2 is complete, 3 re-identified, 4 gone, 5 moved'
+  );
+  assert.deepStrictEqual(
+    C.Slugus.map(p => [p.f, p.gl]),
+    [
+      ['seaslug-Slugus-cand-70', 1],
+      ['seaslug-Slugus-cand-71', 1]
+    ]
+  );
+  assert.deepStrictEqual(
+    C['slugus-sp1'].map(p => [p.f, p.gl]),
+    [
+      ['seaslug-slugus-sp1-cand-80', undefined],
+      ['seaslug-slugus-sp1-cand-81', undefined]
+    ]
+  );
+  const added = C['601'][5];
+  assert.deepStrictEqual(
+    [added.o, added.lic, added.loc, added.r, added.a, Object.keys(added).filter(k => k !== 'st')],
+    ['https://www.inaturalist.org/observations/1', 'cc-by', 'dauin', 1, '(c) u1', ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r']]
+  );
+  assert.match(
+    log,
+    /topup: 6 observations asked again \(0 requests\), 5 returned, 1 gone since; 3 brought 4 more photos \(2 of species, 1 genus-level, 1 of species with no name\); 1 had every photo already, 1 no longer usable/
+  );
+  // A rerun asks nothing and adds nothing (the file is the same).
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
+  assert.match(
+    run(),
+    /topup: 6 observations asked again \(0 requests\), 5 returned, 1 gone since; 0 brought 0 more photos .*4 had every photo already, 1 no longer usable/
+  );
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('fetch_seaslugs.py --topup stops before asking when it would take more than the allowed requests (rule C7)', () => {
+  const dir = mkTmp('slugtopmax-');
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(at('src.json'), JSON.stringify({photoTarget: T, species: []}));
+  fs.writeFileSync(at('inf.json'), JSON.stringify({species: []}));
+  // 8,201 observations: 42 requests of 200; the limit is 40 (about 26 for the 5,200 there are).
+  const L = Array.from({length: 8201}, (_, k) => ({
+    f: `seaslug-601-cand-${k + 1}0`,
+    o: `https://www.inaturalist.org/observations/${k + 1}`
+  }));
+  fs.writeFileSync(at('data/cand.json'), JSON.stringify({v: 1, cand: {601: L}}));
+  let err = '';
+  try {
+    execFileSync(
+      'python3',
+      [
+        'tools/fetch_seaslugs.py',
+        '--offline',
+        '--topup',
+        '--src',
+        at('src.json'),
+        '--informal-src',
+        at('inf.json'),
+        '--cand',
+        at('data/cand.json'),
+        '--cache',
+        at('cache.json'),
+        '--cur',
+        at('cur.json')
+      ],
+      {cwd: ROOT, encoding: 'utf8', stdio: 'pipe'}
+    );
+  } catch (e) {
+    err = String(e.stderr);
+  }
+  assert.match(err, /8201 observations would take 42 requests, more than the 40 allowed/);
+  fs.rmSync(dir, {recursive: true, force: true});
 });
 
 // A temporary tree as the repository has it: the tools' and the admin's data live in data/.
