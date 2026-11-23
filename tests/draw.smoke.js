@@ -1173,10 +1173,11 @@ const server = http.createServer((req, res) => {
         } else fails.push(`achievement test needs 20 genera met (${snap.met})`);
       }
       // Out-of-game prompts (sign-in card, one-tap question, open-all offer) take turns: at least PROMPT.GAP answers after
-      // the last one, never with a card or an achievement toast on screen; a count that went back starts over.
+      // the last one (on the answer clock, model.js tally), never with a card or an achievement toast on screen; a clock
+      // that went back (a reset) starts over.
       {
         const keep = store.get(PROMPT.KEY, null),
-          a = answersSoFar(),
+          a = tally(),
           ok = at => (store.set(PROMPT.KEY, at), promptOk());
         document.querySelectorAll('.unlock, .achpop').forEach(x => x.remove());
         const busy = typeof achBusy !== 'undefined' && achBusy;

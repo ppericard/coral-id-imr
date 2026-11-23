@@ -1,9 +1,9 @@
 # The level's answer count and the checkpoints that hang on it (2026-11-09)
 
-**Status: design only (docs), decided work waiting to be built.** Written on 2026-11-09 on the branch
-`claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and brought to `main` on 2026-11-17 (rule
-W6), checked again against `origin/main` at 2c6815ba. Nothing is built. The branch also held `model.js` `countShift`, a
-shift this note shows is not enough (below, "The problem"); it is not brought over. On `main` the level's count still
+**Status: decided work, its readers built (2026-11-23, "Step 1 built", below), the count itself to come.** Written on
+2026-11-09 on the branch `claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and brought to
+`main` on 2026-11-17 (rule W6), checked again against `origin/main` at 2c6815ba. The branch also held `model.js`
+`countShift`, a shift this note shows is not enough (below, "The problem"); it is not brought over. On `main` the level's count still
 keeps the larger of the device's and the log's (`core.js` `replayedOf`, its comment names this note's branch).
 
 Rule D9 (Pierre, 2026-11-09, Q322, Q330) wants the log's counts everywhere, the level's "answers so far" too, so answers
@@ -53,3 +53,26 @@ sees its count come down to the log's, which rule D9 already decided (silent, ru
    read-only count on the real log of the players whose saved level counts more answers than their log (how many, by how
    much). No simulation is needed for a change that leaves every count the log agrees with as it is; the integrator
    decides.
+
+## Step 1 built: the readers on an answer clock (2026-11-23)
+
+The plan's step 2 is split in two PRs (rule W27: `core.js`, `sync.js` and `tools/sync/Code.gs` held elsewhere). The first
+changes only `model.js` and `quiz.js` and moves nothing a player meets: model 1 ("answers since an event") counted on one
+clock instead of one counter per checkpoint.
+
+- **The answer clock** (`model.js` `tally`): per subject, on the device, kept with the comeback record (`reefid-comeback`
+  `c`, `n`: cleared at sign-out and started over at a progress reset with it). It moves up with the level's count and
+  stays where it is when that count goes down. It starts at the count, so every checkpoint stored before it is a clock
+  value too; until a count goes down (none on `main` but a reset, which starts the clock over) it equals the count.
+- **The checkpoints on it**: a card's mark (a 5th field of the intro entry, `introMark`; the answers count stays the
+  entry's history for the admin's journey), read by `introReady` and `openRecent`; the comeback's floor (`CB.f`,
+  `noOpen`); an exam's last question (`s.ex.at`, `examReady`); the surprise cards (`quiz.js` `winkShow`, `winkDue`); the
+  prompts' spacing (`promptOk`, `promptMark`) and the one-tap question's (`pulseDue`, `pulseAsk`). Thresholds on the
+  count itself stay on the count. Unit tests show each across a count that goes down (`tests/intro`, `pace`, `comeback`,
+  `groups`, `wink`, `pulse`).
+- **Left for step 2** (the count itself): `sync.js` ticks the clock (`tally`) before a merge or an adoption changes the
+  level's count, so a count that goes up then down in one sync, or a device whose clock starts after the drop, loses no
+  answer; then `core.js` `replayedOf` and `replayBase` (the sheet's embedded copy too, rule D3) and a rules version (rule
+  D5). Not on the clock yet: the opt-ins' "Not now" (`app.js` writes `Q[k + 'A']` and the count `core.js` reads against
+  it). A checkpoint written on another device carries that device's clock: the same as its count until the drops, after
+  them off by the difference of the doubles the two devices dropped.

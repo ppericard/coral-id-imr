@@ -118,7 +118,9 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
   deploy's stamping did not run), and the `data.json?v=…` its preload names answers 200 with JSON;
 - the sync script answers the app's own public read-only request (`?stats=1&av=health`: an `av` that is no build number, so
   the script writes nothing to Events for it) with `ok` and its `v`; behind `main`'s `VERSION` is a note inside the
-  self-update window (an hour after `Code.gs` last changed on `main`) and a failure after it (`autoUpdate` is stuck);
+  self-update window (an hour after `Code.gs` last changed on `main`) and a failure after it (`autoUpdate` is stuck); the
+  reply's `vers` (the Apps Script versions kept, served from 170 on: spec/sync.md "The version limit") adds a note naming
+  Google's 200-version limit, and at 200 while behind fails at once (old versions must be deleted by hand);
 - the weekly pCloud backup: **nothing public says when it ran** (the Deploy log is read only through `readInfra`, which needs
   the admin token), so the check says "not exposed without the admin token" and passes; the admin card shows the backup's age.
   With `INFRA_TOKEN` in its environment the check reads it and fails when the last save is over 8 days old (tested; not wired:

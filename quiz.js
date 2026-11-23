@@ -805,7 +805,7 @@ function recordAnswer({
     ex.k = Math.min(EXAM.n, ex.k + 1);
     ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
-    ex.at = answersSoFar();
+    ex.at = tally(); // on the answer clock (model.js tally, examReady)
     if (examPassed(target, ex)) {
       s.mx = Date.now(); // learned, and when (the admin's player journey; an old record's 1 is still truthy)
       delete s.ex;
@@ -1357,13 +1357,15 @@ function winkMerge(v) {
     m = winkUnion(s, r);
   if (JSON.stringify(m) !== JSON.stringify(winkUnion(s))) store.set(WINKK(), m);
 }
+// Due from its answer count (winkAt) and winkGap answers after the last one shown, counted on the answer clock (model.js
+// tally: a wink shown is kept at the clock, winkShow).
 function winkDue() {
   const L = UNITS[SUBJ.id].winks(),
     seen = winkSeen(),
     i = L.findIndex(n => !(n in seen)),
     a = answersSoFar(),
     last = Math.max(-Infinity, ...L.filter(n => n in seen).map(n => seen[n]));
-  if (i < 0 || a < winkAt(i) || a < last + winkGap() || document.querySelector('.unlock')) return null;
+  if (i < 0 || a < winkAt(i) || tally() < last + winkGap() || document.querySelector('.unlock')) return null;
   return {n: L[i]};
 }
 // The wink's photo, never a bad one: the unit's ★ Cover while in play (coverP; decision:
@@ -1406,7 +1408,7 @@ function winkShow({n}) {
     w = g.wink,
     p = winkPhoto(g),
     ch = shuffle([[n, g.name], ...w.choices]);
-  const a = answersSoFar();
+  const a = tally();
   WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a};
   store.set(WINKK(), {...(store.get(WINKK(), null) || {}), [n]: a});
   if (typeof syncSoon === 'function') syncSoon(); // the other devices of the account learn it was shown
@@ -1459,18 +1461,19 @@ function winkShow({n}) {
   document.addEventListener('keydown', keys, {signal: viewKeys()});
 }
 // Out-of-game prompts ("fewer, better pop-ups"; docs/ARCHITECTURE.md "Out-of-game prompts spaced out"): the sign-in
-// card, the one-tap question and the cards on which units are in play come PROMPT.GAP answers apart (counted in answers;
-// a count gone back, a reset, starts over), never with an overlay up or waiting (overlayBusy): one too close waits.
+// card, the one-tap question and the cards on which units are in play come PROMPT.GAP answers apart (counted on the
+// answer clock, model.js tally; a clock gone back, a reset, starts over), never with an overlay up or waiting
+// (overlayBusy): one too close waits.
 const PROMPT = {KEY: 'reefid-prompt-at', GAP: 10};
 // The tour, a card or an achievement toast on screen or waiting (cards wait under the tour, toasts under a card).
 const overlayBusy = () => !!document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy);
 const promptOk = () => {
   if (overlayBusy()) return false;
-  const a = answersSoFar(),
+  const a = tally(),
     at = store.get(PROMPT.KEY, null);
   return typeof at !== 'number' || a < at || a - at >= PROMPT.GAP;
 };
-const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
+const promptMark = () => store.set(PROMPT.KEY, tally());
 // One-time hint that a photo enlarges (most players never knew they could): a bubble over the question's first photo
 // from the ZHINT.AT-th answer, once per device and never once a photo was enlarged there (ZHINT_KEY: 'seen' or
 // 'zoomed'). Never over an overlay (it waits
@@ -1966,10 +1969,11 @@ function tipOut() {
 // then every PULSE.EVERY (PULSE.AFTERX times that after "Not now"), only once the session has PULSE.SESS_N answers and
 // lasted PULSE.SESS_MS (pulseSess; a session: answers under SESSION.GAP apart, as the admin's). Asked in every subject,
 // each with its own pacing (pulseSt, under sDev('pulse'): the answers it counts, answersSoFar, are the subject on
-// screen's): {at: answers when the last showed, q: its item, left: the round's items, x: 1 after "Not now"}. The
-// session is the subject's too (Pierre, 2026-11-20: «Attention à avoir des compteurs par matière»): the device's run of
-// answers in one subject, an answer in another subject starting a new one, v {t0, t, n, s: the subject} in PULSEK
-// (pulseV), which is the first subject's own key too (its dev is ''), so its record stays as it was.
+// screen's): {at: the answer clock when the last showed (model.js tally; PULSE.FIRST reads the count), q: its item,
+// left: the round's items, x: 1 after "Not now"}. The session is the subject's too (Pierre, 2026-11-20: «Attention à
+// avoir des compteurs par matière»): the device's run of answers in one subject, an answer in another subject starting
+// a new one, v {t0, t, n, s: the subject} in PULSEK (pulseV), which is the first subject's own key too (its dev is ''),
+// so its record stays as it was.
 const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESS_N: 15, SESS_MS: 5 * 60000, WAIT: 600},
   PULSEK = 'reefid-pulse';
 const pulseObj = k => {
@@ -2001,10 +2005,11 @@ const pulseSess = (v, now = Date.now()) =>
 const pulseDue = (h = hashNow()) => {
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock')) return false;
   const a = answersSoFar(),
+    c = tally(),
     st = pulseSt(),
     at = typeof st.at === 'number' ? st.at : -1e9;
   const v = pulseV();
-  return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && !!v && v.s === SUBJ.id && pulseSess(v);
+  return a >= PULSE.FIRST && (c < at || c - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1)) && !!v && v.s === SUBJ.id && pulseSess(v);
 };
 // Response rate (Pierre's question: shown against answered): each prompt logs PULSE_SHOWN, then its answer's code,
 // PULSE_SKIP ("Not now", Escape) or PULSE_NONE (the page left with it up); every event carries what the game knew when it
@@ -2030,7 +2035,7 @@ function pulseAsk() {
     h = session.h;
   // the session kept where it lives (the first subject's record, PULSEK), never copied into another subject's
   const k = sDev('pulse');
-  store.set(k, {at: answersSoFar(), q: pk.q, left: pk.left, ...(k === PULSEK ? {v: pulseV()} : {})});
+  store.set(k, {at: tally(), q: pk.q, left: pk.left, ...(k === PULSEK ? {v: pulseV()} : {})});
   pulseOpen = {
     id: it.id,
     at: {

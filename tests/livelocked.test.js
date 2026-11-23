@@ -53,9 +53,14 @@ function app({P = {}, c1 = ['A', 'B'], c2 = ['M'], c3 = ['X', 'Y']} = {}) {
       opensNow: () => [{k: 'c3', units: () => c3, due: () => true}]
     };
   ctx.answersSoFar = () => ctx.n;
+  ctx.cbSave = () => {}; // the answer clock's record (model.js tally) kept in CB only
   vm.createContext(ctx);
   vm.runInContext(
-    model + gate + open + '\nthis.M = {INTRO, introMap, introAdd, introLive, asked, askedOpen, introduced, treeGate, openOf, openShut};',
+    model +
+      require('./clock.js')() +
+      gate +
+      open +
+      '\nthis.M = {INTRO, introMap, introAdd, introLive, asked, askedOpen, introduced, treeGate, openOf, openShut};',
     ctx
   );
   return Object.assign(ctx.M, {ctx});
