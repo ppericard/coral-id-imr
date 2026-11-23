@@ -290,7 +290,7 @@ test('planPhoto: like a duel (no card, no comeback, no mix-up queued, the contra
   // Its flag is no name an array already has (a question is an array: q.find would be Array.prototype.find, so every
   // question would have read as one).
   assert.ok(!('findx' in []));
-  assert.match(quiz, /\n  FINDX = !!q\.findx;\n/);
+  assert.match(quiz, /\n +FINDX = !!q\.findx;\n/);
 });
 
 test('logged with its own mode: quiz|f (custom quiz quiz|s|f), never |kN, |d or |t', () => {
