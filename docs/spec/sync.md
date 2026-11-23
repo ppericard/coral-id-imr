@@ -562,8 +562,9 @@ to the in-memory sheet and checks the replays it serves; the app's own units gai
   to 0 and the replay of its whole log is adopted once it can (`mergeSubject`).
 - **The log is the only reference** (rule D9; LEARNING.md "The log, the only reference for progress"): `core.js`
   `replayedOf` and `replayBase` take the replay's record and answer count of a unit also when the device holds more
-  answers there, and a unit the log has no answer on loses the answers the device counts on it (the level's answer
-  count keeps the larger of the two); no floor; no card for the recalculation (rules D5, D6); and the app never adopts
+  answers there, and a unit the log has no answer on loses the answers the device counts on it; the level's answer
+  count too (rules version 15, fish 7, sea slugs 4), the app's checkpoints counting on their own answer clock
+  (`model.js` `tally`, ticked by `sync.js` `clockTick` before a merge or an adoption moves the count); no floor; no card for the recalculation (rules D5, D6); and the app never adopts
   a replay of a rules version newer than its own (`replayAdoptS`, `rvOf`), which it could not hold.
 - A device that never signed in asks for the other subjects' replays as a save does (`sync.js` `sendAnon`: `rvs`, the
   structure stamps, `sreset` and `sstart` by subject; `Code.gs` `anon_` `replays_`) and adopts them (`replaysAdopt`,
@@ -628,7 +629,7 @@ version (its `reefid-sync-<subject>-rv` key below `rvOf`) by the progress and le
 the replay: `core.js` `replayAdopted` (the one `sync.js` `replayAdoptS` adopts with: `replayedOf` over the saved copy,
 and for a subject replayed with a floor the units kept from the copy floored and the floor's typed opportunities kept)
 of the record the subject's Replayed tab keeps for today's rules, row count and reset (`boardRpl_`, the same test as
-`replay_`'s reuse). The level is the replayed one too (`replayedOf`: the replay's ability, the larger answer count), from
+`replay_`'s reuse). The level is the replayed one too (`replayedOf`: the replay's ability and answer count), from
 `ELO_MIN` answers. With no record kept yet, or a player up to date: the saved copy's. The board reads only (one read of
 the Answers tab and of each Replayed tab, only once a player behind is met; nothing fetched, no lock) and stays cached 5
 minutes.

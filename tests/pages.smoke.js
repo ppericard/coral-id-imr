@@ -6603,7 +6603,7 @@ async function tourArrowsCheck(b, base) {
   return fails;
 }
 
-// The offer to install the app (app.js installNudge, installCard), at 390 px on a touch screen: an
+// The offer to install the app (install.js installNudge, installCard), at 390 px on a touch screen: an
 // Android-like browser (a beforeinstallprompt event, made here: headless Chromium sends none), iPhone Safari (the steps),
 // the installed app (standalone), the 2nd visit, a quiz question, and ⚙ Settings › Install the app. The decision itself is
 // in tests/install.test.js.
