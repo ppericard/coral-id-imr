@@ -19,7 +19,10 @@ subject's answer neither extends nor breaks the run). `achFind(id)` finds an ach
 admin's Journey).
 
 **An achievement** has a family (its icon), a tier 1-3 (shown 🥉🥈🥇) and a test on a snapshot of the player's progress
-(`achSnap()`). The lists are learning milestones only, never time or days played:
+(`achSnap()`). They pop up as they are passed, spread out over the ~300-430 questions learning a whole genus takes.
+Their descriptions say what the player can now do (informational feedback motivates: Deci, Koestner & Ryan 1999,
+*Psychological Bulletin* 125(6)); counts stay counts (genera met, progress %, Elo). The lists are learning milestones
+only, never time or days played (rule L8):
 
 - the corals' (`ACH`): genera met; the genera at each mastery level (`lvStep`: 5/10/20 genera at Open Water or above,
   5/10/20 at Advanced, 5/10 at Divemaster; Instructor on 1/5/10/20/all; the ids of the former quarter rungs are kept, so
@@ -183,7 +186,9 @@ sheet's own copy of each subject's tree: [sync.md › The leaderboard's tree](sy
 sent with each sync as the summary's `board`; `mergeSaved()` takes another device's choice when it is more recent, so an
 opt-out holds on every device). Players already signed in are told once (`boardNotice()`, `reefid-board-told`), on a
 subject that has the leaderboard (`SUBJECTS` `board`) only; a subject switch takes the note away and it is due again
-(`progress.js` `toastsOff`).
+(`progress.js` `toastsOff`). The note never covers a question: it waits while a game's question is on screen, answered
+or not (`.q` in the view), shows on the first page without one (Home, Learn, My progress) and, if a question opens
+while it shows, is taken back, not told, and comes at the next break (`progress.js` `noticeHold`, `boardStep`; REE-210).
 
 **The admin's 🌱**: the account the admin page is signed in to when it reads the answer log with a valid admin token
 (`admin.js` `loadStats`, `aname` / `apin`; `Code.gs` `answers_`) is the admin's account, one at most, kept as its code

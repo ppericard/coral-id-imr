@@ -4,7 +4,7 @@
 // in curation.json fish.tags / fish.ease the tags and ease he took from the earlier
 // judgement: judging/fish-light-q308.json `curation`, [{photo, curated: [tags, ease], rejudged: [tags, ease]}], a
 // proposal only (rule A1). This view lists the ones still open, each with its photo, his tags and ease, the re-judged ones
-// in words, and Accept (the re-judged tags and ease into his draft, autosort.js fishSet: one Undo step) or Keep mine
+// in words, and Accept (the re-judged tags and ease into his draft, autosort.js treePhotoSet: one Undo step) or Keep mine
 // (curation.json fish.kept {photo: 'q308'}: answered, never shown again); Accept all in one Undo step behind a confirm
 // (rule A2: bulk). His Publish sends it all. The view is in the switch only while a proposal is open (admin.js TABS:
 // its `live` option, hasPage).
@@ -76,23 +76,23 @@
       return sid != null && A.treePhotoOn(F, f, sid) && (F.kept || {})[f] !== (x.set || set) && same(F, f, x.curated);
     });
   }
-  // Accept: the re-judged tags and ease as his (fishSet each, so an auto-sort log entry gives the fields up: fishOwn).
+  // Accept: the re-judged tags and ease as his (treePhotoSet each, so an auto-sort log entry gives the fields up: treeOwn).
   // keep: the node ids whose ★ cover the photo is and that he keeps as their cover although the proposal makes it a
-  // juvenile (lightCovers; autosort.js fishCoverJ), confirmed in the same Undo step.
+  // juvenile (lightCovers; autosort.js treeCoverJ), confirmed in the same Undo step.
   function lightAccept(F, x, keep) {
-    let N = A.fishSet(A.fishSet(F || {}, x.photo, 'tags', x.rejudged[0]), x.photo, 'ease', x.rejudged[1]);
-    (Array.isArray(keep) ? keep : []).forEach(id => (N = A.fishCoverJOk(N, id))); // not reduce's index
+    let N = A.treePhotoSet(A.treePhotoSet(F || {}, x.photo, 'tags', x.rejudged[0]), x.photo, 'ease', x.rejudged[1]);
+    (Array.isArray(keep) ? keep : []).forEach(id => (N = A.treeCoverJOk(N, id))); // not reduce's index
     return N;
   }
   // Whether a proposal makes its photo a juvenile (the j flag added: judging/FISH.md "Tags").
   const lightJ = x => !!x && x.rejudged[0].slice(7).includes('j') && !x.curated[0].slice(7).includes('j');
   // The nodes (curation.json fish genera ids) whose ★ cover is proposal x's photo, under either of its names (core.js
-  // treePid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js fishCoverJ): a juvenile
+  // treePid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js treeCoverJ): a juvenile
   // is never a cover unless he confirms it, so Accept asks him first (the view) and the Tree page offers the confirmation.
   function lightCovers(F, x) {
     if (!lightJ(x)) return [];
     const G = (F || {}).genera || {};
-    return Object.keys(G).filter(id => G[id] && G[id].cover && pid(G[id].cover) === pid(x.photo) && !A.fishCoverJ(F, id, x.photo));
+    return Object.keys(G).filter(id => G[id] && G[id].cover && pid(G[id].cover) === pid(x.photo) && !A.treeCoverJ(F, id, x.photo));
   }
   // An open proposal in the fish draft F that would make photo f a juvenile (lightJ), or null.
   const lightJOf = (P, F, f) => lightOpen(P, F).find(x => lightJ(x) && pid(x.photo) === pid(f)) || null;

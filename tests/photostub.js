@@ -6,26 +6,36 @@
 //   await stub.r2(ctx)          R2 (core.js PHOTO_BASE) answering, with the bucket's CORS header
 //   await stub.inat(ctx, log)   iNaturalist answering (small 240, medium 480, large 960 px, as core.js photoOnline asks)
 //   await stub.cotw(ctx)        Corals of the World answering with a stand-in (the online original of an IMR lecture photo)
-//   stub.file('<f>-s.webp')     the local file that stands for a photo file, or null
+//   stub.file('<f>-s.webp')     the local file that stands for a photo file (a Find the X tile, <f>-x.webp, too), or null
 const fs = require('fs'),
   path = require('path');
 module.exports = ROOT => {
   const IMG = path.join(ROOT, 'img'),
     R2 = require(path.join(ROOT, 'core.js')).PHOTO_BASE;
-  // Every photo record (f and src) of the data files: the R2-only photos (downloaded, no r) and iNaturalist's photo ids.
+  // Every photo record (f and src) of the data files: the R2-only photos (downloaded, no r) and iNaturalist's photo ids;
+  // tiles: the photos whose Find the X tile ({f}-x.webp, app.js tileSrc) is on R2 (xc: tools/fish_game.py tile_write).
   const online = new Set(),
+    tiles = new Set(),
     byId = new Map();
   const walk = o => {
     if (!o || typeof o !== 'object') return;
     if (Array.isArray(o)) return o.forEach(walk);
     if (typeof o.f === 'string' && typeof o.src === 'string') {
       if (!o.r) online.add(o.f);
+      if (!o.r && Array.isArray(o.xc)) tiles.add(o.f);
       const id = (/\/photos\/(\d+)\//.exec(o.src) || [])[1];
       if (id && !byId.has(id)) byId.set(id, o.f);
     }
     Object.values(o).forEach(walk);
   };
-  ['data.json', 'data/cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
+  // The photo files of every subject, from SUBJECTS (rule S1: no subject named here): its photos (ph), game file (gm)
+  // and candidates (cand); the corals' own are data.json and data/cand.json.
+  const files = ['data.json', 'data/cand.json'];
+  require(path.join(ROOT, 'core.js')).SUBJECTS.forEach(s => {
+    const a = (s.admin && s.admin.files) || {};
+    ['ph', 'gm', 'cand'].forEach(k => a[k] && !files.includes(a[k]) && files.push(a[k]));
+  });
+  files.forEach(f => {
     const p = path.join(ROOT, f);
     if (fs.existsSync(p)) walk(require(path.join(ROOT, 'core.js')).treeGameRead(JSON.parse(fs.readFileSync(p, 'utf8')))); // its records whole
   });
@@ -40,9 +50,14 @@ module.exports = ROOT => {
       break;
     }
   }
+  // A tile stands in as the 480 px file. A file R2 holds must be answered: a 404 here sends that photo to its online
+  // original (FishBase's among them, a host every smoke cuts off), and R2_OUT of them in a row give R2 up for the page
+  // (app.js r2Failed).
   const file = name => {
     const own = path.join(IMG, name);
     if (fs.existsSync(own)) return own;
+    const x = /^(.+)-x\.webp$/.exec(name);
+    if (x) return tiles.has(x[1]) ? stand['-s'] : null;
     const m = /^(.+?)(-[tsm])?\.webp$/.exec(name);
     return m && online.has(m[1]) ? stand[m[2] || ''] : null;
   };
@@ -87,5 +102,5 @@ module.exports = ROOT => {
           body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900"><rect width="1200" height="900" fill="#789"/></svg>'
         })
     );
-  return {r2, inat, cotw, file, online, stand};
+  return {r2, inat, cotw, file, online, tiles, stand};
 };

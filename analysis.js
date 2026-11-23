@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 15;
+  const AV = 18;
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -525,7 +525,10 @@
   const RANKS = ['family', 'genus', 'species'],
     RK_PRE = {f: 'family', g: 'genus', s: 'species'},
     RK_MIN = 20,
-    LOG_RANK = 18;
+    LOG_RANK = 18,
+    LOG_SC = 22; // core.js LOG_SC: the scoring record (an object, null without) in the sheet's readAnswers rows
+  // The recall R of a comeback question from its scoring record, null when the record has none (R is logged under 1 only).
+  const rowRecall = sc => (sc && typeof sc === 'object' && sc.r > 0 && sc.r < 1 ? Number(sc.r) : null);
   const rankOfUnit = (g, logged, ref) => {
     const m = /^([fgs]):/.exec(String(g || ''));
     if (m) return RK_PRE[m[1]];
@@ -618,6 +621,9 @@
           f: fmtOf(m, ch.length),
           typed: TYPED_RE.test(m) ? 1 : 0,
           back: /\|c(\||$)/.test(m) ? 1 : 0,
+          // the recall the app gave a comeback question (the scoring record's r, core.js scoreRec: logged under 1 only),
+          // else null (Comeback by genus)
+          R: rowRecall(r[LOG_SC]),
           // an exam question (|x), typed or not (a typed exam question is logged quiz|t|x)
           exam: /\|x(\||$)/.test(m) ? 1 : 0,
           qv: !ph.length
@@ -1895,13 +1901,62 @@
     ['macro', 'Corallites shown (vs colony)'],
     ['multi', 'Several views shown (vs colony)']
   ];
-  function confRows(A) {
+  // Common-name modifiers (the name-confusion study's (h), docs/reviews/2026-11-05-name-confusion-study.md §4): the words
+  // of a common name before its head noun (its last word), lower case, a hyphenated word as its parts ("Three-lined
+  // wrasse": three, lined), without a possessive (an eponym: "Bleeker's"), a word of 2 letters or fewer or a stop word.
+  // "Yellowtail" and "Blackspot" name a feature, often the very one two species share.
+  const MOD_STOP = new Set(['the', 'and', 'del', 'des', 'les', 'von', 'van']);
+  function modWords(name) {
+    const w = String(name == null ? '' : name)
+      .toLowerCase()
+      .replace(/\(.*?\)/g, ' ')
+      .split(/[^a-zà-ÿ'’]+/)
+      .filter(Boolean);
+    return [...new Set(w.slice(0, -1).filter(x => x.length > 2 && !MOD_STOP.has(x) && !/['’]s?$/.test(x)))];
+  }
+  // The species units a tree file asks by their common name (core.js LEVELS cn: 's:' + the species id), each with the
+  // modifier words of the name a question shows (w: the main name; wi: the IMR name; a name of one word has none, still a
+  // unit whose name the player reads), its genus unit (g) and the units the tree file declares look-alikes of it (l,
+  // F.lookalikes pairs a / b): {unit: {w, wi, g, l}}. The genus and the look-alikes are the controls of the shared-word
+  // effect (the study's FAM and LOOK): species of one genus look alike, and share words more often than others. From the
+  // tree file's species (fish.json, seaslug.json) with a listed name (cn).
+  function modMeta(F) {
+    const out = {},
+      id = x => 's:' + x;
+    ((F && F.species) || []).forEach(s => {
+      // the names a question shows (app.js cnFirst): the main name (cn[0][0]) to everyone, the IMR name (cn[cni][0]) to a
+      // player at IMR, which the answer log does not say; a species with no listed name is not asked by name
+      const nm = i => (s && s.cn && s.cn[i] && s.cn[i][0]) || '',
+        main = nm(0),
+        imr = Number.isInteger(s && s.cni) && nm(s.cni) ? nm(s.cni) : main;
+      if (s && s.id && main) out[id(s.id)] = {w: modWords(main), wi: modWords(imr), g: s.genus || null, l: []};
+    });
+    ((F && F.lookalikes) || []).forEach(p => {
+      if (p && out[id(p.a)] && out[id(p.b)]) (out[id(p.a)].l.push(id(p.b)), out[id(p.b)].l.push(id(p.a)));
+    });
+    return out;
+  }
+  // The rows of the per-offer model: one per option offered besides the right one. With meta.mod (modMeta), when the genus
+  // shown and the option are both units asked by a common name: mo (both are, and whether they share a modifier word is
+  // the same under the main names and the IMR names, which the log does not tell apart: else the row is left out of the
+  // contrast, mo 0), mod (they share a modifier word), sg (the same genus) and lk (declared look-alikes).
+  function confRows(A, MOD) {
     const E = [];
     A.forEach(a => {
       if (a.typed || a.ch.length < 2) return;
       a.ch.forEach(c => {
         if (c === a.g) return;
         const e = {p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length};
+        if (MOD && MOD[a.g] && MOD[c]) {
+          const u = MOD[a.g],
+            v = MOD[c],
+            shared = (x, y) => x.some(w => y.includes(w)),
+            main = shared(u.w, v.w);
+          e.mo = main === shared(u.wi || u.w, v.wi || v.w) ? 1 : 0;
+          e.mod = e.mo && main ? 1 : 0;
+          e.sg = e.mo && u.g && u.g === v.g ? 1 : 0;
+          e.lk = e.mo && u.l.includes(c) ? 1 : 0;
+        }
         // the rank asked (a question's choices stay within it: model.js distractors), a subject whose ranks are told apart
         if (a.rk0) ((e.rk0 = a.rk0), (e.rk = a.rk));
         E.push(e);
@@ -1911,14 +1966,19 @@
   }
   // The ranks' columns (RK: rkLev) after the views' and the choices' (column CF_RK on).
   const CF_RK = 5;
-  function confFit(E, RK = []) {
+  const CF_MOD = 'A common-name modifier word shared with the option (vs none)';
+  // md: the common-name modifier columns after the ranks' (a subject with species units asked by common name, meta.mod):
+  // {k: their keys among mo, mod, sg, lk}, each there only when it varies among the rows it applies to (mo: when some rows
+  // are such units and some are not; else it would be the intercept).
+  function confFit(E, RK = [], md = null) {
     const X = E.map(e => [
         1,
         e.qv === 'medium' ? 1 : 0,
         e.qv === 'macro' ? 1 : 0,
         e.qv === 'multi' ? 1 : 0,
         Math.log(e.k - 1),
-        ...rkCols(e, RK)
+        ...rkCols(e, RK),
+        ...(md ? md.k.map(k => e[k] || 0) : [])
       ]),
       F = [
         factor(
@@ -1940,12 +2000,36 @@
     if (RK.length) M.rk = RK;
     return {M, F, X};
   }
-  function confusions(A, B, seed) {
-    const E = confRows(A),
+  // The common-name columns of the second fit (confFit md), or null when no option shares a word, or none that does not
+  // among the clean rows. Each column only where it can be told from those before it: mo (both units are asked by name)
+  // when some rows are not such pairs and it is not a rank's indicator already (a log of families, genera and species asked
+  // by their common name only: mo is the species rank, and the rank effect would be lost); sg and lk where they vary among
+  // the rows of the pairs.
+  function modCols(E, RK) {
+    if (!E.some(e => e.mod) || !E.some(e => e.mo && !e.mod)) return null;
+    const ref = E[0].rk0,
+      isRank = f => RK.concat(ref ? [ref] : []).some(r => E.every(e => !!f(e) === (e.rk === r)));
+    return {
+      k: [
+        ...(E.some(e => !e.mo) && !isRank(e => e.mo) ? ['mo'] : []),
+        'mod',
+        ...['sg', 'lk'].filter(k => E.some(e => e.mo && e[k]) && E.some(e => e.mo && !e[k]))
+      ]
+    };
+  }
+  function confusions(A, B, seed, meta) {
+    const E = confRows(A, meta && meta.mod),
       mixed = sum(E.map(e => e.y));
     if (E.length < 300 || mixed < 20) return thin(E.length, 300, {mixed});
     const RK = rkLev(E),
       KR = rkX(RK, E[0].rk0),
+      // the common-name columns, when a unit asked by its common name shares a word with an option offered (meta.mod,
+      // modMeta), in a fit of their own beside this one: the pairs' relative rates, the mix-up map's prior and the players'
+      // expected mix-ups read the fit as it always was, as the new columns' contributions are pair-level ones they would
+      // otherwise lose
+      md = modCols(E, RK),
+      cm = md ? CF_RK + RK.length + md.k.indexOf('mod') : -1,
+      Mn = md ? confFit(E, RK, md).M : null,
       {M, F, X} = confFit(E, RK),
       n = E.length,
       fams = [], // each draw's families of mix-ups (the mix-up map's stability, mixStab)
@@ -1956,6 +2040,7 @@
             o = {sd_pair: Math.sqrt(r.F[0].tau2), sd_player: Math.sqrt(r.F[1].tau2)};
           CF_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
           KR.forEach(([k], j) => (o[k] = r.M.b[CF_RK + j]));
+          if (md) o.mod = confFit(S, RK, md).M.b[cm];
           if (S !== E) fams.push(mixFams(S, r.M, r.F));
           return o;
         },
@@ -1968,6 +2053,8 @@
       M.nz[j + 1] ? eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}) : null
     ).filter(Boolean);
     KR.forEach(([k, l], j) => effects.push(eff(k, l, M.b[CF_RK + j], M.se[CF_RK + j], bi, 'logit', 0.25, n, {rows: M.nz[CF_RK + j]})));
+    // a common-name modifier shared with the option: exploratory, like every effect not named in PRIMARY
+    if (md) effects.push(eff('mod', CF_MOD, Mn.b[cm], Mn.se[cm], bi, 'logit', 0.25, n, {rows: Mn.nz[cm]}));
     effects.push(sdEff('sd_player', 'SD player (each player vs pooled)', F[1].tau2, F[1].n, bi, 'logit', 0.25, n, mean([...F[1].cv])));
     effects.push(sdEff('sd_pair', 'SD pair', F[0].tau2, F[0].n, bi, 'logit', 0.25, n, mean([...F[0].cv])));
     const P = {};
@@ -2602,11 +2689,162 @@
       {off: Float64Array.from(D.map(a => a.prev.x)), g: Float64Array.from(D.map(a => a.g0))}
     );
   }
+  /* Comeback by genus: the app's FSRS stabilities against the comeback questions' answers (ROADMAP "Analyses: next
+     views", the comeback fit against the stability per genus). A rusty comeback question carries the recall R the app
+     gave it, R = (1 + F t / S)^C (model.js recallOf, FSRS.C = -0.5; t the days since the unit's last answer, S its
+     stability), and its logged expectation e = g + (1 - g) R σ(ability part). Had the player's stability been κ S, the
+     recall would be (1 + (R^(1/C) - 1) / κ)^C: t and S cancel, so the fit needs only the logged R. κ = 1 is the app's
+     stabilities, above 1 players remember longer, below 1 they forget faster. Maximum likelihood on log κ with the
+     ability part as the app had it (cbFit); a genus's own κ is shrunk towards the pooled one (a normal prior of SD
+     CB.TAU on log κ), its range the player bootstrap's. Descriptive, no verdict, outside the multiple-testing correction.
+     Biased towards less forgetting until the comeback's stopping rule is corrected for (about +0.09 on right − expected,
+     docs/reviews/2026-11-14-comeback-study.md (c)): read as an upper bound. */
+  const FSRS_C = -0.5,
+    CB = {MIN: 200, PLAYERS: 20, GEN: 5, TAU: 1, LK: 4, HW: 0.3, EDGE: 3.99};
+  const cbRec = (b, lk) => (1 + b / Math.exp(lk)) ** FSRS_C;
+  // The rusty comeback questions of A as the fit reads them: y right, g0 the guess rate, b = R^(1/C) - 1, q the ability
+  // part of the expectation (the app's, recall taken out), g the genus, p the player (boot's cluster).
+  function cbRows(A) {
+    return A.filter(a => a.back && a.R != null && a.E != null && a.g0 < 1).map(a => ({
+      y: a.y,
+      g0: a.g0,
+      b: a.R ** (1 / FSRS_C) - 1,
+      q: clamp((a.E - a.g0) / ((1 - a.g0) * a.R), 0.001, 0.999),
+      e: a.E,
+      g: a.g,
+      p: a.p,
+      gone: a.gone
+    }));
+  }
+  function cbLL(Z, lk, mu, tau) {
+    let s = 0;
+    for (const z of Z) {
+      const p = clamp(z.g0 + (1 - z.g0) * cbRec(z.b, lk) * z.q, 1e-6, 1 - 1e-6);
+      s += z.y ? Math.log(p) : Math.log(1 - p);
+    }
+    return tau ? s - (lk - mu) ** 2 / (2 * tau * tau) : s;
+  }
+  // log κ at the maximum of the (penalised) likelihood: a grid over ±CB.LK, then a golden-section search around its best.
+  function cbFit(Z, mu = 0, tau = 0) {
+    if (!Z.length) return mu;
+    const L = CB.LK,
+      N = 40;
+    let best = 0,
+      bv = -Infinity;
+    for (let i = 0; i <= N; i++) {
+      const lk = -L + (2 * L * i) / N,
+        v = cbLL(Z, lk, mu, tau);
+      if (v > bv) ((bv = v), (best = lk));
+    }
+    const W = (2 * L) / N,
+      phi = (Math.sqrt(5) - 1) / 2;
+    let lo = Math.max(-L, best - W),
+      hi = Math.min(L, best + W),
+      x1 = hi - phi * (hi - lo),
+      x2 = lo + phi * (hi - lo),
+      f1 = cbLL(Z, x1, mu, tau),
+      f2 = cbLL(Z, x2, mu, tau);
+    for (let i = 0; i < 30; i++) {
+      if (f1 < f2) {
+        lo = x1;
+        x1 = x2;
+        f1 = f2;
+        x2 = lo + phi * (hi - lo);
+        f2 = cbLL(Z, x2, mu, tau);
+      } else {
+        hi = x2;
+        x2 = x1;
+        f2 = f1;
+        x1 = hi - phi * (hi - lo);
+        f1 = cbLL(Z, x1, mu, tau);
+      }
+    }
+    const m = (lo + hi) / 2;
+    // the grid's best itself when it beats the search (a maximum on the edge of the range)
+    return cbLL(Z, m, mu, tau) >= bv ? m : best;
+  }
+  const cbBy = Z => {
+    const by = new Map();
+    Z.forEach(z => (by.get(z.g) || by.set(z.g, []).get(z.g)).push(z));
+    return by;
+  };
+  function backGenus(A, B, seed) {
+    const Z = cbRows(A),
+      out = {
+        n: Z.length,
+        players: new Set(Z.filter(z => !z.gone).map(z => z.p)).size,
+        min: CB.MIN,
+        minPlayers: CB.PLAYERS,
+        hw: CB.HW
+      };
+    if (Z.length < 10) return out;
+    const lk = cbFit(Z),
+      by = cbBy(Z),
+      keep = [...by.keys()].filter(g => by.get(g).length >= CB.GEN),
+      bi = boot(
+        Z,
+        S => {
+          const p = cbFit(S),
+            R = {p},
+            bs = cbBy(S);
+          keep.forEach(g => bs.has(g) && (R['g:' + g] = cbFit(bs.get(g), p, CB.TAU)));
+          return R;
+        },
+        B,
+        seed
+      ),
+      // A fit or a bootstrap limit at the end of the searched range (±CB.LK on log κ) is the range's end, not a
+      // measurement: the likelihood is still rising (or falling) there, as when every answer is right. edge: the
+      // estimate itself is there (no finite estimate); open: the range's side(s) that run to the end ('hi', 'lo').
+      rg = (key, v) => {
+        const r = {
+            est: Math.exp(v),
+            lo: bi && bi[key] ? Math.exp(bi[key][0]) : null,
+            hi: bi && bi[key] ? Math.exp(bi[key][1]) : null
+          },
+          open = [];
+        if (bi && bi[key] && bi[key][0] <= -CB.EDGE) open.push('lo');
+        if (bi && bi[key] && bi[key][1] >= CB.EDGE) open.push('hi');
+        if (Math.abs(v) >= CB.EDGE) {
+          r.edge = 1;
+          if (!open.includes(v > 0 ? 'hi' : 'lo')) open.push(v > 0 ? 'hi' : 'lo');
+        }
+        if (open.length) r.open = open;
+        return r;
+      };
+    out.right = mean(Z.map(z => z.y));
+    out.E = mean(Z.map(z => z.e));
+    Object.assign(out, rg('p', lk));
+    // the answers the pooled range would need to be no wider than ±CB.HW on log κ (a stability known to about a third),
+    // from its current width (it narrows as 1/sqrt(n)); 0 when it is that narrow already; none for a range that runs to
+    // the end of the searched range (its width says nothing)
+    if (out.lo != null && !out.open) {
+      const h = Math.log(out.hi / out.lo) / 2;
+      out.need = h > CB.HW ? nice(Z.length * (h / CB.HW) ** 2) : 0;
+    }
+    out.g = keep
+      .map(g => {
+        const L = by.get(g);
+        return {
+          k: g,
+          n: L.length,
+          players: new Set(L.filter(z => !z.gone).map(z => z.p)).size,
+          right: mean(L.map(z => z.y)),
+          E: mean(L.map(z => z.e)),
+          ...rg('g:' + g, cbFit(L, lk, CB.TAU))
+        };
+      })
+      .sort((a, b) => a.est - b.est);
+    out.other = sum([...by.keys()].filter(g => !keep.includes(g)).map(g => by.get(g).length));
+    return out;
+  }
   function comeback(A, B, seed) {
     // Answers whose previous answer on the same genus (same player) was right and had an expectation.
     const D = A.filter(a => a.prev && a.prev.y && a.prev.x != null),
       far = D.filter(a => a.t - a.prev.t >= GAP);
-    if (D.length < 100 || far.length < 20) return thin(far.length, 20, {all: D.length});
+    // the forgetting slope needs these; the stability fit (backGenus) reads every rusty comeback question, so it stays
+    // when the slope has too few (Codex review, #1401)
+    if (D.length < 100 || far.length < 20) return thin(far.length, 20, {all: D.length, stab: backGenus(A, B, seed + 2)});
     const M = backFit(D),
       n = D.length,
       C = A.filter(a => a.back && a.E != null),
@@ -2655,6 +2893,7 @@
       typ: typOf(D),
       effects,
       bands,
+      stab: backGenus(A, B, seed + 2),
       b0: M.b[0],
       b1: M.b[1],
       chk: checkOf(D, backFit, a => a.g0, seed, true)
@@ -3050,7 +3289,7 @@
   // The behaviours of every player in D (any set of answers, prep's shape, in time order): {id: [value or null per
   // PROF_F]}. Kept apart from the window so a later analysis can run it on successive windows of a player's history
   // (whole-history trajectories).
-  function profFeat(D, slopes) {
+  function profFeat(D, slopes, horizon) {
     const by = new Map();
     D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
     const out = {},
@@ -3079,7 +3318,8 @@
       o[0] += a.z;
       o[1]++;
     });
-    const end = D.reduce((m, a) => (a.t > m ? a.t : m), -Infinity);
+    // the log's last moment: the rows' own, or the one given (a trajectory's discarded tails still show a session ended)
+    const end = D.reduce((m, a) => (a.t > m ? a.t : m), horizon != null ? horizon : -Infinity);
     // stops after 2+ misses in a row, pooled first (the last answer of a session ends it; a session still open is not over).
     // The misses are counted within the session (prep's streak runs across a break, so a session's first miss after a
     // miss that ended the one before would read as two in a row).
@@ -3124,7 +3364,10 @@
         [...lens.entries()].filter(([k]) => k !== cut).map(([, v]) => v),
         0.5
       );
-      o[fi('wk')] = (lens.size * 7) / Math.max(7, (L[L.length - 1].t - L[0].t) / DAY);
+      // the span runs to the answer's own `until` when it has one: a trajectory window is read up to the next window's first
+      // answer, so the break after its last session counts (a window of one session would read one a week whatever the gap)
+      const lastA = L[L.length - 1];
+      o[fi('wk')] = (lens.size * 7) / Math.max(7, ((lastA.until != null ? lastA.until : lastA.t) - L[0].t) / DAY);
       o[fi('eve')] = mean(L.map(a => ((new Date(a.t).getUTCHours() + 8) % 24 >= 17 ? 1 : 0)));
     });
     return out;
@@ -3394,6 +3637,133 @@
     };
   }
 
+  /* ---------- 11. Player trajectories: the profile's behaviours along each player's whole history ---------- */
+  // Pierre, 2026-11-05 (Q78): player learning trajectories from the first answer to now, a later analysis level. The
+  // behaviours of Player profiles (profFeat, written to run on any set of answers) on successive windows of about TR.W
+  // answers of each player's whole history (whole sessions: trBlocks) instead of their last PROF_N: where a player
+  // started, and where they are now, on each behaviour. Every window of every player is a unit of its own in one fit (the answer time model, the stops' pooled
+  // rates), so a window's values are read against all windows, not against the players of its own stage. The learning
+  // slope is left out: a slope needs the whole range of practice, not a window of it. Descriptive, no verdict, outside the
+  // multiple-testing correction; admin only (the report keeps anonymous ids).
+  const TR = {
+    W: 100, // answers in a window, at least: it ends with the session that reaches them
+    MIN: 2, // windows a player needs to have a trajectory
+    PLAYERS: 3, // players with a trajectory before the view draws anything
+    MAXW: 40, // newest windows kept a player
+    SHOW: 60, // players kept in the report, the most answers first
+    FLAT: 0.5 // a change under this many SD of the behaviour's windows is no change
+  };
+  const TR_SEP = '\u0002';
+  function trajectories(A, B, seed) {
+    void B;
+    void seed;
+    const by = new Map();
+    A.forEach(a => !a.gone && (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
+    const pl = [...by.entries()]
+        .map(([id, L]) => ({id, L, B: trBlocks(L)}))
+        .filter(x => x.B.length >= TR.MIN)
+        .sort((a, b) => b.L.length - a.L.length || (a.id < b.id ? -1 : 1)),
+      feats = PROF_F.filter(f => f[0] !== 'slope').map(([k, label]) => ({k, label})),
+      fx = feats.map(f => PROF_F.findIndex(g => g[0] === f.k));
+    if (pl.length < TR.PLAYERS) return thin(pl.length, TR.PLAYERS, {of: 'players', at: TR.MIN * TR.W, win: TR.W, feats, effects: []});
+    // each window as a unit: the answers of the window, the player renamed id + window's ordinal (from 1)
+    const D = [];
+    let used = 0;
+    pl.forEach(({id, L, B}) =>
+      B.forEach(([a, b], w) => {
+        if (w < B.length - TR.MAXW) return;
+        used += b - a;
+        // the window's last answer carries when the next answer of the player came (the next window's first, or the short
+        // block after the last window): profFeat reads the sessions a week up to it, so the gap between windows counts
+        const nxt = b < L.length ? L[b].t : null;
+        L.slice(a, b).forEach((x, i, S) =>
+          D.push({...x, p: id + TR_SEP + (w + 1), ...(nxt != null && i === S.length - 1 ? {until: nxt} : {})})
+        );
+      })
+    );
+    // the log's last answer (the windows drop the short tails): a session that ended before it is over, whatever window it is in
+    const V = profFeat(
+        D,
+        null,
+        A.reduce((m, a) => (a.t > m ? a.t : m), -Infinity)
+      ),
+      val = (id, o) => {
+        const r = V[id + TR_SEP + o];
+        return fx.map(f => (r && r[f] != null && isFinite(r[f]) ? r3(r[f]) : null));
+      },
+      shown = pl.slice(0, TR.SHOW),
+      // a window: [its ordinal from the player's first, the answers given by its end, then each behaviour's value or null]
+      who = shown.map(({id, L, B}) => ({
+        k: id,
+        n: L.length,
+        w: B.map(([, b], w) => [w + 1, b, ...val(id, w + 1)]).slice(-TR.MAXW)
+      }));
+    // the typical trajectory: by window ordinal, the median of the answers given by its end and of each behaviour over the
+    // players with a value at that window, from 3 players
+    const ords = [...new Set(who.flatMap(p => p.w.map(r => r[0])))].sort((a, b) => a - b),
+      med = ords
+        .map(o => {
+          const R = who.map(p => p.w.find(r => r[0] === o)).filter(Boolean);
+          return [
+            o,
+            Math.round(
+              q(
+                R.map(r => r[1]),
+                0.5
+              )
+            ),
+            ...feats.map((_, f) => {
+              const L = R.map(r => r[f + 2]).filter(v => v != null);
+              return L.length >= 3 ? r3(q(L, 0.5)) : null;
+            })
+          ];
+        })
+        .filter(r => r.slice(2).some(v => v != null)),
+      // each behaviour: the players whose last window is above, below or within TR.FLAT SD of the behaviour's windows of
+      // their first (SD over every window of every player shown)
+      chg = feats.map((_, f) => {
+        const all = who.flatMap(p => p.w.map(r => r[f + 2])).filter(v => v != null),
+          m = mean(all),
+          sd = Math.sqrt(mean(all.map(v => (v - m) ** 2))),
+          o = {up: 0, down: 0, flat: 0, n: 0};
+        who.forEach(p => {
+          const L = p.w.map(r => r[f + 2]).filter(v => v != null);
+          if (L.length < 2 || !sd) return;
+          const d = (L[L.length - 1] - L[0]) / sd;
+          o.n++;
+          o[d > TR.FLAT ? 'up' : d < -TR.FLAT ? 'down' : 'flat']++;
+        });
+        return o;
+      });
+    return {
+      n: used,
+      players: pl.length,
+      win: TR.W,
+      effects: [],
+      feats,
+      who,
+      med,
+      chg,
+      more: pl.length - shown.length
+    };
+  }
+  // A player's windows: from one session's start, the answers up to the first session's end that makes TR.W answers or
+  // more, so a window holds whole sessions (a window cut inside a session would end it at the cut: its length and its
+  // stops after misses would be those of the cut, not the player's). [from, to) in the player's answers, in order; the
+  // answers after the last window, under TR.W, are left out.
+  function trBlocks(L) {
+    const out = [];
+    let from = 0;
+    for (let i = 0; i < L.length; i++) {
+      const last = i === L.length - 1 || L[i + 1].sess !== L[i].sess;
+      if (last && i + 1 - from >= TR.W) {
+        out.push([from, i + 1]);
+        from = i + 1;
+      }
+    }
+    return out;
+  }
+
   /* ---------- 10. Time and difficulty: what the time to answer and enlarging say about a photo ---------- */
   // The reverse of Answer time and Enlarging: does a slow answer, even a right one, or a photo enlarged first, mean the
   // question or the photo was harder (docs/ROADMAP.md)? Two parts (docs/LEARNING.md "Response time as
@@ -3656,10 +4026,13 @@
     // interactions (0: none; the tests of the interactions plant them): enlarging on a corallite photo, on the log-odds;
     // a look-alike's pull on a corallite photo for the even-numbered genera, on the log of its weight; the practice slope
     // of typed answers, on top of the others'
-    ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0}
+    ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0},
+    // the pull, on the log of its weight, of an option sharing a common-name word with the right answer (synth's share; 0:
+    // none; the tests of the shared-word effect plant one)
+    mod: 0
   };
   // o: {players: [[id, ability, answers, enlarge rate, own learning slope (added to the common one; optional)]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
-  // start, end (ms), seed, subject, rk}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
+  // start, end (ms), seed, subject, rk, share: {genus: [the genera sharing a common-name word with it]}}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
   // carries it in the Subject column (index 17, core.js LOG_SUBJ), as the sheet serves another subject's answers (the
   // fish: units f:Damselfishes, g:Chromis, photos of one view). rk: {rank: [logit, log seconds]}, a rank's questions
   // that much harder and slower (the unit's id prefix: rankOfUnit), for the tests of the rank effects.
@@ -3675,8 +4048,9 @@
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
       // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
-      pickW = (L, look, pull = 1) => {
-        const w = L.map(x => (look.includes(x) ? T.mix * pull : 1));
+      // share: the options sharing a common-name word with the genus shown, each T.mod more weighted on the log scale
+      pickW = (L, look, pull = 1, share = []) => {
+        const w = L.map(x => (look.includes(x) ? T.mix * pull : 1) * (share.includes(x) ? Math.exp(T.mod) : 1));
         let r = R() * sum(w);
         return L.find((x, i) => (r -= w[i]) < 0) || L[L.length - 1];
       },
@@ -3757,7 +4131,12 @@
               ? R() < 0.5
                 ? ''
                 : pick(G)
-              : pickW(ch.slice(1), look, p.v === 'macro' && G.indexOf(g) % 2 === 0 ? Math.exp(T.ix.pairMacro) : 1),
+              : pickW(
+                  ch.slice(1),
+                  look,
+                  p.v === 'macro' && G.indexOf(g) % 2 === 0 ? Math.exp(T.ix.pairMacro) : 1,
+                  (o.share && o.share[g]) || []
+                ),
           sec = Math.exp(
             T.rt.b0 +
               rp +
@@ -3924,6 +4303,7 @@
       medium: {name: 'A close-up shown instead of a colony', o: 'mix'},
       macro: {name: 'Corallites shown instead of a colony', o: 'mix'},
       multi: {name: 'Several views shown instead of a colony', o: 'mix'},
+      mod: {name: 'An option sharing a common-name word (Yellowtail, Bicolor…) with the right answer instead of one not', o: 'mix'},
       sd_player: {name: 'How much players differ from each other', o: 'mix', who: 'player'},
       sd_pair: {name: 'How much pairs of genera differ from each other', o: 'mix', who: 'pair of genera'}
     },
@@ -4416,7 +4796,8 @@
     ['back', 'Comeback', comeback],
     ['sess', 'Sessions', sessions],
     ['who', 'Player profiles', profiles],
-    ['tdiff', 'Time and difficulty', tdiff]
+    ['tdiff', 'Time and difficulty', tdiff],
+    ['traj', 'Player trajectories', trajectories]
   ];
   // rows: the answer log (readAnswers rows); M: how many of its answers (time order) this milestone takes; B: bootstrap
   // draws (BOOT by default); bse: normal bootstrap intervals (boot). progress(key) is called as each analysis finishes.
@@ -4566,7 +4947,11 @@
       live = o.live && all.length % STEP ? all.length : 0,
       Ms = milestones(all.length).concat(live ? [live] : []),
       // the fish photos' features too (fph): a judgment changed refits every milestone, as a coral view or quality
-      mh = hashOf(meta && meta.ph) + (meta && meta.fph ? ':' + hashOf(meta.fph) : '') + (meta && meta.rk ? ':rk' + meta.rk : ''),
+      mh =
+        hashOf(meta && meta.ph) +
+        (meta && meta.fph ? ':' + hashOf(meta.fph) : '') +
+        (meta && meta.rk ? ':rk' + meta.rk : '') +
+        (meta && meta.mod ? ':md' + hashOf(meta.mod) : ''),
       B = o.B == null ? BOOT : o.B,
       Bh = Math.min(B, o.Bh == null ? 199 : o.Bh),
       cap = o.hcap == null ? 60000 : o.hcap,
@@ -4666,6 +5051,10 @@
     RANKS,
     rankOfUnit,
     rankRef,
+    modWords,
+    modMeta,
+    modCols,
+    confRows,
     prep,
     milestones,
     boot,
@@ -4710,6 +5099,9 @@
     confusions,
     learning,
     comeback,
+    backGenus,
+    cbRows,
+    cbFit,
     sessions,
     colCorr,
     entOf,
@@ -4724,6 +5116,8 @@
     PROF_MIN,
     profFeat,
     profiles,
+    trajectories,
+    TR,
     profRun,
     zOf,
     eigSym,

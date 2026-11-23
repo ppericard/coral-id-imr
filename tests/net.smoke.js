@@ -188,8 +188,8 @@ const server = http.createServer((req, res) => {
       // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
       // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1) is its 'medium' file for 480 px and
       // 'large' otherwise, names resized() leaves alone, so resized(…, '') cannot be compared. The host is chosen when it
-      // shows too: R2 is cut off here, and about a second after the first R2 failure (core.js photoRetry: one more try
-      // PHOTO_RETRY ms later) the page reads its photos from their online original or the site (app.js AWAY). Planned
+      // shows too: R2 is cut off here, and about a second after the first R2 failures (core.js photoRetry: one more try
+      // PHOTO_RETRY ms later; app.js R2_OUT photos) the page reads its photos from their online original or the site (app.js AWAY). Planned
       // while R2 was still on and shown after, the same file comes from elsewhere than the R2 address read with the plan.
       // Each file is taken under both: without the R2 base (core.js photoLocal) and where it goes once R2
       // failed (core.js photoAway); check 12 is about which host.
@@ -225,12 +225,18 @@ const server = http.createServer((req, res) => {
     await p.goto(base + '#practice/quiz');
     await ready(p);
     // A lecture photo kept only on R2 falls back to its online original (a Corals of the World file, stubbed): the
-    // failure injection never touches it, so it has no smaller version to fall back to; it only has to load.
+    // failure injection never touches it, so it has no smaller version to fall back to; it only has to load. So does a
+    // turned one (data.json ro), shown as its original cut and turned in a canvas (app.js turnSet: a blob: picture).
     await p
       .waitForFunction(
         () =>
           [...document.querySelectorAll('#view .qstage img')].every(
-            i => (i.dataset.low || /^https:\/\/www\.coralsoftheworld\.org\//.test(i.currentSrc)) && i.complete && i.naturalWidth > 0
+            i =>
+              (i.dataset.low ||
+                /^https:\/\/www\.coralsoftheworld\.org\//.test(i.currentSrc) ||
+                (/^blob:/.test(i.currentSrc) && (r => r && !r.r && [90, 180, 270].includes(+r.ro))(photoLook(i.dataset.f)))) &&
+              i.complete &&
+              i.naturalWidth > 0
           ),
         null,
         {timeout: 15000}
@@ -623,13 +629,31 @@ const server = http.createServer((req, res) => {
     await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
       timeout: 20000
     });
+    // A font is asked for the first time its text is drawn, which can come after a quiet half-second (a run logged the
+    // admin's Barlow Condensed 700 asked 86 ms after it): every font face of the page is loaded before the quiet, so none
+    // is asked while the old worker is stopped for the swap.
+    await q.evaluate(() => Promise.all([...document.fonts].map(f => f.load().catch(() => {}))));
     await qQuiet();
+    // Printed if the new version does not take over: each request of the context (the worker's too) from here, and the
+    // registration's state at the end, so the next failure names what kept the old worker busy (Linear REE-208).
+    const T0 = Date.now(),
+      seen = [],
+      log = r => seen.push(`${Date.now() - T0}ms ${r.url().replace(base, '')}${r.serviceWorker && r.serviceWorker() ? ' (worker)' : ''}`);
+    ctx.on('request', log);
     await q.evaluate(() => (window.__old = 1));
     SWV = 2;
     await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
-    await q
-      .waitForFunction(() => UPDATED, null, {timeout: 30000})
-      .catch(() => fails.push('Admin: a new version did not take over in the background'));
+    if (!(await q.waitForFunction(() => UPDATED, null, {timeout: 30000}).catch(() => null))) {
+      const reg = await q
+        .evaluate(() =>
+          navigator.serviceWorker
+            .getRegistration()
+            .then(r => ['active', 'waiting', 'installing'].map(k => `${k} ${(r && r[k] && r[k].state) || '-'}`).join(', '))
+        )
+        .catch(e => e.message);
+      fails.push(`Admin: a new version did not take over in the background (${reg}; requests: ${seen.slice(0, 12).join(' | ')})`);
+    }
+    ctx.off('request', log);
     await q.evaluate(() => (location.hash = 'photos/candidates'));
     await q
       .waitForFunction(() => !window.__old && location.hash === '#photos/candidates', null, {timeout: 20000})
@@ -970,20 +994,24 @@ const server = http.createServer((req, res) => {
         .then(h => h.jsonValue())
         .catch(() => null);
     // Where each photo of the question on screen should come from once R2 failed, by its name (data-f): its online
-    // original at a light size when it has one, else the site. The photos that are not so.
-    const misplaced = p =>
-      p.evaluate(() =>
-        [...document.querySelectorAll('#view .qstage img')]
-          .map(i => [i.dataset.f, i.getAttribute('src'), photoLook(i.dataset.f)])
-          .filter(([f, u, r]) =>
-            // An online original is iNaturalist's file or, for an IMR lecture photo traced to its original, Corals of the World's.
-            r && r.src
-              ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\.|^https:\/\/www\.coralsoftheworld\.org\/media\/images\//.test(
-                  u
-                )
-              : !u.startsWith('img/')
-          )
-          .map(([f, u]) => `${f} ${u}`)
+    // original at a light size when it has one, else the site. The photos that are not so. A turned photo (Pierre's
+    // rotation baked into its R2 file, ro; app.js turnRec) shown from its online original is that original cut and
+    // turned in a canvas: a blob: picture (app.js turnSet), checked to be so in b.
+    const misplaced = (p, sel = '#view .qstage img') =>
+      p.evaluate(
+        sel =>
+          [...document.querySelectorAll(sel)]
+            .map(i => [i.dataset.f, i.getAttribute('src') || '', photoLook(i.dataset.f)])
+            .filter(([f, u, r]) =>
+              // An online original is iNaturalist's file or, for an IMR lecture photo traced to its original, Corals of the World's.
+              r && r.src
+                ? !/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(medium|large)\.|^https:\/\/www\.coralsoftheworld\.org\/media\/images\//.test(
+                    u
+                  ) && !(!r.r && [90, 180, 270].includes(+r.ro) && u.startsWith('blob:'))
+                : !u.startsWith('img/')
+            )
+            .map(([f, u]) => `${f} ${u}`),
+        sel
       );
     // a. R2 answering: the game photos are R2's.
     {
@@ -994,6 +1022,47 @@ const server = http.createServer((req, res) => {
       const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u)); // a candidate just added (r: 1) is iNaturalist's
       if (!s.length || !s.every(u => u.startsWith(R2 + 'img/'))) fails.push(`R2: the game photos are not read from R2 (${s})`);
       if (errs.length) fails.push('R2: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // a2. R2 answering but one file missing (a 404 for the first game photo the page asks R2 for, a quiz preload or a
+    // shown photo; REE-200), no service worker: that photo falls back on its own and the page keeps R2 (app.js
+    // r2Failed: R2 is given up only after R2_OUT photos failed in a row), so the next question's photos are R2's.
+    {
+      const {ctx, p, errs} = await ctxOf();
+      await fromR2(ctx);
+      let gone = null,
+        asked404 = 0;
+      // Registered after the stub, so asked first (Playwright: the last route matching wins).
+      await ctx.route(
+        u => u.href.startsWith(R2 + 'img/'),
+        r => {
+          const f = (/\/img\/([^/?]+?)(?:-[tsm])?\.webp/.exec(r.request().url()) || [])[1];
+          if (f && !gone) gone = f;
+          if (f && f === gone) return (asked404++, r.fulfill({status: 404}));
+          return r.fallback();
+        }
+      );
+      await p.goto(base + '#practice/quiz');
+      await ready(p);
+      await shown(p);
+      await p.waitForTimeout(2500); // past its retry (core.js PHOTO_RETRY) and its fallback
+      const st = await p.evaluate(() => ({R2, AWAY, sw: swOn()}));
+      if (!gone || !asked404) fails.push('R2, one file missing: no photo was asked from R2');
+      else if (st.sw || !st.R2 || st.AWAY)
+        fails.push(`R2, one file missing (${gone}, asked ${asked404} times): R2 given up for the page (${JSON.stringify(st)})`);
+      await qa.install(p);
+      if (!(await p.$(qa.SEL))) fails.push('R2, one file missing: the question took no answer');
+      else {
+        await p.evaluate(() => smokeAnswer(false));
+        await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
+        await p.click('#next', {timeout: 10000}).catch(() => fails.push('R2, one file missing: no Next after the answer'));
+        const s2 = ((await shown(p)) || []).filter(
+          u => !/inaturalist/.test(u) && (/\/img\/([^/?]+?)(?:-[tsm])?\.webp/.exec(u) || [])[1] !== gone
+        );
+        if (!s2.length || !s2.every(u => u.startsWith(R2 + 'img/')))
+          fails.push(`R2, one file missing (${gone}): the next question's photos are not read from R2 (${s2})`);
+      }
+      if (errs.length) fails.push('R2, one file missing: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
     // b. R2 cut off: R2 was asked, the photos show from their online original or the site's img/, no "Another
@@ -1085,6 +1154,28 @@ const server = http.createServer((req, res) => {
         !/^url\(['"]?blob:/.test(tu.bg)
       )
         fails.push(`R2 cut off: a turned photo from its online original is not cut and turned (${JSON.stringify(tu)})`);
+      // The data's own turned photo (data.json ro, imr-p12_i8 today), as a question shows it once R2 failed (its online
+      // original, loc: AWAY; R2 not asked): a blob: picture, which the host check takes as its online original (a draw
+      // that showed it failed the next-question check below: #1442's smoke (net), 2026-11-21).
+      const tf = await p.evaluate(async () => {
+        const c = [...photoIdx().f.values()].find(x => x.src && !x.r && [90, 180, 270].includes(+x.ro));
+        if (!c) return null;
+        const box = document.createElement('div');
+        box.id = 'turnprobe';
+        box.innerHTML = `<figure class="qph"><img data-f="${c.f}" src="${loc(c, 's')}" alt=""></figure>`;
+        document.getElementById('view').append(box);
+        const i = box.querySelector('img');
+        for (let k = 0; k < 50 && !(/^blob:/.test(i.getAttribute('src') || '') && i.complete && i.naturalWidth); k++)
+          await new Promise(ok => setTimeout(ok, 100));
+        return c.f;
+      });
+      if (tf) {
+        const off = await misplaced(p, '#turnprobe img'),
+          u = await p.evaluate(() => document.querySelector('#turnprobe img').getAttribute('src') || '');
+        if (!/^blob:/.test(u) || off.length)
+          fails.push(`R2 cut off: the data's turned photo is not taken as from its online original (${tf} ${u} ${off})`);
+      }
+      await p.evaluate(() => document.querySelectorAll('#turnprobe').forEach(x => x.remove()));
       const n = asked;
       // A question none of whose photos showed takes no answer (its answers are closed): said as a failure of this
       // check, never a click that waits 30 s and stops every check after it.
@@ -1100,14 +1191,14 @@ const server = http.createServer((req, res) => {
         if (!s2.length || off2.length || asked !== n)
           fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${off2.length ? off2 : s2})`);
       }
-      // The first R2 failure coming from a quiz preload, no element having failed yet: the crops are drawn from then on
-      // too, not only after an element's fallback.
+      // R2 given up by quiz preloads (app.js r2Failed: R2_OUT photos in a row), no element having failed yet: the crops
+      // are drawn from then on too, not only after an element's fallback.
       const pre = await p.evaluate(async () => {
-        ((R2 = true), (AWAY = false));
+        ((R2 = true), (AWAY = false), R2RUN.clear());
         if (CROPW) CROPW.disconnect();
         CROPW = null;
-        const u = PHOTO_BASE + 'img/no-such-photo-s.webp',
-          x = {urls: [u], held: [], r2try: new Set([u])};
+        const U = Array.from({length: R2_OUT}, (_, k) => `${PHOTO_BASE}img/no-such-photo${k}-s.webp`),
+          x = {urls: U, held: [], r2try: new Set(U)};
         ONQ = x;
         PF.push(x);
         pump();

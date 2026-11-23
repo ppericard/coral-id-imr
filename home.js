@@ -11,7 +11,7 @@
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP: a juvenile is never a cover), but the admin's ★ Cover on one he confirmed (cj: app.js
   // treeCurate). Never a photo tagged with a visible watermark or text (its judged flag w: Home skips them, the games
-  // keep them), a ★ Cover included, even one kept as a cover in the admin (autosort.js fishCoverW: the Keep holds the
+  // keep them), a ★ Cover included, even one kept as a cover in the admin (autosort.js treeCoverW: the Keep holds the
   // cover elsewhere, never on Home): homeOk.
   const homeOk = p => !!p && !/w/.test(String(p.jt || '').slice(7));
   const landOk = p => homeOk(p) && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);
@@ -56,7 +56,7 @@
   };
   const bandPhoto = (g, land, n, now) => (land && dayPick(landPool(g), n, now)) || tilePhoto(g, land);
   const ph = (n, v) => {
-    const g = DATA.gen[n];
+    const g = GX(n);
     if (!g) return '';
     const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g);
     return p ? thumb(p, '(max-width:599.98px) calc((100vw - 40px) / 4), 270px') : ''; // a phone tile: a quarter of the band
@@ -65,7 +65,7 @@
     document.documentElement.dataset.page = 'lab'; // as the Lab pages set it (proto/lab.js); no stylesheet reads it
     // Before the data (app.js beforeData: the corals' doors, UNITS doorsFirst), no names: the band stays empty until it comes.
     const names = DATA ? Object.keys(DATA.gen) : [],
-      fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name, // a subject whose units have names of their own (fish entries)
+      named = !!DATA && !!UNITS[SUBJ.id].named, // a subject whose units have names of their own (UNITS named: the tree subjects')
       // its words where they are not the corals' (app.js UNITS door: the fish's, the sea slugs')
       W = UNITS[SUBJ.id].door || {};
     // The subject switch (docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
@@ -92,7 +92,7 @@
     // photo picked to suit them, one of several, the day's (bandPhoto: the cover or a reference photo that suits the
     // tile; none, tilePhoto: the first of its easiest that does).
     const land = !!UNITS[SUBJ.id].land;
-    const tiles = fish
+    const tiles = named
       ? shuffle(slateGenera().filter(homeUnit))
           .slice(0, 12)
           .map(
@@ -113,13 +113,13 @@
     const key = keyOf(SUBJ),
       // Its fish art, a landscape box too (home.css .hdart.rc.land, near 3:2 at every size, so the whole fish shows): the
       // same photo a tile would show (tilePhoto).
-      fp = key && fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
+      fp = key && named && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
       fishArt = fp
         ? `<img ${thumb(fp, land ? '(max-width:599.98px) 184px, 520px' : '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">`
         : '';
     const idoor = !key
       ? ''
-      : fish
+      : named
         ? `
         <section class="hdoor identify">
           <a class="hdart rc${land ? ' land' : ''}" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
@@ -128,7 +128,7 @@
             <h2>${esc(W.title)}</h2>
             <p class="hddesc">${esc(W.desc)}</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}</b><small>${esc(W.soon)}</small></a>
+              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}${W.soon ? '<span class="hdsoon">soon</span>' : ''}</b></a>
             </div>
           </div>
         </section>`
@@ -144,17 +144,17 @@
             </div>
           </div>
         </section>`;
-    $v.innerHTML = `<p class="lede">${key ? `Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.` : `Learn &amp; practise while you are learning the ${SUBJ.many}.`}</p><div class="home-page">${subj}
+    $v.innerHTML = `<p class="lede">${key ? `Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${named ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.` : `Learn &amp; practise while you are learning the ${SUBJ.many}.`}</p><div class="home-page">${subj}
       <div class="hdoors${key ? '' : ' one'}">
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen"><span>Learning phase<span class="wide"> · before ${fish ? W.before : 'ReefCloud or your next dive'}</span></span>${wil ? `<a class="hdwil" href="${esc(hr('progress'))}">What I learn ›</a>` : ''}</p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="' + esc(basicsWords().ask) + ' Start with the basics (5 min)">' + esc(basicsWords().ask) + ' Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen"><span>Learning phase<span class="wide"> · before ${named ? W.before : 'ReefCloud or your next dive'}</span></span>${wil ? `<a class="hdwil" href="${esc(hr('progress'))}">What I learn ›</a>` : ''}</p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="' + esc(basicsWords().ask) + ' Start with the basics (5 min)">' + esc(basicsWords().ask) + ' Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${fish ? W.learn || 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
-              <a class="hdbtn main" href="${esc(hr('quiz'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${fish ? W.practice || 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
+              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${named ? W.learn || 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
+              <a class="hdbtn main" href="${esc(hr('quiz'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${named ? W.practice || 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
             </div>${newb ? '<p class="hdnew"><a href="' + esc(hr('basics')) + '">' + esc(basicsWords().ask) + ' Start with the basics (5 min) ›</a></p>' : ''}
           </div>
         </section>
@@ -184,9 +184,12 @@ ${idoor}
   // The Coral Finder book is cited as a reference (References), never credited as a source of the app's content: its
   // content is not reproduced (a rights question). The Home credit line does not name it.
   window.viewAbout = function () {
-    const inat = 'https://www.inaturalist.org',
+    // The version line: what the deploy stamped on this page, "<build>-<hash>" (sync.js appVer, the one the admin's Errors
+    // page shows), read, never edited (rule W15); a copy never deployed shows its ?v only.
+    const ver = typeof appVer === 'function' ? appVer() : '',
+      inat = 'https://www.inaturalist.org',
       ab = subjMine() // the other subjects open to this player add their lines (app.js UNITS about); the corals' are below
-        .map(S => UNITS[S.id].about)
+        .map(S => UNITS[S.id].about && {...UNITS[S.id].about, id: S.id})
         .filter(Boolean);
     $v.innerHTML = `<h2 class="vh">About and credits</h2><div class="about">
       <section>
@@ -210,7 +213,10 @@ ${idoor}
           <li>Russell Kelley, <i>Coral Finder 2022</i> (Indo-Pacific), BYOGUIDES: an ID guide, cited by page on genus sheets and look-alike pairs.</li>
           ${ab.map(a => a.refs).join('')}
           <li><a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species (WoRMS)</a> and <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a>, linked from every genus sheet.</li>
-        </ul>
+        </ul>${ab
+          .filter(a => a.cites)
+          .map(a => `<p>${esc(a.cites.lead)}</p><ul class="abcites" data-cites="${esc(a.id)}"><li>Loading the sources…</li></ul>`)
+          .join('')}
       </section>
       <section>
         <h3>Privacy</h3>
@@ -222,6 +228,93 @@ ${idoor}
         <p>A mistake, a bug or an idea? It goes straight to Pierre. ${typeof repBtn === 'function' ? repBtn({k: 'page'}, 'Send feedback') : ''}</p>
       </section>
       <p class="note">Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).</p>
+      <p class="note abver">${ver ? `Version ${esc(ver)} · ` : ''}<a href="https://github.com/ppericard/coral-id-imr" target="_blank" rel="noopener">Source on GitHub</a></p>
     </div>`;
+    // A subject that declares what its data cites (UNITS about.cites) lists the sources its data file names, filled in once
+    // the file is in (the player's copy when the subject has been in force, else its file, as the subject's Home reads it).
+    ab.filter(a => a.cites).forEach(a => {
+      const T = typeof treeOf === 'function' ? treeOf(a.id) : null,
+        fill = html => {
+          const ul = $v.querySelector(`[data-cites="${a.id}"]`); // gone when the player left the page meanwhile
+          if (ul) ul.innerHTML = html;
+        };
+      Promise.resolve((T && T.TREERAW && T.TREERAW.f) || UNITS[a.id].get.f())
+        .then(f => {
+          const L = window.aboutCites(f, a.cites.in);
+          if (!L.length) throw new Error('no sources');
+          fill(
+            L.map(
+              s =>
+                `<li>${s.url ? `<a href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)}</a>` : esc(s.name)}${s.pages ? `: ${s.pages} pages cited` : ''}</li>`
+            ).join('')
+          );
+        })
+        .catch(() => fill('<li>The sources could not be loaded just now: try again later.</li>'));
+    });
+  };
+  // The sources a data file cites, one line each (About › References). A source is an object {t, u} in the parts of the file
+  // that hold them (`parts`, from UNITS about.cites.in; u, its web address when it has one), t the way the data names it: the
+  // source's short name before its first comma, then what it is and where in it (rule C2); or a record's own `cite`, a whole
+  // reference (a species named by a paper), linked by its `doi`. A site cited by several pages (the Sea Slug Forum's fact
+  // sheets) is one line, linked to the site (the address of the host as most of its pages spell it) with its pages counted;
+  // a work cited at several places (a paper, a page) is one line, named by what the places share and linked to the work.
+  // Returns [{name, url, pages}] by name.
+  window.aboutCites = function (file, parts) {
+    const found = [],
+      walk = o => {
+        if (Array.isArray(o)) o.forEach(walk);
+        else if (o && typeof o === 'object') {
+          if (typeof o.t === 'string' && o.t.trim() && Object.keys(o).every(k => k === 't' || k === 'u' || k === 'read')) found.push(o);
+          else {
+            if (typeof o.cite === 'string' && o.cite.trim()) found.push({t: o.cite, u: o.doi ? 'https://doi.org/' + o.doi : '', whole: 1});
+            Object.values(o).forEach(walk);
+          }
+        }
+      };
+    (parts || []).forEach(k => walk((file || {})[k]));
+    const short = s => (s.whole ? s.t.trim() : s.t.trim().split(', ')[0]),
+      // the work's own name: t without the place in it, cut after the title's venue "(Journal 12)" or before a ": place"
+      work = s => {
+        const rest = s.t.trim().slice(short(s).length),
+          m = !s.whole && (/^(.*?\))(?:, |$)/.exec(rest) || /^(.*?): /.exec(rest));
+        return short(s) + (m ? m[1] : rest);
+      },
+      norm = u => String(u).replace(/^https?:\/\/(?:www\.)?/i, ''),
+      host = u => norm(u).split('/')[0],
+      groups = new Map(); // short name -> {name, works, pages: web address -> its first spelling}
+    found.forEach(s => {
+      const g = groups.get(short(s)) || groups.set(short(s), {name: short(s), works: new Set(), pages: new Map()}).get(short(s));
+      g.works.add(work(s));
+      if (s.u) g.pages.set(norm(s.u), s.u);
+    });
+    // a site: a short name cited with several pages; every page of its host is one of its pages, whatever its short name
+    const sites = new Map(); // host -> {name, pages: web address -> its first spelling}
+    [...groups.values()]
+      .filter(g => g.pages.size > 1)
+      .forEach(g => {
+        const h = host([...g.pages.values()][0]),
+          S = sites.get(h) || sites.set(h, {name: g.name, pages: new Map()}).get(h);
+        if (g.name.length > S.name.length) S.name = g.name; // "SEASLUG.WORLD (Kimoto Nobuhiko)" over "SEASLUG.WORLD"
+      });
+    const out = [];
+    groups.forEach(g => {
+      const own = [...g.pages.keys()].filter(u => !sites.has(host(u)));
+      g.pages.forEach((u, k) => sites.has(host(k)) && sites.get(host(k)).pages.set(k, u));
+      if (g.pages.size && !own.length) return; // every page of it is a site's
+      // a work cited at several places: the parts of its name they share, the short name at least
+      const P = [...g.works].map(w => w.split(', '));
+      let n = 1;
+      while (P.every(p => p[n] !== undefined && p[n] === P[0][n])) n++;
+      out.push({name: P[0].slice(0, n).join(', '), url: own.length ? g.pages.get(own[0]) : '', pages: 0});
+    });
+    sites.forEach(S => {
+      const at = new Map(); // the host's address as the pages spell it, https; the most used
+      S.pages.forEach(u => {
+        const o = u.replace(/^(?:https?:\/\/)?([^/]+).*$/i, 'https://$1');
+        at.set(o, (at.get(o) || 0) + 1);
+      });
+      out.push({name: S.name, url: [...at.entries()].sort((a, b) => b[1] - a[1])[0][0], pages: S.pages.size});
+    });
+    return out.sort((a, b) => a.name.localeCompare(b.name, 'en', {sensitivity: 'base'}));
   };
 })();

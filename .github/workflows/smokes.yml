@@ -57,11 +57,11 @@ jobs:
           - name: fish main
             smoke: fish
             part: main
-            what: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
+            what: Fish games, account sync and load-order tests
           - name: fish fresh
             smoke: fish
             part: fresh
-            what: Fish quiz test, the brand-new fish players (the starter core, the easy photos before Open Water, five seeds)
+            what: Fish quiz, beta access, Memory and five brand-new players
           - name: seaslug
             smoke: seaslug
             what: Sea slug subject test (its beta gate both ways, the admin's quiz, pages and switch on seaslug.json)
@@ -93,6 +93,9 @@ jobs:
           - name: net
             smoke: net
             what: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
+          - name: pending
+            smoke: pending
+            what: Kept question test (every subject, leave to Learn and back, a reload, answered; the Quiz, the Custom quiz, the Duel tab, typed and Find the X)
           - name: staged
             smoke: staged
             what: Built copy test (the site as the deploy builds it, scripts minified; each subject's Home and a question, the Lab, the admin, the worker)

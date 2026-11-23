@@ -1,7 +1,7 @@
 require('./slot.js').testGuard();
 // Other species in view, split in two (judging/FISH.md "Tags", count): o (no risk of taking
 // another fish for the subject at the game's rank: in play) and k (confusion possible: never in play, rule P3); m, the
-// code before the split, reads as not sorted yet, so as k until sorted. Both automatic routes (autosort.js fishSure,
+// code before the split, reads as not sorted yet, so as k until sorted. Both automatic routes (autosort.js treeSure,
 // tools/fish_game.py judged_sure) and the pre-fetch mirrors (tools/fetch_fish.py sure_add, sure_out) follow one rule;
 // the admin's adds follow the count in force (core.js treeCount, treeOther; tools/fish_game.py count_of, other_out); the
 // re-judge of the photos with m lands where it was classified.
@@ -11,7 +11,7 @@ const test = require('node:test'),
   path = require('path'),
   {execFileSync} = require('child_process');
 const C = require('../core.js'),
-  {fishSure, fishPlay, fishQueue} = require('../autosort.js');
+  {treeSure, treePlay, treeQueue} = require('../autosort.js');
 const ROOT = path.join(__dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const py = code =>
@@ -37,13 +37,13 @@ test('the two automatic routes agree on every count: o may be in play, k never, 
 L = json.loads(${JSON.stringify(JSON.stringify(CASES))})
 print(json.dumps([[G.cand_sure(j), G.judged_sure(j['jt'], j['e']), FF.sure_add(j), FF.sure_out(j)] for j in L]))`);
   CASES.forEach((j, i) => {
-    const s = fishSure(j),
+    const s = treeSure(j),
       add = !!s && s.keep === 'add',
       [cand, sure, sAdd, sOut] = P[i],
       at = JSON.stringify(j);
-    assert.strictEqual(cand, add, `${at}: fish_game.py cand_sure against autosort.js fishSure`);
-    assert.strictEqual(sAdd, add, `${at}: fetch_fish.py sure_add against fishSure`);
-    assert.strictEqual(sOut, !!s && s.keep === 'reject', `${at}: fetch_fish.py sure_out against fishSure's rejects`);
+    assert.strictEqual(cand, add, `${at}: fish_game.py cand_sure against autosort.js treeSure`);
+    assert.strictEqual(sAdd, add, `${at}: fetch_fish.py sure_add against treeSure`);
+    assert.strictEqual(sOut, !!s && s.keep === 'reject', `${at}: fetch_fish.py sure_out against treeSure's rejects`);
     if (!j.u && j.k !== 'dup') assert.strictEqual(sure, add, `${at}: judged_sure, the rubric's part`);
     const c = j.jt[6];
     if (c === 'k' || c === 'm') assert.ok(!add && !sure, `${at}: other species, confusion possible or not sorted: never in play`);
@@ -195,7 +195,7 @@ print(json.dumps({r['f']: r.get('jt') for r in [r for r, _, _ in todo] + list(ke
   );
 });
 
-test('the Candidates queue counts no add held out for other species (Codex review #839): it fills the target like fishRun', () => {
+test('the Candidates queue counts no add held out for other species (Codex review #839): it fills the target like treeRun', () => {
   const cands = {s1: Array.from({length: 9}, (_, i) => ({f: 'fish-s1-cand-' + i, o: 'o' + i}))},
     F = {
       add: Object.fromEntries(cands.s1.slice(0, 8).map(p => [p.f, 's1'])),
@@ -203,9 +203,9 @@ test('the Candidates queue counts no add held out for other species (Codex revie
     },
     // the pass sorts two of the legacy m: one o (in play), one k
     sug = {'fish-s1-cand-4': {jt: 'p1g0smo', e: 4, k: 'best'}, 'fish-s1-cand-5': {jt: 'p1g0smk', e: 4, k: 'best'}};
-  assert.strictEqual(fishPlay(cands, F, null, sug).s1.size, 1, 'only the add sorted o is in play');
-  assert.ok(!fishPlay(cands, F).s1, 'with no pass, the legacy m stays out too: nothing in play');
-  const q = fishQueue(cands, sug, {s1: {}}, F).find(x => x.p.f === 'fish-s1-cand-8');
+  assert.strictEqual(treePlay(cands, F, null, sug).s1.size, 1, 'only the add sorted o is in play');
+  assert.ok(!treePlay(cands, F).s1, 'with no pass, the legacy m stays out too: nothing in play');
+  const q = treeQueue(cands, sug, {s1: {}}, F).find(x => x.p.f === 'fish-s1-cand-8');
   assert.ok(q && q.n === 1 && !q.full, `the waiting candidate is offered under the target: ${JSON.stringify(q && {n: q.n, full: q.full})}`);
 });
 

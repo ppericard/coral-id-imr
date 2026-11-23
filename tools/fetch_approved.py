@@ -5,7 +5,7 @@
 # ("rot" {f: 90 | 180 | 270} degrees clockwise) are applied on the way, from the original, the crop first then the turn
 # (tools/photos.py turn); a photo already downloaded is redone when either changes (data.json "cr", "ro").
 # Site photos (not candidates) are redone from their original the same way when the admin crops or turns them (genus
-# page). Every photo it downloads has an online original (src), so it lives on Cloudflare R2 only (photos out of the
+# page), and so are the IMR lecture photos traced to a Corals of the World original (below). Every photo it downloads has an online original (src), so it lives on Cloudflare R2 only (photos out of the
 # repo): the files are written to --out DIR (default r2-upload/, gitignored), never to img/, and
 # the workflow uploads that folder to R2 (tools/r2_sync.sh DIR) before it commits data.json, so data.json never names a
 # photo R2 lacks. Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every
@@ -50,6 +50,16 @@ def get(p):
     # The shape from the 480 px file, as tools/apply_ratios.py measures it (it only sees the files in img/).
     p['ar'] = photos.write(im, p['f'], OUT, CROP.get(p['f']), ROT.get(p['f']))
     return p
+# The IMR lecture photos traced to their Corals of the World original (data.json course: src, cr, ro; tools/imr_frames.json):
+# redone from the original when their framing in force changes, Pierre's crop and rotation (photos.lecture_frame: his crop
+# entry, [0, 0, 1, 1] for Full photo, with his rotation from curation.json rot alone) over how the lecture framed them. Not
+# through HOSTS (iNaturalist's): tools/fetch_imr_originals.py fetches them, from coralsoftheworld.org only, one request every
+# 2 s, after the iNaturalist ones (REE-60).
+import fetch_imr_originals as imr
+LECT = {f: (url, cr, ro, px) for f, url, cr, ro, px in imr.plan()}
+lect = [p for L in d['course'].values() for p in L
+        if p.get('f') in LECT and p['f'] not in excl and p.get('src') == LECT[p['f']][0]
+        and photos.stale(p, *photos.lecture_frame(p['f'], LECT[p['f']][1], LECT[p['f']][2], CROP, ROT))]
 done = 0
 with cf.ThreadPoolExecutor(6) as ex:
     for fut in cf.as_completed([ex.submit(get, p) for p in todo]):
@@ -60,6 +70,14 @@ with cf.ThreadPoolExecutor(6) as ex:
             if not p.pop('r', None): p['iv'] = p.get('iv', 0) + 1
             photos.mark(p, CROP.get(p['f']), ROT.get(p['f']))
         except Exception as e: print('failed:', e)
+for p in lect:
+    url, cr, ro, px = LECT[p['f']]
+    ar, how = imr.make(p['f'], url, cr, ro, px, CROP, ROT, imr.DEFAULT_CACHE, OUT)
+    if ar is None: print('failed:', how); continue
+    p['ar'] = ar
+    p['iv'] = p.get('iv', 0) + 1  # the app puts it in the photo URL (a rewrite of a file already on the site)
+    photos.mark(p, *how)
+    done += 1
 gone = 0
 if '--all-remote-unused' in sys.argv:
     for L in (d.get('cand') or {}).values():

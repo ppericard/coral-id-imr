@@ -534,11 +534,14 @@ test('a right variant answer the log lacks does not bring the mark back: the exa
 // an edit of them (app.js treeGenera psrc), else IMR's. The juvenile card has none (tests/fishjuvdiff.test.js).
 test('the phase card shows its lines under their recorded source, else IMR', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8'),
-    fn = require('./block.js')(src, 'function phaseShow(', '\n}\n', {through: 1, file: 'quiz.js'}),
-    p = {f: 'm', ph: 'male'},
-    show = g => {
+    fn = require('./block.js')(src, 'const phaseSrcs = ', '\n}\n', {through: 1, file: 'quiz.js'}),
+    p0 = {f: 'm', ph: 'male'},
+    T = {title: ''},
+    show = (g, sps = {}, p = p0) => {
       let body = '';
       const stubs = {
+        TREEU: {sps},
+        safeUrl: u => u,
         GX: () => g,
         phasePair: () => null,
         phasePool: () => [],
@@ -550,7 +553,7 @@ test('the phase card shows its lines under their recorded source, else IMR', () 
         img: x => x.f,
         esc: x => String(x).replace(/</g, '&lt;'),
         credit: () => 'c',
-        cardShow: o => ((body = o.body), {querySelectorAll: () => []}),
+        cardShow: o => ((body = o.body), (T.title = o.title), {querySelectorAll: () => []}),
         setTimeout: () => {},
         TIP: {WAIT: 0}
       };
@@ -563,6 +566,25 @@ test('the phase card shows its lines under their recorded source, else IMR', () 
     /<p class="phlines"><b>Randall 2005 &lt;p. 3><\/b>: An edited line<\/p>/
   );
   assert.ok(!/phlines/.test(show({phase: []})), 'no line: no source');
+  // A species the cited phase list flags (fish.json species phs; docs/decisions/2026-11-21-fish-phase-flag-from-cited-
+  // list.md): the card names the list's sources (rule C2), keeps the IMR lines on sexes or phases only, and its title
+  // follows the list's kind.
+  const sex = {s1: {phs: {k: 'sex', src: [{t: 'Reef Life Survey', u: 'https://rls.example/s1'}, {t: 'FishBase'}]}}},
+    q = {f: 'm', ph: 'male', sp: 's1'},
+    a = show({phase: ['Juveniles look very different from adults']}, sex, q);
+  assert.match(
+    a,
+    /<p class="phlines phsrc">Sources: <a href="https:\/\/rls.example\/s1" target="_blank" rel="noopener">Reef Life Survey<\/a>, FishBase<\/p>/
+  );
+  assert.ok(!/IMR/.test(a), 'an IMR line on juveniles is not the sex card’s');
+  assert.match(T.title, /males and females/);
+  const b = show({phase: ['Males and females differ in colour']}, sex, q);
+  assert.match(b, /<b>IMR<\/b>: Males and females differ in colour<\/p><p class="phlines phsrc">Sources: /);
+  const ip = show({phase: []}, {s1: {phs: {k: 'phase', src: [{t: 'Fishes of Australia'}]}}}, q);
+  assert.match(ip, /<p class="phlines phsrc">Source: Fishes of Australia<\/p>/);
+  assert.match(T.title, /colour phases can look very different/, 'initial and terminal phases only: not "males and females"');
+  show({phase: []}, {}, q);
+  assert.match(T.title, /males and females/, 'no list entry: as before');
 });
 
 // This device's answers replayed on top of the sheet's (sync.js replayAdoptS) recompute the variant groups left with the

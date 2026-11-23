@@ -16,9 +16,10 @@ Hook mode (the hook's JSON on stdin, no argument), for three events in .claude/s
 
 The log is <git common dir>/claude-instructions.jsonl: one file for the checkout and every worktree, never committed,
 append-only. INSTR_LOG names another file (tests). The hooks run main's reviewed copy (`git show
-origin/main:tools/instr_log.py` given with `python3 -I -c`, the JSON on stdin; a checkout with no origin/main ref fetches
-it first, tests/hooks.test.js), so this file uses the standard library only. A hook never fails the session: any error
-writes nothing and exits 0. A subagent's startup files are not logged (LAZY_ONLY).
+origin/main:tools/instr_log.py` given with `python3 -I -c`, the JSON on stdin, after a bounded refresh in each event;
+tests/hooks.test.js), so this file uses the standard library only. A recording error is a diagnostic on stderr with
+exit 1. The hook is observational and cannot block the session. A subagent's inherited startup files fire no
+InstructionsLoaded events (LAZY_ONLY).
 """
 
 import hashlib
@@ -81,16 +82,18 @@ def record(ev):
         r.update(file_facts(ev.get('file_path') or ''))
     elif name == 'SessionStart':
         cwd = ev.get('cwd') or '.'
+        main = os.environ.get('REEF_HOOK_MAIN', '')[:9] or (git(cwd, 'rev-parse', '--short=9', 'origin/main') or '').strip()
         r.update({'source': ev.get('source'), 'model': ev.get('model'),
                   'head': (git(cwd, 'rev-parse', '--short=9', 'HEAD') or '').strip() or None,
-                  'main': (git(cwd, 'rev-parse', '--short=9', 'origin/main') or '').strip() or None})
+                  'main': main or None})
     return {k: v for k, v in r.items() if v not in (None, '', [])}
 
 
 def subagent_context(root):
     """The SubagentStart line: the Manila time and origin/main's core version (or that it has none yet)."""
     t = datetime.now(MANILA).strftime('%a %d %b %H:%M')
-    core = core_line(git(root, 'show', 'origin/main:AGENTS.md') or '')
+    ref = os.environ.get('REEF_HOOK_MAIN') or 'origin/main'
+    core = core_line(git(root, 'show', ref + ':AGENTS.md') or '')
     c = '«%s»' % core if core else 'none yet (AGENTS.md before the core)'
     return ('Session hook (tools/instr_log.py): Manila time %s (Rule 0: AGENTS.md); the rules core on origin/main: %s.'
             % (t, c))
@@ -99,9 +102,10 @@ def subagent_context(root):
 def hook(stdin, root):
     ev = json.loads(stdin)
     path = log_path(root) or log_path(ev.get('cwd') or '.')
-    if path:
-        with open(path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps(record(ev), ensure_ascii=False) + '\n')
+    if not path:
+        raise OSError('no log path')
+    with open(path, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(record(ev), ensure_ascii=False) + '\n')
     if ev.get('hook_event_name') == 'SubagentStart':
         return json.dumps({'hookSpecificOutput': {'hookEventName': 'SubagentStart',
                                                   'additionalContext': subagent_context(root)}})
@@ -130,7 +134,7 @@ def read_log(path):
                     out.append(json.loads(line))
                 except ValueError:
                     pass
-    except OSError:
+    except FileNotFoundError:
         pass
     return out
 
@@ -149,8 +153,8 @@ def short(p, cwd):
 def report(rows, since=None, session=None):
     rows = [r for r in rows if (not since or datetime.fromisoformat(r['t']) >= since) and (not session or r.get('sid') == session)]
     if not rows:
-        return ['No record%s: the hooks did not run here (instr_log.py not on origin/main, no origin/main ref and the '
-                "hooks' fetch of it failed, or settings.json without them), or nothing started." % (' since then' if since else '')]
+        return ['No record%s. Check Claude hook diagnostics for a failed refresh or log write. The hooks may not have '
+                'run here.' % (' since then' if since else '')]
     out, sessions = [], {}
     for r in rows:
         sessions.setdefault(r.get('sid') or '?', []).append(r)
@@ -219,17 +223,23 @@ def main(argv):
             print('\n'.join(expect(root, argv[1] if len(argv) > 1 else 'origin/main')))
             return 0
         opts = dict(zip(argv[1::2], argv[2::2]))
-        path = log_path(root)
+        try:
+            path = log_path(root)
+            rows = read_log(path) if path else []
+        except (OSError, subprocess.TimeoutExpired) as e:
+            print('Instructions log: could not read the log (%s).' % type(e).__name__, file=sys.stderr)
+            return 1
         since = since_utc(opts['--since']) if '--since' in opts else None
         print('Log: %s' % path)
-        print('\n'.join(report(read_log(path) if path else [], since, opts.get('--session'))))
+        print('\n'.join(report(rows, since, opts.get('--session'))))
         return 0
     try:
         out = hook(sys.stdin.read(), root)
         if out:
             print(out)
-    except Exception:  # a hook never fails the session
-        pass
+    except Exception as e:
+        print('Instructions log: could not record hook event (%s).' % type(e).__name__, file=sys.stderr)
+        return 1
     return 0
 
 

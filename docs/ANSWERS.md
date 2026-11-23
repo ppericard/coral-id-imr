@@ -1,14 +1,14 @@
 # Pierre's answers: the ledger
 
 Append-only. Every answer Pierre gives (numbered or not) gets one entry here, in the PR that applies it to the
-document it changes (AGENTS.md "Every answer reaches its doc"). Before asking Pierre anything, search this file, the
-rules (`docs/rules/`) and the decision records (`docs/decisions/`). STATUS only cites entries; it never holds an
-answer alone.
+document it changes ([AGENTS.md, Working with Pierre](../AGENTS.md#working-with-pierre)). Before asking Pierre
+anything, search this file, the rules (`docs/rules/`) and the decision records (`docs/decisions/`). STATUS only
+cites entries; it never holds an answer alone.
 
 This ledger is historical evidence: an entry keeps what was said and how it was read then, and a later entry may amend
 an earlier one. A match is not by itself a current instruction: before applying it, check its scope, the later entries
 and the subject's current home (its Linear issue or subject note, the rule or doc it was applied to); a decision that
-settles the point is applied, never asked again (AGENTS.md "Every answer reaches its doc").
+settles the point is applied, never asked again.
 
 An entry: the date and Manila time, the question number if any, his words as written (French kept), what it decides in
 one line, and where it is applied (the doc or the PR). A later answer that changes an earlier one is a new entry naming
@@ -1760,7 +1760,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pour supprimer les photos du jeu. Donc... il faut un bouton remove, là en un clic la photo ne revient jamais, avec un
   undo juste après, une liste des photos retirées pour en remettre si j'ai besoin. Oui, ça me va, ta proposition A me
   va.» Option A decided: one Remove, one click, the photo never comes back, an Undo just after, a list of the removed
-  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph).
+  photos to put back. Applied: ROADMAP "Admin for every subject" (a decided paragraph); the corals' admin, #1393
+  (decisions/2026-11-21-one-remove.md); the fish and sea slugs wait for a second step.
 - **05:48, the read-only R2 token for the CI (answers the 05:40 entry): withdrawn.** «Pour le jeton R2 en lecture seule,
   ouais, ok, bon, tu retires la demande, très bien.» The integrator withdraws the request; he agreed. Applied: no doc
   change (the question only sits in STATUS, the integrator's).
@@ -1835,3 +1836,77 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   chat (the integrator's role; a ledger hit is evidence, checked for scope, later amendments and applicability; an
   observation, a one-incident correction, tone or repetition never widen an instruction, a clear stop is obeyed).
   Applied: #1361; REE-178.
+- **18:12, the quiz keeps its question (an RA's feedback, relayed).** «Quand on quitte le jeu et qu'on y revient … on se
+  retrouve avec une photo différente et un jeu différent … ça permet de skipper des questions difficiles sans perdre de
+  points … parfois on a envie d'aller voir dans Learn pour revérifier quelque chose avant de pouvoir répondre à la
+  question, mais la question a disparu entre temps. Donc ça serait bien que globalement, en fait, on puisse revenir sur
+  la même question et que les questions restent, plutôt que d'avoir à chaque fois une nouvelle question quand on ne fait
+  juste que partir pour aller voir un truc et revenir.» The question on screen stays, per subject and game, until it is
+  answered, across navigation and a reload. Applied: docs/spec/quiz.md "The pending question",
+  decisions/2026-11-21-quiz-keeps-pending-question.md (#1375); REE-188.
+- **18:12, photo diversity for thin families (an RA's feedback, relayed).** «elle trouvait qu'il y avait beaucoup de
+  redondance dans les photos pour certaines espèces, ou genres, ou familles. Typiquement … les rémoras, les scorpionfish
+  … est-ce que tu peux refaire une passe? … il faudrait rajouter dynamiquement des photos pour des familles qui
+  globalement ont très peu d'espèces.» Applied: the draw's repeat fixed (#1376), a family floor and a first judging pass
+  (#1379), reviews/2026-11-21-photo-diversity.md; REE-189; the draw's cliff REE-197.
+- **18:12, the RA's reports and unverified photos.** «il faudrait que tu vérifies les flags et les retours sur l'app …
+  elle a trouvé des photos qui étaient pas correctement identifiées … ni research grade ni validé par un expert … je te
+  laisse reprendre tous ces retours et regarder aussi ce qu'elle a fait globalement et voir les difficultés qu'elle a pu
+  rencontrer.» Applied: reviews/2026-11-21-ra-session-review.md (#1374), the weekly photo re-check (#1377); REE-190,
+  REE-194, REE-195.
+- **18:14, beginners and experts.** «au début elle s'ennuyait un petit peu parce que finalement elle allait assez vite
+  sur des trucs et finalement le progrès, ça avançait pas assez vite pour elle … c'est toujours le fameux problème de
+  comment est-ce qu'on contente à la fois les débutants et les experts sur les différents modes de jeu.» Not a decision:
+  a subject to study. Applied: Linear REE-191.
+- **18:15, an entry quiz.** «elle me reparlait d'un quiz à l'entrée, comme Duolingo, qui permet de positionner plus
+  correctement … un joueur lorsqu'il démarre.» The opt-in placement test he decided on 2026-11-18 (#1080). Applied: Linear
+  REE-112 (priority raised; the shrinkage check, reviews/2026-11-21-placement-shrinkage-check.md, #1380).
+- **18:17, the RA is a coral expert.** «sur les coraux, elle est vraiment [experte]. Donc, potentiellement, là où elle a
+  eu des erreurs ou des longtemps avant de répondre, c'est qu'il y avait possiblement des erreurs dans nos données ou une
+  des vraies difficultés sur les photos.» (dictated: "inexperte", read as "experte"). Applied:
+  reviews/2026-11-21-ra-session-review.md §3 (#1374); REE-194.
+- **20:59-21:00, keep going until he says stop.** «Du coup, il n'y a plus rien sur lequel tu peux avancer et travailler
+  tout seul cette nuit.» «Et du coup, pourquoi tu les as pas lancés avant?» «Mais sans forcément de priorité haute. Oui,
+  qu'il fallait commencer par de la priorité haute, ok, mais en fait, tant que j'ai pas dit qu'on s'arrêtait, il faut
+  continuer, quoi. Et il faut écluser tout ce qu'il y a dans la roadmap qui est faisable sans moi, et déjà décidé.»
+  Applied: INTEGRATOR.md "Linear" (drain the Todo column until he says stop) (#1384); the night's waves of agents.
+
+## 2026-11-22
+
+- **06:06, tasks scheduled for a date or a trigger stay out of sight.** «Il va falloir qu'on imagine un statut différent
+  pour certaines tâches parce que le fait de renouveler le jeton GitHub de l'admin avant fin janvier, j'ai pas envie de
+  l'avoir à chaque fois dans la liste des tâches alors que c'est quelque chose qui arrive dans plus de 2 mois et qui ne
+  sert à rien de me le redire maintenant en fait. Donc je pense qu'il va falloir créer une section pour les tâches
+  juste qui sont programmées et qui n'ont pas besoin de revenir avant une date précise ou un déclenchement précis. Ça
+  sert à rien de me le répéter, de le faire alors que c'est dans plus de 2 mois.» A working-method request, not a
+  numbered question. Applied: INTEGRATOR.md "Linear" (label Scheduled);
+  decisions/2026-11-22-scheduled-tasks.md; Linear label Scheduled on REE-75 and REE-73.
+
+## 2026-11-23
+
+- **16:05, REE-234 (old Apps Script versions).** Pierre deleted the old Apps Script versions; v220 was deployed at
+  16:19:56. Applied: no doc change (Linear REE-234).
+- **16:18, Q453 (REE-197, #1391).** Not answered as asked. «je préfère beaucoup plus les solutions simples et continues
+  que des choses avec des catégories ou des bascules, des interrupteurs.» #1391 is held until the ease review (REE-85)
+  is done. Applied: Linear REE-197 and REE-85.
+- **16:23, REE-85 (how fish easy and hard are computed).** A request: «j'aimerais bien qu'on revoie en fait comment sont
+  calculés faciles et difficiles par rapport aux différents critères». Applied: reviews/2026-11-23-fish-ease-vs-answers.md;
+  Linear REE-85.
+- **16:33, REE-237 (Key use as activity in the admin).** «Définitivement» to counting Key use as activity in the admin.
+  Applied: Linear REE-237.
+- **16:34, REE-198 (refill for species short of easy adults).** «oui, définitivement» to the most-faved-first refill for
+  the species short of easy adults. Applied: Linear REE-198.
+- **16:37, REE-219 (who sets Done).** «Fait». Linear's "pull request merged" automation no longer sets Done; the
+  integrator sets Done when the completion evidence exists. Applied: INTEGRATOR.md "Linear" (REE-219).
+- **16:38, REE-227 (the machine slot).** «ok» to the wording that a heavy run takes the slot for one command and
+  releases it when that command ends, never a script that keeps a slot between runs. Applied: rules/ship.md W24
+  (REE-227).
+- **16:40, REE-71 (what simulations decide).** «ça me parait raisonnable comme compromis. Ok pour implémenter cette
+  proposition», on the scope of reviews/2026-11-21-simulation-scope.md; his 2026-11-21 caution («il faut pas non plus
+  l'inverser complètement et le transformer plus qu'en garde-fou») is kept. Applied: rules/learning.md L11 (REE-71).
+- **16:40, Q455-Q458 (the REE-85 study).** Asked, not answered: weight 0.5 to 0.2-0.25; the typical-look exception;
+  ease within a family only; caps softened, cap-2 first. Applied: no doc change (open in Linear REE-85).
+- **About › Photos marginal rewrite (REE-51, #1409), Q454.** «je suis d'accord pour avoir une réécriture, même si c'est
+  une réécriture à la marge, si ça permet justement effectivement de nettoyer tout ça proprement … on peut déjà
+  intégrer effectivement les premières modifications à la marge»; the simple credits page: «dans un deuxième temps, mais
+  pas maintenant», once the IMR lecture photos are out. Applied: Linear REE-51.

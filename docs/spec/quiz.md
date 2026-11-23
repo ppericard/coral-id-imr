@@ -20,7 +20,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
   subject has it (`UNITS` `pairs`, `duelLede`).
 - **Typed** (`|t`): no guess rate, no time weight, never a comeback, an Again or a duel (below).
 - **Find the X** (`|f`): scored as 4 choices, the photo tapped the unit given (rule L2); its own format offset, `find`
-  (`core.js` `fmtOf`).
+  (`core.js` `fmtOf`). Asked on the subject's own rank and on its species (the rank `species`, by common or scientific
+  name; the four units of one kind of name), never a scientific genus.
 - **Every format**: its own fitted offset (`core.js` `fmtOf`); no known-mix-ups term on 2 choices (`model.js`
   `confTerm`).
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked
@@ -207,6 +208,48 @@ stores and rates as a photo-quiz answer (`guess_` reads `|kN` at the end and `|t
 admin: Activity's Recent sessions count it as **custom**, the player journey has a "Custom quiz (genera picked)" row
 under Games and the sessions with it in "When they played". Its reminder of the units waiting in the Quiz:
 [cards.md](cards.md#the-custom-quizs-reminder-of-the-units-waiting-in-the-quiz).
+
+## The pending question
+
+A question shown and not answered stays: the player leaves for Learn, My progress or anywhere, or reloads the page, and
+comes back to the same question, photos and choices, unanswered; a new one is drawn only once it is answered
+([decision](../decisions/2026-11-21-quiz-keeps-pending-question.md)). Every subject and every game that asks a question:
+the Quiz (`quiz`), the Custom quiz (`quiz-custom|play`), the Duel tab (`quiz-duel`) and a pair's drill
+(`quiz-duel|A|B`), each kept on its own; in every format (4 choices, typed, Find the X, an Again, a duel slipped in, a
+comeback question, a mastery exam question). One engine (`quiz.js` `PEND`, `pendRec`, `pendBuild`, `pendOk`,
+`pendTake`, `pendShow`, `pendDone`, `pendClock`, rule S1); no Code.gs, no sheet, no progress rule.
+
+- **Kept** by `quizPhoto` and `quizDuel` when the question shows (`pendShow`), in the device key `reefid-<dev>pending`
+  (`{game: record}`, `pendKey`; the corals' `reefid-pending`): never synced, cleared at sign-out and account deletion
+  (`sync.js` `signOutClear`, rule D7), at most `PEND.MAX` games. The record holds units, choices, photo files with their
+  view and the format's flags (its kind, the typed, exam, custom and comeback marks, the pair's order, and for a species
+  asked by its scientific name the names' display, `sv`: `sciShow` draws it at random, so it is drawn once and comes
+  back as it was, never a second look at the common names): never HTML, a prompt or a photo record. `answer` ends it (`go`: any answer, "I don't know" included), so an answered question is
+  never kept, reloaded after its feedback or not.
+- **Taken** first thing in `quizPhoto` / `quizDuel` (`pendTake`, before the first-launch question, the surprise and the
+  plan): built again from the current data, so the photos are the draw's own records (`pendBuild`: a photo hidden or
+  moved since is gone; an exam question's reserved photos are found where the exam draws them, `heldOf`), and valid
+  only while its unit is in play and met (the two of a pair and the four of a Find the X too; a wrong choice outside
+  the units in play, a rank's fallback, stays a choice), in the custom quiz still among the units picked, in the Duel
+  tab unlocked, an exam question still due (`pendOk`). Otherwise the record is dropped and a new question is drawn,
+  quietly, as it always was.
+- **The draw's state** is that of a question that never left: the questions planned behind it stay (keyed on the same
+  answers count; after a break they are planned again, `rustNow`), the repeat window (`lastQs`) and the photo window
+  (`SEENQ`) hold it once (a reload starts them with it), the opening hold, the comeback and the Elo are read at answer
+  time as for any question, a comeback question keeps its mark. The cards and offers of the first showing are not shown
+  again. A question about the genus of its own first-meeting card is not kept (its card is the genus's meeting); one
+  that came with another genus's card (a genus opening next, the question about a genus already met) is kept, and the
+  card does not show again (`introAdd` marks its genus met when the card shows)
+  ([decision](../decisions/2026-11-22-pending-question-other-card.md)). The hint
+  (Show the corallites) is hidden again: opening it counts as help.
+- **Response time**: the clock counts the seconds the player looked at the question before leaving (`QCLOCK.pre`,
+  written at each leave, hide and page close, `pendClock`) and the seconds since the return, never the time away: a
+  right answer given fast proves more (`core.js` `rtWeight`), so looking, leaving to check Learn and answering at once is
+  no fast answer. A card over the question closes the reading as before.
+- **Not kept**: the surprise cards (`wink`, they count nowhere), the Lab's tools (Memory, Same or different?, Odd one out,
+  Matrix: no current question, no score) and the live game (its own session).
+- **A question that cannot be answered** (its photos gave up: the answers close, `app.js`) and "Another question" forget
+  the question (`pendDone`), so the next is new.
 
 ## Bonus genera
 

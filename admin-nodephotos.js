@@ -4,11 +4,12 @@
 // soit avec des paramètres, soit avec des bouts de codes spécialisés"). It replaces the corals' Photos › Genera tab (its Live,
 // Hidden and Excluded views, #photos/genera/…), whose tools now sit on the Tree's page of a leaf node (a genus).
 //
-// What is shared (this file's `npLists`, `npBind`, `npTile`, and the filters' counts): for a node, the photos taken off the
-// site under it (Removed from the site) and the photos excluded for good (Excluded), each one tile with one click, its Undo
-// step and its one binder, on the page of any node of any view of any subject's tree: a leaf shows its own, a group or a
-// family those of the leaves under it, the first root of a view also the excluded photos that name no leaf any more. Both
-// lists are read, and put back, through the subject's adapter below; nothing else on this page knows a subject.
+// What is shared (this file's `npLists`, `npBind`, `npTile`, and the filters' counts): for a node, ONE list, Removed (Pierre,
+// 2026-11-21 05:48, option A: "une liste des photos retirées pour en remettre"): the photos taken out for good (the one Remove:
+// curation exclude) and, as they were published, the ones the old Remove took off the site (a hide entry); each one tile with
+// one Put back, its Undo step and its one binder, on the page of any node of any view of any subject's tree: a leaf shows its
+// own, a group or a family those of the leaves under it, the first root of a view also the removed photos that name no leaf
+// any more. Both are read, and put back, through the subject's adapter below; nothing else on this page knows a subject.
 //
 // What each subject specifies, declared here and nowhere else (rule S1: a parameter or a small piece of code, named, with its
 // reason; the adapter is the one in NODE_PHOTOS under the data shape the subject declares, `SUBJECTS` `flat`, as admin.js
@@ -19,14 +20,18 @@
 //              section per SPECIES under the family, Ease and phase (juvenile, colour phase) tags, the ★ Cover at every rank.
 //              Different data (curation.json genera[<genus>] against fish.genera[<node id>]) and different tiles: one tile
 //              and one body for both is a later step (docs/reviews/2026-11-19-admin-one-engine.md §5, step 8).
-//   removed    the photos taken off the site (Remove), and `back`, the click that returns one. The corals: genera[g].hide, back
-//              is the Remove toggle. The fish's Remove is a reviewed mark (fish.seen) that sends the photo back to the
-//              Candidates, with no inverse on a node page yet: null, so no list (next step).
-//   excluded   the photos excluded for good (curation.json exclude), and `restore`. The corals': the top-level `exclude`. The
-//              fish keep theirs in fish.exclude, with no tested restore: null (next step).
-//   orphans    excluded photos no unit has any more (a coral genus the data lost, a lecture slide with no genus): listed at the
-//              first root of each view; the fish have none to list (excluded: null).
-// The pure part (npExcluded, npUnder) runs in Node too: tests/nodephotos.test.js.
+//   removed    the photos the old Remove took off the site, and `back`, the click that returns one. The corals: genera[g].hide
+//              (published ones only: nothing writes a new one), back deletes the entry (ACT.unhide). The fish and the sea
+//              slugs: none (their old Remove was a reviewed mark, fish.seen, the same mark as ✕ Reject: it stays a candidate).
+//   excluded   the photos removed for good (the one Remove: the corals' ACT.remove, the tree subjects' treeRemove), and
+//              `restore`, the Put back. The corals': the top-level curation `exclude`, Put back deletes the entry. The tree
+//              subjects': their own part's `exclude` (curation.json fish.exclude, seaslug.exclude), each photo under the leaf of
+//              its species (a Not this's species first, else its record's: npTreeExcluded; a genus-level photo under its
+//              genus's leaf); Put back deletes the entry, and the photo is a candidate again (the pipeline reads exclude as
+//              it reads seen and keeps the candidate record).
+//   orphans    removed photos no unit has any more (a coral genus the data lost, a lecture slide with no genus; a fish photo
+//              with no record or a species off the tree): listed at the first root of each view, under `orphanT`.
+// The pure part (npExcluded, npTreeExcluded, npUnder) runs in Node too: tests/nodephotos.test.js.
 (function (root) {
   const inNode = typeof module !== 'undefined' && module.exports;
   // The excluded photos of curation.json (X = exclude {f: reason}) as items {f, p, unit, gone, inat, slide, lecture}: p the
@@ -60,26 +65,39 @@
       };
     });
   }
+  // The removed photos of a tree subject's part of the curation (F: fish or seaslug, F.exclude {f: reason}) as items {f, p,
+  // sid}: p the photo's record, its candidate's (byF {f: record with .sid}) else the game's (plays [{f, sp}]: a reference
+  // photo only the game holds), null when neither holds it; sid its species (or a genus-level photo's genus): the one
+  // Not this sent it to (F.out, never 'x'), else its record's, else ''.
+  function npTreeExcluded(F, byF, plays) {
+    F = F || {};
+    const G = new Map((plays || []).filter(q => q && q.f).map(q => [q.f, q]));
+    return Object.keys(F.exclude || {}).map(f => {
+      const c = (byF || {})[f],
+        g = G.get(f),
+        o = (F.out || {})[f];
+      return {f, p: c || g || null, sid: (o && o !== 'x' && o) || (c && c.sid) || (g && g.sp) || ''};
+    });
+  }
   // The items of `units` (a list of unit ids: a node's leaves), in the order given.
   const npUnder = (items, units) => {
     const s = new Set(units);
     return items.filter(i => s.has(i.unit));
   };
-  const API = {npExcluded, npUnder};
+  const API = {npExcluded, npTreeExcluded, npUnder};
   if (inNode) module.exports = API;
   else Object.assign(root, API);
 })(this);
 
 // ---- The admin part (browser only: admin.js state and helpers, read when called) ----
-// One tile of a list: thumb and cap are the adapter's (its photo's thumbnail, its caption), the click one binder's.
-// kind: 'back' (Put back) or 'restore' (Restore), the adapter's own methods.
-const npTile = (it, kind) => {
-  const word = kind === 'back' ? 'Put back' : 'Restore';
-  return `<figure class="adm-tile${kind === 'back' ? ' is-hidden' : ''}" data-f="${esc(it.f)}" data-g="${esc(it.unit)}">
+// One tile of the list: thumb and cap are the adapter's (its photo's thumbnail, its caption), the click one binder's. kind:
+// the adapter's own method that returns the photo, 'back' (an old Remove's hide entry) or 'restore' (the one Remove's exclusion);
+// the word is Put back either way.
+const npTile = (it, kind) =>
+  `<figure class="adm-tile is-hidden" data-f="${esc(it.f)}" data-g="${esc(it.unit)}" data-np-kind="${kind}">
       ${it.thumb ? `<button type="button" class="adm-ph" data-np="zoom" aria-label="Enlarge">${it.thumb}</button>` : '<span class="adm-ph"><span class="none">no preview</span></span>'}
       <figcaption>${it.cap}</figcaption>
-      <div class="adm-acts"><button type="button" data-np="${kind}">${word}</button></div></figure>`;
-};
+      <div class="adm-acts"><button type="button" data-np="${kind}">Put back</button></div></figure>`;
 // The adapters, by the subject's data shape (SUBJECTS flat: admin.js treeShape); the specifics are listed at the top of
 // this file.
 const NODE_PHOTOS = {
@@ -113,55 +131,101 @@ const NODE_PHOTOS = {
       }));
     },
     orphans: () => NODE_PHOTOS.flat.excludedAll().filter(it => !it.unit),
-    back: it => ACT.hide(it.unit, it.f),
+    back: it => ACT.unhide(it.unit, it.f),
     restore: it => {
       DRAFT.exclude = {...(DRAFT.exclude || {})};
       delete DRAFT.exclude[it.f];
       saveDraft();
       render();
     },
-    zoom: (it, kind) => (kind === 'back' ? zoom(it.unit, it.f) : it.p && zoomOne(it.p))
+    zoom: (it, kind) => (kind === 'back' ? zoom(it.unit, it.f) : it.p && zoomOne(it.p)),
+    orphanT: 'Removed, no genus any more'
   },
-  // A tree subject (the fish and the sea slugs): their body is their builder's page (admin.js TREE_BUILD tree); no list yet
-  // (see the top).
-  tree: {live: null, removed: null, excluded: null, orphans: null}
+  // A tree subject (the fish and the sea slugs): their body is their builder's page (admin.js TREE_BUILD tree); the list is
+  // their part's removed photos (see the top).
+  tree: {
+    live: null,
+    removed: null,
+    // every removed photo of the subject's part, each under the leaf of its species in the view T (a leaf's species: admin.js
+    // leafSid; a genus-level leaf's, its genus), unit '' when the view has none
+    all: T => {
+      if (!T || !FISHC) return [];
+      const leaf = new Map(T.roots.flatMap(r => ttLeaves(T, r)).map(x => [leafSid(T, x), x]));
+      // A photo no loaded file holds any more (a reference photo only the game held: once its removal is published, the
+      // rebuilt game file leaves it out, and the reference list, tools/, is not on the site): its iNaturalist photo, from the
+      // id its name ends with (as the corals' gone photos), so it can still be told and put back.
+      const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
+      return npTreeExcluded(DRAFT[TK], FISHC.byF, FISHC.plays).map(it => {
+        const unit = leaf.get(it.sid) || '',
+          p = it.p,
+          inat = !p && (it.f.match(/(\d{5,})$/) || [])[1];
+        return {
+          ...it,
+          unit,
+          inat,
+          thumb:
+            p && p.src
+              ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy">`
+              : inat
+                ? `<img src="${io(inat)}.jpg" alt="" loading="lazy" data-ext="0">`
+                : '',
+          cap: `${unit ? `<a class="adm-gen" href="${esc(tvHref(unit))}"><i>${esc(fuName(it.sid))}</i></a>` : `<span class="adm-gen">${it.sid ? esc(fuName(it.sid)) : 'species not known here'}</span>`}${p ? fishSrcTag(p) : inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${inat}" target="_blank" rel="noopener">iNat ↗</a>` : `<code class="adm-t">${esc(it.f)}</code>`}`
+        };
+      });
+    },
+    excluded: (units, T) => npUnder(NODE_PHOTOS.tree.all(T), units),
+    orphans: T => NODE_PHOTOS.tree.all(T).filter(it => !it.unit),
+    // Put back: the exclusion goes (one Undo step), the photo is a candidate again (or in play again, a reference photo the
+    // game holds)
+    restore: it =>
+      fishEdit(F => {
+        const X = {...(F.exclude || {})};
+        delete X[it.f];
+        return {...F, exclude: X};
+      }),
+    zoom: it => it.p && fishZoom(it.p, it.sid, false),
+    orphanT: 'Removed, species not known here'
+  }
 };
 const npOf = () => NODE_PHOTOS[treeShape(ASUBJ)] || {};
-// The lists of node id for the tree T and the view's first root: the page's Removed and Excluded sections, '' when the
-// subject has none or they are empty (a leaf page with nothing taken off shows nothing: rule A2).
+// The list of node id for the tree T and the view's first root: the page's Removed section (the photos removed for good, then
+// the ones an old Remove hid), and below it, on the view's first root, the removed photos no unit has any more; '' when the
+// subject has none or they are empty (a leaf page with nothing removed shows nothing: rule A2).
 let NP_ITEMS = new Map(); // the items drawn, by kind and photo: what the binder acts on
 function npLists(T, sel, first) {
   const A = npOf(),
     units = ttLeaves(T, sel),
     rm = A.removed ? A.removed(units) : [],
-    ex = A.excluded ? A.excluded(units) : [],
-    orph = first && A.orphans ? A.orphans() : [],
-    sec = (cls, title, L, kind) => {
-      L.forEach(it => NP_ITEMS.set(`${kind}:${it.unit}:${it.f}`, it)); // a photo removed from two genera is two items
+    ex = A.excluded ? A.excluded(units, T) : [],
+    orph = first && A.orphans ? A.orphans(T) : [],
+    sec = (cls, title, L) => {
+      L.forEach(([kind, it]) => NP_ITEMS.set(`${kind}:${it.unit}:${it.f}`, it)); // a photo removed from two genera is two items
       return L.length
-        ? `<section class="adm-row adm-np ${cls}" data-np-sec="${kind}"><h3>${title} <small>${L.length}</small></h3><div class="adm-grid">${L.map(it => npTile(it, kind)).join('')}</div></section>`
+        ? `<section class="adm-row adm-np ${cls}" data-np-sec><h3>${title} <small>${L.length}</small></h3><div class="adm-grid">${L.map(([kind, it]) => npTile(it, kind)).join('')}</div></section>`
         : '';
     };
   NP_ITEMS = new Map();
   return (
-    sec('adm-npr', 'Removed from the site', rm, 'back') +
-    sec('adm-npx', 'Excluded', ex, 'restore') +
-    sec('adm-npx adm-nporph', 'Excluded, no genus any more', orph, 'restore')
+    sec('adm-npx', 'Removed', [...ex.map(it => ['restore', it]), ...rm.map(it => ['back', it])]) +
+    sec(
+      'adm-npx adm-nporph',
+      A.orphanT,
+      orph.map(it => ['restore', it])
+    )
   );
 }
-// The counts the tags use: the genera (units) holding at least one photo taken off the site / excluded.
+// The count the Removed tag uses: the genera (units) holding at least one removed photo.
 const npCount = {
-  removed: n => (npOf().removed ? npOf().removed([n]).length : 0),
-  excluded: n => (npOf().excluded ? npOf().excluded([n]).length : 0)
+  removed: n => (npOf().removed ? npOf().removed([n]).length : 0) + (npOf().excluded ? npOf().excluded([n]).length : 0)
 };
-// The clicks of the lists in scope: Put back, Restore, Enlarge; an excluded photo's thumbnail from iNaturalist tries .jpg,
-// .jpeg then .png (its extension is unknown).
+// The clicks of the list in scope: Put back, Enlarge; a removed photo's thumbnail from iNaturalist tries .jpg, .jpeg then .png
+// (its extension is unknown).
 function npBind(scope) {
   const A = npOf();
   scope.querySelectorAll('[data-np-sec]').forEach(s => {
-    const kind = s.dataset.npSec;
     s.querySelectorAll('figure[data-f]').forEach(t => {
-      const it = NP_ITEMS.get(`${kind}:${t.dataset.g}:${t.dataset.f}`);
+      const kind = t.dataset.npKind,
+        it = NP_ITEMS.get(`${kind}:${t.dataset.g}:${t.dataset.f}`);
       if (!it) return;
       t.querySelectorAll('[data-np]').forEach(b => {
         b.onclick = () => (b.dataset.np === 'zoom' ? A.zoom(it, kind) : A[b.dataset.np](it));
@@ -209,13 +273,13 @@ function coralLive(n) {
     Ps = P.filter(shown),
     two = lv(n) === 2;
   const candTile =
-    p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
+    p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}
     <figcaption>${srcTag(p)}${rejected(p.f) ? '<span class="adm-src rej" title="Rejected">rejected</span>' : ''}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(
       ([w]) => !(two && w === 'medium')
     )
       .map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">${label(n, w)}</button>`)
-      .join('')}</span>${p.from ? '' : notThis(n)}</div></figure>`;
+      .join('')}</span>${p.from ? '' : notThis(n)}${RMBTN}</div></figure>`;
   // Candidates: set apart from the views and folded by default; open or closed is remembered.
   const candRow = P.length
     ? `<details class="adm-row adm-cands"${store.get('reefid-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} photo${P.length > 1 ? 's' : ''} not on the site${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>

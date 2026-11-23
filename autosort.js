@@ -85,17 +85,17 @@
   // tools/fetch_fish.py sure_out mirrors the rejects. Flags after the seven tags: j c a w typed by the judge (w: a
   // watermark or text, which only Home skips), p (phase) and r (a reference photo) added by the tool. The sea slugs'
   // rubric (judging/SEASLUG.md) adds the view v (ventral) and the flag f (rhinophores or gills hidden), accepted too.
-  const FISH_TAGS = /^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$/;
+  const TREE_TAGS = /^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$/;
   // The doubts that weigh on the photo itself: every unsure field but the fish's box (bb), whose doubt only withholds the
   // photo's tile (tools/fish_game.py unsure, box_of).
-  const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
-  function fishSure(j) {
-    if (!j || fishUnsure(j).length) return null;
+  const treeUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
+  function treeSure(j) {
+    if (!j || treeUnsure(j).length) return null;
     // An egg mass (the sea slugs' egg rule, judging/SEASLUG.md: {egg: 1}, never a code): never a candidate, set aside as
     // a near-duplicate is (tools/seaslug_game.py sure never puts one in play). The fish's judgements carry no egg.
     if (j.egg) return {keep: 'reject', why: 'egg'};
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
-    if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
+    if (!TREE_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};
     if (j.jt[6] === 'k') return {keep: 'reject', why: 'other species'};
     if (j.jt.slice(7).includes('a')) return {keep: 'reject', why: 'out of water'};
@@ -114,36 +114,36 @@
   // after a newer sure judgement: sortBack); ? a Check (not applied, shown blind; never a b), - undone (never applied
   // again); after an a or a b, the fields the run wrote (t tags, e ease, p phase, c crop: a value the admin had already
   // given is not written, so not listed, and an Undo leaves it alone); @t when he answered or corrected it.
-  const FISHW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
+  const TREEW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
   // Observations in play per species: 8 per circle-1 species, 12 for the cheatsheet's 24 most sighted (fish.json cs), at
   // most 20. The auto-sort proposes up to the target; the admin adds beyond it. A species met only on the surprise cards
-  // (fishSpecies wink) keeps a few really good photos (docs/ROADMAP.md "Surprise-only species"): its target is
-  // FISHT.wink, and the admin's Tree shows that many in play, the rest on demand (fishWinkFold).
-  const FISHT = {obs: 8, top: 12, cap: 20, wink: 5};
+  // (treeSpeciesOf wink) keeps a few really good photos (docs/ROADMAP.md "Surprise-only species"): its target is
+  // TREET.wink, and the admin's Tree shows that many in play, the rest on demand (fishWinkFold).
+  const TREET = {obs: 8, top: 12, cap: 20, wink: 5};
   // A subject with a target of its own (core.js SUBJECTS admin target: the sea slugs' game cap) has it on every species
-  // record the admin reads (fishSpecies tgt).
-  const fishTarget = sp => (sp && sp.tgt > 0 ? sp.tgt : sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
-  function fishParse(code) {
+  // record the admin reads (treeSpeciesOf tgt).
+  const treeTarget = sp => (sp && sp.tgt > 0 ? sp.tgt : sp && sp.wink ? TREET.wink : sp && sp.cs ? TREET.top : TREET.obs);
+  function treeParse(code) {
     const m = /^([?-]?)([abr])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
     if (!m || (m[3] && (m[2] === 'r' || m[1] === '?')) || (m[2] === 'b' && m[1] === '?')) return null;
-    const w = Object.keys(FISHW).filter(k => m[3].includes(FISHW[k]));
+    const w = Object.keys(TREEW).filter(k => m[3].includes(TREEW[k]));
     return {check: m[1] === '?', undone: m[1] === '-', kind: m[2], ...(w.length ? {w} : {}), ...(m[4] ? {t: parseInt(m[4], 36)} : {})};
   }
   // Every logged fish photo: {f: {day, code, d}} (the latest day wins, as autoIdx).
-  function fishIdx(F) {
+  function treeIdx(F) {
     const out = {};
     Object.keys((F && F.auto) || {})
       .sort()
       .forEach(day =>
         Object.entries(F.auto[day] || {}).forEach(([f, code]) => {
-          const d = fishParse(code);
+          const d = treeParse(code);
           if (d) out[f] = {day, code, d};
         })
       );
     return out;
   }
   // The admin's keep on a fish photo: 'reject' (Not this, excluded, rejected: these win over an add), 'add', or null.
-  function fishMine(F, f) {
+  function treeKeepOf(F, f) {
     F = F || {};
     if ((F.out || {})[f] || (F.exclude || {})[f] || (F.seen || {})[f]) return 'reject';
     return (F.add || {})[f] ? 'add' : null;
@@ -163,14 +163,14 @@
   }
   // Comparisons for the agreement (field keep, as autoCompare): every answered Check, and every later correction of an
   // applied decision (a disagreement; a decision left alone says nothing), oldest answer first.
-  function fishCompare(F) {
-    const I = fishIdx(F),
+  function treeCompare(F) {
+    const I = treeIdx(F),
       out = [];
     Object.keys(I)
       .sort()
       .forEach(f => {
         const {day, d} = I[f],
-          p = fishMine(F, f),
+          p = treeKeepOf(F, f),
           a = d.kind === 'r' ? 'reject' : 'add';
         if (!p || d.undone) return;
         const ok = a === p,
@@ -194,18 +194,18 @@
   // is a sure add (a crop that saves it, judging/FISH.md "A crop that saves a photo"). Its sure add, or null, when all
   // of these hold:
   // - its log code is the run's own plain reject, exactly 'r': a Check ('?r'), an Undo ('-r'), or a time (@t: he answered
-  //   or corrected it) means he touched it, and his own Reject of a photo the run had set aside marks it '-r' (fishReject);
+  //   or corrected it) means he touched it, and his own Reject of a photo the run had set aside marks it '-r' (treeReject);
   // - it is still set aside only (seen 1), not added, excluded or moved with Not this, and he gave it no tags nor crop
   //   (the new code is read on the judge's crop: one of his would describe another photo);
   // - its judgement was made on or after the day of the reject (at(f): its pass's date, data/suggest.json "by" {key: {fish:
-  //   {at}}}; with none, never), and is a sure add now (fishSure). A reject is logged only from a sure reject, so a sure
+  //   {at}}}; with none, never), and is a sure add now (treeSure). A reject is logged only from a sure reject, so a sure
   //   add judged since is a new judgement, never a rule read anew.
   function sortBack(F, x, f, j, at) {
     if (!x || x.code !== 'r' || (F.seen || {})[f] !== 1 || (F.add || {})[f] || (F.exclude || {})[f] || (F.out || {})[f]) return null;
     if ((F.tags || {})[f] != null || (F.crop || {})[f] != null) return null;
     const d = typeof at === 'function' ? at(f) : null;
     if (!d || d < x.day) return null;
-    const s = fishSure(j);
+    const s = treeSure(j);
     return s && s.keep === 'add' ? s : null;
   }
   // The one route out (Pierre, 2026-11-19 20:57: «il faut que tu fasses une proposition qui intègre directement le jeu»;
@@ -215,7 +215,7 @@
   //   corrected it), and lists the tags (t: still the run's copy; a photo he tagged himself is his);
   // - it is still the run's add in this species (sid), not rejected, excluded or moved with Not this, and no re-judge
   //   proposal of it was answered Keep mine (F.kept);
-  // - its judgement was made on or after the day of the add (at(f), as sortBack), and is a sure rejection now (fishSure).
+  // - its judgement was made on or after the day of the add (at(f), as sortBack), and is a sure rejection now (treeSure).
   // It goes into his draft as the run's plain reject (no new log letter): one Undo step like any of the run's; the photo
   // then waits as a candidate, and a later sure add brings it back by sortBack.
   function sortOut(F, x, f, sid, j, at) {
@@ -224,18 +224,18 @@
     if ((F.add || {})[f] !== sid || (F.seen || {})[f] || (F.exclude || {})[f] || (F.out || {})[f] || (F.kept || {})[f]) return false;
     const a = typeof at === 'function' ? at(f) : null;
     if (!a || a < x.day) return false;
-    const s = fishSure(j);
+    const s = treeSure(j);
     return !!s && s.keep === 'reject';
   }
   // at(f): the date (YYYY-MM-DD) photo f's judgement was made, for the route back (sortBack) and the route out (sortOut);
   // without it, none moves. A photo it brings back is no longer set aside: it is added like an add (code b and the fields
   // written) while its species has room, else it waits as a candidate (code b alone), which the game plays as any sure
-  // candidate. A photo it takes out loses its add and the fields its code lists (as fishUndo does) and is set aside (seen,
+  // candidate. A photo it takes out loses its add and the fields its code lists (as treeUndo does) and is set aside (seen,
   // code r); the room it frees is filled at the next load.
-  function fishRun(cands, sug, species, F, day, keepOn = true, at = null) {
+  function treeRun(cands, sug, species, F, day, keepOn = true, at = null) {
     F = F || {};
-    const I = fishIdx(F),
-      busy = f => fishMine(F, f) || I[f],
+    const I = treeIdx(F),
+      busy = f => treeKeepOf(F, f) || I[f],
       plan = [];
     Object.entries(cands || {}).forEach(([sid, L]) =>
       (L || []).forEach(p => {
@@ -246,7 +246,7 @@
           else if (sortOut(F, I[p.f], p.f, sid, (sug || {})[p.f], at)) plan.push({sid, p, s: {keep: 'reject'}, check: false, out: true});
           return;
         }
-        const s = fishSure((sug || {})[p.f]);
+        const s = treeSure((sug || {})[p.f]);
         if (s) plan.push({sid, p, s, check: autoCheck(p.f)});
       })
     );
@@ -264,7 +264,7 @@
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && (obsOf[p.f] = p.o || p.f)));
     const room = {};
     // In play as the swiper counts it (treePhotoOn): a photo moved with Not this and added to its new species counts there
-    // (fishMine reads its first species, where it is a reject). An add with other species one could take for its subject
+    // (treeKeepOf reads its first species, where it is a reject). An add with other species one could take for its subject
     // (core.js treeOther) is out of play, so it holds no room.
     Object.entries(F.add || {}).forEach(([f, sid]) => {
       if (!treePhotoOn(F, f, sid) || treeOther((F.tags || {})[f], ((sug || {})[f] || {}).jt)) return;
@@ -275,7 +275,7 @@
       put = (k, f, v) => {
         if (v == null || (F[k] || {})[f] != null) return '';
         N[k] = {...(N[k] || {}), [f]: v};
-        return FISHW[k];
+        return TREEW[k];
       };
     plan.forEach(({sid, p, s, check, back, out}) => {
       const f = p.f;
@@ -285,7 +285,7 @@
       }
       if (!keepOn) return R.off++;
       if (out) {
-        // Taken out: the add and the fields its code lists leave (fishUndo's drop; a map left empty stays {}: merge3), the
+        // Taken out: the add and the fields its code lists leave (treeUndo's drop; a map left empty stays {}: merge3), the
         // photo is set aside, its code the run's plain reject.
         delete N.add[f];
         (I[f].d.w || []).forEach(k => {
@@ -300,7 +300,7 @@
       if (s.keep === 'add') {
         const r = (room[sid] = room[sid] || new Set()),
           o = p.o || f,
-          fit = r.has(o) || r.size < Math.min(fishTarget((species || {})[sid]), FISHT.cap);
+          fit = r.has(o) || r.size < Math.min(treeTarget((species || {})[sid]), TREET.cap);
         if (!fit && !back) return R.full++;
         if (back) {
           delete N.seen[f];
@@ -309,7 +309,7 @@
         if (!fit) return (L[f] = 'b');
         r.add(o);
         N.add[f] = sid;
-        const c = fishCopy({...p, f}, {jt: s.tags, ph: s.phase}, F);
+        const c = treeCopy({...p, f}, {jt: s.tags, ph: s.phase}, F);
         L[f] = (back ? 'b' : 'a') + put('tags', f, c.tags) + put('ease', f, s.ease) + put('phase', f, c.phase) + put('crop', f, s.crop);
       } else {
         N.seen[f] = 1;
@@ -327,13 +327,13 @@
 
   // One fish auto decision taken back (the admin's Undo in the Auto details, as the coral autoUndo; rule A1: every auto
   // decision undoable one by one). sid: the candidate's species (its data/fish-cand.json list). What the run wrote leaves the
-  // fish part, and only that: the add while it still names that species, and the fields its code lists (fishOwn takes
+  // fish part, and only that: the add while it still names that species, and the fields its code lists (treeOwn takes
   // off those he set since). Never compared with the pass's judgment, which a new pass may have replaced. The log marks
   // the decision undone ('-'): never applied again, the photo waits as a candidate, or, brought back (b), is set aside
   // again (seen). Emptied maps stay as {} (fishOut leaves them out of the file), so the Publish merge (merge3) removes
   // these entries only.
-  function fishUndo(F, f, sid) {
-    const x = fishIdx(F)[f];
+  function treeUndo(F, f, sid) {
+    const x = treeIdx(F)[f];
     if (!x || x.d.check || x.d.undone) return F;
     const N = {...F},
       drop = (k, ok = () => true) => {
@@ -354,9 +354,9 @@
   }
   // A fish field the admin sets on a photo the auto-sort decided (tags, ease, phase or crop) becomes his: its letter
   // leaves the photo's log code, so an Undo never takes his value away. Every admin action writing these fields calls it.
-  function fishOwn(F, f, field) {
-    const x = fishIdx(F)[f],
-      c = FISHW[field];
+  function treeOwn(F, f, field) {
+    const x = treeIdx(F)[f],
+      c = TREEW[field];
     if (!x || !c || !(x.d.w || []).includes(field)) return F;
     return {...F, auto: {...F.auto, [x.day]: {...F.auto[x.day], [f]: x.code.replace(new RegExp(`^([?-]?[abr][tepc]*?)${c}`), '$1')}}};
   }
@@ -365,13 +365,13 @@
   // ease, phase or crop do too, for reading only. sortReads: the fields of photo f of curation F (a subject's part) that the
   // build reads from the pass's judgement j (tools/fish_game.py read_cur, which this follows): the run's add or brought-back
   // add, not a Check, not undone, not moved with Not this, no re-judge proposal answered Keep mine (F.kept), the judgement a
-  // sure add; the fields are the ones its code lists (a value he edited took its letter off: fishOwn), and the judge's crop
+  // sure add; the fields are the ones its code lists (a value he edited took its letter off: treeOwn), and the judge's crop
   // with the tags when the photo has no crop. A value with no log, or his, is never in the list.
   function sortReads(F, f, j) {
     F = F || {};
     const x = idxOf(F)[f];
     if (!x || !j || x.d.check || x.d.undone || (F.out || {})[f] || (F.kept || {})[f]) return [];
-    const s = fishSure(j);
+    const s = treeSure(j);
     if (!s || s.keep !== 'add') return [];
     const w = [...(x.d.w || [])];
     if (w.includes('tags') && !w.includes('crop') && !(F.crop || {})[f] && j.c) w.push('crop');
@@ -381,7 +381,7 @@
   // the pass's value when the curation has none (every display reader does) shows the one the game plays. Never given to a
   // writer (rule A1: Publish would send the pass's values as his and lose the log's letters); one object per (F, sug),
   // F itself when nothing reads differently. recs: the candidates' records by photo (the source's life stage p.st): the
-  // build's copy of the judgement adds the source's juvenile flag, or its phase when the pass gives none (fishCopy, as
+  // build's copy of the judgement adds the source's juvenile flag, or its phase when the pass gives none (treeCopy, as
   // read_cur's copy_of), so those two fields read that copy, not the bare pass value the readers fall back to.
   const VIEWC = new WeakMap();
   // A photo's judgment for the pages: the game record g (fish-game.json: its older e, jt, ph) under the pass's j. A phase the
@@ -413,7 +413,7 @@
         w = sortReads(F, f, j);
       if (!w.length) return;
       // His own phase choice (one the run did not write) stops the source's juvenile flag, as the build.
-      const c = fishCopy({...((recs || {})[f] || {}), f}, j, f in (F.phase || {}) && !w.includes('phase') ? {phase: {[f]: 1}} : null);
+      const c = treeCopy({...((recs || {})[f] || {}), f}, j, f in (F.phase || {}) && !w.includes('phase') ? {phase: {[f]: 1}} : null);
       w.forEach(k => {
         if (!(f in (F[k] || {}))) return;
         // The build leaves tags alone when the copy has none; a phase or crop the pass no longer gives goes.
@@ -426,18 +426,18 @@
     return N;
   }
   // When the admin answers a fish Check or corrects a fish auto decision, the time goes into its log code (@t), so the
-  // agreement window follows the order he answered in, as autoStamp does for the corals. fishSigs: his keep on each
-  // compared photo; fishStamp: the new fish "auto" map with the time t (seconds) on every photo whose keep changed since
-  // `before` (fishSigs of the previous draft), or null when nothing changed.
-  function fishSigs(F) {
+  // agreement window follows the order he answered in, as autoStamp does for the corals. treeSigs: his keep on each
+  // compared photo; treeStamp: the new fish "auto" map with the time t (seconds) on every photo whose keep changed since
+  // `before` (treeSigs of the previous draft), or null when nothing changed.
+  function treeSigs(F) {
     const S = {};
-    fishCompare(F).forEach(c => (S[c.f] = c.p));
+    treeCompare(F).forEach(c => (S[c.f] = c.p));
     return S;
   }
-  function fishStamp(F, before, t) {
-    const I = fishIdx(F);
+  function treeStamp(F, before, t) {
+    const I = treeIdx(F);
     let A = null;
-    Object.entries(fishSigs(F)).forEach(([f, s]) => {
+    Object.entries(treeSigs(F)).forEach(([f, s]) => {
       if ((before || {})[f] === s || !I[f]) return;
       const {day, code} = I[f];
       A = A || {...F.auto};
@@ -448,9 +448,9 @@
 
   // ---- Fish Candidates ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
-  // one observation). game: fishGameIn's records, counted beside the adds. sug: the pass's judgments (data/suggest.json
+  // one observation). game: treeGameIn's records, counted beside the adds. sug: the pass's judgments (data/suggest.json
   // "fish"): an add held out for other species one could take for its subject (core.js treeOther) counts nowhere.
-  function fishPlay(cands, F, game, sug) {
+  function treePlay(cands, F, game, sug) {
     F = F || {};
     const obsOf = {},
       out = {};
@@ -465,46 +465,46 @@
   // The photos the game plays (fish-game.json records, the published state) that are in play in the draft cur
   // (curation.json): the admin's adds and the photos that entered by themselves (auto "cand" and "ref": docs/rules/photos.md)
   // that he has not rejected, excluded or moved (core.js treePhotoIn, as tools/fish_game.py in_play). The admin counts these,
-  // not the adds alone; the auto-sort's own target (fishRun) is apart.
-  function fishGameIn(game, cur) {
+  // not the adds alone; the auto-sort's own target (treeRun) is apart.
+  function treeGameIn(game, cur) {
     const F = (cur && cur.fish) || {},
       gone = treeGone(cur || {}, F);
     return (game || []).filter(p => p && p.f && p.sp && treePhotoIn(F, p, gone, (F.tags || {})[p.f])).map(p => ({...p, sid: p.sp}));
   }
   // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
   // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
-  // word, so a juvenile by its source never counts as an adult once added (fishPhase reads the draft's word first). F:
+  // word, so a juvenile by its source never counts as an adult once added (treePhase reads the draft's word first). F:
   // the curation before the add: tags the admin already gave the photo are the ones read, never the source's phase.
-  function fishCopy(p, j, F) {
+  function treeCopy(p, j, F) {
     const own = F && p && p.f ? ((F.tags || {})[p.f] ?? null) : null,
       // The admin described the photo already (his tags, or a phase, No phase included): the source's phase never
-      // overrides it (as fishPhase reads his values).
+      // overrides it (as treePhase reads his values).
       mine = own != null || !!(F && p && p.f && p.f in (F.phase || {}));
     let tags = own != null ? own : j && j.jt,
       phase = (j && j.ph) || null;
-    if (mine || FPHW[phase] || !FISH_TAGS.test(tags || '') || tags.slice(7).includes('j')) return {tags, phase};
-    const src = fishPhase({f: '', st: (p || {}).st}, null, {});
-    if (src === 'juvenile') tags = fishTag(tags, 'j');
+    if (mine || FPHW[phase] || !TREE_TAGS.test(tags || '') || tags.slice(7).includes('j')) return {tags, phase};
+    const src = treePhase({f: '', st: (p || {}).st}, null, {});
+    if (src === 'juvenile') tags = treeTag(tags, 'j');
     else if (src) phase = src;
     return {tags, phase};
   }
-  // The swiper's queue (pure): every candidate not decided in its species now (fishState; one sent elsewhere with Not
+  // The swiper's queue (pure): every candidate not decided in its species now (treeStateOf; one sent elsewhere with Not
   // this waits as that species' candidate, marked from), with its species (sid), observations in play (n), target
-  // (fishTarget), phase (ph) and four marks:
+  // (treeTarget), phase (ph) and four marks:
   // - chk: a Check waiting for the admin's answer (shown blind; never full nor set aside);
   // - full: its species is at its target and the photo would add an observation: the swiper stops there (docs/ROADMAP.md
   //   "stop at target"), shown on demand;
-  // - aside: the pass is sure it goes (fishSure reject) and the auto-sort did not apply it (keep off): shown on demand;
+  // - aside: the pass is sure it goes (treeSure reject) and the auto-sort did not apply it (keep off): shown on demand;
   // - nph: it shows a phase none of its species' photos in play shows.
   // Order: the thinnest species first (in play / target, then the fewest in play), its photos together; within a
   // species the missing phases, then best, alt, not judged, dup, then the easiest, then a reference photo (flag r), then
   // an open licence before CC BY-NC (core.js rightsRank), then a fixed order, whoever took the photo.
-  const FISHK = {best: 0, alt: 1, dup: 3};
-  function fishQueue(cands, sug, species, F, game) {
+  const TREEK = {best: 0, alt: 1, dup: 3};
+  function treeQueue(cands, sug, species, F, game) {
     F = F || {};
     sug = sug || {};
-    const I = fishIdx(F),
-      play = fishPlay(cands, F, game, sug),
+    const I = treeIdx(F),
+      play = treePlay(cands, F, game, sug),
       byF = {},
       out = [];
     Object.entries(cands || {}).forEach(([sid, L]) => (L || []).forEach(p => p && p.f && (byF[p.f] = p)));
@@ -512,7 +512,7 @@
     const shows = {};
     Object.entries(F.add || {}).forEach(([f, sid]) => {
       if (!treePhotoOn(F, f, sid) || treeOther((F.tags || {})[f], (sug[f] || {}).jt)) return;
-      const ph = fishPhase(byF[f] || {f}, sug[f], F);
+      const ph = treePhase(byF[f] || {f}, sug[f], F);
       if (ph) (shows[sid] = shows[sid] || new Set()).add(ph);
     });
     // Photos the game already plays by itself (the sure candidates) are not offered again, but for a blind Check.
@@ -520,17 +520,17 @@
     Object.entries(cands || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
         if (!p || !p.f) return;
-        const {sid, st} = fishState(F, p.f, orig);
+        const {sid, st} = treeStateOf(F, p.f, orig);
         if (st) return;
-        if (playing.has(treePid(p.f)) && !(I[p.f] && I[p.f].d.check && !fishMine(F, p.f))) return;
+        if (playing.has(treePid(p.f)) && !(I[p.f] && I[p.f].d.check && !treeKeepOf(F, p.f))) return;
         const inP = play[sid] || new Set(),
-          target = fishTarget((species || {})[sid]),
+          target = treeTarget((species || {})[sid]),
           x = I[p.f],
-          chk = !!(x && x.d.check && !fishMine(F, p.f)),
+          chk = !!(x && x.d.check && !treeKeepOf(F, p.f)),
           und = !!(x && x.d.undone),
           j = sug[p.f] || null,
-          s = fishSure(j),
-          ph = fishPhase(p, j, F);
+          s = treeSure(j),
+          ph = treePhase(p, j, F);
         out.push({
           sid,
           p,
@@ -546,7 +546,7 @@
         });
       })
     );
-    const k = x => (x.j && x.j.k in FISHK ? FISHK[x.j.k] : 2),
+    const k = x => (x.j && x.j.k in TREEK ? TREEK[x.j.k] : 2),
       ref = x =>
         x.j &&
         String(x.j.jt || '')
@@ -568,10 +568,10 @@
     );
   }
   // The admin's tag, ease, phase or crop on a fish photo (pure): field one of tags, ease, phase, crop; v null takes his
-  // value off (the pass's shows again). A field the auto-sort wrote becomes his (fishOwn), so an Undo of its decision
+  // value off (the pass's shows again). A field the auto-sort wrote becomes his (treeOwn), so an Undo of its decision
   // never takes his value away.
-  function fishSet(F, f, field, v) {
-    F = fishOwn(F || {}, f, field);
+  function treePhotoSet(F, f, field, v) {
+    F = treeOwn(F || {}, f, field);
     const M = {...(F[field] || {})};
     if (v == null) delete M[f];
     else M[f] = v;
@@ -582,8 +582,8 @@
   // admin's code, else the pass's, else a plain profile one; the tool-made flags (p phase entry, r reference photo) kept as they
   // were, in the rubrics' order (the fish's j c a w p r, the sea slugs' j c a w f: one order holds both).
   const FFLAGORD = 'jcawfpr';
-  function fishTag(code, pos, v) {
-    const c = FISH_TAGS.test(code || '') ? code : 'p1g0sm1';
+  function treeTag(code, pos, v) {
+    const c = TREE_TAGS.test(code || '') ? code : 'p1g0sm1';
     if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
     const fl = new Set(c.slice(7));
     if (fl.has(pos)) fl.delete(pos);
@@ -594,39 +594,39 @@
   // auto-sort's copy of the pass's (its log code still lists t): the pass's w is added, as a judgement made after the
   // copy. Tags the admin set himself stand as they are. mine: the curation's tags; pass: the pass's jt; auto: the tags
   // are the auto-sort's copy. tools/fish_game.py marked mirrors it.
-  function fishMarked(mine, pass, auto) {
+  function treeMarked(mine, pass, auto) {
     if (
       !auto ||
-      !FISH_TAGS.test(mine || '') ||
+      !TREE_TAGS.test(mine || '') ||
       !String(pass || '')
         .slice(7)
         .includes('w') ||
       mine.slice(7).includes('w')
     )
       return mine;
-    return fishTag(mine, 'w');
+    return treeTag(mine, 'w');
   }
-  // Whether photo f's tags in curation F are the auto-sort's copy (its log code lists t; fishIdx, fishParse).
-  const fishTagsAuto = (F, f) => {
-    const x = fishIdx(F || {})[f];
+  // Whether photo f's tags in curation F are the auto-sort's copy (its log code lists t; treeIdx, treeParse).
+  const treeTagsAuto = (F, f) => {
+    const x = treeIdx(F || {})[f];
     return !!(x && (x.d.w || []).includes('tags'));
   };
-  // The admin's tags of photo f in curation F as the game reads them (fishMarked; pass: the pass's jt), or undefined with
+  // The admin's tags of photo f in curation F as the game reads them (treeMarked; pass: the pass's jt), or undefined with
   // none. The log is read only when the pass's code carries w.
-  function fishTagsMine(F, f, pass) {
+  function treeTagsMine(F, f, pass) {
     const own = ((F || {}).tags || {})[f];
     return own &&
       String(pass || '')
         .slice(7)
         .includes('w')
-      ? fishMarked(own, pass, fishTagsAuto(F, f))
+      ? treeMarked(own, pass, treeTagsAuto(F, f))
       : own;
   }
   // The admin's Add from the swiper (pure): the photo in play for its species, with the pass's tags, ease, phase and crop
   // written beside it where he has none yet (as the auto-sort writes its adds, so every photo in play carries its tags
   // and ease for the game), and its "seen" mark taken off. Not logged as auto: his own decision. A Check he answers this
-  // way keeps its log code, which fishCompare reads against his keep.
-  function fishAdd(F, f, sid, j, p) {
+  // way keeps its log code, which treeCompare reads against his keep.
+  function treeAdd(F, f, sid, j, p) {
     F = F || {};
     const N = {...F, add: {...(F.add || {}), [f]: sid}},
       put = (k, v) => {
@@ -640,7 +640,7 @@
     // An unsure judgment too (u: the judge doubted its code or its keep): the best description of the photo there is
     // until the admin's own tags.
     if (j) {
-      const c = fishCopy({...(p || {}), f}, j, F);
+      const c = treeCopy({...(p || {}), f}, j, F);
       put('tags', c.tags);
       put('ease', j.e);
       put('phase', c.phase);
@@ -650,12 +650,12 @@
   }
   // ---- Fish photos in play, Not this, Remove ----
   // Not this: out {f: species id} = the iNaturalist experts got the species wrong, the photo is that species' candidate
-  // now; out {f: 'x'} = no game species (or unknown): gone. Only the admin's click writes it (fishNotThis). A photo is in
+  // now; out {f: 'x'} = no game species (or unknown): gone. Only the admin's click writes it (treeNotThis). A photo is in
   // play for a species when add names it, it is neither rejected nor excluded, and its out, if any, names that same
-  // species (core.js treePhotoOn, as the game reads it). fishMine stays the keep on its first species, for the agreement.
+  // species (core.js treePhotoOn, as the game reads it). treeKeepOf stays the keep on its first species, for the agreement.
   // A photo's species now (orig: its data/fish-cand.json species) and its state there: 'play', 'rej' (rejected), 'gone'
   // (excluded, or Not this with no game species), or null (a candidate waiting).
-  function fishState(F, f, orig) {
+  function treeStateOf(F, f, orig) {
     F = F || {};
     const o = (F.out || {})[f];
     if ((F.exclude || {})[f] || o === 'x') return {sid: orig, st: 'gone'};
@@ -681,10 +681,10 @@
   // stage still shows. The log index is cached per fish part (a new object at every edit).
   const IDXC = new WeakMap(),
     idxOf = F => {
-      if (!IDXC.has(F)) IDXC.set(F, fishIdx(F));
+      if (!IDXC.has(F)) IDXC.set(F, treeIdx(F));
       return IDXC.get(F);
     };
-  function fishPhase(p, j, F) {
+  function treePhase(p, j, F) {
     F = F || {};
     const w = ((idxOf(F)[p.f] || {}).d || {}).w || [],
       mine = (p.f in (F.phase || {}) && !w.includes('phase')) || (p.f in (F.tags || {}) && !w.includes('tags')),
@@ -704,7 +704,7 @@
   // The admin's Not this (pure): the photo goes to species `to` as its candidate (out {f: to}), or out of every game
   // species ('x'); its add and its rejection go with it (it waits in its new species). Back to its first species (orig)
   // takes the mark off. The auto-sort never calls it: overruling the experts is the admin's call alone.
-  function fishNotThis(F, f, to, orig) {
+  function treeNotThis(F, f, to, orig) {
     F = F || {};
     const N = {...F, out: {...(F.out || {})}},
       drop = k => {
@@ -724,10 +724,10 @@
   // The admin's Reject (✕), from the swiper or on a photo in play (pure): "seen", and the add taken off when it was in play.
   // On a photo the auto-sort had set aside (its log code a plain 'r': a Not this taken back left it waiting), the reject is
   // his own from then on: the code is marked '-r', so the route back (sortBack) never takes his decision for the run's.
-  function fishReject(F, f) {
+  function treeReject(F, f) {
     F = F || {};
     const N = {...F, seen: {...(F.seen || {}), [f]: 1}},
-      x = fishIdx(F)[f];
+      x = treeIdx(F)[f];
     if (N.add && f in N.add) {
       N.add = {...N.add};
       delete N.add[f];
@@ -736,7 +736,7 @@
     return N;
   }
   // The admin's × (excluded for good, imports skip it): "exclude", and the add taken off.
-  function fishExclude(F, f) {
+  function treeExclude(F, f) {
     F = F || {};
     const N = {...F, exclude: {...(F.exclude || {}), [f]: 'excluded'}};
     if (N.add && f in N.add) {
@@ -748,12 +748,12 @@
 
   // ---- The fish units page (docs/reviews/2026-11-06-fish-units-plan.md) ----
   // A family's own choices live in curation.json fish genera {family id: {cover: f, feat: {species id: [f]}, ok: true}}:
-  // the coral key names, species in place of views, keyed by family id (f:Damselfishes). FISHFEAT photos featured per
+  // the coral key names, species in place of views, keyed by family id (f:Damselfishes). TREEFEAT photos featured per
   // species at most, as the corals' 3 per view. A genus's and a species' covers sit in the same map under their
-  // fish.json ids, {cover: f} only ('g:Chromis', 's091'; docs/ARCHITECTURE.md): fishPick and fishCover take any unit id.
-  const FISHFEAT = 3;
+  // fish.json ids, {cover: f} only ('g:Chromis', 's091'; docs/ARCHITECTURE.md): treePick and treeCover take any unit id.
+  const TREEFEAT = 3;
   // A family's choices changed by fn (on a copy); an emptied feat list, feat map or family is left out.
-  function fishPick(F, tid, fn) {
+  function treePick(F, tid, fn) {
     F = F || {};
     const G = {...(F.genera || {})},
       k = JSON.parse(JSON.stringify(G[tid] || {}));
@@ -766,14 +766,14 @@
     else delete G[tid];
     return {...F, genera: G};
   }
-  // A photo featured or not (one click); at FISHFEAT already, nothing changes (full: true, the admin says so).
-  // Only the featured photos still in play count towards FISHFEAT (one that left play elsewhere frees its slot); a click
+  // A photo featured or not (one click); at TREEFEAT already, nothing changes (full: true, the admin says so).
+  // Only the featured photos still in play count towards TREEFEAT (one that left play elsewhere frees its slot); a click
   // on one cleans the list of the others.
-  function fishFeat(F, tid, sid, f) {
+  function treeFeat(F, tid, sid, f) {
     const L = (((((F || {}).genera || {})[tid] || {}).feat || {})[sid] || []).filter(x => x === f || treePhotoOn(F || {}, x, sid));
-    if (!L.includes(f) && L.length >= FISHFEAT) return {F, full: true};
+    if (!L.includes(f) && L.length >= TREEFEAT) return {F, full: true};
     return {
-      F: fishPick(F, tid, k => {
+      F: treePick(F, tid, k => {
         k.feat = k.feat || {};
         k.feat[sid] = L.includes(f) ? L.filter(x => x !== f) : [...L, f];
       }),
@@ -783,12 +783,12 @@
   // Photo f among the photos L: under its name, else the same photo under another name (core.js treePid: a reference
   // photo fi<id> and its candidate copy fish-<species>-cand-<id> are one photo, and the game plays one copy), as the app
   // finds his picks (app.js treeCurate); null when it is not there.
-  const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => treePid(p.f) === treePid(f)))) || null;
+  const treePhotoAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => treePid(p.f) === treePid(f)))) || null;
   // The family's cover: this photo, or none again (his pick taken off, under either of its names). Either way a
   // confirmation of a juvenile cover (coverJ, below) or of a watermarked one (coverW) goes with the old pick: a new pick on
   // a juvenile asks again.
-  const fishCover = (F, tid, f) =>
-    fishPick(F, tid, k => {
+  const treeCover = (F, tid, f) =>
+    treePick(F, tid, k => {
       delete k.coverJ;
       delete k.coverW;
       if (k.cover && treePid(k.cover) === treePid(f)) delete k.cover;
@@ -797,57 +797,57 @@
   // A juvenile is never a cover, but for the admin's own ★ cover on one, once he confirmed it (docs/ARCHITECTURE.md;
   // admin-covers.js JUV_Q). The confirmation sits next to the cover: curation.json fish genera {node id: {cover: f,
   // coverJ: f}}, through the draft and Publish (rule A1). It holds while it names the cover's photo (core.js treePid),
-  // whatever the photo's tags say since. The default cover rule never takes a juvenile. fishCoverJ: tid's ★ cover is
-  // this photo, confirmed; fishCoverYes: photo f as tid's cover, confirmed; fishCoverJOk: the confirmation alone, on the
+  // whatever the photo's tags say since. The default cover rule never takes a juvenile. treeCoverJ: tid's ★ cover is
+  // this photo, confirmed; treeCoverYes: photo f as tid's cover, confirmed; treeCoverJOk: the confirmation alone, on the
   // cover already there (the Tree page's one click).
-  const fishCoverJ = (F, tid, p) => {
+  const treeCoverJ = (F, tid, p) => {
     const k = ((F || {}).genera || {})[tid] || {},
       f = p && (p.f || p);
     return !!(f && k.cover && k.coverJ && treePid(k.coverJ) === treePid(k.cover) && treePid(f) === treePid(k.cover));
   };
-  const fishCoverYes = (F, tid, f) =>
-    fishPick(F, tid, k => {
+  const treeCoverYes = (F, tid, f) =>
+    treePick(F, tid, k => {
       k.cover = f;
       k.coverJ = f;
     });
-  const fishCoverJOk = (F, tid) =>
-    fishPick(F, tid, k => {
+  const treeCoverJOk = (F, tid) =>
+    treePick(F, tid, k => {
       if (k.cover) k.coverJ = k.cover;
     });
-  // A watermarked photo (fishWm) is never a default cover (docs/ARCHITECTURE.md), but the admin's ★ cover on one stays in
+  // A watermarked photo (treeWm) is never a default cover (docs/ARCHITECTURE.md), but the admin's ★ cover on one stays in
   // force (rule A1) while the Tree page asks whether to keep it (admin-covers.js WM_ASK) and Cover proposals offer one
   // without. His Keep sits next to the cover as coverJ does ({cover: f, coverW: f}); it holds while it names the cover's
-  // photo, and a new pick drops it (fishCover). Home still skips the photo (home.js homeOk), and a node's default never
-  // takes a kept ★ cover of a leaf under it. fishCoverW: tid's ★ cover is this photo, kept; fishCoverWOk: the Keep, on
+  // photo, and a new pick drops it (treeCover). Home still skips the photo (home.js homeOk), and a node's default never
+  // takes a kept ★ cover of a leaf under it. treeCoverW: tid's ★ cover is this photo, kept; treeCoverWOk: the Keep, on
   // the cover already there.
-  const fishCoverW = (F, tid, p) => {
+  const treeCoverW = (F, tid, p) => {
     const k = ((F || {}).genera || {})[tid] || {},
       f = p && (p.f || p);
     return !!(f && k.cover && k.coverW && treePid(k.coverW) === treePid(k.cover) && treePid(f) === treePid(k.cover));
   };
-  const fishCoverWOk = (F, tid) =>
-    fishPick(F, tid, k => {
+  const treeCoverWOk = (F, tid) =>
+    treePick(F, tid, k => {
       if (k.cover) k.coverW = k.cover;
     });
   // Validated, or not.
-  const fishOk = (F, tid) =>
-    fishPick(F, tid, k => {
+  const treeOk = (F, tid) =>
+    treePick(F, tid, k => {
       if (k.ok) delete k.ok;
       else k.ok = true;
     });
   // A photo leaving play (Remove, ×, Not this) leaves the family's featured photos and cover too, and any other unit's
   // cover it was: a genus ('g:<Genus>') or a species (its fish.json id), whose covers are picked on the same page: one
   // Undo step for all.
-  const fishDrop = (F, tid, f) => {
+  const treeDrop = (F, tid, f) => {
     const out = k => {
       if (k.cover === f) delete k.cover;
       if (k.coverJ === f) delete k.coverJ;
       if (k.coverW === f) delete k.coverW;
       Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
     };
-    let N = fishPick(F, tid, out);
+    let N = treePick(F, tid, out);
     Object.entries(N.genera || {}).forEach(([id, k]) => {
-      if (id !== tid && k && (k.cover === f || Object.values(k.feat || {}).some(L => (L || []).includes(f)))) N = fishPick(N, id, out);
+      if (id !== tid && k && (k.cover === f || Object.values(k.feat || {}).some(L => (L || []).includes(f)))) N = treePick(N, id, out);
     });
     return N;
   };
@@ -856,54 +856,54 @@
   // the photo's ease and tags, never from its source), the easiest, the most reference-like (refScore), an open licence
   // before CC BY-NC (rightsRank), then a fixed hash. Never by who took them (docs/rules/photos.md).
   // A photo as core.js easyRank and refLevel read it: the admin's ease and tags, else the pass's (j).
-  const fishEase = (p, F, j) => ((F || {}).ease || {})[p.f] || (j(p.f) || {}).e || 0;
-  function fishRec(p, F, j) {
+  const treeEase = (p, F, j) => ((F || {}).ease || {})[p.f] || (j(p.f) || {}).e || 0;
+  function treePhotoRec(p, F, j) {
     const jt = ((F || {}).tags || {})[p.f] || (j(p.f) || {}).jt || '';
     return {
       f: p.f,
       jt,
-      e: fishEase(p, F, j) || undefined,
+      e: treeEase(p, F, j) || undefined,
       lic: p.lic,
       own: p.own,
       a: p.a,
       p
     };
   }
-  function fishOrder(L, F, tid, sid, j = () => null) {
+  function treeOrder(L, F, tid, sid, j = () => null) {
     F = F || {};
     const fe = ((((F.genera || {})[tid] || {}).feat || {})[sid] || []).filter(f => L.some(p => p.f === f)),
       R = L.filter(p => !fe.includes(p.f));
     return {
       feat: fe.map(f => L.find(p => p.f === f)),
       rest: easyRank(
-        R.map(p => fishRec(p, F, j)),
-        x => -(fishEase(x.p, F, j) || 3)
+        R.map(p => treePhotoRec(p, F, j)),
+        x => -(treeEase(x.p, F, j) || 3)
       ).map(x => x.p)
     };
   }
   // A family's cover: the admin's pick while it is in play (L: the family's photos in play), else its first photo in the
-  // game's order across all its species (fishOrder, core.js easyRank, as the game's card cover), else null.
+  // game's order across all its species (treeOrder, core.js easyRank, as the game's card cover), else null.
   // A juvenile is never a cover, at any rank (docs/ARCHITECTURE.md): a pick on one is ignored unless confirmed
-  // (fishCoverJ), the order's first non-juvenile is taken, and a unit whose photos are all juveniles keeps its first.
-  // Juvenile: its phase word (fishPhase), or a game record's ph, which tools/fish_game.py writes the same way. A phase or
+  // (treeCoverJ), the order's first non-juvenile is taken, and a unit whose photos are all juveniles keeps its first.
+  // Juvenile: its phase word (treePhase), or a game record's ph, which tools/fish_game.py writes the same way. A phase or
   // tags the auto-sort copied (its log code lists them) are no choice of the admin's: the game record's phase, which the
   // build reads from the newer judgement (tools/fish_game.py read_cur; Pierre, 2026-11-19 20:57), is the one in force.
   const FJUV = FPHASES[0];
-  function fishJuv(p, j, F) {
+  function treeJuv(p, j, F) {
     if (!p) return false;
     const w = ((idxOf(F || {})[p.f] || {}).d || {}).w || [],
       own = k => p.f in ((F || {})[k] || {}) && !w.includes(k),
       mine = own('phase') || own('tags');
     // a game record (its species sp) carries the build's phase: ph, or none for an adult
     if (!mine && w.length && p.sp != null) return p.ph === FJUV;
-    return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
+    return treePhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
   // A photo with a visible watermark or text (its flag w), its tags as the game reads them: the admin's, with the pass's
-  // w where they are the auto-sort's copy (fishTagsMine), else the pass's (j). The app's copy: app.js wmP.
-  function fishWm(p, j, F) {
+  // w where they are the auto-sort's copy (treeTagsMine), else the pass's (j). The app's copy: app.js wmP.
+  function treeWm(p, j, F) {
     if (!p) return false;
     const pass = (j || {}).jt || '';
-    return String(fishTagsMine(F, p.f, pass) || pass)
+    return String(treeTagsMine(F, p.f, pass) || pass)
       .slice(7)
       .includes('w');
   }
@@ -911,45 +911,45 @@
   // non-juvenile reference-level photo (core.js refLevel), the one most seen around the instance's centre by distinct
   // observers (ties: observations, then the game's order); then his ★ cover of that leaf while in play and not a
   // juvenile, else that leaf's first such photo. With no reference photo under the node, the same on adult photos; a
-  // node with no presence keeps the order's first. seen(leaf id): [observers, observations] (fishNear), by default from
-  // the species records admin-fish.js registers (fishSeenFrom). A photo's leaf: its curation add (F.add), else its game
+  // node with no presence keeps the order's first. seen(leaf id): [observers, observations] (treeNear), by default from
+  // the species records admin-fish.js registers (treeSeenFrom). A photo's leaf: its curation add (F.add), else its game
   // record's sp, else its candidate's sid. The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
-  function fishCoverOf(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
+  function treeCoverOf(L, F, tid, j = () => null, seen = sid => treeNear(treeSeenOf(sid))) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
-      c = fishAt(L, k);
-    if (c && (!fishJuv(c, j(c.f), F) || fishCoverJ(F, tid, c))) return c;
-    return (fishCoverRule(L, F, tid, j, seen) || {}).p || null;
+      c = treePhotoAt(L, k);
+    if (c && (!treeJuv(c, j(c.f), F) || treeCoverJ(F, tid, c))) return c;
+    return (treeCoverRule(L, F, tid, j, seen) || {}).p || null;
   }
   // A leaf's (a species') cover, as the app's sheets show it (learn.js treeSpPhotos, spPhoto): the admin's ★ pick while in
-  // play and not a juvenile (or confirmed: fishCoverJ), else its first non-juvenile photo in the page's order (fishOrder),
+  // play and not a juvenile (or confirmed: treeCoverJ), else its first non-juvenile photo in the page's order (treeOrder),
   // else its first; null for no photo. The default takes a watermarked photo only when the leaf has no adult photo
-  // without one (fishWm, as app.js coverFirst); his pick on one holds.
-  function fishLeafCover(L, F, tid, j = () => null) {
+  // without one (treeWm, as app.js coverFirst); his pick on one holds.
+  function treeLeafCover(L, F, tid, j = () => null) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
-      adult = p => !fishJuv(p, j(p.f), F),
-      c = fishAt(L, k);
+      adult = p => !treeJuv(p, j(p.f), F),
+      c = treePhotoAt(L, k);
     L = L || [];
     return (
-      (c && (adult(c) || fishCoverJ(F, tid, c)) ? c : null) ||
-      L.find(p => adult(p) && !fishWm(p, j(p.f), F)) ||
+      (c && (adult(c) || treeCoverJ(F, tid, c)) ? c : null) ||
+      L.find(p => adult(p) && !treeWm(p, j(p.f), F)) ||
       L.find(adult) ||
       L[0] ||
       null
     );
   }
-  // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
+  // The default alone, whatever his pick on the node (treeCoverOf without it; the admin's Cover proposals, admin-covers.js,
   // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
   // whether the leaves competed on a reference photo, mine: p is his ★ cover of that leaf}; null for no photo.
-  // Never a watermarked photo while the node has an adult photo without one (fishWm): the leaves then compete on those,
+  // Never a watermarked photo while the node has an adult photo without one (treeWm): the leaves then compete on those,
   // and his ★ cover of the leaf chosen is taken only without one (kept with coverW or not).
-  function fishCoverRule(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
-    const juv = p => fishJuv(p, j(p.f), F),
-      wm = p => fishWm(p, j(p.f), F),
-      R = fishOrder(L, F, tid, '', j).rest,
+  function treeCoverRule(L, F, tid, j = () => null, seen = sid => treeNear(treeSeenOf(sid))) {
+    const juv = p => treeJuv(p, j(p.f), F),
+      wm = p => treeWm(p, j(p.f), F),
+      R = treeOrder(L, F, tid, '', j).rest,
       A0 = R.filter(p => !juv(p)),
       A1 = A0.filter(p => !wm(p)),
       A = A1.length ? A1 : A0,
-      Ref = A.filter(p => refLevel(fishRec(p, F, j))),
+      Ref = A.filter(p => refLevel(treePhotoRec(p, F, j))),
       leaf = p => ((F || {}).add || {})[p.f] || p.sp || p.sid;
     let best = null;
     (Ref.length ? Ref : A).forEach(p => {
@@ -960,29 +960,29 @@
       const q = R.find(p => !wm(p)) || R[0];
       return q ? {p: q, leaf: leaf(q), seen: [0, 0], ref: false, mine: false} : null;
     }
-    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (fishCoverJ); the leaves still compete on adults;
+    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (treeCoverJ); the leaves still compete on adults;
     // without a watermark while the node has an adult photo without one (A)
     const lf = leaf(best.p),
       sk = (((F || {}).genera || {})[lf] || {}).cover,
-      sj = fishAt(R, sk),
-      m = fishAt(A, sk) || (fishCoverJ(F, lf, sj) && !(A1.length && wm(sj)) ? sj : null);
+      sj = treePhotoAt(R, sk),
+      m = treePhotoAt(A, sk) || (treeCoverJ(F, lf, sj) && !(A1.length && wm(sj)) ? sj : null);
     return {p: m || best.p, leaf: lf, seen: best.s, ref: Ref.length > 0, mine: !!m};
   }
   // A leaf's presence around the instance's centre (tools/instance.json, fish.json centre): [distinct Research Grade
   // observers, observations] from its record's present, nearU and nearN, else their older names (dauinU, dauin:
   // tools/build_fish.py); [0, 0] with none. The app's copy: app.js nearSeen.
-  const fishNear = r => {
+  const treeNear = r => {
     const p = (r && r.present) || {};
     return [p.nearU ?? p.dauinU ?? 0, p.nearN ?? p.dauin ?? 0];
   };
-  // Where fishCoverOf finds a species' record by id (the admin's fish.json species, FISHC: admin-fish.js registers it);
+  // Where treeCoverOf finds a species' record by id (the admin's fish.json species, FISHC: admin-fish.js registers it);
   // none until then, so every default keeps the game's order.
-  let fishSeenOf = () => null;
-  const fishSeenFrom = get => (fishSeenOf = typeof get === 'function' ? get : () => null);
+  let treeSeenOf = () => null;
+  const treeSeenFrom = get => (treeSeenOf = typeof get === 'function' ? get : () => null);
   // The IMR phases of a family (fish.json families phase: the phase lines of the IMR entries that cover it; dimorph: its
-  // sexes differ), as the phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
+  // sexes differ), as the phase words of treePhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
   // males and females.
-  function fishUnitPhases(t) {
+  function treeUnitPhases(t) {
     const s = ((t && t.phase) || []).join(' ').toLowerCase(),
       out = [];
     if (/juvenile/.test(s)) out.push('juvenile');
@@ -991,23 +991,27 @@
     if (/females?\b/.test(s) || (t && t.dimorph)) out.push('female');
     return out;
   }
+  // Whether the admin shows the Phase row for photos of t (a teach entry or a family: its phase lines, dimorph) of the species
+  // sp (a fish.json species record): when the IMR lines or dimorph say its phases differ, or sp carries phs (the cited
+  // phase list's flag, tools/build_fish.py phase_sources), the same species whose photos carry the phase flag p.
+  const hasPhaseRow = (t, sp) => !!((t && ((t.phase || []).length || t.dimorph)) || (sp && sp.phs));
   // What a family still needs before the admin's ✓ Validated (docs/ARCHITECTURE.md "Admin for every subject"): each
-  // species' observations in play up to its target (fishTarget), 5 easy photos per family (ease 4 or 5, judging/FISH.md)
+  // species' observations in play up to its target (treeTarget), 5 easy photos per family (ease 4 or 5, judging/FISH.md)
   // and every IMR phase at least once. play: {species id: [photo]} in play, species: {id: fish.json species} (the
   // family's game species), j(f): the pass's judgment.
-  const FISHEASY = 5;
-  function fishNeeds(t, play, species, F, j = () => null) {
+  const TREEEASY = 5;
+  function treeNeeds(t, play, species, F, j = () => null) {
     F = F || {};
     const out = [],
       sids = ((t && t.species) || []).filter(s => species[s] && !species[s].out),
       all = sids.flatMap(s => play[s] || []),
-      under = sids.filter(s => new Set((play[s] || []).map(p => p.o || p.f)).size < fishTarget(species[s])).length,
+      under = sids.filter(s => new Set((play[s] || []).map(p => p.o || p.f)).size < treeTarget(species[s])).length,
       easy = all.filter(p => ((F.ease || {})[p.f] || (j(p.f) || {}).e || 0) >= 4).length,
-      shown = new Set(all.map(p => fishPhase(p, j(p.f), F)));
+      shown = new Set(all.map(p => treePhase(p, j(p.f), F)));
     if (!all.length) out.push('No photo in play');
     if (under) out.push(`${under} species under target`);
-    if (easy < FISHEASY) out.push(`Easy ${easy}/${FISHEASY}`);
-    fishUnitPhases(t)
+    if (easy < TREEEASY) out.push(`Easy ${easy}/${TREEEASY}`);
+    treeUnitPhases(t)
       .filter(x => !shown.has(x))
       .forEach(x => out.push(`No ${x}`));
     return out;
@@ -1019,7 +1023,7 @@
   // dimorph, wink, look (IMR's look-alike lines: [other family id, words]), species: [ids], genera: [{id: 'g:Chromis',
   // name, imr, species: [ids]}]}] in the book's order (key group, then fish.json's order). A genus's species come from
   // its genus list, else each species' genus, else the species name's first word. [] when fish.json has no families.
-  function fishUnits(J) {
+  function treeUnitsOf(J) {
     J = J || {};
     const sp = Object.fromEntries((J.species || []).map(x => [x.id, x])),
       tag = x => (x == null || x === false ? '' : typeof x === 'string' ? x : x === true ? 'IMR' : x.name || 'IMR'),
@@ -1055,9 +1059,9 @@
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
   // The species records the admin reads ({id: fish.json species}), each species of a wink family (fish.json families
-  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink; with tgt (its subject's
+  // wink: met only on the surprise cards) marked wink: true, so treeTarget gives it TREET.wink; with tgt (its subject's
   // own target, core.js SUBJECTS admin target), every record marked tgt. Read only, never stored.
-  function fishSpecies(J, tgt) {
+  function treeSpeciesOf(J, tgt) {
     J = J || {};
     const wk = new Set((J.families || []).filter(f => f && f.wink).flatMap(f => f.species || []));
     return Object.fromEntries(
@@ -1067,12 +1071,12 @@
       ])
     );
   }
-  // A wink species' photos in play on the admin's Tree (docs/ROADMAP.md "Surprise-only species"): only n (FISHT.wink) shown,
+  // A wink species' photos in play on the admin's Tree (docs/ROADMAP.md "Surprise-only species"): only n (TREET.wink) shown,
   // the rest folded. Its featured photos (the admin's Feature) always shown, then the surprise card's own photos (fish.json
-  // wink.photos, by photo id as quiz.js winkPhoto reads them, in their order), then the page's order (fishOrder: reference
-  // level first, then the easiest). row: fishOrder's {feat, rest}; returns {feat, show (rest shown), fold (rest folded)}.
+  // wink.photos, by photo id as quiz.js winkPhoto reads them, in their order), then the page's order (treeOrder: reference
+  // level first, then the easiest). row: treeOrder's {feat, rest}; returns {feat, show (rest shown), fold (rest folded)}.
   // Display only: every photo stays in play and counted.
-  function fishWinkFold(row, photos, n = FISHT.wink) {
+  function fishWinkFold(row, photos, n = TREET.wink) {
     const feat = (row && row.feat) || [],
       rest = (row && row.rest) || [],
       want = (photos || []).map(treePid),
@@ -1083,16 +1087,16 @@
     return {feat, show: ord.slice(0, k), fold: ord.slice(k)};
   }
 
-  // Fish Coverage (fishCov): per family, genus and species, the photos in play, the observations against the target, the
+  // Fish Coverage (treeCov): per family, genus and species, the photos in play, the observations against the target, the
   // easy photos (ease 4-5), the reference-level photos (core.js refLevel), the phases shown and what is missing; and the candidates still
-  // waiting. U: fishUnits; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: data/fish-cand.json
+  // waiting. U: treeUnitsOf; play: {species id: [photo]} in play; species: {id: fish.json species}; cand: data/fish-cand.json
   // cand; F: the draft's fish part; j(f): the pass's judgment. Returns {fam, gen, sp}: rows {id, name, fam, n (photos),
   // obs, tgt (a species' target; a genus or family: ok of its species at target), easy, ref, ph, wait (a species also
-  // waitObs, the new observations they hold), need (fishNeeds words), imr}.
-  // fishWaiting: the candidates waiting, by the species they wait in now (one sent elsewhere with Not this waits there:
-  // fishState); one in play (play, by photo id: core.js treePid, a blind Check included), rejected or gone does not wait.
+  // waitObs, the new observations they hold), need (treeNeeds words), imr}.
+  // treeWaiting: the candidates waiting, by the species they wait in now (one sent elsewhere with Not this waits there:
+  // treeStateOf); one in play (play, by photo id: core.js treePid, a blind Check included), rejected or gone does not wait.
   // Read by Coverage and the Tree's node pages.
-  function fishWaiting(cand, F, play) {
+  function treeWaiting(cand, F, play) {
     const waiting = {},
       inPlay = new Set(
         Object.values(play || {})
@@ -1101,24 +1105,24 @@
       );
     Object.entries(cand || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
-        const x = fishState(F || {}, p.f, orig);
+        const x = treeStateOf(F || {}, p.f, orig);
         if (x.st === null && !inPlay.has(treePid(p.f))) (waiting[x.sid] = waiting[x.sid] || []).push(p);
       })
     );
     return waiting;
   }
-  function fishCov(U, play, species, cand, F, j = () => null) {
+  function treeCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
-    const waiting = fishWaiting(cand, F, play);
-    const ease = p => fishEase(p, F, j),
+    const waiting = treeWaiting(cand, F, play);
+    const ease = p => treeEase(p, F, j),
       // The reference level as the game reads it (core.js refLevel, rule P1): the photo's ease (4-5) and look, read from the
       // admin's ease and tags else the pass's, never from the route it came in by (rep, the flag r).
-      isRef = p => refLevel(fishRec(p, F, j)),
+      isRef = p => refLevel(treePhotoRec(p, F, j)),
       spRow = (sid, fam) => {
         const L = play[sid] || [],
           s = species[sid] || {},
           obs = new Set(L.map(p => p.o || p.f)).size,
-          tgt = fishTarget(s),
+          tgt = treeTarget(s),
           W = waiting[sid] || [],
           seen = new Set(L.map(p => p.o || p.f)),
           need = [];
@@ -1136,7 +1140,7 @@
           tgt,
           easy: L.filter(p => ease(p) >= 4).length,
           ref: L.filter(isRef).length,
-          ph: [...new Set(L.map(p => fishPhase(p, j(p.f), F)).filter(Boolean))],
+          ph: [...new Set(L.map(p => treePhase(p, j(p.f), F)).filter(Boolean))],
           wait: W.length,
           // the observations the waiting candidates would add (one observation counts once)
           waitObs: new Set(W.map(p => p.o || p.f).filter(o => !seen.has(o))).size,
@@ -1190,43 +1194,43 @@
         sum(S, {id: u.id, name: u.name, fam: u.id, imr: u.imr || (u.imrWith ? 'with ' + u.imrWith : ''), circle: u.circle}),
         Object.values(GL)
       );
-      r.want = fishUnitPhases(u);
-      r.need = fishNeeds(u, play, species, F, j);
+      r.want = treeUnitPhases(u);
+      r.need = treeNeeds(u, play, species, F, j);
       out.fam.push(r);
     });
     return out;
   }
-  // Coverage's To do (fish): what to act on, each [key, level of fishCov's rows, words, row test]; F: curation.json fish.
-  // Inbox › Coverage › Games shows each as a chip over its rows, To do › All its counts (admin.js renderFishCov,
+  // Coverage's To do (fish): what to act on, each [key, level of treeCov's rows, words, row test]; F: curation.json fish.
+  // Inbox › Coverage › Games shows each as a chip over its rows, To do › All its counts (admin.js covTreePage,
   // fishTodoLines).
-  const FISHCOV_TODO = [
+  const TREECOV_TODO = [
     ['spwait', 'sp', 'species under target with candidates waiting', r => r.obs < r.tgt && r.wait],
     ['spnone', 'sp', 'species with no photo in play', r => !r.n],
     ['famv', 'fam', 'families validated but incomplete', (r, F) => !!(((F && F.genera) || {})[r.id] || {}).ok && r.need.length],
     ['famnr', 'fam', 'families not ready to validate', r => r.need.length]
   ];
-  // Its counts over fishCov's rows C, those keep(row) lets through (the IMR filter): [[key, level, words, n]], n > 0 only.
-  const fishCovTodo = (C, F, keep = () => true) =>
-    FISHCOV_TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(r => keep(r) && fn(r, F)).length]).filter(x => x[3]);
-  // The fish candidates To do counts (fishQueue): those the swiper shows by default, never the auto-sort's Checks (they
+  // Its counts over treeCov's rows C, those keep(row) lets through (the IMR filter): [[key, level, words, n]], n > 0 only.
+  const treeCovTodo = (C, F, keep = () => true) =>
+    TREECOV_TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(r => keep(r) && fn(r, F)).length]).filter(x => x[3]);
+  // The fish candidates To do counts (treeQueue): those the swiper shows by default, never the auto-sort's Checks (they
   // have their own count in Candidates: docs/decisions/2026-11-18-decisions-from-comments-3.md), nor the ones of a
   // species at its target or set aside.
-  const fishCandTodo = Q => (Q || []).filter(x => !x.chk && !x.full && !x.aside).length;
+  const treeCandTodo = Q => (Q || []).filter(x => !x.chk && !x.full && !x.aside).length;
   // Where to look (fish): the species most worth a candidate search, those under target whose waiting candidates cannot
   // fill the gap; the IMR course's (circle 1) first, then the PDF's most sighted (cs), then the largest gap. [{...species
   // row, gap}], best first.
-  const fishLook = C =>
+  const treeLook = C =>
     C.sp
       .map(r => ({...r, gap: Math.max(0, r.tgt - r.obs - r.waitObs)}))
       .filter(r => r.gap > 0)
       .sort((a, b) => (a.circle || 9) - (b.circle || 9) || b.cs - a.cs || b.gap - a.gap || (a.id < b.id ? -1 : 1));
 
   // ---- Fish Photo review: the admin's ease, phase and view on photos in play ----
-  // His value of one field on a photo: fishSet and fishTag (above).
+  // His value of one field on a photo: treePhotoSet and treeTag (above).
   // The agreement line of a review view: over the photos fs where the admin gave his value and the pass gave one, how
-  // often they agree. field: 'ease' (exact, and within one point), 'phase' (fishPhase's words, juvenile included), 'view' (the
+  // often they agree. field: 'ease' (exact, and within one point), 'phase' (treePhase's words, juvenile included), 'view' (the
   // tags' first letter). {n: his values, both, same, near (ease only)}.
-  function fishAgree(F, fs, field, j = () => null) {
+  function treeAgree(F, fs, field, j = () => null) {
     F = F || {};
     const mine = f =>
         field === 'ease'
@@ -1234,10 +1238,10 @@
           : field === 'view'
             ? ((F.tags || {})[f] || '')[0]
             : f in (F.phase || {}) || f in (F.tags || {})
-              ? fishPhase({f}, null, {phase: F.phase, tags: F.tags})
+              ? treePhase({f}, null, {phase: F.phase, tags: F.tags})
               : undefined,
       pass = f =>
-        field === 'ease' ? (j(f) || {}).e : field === 'view' ? ((j(f) || {}).jt || '')[0] : j(f) ? fishPhase({f}, j(f), {}) : undefined;
+        field === 'ease' ? (j(f) || {}).e : field === 'view' ? ((j(f) || {}).jt || '')[0] : j(f) ? treePhase({f}, j(f), {}) : undefined;
     let n = 0,
       both = 0,
       same = 0,
@@ -1261,7 +1265,7 @@
   // none is recorded; rule C2). [{k: 'f:A|f:B' (core.js contentPairKey, the content editor's pair key too), A, B (ids, in
   // the book's order), cues: [[family id the line is on, words, source]]}]. The pairs in force (the editor's withdrawn
   // and added ones): admin-content.js montPairs.
-  function fishPairs(U) {
+  function treePairs(U) {
     const at = Object.fromEntries((U || []).map((u, i) => [u.id, i])),
       P = {};
     (U || []).forEach(u =>
@@ -1280,7 +1284,7 @@
   // photos: his while in that phase's list, else the first of each. {v, a, b, LA, LB (that phase's lists), set, hide}.
   // A phase: adult = every photo not of a juvenile.
   const FMONT_V = ['adult', 'juvenile', 'all'];
-  function fishMontPick(e, LA, LB, ph) {
+  function treeMontPick(e, LA, LB, ph) {
     e = e || {};
     // adult: every photo not of a juvenile (males, females and intermediate phases included); juvenile; all.
     const of = (L, v) => (v === 'all' ? L : L.filter(p => (ph(p) === 'juvenile') === (v === 'juvenile'))),
@@ -1301,7 +1305,7 @@
     };
   }
   // One pair's entry written (empty fields dropped; an empty entry removed: the pair is automatic again), on a copy.
-  function fishMontSet(F, k, e) {
+  function treeMontSet(F, k, e) {
     F = F || {};
     const out = {};
     Object.entries(e || {}).forEach(([x, y]) => {
@@ -1311,6 +1315,48 @@
     if (Object.keys(out).length) M[k] = out;
     else delete M[k];
     return {...F, mont: M};
+  }
+  // The species pairs of a tree subject's file F (fish.json lookalikes, from tools/fish_lookalikes.json: each statement with its
+  // sources and a quote, rule C2) as the admin's Look-alikes page reads them (REE-46, plan PR 10): [{id, a, b (species ids),
+  // kind ('resembles': a source says a resembles b; 'confused'), st {a, b} (the stage that resembles: 'juvenile' or 'all'),
+  // says [{t, u}] (the sources that state the resemblance), marks [{side 'a' | 'b', t (what tells them apart, our words),
+  // src [{t, u}], sourced}]}], in the file's order; a pair that names a species the file lacks is left out. Pure: tests/speciespairs.test.js.
+  function speciesPairs(F) {
+    const known = new Set(((F || {}).species || []).map(s => s.id));
+    return ((F || {}).lookalikes || [])
+      .filter(r => r && known.has(r.a) && known.has(r.b) && r.a !== r.b)
+      .map(r => ({
+        id: r.id,
+        a: r.a,
+        b: r.b,
+        kind: r.kind || 'resembles',
+        st: {a: (r.st || {}).a || 'all', b: (r.st || {}).b || 'all'},
+        says: (r.says || []).map(s => ({t: s.t, u: s.u || ''})),
+        marks: (r.marks || []).map(m => ({
+          side: m.side === 'b' ? 'b' : 'a',
+          t: m.t,
+          src: (m.src || []).map(s => ({t: s.t, u: s.u || ''})),
+          sourced: (m.src || []).length > 0
+        }))
+      }));
+  }
+  // The players' confusion of a species pair: the pooled [offered together, mixed up] of core.js confusionOf (conf = its pair map)
+  // over the two species' own units (core.js spUnitId at the two species levels, cn and sci), both orders; null when the two were
+  // never offered together at a species unit.
+  function speciesPairConf(pair, conf) {
+    const ids = s => [C.spUnitId('cn', s), C.spUnitId('sci', s)],
+      out = [0, 0];
+    let seen = false;
+    ids(pair.a).forEach(x =>
+      ids(pair.b).forEach(y => {
+        const c = (conf || {})[x < y ? x + '|' + y : y + '|' + x];
+        if (!c) return;
+        seen = true;
+        out[0] += c[0];
+        out[1] += c[1];
+      })
+    );
+    return seen ? out : null;
   }
 
   // Photo rotation (pure, tests/rotate.test.js): curation.json rot {f: 90 | 180 | 270} for the corals,
@@ -1328,6 +1374,25 @@
     if (rotNorm(r)) o[f] = rotNorm(r);
     else delete o[f];
     return o;
+  }
+  // The framing in force for an IMR lecture photo traced to its original (REE-60): [crop, rotation]. Pierre's own when the
+  // crop map has an entry for it (the crop editor always writes one for a lecture photo, [0, 0, 1, 1] for Full photo), his
+  // rotation then from the rotation map alone (none when it has no entry), else how the lecture framed it (cr, ro of its
+  // record). tools/photos.py lecture_frame is the same rule (tests/lectureframe.test.js).
+  function lectureFrame(f, cr, ro, crop, rot) {
+    if (crop && Object.prototype.hasOwnProperty.call(crop, f)) return [crop[f], rotNorm((rot || {})[f])];
+    return [cr || null, rotNorm(ro)];
+  }
+  // A photo's prior difficulty before any answer on it, in logits (+ = harder), as model.js photoDiff starts it: its unit's
+  // offset (the sheet's gd, 0 when unknown) plus (PRIOR_MID - its judged ease) x ce, the subject's calibration of one ease step
+  // (core.js calibOf(S).ease); a photo with no judged ease (the corals') has the offset alone. PRIOR_MID is model.js
+  // PDIFF.MID (tests/priordiff.test.js reads both). null when there is nothing to start from.
+  const PRIOR_MID = 3;
+  function photoPrior(ease, off, ce) {
+    const o = Number.isFinite(off) ? off : null,
+      e = Number.isFinite(ease) && ease > 0 ? ease : null;
+    if (o === null && e === null) return null;
+    return (o || 0) + (e === null ? 0 : (PRIOR_MID - e) * (Number.isFinite(ce) ? ce : 0));
   }
   // Where a point of the original photo (x, y in fractions) lands in the file the workflow makes with crop c ([l, t, r, b],
   // null for none) and rotation r (tools/photos.py turn), in fractions of that file; null when the crop cut it off.
@@ -1537,6 +1602,9 @@
     rotNorm,
     rotStep,
     rotSet,
+    lectureFrame,
+    PRIOR_MID,
+    photoPrior,
     photoAt,
     turnedSize,
     rotDelta,
@@ -1546,77 +1614,80 @@
     fnv,
     autoCheck,
     autoSure,
-    fishSure,
-    FISHT,
-    fishTarget,
-    fishParse,
-    fishIdx,
-    fishMine,
+    treeSure,
+    TREET,
+    treeTarget,
+    treeParse,
+    treeIdx,
+    treeKeepOf,
     flagGone,
-    fishCompare,
+    treeCompare,
     sortBack,
     sortOut,
     sortReads,
     sortView,
     sortJudge,
-    fishRun,
-    fishUndo,
-    fishOwn,
-    fishSigs,
-    fishStamp,
+    treeRun,
+    treeUndo,
+    treeOwn,
+    treeSigs,
+    treeStamp,
     treePhotoOn,
-    fishState,
-    fishPlay,
-    fishGameIn,
-    fishPhase,
-    fishQueue,
-    fishNotThis,
-    fishSet,
-    fishTag,
-    fishMarked,
-    fishTagsAuto,
-    fishTagsMine,
-    fishAdd,
-    fishReject,
-    fishExclude,
-    FISHFEAT,
-    fishPick,
-    fishFeat,
-    fishAt,
-    fishCover,
-    fishCoverJ,
-    fishCoverYes,
-    fishCoverJOk,
-    fishCoverW,
-    fishCoverWOk,
-    fishOk,
-    fishDrop,
-    fishOrder,
-    fishCoverOf,
-    fishCoverRule,
-    fishLeafCover,
-    fishNear,
-    fishRec,
-    fishSeenFrom,
-    fishJuv,
-    fishWm,
-    fishUnitPhases,
-    FISHEASY,
-    fishNeeds,
-    fishUnits,
-    fishSpecies,
+    treeStateOf,
+    treePlay,
+    treeGameIn,
+    treePhase,
+    treeQueue,
+    treeNotThis,
+    treePhotoSet,
+    treeTag,
+    treeMarked,
+    treeTagsAuto,
+    treeTagsMine,
+    treeAdd,
+    treeReject,
+    treeExclude,
+    TREEFEAT,
+    treePick,
+    treeFeat,
+    treePhotoAt,
+    treeCover,
+    treeCoverJ,
+    treeCoverYes,
+    treeCoverJOk,
+    treeCoverW,
+    treeCoverWOk,
+    treeOk,
+    treeDrop,
+    treeOrder,
+    treeCoverOf,
+    treeCoverRule,
+    treeLeafCover,
+    treeNear,
+    treePhotoRec,
+    treeSeenFrom,
+    treeJuv,
+    treeWm,
+    treeUnitPhases,
+    hasPhaseRow,
+    TREEEASY,
+    treeNeeds,
+    treeUnitsOf,
+    treeSpeciesOf,
     fishWinkFold,
-    fishCov,
-    fishWaiting,
-    fishLook,
-    FISHCOV_TODO,
-    fishCovTodo,
-    fishCandTodo,
-    fishAgree,
-    fishPairs,
+    treeCov,
+    treeWaiting,
+    treeLook,
+    TREECOV_TODO,
+    treeCovTodo,
+    treeCandTodo,
+    treeAgree,
+    treePairs,
     FMONT_V,
-    fishMontPick,
-    fishMontSet,
+    treeMontPick,
+    treeMontSet,
+    speciesPairs,
+    speciesPairConf,
     autoCode,
     autoParse,
     autoIdx,

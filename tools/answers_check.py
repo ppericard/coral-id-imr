@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every answer reaches its doc (AGENTS.md "Every answer reaches its doc, and the answers ledger"), checked as data.
+"""Check the answer ledger against AGENTS.md "Working with Pierre".
 
   python3 tools/answers_check.py           the report: what fails, what is known, what to look at; exit 0
   python3 tools/answers_check.py --check   the same, exit 1 on a failure (tests/docs.test.js runs it)

@@ -28,7 +28,6 @@ const C = require('../core.js'),
 const http = require('http'),
   fs = require('fs'),
   path = require('path');
-const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const qa = require('./answer.js'); // waits for and answers the question on screen, whatever its format
 const ROOT = path.join(__dirname, '..');
@@ -76,9 +75,6 @@ async function done(b, fails, run) {
   }
   console.log('fish smoke: OK' + slot.partial(PARTS, run));
 }
-// The parts of this smoke (tests/slot.js parts): SMOKE_PART=main|fresh is the shard CI runs on one runner, SMOKE_ONLY the
-// same names (default: both). fresh: (9), the brand-new fish players (freshPlayers); main: everything else.
-const PARTS = ['main', 'fresh'];
 // Start-up's one-time cards out of the way (progress.js window.CARDS_SAID: every card due on screen or decided): each
 // card on screen but the ones kept (a selector) is closed by its first button, until start-up has nothing more to show.
 // A card that was due before or after a sync (the recalculation notes: never held, rule D6) then never covers a click.
@@ -325,6 +321,190 @@ async function findTheX(b, base, errs) {
   });
   await c.close();
   return r.map(m => `find the X: ${m}`);
+}
+// (11b) Find the X on the species (REE-63): the species by their common names and by their scientific names, both levels on
+// (SPECIES_SHEET, SCI_SHEET: rule D4), every family at Advanced so their species are in play, met. FIND.P is 1 for the run:
+// a species asked (rank species) comes with three species of its own kind of name, each its own unit with a tile, never a
+// family, a genus or the other kind of name; logged quiz|f at the rank species (a scientific name's with no |sc or |so);
+// the question is kept when the player leaves and comes back (the pending question: its four tiles are back, unanswered).
+async function findTheXSpecies(b, base, errs) {
+  const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-fxs')) {
+        sessionStorage.setItem('fish-fxs', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 777;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`find the X species: ${e.message}`));
+  await q.goto(base + '#practice/quiz');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU && document.querySelector('#view .q'), null, {
+    timeout: 30000
+  });
+  await qa.install(q);
+  const r = await q.evaluate(async () => {
+    const fails = [],
+      ok = (x, m) => x || fails.push(m),
+      closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    store.set(SHEETV, Math.max(SPECIES_SHEET, SCI_SHEET));
+    Q.sci = true;
+    // every family at Advanced and met: their genera and species come into play, as the scientific names and the
+    // species levels open (a unit's bar set through the former moving average, as the other parts of this smoke do)
+    [...TREEU.c1, ...TREEU.c2, ...TREEU.c3].forEach(n => {
+      introAdd([n], false);
+      const s = st(n);
+      Object.assign(s, {ok: 4, ko: 0, streak: 4, h: '1111', th: 1});
+      delete s.dp;
+      delete s.ds;
+      s.pg = 0.9;
+    });
+    closeCards();
+    dropPlans();
+    // the species in play: met (a card is not the question here)
+    const meet = () => {
+      const L = pool().filter(n => rankOf(n) === 'species');
+      introAdd(L, false);
+      L.forEach(n => Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1}));
+      closeCards();
+      return L;
+    };
+    // the genera too, so the scientific species hang from met units
+    pool()
+      .filter(n => rankOf(n) === 'genus')
+      .forEach(n => (introAdd([n], false), Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1}), (st(n).pg = 0.9)));
+    let L = meet();
+    L = [...L, ...meet()];
+    const by = k => L.filter(n => kindOf(n) === k && UNITS.fish.tiles(n).length),
+      cn = by('cn'),
+      sc = by('sci');
+    ok(cn.length >= 4, `species by common name in play with a tile: ${cn.length}`);
+    ok(sc.length >= 4, `species by scientific name in play with a tile: ${sc.length}`);
+    FIND.P = 1;
+    const seen = {cn: 0, sci: 0},
+      notMet = pool().filter(n => !introReady(n));
+    let kept = false;
+    // planFind asked on species of each kind, shown as the quiz shows a question (quiz.js quizPhoto: the planners' own
+    // draw through planPhoto is covered by tests/findx.test.js; a species pool is too heavy to draw hundreds of questions)
+    for (const k of ['cn', 'sci']) {
+      for (const t of by(k).slice(0, 6)) {
+        const Q0 = planFind('quiz', t, pool(), 0, null);
+        if (!Q0) {
+          ok(false, `no Find the X on ${t}`);
+          continue;
+        }
+        SHOWNQ = Q0;
+        AUTOD = false;
+        FINDX = true;
+        PENDSCI = null;
+        question(...Q0);
+        pendShow('quiz', Q0, null);
+        const [, , ch, prompt, set] = Q0,
+          // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
+          tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
+        seen[k]++;
+        ok(Q0.findx && rankOf(t) === 'species' && kindOf(t) === k, `a species Find the X: ${t}`);
+        ok(prompt === `Find the ${uname(t)}`, `the prompt: ${prompt}`);
+        ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four units: ${ch}`);
+        ok(
+          ch.every(n => rankOf(n) === 'species' && kindOf(n) === k && introReady(n) && !notMet.includes(n) && pool().includes(n)),
+          `four species of one kind of name, met, in play: ${ch}`
+        );
+        ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+        // answer.js: the format has no name buttons (a read)
+        ok(!document.querySelector('#view .ans'), 'no name buttons');
+        ok(
+          set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
+          'each photo a tile of its own species'
+        );
+        ok(
+          [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
+          'the tile files'
+        );
+        ok(!document.querySelector('#view .csn'), 'no scientific name under a tile before the answer');
+        // The pending question (quiz.js PEND, #1375): a species Find the X on screen is kept as units and photo files, and
+        // built again from the data (pendBuild): the same species, four units and four tiles, still askable (pendOk: all four
+        // in play).
+        if (!kept) {
+          kept = true;
+          const rec = pendAll(pendKey()).quiz,
+            q2 = rec && pendBuild('quiz', rec);
+          ok(
+            q2 &&
+              q2.findx &&
+              q2[1] === t &&
+              q2[2].join() === ch.join() &&
+              q2[4].find.map(x => x.p.f).join() === set.find.map(x => x.p.f).join(),
+            `kept: the same species Find the X built again from its record: ${rec && JSON.stringify(rec).slice(0, 120)}`
+          );
+          ok(q2 && pendOk('quiz', q2), 'kept: still askable');
+        }
+        const pick = seen[k] % 2 ? ch.find(n => n !== t) : t,
+          before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
+        smokeAnswer(pick);
+        const log = SYNC ? SYNC.log : store.get(LOG0, []),
+          a = log[log.length - 1];
+        ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
+        if (a) {
+          ok(a.m === 'quiz|f', `mode ${a.m}, a species Find the X has no |sc or |so`);
+          ok(a.rk === 'species', `rank ${a.rk}`);
+          ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
+          ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
+          ok(a.pa === set.find.find(x => x.n === pick).p.f, `the photo tapped: ${a.pa}`);
+          ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
+        }
+        ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
+      }
+    }
+    ok(seen.cn >= 3, `Find the X on species by common name: ${seen.cn}`);
+    ok(seen.sci >= 3, `Find the X on species by scientific name: ${seen.sci}`);
+    // The mimicry pair (REE-45, Q416 c): the class's photos carry no tile on the data today (no box on a juvenile Acanthurus
+    // pyroferus), so they are given one here, in the page only. "Find the Angelfishes" then has the Surgeonfishes' juvenile
+    // as its decoy tile, one of its three others, whatever the draw; the question's own photo is the species resembled.
+    {
+      const E = ((GX('f:Surgeonfishes') || {}).mim || [])[0];
+      ok(!!E, 'a mimicry entry on the Surgeonfishes');
+      if (E) {
+        GX('f:Surgeonfishes').views.wide.forEach(p => mimIn([E], p) === E && (p.xc = [0, 0, 1, 1]));
+        ok(UNITS.fish.tiles('f:Angelfishes').length > 0, 'the Angelfishes have a tile');
+        for (let i = 0; i < 12; i++) {
+          const Q0 = planFind('quiz', 'f:Angelfishes', pool(), 0, null);
+          if (!Q0) {
+            ok(false, 'no Find the X on the Angelfishes');
+            break;
+          }
+          const dec = Q0[4].find.filter(x => x.n !== 'f:Angelfishes' && mimUnit(x.n, x.p) === 'f:Angelfishes');
+          ok(
+            dec.length === 1 && dec[0].n === 'f:Surgeonfishes' && Q0[2].length === 4,
+            `the class's decoy tile: ${Q0[2]} ${dec.map(x => x.n)}`
+          );
+        }
+      }
+    }
+    // The ordinary draw with FIND.P back at 0: none (the family and species draws alike).
+    FIND.P = 0;
+    let none = 0;
+    for (let i = 0; i < 6; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) none++;
+      smokeAnswer();
+    }
+    ok(!none, `${none} Find the X with FIND.P 0`);
+    return fails;
+  });
+  await c.close();
+  return r.map(m => `find the X species: ${m}`);
 }
 // (13) Same or different? (proto/samediff.js, the Lab) on the fish: the units of the declared look-alike pairs of three pairs
 // unlocked, every other family locked. 24 rounds: a photo only of an unlocked family; a Different shows the two families of a
@@ -641,6 +821,162 @@ async function matrixGame(b, base, errs) {
   await c.close();
   return fails.map(m => `matrix: ${m}`);
 }
+// (21) Life stages matched (proto/lifestages.js, the Lab) on the fish: the six families holding the most species whose phases the cited
+// list documents (fish-phases.json) unlocked, the photos stubbed (its tiles are its choices); tests/lifestages.check.js plays the
+// rounds at 390 and 1280 px (the stage shown outlined and no button, three choices of three species, the stages the list documents,
+// a wrong tap crossed and the right one ticked, the source said, one screen in every state, no progress, log or answer count
+// changes).
+async function lifeStages(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-ls')) {
+        sessionStorage.setItem('fish-ls', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`life stages: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  await q.evaluate(() => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove())));
+  const list = await q.evaluate(async () => {
+    const ph = (await UNITS[SUBJ.id].phases()).species,
+      ok = (P, s) => !!P && (s === 'juvenile' ? !!P.juv : !!(P.sex || P.ip_tp)),
+      by = pool()
+        .filter(n => !rankOf(n))
+        .map(n => {
+          const sp = {};
+          gamePics(n, 'wide').forEach(p => p.sp && p.ph && ok(ph[p.sp], p.ph) && ((sp[p.sp] = sp[p.sp] || new Set()).add(p.ph), 0));
+          return [n, Object.values(sp).filter(s => s.size >= 2).length];
+        })
+        .sort((a, b) => b[1] - a[1]);
+    return {species: Object.keys(ph).length, by: by.slice(0, 6)};
+  });
+  if (list.species < 50) return [`life stages: ${list.species} species in fish-phases.json`];
+  if (list.by.filter(([, k]) => k).length < 3) return [`life stages: ${JSON.stringify(list.by)} families with documented stages`];
+  await q.evaluate(
+    L => introAdd(L, true),
+    list.by.map(([n]) => n)
+  );
+  await q.evaluate(() => (location.hash = hr('lab'))); // the game is drawn afresh by the check, with the families now unlocked
+  await q.waitForTimeout(300);
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./lifestages.check.js')(q, w, fails, 'fish', 8);
+  }
+  await c.close();
+  return fails.map(m => `life stages: ${m}`);
+}
+
+// (20) Down the tree (proto/downtree.js, the Lab) on the fish: twelve families, their scientific genera and species unlocked
+// (the sheet's version at the species level, Scientific names on), the photos stubbed; tests/downtree.check.js plays the rounds
+// at 390 and 1280 px (one photo, the steps from the family down, each unlocked and under the one above, names of one rank, a
+// right step ticked, a wrong one crossed with the walk going on, the end sheet with the partial credit, one screen in every state,
+// no progress, log or answer count changes); and that a player with the families alone has nothing to walk down yet.
+async function downTree(b, base, errs) {
+  const PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'}),
+    fails = [];
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png)(\?|$)/.test(r.request().url()) ? r.fulfill({status: 200, contentType: 'image/png', body: PX}) : r.abort())
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-dt')) {
+        sessionStorage.setItem('fish-dt', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`down the tree: ${e.message}`));
+  await q.goto(base + '#home');
+  await q.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
+  // The families alone: no finer unit is unlocked, so the Tools page lists the game (the subject has a tree) but it has nothing to
+  // ask, and says so.
+  const fams = await q.evaluate(() => {
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const L = pool()
+      .filter(n => !rankOf(n) && gamePics(n, 'wide').length)
+      .slice(0, 12);
+    introAdd(L, true);
+    return L.length;
+  });
+  if (fams < 6) return [`down the tree: ${fams} fish families with a photo`];
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q
+    .waitForFunction(
+      () =>
+        /./.test((document.querySelector('#view .note') || {}).textContent || '') &&
+        !/^\s*Loading/.test(document.querySelector('#view .note').textContent),
+      null,
+      {
+        timeout: 15000
+      }
+    )
+    .catch(() => {});
+  const none = await q.evaluate(() => ({
+    note: (document.querySelector('#view .note') || {}).textContent || '',
+    names: document.querySelectorAll('#view .dtq .dtans [data-n]').length
+  }));
+  if (none.names || !/Meet a few in the quiz first/.test(none.note)) fails.push(`families alone: ${JSON.stringify(none)}`);
+  // Their genera and species too (the species level is on from the sheet's SCI_SHEET).
+  const n = await q.evaluate(() => {
+    store.set(SHEETV, SCI_SHEET);
+    Q.sci = true;
+    const F = pool().filter(n => !rankOf(n) && isOpenFam(n)),
+      G = sciNow().filter(g => F.includes(GX(g).parent) && photoAny(g)),
+      S = sciSpAll().filter(u => G.includes(GX(u).parent) && photoAny(u));
+    introAdd([...G, ...S], true);
+    return [F.length, G.length, S.length];
+    function isOpenFam(n) {
+      return unlocked([n]).length === 1;
+    }
+  });
+  if (n[1] < 6 || n[2] < 6) return [...fails, `${n} families, genera, species unlocked`].map(m => `down the tree: ${m}`);
+  await q.evaluate(() => (location.hash = hr('lab'))); // the game is drawn afresh by the check, with the units now unlocked
+  await q.waitForTimeout(300);
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    await q.setViewportSize({width: w, height: h});
+    await q.waitForTimeout(300);
+    await require('./downtree.check.js')(q, w, fails, 'fish', 8);
+  }
+  // Switched to the corals without a reload (TREEU stays loaded): the game is not offered, not on the Tools page and not by its address.
+  await q.evaluate(() => setSubject('coral'));
+  await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000}).catch(() => {});
+  await q.evaluate(() => (location.hash = hr('lab')));
+  await q.waitForTimeout(500);
+  await q.evaluate(() => (location.hash = hr('lab-downtree')));
+  await q.waitForTimeout(500);
+  const coral = await q.evaluate(() => ({
+    subject: SUBJ.id,
+    on: LAB.list.find(x => x.id === 'downtree').on(),
+    page: !!document.querySelector('#view .dtq')
+  }));
+  if (coral.subject !== 'coral' || coral.on || coral.page) fails.push(`switched to the corals: ${JSON.stringify(coral)}`);
+  await c.close();
+  return fails.map(m => `down the tree: ${m}`);
+}
 // (16) Type the family, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the fish: twelve
 // families unlocked, the photos stubbed; tests/labgames.check.js plays them at 390 and 1280 px (the unit word, the photo of an
 // unlocked family, no id shown as a name, the typed answers and the retype, four choices of one rank, the web's nodes and
@@ -813,8 +1149,7 @@ async function memoryGame(b, base, errs) {
   await c.close();
   return fails.map(m => `memory: ${m}`);
 }
-// (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
-// errors in errs.
+// (9) The brand-new players (SMOKE_PART=fresh). Returns their failures and adds their page errors to errs.
 async function freshPlayers(b, base, errs) {
   // (9) A brand-new fish player: the
   // first cards are the starter core (fish.json start), the first 15 questions ask only those entries, and until an
@@ -1134,17 +1469,104 @@ async function freshSeed(b, base, errs, seed, fresh) {
   await c6.close();
 }
 
-(async () => {
-  const run = slot.parts(PARTS, {main: ['main'], fresh: ['fresh']});
-  await slot('fish.smoke');
-  await new Promise(ok => server.listen(0, '127.0.0.1', ok));
-  const base = `http://127.0.0.1:${server.address().port}/`;
-  const b = await chromium.launch();
-  if (!run.has('main')) {
-    const pe = [],
-      f = await freshPlayers(b, base, pe);
-    return done(b, pe.length ? [...f, 'page errors: ' + pe.join(' | ')] : f, run);
+// (10b) The names step on the welcome card (app.js UNITS namesStep, quiz.js namesAskShow; Pierre, 2026-11-04): after "How well do
+// you know reef fish?" a player who is not at IMR is asked which names to learn, on its own card (not the question's), and
+// each answer sets the What I learn rows; "I'm at IMR" is not asked; a device that has not heard the sheet script at the
+// species level (rule D4) is not asked; Escape leaves the record as it plays. Cases: [welcome answer, sheet version heard,
+// names answer or 'esc', the rows after: [Common names on, Scientific names on]].
+async function namesCard(b, base, errs) {
+  const fails = [];
+  const cases = [
+    ['new', 300, 'sci', [false, true]],
+    ['know', 300, 'both', [true, true]],
+    ['new', 300, 'common', [true, false]],
+    ['know', 300, 'esc', [true, false]],
+    ['imr', 300, null, [true, true]],
+    ['new', 0, null, [true, false]]
+  ];
+  for (const [pick, v, names, want] of cases) {
+    const tag = `names step ${pick}/${v}/${names}`;
+    const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(v => {
+      try {
+        if (!sessionStorage.getItem('fish-names')) {
+          sessionStorage.setItem('fish-names', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-admin-vault', 'smoke');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour'}));
+          if (v) localStorage.setItem('reefid-sheet-v', String(v));
+        }
+      } catch (e) {}
+    }, v);
+    const q = await c.newPage();
+    q.on('pageerror', e => errs.push(`${tag}: ${e.message}`));
+    await q.goto(base + '#practice/quiz');
+    await q.waitForFunction(() => window.APP_READY && document.querySelector('.unlock.startq'), null, {timeout: 30000});
+    await q.click(`.unlock.startq [data-start="${pick}"]`);
+    await q
+      .waitForFunction(() => document.querySelector('.unlock.namesq, #view .q, .unlock.basicsq'), null, {timeout: 15000})
+      .catch(() => fails.push(`${tag}: nothing after the answer`));
+    const card = await q.evaluate(() => {
+      const d = document.querySelector('.unlock.namesq');
+      return d
+        ? {
+            title: (d.querySelector('h3') || {}).textContent || '',
+            opts: [...d.querySelectorAll('[data-names]')].map(x => x.dataset.names),
+            startq: d.classList.contains('startq'),
+            quiz: !!document.querySelector('#view .q'),
+            text: d.textContent
+          }
+        : null;
+    });
+    if (names) {
+      if (
+        !card ||
+        card.title !== 'Which names do you want to learn?' ||
+        card.opts.join() !== 'common,sci,both' ||
+        card.startq ||
+        card.quiz ||
+        /Latin/.test(card.text)
+      )
+        fails.push(`${tag}: the card ${JSON.stringify(card)}`);
+      if (card) {
+        if (names === 'esc') await q.keyboard.press('Escape');
+        else await q.click(`.unlock.namesq [data-names="${names}"]`);
+        await q
+          .waitForFunction(() => !document.querySelector('.unlock.namesq'), null, {timeout: 5000})
+          .catch(() => fails.push(`${tag}: the card stays`));
+      }
+    } else if (card) fails.push(`${tag}: asked, but it should not be`);
+    // what comes next: Fish basics offered to "new", else the quiz
+    await q
+      .waitForFunction(() => document.querySelector('#view .q, .unlock.basicsq'), null, {timeout: 15000})
+      .catch(() => fails.push(`${tag}: neither the basics offer nor the quiz after the step`));
+    const st = await q.evaluate(() => ({
+      rows: learnRows().map(r => rowOn(r)),
+      n: learnRows().length,
+      q: ['sp', 'spO', 'sci', 'sciO', 'sciH'].map(k => (k in Q ? Q[k] : null)),
+      fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
+      basics: !!document.querySelector('.unlock.basicsq')
+    }));
+    // the rows read as the answer says (one row only where the sheet has not been heard: its choice is not on offer)
+    const rows = st.n === 1 ? [st.rows[0]] : st.rows;
+    if (JSON.stringify(rows) !== JSON.stringify(st.n === 1 ? [want[1]] : want) || st.q[4] || (st.fish || {}).c !== pick)
+      fails.push(`${tag}: after ${JSON.stringify(st)}`);
+    if (names === 'common' || names === 'esc' || !names) {
+      if (st.q.some(x => x !== null) && pick !== 'imr') fails.push(`${tag}: wrote something it should not ${JSON.stringify(st.q)}`);
+    }
+    if (pick === 'new' && !st.basics) fails.push(`${tag}: Fish basics is not offered after the step`);
+    await c.close();
   }
+  return fails;
+}
+
+// These checks build on one page's answers and progress. Keep the whole sequence in one part.
+async function quizAndProgress(b, base, errs) {
   const ctx = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
   await ctx.route(
     u => !u.href.startsWith(base),
@@ -1165,8 +1587,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
     let s = 777;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
   }, CORAL);
-  const p = await ctx.newPage(),
-    errs = [];
+  const p = await ctx.newPage();
   p.on('pageerror', e => errs.push(e.message));
   await p.goto(base + '#practice/quiz');
   await p.waitForFunction(() => window.APP_READY && typeof TREEU === 'object' && TREEU, null, {timeout: 30000});
@@ -1333,6 +1754,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       W0 = WINK.AT.slice();
     WINK.AT[0] = answersSoFar();
     closeCards();
+    pendDrop('quiz'); // the question left unanswered above is not kept: a wink is decided before a new question is drawn
     quizPhoto();
     const wk = document.querySelector('#view .q.wink');
     ok(!!wk, 'a wink comes for a circle-1 player');
@@ -2023,6 +2445,13 @@ async function freshSeed(b, base, errs, seed, fresh) {
     await setSubject('coral');
     return {subj: SUBJ.id, slate: slateGenera().length, ac: (P.Acropora || {}).ok, fish: localStorage.getItem('reefid-sync-subject')};
   });
+  if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
+    out.push('switch back to corals: ' + JSON.stringify(back));
+  await ctx.close();
+  return out;
+}
+
+async function uiAndAccess(b, base, errs) {
   // The screens the admin sees in the fish beta, at 390 and 1280 px (light theme): the subject switch in its two places,
   // one state (docs/DESIGN.md "Subject switch"): a Corals | Fish row at the top of Home and a switch
   // next to the logo in the header, on every page but Home, the chip and its menu with three subjects; the header keeps its size and Home
@@ -2323,7 +2752,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       if (gl.hash !== h0 || !gl.pop) ui.push(`${width}px families page: a glossary term on a card ${JSON.stringify(gl)}`);
       await q.keyboard.press('Escape');
     }
-    // The family sheets (learn.js viewFishSheet; the fish-sheets study, option B): a family's photo on the families page
+    // The family sheets (learn.js viewTreeSheet; the fish-sheets study, option B): a family's photo on the families page
     // opens its sheet (no longer the photo viewer: the sheet's photos enlarge, with their credits), under the book's
     // English name with its scientific name below; an old entry id links to its family; the only genus of a family opens
     // the family sheet; the species filter is on by default and one tap shows them all.
@@ -2995,6 +3424,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
           WINK.AT[0] = answersSoFar();
           delete WINKS[SUBJ.id];
           localStorage.removeItem('reefid-sync-fish-wink');
+          pendDrop('quiz'); // the question on screen is not kept: a wink is decided before a new question is drawn
           quizPhoto();
           ok({wink: !!document.querySelector('#view .q.wink'), seen: Object.keys(WINKS[SUBJ.id] || {}).length});
         }, 300)
@@ -3032,6 +3462,75 @@ async function freshSeed(b, base, errs, seed, fresh) {
       return r;
     });
     if (!bt2.shown || bt2.after || bt2.told) ui.push(`${width}px leaderboard toast and a subject switch: ${JSON.stringify(bt2)}`);
+    // REE-210: the leaderboard notice never sits over a question's answers or Next (at 390 px it covered two of four
+    // answers for 15 s). It waits while a question is on screen, answered or not; it shows on the first page without one,
+    // its ✕ at least 44 px; a question that opens while it shows takes it away at once, not told (an observer of the
+    // test's own, registered after the app's, sees the toast gone in the very change that draws the question). Light and
+    // dark, the question unanswered and answered (Next on screen). The sync is stubbed in memory only after the answer
+    // (rule D1: no call to the sheet).
+    for (const theme of ['light', 'dark']) {
+      await q.evaluate(() => (location.hash = '#practice/quiz'));
+      // A card due is out of the way first: the start question (answered by its first choice), then any other.
+      await q.waitForFunction(() => document.querySelector('.unlock.startq, #view .q'), null, {timeout: 15000});
+      if (await q.$('.unlock.startq [data-start]'))
+        await q.click(`.unlock.startq [data-start="${(await q.$('.unlock.startq [data-start="know"]')) ? 'know' : 'imr'}"]`);
+      const st = await settle(q);
+      if (st) ui.push(`${width}px leaderboard notice and a question: ${st}`);
+      await qa.ready(q);
+      const bq = await q.evaluate(async theme => {
+        document.documentElement.dataset.theme = theme;
+        const s0 = SYNC,
+          wait = ms => new Promise(r => setTimeout(r, ms)),
+          toast = () => [...document.querySelectorAll('.apptoast')],
+          r = {};
+        store.set('reefid-board-sent14', 1);
+        store.set('reefid-board-told', 0);
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice(); // a question unanswered
+        await wait(300);
+        r.open = toast().length || store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        smokeAnswer(); // the feedback state, Next on screen
+        SYNC = {name: 'Test', code: 'x'};
+        boardNotice();
+        await wait(300);
+        r.feedback = toast().length || store.get('reefid-board-told', 0);
+        location.hash = '#about';
+        for (let i = 0; i < 20 && !toast().length; i++) await wait(100);
+        const t = toast()[0],
+          b = t && t.querySelector('button').getBoundingClientRect();
+        r.shown = toast().length; // exactly one
+        r.close = b ? [Math.round(b.width), Math.round(b.height)] : null;
+        r.fits = t ? t.getBoundingClientRect().right <= innerWidth + 1 && t.getBoundingClientRect().left >= -1 : false;
+        let over = 0;
+        new MutationObserver(() => document.querySelector('#view .q') && toast().length && over++).observe($v, {
+          childList: true,
+          subtree: true
+        });
+        location.hash = '#practice/quiz'; // a question opens under it: taken away, not told, never painted over it
+        for (let i = 0; i < 40 && !document.querySelector('#view .q'); i++) await wait(100);
+        r.over = over;
+        r.pulled = !toast().length && !store.get('reefid-board-told', 0);
+        SYNC = s0;
+        boardStop();
+        toast().forEach(x => x.remove());
+        return r;
+      }, theme);
+      if (
+        bq.open ||
+        bq.feedback ||
+        bq.shown !== 1 ||
+        !bq.close ||
+        bq.close[0] < 44 ||
+        bq.close[1] < 44 ||
+        !bq.fits ||
+        bq.over ||
+        !bq.pulled
+      )
+        ui.push(`${width}px ${theme} leaderboard notice and a question on screen: ${JSON.stringify(bq)}`);
+    }
+    await q.evaluate(() => delete document.documentElement.dataset.theme);
     await q.evaluate(() => (location.hash = '#about'));
     await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
     // From the keyboard: Tab reaches each side, Enter switches, and the focus stays on the side chosen once the header is
@@ -3190,10 +3689,12 @@ async function freshSeed(b, base, errs, seed, fresh) {
       return {
         title: d ? d.querySelector('h2').textContent : '',
         links: d ? [...new Set([...d.querySelectorAll('a')].map(a => a.getAttribute('href')))].join() : '',
-        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true
+        coral: d ? /coral|ReefCloud/i.test(d.textContent) : true,
+        // REE-211: the tag shows on the door while the subject's key is not built, visible at every width.
+        soon: d && d.querySelector('.hdsoon') ? (e => !!e.offsetParent && /soon/i.test(e.textContent))(d.querySelector('.hdsoon')) : false
       };
     });
-    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral)
+    if (door.title !== 'Identify a fish' || door.links !== '#fish/identify/key' || door.coral || !door.soon)
       ui.push(`${width}px Home's Identify door, Fish on: ${JSON.stringify(door)}`);
     await wide('Home, Fish on');
     await q.evaluate(() => (location.hash = '#identify/key'));
@@ -3250,6 +3751,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
     const d = await page();
     if (d.subj !== 'coral' || !d.hash.startsWith('#identify/key?form=B') || d.soon)
       ui.push(`${width}px a Coral ID Key link with Fish on: ${JSON.stringify({...d, text: ''})}`);
+    // REE-211: the corals' Identify door has no "soon" tag (their key is built).
+    await q.evaluate(() => (location.hash = '#home'));
+    await q.waitForSelector('#view .hdoor.identify', {timeout: 15000}).catch(() => {});
+    const ct = await q.evaluate(() => ({
+      door: !!document.querySelector('#view .hdoor.identify'),
+      tag: !!document.querySelector('#view .hdoor.identify .hdsoon')
+    }));
+    if (!ct.door || ct.tag) ui.push(`${width}px Home's Identify door, Coral on, has a "soon" tag: ${JSON.stringify(ct)}`);
     // A fish page linked straight (the subject prefix in the app's addresses): a new tab on a fish
     // address opens that page with Fish on screen; a coral address without a prefix keeps the subject chosen there.
     for (const [h, key] of [
@@ -3613,6 +4122,10 @@ async function freshSeed(b, base, errs, seed, fresh) {
     if ((await q.evaluate(() => SUBJ.id)) !== 'coral') all.push('Corals did not switch back');
     await c9.close();
   }
+  return [...ui, ...grp, ...all];
+}
+
+async function mainScenarios(b, base, errs) {
   // Sync with two subjects, on the real app with a sheet stub (rule D1: window.SHEET_STUB, nothing sent):
   // (1) the sheet's opening hold is the corals': a pull with Fish on screen leaves the fish hold alone;
   // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
@@ -3905,26 +4418,28 @@ async function freshSeed(b, base, errs, seed, fresh) {
       rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
     await c4.close();
   }
-  // (9) A brand-new fish player: freshPlayers, above (its own CI shard).
-  const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
   // (11) Find the X: findTheX, above.
-  const fx = await findTheX(b, base, errs);
+  const fx = [...(await findTheX(b, base, errs)), ...(await findTheXSpecies(b, base, errs))];
   // (13) Same or different?: sameDifferent, above.
-  const sd = run.has('main') ? await sameDifferent(b, base, errs) : [];
+  const sd = await sameDifferent(b, base, errs);
   // (14) Odd one out: oddOne, above.
-  const oo = run.has('main') ? await oddOne(b, base, errs) : [];
+  const oo = await oddOne(b, base, errs);
   // (15) Matrix: matrixGame, above.
-  const mx = run.has('main') ? await matrixGame(b, base, errs) : [];
+  const mx = await matrixGame(b, base, errs);
+  // (20) Down the tree: downTree, above.
+  const dt = await downTree(b, base, errs);
+  // (21) Life stages matched: lifeStages, above.
+  const ls = await lifeStages(b, base, errs);
   // (16) Type the family, Blur reveal and the Look-alike web: labGames, above.
-  const lg = run.has('main') ? await labGames(b, base, errs) : [];
+  const lg = await labGames(b, base, errs);
   // (17) The custom quiz: customQuiz, above.
-  const cqz = run.has('main') ? await customQuiz(b, base, errs) : [];
+  const cqz = await customQuiz(b, base, errs);
   // (18) The Look-alikes deck and Compare: lookAlikes, above.
-  const la = run.has('main') ? await lookAlikes(b, base, errs) : [];
-  // (19) Memory: memoryGame, above.
-  const mem = run.has('main') ? await memoryGame(b, base, errs) : [];
+  const la = await lookAlikes(b, base, errs);
   // (12) A cold first launch: coldHome, above.
   const cold = await coldHome(b, base, errs);
+  // (10b) The names step on the welcome card: namesCard, above.
+  const names = await namesCard(b, base, errs);
   // (10) The fish welcome question (docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -4255,32 +4770,62 @@ async function freshSeed(b, base, errs, seed, fresh) {
         );
     }
   }
-  const fails = [
-    ...out,
-    ...ui,
+  return [
     ...rv,
-    ...fresh,
     ...fx,
     ...sd,
     ...oo,
     ...mx,
+    ...dt,
+    ...ls,
     ...lg,
     ...cqz,
     ...la,
-    ...mem,
     ...cold,
-    ...grp,
-    ...all,
     ...welcome,
+    ...names,
     ...hello,
     ...flag,
     ...early
   ];
-  if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
-    fails.push('switch back to corals: ' + JSON.stringify(back));
+}
+
+const SCENARIOS = {quiz: quizAndProgress, access: uiAndAccess, main: mainScenarios, fresh: freshPlayers, memory: memoryGame};
+const PARTS = Object.keys(SCENARIOS);
+
+function fishParts() {
+  return slot.parts(PARTS, {main: ['main'], fresh: ['fresh', 'quiz', 'access', 'memory']});
+}
+
+async function runFishScenarios(run, execute) {
+  for (const name of run) await execute(name, SCENARIOS[name]);
+}
+
+async function smoke() {
+  const run = fishParts();
+  const {chromium} = require('./calm.js'); // Playwright; contexts in reduced motion by default
+  await slot('fish.smoke');
+  await new Promise(ok => server.listen(0, '127.0.0.1', ok));
+  const base = `http://127.0.0.1:${server.address().port}/`;
+  const b = await chromium.launch();
+  const fails = [],
+    errs = [];
+  await runFishScenarios(run, async (name, scenario) => {
+    const start = performance.now();
+    try {
+      fails.push(...(await scenario(b, base, errs)));
+    } catch (err) {
+      fails.push(`${name}: ${err.stack || err}`);
+    }
+    console.log(`fish.smoke part ${name}: ${((performance.now() - start) / 1000).toFixed(1)} s`);
+  });
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
   await done(b, fails, run);
-})().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+}
+
+module.exports = {fishParts, runFishScenarios};
+if (require.main === module)
+  smoke().catch(e => {
+    console.error(e);
+    process.exit(1);
+  });

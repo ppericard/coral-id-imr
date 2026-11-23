@@ -25,7 +25,7 @@ and one render's context: the Key's tree and the view's, the rows, the Tag… op
 some node), the content editor's data, and the node's own page (its cover, name, tools, why, body and binder) or none for
 a page of its children's cards. The page draws the rest the same for every subject: the tree at the left, the bar (the
 path, the selects, All | IMR, Tag…, the drill-down, the edits to check, the tree's problems), the + Pair box, the
-Structure and Sheet boxes, the cards and the shared Removed and Excluded lists. Its views, in the tab's view switch, are
+Structure and Sheet boxes, the cards and the shared Removed list. Its views, in the tab's view switch, are
 two classifications of the same leaves, one parent per node in each:
 
 - **Key** `#fish/photos/tree/key/<node id>` (`#fish/photos/tree/key/f%3ADamselfishes`, `…/g%3AChromis`, `…/s091`; an
@@ -81,10 +81,10 @@ children, a key group's included, at every width).
 - A **family, genus or species** (the unit, or a node under it: `taxtree.js` `ttNearest` finds its unit) shows its
   photos in play, one section per species under it inside one block per genus between them (any depth: `block`), each
   heading with its own cover in force (ringed when his) and its name opening its page, and on each species heading the
-  candidates still waiting (`autosort.js` `fishWaiting` over the photos in play, as Coverage's). The bar shows its cover
+  candidates still waiting (`autosort.js` `treeWaiting` over the photos in play, as Coverage's). The bar shows its cover
   in force and why (`admin-covers.js` `nodeCover`, `nodeCoverWhy`: "Your ★ cover", else "Default: Most seen near
-  <centre>: N observers" for a node with species under it, the default cover rule as `autosort.js` `fishCoverOf`; for a
-  species "Default: its first photo (featured, then the easiest)", `autosort.js` `fishLeafCover`, as the app's sheets;
+  <centre>: N observers" for a node with species under it, the default cover rule as `autosort.js` `treeCoverOf`; for a
+  species "Default: its first photo (featured, then the easiest)", `autosort.js` `treeLeafCover`, as the app's sheets;
   his ★ on a juvenile or out of play said), with a link to Cover proposals while the rule's other pick of a node he
   covered is open ([admin-photos.md › Cover proposals](admin-photos.md#cover-proposals)); its species and photos in
   play.
@@ -95,14 +95,15 @@ children, a key group's included, at every width).
 - **A family's page**: the book's family (English name, the scientific names below, an **IMR** tag on the families and
   genera in the IMR course, its IMR name in the tooltip), one block per genus and one section per species with its
   photos in play, featured first, then the game's order (the easiest, then the most reference-like: `core.js`
-  `easyRank`), never by who took them (`autosort.js` `fishOrder`); Feature / ★ Cover / Remove / Not this / ×,
-  ✓ Validated with what is missing (`fishNeeds`), a wink's card. Only the family's page has the wink card, ✓ Validated
+  `easyRank`), never by who took them (`autosort.js` `treeOrder`); Feature / ★ Cover / Remove (the one Remove, out for
+  good, the node's Removed list below the page) / Not this,
+  ✓ Validated with what is missing (`treeNeeds`), a wink's card. Only the family's page has the wink card, ✓ Validated
   and what it needs; Feature, Remove, Not this and the rows Not this species and Other species, out of play keep their
   family's id on every page (those rows list the photos of the page's species). The family's choices are in
   `curation.json` `fish` `genera` `{family id: {cover, feat: {species id: [f]}, ok}}`; the families are read through
-  `autosort.js` `fishUnits` from `fish.json` `families` / `genera`.
+  `autosort.js` `treeUnitsOf` from `fish.json` `families` / `genera`.
 - **A wink family's species** (met only on the surprise cards: a few really good photos, not the whole stock) shows
-  `FISHT.wink` (5) of its photos in play: its featured ones, then the surprise card's own (`wink.photos`, by photo id),
+  `TREET.wink` (5) of its photos in play: its featured ones, then the surprise card's own (`wink.photos`, by photo id),
   then the page's order (`autosort.js` `fishWinkFold`), the rest behind its **N more** chip (`FU_WALL`, this tab);
   display only, every photo stays in play and counts (observations, covers, what it needs).
 
@@ -114,11 +115,11 @@ All \| IMR filters the tree (shared with Coverage, `reefid-admin-fu-imr`) and, b
 
 - **Circle** N (a unit's `circle`, one per value the units carry; the circle in force, `admin.js` `fuCircle`, with No
   circle for a family taken off the game);
-- **Look-alikes** (any, or one pair the IMR course compares: `autosort.js` `fishPairs`, as Photos › Look-alikes;
+- **Look-alikes** (any, or one pair the IMR course compares: `autosort.js` `treePairs`, as Photos › Look-alikes;
   `fish.json` declares them between families only, so no genus or species pair; the pairs he withdrew or added are listed
   too, saying so: "Structure", below);
 - **Needs photos** (a species under its target: its heading's warning);
-- **Needs work** (a family whose ✓ Validated waits: `fishNeeds`);
+- **Needs work** (a family whose ✓ Validated waits: `treeNeeds`);
 - **Draft** (a node whose own choices changed since the published file: the rows' dot, each change on its node, a photo
   featured counted on its species, a photo's play, crop, rotation, ease, phase or tags on its species: `fuData`
   `dirty`).
@@ -152,8 +153,8 @@ built, `FISHC.raw`).
 Above the Sheet on a family's page (not a wink family; `admin-content.js` `structBox`):
 
 - its **Circle**: one segment per circle `SUBJECTS` `structure` declares, and None (in no circle); the one in force
-  pressed (`circleRow`); ↺ Restore, Original says the base; stale: Keep mine, Take the new; absorbed or never applied:
-  Remove;
+  pressed (`circleRow`), each circle's number with its words under it (below); ↺ Restore, Original says the base;
+  stale: Keep mine, Take the new; absorbed or never applied: Remove;
 - its **Look-alikes** (`pairRows`): the base's pairs, either side's line, and his entries; Withdraw, ↺, Remove; Add a
   look-alike…: the other family, then Source and Link, asked once when left empty, never required.
 
@@ -164,6 +165,20 @@ state and tools under its tag). A Publish that changes the structure (`structCha
 every player's path and progress (`ST_PUBLISH`, in the one Publish dialog), and counts "N fish circle edits" and
 "N fish look-alike pair edits" apart from the sheet edits (`contentSummary`). What the structure does to the game:
 [content.md › Structure](content.md#structure-circles-and-look-alike-pairs).
+
+**Each subject's own words for its circles.** One declaration, `SUBJECTS` `admin.circles` `{circle: words}`, one reader,
+`admin-content.js` `circleWord` / `circleLab`, for every subject that has circles (rule S1; the corals have none): the
+fish's (1 IMR course, 2 After the course, 3 Beyond the course: what players already read, "the IMR course's families",
+"right after the IMR course's", "beyond the IMR course"; the old "SVS" word is internal, Q182) and the sea slugs' (Stars and
+most common, Next most common, Less common: circle 1 holds the stars and the most common species, the next circles the
+next ones by commonness, Pierre, 2026-11-15, Q377). Shown beside the number wherever the Tree names
+a circle: the Structure box's segments (the number, the words under it, the full "1 · IMR course" as its tooltip, in the
+stale view and in "Original"), the **Circle** tag's options ("Circle 1 · IMR course") and the rows and cards' line
+("circle 1 · IMR course"). A circle with no words, or a subject with none, shows its number alone, never a made-up word
+(rule C2); `tests/structeditor.test.js` checks every circle the units of each subject carry has words. The app's own words
+(the circle-3 offer card, the achievements) and the admin's other pages (Coverage, Players, Photo stats) are unchanged. The
+words belong to the admin for now: another instance's own words are a data field for a second instance
+([content.md › Structure](content.md#structure-circles-and-look-alike-pairs)).
 
 ## Names: the shared names of the name index
 
@@ -187,18 +202,28 @@ format ([ROADMAP "Fish common names"](../ROADMAP.md)).
 
 One implementation for every tree (`admin-nodephotos.js`; Pierre, 2026-11-19: "un code commun entre les matières",
 subject differences as parameters or specialised pieces), which replaced the corals' Photos › Genera tab. Shared: a
-node's **Removed from the site** (**Put back**) and **Excluded** (**Restore**) lists, one tile, one click and one Undo
-step each (`npLists`, `npBind`): a leaf's own, a group's or a family's those of its leaves; the first root of a view
-also lists the excluded photos no leaf has any more; the Tag… filters **Removed photos** and **Excluded photos**
-(`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by the data shape the
+node's **Removed** list (Pierre, 2026-11-21 05:48: one Remove, one click, an Undo just after, a list of the removed photos
+to put one back): the photos removed for good (curation `exclude`) and the ones an earlier Remove took off the site (a published
+`hide` entry), one tile and one **Put back** each, one click and one Undo step (`npLists`, `npBind`): a leaf's own, a group's or
+a family's those of its leaves; the first root of a view also lists the removed photos no leaf has any more; the Tag… filter
+**Removed photos** (`npCount`). Only the draft is written (rule A1). The specificities are declared in `NODE_PHOTOS`, by the data shape the
 subject declares (`SUBJECTS` `flat`, `admin.js` `treeShape`, as the Tree's builders):
 
 - **`live`**, the photos in play: the corals' `coralLive` (a section per view, 3 featured each, 2 or 3 zooms,
   Candidates, Not this genus); the fish's their builder's node page (`TREE_BUILD` `tree`: a section per species, ease
   and phase tags, ★ Cover at every rank). Different data (`genera[<genus>]`, `fish.genera[<node id>]`) and tiles; one
   body is a later step (the study's step 8).
-- **`removed`, `excluded`**: the corals' `genera[g].hide` and top-level `exclude`; none for the fish yet: their Remove
-  (`fish.seen`) returns the photo to Candidates and `fish.exclude` has no tested restore (next step).
+- **`removed`, `excluded`**: the corals' `genera[g].hide` and top-level `exclude`. The tree subjects' (the fish, the sea
+  slugs; REE-44 part 2): their part's `exclude` only (`fish.exclude`, `seaslug.exclude`), written by the one Remove of
+  every photo tile and of the Candidates card's × (`admin.js` `treeRemove`, the toast with its Undo button), each photo
+  under the leaf of its species (Not this's species first, else its candidate's or game record's: `npTreeExcluded`; a
+  genus-level photo under its genus's leaf), the photos with no leaf at the first root ("Removed, species not known
+  here": a reference photo only the game held is left out of the rebuilt game file once its removal is published, and
+  the reference list, `tools/fish_refs.json`, is not on the site, so it shows its iNaturalist photo from its id);
+  Put back deletes the entry, one Undo step, and the photo is a candidate again (a reference photo the game holds, in
+  play again; the auto-sort, which logged it, never adds it again by itself). Their `seen` (✕ Reject, Out of play, a
+  P3 count, and the old Remove's mark) is not in the list: it is a reviewed mark, the photo still a candidate
+  (`tests/adminremove-tree.test.js`).
 
 ## The corals' Tree
 
@@ -225,9 +250,9 @@ species rank).
   rule needs observers per genus near the centre that the coral data does not hold).
 - **A genus's page**: its cover and why (his ★ or the automatic one), what it needs, and every tool its own page
   had in the former Photos › Genera › Live (`admin-nodephotos.js` `coralLive`: its photos per view with Feature, ★
-  Cover, Remove, Not this, ×, Crop, quality and growth form, the zooms, ✓ Validated, the view filter, Candidates, Not
+  Cover, Remove, Not this, Crop, quality and growth form, the zooms, ✓ Validated, the view filter, Candidates, Not
   this genus; [admin-photos.md › A genus's page](admin-photos.md#a-genuss-page-in-the-tree)), above them its Structure and
-  Sheet (below), under them the shared Removed and Excluded lists. Its address is `genusHref`.
+  Sheet (below), under them the shared Removed list. Its address is `genusHref`.
 - **Filters**: All \| IMR (the slate, `core.js` `slateOf`) and Tag… (`ctFilters`: ★ Starred, Look-alikes any or one pair
   of `admin.js` `classicPairs` and of the draft's pair entries, `pairRows`, each saying added or withdrawn, as the
   fish's, Needs work, Candidates waiting, Draft, Removed photos, Excluded photos; never a growth form), read through the leaves as the fish's; the tag in
@@ -240,8 +265,10 @@ species rank).
   fish's Tree. A pair of the base whose withdrawal the ★ rule would hold (`core.js` `starHold`, rule L5: a starred
   genus's last surveyed look-alike) has its **Withdraw** off, titled "★ rule"; a held withdrawal reaching the draft by a
   merge shows "★ rule" with Remove and is counted to check. Publish counts "N coral genus sheet edits" and "N coral
-  look-alike pair edits". Photos › Look-alikes still reads the base's pairs (`classicPairs`), as the fish's Look-alikes
-  page reads the IMR course's with the editor's laid over
+  look-alike pair edits". Photos › Look-alikes reads the pairs in force, as the fish's page does (`admin-content.js`
+  `montPairs`, by the shape the subject declares: the corals' `classicPairsOf` over `data.json` with the draft's pairs
+  laid over it, `sheetFile`); the Look-alikes filter above lists the base's classic pairs (`classicPairs`) and the
+  editor's entries, so a withdrawn pair's ↺ is reached
   ([admin-photos.md › Look-alikes](admin-photos.md#look-alikes)).
 
 ## The sea slugs
@@ -257,9 +284,9 @@ photo tools on their own part of `curation.json`:
   (`seaslug.json` `taxa`, each family's `tgroup`). All | IMR shows only for a tree the IMR course names; a species with no
   common name shows by its scientific name alone.
 - Photos › Candidates: the fish's swiper on `data/seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, the
-  game's cap) on each species and each genus-level list (`autosort.js` `fishSpecies(J, tgt)`, `fishTarget`,
+  game's cap) on each species and each genus-level list (`autosort.js` `treeSpeciesOf(J, tgt)`, `treeTarget`,
   `admin-fish.js` `candSpecies`); no auto-sort, so the queue has no Checks switch; an egg-mass judgement (`{egg: 1}`) is
-  set aside (`autosort.js` `fishSure`).
+  set aside (`autosort.js` `treeSure`).
 - Their rubric's tag rows on a photo's Tags and in words, and the view buttons of Photo review (`SUBJECTS` `admin.tags`,
   declared by each tree subject: the views, the light and the flags differ from the fish's, the rest comes from
   `core.js` `treeRubric`; read by `admin.js` `tagRows`, `tagFlags`, `tagWords`, `tagText`).
@@ -328,7 +355,7 @@ the Key, the WoRMS node a genus-level leaf of its own hangs under.
   `dump` (after `data.json`); `python3 tools/tree_section.py` writes them all, `--check` fails on a section that is
   missing or is not what its sources give, which `tests/treesection.test.js` runs.
 - **What is held.** `tests/treesection.test.js` holds the real sections to the shared JS functions (`autosort.js`
-  `fishUnits`, `taxtree.js` `ttFromRef`, `ttBuild`) and `tests/coraltree.test.js` to `core.js` `lectureGroup` and
+  `treeUnitsOf`, `taxtree.js` `ttFromRef`, `ttBuild`) and `tests/coraltree.test.js` to `core.js` `lectureGroup` and
   `slateOf`; the admin's reader is run on made-up sections.
 - **No section yet** (the file is missing): the Tree says so, with the command that writes it, and its other pages are
   not affected.

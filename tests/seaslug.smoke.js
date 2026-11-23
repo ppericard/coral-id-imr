@@ -99,7 +99,26 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       asked.some(u => /seaslug\.json/.test(u)),
       `1: the sea-slug files not fetched: ${asked.filter(u => /seaslug/.test(u))}`
     );
-    check(!errs.length, '1: page errors: ' + errs.join('; '));
+    // About (REE-213, rule C2): the References list the sources the sea slugs' data cites, each a link to a cited page or site
+    // (tests/seaslug-about.test.js checks the list against every citation); WoRMS and the hand-written lines stay.
+    await p.evaluate(() => (location.hash = '#about'));
+    await p.waitForFunction(() => document.querySelector('#view .abcites li a'), null, {timeout: 15000});
+    const ab = await p.evaluate(() => {
+      const L = [...document.querySelectorAll('#view .abcites li')];
+      return {
+        n: L.length,
+        loading: L.some(x => /Loading|could not be loaded/.test(x.textContent)),
+        forum: L.some(x => /^Sea Slug Forum: \d+ pages cited$/.test(x.textContent) && /seaslugforum\.net/.test(x.querySelector('a').href)),
+        paper: L.some(x => /^Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs$/.test(x.textContent)),
+        https: [...document.querySelectorAll('#view .abcites a')].every(a => /^https:\/\//.test(a.href) && a.target === '_blank'),
+        worms: /World Register of Marine Species/.test(document.querySelector('#view .about').textContent)
+      };
+    });
+    check(
+      ab.n >= 30 && !ab.loading && ab.forum && ab.paper && ab.https && ab.worms,
+      `1: About does not list the sea slugs' cited sources: ${JSON.stringify(ab)}`
+    );
+    check(!errs.length, '1: page errors on About: ' + errs.join('; '));
     await ctx.close();
   }
 
@@ -732,6 +751,53 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await ctx.close();
   }
 
+  // 5b. Down the tree (proto/downtree.js, the Lab) on the sea slugs, whose tree has a family that is structure only (Codex review
+  // #1387): their genera and species (the sheet's SCI_SHEET) unlocked, the photos stubbed; tests/downtree.check.js plays the rounds:
+  // every walk starts at a genus, never at the family, and is two steps.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s5b')) return;
+        sessionStorage.setItem('s5b', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug');
+    await ready(p);
+    const n = await p.evaluate(() => {
+      document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      store.set(SHEETV, SCI_SHEET);
+      const G = pool()
+          .filter(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).length))
+          .slice(0, 12),
+        S = sciSpAll().filter(u => G.includes(GX(u).parent) && photoAny(u));
+      introAdd([...G, ...S], true);
+      return [G.length, S.length, G.filter(g => GX(g).parent && GX(GX(g).parent)).length];
+    });
+    check(n[0] >= 6 && n[1] >= 6, `5b: ${n} sea slug genera, species unlocked, genera under a family record`);
+    for (const [w, h] of [
+      [390, 844],
+      [1280, 800]
+    ]) {
+      await p.setViewportSize({width: w, height: h});
+      await p.waitForTimeout(300);
+      await require('./downtree.check.js')(p, w, fails, 'sea slugs', 4);
+    }
+    check(!errs.length, '5b: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
   // 6. Type the genus, Blur reveal and the Look-alike web (proto/type.js, reveal.js, web.js, the Lab) on the sea slugs, as
   // tests/fish.smoke.js labGames plays them on the fish: ten genera unlocked, the photos stubbed; tests/labgames.check.js plays
   // them at 390 and 1280 px.
@@ -1070,6 +1136,110 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       await require('./memory.check.js')(p, w, fails, 'sea slugs', 3);
     }
     check(!errs.length, '10: page errors: ' + errs.join('; '));
+    await ctx.close();
+  }
+
+  // 11. Find the X (REE-66; Q437: every game mode for every subject, the shared engine): the sea slug photos carry the
+  // animal's box and their tiles (seaslug-game.json xc), so a genus met is asked with three others, each its own genus
+  // with a tile, four square tiles and no name buttons, logged quiz|f at the genus (the units' rank). FIND.P is 1 for the
+  // run so it comes at once; back at 0 none comes.
+  {
+    const {ctx, p, errs} = await page(b, base, () => {
+      try {
+        if (sessionStorage.getItem('s11')) return;
+        sessionStorage.setItem('s11', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"seaslug"');
+        localStorage.setItem('reefid-sync-seaslug-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+      let s = 5151;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    });
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r =>
+        /\.(webp|jpe?g|png)(\?|$)|inaturalist/.test(r.request().url())
+          ? r.fulfill({status: 200, contentType: 'image/png', body: PNG})
+          : r.abort()
+    );
+    await p.setViewportSize({width: 390, height: 844});
+    await p.goto(base + '#seaslug/practice/quiz');
+    await ready(p);
+    await qa.ready(p);
+    const r = await p.evaluate(async () => {
+      const fails = [],
+        ok = (x, m) => x || fails.push(m),
+        closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+      const tiled = pool().filter(n => UNITS.seaslug.tiles(n).length);
+      ok(tiled.length >= 8, `genera in play with a tile: ${tiled.length}`);
+      pool().forEach(n => {
+        introAdd([n], false);
+        Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1});
+      });
+      closeCards();
+      dropPlans();
+      FIND.P = 1;
+      let seen = 0;
+      for (let i = 0; i < 200 && seen < 8; i++) {
+        NEXTQ = null;
+        twoAt = -Infinity;
+        quizPhoto();
+        closeCards();
+        const Q0 = SHOWNQ;
+        if (!Q0 || !Q0.findx) {
+          smokeAnswer();
+          continue;
+        }
+        seen++;
+        const [, t, ch, prompt, set] = Q0,
+          // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
+          tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
+        ok(prompt === `Find the ${uname(t)}`, `the prompt: ${prompt}`);
+        ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four genera: ${ch}`);
+        ok(
+          ch.every(n => !rankOf(n) && introReady(n) && pool().includes(n)),
+          `only genera met, in play: ${ch}`
+        );
+        ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+        // answer.js: the format has no name buttons (a read)
+        ok(!document.querySelector('#view .ans'), 'no name buttons');
+        ok(
+          set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
+          'each photo a tile of its own genus'
+        );
+        ok(
+          [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
+          'the tile files'
+        );
+        const pick = seen % 2 ? ch.find(n => n !== t) : t,
+          before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
+        smokeAnswer(pick);
+        const log = SYNC ? SYNC.log : store.get(LOG0, []),
+          a = log[log.length - 1];
+        ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
+        if (a) {
+          ok(a.m === 'quiz|f' && a.s === 'seaslug' && a.rk === 'genus', `logged ${a.m} ${a.s} ${a.rk}`);
+          ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
+          ok(a.pa === set.find.find(x => x.n === pick).p.f, `the photo tapped: ${a.pa}`);
+        }
+        ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
+      }
+      ok(seen >= 3, `Find the X questions: ${seen}`);
+      FIND.P = 0;
+      let none = 0;
+      for (let i = 0; i < 30; i++) {
+        NEXTQ = null;
+        quizPhoto();
+        closeCards();
+        if (SHOWNQ && SHOWNQ.findx) none++;
+        smokeAnswer();
+      }
+      ok(!none, `${none} Find the X with FIND.P 0`);
+      return fails;
+    });
+    r.forEach(m => fails.push(`11: ${m}`));
+    check(!errs.length, '11: page errors: ' + errs.join('; '));
     await ctx.close();
   }
 

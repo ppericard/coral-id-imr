@@ -11,7 +11,7 @@ const test = require('node:test'),
   os = require('os'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {FISHT} = require('../autosort.js');
+const {TREET} = require('../autosort.js');
 const C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const py = (code, ...args) =>
@@ -23,10 +23,10 @@ const py = (code, ...args) =>
 const J = (code, ...a) => JSON.parse(py(code, ...a));
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
-test('one number: fish_game.py WINK_KEEP, fetch_fish.py WINK_CAP and autosort.js FISHT.wink', () => {
+test('one number: fish_game.py WINK_KEEP, fetch_fish.py WINK_CAP and autosort.js TREET.wink', () => {
   const [keep, cap] = J('import fish_game, fetch_fish\nprint(json.dumps([fish_game.WINK_KEEP, fetch_fish.WINK_CAP]))');
-  assert.strictEqual(keep, FISHT.wink);
-  assert.strictEqual(cap, FISHT.wink);
+  assert.strictEqual(keep, TREET.wink);
+  assert.strictEqual(cap, TREET.wink);
 });
 
 // A wink world: sw (the surprise card's species) and s1 (an ordinary one), each record as tools/fish_game.py record()
@@ -125,7 +125,7 @@ test('wink_trim: the 5 best of a surprise-only species, his picks and the card p
   assert.deepStrictEqual(
     trim([31, 32, 33, 34, 35, 36].map(i => rec('sw', i, {o: 1, e: i === 36 ? 5 : 3})).concat([rec('sw', 70, {e: 1})]), {}),
     ['fish-sw-cand-31', 'fish-sw-cand-32', 'fish-sw-cand-33', 'fish-sw-cand-36', 'fish-sw-cand-70'],
-    'one photo per observation first (the admin counts observations against FISHT.wink), then the best of the rest'
+    'one photo per observation first (the admin counts observations against TREET.wink), then the best of the rest'
   );
 });
 
@@ -205,11 +205,11 @@ test('the repository: each surprise-only species keeps at most 5 photos in play,
       cover = fam && G[fam.id] && G[fam.id].cover;
     const kept = new Set([...card, ...(cover ? [C.treePid(cover)] : [])]);
     assert.ok(L.length >= 1, `${t.id}: photos in play`);
-    assert.ok(L.length <= Math.max(FISHT.wink, kept.size), `${t.id}: ${L.length} photos in play`);
+    assert.ok(L.length <= Math.max(TREET.wink, kept.size), `${t.id}: ${L.length} photos in play`);
     // The surprise card (quiz.js winkPhoto) draws from its chosen photos still in play, else the cover: every one is.
     card.forEach(id => assert.ok(have.has(id), `${t.id}: the card's photo ${id} is in play`));
     if (cover) assert.ok(have.has(C.treePid(cover)), `${t.id}: Pierre's cover is in play`);
-    assert.ok(new Set(L.map(p => p.o)).size >= Math.min(FISHT.wink, L.length), `${t.id}: one photo per observation`);
+    assert.ok(new Set(L.map(p => p.o)).size >= Math.min(TREET.wink, L.length), `${t.id}: one photo per observation`);
     // fish-photos.json's first photos are fish-game.json's.
     (first[t.id] || []).forEach(p => assert.ok(have.has(C.treePid(p.f)), `${t.id}: first photo ${p.f} in play`));
   }

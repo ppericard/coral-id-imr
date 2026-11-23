@@ -1,7 +1,7 @@
 'use strict';
 require('./slot.js').testGuard();
 // The night report (Pierre, 2026-11-18: "un bilan chiffré le matin"; Rule 0: the night ends with his first message after 04:00): tools/night.py on
-// saved snapshots (no network), and tools/brief.py --night-due, the once-a-day line of the UserPromptSubmit hook.
+// saved snapshots (no network), and the advisory compatibility flag for older UserPromptSubmit hooks.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -103,8 +103,9 @@ test('the queue is read from STATUS "## Night queue", "None" meaning empty', () 
   assert.strictEqual(q('## Now\n\nx\n'), null);
 });
 
-test('brief.py --time --night-due: the night report line once a Manila day, in the 04:00-17:30 day window only, offline', () => {
+test('legacy --night-due reports uncertainty without touching a marker or demanding the report', t => {
   const mark = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mark-')), 'day');
+  t.after(() => fs.rmSync(path.dirname(mark), {recursive: true, force: true}));
   const env = {...process.env, BRIEF_NIGHT_MARK: mark, HTTPS_PROXY: 'http://127.0.0.1:9', https_proxy: 'http://127.0.0.1:9', GH_TOKEN: ''};
   const run = (...a) =>
     execFileSync('python3', [path.join(ROOT, 'tools/brief.py'), '--time', ...a], {env, timeout: 5000})
@@ -112,13 +113,17 @@ test('brief.py --time --night-due: the night report line once a Manila day, in t
       .trim()
       .split('\n');
   assert.strictEqual(run('--night-due', '--at', '03:59').length, 1, 'before 04:00: the night is not over');
-  const first = run('--night-due', '--at', '04:01');
-  assert.strictEqual(first.length, 2);
-  assert.match(first[1], /^Night report due .*python3 tools\/night\.py/);
-  assert.strictEqual(run('--night-due', '--at', '09:00').length, 1, 'once a day');
+  for (const time of ['04:01', '09:00', '15:02', '17:29']) {
+    const result = run('--night-due', '--at', time);
+    assert.strictEqual(result.length, 2);
+    assert.match(result[1], /first message and today's delivery status are unknown/);
+  }
+  assert.ok(!fs.existsSync(mark));
+  fs.writeFileSync(mark, 'legacy marker\n');
+  assert.match(run('--night-due', '--at', '15:02')[1], /unknown/);
+  assert.strictEqual(fs.readFileSync(mark, 'utf8'), 'legacy marker\n');
   fs.rmSync(mark);
   assert.strictEqual(run('--night-due', '--at', '17:30').length, 1, 'Rule 0 is quiet from 17:30: no morning line then');
   assert.strictEqual(run('--night-due', '--at', '19:26').length, 1, 'not in the evening, even in a fresh checkout');
-  assert.strictEqual(run('--night-due', '--at', '17:29').length, 2, 'a first message at the end of the day window still gets it');
   assert.strictEqual(run('--at', '04:01').length, 1, 'without --night-due: the one time line');
 });

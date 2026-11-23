@@ -21,9 +21,9 @@ suggestions last.
 **On the fish side** (`#fish/inbox/todo/all`) the same with the fish Health line (`healthLine(S)`: its photos everyone
 misses, its families and genera players are stuck on, `#fish/inbox/todo/health`) and, last instead of the corals' photo
 sections, its **photo work as counts that open their pages** (`fishTodoLines`, `bindFishTodo`): the candidates the fish
-Candidates swiper shows by default (`autosort.js` `fishCandTodo`: never the auto-sort's Checks, nor those of a species at
+Candidates swiper shows by default (`autosort.js` `treeCandTodo`: never the auto-sort's Checks, nor those of a species at
 its target or set aside), the open cover and light proposals (Photo review), and Coverage › Games' To do counts
-(`autosort.js` `FISHCOV_TODO`, `fishCovTodo`, shared with `renderFishCov`, under the same All | IMR filter, so a count is
+(`autosort.js` `TREECOV_TODO`, `treeCovTodo`, shared with `covTreePage` (Coverage › Games), under the same All | IMR filter, so a count is
 the chip it opens: a click opens Coverage › Games with that chip pressed). The corals' out of the presence rule,
 share-alike, Featured but rated Poor and the judging agent's suggestions have no fish counterpart (the fish candidates
 carry the pass's judgment in Candidates). The switch's and the tab's counts stay the reports and flags (`subjTodo`,
@@ -129,8 +129,14 @@ one page to see, sort and manage the players, names joined to the anonymous stat
   answer in force and its history (date, answer, how given), and **Change…**: the subject's answers, then Change /
   Cancel in the bar, then one result line. It posts `userStart` (`Code.gs` `users_`: `core.js` `startAdminSet` appends a
   choice event via `admin`, the history kept, the revision bumped so the player's devices merge it at their next sync,
-  `startUnion`: the latest answer wins); the fallback window restarts from that event, as after `startSet` (the level
-  card is still offered), so a card counts only the answers after the change.
+  `startUnion`: the latest answer wins; never an event taken away, which a device's copy would bring back at its next
+  merge); its time is now, or just after the latest event when a device's clock ran ahead, so it is always the answer
+  in force, and its answer count is the player's in that subject (its level record). The fallback window restarts from
+  that event, as after `startSet` (the level card is still offered): the window's answers, the hold seen in it, its
+  epoch and a verdict waiting for its card go, so a card counts only the answers after the change; the cards shown stay
+  (once per answer and direction). The copy under the key's old name (`keyLegacy`, which an old app still reads) gets
+  the same record when the copy holds it. Nothing changes for an unknown subject or answer, a subject without the
+  question, or a player with no answer saved (asked on their device).
 
 ### Out of the statistics
 

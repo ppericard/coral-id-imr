@@ -616,13 +616,13 @@ test('UNITS seaslug: the three circles on the path, opened by the fish gate', ()
   for (const k of ['slate', 'circles', 'gate']) assert.ok(!new RegExp(`\\n {4}${k}: `).test(U), `${k}: not overridden`);
 });
 
-// The fish tools' sure rule (autosort.js fishSure, FISH_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py
+// The fish tools' sure rule (autosort.js treeSure, TREE_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py
 // TAGS) reads the sea slugs' codes too: their view v and flag f (judging/SEASLUG.md) never set a sure photo aside. The
 // fish's rubric never writes v or f, so no fish judgement is read differently.
 test('a sure sea-slug code with f or v is kept by the sure rule; the fish judgements never carry either', () => {
-  const {fishSure} = require('../autosort.js');
+  const {treeSure} = require('../autosort.js');
   ['d1g0sl1f', 'v1g0sl1', 'p1g0sm1jf', 'o1g0slo'].forEach(jt =>
-    assert.strictEqual((fishSure({jt, e: 3, k: 'best'}) || {}).keep, 'add', jt)
+    assert.strictEqual((treeSure({jt, e: 3, k: 'best'}) || {}).keep, 'add', jt)
   );
   const py2 = body => {
     const r = spawnSync('python3', ['-c', `import json, sys\nsys.path.insert(0, ${JSON.stringify(TOOLS)})\n${body}`], {encoding: 'utf8'});

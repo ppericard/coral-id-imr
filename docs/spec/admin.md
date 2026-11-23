@@ -41,7 +41,7 @@ over the cap).
 | Analyses | Overview | `#analyses/overview` |
 | Analyses | Speed | Answer time `#analyses/speed/answer-time` · Enlarging `#analyses/speed/enlarging` |
 | Analyses | Difficulty | Photos `#analyses/difficulty/photos` · Formats `#analyses/difficulty/formats` · Mix-ups `#analyses/difficulty/mix-ups` · Time `#analyses/difficulty/time` · Pairs `#analyses/difficulty/pairs` · Heatmap `#analyses/difficulty/heatmap` |
-| Analyses | Learning | Practice `#analyses/learning/practice` · After a break `#analyses/learning/after-a-break` · Sessions `#analyses/learning/sessions` · Profiles `#analyses/learning/profiles` · Answer log `#analyses/learning/answer-log` · Stops `#analyses/learning/stops` |
+| Analyses | Learning | Practice `#analyses/learning/practice` · After a break `#analyses/learning/after-a-break` · Sessions `#analyses/learning/sessions` · Profiles `#analyses/learning/profiles` · Trajectories `#analyses/learning/trajectories` · Answer log `#analyses/learning/answer-log` · Stops `#analyses/learning/stops` |
 
 The Analyses tabs: **Overview** (what the data says clearly, every result in words, the milestones); Speed's Answer time
 and Enlarging; Difficulty's Photos, Formats, Mix-ups, **Time** (what the time to answer and enlarging say about a
@@ -104,12 +104,11 @@ open reports; the auto-sort's Checks are never to-dos). The tab's and the Inbox'
 (`todoHere`).
 
 **A flag is a task only while its photo is in play** (Pierre, 2026-11-20). `autosort.js` `flagGone` says a flag's photo left
-play (the corals: Remove, ×, Not this; a subject's own part: out, excluded, rejected), `admin.js` `flagStale` adds "no
+play (the corals: Remove, Not this; a subject's own part: out, excluded, rejected), `admin.js` `flagStale` adds "no
 longer in the subject's data" once that subject's registry is read (the old "missing" cards), `flagsOpen` lists, counts
 and draws only the others, and `sweepFlags`, at every `saveDraft`, drops the stale ones of the subject on screen from the draft (another subject's part never moves with this one's tools; so the click that
 takes a photo off the site clears its flag in the same Undo step; Undo brings both back). A flag already stale in the
-draft is not listed and goes at the next click. Remove on a coral candidate that goes back with the candidates (no hide
-entry) clears its flag in `ACT.hide`. A report that carries a photo is not auto-handled (Done thanks the player).
+draft is not listed and goes at the next click. A report that carries a photo is not auto-handled (Done thanks the player).
 
 ### Each subject's admin part (`SUBJECTS` `admin`)
 
@@ -149,7 +148,7 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   keys, the photo that does not load) is one; the queue, the card's parts and what each button writes come from the
   subject's builder in `CAND_BUILD`, picked by the same declared shape (`candBuild`): `flat` in `admin.js` (the corals'
   `candQueue`, quality and growth form, the cells' cap and the colony a photo replaces, Retest), `tree` in `admin-fish.js`
-  (`fishQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
+  (`treeQueue`, a species' target, the rubric's rows, the photos in play, Not this). Each builder has the same members,
   listed above `CAND_BUILD`; the draft writes stay where they were (the corals' top level, a tree subject's part) and so
   do `cand.json` and every browser key (`tests/candbuild.test.js`; [admin-photos.md](admin-photos.md)). **One band review
   for every subject** (`admin.js` `renderReview`, and `renderDiff` for By difficulty): the gate, the bar, the bands and
@@ -158,8 +157,16 @@ Each subject describes its admin in `core.js` `SUBJECTS` `admin`; the engine nev
   builder in `REVIEW_BUILD`, picked by the same declared shape (`reviewBuild`; the `GROUPS` review views carry an `axis`
   and `hasPage` gives a subject the axes of its builder, no subject field needed). The growth-form axis is the corals'
   named hook (rule C4); the quality and ease scales stay two (study §6 c); every draft write and browser key is where it
-  was (`tests/reviewbuild.test.js`; [admin-photos.md](admin-photos.md)). The tiles still read each side's own state (the
-  study's step 8);
+  was (`tests/reviewbuild.test.js`; [admin-photos.md](admin-photos.md)). **One montage and one coverage page for every
+  subject** (`admin.js` `renderMont`, `renderCov`, the study's step 7): the frame of Photos › Look-alikes (a row per pair
+  with its switch, Auto | Manual, Shown | Hidden, the two photos and a strip of each unit's) and the frame of Coverage ›
+  Games (the section, the table) are one; the pairs, the corals' View and the tree subjects' Phase, the rows and columns
+  come from the subject's builder in `MONT_BUILD` and `COV_BUILD`, picked by the same declared shape (`montBuild`,
+  `covBuild`); every draft write (`mont`, the corals' at the top level, a tree subject's in its part) and browser key
+  (`reefid-admin-fishcov`) is where it was (`tests/montcovtile.test.js`). **One photo tile outside its page** (the study's
+  step 8): To do's reports and flags and Health's photos everyone misses draw a photo's tile through one door, `repTile`,
+  which asks the registries of `TILE_BUILD` in turn (the subject in force's, another subject's read-only, the corals') and
+  binds them through `repBind`; the corals' genus-page tile and the tree subjects' family-page tile are both one `tileFrame`;
 - `autosort`, true for a subject whose part the auto-sort writes at each load (the fish: `fishAutoRun`, `autoWhen`, its
   part's key `AK`; [fish-photos.md › The fish auto-sort](fish-photos.md#the-fish-auto-sort)), its route back of a photo it
   set aside and its route out of one it put in (`sortBack`, `sortOut`) reading the pass's date of each candidate
@@ -388,8 +395,9 @@ The draft button carries the status: "● Publish" with a draft (its title lists
 - **Admin tables never scroll sideways for one long cell**: every `.adm-tbl` cell stops at `--cut` (9 em on phones,
   16 em from tablets; `admin.css`) and ends in "…", its full text in the title (set on hover by one listener on `#view`,
   or written by `cut()` / `pname()` for names); player names are capped by `.adm-cut` itself (an inline block, which
-  every browser honours), genus links are never cut (known length), error messages wrap within a wider cap (13 / 36 em).
-  Tables with many columns still scroll, column by column.
+  every browser honours), genus links are never cut (known length), error messages wrap within a wider cap (13 / 36 em),
+  and the first column of an Analyses table (a pair of genera, a format, a range) wraps in full, at least 7 em wide
+  (REE-222). Tables with many columns still scroll, column by column.
 - **Every account counts**: no page leaves anyone's answers out (`playerRows` = the whole log, `rowsOf` a subject's,
   `photoStats` = the sheet's `?stats=1`); a leaderboard "hidden" (Board −1) changes only the public leaderboard. "you"
   marks the account this browser is signed in with (`isMe`, `MEID` = the anonymous id the sheet derives from the

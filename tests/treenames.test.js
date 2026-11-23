@@ -74,6 +74,18 @@ const APP = {
   fishGenusRow: 'treeGenusRow',
   fishGenusLookCard: 'treeGenusLookCard'
 };
+// The tree sheets' helpers of learn.js: retired in the player app's own scripts. The admin keeps functions of its own
+// under some of the old names (admin.js fishTile, fishFamOf; autosort.js fishMine, fishSpecies), so the admin's files and
+// the tests are not read for these; core.js is read, comments included (it cites the tree names).
+const LEARN = {
+  fishMine: 'treeMine',
+  fishFamOf: 'treeFamOf',
+  fishTile: 'treeTile',
+  fishSpecies: 'treeSpecies',
+  fishMarks: 'treeMarks',
+  viewFishSheet: 'viewTreeSheet'
+};
+const learnScope = f => /^(?:proto\/)?[\w-]+\.js$/.test(f) && !/^(?:admin|autosort\.js$)/.test(f);
 // Every JS file of the repo and the sheet script, as paths from the root.
 const files = (() => {
   const out = [],
@@ -105,12 +117,16 @@ test('the tree engine keeps its tree* names: no retired fish* name comes back', 
   for (const f of files) {
     if (f === me) continue;
     const src = fs.readFileSync(path.join(ROOT, f), 'utf8'),
-      names = [...Object.keys(CORE), ...Object.keys(APP).filter(n => n !== 'FISH' || !ownFish(f, src))],
+      names = [
+        ...Object.keys(CORE),
+        ...Object.keys(APP).filter(n => n !== 'FISH' || !ownFish(f, src)),
+        ...(learnScope(f) ? Object.keys(LEARN) : [])
+      ],
       L = lines(src);
     for (const n of names) {
       const w = word(n),
         at = L.findIndex(l => w.test(l));
-      if (at >= 0) bad.push(`${f}: ${n} (now ${CORE[n] || APP[n]})`);
+      if (at >= 0) bad.push(`${f}: ${n} (now ${CORE[n] || APP[n] || LEARN[n]})`);
     }
   }
   assert.deepStrictEqual(bad, [], 'a retired fish* name of the tree engine is back: use its tree* name');
@@ -121,6 +137,10 @@ test('the new names exist where the code declares them', () => {
     app = ['app.js', 'learn.js'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
   for (const n of Object.values(CORE)) assert.ok(word(n).test(core), `core.js declares ${n}`);
   for (const n of Object.values(APP)) assert.ok(word(n).test(app), `app.js or learn.js declares ${n}`);
+  for (const n of Object.values(LEARN)) assert.ok(word(n).test(app), `learn.js declares ${n}`);
+  // the scope of the learn.js table: the player app's scripts, never the admin's (whose own functions keep those names)
+  assert.ok(['learn.js', 'app.js', 'quiz.js', 'reports.js', 'proto/fishbasics.js'].every(learnScope));
+  assert.ok(!['admin.js', 'admin-fish.js', 'autosort.js', 'tests/fishunits.test.js'].some(learnScope));
   const C = require('../core.js');
   for (const n of ['treeGen', 'treePhotos', 'treeGameRead', 'treeReplayGen', 'treePid', 'treeSheets'])
     assert.strictEqual(typeof C[n], 'function', `core.js exports ${n}`);
@@ -139,4 +159,114 @@ test('the flat subject is a capability (SUBJECTS flat), never a pool file compar
     .filter(f => !f.startsWith('tests/') && !f.startsWith('tools/'))
     .filter(f => /files\[0\]\s*===?\s*['"]data\.json['"]/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')));
   assert.deepStrictEqual(bad, [], 'the engine asks SUBJECTS flat, never a pool file by its name');
+});
+
+// The admin's auto-sort of the tree subjects' candidates (autosort.js): retired everywhere but core.js and its copy in
+// the sheet script (their comments cite them until core.js's next change, rule D3) and the files with a function of their
+// own under the old name (AUTOSORT_OWN). The fish's winks keep theirs (fishWinkFold).
+const AUTOSORT = {
+  FISHCOV_TODO: 'TREECOV_TODO',
+  FISHEASY: 'TREEEASY',
+  FISHFEAT: 'TREEFEAT',
+  FISHK: 'TREEK',
+  FISHT: 'TREET',
+  FISHW: 'TREEW',
+  FISH_TAGS: 'TREE_TAGS',
+  fishAdd: 'treeAdd',
+  fishAgree: 'treeAgree',
+  fishAt: 'treePhotoAt',
+  fishCandTodo: 'treeCandTodo',
+  fishCompare: 'treeCompare',
+  fishCopy: 'treeCopy',
+  fishCov: 'treeCov',
+  fishCovTodo: 'treeCovTodo',
+  fishCover: 'treeCover',
+  fishCoverJ: 'treeCoverJ',
+  fishCoverJOk: 'treeCoverJOk',
+  fishCoverOf: 'treeCoverOf',
+  fishCoverRule: 'treeCoverRule',
+  fishCoverW: 'treeCoverW',
+  fishCoverWOk: 'treeCoverWOk',
+  fishCoverYes: 'treeCoverYes',
+  fishDrop: 'treeDrop',
+  fishEase: 'treeEase',
+  fishExclude: 'treeExclude',
+  fishFeat: 'treeFeat',
+  fishGameIn: 'treeGameIn',
+  fishIdx: 'treeIdx',
+  fishJuv: 'treeJuv',
+  fishLeafCover: 'treeLeafCover',
+  fishLook: 'treeLook',
+  fishMarked: 'treeMarked',
+  fishMine: 'treeKeepOf',
+  fishMontPick: 'treeMontPick',
+  fishMontSet: 'treeMontSet',
+  fishNear: 'treeNear',
+  fishNeeds: 'treeNeeds',
+  fishNotThis: 'treeNotThis',
+  fishOk: 'treeOk',
+  fishOrder: 'treeOrder',
+  fishOwn: 'treeOwn',
+  fishPairs: 'treePairs',
+  fishParse: 'treeParse',
+  fishPhase: 'treePhase',
+  fishPick: 'treePick',
+  fishPlay: 'treePlay',
+  fishQueue: 'treeQueue',
+  fishRec: 'treePhotoRec',
+  fishReject: 'treeReject',
+  fishRun: 'treeRun',
+  fishSeenFrom: 'treeSeenFrom',
+  fishSeenOf: 'treeSeenOf',
+  fishSet: 'treePhotoSet',
+  fishSigs: 'treeSigs',
+  fishSpecies: 'treeSpeciesOf',
+  fishStamp: 'treeStamp',
+  fishState: 'treeStateOf',
+  fishSure: 'treeSure',
+  fishTag: 'treeTag',
+  fishTagsAuto: 'treeTagsAuto',
+  fishTagsMine: 'treeTagsMine',
+  fishTarget: 'treeTarget',
+  fishUndo: 'treeUndo',
+  fishUnitPhases: 'treeUnitPhases',
+  fishUnits: 'treeUnitsOf',
+  fishUnsure: 'treeUnsure',
+  fishWaiting: 'treeWaiting',
+  fishWm: 'treeWm'
+};
+// The files that name another function under one of those names: learn.js's sheet helpers (until their own rename),
+// admin.js's photo words (fishState) and the comment of the admin smoke that tells the two apart, tools/ratedworld.js's
+// fish units, and the tests of each.
+const AUTOSORT_OWN = {
+  'learn.js': ['fishMine', 'fishSpecies'],
+  'admin.js': ['fishState'],
+  'tests/admin.smoke.js': ['fishState'],
+  'tools/ratedworld.js': ['fishUnits'],
+  'tests/ratedworld.test.js': ['fishUnits'],
+  'tests/opengroup.test.js': ['fishUnits'],
+  'tests/familiesfirst.test.js': ['fishUnits'],
+  'tests/sheetparts.test.js': ['fishSpecies'],
+  'tests/speciesmarks.test.js': ['fishSpecies'],
+  'tests/genusmarks.test.js': ['fishSpecies'],
+  'tests/fishjuv.test.js': ['fishSpecies'],
+  'tests/roots.test.js': ['fishSpecies'],
+  'tests/subject-neutral-admin.test.js': ['fishState', 'fishMine', 'fishSpecies']
+};
+
+test('the auto-sort keeps its tree* names: no retired fish* name of autosort.js comes back', () => {
+  const bad = [];
+  for (const f of files) {
+    // core.js, its parts (core/*.js) and its copy in Code.gs: their comments cite some of these names until core's next
+    // change (rule D3); tests/montcovtile.test.js lists the retired montage names to check they are gone.
+    if (f === 'tests/treenames.test.js' || f === 'core.js' || f.startsWith('core/') || f === 'tools/sync/Code.gs') continue;
+    if (f === 'tests/montcovtile.test.js') continue;
+    const L = lines(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    for (const n of Object.keys(AUTOSORT))
+      if (!(AUTOSORT_OWN[f] || []).includes(n) && L.some(l => word(n).test(l))) bad.push(`${f}: ${n} (now ${AUTOSORT[n]})`);
+  }
+  assert.deepStrictEqual(bad, [], 'a retired fish* name of the auto-sort is back: use its tree* name');
+  const as = fs.readFileSync(path.join(ROOT, 'autosort.js'), 'utf8');
+  for (const n of Object.values(AUTOSORT)) assert.ok(word(n).test(as), `autosort.js declares ${n}`);
+  assert.strictEqual(typeof require('../autosort.js').fishWinkFold, 'function', 'autosort.js keeps fishWinkFold');
 });

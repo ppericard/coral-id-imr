@@ -215,6 +215,53 @@ print(json.dumps(r))`)
   }
 );
 
+// A lecture photo's files (tools/fetch_imr_originals.py make, which tools/fetch_approved.py remakes them by): framed as the
+// lecture framed it, or as his crop entry says, from the original in the cache (no request is made), and refused when the
+// picture is no longer the one the lecture's framing was matched on, or comes from another host.
+test(
+  'fetch_imr_originals.make: the lecture’s framing, his crop (Full photo too), a changed picture, another host',
+  {skip: !pil && 'Pillow missing'},
+  () => {
+    const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'lect-cache-')),
+      out = fs.mkdtempSync(path.join(os.tmpdir(), 'lect-out-'));
+    const r = JSON.parse(
+      py(`import fetch_imr_originals as imr, os
+from PIL import Image
+cache, out = ${JSON.stringify(cache)}, ${JSON.stringify(out)}
+Image.effect_noise((400, 300), 60).convert('RGB').save(os.path.join(cache, 't.jpg'), quality=90)
+u = 'https://www.coralsoftheworld.org/media/images/t.jpg'
+cr, ro, px = [0, 0, 0.5, 1], 90, [300, 200]
+size = lambda: list(Image.open(os.path.join(out, 'f1.webp')).size)
+r = {}
+r['lecture'] = imr.make('f1', u, cr, ro, px, None, None, cache, out); r['lecture_size'] = size()
+r['his'] = imr.make('f1', u, cr, ro, px, {'f1': [0, 0, 1, 1]}, {}, cache, out); r['his_size'] = size()
+r['turned'] = imr.make('f1', u, cr, ro, px, {'f1': [0, 0, 1, 1]}, {'f1': 180}, cache, out)
+r['changed'] = imr.make('f1', u, cr, ro, [999, 999], None, None, cache, out)[0]
+try:
+    imr.download('https://example.org/t.jpg', cache)
+except ValueError as e:
+    r['host'] = str(e)[:30]
+# an error page kept as the picture: refused for that photo alone (no raise), and not kept in the cache
+open(os.path.join(cache, 'bad.jpg'), 'w').write('<html>' + 'x' * 2000)
+r['bad'] = imr.make('f2', 'https://www.coralsoftheworld.org/media/images/bad.jpg', cr, ro, px, None, None, cache, out)
+r['bad_kept'] = os.path.exists(os.path.join(cache, 'bad.jpg'))
+print(json.dumps(r))`)
+    );
+    assert.strictEqual(r.bad[0], null);
+    assert.match(r.bad[1], /^f2: .*is not a readable picture/);
+    assert.strictEqual(r.bad_kept, false, 'the next run asks for the picture again');
+    assert.deepStrictEqual(r.lecture, [1.5, [[0, 0, 0.5, 1], 90]]);
+    assert.deepStrictEqual(r.lecture_size, [300, 200], 'cut to its left half, then turned: never the lecture’s own pixels');
+    assert.deepStrictEqual(r.his, [1.33, [[0, 0, 1, 1], 0]], 'Full photo: the whole original, the lecture’s turn off');
+    assert.deepStrictEqual(r.his_size, [400, 300]);
+    assert.deepStrictEqual(r.turned, [1.33, [[0, 0, 1, 1], 180]]);
+    assert.strictEqual(r.changed, null);
+    assert.match(r.host, /^not a www.coralsoftheworld.org/);
+    fs.rmSync(cache, {recursive: true, force: true});
+    fs.rmSync(out, {recursive: true, force: true});
+  }
+);
+
 // The admin's previews (admin.js crSrc, admin-fish.js fishSrc) and its R2 fallback, run in a vm on a stub page.
 const vm = require('vm'),
   block = require('./block.js'),
@@ -227,6 +274,7 @@ const adminVm = (extra = '') => {
       ...CORE,
       sortView: require('../autosort.js').sortView,
       rotNorm,
+      lectureFrame: require('../autosort.js').lectureFrame,
       document: {addEventListener: (t, fn) => (H[t] = fn)},
       navigator: {}
     });
@@ -251,7 +299,7 @@ const adminVm = (extra = '') => {
 test('the fish Candidates: a photo in play with no judgment shows its published crop (review #793)', () => {
   const T = adminVm(),
     o = 'https://inaturalist-open-data.s3.amazonaws.com/photos/7/original.jpg',
-    // A sure candidate fishGameIn put in play from fish-game.json: no j, the pass's crop baked into its R2 file.
+    // A sure candidate treeGameIn put in play from fish-game.json: no j, the pass's crop baked into its R2 file.
     p = {f: 'fish-s016-cand-7', sp: 't01', src: o, cr: [0.1, 0.2, 0.9, 0.8], ar: 1.33},
     vb = 'object-view-box:inset(20% 10% 20% 10%)';
   // The admin has no crop of their own: its R2 file, as the game shows it (never the original uncropped).
@@ -300,6 +348,45 @@ test('the admin shows a framed lecture photo as its file, and draws its framing 
   T.set({DRAFT: {}, AWAY: false});
   const q = {f: 'imr-p1_i1', imr: true, src: o, ar: 1.5};
   assert.strictEqual(T.crSrc(q, 1), `src="${T.img(q, 1)}"`);
+  // His Crop on it (REE-60): a crop entry replaces the lecture's framing, its turn then from the rotation map alone: the
+  // lecture's quarter turn is off when he saved none, and Full photo is an entry too (the whole original, not the framing).
+  T.set({DRAFT: {crop: {[p.f]: [0, 0, 0.5, 1]}}});
+  assert.strictEqual(T.crSrc(p, 1), `src="${o}" style="object-view-box:inset(0% 50% 0% 0%)"`, 'turn off');
+  T.set({DRAFT: {crop: {[p.f]: [0, 0, 1, 1]}}});
+  assert.strictEqual(T.crSrc(p, 1), `src="${o}" style="object-view-box:inset(0% 0% 0% 0%)"`, 'Full photo');
+  // A crop entry on a photo the lecture did not frame (cr and ro absent) is drawn on its file.
+  T.set({DRAFT: {crop: {[q.f]: [0, 0, 1, 1]}}});
+  assert.match(T.crSrc(q, 1), /style="object-view-box:inset\(0% 0% 0% 0%\)"$/);
+});
+
+// The framing in force for a lecture photo is one rule in two languages (autosort.js lectureFrame for the admin,
+// tools/photos.py lecture_frame for the workflows that make its files: tools/fetch_approved.py, tools/fetch_imr_originals.py).
+test('lectureFrame and lecture_frame agree: his crop entry (Full photo included) with his rotation alone, else the lecture’s', () => {
+  const {lectureFrame} = require('../autosort.js');
+  const cases = [
+    // [f, cr, ro, crop map, rot map]
+    ['a', [0.1, 0.2, 0.9, 0.8], 90, null, null],
+    ['a', [0.1, 0.2, 0.9, 0.8], 90, {}, {}],
+    ['a', [0.1, 0.2, 0.9, 0.8], 90, {b: [0, 0, 1, 1]}, {a: 180}],
+    ['a', [0.1, 0.2, 0.9, 0.8], 90, {a: [0, 0, 0.5, 1]}, {}],
+    ['a', [0.1, 0.2, 0.9, 0.8], 90, {a: [0, 0, 0.5, 1]}, {a: 270}],
+    ['a', [0.1, 0.2, 0.9, 0.8], 0, {a: [0, 0, 1, 1]}, undefined],
+    ['a', undefined, undefined, undefined, undefined],
+    ['a', null, 0, {a: [0, 0, 1, 1]}, {a: 90}],
+    ['a', undefined, 90, {}, {a: 90}]
+  ];
+  const want = JSON.parse(
+    py(`import photos
+C = json.loads(${JSON.stringify(JSON.stringify(cases))})
+print(json.dumps([list(photos.lecture_frame(f, cr, ro, crop, rot)) for f, cr, ro, crop, rot in C]))`)
+  );
+  cases.forEach((c, i) => assert.deepStrictEqual(lectureFrame(...c), want[i], JSON.stringify(c)));
+  assert.deepStrictEqual(lectureFrame('a', [0.1, 0.2, 0.9, 0.8], 90, {a: [0, 0, 0.5, 1]}, {}), [[0, 0, 0.5, 1], 0], 'his turn: none');
+  assert.deepStrictEqual(
+    lectureFrame('a', [0.1, 0.2, 0.9, 0.8], 90, {}, {a: 180}),
+    [[0.1, 0.2, 0.9, 0.8], 90],
+    'no crop entry: the lecture’s'
+  );
 });
 
 test('R2 failed: the published rotation is drawn on the original with its crop (admin.js photoRoOf, its error handler)', () => {
@@ -343,13 +430,16 @@ test('R2 failed: the published rotation is drawn on the original with its crop (
     ev = t => ({target: t, stopImmediatePropagation: () => (ev.stopped = (ev.stopped || 0) + 1)});
   T.H.error(ev(i));
   assert.deepStrictEqual([i.A.src, i.st['object-view-box'], i.dataset.rot], [iN(1, 'large'), 'inset(0% 50% 0% 0%)', 90]);
-  assert.deepStrictEqual({...T.state()}, {R2: false, AWAY: true});
+  // One failed photo falls back alone; R2 is given up once 3 different photos failed in a row (r2out.test.js).
+  assert.deepStrictEqual({...T.state()}, {R2: true, AWAY: false}, 'one photo');
   const j = el(`${PHOTO_BASE}img/b-m.webp`, '180');
   T.H.error(ev(j));
   assert.deepStrictEqual([j.A.src, j.st['object-view-box'], j.dataset.rot], [iN(2, 'large'), undefined, '180']);
+  assert.deepStrictEqual({...T.state()}, {R2: true, AWAY: false}, 'two photos');
   const k = el(`${PHOTO_BASE}img/c-m.webp`);
   T.H.error(ev(k));
   assert.deepStrictEqual([k.st['object-view-box'], k.dataset.rot], ['inset(0% 50% 0% 0%)', undefined]);
+  assert.deepStrictEqual({...T.state()}, {R2: false, AWAY: true}, 'three photos in a row');
 });
 
 // The coral workflow (tools/fetch_approved.py) and the fish one (tools/fish_game.py) both make their files with

@@ -2,8 +2,9 @@
 
 Pierre's standing rules on the sync sheet (`tools/sync/Code.gs`), players' data and changes to the progress engine.
 Specs: [ARCHITECTURE.md](../ARCHITECTURE.md) "Progress sync", [SECURITY.md](../SECURITY.md) (security model and abuse
-handling), [LEARNING.md](../LEARNING.md) "Full replay", [spec/sync.md](../spec/sync.md). Who may read or write the
-sheet: AGENTS.md "Data access" and rule D2. The index of every rule is in [README.md](README.md#the-index).
+handling), [LEARNING.md](../LEARNING.md) "Full replay", [spec/sync.md](../spec/sync.md). For who may read or write
+the sheet, see [AGENTS.md, Working mode](../../AGENTS.md#working-mode-the-integrator-and-the-merge-contract-pierre-2026-11-05)
+and [rule D2](#d2). The index of every rule is in [README.md](README.md#the-index).
 
 ### D1
 
@@ -31,13 +32,13 @@ goes there with each real name replaced by a stable pseudonym. The pseudonym is 
 admin's Players page shows it beside the name, so Pierre and the integrator can always map it back from the admin;
 when that id is not at hand, use P1, P2… and keep the mapping outside the repo (STATUS records where), never in a
 committed file. Raw data holding names (sheet exports) stays out of the repo and is deleted when no longer needed.
-- **Data access, the details** (AGENTS.md "Data access" has the rule): the sync sheet is "IMR Coral ID – RA progress" <!-- rename-app: keep -->
+- **Data access, the details**: the sync sheet is "IMR Coral ID – RA progress" <!-- rename-app: keep -->
   (its id in HANDOVER "Code.gs"), read through the Google Sheets / Drive connector, read-only, real names included: no
   anonymisation between agents. A subagent without the connector gets what it needs downloaded by the integrator,
   analyses it, and the integrator puts the real names back against the results for Pierre (he knows the players and
   matches results to people). Real-data checks (rule L12) may be run by any agent; their data and named results are
   never committed.
-- **Reports and events, the details** (AGENTS.md "Reports and events"): the tabs are "Reports" (the players' reports)
+- **Reports and events, the details** ([Integrator startup](../INTEGRATOR.md#integrator-startup)): the tabs are "Reports" (the players' reports)
   and "Events" (`err`, sync "save failed", old app versions); the last check's time is in STATUS; `tools/brief.py`
   cannot read the sheet, it only reminds. Rule 0 decides when the summary reaches Pierre.
 *Why:* he knows the players, and real names help him understand and find problems; work kept only on one machine is
@@ -74,8 +75,11 @@ the live `v` about 15 minutes after the train that merged it, and the sheet's "D
   `tools/sync/appsscript.json` in step (a new Google service = a new scope there = Pierre must accept it once: tell him).
 - The app keeps working with an older script, so a change stays backward compatible (rule D4).
 - `Code.gs` embeds `core.js` between `// BEGIN core.js` and `// END core.js` (reached as `CORE_`; the sheet replays each
-  player's progress with it): after any change to `core.js`, run `python3 tools/sync_core.py --fix` and add the changes
-  file (CI runs `--check`), so the live script always runs the app's engine.
+  player's progress with it). `core.js` is built from its parts, `core/*.js`: write the change in its part
+  (`python3 tools/sync_core.py --where N` names the part holding `core.js` line N), then run
+  `python3 tools/sync_core.py --fix` (it writes `core.js` from the parts, or carries an edit made in `core.js` back into
+  its part, then the copy in `Code.gs`) and add the changes file (CI runs `--check`), so the live script always runs the
+  app's engine.
 - If you change the Elo in `stats_`, change its copy `eloOf()` in `core.js` too (with the photo memory estimate `MEM`
   and the per-unit offsets of the hierarchical photo Elo, `GENUS_K`, `genusOffsetsOf`), and likewise the pair counts
   `conf` in `stats_` and `confusionOf()` (`tests/core.test.js` checks both agree).

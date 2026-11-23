@@ -11,16 +11,24 @@ Update worktrees go to `.claude/worktrees/` (rule W22, git-ignored).
 
 | Script | What it does |
 |---|---|
-| `nightq.sh N…` | One PR at a time: merge `origin/main` into it (`uptodate.sh`), wait for every check and Codex's receipt on the head, then `TRAIN_REPO=$QUEUE_REPO tools/train.py N`. A PR that is red, has a Codex finding, an open thread, a finding or security-bot comment on the head nobody answered (`headfind.py`) or a pending VERSION assign is skipped and logged. |
-| `uptodate.sh N` | Merge `origin/main` into the PR's branch, settling only the decisions index, append-only files and generated data; anything else aborts ("needs a hand"). Pushes and asks `@codex review`. |
+| `nightq.sh N…` | One PR at a time: wait for every check, Codex's receipt and completed security review for the full head SHA. Dry-run and train that SHA on current main under W26. A draft, red PR, unresolved thread or finding, missing review, pending VERSION assign or refused train is skipped and logged. |
+| `uptodate.sh N` | An explicit branch update for the integrator when needed. Merges `origin/main` into the PR's branch, settling only the decisions index, append-only files and generated data. Anything else aborts ("needs a hand"). Pushes and asks `@codex review`. |
 | `assignver.sh N` | Code.gs PR: update it, then assign the sheet VERSION (rule D3). Takes only main's line 1 and `VERSION`, keeps the branch's own `Code.gs`; a `Code.gs` conflict outside the version lines and the core.js block (`resolve_gs.py`) is "needs a hand". Pushes and asks Codex (`codex.md`). |
 | `seqver.sh N…` | Code.gs PRs one after another: `assignver.sh`, then `nightq.sh`, for each. |
 | `chainq.sh`, `afterver.sh`, `afterall.sh` | The same queues, started once the others have finished (`afterall.sh` waits for everything, the version queue first). |
-| `prstate.sh N…`, `wait_ready.sh N…` | The PR state line; wait for the checks, then print it. |
+| `prstate.sh N…`, `wait_ready.sh N…` | The PR state line (with `security@head: <state> <full SHA>`); wait for the checks, then print it. |
+| `secreview.py SHA FILE` | The state of Codex's security review for that full head SHA, read from the Codex bot's summary markers only: `completed`, or not ready (`running`, `absent`, `stale`, `failed:<status>`, `findings`, `?`). |
 | `pushwait.sh DIR BRANCH` | Push once no train runs. |
 | `failjobs.sh REF` | The failing jobs of a commit or train branch, with their error lines. |
 | `thr.py`, `resolve_block.py`, `resolve_append.py`, `resolve_gs.py`, `mainver.py`, `headfind.py` | Helpers: unresolved threads, conflict-block, append-only and `Code.gs` metadata resolution, main's version line, unanswered findings on the head. |
 | `codex.md` | The `@codex review` comment with its footer. |
+
+The queue passes the same full SHA to both `tools/train.py --dry-run --sha SHA N` and `tools/train.py --sha SHA N`.
+Being behind main is fine if the pinned head composes cleanly. A conflict leaves the branch to the integrator. If a fix,
+conflict resolution or VERSION assignment creates a new head, it needs its own checks and reviews.
+
+For a head with absent or stale security review, `nightq.sh` uses the existing draft/ready fallback after checks,
+once per head. A running, failed, unreadable or flagged review cannot pass, and an author's draft is never picked up.
 
 ## Trusted tools
 
@@ -32,9 +40,6 @@ until it merges.
 
 ## Follow-ups (cut from the PR under rule W27; none is a one-line fix)
 
-- **Pass the validated head SHA into the train.** `nightq.sh` rechecks the head just before `tools/train.py`, but the
-  train still fetches the head itself; the full fix is a `--sha` option in `train.py` that refuses a different head
-  (a `train.py` PR of its own).
 - **A security alert needs an explicit answer.** `headfind.py` counts a person's later issue comment as the answer
   (except `@codex review` requests); the full fix ties the answer to the alert (a reply to its thread or a quoted id).
 - **`fish.json` conflicts.** `uptodate.sh` takes the PR's copy (`--ours`) and runs `build_fish.py --regroup`, which

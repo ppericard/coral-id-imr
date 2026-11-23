@@ -2,7 +2,7 @@
 
 The fish have a sheet per family, genus and species (`SUBJECTS` fish `sheets`; study
 [docs/reviews/2026-11-05-fish-sheets-study.md](../reviews/2026-11-05-fish-sheets-study.md), option B): `learn.js`
-`viewFishSheet`, read from `fish.json` alone (`core.js` `treeSheets`: families, genera, species by id; the families in the
+`viewTreeSheet`, read from `fish.json` alone (`core.js` `treeSheets`: families, genera, species by id; the families in the
 key's order; `go(id)`, the sheet an id opens), so they stand whatever the game's units are. The sea slugs read the same
 sheets in their own words ([seaslugs.md](seaslugs.md)). The content the sheets show is built into `fish.json` by
 `tools/build_fish.py` ([fish.md](fish.md)); the content editor's edits are laid over it ([content.md](content.md)). This
@@ -30,7 +30,7 @@ from the families page (each family's card opens its sheet, its photo too: `app.
 - the juveniles and phases (IMR's phase lines, the sourced juvenile note, up to 4 juvenile-tagged photos);
 - a report link.
 
-Every species list has the **"Opened for me" filter, on each time a sheet opens** (`treeTiles`, a `.seg`, `fishMine`):
+Every species list has the **"Opened for me" filter, on each time a sheet opens** (`treeTiles`, a `.seg`, `treeMine`):
 a species counts as opened once its family is at Advanced, its scientific genus is met, or its own species unit is met
 (`spOpen`). The page bar's previous / next go through the families the families page shows (`treeShown`: every family
 on the path, circles 1 to 3, both families of an entry renamed into two; never a wink). A species without a photo shows
@@ -49,7 +49,7 @@ its family's (`treeSheets` `go`); its marks and look-alikes are then shown there
 
 ## The species sheet
 
-`fishSpecies`, `#fish/learn/species/<name>`, opened from a species tile (the whole tile is the link) or a
+`treeSpecies`, `#fish/learn/species/<name>`, opened from a species tile (the whole tile is the link) or a
 single-species genus row:
 
 - the scientific name first (the PDF name), its common name, "now … in WoRMS" when WoRMS renamed it;
@@ -61,10 +61,17 @@ single-species genus row:
   its first adult photo: `spPhoto`; never a juvenile while it has an adult photo), then two more adults, the
   juvenile-tagged ones apart (up to 2), the rest behind "N more photos", each with its credit;
 - "Juvenile:" and its sourced line under the photos ([below](#juveniles-per-species));
+- its sexes or colour phases (`spPhases`, the species part `phases`), only for a species the cited phase list flags
+  with a source (`fish.json` species `phs`): "Males and females" (`k` `sex`) or "Colour phases" (`k` `phase`), "This
+  species' … can look very different", the list's sources (`quiz.js` `phaseSrcs`, the phase card's line), then up to 2
+  photos of each judged phase (`phaseOf`: intermediate, female, male, terminal, in that order), in the photos' order,
+  each captioned with the phase card's word; no section, and no line in the page, for any other species
+  ([decision](../decisions/2026-11-22-fish-species-phases-section.md));
 - the other species of its genus; the iNaturalist, WoRMS and FishBase links; previous / next through its genus's
   species.
 
-No photo: the drawing and those links. Not on a species sheet yet: phase sections, look-alike cues of its own.
+No photo: the drawing and those links. Not on a species sheet yet: a description line, a size or a source's own term for
+each phase (the study's per-species phase list, §5.2), look-alike cues of its own.
 
 ## Family ID marks and behaviour, habitat, size lines
 
@@ -72,7 +79,7 @@ No photo: the drawing and those links. Not on a species sheet yet: phase section
 from the sources each family lists (the FishBase family summaries for circle 1) and faithful to the IMR cues shown beside
 them, is built into `fish.json` families by `tools/build_fish.py` `add_families` (`marks`, `life`, `apart`, `msrc`;
 `--regroup` applies an edit offline). The sheet shows them under the IMR tips with their sources and a "Report or correct
-a line" link (`learn.js` `fishMarks`), and the `apart` lines on the look-alike cards for the pairs IMR gives no words
+a line" link (`learn.js` `treeMarks`), and the `apart` lines on the look-alike cards for the pairs IMR gives no words
 for. Where a source differs from IMR, a point goes to `data/points.json` (rule C5).
 
 **A family IMR gives no cue for** (circles 2 and 3, the Soapfishes) has 1 to 3 ID marks of its own, what to look at on a

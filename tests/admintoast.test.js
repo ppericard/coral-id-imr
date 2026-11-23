@@ -99,5 +99,5 @@ test('admin.js: the auto-sorts and another tab’s clicks toast in the backgroun
   assert.strictEqual(toasts.length, 3, toasts.join(' | '));
   assert.ok(toasts.some(t => /autoToast\(ar\)/.test(t)) && toasts.some(t => /fishToast\(R\)/.test(t)));
   assert.ok(toasts.some(t => /another admin tab/.test(t)));
-  assert.ok(!/saveDraft\(true\)/.test(src), 'the saves are not special-cased (Undo is untouched here)');
+  // The saves nobody clicked (saveDraft(true), saveRun) and Undo against a late run: tests/undorun.test.js (REE-53).
 });

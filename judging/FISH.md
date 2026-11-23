@@ -51,7 +51,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **not a live fish seen in the water**: out of water (a fish on a net, in a hand, dead), a photo of a screen or a print, an aquarium, a capture from a video player (its interface is not a `w`) |
 | | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing and leaves the games as they are; Home skips it and the default covers avoid it (below, "Watermark") |
-| | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
+| | `p` | **phase**: added by the tool, never typed: every photo of a species whose sexes or colour phases look different by a cited source (`tools/fish_judge.py` `phase_flag`): its entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines: Parrotfish, Anthias), or its `sex` or `ip_tp` verdict `yes` in the cited phase list `tools/fish_phases.json` (97 species, 2026-11-21; a sub-adult alone or a conflict adds no flag) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
 
@@ -125,7 +125,9 @@ seen in the water (`a`), the night livery (`n`), a strong colour loss (`2`), a h
 **The phase flag caps nothing** (rubric 3, Pierre, 2026-11-04): a sex or colour phase is a species-level difficulty. An
 Anthias is easy to call an Anthias whatever its sex, a parrotfish easy to call a parrotfish (its family-level difficulty
 is telling it from a wrasse, a look-alike pair); it gets hard only when the species is asked. The flag stays on the
-photos for the species questions and the explanation cards.
+photos for the species questions and the explanation cards: a photo judged male, female or in a colour phase brings
+the sex or colour phase card only on a flagged species, the card naming the list's sources (`fish.json` species `phs`;
+[the decision](../docs/decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
 
 **Juveniles** (`j`) are judged on the photo like any other and cap nothing, whatever their class (Pierre, 2026-11-19,
 Q435: the judged ease is the starting point, the players' answers decide;
@@ -168,7 +170,7 @@ already in play** (another photo of it is a game photo) is judged against that o
 (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): `tools/fish_judge.json`
 `keep` {photo: `best` | `alt` | `dup`}; `best` or `alt` enters, `dup` stays out, and it waits until judged.
 
-**Reference level** (`core.js` `refLevel`, `tools/fish_game.py` `ref_level`, `autosort.js` `fishRec`): a photo judged very
+**Reference level** (`core.js` `refLevel`, `tools/fish_game.py` `ref_level`, `autosort.js` `treePhotoRec`): a photo judged very
 easy (4-5) whose tags read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever
 took it and whatever its route in (rule P1); one kind of fish only (count `1` or `s`: never other species in view, `o`
 or `k`, nor an unclear subject, rule P3). A
@@ -219,11 +221,11 @@ watermark is never a reason to leave play. **Home skips it** (`home.js` `homeOk`
 the Identify door's art, his ★ Cover included; a family whose photos all carry it is not drawn there. Pierre takes the flag
 off (or sets it) in the admin like any tag (Tags › Watermark). His tags win as on every route, a reference photo's included
 since then (`tools/fish_game.py` `record`). The pass's `w` also reaches tags the auto-sort copied into his curation (its log code
-still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/fish_game.py` `marked`).
+still lists `t`), never tags he set himself (`autosort.js` `treeMarked`, `tools/fish_game.py` `marked`).
 
 **Covers** (Pierre, 2026-11-15, Q379, on 4 of his ★ covers tagged watermarked: "Perhaps we should also avoid them for
 covers"): the default cover never takes a watermarked photo, at any level, while the node has an adult photo without one
-(`app.js` `wmP`, `seenCover`, `coverFirst`; the admin's `autosort.js` `fishWm`, `fishCoverRule`, `fishLeafCover`). His ★
+(`app.js` `wmP`, `seenCover`, `coverFirst`; the admin's `autosort.js` `treeWm`, `treeCoverRule`, `treeLeafCover`). His ★
 cover on one stays his choice (rule A1): the Tree page asks "Watermark: keep as cover?", Keep records `coverW` beside the
 cover (`curation.json` `fish` `genera` `{node id: {cover, coverW}}`, as the juvenile cover's `coverJ`), Choose another
 opens its Cover proposal (a photo without one). Home skips it all the same, kept or not. docs/ARCHITECTURE.md "Pierre's
@@ -303,10 +305,14 @@ choices per family in the app" has the details.
   pools, or new code that lets Home show other photos.
 - **A refill pass** (the fourth, 2026-11-19, and any later one) takes every photo in `fish-game.json` and
   `fish-photos.json` that the previous pass's file did not hold (compare with git), plus any whose tags, shape or place
-  changed: a superset of what Home can show, since the pools' reach does not depend on the order. Look as the second pass
+  changed: a superset of what Home can show, since the pools' reach does not depend on the order. A photo a later pass
+  already looked at whole at full size (the tag-doubt pass, `judging/fish-tag-doubts.json`) is left out, and so is an
+  ease-only change that does not make the photo reference-level (`core.js` `refLevel`). Look as the second pass
   did (contact sheets, then the bands at 700 px, then the corners at 2x for authors already tagged), list the tagged
   photos in `judging/fish-watermark.json`, and run `judging_fish.py watermark`, `codes`, `one`, then `fish_game.py`
-  (nothing to download: the flag is its only change).
+  (nothing to download: the flag is its only change). The two exclusions hold only while every unit keeps a clean
+  band-kind photo and a clean reference-level adult: after tagging, count them per unit against the previous pass's
+  files, and look at the fallback photos of any unit that lost its last one (as the third pass did).
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
@@ -352,6 +358,12 @@ so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` c
   judging passes box the photos already judged as they go: the first two box passes (2026-11-09) boxed 172 photos, about
   7 per circle-1 entry (168 tiles kept, 4 too small in the original), so 21 of the 27 circle-1 families have 6
   observations with a tile; the rest wait for the next rounds, entry by entry, the starter core first.
+- **The bulk box pass** (2026-11-22, REE-202; [decision record](../docs/decisions/2026-11-22-fish-box-model.md)): measured
+  first (Q441), **Sonnet 5.5 at medium effort** boxes the photos waiting, one picture per photo (iNaturalist's large size
+  shown at 1000 px, a 10 x 10 grid labelled on the edges, ticks at the half tenths; a framed photo's frame outlined and
+  the outside dimmed), the box read to 0.01 and rounded outward, a seeded 5% of each batch redone blind by Opus 5.5 high.
+  Order: the species of the mimicry pairs whose class can have a tile (M2, M3, M5), all their photos waiting; then the
+  species with no tile, in `fish.json` order, at most 4 photos each. The boxes go into `tools/fish_judge.json` `boxes`.
 
 **The tile** (`tools/fish_game.py` `tile_crop`, `tile_write`; Q321 D4): the box's longer side plus 10% of it on each
 side (less, down to none, where the photo's short side is shorter), squared, centred on the fish, kept inside Pierre's
@@ -407,7 +419,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    - `phase` (optional): the sex or colour phase a solid, cited source documents for the species (the IMR fish
      presentation, `fish.json` `teach[].phase`, is one such source among others; Pierre, 2026-11-20 19:29) when the
      photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile is the code's `j` flag;
-     an adult needs no tag.
+     an adult needs no tag. The cited phase list `tools/fish_phases.json` says which (its quotes); a phase the quote
+     does not let the photo show is left untagged, never marked `unsure` (the re-judge of 2026-11-21:
+     [the decision](../docs/decisions/2026-11-21-fish-phase-flag-from-cited-list.md)).
    - `crop` (optional): as "A proposed crop" above.
    - `bb` (for a photo whose code passes the tile rule): the fish's box, as "The fish's box" above.
    - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`, `bb`) and `note` (140 characters at most; required with
@@ -416,7 +430,7 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    passing species into `data/suggest.json` `"fish"`: `{jt, e, k, ph, c, bb, u, n}`, `jt` and `e` after the caps as in
    `fish-photos.json`. Commit only `judging/fish/*.json` and `data/suggest.json`.
 
-**What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`): `best` or `alt` → **in play at once**, with its
+**What a sure judgement does** (no `unsure`; `autosort.js` `treeSure`): `best` or `alt` → **in play at once**, with its
 tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
 prior difficulty, the players' answers refine it), and other species with no risk of confusion (count `o`) as one
 fish; `dup`, an unclear subject (count `x`), other species one could take for the subject (count `k`: rule P3, as for the
@@ -433,7 +447,7 @@ while a wrong sure decision costs the players. A doubt the rubric settles is not
 
 Pierre, 2026-11-09 (Q323): of the photos with other kinds of fish he had accepted, some show them with no risk of
 confusing them with the main fish, others where the confusion is real. The one code `m` became two, and both automatic
-routes follow the same rule (`autosort.js` `fishSure`, `tools/fish_game.py` `judged_sure`, through `core.js`
+routes follow the same rule (`autosort.js` `treeSure`, `tools/fish_game.py` `judged_sure`, through `core.js`
 `TREE_COUNT`; `tests/otherspecies.test.js`):
 
 - `o` **no confusion risk** (in play): the other fish could not be taken for the main one at the level the game asks

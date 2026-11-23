@@ -48,7 +48,7 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   a refill brings the photos an observation already among the candidates still has. One function for both tools: species_room.
   A species met only on the surprise cards (a wink entry's: whale shark, thresher sharks) keeps a few very good photos,
   not a stock (Pierre, 2026-11-08; 2026-11-15, Q372): its cap is WINK_CAP (5, tools/fish_game.py WINK_KEEP, autosort.js
-  FISHT.wink), so neither the refill nor FishBase searches it once it holds 5, and --topup leaves it alone.
+  TREET.wink), so neither the refill nor FishBase searches it once it holds 5, and --topup leaves it alone.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
   src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
@@ -135,7 +135,7 @@ BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
 # a one-species family holds 90 and a two-species one 45 each, each species' own cap (cap_of) when larger (family_cap).
 FAMILY_FLOOR = 90
 # The cap of a species met only on the surprise cards (fish.json teach wink): 5 photos, the
-# 5 tools/fish_game.py keeps in play for it (WINK_KEEP) and the admin's target (autosort.js FISHT.wink).
+# 5 tools/fish_game.py keeps in play for it (WINK_KEEP) and the admin's target (autosort.js TREET.wink).
 WINK_CAP = 5
 
 
@@ -788,7 +788,7 @@ def pid(f):
 
 
 def sure_out(j):
-    """The pre-sort set it aside without doubt (autosort.js fishSure's rejects): a near-duplicate, the subject not obvious
+    """The pre-sort set it aside without doubt (autosort.js treeSure's rejects): a near-duplicate, the subject not obvious
     (count x), other species one could take for the subject (count k: rule P3, Q323) or out of the water (flag a), with
     no `u` (unsure). Such a candidate no longer holds room."""
     if not j or j.get("u"):
@@ -797,11 +797,11 @@ def sure_out(j):
     return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] in "xk" or "a" in jt[7:]))
 
 
-FISH_TAGS = re.compile(r"^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$")  # autosort.js FISH_TAGS (v, f: the sea slugs')
+FISH_TAGS = re.compile(r"^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$")  # autosort.js TREE_TAGS (v, f: the sea slugs')
 
 
 def sure_add(j):
-    """The pre-sort's sure add (autosort.js fishSure's adds): best or alt, a rubric code and an ease, no `u`, not a
+    """The pre-sort's sure add (autosort.js treeSure's adds): best or alt, a rubric code and an ease, no `u`, not a
     reject (sure_out), a count an automatic route may put in play (core.js FISH_COUNT.play: never the unsorted m)."""
     if not j or j.get("u") or j.get("k") not in ("best", "alt") or sure_out(j):
         return False

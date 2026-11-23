@@ -334,7 +334,7 @@
         '',
         'fish/learn/species/Chromis%20ternatensis'
       ),
-      // The fish ID marks' "Report or correct a line" (learn.js fishMarks): a sheet's report, not a game's.
+      // The fish ID marks' "Report or correct a line" (learn.js treeMarks): a sheet's report, not a game's.
       rp(
         9,
         'Eli Demo',
@@ -933,15 +933,40 @@
           .map((f, i) => (i % 2 ? SPU.find(u => u.family === f) : (fj.genera || []).find(g => g.family === f)))
           .map((x, i) => x && [x.id, FU[i]])
           .filter(Boolean),
-        // the units in the order they open in the made-up answers (synth): a genus or species unit after every second family
-        famOf = Object.fromEntries(FU.flatMap((id, i) => [[id, id], ...(i % 2 && FR[i >> 1] ? [FR[i >> 1]] : [])])),
+        // The common-name modifier words of the species units (analysis.js modMeta, as the Action reads them from the tree
+        // file: Confusions' shared-word effect), and the species units whose names share a word ("Yellow" in two names), a
+        // few in each of the three families with most such pairs, with some that share none: the made-up players meet
+        // them as options of one another (look-alikes of the others of the family; no pull planted on the shared-word ones,
+        // analysis.js TRUTH mod 0), so Confusions' modifier row has something to compare here as in the real report.
+        MOD = ANALYSIS.modMeta(fj),
+        shares = (a, b) => !!(MOD[a] && MOD[b] && MOD[a].w.some(w => MOD[b].w.includes(w))),
+        MU = [...new Set(SPU.map(u => u.family))]
+          .filter(f => FG[f] && FG[f].views.wide.length >= 3)
+          .map(f => {
+            const L = SPU.filter(u => u.family === f && MOD[u.id]).map(u => u.id),
+              S = L.filter(a => L.some(b => b !== a && shares(a, b)));
+            return {f, n: S.length, U: [...S.slice(0, 5), ...L.filter(a => !S.includes(a)).slice(0, 2)]};
+          })
+          .filter(x => x.n >= 3)
+          .sort((a, b) => b.n - a.n || (a.f < b.f ? -1 : 1))
+          .slice(0, 3)
+          .flatMap(x => x.U.map(id => [id, x.f])),
+        // the units in the order they open in the made-up answers (synth): a genus or species unit after every second
+        // family, the species that share a name word after the first six
+        base = FU.flatMap((id, i) => [[id, id], ...(i % 2 && FR[i >> 1] ? [FR[i >> 1]] : [])]),
+        famOf = Object.fromEntries([...base.slice(0, 6), ...MU, ...base.slice(6)]),
         k = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, x) => t + x[2], 0);
+      if (Object.keys(MOD).length) FANA_META[FS.id].mod = MOD;
       fana[FS.id] = ANALYSIS.synth({
         players: ANALYSIS.DEMO_PLAYERS.map(x => [x[0], x[1], Math.ceil(x[2] * k), x[3]]),
         photos: Object.fromEntries(
           Object.keys(famOf).map(id => [id, FG[famOf[id]].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])
         ),
-        look: Object.fromEntries(FU.map(id => [id, FG[id].look || []])),
+        look: Object.fromEntries([
+          ...FU.map(id => [id, FG[id].look || []]),
+          ...MU.map(([id, f]) => [id, MU.filter(([o, g]) => g === f && o !== id).map(([o]) => o)])
+        ]),
+        share: Object.fromEntries(MU.map(([id, f]) => [id, MU.filter(([o, g]) => g === f && shares(id, o)).map(([o]) => o)])),
         rk: {genus: [0.6, 0.15], species: [1, 0.3]},
         start: NOW - 30 * DAY,
         end: NOW - 3 * DAY,
@@ -1115,7 +1140,7 @@
     // replay (no ↻ mark).
     const st = stats(),
       A = answers().rows,
-      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd};
+      opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos};
     // Each player's first-launch answer, as the admin's replay takes it (admin.js progOf starts; without it a rounding
     // can read a genus as stale).
     const starts = Object.fromEntries(
@@ -1382,7 +1407,7 @@
           start = json('reefid-sync-coral-start'),
           rep = replayProgress(
             A.filter(r => r[0] === id),
-            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[id]: start} : {}}
+            {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
         by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
