@@ -47,7 +47,7 @@ photos and its format from the player's own answers; the feedback after an answe
 the ⚙ Settings; and the service worker that serves it offline and brings each new version in.
 
 **Main files.** `index.html` (the inline tier loader, the ⚙ panel), `app.css`, `home.css`; `app.js` (routing, `build()`,
-the shared helpers, Settings), `install.js` (the install card), `core.js` (the engine shared with the admin and the sheet script:
+the shared helpers, Settings), `gloss.js` (the glossary words and their popup), `install.js` (the install card), `core.js` (the engine shared with the admin and the sheet script:
 `SUBJECTS`, `routeOut` / `routeIn`, `scoreAnswer`, the achievement lists; written in its parts, `core/*.js`, which
 `tools/sync_core.py` joins into the one `core.js` the pages load), `model.js` (the learning model), `quiz.js`
 (the games, typed questions, the feedback sheet), `learn.js` (the Learn pages), `progress.js` (My progress,
@@ -100,7 +100,7 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
   - **Similar names after a mix-up**, **The short feedback sheet** (**one decisive line**, **More / Less and Next**, the
     **More panel**, the **first ID tip or mark**, **The coral and sea-slug pairs' lines**), **The More counter**:
     [quiz.md › The feedback sheet](spec/quiz.md#the-feedback-sheet).
-  - **Glossary words**: [quiz.md](spec/quiz.md#glossary-words).
+  - **Glossary words** (`gloss.js`): [quiz.md](spec/quiz.md#glossary-words).
   - **Bonus genera**, **Offered once**, **Add them** / **Not now**: [quiz.md › Bonus genera](spec/quiz.md#bonus-genera).
 - **Lab prototypes** (`proto/`): [basics.md › The Lab](spec/basics.md#the-lab-protolabjs).
 - **Install the app** (`install.js`): [front-end.md](spec/front-end.md#install-the-app-installjs).
