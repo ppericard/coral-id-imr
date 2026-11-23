@@ -811,6 +811,33 @@ Calibration, observed right against expected (z per answer), each arm's level pe
   predicts better for 8 players of 9, and the hard photos' excess (ease 1-2) shrinks. Both are approximations of what
   the app would have done; neither replays the draw, which would have asked other photos.
 
+**The simulation** (rule L11, level 2, on GitHub runners; 0.5 against 0.3 on the same seeds). The rated world with
+`--app own` (the judged-ease prior alone; under `--app truth` the weight has no effect), normal photos, 10 seeds per
+profile × 3,000 answers, one profile per check (the five-profile check was cut at 16 pairs):
+
+- **Primary, declared before running: answers on photos under ease 4 in answers 1-1,000, up**: clear in the cut
+  five-profile check (16 pairs, 13 up, stratified sign-flip p 0.002): beginner 111 → 156, lecture RA 271 → 301.
+- **Held**: true knowledge (up early: beginner +0.025 at 300), the global score (+0.9 to +1.8 points at 1,000 for the
+  beginner, the casual diver and the lecture RA), units met, units at Open Water and families at Advanced (up to +3 at
+  1,000), the share under ease 4 before Open Water (+0.03 at most, the margin +0.05), and the expert in every
+  guardrail.
+- **Breached: the bar's under-claim shrinks early** (E = bar − D\*, margin +0.03): beginner −0.53 → −0.48 at 300 and
+  −0.46 → −0.39 at 1,000, casual diver +0.05 at both, lecture RA −0.29 → −0.23 at 1,000; E stays well below 0 and
+  is the same by 3,000. Likely (not measured): a miss weighs less on a photo rated above the player's level
+  (`core.js` `pgMissW`), and the very easy photos, where a beginner's misses fall, are now rated less easy.
+  **Unclear**: the longest plateau (casual diver, strong RA), the first unit at Open Water (lecture RA +2, strong RA
+  +6.5 answers), the strong RA's score at 3,000 (−0.6).
+- **The heavy-tailed photos** (`--dist tail`, cut at 15 pairs: "the measure cannot tell"): the same pattern, E up at
+  1,000 for the three weaker profiles, nothing else breached.
+- **The app world** (5 seeds × 300 questions): its learner reads a photo's true difficulty from the app's own estimate,
+  so the change changes that world too. As run, breached: the beginner and the casual diver reach their first unit
+  at Open Water 28 and 20 answers later, the lecture RA has 3.8 units fewer at Open Water at 300 and a plateau 9
+  answers longer. With the true difficulty held fixed for both arms (exploratory, run after seeing that): in a world
+  where an ease point is worth 0.5, 0.3 is slower to the first Open Water (beginner +16, casual diver +10), E rises
+  for the casual diver and the strong RA and the beginner's plateau is 16 answers longer; in a world where it is worth
+  0.3, 0.3 is faster (−16, −63) and only E rises (casual diver). The direction follows whichever world is true; the
+  real log points to about 0.3 within a family.
+
 ### Fish: easy, reference-like photos first, whoever took them
 
 The order a unit's photos are met in, where an order matters (the card's photo, the lists, the sheets: `core.js`
