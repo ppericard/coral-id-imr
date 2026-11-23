@@ -69,6 +69,120 @@
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
+  // Look-alike account names (REE-35, the integrator's call): two names that look the same can no longer be two accounts.
+  // A name is at most NAME_MAX UTF-16 code units (the form's maxlength, Code.gs clean_), cut back to its last whole
+  // character (nameCut: a grapheme where the engine segments them, else a code point; never inside an emoji or a
+  // surrogate pair; a name within the limit is never touched). A new name is NFC (nameClean: the app's sign-in form, the admin's
+  // archive name; Code.gs doPost_ keeps the spelling a save sends, an older app's included), refused when it holds an
+  // invisible character (nameHidden), and
+  // refused as taken when it looks like an existing account's name in any case (nameSkeleton, nameKeys). An existing account is never renamed,
+  // merged or changed: these apply to new names only.
+  const NAME_MAX = 40;
+  const nameCut = (s, n = NAME_MAX) => {
+    s = String(s == null ? '' : s);
+    if (s.length <= n) return s;
+    const fit = parts => {
+      let out = '';
+      for (const x of parts) {
+        if (out.length + x.length > n) break;
+        out += x;
+      }
+      return out;
+    };
+    const Seg = typeof Intl === 'object' && Intl && typeof Intl.Segmenter === 'function' ? Intl.Segmenter : null;
+    // One grapheme longer than the limit (a letter under dozens of marks) leaves nothing whole: then code points.
+    return (Seg && fit(Array.from(new Seg(undefined, {granularity: 'grapheme'}).segment(s), x => x.segment))) || fit(Array.from(s));
+  };
+  const nameClean = s =>
+    nameCut(
+      String(s == null ? '' : s)
+        .trim()
+        .normalize('NFC')
+    );
+  // Invisible characters a new name may not hold: the format characters (Unicode category Cf: zero-width space, joiner and
+  // non-joiner, the bidi controls LRM RLM LRE RLE PDF LRO RLO and the isolates, the word joiner, the BOM, the soft
+  // hyphen, the tags), control characters (Cc), line and paragraph separators, and the letters and marks that draw
+  // nothing (the combining grapheme joiner, the Hangul fillers, the Khmer inherent vowels, the Mongolian variation
+  // selectors, the Braille blank). An emoji's own joiner stays: a zero-width joiner between two pictographs (woman
+  // scientist: woman, joiner, microscope) and the tags of a flag (England, Scotland, Wales) draw one emoji, not an
+  // invisible mark. A variation selector (and the reserved code points among the default-ignorable ones) is invisible
+  // too, except right after a symbol, a punctuation mark or a digit (an emoji's presentation: a red heart, a double
+  // exclamation mark, a keycap) or a letter of a script without case (an ideograph's variant). A name with nothing visible left (only marks, say) is refused too.
+  // (Escapes only, here and below: an invisible character written as it is would be invisible in the code too.)
+  const NAME_HIDDEN =
+    /[\p{Cf}\p{Cc}\u{2028}\u{2029}\u{034F}\u{115F}\u{1160}\u{17B4}\u{17B5}\u{180B}-\u{180F}\u{2800}\u{3164}\u{FE00}-\u{FE0F}\u{FFA0}\u{FFF0}-\u{FFF8}\u{E0000}-\u{E0FFF}]/u;
+  const NAME_EMOJI_ZWJ = /(\p{So}[\u{FE0F}\u{1F3FB}-\u{1F3FF}]?)\u{200D}(?=\p{So})/gu,
+    NAME_FLAG_TAGS = /\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F}/gu,
+    NAME_VS_OK = /([\p{S}\p{P}\p{N}\p{Lo}])[\u{FE00}-\u{FE0F}\u{E0100}-\u{E01EF}]/gu;
+  const nameHidden = name => {
+    const s = String(name == null ? '' : name)
+      .replace(NAME_FLAG_TAGS, '\u{1F3F4}')
+      .replace(NAME_EMOJI_ZWJ, '$1')
+      .replace(NAME_VS_OK, '$1');
+    return NAME_HIDDEN.test(s) || (s !== '' && !/[^\s\p{M}]/u.test(s.replace(NAME_IGNORED, '')));
+  };
+  // Greek and Cyrillic letters that look like a Latin letter, each with that letter: every entry of Unicode's
+  // confusables data (UTS #39, https://www.unicode.org/Public/security/latest/confusables.txt, version 18.0.0) whose source
+  // is a letter of U+0370-U+04FF and whose prototype is one ASCII letter. One change: the capital Greek iota Ι and the
+  // capital Ukrainian І, which the data map to l as it maps the Latin I, map to I here, since names are compared case
+  // aside (Ian and ian are one account, so the Latin I/l pair cannot be kept).
+  const NAME_LATIN = (() => {
+    const o = Object.create(null),
+      s =
+        'αaаaΑAАAЬbΒBВBϲcсcϹCСCеeҽeΕEЕEϜFһhҺhΗHНHιiіiϳjјjͿJЈJΚKКKΙIІIӏlӀlΜMϺMМMΝNοoσoϭoоoΟOОOρpϱpϸpрpΡPРPгrѕsЅSΤTТTυuνvѵvѴVѡwшwхxΧXХXγyуyүyΥYϒYУYҮYΖZ';
+    for (let i = 0; i < s.length; i += 2) o[s[i]] = s[i + 1];
+    return o;
+  })();
+  // Default-ignorable code points (Unicode's DerivedCoreProperties: they draw nothing) and the blanks above: left out of
+  // the skeleton, so a name with one looks like the name without it.
+  const NAME_IGNORED =
+    /[\p{Cf}\u{00AD}\u{034F}\u{061C}\u{115F}\u{1160}\u{17B4}\u{17B5}\u{180B}-\u{180F}\u{200B}-\u{200F}\u{202A}-\u{202E}\u{2060}-\u{206F}\u{2800}\u{3164}\u{FE00}-\u{FE0F}\u{FEFF}\u{FFA0}\u{FFF0}-\u{FFF8}\u{1BCA0}-\u{1BCA3}\u{1D173}-\u{1D17A}\u{E0000}-\u{E0FFF}]/gu;
+  // A name's skeleton, what it looks like (after UTS #39's skeleton: decomposed, mapped, composed): decomposed (NFD), the
+  // invisible characters dropped, each Greek or Cyrillic look-alike as its Latin letter, compatibility forms folded
+  // (NFKC: a full-width Ａ is A), case aside, every run of spaces one space. Two names with one skeleton look alike.
+  const nameSkeleton = name =>
+    Array.from(
+      String(name == null ? '' : name)
+        .normalize('NFD')
+        .replace(NAME_IGNORED, '')
+    )
+      .map(c => NAME_LATIN[c] || c)
+      .join('')
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim()
+      .normalize('NFC');
+  // A name's keys: the skeletons of the name as it is, in lower case and in upper case. An account is its name in any
+  // case (Code.gs find_), and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital
+  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key. A mix of cases no
+  // whole-name case covers never shows: an account keeps the spelling it was made with (Code.gs doPost_).
+  const nameKeys = name => {
+    const t = String(name == null ? '' : name);
+    return [...new Set([t, t.toLowerCase(), t.toUpperCase()].map(nameSkeleton))];
+  };
+  // The groups of names that look alike among the given ones (the admin's warning on Players): names joined by a shared
+  // key (nameKeys), each group sorted, the groups by their first name; one name in two spellings of case (one account) is
+  // one name.
+  const nameAlikePairs = names => {
+    const L = [],
+      up = [],
+      by = new Map(),
+      top = i => (up[i] === i ? i : (up[i] = top(up[i])));
+    (names || []).forEach(n => {
+      const t = String(n == null ? '' : n);
+      if (!t || L.some(x => x.toLowerCase() === t.toLowerCase())) return;
+      const i = L.push(t) - 1;
+      up[i] = i;
+      nameKeys(t).forEach(k => (by.has(k) ? (up[top(i)] = top(by.get(k))) : by.set(k, i)));
+    });
+    const G = new Map();
+    L.forEach((t, i) => G.set(top(i), (G.get(top(i)) || []).concat(t)));
+    return [...G.values()]
+      .filter(g => g.length > 1)
+      .map(g => g.slice().sort())
+      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  };
   const SEED = '\u{1F331}';
   // The admin's mark: the script knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its leaderboard
   // rows, admin: 1 in its load reply). markRow: whether a leaderboard row carries it. markHtml: the mark itself, plain
