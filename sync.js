@@ -71,14 +71,15 @@ if (typeof SUBJ_HOOKS !== 'undefined')
 // tab's header); Learned, seen, total and review stay the slate's, as My progress counts them. Only from SCALE_SHEET,
 // the script that widens the tab's grid before writing a longer header (rule D4: an older one fails the save of a
 // summary wider than the tab); before it, the slate's, as before.
+const SCALE_SHEET = 221;
+const scaleSent = () => (sheetV() >= SCALE_SHEET ? scaleUnits() : slateGenera());
 // The first leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen; the others' units
 // in boards.
-const SCALE_SHEET = 221;
 function syncSummary() {
   const B = SUBJECTS.find(x => x.board);
   if (B && B !== SUBJ) return inSubject(B.id, syncSummary);
   const n = slateGenera(),
-    all = sheetV() >= SCALE_SHEET ? scaleUnits() : n,
+    all = scaleSent(),
     genera = Object.fromEntries(all.map(x => [x, level(x)[0]]));
   return {
     learned: n.filter(x => genera[x] === 'ok').length,

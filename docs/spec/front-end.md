@@ -195,7 +195,8 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   taught in the benthos lecture, and common at Dauin and in ReefCloud photos). Used by the draw (`pool()`), the opening
   of genera (`introLeft`, the open-all offer), My progress's tiles and counts, the IMR slate score, the sync summary's
   Learned and total, and `slateIdx`. The global % (the header pill, My progress's ring, the achievements, the sync
-  summary's genera and %: the sheet's "By genus" columns and the leaderboard) counts `scaleUnits()` instead (`UNITS`
+  summary's genera and %: the sheet's "By genus" columns and the leaderboard, from `sync.js` `SCALE_SHEET`, the slate's
+  before) counts `scaleUnits()` instead (`UNITS`
   `scale`; the corals: `gameOf(DATA)`, the slate and the bonus genera, rule L6), the slate for a subject without a
   scale. Millepora's data stays in `DATA.x.gen`
   (Coral Finder ID tips with pages, Research Grade game photos); `isBenthic(n)`. Its first-meeting card and its genus
