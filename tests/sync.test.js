@@ -404,9 +404,13 @@ function fakeVersions(remote, v) {
   return {
     calls: g.calls,
     fetch: (url, o = {}) => {
-      const m = (o.method || 'get').toLowerCase(),
-        p = url.replace(/^.*\/projects\/SCRIPT_ID/, '');
-      if (url.includes('script.googleapis.com') && m === 'post' && p === '/versions' && v.full) {
+      // The Apps Script API's own host and this project's path, parsed (never a substring of the URL).
+      const u = new URL(url),
+        api = u.hostname === 'script.googleapis.com' && u.pathname.startsWith('/v1/projects/SCRIPT_ID/'),
+        m = (o.method || 'get').toLowerCase(),
+        path = api ? u.pathname.slice('/v1/projects/SCRIPT_ID'.length) : '',
+        p = path + u.search;
+      if (api && m === 'post' && path === '/versions' && v.full) {
         g.calls.push('post /versions');
         return resp(429, {
           error: {
@@ -416,9 +420,9 @@ function fakeVersions(remote, v) {
           }
         });
       }
-      if (url.includes('script.googleapis.com') && m === 'get' && p.startsWith('/versions?')) {
+      if (api && m === 'get' && path === '/versions') {
         g.calls.push('get ' + p);
-        const q = new URLSearchParams(p.split('?')[1]),
+        const q = u.searchParams,
           from = Number(q.get('pageToken') || 0),
           to = Math.min(v.kept, from + Number(q.get('pageSize')));
         return resp(200, {
