@@ -66,32 +66,29 @@ const scaled = (sec, N0, N) => (sec * N) / N0;
 
 // The app world's calibration (tools/learnsim.js; docs/LEARNING.md "The cap"). A fish job's time per answer grows with
 // the run: the app reads the bars and the exam state of every unit in play several times an answer, and units come into
-// play as the levels rise (one lecture RA job alone: 4 s per 100 answers at the start, 8 s at 600, 15 s at 1,200, 30 to
-// 55 s from 1,500 on). Its first 100 questions, with no typed question yet, read the fast start only. So the calibration
-// plays a fifth of the run's length (at least 100 answers, at most 1,000: a fish run's typed questions come from about
-// answer 100 to 300), the first wave of jobs side by side as the run plays them (the machine's load and the jobs' own
-// contention in the measure), and the time per answer is extrapolated as it grows (grown, below).
-const CALIB = {MIN: 100, MAX: 1000, SHARE: 5};
+// play as the answers go (one lecture RA job alone: 4 s per 100 answers up to 300, 8 s at 600, 15 s at 1,200, 30 to 55 s
+// from 1,500 on). Its first questions, before any typed question, read the flat start only. So the calibration plays a
+// fifth of the run's length, at least 300 questions (a fish run's typed questions come from about answer 100 to 300; a
+// run of 300 or less is its own calibration) and at most 1,000, the first wave of jobs side by side as the run plays them
+// (the machine's load and the jobs' own contention in the measure), and its time is grown to the run's length (grown).
+const CALIB = {MIN: 300, MAX: 1000, SHARE: 5};
 const calibLength = N => Math.min(N, Math.max(CALIB.MIN, Math.min(CALIB.MAX, Math.ceil(N / CALIB.SHARE))));
 // A job's seconds at length N from a calibration run: setup, its seconds outside the page's questions (the browser
 // context, the page's load; once a job), tail, after its last question (once a job), and pts, the seconds in the page
-// at each count of answers, [answers, seconds], from the first question ([0, s]) to the calibration's last. The time per
-// answer is a straight line in the answers, fitted by least squares over the points' segments (each weighted by its
-// answers), never falling: the measured time to the last point, then that line's integral to N. A calibration as long
-// as the run is its own measure. Still an estimate: a run whose cost per answer jumps later than the calibration reads
-// (a fish run past about 1,200 answers, as its species come into play) can take longer; the cut is the cap.
+// at each count of answers, [answers, seconds], from the first question ([0, s]: the run's preparation, once a job) to
+// the calibration's last. Within the calibration, its own clock. Past it, the time of the questions grows as the square
+// of their number: a time per answer in proportion to the answers so far (one fish job alone: the time of N answers over
+// N squared stays within a fifth from 600 to 3,000 answers; docs/LEARNING.md "The cap" has the runs). Where the time per
+// answer grows more slowly it over-estimates (the corals, 2 to 3 times past 1,000 questions): give --per-job, a
+// measured time, there. The cut is the cap.
 function grown({setup = 0, tail = 0, pts}, N) {
-  const [nL, tL] = pts[pts.length - 1];
-  if (N <= nL) return setup + tail + tL * (N / Math.max(1, nL));
-  const seg = pts.slice(1).map(([n, t], i) => ({m: (n + pts[i][0]) / 2, w: n - pts[i][0], r: (t - pts[i][1]) / Math.max(1e-9, n - pts[i][0])}));
-  const W = seg.reduce((s, x) => s + x.w, 0) || 1,
-    mm = seg.reduce((s, x) => s + x.w * x.m, 0) / W,
-    rm = seg.reduce((s, x) => s + x.w * x.r, 0) / W,
-    vm = seg.reduce((s, x) => s + x.w * (x.m - mm) ** 2, 0),
-    b = vm > 0 ? Math.max(0, seg.reduce((s, x) => s + x.w * (x.m - mm) * (x.r - rm), 0) / vm) : 0,
-    a = rm - b * mm;
-  // Past the last point the line is above the mean rate (b >= 0, and the last point is past every segment's middle).
-  return setup + tail + tL + a * (N - nL) + (b * (N * N - nL * nL)) / 2;
+  const t0 = pts[0][1],
+    [nL, tL] = pts[pts.length - 1];
+  if (N >= nL) return setup + tail + t0 + (tL - t0) * (N / Math.max(1, nL)) ** 2;
+  const i = pts.findIndex(([n]) => n >= N),
+    [na, ta] = pts[Math.max(0, i - 1)],
+    [nb, tb] = pts[i];
+  return setup + tail + (nb > na ? ta + ((tb - ta) * (N - na)) / (nb - na) : tb);
 }
 
 // The options that would fit in leftSec: {flag, value} for fewer seeds, a shorter run, fewer profiles. P profiles x S

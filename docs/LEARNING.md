@@ -1668,16 +1668,19 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
   seeds, a shorter run, fewer profiles. The rated world calibrates on its first job (at most 1,000 answers), its time
   scaled in a straight line, so it can under-estimate a long run (measured on a loaded 4-core machine, rated fish: 1,000
   answers 11 s, 3,000 answers 56 s; corals 4 s and 13 s). The app world calibrates on the run's own subject and
-  profiles: its first wave of jobs side by side, as the run plays them, for a fifth of the run's length (100 to 1,000
-  questions; `tools/checkbudget.js` `calibLength`), and grows each job's time per answer as a straight line in the
-  answers, fitted on the calibration (`grown`); the slowest job of the wave sets the pace. A fish job's time per answer
-  grows as units come into play (one lecture RA job alone: 4 s per 100 answers at the start, 8 s at 600, 15 s at 1,200,
-  30 to 55 s from 1,500, 14 minutes for 3,000 answers; corals 1 to 2.6 s per 100 answers over 1,500), where a straight
-  line from 100 questions gives a seventh of a fish job past 2,500 answers. Grown from 600 it gives about 0.85 of the
-  measured time at 1,500 answers and about 0.6 at 2,500 to 4,000 (REE-56's 4 jobs of 4,000 answers: 17 minutes
-  estimated, 26.5 run): the fish species come into play past about 1,200 answers, which no calibration of that length
-  sees. For such a run, `--per-job` from a measured run is the honest estimate. The stop below is the cap; the estimate
-  only spares a run that would be cut.
+  profiles: its first wave of jobs side by side, as the run plays them, for a fifth of the run's length (300 to 1,000
+  questions, a run of 300 or less being its own calibration; `tools/checkbudget.js` `calibLength`); past the
+  calibration, the time of a job's questions grows as the square of their number, a time per answer in proportion to
+  the answers so far (`grown`; the job's setup, preparation and end once); the slowest job of the wave sets the pace. A
+  fish job's time per answer grows as units come into play (one lecture RA job alone: 4 s per 100 answers up to 300,
+  8 s at 600, 15 s at 1,200, 30 to 55 s from 1,500; 2.8 minutes for 1,500 answers, 9.9 for 2,500, 13.7 for 3,000),
+  where a straight line from 100 questions gives a seventh of a fish job past 2,500 answers. Grown from the calibration
+  it gives 0.98 of that job's 3,000 answers and 1.02 of its 2,500; side by side, 4 jobs of 4,000 answers (26.5 minutes
+  run) and 6 jobs of 2,500 on 6 workers (16.7) were estimated within a fifth of their time once the machine's load is
+  counted (a calibration that ran 1.3 and 1.5 times slower on a busier machine gave 36 and 28 minutes). It
+  over-estimates where the time per answer grows more slowly: fish at 1,500 answers 1.7 times, the corals 2 to 3 times
+  past 1,000 questions (1 to 2.6 s per 100 answers over 1,500); `--per-job` from a measured run is then the honest
+  estimate. The stop below is the cap; the estimate only spares a run that would be cut.
 - **The calibration cannot be stopped once begun**, so a budget under 1 minute needs `--per-job`; if the calibration
   still ends past the budget, nothing more runs and the result is marked cut.
 - **Stop cleanly.** At the budget the run stops sending jobs, ends the ones in flight (closes the browser, ends the
