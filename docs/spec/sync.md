@@ -321,22 +321,23 @@ reports) and in the Removed tombstones; only the look-alike check compares by sk
 taken name is never a new account. A new name is refused when it holds an invisible
 character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,
 plus control characters and the characters that draw nothing, such as the Hangul fillers; a zero-width joiner between two
-pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when its skeleton is an existing
-account's (`nameSkeleton`, after Unicode's UTS #39 skeleton: decomposed, invisible characters dropped, each Greek or
-Cyrillic letter that Unicode's confusables data maps to one Latin letter mapped to it, NFKC, lower case, runs of spaces as
-one; the RAs tab, archives included: `Code.gs` `nameIssue_`). The load of a name with no account says so beside
+pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when it looks like an existing
+account's name (the RAs tab, archives included: `Code.gs` `nameIssue_`). Two names look alike when they share a key
+(`nameKeys`): the skeletons of the name as it is, in lower case and in upper case, since an account is its name in any
+case and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital is B). A skeleton
+(`nameSkeleton`, after Unicode's UTS #39 skeleton): decomposed, invisible characters dropped, each Greek or Cyrillic
+letter that Unicode's confusables data maps to one Latin letter mapped to it, NFKC, lower case, runs of spaces as one. The load of a name with no account says so beside
 `found: false` (`taken: 'invisible'|'lookalike'`), and the form says "This name holds an invisible character …" or
 "A name that looks the same is already taken. If it is yours, type it as you did the first time; if not, add your
 surname's initial …", focused on the name, nothing signed in or sent; the form checks the invisible characters itself
 too, whatever the script's version. A save that would make such an account answers `error: 'reserved'` with
 `why: 'invisible'|'lookalike'`, before anything is logged or written: every app stops on it and says "Not saved: this
 name is reserved, please choose another". An archive name with an invisible character is refused as `reserved`, one
-that looks like a taken name as `exists` (`why: 'lookalike'`). A name that is another Unicode form of an account's name
-(NFC, case aside: an é typed as e and its accent) opens that account, under the account's own spelling (`Code.gs`
-`acct_`, load and save); the load then names that spelling (`name`), which the form keeps, so every later request
-names the account exactly. The form asks the sheet about the name as typed first (any script finds an account as it
-was made), then, when its NFC form differs and no account was found, about the NFC form (a script before this one
-matches names only as they are), and a new account takes the NFC form. Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
+that looks like a taken name as `exists` (`why: 'lookalike'`). An account opens only under its own spelling, case
+aside (`find_`): another Unicode form of its name (an é typed as e and its accent) is a look-alike, so its owner types
+the name as they first did, as the form's message says. The form asks the sheet about the name as typed first, then,
+when its NFC form differs and no account was found, about the NFC form, and a new account takes the NFC form.
+Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
 the players, the existing accounts (archives included) whose names look alike, every character outside Latin's letters
 shown as its code point (`admin.js` `alikeLine`, `core.js` `nameAlikePairs`).
 

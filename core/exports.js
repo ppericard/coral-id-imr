@@ -171,6 +171,7 @@
     nameClean,
     nameHidden,
     nameSkeleton,
+    nameKeys,
     nameAlikePairs,
     SEED,
     markRow,

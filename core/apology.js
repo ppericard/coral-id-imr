@@ -75,7 +75,7 @@
   // surrogate pair; a name within the limit is never touched). A new name is NFC (nameClean: the app's sign-in form, the admin's
   // archive name; Code.gs doPost_ keeps the spelling a save sends, an older app's included), refused when it holds an
   // invisible character (nameHidden), and
-  // refused as taken when it looks like an existing account's name (nameSkeleton). An existing account is never renamed,
+  // refused as taken when it looks like an existing account's name in any case (nameSkeleton, nameKeys). An existing account is never renamed,
   // merged or changed: these apply to new names only.
   const NAME_MAX = 40;
   const nameCut = (s, n = NAME_MAX) => {
@@ -148,19 +148,32 @@
       .replace(/\s+/g, ' ')
       .trim()
       .normalize('NFC');
-  // The groups of names that look alike among the given ones (the admin's warning on Players), each sorted, the groups by
-  // their first name; one name in two spellings of case (one account) is one name.
+  // A name's keys: the skeletons of the name as it is, in lower case and in upper case. An account is its name in any
+  // case (Code.gs find_), and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital
+  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key: a name accepted
+  // in one case can never be signed in under another that looks like a taken name.
+  const nameKeys = name => {
+    const t = String(name == null ? '' : name);
+    return [...new Set([t, t.toLowerCase(), t.toUpperCase()].map(nameSkeleton))];
+  };
+  // The groups of names that look alike among the given ones (the admin's warning on Players): names joined by a shared
+  // key (nameKeys), each group sorted, the groups by their first name; one name in two spellings of case (one account) is
+  // one name.
   const nameAlikePairs = names => {
-    const by = new Map();
+    const L = [],
+      up = [],
+      by = new Map(),
+      top = i => (up[i] === i ? i : (up[i] = top(up[i])));
     (names || []).forEach(n => {
       const t = String(n == null ? '' : n);
-      if (!t) return;
-      const k = nameSkeleton(t),
-        g = by.get(k) || [];
-      if (!g.some(x => x.toLowerCase() === t.toLowerCase())) g.push(t);
-      by.set(k, g);
+      if (!t || L.some(x => x.toLowerCase() === t.toLowerCase())) return;
+      const i = L.push(t) - 1;
+      up[i] = i;
+      nameKeys(t).forEach(k => (by.has(k) ? (up[top(i)] = top(by.get(k))) : by.set(k, i)));
     });
-    return [...by.values()]
+    const G = new Map();
+    L.forEach((t, i) => G.set(top(i), (G.get(top(i)) || []).concat(t)));
+    return [...G.values()]
       .filter(g => g.length > 1)
       .map(g => g.slice().sort())
       .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));

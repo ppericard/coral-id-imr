@@ -279,13 +279,13 @@ function bodyOf(t) {
   return o && o.lt && typeof o.lt === 'object' ? o.lt : o;
 }
 // Accounts made before the sheet refused reserved names (Code.gs doPost_, core.js reservedName) and, from REE-35, names
-// with an invisible character (nameHidden) or looking like a taken one (nameSkeleton: here each name its own), kept in the
+// with an invisible character (nameHidden) or looking like a taken one (nameKeys: here each name its own), kept in the
 // form they came in (nameClean): f runs with the script's checks switched off (a test's players named constructor or
 // __proto__, two accounts whose names look alike), then they are on again.
 function madeBefore(s, f) {
   vm.runInContext(
-    'CORE_.__nc = {reservedName: CORE_.reservedName, nameHidden: CORE_.nameHidden, nameSkeleton: CORE_.nameSkeleton, nameClean: CORE_.nameClean};' +
-      " CORE_.reservedName = () => false; CORE_.nameHidden = () => false; CORE_.nameSkeleton = n => '\\u0000' + String(n); CORE_.nameClean = n => String(n)",
+    'CORE_.__nc = {reservedName: CORE_.reservedName, nameHidden: CORE_.nameHidden, nameKeys: CORE_.nameKeys, nameClean: CORE_.nameClean};' +
+      " CORE_.reservedName = () => false; CORE_.nameHidden = () => false; CORE_.nameKeys = n => ['\\u0000' + String(n)]; CORE_.nameClean = n => String(n)",
     s.ctx
   );
   try {

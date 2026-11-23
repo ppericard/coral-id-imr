@@ -1610,12 +1610,13 @@ const SHEET = () => {
     if (!q.get('name')) return {ok: false};
     // A name that looks like Anna's (a Cyrillic A first): a new account under it would be refused (Code.gs nameIssue_).
     if (q.get('name') === '\u{410}nna') return {ok: true, found: false, taken: 'lookalike'};
-    // Zoe and its accent, made decomposed (REE-35): found as typed, as any script finds it; under its NFC spelling as a
-    // script from v224 finds it (Code.gs acct_), naming the account's own spelling.
-    const zoe = {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account};
-    if (q.get('name').toLowerCase() === 'zoe\u{301}') return q.get('pin') === '1234' ? zoe : {ok: false, error: 'pin'};
-    if (q.get('name').toLowerCase() === 'zo\u{E9}')
-      return q.get('pin') === '1234' ? {...zoe, name: 'Zoe\u{301}'} : {ok: false, error: 'pin'};
+    // Zoe and its accent, made decomposed (REE-35): found as typed, as any script finds it; its NFC spelling is no
+    // account, and a new one under it would look like it (Code.gs nameIssue_).
+    if (q.get('name').toLowerCase() === 'zoe\u{301}')
+      return q.get('pin') === '1234'
+        ? {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account}
+        : {ok: false, error: 'pin'};
+    if (q.get('name').toLowerCase() === 'zo\u{E9}') return {ok: true, found: false, taken: 'lookalike'};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
     // test-sheet-acct: the account's generation (the sheet's _acct), as a name taken again after an archive has another
@@ -1910,8 +1911,8 @@ async function signin(base) {
     }
   );
   // REE-35: an account whose name was made decomposed. Typed so, the sheet is asked about it as typed (any script finds
-  // it; not its NFC form, which a script before v224 would take for a new name). Typed in NFC, the sheet names the
-  // account's own spelling (j.name) and the device keeps it.
+  // it; not its NFC form). Typed in NFC, it is another name that looks like it: said, nothing signed in or sent (the
+  // player types their name as they first did, as the message says).
   await run(seen, async p => {
     await card(p);
     await submit(p, 'Zoe\u{301}', '1234');
@@ -1926,11 +1927,15 @@ async function signin(base) {
     await p.click('.signnudge .sconfirm button[type=button]');
     await p.waitForTimeout(1000);
     await submit(p, 'Zo\u{E9}', '1234');
-    await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
-    await Promise.all([p.waitForNavigation({timeout: 15000}).catch(() => {}), p.click('.signnudge .sconfirm button[type=submit]')]);
-    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000}).catch(() => {});
-    const sy = JSON.parse((await state(p)).sync || 'null');
-    if (!sy || sy.name !== 'Zoe\u{301}') fails.push(`sign-in: the account's own spelling was not kept: ${JSON.stringify(sy && sy.name)}`);
+    await p
+      .waitForFunction(() => /looks the same is already taken/.test(document.querySelector('.signnudge [role=status]').textContent), null, {
+        timeout: 5000
+      })
+      .catch(() => {});
+    const said = await p.textContent('.signnudge [role=status]'),
+      st = await state(p);
+    if (!/looks the same is already taken/.test(said)) fails.push(`sign-in: the NFC form of a decomposed account says "${said}"`);
+    if (st.sync || st.posts.length) fails.push('sign-in: the NFC form of a decomposed account signed in or sent something');
   });
   // A fresh device: the question too (everyone confirms the account), with no "this device" line.
   await run(seen, async p => {

@@ -211,53 +211,67 @@ test('the sheet: a new name that looks like a taken one, or holds an invisible c
   assert.strictEqual(s.get({name: 'anna', pin: '9999'}).error, 'pin');
 });
 
-test('the sheet: one name in another Unicode form opens the same account; an older app keeps the spelling it sent', () => {
+test('the sheet: another Unicode form of a taken name is a look-alike, never the account nor a new one; tombstones hold', () => {
   const s = loadCodeGs({fetch});
-  // The app's form sends a new name in NFC (core.js nameClean): the account is made so.
+  // The app's form sends a new name in NFC (core.js nameClean): the account is made so, and opens only as it is spelt.
   assert.strictEqual(save(s, ZOE).ok, true);
   assert.deepStrictEqual(names(s), [ZOE]);
-  assert.ok(s.sheets.Answers.rows.slice(1).every(r => r[0] === ZOE));
-  // Either form opens it, with the same code, and saves to it: no second account.
-  [ZOE, ZOE_D, 'ZOE\u{301}'].forEach(n => {
+  assert.strictEqual(s.get({name: 'ZO\u{C9}', pin: '1234'}).found, true);
+  [ZOE_D, 'ZOE\u{301}'].forEach(n => {
     const g = s.get({name: n, pin: '1234'});
-    assert.strictEqual(g.found, true, JSON.stringify(n));
-    assert.deepStrictEqual(g.data, prog(1));
+    assert.deepStrictEqual([g.ok, g.found, g.taken], [true, false, 'lookalike'], JSON.stringify(n));
+    const r = save(s, n);
+    assert.deepStrictEqual([r.ok, r.error, r.why], [false, 'reserved', 'lookalike'], JSON.stringify(n));
   });
-  assert.strictEqual(s.get({name: ZOE_D, pin: '9999'}).error, 'pin');
-  assert.strictEqual(save(s, ZOE_D).ok, true);
   assert.deepStrictEqual(names(s), [ZOE]);
-  assert.strictEqual(s.sheets.Answers.rows.slice(1).filter(r => r[0] === ZOE).length, 2);
-  // An app from before this change (or an account made before it) signs up decomposed: the script keeps the spelling
-  // the request sent (only the look-alike comparison uses the skeleton), so that app's later requests name it exactly;
-  // the new form's NFC opens it too.
-  assert.strictEqual(save(s, 'Rene\u{301}').ok, true);
-  assert.deepStrictEqual(names(s), [ZOE, 'Rene\u{301}']);
-  const g = s.get({name: 'Ren\u{E9}', pin: '1234'});
-  assert.strictEqual(g.found, true);
-  // The reply names the account's own spelling (the form keeps it: every later request names it exactly); found as
-  // typed, it names none.
-  assert.strictEqual(g.name, 'Rene\u{301}');
-  assert.ok(!('name' in s.get({name: 'RENE\u{301}', pin: '1234'})));
-  assert.strictEqual(s.get({name: ZOE_D, pin: '1234'}).name, ZOE);
-  assert.ok(!('name' in s.get({name: ZOE, pin: '1234'})));
-  assert.strictEqual(save(s, 'Ren\u{E9}').ok, true);
-  assert.deepStrictEqual(names(s), [ZOE, 'Rene\u{301}']);
-  assert.ok(
-    s.sheets.Answers.rows
-      .slice(1)
-      .filter(r => /^Ren/.test(r[0]))
-      .every(r => r[0] === 'Rene\u{301}')
-  );
-  // Under the spelling the load named, the player deletes their own account (find_, as every other request).
-  assert.strictEqual(s.post({selfDelete: 1, dname: g.name, dpin: '1234'}).deleted, true);
-  assert.deepStrictEqual(names(s), [ZOE]);
-  // Its tombstone holds: a device still signed in with that spelling gets gone, with or without the account's
-  // generation, and the account is never made again.
+  // Two accounts made before in the two forms of one name (madeBefore), the same code: each is its own; deleting one
+  // leaves its tombstone, which its devices meet (gone), never the other account.
+  const t = loadCodeGs({fetch});
+  madeBefore(t, () => [ZOE_D, ZOE].forEach(n => assert.strictEqual(save(t, n).ok, true, JSON.stringify(n))));
+  assert.deepStrictEqual(names(t), [ZOE_D, ZOE]);
+  assert.strictEqual(t.post({selfDelete: 1, dname: ZOE_D, dpin: '1234'}).deleted, true);
+  assert.deepStrictEqual(names(t), [ZOE]);
+  assert.strictEqual(t.get({name: ZOE_D, pin: '1234'}).error, 'gone');
   [{}, {acct: 'x0x0x0x0x0x0'}].forEach(extra => {
-    const r = s.post({name: 'Rene\u{301}', pin: '1234', data: prog(1), summary: {}, answers: [qa('q' + ++qn, 1)], ...extra});
+    const r = t.post({name: ZOE_D, pin: '1234', data: prog(1), summary: {}, answers: [qa('q' + ++qn, 1)], ...extra});
     assert.deepStrictEqual([r.ok, r.error], [false, 'gone'], JSON.stringify(extra));
   });
-  assert.deepStrictEqual(names(s), [ZOE]);
+  assert.deepStrictEqual(names(t), [ZOE]);
+  assert.strictEqual(t.sheets.Answers.rows.slice(1).filter(r => r[0] === ZOE).length, 1, "the other account's answers only");
+});
+
+test('the sheet: a look-alike in one case only is refused in every case (Greek small beta and nu, capitals)', () => {
+  const {nameKeys: K, nameAlikePairs: P} = C;
+  const like = (a, b) => K(a).some(x => K(b).includes(x));
+  // A Greek small beta is no b, but its capital is B: as an account is its name in any case, beta-ob is Bob's look-alike.
+  [
+    ['\u{3B2}ob', 'Bob'],
+    ['\u{392}ob', 'Bob'],
+    ['\u{3BD}ick', 'Nick'], // small nu: its capital is N
+    ['\u{3BD}ick', 'vick'], // small nu looks like v
+    ['\u{39D}ICK', 'nick'],
+    ['\u{3BA}im', 'Kim'], // small kappa: its capital is K
+    ['\u{432}ob', 'Bob'], // Cyrillic small ve: its capital is B
+    ['\u{43D}ans', 'Hans'] // Cyrillic small en: its capital is H
+  ].forEach(([a, b]) => assert.ok(like(a, b), JSON.stringify([a, b])));
+  [
+    ['Nick', 'vick'],
+    ['Bob', 'Rob'],
+    ['\u{3B2}eta', 'Zeta']
+  ].forEach(([a, b]) => assert.ok(!like(a, b), JSON.stringify([a, b])));
+  assert.deepStrictEqual(P(['Bob', '\u{3B2}ob', 'Nick', 'vick', '\u{3BD}ick']), [
+    ['Bob', '\u{3B2}ob'].sort(),
+    ['Nick', 'vick', '\u{3BD}ick'].sort()
+  ]);
+  // The sheet: with Bob and Nick taken, neither beta-ob nor nu-ick is made, so neither can sign in later as the capital.
+  const s = loadCodeGs({fetch});
+  ['Bob', 'Nick'].forEach(n => assert.strictEqual(save(s, n).ok, true, n));
+  ['\u{3B2}ob', '\u{392}OB', '\u{3BD}ick', '\u{3BA}im B.'].forEach(n => {
+    const r = save(s, n);
+    assert.deepStrictEqual([r.ok, r.error], n === '\u{3BA}im B.' ? [true, undefined] : [false, 'reserved'], JSON.stringify(n));
+  });
+  assert.deepStrictEqual(names(s), ['Bob', 'Nick', '\u{3BA}im B.']);
+  assert.strictEqual(s.get({name: '\u{3BD}ICK', pin: '1234'}).taken, 'lookalike');
 });
 
 test('the sheet: an older app that signs up decomposed keeps every request on its account (self-delete, reports)', () => {

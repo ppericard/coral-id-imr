@@ -77,26 +77,16 @@ function find_(sh, name){
 // within the limit is kept as it is). The app's form makes a new name NFC (core.js nameClean), as an admin archive name
 // is here (users_ userArchive); a save keeps the spelling it sent (doPost_), so an older app's account is its own.
 function clean_(p){ return {name: CORE_.nameCut(String(p.name || '').trim()), pin: String(p.pin || '').trim()}; }
-// The RAs row of a player's name (REE-35): the name as it is, case aside (find_), else the account whose name is the
-// same text in another Unicode form (NFC, case aside: an é typed as e and its accent), whose own spelling is then used.
-// So an account made with one form opens with the other, and a new name is never another form of a taken one.
-function acct_(sh, name){
-  const r = find_(sh, name);
-  if (r || sh.getLastRow() < 2) return {r: r, name: name};
-  const k = String(name).normalize('NFC').toLowerCase(), names = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
-  for (let i = 0; i < names.length; i++) { const n = String(names[i][0]); if (n !== '' && n.normalize('NFC').toLowerCase() === k) return {r: i + 2, name: n, other: true}; }
-  return {r: 0, name: name};
-}
 // Why a new account name is refused (REE-35), '' when it is not: 'invisible' when it holds an invisible character
 // (core.js nameHidden: zero-width, bidi control, other format characters), 'lookalike' when it looks like the name of an
-// account in the RAs tab (sh), archives included (the same core.js nameSkeleton: a Cyrillic a, U+0430, for a Latin a, a
-// decomposed accent, a zero-width space). The app's form says it before signing in (the load's taken); a save that
-// would make the account is refused (doPost_).
+// account in the RAs tab (sh), archives included, in any case (core.js nameKeys: a Cyrillic a, U+0430, for a Latin a,
+// a decomposed accent, a zero-width space; another Unicode form of a taken name too). The app's form says it before
+// signing in (the load's taken); a save that would make the account is refused (doPost_).
 function nameIssue_(sh, name){
   if (CORE_.nameHidden(name)) return 'invisible';
   if (sh.getLastRow() < 2) return '';
-  const k = CORE_.nameSkeleton(name);
-  return sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().some(r => r[0] !== '' && CORE_.nameSkeleton(String(r[0])) === k) ? 'lookalike' : '';
+  const k = new Set(CORE_.nameKeys(name));
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().some(r => r[0] !== '' && CORE_.nameKeys(String(r[0])).some(x => k.has(x))) ? 'lookalike' : '';
 }
 // A user string never becomes a formula: a leading = + - @ gets Sheets' quote prefix (hidden, not part of the value read back).
 // Also used for the code hash, whose base64 can start with +.
@@ -232,10 +222,9 @@ function doGet_(e){
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
   if (e.parameter.achs) return json_(achs_());
-  let {name, pin} = clean_(e.parameter);
+  const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
-  const sh = sheet_('RAs', HEAD), a = acct_(sh, name), r = a.r;
-  name = a.name;
+  const sh = sheet_('RAs', HEAD), r = find_(sh, name);
   // No account: taken says why a new account under this name would be refused (nameIssue_), so the app's form says it
   // before signing in. An app from before it signs in, and its first save is refused (doPost_).
   if (!r) { const g = gone_(name, hash_(name, pin)), t = g ? '' : nameIssue_(sh, CORE_.nameClean(name));
@@ -255,11 +244,7 @@ function doGet_(e){
   });
   const have = e.parameter.have !== undefined && e.parameter.have !== '' ? Number(e.parameter.have) : NaN;
   TIM_.op = 'load';  // timed (timEnd_)
-  const out = load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, sts: sts, stn: stn, have: have, light: !!e.parameter.light});
-  // Found under another Unicode form of the name (acct_): the account's own spelling, which the app's form keeps
-  // (sync.js), so every later request names it exactly (self-delete, reports and the rest use find_).
-  if (a.other) out.name = name;
-  return json_(out);
+  return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, sts: sts, stn: stn, have: have, light: !!e.parameter.light}));
 }
 // The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and as a
 // light save answers 'stale' (doPost_). q: pt, rv (undefined: no replay asked), rvs, have (the revision of the copy the
@@ -326,19 +311,17 @@ function doPost_(e){
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // roles (roles_)
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop || p.mergePlan) return json_(users_(p));  // admin user management (see users_)
-  let {name, pin} = clean_(p);
+  const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
   let out, held = true;
   try {
-    const sh = sheet_('RAs', HEAD), a = acct_(sh, name);
-    let r = a.r;
-    // An account's own spelling (acct_). A new name is kept as the request spells it (REE-35): the app's form sends it
-    // NFC (core.js nameClean), and an app from before keeps the spelling it typed as its account's name, so its later
-    // requests (self-delete, reports: find_) and the Removed tombstones (gone_) name the account exactly. Only the
-    // look-alike check below compares names by their skeleton, so another form of a taken name is never a new account.
-    if (r) name = a.name;
-    const h = hash_(name, pin), s = p.summary || {};
+    // A new name is kept as the request spells it (REE-35): the app's form sends it NFC (core.js nameClean), and an app
+    // from before keeps the spelling it typed as its account's name, so its later requests (self-delete, reports: find_)
+    // and the Removed tombstones (gone_) name the account exactly. The look-alike check below compares names by their
+    // skeletons, so another Unicode form of a taken name is never a new account.
+    const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
+    let r = find_(sh, name);
     if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
     // The code is checked before anything is written (a wrong code must not move anonymous answers).
     if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
@@ -8240,7 +8223,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // surrogate pair; a name within the limit is never touched). A new name is NFC (nameClean: the app's sign-in form, the admin's
   // archive name; Code.gs doPost_ keeps the spelling a save sends, an older app's included), refused when it holds an
   // invisible character (nameHidden), and
-  // refused as taken when it looks like an existing account's name (nameSkeleton). An existing account is never renamed,
+  // refused as taken when it looks like an existing account's name in any case (nameSkeleton, nameKeys). An existing account is never renamed,
   // merged or changed: these apply to new names only.
   const NAME_MAX = 40;
   const nameCut = (s, n = NAME_MAX) => {
@@ -8313,19 +8296,32 @@ const CORE_ = (function () { const module = {exports: {}};
       .replace(/\s+/g, ' ')
       .trim()
       .normalize('NFC');
-  // The groups of names that look alike among the given ones (the admin's warning on Players), each sorted, the groups by
-  // their first name; one name in two spellings of case (one account) is one name.
+  // A name's keys: the skeletons of the name as it is, in lower case and in upper case. An account is its name in any
+  // case (Code.gs find_), and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital
+  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key: a name accepted
+  // in one case can never be signed in under another that looks like a taken name.
+  const nameKeys = name => {
+    const t = String(name == null ? '' : name);
+    return [...new Set([t, t.toLowerCase(), t.toUpperCase()].map(nameSkeleton))];
+  };
+  // The groups of names that look alike among the given ones (the admin's warning on Players): names joined by a shared
+  // key (nameKeys), each group sorted, the groups by their first name; one name in two spellings of case (one account) is
+  // one name.
   const nameAlikePairs = names => {
-    const by = new Map();
+    const L = [],
+      up = [],
+      by = new Map(),
+      top = i => (up[i] === i ? i : (up[i] = top(up[i])));
     (names || []).forEach(n => {
       const t = String(n == null ? '' : n);
-      if (!t) return;
-      const k = nameSkeleton(t),
-        g = by.get(k) || [];
-      if (!g.some(x => x.toLowerCase() === t.toLowerCase())) g.push(t);
-      by.set(k, g);
+      if (!t || L.some(x => x.toLowerCase() === t.toLowerCase())) return;
+      const i = L.push(t) - 1;
+      up[i] = i;
+      nameKeys(t).forEach(k => (by.has(k) ? (up[top(i)] = top(by.get(k))) : by.set(k, i)));
     });
-    return [...by.values()]
+    const G = new Map();
+    L.forEach((t, i) => G.set(top(i), (G.get(top(i)) || []).concat(t)));
+    return [...G.values()]
       .filter(g => g.length > 1)
       .map(g => g.slice().sort())
       .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
@@ -11997,6 +11993,7 @@ const CORE_ = (function () { const module = {exports: {}};
     nameClean,
     nameHidden,
     nameSkeleton,
+    nameKeys,
     nameAlikePairs,
     SEED,
     markRow,

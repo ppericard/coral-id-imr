@@ -152,9 +152,10 @@ in a new name (`core.js` `reservedName`).
 like an account's name or hold an invisible character, so nobody can open a second account that passes for another
 player's on the leaderboard or in the admin: a new name is NFC (the app's form; a save keeps the spelling it sent, so
 an older app's account stays its own), one with a zero-width, bidi control or other invisible
-format character is refused, and one whose skeleton (`core.js` `nameSkeleton`: the Greek and Cyrillic letters Unicode's
-confusables data maps to a Latin letter, decomposed accents, invisible characters, full-width forms, case and spaces
-aside) is an existing account's is refused as taken (`Code.gs` `nameIssue_`). Existing accounts are never changed; the
+format character is refused, and one that shares a skeleton with an existing account's name, in any of the two names'
+cases (`core.js` `nameKeys`, `nameSkeleton`: the Greek and Cyrillic letters Unicode's confusables data maps to a Latin
+letter, decomposed accents, invisible characters, full-width forms, case and spaces aside), is refused as taken
+(`Code.gs` `nameIssue_`), so a name accepted in one case can never be signed in under a look-alike capital. Existing accounts are never changed; the
 admin's Players page names the existing pairs that look alike (spec/sync.md "Reserved names").
 The weekly backups to pCloud (sheet v139, [BACKUP.md](BACKUP.md)) are copies of the whole sheet as it was: an account
 deleted, merged or archived stays in the backups made before, until they are deleted (through the upload link, the
