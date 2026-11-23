@@ -205,9 +205,7 @@ players. A simulation decides on the mechanics of the rules (what follows from t
 cases, on the equivalence of two implementations of one rule, and on rough starting values before any data exists,
 labelled as hypotheses. It does not decide on how real people learn, hesitate, forget or stay motivated, nor on a signal
 the simulator does not model, nor on a difference inside its own uncertainty. Then the logic of the feature, the real
-answer log (rule L12) and use by real players decide, and a change that can be reverted ships with its switch named.
-A breach in the rated world on such a question is reported with its reason, never a block by itself. This is no
-reversal either: simulations stay a check with their uses.
+answer log (rule L12) and use by real players, when the change can be reverted, decide.
 
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
 Analyses) get the method suited to the design, found before running (e.g. a factorial design with a mixed-effects

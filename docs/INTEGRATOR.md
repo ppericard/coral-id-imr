@@ -410,8 +410,9 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 | Code, specs, code-coupled studies, decisions | This repo (GitHub) |
 | Conversation | The integrator's chat: never the only copy of anything another collaborator needs |
 
-- **The integrator keeps it current as part of normal work**: Done when the completion evidence exists (Linear's merge
-  automation no longer closes issues, Pierre 2026-11-23, REE-219); a new issue (label Idea) for every idea discussed and not built; an issue's description holds
+- **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
+  opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
+  2026-11-23, REE-219); a new issue (label Idea) for every idea discussed and not built; an issue's description holds
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
   detail in its collapsible "Agent notes". Todo means ready: permitted by a decision of his or the integrator's
   mandate, never approved by the status alone.
