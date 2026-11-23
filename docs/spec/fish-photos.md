@@ -52,6 +52,16 @@ the circle-1 entries (`--circle` for the other circles).
   represented observer and iNaturalist life stage first, then the licence as a tie-break (CC0 / CC BY before NC:
   [data.md › Photo rights](data.md#photo-rights)), then a fixed hash order of the observation. A photo that belongs to
   several iNaturalist observations is taken once, and an observation left with no photo of its own takes no room.
+- **The exception: a species short of easy adults** (Pierre, 2026-11-23 16:34, REE-198: «oui, définitivement»). In a
+  refill, a species with fewer easy adult observations (`easy_obs`) than `easy_need` takes iNaturalist's most-faved
+  observations first (`faves_count`, kept as `fv` by `trim`; `select` `faves`), the order above only between equal
+  faves; Pierre's own first and the buckets above (presence, distance) hold. Its searches are read on to `GEN_PAGES`
+  pages whatever they bring, so older faved observations count too. Still Research Grade, the licences, the presence
+  box, the cap, and the judging rubric.
+  - `easy_need`: `EASY_FAMILY` (12) easy adults a teaching entry, shared over its species as the family floor is: 12 for
+    a one-species family, 6 each for two, 4 each for three, `EASY_NEED` (3) from four species on. 12: the families
+    with 12 easy observations or more showed almost no near repeat ([the review](../reviews/2026-11-21-photo-diversity.md)).
+  - Faves are sparse (most thin species' observations have none), so the neutral order still decides most picks.
 
 ### The cap, weighted by phases
 
@@ -130,9 +140,10 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
 `tools/fish_refill.json`.
 
 - **Short** (`shortness`): a species under its cap (the room of `species_room`: the cap net of what Pierre rejected,
-  excluded or sent elsewhere and of the pre-sort's sure set-asides), or with fewer than `EASY_NEED` (3) observations
+  excluded or sent elsewhere and of the pre-sort's sure set-asides), or with fewer than `easy_need` (`EASY_NEED`, 3, or
+  more for a family with few species: above; short of easy adults, so the most-faved first) observations
   holding a very easy adult photo (ease ≥ `EASY_E`, 4, the ease under which `model.js` `RARE` holds a unit's photos back
-  before Open Water; 3 as `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
+  before Open Water; 3 is the refill's own count, not `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
   reads the judged tags, Pierre's, and a candidate source's life stage; a game photo by its tags only) in play or
   sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `treeSure`'s adds, the game photos of
   `fish-photos.json`). Only room is refilled: a species short of easy photos at its cap stays as it is (the cap holds;

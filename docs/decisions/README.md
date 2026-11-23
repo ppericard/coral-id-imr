@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-23 | [The refill takes the most-faved observations first for a species short of easy adults](2026-11-23-easy-refill-faves.md) | #1476 |
 | 2026-11-22 | [core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte](2026-11-22-core-parts.md) | #1452 |
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
@@ -87,6 +88,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [The quiz keeps its question when the player leaves and comes back](2026-11-21-quiz-keeps-pending-question.md) | #1375 |
 | 2026-11-21 | [R2 is given up for a visit after three photos fail in a row, not after one](2026-11-21-r2-given-up-after-three.md) | #1416 |
 | 2026-11-21 | [The draw's few easiest before Open Water are counted by observation the draw can show, not by photo](2026-11-21-rare-few-by-observation.md) | #1376 |
+| 2026-11-21 | [Before Open Water a unit rotates at least its 12 easiest observations' worth, so an easy photo added never makes a cliff](2026-11-21-rare-few-floor.md) | #1391 |
 | 2026-11-21 | [A report can carry a screenshot or photo, reduced on the phone and kept in a tab of the sheet](2026-11-21-report-image.md) | #1354 |
 | 2026-11-21 | [The player's time net of the photo's: a right answer's z less its photos' time term, a silent replay](2026-11-21-rt-net-photo.md) | #1414 |
 | 2026-11-21 | [Sea slug species look-alikes: the two sourced pairs recorded as decided species pairs, not yet in play](2026-11-21-seaslug-species-pairs.md) | #1394 |

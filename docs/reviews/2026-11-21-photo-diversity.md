@@ -164,7 +164,8 @@ Open Water, but only about 1 easy adult in 30 for before it.
 
 ## Left open
 
-- **The cliff before Open Water.** A family whose bar falls to 3 (2 easy adults or fewer) rotates every observation at
+- **The cliff before Open Water** (fixed by #1391: docs/decisions/2026-11-21-rare-few-floor.md, `RARE.FEW` a floor of
+  12 observations' worth). A family whose bar falls to 3 (2 easy adults or fewer) rotates every observation at
   ease 3 or more, while one with exactly 3 easy adults rotates only those 3. Measured on the repository's harness
   (`tests/rareease.js`: 20 observations at ease 3, 15 under), a player under Open Water:
 

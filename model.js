@@ -12,12 +12,28 @@
 // colonies stay in rotation. All photos of a question come from one observation.
 // PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
 const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DOM.SINGLE};
-// Until a unit reaches Open Water (LV_AT[0]), its photos under ease RARE.E (or under its RARE.FEW easiest observations
-// the draw can show at full weight, when it has fewer) make at most RARE.SHARE of the photos drawn, whatever their
-// number (rareCap): no wall, they still come, rarely. The
-// factor applies to the choice of the observation (by the hard share of its weight) and of its photo. Photos with no
-// judged ease (every coral photo) are never capped. docs/LEARNING.md "Rarely under ease 4 before Open Water".
-const RARE = {E: 4, FEW: 3, SHARE: 0.1};
+// Until a unit reaches Open Water (LV_AT[0]), its photos under ease RARE.E make at most RARE.SHARE of the photos drawn,
+// whatever their number (rareCap): no wall, they still come, rarely. A unit with fewer than RARE.FEW observations at
+// ease RARE.E or more, among those the draw can show at full weight, rotates its RARE.FEW easiest instead (rareHard).
+// The factor applies to the choice of the observation (by the hard share of its weight) and of its photo. Photos with
+// no judged ease (every coral photo) are never capped. docs/LEARNING.md "Rarely under ease 4 before Open Water".
+const RARE = {E: 4, FEW: 12, SHARE: 0.1};
+// How hard a photo of ease e counts under the cap, 0 to 1, from the eases of the observations the draw can show at full
+// weight (each by its easiest such photo; eo, easiest first). Every observation at ease RARE.E or more rotates, and at
+// least the RARE.FEW easiest: the observations at the last ease taken (b) share what is left of the RARE.FEW equally,
+// each easy for that share and hard for the rest; under b, hard. So the rotation holds max(RARE.FEW, the observations
+// at ease RARE.E or more) observations' worth of weight (the whole unit when smaller): an easy adult added takes one
+// share from those at b, never all of them. A bar on the RARE.FEW-th easiest (3 then) that rotated every observation at
+// its ease took a family from its 12 observations at ease 3 or more to its 3 easy adults when a third was judged
+// (REE-197).
+function rareHard(eo) {
+  if (!eo.length) return () => 0;
+  const b = eo[Math.min(RARE.FEW, eo.length) - 1];
+  if (b >= RARE.E) return e => (e < RARE.E ? 1 : 0);
+  const above = eo.filter(e => e > b).length,
+    f = Math.min(1, (Math.min(RARE.FEW, eo.length) - above) / eo.filter(e => e === b).length);
+  return e => (e < b ? 1 : e === b ? 1 - f : 0);
+}
 // The cap holds only on units of the subject's own rank (core.js unitRankOf: the fish families, the sea slugs' genera):
 // a fish genus's player already knows its family, and capping it held back its hard photos' ratings.
 const rareOn = n => (rankOf(n) || unitRankOf(SUBJ)) === unitRankOf(SUBJ);
@@ -208,9 +224,9 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   );
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
-  // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
+  // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise) and how hard each photo counts (0 to 1).
   let hardF = 1,
-    hard = () => false;
+    hard = () => 0;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
@@ -224,7 +240,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     if (!k) r *= (1 + 1.5 * hot) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     if (V.on) r *= V.f(p);
-    return hardF < 1 && hard(p) ? r * hardF : r;
+    return hardF < 1 ? r * (1 - hard(p) * (1 - hardF)) : r;
   };
   const obs = {};
   need.forEach(v =>
@@ -260,11 +276,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   };
   const sc = Object.fromEntries(keys.map(k => [k, score(k)]));
   // Rarely under ease 4 before Open Water (RARE): each observation's hard part, the share of its photos' weight under
-  // the bar (its photo is drawn on those weights); the cap itself comes last, below. The bar's RARE.FEW easiest are
-  // observations the draw can show at full weight, each by its easiest such photo: a variant the unit still holds back
-  // (V) and a second photo of one observation are no easy observation of their own. Counted by photo, a family with two
-  // easy adults, an easy juvenile held back and the rest at ease 3 kept its bar at 4, so 90% of its questions went to
-  // those two photos (REE-189, a remora photo seen 3 times in 14 minutes).
+  // the bar, each photo by how hard it counts (rareHard; its photo is drawn on those weights); the cap itself comes last,
+  // below. The RARE.FEW easiest are observations the draw can show at full weight, each by its easiest such photo: a
+  // variant the unit still holds back (V) and a second photo of one observation are no easy observation of their own.
+  // Counted by photo, a family with two easy adults, an easy juvenile held back and the rest at ease 3 kept its bar at
+  // 4, so 90% of its questions went to those two photos (REE-189, a remora photo seen 3 times in 14 minutes).
   const ph = k => phs[k],
     ease = L =>
       L.map(p => p.e || 0)
@@ -275,13 +291,12 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     hs = {};
   if (rare) {
     const eo = ease(keys.filter(k => sc[k] > 0 && phMul(k) >= 1).map(k => ({e: Math.max(0, ...ease(ph(k).filter(p => V.f(p) >= 1)))}))),
-      few = eo.length ? eo : es,
-      bar = Math.min(RARE.E, few[Math.min(RARE.FEW, few.length) - 1]),
-      sum = L => L.reduce((t, p) => t + w(p), 0);
-    hard = p => p.e > 0 && p.e < bar;
+      hardOf = rareHard(eo.length ? eo : es),
+      sum = (L, f = () => 1) => L.reduce((t, p) => t + w(p) * f(p), 0);
+    hard = p => (p.e > 0 ? hardOf(p.e) : 0);
     keys.forEach(k => {
       const t = sum(ph(k));
-      hs[k] = t ? sum(ph(k).filter(hard)) / t : 0;
+      hs[k] = t ? sum(ph(k), hard) / t : 0;
     });
   }
   // A calibration question draws among the colonies this player has never seen, while the unit has one the draw can
