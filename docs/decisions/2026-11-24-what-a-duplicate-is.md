@@ -1,6 +1,6 @@
 # What a duplicate photo is: a burst or the same framing; another zoom, framing, angle or pose is an `alt`, every subject
 
-Date: 2026-11-24. PR: #0000. Rules or docs touched: judging/FISH.md "Candidates" `keep`; judging/SEASLUG.md
+Date: 2026-11-24. PR: #1524. Rules or docs touched: judging/FISH.md "Candidates" `keep`; judging/SEASLUG.md
 "Candidates: the judging files" `keep`; judging/BRIEF.md "Candidate pass" `keep` and "Per genus" `duplicates`. Study:
 [docs/reviews/2026-11-23-what-a-duplicate-is.md](../reviews/2026-11-23-what-a-duplicate-is.md) (#1506).
 

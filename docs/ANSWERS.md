@@ -1967,7 +1967,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   Fable; REE-266).
 - **06:30, question cards.** «N'utilise les cartes que pour des petites questions hyper faciles. Sinon il faut que tu
   me représentes proprement le contexte comme si j'avais tout oublié». A working-method request on how the integrator
-  asks, not a numbered question. Applied: this ledger only (no doc changed in #0000).
+  asks, not a numbered question. Applied: no doc change yet (the integrator's way of asking; INTEGRATOR.md
+  "Questions and corrections" not changed here).
 - **06:32, the ease weight kept at 0.5 for the sea slugs (#1519).** «Et bien c'est un mauvais choix. C'est quoi nos
   règles globales de développement? ça mérite une issue de non respect à la règle ça». Applied: Linear REE-267; #1519
   (one ease weight for every subject with a judged ease).
@@ -1978,7 +1979,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   ajustements et des paramétrages par sujet si ils sont justifiés. Ce que je te reproche c'est de ne pas avoir
   généralisé, et juste décidé de ne traiter les poissons que parce que c'était l'exemple de départ.» Read by the
   integrator (REE-267's comment): a decision found on one subject applies to every subject by default; a per-subject
-  value or exception is allowed when justified and declared. Applied: Linear REE-267, REE-268; #1519.
+  value or exception is allowed when justified and declared. Applied: Linear REE-267, REE-268; #1519; the sea slugs'
+  caps as the fish's, judging/SEASLUG.md "Caps", decisions/2026-11-24-sea-slug-caps-as-the-fish.md (#1524).
 - **06:38, the objection left unanswered (REE-268).** «Je ne suis pas d'accord pour que tu passes sous silence ce
   problème.» Applied: Linear REE-268.
 - **06:45, questions session, group 2: #1493.** «ok» to #1493 (the saved ease re-judge drafts for five typical-look
@@ -1990,4 +1992,4 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **06:45, group 2c: what a duplicate is (REE-252 question (a), REE-257).** «ok» to the definition, for every subject:
   `dup`, a burst or the same framing, with nothing new to see; `alt`, another zoom, framing, angle or pose of the same
   animal or colony (his word is «ok», the wording is the integrator's). Nothing judged again. Applied: judging/FISH.md,
-  judging/SEASLUG.md, judging/BRIEF.md `keep`; decisions/2026-11-24-what-a-duplicate-is.md (#0000).
+  judging/SEASLUG.md, judging/BRIEF.md `keep`; decisions/2026-11-24-what-a-duplicate-is.md (#1524).
