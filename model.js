@@ -738,11 +738,14 @@ const shareRoom = n => {
 };
 // The opening's pace (docs/LEARNING.md "One opening rule", "Opening pace"): the genera opened on a card
 // (the first cards, or one of their own) in the last OPEN.WIN answers, as at `at` (the answers count at which the
-// question will show).
-const openRecent = (at = answersSoFar()) =>
-  Object.entries(introMap())
-    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n) && at - (Number(e[0]) || 0) < OPEN.WIN)
+// question will show). The window counts the answers since each card on the answer clock (tally, introMark), so a count
+// gone down (rule D9) does not bring an old card back into it.
+const openRecent = (at = answersSoFar()) => {
+  const c = tally() + at - answersSoFar();
+  return Object.entries(introMap())
+    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n) && c - introMark(e) < OPEN.WIN)
     .map(([n]) => n);
+};
 // No new genus while one opened in the last OPEN.WIN answers has not been asked yet (its card read, its question still
 // to come), nor once OPEN.MAX of them have opened: about 3 new genera per 15 answers at most, whatever openChance says.
 // Both read the same window, so a genus whose question is slow to come holds the next card OPEN.WIN answers at most.
@@ -1012,8 +1015,10 @@ const levelTop = list => {
 // at a time, each on its card, never as the answer of the question right after it: a genus met on a single card can be
 // asked from INTRO.GAP answers on, and a new card waits while one is still to be asked (openPace) and while introHold
 // (below). Which genus opens and when is the progressive path's (weighted, OPEN). Kept per subject
-// (reefid-sync-<subject>-intro: genus -> [answers when shown, 1 if ready at once, time, kind]); a genus already asked
-// counts as met. Bonus genera (app.js Q.bon) open the same way, on their own card.
+// (reefid-sync-<subject>-intro: genus -> [answers when shown, 1 if ready at once, time, kind, the answer clock then]); a
+// genus already asked counts as met. The gaps after a card (INTRO.GAP, OPEN.WIN) count on the answer clock (tally,
+// introMark); the answers count when shown stays the card's history (the admin's player journey). Bonus genera (app.js
+// Q.bon) open the same way, on their own card.
 // OFFER: the record of Open all (introAll) and of the back card (introBack). Both synced with the progress (sync.js
 // introMerge).
 const INTRO = {
@@ -1036,14 +1041,18 @@ const introMap = () => {
   const m = store.get(INTRO.KEY, {});
   return (INTROS = m && typeof m === 'object' && !Array.isArray(m) ? m : {});
 };
+// An entry's mark on the answer clock (tally): its own (e[4]); an entry from before the clock, its answers count, which
+// the clock started at.
+const introMark = e => (typeof e[4] === 'number' ? e[4] : Number(e[0]) || 0);
 // kind (readiness and answer count alone cannot tell them apart once synced): 's' one of the first
 // cards, 'c' a card of its own (or a duel's), 'a' opened with Open all genera.
 const introAdd = (L, start, kind = start ? 's' : 'c') => {
   const m = introMap(),
-    a = answersSoFar();
-  // [answers so far, 1 when ready at once (first cards, Open all, a duel's), time shown, kind] (time and kind: the admin's
-  // player journey).
-  L.forEach(n => (m[n] = [a, start ? 1 : 0, Date.now(), kind]));
+    a = answersSoFar(),
+    c = tally();
+  // [answers so far, 1 when ready at once (first cards, Open all, a duel's), time shown, kind, the answer clock] (answers
+  // so far, time and kind: the admin's player journey).
+  L.forEach(n => (m[n] = [a, start ? 1 : 0, Date.now(), kind, c]));
   store.set(INTRO.KEY, m);
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
@@ -1080,7 +1089,7 @@ const introReady = n => {
   if (closed(n)) return false;
   if (askedOpen(n)) return true;
   const e = introMap()[n];
-  return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
+  return !!e && (!!e[1] || tally() >= introMark(e) + INTRO.GAP);
 };
 // "I've had the IMR lecture": an RA has seen every genus in the lecture, so one card at a time would hold them back. On
 // the first cards and in My progress, one tap opens at once, without cards, every unit the lecture teaches (app.js
@@ -1159,13 +1168,15 @@ function introMerge(m, o) {
     // than an Open all ('a') can only be a reopening after a 'b' mark, so it is kept too: a delayed 'b' older than that
     // reopening must not close the genus again (a@100, then c@300, then b@200). A live game's mark (introLive: 'b' with
     // no time) is older than any timed entry: it never replaces one, and any timed opening replaces it.
+    // Its mark on the answer clock (e[4], introMark) comes with it: equal to its answers count until a count goes down.
     const later = (h, e) => (e[3] === 'b' || h[3] === 'b' || (h[3] === 'a' && e[3] === 'c')) && (e[2] || 0) > (h[2] || 0);
     let open = false; // a genus closed or reopened here: the questions planned ahead may be about it (or offer it)
     Object.entries(m).forEach(([n, e]) => {
       if (!Array.isArray(e)) return;
       const h = L[n];
       if (h && later(h, e) && (e[3] === 'b') !== (h[3] === 'b')) open = true;
-      if (!h || later(h, e)) ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
+      if (!h || later(h, e))
+        ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c'), ...(typeof e[4] === 'number' ? [e[4]] : [])];
     });
     if (ch) store.set(INTRO.KEY, L);
     // The planned questions (quiz.js takePlan) only check the answer count and the pool, so they are dropped and drawn
@@ -1387,9 +1398,9 @@ function holdSync(h, log, ids) {
 // - SESSION.GAP: a new visit starts after 30 minutes without an answer (the web-analytics session timeout), never at a
 //   page load. From a new visit, and during a comeback, the first COMEBACK.FLOOR answers open no genus. Neither applies
 //   with fewer than 2 genera answered right.
-// Kept on the device (reefid-comeback: r rust, t time accounted, ok right answers in it, f answers count until which no
-// genus opens); the times per genus (s.at; s.dd, s.dl: days answered right, the last one) are in the synced progress,
-// the player's last answer in P[LEVEL].at.
+// Kept on the device (reefid-comeback: r rust, t time accounted, ok right answers in it, f the answer clock until which
+// no genus opens, c and n the answer clock below); the times per genus (s.at; s.dd, s.dl: days answered right, the last
+// one) are in the synced progress, the player's last answer in P[LEVEL].at.
 const FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5};
 const SESSION = {GAP: 30 * 60000};
 const COMEBACK = {
@@ -1400,11 +1411,38 @@ const COMEBACK = {
 };
 const DAY = 864e5;
 const cbLoad = () =>
-  (o => (o && typeof o === 'object' ? {r: +o.r || 0, t: +o.t || 0, ok: +o.ok || 0, f: +o.f || 0} : {r: 0, t: 0, ok: 0, f: 0}))(
-    store.get(COMEBACK.KEY, null)
-  );
+  (o =>
+    o && typeof o === 'object'
+      ? {
+          r: +o.r || 0,
+          t: +o.t || 0,
+          ok: +o.ok || 0,
+          f: +o.f || 0,
+          ...(typeof o.c === 'number' && typeof o.n === 'number' ? {c: o.c, n: o.n} : {})
+        }
+      : {r: 0, t: 0, ok: 0, f: 0})(store.get(COMEBACK.KEY, null));
 let CB = cbLoad();
 const cbSave = () => store.set(COMEBACK.KEY, CB);
+// The answer clock (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md, "answers since an event"): the answers
+// counted on this device since the progress began, never going down. It moves up with the level's answer count
+// (answersSoFar: an answer, another device's answers merged in) and stays where it is when that count goes down (the
+// answer log's count replacing one that counted answers twice, rule D9), so a checkpoint kept on the clock counts the
+// answers given since it whatever the count does: a card's mark (introMark), the comeback's floor (CB.f), an exam's
+// last question (quiz.js ex.at), a surprise card (quiz.js winkShow), the prompts' spacing (quiz.js promptMark,
+// pulseAsk). It starts at the count, so a checkpoint kept at the count before it is a clock value too, and it is kept
+// with the comeback's record (c the clock, n the count it last saw): it starts over with the progress (introReset)
+// and at sign-out with it. Thresholds on the count itself (OPEN.STUCK_FROM, CHOICE.ASK, WINK.AT, PULSE.FIRST) read the
+// count, which rule D9 lets move.
+function tally() {
+  const a = answersSoFar();
+  if (typeof CB.c === 'number' && typeof CB.n === 'number') {
+    if (a === CB.n) return CB.c;
+    if (a > CB.n) CB.c += a - CB.n;
+    CB.n = a;
+  } else [CB.c, CB.n] = [a, a];
+  cbSave();
+  return CB.c;
+}
 const recallOf = (days, S) => (1 + (FSRS.F * Math.max(0, days)) / S) ** FSRS.C;
 // The local calendar day of a time (days answered right, s.dd).
 const dayNo = (t = Date.now()) => Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / DAY);
@@ -1446,12 +1484,12 @@ function rustNow(now = Date.now()) {
   const last = lastAt();
   if (!last || now <= last) return false;
   if (cbGenera().length < 2) {
-    if (CB.r || CB.f) ((CB = {r: 0, t: now, ok: 0, f: 0}), cbSave());
+    if (CB.r || CB.f) ((CB = {...CB, r: 0, t: now, ok: 0, f: 0}), cbSave()); // the answer clock (c, n) goes on
     return false;
   }
   const on = CB.r > 0,
     from = on ? Math.max(last, CB.t) : last,
-    floor = () => (CB.f = Math.max(CB.f, answersSoFar() + COMEBACK.FLOOR));
+    floor = () => (CB.f = Math.max(CB.f, tally() + COMEBACK.FLOOR));
   const visit = now - last >= SESSION.GAP;
   if (visit) floor();
   if (now > from) {
@@ -1468,8 +1506,8 @@ function rustNow(now = Date.now()) {
   cbSave();
   return visit;
 }
-// No genus opens (card, open-all or bonus genera offer) during the floor of a visit or a comeback.
-const noOpen = () => CB.r > 0 || answersSoFar() < CB.f;
+// No genus opens (card, open-all or bonus genera offer) during the floor of a visit or a comeback (on the answer clock).
+const noOpen = () => CB.r > 0 || tally() < CB.f;
 // The genera a comeback question is drawn from, or null when no comeback runs: genera answered right, the surest half
 // until one is right in this comeback, then the most rusted half. Fewer than 2: no comeback.
 function comebackOf(met) {
@@ -1799,7 +1837,8 @@ const examOn = n => {
   const s = P[n] || {};
   return !s.mx && !(GX(n) || {}).noex && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
 };
-const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
+// The gap since the exam's last question (s.ex.at, quiz.js answer) counts on the answer clock (tally).
+const examReady = n => examOn(n) && (!(P[n] || {}).ex || tally() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
 // (core.js keepsMark: the domain score at DOM.KEEP or above, about one miss below the exam's entry; a record not rebuilt
 // yet, s.pg at PROG.M × (1 − PROG.A)), so a single slip does not take it away.
