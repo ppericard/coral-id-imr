@@ -73,7 +73,7 @@ INFO = {
 # Size classes (data.json traits "size"): Favites species over 8 mm are recorded in the Philippines (above).
 ADD_TR = {'Favites': ['s3']}
 
-# Other spellings of a name, shown after the IMR one wherever the name is shown (app.js altName): name -> [spelling, source].
+# Other spellings of a name, shown after the IMR one wherever the name is shown (idtips.js altName): name -> [spelling, source].
 SPELL = {'Diploastreidae': ['Diploastraeidae', 'WoRMS']}
 
 

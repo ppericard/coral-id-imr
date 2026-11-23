@@ -401,12 +401,13 @@ test('the sheet: the replay is the app’s own under the pairs in force (genLook
 
 // Rule C2 under the editor's coral edits: an edited slot's source travels with it wherever the slot
 // is shown with an attribution of its own. The criteria are cited by the source he gave, the Coral Finder pages only for
-// the book's own text (app.js critRef: the genus sheet, the quiz's answer, the Coral ID Key); his summary's, mnemonic's
+// the book's own text (idtips.js critRef: the genus sheet, the quiz's answer, the Coral ID Key); his summary's, mnemonic's
 // and look-alike line's sources with them; a bonus genus's reworded tips lose the Coral Finder label (tipsLabel).
 test('C2: an edited coral slot shows its own source, never the Coral Finder’s or nothing, in the quiz’s answer and the sheets', () => {
   const vm = require('vm'),
     block = require('./block.js'),
     APP = src('app.js'),
+    IDTIPS = src('idtips.js'),
     LEARN = src('learn.js'),
     QUIZ = src('quiz.js'),
     G = D.gen.Acropora,
@@ -454,7 +455,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
       block(APP, 'const esc = s =>', '\n// Page keyboard handlers', {file: 'app.js'}),
       'const gloss = x => esc(x), glossAll = L => L.map(esc);',
       block(APP, 'const GX = n =>', '\n', {file: 'app.js'}),
-      block(APP, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'app.js'}),
+      block(IDTIPS, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'idtips.js'}),
       block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
       block(APP, 'const tipsEdited = g =>', '\n', {file: 'app.js'}),
       block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),

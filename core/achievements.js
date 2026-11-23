@@ -168,15 +168,17 @@
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The sea slug achievements, modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level,
   // families with every genus at Advanced, the taxonomic groups (the nudibranchs first), the first circle, the sea slug %
-  // every 10 points.
+  // every 10 points, the species by their scientific names.
   // Learning milestones only, never time (rule L8), tested on the sea slug snapshot (progress.js achSnap: met, q, learned
   // over its genera; circ, each circle's genera; fam, its families with every genus at Advanced or above; tax, each
-  // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %), in the shared record
+  // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %; setsAdv.ssp, its
+  // species at Advanced or above by their scientific names; top, its stars), in the shared record
   // under ids starting with ss. SEA_NUDI: the nudibranchs' taxonomic groups (seaslug.json taxa groups 1 and 2,
   // Nudibranchia · Doridina and · Cladobranchia; tests/seaslugach.test.js checks it against the file).
   const SEA_NUDI = [1, 2],
     seaTax = (s, f) => ((s && s.tax) || []).filter(f),
-    seaPct = (id, p, name, tier) => [id, name, p + '% sea slug progress', tier, '📈', s => s.pct >= p];
+    seaPct = (id, p, name, tier) => [id, name, p + '% sea slug progress', tier, '📈', s => s.pct >= p],
+    seaSp = (id, k, name, desc, tier) => [id, name, desc, tier, '🏷️', s => ((s.setsAdv || {}).ssp || 0) >= k];
   const SEASLUG_ACH = [
     ['ssmet5', 'Slug spotter', 'Met 5 sea slug genera', 1, '🧭', s => s.met >= 5],
     ['ssmetall', 'Muck stick', 'Met every sea slug genus in the game', 2, '🧭', s => s.total && s.met >= s.total],
@@ -220,9 +222,9 @@
     seaPct('sspct30', 30, 'Colour chart', 2),
     seaPct('sspct40', 40, 'Torch light', 2),
     seaPct('sspct50', 50, 'Half the reef', 3),
-    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slugs
-    // have no species unit yet, so their % is the mean of the genera's bars and 100% needs every genus learned (names
-    // and tiers: docs/decisions/2026-11-18-seaslug-achievements-high.md).
+    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slug
+    // % is the mean of the genera's bars (their species are not in it), so 100% needs every genus learned (names and
+    // tiers: docs/decisions/2026-11-18-seaslug-achievements-high.md).
     seaPct('sspct60', 60, 'Gill and frill', 3),
     seaPct('sspct70', 70, 'Muck magnet', 3),
     seaPct('sspct80', 80, 'Slug savant', 3),
@@ -236,6 +238,20 @@
       3,
       '📈',
       s => s.pct >= 100 && s.total > 0 && s.learned >= s.total
+    ],
+    // The species by their scientific names (a genus at Advanced brings its own), each named once its bar reaches
+    // Advanced, as the fish's fspsci1 (decision: docs/decisions/2026-11-24-seaslug-species-achievements.md).
+    seaSp('sssp1', 1, 'Down to species', 'A species at Advanced level (80%+) by its scientific name', 1),
+    seaSp('sssp10', 10, 'Species sleuth', '10 species at Advanced level or above by their scientific names', 2),
+    seaSp('sssp50', 50, 'Fifty shades of slug', '50 species at Advanced level or above by their scientific names', 3),
+    // The stars set (seaslug.json species star; UNITS top): every star at Advanced by its scientific name.
+    [
+      'ssstars',
+      'Star struck',
+      'Every star species (the sea slugs most read and written about online) at Advanced level or above by its scientific name',
+      3,
+      '✨',
+      s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every

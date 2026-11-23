@@ -70,6 +70,21 @@ test('the sheet script check: the public read-only request, its version, behind 
   assert.strictEqual(S.ok.calls.filter(c => c.url.includes('commits?path=')).length, 0, "main's commit is asked only when behind");
 });
 
+test('the sheet script check names the Apps Script version limit when the script reports its count (vers)', () => {
+  assert.doesNotMatch(note('ok', 'sheet script: answers'), /version/i, 'no count in the reply: nothing said');
+  assert.strictEqual(level('vers_near', 'sheet script: answers'), 'notice', 'near the limit: a note, never a failure');
+  assert.strictEqual(S.vers_near.ok, true);
+  assert.match(note('vers_near', 'sheet script: answers'), /175 of 200 Apps Script versions kept: delete old versions .*Project history/);
+  assert.strictEqual(
+    level('vers_full_behind', 'sheet script: answers'),
+    'fail',
+    'at the limit and behind: failed without waiting the hour'
+  );
+  assert.match(note('vers_full_behind', 'sheet script: answers'), /behind main \(v176\): Apps Script version limit reached \(200 of 200\)/);
+  assert.strictEqual(level('vers_stuck', 'sheet script: answers'), 'fail');
+  assert.match(note('vers_stuck', 'sheet script: answers'), /autoUpdate is stuck; 190 of 200 Apps Script versions kept/);
+});
+
 test('the backup: not exposed without the token (said, not failed); with it, its age', () => {
   assert.strictEqual(level('ok', 'pCloud backup'), 'notice');
   assert.match(note('ok', 'pCloud backup'), /not exposed without the admin token/);

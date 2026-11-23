@@ -829,8 +829,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The species named at Advanced or above by every kind of name the subject asks (SUBJECTS names: a fish species by
     // its common and its scientific name, Q262), counted once each (their units' sp); 0 for a subject asking one kind.
     both: achBoth(U.sets || [], SUBJ.names || []),
-    // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261), each by its
-    // scientific name: how many, how many at Advanced or above; null for a subject without.
+    // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261; the sea slugs'
+    // stars), each by its scientific name: how many, how many at Advanced or above; null for a subject without.
     top: U.top ? (L => ({total: L.length, adv: at(L, 3)}))(U.top()) : null,
     // The subject's own basics feat (SUBJECTS basics.feat: _basics, _fbasics, _sbasics), read in the subject on screen.
     basics: !!A[(SUBJ.basics || {}).feat || '_basics'],
@@ -900,50 +900,53 @@ function achPending(only) {
 // the other devices already settled.
 let achWait = false;
 function achCheck(silent) {
-  if (!noticesReady()) {
-    achWait = achWait || !!silent;
-    const id = SUBJ.id;
-    noticeLater('ach:' + id, () => {
-      const s = achWait;
-      achWait = false;
-      inSubject(id, () => achCheck(s));
+  // The bars read from one false-alarm table while it runs (app.js faHeld).
+  return faHeld(() => {
+    if (!noticesReady()) {
+      achWait = achWait || !!silent;
+      const id = SUBJ.id;
+      noticeLater('ach:' + id, () => {
+        const s = achWait;
+        achWait = false;
+        inSubject(id, () => achCheck(s));
+      });
+      return;
+    }
+    if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
+    achPending(SUBJ.id); // a recount waiting for this subject's data first: what it keeps is not new
+    const had = store.get(ACHK, null),
+      A = had || {},
+      ids = newAch(achSnap(A), A, achTests());
+    if (!ids.length) {
+      if (!had) store.set(ACHK, A);
+      return achDot();
+    }
+    // Only the first achievement of each family, the top tier and every Contributions tier pop up (docs/ARCHITECTURE.md):
+    // a new kind stays a surprise, an intermediate step lands quietly on the achievements page with a "new" dot on 🏅 / 🏆.
+    // Several at once make one toast.
+    const fams = new Set(
+        achTests()
+          .filter(a => A[a.id])
+          .map(achFam)
+      ),
+      t = Date.now(),
+      loud = [],
+      quiet = [];
+    ids.forEach(id => {
+      const a = achFind(id);
+      (a.tier === 3 || a.kind === 'contrib' || !fams.has(achFam(a)) ? loud : quiet).push(id);
+      fams.add(achFam(a));
+      A[id] = t;
     });
-    return;
-  }
-  if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
-  achPending(SUBJ.id); // a recount waiting for this subject's data first: what it keeps is not new
-  const had = store.get(ACHK, null),
-    A = had || {},
-    ids = newAch(achSnap(A), A, achTests());
-  if (!ids.length) {
-    if (!had) store.set(ACHK, A);
-    return achDot();
-  }
-  // Only the first achievement of each family, the top tier and every Contributions tier pop up (docs/ARCHITECTURE.md):
-  // a new kind stays a surprise, an intermediate step lands quietly on the achievements page with a "new" dot on 🏅 / 🏆.
-  // Several at once make one toast.
-  const fams = new Set(
-      achTests()
-        .filter(a => A[a.id])
-        .map(achFam)
-    ),
-    t = Date.now(),
-    loud = [],
-    quiet = [];
-  ids.forEach(id => {
-    const a = achFind(id);
-    (a.tier === 3 || a.kind === 'contrib' || !fams.has(achFam(a)) ? loud : quiet).push(id);
-    fams.add(achFam(a));
-    A[id] = t;
+    store.set(ACHK, A);
+    if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
+    achDot();
+    // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (a toast may go unread); the
+    // first stays a toast, like the learning achievements.
+    const card = id => !silent && had && (achFind(id) || {}).kind === 'contrib' && achFind(id).tier >= 2;
+    (silent || !had ? ids : loud).filter(card).forEach(id => achCard(achFind(id)));
+    achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
   });
-  store.set(ACHK, A);
-  if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
-  achDot();
-  // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (a toast may go unread); the
-  // first stays a toast, like the learning achievements.
-  const card = id => !silent && had && (achFind(id) || {}).kind === 'contrib' && achFind(id).tier >= 2;
-  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(achFind(id)));
-  achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
 }
 // One card at a time (docs/DESIGN.md "Cards"): fn runs once no card or tour is open.
 function cardFree(fn) {

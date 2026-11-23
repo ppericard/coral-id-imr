@@ -502,7 +502,8 @@ A card shows once per answer and direction, never the opposite of the last move 
 inferred answer, and never for a subject whose units say `startFb` false (the fish and the sea slugs, until their
 level is better calibrated).
 
-**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md)):
+**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md);
+re-run on 2026-11-23 after REE-249's fix, the same readings but the beginner's level at 60, now 0.83: [review](reviews/2026-11-23-fish-sim-typed-bug-inventory.md)):
 the fish use the corals' `CHOICE.opts`. On the fish profiles of `tools/learnprof.js` (assumptions, not fits), the first
 20 answers' surprise under the truthful answer: "new" holds (beginner −0.01; corals 0.08); "imr" and "know"
 under-predict the lecture RA, strong RA and expert (0.11 to 0.12), as much as on the corals (0.09 to 0.14). The bands
@@ -734,7 +735,9 @@ The answer log is the reference (rule D9). The sheet replays each player's whole
 (`core.js` `replayProgress`, `replayedOf`; "Full replay" below), whenever a rules version is added (`core.js` `RVS`, the
 fish's `FISH_RVS`, the sea slugs' `SEASLUG_RVS`; rule D5), and every device adopts the replay once (`sync.js`
 `replayAdopt`). The replay's record of a unit and its answer count win over the saved copy, also when the copy holds
-more answers; a unit the log has no answer on loses the answers the copy counts. There is no floor: a bar may go down.
+more answers; a unit the log has no answer on loses the answers the copy counts. The level's answer count follows the
+log the same way (rules version 15, fish 7, sea slugs 4); the app's checkpoints count on an answer clock of their own
+(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). There is no floor: a bar may go down.
 A recalculation is silent, a learned mark taken away included (rule D6), and every leaderboard follows at once (rule D8).
 
 ### Fish on the same model
@@ -749,7 +752,7 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
   2, open once every circle-1 family has been asked; 3, the families beyond the course, offered by a card once circle 1
   reaches its gate (its Entries component at 55%, or, without the global score, the plain mean at 50%:
   `core.js` `SUBJECTS` `gate`, `TREE_GATE = {c3: {entries: 0.55, mean: 0.5}}`; `app.js` `treeC3`), open on the player's yes (or in My progress any time), offered again
-  `OPEN_AGAIN` (200) answers after a "Not now", then never. Every circle counts in the progress, open or not.
+  `OPEN_AGAIN` (200) answers after a "Not now" (on the answer clock, `model.js` `tally`), then never. Every circle counts in the progress, open or not.
 - **Winks**: an unmistakable fish (a whale shark) as a rare surprise card in the photo quiz, its name among 3 absurd
   choices: never counted anywhere (logged with the mode `WINK_MODE`, which every reader of the log leaves out). Wink i is
   due from `WINK.AT[i]` answers and at least the gap between the first two after the last one (`quiz.js`
@@ -1054,10 +1057,14 @@ module's six steps is seen (27 screens, 21 taps on Next, measured on the real pa
 number of answers or an amount of time; its name, tier and words are the
 integrator's call, easy to correct). Still to come: fpct100 (with the ultimate exam, Q395). Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
-their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
+their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md). Those runs
+predate the fix of REE-249 (no right typed answer recorded, so no fish exam could pass); the timings up to 1,500 answers
+re-run on 2026-11-23 are in [the review](reviews/2026-11-23-fish-sim-typed-bug-inventory.md).
 
 **Sea slug achievements**: the same kinds over the sea slugs' genera, families, taxonomic groups and first circle, and
-their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`).
+their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`); their species by their scientific names at Advanced (1, 10
+and 50), and every star at Advanced (Q369 (c)). Their timing was measured with the real game, sheet at `SCI_SHEET`
+([decision record](decisions/2026-11-24-seaslug-species-achievements.md)).
 
 ## Pooled statistics: photo difficulty and confusions
 
@@ -1480,9 +1487,10 @@ replay".
   move and volatility, run, the later last answer `at`, a duel won on either side, variant groups left `vl`; the photos
   seen per photo the larger of the two sides, since the device also counts as shown a corallites hint revealed after the
   answer, which the log leaves out and the exam must not meet as new), `pm` 1 and the rules version (so `mergeProgress`
-  keeps it over an older copy of the same answers); for the global level, the replay's ability and the larger answer
-  count (`answersSoFar` keys the exam's gaps, the cards met and the prompts, so it never goes back) with the answer
-  times `rt` of the same side, and no ability when the log has no answer at all. A unit the log has answers on takes the
+  keeps it over an older copy of the same answers); for the global level, the replay's ability, typed opportunities,
+  answer times `rt` and answer count (rules version 15: the exam's gaps, the cards met and the prompts count on the
+  device's answer clock, `model.js` `tally`, which never goes back), and, when the log has no answer at all, no level
+  if the copy's counts answers (as a unit). A unit the log has answers on takes the
   replay's record and counts even when the saved copy holds more there (counted twice: a reply lost, then another
   device's save); the copy's counts and recent results only when none of its answers is replayable. From the device,
   what the log cannot give: the mastery exam passed or in course (the exam is not replayed), dropped when a miss logged
@@ -1659,13 +1667,25 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
 
 - **One wall-clock budget, 40 minutes at every level and on every machine.** `--budget MIN` asks for less and never more.
   The clock starts when the compute does (the machine slot held), calibration included.
-- **Plan, then run.** The run counts its jobs (profiles × seeds) and estimates their time on the workers: from one short
-  calibration run (the first job, at most 1,000 answers or 100 questions, its time scaled in a straight line to the full
-  length), or from `--per-job SEC`, a job's time at the full length measured before (its `seconds` in an earlier
+- **Plan, then run.** The run counts its jobs (profiles × seeds) and estimates their time on the workers: from a
+  calibration, or from `--per-job SEC`, a job's time at the full length measured before (its `seconds` in an earlier
   `--out`, divided by the waves). Over the budget it **refuses to start** (exit 2) and says which options would fit: fewer
-  seeds, a shorter run, fewer profiles. The estimate is a straight line, so it can under-estimate a long run (measured on
-  a loaded 4-core machine, rated fish: 1,000 answers 11 s, 3,000 answers 56 s; corals 4 s and 13 s): the stop below is
-  the cap, the estimate only spares a run that would be cut.
+  seeds, a shorter run, fewer profiles. The rated world calibrates on its first job (at most 1,000 answers), its time
+  scaled in a straight line, so it can under-estimate a long run (measured on a loaded 4-core machine, rated fish: 1,000
+  answers 11 s, 3,000 answers 56 s; corals 4 s and 13 s). The app world calibrates on the run's own subject and
+  profiles: its first wave of jobs side by side, as the run plays them, for a fifth of the run's length (300 to 1,000
+  questions, a run of 300 or less being its own calibration; `tools/checkbudget.js` `calibLength`); past the
+  calibration, the time of a job's questions grows as the square of their number, a time per answer in proportion to
+  the answers so far (`grown`; the job's setup, preparation and end once); the slowest job of the wave sets the pace. A
+  fish job's time per answer grows as units come into play (one lecture RA job alone: 4 s per 100 answers up to 300,
+  8 s at 600, 15 s at 1,200, 30 to 55 s from 1,500; 2.8 minutes for 1,500 answers, 9.9 for 2,500, 13.7 for 3,000),
+  where a straight line from 100 questions gives a seventh of a fish job past 2,500 answers. Grown from the calibration
+  it gives 0.98 of that job's 3,000 answers and 1.02 of its 2,500; side by side, 4 jobs of 4,000 answers (26.5 minutes
+  run) and 6 jobs of 2,500 on 6 workers (16.7) were estimated within a fifth of their time once the machine's load is
+  counted (a calibration that ran 1.3 and 1.5 times slower on a busier machine gave 36 and 28 minutes). It
+  over-estimates where the time per answer grows more slowly: fish at 1,500 answers 1.7 times, the corals 2 to 3 times
+  past 1,000 questions (1 to 2.6 s per 100 answers over 1,500); `--per-job` from a measured run is then the honest
+  estimate. The stop below is the cap; the estimate only spares a run that would be cut.
 - **The calibration cannot be stopped once begun**, so a budget under 1 minute needs `--per-job`; if the calibration
   still ends past the budget, nothing more runs and the result is marked cut.
 - **Stop cleanly.** At the budget the run stops sending jobs, ends the ones in flight (closes the browser, ends the
@@ -1750,9 +1770,18 @@ the cost of a long run grows with the units met times the units read (the scan t
 time). The rated world arms a table for each answer
 (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds every unit's false alarms and chances in one
 pass over the records, in the scan's own order, so each value is the scan's to the last bit, and `scoreAnswer` empties
-it. The app and the sheet never arm it and scan as before. The same seeds give byte-identical `--out` files (the date,
+it. The sheet never arms it and scans as before. In the rated world the same seeds give byte-identical `--out` files (the date,
 commit and run time aside) and reports, and every read of a run can be checked against the scan (`FA_CHECK`,
-`tests/faof.test.js`).
+`tests/faof.test.js`). The app world holds it too, in the page, over each question and the run's reads after it
+(`tools/learnsim.js` `held`, through the app's own `faHeld` below, so the app's handlers inside keep that table):
+without it the scan is most of a fish run's time (600 answers: 138 s, the sixth hundred fourteen times the first; 36 s
+with the table). With every read checked against the scan (`--facheck`: `FA_CHECK.on` in the page), a fish run
+of 600 answers gives the same `--out` file with the table as without it (the date, commit and run time aside). The app
+arms it for each handler that reads the bars (`app.js` `faHeld`: `quiz.js` `answer`, `quizPhoto`, `planNext`,
+`progress.js` `achCheck`) and drops it when the handler ends, a throw included, so no table outlives one synchronous
+task: inside a handler only `scoreAnswer` writes the fields the table reads, and a sync reply, a reset or another
+device's progress writes the player's progress in a task of its own. Every smoke turns `FA_CHECK` on in its pages
+(`tests/facheck.js`), so a read that differs from the scan fails it.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `treeGen`, `treePhotos`, `app.js` `treeGenera`
@@ -1993,6 +2022,11 @@ learning change".
   JSON) and those below. Each run (profile × seed) gets a fresh browser context; seeds are 1..N (`--seed0` shifts them,
   for fresh seeds), and the app's `Math.random` and the learner's own generator are both seeded from the seed, so a run
   repeats and two versions of the app compare on paired seeds. The fish's surprise questions are left out of the path.
+  The learner's answer goes in through `tests/answer.js` (`smokeAnswer`), as in the smokes: a typed answer is the
+  unit's name, and an answer the app does not take stops the run with what is on screen. Fish runs before this
+  (REE-249) typed a family's id (`f:Damselfishes`): the form read it as "So close!" and never took it, so a typed
+  question the learner got right came back unanswered for up to about a thousand answers, counted right by the learner
+  and by nothing in the app.
 - **Photo ratings**: `--stats` loads a `?stats=1` reply of the sync sheet, a file (fetched with an `av`, or the sheet
   logs the read as an old app) or `live` (read at start with `av=learnsim`); without it every photo's difficulty is 0,
   as in CI. The learner meets the app's own `photoDiff` unless `--truth` fixes its world: a file

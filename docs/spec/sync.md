@@ -309,8 +309,41 @@ please choose another"; an admin archive name holding one is refused as well (`u
 covers a name holding anywhere the seedling or one of its look-alikes (`core.js` `SEED_LOOKALIKES`: 🌱 🌿 🪴 ☘ 🍀 🍃):
 the seedling is the admin's own mark, shown after the admin's account name on the leaderboard, so no player can show
 it. Otherwise a name is any text: trimmed, at most 40 UTF-16 code units (the form's `maxlength`, `Code.gs` `clean_`),
-matched case-blind (`toLowerCase`) with no Unicode normalisation. An account that already has a reserved name signs in,
+cut at its last whole character (`core.js` `nameCut`: a grapheme where the engine segments them, else a code point;
+never inside an emoji), matched case-blind (`toLowerCase`). An account that already has a reserved name signs in,
 loads and saves as any other; the sheet's maps by player have no prototype (`Object.create(null)`).
+
+**Look-alike names** (REE-35, the integrator's call; sheet v224). Two names that look the same can no longer be two
+accounts. A new name is NFC (`core.js` `nameClean`): the form makes it so before it is sent, and the script makes the
+admin's archive name so. A save that makes an account keeps the spelling it sent (`Code.gs` `doPost_`), so an app from
+before this change, which keeps the name as typed, names its account exactly in every later request (self-delete,
+reports) and in the Removed tombstones; only the look-alike check compares by skeleton, so another Unicode form of a
+taken name is never a new account. A new name is refused when it holds an invisible
+character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,
+plus control characters and the characters that draw nothing, such as the Hangul fillers, a variation selector but
+right after a symbol, a punctuation mark, a digit or an ideograph, and a name with nothing visible left; a zero-width joiner between two
+pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when it looks like an existing
+account's name (the RAs tab, archives included: `Code.gs` `nameIssue_`). Two names look alike when they share a key
+(`nameKeys`): the skeletons of the name as it is, in lower case and in upper case, since an account is its name in any
+case and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital is B). An account
+keeps the spelling it was made with: a save in another case (the same account, `find_`) never changes how its name
+shows (the RAs row, the progress copy, the grid, the answers), so a mix of cases that no whole-name case covers never
+shows either. Before this change a save rewrote the name in the case it was typed in. A skeleton
+(`nameSkeleton`, after Unicode's UTS #39 skeleton): decomposed, invisible characters dropped, each Greek or Cyrillic
+letter that Unicode's confusables data maps to one Latin letter mapped to it, NFKC, lower case, runs of spaces as one. The load of a name with no account says so beside
+`found: false` (`taken: 'invisible'|'lookalike'`), and the form says "This name holds an invisible character …" or
+"A name that looks the same is already taken. If it is yours, type it as you did the first time; if not, add your
+surname's initial …", focused on the name, nothing signed in or sent; the form checks the invisible characters itself
+too, whatever the script's version. A save that would make such an account answers `error: 'reserved'` with
+`why: 'invisible'|'lookalike'`, before anything is logged or written: every app stops on it and says "Not saved: this
+name is reserved, please choose another". An archive name with an invisible character is refused as `reserved`, one
+that looks like a taken name as `exists` (`why: 'lookalike'`). An account opens only under its own spelling, case
+aside (`find_`): another Unicode form of its name (an é typed as e and its accent) is a look-alike, so its owner types
+the name as they first did, as the form's message says. The form asks the sheet about the name as typed first, then,
+when its NFC form differs and no account was found, about the NFC form, and a new account takes the NFC form.
+Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
+the players, the existing accounts (archives included) whose names look alike, every character outside Latin's letters
+shown as its code point (`admin.js` `alikeLine`, `core.js` `nameAlikePairs`).
 
 **Sign out clears the device's progress** (`reefid-sync-coral-progress`, `-quiz`, `-reset`, `reefid-log0`,
 `reefid-nudge`, `reefid-anon-base`, and the other subjects' and per-device records, `sync.js` `signOutClear`; a second
@@ -540,8 +573,9 @@ to the in-memory sheet and checks the replays it serves; the app's own units gai
   to 0 and the replay of its whole log is adopted once it can (`mergeSubject`).
 - **The log is the only reference** (rule D9; LEARNING.md "The log, the only reference for progress"): `core.js`
   `replayedOf` and `replayBase` take the replay's record and answer count of a unit also when the device holds more
-  answers there, and a unit the log has no answer on loses the answers the device counts on it (the level's answer
-  count keeps the larger of the two); no floor; no card for the recalculation (rules D5, D6); and the app never adopts
+  answers there, and a unit the log has no answer on loses the answers the device counts on it; the level's answer
+  count too (rules version 15, fish 7, sea slugs 4), the app's checkpoints counting on their own answer clock
+  (`model.js` `tally`, ticked by `sync.js` `clockTick` before a merge or an adoption moves the count); no floor; no card for the recalculation (rules D5, D6); and the app never adopts
   a replay of a rules version newer than its own (`replayAdoptS`, `rvOf`), which it could not hold.
 - A device that never signed in asks for the other subjects' replays as a save does (`sync.js` `sendAnon`: `rvs`, the
   structure stamps, `sreset` and `sstart` by subject; `Code.gs` `anon_` `replays_`) and adopts them (`replaysAdopt`,
@@ -606,7 +640,7 @@ version (its `reefid-sync-<subject>-rv` key below `rvOf`) by the progress and le
 the replay: `core.js` `replayAdopted` (the one `sync.js` `replayAdoptS` adopts with: `replayedOf` over the saved copy,
 and for a subject replayed with a floor the units kept from the copy floored and the floor's typed opportunities kept)
 of the record the subject's Replayed tab keeps for today's rules, row count and reset (`boardRpl_`, the same test as
-`replay_`'s reuse). The level is the replayed one too (`replayedOf`: the replay's ability, the larger answer count), from
+`replay_`'s reuse). The level is the replayed one too (`replayedOf`: the replay's ability and answer count), from
 `ELO_MIN` answers. With no record kept yet, or a player up to date: the saved copy's. The board reads only (one read of
 the Answers tab and of each Replayed tab, only once a player behind is met; nothing fetched, no lock) and stays cached 5
 minutes.
@@ -981,6 +1015,16 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   finish it. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
   leaderboard's replays made ahead (`boardWarmRun_`, which first reads the structure again, `subjStRefresh_`) and the
   pooled statistics' fold (`statsFoldRun_`); every run ends with the Timings trim (`timTrim_`).
+- **The version limit** (`SELF_VERSIONS`; the 2026-11-22 incident): Google keeps at most 200 versions a project and
+  each install saves one (about 10 a day); at 200 `POST /versions` answers 429 and the script cannot update itself. The
+  API cannot delete a version, so only a person can free them (Apps Script editor, Project history). After each deploy
+  the script counts its versions (`selfVersionsCount_`), and an up-to-date run counts at most once an hour while no
+  count is kept (the install that brought the count was finished by the updater before it), the last count failed, or
+  it is 170 or more (`selfVersionsRun_`, so a clean-up is seen without a deploy); from 170 it writes one line a day to the Alerts tab and
+  the Deploy log with the count and what to do (`selfVersionsSave_`). A 429 at `POST /versions` reads "error: version
+  limit reached: delete old versions …" in the Deploy log (counted as 200; `AUTO_PENDING` finishes the update after the
+  clean-up). While the count is 170 or more the public `?stats=1` reply carries it as `vers` (the app ignores it), for
+  the hourly Health check (docs/PAGES.md "Infrastructure health").
 - **By hand**, before the one-time setup (HANDOVER.md) or if it fails: copy
   <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/Code.gs> into Extensions > Apps Script, then
   Deploy > Manage deployments > Edit > New version.

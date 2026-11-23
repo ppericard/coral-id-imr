@@ -148,6 +148,15 @@ The admin's account (v125, the 🌱 after its name) is kept by its code hash in 
 only by a read with the admin's token from the admin page signed in to that account (its code checked), never from what a
 player sends; a delete, a merge (its from) and an archive clear it, and no player can type the seedling or a look-alike
 in a new name (`core.js` `reservedName`).
+**Look-alike names** (sheet v224, REE-35, the integrator's call): no new name (a sign-up or an archive name) may look
+like an account's name or hold an invisible character, so nobody can open a second account that passes for another
+player's on the leaderboard or in the admin: a new name is NFC (the app's form; a save keeps the spelling it sent, so
+an older app's account stays its own), one with a zero-width, bidi control or other invisible
+format character is refused, and one that shares a skeleton with an existing account's name, in any of the two names'
+cases (`core.js` `nameKeys`, `nameSkeleton`: the Greek and Cyrillic letters Unicode's confusables data maps to a Latin
+letter, decomposed accents, invisible characters, full-width forms, case and spaces aside), is refused as taken
+(`Code.gs` `nameIssue_`), so a name accepted in one case can never be signed in under a look-alike capital. Existing accounts are never changed; the
+admin's Players page names the existing pairs that look alike (spec/sync.md "Reserved names").
 The weekly backups to pCloud (sheet v139, [BACKUP.md](BACKUP.md)) are copies of the whole sheet as it was: an account
 deleted, merged or archived stays in the backups made before, until they are deleted (through the upload link, the
 script cannot delete: Pierre prunes them by hand; with a token, the 12 newest are kept), then pCloud's trash. No feature reads them; they are opened only to restore (privacy.html says so).
@@ -252,7 +261,10 @@ script writes there itself, never what a player sends:
   anonymous id, no name), `anon`, `n:<name>` (a signed-in player's answers), `newacct`, `reports`,
   `ev:<device id>`, `events`, `old`, `selfdel`, `sd:<admin id>` or `auditdeny` (the Audit tab's refusals, roles step 1);
 - `photos not of the unit shown: <admin id> (n of m answers)` (`photoCheck_`);
-- `left out of the statistics: device <admin id> signed in as <admin id>, left out too`.
+- `left out of the statistics: device <admin id> signed in as <admin id>, left out too`;
+- `sheet script versions: …` (`selfVersionsSave_`, v222): the Apps Script versions kept are near Google's 200-version
+  limit, or at it, and old ones must be deleted by hand (spec/sync.md "The version limit"); it names nobody and shows
+  under Other.
 
 The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves it as the name's admin id (`aid_`, the
 id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name

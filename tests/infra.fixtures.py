@@ -124,6 +124,15 @@ def main():
     old = dict(behind)
     old[commits] = (200, json.dumps([{'commit': {'committer': {'date': '2026-11-18T03:00:00Z'}}}]).encode())
     S['behind_stuck'] = go(old)
+    # The Apps Script version count (Code.gs SELF_VERSIONS: `vers` served from 170 on): a note when up to date, a failure at
+    # once at the limit while behind (it cannot update itself), named in the stuck failure.
+    S['vers_near'] = go(routes(**{SYNC + '?stats=1&av=health': (200, b'{"ok": true, "v": 176, "vers": 175}')}))
+    full = dict(behind)
+    full[SYNC + '?stats=1&av=health'] = (200, b'{"ok": true, "v": 175, "vers": 200}')
+    S['vers_full_behind'] = go(full)
+    stuck = dict(old)
+    stuck[SYNC + '?stats=1&av=health'] = (200, b'{"ok": true, "v": 175, "vers": 190}')
+    S['vers_stuck'] = go(stuck)
     S['tree_truncated'] = go(routes(**{'https://api.github.com/repos/%s/git/trees/main?recursive=1' % health.REPO: (200, b'{"truncated": true, "tree": []}')}))
     S['r2_warn'] = go(routes(), rt=root(r2_bytes=7_500_000_000))
     S['r2_exactly_70'] = go(routes(), rt=root(r2_bytes=7_000_000_000))

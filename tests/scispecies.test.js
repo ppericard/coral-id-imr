@@ -57,7 +57,7 @@ function appOf(subj, X0, Fx, {sheet = 1000, bar = {}, met = new Set()} = {}) {
       block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
       block(APP, 'const sciSpOn = () =>', '// The units in play a species by its scientific name', {file: 'app.js'}),
       'const GX = n => TREEU.gen[n];',
-      'this.A = {treeGenera, sciPlay, kindOf, kindRank, rankOf, sciSpAll, sciTypeNames, sciShow, sciPart, SCISHOW};'
+      'this.A = {treeGenera, sciPlay, kindOf, kindRank, rankOf, sciSpAll, sciStars, sciTypeNames, sciShow, sciPart, SCISHOW};'
     ].join('\n'),
     ctx
   );
@@ -206,6 +206,20 @@ test('the gate (rule D4): before the sheet replays them, no unit of the level, n
   const sea = block(APP, '\n  seaslug: {', '\ntreeAt(SUBJ.id);', {file: 'app.js'});
   assert.match(sea, /sets: \[SCI_SP\]/);
   assert.match(sea, /\.filter\(\(\[, g\]\) => g\.rank !== 'species'\)/, "the sea slugs' genus names never hold a species");
+  // Their top species (progress.js achSnap top, core.js SEASLUG_ACH ssstars): their stars, by their scientific names
+  assert.match(sea, /\n {4}top: \(\) => sciStars\(sciSpAll\(\)\),\n/);
+});
+
+test("the sea slugs' stars (sciStars): every species seaslug.json marks a star, by its scientific name; none while the level is off", () => {
+  const S = appOf(SEA, seaX0(), SF);
+  S.ctx.TREEU.sps = Object.fromEntries(SF.species.map(x => [x.id, x]));
+  const want = SF.species.filter(s => s.star).map(s => C.spUnitId('sci', s.id)),
+    got = [...S.sciStars(S.sciSpAll())];
+  assert.ok(want.length >= 20, String(want.length));
+  assert.deepStrictEqual([...got].sort(), [...want].sort());
+  const off = appOf(SEA, seaX0(), SF, {sheet: 197});
+  off.ctx.TREEU.sps = S.ctx.TREEU.sps;
+  assert.deepStrictEqual([...off.sciStars(off.sciSpAll())], [], 'no stars below SCI_SHEET');
 });
 
 test('sciShow: with the common name under it below Open Water, alone from Advanced, by a rising chance between', () => {

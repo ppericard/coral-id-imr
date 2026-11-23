@@ -435,6 +435,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // until the whole game pool is in): not adopted, nor the version marked applied, so a partial table never clears a
     // group the sheet left; the next reply brings it again.
     if (rows.length && rvVars(S.id, rp.rv) && !vt) return false;
+    clockTick(); // the answers counted so far on the answer clock, before the log's count replaces the level's (rule D9)
     // A mark the replay took away: the former model's (a record learned with neither s.pg nor the domain-score bar,
     // core.js afterBkt), or a rule of the new version.
     mxRecalc(
@@ -444,6 +445,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
+    clockTick(); // and right after: the log's count the clock's baseline before another answer is counted
     store.set(rvKey(S), rp.rv);
     if (stamp !== null) store.set(stKey(S), stamp); // the structure it was replayed under ('' for the base's)
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself (core.js replayBase), never
@@ -468,6 +470,15 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     return false;
   }
 }
+// The answer clock (model.js tally: the answers counted on this device, never going down, which the checkpoints count
+// on) brought up to the level's answer count before a merge or a replay's adoption changes that count: a count that goes
+// up then down in one sync (another device's answers merged, then the log's count adopted), or a clock not started yet
+// (it starts at the count), loses no answer; and right after, so the new count is its baseline before the next answer.
+// Not before model.js is in (the quiz tier): the clock then starts at the count it finds.
+const clockTick = () => typeof tally === 'function' && tally();
+// At the end of each subject's merge, the other devices' marks in (the progress's exams, the cards, the surprise cards):
+// the clock moved up to the latest of them if it is behind (model.js clockSync).
+const clockSeen = () => typeof clockSync === 'function' && clockSync();
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (reefid-sync-coral-reset, a time) wins over older progress.
@@ -603,6 +614,7 @@ function mergeSubject(j, d, S, mine) {
     if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
     notesSeen(j);
     if (RO) replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here
+    clockSeen();
     prog();
     return;
   }
@@ -618,7 +630,7 @@ function mergeSubject(j, d, S, mine) {
   notesSeen(j);
   const recovered = !!(RO && lgFor(S) && rpS && replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre));
   // That replay not adoptable yet (units not in, no replay in the reply, an older queued answer): no merge, which would
-  // count those answers again for good (replayedOf keeps the larger count); version 0 until the replay comes.
+  // count those answers again until the next replay; version 0 until the replay comes.
   const waitRp = RO && lgFor(S) && !recovered;
   if (waitRp) store.set(RK, 0);
   if (!mine && !recovered && !waitRp) {
@@ -629,8 +641,10 @@ function mergeSubject(j, d, S, mine) {
       // whose mxRecalc tells it with its card (progress.js mxLostNotice); the merge would take it silently.
       if (RO && rvSaved > rvApplied(S))
         Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
+      clockTick(); // before the merge moves the level's count (another device's adoption may have lowered it)
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
+      clockTick(); // and right after: the merged count the clock's baseline
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
     } else store.set(RK, stOff ? 0 : rvSaved);
@@ -641,6 +655,7 @@ function mergeSubject(j, d, S, mine) {
   if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
   notesSeen(j);
   if (RO) replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here
+  clockSeen();
   prog();
 }
 // A save that fails (docs/ARCHITECTURE.md "A save that fails"): a passing failure is retried SAVE.RETRY seconds apart
@@ -2012,11 +2027,18 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     }
     f.onsubmit = e => {
       e.preventDefault();
-      const name = f.n.value.trim(),
+      // REE-35: the sheet is asked about the name as typed first (cut at a whole character, core.js nameCut), so an
+      // existing account opens under its own spelling. A new name is NFC (core.js nameClean): when that differs from the
+      // typed one and no account was found, the sheet is asked about it too (an account made in NFC opens), and a new
+      // account takes it.
+      const typed = nameCut(f.n.value.trim()),
+        fresh = nameClean(typed),
         pin = f.p.value.trim();
       msg('Connecting…');
-      syncGet({name, pin})
-        .then(j => {
+      syncGet({name: typed, pin})
+        .then(j => (j && j.ok && !j.found && fresh !== typed ? syncGet({name: fresh, pin}).then(k => [k, fresh]) : [j, typed]))
+        .then(([j, asked]) => {
+          const name = j.ok && !j.found ? fresh : asked;
           if (!j.ok)
             return msg(
               j.error === 'gone'
@@ -2034,6 +2056,17 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
           // would send it (the sheet refuses it too). An existing account that has one signs in.
           if (reservedName(name)) {
             msg('This name is reserved, please choose another.');
+            return f.n.focus({preventScroll: true});
+          }
+          // Nor under a name with an invisible character, or one that looks like a taken name (REE-35): the sheet says
+          // it (taken: Code.gs nameIssue_, from the sheet script v224), the form checks the invisible characters itself
+          // (core.js nameHidden) whatever the sheet's version. An existing account that has such a name signs in.
+          if (j.taken === 'invisible' || nameHidden(name)) {
+            msg('This name holds an invisible character (a zero-width space or a text-direction mark): please type it again.');
+            return f.n.focus({preventScroll: true});
+          }
+          if (j.taken === 'lookalike') {
+            msg(`A name that looks the same is already taken. If it is yours, type it as you did the first time; if not, ${tail(name)}.`);
             return f.n.focus({preventScroll: true});
           }
           enter(name, pin, j);

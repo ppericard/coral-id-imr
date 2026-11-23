@@ -1597,6 +1597,8 @@ async function quizAndProgress(b, base, errs) {
       ok = (c, m) => c || fails.push(m);
     const closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
+    // The answers below read the bars from the false-alarm table (app.js faHeld), each read checked against the scan.
+    ok(FA_CHECK.on === true, 'FA_CHECK on in the page (tests/facheck.js)');
     ok(
       TREEU.c1.length === 28 &&
         TREEU.c2.length > 0 &&
@@ -1963,6 +1965,7 @@ async function quizAndProgress(b, base, errs) {
     if (c3card) c3card.querySelector('[data-notnow]').click();
     closeCards();
     ok(Q.beyond === false && Q.beyondN === 1 && !TREEU.c3.some(mayOpen), 'Not now keeps circle 3 closed');
+    ok(Q.beyondA === tally(), 'Not now marked on the answer clock (model.js tally)');
     // The Scientific names offer due (a family at Advanced): it says what is next, the card waits for it. Answered, still
     // no card right after a first "Not now" on circle 3: its offer comes back.
     const sq = Q.sci;
@@ -1971,10 +1974,10 @@ async function quizAndProgress(b, base, errs) {
     ok(!allMetDue(), 'all met: no card after a first Not now on circle 3 ' + JSON.stringify(allMetDue()));
     ok(!picks().some(n => TREEU.c3.includes(n)), 'the opening never draws circle 3 after Not now');
     ok(!openOfferDue(), 'not asked again at once');
-    Q.beyondA = answersSoFar() - OPEN_AGAIN;
+    Q.beyondA = tally() - OPEN_AGAIN;
     ok(openOfferDue() && openOfferDue().k === 'beyond', 'asked once more OPEN_AGAIN answers later');
     openNo('beyond');
-    Q.beyondA = answersSoFar() - 10 * OPEN_AGAIN;
+    Q.beyondA = tally() - 10 * OPEN_AGAIN;
     ok(Q.beyondN === 2 && !openOfferDue(), 'then never');
     {
       // Its offer will not come back: the card points to My progress.
@@ -2737,7 +2740,7 @@ async function uiAndAccess(b, base, errs) {
     if (!fcv.shown || fcv.bad.length)
       ui.push(`${width}px families page: the cards' photos are not the curated covers ${JSON.stringify(fcv)}`);
     await wide('the families page');
-    // Each family is one card that opens its sheet (app.js listCard; Pierre, 2026-11-20): one link, its name, no "Open
+    // Each family is one card that opens its sheet (idtips.js listCard; Pierre, 2026-11-20): one link, its name, no "Open
     // the sheet" line, no zoom button; a glossary term in it opens its definition, not the sheet.
     const lc = await q.evaluate(() => {
       const c = [...document.querySelectorAll('#view .lcard')];

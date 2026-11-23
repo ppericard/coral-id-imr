@@ -13,9 +13,10 @@
 //                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]]
 //                          [--budget MIN] [--per-job SEC] [--pierre-go "Q number or message, date"]
 // --budget MIN (rule L11, tools/checkbudget.js): minutes of compute, 40 at most and by default, in either world: the run
-// plans its jobs, estimates their time from one short calibration run (or --per-job SEC, a job's time at the full
-// length), refuses to start over the budget (saying which options would fit), and stops at the budget with the runs it
-// has, marked cut. Level 3 (over 20 seeds, or over 10,000 answers in the rated world) never runs on this machine: only
+// plans its jobs, estimates their time from a calibration (here: the first wave of jobs side by side for a fifth of the
+// run, their time per answer grown, tools/checkbudget.js grown; the rated world: one short run) or --per-job SEC, a
+// job's time at the full length, refuses to start over the budget (saying which options would fit), and stops at the
+// budget with the runs it has, marked cut. Level 3 (over 20 seeds, or over 10,000 answers in the rated world) never runs on this machine: only
 // with --pierre-go on a GitHub runner (GITHUB_ACTIONS=true); elsewhere the command to dispatch it is printed.
 //   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
 //                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]: the sheet's photo Elo
@@ -23,6 +24,8 @@
 // --live N: N live-game answers on units the path has not opened, before the first question (rule L4: they count and
 // open nothing); --liveoff records them nowhere (the live mode's version 1), the learner taught the same: the two arms of
 // a paired comparison (tools/learncmp.js).
+// --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
+// against the scan, and a difference stops the run; the same --out as without it, slower.
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
 // --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js
@@ -182,6 +185,7 @@ const SEEDS = Number(arg('seeds', 5)),
   LIVEN = Number(arg('live', 0)),
   LIVEOFF = process.argv.includes('--liveoff'),
   ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
+  FACHECK = process.argv.includes('--facheck'), // every false-alarm rate read from the table checked against the scan
   BEYOND = arg('beyond', ''),
   // --rows sp:off,sci:off: the What I learn card's names rows, each k:on|off, switched before the first question.
   ROWS = arg('rows', '')
@@ -315,6 +319,7 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
+  const clk0 = performance.now(); // the run's clock in the page, for the budget's plan (clock, below)
   const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg,
     ACHT = cfg.ach,
     BEYOND = cfg.beyond;
@@ -636,8 +641,17 @@ function play(cfg) {
     prevGood = null;
   const mill = {met: null, asked: null},
     bon = {offer: null, n: 0, q: 0};
+  // The false-alarm table held over one question and the run's reads after it (core.js faArm; docs/LEARNING.md "Long
+  // rated runs: the false-alarm table"), as the rated world does: every bar reads faOf, which otherwise scans every
+  // record of P for each unit, and the app and this loop read the bars of every unit in play several times an answer, so
+  // without it a long run's time per answer grows with its answers (a fish run's most of all). The app's own handler
+  // hold (app.js faHeld) is used, so the app's handlers inside keep this table rather than dropping it when they end;
+  // it is taken on the P in play at each question (a break's P is a new object). The table gives the scan's values to
+  // the last bit; scoreAnswer empties it when it writes P, and nothing else in a run writes the records' conf, off, ty
+  // or the level's tyk. An app without faHeld: armed at each question, as before.
+  const held = fn => (typeof faHeld === 'function' ? faHeld(fn) : (typeof faArm === 'function' && faArm(P), fn()));
   // One question, as the player sees it (pre: called once it shows, for the breaks).
-  const ask = (pre, i = -1, cur = 'quiz') => {
+  const ask = (pre, i = -1, cur = 'quiz') => held(() => {
     // Achievement toasts have gone by the next question (4 s in the app; no time passes in this loop), and the sign-in
     // card is closed: the out-of-game prompts (the bonus genera offer among them) wait for neither (quiz.js promptOk).
     document.querySelectorAll('.achpop').forEach(x => x.remove());
@@ -697,8 +711,10 @@ function play(cfg) {
     // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen.
     // Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).
+    // answer.js: the format read
     const typed = !!document.querySelector('#view .tyform'),
       [, t, , , set] = window.__q,
+      // answer.js: the choices read
       ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
       shown = set.shown || [],
       d = mean(shown.map(p => trueD(t, p))) || 0,
@@ -776,17 +792,11 @@ function play(cfg) {
       Object.assign(QCLOCK, {t0: performance.now() - sec * 1000, off: 0, hid: null});
       rtq.push([pTrue, eps]);
     } else rtq.push([pTrue, null]);
-    if (typed) {
-      const f = document.querySelector('#view .tyform');
-      if (!pick) f.querySelector('[data-idk]').click();
-      // a species is typed by its common name (its id holds no letters to read)
-      else ((f.querySelector('input').value = (GX(pick) || {}).rank === 'species' ? GX(pick).name : pick), f.requestSubmit());
-    } else {
-      // A Find the X opens its answers once its four tiles are in (quiz.js question): the photos' host is out of reach
-      // here, so each tile is counted in (its load event), as a player's would be once it came.
-      document.querySelectorAll('#view .qstage.qfx .fxt img').forEach(im => im.dispatchEvent(new Event('load')));
-      document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
-    }
+    // Answered as the smokes answer (tests/answer.js smokeAnswer): the choice clicked, or the unit's name typed (a fish
+    // family's, not its id f:...: an id read as "So close!" was never taken, and the question came back unanswered for
+    // hundreds of answers), "I don't know" for ''; a Find the X's tiles counted in. An answer the app does not take throws
+    // with what is on screen.
+    smokeAnswer(pick);
     planNext(cur); // answer()'s top-up after the feedback
     if (oa.at !== null && lastE !== null)
       oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
@@ -819,7 +829,7 @@ function play(cfg) {
     }
     T += L.STEP;
     return {q, t, good, set, e: lastE, first};
-  };
+  });
   // The field measures (both learners; docs/LEARNING.md "Field learner"): over the genera met, the bar shown (genScore)
   // against the learner's true whole-slate success pOpen; the share of Learned genera with pOpen >= PREC; the genera at the
   // exam's entry or above (bar 95% or more); and the custom selection's own (--custom).
@@ -943,7 +953,12 @@ function play(cfg) {
   // An app that never records a live answer on a unit not opened (the live mode's version 1: liveLog skips it) records
   // none here either: the before arm of a comparison on such an app needs no --liveoff.
   let cur = 'quiz';
-  for (let i = 0; i < N; i++) {
+  // The budget's plan (tools/checkbudget.js grown): the seconds in the page at the first question, every cfg.clockEvery
+  // answers and at the last, [answers, seconds]; tail, the seconds after the last question (the breaks, the measures).
+  const clock = {pts: [[0, (performance.now() - clk0) / 1000]], tail: 0};
+  // Each question and the measures after it read the bars from one table (held, above).
+  for (let i = 0; i < N; i++) held(() => {
+    if (i && i % cfg.clockEvery === 0) clock.pts.push([i, (performance.now() - clk0) / 1000]);
     // --custom: once N genera are unlocked, they are the custom quiz's selection for --drill questions, then the Quiz again.
     if (cust && cust.sel === null && SL.filter(introReady).length >= cust.n) {
       cust.sel = SL.filter(introReady)
@@ -1097,7 +1112,8 @@ function play(cfg) {
       });
       blk = {n: 0, ok: 0};
     }
-  }
+  });
+  clock.pts.push([N, (performance.now() - clk0) / 1000]);
   // The app's own answer log of the first session (LOG0: answers of a player not signed in), with the learner's chance
   // and time noise of each answer, for --rtlog.
   const log0 = (store.get(LOG0, []) || []).slice(-rtq.length),
@@ -1239,14 +1255,18 @@ function play(cfg) {
     blocked: [...blocked].filter(([a]) => a < N).map(([a, c]) => [a + 1, Math.round(c * 1000) / 1000]),
     alog,
     custom: cust,
-    lsPeak: window.__lsPeak // the most characters localStorage held (tools/memstorage.js)
+    lsPeak: window.__lsPeak, // the most characters localStorage held (tools/memstorage.js)
+    clock: {...clock, tail: (performance.now() - clk0) / 1000 - clock.pts[clock.pts.length - 1][1]} // the plan's only (run drops it)
   };
 }
 
 // A simulated player's anonymous id (sync.js anonId's form: 10 of a-z0-9) from its profile and seed.
 const simId = (name, seed) =>
   Array.from(require('crypto').createHash('sha256').update(`sim ${name} ${seed}`).digest().subarray(0, 10), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+// A run's timing for the budget's plan (main, CB.grown): {setup, pts, tail}, under a symbol so that --out never holds it.
+const TIMING = Symbol('timing');
 async function run(browser, base, name, seed, n = QN) {
+  const t0 = Date.now();
   const ctx = await browser.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
   await ctx.route(
     u => !u.href.startsWith(base),
@@ -1256,6 +1276,8 @@ async function run(browser, base, name, seed, n = QN) {
   // evaluate, and the browser's storage would queue about 1.5 MB an answer in the renderer until it crashed).
   await ctx.addInitScript(memStorage);
   await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
+  if (FACHECK) await ctx.addInitScript({path: path.join(ROOT, 'tests', 'facheck.js')}); // --facheck
+  await ctx.addInitScript(require('../tests/answer.js').PAGE); // smokeAnswer: answers the question shown, as the smokes do
   await ctx.addInitScript(([st, sv, subj, aid]) => {
     localStorage.setItem('reefid-tour', '"done"');
     // The simulated player's anonymous id, one per profile and seed (simId): their reserve (core.js reserveOf), the same
@@ -1290,7 +1312,8 @@ async function run(browser, base, name, seed, n = QN) {
   // Every script tier in (My progress, the Tools) and the network quiet, so each run starts from the same state.
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
-  const r = await p.evaluate(play, {
+  const {clock, ...r} = await p.evaluate(play, {
+    clockEvery: 50,
     prof: profOf(name, SUBJECT),
     seed,
     N: n,
@@ -1319,7 +1342,9 @@ async function run(browser, base, name, seed, n = QN) {
     liveOff: LIVEOFF
   });
   await ctx.close();
-  return {profile: name, seed, errs, ...r};
+  // setup: the seconds of the job outside the page's run (the browser context, the page's load, the close), once a job.
+  const inPage = clock.pts[clock.pts.length - 1][1] + clock.tail;
+  return {profile: name, seed, errs, ...r, [TIMING]: {setup: Math.max(0, (Date.now() - t0) / 1000 - inPage), ...clock}};
 }
 
 // The field measures (both learners): per profile and checkpoint, mean +- sd over the seeds; precL over the runs with a
@@ -1689,22 +1714,27 @@ function openTable(runs) {
   for (let s = SEED0 + 1; s <= SEED0 + SEEDS; s++) for (const name of NAMES) jobs.push([name, s]);
   const planned = jobs.length,
     runs = [];
-  // The plan: a job's time from --per-job, else from one short run (100 questions at most; its time scaled to QN); when
-  // the run is already the full length it is the first result. Over the budget: refused, with the options that fit.
+  // The plan: a job's time from --per-job, else from a calibration (tools/checkbudget.js calibLength and grown):
+  // the first wave of jobs, side by side as the run plays them, each for a fifth of the run's length (100 to 1,000
+  // questions), its time per answer extrapolated as it grows; the slowest job sets the pace of the waves. When the run is
+  // already that length the calibration is its first results. Over the budget: refused, with the options that fit.
   let perJob = PERJOB,
+    perJobAt = null,
     source = '--per-job';
   if (perJob === null) {
-    const n0 = Math.min(QN, 100),
+    const n0 = CB.calibLength(QN),
       tc = Date.now(),
-      first = jobs[0],
-      r0 = await run(browser, base, ...first, n0),
-      sec = (Date.now() - tc) / 1000;
-    perJob = CB.scaled(sec, n0, QN);
-    source = `calibration: ${first.join(' seed ')}, ${n0} questions in ${sec.toFixed(1)} s`;
-    if (n0 === QN) (runs.push(r0), jobs.shift());
+      wave = jobs.slice(0, Math.max(1, Math.min(WORKERS, jobs.length))),
+      r0 = await Promise.all(wave.map(j => run(browser, base, ...j, n0))),
+      sec = (Date.now() - tc) / 1000,
+      slow = r0.reduce((x, r) => (CB.grown(r[TIMING], QN) > CB.grown(x[TIMING], QN) ? r : x));
+    perJobAt = n => CB.grown(slow[TIMING], n);
+    perJob = perJobAt(QN);
+    source = `calibration: ${wave.length > 1 ? `${wave.length} jobs side by side` : 'one job'}, ${n0} questions in ${sec.toFixed(1)} s; ${wave.length > 1 ? 'the slowest, ' : ''}${slow.profile} seed ${slow.seed}, grown to ${QN}`;
+    if (n0 === QN) (runs.push(...r0), jobs.splice(0, wave.length));
     if (budget.expired()) (budget.cut = true), (jobs.length = 0); // the calibration itself overran: nothing more runs, marked cut
   }
-  const pl = CB.plan({budget, jobs: jobs.length, workers: WORKERS, perJobSec: perJob, P: NAMES.length, S: SEEDS, N: QN, source});
+  const pl = CB.plan({budget, jobs: jobs.length, workers: WORKERS, perJobSec: perJob, perJobAt, P: NAMES.length, S: SEEDS, N: QN, source});
   console.error(pl.text);
   if (!pl.ok) {
     await browser.close();

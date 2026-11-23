@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
 // The sea slug achievements (first version, then the % ladder to 100%; Pierre, 2026-11-17: "une première version des succès pour les limaces de
 // mer"; core.js SEASLUG_ACH; rule L8: learning milestones only, never time): ids of their own in the shared record, each
-// reachable on the sea slug snapshot as the app makes it (progress.js achSnap over seaslug.json's genera, families and
-// taxonomic groups), none on an empty one, and the snapshot's family and taxonomic-group counts right.
+// reachable on the sea slug snapshot as the app makes it (progress.js achSnap over seaslug.json's genera, families,
+// taxonomic groups, species by their scientific names and stars), none on an empty one, and the snapshot's counts right.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -15,10 +15,18 @@ const ROOT = path.join(__dirname, '..'),
 const S = C.subjectOf('seaslug'),
   L = S.achs();
 
-// progress.js achSnap over the sea slugs' units (core.js treeGen at the genus, as the app's), each genus at level lv(n).
-function snapOf(lv, pct = 0) {
+// progress.js achSnap over the sea slugs' units (core.js treeGen at the genus, as the app's), each genus at level lv(n);
+// their species by their scientific names (core.js treeSpUnits 'sci', the app's set UNITS sets, its key ssp) at the
+// level spLv(n) of their unit (the genus's level unless said), and their stars (seaslug.json star: UNITS top).
+function snapOf(lv, pct = 0, spLv = null) {
   const X = C.treeGen(SF, {}, undefined, C.unitRankOf(S)),
     slate = [...X.c1, ...X.c2, ...X.c3],
+    U = C.treeSpUnits(SF, X, 'sci'),
+    sp = U.map(u => u.id),
+    stars = U.filter(u => u.s.star).map(u => u.id),
+    genusOf = new Map(U.map(u => [u.id, u.genus])),
+    spAt = spLv || (n => lv(genusOf.get(n))),
+    isSp = new Set(sp),
     ctx = {
       ...C,
       SUBJ: S,
@@ -28,13 +36,13 @@ function snapOf(lv, pct = 0) {
       GX: n => X.gen[n],
       slateGenera: () => slate,
       scaleUnits: () => slate, // app.js: the units of the global % (UNITS scale; the sea slugs have none: the slate)
-      lvStep: n => lv(n),
+      lvStep: n => (isSp.has(n) ? spAt(n) : lv(n)),
       shownGroup: () => '',
       bonusList: () => [],
       introduced: () => false,
       eloScore: () => 0,
       headPct: () => pct,
-      UNITS: {seaslug: {core: () => X.c1, circles: () => [X.c1, X.c2, X.c3], sets: []}},
+      UNITS: {seaslug: {core: () => X.c1, circles: () => [X.c1, X.c2, X.c3], sets: [{k: 'ssp', all: () => sp}], top: () => stars}},
       store: {get: (k, d) => d, set: () => {}}
     };
   vm.createContext(ctx);
@@ -43,11 +51,84 @@ function snapOf(lv, pct = 0) {
     ctx
   );
   // out of the page's realm, so its arrays compare as plain ones
-  return {snap: JSON.parse(JSON.stringify(ctx.achSnap({}))), X, slate};
+  return {snap: JSON.parse(JSON.stringify(ctx.achSnap({}))), X, slate, sp, stars};
 }
 
-test('sea slug achievements: their own ids, a modest first list, plain and well-formed', () => {
-  assert.ok(L.length >= 10 && L.length <= 20, String(L.length));
+test('the species achievements: species at Advanced by their scientific names (1, 10, 50) and every star', () => {
+  const A2 = id => L.find(a => a.id === id),
+    snap = o => ({total: 78, met: 0, q: [0, 0, 0], learned: 0, pct: 0, sets: {}, setsAdv: {}, top: null, ...o});
+  assert.deepStrictEqual(
+    L.filter(a => a.icon === '🏷️').map(a => [a.id, a.tier]),
+    [
+      ['sssp1', 1],
+      ['sssp10', 2],
+      ['sssp50', 3]
+    ]
+  );
+  [
+    ['sssp1', 1],
+    ['sssp10', 10],
+    ['sssp50', 50]
+  ].forEach(([id, k]) => {
+    const a = A2(id);
+    assert.ok(!a.test(snap({})) && !a.test(snap({setsAdv: {ssp: k - 1}})), id + ' below ' + k);
+    assert.ok(a.test(snap({setsAdv: {ssp: k}})), id + ' at ' + k);
+    // at Advanced: Open Water alone (sets) never earns it
+    assert.ok(!a.test(snap({sets: {ssp: 206}})), id + ' on Open Water');
+  });
+  const st = A2('ssstars');
+  assert.strictEqual(st.tier, 3);
+  assert.ok(!st.test(snap({})) && !st.test(snap({top: {total: 0, adv: 0}})), 'none while the species level is off');
+  assert.ok(!st.test(snap({top: {total: 21, adv: 20}})) && st.test(snap({top: {total: 21, adv: 21}})));
+  // none rests on genera learned: nothing takes them back
+  ['sssp1', 'sssp10', 'sssp50', 'ssstars'].forEach(id => assert.ok(!C.ACH_LEARN.includes(id), id));
+  // the stars as the description names them: no count written in it (the set is Pierre's to edit, Q369 (c))
+  assert.ok(!/\d/.test(st.desc), st.desc);
+});
+
+test('the sea slug snapshot: the species at Advanced and the stars, from seaslug.json', () => {
+  const sf = new Set(SF.species.filter(s => s.star).map(s => s.id));
+  // every genus at Advanced, no species met: none of the species ones
+  const g = snapOf(
+      () => 3,
+      45,
+      () => 0
+    ),
+    gotG = new Set(C.newAch(g.snap, {}, L));
+  assert.strictEqual(g.sp.length, SF.species.length);
+  assert.strictEqual(g.stars.length, sf.size);
+  assert.ok(sf.size >= 20, String(sf.size));
+  assert.deepStrictEqual(g.snap.top, {total: sf.size, adv: 0});
+  ['sssp1', 'sssp10', 'sssp50', 'ssstars'].forEach(id => assert.ok(!gotG.has(id), id));
+  // 10 species at Advanced, the first 9 not the stars: sssp1 and sssp10, not sssp50; 9: not sssp10
+  const nonStar = g.sp.filter(n => !g.stars.includes(n)),
+    at = (L0, k) => n => (L0.slice(0, k).includes(n) ? 3 : 2);
+  const s10 = snapOf(() => 3, 45, at(nonStar, 10)),
+    s9 = snapOf(() => 3, 45, at(nonStar, 9));
+  assert.strictEqual(s10.snap.setsAdv.ssp, 10);
+  assert.strictEqual(s10.snap.sets.ssp, g.sp.length, 'the others at Open Water');
+  const got10 = new Set(C.newAch(s10.snap, {}, L)),
+    got9 = new Set(C.newAch(s9.snap, {}, L));
+  assert.ok(got10.has('sssp1') && got10.has('sssp10') && !got10.has('sssp50'));
+  assert.ok(got9.has('sssp1') && !got9.has('sssp10'));
+  // every star at Advanced but one: not yet; every one: Star struck
+  const allStars = snapOf(
+      () => 3,
+      45,
+      n => (g.stars.includes(n) ? 3 : 0)
+    ),
+    oneShort = snapOf(
+      () => 3,
+      45,
+      n => (g.stars.slice(1).includes(n) ? 3 : 0)
+    );
+  assert.deepStrictEqual(allStars.snap.top, {total: sf.size, adv: sf.size});
+  assert.ok(new Set(C.newAch(allStars.snap, {}, L)).has('ssstars'));
+  assert.ok(!new Set(C.newAch(oneShort.snap, {}, L)).has('ssstars'));
+});
+
+test('sea slug achievements: their own ids, a modest list, plain and well-formed', () => {
+  assert.ok(L.length >= 10 && L.length <= 24, String(L.length));
   const ids = [...C.ACH, ...C.FISH_ACH, ...L].map(a => a.id);
   assert.strictEqual(new Set(ids).size, ids.length, 'one id per achievement across subjects');
   L.forEach(a => {
@@ -124,7 +205,9 @@ test('none on an empty snapshot, every one at full marks, the levels and groups 
   // Advanced on every genus, nothing learned, 45%: not the Divemaster, Instructor or 50% ones
   const adv = snapOf(() => 3, 45).snap,
     got = new Set(C.newAch(adv, {}, L));
-  ['ssmetall', 'ssq80', 'ssfam5', 'ssc1adv', 'ssnudi', 'ssother', 'sspct40'].forEach(id => assert.ok(got.has(id), id));
+  ['ssmetall', 'ssq80', 'ssfam5', 'ssc1adv', 'ssnudi', 'ssother', 'sspct40', 'sssp1', 'sssp50', 'ssstars'].forEach(id =>
+    assert.ok(got.has(id), id)
+  );
   ['ssq95', 'sslearn1', 'sspct50'].forEach(id => assert.ok(!got.has(id), id));
   // 65%: the 60% one, not the 70% one
   const hi = new Set(C.newAch(snapOf(() => 3, 65).snap, {}, L));

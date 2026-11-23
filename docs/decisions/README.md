@@ -58,8 +58,11 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-24 | [The sea slugs' species achievements: 1, 10 and 50 species at Advanced by their scientific names, and every star](2026-11-24-seaslug-species-achievements.md) | #1515 |
 | 2026-11-23 | [The refill takes the most-faved observations first for a species short of easy adults](2026-11-23-easy-refill-faves.md) | #1476 |
+| 2026-11-23 | [A species short of easy adults may take faved candidates beyond its cap](2026-11-23-faved-beyond-cap.md) | #1487 |
 | 2026-11-23 | [Pages opened: pagehide also queues the summary; keeping it across a killed page left for its own issue](2026-11-23-pages-kept-copy.md) | #1471 |
+| 2026-11-23 | [A rule not followed gets a Linear issue, not an automatic new rule](2026-11-23-rule-not-followed-issue.md) | #1501 |
 | 2026-11-22 | [core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte](2026-11-22-core-parts.md) | #1452 |
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
