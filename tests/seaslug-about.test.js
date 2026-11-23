@@ -121,6 +121,53 @@ test('aboutCites: nothing for a file or a part with no source, never a throw', (
   assert.strictEqual(cites({genera: [{t: 'x'}]}, undefined).length, 0);
 });
 
+test('aboutCites: a source the page lists by hand (WoRMS, Wikipedia) is folded into that line, never listed twice (REE-221)', () => {
+  const f = {
+      genera: [
+        {t: 'Wikipedia, Costasiella (after a diagnosis)', u: 'https://en.wikipedia.org/w/index.php?title=Costasiella&oldid=1'},
+        {t: 'English Wikipedia, Melibe colemani', u: 'https://en.wikipedia.org/wiki/Melibe_colemani'},
+        {t: 'World Register of Marine Species, Chromodorididae'},
+        {t: 'WoRMS Editorial Board, Aphia', u: 'https://www.marinespecies.org/aphia.php?p=taxdetails&id=1'},
+        {t: 'Gosliner 1995, Thuridilla (Proc. 49)', u: 'https://doi.org/10.1/x'}
+      ]
+    },
+    own = ['https://www.marinespecies.org', 'https://en.wikipedia.org'];
+  // without the hand-written addresses nothing is folded (the corals' and the fish's pages)
+  assert.strictEqual(cites(f, ['genera']).length, 5);
+  assert.deepStrictEqual(
+    Array.from(page([]).c.window.aboutCites(f, ['genera'], own), s => s.name),
+    ['Gosliner 1995, Thuridilla (Proc. 49)']
+  );
+  // a name with no address folds only when its source is a line of the page
+  assert.strictEqual(
+    page([]).c.window.aboutCites({genera: [{t: 'Wikipedia, X'}]}, ['genera'], ['https://www.marinespecies.org']).length,
+    1
+  );
+});
+
+test('About: each source appears once in the sea slugs’ References, the hand-written line holding WoRMS and Wikipedia (REE-221)', async () => {
+  const f = {
+      genera: [
+        {t: 'English Wikipedia, Melibe colemani', u: 'https://en.wikipedia.org/wiki/Melibe_colemani'},
+        {t: 'World Register of Marine Species, Aeolidiidae'},
+        {t: 'Sea Slug Forum, a', u: 'https://www.seaslugforum.net/a'},
+        {t: 'Sea Slug Forum, b', u: 'https://www.seaslugforum.net/b'}
+      ]
+    },
+    p = page([{id: 'seaslug', about: SEA, f}]);
+  p.c.window.viewAbout();
+  await new Promise(r => setTimeout(r, 0));
+  const all = p.out.innerHTML + p.uls.seaslug.innerHTML;
+  assert.match(p.uls.seaslug.innerHTML, /Sea Slug Forum/);
+  assert.ok(!/Wikipedia|World Register|WoRMS/.test(p.uls.seaslug.innerHTML), 'derived lines folded');
+  assert.strictEqual(
+    (all.match(/World Register of Marine Species/g) || []).length,
+    2,
+    'the hand-written lines only (the sea slugs’ and the shared one)'
+  );
+  assert.strictEqual((all.match(/>Wikipedia</g) || []).length, 1);
+});
+
 test('the sea slugs declare what their data cites; the corals and the fish keep their lists', () => {
   assert.ok(SEA.cites && SEA.cites.lead && Array.isArray(SEA.cites.in) && SEA.cites.in.length, 'seaslug about.cites');
   assert.ok(!FISHES.cites, 'the fish list stays the one written by hand');
@@ -249,7 +296,13 @@ test('viewAbout: the sea slugs list their sources under References once the file
   await flush();
   const h = p.uls.seaslug.innerHTML;
   assert.ok(!/Loading/.test(h));
-  assert.strictEqual((h.match(/<li>/g) || []).length, p.c.window.aboutCites(SLUG, SEA.cites.in).length);
+  const hand = [...p.out.innerHTML.matchAll(/<a href="(https?:[^"]+)"/g)].map(m => m[1]);
+  assert.strictEqual((h.match(/<li>/g) || []).length, p.c.window.aboutCites(SLUG, SEA.cites.in, hand).length);
+  assert.strictEqual(
+    p.c.window.aboutCites(SLUG, SEA.cites.in).length - p.c.window.aboutCites(SLUG, SEA.cites.in, hand).length,
+    2,
+    'the two Wikipedia lines are folded'
+  );
   assert.match(
     h,
     /<li><a href="https:\/\/doi\.org\/10\.3853\/j\.0812-7387\.16\.1993\.79" target="_blank" rel="noopener">Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs<\/a><\/li>/

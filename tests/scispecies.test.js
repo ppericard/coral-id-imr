@@ -390,8 +390,9 @@ test('a locked scientific species takes a live answer as evidence without openin
       Q: {}
     };
   ctx.answersSoFar = () => ctx.n;
+  ctx.cbSave = () => {}; // the answer clock's record (model.js tally) kept in CB only
   vm.createContext(ctx);
-  vm.runInContext(model + '\nthis.M = {introLive, introduced, asked, closed, introAdd};', ctx);
+  vm.runInContext(model + require('./clock.js')() + '\nthis.M = {introLive, introduced, asked, closed, introAdd};', ctx);
   const M = ctx.M,
     g = 'g:Chromis',
     own = X.ssl.filter(n => X.gen[n].parent === g && X.gen[n].views.wide.length),
