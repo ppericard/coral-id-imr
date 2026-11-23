@@ -104,7 +104,6 @@ They live in the admin since 2026-11-05 (Pierre: he settles most of them himself
 - **Near-duplicate / redundancy suggestions among IMR + Pierre photos**: [REE-74](https://linear.app/reef-id/issue/REE-74)
 - **Tour leftovers from the new-player walkthrough**: [REE-49](https://linear.app/reef-id/issue/REE-49)
 - **Paliform-lobe photos in Corallite anatomy**: [REE-109](https://linear.app/reef-id/issue/REE-109)
-- **The level's answer count follows the log**: [REE-42](https://linear.app/reef-id/issue/REE-42)
 - **Full replay, what is left**: [REE-138](https://linear.app/reef-id/issue/REE-138)
 - **Fish progress replayed from the answer log**: [REE-59](https://linear.app/reef-id/issue/REE-59)
 - **Domain and repository rename, with a migration for players**: [REE-110](https://linear.app/reef-id/issue/REE-110)

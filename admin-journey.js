@@ -122,7 +122,8 @@ const jStepWords = ([, kind, w]) =>
 // The opt-in choices a player made (SUBJECTS optin: the corals' bonus genera, the fish's scientific names and circle 3),
 // from the subject's quiz settings in their saved copy (reefid-sync-<subject>-quiz: app.js bonusSet, openNo): q[k] on or
 // off, q[k + 'T'] when the latest choice was made (every toggle, a "Not now" included), q[k + 'N'] the offer's "Not now"
-// count and q[k + 'A'] the answers so far at the last one (kept through later choices: no time of their own), q[k + 'H']
+// count and q[k + 'A'] the answer clock at the last one (model.js tally: the answers so far, or more once the level's
+// count went down; kept through later choices: no time of their own), q[k + 'H']
 // on by hand before it was due. [[time or null, the set's name, what happened]]: the current state with the time of the
 // latest choice, and the offer's declines apart with no time; a set never offered or chosen left out.
 const JOPT = {bon: 'Bonus genera', sci: 'Scientific names', beyond: 'Families beyond the IMR course'};
