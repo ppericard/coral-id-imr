@@ -774,13 +774,14 @@ again and keeps the band only when it agrees with the rounded size. It feeds adm
 runs (`sync.js` `pvKeep`): `reefid-pv-live` holds, per visit id, the event as `pagesSend` would queue it now (its id,
 time, page, app version, owner and fields), written when a page opens and every `PV_BEAT` (15 s) while in view, read from
 a copy of the tally (`pvPeek`, after the feedback sheet's seconds so far: `quiz.js` `fbEnd(false)`), at most `PV_KEEP`
-(5) visits. Queuing the summary drops the copy (`pvDone`) and gives the next tally a new id. A copy of another visit not
-written for `PV_STALE` (2 min) is queued as it is, then removed, by the next page, at load and at each beat
-(`pvRecover`), which notes its visit id in `reefid-pv-done` (the last 20): a page still open in another window writes
-its copy every 15 s, so it is never taken for a killed one. A page whose visit id is in that list (`pvClaimed`: queued
-by another page, as after a sleep) starts its tally again instead of queuing it; a copy only pushed out by the
-`PV_KEEP` limit is written again. The copy and the live summary share one id, which the
-sheet keeps once (`events_` skips an id already in the tab). Sign-in moves the anonymous copies to the account
+(5) visits. **One identity: the summary's event id** (`pvId`), carried by the copy and by the summary when queued.
+Queuing the summary drops the copy (`pvDone`) and gives the next tally a new id. A copy of another visit not written
+for `PV_STALE` (2 min) is queued as it is, then removed, by the next page, at load and at each beat (`pvRecover`), which
+notes its event id in `reefid-pv-done` (the last 20): a page still open in another window writes its copy every 15 s,
+so it is never taken for a killed one. A page whose current event id is in that list (`pvClaimed`: queued by another
+page, as after a sleep) starts its tally again under a new id instead of queuing it, so an old note never matches a
+later tally, and a copy pushed out by the `PV_KEEP` limit is simply written again. The sheet also keeps an id once
+(`events_` skips an id already in the tab). Sign-in moves the anonymous copies to the account
 (`pagesOwn`), sign-out drops them. Same event, same fields: the sheet script takes it as any summary (rule D4).
 
 **Whose it is.** Each summary is queued with its owner (`o`, `core.js` `pagesOwner`: `n:<name>` signed in,

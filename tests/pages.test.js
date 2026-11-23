@@ -482,7 +482,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
     code =
       block(src, 'const pvFields = S => ({', '// The player active now, as a summary', {file: 'sync.js'}) +
       block(src, "// The visit's summary kept on the device", '\npvRecover();\n', {through: 1, file: 'sync.js'}) +
-      '\nthis.M = {pagesSend, pvKeep, pvRecover, kept: () => pvKept};';
+      '\nthis.M = {pagesSend, pvKeep, pvRecover, id: () => pvId};';
   const LS = new Map(),
     Q = [];
   let clock = Date.UTC(2026, 10, 23, 2),
@@ -548,7 +548,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
     [copy.k, copy.id, copy.vi, copy.na, copy.o, copy.pg, copy.av, copy.t],
     ['pages', 'id1', 'visita', 3, 'a:dev0000001', 'learn/genera', '7-abc', new Date(clock).toISOString()]
   );
-  assert.ok(A.kept());
+  assert.strictEqual(copy.id, A.id(), 'the copy carries the summary event id');
   // Hidden: no beat. The tally itself went on (the copy is read from a copy of it).
   clock += 5000;
   A.ctx.document.visibilityState = 'hidden';
@@ -592,7 +592,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
     [['visitb', bid]]
   );
   assert.deepStrictEqual(live(), []);
-  assert.ok(!B.kept());
+  assert.notStrictEqual(B.id(), bid, 'a new tally, a new event id');
   B.pagesSend(); // pagehide after the hidden event: nothing left
   clock += 600000;
   B2.pvRecover();
@@ -670,7 +670,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
   K.open('quiz');
   clock += 2000;
   K.beat();
-  assert.ok(!K.kept());
+  assert.ok(!live().includes('visitm'));
   K.pagesSend();
   assert.deepStrictEqual(
     Q.map(x => [x.vi, x.r]),
@@ -704,7 +704,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
   assert.ok(live().includes('many' + (N + 2)) && !live().includes('many0'));
   // A copy only pushed out by that limit was never queued: its page keeps its tally, writes it again, sends it when left.
   many[0].beat();
-  assert.ok(live().includes('many0') && many[0].kept());
+  assert.ok(live().includes('many0'));
   many[1].pagesSend();
   assert.deepStrictEqual(
     Q.map(x => [x.vi, x.r['practice.quiz'][0]]),
@@ -712,6 +712,43 @@ test('a page killed without a hidden event: its summary queued by the next page,
     'an evicted copy is not a queued one'
   );
   assert.strictEqual(Q.length, 1);
+  many.forEach(P => P.pagesSend());
+  // Codex's sequence: a page's copy queued elsewhere (asleep), the page resumes, its new tally's copy is pushed out by
+  // five newer ones, then it is left: the new tally is queued once, under its new event id.
+  Q.length = 0;
+  const R = page('visitq'),
+    S = page('visitr');
+  R.open('quiz');
+  clock += 7000;
+  R.beat();
+  const first = R.id();
+  clock += 600000; // asleep
+  S.beat();
+  assert.deepStrictEqual(
+    Q.map(x => [x.vi, x.id]),
+    [['visitq', first]]
+  );
+  R.beat(); // awake: its tally was queued, it starts again under a new id
+  assert.notStrictEqual(R.id(), first);
+  clock += 4000;
+  R.beat();
+  const newer = [];
+  for (let i = 0; i < N; i++) {
+    const P = page('newer' + i);
+    newer.push(P);
+    P.open('genera');
+    clock += 1000;
+    P.pvKeep();
+  }
+  assert.ok(!live().includes('visitq'), 'its copy pushed out by five newer ones');
+  clock += 2000;
+  R.pagesSend();
+  const rs = Q.filter(x => x.vi === 'visitq');
+  assert.strictEqual(rs.length, 2, 'the recovered summary, then the new tally once');
+  assert.notStrictEqual(rs[1].id, first);
+  assert.deepStrictEqual(rs[1].r, {'practice.quiz': [0, 4 + N + 2]});
+  newer.forEach(P => P.pagesSend());
+  S.pagesSend();
   // The answer's feedback sheet on screen: its seconds so far are in each copy (quiz.js fbEnd(false), counted once).
   Q.length = 0;
   const FB = page('visitp');
