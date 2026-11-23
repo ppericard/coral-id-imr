@@ -36,7 +36,9 @@ only, never time or days played (rule L8):
   fish score every 10 points, the scientific genera at Open Water and Advanced, species by their common names and by their
   scientific names, Fish basics done (fbasics, "Fin to tail": the fish's feat `_fbasics`, set by the same `achBasics()`);
 - the sea slugs' (`SEASLUG_ACH`): genera met, genera at each level, families with every genus at Advanced, the taxonomic
-  groups (the nudibranchs first), the first circle, the sea slug % every 10 points.
+  groups (the nudibranchs first), the first circle, the sea slug % every 10 points, the species at Advanced by their
+  scientific names (`achSnap` `setsAdv.ssp`) and the stars among them (`achSnap` `top`: `UNITS.seaslug` `top`, the species
+  `seaslug.json` marks `star`).
 
 The runs and Sharp eye count only in the normal photo quiz (its Again, typed questions and slipped-in duels included),
 never in the custom quiz, the Duel tab or a live game: an answer there neither extends nor breaks the run
