@@ -108,7 +108,7 @@ again from the whole state each time it is read.
 | The units in play (`app.js` `bonusList`, `pool`, `sciUp`, `shareFree`; `model.js` `cbPlay`) | The slate plus what each set brings: genera of families at Advanced, species met and next (`sciOpen`, `spPlay`, `sciPlay`, `lvlNext`) | **Made again** by each reader | O(T) to group a level's units by parent, then O(parents at their threshold × the level's units) for `lvlNext`'s count | `bonusList` 22; `lvlNext` 2,300; `introduced` 1.57 M; `GX` 208,000 |
 | Exam entry (`model.js` `examOn`, `examLooks`, `lookLeft`, `matesLeft`) | Bar at the entry, pair coverage, group partners met | **Made again** per unit per reader; the reverse look-alike index kept for one microtask (#1521) | O(look-alikes) a unit on the slate; a unit with a look-alike off the slate reads `bonusList` | `examOn` 476; `examLooks` 42 |
 | Levels (`model.js` `lvStep`, `level`, `shaky`) | The diver's ladder step from the bar and the exam entry | **Made again** | O(1) plus `genScore` and `examOn` | `lvStep` 4,700 |
-| The draw (`model.js` `nextTarget`, `weighted`, `weight`, `drawW`, `shareW`, `sharesNow`) | Each met unit's weight, the rank share's caps | Weights **made again** per draw (they must be: see 4.3); the shares kept per answer by a key of their own | O(units met) a draw, plus `examOn` per unit; `sharesNow` asks `mayOpen` per unit, which for a circle-3 unit computes the whole tree's score | `weight` 221; `treeScore` 54 |
+| The draw (`model.js` `nextTarget`, `weighted`, `weight`, `drawW`, `shareW`, `sharesNow`) | Each met unit's weight, the rank share's caps | Weights **made again** per draw (rightly: section 3, "What does not"); the shares kept per answer by a key of their own | O(units met) a draw, plus `examOn` per unit; `sharesNow` asks `mayOpen` per unit, which for a circle-3 unit computes the whole tree's score | `weight` 221; `treeScore` 54 |
 | The global score (`model.js` `headScore`, `core.js` `treeScore`; `progress.js` `showProg`) | The weighted mean of every tree entry's bars | **Made again** by the header pill (at every `save` and every `route`), the circle-3 gate, the achievements | O(T) bars a call | `treeScore` 54 |
 | Opening (`quiz.js` `planPhoto`; `model.js` `openFresh`, `openPick`, `openChance`, `openPace`, `groupsNow`) | Whether and which unit opens | Intro map kept (parsed once); groups kept by a key of their own; the rest **made again** per planned question | O(V) a question | `planPhoto` 2 |
 | Choices and photos (`model.js` `distractors`, `trapsFor`, `photoSet`, `examSet`) | The wrong choices, the photos | **Made again** per question (random draws: nothing to keep) | O(V) for the choices, O(photos of the unit) for the photos; `examSet` reads every photo ever shown (`shownAll`) | 2 questions |
@@ -140,7 +140,7 @@ measure before `sync.js` is touched, with a stub sheet (rule D1: `window.SHEET_S
 | A save with answers: `logAnswers_` | Every answer id of the Answers tab, to refuse a double | O(all players' answers) | 0.85 to 0.93 s for 7,600 rows × 1 column [real sheet, Timings tab] |
 | The same save: `hold_` (the opening hold) | The whole Answers tab, every column, then the player's rows folded from the first | O(all players' answers + H); its cache is dropped by any new row | 1.2 to 2.6 s for 7,450 to 7,680 rows × 27 columns (one read 5.1 s) [real sheet] |
 | The full replay: `replay_`, `rplMake_` → `core.js` `replayProgress` (only when the app's rules version or structure stamp is behind, or after a refused save) | The player's rows since their reset, scored one by one by the app's scorer | O(H × (k + G)), plus O(U) at each miss (`keepsMark` → `faOf`); kept in the Replayed tab and reused only while the row count is the same, started again from the first row otherwise | 3,000 fish answers: 67 ms in Node here, 12% of it the scan [measured]; Apps Script is slower by a factor not measured |
-| The leaderboard: `board_`, `boardWarm_` → `pctOf_` | Each player's bars over the scale | O(U²) a player by the scan | 136 units: 7.7 ms by the scan, 0.2 ms with the table [measured in Node] |
+| The leaderboard: `board_`, `boardWarm_` → `pctOf_` (a subject with a global score: `core.js` `treeScore`) | Each player's bars over the scale or the tree | O(U²) a player by the scan | `pctOf` over 136 units: 7.7 ms by the scan, 0.2 ms with the table [measured in Node] |
 | The pooled statistics: `stats_`, `statsFold_` | New rows folded into a snapshot | **Already incremental** (Q123 option j, 2026-11-14): settled part, pending part, rebuilt when what was settled no longer holds, equal to the full build run for run (`tests/statsfold.test.js`) | 2 to 16 s a fold step, most 5 to 10 [real sheet] |
 
 [real sheet, Timings tab, 2026-11-22; the script logs every operation over 5 s and samples the others] In three play
@@ -482,10 +482,11 @@ change but speed. These choices are his:
   after each step; and the work budget of 4.6 (5) as the routine guard.
 - **(c) The heavy subject in the routine checks** (suggested on REE-263, not decided): a long fish state checked in
   CI for work per answer. **Recommendation: yes**, as step 0's budget: the corals cannot show this class of problem.
-- **(d) A real phone and a real history.** Everything here is one simulated player on a throttled desktop CPU. The
-  real log holds about 7,600 answers in all [real sheet], so no real player is near 3,000 fish answers yet.
-  **Recommendation**: the app times its own answers (tap to feedback, the planning) and sends one median per visit
-  with the visit's summary it already sends: a number, no content. It is new data about a device, so his call.
+- **(d) A real phone and a real history.** Everything here is one simulated player on a desktop CPU. The real log
+  holds about 7,700 answers in all, about 4,000 of them on the corals [real sheet: the Answers tab's rows, the
+  statistics' rows], so the fish state of 3,000 answers is at or beyond the longest real one [guess: not counted per
+  player]. **Recommendation**: the app times its own answers (tap to feedback, the planning) and sends one median per
+  visit with the page summaries it already sends: a number, no content. It is new data about a device, so his call.
 - **(e) The sheet's save path** (step 7): fold it now in `Code.gs`, or leave it to the storage decision (Q352).
   **Recommendation: leave it**, unless saves over 10 s become a problem for players before then.
 
@@ -493,8 +494,8 @@ change but speed. These choices are his:
 
 The scratch scripts stayed outside the repository (the per-answer note's harness and saved states, a call counter by
 V8 coverage, a counter of the state versions, the counters' prototype against `core.js`, a count of the units an
-answer moves, a replay timer): step 0 commits the useful part. Every Chromium run and timed Node run took the machine slot (rule W24), each under the
-40-minute cap. Not done: a measure on a phone or on a real player's state; the signed-in path; a prototype of the
-views (their gain is estimated from single passes and the versions counted, section 5); timings of a whole answer
-after each step (the work counts are exact, the times are the per-answer note's); the sheet's time broken down beyond
-its Timings tab.
+answer moves, a replay timer): step 0 commits the useful part. Every Chromium run and timed Node run took the machine
+slot (rule W24), each under the 40-minute cap. Not done: a measure on a phone or on a real player's state; the
+signed-in path; a prototype of the views (their gain is estimated from single passes and the versions counted,
+section 5); timings of a whole answer after each step (the work counts are exact, the times are the per-answer
+note's); the sheet's time broken down beyond its Timings tab.
