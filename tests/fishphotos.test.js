@@ -1150,7 +1150,10 @@ for k in ('region', 'ph', 'world'):
     put(Q[k], [])
 Q = queries(502)
 put(Q['own'], [])
-put(Q['dauin'], [ob(i) for i in range(100, 108)], total=300)  # enough on the first page: no more pages asked
+put(Q['dauin'], [ob(i) for i in range(100, 108)], total=300)  # enough on the first page
+# Both species have no easy adult, so the refill takes the most-faved first and reads on (easy_need, select faves:
+# tests/easyrefill.test.js, where a species not short of easy adults stops at the first page): the next page is empty.
+put(Q['dauin'] + '&id_below=100', [])
 for k in ('region', 'ph', 'world'):
     put(Q[k], [])
 json.dump(c, open(d + '/cache.json', 'w'))`,
