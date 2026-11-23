@@ -597,14 +597,8 @@
    "keep": "alt"
   },
   "fish-s337-cand-639543350": {
-   "code": "p1g0sl15",
-   "keep": "best",
-   "bb": [
-    0.12,
-    0.45,
-    1.0,
-    0.73
-   ]
+   "code": "p0g0sl14",
+   "keep": "best"
   },
   "fish-s337-cand-615175185": {
    "code": "p1g2mmo2",

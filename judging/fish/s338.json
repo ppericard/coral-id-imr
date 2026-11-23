@@ -552,7 +552,13 @@
   },
   "fish-s338-cand-478044030": {
    "code": "o1g0sm1w3",
-   "keep": "best"
+   "keep": "best",
+   "bb": [
+    0.3,
+    0.25,
+    0.7,
+    0.75
+   ]
   },
   "fish-s338-cand-682478416": {
    "code": "p1g0sl1c3",
@@ -575,7 +581,7 @@
    "keep": "alt"
   },
   "fish-s338-cand-610300295": {
-   "code": "p1g1ml14",
+   "code": "p1g1ml13",
    "keep": "best"
   }
  }
