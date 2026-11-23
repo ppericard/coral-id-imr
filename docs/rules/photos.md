@@ -111,3 +111,17 @@ live colony that is only pale or bleached is not a skeleton. The photos judged b
 (`tests/skeletons.test.js`).
 *Why:* the features cannot be seen properly on a skeleton.
 *Source:* Pierre, 2026-11-09.
+
+### P7
+
+**No large judging or re-judging pass by agents without Pierre's explicit OK.** A judging pass over many photos
+(hundreds or more, or a re-judge of photos already in play) waits for his OK on that pass, with its size and an
+estimate of its cost; what can be scripted from the recorded codes is scripted first. Until he says OK, judging
+stays on hold and every other decided development work goes first. Small judging needed to finish a decided PR (a
+handful of photos) is not a pass.
+*Why:* judging by agents spends a large share of the quota, and part of it can often be scripted; he prefers the
+quota to go to development and to decide himself when, and how much, judging is worth it.
+*Source:* Pierre, 2026-11-23 19:26 Manila: «j'aimerais que tu évites de faire des grosses séries de jugements, de
+rejugements sur des milliers, voire des dizaines de milliers de photos, sans mon accord explicite … ça prend
+énormément de quotas … je préfère presque qu'on mette en stand-by du jugement jusqu'à ce que je dise OK, ou que je
+recentre le jugement … et que par contre on puisse prioriser toutes les autres tâches de développement».
