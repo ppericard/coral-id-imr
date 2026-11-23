@@ -1963,3 +1963,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   y compris avec des questions qui sont parfois très difficiles ou des questions taxonomiques plus basses, en fait,
   non, on n'arrive pas à savoir rapidement si la personne est un expert ou pas». Applied: LEARNING.md "The players
   we design for"; Linear REE-191, REE-112.
+- **20:54, speed as the expert's challenge.** «J'aime bien ton idée de défi sur la vitesse, notamment pour les experts.
+  Je pense que ça fait partie des choses que j'ai pas forcément explorées jusqu'à présent … à noter ou à remonter si
+  c'est déjà noté quelque part.» Not a decision: an idea brought back. Applied: Linear REE-147 (timed classification,
+  declined for IMR and casual learners on 2026-11-03) with the new angle; REE-191.
