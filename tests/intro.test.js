@@ -47,7 +47,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
   vm.runInContext(
     block +
       clock() +
-      '\nthis.M = {INTRO, introMap, introAdd, introduced, introReady, introLeft, introAll, backOpen, backDue, introBack, introMerge, holdStep, closed, introLive, unlocked, tally};',
+      '\nthis.M = {INTRO, introMap, introAdd, introduced, introReady, introLeft, introAll, backOpen, backDue, introBack, introMerge, holdStep, closed, introLive, unlocked, tally, clockSync};',
     ctx
   );
   const M = ctx.M;
@@ -115,6 +115,24 @@ test('the answer clock: starts at the count (an entry of before reads its count 
       [34, 1, 3, 'c']
     ])
   );
+});
+
+// Codex, #1497: a card's mark synced from a device whose clock is ahead (its count went down by more) never holds a
+// gap back here: a clock that starts takes the latest mark (model.js clockMarks), one behind moves up to it (clockSync).
+test('the answer clock and a mark synced from a device ahead: started at it, or moved up to it', () => {
+  const M = model();
+  M.ctx.n = 30; // the log's count, as this new device loads it
+  M.introMerge(JSON.stringify({B: [80, 0, 2, 'c', 55]}), null); // a card the other device showed at its clock 55
+  assert.strictEqual(M.tally(), 55, 'a new clock starts at the mark');
+  M.ctx.n = 31;
+  assert.strictEqual(M.tally(), 56, 'then counts on from it');
+  const N = model();
+  N.ctx.n = 40;
+  assert.strictEqual(N.tally(), 40);
+  N.introMerge(JSON.stringify({C: [90, 0, 3, 'c', 70]}), null);
+  assert.strictEqual(N.clockSync(), 70, 'a clock behind the mark moves up to it');
+  N.ctx.n = 41;
+  assert.strictEqual(N.tally(), 71);
 });
 
 // The card that offered Open all is gone; Open all itself stays, the same on the first cards and

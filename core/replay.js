@@ -335,7 +335,8 @@
   // (pm 1, rv when given, vl its variant groups with no right answer in the log); from the saved copy, what the log
   // cannot give (the exam passed or in course, dropped as the game drops it: afterBkt, a later miss r.lm or r.lx; dd,
   // dl, ro, cor); a unit the log has no answer on keeps the saved record only if it counts no answer either; LEVEL, the
-  // replayed ability with the larger answer count. The replay never decides the exam (mxKeeps, lm).
+  // replayed ability and answer count, as a unit's (docs/reviews/2026-11-09-level-count-checkpoints.md). The replay
+  // never decides the exam (mxKeeps, lm).
   const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
   // vl (replayProgress vars): the unit's variant groups with no right answer in the log, kept on the record so the app's
   // exam asks them (model.js varLeft) even where the photos seen ps, merged with the saved copy below, hold a right answer
@@ -360,13 +361,16 @@
       const s = isObj(S[g]) ? S[g] : null,
         r = isObj(R[g]) ? R[g] : null;
       if (g === LEVEL) {
-        // One rule for the level (rule D9): every field that feeds progress (the ability th, vr, lt, the typed
-        // opportunities tyk, the answer times rt) is the log's, absent when the log has none; only the plain answer count
-        // (ok, ko: the clock the checkpoints hang on) keeps the larger of the two.
+        // One rule for the level (rule D9; Q322, Q330): every field that feeds progress (the ability th, vr, lt, the
+        // typed opportunities tyk, the answer times rt) and the answer count (ok, ko) are the log's, the other fields
+        // (recent results h) the saved copy's. No answer of the log on it: as a unit, the saved record only when it
+        // counts no answer either, none of the log's fields. The app's checkpoints count on their own answer clock
+        // (model.js tally), which never goes down with the count.
+        if (!r && s && n(s)) return;
         const o = s ? dup(s) : {};
         LEVEL_LOG.forEach(f => (r && r[f] !== undefined ? (o[f] = dup(r[f])) : delete o[f]));
         if (r) {
-          if (!s || n(r) >= n(s)) [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+          [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
         }
@@ -422,7 +426,8 @@
   // sheet yet, which stay the difference P - B. rec: the sheet's replay (replay.rec), M: the record adopted
   // (replayedOf), rv: its rules version, B: the baseline before. Per unit: adopted (M[g].rv is rv), replayedOf of rec
   // alone with its photos shown per photo the larger of rec's and B's; kept from this device's copy, B's record. The
-  // level: the replay's, with B's answer count and times (rt) when larger; B's when the sheet sent none.
+  // level: the replay's, its answer count too (rule D9); with no level in the log, B's when it counts no answer (the
+  // record adopted keeps none otherwise, replayedOf), none of the log's fields.
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -434,15 +439,12 @@
         r = R[g];
       if (g === LEVEL) {
         if (!r) {
-          // No level in the log: the shared clock (ok, ko) only, none of the log's fields (LEVEL_LOG), as replayedOf.
-          if (!b) return;
+          if (!b || n(b)) return;
           const o = dup(b);
           LEVEL_LOG.forEach(f => delete o[f]);
           return void (out[g] = o);
         }
-        const o = dup(r);
-        if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0]; // the clock only (replayedOf, LEVEL_LOG)
-        out[g] = o;
+        out[g] = dup(r);
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
         Object.keys((b && b.ps) || {}).forEach(f => {
