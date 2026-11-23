@@ -981,6 +981,15 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   finish it. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
   leaderboard's replays made ahead (`boardWarmRun_`, which first reads the structure again, `subjStRefresh_`) and the
   pooled statistics' fold (`statsFoldRun_`); every run ends with the Timings trim (`timTrim_`).
+- **The version limit** (`SELF_VERSIONS`; the 2026-11-22 incident): Google keeps at most 200 versions a project and
+  each install saves one (about 10 a day); at 200 `POST /versions` answers 429 and the script cannot update itself. The
+  API cannot delete a version, so only a person can free them (Apps Script editor, Project history). After each deploy
+  the script counts its versions (`selfVersionsCount_`), and again every hour while the count is 170 or more
+  (`selfVersionsRun_`, so a clean-up is seen without a deploy); from 170 it writes one line a day to the Alerts tab and
+  the Deploy log with the count and what to do (`selfVersionsSave_`). A 429 at `POST /versions` reads "error: version
+  limit reached: delete old versions …" in the Deploy log (counted as 200; `AUTO_PENDING` finishes the update after the
+  clean-up). While the count is 170 or more the public `?stats=1` reply carries it as `vers` (the app ignores it), for
+  the hourly Health check (docs/PAGES.md "Infrastructure health").
 - **By hand**, before the one-time setup (HANDOVER.md) or if it fails: copy
   <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/Code.gs> into Extensions > Apps Script, then
   Deploy > Manage deployments > Edit > New version.

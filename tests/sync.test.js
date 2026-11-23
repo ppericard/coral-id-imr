@@ -379,7 +379,7 @@ test('autoUpdate: a higher version is installed and the web app deployment repoi
   assert.match(s.ctx.autoUpdate(), /^deployed v/);
   assert.deepStrictEqual(
     g.calls.map(c => c.split(' ').slice(0, 2).join(' ')),
-    ['get /content', 'put /content', 'post /versions', 'get /deployments', 'put /deployments/WEB']
+    ['get /content', 'put /content', 'post /versions', 'get /deployments', 'put /deployments/WEB', 'get /versions?pageSize=50']
   );
   assert.ok(g.calls[1].includes('"name":"appsscript"'));
   assert.ok(g.calls[4].includes('"versionNumber":7'));
@@ -394,6 +394,148 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
     s = loadCodeGs({fetch: g.fetch});
   assert.strictEqual(s.ctx.autoUpdate(), 'skipped');
   assert.deepStrictEqual(g.calls, []);
+});
+
+// The Apps Script version limit (Code.gs SELF_VERSIONS; the 2026-11-22 incident: 200 versions kept, every POST /versions
+// answered 429 for 36 hours). `v.kept`: the versions the project keeps, served by GET /versions 50 a page; `v.full`: POST
+// /versions answers Google's 429 RESOURCE_EXHAUSTED. Both can change between runs (a person deleted old versions).
+function fakeVersions(remote, v) {
+  const g = fakeGoogle(remote);
+  return {
+    calls: g.calls,
+    fetch: (url, o = {}) => {
+      const m = (o.method || 'get').toLowerCase(),
+        p = url.replace(/^.*\/projects\/SCRIPT_ID/, '');
+      if (url.includes('script.googleapis.com') && m === 'post' && p === '/versions' && v.full) {
+        g.calls.push('post /versions');
+        return resp(429, {
+          error: {
+            code: 429,
+            message: 'Cannot create more versions: Script has reached the limit of 200 versions.',
+            status: 'RESOURCE_EXHAUSTED'
+          }
+        });
+      }
+      if (url.includes('script.googleapis.com') && m === 'get' && p.startsWith('/versions?')) {
+        g.calls.push('get ' + p);
+        const q = new URLSearchParams(p.split('?')[1]),
+          from = Number(q.get('pageToken') || 0),
+          to = Math.min(v.kept, from + Number(q.get('pageSize')));
+        return resp(200, {
+          versions: Array.from({length: Math.max(0, to - from)}, (_, i) => ({versionNumber: from + i + 1})),
+          ...(to < v.kept ? {nextPageToken: String(to)} : {})
+        });
+      }
+      return g.fetch(url, o);
+    }
+  };
+}
+const NEXT = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
+const alerts = s => (s.sheets.Alerts ? s.sheets.Alerts.rows.slice(1).map(r => String(r[1])) : []);
+const deployLog = s => s.sheets['Deploy log'].rows.slice(1).map(r => String(r[1]));
+
+test('versions: 169 kept after a deploy is no alert, and the stats reply carries no count', () => {
+  const v = {kept: 169},
+    g = fakeVersions(NEXT, v),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(
+    g.calls.filter(c => c.startsWith('get /versions')),
+    [
+      'get /versions?pageSize=50',
+      'get /versions?pageSize=50&pageToken=50',
+      'get /versions?pageSize=50&pageToken=100',
+      'get /versions?pageSize=50&pageToken=150'
+    ],
+    'every page counted'
+  );
+  assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).n, 169);
+  assert.deepStrictEqual(alerts(s), []);
+  assert.strictEqual(deployLog(s).length, 1, 'the deploy line only');
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, undefined);
+});
+
+test('versions: 170 kept after a deploy writes one Alerts and Deploy log line, once a day, and the stats reply says 170', () => {
+  const v = {kept: 170},
+    g = fakeVersions(NEXT, v),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  const want =
+    'sheet script versions: 170 of 200 kept, the self-update stops at 200 (about 10 are used a day); delete old versions in the Apps Script editor (Project history)';
+  assert.deepStrictEqual(alerts(s), [want]);
+  assert.match(deployLog(s)[0], /^deployed v/);
+  assert.strictEqual(deployLog(s)[1], want);
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, 170);
+  // The next deploy the same day: counted (171), no second line.
+  v.kept = 171;
+  delete s.props.AUTO_PENDING;
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.strictEqual(alerts(s).length, 1, 'once a day');
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, 171);
+  // A day later: a new line.
+  const st = JSON.parse(s.props.AUTO_VERSIONS);
+  s.props.AUTO_VERSIONS = JSON.stringify({...st, alerted: st.alerted - 86400000});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.strictEqual(alerts(s).length, 2);
+  assert.match(alerts(s)[1], /^sheet script versions: 171 of 200 kept/);
+});
+
+test('versions: 200 kept after a deploy says the limit is reached', () => {
+  const g = fakeVersions(NEXT, {kept: 200}),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(alerts(s), [
+    'sheet script versions: limit reached, 200 of 200: the self-update is stopped; delete old versions in the Apps Script editor (Project history)'
+  ]);
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, 200);
+});
+
+test('versions: a 429 at POST /versions is said plainly, the update stays pending, and a clean-up finishes it', () => {
+  const v = {kept: 200, full: true},
+    g = fakeVersions(NEXT, v),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.ctx.autoUpdate(), 'error');
+  const line = deployLog(s)[0];
+  assert.strictEqual(
+    line,
+    'error: version limit reached: delete old versions in the Apps Script editor (Project history), 200 of 200 are kept; the next run then finishes the update'
+  );
+  assert.doesNotMatch(line, /RESOURCE_EXHAUSTED|\{/, 'no raw JSON');
+  assert.ok(s.props.AUTO_PENDING, 'the code is in place: the next run finishes the deployment');
+  assert.deepStrictEqual(alerts(s), [
+    'sheet script versions: limit reached, 200 of 200: the self-update is stopped; delete old versions in the Apps Script editor (Project history)'
+  ]);
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, 200, 'the Health check can name it');
+  // 15 minutes later, still full: the same plain line again, no second Alerts line.
+  assert.strictEqual(s.ctx.autoUpdate(), 'error');
+  assert.strictEqual(deployLog(s)[1], line);
+  assert.strictEqual(alerts(s).length, 1);
+  // Old versions deleted by hand: the next run deploys, counts again, and the warning is gone.
+  v.full = false;
+  v.kept = 120;
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).n, 120);
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, undefined);
+  assert.strictEqual(alerts(s).length, 1);
+});
+
+test('versions: an up-to-date run counts again only while the count is high, at most once an hour', () => {
+  const v = {kept: 150},
+    g = fakeVersions(CODE, v),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.calls, [], 'no count known: nothing asked (counted after each deploy)');
+  s.props.AUTO_VERSIONS = JSON.stringify({n: 120, at: Date.now() - 7200000});
+  s.ctx.autoUpdate();
+  assert.deepStrictEqual(g.calls, [], 'a low count is not counted again');
+  s.props.AUTO_VERSIONS = JSON.stringify({n: 180, at: Date.now() - 600000, alerted: Date.now() - 600000});
+  s.ctx.autoUpdate();
+  assert.deepStrictEqual(g.calls, [], 'counted 10 minutes ago');
+  s.props.AUTO_VERSIONS = JSON.stringify({n: 180, at: Date.now() - 3600000, alerted: Date.now() - 3600000});
+  s.ctx.autoUpdate();
+  assert.strictEqual(g.calls.filter(c => c.startsWith('get /versions')).length, 3, 'an hour later: counted again (150)');
+  assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).n, 150);
+  assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, undefined, 'the clean-up is seen without a deploy');
 });
 
 // The release branch (rule D3): the script installs from `release`, which only the
@@ -520,7 +662,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
   assert.match(s2.ctx.autoUpdate(), /^deployed v/);
   assert.deepStrictEqual(
     g2.calls.map(c => c.split(' ').slice(0, 2).join(' ')),
-    ['post /versions', 'get /deployments', 'put /deployments/WEB']
+    ['post /versions', 'get /deployments', 'put /deployments/WEB', 'get /versions?pageSize=50']
   );
   assert.strictEqual(s2.props.AUTO_PENDING, undefined);
 });

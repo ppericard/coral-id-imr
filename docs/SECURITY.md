@@ -252,7 +252,10 @@ script writes there itself, never what a player sends:
   anonymous id, no name), `anon`, `n:<name>` (a signed-in player's answers), `newacct`, `reports`,
   `ev:<device id>`, `events`, `old`, `selfdel`, `sd:<admin id>` or `auditdeny` (the Audit tab's refusals, roles step 1);
 - `photos not of the unit shown: <admin id> (n of m answers)` (`photoCheck_`);
-- `left out of the statistics: device <admin id> signed in as <admin id>, left out too`.
+- `left out of the statistics: device <admin id> signed in as <admin id>, left out too`;
+- `sheet script versions: …` (`selfVersionsSave_`, vNEXT): the Apps Script versions kept are near Google's 200-version
+  limit, or at it, and old ones must be deleted by hand (spec/sync.md "The version limit"); it names nobody and shows
+  under Other.
 
 The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves it as the name's admin id (`aid_`, the
 id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name

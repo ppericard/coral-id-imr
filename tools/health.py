@@ -11,6 +11,9 @@ Checks, each read-only and with no name, code or secret in anything it prints (a
 2. the sync sheet script answers the app's own public read-only request (`?stats=1&av=health`: an av that is no build
    number, so the script logs nothing for it) with ok and its `v`; behind `main`'s VERSION is a notice inside the
    self-update window (BEHIND_MIN after the Code.gs commit) and a failure after it (the 15-minute `autoUpdate` is stuck);
+   the reply's `vers` (the Apps Script versions the project keeps, served only from 170 on: Code.gs SELF_VERSIONS) is a
+   note naming the limit, and at VERSIONS_MAX while behind a failure at once (the script cannot update itself until old
+   versions are deleted by hand);
 3. the weekly pCloud backup: nothing public tells when it last ran (the Deploy log is read only with the admin token), so
    without INFRA_TOKEN the line says so and passes; with it, `readInfra` says when the last backup saved, and one older
    than BACKUP_DAYS fails. The workflow does not pass the token (an access decision for Pierre: docs/PAGES.md).
@@ -47,6 +50,7 @@ WARN = 0.70  # a warning past 70 % of a limit (the same in tools/brief.py and ad
 LIMITS = {'cells': 10_000_000, 'pages': 10**9, 'r2': 10 * 10**9, 'slow': 5000}
 BACKUP_DAYS = 8  # the backup is weekly (Sundays about 02:00 Manila)
 BEHIND_MIN = 60  # the script updates itself every 15 minutes: an hour behind main is stuck
+VERSIONS_MAX = 200  # Apps Script keeps 200 versions a project (Code.gs SELF_VERSIONS.MAX): at 200 the self-update stops
 INFRA_STALE_DAYS = 30  # the hand-measured R2 figure is old after a month
 HEX10 = re.compile(r'^[0-9a-f]{10}$')
 REF = re.compile(r'(?<![\w./-])([\w][\w./-]*\.(?:js|css|json))\?v=([0-9a-z]+)(?![\w])')
@@ -178,12 +182,22 @@ def check_sheet(get, url, v_main, age_of, pause=3):
     if not (isinstance(j, dict) and j.get('ok') and isinstance(v, int)):
         return res('sheet script: answers', False, 'HTTP %s, no ok reply with a version' % s if s else 'no answer'), None
     note = 'v%d, %.1f s' % (v, ms / 1000)
+    n = j.get('vers')
+    full, limit = isinstance(n, int) and n >= VERSIONS_MAX, None
+    if full:
+        limit = 'Apps Script version limit reached (%d of %d): delete old versions in the Apps Script editor (Project history)' % (n, VERSIONS_MAX)
+    elif isinstance(n, int):
+        limit = '%d of %d Apps Script versions kept: delete old versions in the Apps Script editor (Project history) before the limit' % (n, VERSIONS_MAX)
     if v_main and v < v_main:
+        if full:  # the script cannot update itself until versions are deleted: no need to wait the hour
+            return res('sheet script: answers', False, '%s, behind main (v%d): %s' % (note, v_main, limit)), v
         age_min = age_of()
         if age_min is not None and age_min > BEHIND_MIN:
-            return res('sheet script: answers', False, '%s, behind main (v%d) for %d min: autoUpdate is stuck' % (note, v_main, age_min)), v
+            return res('sheet script: answers', False, '%s, behind main (v%d) for %d min: autoUpdate is stuck%s' % (note, v_main, age_min, '; ' + limit if limit else '')), v
         note += ', behind main (v%d): updating itself (about 15 min)' % v_main
-        return res('sheet script: answers', True, note, 'notice'), v
+        return res('sheet script: answers', True, note + ('; ' + limit if limit else ''), 'notice'), v
+    if limit:
+        return res('sheet script: answers', True, note + '; ' + limit, 'notice'), v
     return res('sheet script: answers', True, note), v
 
 
