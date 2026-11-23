@@ -1715,6 +1715,12 @@ document.addEventListener('visibilitychange', () => {
     sendEvents();
   } else pagesResume(PV, Date.now());
 });
+// A page closed or reloaded where the browser gives no hidden event first: its summary goes as when the app is hidden
+// (after a hidden event, pagesTake has nothing left, so nothing is queued twice).
+window.addEventListener('pagehide', () => {
+  pagesSend();
+  sendEvents();
+});
 // Signing in: a new name keeps and sends what this device holds. A known account ("Is it you?", bindSync) takes the
 // sheet's settings, adds up both progresses, then reloads; either way the answers played before join the log (LOG0).
 function signIn(name, pin, j) {
