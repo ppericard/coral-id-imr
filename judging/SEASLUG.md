@@ -119,7 +119,10 @@ The fish's scale, the same five levels:
 **Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): an unclear subject
 (`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong colour loss
 (`2`), a head-on, rear or ventral view (`h`, `t`, `v`) or a partial animal (`0`) is at most 3. The fish's caps, but a
-dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `j`, `w` and `f` cap nothing.
+dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `j`, `w` and `f` cap nothing. Since
+2026-11-23 the fish's partial fish and head-on, tail or top views are at most 4, and their typical-look families free
+partial and camouflage (judging/FISH.md "Caps", Q456 and Q458): both came from fish answers, so the sea slugs keep their
+caps at 3 and have no typical-look family (`RUBRICS` `"seaslug"`).
 
 ## Juveniles
 

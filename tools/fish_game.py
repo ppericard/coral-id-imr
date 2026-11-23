@@ -448,6 +448,7 @@ def ref_play(fish, refs, codes):
     play enters only once judged against its photos (in_play, keep)."""
     import fish_judge as J
     dim = {t['id'] for t in fish.get('teach') or [] if t.get('dimorph')}
+    typ = J.typical_now()  # the typical-look families (Q456: partial and camouflage cap nothing there)
     of, _ = entries(fish)
     out = []
     for sid, L in (refs or {}).items():
@@ -455,7 +456,7 @@ def ref_play(fish, refs, codes):
         for r in L:
             if not t or r.get('f') not in codes or not r.get('src'):
                 continue
-            e, jt = J.cap(codes[r['f']], t in dim or sid in J.phase_species(), r.get('rep'))
+            e, jt = J.cap(codes[r['f']], t in dim or sid in J.phase_species(), r.get('rep'), typical=t in typ)
             q = {k: v for k, v in r.items() if k != 'for'}
             q.update(e=e, jt=jt)
             if judged_sure(jt, e):

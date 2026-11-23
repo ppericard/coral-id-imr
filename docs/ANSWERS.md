@@ -1910,3 +1910,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   une réécriture à la marge, si ça permet justement effectivement de nettoyer tout ça proprement … on peut déjà
   intégrer effectivement les premières modifications à la marge»; the simple credits page: «dans un deuxième temps, mais
   pas maintenant», once the IMR lecture photos are out. Applied: Linear REE-51.
+- **17:20, Q455 (REE-85, the ease weight).** «ok» to the integrator's revised recommendations of 16:49 (his word is
+  «ok», the wording is the integrator's, REE-85's comment of 17:21): the ease weight to about 0.3 (0.2–0.4), no
+  urgency; response time is the better signal for a photo's difficulty (REE-16). Applied: Linear REE-240.
+- **17:20, Q456 (REE-85, the typical look).** «ok», the same answer: in a family whose usual look is buried or
+  camouflaged, partial `0` and camouflage `c` no longer cap the ease; the families set by a declared rule, at least
+  half of the family's photos in play tagged `0` or `c`. Applied: judging/FISH.md "Caps"; tools/fish_judge.py
+  `typical_look` (REE-242).
+- **17:20, Q457 (REE-85, the ease within a family).** «ok», the same answer: the judged ease used only within a
+  family, later, with a simulation. Applied: Linear REE-241.
+- **17:20, Q458 (REE-85, the caps softened).** «ok», the same answer: first step, a partial fish `0` (outside the
+  typical-look families) and the head-on, tail and top views `h t d` at most 4 instead of 3; the blur cap kept,
+  camouflage kept outside the typical-look families, monochrome left open. Applied: judging/FISH.md "Caps";
+  tools/fish_judge.py `cap` (REE-242).
