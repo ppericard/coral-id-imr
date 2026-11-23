@@ -66,7 +66,8 @@ exam, or where the bias swamps the measure (the freezes).
 | 7 | 11-17 | Variants on their unit's mastery (#953, Q391, Q392 a); levels and shares [study](2026-11-17-levels-and-shares-study.md) | 5 x 600: `phOther` down in 50 of 50 pairs; the casual diver's first family at Open Water about 12 answers later (declared) and the beginner's E at 300 (Q392 a) | bias, mid | No for the primary and the first Open Water (both before typed questions); E a little (both arms) | Low |
 | 8 | 11-09 | Fish format offsets (#809): E breached on every profile, accepted | 5 x 300 with `--stats` (typed offset −0.42) | bias, short | E is the app's bar: lost typed rights hold it down in both arms; the breach was the bar rising towards the truth | Low |
 | 9 | 11-19 | The fish's own statistics (#1148, Q413) and reference photos (#1045, Q421): E breaches accepted, merged with no further simulation | 5 x 300 (#1148: 15 seeds) | bias, short | As row 8; Pierre's answers rest on the direction (the bar closer to the truth), not on the size | Low |
-| 10 | 11-08 to 11-23 | Draw changes judged on a draw measure at 300 questions: RARE cap (#729, Q252; 29% → 9%), photo memory prior (#790, #805), stuck shaky (#857), Find the X families (#885, level 3 on 40 seeds), no photo twice (#1093), live answers (#1234), names rows (#1301, page errors), REE-189 (#1376), REE-197 (#1391, 10 seeds) | 5 profiles x 5-20 seeds x 300; primaries `hard`, `near`, `perPhoto`, `know`, page errors | bias, short | No for the primaries (the learner's or the draw's); the guardrails on levels and plateaus a little, in both arms | Low |
+| 10 | 11-08 to 11-21 | Draw changes judged on a draw measure at 300 questions, both arms before #1375: RARE cap (#729, Q252; 29% → 9%), photo memory prior (#790, #805), stuck shaky (#857), Find the X families (#885, level 3 on 40 seeds), no photo twice (#1093), live answers (#1234), names rows (#1301, page errors), REE-189 (#1376, merged before #1375) | 5 profiles x 5-20 seeds x 300; primaries `hard`, `near`, `know`, page errors | bias, short | No for the primaries (the learner's or the draw's); the guardrails on levels and plateaus a little, in both arms | Low |
+| 10b | 11-23 | REE-197, the floor of 12 (#1391, merged 11-23 as a stop-gap that REE-245 is to replace) | 5 x 10 seeds x 300: `perPhoto@300` down, clear (p 1.0e-5); cost `hard@300` held; two of the beginner's guardrails unclear | **possibly freezes**: the arms it names (main `2b731bd11`, the branch before its merge of 11-23) predate #1375, but the merged head holds #1375 and the PR does not record which head the after arm ran; no trace kept | If an arm froze, yes: a frozen question repeats its photos and the learner is taught each time, which moves `perPhoto`, `near` and true knowledge themselves (Codex, #1512) | Medium: re-run on today's main (§3.3): the direction holds, the size is smaller |
 | 11 | 11-06, 11-09 | Fish draw in big pools (#678, Q186): nothing moves; families before genera (#822, Q208 A): app-world guardrails held | 4 x 5 x 600; 5 x 600 | bias, mid | Little: paired, the primaries elsewhere (#822's in the rated world) | Low |
 
 No decision record (`docs/decisions/`) and no answer in `docs/ANSWERS.md` rests on a fish app-world figure beyond rows 8
@@ -110,10 +111,10 @@ beginner met no typed question in its first 300 in the old run. Likely the draw 
 design (`--ach --profiles lectureRA,strongRA --seeds 2 --questions 4000 --beyond yes --choice auto`, 4 workers) and the
 notebook's L8 design with the strong RA added (beginner, lecture RA, strong RA x 2 seeds x 2,500, same options, 6
 workers). learnsim's plan had estimated them at 6.2 and 3.8 minutes [sim] (#1502 saw it too). Now that the fish
-answers really go in, a
-fish job's time grows much faster than its length: in the run below, 4 jobs of 1,500 answers side by side on the
-shared 4-core machine, the first ended after 1,018 s and the last after 1,642 s. So the 2,500-, 4,000- and 8,000-answer timings cannot be re-run here
-within the cap, split or not (one job is one run), and the beginner's was not re-run.
+answers really go in, a fish job's time grew much faster than its length: in the run below, 4 jobs of 1,500 answers
+side by side on the shared 4-core machine, the first ended after 1,018 s and the last after 1,642 s. **Fixed since by
+#1514** (REE-262: the false-alarm table armed in the app world, a calibration that grows), which then ran both designs
+in full (4,000 answers in 1,593 s, 2,500 in 1,002 s) with the same answers; its figures go past 1,500 below [read].
 
 **What ran**: the same options at 1,500 answers, lecture RA and strong RA x 2 seeds (1,642 s) [sim]. The answer at
 which each achievement first entered the record, seed 1 / seed 2 (median); the notebook's run of 2026-11-08 (lecture RA,
@@ -133,13 +134,39 @@ which each achievement first entered the record, seed 1 / seed 2 (median); the n
 | **flearn1 First briefing** | **740 / 1,141 (941)** | **> 8,000** | not reached | **376 / 654 (515)** | not reached |
 | fq95a Dive guide | 1,005 / 1,354 (1,180) | > 2,500; 1,531 / 1,945 | – | 1,067 / 1,056 (1,062) | – |
 | fq80b Deep diver | 1,249 / 1,419 (1,334) | > 2,500; 1,962 / 2,006 | – | 1,001 / 1,015 (1,008) | – |
-| fpct50 and beyond, flearn10, flearn30, flearncore, fcoreadv, fc2, fc3adv, fgen20, fgen60, fsp1 and every species one | > 1,500 | the 8,000 table | not reached | > 1,500 | not reached |
+| fpct50 and beyond, flearn10, flearn30, flearncore, fcoreadv, fc2, fc3adv, fgen20, fgen60, fsp1 and every species one | > 1,500 (below) | the 8,000 table | not reached | > 1,500 (below) | not reached |
 
 At 1,500 answers [sim]: units Learned 5 and 3 (lecture RA), 9 and 9 (strong RA); families at Advanced 22.5 and 27
 (means); scientific genera at Open Water 6 and 3; species at Open Water 0.5 and 2, none at Advanced; every family met
 (65) in every run; right % since the previous row 93 and 96.
 
-## 4. What holds and what changes
+**Past 1,500 answers** (#1514's runs on `1ecb1399` with its fix, the same seeds and options, identical to the table
+above up to 1,500; medians of 2) [read]: lecture RA / strong RA, flearn10 1,882 / 1,510, fpct50 1,919 / 2,061, fcoreadv
+not reached / 1,959, fsp1 3,292 / 1,987, flearn30 3,082 / 2,509, fc3adv 2,759 / 2,752, flearncore not reached / 3,494,
+fpct60 not reached / 3,815; at 4,000 answers 36-42 units Learned and 56-59 of 65 families at Advanced. The beginner at
+2,500: fmet5 20, fpct10 46, fq50a 219, fq50b 517, fmetall 667, fq80a 1,050, flearn1 1,479, flearn10 1,986, fpct50
+2,392.
+
+### 3.3 REE-197's paired check (#1391), re-run
+
+Row 10b's arms cannot be shown free of the freezes from the PR alone. Its figures point that way [guess]: a frozen
+question shows the same photos hundreds of times, which would put answers per photo far above the 1.006 to 1.030 it
+reported at 300. Re-run to settle it, as #1391 ran it, on today's main with the fixed learnsim (#1502, #1514):
+before = `origin/main` `172ac5c4` with #1391's `model.js` change reverted (a scratch worktree, never committed),
+after = `origin/main`; `--subject fish --seeds 10 --questions 300`, the five fish profiles; declared before running:
+primary `perPhoto@300:down`, cost `hard@300` up to +0.05, one look; each arm in a slot under a 20-minute budget (219 and
+328 s); `tools/learncmp.js` [sim].
+
+- **The primary is clear, down, but much smaller**: pooled p 0.007, 16 of 50 pairs down, the others mostly equal.
+  Answers per photo at 300, before → after: beginner 1.016 → 1.015, casual diver 1.013 → 1.011, lecture RA 1.009 →
+  1.008, strong RA 1.005 → 1.004, expert 1.006 → 1.005; no profile clear under Holm. #1391 read 1.016-1.030 → 1.006-1.017
+  (43 of 50 pairs down). Today's before arm already repeats less; what of that is the bug's and what the 157 commits
+  since #1391's base is not isolated.
+- **The cost is held**: the share under ease 4 before Open Water +0.005 to +0.010, bounds at most +0.015 against +0.05.
+- **Every guardrail is held**, the beginner's two cells that #1391 left unclear included (first unit at Open Water
+  92.4 → 92.4; longest plateau 48 → 48).
+
+
 
 **Holds:**
 
@@ -147,10 +174,14 @@ At 1,500 answers [sim]: units Learned 5 and 3 (lecture RA), 9 and 9 (strong RA);
   recommendations included (keep the shared values, keep the fish's cards off, refit the bands on real fish players).
   One figure moved and is not the bug's (§3.1).
 - **The first achievements come within a few dozen answers** (rule L8): fmet5 about 20, fpct10 6 to 16, unchanged.
-- **The paired draw checks at 300 to 600 questions** (rows 5 to 11): not re-run. Their primaries are the learner's or
-  the draw's own measures; the bug touched a few questions there (§1: none to 11 by question 300) and both arms alike
-  [guess]. Pierre's Q413 and Q421 rested on the direction of the bar's change, which a dropped right answer does not
-  reverse.
+- **The paired draw checks at 300 to 600 questions run before #1375** (rows 5 to 11 but 10b): not re-run. Their
+  primaries are the learner's or the draw's own measures; the bug touched a few questions there (§1: none to 11 by
+  question 300) and both arms alike [guess]. Pierre's Q413 and Q421 rested on the direction of the bar's change, which
+  a dropped right answer does not reverse.
+- **REE-197's check (#1391, row 10b)**, the one fish check at 300 questions whose merged code holds #1375, re-run on
+  today's main (§3.3): answers per photo still go down (clear, pooled), by a tenth to a fifth of what #1391 measured, with the cost
+  and every guardrail held. #1391's decision (a stop-gap, merged on Pierre's «ok» of 2026-11-23 17:22, which REE-245's
+  continuous weight is to replace) stands; its measured size does not.
 
 **Changes** (simulation only; the app was never wrong):
 
@@ -164,17 +195,15 @@ At 1,500 answers [sim]: units Learned 5 and 3 (lecture RA), 9 and 9 (strong RA);
   part is not isolated.
 - **REE-56's timing (#1498, §7)**: the merged note already voids its run; its "last valid measure", the notebook's
   fq80a at 978-1,230, is from the bias era too. Today fq80a comes at about 684 (strong RA) and 819 (lecture RA), the
-  lecture RA has 22.5 families at Advanced by 1,500, and both profiles have species units at Open Water by 1,500 (none
-  at Advanced yet). The hunts' distance past 1,500 answers is still unmeasured, as §7 says.
+  lecture RA has 22.5 families at Advanced by 1,500, and the first species at Advanced (fsp1) comes at about 1,990
+  (strong RA) and 3,290 (lecture RA) answers (#1514): the hunts, which need species at Advanced, come after that.
 - **#1410's "every difference 0.0 exactly"** is two frozen arms, not a held guardrail; its "the measure cannot tell"
   stays.
 
-**Not measured, so "the measure cannot tell"** (rule L11): every fish achievement past 1,500 answers (fpct50 and up,
-flearn10, flearn30, flearncore, fcoreadv, fc2, fc3adv, fgen20, fgen60, the species ones), and the beginner's timing.
-They need fish jobs longer than the 40-minute cap allows on this machine (§3.2).
+**Past 1,500 answers** the far achievements were out of reach here (§3.2) and are measured by #1514: the mastery ones
+are no longer out of reach (flearn10 about 1,500-1,900, flearn30 about 2,500-3,100), fpct50 about 1,900-2,400.
 
 **For Pierre**: no changed conclusion touches what players see or how the game behaves. The achievements are built and
 approved (Q259-Q264), and nothing proposed here changes them; the welcome values hold. So no "Decision for Pierre"
-issue is opened. Before an achievement's timing is next relied on (REE-56's hunts, REE-30's fpct100), it is re-run on
-a fixed learnsim; the budget's estimate for fish runs and the length a fish job can reach within the cap are a tooling
-fix of their own (rule W27: a check longer than L11's cap is a tooling bug to fix).
+issue is opened. The tooling gap this ran into (rule W27: a check longer than L11's cap is a tooling bug to fix) is
+#1514's.
