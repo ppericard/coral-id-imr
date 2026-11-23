@@ -264,7 +264,8 @@ Coral genera off the IMR list but common at Dauin, an opt-in set (`BONUS` in `co
 - **The offer**, once, when every slate genus has been asked at least once (`asked`; met alone is not enough: a player
   who taps Open all would otherwise get it a question later), by a card over the question (a prompt like the others,
   `promptOk`): "5 more genera?", "Not on the IMR coral list, but common at Dauin: you may meet them on dives and in
-  ReefCloud photos.", **Add them** / **Not now**.
+  ReefCloud photos.", **Add them** / **Not now**, and its note "⚙ Settings, Bonus genera, any time. They count in your
+  progress, not in your IMR slate score."
 - **The choice** is `Q.bon` in `reefid-sync-coral-quiz` (synced with the quiz settings; `Q.bonT`, when it was made, so
   the latest choice wins across devices in `sync.js` `mergeSaved`, and a newer progress reset from another device clears
   it; `mergeUsers` keeps it on if either account had it on). ⚙ **Bonus genera On / Off** changes it any time (Off takes
@@ -274,8 +275,11 @@ Coral genera off the IMR list but common at Dauin, an opt-in set (`BONUS` in `co
   easiest first, the shaky slope, the opening hold), each on its first-meeting card (kicker "Bonus genus", "Not on the
   IMR list, but common at Dauin."); no threshold, no weight cap. They are choices and distractors like slate genera
   (`distractors()` matches look-alikes both ways), duel with their slate look-alike (`duelPick`), have their own `P[n]`
-  (synced), count as "wrongly given" (rule L2), and never count in the progress (`progPct`, the slate tiles, the sync
-  summary).
+  (synced), count as "wrongly given" (rule L2), and count in the global progress for every player, opted in or not
+  (rule L6, Q445 A: the one scale of every game genus, `UNITS` `scale`, `scaleUnits`: the header pill, My progress's
+  ring, the achievements, the sync summary's genera and %, so the "By genus" columns and the leaderboard), never in the
+  IMR slate score (the slate's own %, under the player's name on My progress), nor in the slate tiles' counts, Learned
+  or the units unlocked.
 - **Where they show.** My progress shows them after the slate genera in all three views once on (the photo wall: tiles
   tagged "Bonus"; Slate: a strip under the slate; Groups: a "+" row). Their ID tips are labelled "ID tips (Coral Finder
   p. …)", never IMR. `#learn/compare/A/B` accepts them (`UNITS` `inGame`, `gameGenus()`). A two-level bonus genus counts its `medium`

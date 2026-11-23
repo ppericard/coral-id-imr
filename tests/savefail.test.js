@@ -105,6 +105,7 @@ function app({fail = () => undefined} = {}) {
     achMerge: () => {},
     route: () => {},
     slateGenera: () => [],
+    scaleUnits: () => [], // app.js: the units of the global % (UNITS scale)
     level: () => ['new'],
     progPct: () => 0,
     boardOn: () => true,

@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v221 (2026-11-23)
+
+One 45-genus coral scale (rule L6; Pierre, 2026-11-20: «Les genres bonus dans les coraux devraient définitivement compter dans le progres global»; Q445 A, 2026-11-21: «une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR»): the "By genus" tab's columns are the script's own scale (`scale_`: the slate's genera then the bonus genera), never the genera a save names: unknown keys are ignored, the grid grows at most to the scale's width, and nothing is written there when data.json cannot be read (a Codex security finding on the PR); the app sends from this version (`sync.js` `SCALE_SHEET`) the bonus genera too, so `board_`, which ranks the corals over that header, ranks them on the one scale. The admin's replayed Progress % (`replayedAll_` `rp`, its own and the saved copy's) is over every game genus too (`scale_`, `core.js` `gameOf` over data.json, cached as `scale1`), as the app's header shows it; Learned stays over the slate. Rules version 14 in the embedded `core.js` (`RVS`, no card): no bar moves, every device takes the replay once
+
 ## v220 (2026-11-22)
 
 Comments only: the embedded `core.js` copy's long comment blocks are cut to their contract and a pointer to the doc section that explains them (the facts they held moved into `docs/LEARNING.md` and `docs/spec/` first). No behaviour change: the code is token-identical (integrator's call, Q406 / REE-29, architecture steps 3-4 decision (c))
