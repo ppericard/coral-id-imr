@@ -1967,3 +1967,15 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   Je pense que ça fait partie des choses que j'ai pas forcément explorées jusqu'à présent … à noter ou à remonter si
   c'est déjà noté quelque part.» Not a decision: an idea brought back. Applied: Linear REE-147 (timed classification,
   declined for IMR and casual learners on 2026-11-03) with the new angle; REE-191.
+- **21:05, every photo of an observation, views and zoom.** «je pense qu'il faut justement toutes les prendre … et
+  justement voir dans quelle mesure c'est possible de faire une identification sur différents niveaux de zoom d'une
+  photo»; against preferring an observation's first photo; wide photos: «une identification au genre, je pense que
+  dans beaucoup de cas, ça peut se faire … de loin, avec une photo en wide», the species of a coral needing the
+  corallites. A small photo is a fair challenge: «être capable d'identifier l'organisme sur une petite photo
+  justement … ça montre une vraie expertise», enlarged with a tap. Applied: Linear REE-252; LEARNING.md "The
+  players we design for".
+- **21:05, questions that do not count.** «injecter des questions qui ne vont pas vraiment compter, ou en tout cas
+  qui ne vont pas compter si le joueur la rate, mais qui permettent de tester des choses sur son niveau, sur ce qu'il
+  a appris, sur ses faiblesses»; «il ne faut jamais que ça fasse chuter notre taux de réussite local à un stade où en
+  fait on finit par nous décourager». Not settled: to reconcile with Q385 (2026-11-18, no practice probe from the
+  reserve). Applied: Linear REE-191.

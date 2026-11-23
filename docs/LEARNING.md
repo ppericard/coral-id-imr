@@ -76,9 +76,10 @@ his to correct). Every change to the draw, the opening, the formats or the photo
    those who do not: strong players get it right more often than weak ones. A photo that strong players miss as often
    as anyone is noise, not challenge. A Research Grade identification says an expert could name the species (Pierre:
    on iNaturalist and identified, so «identifiable. Probablement»), and our questions ask less than the species; the
-   doubt left is the one photo we show alone and on a phone, when the identifier also saw the observation's other
-   photos (REE-191 measures it from the answers; REE-194 lists photos other players also miss). An expert's challenges come from their own weaknesses, which the
-   engine finds, and from such photos. An absolute expert answers even far, low-detail photos; we accept they can
+   doubt left is the one photo we show when the identifier also saw the observation's other photos (REE-252 measures
+   it; REE-194 lists photos other players also miss). A small photo is a fair challenge, not a defect: identifying from
+   it is a real skill, and a tap enlarges it (Pierre, 21:05). An expert's challenges come from their own weaknesses,
+   which the engine finds, and from such photos. An absolute expert answers even far, low-detail photos; we accept they can
    hardly be challenged on identification.
 3. **Content is the binding constraint.** Every unit needs a stock at every level: a deep stock of easy photos for the
    beginner, a stock of hard and identifiable photos for the expert. Seeing a photo again is acceptable for a
