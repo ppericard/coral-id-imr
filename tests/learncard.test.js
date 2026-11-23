@@ -1,8 +1,8 @@
 require('./slot.js').testGuard();
-// A unit's card on a Learn list (app.js listCard; Pierre, 2026-11-20), for every subject: the whole card opens the
+// A unit's card on a Learn list (idtips.js listCard; Pierre, 2026-11-20), for every subject: the whole card opens the
 // unit's sheet through one link (its name, stretched over the card), with no "Open the sheet" line, no ID marks heading
-// and no source under the cues (they are on the sheet, rule C2), and its photo no longer enlarges there. Run from app.js
-// and learn.js themselves.
+// and no source under the cues (they are on the sheet, rule C2), and its photo no longer enlarges there. Run from
+// idtips.js and learn.js themselves.
 // node --test tests/learncard.test.js
 const test = require('node:test');
 const assert = require('node:assert');
@@ -12,7 +12,7 @@ const fs = require('fs'),
 const block = require('./block.js');
 
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-const app = read('app.js'),
+const idtips = read('idtips.js'),
   learn = read('learn.js'),
   css = read('app.css');
 
@@ -39,9 +39,9 @@ const ctx = {
 };
 vm.createContext(ctx);
 vm.runInContext(
-  block(app, 'const tipsList = (g, cls', '\nconst tipsText', {file: 'app.js'}) +
+  block(idtips, 'const tipsList = (g, cls', '\nconst tipsText', {file: 'idtips.js'}) +
     '\n' +
-    block(app, 'const tipCard = n =>', '\n/* ---------- key helpers', {file: 'app.js'}) +
+    block(idtips, 'const tipCard = n =>', '\n  );\n', {through: 1, file: 'idtips.js'}) +
     '\nthis.M = {tipsList, listCard, tipCard};',
   ctx
 );

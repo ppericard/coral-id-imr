@@ -3011,7 +3011,7 @@ async function startSmoke(b, base) {
     }
     await p.evaluate(() => (location.hash = 'learn/genera'));
     await drawn(p);
-    // The ID tips view: each genus one card that opens its sheet (app.js listCard, shared with the fish and sea slugs;
+    // The ID tips view: each genus one card that opens its sheet (idtips.js listCard, shared with the fish and sea slugs;
     // Pierre, 2026-11-20): one link, its name, stretched over the card; its look-alikes' Compare links above it.
     await p.evaluate(() => document.querySelector('[data-gv="tips"]').click());
     await p.waitForSelector('#azgrid .lcard', {timeout: 8000});
