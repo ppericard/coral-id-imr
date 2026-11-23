@@ -163,6 +163,40 @@ print(json.dumps([BEYOND_PER, BEYOND_MAX,
   assert.deepStrictEqual(out, [3, 30, 30, 9, 17.5, 3, 0, 0, 0]);
 });
 
+test('beyond the cap: an observation cut by the room under the cap brings its other photos to the beyond pass (Codex #1487)', () => {
+  // 1 of room under the cap, 9 beyond, one local faved observation with 10 photos: 1 photo under the cap (a new
+  // observation's first photo costs 1), the 9 others beyond it (0.5 each), marked bc in the records.
+  const out = J(`${OBS}
+o = ob(70, 3)
+o['ph'] = [[700 + k, f'https://x/{700 + k}/square.jpg', 'cc-by', '(c) u'] for k in range(10)]
+it = usable_obs(o, set(), set())
+c = {'s': {'id': 's1'}, 'R': {'room': 1, 'rooms': {}, 'free': 1}, 'n': Counter(), 'near': True, 'held': {}, 'all': {70: it},
+     'pools': {it['tier']: [it]}, 'more': {}, 'world': lambda: [], 'pw': {}, 'pmore': {}, 'faves': True, 'beyond': 9}
+got = fill(c, set())
+rec = [record({'id': 's1'}, x, p) for x in got for p in x['P']]
+print(json.dumps([[len(x['P']) for x in got], [bool(x.get('beyond')) for x in got], sum(1 for r in rec if r.get('bc')), len({r['f'] for r in rec})]))`);
+  assert.deepStrictEqual(out, [[1, 9], [false, true], 9, 10]);
+});
+
+test('beyond the cap: what it took (bc) never eats the room under the cap nor a phase reservation (Codex #1487)', () => {
+  // Cap 50, a juvenile phase (PER_PHASE 10 reserved), 40 adults held: room 10, all of it the juveniles'. 20 adults taken
+  // beyond the cap leave both as they were, so FishBase or a later run still fills the juveniles; counted as the bonus.
+  const out = J(`t = {'id': 't1', 'species': ['s1'], 'phase': ['Juveniles look different']}
+s = {'id': 's1'}
+rec = lambda i, bc=False: {'f': f'fish-s1-cand-{i}', 'o': f'o{i}', **({'bc': 1} if bc else {})}
+L = [rec(i) for i in range(40)] + [rec(i, True) for i in range(40, 60)]
+R = species_room(s, t, L, lambda f: False, cap=50)
+R0 = species_room(s, t, [{k: v for k, v in p.items() if k != 'bc'} for p in L], lambda f: False, cap=50)
+print(json.dumps([[R[k] for k in ('have', 'bonus', 'room', 'rooms')], [R0[k] for k in ('room', 'rooms')],
+    beyond_cap(R, t, 2, 12), beyond_cap({**R, 'bonus': 30}, t, 2, 12)]))`);
+  assert.deepStrictEqual(out, [
+    [40, 20, 10, {juvenile: 10}],
+    [0, {juvenile: 0}],
+    10, // 30 beyond the cap for 10 easy adults missing, 20 of it taken
+    0
+  ]);
+});
+
 test('faved: faves > 0 and not annotated juvenile', () => {
   const out =
     J(`print(json.dumps([faved({'fv': 2, 'st': ''}), faved({'fv': 2, 'st': 'adult/male'}), faved({'fv': 2, 'st': 'adult/juvenile'}),
@@ -170,17 +204,21 @@ test('faved: faves > 0 and not annotated juvenile', () => {
   assert.deepStrictEqual(out, [true, true, false, false, false]);
 });
 
-test('pick_short: a species at its cap with room beyond it is picked; a fresh "free" record covers "faves" (same searches)', () => {
+test('pick_short: a species at its cap with room beyond it is picked; a fresh "free" record covers "faves" only with room for an observation', () => {
   const out = J(`import datetime
 r = {'cap': 90, 'base': 30, 'room': 0, 'beyond': 30, 'parts': {'faves': 30}, 'easy': 2, 'need': 12, 'unjudged': 60}
+r2 = {**r, 'room': 2, 'parts': {'free': 2, 'faves': 30}}
 d = datetime.date(2026, 11, 23)
+free = {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free']}}
 print(json.dumps([pick_short({'s1': r}, {}, d), pick_short({'s1': {**r, 'beyond': 0, 'parts': {}}}, {}, d),
-    pick_short({'s1': r}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free']}}, d),
+    pick_short({'s1': r2}, free, d), pick_short({'s1': r}, free, d), pick_short({'s1': {**r2, 'room': 0.5}}, free, d),
     pick_short({'s1': r}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['juvenile']}}, d)]))`);
   assert.deepStrictEqual(out, [
     [['s1'], []],
     [[], []],
-    [[], ['s1']],
+    [[], ['s1']], // room 2: its searches read to the end took every usable observation, faved ones included
+    [['s1'], []], // at its cap, or under 1 of room: the end only says nothing more fitted under the cap
+    [['s1'], []],
     [['s1'], []]
   ]);
 });

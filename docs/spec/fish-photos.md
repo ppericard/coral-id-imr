@@ -66,8 +66,11 @@ the circle-1 entries (`--circle` for the other circles).
     assez»; 18:37: «on y est au "deuxième temps"»): such a species may also hold `BEYOND_PER` (3) room per easy adult
     observation it lacks (`easy_need` - `easy_obs`) beyond its cap, at most `BEYOND_MAX` (30), counted as the cap
     counts (`beyond_cap`), for faved observations only (`faves_count` > 0, not annotated juvenile: `faved`), the
-    most-faved first, from the same searches and buckets. Never a wink entry's species; nothing is removed when the
-    shortfall shrinks. [The decision](../decisions/2026-11-23-faved-beyond-cap.md).
+    most-faved first, from the same searches and buckets (an observation cut by the room under the cap brings its
+    other photos). Those candidates carry `bc: 1`: `species_room` counts them apart (`bonus`), so the room under the cap
+    and each phase's reservation stay as without them (FishBase or a later run still fills an open phase).
+    Never a wink entry's species; nothing is removed when the shortfall shrinks.
+    [The decision](../decisions/2026-11-23-faved-beyond-cap.md).
 
 ### The cap, weighted by phases
 
@@ -166,7 +169,7 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   (`fetch_fishbase.py`, offline) fills what iNaturalist left and `--rep` tags the covers, for the refilled species only.
 - **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts, cap}}): a part of the room
   ("free", the general searches; `faves`, the room beyond the cap, read from the same searches, so a `free` record
-  covers it; `juvenile`, `male`, `female`, the phase searches) still open after the run whose
+  covers it while the species has room for a new observation, 1 or more; `juvenile`, `male`, `female`, the phase searches) still open after the run whose
   searches were read to their end (`ends`), or which got nothing, is searched to the end that day, under the cap the
   species had then (`cap`); the species is skipped while every open part of its room is in a record less than
   `RECHECK_DAYS` (30) old made under a cap at least its cap now (`pick_short`; a record without `cap` reads as the cap
@@ -243,7 +246,8 @@ Photo records have the coral candidates' shape: `f` (`fish-<species id>-cand-<iN
 (iNaturalist's taxon name), `own`, `loc` (dauin / ph / world, world = abroad in the Indo-West Pacific), `src` (the
 original, shown straight from iNaturalist in the admin), `r: 1`, plus `st` (iNaturalist Life Stage / Sex annotations:
 juvenile, adult, female, male; FishBase's life stage, with initial and terminal for its phases; a hint for the phase,
-and the phase of the photo for the cap until a judging tag says otherwise) and `ni`. Nothing is downloaded and no photo
+and the phase of the photo for the cap until a judging tag says otherwise), `ni` and `bc` (taken beyond the cap:
+`beyond_cap`, counted apart by `species_room`). Nothing is downloaded and no photo
 is committed; the photos in play are downloaded (R2, the four sizes) when they enter the game.
 
 ## The fish curation

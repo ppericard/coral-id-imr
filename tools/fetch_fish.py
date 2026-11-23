@@ -58,7 +58,8 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   TREET.wink), so neither the refill nor FishBase searches it once it holds 5, and --topup leaves it alone.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
-  src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
+  src, r, plus st (life stage / sex annotations), ni (Pierre's own Needs ID observation, confirmed by rule S2) and bc
+  (taken beyond the cap: beyond_cap; species_room counts it apart).
   data/fish-cand.json = {"v": 1, "cand": {species id: [photo, ...]}}, one species per line (tools/datajson.py layout).
 - Curation: curation.json "fish" (written by the admin only, never here; its full shape is the admin plan's PR 4): add
   {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id or "x"}. The top-level "exclude" (corals) is honoured too, by iNaturalist photo id.
@@ -599,13 +600,14 @@ def easy_need(t):
 
 def beyond_cap(R, t, easy, need):
     """The room beyond the cap of a species short of easy adults (REE-243), for faved observations only: its cap raised
-    by min(BEYOND_MAX, BEYOND_PER * (need - easy)), net of what it holds and of its room under the cap (R: species_room).
-    0 for a species not short of easy adults, or of a wink entry (a few very good photos: WINK_CAP, Q372). As the cap,
-    it counts what the species holds: a refill never takes it twice, and nothing is removed when it shrinks."""
+    by min(BEYOND_MAX, BEYOND_PER * (need - easy)), net of what it already took beyond the cap (R["bonus"]: its bc
+    candidates) and of what it holds over the cap otherwise (R: species_room). Counted apart from the cap's room, so it
+    never takes a phase's reservation (species_room). 0 for a species not short of easy adults, or of a wink entry (a
+    few very good photos: WINK_CAP, Q372). A refill never takes it twice, and nothing is removed when it shrinks."""
     if easy >= need or is_wink(t):
         return 0
     extra = min(BEYOND_MAX, BEYOND_PER * (need - easy))
-    return max(0, R["cap"] + extra - R["have"]) - R["room"]
+    return max(0, extra - R.get("bonus", 0) - max(0, R["have"] - R["cap"]))
 
 
 def faved(it):
@@ -718,7 +720,8 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
     """Everything the cap of Q36 says about species s (entry t), shared by tools/fetch_fish.py and tools/fetch_fishbase.py:
     {"cap", "phases" (species_phases), "have" (photos still usable, weighted per observation: obs_cost), "held"
     ({phase: photos kept of it, counted the same way}), "obs" ({observation: photos still usable}), "room", "rooms",
-    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of, raised for
+    "free" (phase_room), "bonus" (the photos taken beyond the cap, bc: counted apart, so the cap's room and the phases'
+    reservations stay as without them; beyond_cap)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of, raised for
     a family the game covers with few species (family_cap). An
     observation's first usable photo in list order counts 1, the others EXTRA_W. A species of a wink entry (met only on
     the surprise cards) never holds more than WINK_CAP, whatever the cap (Q372)."""
@@ -728,15 +731,19 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
     c = family_cap(base, t) if cap is None else cap
     if is_wink(t):
         c, base = min(c, WINK_CAP), min(base, WINK_CAP)
-    held, obs = Counter(), Counter()
+    held, obs, bonus = Counter(), Counter(), 0
     for p in L:
         if not gone(p["f"]):
             o = p.get("o") or p["f"]
-            x = photo_phase(p, sug.get(p["f"]))
-            held[x if x in phases else ""] += obs_cost(obs[o], 1)
+            k = obs_cost(obs[o], 1)
             obs[o] += 1
+            if p.get("bc"):  # taken beyond the cap (beyond_cap): never eats the cap's room nor a phase's reservation
+                bonus += k
+                continue
+            x = photo_phase(p, sug.get(p["f"]))
+            held[x if x in phases else ""] += k
     return {"cap": c, "base": base, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, "obs": dict(obs),
-            **phase_room(phases, c, held)}
+            "bonus": bonus, **phase_room(phases, c, held)}
 
 
 def moved_of(cur):
@@ -903,6 +910,8 @@ def record(s, o, p):
         r["st"] = o["st"]
     if own and o.get("g") != "research":
         r["ni"] = 1
+    if o.get("beyond"):
+        r["bc"] = 1  # taken beyond the cap (beyond_cap): species_room counts it apart
     return r
 
 
@@ -928,6 +937,7 @@ def fill(c, used):
     phase that iNaturalist cannot fill stays open for that phase: FishBase fills it next (tools/fetch_fishbase.py), or a
     later run; never adults in a juvenile's place. Room as obs_cost counts it (held: the photos each observation keeps)."""
     s, R, n, near, held = c["s"], c["R"], c["n"], c["near"], c["held"]
+    pool0 = {it["id"]: list(it["P"]) for L in c["pools"].values() for it in L}  # select cuts P: the beyond pass starts again
     taken, left = [], R["room"]
     free = R["free"] + sum(r for ph, r in R["rooms"].items() if ph not in INAT_PHASE)
     for ph in PHASES:
@@ -951,8 +961,10 @@ def fill(c, used):
                         faves=c.get("faves", False))
     if c.get("beyond", 0) > 0:
         # Beyond the cap (REE-243): faved observations only (faved), most-faved first, from the same searches and with
-        # the same buckets (Pierre's own, presence, distance, abroad only as select allows).
-        pools = {k: [it for it in L if faved(it)] for k, L in c["pools"].items()}
+        # the same buckets (Pierre's own, presence, distance, abroad only as select allows). Each observation with its
+        # photos as found, less those taken (claimed): one cut by the room under the cap brings the rest here.
+        pools = {k: [{**{a: v for a, v in it.items() if a != "phase"}, "P": [p for p in pool0[it["id"]] if str(p[0]) not in used]}
+                     for it in L if faved(it)] for k, L in c["pools"].items()}
         got = select(pools, c["beyond"], c["more"], n, lambda: [it for it in c["world"]() if faved(it)], anywhere=near,
                      claimed=used, photos=True, held=held, faves=True)
         for o in got:
@@ -1213,8 +1225,10 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
         e = mem.get(sid)
         same = (e or {}).get("cap", r.get("base", r["cap"])) >= r["cap"]
         done = set((e or {}).get("parts") or [])
-        if "free" in done:
-            done.add("faves")  # the room beyond the cap reads the same general searches: read to their end, nothing more
+        if "free" in done and r["room"] >= 1:
+            # The room beyond the cap reads the same general searches: read to their end with room for a new observation
+            # (1), every usable one is taken. With less room left, the end only says nothing more fitted under the cap.
+            done.add("faves")
         if e and fresh(e, today) and same and set(r["parts"]) <= done:
             skip.append(sid)
             continue

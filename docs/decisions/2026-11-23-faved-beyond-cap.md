@@ -20,14 +20,17 @@ pas assez». 18:37: «on y est au "deuxième temps" c'était après la première
   (`obs_cost`): `beyond_cap`. Only faved observations (`faves_count` > 0) not annotated juvenile take it (`faved`),
   the most-faved first, with the same searches, buckets, licences, Research Grade and presence rules. Nothing is
   removed when the shortfall shrinks; a wink entry's species keeps `WINK_CAP`.
+- Those candidates carry `bc: 1` and are counted apart (`species_room` `bonus`), so the bonus never eats the room under
+  the cap nor a phase's reservation that FishBase or a later run may still fill (Codex review on #1487).
 - 3 and 30 are the integrator's call, easy to correct: about one faved observation (a few photos) per missing easy
   adult, so the judging pass gets one or two tries at each, and a family that stays short never grows by more than
   one base cap.
-- The room beyond the cap is a part of the exhaustion memory (`faves`); a fresh `free` record covers it, since it reads
-  the same general searches (read to their end, every usable observation is already a candidate).
+- The room beyond the cap is a part of the exhaustion memory (`faves`). A fresh `free` record covers it while the
+  species has room for a new observation (1 or more): its searches read to their end then took every usable
+  observation. With less room, the end only says that nothing more fitted under the cap.
 
 ## Consequences
 
-- `tools/fetch_fish.py` `BEYOND_PER`, `BEYOND_MAX`, `beyond_cap`, `faved`, `fill`, `run`, `ends`, `exhausted`,
-  `shortness`, `pick_short`, `refill` (`--only`); tests `tests/easyrefill.test.js`.
+- `tools/fetch_fish.py` `BEYOND_PER`, `BEYOND_MAX`, `beyond_cap`, `faved`, `species_room` (`bonus`), `record` (`bc`),
+  `fill`, `run`, `ends`, `exhausted`, `shortness`, `pick_short`, `refill` (`--only`); tests `tests/easyrefill.test.js`.
 - The new candidates wait for the judging pass like any other.
