@@ -200,6 +200,15 @@ the margins set once there): held when the one-sided 90% bound of the paired dif
 goes one step up within the cap, then is reported "the measure cannot tell"; breached, or a cost not declared, goes to Pierre. Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
 9% of cells with no effect). **Real data** (rule L12): inference per player (players are the statistical unit), never per answer.
 
+**What a simulation decides, and what it does not.** The simulated learner is our own model, not fitted to real
+players. A simulation decides on the mechanics of the rules (what follows from the rules alone), on bugs and extreme
+cases, on the equivalence of two implementations of one rule, and on rough starting values before any data exists,
+labelled as hypotheses. It does not decide on how real people learn, hesitate, forget or stay motivated, nor on a signal
+the simulator does not model, nor on a difference inside its own uncertainty. Then the logic of the feature, the real
+answer log (rule L12) and use by real players decide, and a change that can be reverted ships with its switch named.
+A breach in the rated world on such a question is reported with its reason, never a block by itself. This is no
+reversal either: simulations stay a check with their uses.
+
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
 Analyses) get the method suited to the design, found before running (e.g. a factorial design with a mixed-effects
 model, seeds or players as random effects, interactions in the model rather than many pairwise tests; study §6); state
@@ -210,6 +219,9 @@ the model and its assumptions in the PR and check them. They are rare: taking th
 levels by possible effect, the rated world beside the app world, 2026-11-08; the 40-minute cap, level 2's worlds, level 3 off this machine, 2026-11-18, Q405
 ("6h de calcul ne devrait JAMAIS arriver", 11-17); this rule over LEARNING.md and the tools on level 2's worlds, the cap
 and level 3's go, and level 3's tests, LEARNING.md's level-2 length the minimum, 2026-11-19 (Q415).
+What a simulation decides: Pierre, 2026-11-21 13:25 («il faut pas non plus l'inverser complètement et le transformer
+plus qu'en garde-fou»); 2026-11-23 16:40 Manila («ça me parait raisonnable comme compromis. Ok pour implémenter cette
+proposition», REE-71; scope: [reviews/2026-11-21-simulation-scope.md](../reviews/2026-11-21-simulation-scope.md)).
 
 ### L12
 

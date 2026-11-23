@@ -352,11 +352,13 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
 - **Arrival order**: each waiter takes a ticket in the slots directory and a free slot goes to the oldest live ticket; a
   dead waiter's ticket is skipped (the holders' PID and start-time check).
 - **Disk**: a heavy run refuses to start with less than 5 GB free on the repository's disk (`tests/slot.js` `diskOk()`,
-  `MIN_FREE_GB`), and says what to clean. **Every agent cleans up behind itself**: its worktree once its PR is merged
+  `MIN_FREE_GB`), and says what to clean. **A heavy run takes the slot for one command and releases it when that
+  command ends; never a script that keeps a slot between runs.** **Every agent cleans up behind itself**: its worktree once its PR is merged
   (`git worktree remove`), temporary downloads, venvs, screenshots it no longer needs.
 
 *Why:* an agent that forgets the rule must not be able to overload the machine. *Source:* Pierre, 2026-11-05 ("the
-automatic lock of the unit tests"; the load budget of twice the cores and the disk rule the same day).
+automatic lock of the unit tests"; the load budget of twice the cores and the disk rule the same day; the slot for one command, 2026-11-23 16:38 Manila,
+«ok», REE-227).
 
 ### W25
 
