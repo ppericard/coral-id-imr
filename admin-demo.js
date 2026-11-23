@@ -1116,6 +1116,8 @@
       list,
       gen,
       slate: slateOf(D),
+      // the corals' global % over every game genus, the bonus genera included (Code.gs scale_, rule L6)
+      scale: gameOf(D),
       pools: {},
       excluded: [],
       gdefs,
@@ -1198,7 +1200,7 @@
               opt
             )[id].P
           );
-          if (pctOf(replayedOf(full, P), S.slate) !== pctOf(P, S.slate)) break;
+          if (pctOf(replayedOf(full, P), S.scale) !== pctOf(P, S.scale)) break;
         }
       }
       u.data['reefid-sync-coral-progress'] = JSON.stringify(P);
@@ -1410,7 +1412,7 @@
             {gen: S.gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[id]: start} : {}}
           )[id],
           G = replayedOf(rep, P);
-        by[k].rp = [pctOf(G, S.slate), learnedOf(G, S.slate), pctOf(P, S.slate)];
+        by[k].rp = [pctOf(G, S.scale), learnedOf(G, S.slate), pctOf(P, S.scale)];
       });
     }
     // Code.gs exposure_: each player's photo exposure per subject, ex {subject id: [seen, of, hit, asked, units]}.
