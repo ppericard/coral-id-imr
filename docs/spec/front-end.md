@@ -240,7 +240,7 @@ genera for the corals, Scientific names for the fish. The rows:
 A small inline script in `index.html` applies the theme, palette and colour-blind mode before the first paint. There is
 no "Photos from Dauin / PH / All" setting, and none is to come back.
 
-## Install the app (`app.js`)
+## Install the app (`install.js`)
 
 Phone players are nudged to install the app (an icon on the home screen) instead of opening a link in the browser.
 `installNudge` offers one card (`installCard`, `cardShow` kind `feature`, `.unlock.install`, the app's icon in the
