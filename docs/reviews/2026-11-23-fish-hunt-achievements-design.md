@@ -1,8 +1,9 @@
 # The fish hunt achievements and Q261's two: design note (REE-56)
 
 **Status: design only (docs).** Nothing is built. Written on `origin/main` at ff634ee6, 2026-11-23 (Manila evening),
-for Linear REE-56 "Fish achievements: the hunt set and Q261's two". One read-only simulation was run for the timing
-(section 7). Section 9 lists the questions for Pierre and the integrator's calls; section 10 is the build plan.
+for Linear REE-56 "Fish achievements: the hunt set and Q261's two". The read-only timing runs gave no valid figure
+(section 7: the first hit a simulator bug since fixed, the second was cut at its budget). Section 9 lists the
+questions for Pierre and the integrator's calls; section 10 is the build plan.
 
 ## 1. What Pierre decided
 
@@ -41,7 +42,8 @@ scientific name), all replayed from the answer log by the sheet (rule D9):
 - the bar and its level (`lvStep`: met, Open Water, Advanced 80%, Divemaster, learned);
 - `s.ps`, every photo shown on that unit with its counts `{file: [shown, right]}` (`model.js`, `core/replay.js`);
 - `s.off` and `s.conf`, how often another unit was offered beside it and taken for it; `core/elo.js` `pairConf` reads
-  both directions, and `confScore` with `CONF.TRAP` (0.2) is the engine's own test of "this player mixes up this pair".
+  both directions, and `confScore(c, prior)` against `CONF.TRAP` (0.2) is the engine's own test of "this player mixes
+  up this pair" (`model.js` `confusable`, with the pooled score as the prior).
 
 **The data a hunt can be built from** (counted on `fish.json` and `fish-game.json` of this `main`):
 
@@ -97,8 +99,19 @@ a source's claim, FISH_PATH.md), so it appears only inside a species' common nam
 2. at least K photos of the class of each side were answered right (distinct files in any unit's `s.ps`: a family, a
    genus or a species question all count, since the class is a photo property); K = 3 proposed, the most M4 allows
    comfortably (5 juvenile photos on its a side);
-3. the pair is not a known mix-up for this player: `confScore(pairConf(P, a, b))` under `CONF.TRAP` on the two species
-   units, the engine's own line (no new constant).
+3. the pair is not a known mix-up for this player: `confScore(pairConf(P, a, b), CONF.LOOK) < CONF.TRAP` on the two
+   species units (`core/elo.js` `confScore(c, prior)`, whose second argument is required). The prior is the one the
+   engine gives a declared look-alike pair (`model.js` `confPrior`), since a source declares the pair; no new constant.
+   With no mix-up, the two must have been offered together at least 5 times (2.4 / (n + 8) < 0.2 needs n > 4); each
+   mix-up asks 5 more offers without one. It reads the player's own record only, so a recount gives what play gave.
+
+   The draw's own test, `confusable(a, b)` (`model.js`: `confScore(pairConf(P, a, b), pooledConf(a, b)) >=
+   CONF.TRAP`), is not used here for two reasons. Its prior is the pooled score, which moves with the sheet's statistics,
+   so a recount could take a hunt back that nothing in the player's play changed. And `pooledConf`'s own prior depends
+   on the units' families: the decided pairs are not declared look-alikes of the units (the mimicry class is per photo,
+   [decision](../decisions/2026-11-19-mimicry-pairs-drilled.md)), so M1, across two families, would start at
+   `CONF.BASE` (0.03) or `CONF.FORM` (0.08) and pass with no offer at all, where a pair inside one family (M5) starts
+   higher (`CONF.FAM`, or `CONF.LOOK` where its species units list each other as look-alikes).
 
 | Id | Name | Description (plain) | Tier |
 | --- | --- | --- | --- |
@@ -112,7 +125,8 @@ a source's claim, FISH_PATH.md), so it appears only inside a species' common nam
 | fhunt5 | Look-alike hunter | 5 look-alike pairs hunted | 3 |
 | fhfool | Fool me once | You hunted a pair you had once mixed up (`pairConf` shows a mix-up, and the pair is hunted now) | 2 |
 
-Silver where both species are in circle 1, gold where one needs circle 3. fhunt5 counts pairs (a fixed number), so a
+Each name and description would sit with its pair in the pairs file, so the rule stays general (section 8). Silver
+where both species are in circle 1, gold where one needs circle 3. fhunt5 counts pairs (a fixed number), so a
 pair added to the file later never takes it back, where "every pair" would (Q260). fhfool is the wink Pierre asked for
 that stays a learning milestone: being fooled earns nothing; being fooled and then mastering the pair does.
 
@@ -169,35 +183,24 @@ alternative is a "hidden hunt" line until one species of it is met.
 
 ## 7. Timing (rule L8): what the simulation says
 
-`tools/learnsim.js --subject fish --ach` (the real fish game in a browser), profiles lecture RA and strong RA, 2 seeds x
-4,000 answers, `--beyond yes` (circle 3 accepted), `--choice auto`, on this `main`, read-only, in a machine slot (rule
-W24), within the 40-minute cap (rule L11; 4 runs in 552 s). The hunts are not in the code, so the run times what they
-rest on: a species named at Advanced (fsp1, fspsci1), and before it a family at Advanced, since a family's species
-open only once it reaches Advanced (`app.js` `spPlay`). The answer at which each first entered the record, median of
-the 2 seeds (runs reaching it):
+**No valid timing yet.** The hunts are not in the code, so a simulation can only time what they rest on: a species
+named at Advanced (fsp1, fspsci1), and before it a family at Advanced, since a family's species open only once it
+reaches Advanced (`app.js` `spPlay`). Every hunt and both of Q261's two therefore come after a family's Advanced
+(fq80a) by construction: far goals, as Pierre's "harder" asks, which leave the first achievements where they are
+(fmet5 and fpct10 within a few dozen answers, rule L8). How far after, nothing measured here can say:
 
-| Achievement | lecture RA | strong RA |
-| --- | --- | --- |
-| fmet5 Meet the neighbours | 20 (2/2) | 20 (2/2) |
-| fpct10, fpct20 | 14, 84 (2/2) | 6, 51 (2/2) |
-| fq50a Certified | 115 (2/2) | 244 (2/2) |
-| fmetcore Roll call | 170 (2/2) | 1,325 (2/2) |
-| fpct30 Reef crest | 301 (2/2) | 2,122 (2/2) |
-| fq50b School's in | 1,687 (2/2) | > 4,000 (1/2) |
-| fmetall Full logbook | > 4,000 (1/2) | not reached |
-| fq80a (a family at Advanced), fsp1, fspsci1, every species one | not reached | not reached |
-
-Families at Advanced over the 4,000 answers: none in either lecture RA run; one or two in the strong RA runs, the first
-at answer 488 in one seed and after 3,000 in the other. No species unit was met in any run. Two things are not
-diagnosed here: the measures stayed flat over long stretches (for the lecture RA, identical from answer 600 to 1,200 and
-from 2,100 to 2,700, at 97-100% right), and fq50b came later than the notebook's run of 2026-11-08 (725 / 1,084 for
-the lecture RA). The figures are therefore a floor, not a timing.
-
-What it means for the hunts: in today's simulation no hunt, and neither of Q261's two, comes within 4,000 answers,
-since each needs species named at Advanced, which the simulated players never reach. They are far goals by
-construction, as Pierre's "harder" asks, and they leave the first achievements where they are (fmet5 and fpct10 within
-a few dozen answers, rule L8). How far beyond 4,000 they come the simulation cannot say yet: the run above did not
-reach the species level, and on 2026-11-19 the real log had no species answer either.
+- **A first run is void.** `tools/learnsim.js --subject fish --ach`, lecture RA and strong RA, 2 seeds x 4,000 answers,
+  `--beyond yes`, `--choice auto`, on ff634ee6 (4 runs in 552 s, in a machine slot, rule W24). No family reached
+  Advanced for the lecture RA and no species unit was met, but its measures stayed flat for hundreds of answers. That
+  was the simulator bug REE-249, fixed in #1502 after the run: a typed fish question was answered with the unit's id,
+  never taken, and asked again, so 84-92% of each run's answers were spent on one repeated question. None of its
+  figures stand.
+- **The same command on the fix (main at 34a430b6) was cut** at its 35-minute budget with 0 of 4 runs done (rule L11:
+  stopped with what it had), well past what its calibration run had planned; the machine was loaded at the time (load about
+  7 on 4 cores, another run of the same command under way). Not run again from here.
+- **The last valid measure** is the notebook's run of 2026-11-08 (8,000 answers, before the species level): the first
+  family at Advanced (fq80a) at answers 978-1,230. A hunt comes after that point plus the species' own climb, which no
+  run has timed (on 2026-11-19 the real log had no species answer either).
 
 The build checks each hunt's timing with the real game (rule L8, the issue's completion evidence) the way REE-30 plans
 for fpct100: a progress built just short of each condition, then played in the real game until the hunt comes (the
@@ -212,16 +215,24 @@ only, rule L12).
   changes file, and the integrator assigns the sheet version (rule D3). `?achs=1` counts ids, whatever their kind.
 - **No `ACH_V` raise for additions**: a new achievement is tested at the next check and comes as one recap toast for a
   player who already meets it. A raise is needed only if a condition of an existing one changes.
-- **Rule S1**: the tests read the subject's own pairs file (`lookalikes`, kind `resembles`) and photo phases, so the
-  mechanism is subject-neutral. The list is the fish's (Pierre's decision). Whether the sea slugs get theirs is
-  question f; until then, "no hunt list" is declared in `tests/subject-neutral.test.js` with its reason.
+- **One rule for every subject (rule S1; Pierre, 2026-11-23 21:22 and 21:25, paraphrase as the integrator
+  relayed it: a rule is general and never names the subjects it covers).** The hunts are one rule over whatever a subject declares: a pair hunt for each of its declared
+  species look-alike pairs (a side with no stage given counts every photo), the young for its species a source says
+  look different as young, the phases for its photos that carry one, Q261's two for its species that carry the Dauin
+  rank. A subject that declares none of these simply gets no hunt of that kind; no subject is named in the code and
+  no exception is needed. Each pair's fun name and description sit with the pair in the subject's pairs file (data,
+  reviewed with the pair), so the code holds no list of its own. Today that gives the fish their 7 pairs, the young,
+  the phases and Q261's two, and the sea slugs pair hunts for their 3 decided pairs (`tools/seaslugs.json`
+  `lookalikes`: the two Spanish dancers, Q377; two specialist-sourced pairs, Q390 D), and nothing else (no juvenile
+  flags, no Dauin rank); the corals have no species, so none.
 
 ## 9. Open questions
 
 **Pierre's** (player-facing choices his words of 2026-11-04 and Q261 leave open):
 
 - **(a) What "mastering a pair" asks.** Recommended: section 4.1 (both species named at Advanced, 3 photos of the class
-  right on each side, the pair not a known mix-up for the player). Harder: 5 photos (M4 has 5 in its class), or the
+  right on each side, the pair not a known mix-up for the player: at least 5 offers together without a mix-up).
+  Harder: 5 photos (M4 has 5 in its class), or the
   species learned (its exam passed) once REE-27 ships.
 - **(b) The first list.** Recommended: the 7 pairs, Look-alike hunter, Fool me once, Baby faces 10 and 30, Two-tone 10,
   Rare finds (13 hunts); the hard combinations from the players' confusions later (4.4). Options: add "Batfish five" now,
@@ -232,8 +243,12 @@ only, rule L12).
   Alternatives: by scientific names (overlapping fdauin20 on 10 species), another X.
 - **(e) Rare finds.** Recommended: the 10 least seen near Dauin among those seen there, by either name at Advanced, in
   the hunt section. Alternatives: every species seen by a single observer near Dauin (27 today, moving), or another X.
-- **(f) The sea slugs.** Recommended: the fish only for now, the mechanism ready for any subject's pairs; the sea
-  slugs' two decided species pairs (#1394) could get pair hunts later on his word.
+- **(f) One rule, every subject's declared pairs.** Following his words of 2026-11-23 (21:22, 21:25), the hunt is one
+  general rule (section 8): every subject's declared species look-alike pairs become pair hunts, and a subject that
+  declares none gets none. The question left is only what that means today: the sea slugs' 3 decided pairs, which
+  are plain confusions with no stage and no "resembles" claim, would get pair hunts at the same build. Recommended:
+  yes, every declared pair, whatever its kind (the alternative is to read only pairs where a source says one species
+  resembles the other, which today leaves the sea slugs none).
 
 **The integrator's calls, easy to correct** (recorded in the build PR's Decisions): option A; the ids; the names and
 descriptions; the tiers and icons; K's starting value once (a) is answered; ties by `cmi`; the counts 2 juvenile and
@@ -246,16 +261,19 @@ these files); REE-30's fpct100 (#1489 step 5) edits the same list, so the two go
 estimates from cited PRs (`tools/effort.py`).
 
 1. **The hunt engine and the first list (engine M)**, once (a), (b), (c) and (f) are answered: `core/achievements.js`
-   (`FISH_HUNT`, kind `hunt`; `core.js` built), `tools/sync/Code.gs` (`sync_core.py --fix`) and a changes file,
-   `app.js` (`UNITS` fish `hunts()`: each pair's class photos and units from `fish.json`, as `mimLay` reads them; the
-   `jd` species; the phased species), `progress.js` (`achSnap` hunt counts; the section on `#ach` and its count; `ACH_L`
-   unchanged), `tests/achhunt.test.js` (each condition at its threshold, both sides, a mix-up blocking, the kind kept
-   out of the badge, a recount equal to play), `tests/subject-neutral.test.js`, docs (spec/achievements.md,
+   (one rule making the hunts, kind `hunt`, from what a subject declares; `core.js` built), `tools/sync/Code.gs`
+   (`sync_core.py --fix`) and a changes file, `app.js` (one `hunts()` for every tree subject: each declared pair's
+   class photos and units, as `mimLay` reads them; the species flagged "young look different"; the phased species),
+   the pairs' names and descriptions in `tools/fish_lookalikes.json` and `tools/seaslugs.json` (built into each
+   subject's file), `progress.js` (`achSnap` hunt counts; the section on `#ach` and its count; `ACH_L` unchanged),
+   `tests/achhunt.test.js` (each condition at its threshold, both sides, a mix-up blocking, the kind kept out of the
+   badge, a recount equal to play, every subject: one with no pairs gets no pair hunt), docs (spec/achievements.md,
    LEARNING.md "Fish achievements", FISH_PATH.md). Timing checked with the real game (rule L8) as section 7 ends, the
    table in the PR. Players see: yes, one line to Pierre after the merge. Comparable
    to #1265, #1370, #1420, #1433, #1434: median 1.7 h (range 81 min-2.7 h).
-2. **Q261's two (engine S)**, once (d) and (e) are answered: `app.js` (`UNITS` fish `usual()`, `rare()`, beside
-   `top`), `progress.js` (`achSnap`), `core/achievements.js` (fusual20 in `FISH_ACH`, frare10 in the hunts), `Code.gs`,
+2. **Q261's two (engine S)**, once (d) and (e) are answered: `app.js` (`usual()`, `rare()` beside `top`, for every
+   subject whose species carry the Dauin rank), `progress.js` (`achSnap`), `core/achievements.js` (Usual suspects in
+   the general rule beside fdauin20, Rare finds in the hunts), `Code.gs`,
    a changes file, tests, docs. Comparable to #1299, #1322, #1376, #1428, #1445: median 81 min (range 23 min-6.9 h).
 3. **Hard combinations (study, then engine S)**, when the sheet's species confusions allow: a read-only count of the
    pooled species pairs (aggregates only, rule L12), the groups proposed to Pierre, then a list in the shape of 4.1.
