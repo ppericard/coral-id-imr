@@ -210,8 +210,12 @@ later species level to check; the cues are the sources', never shown to players 
 `judging/seaslug/<taxon id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:
 
 - `code`: the code of "Tags" above, ease included (`d1g0sl15`). The tool applies the caps.
-- `keep` (optional): `best`, `alt` or `dup`, as the fish's. A sea-slug candidate is one observation (one photo each,
-  `tools/fetch_seaslugs.py`), so a judgement without `keep` reads `best`; exactly one `best` per observation still holds.
+- `keep` (optional): `best` (exactly one per observation: its most useful photo), `alt` or `dup`, by the definition
+  shared by every subject (Pierre, 2026-11-24, «ok»; [the decision](../docs/decisions/2026-11-24-what-a-duplicate-is.md)):
+  `alt`: another zoom, framing, angle or pose of the same animal or colony; `dup`: a burst or the same framing, with
+  nothing new to see. Another side or other light is an `alt` too. The fetch takes one photo per observation today
+  (`tools/fetch_seaslugs.py`; every photo, as the other subjects, is Linear REE-252), so a judgement without `keep`
+  reads `best`.
 - `crop` (optional): `[left, top, right, bottom]` fractions of the photo, as FISH.md "A proposed crop", Q430 aside.
 - `unsure` (the fields you doubt: `code`, `keep`, `crop`, `bb`) and `note` (140 characters at most; required with `unsure`).
 - An egg-mass photo: `{"egg": true}` and nothing else but a `note`.
