@@ -388,8 +388,30 @@ function renderJourney(name, anonId = '') {
   const R = jRows(ASUBJ).sort((a, b) => a[1] - b[1]);
   const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}${u.arch ? '<small class="note">archived</small>' : ''}${SUBJECTS.length > 1 ? jseg() : ''}</div>`;
   if (!R.length) {
-    $v.innerHTML = head + '<p class="note">No answers yet.</p>';
+    // No answer, but maybe visits (REE-237: use of the app outside the quiz is activity): what they opened and for how long,
+    // from their page summaries (admin.js useOf), under this player's id.
+    const SN = PGS && !PGS.err ? useOf((u.arch ? PGS.arch : PGS.rows).filter(x => x.id === u.id)) : null;
+    $v.innerHTML =
+      head +
+      '<p class="note">No answers yet.</p>' +
+      (!PGS
+        ? '<p class="note">Loading…</p>'
+        : PGS.err
+          ? `<p class="note">${esc(PGS.err)}</p>`
+          : !SN
+            ? '<p class="note">No visit recorded yet.</p>'
+            : kpis([
+                ['Visits', SN.visits],
+                ['On screen', useSecs(SN.secs)],
+                ['Days', SN.days],
+                ['Last visit', ago(SN.last)]
+              ]) +
+              `<div class="adm-sgrid adm-journey"><section class="adm-scard" data-jpages><h3>Pages opened</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Page</th><th class="n">Times</th><th class="n">Time</th></tr></thead><tbody>${SN.pages
+                .slice(0, 8)
+                .map(o => `<tr><td>${esc(useLabel(o.p))}</td><td class="n">${o.n}</td><td class="n">${useSecs(o.s)}</td></tr>`)
+                .join('')}</tbody></table></div></section></div>`);
     bindJReload();
+    pagesFresh(here); // read again once stale (admin.js)
     return;
   }
   const J = journeyOf(R, M && M.slate),
