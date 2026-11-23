@@ -1910,3 +1910,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   une réécriture à la marge, si ça permet justement effectivement de nettoyer tout ça proprement … on peut déjà
   intégrer effectivement les premières modifications à la marge»; the simple credits page: «dans un deuxième temps, mais
   pas maintenant», once the IMR lecture photos are out. Applied: Linear REE-51.
+- **16:34, the refill aimed at easy photos.** To "launch REE-198, the easy-photo refill for families with 1 to 3
+  species" (for species short of easy adult photos only, iNaturalist's most-faved observations first, still Research
+  Grade and judged on the rubric, the neutral order of Q284 everywhere else): «oui, définitivement». Amends Q284's
+  "no votes order" for those species only. Applied: tools/fetch_fish.py `easy_need`, `select` faves;
+  spec/fish-photos.md "Candidates from iNaturalist" and "Automatic refill" (REE-198).
