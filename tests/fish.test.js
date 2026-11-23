@@ -578,32 +578,75 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
 // the flag r and no ease point (one judgement per photo, whatever its route in).
 // The typed flags j c a w (w, a visible watermark or text), as tools/fish_judge.py CODE; w caps nothing. Strong blur
 // (clarity b) at most 2 (judging/FISH.md "Strong blur", 2026-11-19). A juvenile (j) caps nothing (Q435, 2026-11-19).
+// A head-on, tail or top view and a partial fish at most 4 (Q458 step 1, 2026-11-23); in a typical-look family (typ:
+// TYPICAL below) partial and camouflage cap nothing (Q456, 2026-11-23).
 const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$/;
-const capOf = (code, phase, rep) => {
+const capOf = (code, phase, rep, typ) => {
   const [, v, w, l, k, cl, , n, fl0, e0] = code.match(CODE),
-    fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : '');
+    fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : ''),
+    part = w === '0' && !typ;
   let e = +e0;
   if (n === 'x' || k === '3' || cl === 'b') e = Math.min(e, 2);
-  if (/[ca]/.test(fl) || l === 'n' || k === '2' || /[htd]/.test(v) || w === '0') e = Math.min(e, 3);
+  if (/a/.test(fl) || (/c/.test(fl) && !typ) || l === 'n' || k === '2') e = Math.min(e, 3);
+  if (/[htd]/.test(v) || part) e = Math.min(e, 4);
   return {e, jt: code.slice(0, 7) + fl};
 };
+// The typical-look families (judging/FISH.md "Caps", Q456): the level-1 entries with at least half of their photos in
+// play (fish-game.json) tagged partial (whole 0) or camouflage (c); the test's copy of tools/fish_judge.py typical_look.
+const typicalOf = (fish, recs) => {
+  const of = new Map(),
+    n = {},
+    h = {};
+  fish.teach.filter(t => t.level === 1).forEach(t => (t.species || []).forEach(s => of.has(s) || of.set(s, t.id)));
+  recs.forEach(r => {
+    const t = of.get(r.sp),
+      jt = String(r.jt || '');
+    if (!t || jt.length < 7) return;
+    n[t] = (n[t] || 0) + 1;
+    h[t] = (h[t] || 0) + (jt[1] === '0' || jt.slice(7).includes('c') ? 1 : 0);
+  });
+  return new Set(Object.keys(n).filter(t => h[t] >= 0.5 * n[t]));
+};
+const TYPICAL = typicalOf(F, Object.values(GM).flat());
 const SPN = new Map(F.species.map(s => [s.id, [s.name, s.now].filter(Boolean)]));
-// The test's copy of the caps (capOf) and tools/fish_judge.py cap() agree, strong blur included (2026-11-19).
+// The test's copy of the caps (capOf) and tools/fish_judge.py cap() agree, strong blur included (2026-11-19), the
+// softened partial and views and the typical look too (2026-11-23).
 test('the caps: the test copy and tools/fish_judge.py cap() agree; strong blur (b) at most 2, soft (m) and juveniles uncapped', () => {
-  const codes = [
-    'p1g0sl15',
-    'p1g0ml15',
-    'p1g0bl15',
-    'p1g0bl13',
-    'p1g0bl11',
-    'h1g0bl15',
-    'p1g0bl1j5',
-    'p1n0bl15',
-    'p1g0sls5',
-    'p0g0ml15',
-    'p1g0sl1j5',
-    'p1g0sl1j4',
-    'p1g0sl1jc5'
+  // [code, typical-look family], then the ease after the caps.
+  const cases = [
+    ['p1g0sl15', false, 5],
+    ['p1g0ml15', false, 5],
+    ['p1g0bl15', false, 2],
+    ['p1g0bl13', false, 2],
+    ['p1g0bl11', false, 1],
+    ['h1g0bl15', false, 2],
+    ['p1g0bl1j5', false, 2],
+    ['p1n0bl15', false, 2],
+    ['p1g0sls5', false, 5],
+    ['p1g0sl1j5', false, 5],
+    ['p1g0sl1j4', false, 4],
+    ['p1g0sl1jc5', false, 3],
+    // Q458 step 1: partial and the head-on, tail and top views one step (at most 4); the other cap-3 tags unchanged.
+    ['p0g0ml15', false, 4],
+    ['h1g0sl15', false, 4],
+    ['t1g0sl15', false, 4],
+    ['d1g0sl15', false, 4],
+    ['h0g0sl14', false, 4],
+    ['p0g0sl13', false, 3],
+    ['p1g0sl1c5', false, 3],
+    ['p1g0sl1a5', false, 3],
+    ['p1n0sl15', false, 3],
+    ['p1g2sl15', false, 3],
+    ['p0g3sl15', false, 2],
+    // Q456: in a typical-look family, partial and camouflage cap nothing; the other caps hold.
+    ['p0g0sl15', true, 5],
+    ['p1g0sl1c5', true, 5],
+    ['p0g0sl1c5', true, 5],
+    ['h0g0sl1c5', true, 4],
+    ['p0g0sl1ca5', true, 3],
+    ['p0n0sl1c5', true, 3],
+    ['p0g0bl1c5', true, 2],
+    ['p0g0sl1c3', true, 3]
   ];
   const r = require('child_process').spawnSync(
     'python3',
@@ -611,18 +654,59 @@ test('the caps: the test copy and tools/fish_judge.py cap() agree; strong blur (
       '-c',
       `import sys, json; sys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})
 from fish_judge import cap
-print(json.dumps([list(cap(c, False)) for c in json.loads(sys.argv[1])]))`,
-      JSON.stringify(codes)
+print(json.dumps([list(cap(c, False, typical=t)) for c, t in json.loads(sys.argv[1])]))`,
+      JSON.stringify(cases.map(([c, t]) => [c, t]))
     ],
     {encoding: 'utf8'}
   );
   assert.strictEqual(r.status, 0, r.stderr);
   const py = JSON.parse(r.stdout);
-  codes.forEach((c, i) => assert.deepStrictEqual(py[i], [capOf(c, false, null).e, capOf(c, false, null).jt], c));
-  assert.deepStrictEqual(
-    py.map(x => x[0]),
-    [5, 5, 2, 2, 1, 2, 2, 2, 5, 3, 5, 4, 3]
+  cases.forEach(([c, t, e], i) => {
+    const js = capOf(c, false, null, t);
+    assert.deepStrictEqual(py[i], [js.e, js.jt], `${c} typical ${t}: python and the test copy`);
+    assert.strictEqual(py[i][0], e, `${c} typical ${t}`);
+  });
+});
+// The typical-look rule (Q456): a declared rule on the photos in play, never a hand list. tools/fish_judge.py
+// typical_look on a made-up pool (the line at half, a species counted for its first level-1 entry), and on the photos in
+// play (typical_now) the same families as the test's copy.
+test('the typical-look families: at least half of the photos in play partial or camouflaged, the tool and the test copy agree', () => {
+  const fish = {
+      teach: [
+        {id: 'a', level: 1, species: ['s1', 's2']},
+        {id: 'b', level: 1, species: ['s3', 's1']},
+        {id: 'c', level: 1, species: ['s4']},
+        {id: 'd', level: 2, species: ['s5']}
+      ]
+    },
+    recs = [
+      {sp: 's1', jt: 'p0g0sl1'},
+      {sp: 's2', jt: 'p1g0sl1'},
+      {sp: 's3', jt: 'p1g0sl1'},
+      {sp: 's3', jt: 'p1g0sl1c'},
+      {sp: 's3', jt: 'p1g0sl1'},
+      {sp: 's4', jt: 'p1g0sl1jc'},
+      {sp: 's5', jt: 'p0g0sl1'},
+      {sp: 's9', jt: 'p0g0sl1'}
+    ];
+  const r = require('child_process').spawnSync(
+    'python3',
+    [
+      '-c',
+      `import sys, json; sys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})
+import fish_judge as J
+a = json.loads(sys.argv[1])
+print(json.dumps([sorted(J.typical_look(a['fish'], a['recs'])), sorted(J.typical_now())]))`,
+      JSON.stringify({fish, recs})
+    ],
+    {encoding: 'utf8', maxBuffer: 1 << 24}
   );
+  assert.strictEqual(r.status, 0, r.stderr);
+  const [made, now] = JSON.parse(r.stdout);
+  // a: 1 of 2 (the line itself: in); b: 1 of 3 (out); c: 1 of 1; d is no level-1 entry, s9 in no entry.
+  assert.deepStrictEqual(made, ['a', 'c']);
+  assert.deepStrictEqual([...typicalOf(fish, recs)].sort(), made);
+  assert.deepStrictEqual(now, [...TYPICAL].sort(), 'tools/fish_judge.py typical_now and the test copy on fish-game.json');
 });
 test('judged photos: every code valid and once, crops inside the photo, 5 very easy photos in play per circle-1 entry', () => {
   const c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
@@ -642,12 +726,15 @@ test('judged photos: every code valid and once, crops inside the photo, 5 very e
   // Every circle-1 entry has at least 5 very easy photos in play, so its first questions take turns among them (the draw
   // strongly favours them at the start); fish-game.json alone holds them (no remote photo joins an entry short of them).
   c1.forEach(id => assert.ok((GM[id] || []).filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in play`));
-  // The rubric's caps on the judged codes (the night livery, partial, head / tail / top views, camouflage, out of water,
-  // an unclear subject): never among the very easy photos.
+  // The rubric's caps on the judged codes (the night livery, camouflage outside a typical-look family, out of water, an
+  // unclear subject: never among the very easy photos; partial and head / tail / top views: never at 5, partial
+  // uncapped in a typical-look family).
   Object.values(codes).forEach(([tid, c]) => {
-    const {e, jt} = capOf(c, false, null);
-    if (/[ca]/.test(jt.slice(7)) || /[htd]/.test(jt[0]) || jt[1] === '0' || jt[2] === 'n' || jt[3] >= '2' || jt[6] === 'x')
+    const typ = TYPICAL.has(tid),
+      {e, jt} = capOf(c, false, null, typ);
+    if ((/c/.test(jt.slice(7)) && !typ) || /a/.test(jt.slice(7)) || jt[2] === 'n' || jt[3] >= '2' || jt[6] === 'x')
       assert.ok(e <= 3, `${tid} ${c}: ease ${e}`);
+    if (/[htd]/.test(jt[0]) || (jt[1] === '0' && !typ)) assert.ok(e <= 4, `${tid} ${c}: ease ${e}`);
     if (jt[4] === 'b') assert.ok(e <= 2, `${tid} ${c}: strong blur at ease ${e}`);
   });
 });
@@ -677,7 +764,10 @@ print(json.dumps({'plan': [r for r, _, _ in todo] + list(keep.values()), 'fish':
         {cwd: path.join(__dirname, '..'), encoding: 'utf8', maxBuffer: 64 << 20}
       )
     ),
-    entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id])));
+    entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id]))),
+    // A species' first level-1 entry, as tools/fish_judge.py typical_shares counts it.
+    first = new Map();
+  F.teach.filter(t => t.level === 1).forEach(t => (t.species || []).forEach(s => first.has(s) || first.set(s, t.id)));
   // Pierre's adds in play, then the photos that entered by themselves (candidates judged sure, reference-level photos;
   // tests/fishgame.test.js checks the routes on a fixture). A species met only on the surprise cards keeps its 5 best
   // (tools/fish_game.py wink_trim, tests/winkstock.test.js), the auto-sort's adds among the others.
@@ -696,10 +786,11 @@ print(json.dumps({'plan': [r for r, _, _ in todo] + list(keep.values()), 'fish':
     assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
     const pass = !(p.f in (FC.ease || {})) || (S[p.f] && S[p.f].e === FC.ease[p.f] && S[p.f].jt === FC.tags[p.f]);
     if (!pass) return; // Pierre's own values stand (an ease he set is his choice)
-    const fl = p.jt.slice(7);
+    const fl = p.jt.slice(7),
+      typ = TYPICAL.has(first.get(p.sp)); // a typical-look family: partial and camouflage cap nothing (Q456)
     if (p.jt[6] === 'x' || p.jt[3] === '3' || p.jt[4] === 'b') assert.ok(p.e <= 2, `${p.f}: ${p.jt} at ease ${p.e}`);
-    if (/[ca]/.test(fl) || p.jt[2] === 'n' || p.jt[3] === '2' || /[htd]/.test(p.jt[0]) || p.jt[1] === '0')
-      assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
+    if (/a/.test(fl) || (/c/.test(fl) && !typ) || p.jt[2] === 'n' || p.jt[3] === '2') assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
+    if (/[htd]/.test(p.jt[0]) || (p.jt[1] === '0' && !typ)) assert.ok(p.e <= 4, `${p.f}: ${p.jt} at ease ${p.e}`);
   });
   // The game once the workflow has downloaded the plan (fish-game.json is filled after a Publish): by teaching entry, as
   // tools/fish_game.py lays it out; treeGen gives each photo to its species' family.
