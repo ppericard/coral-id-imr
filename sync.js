@@ -1650,7 +1650,7 @@ function pagesRoute(h) {
   }
   const s = genus && P[genus],
     now = Date.now();
-  pvSettle(now); // a tally queued by another page is settled before this opening joins the new one
+  pvRoll(now); // a stale tally is sent first: this opening goes in the new one
   pagesOpen(PV, h, now, {
     genus,
     from,
@@ -1670,7 +1670,10 @@ const pagesScreen = () => {
 // The feedback sheet's tally (core.js PAGES.FB; quiz.js fbShown, fbMoreBind, fbEnd): one count into the visit's summary, which
 // the app already sends when it is left (pagesSend; docs/decisions/2026-11-18-feedback-sheet.md). No gate (rule D4): a
 // sheet script from before it drops the field, as it drops any field it does not know (core.js pagesClean).
-const fbTally = (kind, n) => pagesFb(PV, kind, n);
+const fbTally = (kind, n) => {
+  pvRoll(Date.now()); // a stale tally is sent first: the count goes in the new one
+  pagesFb(PV, kind, n);
+};
 // The fields of a summary as queued: its id (pvId, the one its kept copy carries), the visit, the answers so far, the screen,
 // the summary S and its owner.
 const pvFields = S => ({
@@ -1681,11 +1684,11 @@ const pvFields = S => ({
   ...S,
   o: pvOwner()
 });
-// The app left: the summary queued, its kept copy dropped (pvDone). A tally another page queued is settled first
-// (pvSettle): only what came after it is queued.
+// The app left: the summary queued, its kept copy dropped (pvDone). A stale tally is sent first as it is (pvRoll), then
+// what came after it.
 function pagesSend() {
   const now = Date.now();
-  pvSettle(now);
+  pvRoll(now);
   if (typeof fbEnd === 'function') fbEnd(false); // the sheet still on screen: its seconds so far go in this summary
   const S = pagesTake(PV, now);
   if (S) ev('pages', pvFields(S));
@@ -1706,49 +1709,54 @@ const pagesWho = batch =>
 // The visit's summary kept on the device while it runs (docs/decisions/2026-11-23-pages-kept-copy.md), so a page killed
 // without a hidden event (the app or the phone stopped, a crash) still sends it: PVLIVE holds, per visit id, the summary
 // so far as pagesSend would queue it, written when a page opens and every PV_BEAT while in view (pvKeep), dropped when
-// the summary is queued (pvDone). A copy left by another visit and not written for PV_STALE is queued by the next page
-// (pvRecover, at load and each beat): that page was killed. One identity: the summary's event id (pvId). A copy carries
-// it, pvRecover notes each id it queues in PVDONE, and a page whose current id is there (pvClaimed, as after a computer's
-// sleep) starts its tally again under a new id, so a note never matches a later tally: never counted twice. Same event,
-// same fields: an older sheet script takes it as it is (rule D4).
+// the summary is queued (pvDone). One local rule, with no knowledge of other pages: a copy not written for PV_STALE is
+// sent as it is, under its own event id, by whichever page sees it first (another page: pvRecover, at load and each beat;
+// its own page: pvRoll, back in view or before its tally changes), and the live page never goes on with a stale tally: it
+// starts a new one under a new event id. Two pages may send the same copy: the sheet keeps the first row of an id
+// (Code.gs events_), and a copy already in this device's queue is not queued again. Same event, same fields: an older
+// sheet script takes it as it is (rule D4).
 const PVLIVE = 'reefid-pv-live',
-  PVDONE = 'reefid-pv-done', // the event ids of the copies another page queued, the last PV_DONE_N
   PV_BEAT = 15000,
   PV_STALE = 120000,
-  PV_KEEP = 5,
-  PV_DONE_N = 20;
-let pvId = evId();
+  PV_KEEP = 5;
+let pvId = evId(),
+  pvCopy = null, // this page's copy as last written, and when
+  pvAt = 0;
 const pvLive = () => {
   const L = store.get(PVLIVE, null);
   return L && typeof L === 'object' && !Array.isArray(L) ? L : {};
 };
-const pvDoneIds = () => {
-  const D = store.get(PVDONE, []);
-  return Array.isArray(D) ? D : [];
-};
-const pvClaimed = () => pvDoneIds().includes(pvId);
+// A copy queued, unless this device's queue already holds its id.
+function pvQueue(x) {
+  if (x && typeof x === 'object' && x.r && typeof x.r === 'object' && x.id && !store.get(EVQ, []).some(y => y && y.id === x.id))
+    ev('pages', x);
+}
 // The summary so far, taken from a copy of the tally: the tally goes on.
 function pvPeek(now) {
   const cp = O => Object.keys(O).reduce((o, k) => ((o[k] = O[k].slice()), o), Object.create(null));
   return pagesTake({r: cp(PV.r), g: cp(PV.g), cur: PV.cur, at: PV.at, fb: (PV.fb || [0, 0, 0, 0]).slice()}, now);
 }
-// The one place a claimed tally is reconciled, before anything else touches the tally (pagesRoute before a page opens,
-// pvKeep, pagesSend): queued by another page, what it holds is in that summary, so it starts again under a new id; the
-// page in view goes on counting.
-function pvSettle(now) {
-  if (!pvClaimed()) return;
+// This page's copy gone stale (asleep, frozen, hidden long): sent as it is, then a new tally under a new id; the page in
+// view goes on counting. Called before the tally changes (pagesRoute, fbTally, pvKeep, pagesSend) and back in view.
+function pvRoll(now) {
+  if (!pvCopy || now - pvAt < PV_STALE) return;
+  pvQueue(pvCopy);
   const at = PV.at;
   pagesTake(PV, now);
   if (at) pagesResume(PV, now);
   pvDone();
 }
 function pvKeep(now = Date.now()) {
-  pvSettle(now);
+  pvRoll(now);
   // The answer's feedback sheet still on screen: its seconds so far go in the tally (counted once, quiz.js fbEnd).
   if (typeof fbEnd === 'function') fbEnd(false);
   const S = pvPeek(now),
     L = pvLive();
-  if (S) L[PVI] = {...pvFields(S), k: 'pages', t: new Date(now).toISOString(), pg: (location.hash || '#home').slice(1, 60), av: appVer()};
+  pvCopy = S
+    ? {...pvFields(S), k: 'pages', t: new Date(now).toISOString(), pg: (location.hash || '#home').slice(1, 60), av: appVer()}
+    : null;
+  pvAt = now;
+  if (pvCopy) L[PVI] = pvCopy;
   else delete L[PVI];
   const keep = Object.keys(L)
     .sort((a, b) => (String((L[b] || {}).t) > String((L[a] || {}).t) ? 1 : -1))
@@ -1761,25 +1769,24 @@ function pvDone() {
     delete L[PVI];
     store.set(PVLIVE, L);
   }
+  pvCopy = null;
   pvId = evId();
 }
 function pvRecover(now = Date.now()) {
   const L = pvLive(),
     old = Object.keys(L).filter(k => k !== PVI && !(now - Date.parse((L[k] || {}).t) < PV_STALE));
   if (!old.length) return;
-  const q = new Set(store.get(EVQ, []).map(x => x && x.id)), // one already queued by another page at the same moment
-    out = old.map(k => L[k]).filter(x => x && typeof x === 'object' && x.r && typeof x.r === 'object' && x.id && !q.has(x.id));
+  const out = old.map(k => L[k]);
   old.forEach(k => delete L[k]);
-  // Out of the store first, its event id noted (its page, if alive, starts a new tally): queued once.
-  store.set(PVDONE, [...pvDoneIds(), ...out.map(x => x.id)].slice(-PV_DONE_N));
   store.set(PVLIVE, L);
-  out.forEach(x => ev('pages', x));
+  out.forEach(pvQueue);
 }
 setInterval(() => {
   if (document.visibilityState !== 'visible') return;
   pvKeep();
   pvRecover();
 }, PV_BEAT);
+window.addEventListener('pageshow', () => pvRoll(Date.now()));
 pvRecover();
 // Load times (app.js loadMark): sent once a visit.
 function loadSend() {
@@ -1810,7 +1817,10 @@ document.addEventListener('visibilitychange', () => {
     pagesSend();
     sendAnon();
     sendEvents();
-  } else pagesResume(PV, Date.now());
+  } else {
+    pvRoll(Date.now()); // back after a long while: a stale tally is sent before this one goes on
+    pagesResume(PV, Date.now());
+  }
 });
 // A page closed or reloaded where the browser gives no hidden event first: its summary goes as when the app is hidden
 // (after a hidden event, nothing is left to queue).
@@ -1982,6 +1992,7 @@ function signOutClear(all) {
   );
   // and their copies kept on the device (pvKeep); the visit's tally goes on, kept again at the next beat as the next player's.
   store.set(PVLIVE, {});
+  pvCopy = null;
   // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
   // The first-meeting cards too: the next player meets their own genera.
   [

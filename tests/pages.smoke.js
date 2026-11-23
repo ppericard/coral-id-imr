@@ -4770,9 +4770,10 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // A page killed without a hidden event (sync.js pvKeep, pvRecover): its summary kept on the device is queued by the
-  // next page once it is PV_STALE old, under the same id, once. Here the first page stays open, as a computer asleep:
-  // awake, it does not queue the same tally again. Its copy follows the player at sign-in, as the queue does.
+  // A page killed without a hidden event (sync.js pvKeep, pvRecover, pvRoll): its summary kept on the device is queued by
+  // the next page once it is PV_STALE old, under the same id, once. Here the first page stays open, as a computer asleep:
+  // awake, its stale tally is already in the queue (not queued twice) and it goes on with a new one. Its copy follows the
+  // player at sign-in, as the queue does.
   {
     const [c, p, posts] = await open(390, 30);
     await p.evaluate(() => (location.hash = 'learn/genera'));
@@ -4785,6 +4786,7 @@ async function pagesVisit(b, base) {
       const L = JSON.parse(localStorage.getItem('reefid-pv-live') || '{}'),
         x = L[PVI];
       if (x) localStorage.setItem('reefid-pv-live', JSON.stringify({...L, [PVI]: {...x, t: new Date(Date.now() - 180000).toISOString()}}));
+      pvAt = Date.now() - 180000; // its own clock agrees: the copy was written 3 minutes ago
       return x || null;
     });
     const p2 = await c.newPage();
@@ -4795,7 +4797,7 @@ async function pagesVisit(b, base) {
       left = await p2.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')));
     if (!copy || Q.length !== 1 || Q[0].id !== copy.id || !(Q[0].r['learn.genera'] || [])[0] || left.includes(copy.vi))
       fails.push(`pages summary of a killed page: ${JSON.stringify({copy, Q, left})}`);
-    // The first page awake: its copy is gone, its tally starts again.
+    // The first page awake: its tally is stale, already queued; it starts a new one.
     await p.evaluate(() => {
       Object.defineProperty(document, 'visibilityState', {value: 'visible', configurable: true});
       pvKeep();

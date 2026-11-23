@@ -12,27 +12,29 @@ outside the quiz on 2026-11-08; part C2 of that work, keeping the count across s
 ## Decision
 
 Integrator's call (REE-40: "C2 is the integrator's call, design first"; AGENTS.md "Working mode", implementation details
-with no player-facing effect). While the visit runs, the summary so far is also written to the device, under its visit
-id, as it would be queued: when a page opens and every 15 s while in view, at most five visits. The next page queues,
-once, a copy of another visit left two minutes unwritten (a page open in another window rewrites its own every 15 s).
-Queuing the summary drops the copy. `pagehide` queues the summary too. No sheet change: the same event and fields, so
-an older sheet script takes it (rule D4).
+with no player-facing effect). While the visit runs, the summary so far is also written to the device, as it would be
+queued, under its tally's event id: when a page opens and every 15 s while in view, at most five visits. Queuing the
+summary drops the copy and starts a new tally with a new event id. `pagehide` queues the summary too. No sheet change:
+the same event and fields, so an older sheet script takes it (rule D4).
 
-**Design note: one identity, the summary's event id.** Two review findings in a row came from telling "my copy was
-queued elsewhere" by the visit id or by the copy being gone: a copy pushed out by the five-visit limit, and then a later
-tally of a visit whose earlier summary had been recovered, were both taken for queued and lost. So the claim is now
-told by the summary's event id alone. Every tally has an event id, carried by its copy and by the summary when queued;
-a new tally (after the summary is queued, or after a claim) always gets a new one. The page that recovers a copy notes
-its event id; a page treats its tally as claimed only when its current event id is noted, then starts a new tally under
-a new id. An old note can never match a later tally, and a missing copy means nothing by itself, so the earlier cases
-(the copy gone, the storage refused, the eviction) need no logic of their own. The claim is reconciled in one place,
-`pvSettle`, before anything else touches the tally (a page opening, a beat, the app left), so an opening made after the
-claim joins the new tally and is never dropped with the queued one. The sheet keeps an id once as well.
+**One local rule** (integrator's decision under rule W27, 2026-11-23): a tally whose copy has not been written for two
+minutes is sent as it is, under its own event id, by whichever page sees it first (another page at load or at its beat;
+its own page back in view or before its tally changes), and the live page never goes on with a stale tally: it starts a
+new one under a new event id. No page needs to know whether another page already sent something. A copy may be sent
+twice; the device does not queue an id it already holds, and the sheet keeps the first row of an id, so each tally
+counts once.
+
+**Why the rule replaced the claim mechanism.** The first design had the live page find out whether another page had
+already queued its copy (a "claim"), by the copy being gone, then by a list of recovered ids, then reconciled at each
+place the tally changes. Codex found four problems in a row in that part (a copy pushed out by the five-visit limit, a
+later tally after a recovery, an opening and then feedback counted after a claim, all lost). Each came from the same
+cross-page question asked at one more place. The local rule removes the question, and with it the whole class: the
+recovered-ids list and the claim checks are gone.
 
 ## Consequences
 
-`sync.js` `pvKeep`, `pvRecover`, `pvClaimed`, `pvDone`, `pagesSend`; the storage keys `reefid-pv-live`, moved to the
-account at sign-in and dropped at sign-out like the queued summaries, and `reefid-pv-done`, the last 20 event ids
-recovered. A killed visit's summary arrives later, with the
-time of its last write. Up to 15 s of a killed page, and the time between a sleep and the next beat, are lost. Specified
-in docs/spec/sync.md "Events and pages"; tested in `tests/pages.test.js` and the `visit` part of `tests/pages.smoke.js`.
+`sync.js` `pvKeep`, `pvRecover`, `pvRoll`, `pvQueue`, `pvDone`, `pagesSend`, `fbTally`; the storage key `reefid-pv-live`,
+moved to the account at sign-in and dropped at sign-out like the queued summaries. A killed visit's summary arrives
+later, with the time of its last write. Up to one beat (15 s) before a kill or a sleep is lost; a page that misses its
+beats for two minutes while in view starts a new tally (its summary is split, nothing counted twice). Specified in
+docs/spec/sync.md "Events and pages"; tested in `tests/pages.test.js` and the `visit` part of `tests/pages.smoke.js`.

@@ -148,9 +148,9 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
     run = v => {
       const sent = [],
         ctx = {
-          // the kept copy (pvKeep): its id, the settling of a tally queued elsewhere, and its drop (tested below)
+          // the kept copy (pvKeep): its id, a stale tally sent first, and its drop (tested below)
           pvId: 'id00000001',
-          pvSettle: () => sent.push(['settle']),
+          pvRoll: () => sent.push(['roll']),
           pvDone: () => sent.push(['done']),
           window: {innerWidth: 393, innerHeight: 659.5, devicePixelRatio: 2.625, navigator: {userAgent: 'secret UA'}},
           viewportOf: C.viewportOf,
@@ -172,7 +172,7 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
       return sent;
     };
   const base = {id: 'id00000001', vi: 'visit0001', na: 12, r: {'practice.quiz': [1, 30]}, g: {}, o: 'a:dev0000001'},
-    S0 = ['settle'],
+    S0 = ['roll'],
     done = ['done'];
   assert.deepStrictEqual(plain(run(N)), [S0, ['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}], done]);
   assert.deepStrictEqual(plain(run(N + 3)), [S0, ['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}], done]);
@@ -469,19 +469,20 @@ test('quiz.js counts the sheet shown, More once an answer, its seconds capped, a
   ]);
 });
 
-// The visit's summary kept on the device (sync.js pvKeep, pvRecover, pagesSend; docs/decisions/2026-11-23-pages-kept-copy.md):
-// a page killed without a hidden event still sends its summary, once. Each page is the sync.js code in a vm of its own,
-// all sharing one localStorage and one event queue, on a clock the test moves.
-test('a page killed without a hidden event: its summary queued by the next page, once; never twice', () => {
+// The visit's summary kept on the device (sync.js pvKeep, pvRecover, pvRoll, pagesSend;
+// docs/decisions/2026-11-23-pages-kept-copy.md): a page killed without a hidden event still sends its summary, and every
+// tally reaches the sheet once. Each page is the sync.js code in a vm of its own, all sharing one localStorage (the event
+// queue included), on a clock the test moves. sheet() keeps the first row of each event id, as Code.gs events_ does.
+test('a page killed without a hidden event: its summary sent by whichever page sees it stale first; each tally once', () => {
   const fs = require('fs'),
     path = require('path'),
     vm = require('vm'),
     block = require('./block.js'),
     src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
     code =
-      block(src, 'const pvFields = S => ({', '// The player active now, as a summary', {file: 'sync.js'}) +
+      block(src, 'const fbTally = ', '// The player active now, as a summary', {file: 'sync.js'}) +
       block(src, "// The visit's summary kept on the device", '\npvRecover();\n', {through: 1, file: 'sync.js'}) +
-      '\nthis.M = {pagesSend, pvKeep, pvRecover, pvSettle, id: () => pvId};';
+      '\nthis.M = {pagesSend, pvKeep, pvRecover, pvRoll, fbTally, id: () => pvId};';
   const LS = new Map(),
     Q = [];
   let clock = Date.UTC(2026, 10, 23, 2),
@@ -496,8 +497,17 @@ test('a page killed without a hidden event: its summary queued by the next page,
     get: (k, d) => (LS.has(k) ? JSON.parse(LS.get(k)) : d),
     set: (k, v) => refuse || LS.set(k, JSON.stringify(v))
   };
+  // ev as sync.js has it: into the shared queue (reefid-evq); Q logs every event queued.
+  const ev = (k, o) => {
+    const x = {k, ...plain(o)};
+    Q.push(x);
+    LS.set('reefid-evq', JSON.stringify([...store.get('reefid-evq', []), x]));
+  };
+  const sentOut = () => LS.delete('reefid-evq'), // the queue sent
+    sheet = () => Q.filter((x, i) => Q.findIndex(y => y.id === x.id) === i);
   const page = (vi, owner = 'a:dev0000001') => {
     const beats = [],
+      shows = [],
       ctx = {
         store,
         Date: FD,
@@ -505,6 +515,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
         PVI: vi,
         pagesTake: C.pagesTake,
         pagesResume: C.pagesResume,
+        pagesFb: C.pagesFb,
         EVQ: 'reefid-evq',
         pagesScreen: () => ({}),
         answersSoFar: () => 3,
@@ -513,7 +524,8 @@ test('a page killed without a hidden event: its summary queued by the next page,
         evId: () => 'id' + ++ids,
         location: {hash: '#learn/genera'},
         document: {visibilityState: 'visible'},
-        ev: (k, o) => Q.push({k, ...plain(o)}),
+        window: {addEventListener: (t, f) => t === 'pageshow' && shows.push(f)},
+        ev,
         setInterval: (f, ms) => beats.push([f, ms])
       };
     vm.createContext(ctx);
@@ -522,12 +534,28 @@ test('a page killed without a hidden event: its summary queued by the next page,
       ctx,
       beats,
       open: h => C.pagesOpen(ctx.PV, h, clock),
+      // pagesRoute's order: a stale tally sent first, the opening, the copy kept
+      route(h) {
+        ctx.M.pvRoll(clock);
+        C.pagesOpen(ctx.PV, h, clock);
+        ctx.M.pvKeep(clock);
+      },
       beat: () => beats.forEach(([f]) => f()),
+      show: () => shows.forEach(f => f()),
       ...ctx.M
     };
   };
   const copies = () => (LS.has('reefid-pv-live') ? JSON.parse(LS.get('reefid-pv-live')) : {}),
-    live = () => Object.keys(copies()).sort();
+    live = () => Object.keys(copies()).sort(),
+    reset = () => {
+      Q.length = 0;
+      sentOut();
+    };
+  // pagesRoute and the return to view roll a stale tally before the tally changes.
+  const rsrc = block(src, 'function pagesRoute(h) {', '\n}\n', {through: 1, file: 'sync.js'}),
+    vsrc = block(src, '  } else {\n    pvRoll(Date.now());', '});', {file: 'sync.js'});
+  assert.ok(rsrc.indexOf('pvRoll(') >= 0 && rsrc.indexOf('pvRoll(') < rsrc.indexOf('pagesOpen('), 'pagesRoute rolls first');
+  assert.ok(vsrc.indexOf('pvRoll(') < vsrc.indexOf('pagesResume('), 'back in view: rolled first');
   // Page A: the quiz 10 s, Genera 5 s; its copy is kept when a page opens and at each beat (15 s, in view only).
   const A = page('visita');
   assert.deepStrictEqual(
@@ -537,7 +565,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
   A.open('quiz');
   clock += 10000;
   A.open('genera');
-  A.pvKeep(); // as pagesRoute does after a page opens
+  A.pvKeep();
   clock += 5000;
   A.beat();
   assert.deepStrictEqual(live(), ['visita']);
@@ -566,24 +594,24 @@ test('a page killed without a hidden event: its summary queued by the next page,
   B.beat();
   assert.strictEqual(Q.length, 0);
   assert.deepStrictEqual(live(), ['visita', 'visitb']);
-  // Two minutes without a write: A was killed. B's next beat queues A's summary once, with A's id, time and owner.
-  clock += 120000;
-  B.beat();
+  // Two minutes without a write: A's copy is stale. B's next beat queues it as it is, with A's id, time and owner.
+  const aT = copies().visita.t;
+  for (let i = 0; i < 8; i++) {
+    clock += 15000; // B in view, beating
+    B.beat();
+  }
   assert.strictEqual(Q.length, 1);
   const sent = Q[0];
-  assert.deepStrictEqual(
-    [sent.k, sent.id, sent.vi, sent.o, sent.t, sent.na],
-    ['pages', 'id1', 'visita', 'a:dev0000001', new Date(clock - 155000).toISOString(), 3]
-  );
+  assert.deepStrictEqual([sent.k, sent.id, sent.vi, sent.o, sent.t, sent.na], ['pages', 'id1', 'visita', 'a:dev0000001', aT, 3]);
   assert.deepStrictEqual(sent.r, {'practice.quiz': [1, 10], 'learn.genera': [1, 10]});
   assert.deepStrictEqual(plain(C.pagesClean(sent).r), sent.r, 'the sheet keeps it as any summary');
   assert.deepStrictEqual(live(), ['visitb']);
   clock += 15000;
   B.beat();
   const B2 = page('visitc');
-  assert.strictEqual(Q.length, 1, 'queued once, by one page');
+  assert.strictEqual(Q.length, 1, 'queued once');
   // B left normally (hidden): its summary queued under its copy's id, the copy dropped; nothing is queued again later.
-  Q.length = 0;
+  reset();
   const bid = copies().visitb.id;
   B.pagesSend();
   assert.deepStrictEqual(
@@ -594,11 +622,12 @@ test('a page killed without a hidden event: its summary queued by the next page,
   assert.notStrictEqual(B.id(), bid, 'a new tally, a new event id');
   B.pagesSend(); // pagehide after the hidden event: nothing left
   clock += 600000;
+  B.show();
   B2.pvRecover();
   page('visitd');
   assert.strictEqual(Q.length, 1, 'a summary queued when the app was left is never queued again');
   // A reload long after a kill: the next page queues the copy at load.
-  Q.length = 0;
+  reset();
   const D = page('visite');
   D.open('quiz');
   clock += 4000;
@@ -609,33 +638,40 @@ test('a page killed without a hidden event: its summary queued by the next page,
     Q.map(x => [x.vi, x.r]),
     [['visite', {'practice.quiz': [1, 4]}]]
   );
-  // A computer asleep with the app in view: another page queues its copy meanwhile. Awake, its tally starts again (nothing
-  // counted twice), and leaving it queues only what came after.
-  Q.length = 0;
-  const E = page('visitg'),
-    F = page('visith');
-  E.open('quiz');
-  clock += 8000;
-  E.beat();
-  clock += 600000; // asleep
-  F.beat();
-  assert.deepStrictEqual(
-    Q.map(x => [x.vi, x.r]),
-    [['visitg', {'practice.quiz': [1, 8]}]]
-  );
-  E.beat(); // awake: its copy is gone
-  clock += 3000;
-  E.pagesSend();
-  assert.deepStrictEqual(
-    Q.map(x => [x.vi, x.r]),
-    [
-      ['visitg', {'practice.quiz': [1, 8]}],
-      ['visitg', {'practice.quiz': [0, 3]}]
-    ]
-  );
-  assert.notStrictEqual(Q[0].id, Q[1].id, 'a new tally, a new id');
-  // Left before its next beat: nothing queued, its summary is already queued.
-  Q.length = 0;
+  // A computer asleep with the app in view: another page sends its stale copy meanwhile. Awake, it sends its own stale
+  // copy too (same id: not queued twice on one device; once sent, the sheet keeps the first row), then goes on with a
+  // new tally under a new id. Whether the other page's send left the queue or not, the sheet has each tally once.
+  for (const flushed of [false, true]) {
+    reset();
+    const E = page('visitg' + flushed),
+      F = page('visith' + flushed);
+    E.open('quiz');
+    clock += 8000;
+    E.beat();
+    const first = E.id();
+    clock += 600000; // asleep
+    F.beat();
+    assert.deepStrictEqual(
+      Q.map(x => [x.id, x.r]),
+      [[first, {'practice.quiz': [1, 8]}]]
+    );
+    if (flushed) sentOut();
+    E.beat(); // awake
+    assert.notStrictEqual(E.id(), first, 'the live page never goes on with a stale tally');
+    clock += 3000;
+    E.pagesSend();
+    assert.deepStrictEqual(
+      sheet().map(x => [x.id === first, x.r]),
+      [
+        [true, {'practice.quiz': [1, 8]}],
+        [false, {'practice.quiz': [0, 3]}]
+      ]
+    );
+    assert.strictEqual(Q.length, flushed ? 3 : 2, flushed ? 'sent again after the queue left: the sheet keeps one' : 'not queued twice');
+    F.pagesSend();
+  }
+  // Left before its next beat: the stale copy as it is, nothing more.
+  reset();
   const G = page('visiti'),
     H = page('visitj');
   G.open('quiz');
@@ -643,11 +679,32 @@ test('a page killed without a hidden event: its summary queued by the next page,
   G.beat();
   clock += 600000;
   H.beat();
-  assert.strictEqual(Q.length, 1);
   G.pagesSend();
-  assert.strictEqual(Q.length, 1, 'queued elsewhere: not again');
-  // Two pages in view at once (two windows): neither queues the other's copy.
-  Q.length = 0;
+  assert.deepStrictEqual(
+    sheet().map(x => [x.vi, x.r]),
+    [['visiti', {'practice.quiz': [1, 6]}]]
+  );
+  H.pagesSend();
+  // A page whose copy went stale while nobody else was open: back in view (pageshow), it sends it itself.
+  reset();
+  const W = page('visitu');
+  W.open('quiz');
+  clock += 5000;
+  W.beat();
+  clock += 600000;
+  W.show();
+  assert.deepStrictEqual(
+    Q.map(x => [x.vi, x.r]),
+    [['visitu', {'practice.quiz': [1, 5]}]]
+  );
+  clock += 2000;
+  W.pagesSend();
+  assert.deepStrictEqual(
+    sheet().map(x => x.r),
+    [{'practice.quiz': [1, 5]}, {'practice.quiz': [0, 2]}]
+  );
+  // Two pages in view at once (two windows): neither sends the other's copy.
+  reset();
   const I = page('visitk'),
     J = page('visitl');
   I.open('quiz');
@@ -660,10 +717,8 @@ test('a page killed without a hidden event: its summary queued by the next page,
   assert.strictEqual(Q.length, 0);
   I.pagesSend();
   J.pagesSend();
-  H.pagesSend();
-  F.pagesSend();
   // A device whose storage refuses the copy: the app left sends its summary as before.
-  Q.length = 0;
+  reset();
   refuse = true;
   const K = page('visitm');
   K.open('quiz');
@@ -677,21 +732,21 @@ test('a page killed without a hidden event: its summary queued by the next page,
   );
   refuse = false;
   // Two pages opened at the same moment both find the copy: the one already in the shared queue is not queued again.
-  Q.length = 0;
+  reset();
   const M = page('visitn');
   M.open('quiz');
   clock += 2000;
   M.pvKeep();
-  LS.set('reefid-evq', JSON.stringify([{...copies().visitn, k: 'pages'}]));
+  ev('pages', copies().visitn);
+  Q.length = 0;
   clock += 300000;
   page('visito');
   assert.strictEqual(Q.length, 0);
   assert.ok(!live().includes('visitn'));
-  LS.delete('reefid-evq');
-  // At most PV_KEEP copies, the newest.
+  // At most PV_KEEP copies, the newest; a copy pushed out is written again by its live page and sent when it is left.
+  reset();
   const N = Number(/PV_KEEP = (\d+)/.exec(src)[1]),
     many = [];
-  Q.length = 0;
   for (let i = 0; i < N + 3; i++) {
     const P = page('many' + i);
     many.push(P);
@@ -701,34 +756,26 @@ test('a page killed without a hidden event: its summary queued by the next page,
   }
   assert.strictEqual(live().length, N);
   assert.ok(live().includes('many' + (N + 2)) && !live().includes('many0'));
-  // A copy only pushed out by that limit was never queued: its page keeps its tally, writes it again, sends it when left.
   many[0].beat();
   assert.ok(live().includes('many0'));
   many[1].pagesSend();
   assert.deepStrictEqual(
     Q.map(x => [x.vi, x.r['practice.quiz'][0]]),
-    [['many1', 1]],
-    'an evicted copy is not a queued one'
+    [['many1', 1]]
   );
-  assert.strictEqual(Q.length, 1);
   many.forEach(P => P.pagesSend());
-  // Codex's sequence: a page's copy queued elsewhere (asleep), the page resumes, its new tally's copy is pushed out by
-  // five newer ones, then it is left: the new tally is queued once, under its new event id.
-  Q.length = 0;
+  // Codex's sequence: a page's copy sent by another page (asleep), the page resumes, its new tally's copy is pushed out by
+  // five newer ones, then it is left: each tally once, the new one under its new id.
+  reset();
   const R = page('visitq'),
     S = page('visitr');
   R.open('quiz');
   clock += 7000;
   R.beat();
-  const first = R.id();
+  const rFirst = R.id();
   clock += 600000; // asleep
   S.beat();
-  assert.deepStrictEqual(
-    Q.map(x => [x.vi, x.id]),
-    [['visitq', first]]
-  );
-  R.beat(); // awake: its tally was queued, it starts again under a new id
-  assert.notStrictEqual(R.id(), first);
+  R.beat(); // awake
   clock += 4000;
   R.beat();
   const newer = [];
@@ -742,46 +789,61 @@ test('a page killed without a hidden event: its summary queued by the next page,
   assert.ok(!live().includes('visitq'), 'its copy pushed out by five newer ones');
   clock += 2000;
   R.pagesSend();
-  const rs = Q.filter(x => x.vi === 'visitq');
-  assert.strictEqual(rs.length, 2, 'the recovered summary, then the new tally once');
-  assert.notStrictEqual(rs[1].id, first);
-  assert.deepStrictEqual(rs[1].r, {'practice.quiz': [0, 4 + N + 2]});
+  const rs = sheet().filter(x => x.vi === 'visitq');
+  assert.deepStrictEqual(
+    rs.map(x => [x.id === rFirst, x.r]),
+    [
+      [true, {'practice.quiz': [1, 7]}],
+      [false, {'practice.quiz': [0, 4 + N + 2]}]
+    ]
+  );
   newer.forEach(P => P.pagesSend());
   S.pagesSend();
-  // A page opened after its tally was queued elsewhere and before its next beat (pagesRoute settles, then opens, then
-  // keeps): the opening is in the new tally, never dropped with the queued one; left at once, it is still there.
-  const route = (P, h) => {
-    P.pvSettle(clock);
-    P.open(h);
-    P.pvKeep(clock);
-  };
-  const rsrc = block(src, 'function pagesRoute(h) {', '\n}\n', {through: 1, file: 'sync.js'});
-  assert.ok(rsrc.indexOf('pvSettle(') >= 0 && rsrc.indexOf('pvSettle(') < rsrc.indexOf('pagesOpen('), 'pagesRoute settles first');
+  // A page opened after a stale period, before any beat (pagesRoute: rolled first): the opening is in the new tally;
+  // left after 5 s or at once, it is there, the stale tally sent once as it was.
   for (const wait of [5000, 0]) {
-    Q.length = 0;
+    reset();
     const T = page('visits' + wait),
       U = page('visitt' + wait);
-    route(T, 'quiz');
+    T.route('quiz');
     clock += 9000;
     T.beat();
     clock += 600000; // asleep
     U.beat();
-    assert.deepStrictEqual(
-      Q.map(x => x.r),
-      [{'practice.quiz': [1, 9]}]
-    );
-    route(T, 'genera'); // awake, before any beat
+    T.route('genera'); // awake, before any beat
     clock += wait;
     T.pagesSend();
     assert.deepStrictEqual(
-      Q.map(x => x.r),
+      sheet().map(x => x.r),
       [{'practice.quiz': [1, 9]}, {'learn.genera': [1, wait / 1000]}],
       `the opening kept, left after ${wait} ms`
     );
     U.pagesSend();
   }
+  // Feedback right after resuming, before any beat (fbTally rolls first): the count is in the new tally.
+  reset();
+  const V = page('visitv'),
+    X = page('visitw');
+  V.open('quiz');
+  V.fbTally('shown');
+  clock += 6000;
+  V.beat();
+  clock += 600000; // asleep
+  X.beat();
+  V.fbTally('shown'); // awake: a new answer's feedback
+  V.fbTally('more');
+  clock += 1000;
+  V.pagesSend();
+  assert.deepStrictEqual(
+    sheet().map(x => [x.r, x.fb]),
+    [
+      [{'practice.quiz': [1, 6]}, [1, 0, 0, 0]],
+      [{'practice.quiz': [0, 1]}, [1, 1, 0, 0]]
+    ]
+  );
+  X.pagesSend();
   // The answer's feedback sheet on screen: its seconds so far are in each copy (quiz.js fbEnd(false), counted once).
-  Q.length = 0;
+  reset();
   const FB = page('visitp');
   let fbAt = clock,
     fbCalls = 0;
