@@ -502,7 +502,8 @@ A card shows once per answer and direction, never the opposite of the last move 
 inferred answer, and never for a subject whose units say `startFb` false (the fish and the sea slugs, until their
 level is better calibrated).
 
-**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md)):
+**The fish values** (checked 2026-11-20, simulation only: [review](reviews/2026-11-20-fish-welcome-values-check.md);
+re-run on 2026-11-23 after REE-249's fix, the same readings but the beginner's level at 60, now 0.83: [review](reviews/2026-11-23-fish-sim-typed-bug-inventory.md)):
 the fish use the corals' `CHOICE.opts`. On the fish profiles of `tools/learnprof.js` (assumptions, not fits), the first
 20 answers' surprise under the truthful answer: "new" holds (beginner −0.01; corals 0.08); "imr" and "know"
 under-predict the lecture RA, strong RA and expert (0.11 to 0.12), as much as on the corals (0.09 to 0.14). The bands
@@ -1056,7 +1057,9 @@ module's six steps is seen (27 screens, 21 taps on Next, measured on the real pa
 number of answers or an amount of time; its name, tier and words are the
 integrator's call, easy to correct). Still to come: fpct100 (with the ultimate exam, Q395). Only those that rest on learned marks (`core.js`
 `ACH_LEARN`) are ever taken back, and only when a recalculation takes the mark away. **Fish achievements, simulated**:
-their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
+their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md). Those runs
+predate the fix of REE-249 (no right typed answer recorded, so no fish exam could pass); the timings up to 1,500 answers
+re-run on 2026-11-23 are in [the review](reviews/2026-11-23-fish-sim-typed-bug-inventory.md).
 
 **Sea slug achievements**: the same kinds over the sea slugs' genera, families, taxonomic groups and first circle, and
 their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`); their species by their scientific names at Advanced (1, 10
