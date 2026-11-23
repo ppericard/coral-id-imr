@@ -142,6 +142,27 @@ print(json.dumps([[[p[0] for p in o['P']] for o in a], [[p[0] for p in o['P']] f
   assert.deepStrictEqual(out[2], [6], 'observation 5 belongs to the genus-level list');
 });
 
+test('what frees room is the fish’s: a rejected or excluded candidate, a judged near-duplicate, an egg mass; an unsure or a fish judgement does not', () => {
+  const out = J(`${OBS}
+from fetch_fish import state
+rec = lambda i, k, **x: {'f': f'seaslug-601-cand-{i * 10 + k}', 'o': obs_url(i), **x}
+L = [rec(1, 0), rec(1, 1), rec(1, 2), rec(2, 0), rec(3, 0), rec(4, 0), rec(5, 0)]
+dup = lambda **x: {'jt': 'd1g0sl1', 'e': 3, 'k': 'dup', **x}
+sug = {'seaslug': {'seaslug-601-cand-11': dup(), 'seaslug-601-cand-30': dup(u=1), 'seaslug-601-cand-40': {'jt': 'd1g0sl1', 'e': 3, 'k': 'best'},
+                   'seaslug-601-cand-50': {'egg': 1}}, 'fish': {'seaslug-601-cand-12': dup()}}
+cur = {'seaslug': {'seen': {'seaslug-601-cand-20': 1}}, 'fish': {'seen': {'seaslug-601-cand-30': 1}}}
+gone = Gone(egg_set(sug), state(cur, sug, 'seaslug')[0])
+print(json.dumps([[p['f'].rsplit('-', 1)[1] for p in L if p['f'] in gone], held(L), held(L, gone), sorted(kept_of(L, gone).values())]))`);
+  assert.deepStrictEqual(
+    out[0],
+    ['11', '20', '50'],
+    'the dup (not an unsure one), the rejected, the egg mass; the fish’s part of either file counts for nothing'
+  );
+  assert.strictEqual(out[1], 6);
+  assert.strictEqual(out[2], 3.5, '1 + 0.5 for observation 1 (its dup out), observations 3 and 4 for 1 each, 5 and 2 nothing');
+  assert.deepStrictEqual(out[3], [1, 1, 2]);
+});
+
 test('the room counts as the fish’s cap does: an observation’s first photo 1, each further one 0.5, an egg mass nothing', () => {
   const out = J(`${OBS}
 rec = lambda i, k, **x: {'f': f'seaslug-601-cand-{i * 10 + k}', 'o': obs_url(i), **x}
@@ -247,7 +268,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, on top of a full list up to max, in the target on a new one; --own asks nothing else", () => {
+test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, within the room the target leaves, none on a full list; --own asks nothing else", () => {
   const dir = mkTmp('slugown-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
@@ -255,13 +276,14 @@ test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter fi
     photoTarget: {...T, candidates: 3, max: 7, perJuvenileForm: 0, juvenile: {}},
     species: [
       {name: 'Slugus fullus', inat: 701, circle: 1},
-      {name: 'Slugus novus', inat: 702, circle: 1}
+      {name: 'Slugus novus', inat: 702, circle: 1},
+      {name: 'Slugus paulus', inat: 703, circle: 1}
     ]
   };
   fs.writeFileSync(at('src.json'), JSON.stringify(src));
-  // 701 is already full (3 = its target), filled before the rule: one of them his own Research Grade observation (803).
-  const old = i => ({
-    f: `seaslug-701-cand-${i * 10}`,
+  // 701 is already full (3 = its target): one of them his own Research Grade observation (803). 703 holds 2: room for one.
+  const old = (i, key = 701) => ({
+    f: `seaslug-${key}-cand-${i * 10}`,
     a: '(c) x',
     lic: 'cc-by',
     o: `https://www.inaturalist.org/observations/${i}`,
@@ -271,7 +293,10 @@ test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter fi
     src: 'x',
     r: 1
   });
-  fs.writeFileSync(at('data/cand.json'), JSON.stringify({v: 1, cand: {701: [801, 802, 803].map(old)}}));
+  fs.writeFileSync(
+    at('data/cand.json'),
+    JSON.stringify({v: 1, cand: {701: [801, 802, 803].map(i => old(i)), 703: [931, 932].map(i => old(i, 703))}})
+  );
   py(
     `${OBS}
 from fetch_fish import API, FIELDS, queries
@@ -279,12 +304,13 @@ d = sys.argv[1]
 c = {}
 def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
 P = 'ppericard'
-# 701, his search: Needs ID at the species (taken, ni), Research Grade (taken), Needs ID at the genus (no), a photo
-# without a licence (taken, lic "own"), annotated Egg (no), already a candidate (803: never twice).
-put(queries(701)['own'], [ob(901, u=P, g='needs_id'), ob(902, u=P), ob(903, u=P, g='needs_id', rk='genus'),
-                          ob(904, u=P, g='needs_id', lic=[None]), ob(905, u=P, g='needs_id', an=[(1, 7)]), ob(803, u=P)])
-# 702, a new list: one of his Needs ID, then the others fill the target of 3 (his count in it).
-put(queries(702)['own'], [ob(911, u=P, g='needs_id')])
+# 701 is full: his search is never asked (not in this cache: --offline would stop on it).
+# 702, a new list of 3 places, his search: Needs ID at the species (taken, ni), Research Grade (taken), Needs ID at the
+# genus (no), a photo without a licence (taken, lic "own"), annotated Egg (no): his 3 fill the target.
+put(queries(702)['own'], [ob(911, u=P, g='needs_id'), ob(912, u=P), ob(913, u=P, g='needs_id', rk='genus'),
+                          ob(914, u=P, g='needs_id', lic=[None]), ob(915, u=P, g='needs_id', an=[(1, 7)])])
+# 703, one place left: his two observations, one comes.
+put(queries(703)['own'], [ob(941, u=P, g='needs_id'), ob(942, u=P)])
 json.dump(c, open(d + '/cache.json', 'w'))
 # The general search of 702, for the second run only: the --own run must not ask it.
 c2 = dict(c)
@@ -302,23 +328,21 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   // 1. --own: his search only (the general search of 702 is not in this cache: --offline would stop on it).
   const log = run('cache.json', '--own');
   let C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
-  assert.deepStrictEqual(ids(C['701']).sort(), [801, 802, 803, 901, 902, 904], 'on top of the full list, up to max; nothing removed');
-  assert.deepStrictEqual(ids(C['702']), [911]);
-  const by = Object.fromEntries([...C['701'], ...C['702']].map(p => [+p.o.split('/').pop(), p]));
-  assert.strictEqual(by[901].ni, 1, 'his Needs ID observation is marked, as data/fish-cand.json (ni)');
-  assert.strictEqual(by[911].ni, 1);
-  assert.strictEqual(by[902].ni, undefined, 'his Research Grade one is not');
-  assert.strictEqual(by[904].lic, 'own', 'his photo without a licence, as the fish');
-  for (const i of [901, 902, 904, 911]) assert.strictEqual(by[i].own, true);
-  assert.deepStrictEqual(Object.keys(by[901]), ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r', 'ni']);
-  assert.match(log, /Slugus fullus\s+6 \/ 3 .*Pierre's own 4 \(\+3\)/);
+  assert.deepStrictEqual(ids(C['701']).sort(), [801, 802, 803], 'a full list takes none of his, as the fish: no room above the target');
+  assert.deepStrictEqual(ids(C['702']).sort(), [911, 912, 914]);
+  assert.strictEqual(C['703'].length, 3, 'one place left: one of his two');
+  const by = Object.fromEntries([...C['702'], ...C['703']].map(p => [+p.o.split('/').pop(), p]));
+  assert.strictEqual(by[911].ni, 1, 'his Needs ID observation is marked, as data/fish-cand.json (ni)');
+  assert.strictEqual(by[912].ni, undefined, 'his Research Grade one is not');
+  assert.strictEqual(by[914].lic, 'own', 'his photo without a licence, as the fish');
+  for (const i of [911, 912, 914]) assert.strictEqual(by[i].own, true);
+  assert.deepStrictEqual(Object.keys(by[911]), ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r', 'ni']);
+  assert.match(log, /Slugus novus\s+3 \/ 3 .*Pierre's own 3 \(\+3\)/);
   assert.match(log, /Pierre's own added this run: 4/);
-  // 2. The normal run: 702's others fill its target of 3 around his one; 701 has no room under its target.
-  run('cache2.json');
-  C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
-  assert.strictEqual(C['702'].length, 3);
-  assert.strictEqual(C['702'].filter(p => p.own).length, 1, 'his counts in the target: two others, not three');
-  assert.strictEqual(C['701'].length, 6);
+  // 2. The normal run: 701, 702 and 703 are full, nothing is asked or added (the general searches are not in the cache).
+  const before1 = fs.readFileSync(at('data/cand.json'), 'utf8');
+  run('cache.json');
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before1);
   // A rerun writes the same file.
   const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run('cache2.json');

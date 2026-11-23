@@ -431,9 +431,9 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     The new candidates wait unjudged and out of play for the judging pass (rule P7);
   - **Pierre's own observations: the fish's rule** (rule P1's fish exception, rule S2): identified to the species
     they are usable even when Needs ID (`ni`), his photos whatever their licence, read by `fetch_fish.usable_obs`
-    itself; asked on his own search (`--own`: that search only, every species together) and taken first, so none is left
-    out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the rubric
-    like any candidate;
+    itself; asked on his own search (`--own`: that search only, every species together) and taken first within the room
+    the target leaves, as the fish's `select` takes them (a full list takes none until the judging frees room); never
+    boosted, judged on the rubric like any candidate;
   - it reuses `fetch_fish.py`'s searches, cache and pacing (~1 request/s, cached in
     `tools/.cache/seaslug_photos.json`). The file has `data/fish-cand.json`'s shape and record fields, keyed by the species'
     iNaturalist taxon id, `f` = `seaslug-<taxon id>-cand-<photo id>` (the docstring lists the differences);
@@ -453,8 +453,10 @@ The subject in the app: [seaslugs.md](seaslugs.md).
   - **The very variable genera's ceiling**: a species of a genus in `photoTarget.maxGenera` (*Chromodoris*, *Phyllidia*)
     has `max` (30) as its target (`target`), never above it; a very variable genus's genus-level list takes the 30 too,
     any other keeps 20;
-  - **Egg masses**: the target counts the candidates still usable, as the fish's cap does: one judged an egg
-    mass (`data/suggest.json` `"seaslug"` `{egg: 1}`, the egg rule's filter 2) counts nothing (`held`), and an observation
+  - **What frees room, and egg masses**: the target counts the candidates still usable, by the fish's own rule
+    (`fetch_fish.state`, `sure_out`, through `Gone`): one Pierre rejected, excluded or sent elsewhere, one the judging set
+    aside for sure (`dup`, a subject not obvious, other species in view) and one judged an egg mass (`data/suggest.json`
+    `"seaslug"` `{egg: 1}`, the egg rule's filter 2) count nothing (`held`), and an observation
     whose every candidate is one brings its next usable photos first (`eggs_back`: asked again by id, every observation
     with an egg-mass candidate in the run's lists in one request, under a new candidate's rules; for a species with no
     name, still its label, its observation fields read), the egg-mass record kept beside it (its judgement keeps it out

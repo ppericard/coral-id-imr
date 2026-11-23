@@ -20,13 +20,16 @@ sea-slug decisions:
   other photos of an observation `alt` or `dup` (judging/SEASLUG.md). The extras weigh EXTRA_W (0.5) against the target
   (fetch_fish.obs_cost: an observation's first photo 1), so an observation with many photos takes less room than as
   many observations, and the fish's own `select` picks them (pick).
-- What counts against the target: the candidates still usable, weighted as above (held): a candidate the judging pass
-  found an egg mass (data/suggest.json "seaslug" {egg: 1}, the egg rule's filter 2) frees its place. Only an egg mass
-  does: unlike the fish's cap (fetch_fish.species_room), a candidate Pierre rejects, excludes or sends elsewhere, or the
-  judging sets aside as a near-duplicate, still counts. An observation whose every candidate is an egg mass brings its
-  next usable photos, asked again by id (eggs_back, every list of the run in one request), under the same rules as a new
-  candidate (still that taxon, Research Grade or agreed, never annotated Egg or Dead, the licences); one without one
-  leaves the place to the next observation. The egg-mass record stays (its judgement keeps it out).
+- What counts against the target: the candidates still usable, weighted as above (held), and the fish's own rule for
+  what is still usable (fetch_fish.state, sure_out; Gone): a candidate Pierre rejected, excluded or sent elsewhere, one the
+  judging set aside for sure (`dup`, a subject not obvious, other species in view) and a candidate judged an egg mass
+  (data/suggest.json "seaslug" {egg: 1}, the egg rule's filter 2) free their place. An observation whose every candidate
+  is an egg mass brings its next usable photos, asked again by id (eggs_back, every list of the run in one request),
+  under the same rules as a new candidate (still that taxon, Research Grade or agreed, never annotated Egg or Dead, the
+  licences); one without one leaves the place to the next observation. The egg-mass record stays (its judgement keeps it
+  out).
+- Pierre's own observations come first within the room the target leaves, as the fish's (fetch_fish.select), never above
+  it: a list with no room takes none, and the room the judging frees goes to his first.
 - A photo of an observation Pierre sent elsewhere or out of a list (curation.json "seaslug" `out`) brings no other photo
   of that observation, as the fish's `known` (his identification is in doubt).
 - Identity: Research Grade at the species level (or below), never captive. Pierre's own observations (iNaturalist user
@@ -34,9 +37,8 @@ sea-slug decisions:
   ID"; rule P1's fish exception, rule S2): one identified to the species (the observation's taxon at species level or
   below, whoever named it) is usable even when Needs ID, and his photo even without a licence, as fetch_fish.usable_obs
   reads them (this tool calls it). They are asked on their own search (fetch_fish.queries "own": Research Grade and
-  Needs ID, any place, abroad kept inside the Indo-West Pacific) and taken first, as fetch_fish.select takes them, so
-  none is left out: within the photo target on a new list, and on a list already full (filled before 2026-11-16) on
-  top of it, up to the ceiling `max` (30), since a candidate already there is never removed. Never boosted: they wait
+  Needs ID, any place, abroad kept inside the Indo-West Pacific) and taken first within the room the target leaves, as
+  fetch_fish.select takes them (the fish's room, no more: a full list takes none until the judging frees room). Never boosted: they wait
   for the judging pass like any candidate, on the same rubric, and play by their judged ease. `own` marks them, `ni`
   the Needs ID ones (as fetch_fish.record).
 - Licences (rule P1): CC0, CC BY, CC BY-NC only, never share-alike nor ND (Pierre's own photos whatever their licence,
@@ -116,7 +118,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line
 from fetch_fish import (API, DEAD, FIELDS, LICENCES, LOC, PH, STAGE, TAXA, Net, hord, lic_class, lic_ok, obs_cost,  # noqa: E402
-                        obs_url, pages, phase_obs, prefetch, queries, select, tier_of, trim, usable_obs)
+                        obs_url, pages, phase_obs, prefetch, queries, select, state, tier_of, trim, usable_obs)
 import inat  # noqa: E402  the batched counts (rule C7)
 from presence import NEAR_AREA, label_confirmed, near_dauin  # noqa: E402  rule C8 and the label rule beside it
 
@@ -152,19 +154,32 @@ def egg_set(sug):
     return {f for f, j in ((sug or {}).get("seaslug") or {}).items() if isinstance(j, dict) and j.get("egg")}
 
 
+class Gone:
+    """The candidates that no longer take room under a target, as the fish's cap frees it (fetch_fish.state, the same code
+    with the sea slugs' part of curation.json and data/suggest.json): one Pierre rejected, excluded or sent elsewhere, one
+    the judging set aside for sure (a near-duplicate `dup`, a subject not obvious, other species in view: fetch_fish.sure_out),
+    an add of his held out for look-alikes, and an egg mass (the egg rule's filter 2). `f in gone` says it."""
+
+    def __init__(self, egg=frozenset(), gone=lambda f: False):
+        self.egg, self.gone = egg, gone
+
+    def __contains__(self, f):
+        return f in self.egg or bool(self.gone(f))
+
+
 def whole(x):
     """x as an int when it is one (the room is counted in halves: an extra photo takes EXTRA_W)."""
     return int(x) if x == int(x) else x
 
 
-def held(L, egg=frozenset(), only=None):
-    """The room the candidates of list L take against its target: those still usable (every one but those judged an egg
-    mass), weighted per observation as the fish's cap counts them (fetch_fish.species_room, obs_cost): an observation's
-    first usable photo in list order counts 1, each further one EXTRA_W. only: a test of a record; only the ones it accepts
-    are summed, the weights still follow the observation."""
+def held(L, gone=frozenset(), only=None):
+    """The room the candidates of list L take against its target: those still usable (every one but those in gone: a
+    Gone, or a set of egg masses), weighted per observation as the fish's cap counts them (fetch_fish.species_room,
+    obs_cost): an observation's first usable photo in list order counts 1, each further one EXTRA_W. only: a test of a
+    record; only the ones it accepts are summed, the weights still follow the observation."""
     n, room = Counter(), 0
     for p in L:
-        if p["f"] in egg:
+        if p["f"] in gone:
             continue
         k = obs_cost(n[p["o"]], 1)
         n[p["o"]] += 1
@@ -173,12 +188,12 @@ def held(L, egg=frozenset(), only=None):
     return whole(room)
 
 
-def kept_of(L, egg=frozenset()):
+def kept_of(L, gone=frozenset()):
     """{observation URL: its candidates still usable} of list L: what select calls `held`, so an observation among the
     candidates brings its other photos at their weight and its observer and life stage are not counted again."""
     n = Counter()
     for p in L:
-        if p["f"] not in egg:
+        if p["f"] not in gone:
             n[p["o"]] += 1
     return n
 
@@ -397,7 +412,7 @@ def label_query(gid, field):
     return gl_query([gid], "&field:" + urllib.parse.quote(field["name"]) + "=" + urllib.parse.quote(field["value"]))
 
 
-def informal_run(net, src, inf, have, T, pairs, used, taken, report, egg=frozenset(), known=frozenset()):
+def informal_run(net, src, inf, have, T, pairs, used, taken, report, gone=frozenset(), known=frozenset()):
     """--informal: each species of tools/seaslug_informal.json, its presence measured (written into inf) and, when
     present, its candidates added to have under its key. known: observation URLs that bring no other photo (sent elsewhere
     by Pierre)."""
@@ -418,10 +433,10 @@ def informal_run(net, src, inf, have, T, pairs, used, taken, report, egg=frozens
         cap = target(s, T)[0]
         items = mine([x for x in (usable_gl(o, pairs, used) for o in gl_obs(net, label_query(gid, s["field"])))
                       if x and obs_url(x["id"]) not in known], taken, s["key"])
-        got = pick(items, max(0, cap - held(L, egg)), stages(L), used, kept_of(L, egg), own_first=False)
+        got = pick(items, max(0, cap - held(L, gone)), stages(L), used, kept_of(L, gone), own_first=False)
         new = add_picks(L, s["key"], got, taken)
-        report[s["name"]] = {"n": held(L, egg), "target": cap, "new": len(new), "pool": len(items), **s["presence"]}
-        print(f"{s['name']:<30} {held(L, egg):>4} / {cap} (+{len(new)}; {len(items)} usable observations with its label; "
+        report[s["name"]] = {"n": held(L, gone), "target": cap, "new": len(new), "pool": len(items), **s["presence"]}
+        print(f"{s['name']:<30} {held(L, gone):>4} / {cap} (+{len(new)}; {len(items)} usable observations with its label; "
               f"presence: {u} observers in the Philippines, {nu} near Dauin)", flush=True)
 
 
@@ -434,7 +449,7 @@ def gl_target(g, T):
     return int(min(T.get("max", 1e9), T["candidates"]))
 
 
-def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), egg=frozenset(), known=frozenset()):
+def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), gone=frozenset(), known=frozenset()):
     """--genus-level: the genus-level candidates of each genus unit (game_genera; --only: some of them), keyed by genus
     name, marked gl. known: as informal_run's."""
     names = [g for g in game_genera(src) if not only or g in only]
@@ -450,11 +465,11 @@ def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), egg=
         cap = gl_target(g, T)
         L = have.setdefault(g, [])
         items = mine([x for x in (usable_gl(o, pairs, used) for o in pool[g]) if x and obs_url(x["id"]) not in known], taken, g)
-        got = pick(items, max(0, cap - held(L, egg)), stages(L), used, kept_of(L, egg), own_first=False)
+        got = pick(items, max(0, cap - held(L, gone)), stages(L), used, kept_of(L, gone), own_first=False)
         new = add_picks(L, g, got, taken, gl=True)
-        report[g] = {"n": held(L, egg), "target": cap, "new": len(new), "pool": len(items), "genus": len(pool[g]),
+        report[g] = {"n": held(L, gone), "target": cap, "new": len(new), "pool": len(items), "genus": len(pool[g]),
                      **({"missing": True} if g not in gids else {})}
-        print(f"{g:<20} {held(L, egg):>4} / {cap} (+{len(new)}; {len(items)} usable of {len(pool[g])} genus-level observations"
+        print(f"{g:<20} {held(L, gone):>4} / {cap} (+{len(new)}; {len(items)} usable of {len(pool[g])} genus-level observations"
               f"{'; genus not found on iNaturalist' if g not in gids else ''})", flush=True)
 
 
@@ -510,21 +525,23 @@ def still(o, job, pairs, used):
     return o.get("t") == genus and usable_gl(o, pairs, used) or None
 
 
-def eggs_back(net, jobs, egg, pairs, used):
+def eggs_back(net, jobs, egg, pairs, used, gone=None):
     """The egg rule's filter 2: in each list of jobs [(key, L, cap, kind, genus, label)] (still: kind and label), each
     observation whose every candidate is judged an egg mass (egg_only) brings its next usable photos, in list order, while
     the list holds fewer than its target (held), each photo for its weight (fetch_fish.obs_cost; the last cut to the room
     left). The observations are asked again by id, as they are now (again: every list together), under the list's rules
     (still). Asked only when one is wanted, then every observation with an egg-mass candidate in these lists, a set a
-    rerun asks the same way (cached: --offline gives the same file). Returns {key: [records added]}."""
-    want = {job[0]: egg_only(job[1], egg) for job in jobs if held(job[1], egg) < job[2]}
+    rerun asks the same way (cached: --offline gives the same file). egg: the egg masses (egg_set); gone: what frees
+    room (Gone; the egg masses when not given). Returns {key: [records added]}."""
+    gone = egg if gone is None else gone
+    want = {job[0]: egg_only(job[1], egg) for job in jobs if held(job[1], gone) < job[2]}
     ids = {num(p["o"]) for job in jobs for p in job[1] if p["f"] in egg} if any(want.values()) else set()
     obs = again(net, ids)
     out = {}
     for job in jobs:
         key, L, cap = job[:3]
-        room = cap - held(L, egg)
-        kept = kept_of(L, egg)
+        room = cap - held(L, gone)
+        kept = kept_of(L, gone)
         for u in want.get(key, []):
             o = obs.get(num(u))
             x = o and room > 0 and still(o, job, pairs, used)
@@ -594,40 +611,39 @@ def topup_jobs(have, inf, only=()):
     return jobs
 
 
-def own_room(L, T, egg=frozenset()):
-    """The room for Pierre's own observations in a list L: up to the ceiling `max`, so on a list the others already
-    filled to its target his still come (a candidate already there is never removed); his count in the target after.
-    A candidate judged an egg mass does not count (held)."""
-    return max(0, T.get("max", 0) - held(L, egg))
+def room_of(L, cap, gone=frozenset()):
+    """The room a list L has left under its target cap, as the fish's (fetch_fish.species_room): what the candidates still
+    usable take (held) is taken off; a full list has none, for Pierre's own observations too."""
+    return max(0, cap - held(L, gone))
 
 
-def fill(net, s, L, T, pairs, used, own_only=False, egg=frozenset(), known=frozenset(), taken=None):
+def fill(net, s, L, T, pairs, used, own_only=False, gone=frozenset(), known=frozenset(), taken=None):
     """The new candidates of species s (L: its candidates already there), in room as the fish's cap counts it (held): Pierre's
-    own first (his search, every one usable up to own_room: the fish's select takes his first), then the juvenile room
-    (Life Stage: Juvenile observations, the Philippines then abroad), then the rest (the Philippines, then abroad when
-    their search was read to its end and room is left). An observation among the candidates brings its other photos,
-    at their weight. own_only: his only, nothing else asked. egg: the candidates judged an egg mass, which count against
-    nothing (held). known: observation URLs that bring no other photo (sent elsewhere by Pierre). taken: {observation URL:
+    own first (his search, every one usable within the room left: the fish's select takes his first), then the juvenile
+    room (Life Stage: Juvenile observations, the Philippines then abroad), then the rest (the Philippines, then abroad
+    when their search was read to its end and room is left). An observation among the candidates brings its other photos,
+    at their weight. own_only: his only, nothing else asked. gone: the candidates that count against nothing (Gone:
+    rejected, set aside, egg masses; held). known: observation URLs that bring no other photo (sent elsewhere by Pierre). taken: {observation URL:
     list key}; an observation held by another list (a genus-level one, a species with no name, another species it was
     identified as before) brings nothing here. Returns ([items, each with its photos P and its cost], {"juvenile": room
     short by})."""
     tid, Q = s["inat"], queries(s["inat"])
     cap, juv = target(s, T)
-    n, kept = stages(L), kept_of(L, egg)
+    n, kept = stages(L), kept_of(L, gone)
     taken = {} if taken is None else taken
     it = lambda obs: mine([x for x in (usable(o, pairs, used) for o in obs if obs_url(o["id"]) not in known) if x],  # noqa: E731
                           taken, str(tid))
     # The room the usable observations of a search would take, counted as pick takes it (obs_cost).
     cost = lambda res: sum(obs_cost(kept.get(obs_url(x["id"]), 0), len(x["P"])) for x in it(res))  # noqa: E731
     got = []
-    if own_room(L, T, egg):
+    if room_of(L, cap, gone):
         own_obs = pages(net, Q["own"], lambda res: False)
-        got += pick([x for x in it(own_obs["results"]) if x["own"]], own_room(L, T, egg), n, used, kept)
+        got += pick([x for x in it(own_obs["results"]) if x["own"]], room_of(L, cap, gone), n, used, kept)
     if own_only:
         return got, {}
-    have = held(L, egg) + spent(got)
+    have = held(L, gone) + spent(got)
     juvenile = lambda st: "juvenile" in (st or "").split("/")  # noqa: E731
-    jr = whole(max(0, min(juv - held(L, egg, lambda p: juvenile(p.get("st"))) - spent([x for x in got if juvenile(x["st"])]),
+    jr = whole(max(0, min(juv - held(L, gone, lambda p: juvenile(p.get("st"))) - spent([x for x in got if juvenile(x["st"])]),
                           cap - have)))
     free = whole(max(0, cap - have - jr))
     if not jr and not free:
@@ -673,13 +689,15 @@ def run(args):
     inf = json.loads(inf_path.read_text(encoding="utf-8")) if inf_path.exists() else {"species": []}
     order = [str(s["inat"]) for s in src["species"]] + [s["key"] for s in inf["species"]] + game_genera(src)
     sug_path = Path(getattr(args, "suggest", None) or SUGGEST)
-    egg = egg_set(json.loads(sug_path.read_text(encoding="utf-8")) if sug_path.exists() else {})
+    sug = json.loads(sug_path.read_text(encoding="utf-8")) if sug_path.exists() else {}
+    egg = egg_set(sug)
+    gone = Gone(egg, state(cur, sug, "seaslug")[0])  # what frees room, as the fish's cap does
 
     def back(jobs):
         """eggs_back over the run's lists, its count printed."""
         jobs = [j for j in jobs if j[0] in have]
         some = any(egg_only(j[1], egg) for j in jobs)
-        got = eggs_back(net, jobs, egg, pairs, used)
+        got = eggs_back(net, jobs, egg, pairs, used, gone)
         if some:
             print(f"egg masses: {len({r['o'] for v in got.values() for r in v})} observations brought their next photos "
                   f"({', '.join(f'{k} {len(v)}' for k, v in got.items()) or 'none'})", flush=True)
@@ -714,9 +732,9 @@ def run(args):
                 jobs += [(g, have.get(g, []), gl_target(g, T), "gl", g, None) for g in game_genera(src) if not only or g in only]
             back(jobs)
             if args.informal:
-                informal_run(net, src, inf, have, T, pairs, used, taken, report, egg, known)
+                informal_run(net, src, inf, have, T, pairs, used, taken, report, gone, known)
             if args.genus_level:
-                genus_level_run(net, src, have, T, pairs, used, taken, report, only, egg, known)
+                genus_level_run(net, src, have, T, pairs, used, taken, report, only, gone, known)
         finally:
             net.save()
         if args.informal:
@@ -734,22 +752,22 @@ def run(args):
         back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp",
                                            s.get("genus"), None) for s in S])
         # The admin's own for every species with room for them (his search, asked together: rule C7), then the general one.
-        prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T, egg)], ["own"])
+        prefetch(net, [s["inat"] for s in S if room_of(have.get(str(s["inat"]), []), target(s, T)[0], gone)], ["own"])
         if not own_only:
-            prefetch(net, [s["inat"] for s in S if held(have.get(str(s["inat"]), []), egg) < target(s, T)[0]], ["ph"])
+            prefetch(net, [s["inat"] for s in S if held(have.get(str(s["inat"]), []), gone) < target(s, T)[0]], ["ph"])
         for s in S:
             key = str(s["inat"])
             L = have.setdefault(key, [])
-            got, short = fill(net, s, L, T, pairs, used, own_only, egg, known, taken)
+            got, short = fill(net, s, L, T, pairs, used, own_only, gone, known, taken)
             add_picks(L, key, got, taken)
-            loc = Counter(p["loc"] for p in L if p["f"] not in egg)
-            report[s["name"]] = {"n": held(L, egg), "target": target(s, T)[0], "eggBack": len(back_.get(key, [])),
+            loc = Counter(p["loc"] for p in L if p["f"] not in gone)
+            report[s["name"]] = {"n": held(L, gone), "target": target(s, T)[0], "eggBack": len(back_.get(key, [])),
                                  "ph": loc["dauin"] + loc["ph"], "world": loc["world"],
                                  "juvenile": sum(1 for p in L if "juvenile" in (p.get("st") or "")),
                                  "own": sum(1 for p in L if p.get("own")), "ownNew": sum(len(o["P"]) for o in got if o["own"]),
                                  **({"short": short} if short else {})}
             own = f", Pierre's own {report[s['name']]['own']} (+{report[s['name']]['ownNew']})" if report[s["name"]]["own"] else ""
-            print(f"{s['name']:<30} {held(L, egg):>4} / {target(s, T)[0]} (Philippines {loc['dauin'] + loc['ph']}, abroad "
+            print(f"{s['name']:<30} {held(L, gone):>4} / {target(s, T)[0]} (Philippines {loc['dauin'] + loc['ph']}, abroad "
                   f"{loc['world']}, juvenile {report[s['name']]['juvenile']}{own}){' short ' + json.dumps(short) if short else ''}",
                   flush=True)
     finally:

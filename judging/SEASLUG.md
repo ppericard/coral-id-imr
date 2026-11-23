@@ -149,7 +149,8 @@ annotated:
   reads the sea slugs only.
 - The egg-only photo goes, not the observation's other photos. `tools/fetch_seaslugs.py` takes every usable photo of an
   observation; at its next run, an observation whose every candidate is judged an egg mass brings its next usable photos
-  as new candidates (`eggs_back`), judged like any other, and the egg-mass one counts nothing against the target.
+  as new candidates (`eggs_back`), judged like any other, and the egg-mass one counts nothing against the target. A
+  photo judged `dup` counts nothing against it either, as the fish's.
 
 ## Watermark
 
