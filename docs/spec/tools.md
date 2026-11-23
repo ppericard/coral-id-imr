@@ -69,9 +69,10 @@ written with `tools/datajson.py`.
   no draft, no `needs-pierre`, green on its head, no sheet changes file; from `BODY_FROM` on, its description: "Choices
   I made" None, and each item of "Players see" quoting Pierre with a date or marked "integrator's call"), builds `main`
   plus their heads in a temporary worktree (the sheet rules checked by `main`'s copy of `sheet_version.py`: no PR's
-  code runs), pushes `train/<UTC time>`, waits for Checks and Smokes on it, squash-merges each PR at its tested head in
-  order (stopping if `main` moved) and compares `main`'s tree with the train's. `gh api` GET and PUT only, no
-  force-push; `tests/train.test.js` (a stand-in `gh`, a bare origin).
+  code runs), checks the heads and base again before pushing `train/<UTC time>` and waits for Checks and Smokes.
+  It squash-merges each PR at its tested head in order (stopping if `main` moved) and compares `main`'s tree with
+  the train's. The queue gives both runs `--sha FULL_SHA` for one PR, so a moved head must pass its own gates
+  before it can train. `gh api` GET and PUT only, no force-push. See `tests/train.test.js` (a stand-in `gh`, a bare origin).
 - **The session hooks** (`.claude/settings.json`) run tools from a trusted Git revision. SessionStart,
   InstructionsLoaded and SubagentStart each fetch `origin/main` before selecting a script, because eager instruction
   loads can run asynchronously before SessionStart. The fetch is non-interactive, bounded to three seconds and
