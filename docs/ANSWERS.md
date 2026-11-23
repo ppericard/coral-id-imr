@@ -1979,3 +1979,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   a appris, sur ses faiblesses»; «il ne faut jamais que ça fasse chuter notre taux de réussite local à un stade où en
   fait on finit par nous décourager». Not settled: to reconcile with Q385 (2026-11-18, no practice probe from the
   reserve). Applied: Linear REE-191.
+- **21:22, the placement test: several tries on one photo, and a card to offer it again.** Typed first with an «je
+  ne sais pas» button, then the same photo with an easier question (4 families): «quelqu'un pourrait très bien ne pas
+  connaître l'espèce exacte … tout en étant capable de le retrouver si on lui fait des propositions»; for a player
+  who did not take it, a card offering it again when conditions to define are met (success well above the aim, a
+  pulse answer «je m'ennuie», «pas assez dur» or «c'est trop dur»). Applied: Linear REE-112.
+- **21:22, one rule, never a subject's exception.** On «finer ranks sooner in fish»: «tu es en train de faire une
+  exception pour un groupe, une matière. Donc, ça ne me va pas. La règle doit être générale» (rule S1). Applied:
+  #1503's wording; Linear REE-191. Questions that do not count kept as a concept: «garder l'idée du concept».
+  Applied: Linear REE-253.
+- **21:22, the simulator bug: general or an exception?** «soit c'est réellement un bug qui existe à l'échelle de
+  l'ensemble des matières, soit … il y a une exception dans le code … il y a du code qui a besoin d'être généralisé»;
+  «est-ce que tu es sûr que ce bug, il est arrivé en pratique sur les simulations précédentes?» Applied: Linear
+  REE-249 (general in the sim, hidden by the corals' bare ids; freezes only since #1375), REE-28.
