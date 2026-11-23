@@ -3114,7 +3114,8 @@ const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.uni
 // its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
 // answered in a live game before the path opened it, model.js introLive) opens nothing (rule L4). A unit of a part that
 // is off never opens (model.js mayOpen); one already open stays open.
-// (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never).
+// (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never). The
+// answers are counted on the answer clock (model.js tally), so a count that goes down (rule D9) never delays that ask.
 const opensNow = () => UNITS[SUBJ.id].opens || [];
 const openOf = (S, full) => {
   const L = S.units(),
@@ -3123,7 +3124,7 @@ const openOf = (S, full) => {
     met: L.some(n => n in m && !closed(n)),
     due: full && S.due(),
     left: full && L.some(n => !introduced(n)),
-    at: full ? answersSoFar() : 0
+    at: full ? tally() : 0
   });
 };
 const openShut = n => opensNow().some(S => S.units().includes(n) && !openOf(S).on);
@@ -3132,10 +3133,11 @@ const opensOff = () => opensNow().filter(S => openOf(S, 1).row);
 // The card, the first due (quiz.js openOfferShow): after a "Not now", at most once more, a while later
 // (docs/decisions/2026-11-18-decisions-from-app-comments.md).
 const openOfferDue = () => opensNow().find(S => openOf(S, 1).ask) || null;
-// "Not now" on the card: off, counted, with the answer count it was said at.
+// "Not now" on the card: off, counted, with the answer clock it was said at (model.js tally; synced with the choice, a
+// mark the clock of another device moves up to: model.js clockMarks).
 function openNo(k) {
   Q[k + 'N'] = (Q[k + 'N'] || 0) + 1;
-  Q[k + 'A'] = answersSoFar();
+  Q[k + 'A'] = tally();
   bonusSet(false, k);
 }
 // ⚙ Bonus genera On / Off, the What I learn card's rows (learnSet) and the offer card (quiz.js bonusOfferShow): saved in

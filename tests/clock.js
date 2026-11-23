@@ -2,7 +2,8 @@
 // for a test that runs a block of model.js or quiz.js in a vm: the functions' own source, to add to the block. It reads
 // the context's answersSoFar and keeps its clock on the context's comeback record (CB, cbSave): a test gives both, then
 // can lower the answer count and read its checkpoints across the drop. The synced marks it starts at (clockMarks) are
-// read from the context's P (with LEVEL), introMap and winkSeen, when the context has them.
+// read from the context's P (with LEVEL), introMap, winkSeen, and Q with opensNow (a part's "Not now"), when the context
+// has them.
 const fs = require('fs'),
   path = require('path'),
   cut = require('./block.js');

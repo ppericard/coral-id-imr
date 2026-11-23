@@ -21,7 +21,7 @@ function app({P = {}, c1 = ['A', 'B'], c2 = ['M'], c3 = ['X', 'Y']} = {}) {
   const model = cut(read('model.js'), '// First meeting with a genus (Pierre', '// Comeback after a break (Pierre', {file: 'model.js'}),
     src = read('app.js'),
     gate = cut(src, 'const treeGate = n => {', '\n};\n', {through: 1, file: 'app.js'}),
-    open = cut(src, 'const openOf = (S, full) => {', '// What My progress offers to open', {file: 'app.js'});
+    open = cut(src, 'const openOf = (S, full) => {', '// ⚙ Bonus genera On / Off', {file: 'app.js'});
   const saved = {},
     circle = Object.fromEntries([...c1.map(n => [n, 1]), ...c2.map(n => [n, 2]), ...c3.map(n => [n, 3])]),
     ctx = {
@@ -50,7 +50,8 @@ function app({P = {}, c1 = ['A', 'B'], c2 = ['M'], c3 = ['X', 'Y']} = {}) {
       treeC3: () => true,
       openState: C.openState,
       Q: {},
-      opensNow: () => [{k: 'c3', units: () => c3, due: () => true}]
+      opensNow: () => [{k: 'c3', units: () => c3, due: () => true}],
+      bonusSet: (on, k) => (ctx.Q[k] = !!on) // app.js bonusSet, as openNo calls it
     };
   ctx.answersSoFar = () => ctx.n;
   ctx.cbSave = () => {}; // the answer clock's record (model.js tally) kept in CB only
@@ -60,7 +61,7 @@ function app({P = {}, c1 = ['A', 'B'], c2 = ['M'], c3 = ['X', 'Y']} = {}) {
       require('./clock.js')() +
       gate +
       open +
-      '\nthis.M = {INTRO, introMap, introAdd, introLive, asked, askedOpen, introduced, treeGate, openOf, openShut};',
+      '\nthis.M = {INTRO, introMap, introAdd, introLive, asked, askedOpen, introduced, treeGate, openOf, openShut, openOfferDue, openNo, tally, clockSync};',
     ctx
   );
   return Object.assign(ctx.M, {ctx});
@@ -98,6 +99,45 @@ test('a part opened by choice: a closed mark (a live answer on one of its units)
   // A unit of it once opened on a card (an older record, the part never asked): on, as before.
   M.introAdd(['Y'], false);
   assert.strictEqual(M.openShut('X'), false);
+});
+
+// A part's "Not now" on the answer clock (model.js tally; rule D9, docs/reviews/2026-11-09-level-count-checkpoints.md):
+// the offer comes back once, OPEN_AGAIN answers after it, whatever the level's count does meanwhile.
+test('a part opened by choice: a count that goes down after "Not now" never delays the second ask', () => {
+  const M = app();
+  M.ctx.n = 300;
+  assert.strictEqual((M.openOfferDue() || {}).k, 'c3', 'the card at its gate');
+  M.openNo('c3');
+  assert.strictEqual(M.openOfferDue(), null, 'not asked again at once');
+  M.ctx.n = 250; // the log's count adopted, 50 answers counted twice dropped
+  M.tally(); // sync.js clockTick, right after the adoption
+  M.ctx.n = 449;
+  assert.strictEqual(M.openOfferDue(), null, '199 answers since the "Not now"');
+  M.ctx.n = 450;
+  assert.strictEqual((M.openOfferDue() || {}).k, 'c3', '200 answers since the "Not now": asked once more');
+  M.openNo('c3');
+  M.ctx.n = 5000;
+  assert.strictEqual(M.openOfferDue(), null, 'then never');
+});
+
+test('a part opened by choice: a "Not now" synced from a device whose clock is ahead', () => {
+  // The other device said "Not now" at its clock 400; this one's count is the log's 100 (sync.js mergeSubject brings the
+  // choice in with its mark, then clockSeen).
+  const said = {c3: false, c3T: 1, c3N: 1, c3A: 400},
+    M = app();
+  M.ctx.n = 100;
+  assert.strictEqual(M.tally(), 100);
+  Object.assign(M.ctx.Q, said);
+  assert.strictEqual(M.clockSync(), 400, 'the clock moves up to the mark');
+  M.ctx.n = 299;
+  assert.strictEqual(M.openOfferDue(), null, '199 answers since');
+  M.ctx.n = 300;
+  assert.strictEqual((M.openOfferDue() || {}).k, 'c3', 'asked once more 200 answers after it, not 500');
+  // A clock that starts after the mark came in (a new device, a sign-in) starts at it.
+  const N = app();
+  Object.assign(N.ctx.Q, said);
+  N.ctx.n = 100;
+  assert.strictEqual(N.tally(), 400, 'a new clock starts at the mark');
 });
 
 // Live answers on units not opened count: a coral rules version (rule D5), with no card (rule D6).
