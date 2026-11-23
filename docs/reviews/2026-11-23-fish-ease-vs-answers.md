@@ -8,6 +8,10 @@ comme ça qu'on les voit"). Nothing in the app, the sheet, Linear or GitHub was 
 
 ## Summary
 
+The follow-up [Experts and response time](#experts-and-response-time-follow-up-2026-11-23) revises two
+recommendations below: the weight goes to about 0.3 (range 0.2–0.4) and the caps soften with partial and the views
+first, not cap-2. Pierre's answers (Q455–Q458) follow the revised ones.
+
 - **Data:** 3,537 fish answers from 9 players (2026-11-06 to 2026-11-22). The analysis uses 3,349 family-level quiz
   answers, 88.7% right (379 misses). There are 2,811 distinct photos, and 82% of them were answered only once.
 - **The #1341 gate is not met.** 4 players have 20+ answers after the switch to served ratings (524, 178, 67 and 38),
@@ -195,6 +199,124 @@ look. Two exceptions: snake eels are answered as expected (13 answers, too few t
 answered worse than expected. For lizardfishes the difficulty is likely the family, not the photo: a look-alike
 question, which this study did not examine.
 
+## Experts and response time (follow-up, 2026-11-23)
+
+Pierre answered Q455–Q458 on this section's revised table («ok», 2026-11-23 17:20 Manila; docs/ANSWERS.md).
+
+Pierre, 16:41, on the ease 1–2 photos answered better than expected: «ça c'est aussi parce que des experts jouent.
+C'est là où le temps de réaction est un bon indice». The script is `expert_rt.py` and the full output is
+`expert_rt.txt`. Players were ranked by three rules, fixed before the outcomes were looked at:
+
+- the app's median ability at the answer (top 3: P7, P14, P4);
+- accuracy on their first 100 fish answers (P7, P14, P13);
+- median time of a right answer (fastest: P4, P13, P11).
+
+### The experts explain the "hard photos answered too well" pattern
+
+| Calibration by ease (observed against app expected) | Ease 1 | Ease 2 | Ease 3 | Ease 4 | Ease 5 |
+| --- | --- | --- | --- | --- | --- |
+| All players | 0.919 / 0.875 (z +1.8) | 0.922 / 0.883 (+2.4) | 0.893 / 0.890 | 0.882 / 0.890 | 0.860 / 0.874 |
+| All, with an intercept per player | 0.919 / 0.902 (+0.8) | 0.922 / 0.902 (+1.3) | 0.893 / 0.896 | 0.882 / 0.887 | 0.860 / 0.859 |
+| Top 3 by ability | 0.952 / 0.908 (+1.9), n 146 | 0.932 / 0.917 (+0.9), n 294 | 0.933 / 0.934 | 0.930 / 0.941 | 0.943 / 0.944 |
+| Without the top 3 | 0.741 / 0.798 (−0.8), n 27 | 0.879 / 0.805 (+1.5), n 66 | 0.804 / 0.811 | 0.829 / 0.828 | 0.817 / 0.823 |
+
+- The top 3 by ability gave 83% of all the answers on ease 1–2 photos. The draw aims the hard photos at strong
+  players.
+- For those players the app's expected success is a little low: the per-player intercepts absorb it.
+- Once a player's general under-rating is allowed for, the hard photos' excess is no longer clear.
+- Without the experts, ease 1–2 rest on 93 answers and point both ways.
+- Only 25 answers sit at the ability cap (`ELO.hi` 3). The cap is not the cause.
+
+### The ease's weight, by player group
+
+| Subset | Slope per point [players 95%] | λ | App scale (prior 0.5) |
+| --- | --- | --- | --- |
+| All | −0.19 [−0.32, −0.07] | 0.82 | 0.23 |
+| All, intercept per player | −0.20 (SE 0.07) | 0.61 | 0.33 |
+| Without the top 3 by ability | −0.25 [−0.43, −0.05] | 0.61 | 0.40 |
+| Without the top 3 by first-100 accuracy | −0.23 [−0.36, −0.07] | 0.65 | 0.35 |
+| Without the fastest 3 | −0.18 [−0.33, −0.03] | 0.89 | 0.20 |
+| Top 3 by ability only | −0.19 [−0.29, −0.17] | 0.81 | 0.23 |
+| Answers in the top / lower two ability terciles | −0.22 / −0.21 | 0.90 / 0.75 | 0.25 / 0.28 |
+
+Held-out players (log-loss per answer against no prior):
+
+| Players | 0.2 | 0.3 | 0.4 | 0.5 |
+| --- | --- | --- | --- | --- |
+| All 9 | −0.0009 (6/9) | −0.0008 (6/9) | −0.0003 (5/9) | +0.0007 (4/9) |
+| Without the top 3 (6 players) | −0.0015 (5/6) | −0.0019 (4/6) | −0.0020 (4/6) | −0.0018 (4/6) |
+
+- The slope survives every split, so the ease is real evidence within a family.
+- Its size depends on how the experts are handled. On the app's scale it is 0.20–0.25 with them as they are, and
+  0.33–0.40 once a player's own level is allowed for.
+- For the 6 other players, 0.3 to 0.5 predict equally well.
+- The weight therefore lies between about 0.2 and 0.4. It is below today's 0.5, but less clearly than the first pass
+  said.
+
+### Response time of right answers
+
+There are 2,828 right answers with choices (not typed), with their seconds logged: 9 players, 31 photos enlarged. The
+model is log seconds against a player intercept, the format, practice on the unit and on fish, enlargement, the app's
+ability at the answer, and the photo terms. It is an OLS fit with intervals from 300 player-cluster bootstraps. In the
+tables, "+6%" means a right answer takes 6% longer.
+
+| Ease, per point harder | Time of a right answer [players 95%] |
+| --- | --- |
+| All | +5.8% [+3.6, +10.2] |
+| Within the family | +6.9% [+4.8, +12.3] |
+| Top 3 by ability | +3.8% [+2.3, +4.9] |
+| Without the top 3 | +10.6% [+7.5, +17.9] |
+| Answers in the top ability tercile | +5.8% [+1.5, +10.3] |
+
+| Criterion (cap) | Right answers | Time, all [players 95%] | Within the family | In ease points of time (about 6% a point) |
+| --- | --- | --- | --- | --- |
+| Partial `0` (≤3) | 112 | −4.7% [−14.6, +5.1] | −2.2% | none |
+| Camouflage `c` (≤3) | 103 | +6.7% [−7.9, +21.0] | +9.1% [+0.9, +24.5] | about 1.5 |
+| Views `h t d` (≤3) | 146 | −3.1% [−16.2, +0.8] | +7.3% [−6.3, +15.5] | 0 to 1 |
+| Any cap-3 tag | 481 | +1.1% [−3.1, +8.0] | — | about 0.2 |
+| Strong blur `b` (≤2) | 100 | +13.9% [+1.1, +24.2] | +12.9% [−2.8, +26.0] | about 2 |
+| Monochrome `3` (≤2) | 46 | +4.1% [−3.1, +34.4] | +6.4% | unclear |
+| Any cap-2 tag | 125 | +13.0% [+6.7, +22.3] | — | about 2 |
+| Oblique `o` (one step) | 496 | +5.8% [−0.2, +11.4] | +8.4% [+3.5, +14.8] | about 1 |
+| Small `s` | 213 | +10.5% [+1.0, +51] | +10.3% [+1.3, +37] | about 1.7 |
+| Juvenile `j` (no cap) | 125 | +15.6% [−4.0, +29] | +18.6% [−0.8, +34] | about 2.5 |
+| Typical-look family × partial or camouflaged | 99 | +1.9% [−4.3, +10.7] | −3.9% | none |
+
+Median seconds of right answers: 2.3 s for typical-look partial or camouflaged photos, 2.3 s for the other photos of
+typical-look families, 2.9 s for partial or camouflaged photos in other families, and 2.7 s for the remaining photos.
+
+**Reading.**
+
+- **Pierre's point holds.** Time is the more sensitive signal for strong players. They rarely miss a hard photo, but
+  they still take longer on it: +4% per point, a clear interval.
+- **The typical-look result gets stronger.** A buried or camouflaged photo in its usual family is answered as fast as
+  any other photo. Without the top 3, the interaction on right/wrong is still +0.57 [+0.12, +1.07]; with a
+  per-player intercept it is +0.80.
+- **Blur, and the cap-2 group through it, is a real difficulty in time** (about 2 ease points), though not in misses.
+  The blur cap at 2 roughly matches its time cost. Monochrome has too few answers to say anything.
+- **Camouflage outside the typical families** is slower within a family, and has more misses (−0.65): its cap-3
+  stands.
+- **Partial photos and head-on, tail or top views** are no slower and have no more misses. Their caps are the
+  least supported.
+- **Mild real costs:** oblique views (about 1 point), small fish (about 1.7) and juveniles (about 2.5 in time, none in
+  misses).
+- **Between families**, the time slope without family terms (+5.8%) is no larger than within families (+6.9%). Time
+  gives the cross-family ranking no support.
+
+### What changes for Q455–Q458
+
+- **Q455 (lower `calib.ease`):** the direction holds; the size changes. Recommend about **0.3** (supported range
+  0.2–0.4), not 0.2–0.25. The case for acting before the #1341 gate is weaker: for the non-expert players, 0.5
+  predicts as well as 0.3. A time term in the photo's rating (REE-16, ROADMAP "Time in the photo rating") would use
+  the more sensitive signal.
+- **Q456 (typical-look exception):** strengthened. It holds without the experts and is confirmed in time.
+- **Q457 (ease within a family only):** unchanged. The A models already had a per-player term, and time adds no
+  between-family support.
+- **Q458 (soften the caps, cap-2 first):** revised. **Do not start with cap-2**: blur costs about 2 ease points in time.
+  Start instead with partial `0` (outside typical families) and the views `h t d`, which neither misses nor time
+  support. Keep blur at about one or two steps, keep camouflage outside the typical families, and leave monochrome
+  open.
+
 ## What the figures cannot say
 
 - **There are few misses.** At 88.7% right, the 379 misses carry the information, and many criteria have under 20
@@ -280,5 +402,6 @@ The scripts are in the study's scratch folder. The inputs are not kept in the re
    commits listed in `prep.py`.
 3. Prepare the rows: `python3 -I prep.py answers.json fg rows.json`.
 4. Fit the models: `node tests/slot.js --name ree85-fit -- python3 -I fit.py rows.json fish-game.json --boot 300`.
+5. The experts and response time: `node tests/slot.js --name ree85-rt -- python3 -I expert_rt.py rows.json fish-game.json` (output kept as `expert_rt.txt`).
 
 The bootstrap and the permutation use seed 85. The run is short and goes inside the machine slot (rule W24).

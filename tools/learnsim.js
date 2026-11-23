@@ -697,8 +697,10 @@ function play(cfg) {
     // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen.
     // Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).
+    // answer.js: the format read
     const typed = !!document.querySelector('#view .tyform'),
       [, t, , , set] = window.__q,
+      // answer.js: the choices read
       ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
       shown = set.shown || [],
       d = mean(shown.map(p => trueD(t, p))) || 0,
@@ -776,17 +778,11 @@ function play(cfg) {
       Object.assign(QCLOCK, {t0: performance.now() - sec * 1000, off: 0, hid: null});
       rtq.push([pTrue, eps]);
     } else rtq.push([pTrue, null]);
-    if (typed) {
-      const f = document.querySelector('#view .tyform');
-      if (!pick) f.querySelector('[data-idk]').click();
-      // a species is typed by its common name (its id holds no letters to read)
-      else ((f.querySelector('input').value = (GX(pick) || {}).rank === 'species' ? GX(pick).name : pick), f.requestSubmit());
-    } else {
-      // A Find the X opens its answers once its four tiles are in (quiz.js question): the photos' host is out of reach
-      // here, so each tile is counted in (its load event), as a player's would be once it came.
-      document.querySelectorAll('#view .qstage.qfx .fxt img').forEach(im => im.dispatchEvent(new Event('load')));
-      document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
-    }
+    // Answered as the smokes answer (tests/answer.js smokeAnswer): the choice clicked, or the unit's name typed (a fish
+    // family's, not its id f:...: an id read as "So close!" was never taken, and the question came back unanswered for
+    // hundreds of answers), "I don't know" for ''; a Find the X's tiles counted in. An answer the app does not take throws
+    // with what is on screen.
+    smokeAnswer(pick);
     planNext(cur); // answer()'s top-up after the feedback
     if (oa.at !== null && lastE !== null)
       oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
@@ -1256,6 +1252,7 @@ async function run(browser, base, name, seed, n = QN) {
   // evaluate, and the browser's storage would queue about 1.5 MB an answer in the renderer until it crashed).
   await ctx.addInitScript(memStorage);
   await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
+  await ctx.addInitScript(require('../tests/answer.js').PAGE); // smokeAnswer: answers the question shown, as the smokes do
   await ctx.addInitScript(([st, sv, subj, aid]) => {
     localStorage.setItem('reefid-tour', '"done"');
     // The simulated player's anonymous id, one per profile and seed (simId): their reserve (core.js reserveOf), the same

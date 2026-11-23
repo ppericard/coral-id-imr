@@ -1433,14 +1433,36 @@ const cbSave = () => store.set(COMEBACK.KEY, CB);
 // with the comeback's record (c the clock, n the count it last saw): it starts over with the progress (introReset)
 // and at sign-out with it. Thresholds on the count itself (OPEN.STUCK_FROM, CHOICE.ASK, WINK.AT, PULSE.FIRST) read the
 // count, which rule D9 lets move.
+// A clock that starts (a new device, a sign-in, a reset) starts at the latest synced mark if that is ahead of the count
+// (clockMarks).
 function tally() {
   const a = answersSoFar();
   if (typeof CB.c === 'number' && typeof CB.n === 'number') {
     if (a === CB.n) return CB.c;
     if (a > CB.n) CB.c += a - CB.n;
     CB.n = a;
-  } else [CB.c, CB.n] = [a, a];
+  } else [CB.c, CB.n] = [Math.max(a, clockMarks()), a];
   cbSave();
+  return CB.c;
+}
+// The latest mark another device of the account may have kept on its own clock and synced here: an exam's last question
+// (s.ex.at, in the progress), a card's (introMark), a surprise card shown (quiz.js winkSeen). Once a count has gone down
+// (rule D9) two devices' clocks can differ by the doubles each counted (a new device's starts at the log's count), so a
+// mark from a device ahead would hold a gap back here by the difference (Codex, #1497).
+function clockMarks() {
+  let m = 0;
+  const up = x => typeof x === 'number' && isFinite(x) && x > m && (m = x);
+  Object.keys(typeof P === 'object' && P ? P : {}).forEach(n => n !== LEVEL && P[n] && P[n].ex && up(P[n].ex.at));
+  if (typeof introMap === 'function') Object.values(introMap()).forEach(e => Array.isArray(e) && up(introMark(e)));
+  if (typeof winkSeen === 'function') Object.values(winkSeen()).forEach(up);
+  return m;
+}
+// After a sync brought other devices' marks in (sync.js mergeSubject): the clock moves up to the latest of them when it is
+// behind (as a Lamport clock), so no synced mark is ahead of it; a mark of this device's is then due as much sooner.
+function clockSync() {
+  const c = tally(),
+    m = clockMarks();
+  if (m > c) ((CB.c = m), cbSave());
   return CB.c;
 }
 const recallOf = (days, S) => (1 + (FSRS.F * Math.max(0, days)) / S) ** FSRS.C;
