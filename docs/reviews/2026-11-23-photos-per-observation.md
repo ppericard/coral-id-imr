@@ -102,8 +102,9 @@ The further photos judged `dup` are 8,593 with the 10 whose judgement is unsure 
 **Is it intended?** Yes: Pierre's 2026-11-08 decision took every photo and left the near-duplicates to the judging
 pass (Q226, Q218, `tools/fetch_fish.py`'s header). The `alt` definition lists "another side, another phase or pose,
 other light", not another distance or framing [read]. His words of 21:05 ask for identification "at different zoom
-levels". The rubric does not say whether a closer or wider shot of the same fish is an `alt`. The 57% of `best`/`dup`
-pairs with equal ease (2,987 of 5,216) look like true bursts [measured]. How many of the 8,593 `dup` photos are a
+levels". The rubric does not say whether a closer or wider shot of the same fish is an `alt`. In 57% of the observations
+with a `best` and `dup`s (2,987 of 5,216), the `dup`s have the best's ease [measured]. That fits bursts, but equal
+ease does not show it [guess]. How many of the 8,593 `dup` photos are a
 different zoom cannot be told without looking at them, which is judging (rule P7).
 
 ## 3. Corals: accuracy and time by view (step 2)
@@ -111,11 +112,20 @@ different zoom cannot be told without looking at them, which is judging (rule P7
 **Data and method.** The sync sheet's Answers tab, columns A to W, read through the Google Sheets connector on
 2026-11-23 about 21:15 Manila. 7,676 rows, the last answer on 2026-11-22 18:36, pseudonymised at once (P1-P15). Coral
 rows (Subject blank or `coral`) of the photo quiz (Mode `quiz…`, Find the X left out). The Photos column lists the
-photos the player saw (the corallites hint only when opened: `quiz.js`). Each photo's view comes from `data.json`, with
+question's photos. It includes the corallites hint even when the player never opened it, because `quiz.js` `go` reveals
+the hint before it logs the answer (Codex on this PR; `answer`'s comment says otherwise) [read]. Each photo's view comes from `data.json`, with
 Pierre's adds and moves from `curation.json` genera. 13 rows name a photo with no known view and were left out, which
 leaves 3,958 rows. One photo = "that view alone". Two or more = "several views" of one colony (wide + close-up 306,
 wide + close-up + corallites 277, wide + close-up for a two-level genus 247, close-up + corallites 85). Typed answers
 (77) are left out of the table.
+
+- **The hint, a sensitivity check.** A one-view question never has a hint (`model.js` `photoSet`), so "one view alone"
+  is exact. In "several views", whether the corallites were seen is not known, so the table does not split several
+  views by the hint. One group may have been answered from one view: close-up + corallites (85 answers), a close-up
+  whose hint may have stayed shut. Taking those 85 out of "several views" leaves the results as they are: wide alone
+  minus several views +3.5 (+1.3 to +5.7) in all; below ability 0.5, +5.8 (+2.1 to +10.0), with 9 of 10 paired players
+  ahead (sign test p 0.02) [measured]. The `quiz.js` mismatch between `go` and `answer`'s comment is a logging matter
+  for another issue.
 
 - **Expected** is the app's own expectation logged with the answer. It includes the player's ability, the photo's
   difficulty, memory, the question's format and the +0.5 a photo alone gets (`core.js` `DOM` SINGLE, `model.js`
@@ -245,6 +255,6 @@ extract itself stays out of the repository). Each is run with `python3 -I`:
 | `xtab_fish.py fish-rows.json answers.json fish-game.json` | section 2's cross-tabs and section 4 (fish ease within observations, answers on multi-photo observations) |
 | `aside_check.py <worktree> fish-rows.json` | the `best`/`alt` photos set aside are all non-sure verdicts |
 | `fish_cache.py <fish_photos.json cache> data/fish-cand.json` | section 2's cache sample (usable photos against candidates) |
-| `coral_views.py answers.json data.json curation.json coral.json` | section 3 (bootstrap seed 252) |
+| `coral_views.py answers.json data.json curation.json coral.json` | section 3 (bootstrap seed 252); with `--split-hint`, the hint sensitivity check |
 | `coral_obs.py answers.json data.json data/cand.json curation.json` | section 4, corals |
 | `seaslug_counts.py <worktree> answers.json` | section 5 |
