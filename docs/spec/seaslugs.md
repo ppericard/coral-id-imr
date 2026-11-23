@@ -33,11 +33,15 @@ replay (`Code.gs` `board_`, `boardWarm_`; rule D8), by their % (the genera's mea
 and the board turn on from the script that has them (`core.js` `SEASLUGRP_SHEET`, `replayed.sheet`; `sync.js` `rpOn`;
 rule D4); before it, the subject merges against its own base `sbase` and shows no board.
 
-**Their achievements** (`core.js` `SEASLUG_ACH`, ids `ss…`, 20): genera met, genera at each level, families with every
+**Their achievements** (`core.js` `SEASLUG_ACH`, ids `ss…`, 24): genera met, genera at each level, families with every
 genus at Advanced, the nudibranch groups (`SEA_NUDI`) and the others, the first circle at Advanced, their % every 10
-points to 100. They read `progress.js` `achSnap`'s `fam` (units grouped by their `parent`, each group all at Advanced)
-and `tax` (each taxonomic group, `tg`, its units met and at Advanced), with their own ? text (`UNITS.seaslug` `achHelp`;
-`tests/seaslugach.test.js`).
+points to 100, and the species by their scientific names at Advanced (1, 10 and 50: `sssp1`, `sssp10`, `sssp50`) and
+every star at Advanced (`ssstars`). They read `progress.js` `achSnap`'s `fam` (units grouped by their `parent`, each group
+all at Advanced), `tax` (each taxonomic group, `tg`, its units met and at Advanced), `setsAdv.ssp` (the species set's
+units at Advanced, as the fish's `fspsci1` reads it) and `top` (`UNITS.seaslug` `top`: `app.js` `sciStars`, the species
+units whose record carries `star`; none while the species level is off), with their own ? text (`UNITS.seaslug`
+`achHelp`; `tests/seaslugach.test.js`, `tests/scispecies.test.js`). Choices and timing:
+[decision record](../decisions/2026-11-24-seaslug-species-achievements.md).
 
 ## A second tree subject on the fish engine
 
