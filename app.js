@@ -2312,7 +2312,7 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //   tour        the tour's words where they differ for it (tour.js words)
 //   slate()     the units the games teach and progress counts (corals: core.js slateOf, starred last; fish: every family)
 //   scale()     the units the global progress % counts when they are more than the slate (corals: core.js gameOf, the
-//               slate and the bonus genera, for every player, opted in or not: rule L6, Q445 A); the slate if absent
+//               slate and the bonus genera, for every player, opted in or not: rule L6); the slate if absent
 //   slateName   with a scale: the name of the slate's own % shown beside the global one (corals: "IMR slate")
 //   core()      the part "Open all" opens (model.js introLeft); the slate if absent
 //   gate(n)     whether slate unit n may open now (model.js mayOpen); always if absent
@@ -2327,7 +2327,7 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 
 // Bonus genera (core.js BONUS; docs/ARCHITECTURE.md "Bonus genera"): Coral Finder genera common at Dauin with a
 // look-alike on the slate, or no hard coral; opt-in (Q.bon, ⚙ any time, off keeps their progress), then open like the
-// others; they count in the global progress (UNITS scale, the one 45-genus scale for everyone: rule L6, Q445 A), never
+// others; they count in the global progress (UNITS scale, the one 45-genus scale for everyone: rule L6), never
 // in the IMR slate score; tips labelled the Coral Finder's, photos Research Grade or Pierre's own, never multi-coral
 // (tools/apply_bonus.py).
 
@@ -2590,9 +2590,8 @@ const UNITS = {
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
-    // The one 45-genus scale of the global progress (rule L6; Pierre, 2026-11-21, Q445 A: «une seule échelle de 45
-    // genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR»): the slate and the bonus genera, for
-    // every player, opted in or not; the slate's own % stays as the IMR slate score.
+    // The one 45-genus scale of the global progress (rule L6; docs/decisions/2026-11-21-coral-one-scale.md): the slate
+    // and the bonus genera, for every player, opted in or not; the slate's own % is the IMR slate score.
     scale: () => gameOf(DATA),
     slateName: 'IMR slate',
     // The IMR lecture's group k (data.json imrg: {n, t}), undefined for the genera outside the lecture's groups.

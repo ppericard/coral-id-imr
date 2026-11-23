@@ -1132,10 +1132,11 @@ test('board: signed-in players by progress then level; opted-out players and the
   );
 });
 
-// The corals' board on the one scale of every game genus (rule L6, Q445 A): the app's save summary sends the slate's
-// genera then the bonus genera (sync.js syncSummary over app.js scaleUnits), the "By genus" header takes them, and
-// board_ ranks every player over that header, with no change in the script; a save from an app of before (the slate
-// alone, the same genera first) writes over the start of the header and leaves the bonus columns, so the scale holds.
+// The corals' board on the one scale of every game genus (rule L6): the app's save summary sends the slate's
+// genera then the bonus genera (sync.js syncSummary over app.js scaleUnits, from SCALE_SHEET), the "By genus" header
+// takes them, its grid widened first when it is too narrow (a tab of the slate's width), and board_ ranks every player
+// over that header; a save from an app of before (the slate alone, the same genera first) writes over the start of the
+// header and leaves the bonus columns, so the scale holds.
 test('board: the corals rank over the "By genus" header, the bonus genera included, an older app\'s save after it too', () => {
   const C = require('../core.js'),
     s = seed(),
@@ -1147,12 +1148,22 @@ test('board: the corals rank over the "By genus" header, the bonus genera includ
     data = {'reefid-sync-coral-progress': JSON.stringify(P), 'reefid-sync-coral-rv': JSON.stringify(C.RV)},
     genera = L => Object.fromEntries(L.map(n => [n, P[n] ? 'ok' : 'new']));
   assert.ok(scale.includes('Isopora') && !slate.includes('Isopora'));
+  // A tab made by the slate's saves, its grid no wider than they are (writing past it fails, as in Sheets).
   s.post({
+    name: 'Cy',
+    pin: '2222',
+    data: prog(1),
+    summary: {learned: 0, seen: 1, total: slate.length, genera: genera(slate), pct: 1, board: 1}
+  });
+  s.sheets['By genus'].maxCols = 2 + slate.length;
+  const r = s.post({
     name: 'Ana',
     pin: '1234',
     data,
     summary: {learned: 1, seen: 1, total: slate.length, genera: genera(scale), pct: C.pctOf(P, scale), board: 1}
   });
+  assert.ok(r.ok, 'the save of the wider summary');
+  assert.strictEqual(s.sheets['By genus'].maxCols, 2 + scale.length, 'the grid widened');
   const head = () => s.sheets['By genus'].rows[0].slice(2).filter(Boolean);
   assert.deepStrictEqual(head(), scale, 'the header: the slate then the bonus genera');
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], C.pctOf(P, scale));
@@ -2263,7 +2274,7 @@ test("v42: the player list carries each player's replayed progress, learned and 
     st = s.get({stats: '1'}),
     D = JSON.parse(DJSON),
     list = C.slateOf(D),
-    // The two % over the one scale of every game genus, the bonus genera included (rule L6, Q445 A: Code.gs scale_, as
+    // The two % over the one scale of every game genus, the bonus genera included (rule L6: Code.gs scale_, as
     // the app's header); Learned over the slate.
     scale = C.gameOf(D),
     P = JSON.parse(data['reefid-sync-coral-progress']),

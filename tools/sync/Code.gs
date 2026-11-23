@@ -381,10 +381,13 @@ function doPost_(e){
         try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('left out of the statistics: device ' + aid_('~anon ' + p.anon) + ' signed in as ' + aid_(name) + ', left out too')]); } catch (e) {}
       }
     }
-    // One row per RA, one column per genus, coloured by status: the class at a glance.
+    // One row per RA, one column per genus, coloured by status: the class at a glance. The grid widened first when the
+    // summary holds more genera than it has columns (the corals' one scale, the bonus genera after the slate: rule L6;
+    // the app sends it from vNEXT, sync.js SCALE_SHEET), as writing past it fails.
     const genera = Object.keys(s.genera || {});
     if (genera.length) {
       const g = sheet_('By genus'), head = ['Name', 'Learned'].concat(genera.map(safe_));
+      if (g.getMaxColumns && g.getMaxColumns() < head.length) g.insertColumnsAfter(g.getMaxColumns(), head.length - g.getMaxColumns());
       g.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold'); g.setFrozenRows(1); g.setFrozenColumns(2);
       const gr = find_(g, name) || g.getLastRow() + 1;
       g.getRange(gr, 1, 1, head.length).setValues([[safe_(name), (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
@@ -644,7 +647,7 @@ function slate_(){
   return hit ? JSON.parse(hit) : dataJson_().slate;
 }
 // The one 45-genus scale of the corals' global progress % (core.js gameOf over data.json: the slate and the bonus
-// genera, as the app's UNITS scale; rule L6, Q445 A), cached with gen_; the slate while it cannot be read.
+// genera, as the app's UNITS scale; rule L6), cached with gen_; the slate while it cannot be read.
 function scale_(){
   const hit = CacheService.getScriptCache().get('scale1');
   return (hit ? JSON.parse(hit) : dataJson_().scale) || slate_();
@@ -9323,7 +9326,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate.
   // slateOf(d) = the slate as the games teach it and the IMR slate score counts it (app.js slateGenera);
   // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera and the one scale the global
-  // progress counts for every coral player, opted in or not (app.js UNITS scale; rule L6, Q445 A); the rest of
+  // progress counts for every coral player, opted in or not (app.js UNITS scale; rule L6); the rest of
   // data.json "x" are Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
   // a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],

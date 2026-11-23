@@ -24,7 +24,7 @@ const scoreBars = H =>
       )
     : '';
 // The slate's own % beside the global one, for a subject whose global progress counts more units than its slate
-// (app.js UNITS scale and slateName: the corals' IMR slate score, rule L6, Q445 A); null for any other subject.
+// (app.js UNITS scale and slateName: the corals' IMR slate score, rule L6); null for any other subject.
 const slatePct = (U = UNITS[SUBJ.id]) => (U.scale && U.slateName ? progPct(slateGenera()) : null);
 const slateBar = (U = UNITS[SUBJ.id], v = slatePct(U)) =>
   v == null ? '' : barsRow([[esc(U.slateName), v / 100]], `Your ${esc(U.slateName)} score`);

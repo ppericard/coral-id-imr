@@ -1246,16 +1246,22 @@ const server = http.createServer((req, res) => {
           if (i && a - cards[i - 1][0] < INTRO.GAP) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
         });
         if (cards.length < 2) fails.push(`only ${cards.length} bonus genus card(s) in 150 questions`);
-        // Their own progress grows: the global % (the one scale of every game genus, rule L6, Q445 A) counts it, the IMR
+        // Their own progress grows: the global % (the one scale of every game genus, rule L6) counts it, the IMR
         // slate score does not; the header, the save summary (the sheet's "By genus" columns and the leaderboard %) and
-        // the achievements read the global one. Off, it still counts (one scale for everyone).
+        // the achievements read the global one. Off, it still counts (one scale for everyone). The save summary sends the
+        // scale only to a script from SCALE_SHEET (it widens the tab first), the slate's to an older one (rule D4).
         const pb = {...P};
         B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
         const scaleOk = () => {
           const S = slateGenera(),
             all = scaleUnits(),
-            sum = syncSummary(),
+            v0 = store.get(SHEETV, 0),
+            old = (store.set(SHEETV, SCALE_SHEET - 1), syncSummary()),
+            sum = (store.set(SHEETV, SCALE_SHEET), syncSummary()),
             pill = document.getElementById('progn').textContent;
+          store.set(SHEETV, v0);
+          if (SHEET_FLOOR < SCALE_SHEET && (Object.keys(old.genera).join() !== S.join() || old.pct !== progPct(S)))
+            fails.push('the save summary to an older script: not the slate as before');
           if (S.some(isBonus)) fails.push('a bonus genus in the slate');
           if (all.join() !== [...S, ...B].join()) fails.push(`the global scale: ${all.length} units, not the slate then the bonus genera`);
           if (headPct(all) !== pctOf(P, all) || headPct(all) <= progPct(S)) fails.push('bonus genera not counted in the global %');
