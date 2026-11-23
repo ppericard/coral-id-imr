@@ -645,6 +645,78 @@
   "fish-s341-cand-248835023": {
    "code": "p0g1sl13",
    "keep": "best"
+  },
+  "fish-s341-cand-131438554": {
+   "code": "p1d2bm12",
+   "keep": "best"
+  },
+  "fish-s341-cand-482367000": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s341-cand-72366361": {
+   "code": "p0g0sl14",
+   "keep": "best"
+  },
+  "fish-s341-cand-703463197": {
+   "code": "p1g1smx1",
+   "keep": "best"
+  },
+  "fish-s341-cand-220619598": {
+   "code": "o1g2mlk1",
+   "keep": "best"
+  },
+  "fish-s341-cand-220619591": {
+   "code": "o1g2mlk1",
+   "keep": "dup"
+  },
+  "fish-s341-cand-411710931": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s341-cand-301704206": {
+   "code": "d1d2bsx1",
+   "keep": "best"
+  },
+  "fish-s341-cand-711993223": {
+   "code": "p0g1ml13",
+   "keep": "best"
+  },
+  "fish-s341-cand-706490204": {
+   "code": "d1g1smx1",
+   "keep": "best"
+  },
+  "fish-s341-cand-577487438": {
+   "code": "p0g1sls3",
+   "keep": "best"
+  },
+  "fish-s341-cand-602667693": {
+   "code": "o0g1sls2",
+   "keep": "best"
+  },
+  "fish-s341-cand-607766171": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s341-cand-607766169": {
+   "code": "p0g0sl1a2",
+   "keep": "alt"
+  },
+  "fish-s341-cand-301699832": {
+   "code": "d1g2mm1a1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Seen through a framed glass window: an aquarium or a glass-bottom boat? Coded a (out) either way until settled."
+  },
+  "fish-s341-cand-509127954": {
+   "code": "p1d1bmk1",
+   "keep": "dup"
+  },
+  "fish-s341-cand-509127679": {
+   "code": "o0d1mlo2",
+   "keep": "best"
   }
  }
 }
