@@ -5,7 +5,10 @@
   python3 tools/brief.py --short   5 lines at most (the SessionStart hook in .claude/settings.json)
   python3 tools/brief.py --time    one line: Manila time and the Rule 0 window (the UserPromptSubmit hook; offline)
   --time --night-due               legacy hook flag: report that the first message and delivery status are unknown
-  --at HH:MM                       pretend it is that Manila time (tests)
+  python3 tools/brief.py --checkin what every `send_later` check-in runs (REE-244): the time line, Linear's Next view
+                                   link (count unknown: no Linear access), open PRs, the merge queue and its log's
+                                   last line, today's agent launches, then tools/checkin.md
+  --at HH:MM                      pretend it is that Manila time (tests)
 
 It prints the Manila time and the Rule 0 window (AGENTS.md Rule 0), the open PRs (checks, the needs-pierre label, age),
 the remote branches with commits not in main and no PR (rule W6), the sheet script's VERSION on main against
@@ -487,6 +490,92 @@ def tracker_line():
     return 'Start: Project Home %s · Drive Reef_ID %s · views Now/Next/Decisions/Waiting' % tuple(links)
 
 
+# --- The check-in (REE-244) ----------------------------------------------------------------------------------------------
+# The integrator's `send_later` check-ins drive its nights. Their prompt is one fixed line that runs `--checkin`, which
+# prints the live signals and then tools/checkin.md, the reviewed text of what every check-in does. The work's source
+# is Linear's Next view: the brief has no Linear credentials, so it gives the view's link and never a count.
+
+CHECKIN = 'tools/checkin.md'
+NEXT_LABEL = 'Next (ready to start)'  # the Next view's link text in INTEGRATOR.md "Linear"
+
+
+def next_line():
+    try:
+        text = open(os.path.join(ROOT, 'docs/INTEGRATOR.md'), encoding='utf8').read()
+        sec = re.search(r'^## Linear\n(.*?)(?=^## |\Z)', text, re.M | re.S).group(1)
+        url = re.search(r'\[%s\]\((https://[^)\s]+)\)' % re.escape(NEXT_LABEL), sec).group(1)
+    except (OSError, AttributeError):
+        url = 'link in docs/INTEGRATOR.md "Linear"'
+    return 'Linear Next view: %s · Todo count unknown: open the view (the brief has no Linear access)' % url
+
+
+# A queue or train process itself, not a shell whose command line merely names it: the program, then the script, then
+# the PR numbers last (`bash tools/queue/nightq.sh 1391 1474`, `python3 tools/train.py --sha SHA 1478`).
+QUEUE_PROCS = (
+    ('nightq.sh', re.compile(r'^\S*\bbash (?:\S*/)?nightq\.sh((?: \d+)+)$')),
+    ('train.py', re.compile(r'^\S*\bpython3? (?:\S*/)?train\.py(?: \S+)*?((?: \d+)+)$')),
+)
+
+
+def running(rx):
+    """The sorted PR numbers of the processes whose command line matches `rx`, or None when pgrep fails. Never raises."""
+    try:
+        r = subprocess.run(['pgrep', '-af', r'nightq\.sh|train\.py'], capture_output=True, text=True, timeout=3)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if r.returncode not in (0, 1):  # 1: no process matched
+        return None
+    prs = set()
+    for line in r.stdout.splitlines():
+        m = rx.match(line.partition(' ')[2])  # pgrep -a: "PID command line"
+        if m:
+            prs.update(int(n) for n in m.group(1).split())
+    return sorted(prs)
+
+
+def queue_line():
+    """The queue's processes and the last line of its log (tools/queue/lib.sh: QUEUE_DIR, nightq.log). Never raises."""
+    bits = []
+    for name, rx in QUEUE_PROCS:
+        n = running(rx)
+        bits.append('%s %s' % (name, 'unknown' if n is None else 'on ' + ', '.join('#%d' % x for x in n) if n else 'not running'))
+    log = os.path.join(os.environ.get('QUEUE_DIR') or os.path.expanduser('~/.cache/reefid-queue'), 'nightq.log')
+    try:
+        with open(log, encoding='utf8', errors='replace') as f:
+            last = [l.strip() for l in f if l.strip()]
+        ago = span(time.time() - os.path.getmtime(log))
+        bits.append('log %s ago: %s' % (ago, last[-1][:160]) if last else 'log empty')
+    except OSError:
+        bits.append('no log at %s' % log)
+    return 'Queue: ' + ' · '.join(bits)
+
+
+def checkin(at):
+    lines = [time_line(at), next_line()]
+    if shutil.which('gh') is None:
+        lines.append('PRs: not listed (gh not found)')
+    else:
+        pool = ThreadPoolExecutor(max_workers=16)
+        pr_list, err = result(pool.submit(prs, pool))
+        if pr_list is None:
+            lines.append('PRs: not listed (%s)' % err)
+        else:
+            bits = []
+            for p in pr_list:
+                c, e = result(p['checks'])
+                tags = [c or ('checks ?' if e else '')] + (['needs-pierre'] if p['pierre'] else []) + (['draft'] if p['draft'] else [])
+                bits.append('#%d %s' % (p['n'], ', '.join(t for t in tags if t)))
+            lines.append('PRs: %d open%s' % (len(pr_list), (': ' + '; '.join(bits)) if bits else ''))
+        pool.shutdown(wait=False, cancel_futures=True)
+    lines.append(queue_line())
+    lines.append((launches(at) or 'Agent launches today: none logged') + ' · running agents: your task list (not visible here)')
+    try:
+        text = open(os.path.join(ROOT, CHECKIN), encoding='utf8').read().strip()
+    except OSError:
+        text = '%s not found: follow docs/INTEGRATOR.md "Habits" and "Linear" (drain the Todo column until Pierre says stop)' % CHECKIN
+    return lines + ['', text]
+
+
 # --- What loads here and the agents launched today (the rules core trial; docs/INTEGRATOR.md "Working with Pierre") ---
 # Agents load this checkout's CLAUDE.md, AGENTS.md and .claude/, not origin/main's: a stale or changed copy is said in
 # one line (the proposal's G13). tools/agent_guard.py logs every Agent launch in the git common dir; the brief counts
@@ -755,10 +844,15 @@ def main():
     ap.add_argument('--short', action='store_true', help='5 lines at most')
     ap.add_argument('--time', action='store_true', help='one line: Manila time and the Rule 0 window (offline)')
     ap.add_argument('--night-due', action='store_true', help='with --time: compatibility for older hooks, advisory only')
+    ap.add_argument('--checkin', action='store_true', help="the integrator's check-in: live signals, then tools/checkin.md")
     ap.add_argument('--at', metavar='HH:MM', help='pretend it is this Manila time (tests)')
     a = ap.parse_args()
     if a.at and not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', a.at):
         ap.error('--at takes HH:MM')
+    if a.checkin:
+        print('\n'.join(checkin(a.at)))
+        sys.stdout.flush()
+        os._exit(0)  # do not wait for calls past the deadline
     if a.time:
         print(time_line(a.at))
         # Older checked-out settings may still pass this flag when their trusted brief has already been updated.

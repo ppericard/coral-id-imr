@@ -703,6 +703,7 @@ const DOC_MARKS = {
   'judging/PROMPT.md': [3, 160],
   'judging/SEASLUG.md': [17, 500],
   'tools/README.md': [13, 280],
+  'tools/checkin.md': [3, 130], // new, 2026-11-23: the check-in's fixed text (REE-244)
   'tools/queue/recovered/README.md': [5, 400], // new, 2026-11-22: the integrator's queue scripts kept as reference (REE-231)
   'tools/studies/ree112/README.md': [5, 400], // new, 2026-11-22: REE-112's study scripts kept as reference (REE-231)
   'tools/studies/ree191/README.md': [6, 400], // new, 2026-11-22: REE-191's study scripts kept as reference (REE-231)
