@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# The merge queue, one PR at a time: bring it up to date (uptodate.sh), wait for every check, Codex's receipt and
-# Codex's completed security review on the head (full SHA), then a train of that PR alone. A PR that cannot be updated alone, goes red, or gets a Codex
-# finding is skipped and logged for the integrator. Never re-runs a train (rule W23).
+# The merge queue, one PR at a time: wait for checks and both Codex reviews, then dry-run and train the reviewed
+# head on current main (rule W26). Conflicts, red checks and findings are logged for the integrator.
 # Usage: bash nightq.sh N [N...]   (log: $QUEUE_DIR/nightq.log)
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 log() { echo "$(TZ=Asia/Manila date +%H:%M) $*" | tee -a "$LOG"; }
@@ -25,9 +24,6 @@ for n in "$@"; do
   if [ "$state" != "open" ]; then log "#$n: $state, skipped"; continue; fi
   # a draft is its author's work in progress: never marked ready by the queue (ask_security)
   if [ "$(gh api $R/pulls/$n --jq .draft)" != "false" ]; then log "#$n: draft (or unreadable), skipped"; continue; fi
-  up=$(bash "$Q/uptodate.sh" "$n" 2>&1 | tail -1)
-  log "#$n: $up"
-  case "$up" in *"needs a hand"*|*"local changes"*) log "#$n: SKIPPED (update needs a hand)"; continue;; esac
   # wait for checks (max ~40 min) and Codex's receipt on the head (max ~30 min more)
   sleep 60
   bash "$Q/wait_ready.sh" "$n" >/dev/null 2>&1
@@ -75,19 +71,21 @@ for n in "$@"; do
   # a finding on the head can exist before its thread does, and a security bot's comment is no thread: both count
   # like a Codex finding (merge contract); "?" (unreadable) skips too
   case "$line" in *"unanswered@head: 0 |"*) ;; *) log "#$n: SKIPPED (findings or security comments on the head, not answered)"; continue;; esac
-  # a pending changes entry, as train.py and sheet_version.py count one: any file there but the folder's README
-  if git -C "$REPO_DIR" diff --name-only --diff-filter=AM origin/main...origin/$(gh api $R/pulls/$n --jq .head.ref) 2>/dev/null |
-    grep '^tools/sync/changes/' | grep -qv '/README\.md$'; then
-    log "#$n: SKIPPED (needs a VERSION assign)"; continue
-  fi
-  git pull -q
-  # the head the gates above read (prstate's short sha) must still be the PR's head; train.py pins only the head it
-  # fetches itself (follow-up in README: pass the validated SHA into the train)
+  # Refresh the integrator checkout. The train checks pending VERSION entries on the pinned head.
+  if ! git pull -q --ff-only; then log "#$n: SKIPPED (could not refresh the integrator checkout)"; continue; fi
+  # The same full head must pass the gates and both train invocations.
   cur=$(gh api $R/pulls/$n --jq .head.sha)
   case "$cur" in "$(echo "$line" | awk '{print $3}')"*) ;; *) log "#$n: SKIPPED (head moved since the gates were read)"; continue;; esac
   # the security review must be for this very head, full SHA (not a prefix)
   if [ "$cur" != "$secsha" ]; then log "#$n: SKIPPED (the security review read is not for head $cur)"; continue; fi
-  out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py "$n" 2>&1 | tail -4)
-  log "#$n train: $(echo "$out" | tr '\n' ' ')"
+  if ! out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py --dry-run --sha "$cur" "$n" 2>&1); then
+    log "#$n: SKIPPED (train dry run refused): $out"
+    continue
+  fi
+  if out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py --sha "$cur" "$n" 2>&1); then
+    log "#$n train: $(echo "$out" | tail -4 | tr '\n' ' ')"
+  else
+    log "#$n train stopped: $out"
+  fi
 done
 log "queue done"
