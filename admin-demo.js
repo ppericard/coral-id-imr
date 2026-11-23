@@ -624,6 +624,18 @@
         data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-settings': '{}'}
       };
     });
+    // Mio Demo signed in and has never answered: he only reads the Identify › Key, on a computer (his visits are below).
+    // Players shows him active, with the visit marked, and his Journey lists the pages he opened (REE-237).
+    users['mio demo'] = {
+      name: 'Mio Demo',
+      updated: NOW - 3 * DAY,
+      learned: 0,
+      seen: 0,
+      total: list.length,
+      review: '',
+      rev: 1,
+      data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-settings': '{}'}
+    };
     // Pages opened ('pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
     // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
     // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
@@ -721,7 +733,9 @@
             i === 6 ? 1 : 0,
             i < 4 ? vint(4, 8) : i < 6 ? 2 : vint(1, 2),
             0
-          ])
+          ]),
+          // Mio Demo (signed in, never answered) opens the Key on a computer, 3 visits (REE-237); last, so the others' stay.
+          [aid('Mio Demo'), 'key', 'Chrome 140', 1440, 0, 3, 0]
         ],
         add = (P, k, n, sec) => {
           const o = (P[k] = P[k] || [0, 0]);
@@ -740,7 +754,7 @@
         for (let v = 0; v < nv; v++) {
           // At its hour of the day, within the 24 hours before NOW - day days - 2 h: never on the edge of the 7 or 30
           // days whatever the time the demo opens (days 6 and 29 left out), so the page's numbers stay the same.
-          const day = vpick([...Array(35).keys()].filter(d => d !== 6 && d !== 29)),
+          const day = prof === 'key' ? [1, 3, 5][v] : vpick([...Array(35).keys()].filter(d => d !== 6 && d !== 29)),
             h = prof === 'staff' ? vint(8, 16) : vpick([7, 12, 13, 18, 19, 20, 21, 22]),
             end = NOW - day * DAY - 2 * 3600e3,
             t0 = new Date(end);
@@ -774,6 +788,11 @@
             for (let i = vint(0, 3); i--;) sheet(vpick(['learn', 'other', 'other']));
             if (vr() < 0.3) add(P, 'learn.compare', 1, vint(40, 200));
             if (vr() < 0.3) add(P, 'tools.anatomy', 1, vint(60, 300));
+          } else if (prof === 'key') {
+            p0 = v === 1 ? 'identify.key' : 'home';
+            if (p0 === 'home') add(P, 'home', 1, vint(5, 25));
+            add(P, 'identify.key', vint(1, 3), vint(240, 900));
+            if (v === 2) add(P, 'learn.genera', 1, vint(30, 90));
           } else if (prof === 'second') {
             p0 = 'fish.home';
             add(P, 'fish.home', 1, vint(10, 40));
