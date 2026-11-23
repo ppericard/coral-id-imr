@@ -16,14 +16,14 @@ Night report: last sent 2026-11-22 (15:25 Manila, late: a hook's false reminder,
   (INTEGRATOR "Linear"), delegate, integrate. A Codex session may work on REE-121 / REE-220 (queue latency); check
   `codex/*` branches before touching tools/queue/. Merge only through `tools/queue/nightq.sh`, one queue process at a
   time (parallel runs collide on main; REE-220).
-- **Judging is on hold** (rule P7, Pierre 19:26/19:28): no judging or re-judging by agents over 100 photos without his
+- **Judging is on hold** (the photos rule added by #1491, Pierre 19:26/19:28): no judging or re-judging by agents over 100 photos without his
   explicit OK with count, purpose, why an agent and cost. #1493 (`needs-pierre`) holds 254 ease changes already
   judged before the rule (5 typical-look families; thin families 19 → 15) for his OK.
 - **Merged since 17:21:** #1391 (draw cliff stop-gap), #1471 (REE-40 pagehide), #1474 (corals 45-genus scale,
   sheet v221), #1478 (Key use counts as activity), #1479 (fish smoke flake), #1480 (check-ins from the repo),
   #1481, #1482 (typical-look caps), #1483 and #1486 (judging batches 1–2), #1484 (REE-42 step 1), #1485 (version
   limit warning, sheet v222), #1409 (About), #1490 (About references).
-- **In the queue:** #1491 (rule P7 + the evening's ledger), #1492 (REE-248 reserve design), #1487 (REE-243 faved
+- **In the queue:** #1491 (the judging rule + the evening's ledger), #1492 (REE-248 reserve design), #1487 (REE-243 faved
   candidates beyond the cap), #1488 (judging batch 3), #1489 (REE-27 species exams design), #1494 (REE-245
   continuous draw design).
 - **Running:** REE-42 step 2 (holds core.js/core/*.js, Code.gs, sync.js), REE-64 (holds app.js).
