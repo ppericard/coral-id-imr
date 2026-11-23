@@ -66,8 +66,12 @@ his to correct). Every change to the draw, the opening, the formats or the photo
    does (right answers, response time), never declared: slow enough that a complete beginner is never faced with
    what is too hard, even if they advance very slowly; fast enough that an expert meets real challenges within the
    first answers, not a start where everything is easy and the same photos come round. How fast the engine finds a
-   player's zone, in both directions, is a property we measure (REE-191); the opt-in placement test (REE-112, #1080)
-   is the decided way to start further on.
+   player's zone, in both directions, is a property we measure (REE-191). **Easy questions cannot reveal an expert:**
+   a beginner with a good eye answers the first easy families right and fast too (Pierre, 2026-11-23 20:49: «on
+   n'arrive pas à savoir rapidement si la personne est un expert ou pas. On arrive juste à savoir que la personne
+   elle n'est pas complètement débile»). Only hard photos, look-alikes and lower ranks tell them apart, which is why
+   the opt-in placement test (REE-112, #1080) asks such questions; fast right answers on easy ones only say it is
+   worth asking.
 2. **A good challenge is hard and identifiable.** A hard photo is worth showing when it separates those who know from
    those who do not: strong players get it right more often than weak ones. A photo that strong players miss as often
    as anyone is noise, not challenge. A Research Grade identification says an expert could name the species (Pierre:

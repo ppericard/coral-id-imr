@@ -1957,3 +1957,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   between them, «une balance entre facilité, challenge, apporter de la diversité, apporter des modes de jeu
   différents»; the modes that can be «dans le jeu principal le soient dans le jeu principal». Applied: LEARNING.md
   "The players we design for".
+- **20:49, easy questions cannot reveal an expert.** A beginner «qui a une bonne reconnaissance des patterns» answers
+  the first easy families right and fast, even ten families open; it shows only on many units in play, the hard
+  families and the lower ranks: «si on n'a pas de test spécifiquement fait pour déterminer le niveau de quelqu'un,
+  y compris avec des questions qui sont parfois très difficiles ou des questions taxonomiques plus basses, en fait,
+  non, on n'arrive pas à savoir rapidement si la personne est un expert ou pas». Applied: LEARNING.md "The players
+  we design for"; Linear REE-191, REE-112.
