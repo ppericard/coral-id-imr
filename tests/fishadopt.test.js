@@ -637,7 +637,7 @@ test("a device with more answers than the log (played before the fish log): the 
   assert.strictEqual(a.rvApplied(FS), FRV);
   const P = a.fish(),
     n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0);
-  assert.strictEqual(n(P['~level']), 30, "the level's count keeps main's rule, the larger (a follow-up: the log's)");
+  assert.strictEqual(n(P['~level']), 20, "the level's count: the log's 20 answers (fish rules version 7)");
   assert.strictEqual(n(P['f:Damselfishes']), 10, "the log's 10 typed answers");
   assert.ok(!P['f:Wrasses'], 'a unit the log has no answer on: its saved answers go');
   assert.deepStrictEqual(a.base()['~level'].ok, P['~level'].ok, 'the same in the shared baseline');
