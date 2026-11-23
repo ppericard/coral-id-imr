@@ -27,6 +27,7 @@ function snapOf(lv, pct = 0) {
       ELO_MIN: 200,
       GX: n => X.gen[n],
       slateGenera: () => slate,
+      scaleUnits: () => slate, // app.js: the units of the global % (UNITS scale; the sea slugs have none: the slate)
       lvStep: n => lv(n),
       shownGroup: () => '',
       bonusList: () => [],

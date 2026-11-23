@@ -115,6 +115,13 @@
       why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21: \"si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui [...] il faut recalculer la progression de tous. On peut le faire en silence\"): a right answer's time weight takes off z its photos' time term (rtWeight ti: the mean of the photos' served terms, ptimeQ), so a slowness the photo explains no longer counts against the player; the game logs the term in the scoring record (i), and the sheet's replay nets every answer logged without it by the photos' terms served now (replayProgress photos), so every player's progress is recalculated, silently",
       // No card (rule D6; Q452: "en silence").
       msg: null
+    },
+    {
+      v: 14,
+      at: '2026-11-23',
+      why: 'One 45-genus coral scale (rule L6; Pierre, 2026-11-20: "Les genres bonus dans les coraux devraient définitivement compter dans le progres global"; Q445 A, 2026-11-21: "une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR"): the global progress % (the header, My progress, the achievements, the leaderboard) is the mean of the bars of every game genus, the slate\'s and the bonus genera\'s (core.js gameOf), for every player, opted in or not; today\'s % over the slate stays as the IMR slate score. No genus\'s bar moves; every device takes the replay once',
+      // No card (rule D5).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;

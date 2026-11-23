@@ -193,8 +193,12 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   and the progress counts, "the slate" in the code. For the corals, the IMR coral slate's genera (`DATA.gen`, in
   data.json order) and `BENTHIC` (Millepora: a hydrozoan, so not on the IMR coral list, but on the IMR benthic slate,
   taught in the benthos lecture, and common at Dauin and in ReefCloud photos). Used by the draw (`pool()`), the opening
-  of genera (`introLeft`, the open-all offer), `progPct`, the header pill, My progress, the sync summary (the sheet's
-  "By genus" columns and the leaderboard %), the achievements and `slateIdx`. Millepora's data stays in `DATA.x.gen`
+  of genera (`introLeft`, the open-all offer), My progress's tiles and counts, the IMR slate score, the sync summary's
+  Learned and total, and `slateIdx`. The global % (the header pill, My progress's ring, the achievements, the sync
+  summary's genera and %: the sheet's "By genus" columns and the leaderboard, from `sync.js` `SCALE_SHEET`, the slate's
+  before) counts `scaleUnits()` instead (`UNITS`
+  `scale`; the corals: `gameOf(DATA)`, the slate and the bonus genera, rule L6), the slate for a subject without a
+  scale. Millepora's data stays in `DATA.x.gen`
   (Coral Finder ID tips with pages, Research Grade game photos); `isBenthic(n)`. Its first-meeting card and its genus
   sheet carry `BENTHIC_NOTE` ("Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate…");
   the Slate view of My progress marks it **F** (after the starred genera), the Groups view gives it its own **F** row.
