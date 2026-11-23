@@ -3819,8 +3819,9 @@
   // Look-alike account names (REE-35, the integrator's call): two names that look the same can no longer be two accounts.
   // A name is at most NAME_MAX UTF-16 code units (the form's maxlength, Code.gs clean_), cut back to its last whole
   // character (nameCut: a grapheme where the engine segments them, else a code point; never inside an emoji or a
-  // surrogate pair; a name within the limit is never touched). A new name (the app's sign-in form, Code.gs doPost_ with no
-  // account yet, users_ userArchive) is NFC (nameClean), refused when it holds an invisible character (nameHidden), and
+  // surrogate pair; a name within the limit is never touched). A new name is NFC (nameClean: the app's sign-in form, the admin's
+  // archive name; Code.gs doPost_ keeps the spelling a save sends, an older app's included), refused when it holds an
+  // invisible character (nameHidden), and
   // refused as taken when it looks like an existing account's name (nameSkeleton). An existing account is never renamed,
   // merged or changed: these apply to new names only.
   const NAME_MAX = 40;

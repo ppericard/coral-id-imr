@@ -314,8 +314,11 @@ never inside an emoji), matched case-blind (`toLowerCase`). An account that alre
 loads and saves as any other; the sheet's maps by player have no prototype (`Object.create(null)`).
 
 **Look-alike names** (REE-35, the integrator's call; sheet v224). Two names that look the same can no longer be two
-accounts. A new name (the form; `Code.gs` `doPost_` with no account yet; the admin's archive name) is NFC
-(`core.js` `nameClean`, in the form before it is sent and in the script). It is refused when it holds an invisible
+accounts. A new name is NFC (`core.js` `nameClean`): the form makes it so before it is sent, and the script makes the
+admin's archive name so. A save that makes an account keeps the spelling it sent (`Code.gs` `doPost_`), so an app from
+before this change, which keeps the name as typed, names its account exactly in every later request (self-delete,
+reports) and in the Removed tombstones; only the look-alike check compares by skeleton, so another Unicode form of a
+taken name is never a new account. A new name is refused when it holds an invisible
 character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,
 plus control characters and the characters that draw nothing, such as the Hangul fillers; a zero-width joiner between two
 pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when its skeleton is an existing

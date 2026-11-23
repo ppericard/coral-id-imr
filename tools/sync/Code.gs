@@ -74,8 +74,8 @@ function find_(sh, name){
   return i > 0 ? i + 1 : 0;
 }
 // A name is cut at its last whole character within 40 UTF-16 code units (core.js nameCut: never inside an emoji; a name
-// within the limit is kept as it is). Only a new name is made NFC (doPost_, users_ userArchive: core.js nameClean), so an
-// existing account keeps its spelling.
+// within the limit is kept as it is). The app's form makes a new name NFC (core.js nameClean), as an admin archive name
+// is here (users_ userArchive); a save keeps the spelling it sent (doPost_), so an older app's account is its own.
 function clean_(p){ return {name: CORE_.nameCut(String(p.name || '').trim()), pin: String(p.pin || '').trim()}; }
 // The RAs row of a player's name (REE-35): the name as it is, case aside (find_), else the account whose name is the
 // same text in another Unicode form (NFC, case aside: an é typed as e and its accent), whose own spelling is then used.
@@ -333,8 +333,11 @@ function doPost_(e){
   try {
     const sh = sheet_('RAs', HEAD), a = acct_(sh, name);
     let r = a.r;
-    // An account's own spelling (acct_); a new name NFC (core.js nameClean: REE-35).
-    name = r ? a.name : CORE_.nameClean(name);
+    // An account's own spelling (acct_). A new name is kept as the request spells it (REE-35): the app's form sends it
+    // NFC (core.js nameClean), and an app from before keeps the spelling it typed as its account's name, so its later
+    // requests (self-delete, reports: find_) and the Removed tombstones (gone_) name the account exactly. Only the
+    // look-alike check below compares names by their skeleton, so another form of a taken name is never a new account.
+    if (r) name = a.name;
     const h = hash_(name, pin), s = p.summary || {};
     if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
     // The code is checked before anything is written (a wrong code must not move anonymous answers).
@@ -8234,8 +8237,9 @@ const CORE_ = (function () { const module = {exports: {}};
   // Look-alike account names (REE-35, the integrator's call): two names that look the same can no longer be two accounts.
   // A name is at most NAME_MAX UTF-16 code units (the form's maxlength, Code.gs clean_), cut back to its last whole
   // character (nameCut: a grapheme where the engine segments them, else a code point; never inside an emoji or a
-  // surrogate pair; a name within the limit is never touched). A new name (the app's sign-in form, Code.gs doPost_ with no
-  // account yet, users_ userArchive) is NFC (nameClean), refused when it holds an invisible character (nameHidden), and
+  // surrogate pair; a name within the limit is never touched). A new name is NFC (nameClean: the app's sign-in form, the admin's
+  // archive name; Code.gs doPost_ keeps the spelling a save sends, an older app's included), refused when it holds an
+  // invisible character (nameHidden), and
   // refused as taken when it looks like an existing account's name (nameSkeleton). An existing account is never renamed,
   // merged or changed: these apply to new names only.
   const NAME_MAX = 40;

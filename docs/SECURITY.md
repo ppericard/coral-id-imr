@@ -150,7 +150,8 @@ player sends; a delete, a merge (its from) and an archive clear it, and no playe
 in a new name (`core.js` `reservedName`).
 **Look-alike names** (sheet v224, REE-35, the integrator's call): no new name (a sign-up or an archive name) may look
 like an account's name or hold an invisible character, so nobody can open a second account that passes for another
-player's on the leaderboard or in the admin: a new name is NFC, one with a zero-width, bidi control or other invisible
+player's on the leaderboard or in the admin: a new name is NFC (the app's form; a save keeps the spelling it sent, so
+an older app's account stays its own), one with a zero-width, bidi control or other invisible
 format character is refused, and one whose skeleton (`core.js` `nameSkeleton`: the Greek and Cyrillic letters Unicode's
 confusables data maps to a Latin letter, decomposed accents, invisible characters, full-width forms, case and spaces
 aside) is an existing account's is refused as taken (`Code.gs` `nameIssue_`). Existing accounts are never changed; the

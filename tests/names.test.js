@@ -211,10 +211,10 @@ test('the sheet: a new name that looks like a taken one, or holds an invisible c
   assert.strictEqual(s.get({name: 'anna', pin: '9999'}).error, 'pin');
 });
 
-test('the sheet: a new name is made NFC, and one name in another Unicode form opens the same account', () => {
+test('the sheet: one name in another Unicode form opens the same account; an older app keeps the spelling it sent', () => {
   const s = loadCodeGs({fetch});
-  // Typed decomposed (an older app sends it as typed): the account is made in NFC.
-  assert.strictEqual(save(s, ZOE_D).ok, true);
+  // The app's form sends a new name in NFC (core.js nameClean): the account is made so.
+  assert.strictEqual(save(s, ZOE).ok, true);
   assert.deepStrictEqual(names(s), [ZOE]);
   assert.ok(s.sheets.Answers.rows.slice(1).every(r => r[0] === ZOE));
   // Either form opens it, with the same code, and saves to it: no second account.
@@ -227,8 +227,10 @@ test('the sheet: a new name is made NFC, and one name in another Unicode form op
   assert.strictEqual(save(s, ZOE_D).ok, true);
   assert.deepStrictEqual(names(s), [ZOE]);
   assert.strictEqual(s.sheets.Answers.rows.slice(1).filter(r => r[0] === ZOE).length, 2);
-  // An account made decomposed before this change keeps its spelling, and the app's NFC form opens it.
-  madeBefore(s, () => assert.strictEqual(save(s, 'Rene\u{301}').ok, true));
+  // An app from before this change (or an account made before it) signs up decomposed: the script keeps the spelling
+  // the request sent (only the look-alike comparison uses the skeleton), so that app's later requests name it exactly;
+  // the new form's NFC opens it too.
+  assert.strictEqual(save(s, 'Rene\u{301}').ok, true);
   assert.deepStrictEqual(names(s), [ZOE, 'Rene\u{301}']);
   const g = s.get({name: 'Ren\u{E9}', pin: '1234'});
   assert.strictEqual(g.found, true);
@@ -248,6 +250,35 @@ test('the sheet: a new name is made NFC, and one name in another Unicode form op
   );
   // Under the spelling the load named, the player deletes their own account (find_, as every other request).
   assert.strictEqual(s.post({selfDelete: 1, dname: g.name, dpin: '1234'}).deleted, true);
+  assert.deepStrictEqual(names(s), [ZOE]);
+  // Its tombstone holds: a device still signed in with that spelling gets gone, with or without the account's
+  // generation, and the account is never made again.
+  [{}, {acct: 'x0x0x0x0x0x0'}].forEach(extra => {
+    const r = s.post({name: 'Rene\u{301}', pin: '1234', data: prog(1), summary: {}, answers: [qa('q' + ++qn, 1)], ...extra});
+    assert.deepStrictEqual([r.ok, r.error], [false, 'gone'], JSON.stringify(extra));
+  });
+  assert.deepStrictEqual(names(s), [ZOE]);
+});
+
+test('the sheet: an older app that signs up decomposed keeps every request on its account (self-delete, reports)', () => {
+  const s = loadCodeGs({fetch});
+  // The app before this change sends the name as typed, and keeps it as its account's name.
+  assert.strictEqual(save(s, ZOE_D).ok, true);
+  assert.deepStrictEqual(names(s), [ZOE_D]);
+  assert.strictEqual(s.get({name: ZOE_D, pin: '1234'}).found, true);
+  const rep = s.post({reports: [{id: 'r1', why: 'photo', t: '2026-11-01T00:00:00Z'}], rname: ZOE_D, rpin: '1234'});
+  assert.strictEqual(rep.ok, true, JSON.stringify(rep));
+  // Its report is the account's, verified (its code checked under the spelling the app holds).
+  assert.deepStrictEqual(
+    s.sheets.Reports.rows.slice(1).map(r => [r[1], r[2]]),
+    [[ZOE_D, 1]]
+  );
+  assert.strictEqual(s.post({selfDelete: 1, dname: ZOE_D, dpin: '1234'}).deleted, true);
+  assert.deepStrictEqual(names(s), []);
+  // A look-alike of a taken name is still refused, whatever form it comes in.
+  assert.strictEqual(save(s, ZOE).ok, true);
+  const look = save(s, 'Z\u{43E}e\u{301}'); // a Cyrillic o, then e and its accent decomposed
+  assert.deepStrictEqual([look.error, look.why], ['reserved', 'lookalike']);
   assert.deepStrictEqual(names(s), [ZOE]);
 });
 
