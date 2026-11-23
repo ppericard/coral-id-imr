@@ -59,6 +59,22 @@ exceptions**:
 We are closer to Duolingo (bring people who know nothing to knowledge, bringing items back until they are mastered)
 than to an exam on people who already know (Pierre). A new player is a beginner, not an average player.
 
+**The engine's guiding aims** (Pierre, 2026-11-23 20:40 Manila: «le moteur il doit pouvoir fonctionner aussi bien
+pour un débutant complet … à sa vitesse sans le faire confronter à des choses qui sont trop difficiles»; «faire jouer
+des gens qui sont très bons, des experts, sans que ils se retrouvent frustrés au début»). Every change to the draw, the
+opening or the photos is read against all three:
+
+- **The complete beginner progresses at their own pace, never faced with what is too hard**, even if that means
+  advancing very slowly. So they do not always see the same photos, **the stock of easy photos must be fairly large**,
+  though at some point they will see photos again.
+- **The expert finds real challenges quickly**, not a start where everything is too easy and turns over the same few
+  photos. Two complementary sources: the engine finds their weaknesses and works on them, and photos that are
+  **objectively hard but identifiable** (a photo can be hard only because it cannot be identified). An absolute expert
+  answers even far, low-detail photos and can hardly be challenged; an expert with weaknesses of their own should be.
+- **Everyone in between** learns at their own speed, and their interest is kept by a balance of ease, challenge,
+  diversity of content and of game modes. Modes that can live inside the main quiz go there; bonus games are apart.
+  Content is limited, in particular by what iNaturalist offers.
+
 ## Research we rely on
 
 - **Elo rating in education** (Pelánek 2016, *Computers & Education*): a student's answer is a match between student

@@ -1949,3 +1949,11 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   qu'est-ce que tu vas chercher à refaire comme jugement, pourquoi est-ce qu'on a besoin de le refaire, et de
   justifier proprement l'utilisation d'un agent parfois coûteux sur des grandes quantités de photos». Applied:
   rules/photos.md P7.
+- **20:40, the engine's guiding aims (on the REE-245 design).** «le moteur il doit pouvoir fonctionner aussi bien pour
+  un débutant complet et arriver à le faire progresser à sa vitesse sans le faire confronter à des choses qui sont trop
+  difficiles … il faut qu'on ait un stock de photos faciles qui soit relativement important»; «faire jouer des gens qui
+  sont très bons, des experts, sans que ils se retrouvent frustrés au début … assez rapidement ils puissent retrouver
+  des vrais challenges»: their weaknesses worked on, and photos «objectivement très difficiles mais identifiables»;
+  between them, «une balance entre facilité, challenge, apporter de la diversité, apporter des modes de jeu
+  différents»; the modes that can be «dans le jeu principal le soient dans le jeu principal». Applied: LEARNING.md
+  "The players we design for".
