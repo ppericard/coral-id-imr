@@ -173,8 +173,8 @@ fill it, at fit and at actual size; `ANN` keeps each photo's marks).
   credit.
 
 **The words.** The words, their step (or Corallite anatomy card) and their plain line are one table in the first tier,
-`app.js` `BASICS_WORDS` (`basicsRoute`, `basicsListed`; the module's Words list and `window.BASICS` read it), so the
-glossary popup links the same way before and after the Tools tier is in: the popup of every underlined term (`app.js`
+`gloss.js` `BASICS_WORDS` (`basicsRoute`, `basicsListed`; the module's Words list and `window.BASICS` read it), so the
+glossary popup links the same way before and after the Tools tier is in: the popup of every underlined term (`gloss.js`
 `showGloss`, `basicsHref`) ends with a link to its step ("Coral basics: on a photo"), to Corallite anatomy, or to the
 Words list (none for a word Coral basics does not have).
 
