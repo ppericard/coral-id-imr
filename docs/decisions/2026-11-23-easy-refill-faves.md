@@ -1,6 +1,6 @@
 # The refill takes the most-faved observations first for a species short of easy adults
 
-Date: 2026-11-23. PR: REE-198. Rules or docs touched: docs/spec/fish-photos.md "Candidates from iNaturalist", "Automatic
+Date: 2026-11-23. PR: #1476. Rules or docs touched: docs/spec/fish-photos.md "Candidates from iNaturalist", "Automatic
 refill"; docs/spec/data.md "Photo rights"; amends the "no votes order" of Q284 for those species only.
 
 ## Context
