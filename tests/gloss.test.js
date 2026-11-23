@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// Glossary words (app.js GLOSS_PAT, gloss, glossAll): app.js's own code run in Node on the
+// Glossary words (gloss.js GLOSS_PAT, gloss, glossAll): gloss.js's own code (with app.js esc) run in Node on the
 // real data.json terms.
 const test = require('node:test');
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
@@ -10,12 +10,13 @@ const fs = require('fs'),
 const DATA = require('../data.json');
 
 function app() {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
-    pick = (a, b) => block(src, a, b),
+  const appSrc = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'gloss.js'), 'utf8'),
+    pick = (a, b) => block(src, a, b, {file: 'gloss.js'}),
     ctx = {DATA};
   vm.createContext(ctx);
   vm.runInContext(
-    block(src, 'const esc = ', '\n') +
+    block(appSrc, 'const esc = ', '\n', {file: 'app.js'}) +
       '\n' +
       pick('const GLOSS_PAT', 'const $gpop') +
       pick("// A term's text", 'function showGloss') +
