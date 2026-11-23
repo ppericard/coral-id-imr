@@ -1949,3 +1949,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   qu'est-ce que tu vas chercher à refaire comme jugement, pourquoi est-ce qu'on a besoin de le refaire, et de
   justifier proprement l'utilisation d'un agent parfois coûteux sur des grandes quantités de photos». Applied:
   rules/photos.md P7.
+- **20:51, a rule not followed gets an issue.** «la règle, ça devrait presque être qu'à chaque fois que tu dis « j'ai
+  pas suivi la règle », il faut que ça crée il faut que tu crées une issue automatiquement pour dire bah, « j'ai pas
+  suivi la règle, voilà ce qui s'est passé, voilà le contexte » … Et comme ça, ça permet de digérer cette information
+  sans pour autant créer de manière automatique et de suite une nouvelle règle que tu n'arriveras pas à suivre non
+  plus d'ailleurs.» Applied: INTEGRATOR.md "Questions and corrections"; Linear label "Rule not followed"; REE-251.
