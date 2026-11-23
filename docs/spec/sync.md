@@ -325,7 +325,10 @@ right after a symbol, a punctuation mark, a digit or an ideograph, and a name wi
 pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when it looks like an existing
 account's name (the RAs tab, archives included: `Code.gs` `nameIssue_`). Two names look alike when they share a key
 (`nameKeys`): the skeletons of the name as it is, in lower case and in upper case, since an account is its name in any
-case and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital is B). A skeleton
+case and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital is B). An account
+keeps the spelling it was made with: a save in another case (the same account, `find_`) never changes how its name
+shows (the RAs row, the progress copy, the grid, the answers), so a mix of cases that no whole-name case covers never
+shows either. Before this change a save rewrote the name in the case it was typed in. A skeleton
 (`nameSkeleton`, after Unicode's UTS #39 skeleton): decomposed, invisible characters dropped, each Greek or Cyrillic
 letter that Unicode's confusables data maps to one Latin letter mapped to it, NFKC, lower case, runs of spaces as one. The load of a name with no account says so beside
 `found: false` (`taken: 'invisible'|'lookalike'`), and the form says "This name holds an invisible character …" or

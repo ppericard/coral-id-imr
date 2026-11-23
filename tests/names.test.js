@@ -297,6 +297,35 @@ test('the sheet: a look-alike in one case only is refused in every case (Greek s
   assert.strictEqual(s.get({name: '\u{3BD}ICK', pin: '1234'}).taken, 'lookalike');
 });
 
+test('the sheet: an account keeps the spelling it was made with, whatever case later requests use', () => {
+  // A name made in one case passed the look-alike check as it was spelt; signed in later in another case (the same
+  // account: find_), it would show under that case, which may look like another player's name in a mix of cases no
+  // check of whole-name cases foresees (beta-nu-ob is no Bvob, its capitals Beta-Nu are B and N, beta-Nu-ob is). So a
+  // save never changes how the account's name is spelt: the RAs row, the progress copy, the grid and the answers keep it.
+  const s = loadCodeGs({fetch}),
+    made = '\u{3B2}\u{3BD}ob',
+    later = '\u{392}\u{3BD}ob';
+  assert.strictEqual(save(s, 'Bvob').ok, true);
+  assert.strictEqual(save(s, made).ok, true);
+  assert.deepStrictEqual(names(s), ['Bvob', made]);
+  assert.strictEqual(save(s, later).ok, true);
+  assert.strictEqual(save(s, made.toUpperCase()).ok, true);
+  assert.deepStrictEqual(names(s), ['Bvob', made]);
+  assert.ok(
+    s.sheets.Answers.rows
+      .slice(1)
+      .filter(r => r[0] !== 'Bvob')
+      .every(r => r[0] === made)
+  );
+  assert.deepStrictEqual(s.sheets['Progress data'].rows.slice(1).map(r => r[0]), ['Bvob', made]);
+  const u = s.post({users: 1, token: TOK});
+  assert.deepStrictEqual(u.users.map(x => x.name).sort(), ['Bvob', made].sort());
+  // A plain name too: made as anna, saved as ANNA, still anna.
+  assert.strictEqual(save(s, 'anna').ok, true);
+  assert.strictEqual(save(s, 'ANNA').ok, true);
+  assert.ok(names(s).includes('anna') && !names(s).includes('ANNA'));
+});
+
 test('the sheet: an older app that signs up decomposed keeps every request on its account (self-delete, reports)', () => {
   const s = loadCodeGs({fetch});
   // The app before this change sends the name as typed, and keeps it as its account's name.

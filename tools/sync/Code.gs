@@ -311,7 +311,7 @@ function doPost_(e){
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // roles (roles_)
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop || p.mergePlan) return json_(users_(p));  // admin user management (see users_)
-  const {name, pin} = clean_(p);
+  let {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
   let out, held = true;
@@ -319,9 +319,12 @@ function doPost_(e){
     // A new name is kept as the request spells it (REE-35): the app's form sends it NFC (core.js nameClean), and an app
     // from before keeps the spelling it typed as its account's name, so its later requests (self-delete, reports: find_)
     // and the Removed tombstones (gone_) name the account exactly. The look-alike check below compares names by their
-    // skeletons, so another Unicode form of a taken name is never a new account.
+    // skeletons, so another Unicode form of a taken name is never a new account. An existing account keeps the spelling
+    // it was made with (its RAs name; the same account in any case, find_): a save in another case never changes how
+    // it shows, so a name that passed the look-alike check as made cannot later show as a look-alike in a mix of cases.
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
     let r = find_(sh, name);
+    if (r) name = String(sh.getRange(r, 1).getValue()) || name;
     if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
     // The code is checked before anything is written (a wrong code must not move anonymous answers).
     if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
@@ -8303,8 +8306,8 @@ const CORE_ = (function () { const module = {exports: {}};
       .normalize('NFC');
   // A name's keys: the skeletons of the name as it is, in lower case and in upper case. An account is its name in any
   // case (Code.gs find_), and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital
-  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key: a name accepted
-  // in one case can never be signed in under another that looks like a taken name.
+  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key. A mix of cases no
+  // whole-name case covers never shows: an account keeps the spelling it was made with (Code.gs doPost_).
   const nameKeys = name => {
     const t = String(name == null ? '' : name);
     return [...new Set([t, t.toLowerCase(), t.toUpperCase()].map(nameSkeleton))];

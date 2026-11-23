@@ -155,8 +155,8 @@
       .normalize('NFC');
   // A name's keys: the skeletons of the name as it is, in lower case and in upper case. An account is its name in any
   // case (Code.gs find_), and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital
-  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key: a name accepted
-  // in one case can never be signed in under another that looks like a taken name.
+  // is B; a Greek small nu is a v, its capital an N), so two names look alike when they share a key. A mix of cases no
+  // whole-name case covers never shows: an account keeps the spelling it was made with (Code.gs doPost_).
   const nameKeys = name => {
     const t = String(name == null ? '' : name);
     return [...new Set([t, t.toLowerCase(), t.toUpperCase()].map(nameSkeleton))];
