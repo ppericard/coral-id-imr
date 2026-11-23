@@ -96,7 +96,8 @@ one page to see, sort and manage the players, names joined to the anonymous stat
   built in `app.js` `treeGenera`, are not in the pool.
 - **Progress and Learned are the full replay** (`progOf` in `admin.js`): the admin shows the values the player will
   have, not the stale copy of a player who has not reopened the app. The player list carries each player's replay
-  computed by the sheet once (`Code.gs` `replayedAll_`, `rp` = [progress %, learned, the saved copy's %] over the slate,
+  computed by the sheet once (`Code.gs` `replayedAll_`, `rp` = [progress %, learned, the saved copy's %]: the two % over
+  the corals' one scale, `scale_`, the bonus genera included as the app's header, rule L6; learned over the slate;
   the replay record reused from the Replayed tab while the player's rows, reset and first-launch answer are the same), so
   the list reads no saved copy; a player the sheet gave no `rp` is replayed here (`core.js` `replayProgress` over their
   answers in the log with today's rules, the sheet's photo memory offsets and pooled confusions from `?stats=1`, the

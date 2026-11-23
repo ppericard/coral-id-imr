@@ -5031,10 +5031,11 @@
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file; docs/spec/quiz.md "Bonus genera", docs/LEARNING.md "Millepora and the bonus
-  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate, never
-  // counted in the progress. slateOf(d) = the slate as the games and the progress count it (app.js slateGenera);
-  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera; the rest of data.json "x" are
-  // Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
+  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate.
+  // slateOf(d) = the slate as the games teach it and the IMR slate score counts it (app.js slateGenera);
+  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera and the one scale the global
+  // progress counts for every coral player, opted in or not (app.js UNITS scale; rule L6, Q445 A); the rest of
+  // data.json "x" are Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
   // a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
@@ -6060,6 +6061,13 @@
       at: '2026-11-21',
       why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21: \"si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui [...] il faut recalculer la progression de tous. On peut le faire en silence\"): a right answer's time weight takes off z its photos' time term (rtWeight ti: the mean of the photos' served terms, ptimeQ), so a slowness the photo explains no longer counts against the player; the game logs the term in the scoring record (i), and the sheet's replay nets every answer logged without it by the photos' terms served now (replayProgress photos), so every player's progress is recalculated, silently",
       // No card (rule D6; Q452: "en silence").
+      msg: null
+    },
+    {
+      v: 14,
+      at: '2026-11-23',
+      why: 'One 45-genus coral scale (rule L6; Pierre, 2026-11-20: "Les genres bonus dans les coraux devraient définitivement compter dans le progres global"; Q445 A, 2026-11-21: "une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR"): the global progress % (the header, My progress, the achievements, the leaderboard) is the mean of the bars of every game genus, the slate\'s and the bonus genera\'s (core.js gameOf), for every player, opted in or not; today\'s % over the slate stays as the IMR slate score. No genus\'s bar moves; every device takes the replay once',
+      // No card (rule D5).
       msg: null
     }
   ];

@@ -10,7 +10,8 @@
 //   starred genus never before the genera its card compares it to (core.js starRefs);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
-//   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
+//   "Not now" kept, once on opened one card at a time, counted in the global % (the one scale, rule L6) and never in
+//   the IMR slate score, on or off, Off out of the draw;
 // - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
 //   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
 //   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers;
@@ -1245,13 +1246,36 @@ const server = http.createServer((req, res) => {
           if (i && a - cards[i - 1][0] < INTRO.GAP) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
         });
         if (cards.length < 2) fails.push(`only ${cards.length} bonus genus card(s) in 150 questions`);
-        // Their own progress grows, the slate's % does not count it.
+        // Their own progress grows: the global % (the one scale of every game genus, rule L6, Q445 A) counts it, the IMR
+        // slate score does not; the header, the save summary (the sheet's "By genus" columns and the leaderboard %) and
+        // the achievements read the global one. Off, it still counts (one scale for everyone).
         const pb = {...P};
         B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
-        if (progPct() !== progPct(slateGenera()) || slateGenera().some(isBonus)) fails.push('bonus genera counted in the progress');
+        const scaleOk = () => {
+          const S = slateGenera(),
+            all = scaleUnits(),
+            sum = syncSummary(),
+            pill = document.getElementById('progn').textContent;
+          if (S.some(isBonus)) fails.push('a bonus genus in the slate');
+          if (all.join() !== [...S, ...B].join()) fails.push(`the global scale: ${all.length} units, not the slate then the bonus genera`);
+          if (headPct(all) !== pctOf(P, all) || headPct(all) <= progPct(S)) fails.push('bonus genera not counted in the global %');
+          if (slatePct() !== pctOf(P, S)) fails.push(`the IMR slate score ${slatePct()} is not the slate's % ${pctOf(P, S)}`);
+          if (sum.pct !== headPct(all) || Object.keys(sum.genera).join() !== all.join() || sum.total !== S.length)
+            fails.push('the save summary: its % or genera not the global scale, or its total not the slate');
+          if (achSnap().pct !== headPct(all)) fails.push('the achievements do not read the global %');
+          if (pill !== headPct(all) + '%') fails.push(`the header pill ${pill}, not the global % ${headPct(all)}`);
+        };
+        showProg();
+        scaleOk();
         P = pb;
         bonusSet(false);
         if (pool().some(isBonus) || !B.some(n => P[n])) fails.push('bonus genera off: still in the pool, or their progress lost');
+        P = {...pb};
+        B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
+        showProg();
+        scaleOk();
+        P = pb;
+        showProg();
       }
       question = q0;
       INTROS = {};

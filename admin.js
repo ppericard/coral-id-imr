@@ -10800,7 +10800,7 @@ function unitsOf(S) {
     UNITM.by[S.id] = {
       R,
       v: S.replay
-        ? DATA && {gen: DATA.gen, slate: slateOf(DATA)}
+        ? DATA && {gen: DATA.gen, slate: slateOf(DATA), scale: gameOf(DATA)}
         : R && R.slate
           ? {gen: R.gen, slate: R.slate, ...((R.raw && unitRpl(S, R.raw.f, R.raw.ph, R.raw.gm, SAVED)) || {})}
           : null
@@ -10835,8 +10835,9 @@ function unitRpl(S, f, ph, gm, cur) {
 // A progress record P's headline % in subject S as the player's app shows it (model.js headPct, sync.js headOf) and its
 // leaderboard ranks by it (Code.gs board_): its global score over the tree (core.js treeScore with SUBJECTS score: the
 // fish %, every family, genus and species unit weighted) when M (unitsOf) has one, else the mean of its units' bars over
-// the slate (core.js pctOf: the corals, a subject with no tree).
-const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).pct : pctOf(P, M.slate));
+// its scale (core.js pctOf: the corals' 45 genera, core.js gameOf, as app.js UNITS scale, rule L6), else its slate (a
+// subject with no tree).
+const unitPct = (S, M, P) => (M.tree && S.score ? treeScore(P, M.tree, S.score).pct : pctOf(P, M.scale || M.slate));
 // replay units: end
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
 // replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's; and the photos with

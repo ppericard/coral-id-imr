@@ -2311,6 +2311,9 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //   pick        its line in the welcome tour's subject pick (tour.js)
 //   tour        the tour's words where they differ for it (tour.js words)
 //   slate()     the units the games teach and progress counts (corals: core.js slateOf, starred last; fish: every family)
+//   scale()     the units the global progress % counts when they are more than the slate (corals: core.js gameOf, the
+//               slate and the bonus genera, for every player, opted in or not: rule L6, Q445 A); the slate if absent
+//   slateName   with a scale: the name of the slate's own % shown beside the global one (corals: "IMR slate")
 //   core()      the part "Open all" opens (model.js introLeft); the slate if absent
 //   gate(n)     whether slate unit n may open now (model.js mayOpen); always if absent
 //   sets        opt-in sets, offered once by a card when due() (quiz.js bonusOfferShow), ⚙ rows: units(), words, tag
@@ -2324,8 +2327,9 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 
 // Bonus genera (core.js BONUS; docs/ARCHITECTURE.md "Bonus genera"): Coral Finder genera common at Dauin with a
 // look-alike on the slate, or no hard coral; opt-in (Q.bon, ⚙ any time, off keeps their progress), then open like the
-// others but never count in the progress, tips labelled the Coral Finder's, photos Research Grade or Pierre's own, never
-// multi-coral (tools/apply_bonus.py).
+// others; they count in the global progress (UNITS scale, the one 45-genus scale for everyone: rule L6, Q445 A), never
+// in the IMR slate score; tips labelled the Coral Finder's, photos Research Grade or Pierre's own, never multi-coral
+// (tools/apply_bonus.py).
 
 // Fish circles (docs/FISH_PATH.md): 1, the IMR course's families; 2, now and then on the SVS videos; 3, what divers look
 // for around Dauin; all count, open or not. treeGate: circle 2 once every circle-1 family was asked, circle 3 at treeC3
@@ -2586,6 +2590,11 @@ const UNITS = {
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
+    // The one 45-genus scale of the global progress (rule L6; Pierre, 2026-11-21, Q445 A: «une seule échelle de 45
+    // genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR»): the slate and the bonus genera, for
+    // every player, opted in or not; the slate's own % stays as the IMR slate score.
+    scale: () => gameOf(DATA),
+    slateName: 'IMR slate',
     // The IMR lecture's group k (data.json imrg: {n, t}), undefined for the genera outside the lecture's groups.
     group: k => DATA.imrg.find(x => x.n === k),
     // The structure stamp of its units (core.js structStamp: '' while the look-alike pairs in force are data.json's), sent
@@ -2673,7 +2682,7 @@ const UNITS = {
         kick: 'Every genus of the slate met',
         title: n => `${n} more genera?`,
         body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
-        note: "⚙ Settings, Bonus genera, any time. They don't count in your progress.",
+        note: '⚙ Settings, Bonus genera, any time. They count in your progress, not in your IMR slate score.',
         tag: 'Bonus genus',
         name: 'Bonus genera',
         card: 'Not on the IMR list, but common at Dauin.'
@@ -3188,8 +3197,11 @@ const UNITS = {
 };
 treeAt(SUBJ.id); // the tree of the subject opened on (fish.json for the fish) in force before its files come
 const SETS = () => UNITS[SUBJ.id].sets;
-// The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
+// The genera the games teach (the units of the subject): "the slate" in the code means this list.
 const slateGenera = () => UNITS[SUBJ.id].slate();
+// The units the subject's global progress % counts (UNITS scale: the corals' one 45-genus scale, the slate and the bonus
+// genera, rule L6), the slate where the subject has no scale of its own.
+const scaleUnits = () => (UNITS[SUBJ.id].scale || UNITS[SUBJ.id].slate)();
 // The opt-in set a unit belongs to (the coral bonus genera, the fish scientific genera), or null.
 const setOf = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;
 const isBonus = n => !!setOf(n);

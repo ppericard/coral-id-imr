@@ -1132,6 +1132,43 @@ test('board: signed-in players by progress then level; opted-out players and the
   );
 });
 
+// The corals' board on the one scale of every game genus (rule L6, Q445 A): the app's save summary sends the slate's
+// genera then the bonus genera (sync.js syncSummary over app.js scaleUnits), the "By genus" header takes them, and
+// board_ ranks every player over that header, with no change in the script; a save from an app of before (the slate
+// alone, the same genera first) writes over the start of the header and leaves the bonus columns, so the scale holds.
+test('board: the corals rank over the "By genus" header, the bonus genera included, an older app\'s save after it too', () => {
+  const C = require('../core.js'),
+    s = seed(),
+    D = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'), 'utf8')),
+    slate = C.slateOf(D),
+    scale = C.gameOf(D),
+    P = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}, Isopora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}},
+    // At today's rules version, so the board reads this copy as it is (no replay to adopt first, rule D8).
+    data = {'reefid-sync-coral-progress': JSON.stringify(P), 'reefid-sync-coral-rv': JSON.stringify(C.RV)},
+    genera = L => Object.fromEntries(L.map(n => [n, P[n] ? 'ok' : 'new']));
+  assert.ok(scale.includes('Isopora') && !slate.includes('Isopora'));
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data,
+    summary: {learned: 1, seen: 1, total: slate.length, genera: genera(scale), pct: C.pctOf(P, scale), board: 1}
+  });
+  const head = () => s.sheets['By genus'].rows[0].slice(2).filter(Boolean);
+  assert.deepStrictEqual(head(), scale, 'the header: the slate then the bonus genera');
+  assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], C.pctOf(P, scale));
+  assert.notStrictEqual(C.pctOf(P, scale), C.pctOf(P, slate), 'the two scales differ for this player');
+  // An older app's save: the slate alone.
+  s.post({
+    name: 'Ben',
+    pin: '1111',
+    data: prog(3),
+    summary: {learned: 0, seen: 1, total: slate.length, genera: genera(slate), pct: 1, board: 1}
+  });
+  assert.deepStrictEqual(head(), scale, 'still the whole scale');
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], C.pctOf(P, scale));
+});
+
 // One leaderboard per subject (no merged ranking): fixtures only.
 test('board (v95): each subject its own board, by its % over the units its apps sent, then its level; the corals as before', () => {
   const s = seed();
@@ -2226,16 +2263,20 @@ test("v42: the player list carries each player's replayed progress, learned and 
     st = s.get({stats: '1'}),
     D = JSON.parse(DJSON),
     list = C.slateOf(D),
+    // The two % over the one scale of every game genus, the bonus genera included (rule L6, Q445 A: Code.gs scale_, as
+    // the app's header); Learned over the slate.
+    scale = C.gameOf(D),
     P = JSON.parse(data['reefid-sync-coral-progress']),
     rec = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
       {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P,
     G = C.replayedOf({P: rec}, P);
+  assert.ok(scale.length > list.length && list.every(n => scale.includes(n)), 'the scale holds the slate and more');
   const ana = r.users.find(u => u.name === 'Ana');
-  assert.deepStrictEqual(ana.rp, [C.pctOf(G, list), C.learnedOf(G, list), C.pctOf(P, list)]);
+  assert.deepStrictEqual(ana.rp, [C.pctOf(G, scale), C.learnedOf(G, list), C.pctOf(P, scale)]);
   assert.ok(ana.rp[0] > 0);
-  assert.deepStrictEqual(r.users.find(u => u.name === 'Ben').rp, [C.pctOf(P1(), list), C.learnedOf(P1(), list), C.pctOf(P1(), list)]);
+  assert.deepStrictEqual(r.users.find(u => u.name === 'Ben').rp, [C.pctOf(P1(), scale), C.learnedOf(P1(), list), C.pctOf(P1(), scale)]);
   // Stored in the Replayed tab, one row a player, and reused: a marker put in Ana's record comes back in her %.
   const T = s.sheets.Replayed;
   assert.deepStrictEqual(
@@ -2245,7 +2286,7 @@ test("v42: the player list carries each player's replayed progress, learned and 
       ['Ben', C.RV, 0]
     ]
   );
-  T.rows[1][5] = JSON.stringify(Object.fromEntries(list.map(g => [g, {pg: 1, ok: 30, ko: 0, h: '1111111111', u: 1}])));
+  T.rows[1][5] = JSON.stringify(Object.fromEntries(scale.map(g => [g, {pg: 1, ok: 30, ko: 0, h: '1111111111', u: 1}])));
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ana').rp[0], 95);
   // A new answer: replayed again, still one row for her.
   s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [qa('r12', 12)]});

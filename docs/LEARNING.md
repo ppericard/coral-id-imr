@@ -633,8 +633,12 @@ keep their choice. The admin's player journey reads them.
 Millepora (fire coral, not a hard coral but on the IMR benthic slate: `core.js` `BENTHIC`) counts like a slate genus in
 the games and the progress. The bonus genera (`core.js` `BONUS`: Coral Finder genera common at Dauin with a look-alike
 on the slate) are opt-in: offered once, by a card, when every slate genus has been asked; ⚙ Bonus genera turns them on
-or off any time (off keeps their progress). Once on they open like the others, one at a time, and never count in the
-progress (rule L6).
+or off any time (off keeps their progress). Once on they open like the others, one at a time. They count in the global
+progress (rule L6, Q445 A): the headline % is the mean of the bars of every game genus (`core.js` `gameOf`, `app.js`
+`UNITS` `scale`, `scaleUnits`), the slate's and the bonus genera's, for every player, opted in or not, so a player who
+leaves them off tops out below 100%; the mean over the slate alone stays as the IMR slate score (`UNITS` `slateName`,
+`progress.js` `slatePct`). No genus's bar moves with it: rules version 14 only makes every device take the replay once.
+The simulations' shown % (`tools/learnsim.js` `shownPct`, `tools/ratedworld.js`) stays over the slate.
 
 ### The domain-score bar
 
