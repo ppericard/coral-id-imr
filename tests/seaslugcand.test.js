@@ -119,6 +119,29 @@ print(json.dumps([o['id'] for o in pick([usable(ob(i, lic=l), EGG) for i, l in (
   assert.deepStrictEqual(lic, [3], 'among equals in variety, an open licence first (the last tie-break)');
 });
 
+test('a pass leaves the photos it did not take to the next one; an observation held by another list brings nothing to a species (Codex review)', () => {
+  const out = J(`${OBS}
+from collections import Counter
+from fetch_fish import Net, API, FIELDS, queries
+import tempfile
+x = usable(ob(1, n=4), EGG)
+kept, used = Counter(), set()
+a = pick([x], 1.5, Counter(), used, kept)
+b = pick([x], 2, Counter(), used, kept)
+d = tempfile.mkdtemp()
+c = {API + queries(601)['own'] + '&fields=' + FIELDS: {'total': 0, 'results': []},
+     API + queries(601)['ph'] + '&fields=' + FIELDS: {'total': 2, 'results': [ob(5), ob(6)]},
+     API + queries(601)['world'] + '&fields=' + FIELDS: {'total': 0, 'results': []}}
+json.dump(c, open(d + '/c.json', 'w'))
+T = {'candidates': 5, 'max': 7, 'perJuvenileForm': 0}
+net = Net(d + '/c.json', offline=True)
+got, _ = fill(net, {'name': 'Slugus slugii', 'inat': 601}, [], T, EGG, set(), taken={obs_url(5): 'Slugus'})
+print(json.dumps([[[p[0] for p in o['P']] for o in a], [[p[0] for p in o['P']] for o in b], [o['id'] for o in got]]))`);
+  assert.deepStrictEqual(out[0], [[10, 11]]);
+  assert.deepStrictEqual(out[1], [[12, 13]], 'the two photos the first pass could not fit are still there');
+  assert.deepStrictEqual(out[2], [6], 'observation 5 belongs to the genus-level list');
+});
+
 test('the room counts as the fish’s cap does: an observation’s first photo 1, each further one 0.5, an egg mass nothing', () => {
   const out = J(`${OBS}
 rec = lambda i, k, **x: {'f': f'seaslug-601-cand-{i * 10 + k}', 'o': obs_url(i), **x}

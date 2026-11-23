@@ -225,10 +225,11 @@ def pick(items, room, n, used, kept, own_first=True):
     first for 1 of room and each further one for EXTRA_W (obs_cost), cut to the room left. used (photo ids) and kept
     (kept_of: the photos each observation already holds) are updated: a photo is taken once. Each item returned carries
     only its own photos (P) and the room it took (cost)."""
-    if own_first:
-        return select({"ph": items}, room, {}, n, claimed=used, photos=True, held=kept)
+    # select cuts the photos (P) of the items it takes: it works on copies, so an item two passes share (a juvenile and
+    # the general room) keeps the photos the first pass left.
     own = {o["id"]: o["own"] for o in items}
-    got = select({"ph": [{**o, "own": False} for o in items]}, room, {}, n, claimed=used, photos=True, held=kept)
+    items = [{**o, "own": o["own"] and own_first} for o in items]
+    got = select({"ph": items}, room, {}, n, claimed=used, photos=True, held=kept)
     return [{**o, "own": own[o["id"]]} for o in got]
 
 
@@ -600,18 +601,22 @@ def own_room(L, T, egg=frozenset()):
     return max(0, T.get("max", 0) - held(L, egg))
 
 
-def fill(net, s, L, T, pairs, used, own_only=False, egg=frozenset(), known=frozenset()):
+def fill(net, s, L, T, pairs, used, own_only=False, egg=frozenset(), known=frozenset(), taken=None):
     """The new candidates of species s (L: its candidates already there), in room as the fish's cap counts it (held): Pierre's
     own first (his search, every one usable up to own_room: the fish's select takes his first), then the juvenile room
     (Life Stage: Juvenile observations, the Philippines then abroad), then the rest (the Philippines, then abroad when
     their search was read to its end and room is left). An observation among the candidates brings its other photos,
     at their weight. own_only: his only, nothing else asked. egg: the candidates judged an egg mass, which count against
-    nothing (held). known: observation URLs that bring no other photo (sent elsewhere by Pierre). Returns ([items, each
-    with its photos P and its cost], {"juvenile": room short by})."""
+    nothing (held). known: observation URLs that bring no other photo (sent elsewhere by Pierre). taken: {observation URL:
+    list key}; an observation held by another list (a genus-level one, a species with no name, another species it was
+    identified as before) brings nothing here. Returns ([items, each with its photos P and its cost], {"juvenile": room
+    short by})."""
     tid, Q = s["inat"], queries(s["inat"])
     cap, juv = target(s, T)
     n, kept = stages(L), kept_of(L, egg)
-    it = lambda obs: [x for x in (usable(o, pairs, used) for o in obs if obs_url(o["id"]) not in known) if x]  # noqa: E731
+    taken = {} if taken is None else taken
+    it = lambda obs: mine([x for x in (usable(o, pairs, used) for o in obs if obs_url(o["id"]) not in known) if x],  # noqa: E731
+                          taken, str(tid))
     # The room the usable observations of a search would take, counted as pick takes it (obs_cost).
     cost = lambda res: sum(obs_cost(kept.get(obs_url(x["id"]), 0), len(x["P"])) for x in it(res))  # noqa: E731
     got = []
@@ -735,7 +740,7 @@ def run(args):
         for s in S:
             key = str(s["inat"])
             L = have.setdefault(key, [])
-            got, short = fill(net, s, L, T, pairs, used, own_only, egg, known)
+            got, short = fill(net, s, L, T, pairs, used, own_only, egg, known, taken)
             add_picks(L, key, got, taken)
             loc = Counter(p["loc"] for p in L if p["f"] not in egg)
             report[s["name"]] = {"n": held(L, egg), "target": target(s, T)[0], "eggBack": len(back_.get(key, [])),
