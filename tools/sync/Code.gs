@@ -381,12 +381,15 @@ function doPost_(e){
         try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('left out of the statistics: device ' + aid_('~anon ' + p.anon) + ' signed in as ' + aid_(name) + ', left out too')]); } catch (e) {}
       }
     }
-    // One row per RA, one column per genus, coloured by status: the class at a glance. The grid widened first when the
-    // summary holds more genera than it has columns (the corals' one scale, the bonus genera after the slate: rule L6;
-    // the app sends it from v221, sync.js SCALE_SHEET), as writing past it fails.
-    const genera = Object.keys(s.genera || {});
+    // One row per RA, one column per genus, coloured by status: the class at a glance. The columns are the script's own,
+    // never the client's: the corals' one scale (scale_: core.js gameOf over data.json, the slate then the bonus genera,
+    // rule L6), each filled from the summary's status for it, any other key ignored; none written while data.json cannot
+    // be read. The grid widened first when it is narrower than that scale (writing past it fails), so never beyond it.
+    const sent = s.genera && typeof s.genera === 'object' ? s.genera : {}, genera = Object.keys(sent).length ? scale_() || [] : [];
     if (genera.length) {
       const g = sheet_('By genus'), head = ['Name', 'Learned'].concat(genera.map(safe_));
+      const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);  // a status the script knows, else none
+      s.genera = Object.fromEntries(genera.map(n => [n, own(sent, n) && own(LABELS, String(sent[n])) ? String(sent[n]) : 'new']));
       if (g.getMaxColumns && g.getMaxColumns() < head.length) g.insertColumnsAfter(g.getMaxColumns(), head.length - g.getMaxColumns());
       g.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold'); g.setFrozenRows(1); g.setFrozenColumns(2);
       const gr = find_(g, name) || g.getLastRow() + 1;

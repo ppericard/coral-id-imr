@@ -51,7 +51,7 @@ record in a new tab.
 |---|---|
 | `RAs` | One row per player: name, the hidden code hash and the saved data as JSON (column H) |
 | `Progress data` | Name, revision, the saved data in 45,000-character chunks (a cell holds at most 50,000); `RAs` column H keeps the JSON when it fits, else `@Progress data` |
-| `By genus` | The corals' progress per player and genus, written from each save's summary (`syncSummary` `genera`: the global scale, the slate then the bonus genera, rule L6, sent from `SCALE_SHEET`, the script that widens the tab's grid first; the slate's to an older one); its header row is the list of genera the corals' leaderboard counts |
+| `By genus` | The corals' progress per player and genus, written at each save that carries a summary's `genera`: its columns are the script's own, never the client's (`Code.gs` `scale_`, `core.js` `gameOf` over data.json: the global scale, the slate then the bonus genera, rule L6), each filled from the summary's status for it, any other key ignored, the grid widened to that scale at most, nothing written while data.json cannot be read (the app sends the scale's genera from `SCALE_SHEET`, the slate's to an older script); its header row is the list of genera the corals' leaderboard counts |
 | `Answers` | One row per answer (below) |
 | `Activity` | A QUERY per player over the Answers tab; it counts every subject's answers |
 | `Reports` | One row per report or feedback: time, reporter, verified, reason, expected, answered, suggested genus, note, mode (game, photo, sheet or page), photos, where, id, image (the report's id when a picture is attached, else empty; from v212) |

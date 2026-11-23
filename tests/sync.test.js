@@ -1132,15 +1132,17 @@ test('board: signed-in players by progress then level; opted-out players and the
   );
 });
 
-// The corals' board on the one scale of every game genus (rule L6): the app's save summary sends the slate's
-// genera then the bonus genera (sync.js syncSummary over app.js scaleUnits, from SCALE_SHEET), the "By genus" header
-// takes them, its grid widened first when it is too narrow (a tab of the slate's width), and board_ ranks every player
-// over that header; a save from an app of before (the slate alone, the same genera first) writes over the start of the
-// header and leaves the bonus columns, so the scale holds.
+// The corals' board on the one scale of every game genus (rule L6). The "By genus" columns are the script's own, the
+// scale from data.json (Code.gs scale_: core.js gameOf, the slate then the bonus genera), each filled from the save
+// summary's status for it, whatever genera the app sent; its grid widened first when it is too narrow (a tab of the
+// slate's width, made by the older script), and board_ ranks every player over that header; a save from an app of before
+// (the slate alone) fills the slate's columns and leaves the bonus ones blank, so the scale holds.
+const DATA_TEXT = require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'), 'utf8'),
+  dataFetch = url => (/\/main\/data\.json$/.test(url) ? {getResponseCode: () => 200, getContentText: () => DATA_TEXT} : null);
 test('board: the corals rank over the "By genus" header, the bonus genera included, an older app\'s save after it too', () => {
   const C = require('../core.js'),
-    s = seed(),
-    D = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'), 'utf8')),
+    s = loadCodeGs({fetch: dataFetch}),
+    D = JSON.parse(DATA_TEXT),
     slate = C.slateOf(D),
     scale = C.gameOf(D),
     P = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}, Isopora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}},
@@ -1148,14 +1150,16 @@ test('board: the corals rank over the "By genus" header, the bonus genera includ
     data = {'reefid-sync-coral-progress': JSON.stringify(P), 'reefid-sync-coral-rv': JSON.stringify(C.RV)},
     genera = L => Object.fromEntries(L.map(n => [n, P[n] ? 'ok' : 'new']));
   assert.ok(scale.includes('Isopora') && !slate.includes('Isopora'));
-  // A tab made by the slate's saves, its grid no wider than they are (writing past it fails, as in Sheets).
+  // A tab as the older script left it: the slate's columns, its grid no wider (writing past it fails, as in Sheets).
   s.post({
     name: 'Cy',
     pin: '2222',
     data: prog(1),
     summary: {learned: 0, seen: 1, total: slate.length, genera: genera(slate), pct: 1, board: 1}
   });
-  s.sheets['By genus'].maxCols = 2 + slate.length;
+  const T = s.sheets['By genus'];
+  T.rows.forEach((row, i) => (T.rows[i] = row.slice(0, 2 + slate.length)));
+  T.maxCols = 2 + slate.length;
   const r = s.post({
     name: 'Ana',
     pin: '1234',
@@ -1176,8 +1180,42 @@ test('board: the corals rank over the "By genus" header, the bonus genera includ
     summary: {learned: 0, seen: 1, total: slate.length, genera: genera(slate), pct: 1, board: 1}
   });
   assert.deepStrictEqual(head(), scale, 'still the whole scale');
+  assert.deepStrictEqual(
+    T.rows.find(x => x[0] === 'Ben').slice(2 + slate.length),
+    scale.slice(slate.length).map(() => ''),
+    "the older app's row: the bonus columns blank"
+  );
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], C.pctOf(P, scale));
+});
+
+// The client never chooses the "By genus" columns (Codex security review on #1474): a new account's save naming
+// thousands of genera of its own widens the grid to the scale at most and stores none of them; with data.json
+// unreadable, no column is written at all.
+test('"By genus": unknown genera in a save are ignored, the grid never grows past the scale', () => {
+  const C = require('../core.js'),
+    D = JSON.parse(DATA_TEXT),
+    scale = C.gameOf(D),
+    s = loadCodeGs({fetch: dataFetch}),
+    flood = Object.fromEntries(Array.from({length: 9000}, (_, i) => ['Fake' + i, 'ok']));
+  flood.Acropora = 'ok';
+  s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {learned: 0, seen: 1, total: 40, genera: {Acropora: 'new'}}});
+  const T = s.sheets['By genus'];
+  T.maxCols = 2 + scale.length;
+  const r = s.post({name: 'Eve', pin: '3333', data: prog(1), summary: {learned: 0, seen: 1, total: 40, genera: flood}});
+  assert.ok(r.ok, r.error);
+  assert.strictEqual(T.maxCols, 2 + scale.length, 'no column added');
+  assert.deepStrictEqual(T.rows[0].slice(2), scale, 'the header: the scale, no key of the client');
+  assert.ok(
+    T.rows.every(x => x.length <= 2 + scale.length),
+    'no row wider than the scale'
+  );
+  assert.ok(!/Fake/.test(JSON.stringify(T.rows)), 'no unknown genus stored');
+  assert.strictEqual(T.rows.find(x => x[0] === 'Eve')[2 + scale.indexOf('Acropora')], 'Learned', 'a known genus filled');
+  // data.json unreadable: the tab is not written (nor made), the save still goes through.
+  const u = loadCodeGs();
+  assert.ok(u.post({name: 'Eve', pin: '3333', data: prog(1), summary: {learned: 0, seen: 1, total: 40, genera: flood}}).ok);
+  assert.ok(!u.sheets['By genus'] || !/Fake/.test(JSON.stringify(u.sheets['By genus'].rows)));
 });
 
 // One leaderboard per subject (no merged ranking): fixtures only.
@@ -1527,8 +1565,10 @@ test('achs: how many signed-in players hold each achievement; counts only', () =
 });
 
 test('board (v16): the % is computed from the saved progress with the app formula, the same as core.js pctOf', () => {
-  const {pctOf} = require('../core.js');
-  const s = loadCodeGs();
+  const {pctOf, gameOf} = require('../core.js');
+  // The "By genus" columns are the script's scale from data.json (Code.gs scale_), whatever genera the app sends.
+  const s = loadCodeGs({fetch: dataFetch}),
+    scale = gameOf(JSON.parse(DATA_TEXT));
   const genera = {Acropora: 'mid', Porites: 'ok', Favites: 'new', Galaxea: 'mid'};
   const P = {
     Acropora: {ok: 8, ko: 2, pg: 0.5},
@@ -1545,7 +1585,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
     summary: {pct: 5, genera},
     answers: [ans('p1')]
   });
-  const want = pctOf(P, Object.keys(genera));
+  const want = pctOf(P, scale);
   assert.ok(want > 5);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], want);
   // Progress saved before s.pg (BKT's L, or only recent results; learned or not) is recomputed the same way (pgOf).
@@ -1556,7 +1596,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
   };
   s.post({name: 'Ben', pin: '1111', data: {'reefid-sync-coral-progress': JSON.stringify(Q)}, summary: {genera}, answers: [ans('q1')]});
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
-  assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ben')[1], pctOf(Q, Object.keys(genera)));
+  assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ben')[1], pctOf(Q, scale));
 });
 
 // model.js's opening hold (INTRO, holdNext, holdStep, holdSync) run in Node on a stub store: the app's own code.
@@ -2393,8 +2433,9 @@ test("v28: an anonymous device's replay counts only the answers after its progre
 // rename still saves the old names, the renamed app saves the new ones plus a copy under the old ones (core.js
 // withLegacy): the sheet reads the new name first, else the old one. rename-app: keep-begin
 test('v33: saved data is read under the new key names or the old ones (progress, reset, achievements)', () => {
-  const {pctOf, withLegacy} = require('../core.js');
-  const s = loadCodeGs(),
+  const {pctOf, withLegacy, gameOf} = require('../core.js');
+  // The board's columns: the script's scale from data.json (Code.gs scale_).
+  const s = loadCodeGs({fetch: dataFetch}),
     P = {Acropora: {ok: 8, ko: 2, pg: 0.5, th: 0.4}, Porites: {ok: 20, ko: 1, pg: 0.7, mx: 1, th: 1.2}},
     genera = {Acropora: 'mid', Porites: 'ok', Favites: 'new'},
     oldP = {'imr-coral-progress': JSON.stringify(P)},
@@ -2404,7 +2445,7 @@ test('v33: saved data is read under the new key names or the old ones (progress,
   s.post({name: 'New', pin: '1234', data: newP, summary: {pct: 1, genera}, answers: [ans('n1')]});
   s.post({name: 'Both', pin: '1234', data: withLegacy(newP), summary: {pct: 1, genera}, answers: [ans('b1')]});
   const rows = s.get({board: '1'}).rows,
-    want = pctOf(P, Object.keys(genera));
+    want = pctOf(P, gameOf(JSON.parse(DATA_TEXT)));
   assert.ok(want > 1);
   ['Old', 'New', 'Both'].forEach(n => assert.strictEqual(rows.find(r => r[0] === n)[1], want, n));
   // Both names with different values (never sent by the app; a guard): the new one wins.

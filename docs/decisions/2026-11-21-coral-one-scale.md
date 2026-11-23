@@ -27,6 +27,7 @@ integrator's call, easy to correct.
   fish level turned off stops rising.
 - The save summary's genera and % (the sheet's "By genus" header, which the corals' leaderboard ranks over) follow the
   scale only once the script widens that tab's grid before writing (`sync.js` `SCALE_SHEET`, rule D4); before, the
-  slate's, as before.
+  slate's, as before. The script writes that tab's columns from its own scale (`Code.gs` `scale_`), never from the
+  genera a client sends, so a save cannot grow the grid past the scale.
 - No genus's bar moves; rules version 14 (`core.js` `RVS`, no card) makes every device take the replay once (rule D5).
 - Rule L6 says it now; the simulations' shown % stays over the slate.

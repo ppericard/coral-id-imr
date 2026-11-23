@@ -88,7 +88,9 @@ const sa = (id, i) =>
     sc: {d: 0, r: 1}
   });
 const GENERA = {Acropora: 'mid', Montipora: 'new', Porites: 'new', Pocillopora: 'new'},
-  CLIST = Object.keys(GENERA),
+  // The corals' board units: the script's own scale over data.json (Code.gs scale_, core.js gameOf: the "By genus"
+  // columns, whatever genera the summary names).
+  CLIST = C.gameOf(JSON.parse(DJSON)),
   FUNITS = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses'],
   SUNITS = ['g:Chromodoris', 'g:Hypselodoris', 'g:Goniobranchus', 'g:Glossodoris'];
 // Each subject with a leaderboard and rules versions, its fixtures: its saved progress key, a saved copy whose bars the
@@ -398,6 +400,7 @@ test('an account deleted while the trigger replays it: none of its replays writt
     s = loadCodeGs({fetch: f.fetch});
   play(s, 'Ana', '1234', {});
   play(s, 'Ben', '1111', {});
+  f.n.data = 0; // the saves read data.json too (their "By genus" columns, Code.gs scale_): counted from the trigger on
   hook.data = () => assert.ok(s.post({selfDelete: 1, dname: 'Ana', dpin: '1234'}).deleted, 'deleted mid-run');
   assert.match(s.ctx.autoUpdate(), /^up to date/);
   assert.strictEqual(f.n.data, 1, 'the delete ran inside the replay');
