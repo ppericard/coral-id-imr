@@ -122,6 +122,13 @@
       why: 'One 45-genus coral scale (rule L6; Pierre, 2026-11-20: "Les genres bonus dans les coraux devraient définitivement compter dans le progres global"; Q445 A, 2026-11-21: "une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR"): the global progress % (the header, My progress, the achievements, the leaderboard) is the mean of the bars of every game genus, the slate\'s and the bonus genera\'s (core.js gameOf), for every player, opted in or not; today\'s % over the slate stays as the IMR slate score. No genus\'s bar moves; every device takes the replay once',
       // No card (rule D5).
       msg: null
+    },
+    {
+      v: 15,
+      at: '2026-11-23',
+      why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09; docs/reviews/2026-11-09-level-count-checkpoints.md): the replay's count of the player's answers wins over the device's also when the device counts more (answers counted twice before #824), as every unit's record already did, and a level with no answer in the log keeps none (replayedOf, replayBase); the app's checkpoints count on their own answer clock (model.js tally), which never goes down. A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      // No card (rule D6).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -172,6 +179,13 @@
       why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21), as the corals' rules version 13: a right answer's time weight takes off z its photos' time term as the game logged it (the scoring record's i, rtWeight ti). The sheet's replay of this subject reads no pooled photo numbers, so an answer logged before the term was logged keeps its weight: a log with no such answer replays as before; every player replayed at once, silently (rule D6)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 7,
+      at: '2026-11-23',
+      why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      // No card (rule D6).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -193,6 +207,12 @@
       v: 3,
       at: '2026-11-21',
       why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21), as the corals' rules version 13 and the fish's 6: a right answer's time weight takes off z its photos' time term as the game logged it (the scoring record's i). The replay reads no pooled photo numbers, so an answer logged before keeps its weight: a log with no such answer replays as before; every player replayed at once, silently (rule D6)",
+      msg: null
+    },
+    {
+      v: 4,
+      at: '2026-11-23',
+      why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15 and the fish's 7: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       msg: null
     }
   ];

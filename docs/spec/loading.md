@@ -19,7 +19,7 @@ The files come one tier after the other, so what the player waits for never shar
 1. **Home**: `app.css` (with, at its end, the few rules from the Lab's stylesheet that the pages before tier 5 use: the
    tile grid `.pgrid`, the game layout `.pgame` with its side column `.gside`, the Genera page's `.ikn` and `.ikxtag`),
    `home.css`, the main font, `core.js` (one file, one request: its parts, `core/*.js`, are joined into it in the
-   repository by `tools/sync_core.py`, never loaded one by one), `app.js`, `sync.js`, `home-art.js`, `home.js`,
+   repository by `tools/sync_core.py`, never loaded one by one), `app.js`, `install.js` (the install card), `sync.js`, `home-art.js`, `home.js`,
    `tour.js`, `data.json`, `curation.json`.
 2. **The photo quiz**: `model.js` (with the look-alike pairs and their sources the quiz shares with the Learn pages:
    `pairs`, `isClassic`, `mixedUp`, `photoPair`, `shownGroup`, `starNote`), `tips.js` (the "Did you know?" tips'
