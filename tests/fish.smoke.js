@@ -2459,12 +2459,17 @@ async function uiAndAccess(b, base, errs) {
   // fish question (4 upright names); the enlarged photo before the answer credits its author by name only (blindCredit:
   // no taxon, no link); after the answer the full credit with its iNaturalist link; My progress; a wink once; back to the
   // corals through the header chip; nothing wider than the screen on any of them.
+  // The photos are answered by a stand-in (every outside host: R2, iNaturalist, Corals of the World), as in the flag
+  // check (mainScenarios). With them cut off, every question's photo failed for good about 5 s after it was drawn
+  // (app.js: two retries, then its 480 px file), and the question closed its answers (qnone, "Another question"), as
+  // the app means for a question with no photo; a wait for its answers that came later timed out (REE-238).
+  const stand = fs.readFileSync(require('./photostub.js')(ROOT).stand['-s']);
   const ui = [];
   for (const width of [390, 1280]) {
     const c2 = await b.newContext({viewport: {width, height: width < 600 ? 844 : 800}, serviceWorkers: 'block'});
     await c2.route(
       u => !u.href.startsWith(base),
-      r => r.abort()
+      r => (r.request().resourceType() === 'image' ? r.fulfill({contentType: 'image/webp', body: stand}) : r.abort())
     );
     await c2.addInitScript(() => {
       try {
@@ -2596,9 +2601,8 @@ async function uiAndAccess(b, base, errs) {
     // Home mosaic: rotate the photos", home.js landPool): each tile one of its family's photos that suit it, the cover or
     // a reference photo (refLevel), never a remote one, at most 6, or the pick above when it has none; the same all day,
     // another on some later day.
-    // By photo, not by address (as the family sheet's hero below): every R2 photo fails in this smoke, so R2 goes off
-    // mid-run (app.js photoFail, r2Out) and a photo shown under its R2 address may be read under its online original
-    // (core.js photoAway), or the reverse, depending on when the failure lands.
+    // By photo, not by address (as the family sheet's hero below): a page that loses R2 (app.js photoFail, r2Out) reads a
+    // photo shown under its R2 address under its online original (core.js photoAway), so either may show.
     const ht = await q.evaluate(() => {
       const srcOf = p => (/src="([^"]*)"/.exec(thumb(p, '1px')) || [])[1],
         shows = (u, p) =>
@@ -2707,7 +2711,7 @@ async function uiAndAccess(b, base, errs) {
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
     // Each family's photo there is Pierre's ★ Cover (curation.json fish genera, app.js treeCurate) while it is in play,
     // else the card photo (cover(): the easiest, ties on the licence).
-    // By photo, not by address (R2 goes off mid-run here: the Home check above).
+    // By photo, not by address (R2 off on a page: the Home check above).
     const fcv = await q.evaluate(() => {
       const srcOf = a => (/src="([^"]*)"/.exec(a) || [])[1],
         shows = (u, p) =>
@@ -2781,7 +2785,7 @@ async function uiAndAccess(b, base, errs) {
     const hc = await q.evaluate(() => {
       const p = listPhoto('f:' + decodeURIComponent(location.hash.split('/').pop())),
         h = document.querySelector('#view .hero-ph img');
-      // By photo, not by address: a photo's address moves from R2 to its iNaturalist original when R2 fails mid-run
+      // By photo, not by address: a photo's address moves from R2 to its iNaturalist original when R2 fails on a page
       // (core.js photoUrl fallback), so the same cover can show under either.
       const id = String((p && p.f) || ''),
         got = h ? h.getAttribute('src') : '',

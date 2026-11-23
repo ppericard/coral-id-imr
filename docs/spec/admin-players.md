@@ -77,14 +77,30 @@ admin. Loaded once at start (`data/points.json?v=1`, stamped at deploy). Pure lo
 `#players/list` (`renderUsers`), **one page for every subject** (`SHARED`: no prefix; `#fish/players/list` lands here):
 one page to see, sort and manage the players, names joined to the anonymous statistics by each player's anonymous id.
 
-- **Columns**: Name, **Last** (any subject: the exact time of their last answer in the answer log loaded, else the
-  player list's, written "now" under `RECENT.NOW` = 5 minutes as a green pill, "12 min ago", "3 h ago" today,
+- **Columns**: Name, **Last** (their last activity, any subject: the exact time of their last answer in the answer log
+  loaded, else the player list's, or the last visit when it is later, marked "visit" in muted type and never a "now"
+  pill; written "now" under `RECENT.NOW` = 5 minutes as a green pill, "12 min ago", "3 h ago" today,
   "yesterday 18:40" ("yest. 18:40" on phones), then the date, the full date and time on hover; `ago()` in `admin.js`;
-  the default sort, most recent first, and one tap on Last brings it back), Devices (distinct devices of their
+  the default sort, most recent first, and one tap on Last brings it back; the subjects' own Last columns stay answers
+  only), Devices (distinct devices of their
   pages-opened summaries), Groups (their groups), then a group of columns per subject (`SCOLS`: Answers, Right, Last,
   Sessions with their median length, Progress for the replayed subject, **Photos** and **Spread**). Every column title
   sorts (`UCOLS`, `SF.us` / `SF.ud`); "you" marks the synced name; a player hidden from the leaderboard has a greyed name
   (muted, italic, "hidden from the leaderboard" in its title).
+- **Use outside the quiz counts as activity** (REE-237; Pierre, 2026-11-23 16:33 Manila: «Définitivement», admin
+  only, nothing changes for players): a player who opens the app without answering (say only Identify › Key) is active,
+  not inactive. The page summaries of the sheet's Pages tab ([sync.md](sync.md#pages-opened); no sheet change: the admin
+  already reads them, `loadPages`) give each player's last visit, visits, days and time on screen, and the pages with
+  most time (`useOf`, `useBy`, between `// lastuse: begin` and `end` in `admin.js`, tested in `tests/lastuse.test.js`; a
+  summary with no page opened and no second on screen is no visit). **Last** and the **Active 7 d** tile take the
+  later of the last answer and the last visit (`activeAt`); the Last cell marks a visit; a player's bar says "App: N
+  visits · time on screen · the three pages with most time" (a page in words, `Identify › Key`, another subject's
+  with its name after, `useLabel`); a Journey with no answer shows their Visits, time On screen, Days and Last visit,
+  and a Pages opened table instead of the bare "No answers yet." (`admin-journey.js`). Until the Pages tab is read
+  (`pagesFresh`, drawn once more when it arrives) or when it cannot be (no token, a script too old, offline) the list
+  is answers only, as before. Not covered: Activity's recent sessions and its Activity over time stay answers (who
+  plays); a device that never signed in and never answered is on Players › Visits ("Never answered"), not in Not signed
+  in. The demo's Mio Demo is signed in, has never answered and only reads the Key (`admin-demo.js`).
 - **Photos and Spread**, in the subject of the admin's switch: `ex` of `Code.gs` `users_`, computed by `exposure_` with
   `core.js` `exposureOf` over that subject's rows (`subjRows`) against its game photos per unit grouped by colony
   (`pools_`, `core.js` `unitPool` over the site's files `SUBJECTS` `pool` names: `slots` = `data.json` + `curation.json`
@@ -96,7 +112,8 @@ one page to see, sort and manage the players, names joined to the anonymous stat
   built in `app.js` `treeGenera`, are not in the pool.
 - **Progress and Learned are the full replay** (`progOf` in `admin.js`): the admin shows the values the player will
   have, not the stale copy of a player who has not reopened the app. The player list carries each player's replay
-  computed by the sheet once (`Code.gs` `replayedAll_`, `rp` = [progress %, learned, the saved copy's %] over the slate,
+  computed by the sheet once (`Code.gs` `replayedAll_`, `rp` = [progress %, learned, the saved copy's %]: the two % over
+  the corals' one scale, `scale_`, the bonus genera included as the app's header, rule L6; learned over the slate;
   the replay record reused from the Replayed tab while the player's rows, reset and first-launch answer are the same), so
   the list reads no saved copy; a player the sheet gave no `rp` is replayed here (`core.js` `replayProgress` over their
   answers in the log with today's rules, the sheet's photo memory offsets and pooled confusions from `?stats=1`, the

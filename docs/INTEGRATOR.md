@@ -11,7 +11,8 @@ Recover the active discussion and any stop from STATUS. Check [Linear](#linear) 
 permitted work and decisions or blockers. Read the selected issue's recent comments and relevant linked evidence
 before choosing a next action. At session start and each morning, read Reports and Events since the last check
 and summarize new items for Pierre with real names under Rule 0. Check Scheduled issues at session start.
-If access is missing, record what remains unchecked.
+If access is missing, record what remains unchecked. If the Linear tools are missing, say so to Pierre at once: the
+session cannot resume without them.
 On Pierre's confirmed first message after 04:00 Manila, lead with the night report from `python3 tools/night.py` in
 French if the conversation or handoff confirms it has yet to be sent. A new session or a technical notification
 does not establish either fact. The handoff's evidence is the "Night report" line of STATUS (the Manila day of the
@@ -410,7 +411,8 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 | Conversation | The integrator's chat: never the only copy of anything another collaborator needs |
 
 - **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
-  opens, Done at merge; a new issue (label Idea) for every idea discussed and not built; an issue's description holds
+  opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
+  2026-11-23, REE-219); a new issue (label Idea) for every idea discussed and not built; an issue's description holds
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
   detail in its collapsible "Agent notes". Todo means ready: permitted by a decision of his or the integrator's
   mandate, never approved by the status alone.

@@ -5,19 +5,29 @@
 // review first, mix-ups). Signing in, backup and reset live in the header and ⚙, never around the board.
 // A subject with a global score (core.js SUBJECTS score) shows its parts under the name, from the ring's own computation
 // (model.js headScore, core.js treeScore): families, species by common name, species by scientific name.
+const barsRow = (rows, label) =>
+  `<div class="pbars" role="list" aria-label="${label}">${rows
+    .map(([t, x]) => {
+      const v = Math.round(100 * x);
+      return `<span role="listitem" title="${t}: ${v}%"><small>${t}</small><span class="bar"><span style="width:${v}%"></span></span><b>${v}%</b></span>`;
+    })
+    .join('')}</div>`;
 const scoreBars = H =>
   H
-    ? `<div class="pbars" role="list" aria-label="Your progress in parts">${[
-        ['Families', H.entries],
-        ['Common names', H.common],
-        ['Scientific names', H.S]
-      ]
-        .map(([t, x]) => {
-          const v = Math.round(100 * x);
-          return `<span role="listitem" title="${t}: ${v}%"><small>${t}</small><span class="bar"><span style="width:${v}%"></span></span><b>${v}%</b></span>`;
-        })
-        .join('')}</div>`
+    ? barsRow(
+        [
+          ['Families', H.entries],
+          ['Common names', H.common],
+          ['Scientific names', H.S]
+        ],
+        'Your progress in parts'
+      )
     : '';
+// The slate's own % beside the global one, for a subject whose global progress counts more units than its slate
+// (app.js UNITS scale and slateName: the corals' IMR slate score, rule L6); null for any other subject.
+const slatePct = (U = UNITS[SUBJ.id]) => (U.scale && U.slateName ? progPct(slateGenera()) : null);
+const slateBar = (U = UNITS[SUBJ.id], v = slatePct(U)) =>
+  v == null ? '' : barsRow([[esc(U.slateName), v / 100]], `Your ${esc(U.slateName)} score`);
 // The player's card at the top of My progress: the overall ring and %, the name, rank and Elo (the rank once the
 // leaderboard loads), units learned or met, achievements with the last three. The Elo is always this device's own level
 // (P[LEVEL], eloLine), never the board's copy, so it does not jump when the board arrives (docs/LEARNING.md "One player
@@ -40,7 +50,7 @@ function badge(ring, pct, sub) {
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
             .join('')}</a>`
         : ''
-    }</span>${scoreBars(headScore())}</div></div>`;
+    }</span>${scoreBars(headScore()) || slateBar()}</div></div>`;
 }
 // The What I learn card (docs/FISH_PATH.md "Which names a player learns"; Pierre, 2026-11-18, Q396, Q400 D, Q404 A): the
 // subject's names rows (app.js learnRows), each on or off, under its base level (always on). Right under the player's
@@ -256,12 +266,13 @@ function quizBoard() {
       ? UNITS[SUBJ.id].progHelp()
       : `<p class="lede"><b>To learn a genus</b>, keep getting it right: its % is the share of all its photos, easy to hard, you would name alone and typed, as far as your answers on it have shown. Hard photos and typed answers prove the most; a right pick among 2 easy choices proves little. It fills up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
-  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
+  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. Their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
+  <p class="lede"><b>Your progress</b> (the ring and the header) is over every genus of the games, the slate's and the bonus genera, whether you have added them or not. <b>IMR slate</b>, under your name, is the same over the IMR slate's genera alone.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen (for a player new to corals, a <b>?</b> in place of a genus not met yet: it shows once it opens); the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
   <p class="lede"><b>Your tricky pairs</b>: the pairs of ${SUBJ.many} you mix up most, from your own answers alone, once you have mixed a pair up ${TRICKY.MIN} times ("3 of 5": mixed up 3 times in 5 questions that offered both). A pair you now tell apart sinks below the others. ${SUBJ.pages.includes('cmp') ? 'Tap one to see the two side by side. ' : ''}Ask yourself what tells the two apart for you.</p>
-  <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}${learnCard()}<div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, headPct(scaleUnits()), lvSummary(list))}${learnCard()}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
@@ -417,8 +428,9 @@ const boardTiles = (list, BA, SECT) => [...list, ...BA, ...SECT.flatMap(x => x.L
 // Header progress pill: always in view; the page itself is #progress.
 function showProg() {
   if (!DATA) return;
-  const n = slateGenera();
-  const pt = `${headPct(n)}%`;
+  const n = slateGenera(),
+    sp = slatePct();
+  const pt = `${headPct(scaleUnits())}%`;
   document.getElementById('progn').textContent = pt;
   const p2 = document.getElementById('progn2');
   if (p2) p2.textContent = pt;
@@ -426,7 +438,7 @@ function showProg() {
   const pill = document.getElementById('prog'),
     out = !!SYNC_URL && !SYNC;
   pill.querySelector('.pl').textContent = 'Progress';
-  pill.style.setProperty('--pp', headPct(n));
+  pill.style.setProperty('--pp', headPct(scaleUnits()));
   // Status only: the pill shows progress and nothing else; saving trouble is the "Not saved" button's to say.
   pill.title = `${
     SYNC
@@ -434,7 +446,7 @@ function showProg() {
       : out
         ? 'Your progress (not saved online yet: Sign in, top right)'
         : `Your progress per ${SUBJ.one}`
-  }. ${pt}, ${unlockText(n)}.`; // the count in words: the header has no room for it (one line at 1024 px, rule U3)
+  }. ${pt}${sp == null ? '' : ` (${UNITS[SUBJ.id].slateName}: ${sp}%)`}, ${unlockText(n)}.`; // the count in words: the header has no room for it (one line at 1024 px, rule U3)
   // A filled "Sign in" button in the header on every page while signed out; once signed in it goes and the account is a
   // quiet line at the top of ⚙. Trouble saving brings it back as "Not saved", which opens ⚙ where the problem is explained.
   const sb = document.getElementById('signb'),
@@ -770,7 +782,7 @@ const achBoth = (sets, names) => {
 // (core.js FISH_ACH): met, at Advanced or above and learned in the core; at Advanced or above in each circle; units at
 // Open Water or above (sets) and at Advanced or above (setsAdv) in each set. pct: the subject's global score when it has
 // one (core.js SUBJECTS score, treeScore over UNITS tree), from the device's progress whatever the sheet's version, else
-// the headline %.
+// the headline % (over app.js scaleUnits: the corals' 45 genera, rule L6).
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
     st = L.map(lvStep),
@@ -792,7 +804,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     met: st.filter(x => x >= 1).length,
     q: [2, 3, 4].map(k => st.filter(x => x >= k).length),
     learned: st.filter(x => x >= 5).length,
-    pct: T ? treeScore(P, T, SUBJ.score).pct : headPct(L),
+    pct: T ? treeScore(P, T, SUBJ.score).pct : headPct(scaleUnits()),
     streak: A._best || 0,
     duel: L.some(n => (P[n] || {}).du),
     cor: !!A._cor,
@@ -1447,7 +1459,7 @@ function recalcNotice(visit = false) {
   cardShow({
     kind: k,
     cls: 'recalc',
-    visual: k === 'update' ? cardRing(headPct()) : '',
+    visual: k === 'update' ? cardRing(headPct(scaleUnits())) : '',
     kick: due[0].k || 'Update',
     title: due[0].t,
     body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),

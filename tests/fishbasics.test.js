@@ -37,6 +37,7 @@ function load() {
       key: {short: 'Allen et al. 2015', cite: 'Allen, G. (2015). Reef Fish Identification'}
     },
     slateGenera: () => Object.keys(GXS),
+    scaleUnits: () => Object.keys(GXS),
     GX: n => GXS[n],
     cover: g => ({f: 'p-' + g.name, ar: 1.5, a: 'A. Diver', o: 'https://www.inaturalist.org/observations/1', t: 'x'}),
     groupHue: n => n * 10,
@@ -208,6 +209,7 @@ test('Fish basics: achSnap reads the subject’s own feat, so fbasics comes with
         ELO_MIN: 200,
         GX: () => ({}),
         slateGenera: () => [],
+        scaleUnits: () => [],
         lvStep: () => 0,
         shownGroup: () => '',
         bonusList: () => [],

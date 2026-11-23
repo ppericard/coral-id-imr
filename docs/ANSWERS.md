@@ -1881,3 +1881,37 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sert à rien de me le répéter, de le faire alors que c'est dans plus de 2 mois.» A working-method request, not a
   numbered question. Applied: INTEGRATOR.md "Linear" (label Scheduled);
   decisions/2026-11-22-scheduled-tasks.md; Linear label Scheduled on REE-75 and REE-73.
+
+## 2026-11-23
+
+- **16:34, the refill aimed at easy photos.** To "launch REE-198, the easy-photo refill for families with 1 to 3
+  species" (for species short of easy adult photos only, iNaturalist's most-faved observations first, still Research
+  Grade and judged on the rubric, the neutral order of Q284 everywhere else): «oui, définitivement». Amends Q284's
+  "no votes order" for those species only. Applied: tools/fetch_fish.py `easy_need`, `select` faves;
+  spec/fish-photos.md "Candidates from iNaturalist" and "Automatic refill" (REE-198).
+- **16:05, REE-234 (old Apps Script versions).** Pierre deleted the old Apps Script versions; v220 was deployed at
+  16:19:56. Applied: no doc change (Linear REE-234).
+- **16:18, Q453 (REE-197, #1391).** Not answered as asked. «je préfère beaucoup plus les solutions simples et continues
+  que des choses avec des catégories ou des bascules, des interrupteurs.» #1391 is held until the ease review (REE-85)
+  is done. Applied: Linear REE-197 and REE-85.
+- **16:23, REE-85 (how fish easy and hard are computed).** A request: «j'aimerais bien qu'on revoie en fait comment sont
+  calculés faciles et difficiles par rapport aux différents critères». Applied: reviews/2026-11-23-fish-ease-vs-answers.md;
+  Linear REE-85.
+- **16:33, REE-237 (Key use as activity in the admin).** «Définitivement» to counting Key use as activity in the admin.
+  Applied: Linear REE-237.
+- **16:34, REE-198 (refill for species short of easy adults).** «oui, définitivement» to the most-faved-first refill for
+  the species short of easy adults. Applied: Linear REE-198.
+- **16:37, REE-219 (who sets Done).** «Fait». Linear's "pull request merged" automation no longer sets Done; the
+  integrator sets Done when the completion evidence exists. Applied: INTEGRATOR.md "Linear" (REE-219).
+- **16:38, REE-227 (the machine slot).** «ok» to the wording that a heavy run takes the slot for one command and
+  releases it when that command ends, never a script that keeps a slot between runs. Applied: rules/ship.md W24
+  (REE-227).
+- **16:40, REE-71 (what simulations decide).** «ça me parait raisonnable comme compromis. Ok pour implémenter cette
+  proposition», on the scope of reviews/2026-11-21-simulation-scope.md; his 2026-11-21 caution («il faut pas non plus
+  l'inverser complètement et le transformer plus qu'en garde-fou») is kept. Applied: rules/learning.md L11 (REE-71).
+- **16:40, Q455-Q458 (the REE-85 study).** Asked, not answered: weight 0.5 to 0.2-0.25; the typical-look exception;
+  ease within a family only; caps softened, cap-2 first. Applied: no doc change (open in Linear REE-85).
+- **About › Photos marginal rewrite (REE-51, #1409), Q454.** «je suis d'accord pour avoir une réécriture, même si c'est
+  une réécriture à la marge, si ça permet justement effectivement de nettoyer tout ça proprement … on peut déjà
+  intégrer effectivement les premières modifications à la marge»; the simple credits page: «dans un deuxième temps, mais
+  pas maintenant», once the IMR lecture photos are out. Applied: Linear REE-51.

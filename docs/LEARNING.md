@@ -633,8 +633,12 @@ keep their choice. The admin's player journey reads them.
 Millepora (fire coral, not a hard coral but on the IMR benthic slate: `core.js` `BENTHIC`) counts like a slate genus in
 the games and the progress. The bonus genera (`core.js` `BONUS`: Coral Finder genera common at Dauin with a look-alike
 on the slate) are opt-in: offered once, by a card, when every slate genus has been asked; ⚙ Bonus genera turns them on
-or off any time (off keeps their progress). Once on they open like the others, one at a time, and never count in the
-progress (rule L6).
+or off any time (off keeps their progress). Once on they open like the others, one at a time. They count in the global
+progress (rule L6, Q445 A): the headline % is the mean of the bars of every game genus (`core.js` `gameOf`, `app.js`
+`UNITS` `scale`, `scaleUnits`), the slate's and the bonus genera's, for every player, opted in or not, so a player who
+leaves them off tops out below 100%; the mean over the slate alone stays as the IMR slate score (`UNITS` `slateName`,
+`progress.js` `slatePct`). No genus's bar moves with it: rules version 14 only makes every device take the replay once.
+The simulations' shown % (`tools/learnsim.js` `shownPct`, `tools/ratedworld.js`) stays over the slate.
 
 ### The domain-score bar
 
@@ -783,14 +787,24 @@ pool of 30 does.
 
 ### Rarely under ease 4 before Open Water
 
-Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` (or under its `RARE.FEW` easiest
-observations when it has fewer) make at most `RARE.SHARE` of the photos drawn, whatever their number (`model.js`
-`rareCap`, applied last, to the choice of the observation and of its photo): no wall, they still come, rarely. The
-`RARE.FEW` easiest are observations the draw can show at full weight, each by its easiest such photo: a variant its unit
-still holds back and a second photo of one observation do not count (REE-189:
-docs/decisions/2026-11-21-rare-few-by-observation.md). `model.js` `RARE = {E: 4, FEW: 3, SHARE: 0.1}`. Only on units of
-the subject's own rank (the fish families, the sea slug genera: `model.js` `rareOn`); photos with no judged ease (every
-coral photo) are never capped.
+Until a unit reaches Open Water (`LV_AT[0]`), its photos judged under `RARE.E` make at most `RARE.SHARE` of the photos
+drawn, whatever their number (`model.js` `rareCap`, applied last, to the choice of the observation and of its photo):
+no wall, they still come, rarely. `model.js` `RARE = {E: 4, FEW: 12, SHARE: 0.1}`. Only on units of the subject's own
+rank (the fish families, the sea slug genera: `model.js` `rareOn`); photos with no judged ease (every coral photo) are
+never capped.
+
+- **The floor of the rotation** (`model.js` `rareHard`). A unit with fewer than `RARE.FEW` observations at ease 4 or
+  more rotates its `RARE.FEW` easiest observations' worth instead. The observations at the last ease this reaches share
+  what is left of the `RARE.FEW` equally: each counts easy for that share and hard for the rest; under that ease, hard.
+  - So the rotation holds max(`RARE.FEW`, the easy observations) observations' worth of weight, or the whole unit
+    when it is smaller. An easy photo added takes one share from those at the last ease, never all of them.
+  - Example: 2 easy adults and 20 observations at ease 3: the 20 share the 10 places left, each half easy.
+  - Why (REE-197: docs/decisions/2026-11-21-rare-few-floor.md): the former fallback, a bar on the 3rd easiest that
+    rotated every observation at its ease, took a family from its 12 observations at ease 3 or more to its 3 easy
+    adults when a third was judged.
+- **Observations, not photos** (REE-189: docs/decisions/2026-11-21-rare-few-by-observation.md). The easiest are
+  observations the draw can show at full weight, each by its easiest such photo. A variant its unit still holds back
+  and a second photo of one observation do not count.
 
 ### Juveniles and colour phases on their unit's mastery
 

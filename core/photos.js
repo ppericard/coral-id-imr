@@ -1,9 +1,10 @@
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file; docs/spec/quiz.md "Bonus genera", docs/LEARNING.md "Millepora and the bonus
-  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate, never
-  // counted in the progress. slateOf(d) = the slate as the games and the progress count it (app.js slateGenera);
-  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera; the rest of data.json "x" are
-  // Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
+  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate.
+  // slateOf(d) = the slate as the games teach it and the IMR slate score counts it (app.js slateGenera);
+  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera and the one scale the global
+  // progress counts for every coral player, opted in or not (app.js UNITS scale; rule L6); the rest of
+  // data.json "x" are Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
   // a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];

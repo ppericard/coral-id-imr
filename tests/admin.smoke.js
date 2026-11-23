@@ -9,10 +9,10 @@ const ROOT = path.join(__dirname, '..');
 // id is counted by its device; and the visits of Players › Visits: Ben and Carla reading sheets, 12 devices that never
 // answered): players, share that opened one, visits, share with one.
 const SHEETS_ALL = [
-  'Under 50 answers 22 50% 59 39%',
+  'Under 50 answers 23 48% 62 37%',
   '50-300 answers 6 50% 22 73%',
   'Over 300 answers 1 0% 1 0%',
-  'All 23 48% 82 48%'
+  'All 24 46% 85 46%'
 ].join(' | ');
 // The Analyses views the fish and the sea slugs do not list yet (core.js SUBJECTS admin), the one exception to "no line on
 // what is not there" on their side: Learning › Trajectories (REE-23) waits for the PR that holds core.js (rule W27); the
@@ -4546,10 +4546,53 @@ async function lazyPart(b, base, fails) {
           fails.push(`${w}px Players (${how}): ${L.filter(x => x.now).length} players "now", expected 1`);
         // 24 h times, "yest." on phones (Pierre, 2026-11-03: a narrower Last column).
         const yest = w < 600 ? /^yest\. \d\d:\d\d$/ : /^yesterday \d\d:\d\d$/;
-        if (!L.slice(1).every(x => /min ago|h ago|^\d+ \w+$|^\w+ \d+$/.test(x.txt) || yest.test(x.txt)) || L.some(x => /AM|PM/.test(x.txt)))
+        // A last activity that is a visit (REE-237) reads the same time, then "visit".
+        const tx = x => x.txt.replace(/ visit$/, '');
+        if (!L.slice(1).every(x => /min ago|h ago|^\d+ \w+$|^\w+ \d+$/.test(tx(x)) || yest.test(tx(x))) || L.some(x => /AM|PM/.test(x.txt)))
           fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
       };
       await checkLast('default sort');
+      // Use of the app outside the quiz counts as activity (REE-237; Pierre, 2026-11-23 16:33 Manila: «Définitivement»): Mio Demo,
+      // signed in, never answered, only reads the Key (admin-demo.js, 3 visits, the last a day ago): his Last is that visit,
+      // marked, with no "now" pill; Active 7 d counts him with the others; his bar names the Key; his Journey lists the pages.
+      {
+        const kai = await p
+          .$eval('.adm-urow[data-uopen="Mio Demo"]', tr => ({
+            txt: tr.cells[1].textContent.trim(),
+            t: Number((tr.cells[1].querySelector('[data-t]') || {dataset: {}}).dataset.t || 0),
+            now: !!tr.cells[1].querySelector('.adm-ago.now'),
+            answers: tr.cells[4].textContent.trim()
+          }))
+          .catch(() => null);
+        if (!kai || !/ visit$/.test(kai.txt) || kai.now || !kai.t || Date.now() - kai.t > 7 * 864e5 || kai.answers !== '–')
+          fails.push(`${w}px Players: Mio Demo (never answered, visits) is not active by his visit (${JSON.stringify(kai)})`);
+        const act = await p.evaluate(() => ({
+          kpi: Number(
+            [...document.querySelectorAll('.adm-kpis > div')]
+              .find(d => d.querySelector('span').textContent === 'Active 7 d')
+              .querySelector('b').textContent
+          ),
+          rows: [...document.querySelectorAll('.adm-urow')].filter(tr => {
+            const s = tr.cells[1].querySelector('[data-t]');
+            return s && Date.now() - Number(s.dataset.t) < 7 * 864e5;
+          }).length
+        }));
+        if (act.kpi !== act.rows) fails.push(`${w}px Players: Active 7 d ${act.kpi}, the rows active in 7 days ${act.rows}`);
+        await p.click('.adm-urow[data-uopen="Mio Demo"]');
+        await settle();
+        const bar = await p.$eval('.adm-udet', d => d.innerText).catch(() => '');
+        if (!/App: 3 visits · \d+ min on screen · Identify › Key \d+ min/.test(bar))
+          fails.push(`${w}px Players: Mio Demo's bar does not name the Key (${JSON.stringify(bar)})`);
+        await p.click('.adm-urow[data-uopen="Mio Demo"]');
+        await settle();
+        await go('players/list/journey/Mio Demo');
+        const kj = await text();
+        if (!/No answers yet\./.test(kj) || !/3\s*Visits/i.test(kj) || !/Pages opened[\s\S]*Identify › Key/i.test(kj) || /Loading/.test(kj))
+          fails.push(`${w}px Journey: Mio Demo's visits not shown (${JSON.stringify(kj.slice(0, 300))})`);
+        if (await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth))
+          fails.push(`${w}px Journey: Mio Demo wider than the screen`);
+        await go('players/list');
+      }
       // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
       // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
       // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
@@ -4608,7 +4651,8 @@ async function lazyPart(b, base, fails) {
         // Names joined with the answer log by anonymous id: every demo player has answers in the corals' group (the fifth
         // column); sorting by name puts Ana first, reversed last.
         const lv = await p.$$eval('.adm-urow td:nth-child(5)', L => L.map(td => td.textContent.trim()));
-        if (!lv.length || lv.some(x => !/^\d+$/.test(x))) fails.push(`${w}px Players: answers missing (${lv.join(' ')})`);
+        // ... but Mio Demo (REE-237), who only reads the Key: no answer, "–".
+        if (!lv.length || lv.filter(x => !/^\d+$/.test(x)).join() !== '–') fails.push(`${w}px Players: answers missing (${lv.join(' ')})`);
         if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
         const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
         await p.click('[data-usort="name"]');
@@ -8596,7 +8640,7 @@ async function lazyPart(b, base, fails) {
       // The same numbers whether or not the players' part ran before this (a whole run, or SMOKE_PART=main alone as on CI):
       // its merge of "mara demo2" and delete of "Test Demo" touch players whose visits all include a game, so they are not
       // among the 17 visitors without one, and none of those visitors loses its answers (checked on a whole run at 1280).
-      if (v0.kpis !== '46of 75Visits without a game | 17Visitors | 13Never answered | 8 minMedian visit | 54%On a phone')
+      if (v0.kpis !== '49of 78Visits without a game | 18Visitors | 14Never answered | 8 minMedian visit | 51%On a phone')
         fails.push(`${w}px Visits: numbers ${v0.kpis}`);
       if (v0.rows !== 12 || v0.open || v0.legend || v0.stack) fails.push(`${w}px Visits: ${JSON.stringify({...v0, pages: ''})}`);
       if (!/Coral ID Key/.test(v0.pages) || !/Tools › anatomy/.test(v0.pages) || /Quiz|Duels/.test(v0.pages))
@@ -8615,24 +8659,24 @@ async function lazyPart(b, base, fails) {
       if (
         scr !==
         JSON.stringify({
-          scr: '16 devices, 90 d',
+          scr: '17 devices, 90 d',
           bands: [
             ['≤360', '2'],
             ['361-390', '2'],
             ['391-414', '6'],
             ['415-600', '1'],
             ['Tablet', '2'],
-            ['Desktop', '3']
+            ['Desktop', '4']
           ],
           sizes: [
             '410 × 780 2.6 4',
             '390 × 660 3 3',
             '360 × 660 3 2',
+            '1440 × 780 2 2',
             '380 × 740 2.8 1',
             '430 × 750 3 1',
             '800 × 1180 2 1',
-            '820 × 1100 2 1',
-            '1440 × 780 2 1'
+            '820 × 1100 2 1'
           ]
         })
       )
@@ -8646,7 +8690,7 @@ async function lazyPart(b, base, fails) {
           return vis();
         };
         const va = await click('vis', 'all');
-        if (!/^75Visits \| 23Visitors/.test(va.kpis) || !va.legend || !va.stack || !/Quiz/.test(va.pages))
+        if (!/^78Visits \| 24Visitors/.test(va.kpis) || !va.legend || !va.stack || !/Quiz/.test(va.pages))
           fails.push(`${w}px Visits, All visits: ${va.kpis} legend ${va.legend} stacked ${va.stack}`);
         const vn = await click('who', 'never');
         // Only those who never answered: every visitor is one.
@@ -8655,7 +8699,7 @@ async function lazyPart(b, base, fails) {
         if (!/^\d+Visits \| [1-9]\d*Visitors/.test(vt.kpis) || !vt.dev.every(t => /^Tablet/.test(t)))
           fails.push(`${w}px Visits, Tablet: ${vt.kpis} ${JSON.stringify(vt.dev)}`);
         // Screens are not filtered: the same devices under any filter.
-        if (vt.scr !== '16 devices, 90 d') fails.push(`${w}px Visits, Tablet: screens filtered ${vt.scr}`);
+        if (vt.scr !== '17 devices, 90 d') fails.push(`${w}px Visits, Tablet: screens filtered ${vt.scr}`);
         await click('dev', 'all');
         await click('who', 'all');
         const vw = await click('by', 'week');
@@ -8668,7 +8712,7 @@ async function lazyPart(b, base, fails) {
         await p.click('[data-vall]');
         await settle();
         const vs = await vis();
-        if (vs.rows !== 17) fails.push(`${w}px Visits: Show all lists ${vs.rows} visitors, not 17`);
+        if (vs.rows !== 18) fails.push(`${w}px Visits: Show all lists ${vs.rows} visitors, not 18`);
         // A visitor's name opens their Journey.
         const jl = await p.$eval('[data-visits="visitors"] a[href^="#players/list/"]', a => a.getAttribute('href')).catch(() => '');
         if (!jl) fails.push(`${w}px Visits: no Journey link`);
@@ -8695,7 +8739,7 @@ async function lazyPart(b, base, fails) {
           fails.push(`${w}px Visits, Fish: Journey links ${JSON.stringify(fl)}`);
         const vc = await click('subj', 'coral');
         if (
-          !/^71Visits \| 21Visitors/.test(vc.kpis) ||
+          !/^74Visits \| 22Visitors/.test(vc.kpis) ||
           vc.cards !== 'time pages key:coral sheets first device screens visitors' ||
           /Families/.test(vc.pages)
         )

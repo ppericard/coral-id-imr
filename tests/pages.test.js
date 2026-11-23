@@ -183,6 +183,87 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
   assert.ok(!/secret UA/.test(JSON.stringify(sent)), 'no user agent in the summary');
 });
 
+// Leaving the page (sync.js: visibilitychange hidden, and pagehide for a page closed or reloaded without a hidden event
+// first): the summary is queued once, whichever events come, and coming back adds only what came after.
+test('pagehide queues the summary once: alone, after the hidden event, and after coming back', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    block = require('./block.js'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8');
+  let now = 1e6;
+  const sent = [],
+    on = {},
+    ctx = {
+      Date: {now: () => now},
+      window: {innerWidth: 390, innerHeight: 800, devicePixelRatio: 1, addEventListener: (t, f) => (on[t] = f)},
+      document: {visibilityState: 'visible', addEventListener: (t, f) => (on[t] = f)},
+      viewportOf: C.viewportOf,
+      pagesTake: C.pagesTake,
+      pagesResume: C.pagesResume,
+      PV: C.pagesNew(),
+      PVI: 'visit0001',
+      pvOwner: () => 'a:dev0000001',
+      ev: (k, o) => sent.push(plain(o)),
+      VIEWPORT_SHEET: 1e9,
+      sheetV: () => 0,
+      loadSend: () => {},
+      sendAnon: () => {},
+      sendEvents: () => {}
+    };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(src, 'const viewportOn = ', '\nfunction pagesSend() {', {file: 'sync.js'}) +
+      block(src, 'function pagesSend() {', '\n}\n', {through: 1, file: 'sync.js'}) +
+      block(
+        src,
+        "document.addEventListener('visibilitychange', () => {\n  if (document.visibilityState === 'hidden') {\n    loadSend();",
+        '// Signing in:',
+        {
+          file: 'sync.js'
+        }
+      ),
+    ctx
+  );
+  const hide = () => {
+    ctx.document.visibilityState = 'hidden';
+    on.visibilitychange();
+  };
+  // A browser that gives only pagehide: the summary is queued.
+  C.pagesOpen(ctx.PV, 'quiz', now);
+  now += 7000;
+  on.pagehide();
+  assert.deepStrictEqual(
+    sent.map(x => x.r),
+    [{'practice.quiz': [1, 7]}]
+  );
+  on.pagehide();
+  assert.strictEqual(sent.length, 1, 'a second pagehide adds nothing');
+  // Hidden, then pagehide (a reload, a close): queued once.
+  sent.length = 0;
+  ctx.document.visibilityState = 'visible';
+  on.visibilitychange();
+  C.pagesOpen(ctx.PV, 'genera', now);
+  now += 4000;
+  hide();
+  on.pagehide();
+  assert.deepStrictEqual(
+    sent.map(x => x.r),
+    [{'learn.genera': [1, 4]}],
+    'hidden then pagehide: one summary'
+  );
+  // Back in view for 3 s, then pagehide alone: only those 3 s, the page still in view counted 0 times.
+  ctx.document.visibilityState = 'visible';
+  on.visibilitychange();
+  now += 3000;
+  on.pagehide();
+  assert.deepStrictEqual(
+    sent.map(x => x.r),
+    [{'learn.genera': [1, 4]}, {'learn.genera': [0, 3]}]
+  );
+  assert.ok(sent.every(x => x.vi === 'visit0001'));
+});
+
 // The screen of a summary (core.js VIEWPORT, viewportOf): coarse, so it adds no fingerprint.
 test('viewportOf: the CSS viewport to 10 px, the pixel ratio to one decimal, the orientation, the band of the exact short side', () => {
   const V = C.viewportOf;

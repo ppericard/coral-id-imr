@@ -3497,6 +3497,13 @@ td.cov-c .cov-off {
 .adm-uex {
   color: var(--muted);
 }
+/* Last activity that is a visit, not an answer (admin.js lastCell, REE-237), and what a player used outside the answers (seenHtml). */
+.adm-seen,
+.adm-tbl small.adm-seen,
+.adm-udet .adm-useen small {
+  color: var(--muted);
+  font-weight: 400;
+}
 .adm-urow {
   cursor: pointer;
 }
