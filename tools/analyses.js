@@ -82,6 +82,39 @@ const planText = (answers, p, subject = C.replaySubject()) =>
 // older script: an upper bound, so the run reads the whole log to count the subject's, below).
 const headCount = (head, subject) => (head.counts && typeof head.counts[subject] === 'number' ? head.counts[subject] : Number(head.answers) || 0);
 
+// One POST to the sync script, answered with its JSON reply. Apps Script answers a POST with a redirect to its reply
+// (fetch follows it as a GET, as the admin page does). The compute between two calls takes minutes, long enough for the
+// runner's network to drop an idle keep-alive connection without a word (REE-235: the put got a reset, and a failed
+// one never reached the script): so no connection is kept (`Connection: close`), and a request that fails at the network
+// (the fetch or the read of the reply rejects) is tried once more after a pause, on a new connection. Every call is safe
+// to repeat (the reads change nothing; analysesPut replaces the whole report). A reply that is not JSON, or an error
+// JSON the script answers by name, is no network failure: not tried again. A failure returns {error} naming its cause
+// (the network error's code, else its message), so the log says why. o: {fetch, wait: ms before the second try}.
+async function sheetPost(url, body, o = {}) {
+  const f = o.fetch || fetch,
+    wait = o.wait != null ? o.wait : 1500,
+    text = JSON.stringify(body);
+  let why = '';
+  for (let i = 0; i < 2; i++) {
+    if (i) await new Promise(r => setTimeout(r, wait));
+    let raw, status;
+    try {
+      const r = await f(url, {method: 'POST', body: text, headers: {connection: 'close'}});
+      status = r.status;
+      raw = await r.text();
+    } catch (e) {
+      why = `network: ${(e && e.cause && (e.cause.code || e.cause.message)) || (e && e.code) || (e && e.message) || 'unknown'}`;
+      continue;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      return {error: `reply is not JSON (HTTP ${status})`};
+    }
+  }
+  return {error: `no reply, ${why}, after a second try`};
+}
+
 // io: {post(body) -> reply, log(text)}; o: {force, B, Bh, subject: the analysed subject, the replayed one (the corals) by
 // default}. Returns what happened, in a word.
 async function sheetRun(io, token, o = {}) {
@@ -184,10 +217,7 @@ if (require.main === module) {
       const url = syncUrl();
       const io = {
         // Apps Script answers a POST with a redirect to its reply (fetch follows it as a GET, as the admin page does).
-        post: b =>
-          fetch(url, {method: 'POST', body: JSON.stringify(b)})
-            .then(r => r.json())
-            .catch(() => null),
+        post: b => sheetPost(url, b),
         log
       };
       const r = await sheetRunAll(io, token, {force: argv.includes('--force'), B, Bh});
@@ -209,4 +239,4 @@ if (require.main === module) {
     log(`${rep.answers} answers, ${rep.M.length} milestones${out ? ', written to ' + out : ''}.`);
   })();
 }
-module.exports = {sheetRun, sheetRunAll, subjects, metaOf, plan, lastOf, planText, headCount};
+module.exports = {sheetPost, sheetRun, sheetRunAll, subjects, metaOf, plan, lastOf, planText, headCount};
