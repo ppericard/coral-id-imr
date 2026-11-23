@@ -779,8 +779,10 @@ Queuing the summary drops the copy (`pvDone`) and gives the next tally a new id.
 for `PV_STALE` (2 min) is queued as it is, then removed, by the next page, at load and at each beat (`pvRecover`), which
 notes its event id in `reefid-pv-done` (the last 20): a page still open in another window writes its copy every 15 s,
 so it is never taken for a killed one. A page whose current event id is in that list (`pvClaimed`: queued by another
-page, as after a sleep) starts its tally again under a new id instead of queuing it, so an old note never matches a
-later tally, and a copy pushed out by the `PV_KEEP` limit is simply written again. The sheet also keeps an id once
+page, as after a sleep) starts its tally again under a new id, so an old note never matches a later tally, and a copy
+pushed out by the `PV_KEEP` limit is simply written again. That reconciliation happens in one place, `pvSettle`, called
+before anything else touches the tally: `pagesRoute` before the page opens, `pvKeep`, `pagesSend` (which then queues
+only what came after). The sheet also keeps an id once
 (`events_` skips an id already in the tab). Sign-in moves the anonymous copies to the account
 (`pagesOwn`), sign-out drops them. Same event, same fields: the sheet script takes it as any summary (rule D4).
 

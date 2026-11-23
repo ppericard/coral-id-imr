@@ -1648,15 +1648,17 @@ function pagesRoute(h) {
       localStorage.removeItem(PVLINK);
     } catch (e) {}
   }
-  const s = genus && P[genus];
-  pagesOpen(PV, h, Date.now(), {
+  const s = genus && P[genus],
+    now = Date.now();
+  pvSettle(now); // a tally queued by another page is settled before this opening joins the new one
+  pagesOpen(PV, h, now, {
     genus,
     from,
     asked: s && (s.ok || 0) + (s.ko || 0) > 0,
     hidden: document.visibilityState === 'hidden',
     pre: SUBJ.pv // a fish page is named fish.<page> (core.js pageName)
   });
-  pvKeep();
+  pvKeep(now);
 }
 // The screen it was sent from, rounded (core.js VIEWPORT, viewportOf): only once the sheet script keeps it (rule D4).
 const VIEWPORT_SHEET = 177;
@@ -1679,15 +1681,15 @@ const pvFields = S => ({
   ...S,
   o: pvOwner()
 });
-// The app left: the summary queued, its kept copy dropped (pvDone). Not when another page queued that copy (pvClaimed):
-// the tally starts again instead, so it is never counted twice.
+// The app left: the summary queued, its kept copy dropped (pvDone). A tally another page queued is settled first
+// (pvSettle): only what came after it is queued.
 function pagesSend() {
+  const now = Date.now();
+  pvSettle(now);
   if (typeof fbEnd === 'function') fbEnd(false); // the sheet still on screen: its seconds so far go in this summary
-  const lost = pvClaimed(),
-    S = pagesTake(PV, Date.now()),
-    f = S && !lost ? pvFields(S) : null;
+  const S = pagesTake(PV, now);
+  if (S) ev('pages', pvFields(S));
   pvDone();
-  if (f) ev('pages', f);
 }
 // The player active now, as a summary's owner (core.js pagesOwner): no anonymous id is made for a signed-in player.
 const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesOwner(null, anonId()));
@@ -1730,14 +1732,18 @@ function pvPeek(now) {
   const cp = O => Object.keys(O).reduce((o, k) => ((o[k] = O[k].slice()), o), Object.create(null));
   return pagesTake({r: cp(PV.r), g: cp(PV.g), cur: PV.cur, at: PV.at, fb: (PV.fb || [0, 0, 0, 0]).slice()}, now);
 }
+// The one place a claimed tally is reconciled, before anything else touches the tally (pagesRoute before a page opens,
+// pvKeep, pagesSend): queued by another page, what it holds is in that summary, so it starts again under a new id; the
+// page in view goes on counting.
+function pvSettle(now) {
+  if (!pvClaimed()) return;
+  const at = PV.at;
+  pagesTake(PV, now);
+  if (at) pagesResume(PV, now);
+  pvDone();
+}
 function pvKeep(now = Date.now()) {
-  if (pvClaimed()) {
-    // queued by another page: the tally so far is in it; the page in view goes on counting
-    const at = PV.at;
-    pagesTake(PV, now);
-    if (at) pagesResume(PV, now);
-    return pvDone();
-  }
+  pvSettle(now);
   // The answer's feedback sheet still on screen: its seconds so far go in the tally (counted once, quiz.js fbEnd).
   if (typeof fbEnd === 'function') fbEnd(false);
   const S = pvPeek(now),

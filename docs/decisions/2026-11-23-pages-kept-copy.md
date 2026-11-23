@@ -25,7 +25,9 @@ told by the summary's event id alone. Every tally has an event id, carried by it
 a new tally (after the summary is queued, or after a claim) always gets a new one. The page that recovers a copy notes
 its event id; a page treats its tally as claimed only when its current event id is noted, then starts a new tally under
 a new id. An old note can never match a later tally, and a missing copy means nothing by itself, so the earlier cases
-(the copy gone, the storage refused, the eviction) need no logic of their own. The sheet keeps an id once as well.
+(the copy gone, the storage refused, the eviction) need no logic of their own. The claim is reconciled in one place,
+`pvSettle`, before anything else touches the tally (a page opening, a beat, the app left), so an opening made after the
+claim joins the new tally and is never dropped with the queued one. The sheet keeps an id once as well.
 
 ## Consequences
 

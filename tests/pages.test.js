@@ -145,12 +145,12 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
     block = require('./block.js'),
     src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
     N = Number(/const VIEWPORT_SHEET = (\d+);/.exec(src)[1]),
-    run = (v, claimed = false) => {
+    run = v => {
       const sent = [],
         ctx = {
-          // the kept copy (pvKeep): its id, whether another page queued it, and its drop (tested below)
+          // the kept copy (pvKeep): its id, the settling of a tally queued elsewhere, and its drop (tested below)
           pvId: 'id00000001',
-          pvClaimed: () => claimed,
+          pvSettle: () => sent.push(['settle']),
           pvDone: () => sent.push(['done']),
           window: {innerWidth: 393, innerHeight: 659.5, devicePixelRatio: 2.625, navigator: {userAgent: 'secret UA'}},
           viewportOf: C.viewportOf,
@@ -172,16 +172,15 @@ test('pagesSend: the rounded screen in the summary from VIEWPORT_SHEET, the summ
       return sent;
     };
   const base = {id: 'id00000001', vi: 'visit0001', na: 12, r: {'practice.quiz': [1, 30]}, g: {}, o: 'a:dev0000001'},
+    S0 = ['settle'],
     done = ['done'];
-  assert.deepStrictEqual(plain(run(N)), [done, ['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
-  assert.deepStrictEqual(plain(run(N + 3)), [done, ['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}]]);
-  assert.deepStrictEqual(plain(run(N - 1)), [done, ['pages', base]], 'an older script: the summary as before');
+  assert.deepStrictEqual(plain(run(N)), [S0, ['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}], done]);
+  assert.deepStrictEqual(plain(run(N + 3)), [S0, ['pages', {...base, vp: {w: 390, h: 660, d: 2.6, o: 'p', b: 2}}], done]);
+  assert.deepStrictEqual(plain(run(N - 1)), [S0, ['pages', base], done], 'an older script: the summary as before');
   // No gate on the Pages tab: a summary is always sent, without the screen below VIEWPORT_SHEET, also before any reply
   // (no version known yet).
-  assert.deepStrictEqual(plain(run(1)), [done, ['pages', base]], 'an old script: the summary, no screen');
-  assert.deepStrictEqual(plain(run(undefined)), [done, ['pages', base]], 'no version yet: the summary, no screen');
-  // Its kept copy queued by another page meanwhile: nothing queued here, the copy's record dropped.
-  assert.deepStrictEqual(plain(run(N, true)), [done], 'queued elsewhere: never twice');
+  assert.deepStrictEqual(plain(run(1)), [S0, ['pages', base], done], 'an old script: the summary, no screen');
+  assert.deepStrictEqual(plain(run(undefined)), [S0, ['pages', base], done], 'no version yet: the summary, no screen');
   // What the sheet keeps of it is what was sent (pagesClean takes the app's rounded values as they are).
   const [, [, sent]] = run(N);
   assert.deepStrictEqual(plain(C.pagesClean(sent)).vp, sent.vp);
@@ -482,7 +481,7 @@ test('a page killed without a hidden event: its summary queued by the next page,
     code =
       block(src, 'const pvFields = S => ({', '// The player active now, as a summary', {file: 'sync.js'}) +
       block(src, "// The visit's summary kept on the device", '\npvRecover();\n', {through: 1, file: 'sync.js'}) +
-      '\nthis.M = {pagesSend, pvKeep, pvRecover, id: () => pvId};';
+      '\nthis.M = {pagesSend, pvKeep, pvRecover, pvSettle, id: () => pvId};';
   const LS = new Map(),
     Q = [];
   let clock = Date.UTC(2026, 10, 23, 2),
@@ -749,6 +748,38 @@ test('a page killed without a hidden event: its summary queued by the next page,
   assert.deepStrictEqual(rs[1].r, {'practice.quiz': [0, 4 + N + 2]});
   newer.forEach(P => P.pagesSend());
   S.pagesSend();
+  // A page opened after its tally was queued elsewhere and before its next beat (pagesRoute settles, then opens, then
+  // keeps): the opening is in the new tally, never dropped with the queued one; left at once, it is still there.
+  const route = (P, h) => {
+    P.pvSettle(clock);
+    P.open(h);
+    P.pvKeep(clock);
+  };
+  const rsrc = block(src, 'function pagesRoute(h) {', '\n}\n', {through: 1, file: 'sync.js'});
+  assert.ok(rsrc.indexOf('pvSettle(') >= 0 && rsrc.indexOf('pvSettle(') < rsrc.indexOf('pagesOpen('), 'pagesRoute settles first');
+  for (const wait of [5000, 0]) {
+    Q.length = 0;
+    const T = page('visits' + wait),
+      U = page('visitt' + wait);
+    route(T, 'quiz');
+    clock += 9000;
+    T.beat();
+    clock += 600000; // asleep
+    U.beat();
+    assert.deepStrictEqual(
+      Q.map(x => x.r),
+      [{'practice.quiz': [1, 9]}]
+    );
+    route(T, 'genera'); // awake, before any beat
+    clock += wait;
+    T.pagesSend();
+    assert.deepStrictEqual(
+      Q.map(x => x.r),
+      [{'practice.quiz': [1, 9]}, {'learn.genera': [1, wait / 1000]}],
+      `the opening kept, left after ${wait} ms`
+    );
+    U.pagesSend();
+  }
   // The answer's feedback sheet on screen: its seconds so far are in each copy (quiz.js fbEnd(false), counted once).
   Q.length = 0;
   const FB = page('visitp');
