@@ -84,7 +84,7 @@ function acct_(sh, name){
   const r = find_(sh, name);
   if (r || sh.getLastRow() < 2) return {r: r, name: name};
   const k = String(name).normalize('NFC').toLowerCase(), names = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
-  for (let i = 0; i < names.length; i++) { const n = String(names[i][0]); if (n !== '' && n.normalize('NFC').toLowerCase() === k) return {r: i + 2, name: n}; }
+  for (let i = 0; i < names.length; i++) { const n = String(names[i][0]); if (n !== '' && n.normalize('NFC').toLowerCase() === k) return {r: i + 2, name: n, other: true}; }
   return {r: 0, name: name};
 }
 // Why a new account name is refused (REE-35), '' when it is not: 'invisible' when it holds an invisible character
@@ -255,7 +255,11 @@ function doGet_(e){
   });
   const have = e.parameter.have !== undefined && e.parameter.have !== '' ? Number(e.parameter.have) : NaN;
   TIM_.op = 'load';  // timed (timEnd_)
-  return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, sts: sts, stn: stn, have: have, light: !!e.parameter.light}));
+  const out = load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, sts: sts, stn: stn, have: have, light: !!e.parameter.light});
+  // Found under another Unicode form of the name (acct_): the account's own spelling, which the app's form keeps
+  // (sync.js), so every later request names it exactly (self-delete, reports and the rest use find_).
+  if (a.other) out.name = name;
+  return json_(out);
 }
 // The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and as a
 // light save answers 'stale' (doPost_). q: pt, rv (undefined: no replay asked), rvs, have (the revision of the copy the

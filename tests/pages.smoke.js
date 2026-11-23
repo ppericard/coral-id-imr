@@ -1610,6 +1610,12 @@ const SHEET = () => {
     if (!q.get('name')) return {ok: false};
     // A name that looks like Anna's (a Cyrillic A first): a new account under it would be refused (Code.gs nameIssue_).
     if (q.get('name') === '\u{410}nna') return {ok: true, found: false, taken: 'lookalike'};
+    // Zoe and its accent, made decomposed (REE-35): found as typed, as any script finds it; under its NFC spelling as a
+    // script from vNEXT finds it (Code.gs acct_), naming the account's own spelling.
+    const zoe = {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account};
+    if (q.get('name').toLowerCase() === 'zoe\u{301}') return q.get('pin') === '1234' ? zoe : {ok: false, error: 'pin'};
+    if (q.get('name').toLowerCase() === 'zo\u{E9}')
+      return q.get('pin') === '1234' ? {...zoe, name: 'Zoe\u{301}'} : {ok: false, error: 'pin'};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
     // test-sheet-acct: the account's generation (the sheet's _acct), as a name taken again after an archive has another
@@ -1903,6 +1909,29 @@ async function signin(base) {
         );
     }
   );
+  // REE-35: an account whose name was made decomposed. Typed so, the sheet is asked about it as typed (any script finds
+  // it; not its NFC form, which a script before vNEXT would take for a new name). Typed in NFC, the sheet names the
+  // account's own spelling (j.name) and the device keeps it.
+  await run(seen, async p => {
+    await card(p);
+    await submit(p, 'Zoe\u{301}', '1234');
+    await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+    let gets = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('test-sheet-log') || '[]')
+        .filter(x => x.get && x.name)
+        .map(x => x.name)
+    );
+    if (!(await p.$('.signnudge .sconfirm')) || gets.join('|') !== 'Zoe\u{301}')
+      fails.push(`sign-in: a decomposed account typed as it was made was not asked as typed: ${JSON.stringify(gets)}`);
+    await p.click('.signnudge .sconfirm button[type=button]');
+    await p.waitForTimeout(1000);
+    await submit(p, 'Zo\u{E9}', '1234');
+    await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+    await Promise.all([p.waitForNavigation({timeout: 15000}).catch(() => {}), p.click('.signnudge .sconfirm button[type=submit]')]);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000}).catch(() => {});
+    const sy = JSON.parse((await state(p)).sync || 'null');
+    if (!sy || sy.name !== 'Zoe\u{301}') fails.push(`sign-in: the account's own spelling was not kept: ${JSON.stringify(sy && sy.name)}`);
+  });
   // A fresh device: the question too (everyone confirms the account), with no "this device" line.
   await run(seen, async p => {
     await card(p);

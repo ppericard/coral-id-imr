@@ -2027,13 +2027,19 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     }
     f.onsubmit = e => {
       e.preventDefault();
-      // NFC and cut at a whole character, as the sheet makes a new name (core.js nameClean, REE-35); an existing account
-      // typed in another form opens all the same (Code.gs acct_).
-      const name = nameClean(f.n.value),
+      // REE-35: the sheet is asked about the name as typed first (cut at a whole character, core.js nameCut), so an
+      // existing account opens under its own spelling whatever the sheet script's version. A new name is NFC (core.js
+      // nameClean), as the sheet makes it: when that differs from the typed one, the sheet is asked about it too (a script
+      // before vNEXT matches names only as they are). A script from vNEXT that finds the account under another Unicode
+      // form of the name (Code.gs acct_) names it by its own spelling (j.name), which the device then keeps.
+      const typed = nameCut(f.n.value.trim()),
+        fresh = nameClean(typed),
         pin = f.p.value.trim();
       msg('Connecting…');
-      syncGet({name, pin})
-        .then(j => {
+      syncGet({name: typed, pin})
+        .then(j => (j && j.ok && !j.found && fresh !== typed ? syncGet({name: fresh, pin}).then(k => [k, fresh]) : [j, typed]))
+        .then(([j, asked]) => {
+          const name = j.ok && j.found && typeof j.name === 'string' && j.name ? j.name : j.ok && !j.found ? fresh : asked;
           if (!j.ok)
             return msg(
               j.error === 'gone'

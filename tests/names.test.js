@@ -230,7 +230,14 @@ test('the sheet: a new name is made NFC, and one name in another Unicode form op
   // An account made decomposed before this change keeps its spelling, and the app's NFC form opens it.
   madeBefore(s, () => assert.strictEqual(save(s, 'Rene\u{301}').ok, true));
   assert.deepStrictEqual(names(s), [ZOE, 'Rene\u{301}']);
-  assert.strictEqual(s.get({name: 'Ren\u{E9}', pin: '1234'}).found, true);
+  const g = s.get({name: 'Ren\u{E9}', pin: '1234'});
+  assert.strictEqual(g.found, true);
+  // The reply names the account's own spelling (the form keeps it: every later request names it exactly); found as
+  // typed, it names none.
+  assert.strictEqual(g.name, 'Rene\u{301}');
+  assert.ok(!('name' in s.get({name: 'RENE\u{301}', pin: '1234'})));
+  assert.strictEqual(s.get({name: ZOE_D, pin: '1234'}).name, ZOE);
+  assert.ok(!('name' in s.get({name: ZOE, pin: '1234'})));
   assert.strictEqual(save(s, 'Ren\u{E9}').ok, true);
   assert.deepStrictEqual(names(s), [ZOE, 'Rene\u{301}']);
   assert.ok(
@@ -239,6 +246,9 @@ test('the sheet: a new name is made NFC, and one name in another Unicode form op
       .filter(r => /^Ren/.test(r[0]))
       .every(r => r[0] === 'Rene\u{301}')
   );
+  // Under the spelling the load named, the player deletes their own account (find_, as every other request).
+  assert.strictEqual(s.post({selfDelete: 1, dname: g.name, dpin: '1234'}).deleted, true);
+  assert.deepStrictEqual(names(s), [ZOE]);
 });
 
 test('the sheet: a name is cut at a whole character, never inside an emoji', () => {

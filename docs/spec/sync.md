@@ -330,7 +330,10 @@ too, whatever the script's version. A save that would make such an account answe
 name is reserved, please choose another". An archive name with an invisible character is refused as `reserved`, one
 that looks like a taken name as `exists` (`why: 'lookalike'`). A name that is another Unicode form of an account's name
 (NFC, case aside: an é typed as e and its accent) opens that account, under the account's own spelling (`Code.gs`
-`acct_`, load and save). Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
+`acct_`, load and save); the load then names that spelling (`name`), which the form keeps, so every later request
+names the account exactly. The form asks the sheet about the name as typed first (any script finds an account as it
+was made), then, when its NFC form differs and no account was found, about the NFC form (a script before this one
+matches names only as they are), and a new account takes the NFC form. Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
 the players, the existing accounts (archives included) whose names look alike, every character outside Latin's letters
 shown as its code point (`admin.js` `alikeLine`, `core.js` `nameAlikePairs`).
 
