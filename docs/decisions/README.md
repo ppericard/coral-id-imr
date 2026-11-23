@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-24 | [The sea slugs' species achievements: 1, 10 and 50 species at Advanced by their scientific names, and every star](2026-11-24-seaslug-species-achievements.md) | #1515 |
 | 2026-11-23 | [The refill takes the most-faved observations first for a species short of easy adults](2026-11-23-easy-refill-faves.md) | #1476 |
 | 2026-11-23 | [A species short of easy adults may take faved candidates beyond its cap](2026-11-23-faved-beyond-cap.md) | #1487 |
 | 2026-11-23 | [Pages opened: pagehide also queues the summary; keeping it across a killed page left for its own issue](2026-11-23-pages-kept-copy.md) | #1471 |
