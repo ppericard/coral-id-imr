@@ -116,7 +116,7 @@ function engine(
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${code}\nCALSET = CALSET0;\nreturn {photoSet, seenAdd, RARE, rareCap, varOf, MIM_AT, mimOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
+      `(function (${names.join(', ')}) {\n${code}\nCALSET = CALSET0;\nreturn {photoSet, seenAdd, RARE, rareCap, rareHard, varOf, MIM_AT, mimOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P, shownAll};\n})`,
       ctx
     );
   return make(...names.map(k => stubs[k]));

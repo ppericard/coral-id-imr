@@ -22,7 +22,8 @@ test('before Open Water, a pool dominated by hard photos: those under ease 4 com
 });
 
 test('a family with few easy photos: its few easiest count as the easy ones', () => {
-  // 2 photos at ease 3, the rest at ease 1-2: the bar is the third easiest (ease 2 here), so the ease-1 photos are held.
+  // 2 photos at ease 3, 10 at ease 2, the rest at ease 1: the RARE.FEW (12) easiest reach ease 2, so the ease-1 photos
+  // are held.
   const L = [
     {f: 'a', o: 'a', e: 3},
     {f: 'b', o: 'b', e: 3}
@@ -42,8 +43,8 @@ test('the few easiest are observations the draw can show: a held-back juvenile a
   // photo at 4), an easy juvenile its bar still holds back, the rest of its adults at ease 3. Counted by photo, the third
   // easiest was the juvenile or b's second photo (ease 4), so ease 3 was "hard" and the two adults took about 90% of
   // the questions, however often they had been seen (both seen 3 times, right: the photo memory could not help); a player
-  // saw one photo 3 times in 14 minutes. By observation at full weight the third easiest is at ease 3: the adults share
-  // the draw with the ease-3 ones, and ease 1-2 stays rare.
+  // saw one photo 3 times in 14 minutes. By observation at full weight the easiest after the adults are at ease 3: the
+  // adults share the draw with ease-3 ones, and ease 1-2 stays rare.
   const L = [
     {f: 'a', o: 'a', e: 5},
     {f: 'b', o: 'b', e: 4},
