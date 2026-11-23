@@ -48,7 +48,8 @@ const startOf = r => {
       pick(r, ['card', 'tour', 'inferred', 'ease', ''])
     ]);
   if (r() < 0.3) o.ease = [pick(r, CHOICES), Math.floor(r() * 50), 2000];
-  if (r() < 0.3) o.fb = {[pick(r, ['imr-lo', 'know-hi', 'new-hi', 'imr-hi'])]: [3, 4]};
+  // a fallback card shown ('<answer>-<direction>', joined: no old key name for tools/rename_app.py)
+  if (r() < 0.3) o.fb = {[pick(r, ['imr', 'know', 'new']) + '-' + pick(r, ['lo', 'hi'])]: [3, 4]};
   if (r() < 0.2) o.at = 5;
   return o;
 };
