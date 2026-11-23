@@ -29,13 +29,13 @@ test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID and the step
   assert.match(read('model.js'), /gdOff\(n\) \+ \(p\.e \? \(PDIFF\.MID - p\.e\) \* calibOf\(SUBJ\)\.ease : 0\)/);
 });
 
-// The judged ease's weight per subject (docs/decisions/2026-11-23-fish-ease-weight.md): 0.3 logit a point for the fish,
-// the default 0.5 for the sea slugs, read where the app reads it, model.js photoDiff (a photo nobody answered) and
-// genusDiff (a unit's difficulty: its offset plus its judged photos' mean prior).
-test('the judged ease weighs 0.3 a point in the fish prior, 0.5 in the sea slugs’, as model.js photoDiff and genusDiff read it', () => {
-  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.3);
-  assert.strictEqual(C.calibOf(C.subjectOf('seaslug')).ease, 0.5);
-  assert.strictEqual(C.CALIB.ease, 0.5);
+// The judged ease's weight (docs/decisions/2026-11-23-judged-ease-weight.md): the shared calibration's 0.3 logit a point,
+// which the subjects with a judged ease read today (none sets its own), where the app reads it: model.js photoDiff (a
+// photo nobody answered) and genusDiff (a unit's difficulty: its offset plus its judged photos' mean prior).
+test('the judged ease weighs the shared 0.3 a point in the fish’s and the sea slugs’ priors, as model.js photoDiff and genusDiff read it', () => {
+  assert.strictEqual(C.CALIB.ease, 0.3);
+  const w = C.CALIB.ease;
+  ['fish', 'seaslug'].forEach(id => assert.strictEqual(C.calibOf(C.subjectOf(id)).ease, w, id));
   const src = read('model.js'),
     engine = id => {
       const photos = [{f: 'a', e: 5}, {f: 'b', e: 1}, {f: 'c', e: 4}, {f: 'u'}],
@@ -64,14 +64,16 @@ test('the judged ease weighs 0.3 a point in the fish prior, 0.5 in the sea slugs
   const F = engine('fish'),
     S = engine('seaslug'),
     near = (a, b, m) => assert.ok(Math.abs(a - b) < 1e-9, `${m}: ${a} against ${b}`);
-  near(F.photoDiff('fam', {f: 'a', e: 5}), 0.2 - 0.6, 'fish, ease 5');
-  near(F.photoDiff('fam', {f: 'b', e: 1}), 0.2 + 0.6, 'fish, ease 1');
-  near(F.photoDiff('fam', {f: 'u'}), 0.2, 'fish, no judged ease: the offset');
-  near(S.photoDiff('fam', {f: 'a', e: 5}), 0.2 - 1, 'sea slugs, ease 5');
-  near(S.photoDiff('fam', {f: 'b', e: 1}), 0.2 + 1, 'sea slugs, ease 1');
-  // the unit: its offset plus the mean prior of its judged photos (ease 5, 1, 4: mean 3 − e = −1/3), rounded to 0.01
-  near(F.genusDiff('fam'), 0.1, 'fish unit');
-  near(S.genusDiff('fam'), 0.03, 'sea slug unit');
+  [
+    [F, 'fish'],
+    [S, 'sea slugs']
+  ].forEach(([M, s]) => {
+    near(M.photoDiff('fam', {f: 'a', e: 5}), 0.2 - 2 * w, `${s}, ease 5`);
+    near(M.photoDiff('fam', {f: 'b', e: 1}), 0.2 + 2 * w, `${s}, ease 1`);
+    near(M.photoDiff('fam', {f: 'u'}), 0.2, `${s}, no judged ease: the offset`);
+    // the unit: its offset plus the mean prior of its judged photos (ease 5, 1, 4: mean 3 − e = −1/3), rounded to 0.01
+    near(M.genusDiff('fam'), Math.round((0.2 - w / 3) * 100) / 100, `${s} unit`);
+  });
 });
 
 // treePrior and the prior's caption line, run from admin.js.

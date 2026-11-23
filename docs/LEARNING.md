@@ -765,28 +765,33 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
   Damselfishes and Surgeonfishes) open before any other (`model.js` `openPick`).
 - **Fish photos judged**: every fish photo carries a judged ease from 1 (hard) to 5 (very easy) (judging/FISH.md). It is
   the photo's prior before any answer: its genus offset + (`PDIFF.MID` − ease) × the subject's `calib.ease`, fading as
-  answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The fish's weight is
-  **0.3 logit an ease point** (fish `SUBJECTS` `calib.ease`; "The fish ease weight, measured" below); the sea slugs keep
-  the default 0.5 (`core.js` `CALIB`: one standard deviation of a photo's own difficulty around its unit), the fish's
-  being measured on fish answers only. The same prior gives each unit its difficulty, so judged units open easiest first from the
+  answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The weight is **one
+  shared value, 0.3 logit an ease point** (`core.js` `CALIB.ease`; "The judged ease weight, measured" below), read by
+  every subject whose photos carry a judged ease: today the fish and the sea slugs. A subject may set its own in its
+  `SUBJECTS` `calib` only with a declared reason (rule S1); none does. The corals' photos carry no judged ease, so their
+  prior has no ease term. The same prior gives each unit its difficulty, so judged units open easiest first from the
   first card, and no photo is ever walled off.
 - **The first questions on a unit** lean towards its easy photos: the target sits `calib.early` logits lower, fading as
-  `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's `calib` = {ease: 0.3, ref: 3, early:
-  1.5, u: 0.25, pool: 30}; the sea slugs' the same with the default ease 0.5 and pool 20; the corals keep `core.js`
-  `CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity}` (their photos carry no judged ease).
+  `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's `calib` = {ref: 3, early: 1.5, u:
+  0.25, pool: 30}; the sea slugs' the same with pool 20; the corals keep the shared `core.js`
+  `CALIB = {ease: 0.3, ref: 1, early: 0, pool: Infinity}`.
 
-### The fish ease weight, measured
+### The judged ease weight, measured
 
 The weight 0.3 is the centre of the range the fish answers support (0.2–0.4; the REE-85 study,
 `docs/reviews/2026-11-23-fish-ease-vs-answers.md`, "Experts and response time"; the decision:
-`docs/decisions/2026-11-23-fish-ease-weight.md`). On held-out players (the study's model with the format offsets and
+`docs/decisions/2026-11-23-judged-ease-weight.md`). It is shared by every subject with a judged ease: the sea slugs'
+answers have not measured it (below), and nothing gives them a reason to differ. On held-out players (the study's model with the format offsets and
 the ability's scale refitted, 9 players), the next-answer log-loss against no photo prior was +0.0007 a nat at 0.5 (4
 players of 9 better) and −0.0008 at 0.3 (6 of 9).
 
 **The real log replayed** (rule L12; the Answers tab read-only, 3,513 fish quiz answers of 9 players, 2026-11-06 to
 2026-11-22): each answer's logged expectation re-scored with the ease's part of its difficulty at 0.3 instead of 0.5
 (the part as the game used it then, fading with the photo's answers after the served ratings). Paired log-loss
-0.3 − 0.5, players the unit (mean of the players' means, 95% t interval, exact sign-flip p):
+0.3 − 0.5, players the unit (mean of the players' means, 95% t interval, exact sign-flip p). The first row was the
+declared replay; the two below it were added after seeing it (exploratory). The sea slugs: 168 answers from 2
+players (165 of them one player's, within one hour of 2026-11-20), too few to judge with players as the unit: not
+measured.
 
 | Replay | All answers | Players better | p | Ease 1-2 | Ease 4-5 |
 | --- | --- | --- | --- | --- | --- |
@@ -812,7 +817,8 @@ Calibration, observed right against expected (z per answer), each arm's level pe
   predicts better for 8 players of 9, and the hard photos' excess (ease 1-2) shrinks. Both are approximations of what
   the app would have done; neither replays the draw, which would have asked other photos.
 
-**The simulation** (rule L11, level 2, on GitHub runners; 0.5 against 0.3 on the same seeds). The rated world with
+**The simulation** (rule L11, level 2, on GitHub runners; 0.5 against 0.3 on the same seeds; the fish only:
+`tools/learnsim.js` has no sea slug subject in either world). The rated world with
 `--app own` (the judged-ease prior alone; under `--app truth` the weight has no effect), normal photos, 10 seeds per
 profile × 3,000 answers, one profile per check (the five-profile check was cut at 16 pairs):
 

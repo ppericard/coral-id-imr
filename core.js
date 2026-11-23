@@ -616,12 +616,11 @@
       // as its headline % (model.js headPct) with its components (My progress's bars). The one switch: without it the
       // headline is the families' mean (progPct), and the rules that read it follow (app.js treeGate).
       score: {entries: 0.25, a: 11 / 15, b: 0.8, half: 0.5, pow: 0.5},
-      // Reference-level photos first in the draw, never only them. ease 0.3: the judged ease's prior at the weight the
-      // fish answers support, below the default 0.5 (docs/decisions/2026-11-23-fish-ease-weight.md). u 0.25: an
-      // unanswered photo's prior trusted to 0.5 logit, the photos' own spread around their unit (0.5 squared); pool 30,
-      // a species' candidate cap, so a pool of 1,000 photos favours its easy ones as a pool of 30 does
-      // (docs/LEARNING.md "The fish draw in big pools", tools/fish_draw_sim.js).
-      calib: {ease: 0.3, ref: 3, early: 1.5, u: 0.25, pool: 30},
+      // Reference-level photos first in the draw, never only them; the judged ease's prior at the shared weight
+      // (CALIB.ease). u 0.25: an unanswered photo's prior trusted to 0.5 logit, the photos' own spread around their unit
+      // (0.5 squared); pool 30, a species' candidate cap, so a pool of 1,000 photos favours its easy ones as a pool of 30
+      // does (docs/LEARNING.md "The fish draw in big pools", tools/fish_draw_sim.js).
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
       gate: TREE_GATE,
       // basics: Fish basics (proto/fishbasics.js), step 0 of the Learn path, with its own record (reefid-fish-basics)
       // and done feat. quiz-duel: the Duel tab on its look-alike pairs (app.js UNITS pairs).
@@ -839,8 +838,7 @@
       ach: true,
       achs: () => SEASLUG_ACH,
       // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
-      // observations, the sea slugs' candidate count. The judged ease keeps the default weight (CALIB.ease): the fish's
-      // lower one was measured on fish answers only.
+      // observations, the sea slugs' candidate count.
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       gate: TREE_GATE,
       // basics: Sea slug basics (proto/seaslugbasics.js), step 0 of the Learn path, with its own record
@@ -988,11 +986,12 @@
   // The subject chosen on this device (Home or the header), synced with the player's settings.
   const SUBJECT_KEY = 'reefid-sync-subject';
   const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
-  // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
-  // around its unit (docs/LEARNING.md "Hierarchical photo Elo"); ref 1, no draw bonus;
+  // The difficulty engine's calibration, shared by every subject (SUBJECTS calib may set a field for a subject, with its
+  // reason, rule S1): ease 0.3, the logits a point of judged ease weighs in a photo's prior, for every subject whose
+  // photos carry a judged ease (docs/decisions/2026-11-23-judged-ease-weight.md); ref 1, no draw bonus;
   // early 0, no lean at the start; u unset, a photo nobody answered as unsure as model.js CAL.U says; pool unbounded,
   // every observation keeps the whole floor (model.js PICKD.FLOOR).
-  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
+  const CALIB = {ease: 0.3, ref: 1, early: 0, pool: Infinity};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   // The rank subject s's game units are at (SUBJECTS unitRank, else its rank): what an answer on one of them logs, and the
   // rank app.js rankOf reads as the subject's own.

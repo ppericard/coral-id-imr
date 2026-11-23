@@ -168,7 +168,7 @@ test('prep.js: readAnswers form, left-out ids, offsets, practice counts and the 
   const FX = Pr.prepare(fr, 'fish');
   assert.strictEqual(FX.rows[0].S, pics[0].sp);
   assert.strictEqual(FX.rows[0].ez[0], 3 - pics[0].e);
-  // the fish's own weight of an ease point (core.js SUBJECTS fish calib.ease)
+  // the weight of an ease point the subject reads (core.js calibOf: the shared CALIB.ease)
   assert.strictEqual(FX.rows[0].ezK, require('../core.js').calibOf(require('../core.js').subjectOf('fish')).ease);
 });
 
