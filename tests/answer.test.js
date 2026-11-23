@@ -49,10 +49,16 @@ test('the rule catches the hang it is for', () => {
   assert.ok(!RAW('        await p.click(\'#lightbox [data-c="save"]\');'));
 });
 
-// The app's smokes (admin.smoke.js has no quiz question: its number keys and [data-c] are the admin's own).
+// The app's smokes (admin.smoke.js has no quiz question: its number keys and [data-c] are the admin's own), and the
+// learning simulation: it typed a fish family's id (f:Damselfishes), which the form read as "So close!" and never took,
+// so the same question came back unanswered for hundreds of answers (REE-249).
 test('no smoke waits for or clicks an answer of one format itself: tests/answer.js does', () => {
-  const bad = [];
-  for (const f of fs.readdirSync(__dirname).filter(f => f.endsWith('.smoke.js') && f !== 'admin.smoke.js')) {
+  const bad = [],
+    files = [
+      ...fs.readdirSync(__dirname).filter(f => f.endsWith('.smoke.js') && f !== 'admin.smoke.js'),
+      path.join('..', 'tools', 'learnsim.js')
+    ];
+  for (const f of files) {
     const L = fs.readFileSync(path.join(__dirname, f), 'utf8').split('\n');
     // The marker on the line or on a comment line just above it.
     L.forEach((l, i) => RAW(l) && !(i && /^\s*\/\/.*answer\.js:/.test(L[i - 1])) && bad.push(`${f}:${i + 1}: ${l.trim()}`));

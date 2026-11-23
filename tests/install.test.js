@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// The offer to install the app (app.js installDue, installVisit, installIos; Pierre, 2026-11-08: nudge phone players to
+// The offer to install the app (install.js installDue, installVisit, installIos; Pierre, 2026-11-08: nudge phone players to
 // install it on the home screen instead of opening a link in the browser). installDue decides, on its inputs only; the
 // card itself, its calm moment on Home and the ⚙ row are in tests/pages.smoke.js (part install).
 const test = require('node:test'),
@@ -9,11 +9,11 @@ const test = require('node:test'),
   vm = require('vm'),
   block = require('./block.js');
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+const src = fs.readFileSync(path.join(__dirname, '..', 'install.js'), 'utf8'),
   ctx = {};
 vm.createContext(ctx);
 vm.runInContext(
-  block(src, 'const INSTALL = ', 'let installEv = null', {file: 'app.js'}) +
+  block(src, 'const INSTALL = ', 'let installEv = null', {file: 'install.js'}) +
     '\nthis.due = installDue; this.visit = installVisit; this.ios = installIos; this.I = INSTALL;',
   ctx
 );
