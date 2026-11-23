@@ -135,7 +135,7 @@ every genus: `python3 tools/fetch_local.py --dauin 30 --ph 20 --ph-all`.
   corallites, Tentacular lobes, Axial furrow, Spinules), each with the Corals of the World glossary definition, and
   Polyp.
 - `spell`, the other spellings of a name (name → `[spelling, source]`, e.g. Diploastreidae → Diploastraeidae, WoRMS):
-  both are shown, the IMR one first, by `app.js` `altName` wherever a family is shown; never a per-name branch in code.
+  both are shown, the IMR one first, by `idtips.js` `altName` wherever a family is shown; never a per-name branch in code.
 - `x`: the extra Dauin genera for the Coral ID Key and the bonus genera, built by `tools/build_extra.py`;
   `tools/apply_bonus.py` checks Research Grade again and moves the bonus genera's photos of several corals to `more`.
 
