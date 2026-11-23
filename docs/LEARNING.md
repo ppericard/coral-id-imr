@@ -1059,7 +1059,9 @@ integrator's call, easy to correct). Still to come: fpct100 (with the ultimate e
 their timing was simulated with the real game; the runs are in the [notebook](archive/learning-notebook.md).
 
 **Sea slug achievements**: the same kinds over the sea slugs' genera, families, taxonomic groups and first circle, and
-their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`).
+their % every 10 points up to 100% (`core.js` `SEASLUG_ACH`); their species by their scientific names at Advanced (1, 10
+and 50), and every star at Advanced (Q369 (c)). Their timing was measured with the real game, sheet at `SCI_SHEET`
+([decision record](decisions/2026-11-24-seaslug-species-achievements.md)).
 
 ## Pooled statistics: photo difficulty and confusions
 
