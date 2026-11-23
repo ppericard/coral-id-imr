@@ -773,17 +773,18 @@ again and keeps the band only when it agrees with the rounded size. It feeds adm
 [decision](../decisions/2026-11-23-pages-kept-copy.md)). The summary so far is also kept on the device while the visit
 runs (`sync.js` `pvKeep`): `reefid-pv-live` holds, per visit id, the event as `pagesSend` would queue it now (its id,
 time, page, app version, owner and fields), written when a page opens and every `PV_BEAT` (15 s) while in view, read from
-a copy of the tally (`pvPeek`, after the feedback sheet's seconds so far: `quiz.js` `fbEnd(false)`), at most `PV_KEEP`
-(5) visits. The copy and the summary carry one identity, the tally's event id (`pvId`); queuing the summary drops the
-copy (`pvDone`) and gives the next tally a new id. **One local rule, no page knowing what another sent: a copy not
-written for `PV_STALE` (2 min) is sent as it is, under its own id, by whichever page sees it first, and the live page
-never goes on with a stale tally.** Another page sends it at load and at each beat (`pvRecover`; a page still open in
-another window writes its copy every 15 s, so it is never taken for a killed one). Its own page (`pvRoll`, on its last
-write's time) sends it back in view (`visibilitychange` visible, `pageshow`) and before its tally changes
-(`pagesRoute` before the page opens, `fbTally`, `pvKeep`, `pagesSend`), then starts a new tally under a new id: what
-follows goes in the new one. The same copy may be sent twice (by another page and by its own): a copy already in the
-device's queue is not queued again (`pvQueue`), and the sheet keeps the first row of an id (`events_` skips an id
-already in the tab), so each tally counts once. Sign-in moves the anonymous copies to the account
+a copy of the tally (`pvPeek`, after the feedback sheet's seconds so far: `quiz.js` `fbEnd(false)`). The copy and the
+summary carry one identity, the tally's event id (`pvId`); queuing the summary drops the copy (`pvDone`) and gives the
+next tally a new id. **One local rule, no page knowing what another sent: a copy not written for `PV_STALE` (2 min)
+is sent as it is, under its own id, by whichever page takes it out of the store first, and the live page never goes on
+with a stale tally.** Another page takes it at load and at each beat (`pvRecover`; a page still open in another window
+writes its copy every 15 s, so it is never taken for a killed one). Its own page (`pvRoll`, on its last write's time)
+takes it back in view (`visibilitychange` visible, `pageshow`) and before its tally changes (`pagesRoute` before the
+page opens, `fbTally`, `pvKeep`, `pagesSend`), sends it if it was still there, then starts a new tally under a new id:
+what follows goes in the new one. The store entry is the token, so each copy is sent once by the page that removed it,
+whatever the sheet still remembers of recent ids; a device whose storage refuses the copy sends its own stale tally
+itself (no other page can have it). Copies are never pushed out: only the pages in view and the killed pages not yet
+found have one. Sign-in moves the anonymous copies to the account, this page's own included
 (`pagesOwn`), sign-out drops them. Same event, same fields: the sheet script takes it as any summary (rule D4).
 
 **Whose it is.** Each summary is queued with its owner (`o`, `core.js` `pagesOwner`: `n:<name>` signed in,

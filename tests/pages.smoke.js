@@ -4809,9 +4809,10 @@ async function pagesVisit(b, base) {
       pagesRoute('quiz');
       const before = (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o;
       signIn('Ana', '1234', {found: false});
-      return [before, (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o];
+      return [before, (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o, (pvCopy || {}).o];
     });
-    if (!/^a:[a-z0-9]{10}$/.test(own[0] || '') || own[1] !== 'n:ana') fails.push(`pages summary copy at sign-in: ${JSON.stringify(own)}`);
+    if (!/^a:[a-z0-9]{10}$/.test(own[0] || '') || own[1] !== 'n:ana' || own[2] !== 'n:ana')
+      fails.push(`pages summary copy at sign-in (stored, in memory): ${JSON.stringify(own)}`);
     if (posts.length) fails.push(`pages summary of a killed page: sent from a local copy: ${posts.join(' ')}`);
     await c.close();
   }

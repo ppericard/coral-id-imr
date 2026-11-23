@@ -638,9 +638,9 @@ test('a page killed without a hidden event: its summary sent by whichever page s
     Q.map(x => [x.vi, x.r]),
     [['visite', {'practice.quiz': [1, 4]}]]
   );
-  // A computer asleep with the app in view: another page sends its stale copy meanwhile. Awake, it sends its own stale
-  // copy too (same id: not queued twice on one device; once sent, the sheet keeps the first row), then goes on with a
-  // new tally under a new id. Whether the other page's send left the queue or not, the sheet has each tally once.
+  // A computer asleep with the app in view: another page takes its stale copy out of the store and sends it. Awake, its
+  // copy is gone: it does not send it again, and goes on with a new tally under a new id. Whether the other page's send
+  // left the queue or not (the sheet's check of recent ids is never needed), each tally is sent once.
   for (const flushed of [false, true]) {
     reset();
     const E = page('visitg' + flushed),
@@ -667,7 +667,7 @@ test('a page killed without a hidden event: its summary sent by whichever page s
         [false, {'practice.quiz': [0, 3]}]
       ]
     );
-    assert.strictEqual(Q.length, flushed ? 3 : 2, flushed ? 'sent again after the queue left: the sheet keeps one' : 'not queued twice');
+    assert.strictEqual(Q.length, 2, 'each tally sent once');
     F.pagesSend();
   }
   // Left before its next beat: the stale copy as it is, nothing more.
@@ -730,6 +730,20 @@ test('a page killed without a hidden event: its summary sent by whichever page s
     Q.map(x => [x.vi, x.r]),
     [['visitm', {'practice.quiz': [1, 2]}]]
   );
+  // and, asleep there, it sends its stale tally itself when back (no other page can have it), then a new one
+  reset();
+  const K2 = page('visitm2');
+  K2.open('quiz');
+  clock += 3000;
+  K2.beat();
+  clock += 600000;
+  K2.show();
+  clock += 1000;
+  K2.pagesSend();
+  assert.deepStrictEqual(
+    Q.map(x => x.r),
+    [{'practice.quiz': [1, 3]}, {'practice.quiz': [0, 1]}]
+  );
   refuse = false;
   // Two pages opened at the same moment both find the copy: the one already in the shared queue is not queued again.
   reset();
@@ -743,29 +757,22 @@ test('a page killed without a hidden event: its summary sent by whichever page s
   page('visito');
   assert.strictEqual(Q.length, 0);
   assert.ok(!live().includes('visitn'));
-  // At most PV_KEEP copies, the newest; a copy pushed out is written again by its live page and sent when it is left.
+  // No copy is ever pushed out by others: eight pages in view each keep theirs.
   reset();
-  const N = Number(/PV_KEEP = (\d+)/.exec(src)[1]),
+  const N = 8,
     many = [];
-  for (let i = 0; i < N + 3; i++) {
+  for (let i = 0; i < N; i++) {
     const P = page('many' + i);
     many.push(P);
     P.open('quiz');
     clock += 1000;
     P.pvKeep();
   }
-  assert.strictEqual(live().length, N);
-  assert.ok(live().includes('many' + (N + 2)) && !live().includes('many0'));
-  many[0].beat();
-  assert.ok(live().includes('many0'));
-  many[1].pagesSend();
-  assert.deepStrictEqual(
-    Q.map(x => [x.vi, x.r['practice.quiz'][0]]),
-    [['many1', 1]]
-  );
+  assert.strictEqual(live().filter(k => k.startsWith('many')).length, N);
   many.forEach(P => P.pagesSend());
-  // Codex's sequence: a page's copy sent by another page (asleep), the page resumes, its new tally's copy is pushed out by
-  // five newer ones, then it is left: each tally once, the new one under its new id.
+  assert.strictEqual(Q.length, N);
+  // Codex's sequence: a page's copy sent by another page (asleep), the page resumes, more pages open copies of their own,
+  // then it is left: each tally once, the new one under its new id.
   reset();
   const R = page('visitq'),
     S = page('visitr');
@@ -786,7 +793,7 @@ test('a page killed without a hidden event: its summary sent by whichever page s
     clock += 1000;
     P.pvKeep();
   }
-  assert.ok(!live().includes('visitq'), 'its copy pushed out by five newer ones');
+  assert.ok(live().includes('visitq'), 'its new copy stays');
   clock += 2000;
   R.pagesSend();
   const rs = sheet().filter(x => x.vi === 'visitq');

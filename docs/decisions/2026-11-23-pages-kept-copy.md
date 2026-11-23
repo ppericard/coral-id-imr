@@ -13,16 +13,23 @@ outside the quiz on 2026-11-08; part C2 of that work, keeping the count across s
 
 Integrator's call (REE-40: "C2 is the integrator's call, design first"; AGENTS.md "Working mode", implementation details
 with no player-facing effect). While the visit runs, the summary so far is also written to the device, as it would be
-queued, under its tally's event id: when a page opens and every 15 s while in view, at most five visits. Queuing the
+queued, under its tally's event id: when a page opens and every 15 s while in view. Queuing the
 summary drops the copy and starts a new tally with a new event id. `pagehide` queues the summary too. No sheet change:
 the same event and fields, so an older sheet script takes it (rule D4).
 
 **One local rule** (integrator's decision under rule W27, 2026-11-23): a tally whose copy has not been written for two
 minutes is sent as it is, under its own event id, by whichever page sees it first (another page at load or at its beat;
 its own page back in view or before its tally changes), and the live page never goes on with a stale tally: it starts a
-new one under a new event id. No page needs to know whether another page already sent something. A copy may be sent
-twice; the device does not queue an id it already holds, and the sheet keeps the first row of an id, so each tally
-counts once.
+new one under a new event id. No page needs to know whether another page already sent something.
+
+**The store entry is the token** (a review finding on the rule above, the same day). The rule first let a copy be sent
+twice and relied on the sheet keeping the first row of an id, but the sheet only checks its last 2,000 rows: a tab
+restored long after another page sent its copy would be counted twice. So "sees it first" means "takes it out of the
+store first": a page removes a stale copy from the store, then sends it; its own page, back, sends it only if it is
+still there. Each copy is sent once, by the page that removed it, whatever the sheet remembers. A device whose storage
+refuses the copy sends its own stale tally itself (no other page can have it). Nothing pushes a copy out any more (the
+five-visit limit is gone): only the pages in view and the killed pages not yet found have one, so the store stays small
+and a copy is never lost to a limit.
 
 **Why the rule replaced the claim mechanism.** The first design had the live page find out whether another page had
 already queued its copy (a "claim"), by the copy being gone, then by a list of recovered ids, then reconciled at each
@@ -34,7 +41,7 @@ recovered-ids list and the claim checks are gone.
 ## Consequences
 
 `sync.js` `pvKeep`, `pvRecover`, `pvRoll`, `pvQueue`, `pvDone`, `pagesSend`, `fbTally`; the storage key `reefid-pv-live`,
-moved to the account at sign-in and dropped at sign-out like the queued summaries. A killed visit's summary arrives
+moved to the account at sign-in (with the page's own copy in memory) and dropped at sign-out like the queued summaries. A killed visit's summary arrives
 later, with the time of its last write. Up to one beat (15 s) before a kill or a sleep is lost; a page that misses its
 beats for two minutes while in view starts a new tally (its summary is split, nothing counted twice). Specified in
 docs/spec/sync.md "Events and pages"; tested in `tests/pages.test.js` and the `visit` part of `tests/pages.smoke.js`.
