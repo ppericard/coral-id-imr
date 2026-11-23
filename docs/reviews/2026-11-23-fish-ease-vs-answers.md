@@ -17,7 +17,9 @@ comme ça qu'on les voit"). Nothing in the app, the sheet, Linear or GitHub was 
   family, each ease point moves the odds of a right answer by −0.19 logit (95% interval over players: −0.32 to −0.08).
   On the app's scale that is about 0.24 per point, against 0.5 in force (`calib.ease`). The same figure appears before
   and after the switch, in every question format, early and late on a unit, and with the ease of the time instead of
-  today's. It matches #1341 (0.24) and Q351 (0.33).
+  today's. The earlier studies agree once put on the same scale: Q351's refit weight is 0.24 per point, and the calibration slopes
+of #1341 (0.24) and Q351 (0.33), where 1 would be right, correspond to weights of about 0.12 and 0.165 against the 0.5
+prior.
 - **Between families, the judged ease predicts nothing, or slightly the wrong way.** Families whose pools are judged
   harder are answered no worse, and slightly better (Spearman −0.25, permutation p 0.05, 64 families). Yet the app uses
   the mean judged prior as a unit's difficulty (`model.js` line 631, the opening order).
@@ -53,9 +55,10 @@ last snapshot before the answer. Check: before the switch, the logged difficulty
 **The app's own prediction, with its ease share removed.** Each row logs the expected success `e` and its guess rate
 `g` (`core.js` `guessOf`: 1/4, 1/k for |kN, 1/2 for the 2-choice formats, 0 for a typed answer). From these,
 z = logit((e − g)/(1 − g)) is the app's ability-minus-difficulty for that player, unit and photo at that moment. The
-ease's share in it is (3 − ease) × 0.5 × w. Here w = 1 before the switch (2026-11-19 19:53 Manila) and
+ease's share is part of the difficulty, so it enters z with a minus sign: −(3 − ease) × 0.5 × w. Here w = 1 before the switch (2026-11-19 19:53 Manila) and
 `PDIFF.W` / (n + `PDIFF.W`) after it, with n the photo's earlier answers in the log (an approximation of the served
-count). Removing that share gives z_ne, the app's prediction without any photo prior.
+count). Removing that share gives z_ne = z + (3 − ease) × 0.5 × w (the share added back; this is the sign the fitting
+scripts use), the app's prediction without any photo prior.
 
 **Models.** All use P(right) = g + (1 − g) · sigmoid(η), fitted by maximum likelihood with a weak ridge (normal prior,
 sd 2) on the photo and format terms:
@@ -214,8 +217,9 @@ question, which this study did not examine.
 
 1. **Lower the ease's weight from 0.5 to about 0.2–0.25 per point** (`core.js` `CALIB.ease`, `calib.ease`, which the
    fish inherit).
-   - **Evidence:** four estimates agree: this study (0.24 on the app's scale), #1341 (0.24), Q351 (0.33), and the
-     held-out arms (0.1–0.3 best).
+   - **Evidence:** estimates of the weight per point agree on a value below 0.5: this study (0.24), Q351's refit (0.24),
+     #1341's and Q351's calibration slopes (0.24 and 0.33, where 1 would be right) converted to weights (about 0.12 and
+     0.165), and the held-out arms (0.1–0.3 best).
    - **Effect:** the photos judged 1–3 come earlier and more often in the targeting, and their ratings come from
      answers sooner. On log-loss it is about −0.001 to −0.002 a nat per answer against today: small, and not clear at
      9 players. It removes the miscalibration seen at ease 1–2.
