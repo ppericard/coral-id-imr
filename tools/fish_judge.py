@@ -11,7 +11,7 @@ differences (RUBRICS; cap and with_flag take the subject): tools/judging_fish.py
 This script:
   - prints the summary of the photos in play (fish-game.json): counts per tag, very easy photos (ease 4-5) per entry,
     circle-1 entries short of them (the circles in force: the content editor's moves in curation.json laid over
-    fish.json, tools/fish_inforce.py);
+    fish.json, tools/fish_inforce.py), the typical-look families (typical_look) with their shares;
   - with --sheets DIR: downloads the photos in play at iNaturalist's medium size (FishBase's whole) into DIR/img and draws
     contact sheets of 12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after);
     --only t28,t47 limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid
@@ -50,10 +50,18 @@ NEW_COUNT = "1sokx"
 # fish's b since Pierre's review of the gold set, 2026-11-19, judging/FISH.md "Strong blur"; his review was of fish only).
 # A juvenile (j) caps nothing in either rubric (Q435, Pierre, 2026-11-19: the judged ease is the starting point and the
 # players' answers decide; judging/FISH.md "Juveniles").
+# The fish's caps softened by one step (Q458 step 1, Pierre, 2026-11-23 17:20, from the fish answers of the REE-85 study,
+# docs/reviews/2026-11-23-fish-ease-vs-answers.md): a head-on, tail or top view and a partial fish at most 4 (views4,
+# part4), not 3. The sea slugs keep both at 3 (views3; part4 False): the study read fish answers only, and no sea slug
+# answer measured them. The typical look (Q456, the same day): in a family whose usual look is buried or camouflaged
+# (typical_look), the tags of `typical` (the fish's partial 0 and camouflage c) cap nothing; the sea slugs have no such
+# family ("").
 RUBRICS = {
-    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd", "blur2": "b"},
+    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "", "views4": "htd", "part4": True,
+             "blur2": "b", "typical": "0c"},
     "seaslug": {"code": re.compile(r"^([pohtdv])([01])([gd])([0-3])([smb])([lms])([1sokx])([jcawf]*)([1-5])$"),
-                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv", "blur2": ""},
+                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv", "views4": "", "part4": False, "blur2": "",
+                "typical": ""},
 }
 
 
@@ -109,13 +117,15 @@ WANT = 5  # at least 5 very easy photos per circle-1 entry
 # judgement per photo: docs/decisions/2026-11-19-fish-reference-from-photo.md).
 
 
-def cap(code, phase, rep=None, subject="fish"):
+def cap(code, phase, rep=None, subject="fish", typical=False):
     """(ease after the caps, tags with the phase and reference flags): judging/FISH.md "Caps" and "Reference photos".
     A juvenile (flag j) caps nothing (Q435). rep: the photo's `rep` (a reference source shows it for the species:
     FishBase's main picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement
     per photo, whatever its route in).
     subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": a dorsal view caps nothing, strong blur
-    neither (blur2)."""
+    neither (blur2), a partial animal and a head-on, rear or ventral view at most 3.
+    typical: the photo's family has the typical look (typical_look: buried or camouflaged is how it is seen), so the
+    rubric's `typical` tags (the fish's partial 0 and camouflage c) cap nothing (Q456, Pierre, 2026-11-23)."""
     R = RUBRICS[subject]
     m = R["code"].match(code)
     if not m:
@@ -123,15 +133,65 @@ def cap(code, phase, rep=None, subject="fish"):
     v, w, light, loss, clarity, _z, n, fl, e = m.groups()
     fl = fl + ("p" if phase and "p" not in fl else "") + ("r" if rep else "")
     e = int(e)
+    free = R["typical"] if typical else ""  # the tags the family's usual look frees (Q456)
     # Strong blur (b: the outline or pattern smeared) is a hard photo, kept in play (judging/FISH.md "Strong blur").
     if n == "x" or loss == "3" or clarity in R["blur2"]:
         e = min(e, 2)
     # The phase flag p caps nothing (a sex or colour phase is a species-level difficulty; an Anthias or a parrotfish is
     # easy to call one at the family level), kept for the species questions and explanation cards.
     # light n is the night livery only (rubric 6: a night or resting colour pattern unlike the day one); a fish lit by a flash or a lamp on a dark background is good light (g) and caps nothing.
-    if set(fl) & set("ca") or light == "n" or loss == "2" or v in R["views3"] or w == "0":
+    part = w == "0" and "0" not in free
+    if set(fl) & (set("ca") - set(free)) or light == "n" or loss == "2" or v in R["views3"] or (part and not R["part4"]):
         e = min(e, 3)
+    # A head-on, tail or top view and a partial fish: one step softer (Q458 step 1).
+    if v in R["views4"] or (part and R["part4"]):
+        e = min(e, 4)
     return e, code[:7] + fl
+
+
+# The typical look (Q456, Pierre, 2026-11-23 17:20; judging/FISH.md "Caps"): a family whose usual look is buried or
+# camouflaged, by a declared rule, never by hand: at least TYPICAL_SHARE of its photos in play tagged partial (whole 0) or
+# camouflage (c). The rule of the REE-85 study (docs/reviews/2026-11-23-fish-ease-vs-answers.md "The typical-look
+# families"), declared on the photos in play before any answer was read; its pool is the same: the photos fish-game.json
+# lists (typical_now), whose tags never depend on the ease, so re-capping never moves the families.
+TYPICAL_SHARE = 0.5
+_TYPICAL = {}
+
+
+def typical_shares(fish, recs):
+    """{teaching id: (photos tagged partial 0 or camouflage c, photos)} of the level-1 entries (fish.json teach; a species
+    counts for its first level-1 entry, as tools/fish_game.py entries) over the photo records recs ({sp, jt})."""
+    of = {}
+    for t in (fish or {}).get("teach") or []:
+        if t.get("level") == 1:
+            for s in t.get("species") or []:
+                of.setdefault(s, t["id"])
+    out = {}
+    for r in recs:
+        t, jt = of.get(r.get("sp")), str(r.get("jt") or "")
+        if t and len(jt) >= 7:
+            h, n = out.get(t, (0, 0))
+            out[t] = (h + (jt[1] == "0" or "c" in jt[7:]), n + 1)
+    return out
+
+
+def typical_look(fish, recs, share=TYPICAL_SHARE):
+    """The teaching ids whose usual look is buried or camouflaged: at least `share` of their photos (recs) tagged partial
+    or camouflage (typical_shares)."""
+    return {t for t, (h, n) in typical_shares(fish, recs).items() if n and h >= share * n}
+
+
+def typical_now(root=None):
+    """typical_look on the photos in play as fish-game.json lists them, with fish.json's entries, read once per root
+    (the repository by default); an empty set with neither file."""
+    r = Path(root or ROOT)
+    if r not in _TYPICAL:
+        import fish_game as G
+        fp = r / "fish.json"
+        fish = json.loads(fp.read_text(encoding="utf-8")) if fp.exists() else {}
+        doc = G.load(str(r), G.OUT_FILE, {"photos": {}}) or {"photos": {}}
+        _TYPICAL[r] = typical_look(fish, [p for L in (doc.get("photos") or {}).values() for p in L])
+    return _TYPICAL[r]
 
 
 def load_src():
@@ -279,6 +339,12 @@ def summary(doc, fish):
         if ve < WANT and c == 1:
             short.append(f"{tid} {nm} ({ve})")
     print("circle-1 entries with fewer than %d very easy photos (better photos needed): %s" % (WANT, ", ".join(short) or "none"))
+    # The typical-look families (Q456): partial and camouflage cap nothing there.
+    sh = typical_shares(fish, allp)
+    top = sorted(sh, key=lambda t: -sh[t][0] / sh[t][1])
+    print(f"typical-look families (at least {TYPICAL_SHARE:.0%} of the photos in play partial or camouflaged): "
+          + ", ".join(f"{t} {names.get(t, ('?',))[0]} ({sh[t][0] / sh[t][1]:.0%})" for t in top
+                      if sh[t][0] >= TYPICAL_SHARE * sh[t][1]))
 
 
 def sheets(out, only=(), todo=False, refs=False):

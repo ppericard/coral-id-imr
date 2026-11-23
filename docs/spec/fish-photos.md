@@ -290,7 +290,9 @@ given, never judged by the pass.
   or FishBase recorded (`st`), the judge's own view weighing much less ([the
   decision](../decisions/2026-11-19-fish-rubric-gold-set.md); `judging/FISH.md` "The gold set's corrections"). The import
   applies the rubric's caps (strong blur, clarity `b`, at most 2 for the fish since then; a fish juvenile caps nothing
-  since Q435, [the decision](../decisions/2026-11-19-fish-juvenile-no-cap.md)) and phase flag
+  since Q435, [the decision](../decisions/2026-11-19-fish-juvenile-no-cap.md); a partial fish and a head-on, tail or top
+  view at most 4, and partial and camouflage nothing in a typical-look family, since Q456 and Q458, 2026-11-23,
+  `judging/FISH.md` "Caps") and phase flag
   (`tools/fish_judge.py` `cap`) and writes `data/suggest.json` `fish` {`jt`, `e`, `k`, `ph`, `c`, `u`, `n`}, the same `jt` and `e` as the game
   photos, so a photo keeps its tags when it moves from the candidates to the game.
 - **Sure decisions** (`autosort.js` `treeSure`, the fish `autoSure`; no `u`): best or alt → add with its tags, ease,
