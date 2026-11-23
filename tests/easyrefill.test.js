@@ -214,15 +214,25 @@ w('cand.json', {'v': 1, 'cand': {'s1': [rec('s1', i) for i in range(1, 6)], 's2'
 a = argparse.Namespace(fish=os.path.join(d, 'fish.json'), cand=os.path.join(d, 'cand.json'), cur=os.path.join(d, 'none.json'),
     suggest=os.path.join(d, 'none.json'), fbsrc=os.path.join(d, 'none.json'), photos=os.path.join(d, 'none.json'),
     cache=os.path.join(d, 'cache.json'), offline=False, refresh=False, plan=True, only='', deep=True, rep=False, circle=[1], cap=5)
-with contextlib.redirect_stdout(io.StringIO()):
-    P = fetch_fish.run(a)
-print(json.dumps([seen, [[P[s][k] for k in ('room', 'beyond')] for s in ('s1', 's2', 's3')]]))`);
+out = []
+for b in (True, False):  # --beyond-cap, then the scheduled refill
+    with contextlib.redirect_stdout(io.StringIO()):
+        P = fetch_fish.run(argparse.Namespace(**{**vars(a), 'beyond_cap': b}))
+    out.append([[P[s][k] for k in ('room', 'beyond')] for s in ('s1', 's2', 's3')])
+print(json.dumps([seen, out]))`);
   assert.deepStrictEqual(out, [
-    [[501, 502]],
+    [[501, 502], [502]],
     [
-      [0, 30],
-      [4, 30],
-      [0, 0]
+      [
+        [0, 30],
+        [4, 30],
+        [0, 0]
+      ],
+      [
+        [0, 0],
+        [4, 0],
+        [0, 0]
+      ]
     ]
   ]);
 });
@@ -252,42 +262,30 @@ test('faved: faves > 0 and not annotated juvenile', () => {
   assert.deepStrictEqual(out, [true, true, false, false, false]);
 });
 
-test('pick_short: a species at its cap with room beyond it is picked; a fresh "free" record covers "faves" only with free room for an observation', () => {
+test('shortness and pick_short: the room beyond the cap only in a --beyond-cap run, never remembered as searched to the end', () => {
+  // A one-species family at its cap (5) with no easy adult: no room in the scheduled refill; 30 beyond the cap when
+  // asked (bonus). A fresh record of its other parts never skips it then: that room is searched again each time asked.
   const out = J(`import datetime
-r = {'cap': 90, 'base': 30, 'room': 0, 'beyond': 30, 'parts': {'faves': 30}, 'easy': 2, 'need': 12, 'unjudged': 60}
-r2 = {**r, 'room': 2, 'parts': {'free': 2, 'faves': 30}}
+s, t = {'id': 's1'}, {'id': 't1', 'species': ['s1']}
+L = [{'f': f'fish-s1-cand-{i}', 'o': f'o{i}'} for i in range(5)]
+row = lambda bonus: shortness(s, t, L, lambda f: False, {}, {}, cap=5, bonus=bonus)
 d = datetime.date(2026, 11, 23)
-free = {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free']}}
-# 10.5 of room, 10 of it kept for the juveniles: 0.5 free, too little for a new observation (Codex #1487).
-r3 = {**r, 'room': 10.5, 'parts': {'free': 0.5, 'juvenile': 10, 'faves': 30}}
-both = {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['free', 'juvenile']}}
-print(json.dumps([pick_short({'s1': r}, {}, d), pick_short({'s1': {**r, 'beyond': 0, 'parts': {}}}, {}, d),
-    pick_short({'s1': r2}, free, d), pick_short({'s1': r}, free, d), pick_short({'s1': {**r2, 'room': 0.5, 'parts': {'free': 0.5, 'faves': 30}}}, free, d),
-    pick_short({'s1': r}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['juvenile']}}, d),
-    pick_short({'s1': r3}, both, d), pick_short({'s1': {**r3, 'parts': {'free': 1, 'juvenile': 10, 'faves': 30}}}, both, d),
-    # A "faves" record made when it lacked 10 easy adults (gap): it holds while 10 or fewer are missing; 11 (an ease
-    # corrected down) opens more room beyond the cap; a record without gap is rechecked (Codex #1487).
-    [pick_short({'s1': {**r, 'easy': e}}, {'s1': {'at': '2026-11-21', 'cap': 90, 'parts': ['faves'], **g}}, d)
-     for e, g in ((2, {'gap': 10}), (3, {'gap': 10}), (1, {'gap': 10}), (2, {}))]]))`);
+free = {'s1': {'at': '2026-11-21', 'cap': 5, 'parts': ['free']}}
+r2 = {**row(True), 'room': 2, 'parts': {'free': 2}}
+print(json.dumps([[row(b)[k] for b in (False, True) for k in ('room', 'beyond', 'parts')],
+    pick_short({'s1': row(False)}, {}, d), pick_short({'s1': row(True)}, {}, d), pick_short({'s1': row(True)}, free, d),
+    pick_short({'s1': r2}, free, d), pick_short({'s1': {**r2, 'beyond': 0}}, free, d)]))`);
   assert.deepStrictEqual(out, [
+    [0, 0, {}, 0, 30, {}],
+    [[], []], // the scheduled refill: at its cap, nothing to take
+    [['s1'], []], // --beyond-cap: its faved room beyond the cap
     [['s1'], []],
-    [[], []],
-    [[], ['s1']], // room 2: its searches read to the end took every usable observation, faved ones included
-    [['s1'], []], // at its cap, or under 1 of room: the end only says nothing more fitted under the cap
-    [['s1'], []],
-    [['s1'], []],
-    [['s1'], []], // room 10.5 but 0.5 free (the rest the juveniles'): the free part's end says nothing of the faves
-    [[], ['s1']], // 1 free: room for a new observation, so the end covers the faves
-    [
-      [[], ['s1']],
-      [[], ['s1']],
-      [['s1'], []],
-      [['s1'], []]
-    ]
+    [['s1'], []], // a fresh "free" record says nothing of the room beyond the cap
+    [[], ['s1']] // without it, the record holds as before
   ]);
 });
 
-test('refill offline: a species at its cap, short of easy adults, takes faved adults beyond it, most-faved first; nothing else', () => {
+test('refill offline: the scheduled refill leaves the room beyond the cap; --beyond-cap takes faved adults there, most-faved first, marked bc', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'beyondcap-'));
   fs.mkdirSync(path.join(dir, 'data'));
   const fish = {
@@ -332,23 +330,37 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
       cwd: ROOT,
       encoding: 'utf8'
     });
-  const P = JSON.parse(run('--plan'));
+  const ids = L => L.map(p => p.o.split('/').pop());
+  const cand = () => JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
+  // The scheduled refill (no --beyond-cap): both at their cap, nothing to take, nothing asked.
+  const S = JSON.parse(run('--plan'));
+  assert.deepStrictEqual([S.short.s1.beyond, S.short.s2.beyond, S.pick, S.at_cap], [0, 0, [], ['s1', 's2']]);
+  run('--offline');
+  assert.deepStrictEqual([ids(cand().s1).length, ids(cand().s2).length], [5, 5]);
+  // Asked for by hand (--beyond-cap): the faved room beyond the cap.
+  const P = JSON.parse(run('--plan', '--beyond-cap'));
   assert.deepStrictEqual([P.short.s1.room, P.short.s1.beyond, P.short.s2.room, P.short.s2.beyond], [0, 30, 0, 9]);
   assert.deepStrictEqual(P.pick, ['s1', 's2']);
   assert.deepStrictEqual(P.at_cap, []);
-  run('--offline');
-  const got = JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand;
-  const ids = L => L.map(p => p.o.split('/').pop());
+  run('--offline', '--beyond-cap');
+  const got = cand();
   // s1: its 5 kept, then every faved adult, most-faved first (54: 7, 52: 4, 59: 2, 53: 1); not the faved juvenile
   // (57: 20) nor any unfaved one, though 30 of room beyond the cap was open.
   assert.deepStrictEqual(ids(got.s1), ['1', '2', '3', '4', '5', '54', '52', '59', '53']);
   // s2: 9 of room beyond (3 missing x 3): its 4 faved adults (1 room each), from its own search.
   assert.deepStrictEqual(ids(got.s2), ['6', '7', '8', '9', '10', '154', '152', '159', '153']);
-  // Searched to the end with room beyond the cap left: "faves" is remembered, so the next refill skips them.
+  // Every bonus candidate marked bc; the room beyond the cap is never remembered as searched to the end.
+  assert.deepStrictEqual(
+    [got.s1, got.s2].map(L => L.filter(p => p.bc).length),
+    [4, 4]
+  );
   const mem = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8')).end;
-  assert.deepStrictEqual([mem.s1.parts, mem.s2.parts], [['faves'], ['faves']]);
-  assert.deepStrictEqual([mem.s1.gap, mem.s2.gap], [12, 3]); // the easy adults each lacked (need - easy)
-  const again = JSON.parse(run('--plan'));
-  assert.deepStrictEqual([again.pick, again.skip], [[], ['s1', 's2']]);
+  assert.deepStrictEqual(mem, {});
+  // The scheduled refill afterwards: nothing to take (the bc candidates never eat the room under the cap).
+  const after = JSON.parse(run('--plan'));
+  assert.deepStrictEqual([after.pick, after.skip, after.at_cap], [[], [], ['s1', 's2']]);
+  // Another --beyond-cap run searches them again (what is left: 30 - 4 and 9 - 4).
+  const again = JSON.parse(run('--plan', '--beyond-cap'));
+  assert.deepStrictEqual([again.pick, again.short.s1.beyond, again.short.s2.beyond], [['s1', 's2'], 26, 5]);
   fs.rmSync(dir, {recursive: true, force: true});
 });
