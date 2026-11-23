@@ -1993,6 +1993,11 @@ learning change".
   JSON) and those below. Each run (profile × seed) gets a fresh browser context; seeds are 1..N (`--seed0` shifts them,
   for fresh seeds), and the app's `Math.random` and the learner's own generator are both seeded from the seed, so a run
   repeats and two versions of the app compare on paired seeds. The fish's surprise questions are left out of the path.
+  The learner's answer goes in through `tests/answer.js` (`smokeAnswer`), as in the smokes: a typed answer is the
+  unit's name, and an answer the app does not take stops the run with what is on screen. Fish runs before this
+  (REE-249) typed a family's id (`f:Damselfishes`): the form read it as "So close!" and never took it, so a typed
+  question the learner got right came back unanswered for up to about a thousand answers, counted right by the learner
+  and by nothing in the app.
 - **Photo ratings**: `--stats` loads a `?stats=1` reply of the sync sheet, a file (fetched with an `av`, or the sheet
   logs the read as an old app) or `live` (read at start with `av=learnsim`); without it every photo's difficulty is 0,
   as in CI. The learner meets the app's own `photoDiff` unless `--truth` fixes its world: a file
