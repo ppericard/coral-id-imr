@@ -58,6 +58,12 @@ report) or *force*. Then it reads the answer log (`readAnswers`), fits every ana
 stored milestones whose answers and photo features are unchanged (the fingerprint `fpOf`: count, last time, right
 answers, players, `AV`, a hash of the photo features), and stores the report (`analysesPut`).
 
+Each call keeps no connection (`Connection: close`): the compute between two calls takes minutes, and the runner's network
+drops an idle one without a word (REE-235: the put got a reset and the fish report was never stored). A call that fails
+at the network is tried once more after a pause (`sheetPost`; safe: the reads change nothing and a put replaces the whole
+report), and the log names the cause (`The sheet did not store the report (no reply, network: ECONNRESET, …)`). An error
+the script answers by name is not retried.
+
 Both calls carry the admin token from the repository secret **`ANALYSES_ADMIN_TOKEN`** (its setup:
 [HANDOVER.md](../HANDOVER.md) "Analyses report"); without it the job says so and stops, green. The script prints counts
 only (the Actions log of a public repository is public); the report goes to the sheet only: no artifact, no cache,
