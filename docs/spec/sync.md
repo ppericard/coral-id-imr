@@ -51,7 +51,7 @@ record in a new tab.
 |---|---|
 | `RAs` | One row per player: name, the hidden code hash and the saved data as JSON (column H) |
 | `Progress data` | Name, revision, the saved data in 45,000-character chunks (a cell holds at most 50,000); `RAs` column H keeps the JSON when it fits, else `@Progress data` |
-| `By genus` | The corals' progress per player and genus, written from each save's summary; its header row is the list of genera the corals' leaderboard counts |
+| `By genus` | The corals' progress per player and genus, written at each save that carries a summary's `genera`: its columns are the script's own, never the client's (`Code.gs` `scale_`, `core.js` `gameOf` over data.json: the global scale, the slate then the bonus genera, rule L6), each filled from the summary's status for it, any other key ignored, the grid widened to that scale at most, nothing written while data.json cannot be read (the app sends the scale's genera from `SCALE_SHEET`, the slate's to an older script); its header row is the list of genera the corals' leaderboard counts |
 | `Answers` | One row per answer (below) |
 | `Activity` | A QUERY per player over the Answers tab; it counts every subject's answers |
 | `Reports` | One row per report or feedback: time, reporter, verified, reason, expected, answered, suggested genus, note, mode (game, photo, sheet or page), photos, where, id, image (the report's id when a picture is attached, else empty; from v212) |
@@ -761,7 +761,10 @@ player before (`P[g].ok + ko`).
 (`r`, `g`, capped at 30 pages and 30 genera), the visit id `vi` (random per page load), the answers so far `na`
 (`answersSoFar`), the screen `vp` once the replies say `v` ≥ `sync.js` `VIEWPORT_SHEET` (`viewportOn`, rule D4) and,
 once the answers' feedback was shown, the four feedback-sheet numbers `fb` (ARCHITECTURE.md "The More counter"); then it
-starts a fresh tally (coming back adds another summary with the same `vi`; the page still in view counts 0 times). The
+starts a fresh tally (coming back adds another summary with the same `vi`; the page still in view counts 0 times).
+`pagehide` does the same, for a browser that closes or reloads a page without a hidden event first; after a hidden
+event the tally is empty, so nothing is queued twice ([decision](../decisions/2026-11-23-pages-kept-copy.md)). A page
+killed with no event at all (the app or the phone stopped, a crash) still loses its summary so far. The
 screen `vp` is `{w, h, d, o, b}` (`core.js` `VIEWPORT`, `viewportOf`): `innerWidth` and `innerHeight` rounded to 10 px,
 `devicePixelRatio` to one decimal and clamped, `o` portrait or landscape, `b` the band of the exact short side (0 ≤360,
 1 361-390, 2 391-414, 3 415-600, 4 wider, since the 10 px grid cannot keep the edges); `pagesClean` rounds and clamps it

@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 220 (2026-11-22). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 221 (2026-11-23). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 220;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 221;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -381,10 +381,16 @@ function doPost_(e){
         try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('left out of the statistics: device ' + aid_('~anon ' + p.anon) + ' signed in as ' + aid_(name) + ', left out too')]); } catch (e) {}
       }
     }
-    // One row per RA, one column per genus, coloured by status: the class at a glance.
-    const genera = Object.keys(s.genera || {});
+    // One row per RA, one column per genus, coloured by status: the class at a glance. The columns are the script's own,
+    // never the client's: the corals' one scale (scale_: core.js gameOf over data.json, the slate then the bonus genera,
+    // rule L6), each filled from the summary's status for it, any other key ignored; none written while data.json cannot
+    // be read. The grid widened first when it is narrower than that scale (writing past it fails), so never beyond it.
+    const sent = s.genera && typeof s.genera === 'object' ? s.genera : {}, genera = Object.keys(sent).length ? scale_() || [] : [];
     if (genera.length) {
       const g = sheet_('By genus'), head = ['Name', 'Learned'].concat(genera.map(safe_));
+      const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);  // a status the script knows, else none
+      s.genera = Object.fromEntries(genera.map(n => [n, own(sent, n) && own(LABELS, String(sent[n])) ? String(sent[n]) : 'new']));
+      if (g.getMaxColumns && g.getMaxColumns() < head.length) g.insertColumnsAfter(g.getMaxColumns(), head.length - g.getMaxColumns());
       g.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold'); g.setFrozenRows(1); g.setFrozenColumns(2);
       const gr = find_(g, name) || g.getLastRow() + 1;
       g.getRange(gr, 1, 1, head.length).setValues([[safe_(name), (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
@@ -638,10 +644,16 @@ function gen_(){
   const hit = CacheService.getScriptCache().get('gen1');
   return hit ? JSON.parse(hit) : dataJson_().gen;
 }
-// The slate (core.js slateOf over data.json: what the app's progress % and Learned count), cached with gen_.
+// The slate (core.js slateOf over data.json: what the app's Learned and IMR slate score count), cached with gen_.
 function slate_(){
   const hit = CacheService.getScriptCache().get('slate1');
   return hit ? JSON.parse(hit) : dataJson_().slate;
+}
+// The one 45-genus scale of the corals' global progress % (core.js gameOf over data.json: the slate and the bonus
+// genera, as the app's UNITS scale; rule L6), cached with gen_; the slate while it cannot be read.
+function scale_(){
+  const hit = CacheService.getScriptCache().get('scale1');
+  return (hit ? JSON.parse(hit) : dataJson_().scale) || slate_();
 }
 // Lines for the app's cards, which may name a player, a name never written in the repo (rule D2): the Notes tab (Key,
 // Text), rows whose key starts with card., served as notes: {key: text} with every load and save reply (sync.js
@@ -656,17 +668,17 @@ function notes_(){
   return out;
 }
 function dataJson_(){
-  const c = CacheService.getScriptCache(), none = {gen: null, slate: null};
+  const c = CacheService.getScriptCache(), none = {gen: null, slate: null, scale: null};
   let d;
   try {
     const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/' + REPO + '/main/data.json', {muteHttpExceptions: true});
     if (!r || r.getResponseCode() !== 200) return none;
     d = JSON.parse(r.getContentText());
   } catch (e) { return none; }
-  const out = CORE_.genLooks(d), slate = CORE_.slateOf(d);
+  const out = CORE_.genLooks(d), slate = CORE_.slateOf(d), scale = CORE_.gameOf(d);
   if (!Object.keys(out).length) return none;
-  try { c.put('gen1', JSON.stringify(out), 21600); c.put('slate1', JSON.stringify(slate), 21600); } catch (e) {}
-  return {gen: out, slate: slate.length ? slate : null};
+  try { c.put('gen1', JSON.stringify(out), 21600); c.put('slate1', JSON.stringify(slate), 21600); c.put('scale1', JSON.stringify(scale), 21600); } catch (e) {}
+  return {gen: out, slate: slate.length ? slate : null, scale: scale.length ? scale : null};
 }
 // An Answers row as a replay row (core.js replayProgress): [player, time ms, shown, answered, right, mode, photos, e, th,
 // new photos, choices, null, seconds, null ... null, scoring at 22]; blank numbers are null. The seconds (at 12, as in
@@ -3796,12 +3808,13 @@ function photoAlert_(name, rows){
 // list gets rp: [progress %, learned, the saved copy's progress %],
 // the full replay of their log as the admin showed it (core.js replayProgress over their rows since their last reset,
 // with their first-launch answer, the photo memory and pooled confusions of stats_; then replayedOf with their saved
-// copy, pctOf and learnedOf over the slate). Computed here once (rule L12): the replay record is the one the
+// copy, pctOf over the one 45-genus scale (scale_: the app's global %, rule L6) and learnedOf over the slate). Computed here once (rule L12): the replay record is the one the
 // Replayed tab keeps (replay_), reused while the rules, the player's row count and reset are the same, made and stored
 // otherwise. No rp without data.json (gen_) or for a broken saved copy: the admin then reads that player's copy itself.
 function replayedAll_(users, dcol){
   const gen = gen_(), list = slate_(), stM = subjSt_(CORE_.replaySubject());  // its structure stamp ('' none)
   if (!gen || !list || !users.length || stM === null) return;
+  const scale = scale_() || list;
   // The pooled stats from the snapshot (statsServed_), else stats_.
   const ss = SpreadsheetApp.getActiveSpreadsheet(), st = statsServed_() || stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // by player, no prototype
   const dt = ss.getSheetByName(DATA_TAB);
@@ -3838,7 +3851,7 @@ function replayedAll_(users, dcol){
       if (!c) cached[k] = {at: at, r: row};
     }
     const G = CORE_.replayedOf({P: rec}, P);
-    u.rp = [CORE_.pctOf(G, list), CORE_.learnedOf(G, list), CORE_.pctOf(P, list)];
+    u.rp = [CORE_.pctOf(G, scale), CORE_.learnedOf(G, list), CORE_.pctOf(P, scale)];
   });
 }
 // Self-update from GitHub, so the script redeploys without anyone (docs/ARCHITECTURE.md "Progress sync (Google
@@ -9313,10 +9326,11 @@ const CORE_ = (function () { const module = {exports: {}};
 
   // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
   // two lists below from this file; docs/spec/quiz.md "Bonus genera", docs/LEARNING.md "Millepora and the bonus
-  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate, never
-  // counted in the progress. slateOf(d) = the slate as the games and the progress count it (app.js slateGenera);
-  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera; the rest of data.json "x" are
-  // Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
+  // genera"): BENTHIC, Millepora, a slate genus (app.js isBenthic); BONUS, the opt-in genera off the slate.
+  // slateOf(d) = the slate as the games teach it and the IMR slate score counts it (app.js slateGenera);
+  // gameOf(d) = every genus a game can ask (slate + BONUS), the admin's game genera and the one scale the global
+  // progress counts for every coral player, opted in or not (app.js UNITS scale; rule L6); the rest of
+  // data.json "x" are Key-only. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose DATA.gen also holds the "x" genera:
   // a genus of d.x.gen is never a slate genus by its key in d.gen.
   const BENTHIC = ['Millepora'],
     BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
@@ -10342,6 +10356,13 @@ const CORE_ = (function () { const module = {exports: {}};
       at: '2026-11-21',
       why: "The player's time net of the photo's (Q452, Pierre, 2026-11-21: \"si la lenteur vient d'une photo dure pour tout le monde, c'est injuste pour lui [...] il faut recalculer la progression de tous. On peut le faire en silence\"): a right answer's time weight takes off z its photos' time term (rtWeight ti: the mean of the photos' served terms, ptimeQ), so a slowness the photo explains no longer counts against the player; the game logs the term in the scoring record (i), and the sheet's replay nets every answer logged without it by the photos' terms served now (replayProgress photos), so every player's progress is recalculated, silently",
       // No card (rule D6; Q452: "en silence").
+      msg: null
+    },
+    {
+      v: 14,
+      at: '2026-11-23',
+      why: 'One 45-genus coral scale (rule L6; Pierre, 2026-11-20: "Les genres bonus dans les coraux devraient définitivement compter dans le progres global"; Q445 A, 2026-11-21: "une seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR"): the global progress % (the header, My progress, the achievements, the leaderboard) is the mean of the bars of every game genus, the slate\'s and the bonus genera\'s (core.js gameOf), for every player, opted in or not; today\'s % over the slate stays as the IMR slate score. No genus\'s bar moves; every device takes the replay once',
+      // No card (rule D5).
       msg: null
     }
   ];

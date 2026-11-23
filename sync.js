@@ -66,21 +66,28 @@ if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     if (!keep && Date.now() - (ownStatsAt[SUBJ.id] || 0) > 600000) loadOwnStats();
   });
-// The slate genera: the sheet's "By genus" columns and the leaderboard % follow them.
+// The genera of the global progress (app.js scaleUnits: the corals' one 45-genus scale, the slate then the bonus
+// genera, rule L6): the sheet's "By genus" columns and the leaderboard % follow them (Code.gs board_ ranks over the
+// tab's header); Learned, seen, total and review stay the slate's, as My progress counts them. Only from SCALE_SHEET,
+// the script that widens the tab's grid before writing a longer header (rule D4: an older one fails the save of a
+// summary wider than the tab); before it, the slate's, as before.
+const SCALE_SHEET = 221;
+const scaleSent = () => (sheetV() >= SCALE_SHEET ? scaleUnits() : slateGenera());
 // The first leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen; the others' units
 // in boards.
 function syncSummary() {
   const B = SUBJECTS.find(x => x.board);
   if (B && B !== SUBJ) return inSubject(B.id, syncSummary);
   const n = slateGenera(),
-    genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
+    all = scaleSent(),
+    genera = Object.fromEntries(all.map(x => [x, level(x)[0]]));
   return {
     learned: n.filter(x => genera[x] === 'ok').length,
     seen: n.filter(x => genera[x] !== 'new').length,
     total: n.length,
     review: n.filter(x => genera[x] === 'weak'),
     genera,
-    pct: progPct(n), // the public leaderboard: progress as the header shows it
+    pct: progPct(all), // the public leaderboard: progress as the header shows it
     board: boardOn() ? 1 : 0,
     boards: boardUnits()
   };
@@ -349,7 +356,7 @@ function replaysAdopt(j, pending, cuts) {
 const headOf = X => {
   const U = typeof UNITS === 'object' ? UNITS[SUBJ.id] : null,
     T = SUBJ.score && U && U.tree ? U.tree() : null,
-    L = typeof slateGenera === 'function' ? slateGenera() : [];
+    L = typeof scaleUnits === 'function' ? scaleUnits() : [];
   return T ? treeScore(X, T, SUBJ.score).pct : pctOf(X, L);
 };
 function replayAdoptS(S, rp, pending, v, cut, pre) {
@@ -1714,6 +1721,12 @@ document.addEventListener('visibilitychange', () => {
     sendAnon();
     sendEvents();
   } else pagesResume(PV, Date.now());
+});
+// A page closed or reloaded where the browser gives no hidden event first: its summary goes as when the app is hidden
+// (after a hidden event, pagesTake has nothing left, so nothing is queued twice).
+window.addEventListener('pagehide', () => {
+  pagesSend();
+  sendEvents();
 });
 // Signing in: a new name keeps and sends what this device holds. A known account ("Is it you?", bindSync) takes the
 // sheet's settings, adds up both progresses, then reloads; either way the answers played before join the log (LOG0).

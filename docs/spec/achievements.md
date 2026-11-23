@@ -146,7 +146,11 @@ line the units unlocked ("30/40 genera unlocked": `progress.js` `unlockText`, th
 `model.js` `introduced`, out of `slateGenera()`, in `SUBJECTS` `many`; the header pill has no room for it, so only its
 tooltip says it), the two highest levels reached (`lvSummary`), 🏆 the leaderboard place and the Elo (`#leaderboard`;
 the Elo is the device's own level, `eloLine()`, shown only from `ELO_MIN` answers, with no countdown; the board brings
-the place only), and 🏅 earned / total with the latest three of different kinds (`#leaderboard/achievements`). Under the
+the place only), and 🏅 earned / total with the latest three of different kinds (`#leaderboard/achievements`). The
+ring's % is the global progress (`headPct(scaleUnits())`: for the corals the one scale of every game genus, the bonus
+genera included, rule L6); under the line, the fish show their score's parts (`scoreBars`) and the corals one bar, the
+**IMR slate** score (`slateBar`, `UNITS` `slateName`: the % over the slate alone, Q445 A), which the header pill's
+tooltip repeats. Under the
 ring (`#pbrank`), linking to the leaderboard: the rank (from the board) and the Elo (always the device's own, so it does
 not change when the board loads).
 

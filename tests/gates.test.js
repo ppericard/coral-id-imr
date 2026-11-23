@@ -62,6 +62,18 @@ const GATES = {
   // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).
   TREE_SHEET: (v, N) => fn('sync.js', 'const treeOn = ', '\n', 'treeOn', {sheetV: () => v, TREE_SHEET: N})(),
+  // The corals' one scale in the save summary (sync.js scaleSent, syncSummary genera and pct; rule L6): the slate then
+  // the bonus genera, from the script that widens the "By genus" grid before writing them (Code.gs; an older one fails
+  // the save of a summary wider than the tab); before, the slate's, as before (tests/sync.test.js runs the script side).
+  SCALE_SHEET: (v, N) => {
+    const L = fn('sync.js', 'const scaleSent = ', '\n', 'scaleSent', {
+      sheetV: () => v,
+      SCALE_SHEET: N,
+      slateGenera: () => ['Acropora'],
+      scaleUnits: () => ['Acropora', 'Isopora']
+    })();
+    return L.length === 2;
+  },
   // The fish species level (sync.js speciesOn: its units open and count in the score's tree once the sheet replays them,
   // core.js treeReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
   SPECIES_SHEET: (v, N) =>

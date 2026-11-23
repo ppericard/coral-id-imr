@@ -101,6 +101,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     route: () => {},
     // What a sync (syncOnce, mergeSaved) touches besides the progress.
     slateGenera: () => [],
+    scaleUnits: () => [], // app.js: the units of the global % (UNITS scale)
     level: () => ['new'],
     progPct: () => 0,
     boardOn: () => true,
@@ -385,7 +386,7 @@ test('the recalculation card compares the progress before the sync, even when th
   const old = {Acropora: {ok: 3, ko: 1, h: '1101', pg: 0.95}},
     B = app({sheet: s, P: copy(old), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(old)}}),
     seen = [];
-  B.ctx.slateGenera = () => ['Acropora'];
+  B.ctx.slateGenera = B.ctx.scaleUnits = () => ['Acropora'];
   B.ctx.rvNoticeAdd = (from, to, pct) => seen.push([...pct]); // a plain array of this realm
   const before = C.pctOf(old, ['Acropora']);
   await B.syncPull();
@@ -1003,6 +1004,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
   const ids = s => (s === 'fish' && !ctx.treePhotoIn ? [] : Object.keys(lv[s]));
   Object.assign(ctx, {
     slateGenera: () => ids(ctx.cur),
+    scaleUnits: () => ids(ctx.cur),
     lvStep: n => lv[ctx.cur][n] || 0,
     shownGroup: () => '',
     bonusList: () => [],

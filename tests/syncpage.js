@@ -99,6 +99,7 @@ function page(s, {v = SV, SYNC = null, P = {}, ls = {}, net = () => undefined, l
     achMerge: () => {},
     route: () => {},
     slateGenera: () => [],
+    scaleUnits: () => [], // app.js: the units of the global % (UNITS scale)
     level: () => ['new'],
     progPct: () => 0,
     boardOn: () => true,

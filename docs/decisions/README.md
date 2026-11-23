@@ -59,6 +59,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | Date | Record | PR |
 |---|---|---|
 | 2026-11-23 | [The refill takes the most-faved observations first for a species short of easy adults](2026-11-23-easy-refill-faves.md) | #1476 |
+| 2026-11-23 | [Pages opened: pagehide also queues the summary; keeping it across a killed page left for its own issue](2026-11-23-pages-kept-copy.md) | #1471 |
 | 2026-11-22 | [core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte](2026-11-22-core-parts.md) | #1452 |
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
@@ -70,6 +71,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
 | 2026-11-21 | [Comeback by genus: a stability multiplier fitted from the logged recall, descriptive, an upper bound](2026-11-21-comeback-by-genus.md) | #1398 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
+| 2026-11-21 | [Corals: the bonus genera count on one scale of every game genus, today's % kept as the IMR slate score](2026-11-21-coral-one-scale.md) | #1474 |
 | 2026-11-21 | [Down the tree: a Lab prototype, one photo named family, then genus, then species, each step a partial credit shown on screen only](2026-11-21-down-the-tree-lab.md) | #1387 |
 | 2026-11-21 | [The answer feedback no longer says "(IMR)" as its line's source](2026-11-21-feedback-no-imr-label.md) | #1353 |
 | 2026-11-21 | [Find the X on a mimicry pair: the class's photo is the decoy tile, dormant until the class has tiles](2026-11-21-find-the-x-mimicry-pair.md) | #1412 |

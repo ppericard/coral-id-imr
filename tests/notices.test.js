@@ -82,6 +82,7 @@ function app({SYNC = {name: 'Ana', pin: '1234', srv: 4, base: prog, log: []}, re
     achMerge: () => {},
     route: () => {},
     slateGenera: () => [],
+    scaleUnits: () => [], // app.js: the units of the global % (UNITS scale)
     level: () => ['new'],
     progPct: () => 0,
     boardOn: () => true,

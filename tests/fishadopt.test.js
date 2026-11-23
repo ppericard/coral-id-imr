@@ -126,6 +126,7 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
     route: () => {},
     rvNoticeAdd: (from, to, pct) => cards.push([ctx.SUBJ.id, from, to, pct]),
     slateGenera: () => [],
+    scaleUnits: () => [], // app.js: the units of the global % (UNITS scale)
     level: () => ['new'],
     progPct: () => 0,
     boardOn: () => true,

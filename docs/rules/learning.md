@@ -91,20 +91,28 @@ subject-neutral wording, 2026-11-06.
 ### L6
 
 **No unit-specific code: rule S1** (shared and modular by default; an exception is declared and named in one place).
-**Corals: Millepora counts as a slate genus; the other common off-slate genera are opt-in bonus genera.** *Millepora* is a slate genus for everything in the games and the progress (`BENTHIC`), with a warning on its
+**Corals: Millepora counts as a slate genus; the other common off-slate genera are opt-in bonus genera, counted in the
+global progress on one scale.** *Millepora* is a slate genus for everything in the games and the progress (`BENTHIC`), with a warning on its
 first card and its sheet that it is not a hard coral nor on the IMR coral list, but on the IMR benthic slate. The bonus
 genera (`BONUS`: Isopora, Leptoseris, Heliopora, Sandalolitha, Pleuractis) are offered once by a card when the player
 has met every slate genus (Add them / Not now; never in the first 10 answers of a visit or during a comeback, rule L1),
 and ⚙ Bonus genera On / Off any time (`Q.bon`); once on they open one at a time like slate genera (no threshold, no
-weight cap of their own); they never count in the progress, their ID tips come from the book (labelled so), their
-game photos (Millepora's too) are Research Grade iNat (or Pierre's) only. Details: ARCHITECTURE.md "Bonus genera". The
+weight cap of their own); their ID tips come from the book (labelled so), their
+game photos (Millepora's too) are Research Grade iNat (or Pierre's) only. **They count in the global progress: one
+scale of every game genus** (`gameOf`: the slate, Millepora and the bonus genera, 45 genera today; `app.js` `UNITS`
+`scale`) for every coral player, opted in or not: the header, My progress's ring, the achievements, the leaderboard and
+the admin's Progress. **Today's % over the slate alone stays as a separate "IMR slate" score** (`UNITS` `slateName`),
+under the player's name on My progress. Details: ARCHITECTURE.md "Bonus genera". The
 game genera (slate + Millepora + bonus) and the Key-only ones (the other `data.json` `x` genera) are defined once,
 `core.js` `BENTHIC`, `BONUS`, `slateOf()`, `gameOf()` (Python: `tools/genera.py`): use them, never
 `n === 'Millepora'` or a `!DATA.gen[n].x` filter for "game genus". In the admin the game genera come first (Candidates,
 Game coverage); Key-only genera get no Corallites candidates and a cap of `CAP.sheet` (6) colonies per view.
 *Why:* Millepora is very common at Dauin and in ReefCloud photos. *Source:* Pierre, 2026-11-01, changed 2026-11-02; no
 genus-specific case, 2026-11-03; subject-neutral wording, and no unit-specific code for every subject, 2026-11-06
-(Q169); its first line merged into rule S1, 2026-11-19.
+(Q169); its first line merged into rule S1, 2026-11-19; the bonus genera counted, 2026-11-20 (Reports: «Les genres
+bonus dans les coraux devraient définitivement compter dans le progres global») and 2026-11-21 05:40 (Q445 A: «une
+seule échelle de 45 genres, oui, et du coup le pourcentage actuel gardé comme score ardoise IMR»), replacing "they never
+count in the progress".
 
 ### L7
 
