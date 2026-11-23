@@ -3117,7 +3117,7 @@
   // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; docs/FISH_PATH.md): a "no" keeps its units
   // closed, and the player can still open them later. From the subject's quiz settings q and the part's key k. o: met
   // (one of its units already opened on a card), due (its
-  // threshold reached), left (a unit of it not open yet), at (the player's answer count). on: the player said yes, or was
+  // threshold reached), left (a unit of it not open yet), at (the answer clock, model.js tally). on: the player said yes, or was
   // never asked and has one of its units open (it opened by itself before the choice existed: kept on). row: My progress
   // offers to open it. ask: its card is due: never answered, or once more OPEN_AGAIN answers after a first "Not now"
   // (a "no" seen without its count counts as one), then never.
