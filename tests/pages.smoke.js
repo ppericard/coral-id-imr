@@ -1608,6 +1608,15 @@ const SHEET = () => {
         ...JSON.parse(localStorage.getItem('test-sheet-scopes') || '{}')
       };
     if (!q.get('name')) return {ok: false};
+    // A name that looks like Anna's (a Cyrillic A first): a new account under it would be refused (Code.gs nameIssue_).
+    if (q.get('name') === '\u{410}nna') return {ok: true, found: false, taken: 'lookalike'};
+    // Zoe and its accent, made decomposed (REE-35): found as typed, as any script finds it; its NFC spelling is no
+    // account, and a new one under it would look like it (Code.gs nameIssue_).
+    if (q.get('name').toLowerCase() === 'zoe\u{301}')
+      return q.get('pin') === '1234'
+        ? {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account}
+        : {ok: false, error: 'pin'};
+    if (q.get('name').toLowerCase() === 'zo\u{E9}') return {ok: true, found: false, taken: 'lookalike'};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
     // test-sheet-acct: the account's generation (the sheet's _acct), as a name taken again after an archive has another
@@ -1835,6 +1844,31 @@ async function signin(base) {
         if (said !== 'This name is reserved, please choose another.') fails.push(`sign-in: the reserved name ${nm} says "${said}"`);
         if (st.sync || st.posts.length) fails.push(`sign-in: the reserved name ${nm} signed in or sent something`);
       }
+      // REE-35: a name that looks like a taken one (the sheet's taken), and one with an invisible character (the form's
+      // own check, core.js nameHidden), typed decomposed: said on the form, nothing signed in or saved, and the name
+      // sent to the sheet in NFC (core.js nameClean).
+      for (const [nm, re, sent] of [
+        ['\u{410}nna', /looks the same is already taken/, '\u{410}nna'],
+        ['Zoe\u{301}\u{200B}', /invisible character/, 'Zo\u{E9}\u{200B}']
+      ]) {
+        await submit(p, nm, '1234');
+        await p
+          .waitForFunction(r => new RegExp(r).test(document.querySelector('.signnudge [role=status]').textContent), re.source, {
+            timeout: 5000
+          })
+          .catch(() => {});
+        const said = await p.textContent('.signnudge [role=status]'),
+          st = await state(p),
+          gets = await p.evaluate(() =>
+            JSON.parse(localStorage.getItem('test-sheet-log') || '[]')
+              .filter(x => x.get)
+              .map(x => x.name)
+          );
+        if (!re.test(said)) fails.push(`sign-in: the name ${JSON.stringify(nm)} says "${said}"`);
+        if (st.sync || st.posts.length) fails.push(`sign-in: the name ${JSON.stringify(nm)} signed in or sent something`);
+        if (gets[gets.length - 1] !== sent)
+          fails.push(`sign-in: the name ${JSON.stringify(nm)} reached the sheet as ${JSON.stringify(gets[gets.length - 1])}`);
+      }
       // The right code: "Is it you?" with the account's numbers, nothing merged yet.
       await submit(p, 'Anna', '1234');
       await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
@@ -1876,6 +1910,33 @@ async function signin(base) {
         );
     }
   );
+  // REE-35: an account whose name was made decomposed. Typed so, the sheet is asked about it as typed (any script finds
+  // it; not its NFC form). Typed in NFC, it is another name that looks like it: said, nothing signed in or sent (the
+  // player types their name as they first did, as the message says).
+  await run(seen, async p => {
+    await card(p);
+    await submit(p, 'Zoe\u{301}', '1234');
+    await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+    let gets = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('test-sheet-log') || '[]')
+        .filter(x => x.get && x.name)
+        .map(x => x.name)
+    );
+    if (!(await p.$('.signnudge .sconfirm')) || gets.join('|') !== 'Zoe\u{301}')
+      fails.push(`sign-in: a decomposed account typed as it was made was not asked as typed: ${JSON.stringify(gets)}`);
+    await p.click('.signnudge .sconfirm button[type=button]');
+    await p.waitForTimeout(1000);
+    await submit(p, 'Zo\u{E9}', '1234');
+    await p
+      .waitForFunction(() => /looks the same is already taken/.test(document.querySelector('.signnudge [role=status]').textContent), null, {
+        timeout: 5000
+      })
+      .catch(() => {});
+    const said = await p.textContent('.signnudge [role=status]'),
+      st = await state(p);
+    if (!/looks the same is already taken/.test(said)) fails.push(`sign-in: the NFC form of a decomposed account says "${said}"`);
+    if (st.sync || st.posts.length) fails.push('sign-in: the NFC form of a decomposed account signed in or sent something');
+  });
   // A fresh device: the question too (everyone confirms the account), with no "this device" line.
   await run(seen, async p => {
     await card(p);
@@ -3011,7 +3072,7 @@ async function startSmoke(b, base) {
     }
     await p.evaluate(() => (location.hash = 'learn/genera'));
     await drawn(p);
-    // The ID tips view: each genus one card that opens its sheet (app.js listCard, shared with the fish and sea slugs;
+    // The ID tips view: each genus one card that opens its sheet (idtips.js listCard, shared with the fish and sea slugs;
     // Pierre, 2026-11-20): one link, its name, stretched over the card; its look-alikes' Compare links above it.
     await p.evaluate(() => document.querySelector('[data-gv="tips"]').click());
     await p.waitForSelector('#azgrid .lcard', {timeout: 8000});

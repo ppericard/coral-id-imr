@@ -309,8 +309,41 @@ please choose another"; an admin archive name holding one is refused as well (`u
 covers a name holding anywhere the seedling or one of its look-alikes (`core.js` `SEED_LOOKALIKES`: 🌱 🌿 🪴 ☘ 🍀 🍃):
 the seedling is the admin's own mark, shown after the admin's account name on the leaderboard, so no player can show
 it. Otherwise a name is any text: trimmed, at most 40 UTF-16 code units (the form's `maxlength`, `Code.gs` `clean_`),
-matched case-blind (`toLowerCase`) with no Unicode normalisation. An account that already has a reserved name signs in,
+cut at its last whole character (`core.js` `nameCut`: a grapheme where the engine segments them, else a code point;
+never inside an emoji), matched case-blind (`toLowerCase`). An account that already has a reserved name signs in,
 loads and saves as any other; the sheet's maps by player have no prototype (`Object.create(null)`).
+
+**Look-alike names** (REE-35, the integrator's call; sheet v224). Two names that look the same can no longer be two
+accounts. A new name is NFC (`core.js` `nameClean`): the form makes it so before it is sent, and the script makes the
+admin's archive name so. A save that makes an account keeps the spelling it sent (`Code.gs` `doPost_`), so an app from
+before this change, which keeps the name as typed, names its account exactly in every later request (self-delete,
+reports) and in the Removed tombstones; only the look-alike check compares by skeleton, so another Unicode form of a
+taken name is never a new account. A new name is refused when it holds an invisible
+character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,
+plus control characters and the characters that draw nothing, such as the Hangul fillers, a variation selector but
+right after a symbol, a punctuation mark, a digit or an ideograph, and a name with nothing visible left; a zero-width joiner between two
+pictographs and a flag's tags draw one emoji and are allowed), and refused as taken when it looks like an existing
+account's name (the RAs tab, archives included: `Code.gs` `nameIssue_`). Two names look alike when they share a key
+(`nameKeys`): the skeletons of the name as it is, in lower case and in upper case, since an account is its name in any
+case and a look-alike letter may be one in one case only (a Greek small beta is no b, its capital is B). An account
+keeps the spelling it was made with: a save in another case (the same account, `find_`) never changes how its name
+shows (the RAs row, the progress copy, the grid, the answers), so a mix of cases that no whole-name case covers never
+shows either. Before this change a save rewrote the name in the case it was typed in. A skeleton
+(`nameSkeleton`, after Unicode's UTS #39 skeleton): decomposed, invisible characters dropped, each Greek or Cyrillic
+letter that Unicode's confusables data maps to one Latin letter mapped to it, NFKC, lower case, runs of spaces as one. The load of a name with no account says so beside
+`found: false` (`taken: 'invisible'|'lookalike'`), and the form says "This name holds an invisible character …" or
+"A name that looks the same is already taken. If it is yours, type it as you did the first time; if not, add your
+surname's initial …", focused on the name, nothing signed in or sent; the form checks the invisible characters itself
+too, whatever the script's version. A save that would make such an account answers `error: 'reserved'` with
+`why: 'invisible'|'lookalike'`, before anything is logged or written: every app stops on it and says "Not saved: this
+name is reserved, please choose another". An archive name with an invisible character is refused as `reserved`, one
+that looks like a taken name as `exists` (`why: 'lookalike'`). An account opens only under its own spelling, case
+aside (`find_`): another Unicode form of its name (an é typed as e and its accent) is a look-alike, so its owner types
+the name as they first did, as the form's message says. The form asks the sheet about the name as typed first, then,
+when its NFC form differs and no account was found, about the NFC form, and a new account takes the NFC form.
+Existing accounts are never renamed, merged or changed; the admin's Players page lists, above
+the players, the existing accounts (archives included) whose names look alike, every character outside Latin's letters
+shown as its code point (`admin.js` `alikeLine`, `core.js` `nameAlikePairs`).
 
 **Sign out clears the device's progress** (`reefid-sync-coral-progress`, `-quiz`, `-reset`, `reefid-log0`,
 `reefid-nudge`, `reefid-anon-base`, and the other subjects' and per-device records, `sync.js` `signOutClear`; a second

@@ -35,9 +35,9 @@ its name in the map, `t` `text` or `list`, `imr` for the IMR's words, `f` the re
   genus sheet has its More details). The app lays them over `data.json` in `build()` before the curation and the units
   (`app.js` `DATAST`, `DATAON`): an edited tip's source becomes the genus's `qsrc` (`tipsList`; a bonus genus's tips
   then lose the Coral Finder label, `tipsLabel`), the other sources are shown with their slot on the genus sheet
-  (`learn.js` `viewGenus`, `esrcIn`, `esrcP`), in the quiz's answer (`quiz.js` `fbBody`, `app.js` `esrcTag`) and on the
+  (`learn.js` `viewGenus`, `esrcIn`, `esrcP`), in the quiz's answer (`quiz.js` `fbBody`, `idtips.js` `esrcTag`) and on the
   Look-alikes deck's line (`learn.js` `lsrcEsrc`); edited criteria are cited by their source in place of the Coral Finder
-  pages wherever they are shown (`app.js` `critRef`: the sheet, the answer, the Coral ID Key).
+  pages wherever they are shown (`idtips.js` `critRef`: the sheet, the answer, the Coral ID Key).
 - **The sea slugs**: a family's and a genus's `marks`, the `note` on every rank, and a genus's `lsrc/<other genus>`, its
   look-alike line, of type `srcs`: a list of sources `{t, u}` replaced whole, as `tools/seaslug_game.py` `genus_looks`
   writes them (a specialist source's for a declared pair, iNaturalist's counts for a data one), shown under the other
@@ -80,7 +80,7 @@ its new id's.
 Rule C2: every clue carries its source.
 
 - An edited tip's source becomes the unit's `qsrc` (`treeGen`; `app.js` `treeGenera` for the marks that stand for
-  missing tips and for a genus's tips), shown under the tips wherever they are (`app.js` `tipsList`: the quiz feedback,
+  missing tips and for a genus's tips), shown under the tips wherever they are (`idtips.js` `tipsList`: the quiz feedback,
   the cards, the ID tips view).
 - An edited look-alike line's source goes after its own in `lsrc` (`treeLookSrc`) and, by the other family's id, in the
   unit's `lksrc` (`app.js` `treeGenera`), which the quiz feedback's decisive line says after "IMR;" (`quiz.js`
