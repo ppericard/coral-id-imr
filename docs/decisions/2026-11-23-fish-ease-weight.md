@@ -1,6 +1,6 @@
 # Fish ease weight: the judged ease weighs 0.3 logit a point in a fish photo's prior, not 0.5
 
-Date: 2026-11-23. PR: #1518. Rules or docs touched: L11, L12, D5; `core.js` `SUBJECTS` fish `calib.ease`;
+Date: 2026-11-23. PR: #1519. Rules or docs touched: L11, L12, D5; `core.js` `SUBJECTS` fish `calib.ease`;
 docs/LEARNING.md "Fish: the starter core and judged photos", "The fish ease weight, measured"; judging/FISH.md "What
 the app does with it".
 
