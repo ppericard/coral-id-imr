@@ -4770,6 +4770,49 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
+  // A page killed without a hidden event (sync.js pvKeep, pvRecover): its summary kept on the device is queued by the
+  // next page once it is PV_STALE old, under the same id, once. Here the first page stays open, as a computer asleep:
+  // awake, it does not queue the same tally again. Its copy follows the player at sign-in, as the queue does.
+  {
+    const [c, p, posts] = await open(390, 30);
+    await p.evaluate(() => (location.hash = 'learn/genera'));
+    await p.waitForSelector('#view a[href^="#learn/genus/"]');
+    await p.waitForTimeout(1100);
+    const copy = await p.evaluate(() => {
+      pvKeep();
+      // Frozen from here (no event): its beat writes nothing while the second page opens.
+      Object.defineProperty(document, 'visibilityState', {value: 'hidden', configurable: true});
+      const L = JSON.parse(localStorage.getItem('reefid-pv-live') || '{}'),
+        x = L[PVI];
+      if (x) localStorage.setItem('reefid-pv-live', JSON.stringify({...L, [PVI]: {...x, t: new Date(Date.now() - 180000).toISOString()}}));
+      return x || null;
+    });
+    const p2 = await c.newPage();
+    p2.on('pageerror', e => fails.push(`pages summary: second page error: ${e.message}`));
+    await p2.goto(base);
+    await p2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const Q = (await queued(p2)).filter(x => copy && x.vi === copy.vi),
+      left = await p2.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')));
+    if (!copy || Q.length !== 1 || Q[0].id !== copy.id || !(Q[0].r['learn.genera'] || [])[0] || left.includes(copy.vi))
+      fails.push(`pages summary of a killed page: ${JSON.stringify({copy, Q, left})}`);
+    // The first page awake: its copy is gone, its tally starts again.
+    await p.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {value: 'visible', configurable: true});
+      pvKeep();
+    });
+    await hide(p);
+    const again = (await queued(p)).filter(x => copy && x.vi === copy.vi && Object.values(x.r || {}).some(v => v[0] > 0));
+    if (again.length !== 1) fails.push(`pages summary counted twice after a killed page's copy was queued: ${JSON.stringify(again)}`);
+    const own = await p2.evaluate(() => {
+      pagesRoute('quiz');
+      const before = (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o;
+      signIn('Ana', '1234', {found: false});
+      return [before, (JSON.parse(localStorage.getItem('reefid-pv-live') || '{}')[PVI] || {}).o];
+    });
+    if (!/^a:[a-z0-9]{10}$/.test(own[0] || '') || own[1] !== 'n:ana') fails.push(`pages summary copy at sign-in: ${JSON.stringify(own)}`);
+    if (posts.length) fails.push(`pages summary of a killed page: sent from a local copy: ${posts.join(' ')}`);
+    await c.close();
+  }
   // Before any reply too: the app reads the script as the gate floor (core.js SHEET_FLOOR), which stores them.
   {
     const [c, p] = await open(390, 0);
