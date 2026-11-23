@@ -322,7 +322,7 @@ from judging_fish import entry
 L = [{'f': 'fish-s1-cand-7'}, {'f': 'fish-s1-cand-8', 'rep': 'inaturalist'}, {'f': 'fish-s1-cand-fb-X_m0', 'via': 'fishbase', 'rep': 'fishbase'}]
 n = tag_rep(L, 7)
 print(json.dumps([0, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbase'), cap('p1g0sm15', False, rep='inaturalist'),
-                  cap('p1g0sm1j4', False, rep='fishbase'), cap('h1g0sm14', False, rep='fishbase'), cap('p1g0sm13', True, rep='fishbase'),
+                  cap('p1g0sm1j4', False, rep='fishbase'), cap('h1g0sm15', False, rep='fishbase'), cap('p1g0sm13', True, rep='fishbase'),
                   n, [p.get('rep') for p in L], entry('s001', {'code': 'p1g0sm13', 'keep': 'best'}, 'fishbase')]))`
       ],
       {cwd: ROOT, encoding: 'utf8'}
@@ -332,7 +332,7 @@ print(json.dumps([0, cap('p1g0sm13', False), cap('p1g0sm13', False, rep='fishbas
   assert.deepStrictEqual(out[2], [3, 'p1g0sm1r'], 'the same judgement, the same ease, whatever the route in');
   assert.deepStrictEqual(out[3], [5, 'p1g0sm1r']);
   assert.deepStrictEqual(out[4], [4, 'p1g0sm1jr'], 'a juvenile keeps its judged ease (Q435)');
-  assert.deepStrictEqual(out[5], [3, 'h1g0sm1r'], 'a head-on view stays capped at 3');
+  assert.deepStrictEqual(out[5], [4, 'h1g0sm1r'], 'a head-on view stays capped, at 4 since Q458 step 1');
   assert.deepStrictEqual(out[6], [3, 'p1g0sm1pr'], 'with the phase flag');
   assert.strictEqual(out[7], 1);
   assert.deepStrictEqual(out[8], ['inaturalist', null, 'fishbase'], 'the cover tagged, a stale tag removed, FishBase keeps its own');

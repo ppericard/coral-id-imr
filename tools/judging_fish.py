@@ -55,7 +55,7 @@ import urllib.request
 from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fish_judge import RUBRICS, cap, phase_flag  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
+from fish_judge import RUBRICS, cap, phase_flag, typical_now  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
 from fish_game import box_in, box_ok  # noqa: E402  the fish's box, as the tile tool reads it
 # A box narrower or shorter than this share of the photo is a mistake, not an animal (the tile needs 320 px of the original).
 MIN_BB = 0.02
@@ -366,14 +366,16 @@ def entry(sid, x, rep=None):
     """A judging file's record -> data/suggest.json "fish" (autosort.js treeSure): the tags and ease after the rubric's caps
     (tools/fish_judge.py cap: the phase flag of a species whose sexes or colour phases differ by a cited source, phase_flag:
     a dimorph entry or the cited phase list; and the reference flag r, which leaves the ease as
-    judged, for a candidate whose data/fish-cand.json record carries `rep`; a juvenile caps nothing). A sea slug's: its
-    rubric's caps (no entry: no phase), keep best when the judgement names none, and an egg-mass
-    photo as {egg: 1} (the egg rule: never in play)."""
+    judged, for a candidate whose data/fish-cand.json record carries `rep`; a juvenile caps nothing; partial and
+    camouflage cap nothing in a typical-look family, its teaching entry among tools/fish_judge.py typical_now, Q456). A
+    sea slug's: its rubric's caps (no entry: no phase, no typical look), keep best when the judgement names none, and an
+    egg-mass photo as {egg: 1} (the egg rule: never in play)."""
     if x.get("egg"):
         return {"egg": 1, **({"n": x["note"]} if x.get("note") else {})}
     t = ENTRY.get(sid) or {}
     flag = CFG.get("flag")  # the subject's phase flag (SUBJECTS "flag": the fish's phase_flag; none for the sea slugs)
-    ease, tags = cap(x["code"], bool(flag and flag(sid, t)), rep, subject=SUBJECT)
+    typ = bool(t) and t.get("id") in typical_now()
+    ease, tags = cap(x["code"], bool(flag and flag(sid, t)), rep, subject=SUBJECT, typical=typ)
     e = {"jt": tags, "e": ease, "k": x.get("keep", CFG["keep"])}
     if x.get("phase"):
         e["ph"] = x["phase"]

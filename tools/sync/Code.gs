@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 221 (2026-11-23). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 222 (2026-11-23). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 221;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 222;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -199,9 +199,12 @@ function doGet_(e){
   if (e.parameter.stats) behind_(e.parameter);  // a device on a replaced app version
   // The snapshot (statsFold_), else the whole log; &s=<subject> asks another subject's (statsSid_: the corals without
   // it). The reply names the subject it rates (s), so an app reads another subject's only when it is that one's (sync.js
-  // loadOwnStats)
-  if (e.parameter.stats) { TIM_.op = 'stats'; const sid = statsSid_(e.parameter.s), st = statsServed_(sid) || stats_(true, sid);
-    return json_({ok: st.ok, s: sid, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
+  // loadOwnStats). vers: the Apps Script versions the project keeps, only while near Google's limit (selfVersionsSave_),
+  // for the hourly Health check; the app ignores it.
+  if (e.parameter.stats) { TIM_.op = 'stats'; const sid = statsSid_(e.parameter.s), st = statsServed_(sid) || stats_(true, sid), vs = selfVersionsGet_();
+    const out = {ok: st.ok, s: sid, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt};
+    if (vs && typeof vs.n === 'number' && vs.n >= SELF_VERSIONS.WARN) out.vers = vs.n;
+    return json_(out); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
   if (e.parameter.achs) return json_(achs_());
@@ -2421,7 +2424,8 @@ function readEvents_(token, pages){
 // POST {readAlerts: 1, token} (the Alerts tab in the admin; docs/SECURITY.md) → {ok, rows: [[time
 // ms, event]]}, newest first, the last 3000, as readEvents. The instance's players right, as readEvents (gate_: the
 // admin token passes, a refusal audited). The tab's writers:
-// over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id).
+// over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id),
+// and selfVersionsSave_'s ("sheet script versions: …", naming nobody).
 // One over_ key names a player, the per-name answer cap ("n:<name>"): served as the name's admin id (aid_, the id admin
 // Players shows beside the name), so the page shows no name.
 // Rule D7: a line that names an account or a device (alertId_) is
@@ -3902,13 +3906,9 @@ function autoUpdate_(){
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
     const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
-    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); } return 'up to date (v' + VERSION + ')'; }
+    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); selfVersionsRun_(log); } return 'up to date (v' + VERSION + ')'; }
     if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
-    const man = get('appsscript.json'), id = ScriptApp.getScriptId(), auth = {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()};
-    const api = (method, path, body) => { const o = {method: method, headers: auth, muteHttpExceptions: true}; if (body) { o.contentType = 'application/json'; o.payload = JSON.stringify(body); }
-      const r = UrlFetchApp.fetch('https://script.googleapis.com/v1/projects/' + id + path, o);
-      if (r.getResponseCode() >= 300) throw new Error(method.toUpperCase() + ' ' + path + ' ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
-      return JSON.parse(r.getContentText() || '{}'); };
+    const man = get('appsscript.json'), api = selfApi_;
     if (v > VERSION) {
       const files = api('get', '/content').files || [], js = files.filter(f => f.type === 'SERVER_JS');
       if (js.length !== 1) { log('v' + v + ' not installed: expected one script file, found ' + js.length); return 'skipped'; }
@@ -3921,8 +3921,85 @@ function autoUpdate_(){
     deps.forEach(d => api('put', '/deployments/' + d.deploymentId, {deploymentConfig: {versionNumber: ver.versionNumber, manifestFileName: 'appsscript', description: 'v' + dv + ' (auto)'}}));
     props.deleteProperty('AUTO_PENDING');
     log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update') + ', from ' + branch);
+    try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { log('version count: ' + e.message); selfVersionsFailed_(); }  // the deploy itself is done; the up-to-date runs try again
     return 'deployed v' + dv;
-  } catch (e) { log('error: ' + e.message); return 'error'; }
+  } catch (e) {
+    // Google's 429 at POST /versions is the version limit (RESOURCE_EXHAUSTED, "Cannot create more versions"): said plainly,
+    // every run until it is fixed (AUTO_PENDING then finishes the update), and in the Alerts tab once a day.
+    if (e.status === 429 && e.call === 'post /versions') {
+      log('error: version limit reached: delete old versions in the Apps Script editor (Project history), ' + SELF_VERSIONS.MAX + ' of ' + SELF_VERSIONS.MAX + ' are kept; the next run then finishes the update');
+      try { selfVersionsSave_(SELF_VERSIONS.MAX, () => {}); } catch (x) {}
+      return 'error';
+    }
+    log('error: ' + e.message); return 'error';
+  }
+}
+// The Apps Script API on this script, with its own OAuth token: the reply's JSON, or an Error carrying the HTTP status
+// (status) and the call ('post /versions'), so a caller can tell the version limit from any other failure.
+function selfApi_(method, path, body){
+  const o = {method: method, headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}, muteHttpExceptions: true};
+  if (body) { o.contentType = 'application/json'; o.payload = JSON.stringify(body); }
+  const r = UrlFetchApp.fetch('https://script.googleapis.com/v1/projects/' + ScriptApp.getScriptId() + path, o), s = r.getResponseCode();
+  if (s >= 300) { const e = new Error(method.toUpperCase() + ' ' + path + ' ' + s + ': ' + r.getContentText().slice(0, 300)); e.status = s; e.call = method + ' ' + path.split('?')[0]; throw e; }
+  return JSON.parse(r.getContentText() || '{}');
+}
+// The Apps Script version limit. Google keeps at most 200 versions a project, and every self-update saves one (about 10
+// a day); at 200, POST /versions answers 429 and the script can no longer update itself (2026-11-22: 36 hours stuck at
+// v218 until old versions were deleted by hand). The API can list versions but not delete one (projects.versions:
+// create, get, list), so only a person can free them: the Apps Script editor, Project history. The script counts them
+// after each deploy, and from the up-to-date runs at most every RECOUNT while no count is kept, the last one failed, or
+// it is at WARN or over (so a clean-up is seen without waiting for the next deploy). At WARN or over it writes one line to the Alerts tab (the admin's To do > Alerts) and the
+// Deploy log, at most once every ALERT, with the count and what to do; a 429 at POST /versions is counted as MAX. The
+// last count is the Script Property AUTO_VERSIONS ({n, at, alerted, failed}: times in ms, n null before a good count), and while it is at WARN or over the
+// public stats reply carries it as `vers` (doGet_), so the hourly Health check names the limit (tools/health.py): a
+// number of versions, nothing about anyone.
+const SELF_VERSIONS = {MAX: 200, WARN: 170, RECOUNT: 3600000, ALERT: 86400000, PAGE: 50, PAGES: 10};
+function selfVersionsGet_(){
+  try { const s = JSON.parse(PropertiesService.getScriptProperties().getProperty('AUTO_VERSIONS') || 'null'); return s && typeof s.at === 'number' ? s : null; } catch (e) { return null; }
+}
+// The number of versions the project keeps (GET /versions, page by page; PAGES pages at most, far past MAX).
+function selfVersionsCount_(){
+  let n = 0, tok = '';
+  for (let i = 0; i < SELF_VERSIONS.PAGES; i++) {
+    const r = selfApi_('get', '/versions?pageSize=' + SELF_VERSIONS.PAGE + (tok ? '&pageToken=' + encodeURIComponent(tok) : ''));
+    n += (r.versions || []).length;
+    tok = r.nextPageToken || '';
+    if (!tok) break;
+  }
+  return n;
+}
+// Keeps the count n; at WARN or over, the Alerts and Deploy log line (log) unless one was written less than ALERT ago.
+function selfVersionsSave_(n, log){
+  const now = Date.now(), was = selfVersionsGet_(), s = {n: n, at: now};
+  if (n >= SELF_VERSIONS.WARN) {
+    s.alerted = was && was.alerted || 0;
+    if (now - s.alerted >= SELF_VERSIONS.ALERT) {
+      s.alerted = now;
+      const line = 'sheet script versions: ' + (n >= SELF_VERSIONS.MAX ? 'limit reached, ' + SELF_VERSIONS.MAX + ' of ' + SELF_VERSIONS.MAX + ': the self-update is stopped'
+        : n + ' of ' + SELF_VERSIONS.MAX + ' kept, the self-update stops at ' + SELF_VERSIONS.MAX + ' (about 10 are used a day)')
+        + '; delete old versions in the Apps Script editor (Project history)';
+      try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), line]); } catch (e) {}
+      log(line);
+    }
+  }
+  PropertiesService.getScriptProperties().setProperty('AUTO_VERSIONS', JSON.stringify(s));
+}
+// A count that failed: the last good count kept (n, null when none), the try's time, `failed`, so the next try waits
+// RECOUNT. Never throws.
+function selfVersionsFailed_(){
+  try { const was = selfVersionsGet_() || {}, s = {n: typeof was.n === 'number' ? was.n : null, at: Date.now(), failed: true};
+    if (was.alerted) s.alerted = was.alerted;
+    PropertiesService.getScriptProperties().setProperty('AUTO_VERSIONS', JSON.stringify(s)); } catch (e) {}
+}
+// From a run that finds the script up to date: counts when no count is kept yet (the install of the version that brought
+// the count was finished by the updater before it, which counts nothing), when the last count failed, or while it was at
+// WARN or over; never more than once every RECOUNT once a count or a try is kept (a failing API is not asked every run).
+// A good count under WARN is only renewed by the next deploy. Never throws.
+function selfVersionsRun_(log){
+  const s = selfVersionsGet_();
+  if (s && !s.failed && typeof s.n === 'number' && s.n < SELF_VERSIONS.WARN) return;
+  if (s && Date.now() - s.at < SELF_VERSIONS.RECOUNT) return;
+  try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { selfVersionsFailed_(); }
 }
 
 // One-shot data migrations (rule W3: no backward compatibility): the code that

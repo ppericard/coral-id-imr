@@ -14,7 +14,7 @@ Set by Pierre after the 11-08 drain of open PRs and reset after the history rewr
 4. **One admin for every subject** (until 2026-11-20 "Fish admin at parity with the corals, Analyses first"; Pierre: nearly short term, he needs the tools to keep going; 2026-11-20: one admin adapted to each subject, the sea slugs and any later one too), with the per-subject refit of the analyses: the admin one-engine study's steps, one PR each (row "One engine for every subject, what is left").
 5. **Rights**: done; the Coral Finder crops are out of the app, `img/`, the git history and R2 (#748; Q121, Q300, Q294), no GitHub Support purge (his choice, 2026-11-08). The book stays a cited source (rule C2).
 6. **Rule L11's tools** (comparator, fish profiles, the rated world): done, 7 merged on 2026-11-08.
-7. **Medium term**: IMR-owned content separated from the core app (an IMR edition if needed); the calmer About text; the **"Professionalise the platform"** study.
+7. **Medium term**: IMR-owned content separated from the core app (an IMR edition if needed); the **"Professionalise the platform"** study.
 8. Everything under "Parked" stays parked until Pierre brings it up.
 
 ## Content questions for Pierre, and questions for an IMR trainer
@@ -36,7 +36,6 @@ They live in the admin since 2026-11-05 (Pierre: he settles most of them himself
 - **iNaturalist API v1 to v2**: [REE-122](https://linear.app/reef-id/issue/REE-122)
 - **More good fish photos we missed**: [REE-123](https://linear.app/reef-id/issue/REE-123)
 - **The feedback sheet's decisive lines**: [REE-61](https://linear.app/reef-id/issue/REE-61)
-- **About and credits: a calmer rights text**: [REE-51](https://linear.app/reef-id/issue/REE-51)
 - **Coral ID Key: photos in place of the drawings**: [REE-79](https://linear.app/reef-id/issue/REE-79)
 - **The Tree tab: covers and sheets at any level, for any subject**: [REE-12](https://linear.app/reef-id/issue/REE-12), [REE-124](https://linear.app/reef-id/issue/REE-124)
 - **Analyses: next views**: [REE-41](https://linear.app/reef-id/issue/REE-41)

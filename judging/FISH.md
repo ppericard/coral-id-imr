@@ -103,24 +103,48 @@ Pierre's criteria (2026-11-04). Very easy first: good light, colourful, the fish
 fish in the frame, one fish (or the subject obvious), an easy species (that last one is the entry's order, not the
 photo's: `fish.json` `start` and the opening rule). Avoid at the very start: juveniles (their draw ramp's, never
 their ease, "Juveniles" below); species whose sexes or colour phases differ (Parrotfish); the fish in its night livery, partial fish, head-on or tail views, heavy crops, murky water, camouflage,
-several species in the frame.
+several species in the frame. Since 2026-11-23 a partial fish and a head-on, tail or top view cost one step, and in a
+typical-look family partial and camouflage cost nothing (Q456, Q458: "Caps" below).
 
 - **5 very easy**: profile, whole, good light (a flash on a dark background included), sharp, large or medium, one fish (or a school of it); colourful or with
   its family's shape and pattern plain to see. A field-guide photo. A photo that meets every one of these is 5:
   no better photo is held in reserve, whatever the species (Pierre, 2026-11-19).
 - **4 easy**: as 5 with one mild shortfall: a slight oblique, dim light, a slight colour loss,
-  a busy background, the fish medium-small, another kind of fish in the frame far from the subject.
-- **3 medium**: two mild shortfalls, or one strong one: a marked oblique, a head-on, tail or top view, part of the fish
-  cut or hidden, the fish in its night livery, a strong colour loss, the fish small, camouflage the eye still sees through.
+  a busy background, the fish medium-small, another kind of fish in the frame far from the subject, a head-on, tail or
+  top view, part of the fish cut or hidden (these two since Q458, below).
+- **3 medium**: two mild shortfalls, or one strong one: a marked oblique, the fish in its night livery, a strong colour
+  loss, the fish small, camouflage the eye still sees through.
 - **2 hard**: the shape or the colours are hard to read: several strong shortfalls, murky water, camouflage, a tiny
   fish, a school in the blue.
 - **1 very hard**: the fish is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
 **Caps** (the tool applies them, so a typed ease can never break them): an unclear subject (`x`), a monochrome photo
 (colour loss `3`) or a strongly blurred one (clarity `b`, 2026-11-19) is at most 2; camouflage (`c`), not a live fish
-seen in the water (`a`), the night livery (`n`), a strong colour loss (`2`), a head-on, tail or top view (`h`, `t`,
-`d`) or a partial fish (`0`) is at most 3. So a photo at 4 or
-5 ("very easy", the first questions' photos) is never one Pierre wants kept from the start.
+seen in the water (`a`), the night livery (`n`) or a strong colour loss (`2`) is at most 3; a head-on, tail or top view
+(`h`, `t`, `d`) or a partial fish (`0`) is at most 4. So a photo at 5 is never one Pierre wants kept from the start.
+
+**Partial fish and head-on, tail or top views: one step, not a ceiling** (Q458 step 1, Pierre, 2026-11-23 17:20, «ok»
+to the integrator's recommendation). Until then both were at most 3. The fish answers showed no cost for either, in
+misses or in time ([the REE-85 study](../docs/reviews/2026-11-23-fish-ease-vs-answers.md) "Criterion by criterion" and
+its follow-up on response time). The blur cap, camouflage outside the typical-look families and the other caps stay;
+monochrome stays as it is, open.
+
+**The typical look** (Q456, Pierre, the same answer; his point of 16:23 on snake eels and garden eels: «c'est toujours
+comme ça qu'on les voit»). In a family whose usual look is buried or camouflaged, a partial fish (`0`) and camouflage
+(`c`) cap nothing: the photo is judged against the family's usual look, so a buried garden eel or a jawfish in its
+burrow counts no shortfall for those two tags. The families come from a declared rule, never from a hand list: **at
+least half of the family's photos in play tagged `0` or `c`** (`tools/fish_judge.py` `typical_look`, on the photos
+`fish-game.json` lists, `typical_now`; the rule the study declared before reading any answer). On 2026-11-23 it gives
+11 families: Garden eels, Ghost pipefishes, Jawfishes, Lizardfish, Morays & ribbon eels, Scorpionfishes, Seamoths,
+Snake eels, Soles, Stargazers, Stonefishes & waspfishes. Rays are out (32%), as are Seahorses & pipefishes (48%) and
+Frogfishes (46%). The tags never depend on the ease, so a re-cap leaves the families as they are; a family that crosses
+the line as photos enter play changes its caps at the next `python3 tools/judging_fish.py rep` and `tools/fish_game.py`
+run. `python3 tools/fish_judge.py` prints the families and their shares.
+
+**What the re-cap moved.** A code keeps the ease the judge typed, and the caps only lower it, so the re-cap of
+2026-11-23 (`python3 tools/judging_fish.py rep`, then `tools/fish_game.py`) raised only the photos typed above their old
+cap: 9 photos in play, from 3 to 4. A photo typed 3 under the old scale (a partial fish or a head-on view was then one
+strong shortfall) keeps its 3 until it is judged again: the tool never guesses the ease a judge would type.
 
 **The phase flag caps nothing** (rubric 3, Pierre, 2026-11-04): a sex or colour phase is a species-level difficulty. An
 Anthias is easy to call an Anthias whatever its sex, a parrotfish easy to call a parrotfish (its family-level difficulty

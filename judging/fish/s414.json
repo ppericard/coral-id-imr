@@ -239,6 +239,198 @@
   "fish-s414-cand-291692782": {
    "code": "p1g0sl13",
    "keep": "dup"
+  },
+  "fish-s414-cand-233658463": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-233658439": {
+   "code": "d1g1sm1c2",
+   "keep": "alt"
+  },
+  "fish-s414-cand-510882466": {
+   "code": "o1g0msxc1",
+   "keep": "best"
+  },
+  "fish-s414-cand-334647615": {
+   "code": "d1g0sl13",
+   "keep": "best"
+  },
+  "fish-s414-cand-277710314": {
+   "code": "o1g1mm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-670722422": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-628618905": {
+   "code": "p0g0sl13",
+   "keep": "best"
+  },
+  "fish-s414-cand-202989039": {
+   "code": "o1g0sl1w3",
+   "keep": "alt"
+  },
+  "fish-s414-cand-202989315": {
+   "code": "o1g0sl1w3",
+   "keep": "best"
+  },
+  "fish-s414-cand-202989314": {
+   "code": "d1g0sl1w3",
+   "keep": "dup"
+  },
+  "fish-s414-cand-606167849": {
+   "code": "o1g1sl1w3",
+   "keep": "best"
+  },
+  "fish-s414-cand-34711331": {
+   "code": "d1g2msxc1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-34711386": {
+   "code": "d1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-544320767": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-544320777": {
+   "code": "o1g1sm1c2",
+   "keep": "alt"
+  },
+  "fish-s414-cand-510867932": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-646174200": {
+   "code": "d1g0sl1w3",
+   "keep": "alt"
+  },
+  "fish-s414-cand-646174253": {
+   "code": "o1g0sl1w3",
+   "keep": "best"
+  },
+  "fish-s414-cand-646174298": {
+   "code": "d1g0sl1w3",
+   "keep": "dup"
+  },
+  "fish-s414-cand-559717397": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-576309631": {
+   "code": "d1d3bsxc1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-576309774": {
+   "code": "d1d3msxc1",
+   "keep": "best"
+  },
+  "fish-s414-cand-576309779": {
+   "code": "d1d3msxc1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-576309782": {
+   "code": "d1d3msxc1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-339176671": {
+   "code": "d1g3bsxc1",
+   "keep": "best"
+  },
+  "fish-s414-cand-256168737": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s414-cand-282336782": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s414-cand-282336871": {
+   "code": "o0g2sl1c2",
+   "keep": "dup"
+  },
+  "fish-s414-cand-282336925": {
+   "code": "p1g2sm1c2",
+   "keep": "alt"
+  },
+  "fish-s414-cand-282337052": {
+   "code": "o1g2bm1c1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-477394218": {
+   "code": "o0g1sl1w2",
+   "keep": "alt"
+  },
+  "fish-s414-cand-477394211": {
+   "code": "o1g1sl1w3",
+   "keep": "best"
+  },
+  "fish-s414-cand-437489032": {
+   "code": "p1d1ml1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-688386308": {
+   "code": "o1g2sl12",
+   "keep": "best"
+  },
+  "fish-s414-cand-86223949": {
+   "code": "d1g0sm13",
+   "keep": "best"
+  },
+  "fish-s414-cand-552988009": {
+   "code": "d1g0sm1a3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A plain grey ground, no sand texture: likely a tank or tray (a), but it could be open water"
+  },
+  "fish-s414-cand-226973070": {
+   "code": "d1g1mlsc2",
+   "keep": "best"
+  },
+  "fish-s414-cand-441660844": {
+   "code": "p1g0ml13",
+   "keep": "best"
+  },
+  "fish-s414-cand-442528399": {
+   "code": "o1g0ml13",
+   "keep": "dup"
+  },
+  "fish-s414-cand-484869924": {
+   "code": "d1g1mm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-280020031": {
+   "code": "p1d0ml1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-489666848": {
+   "code": "d1g1msxc1",
+   "keep": "best"
+  },
+  "fish-s414-cand-84194987": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s414-cand-221402031": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-255190161": {
+   "code": "o0g1ml1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-295212637": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-450600381": {
+   "code": "d1g0sl1c2",
+   "keep": "best"
   }
  }
 }

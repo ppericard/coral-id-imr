@@ -29,12 +29,14 @@ function page({subj = 'fish', n = 0, saved = {}} = {}) {
   };
   ctx.sKey = name => C.subjKey(ctx.SUBJ.id, name);
   ctx.answersSoFar = () => ctx.n;
+  [ctx.CB, ctx.cbSave] = [{}, () => {}]; // model.js's answer clock (tally), on this page's comeback record
   ctx.document = {querySelector: s => (s === '.unlock' && ctx.card ? {} : null)};
   vm.createContext(ctx);
   vm.runInContext(
     cut(src, 'const WINK = {', 'function winkShow(', {file: 'quiz.js'}) +
+      require('./clock.js')() +
       // winkShow's bookkeeping, without its screen (the lines that mark a wink shown)
-      '\nthis.M = {WINK, winkAt, winkDue, winkMerge, winkPhoto, shown: ({n}) => { const a = answersSoFar(); WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a}; store.set(WINKK(), {...(store.get(WINKK(), null) || {}), [n]: a}); }};',
+      '\nthis.M = {WINK, winkAt, winkDue, winkMerge, winkPhoto, shown: ({n}) => { const a = tally(); WINKS[SUBJ.id] = {...(WINKS[SUBJ.id] || {}), [n]: a}; store.set(WINKK(), {...(store.get(WINKK(), null) || {}), [n]: a}); }};',
     ctx
   );
   return Object.assign(ctx.M, {ctx, saved});
@@ -66,6 +68,16 @@ test('a player already past both thresholds meets them apart, never back to back
   assert.strictEqual(got.length, 2);
   assert.deepStrictEqual(got[0], [900, WALE]);
   assert.ok(got[1][0] - got[0][0] >= M.WINK.AT[1] - M.WINK.AT[0], JSON.stringify(got));
+});
+
+// The level's answer count follows the log (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md): the gap after
+// a surprise counts on the answer clock (model.js tally); the thresholds (WINK.AT) read the count itself.
+test('a count gone down (rule D9): the gap after a surprise still counts the answers since it', () => {
+  const M = page();
+  assert.deepStrictEqual(play(M, 900, 901), [[900, WALE]]);
+  M.ctx.n = 850; // the log's count replaces one that counted 50 answers twice
+  assert.strictEqual(M.winkDue(), null);
+  assert.deepStrictEqual(play(M, 850, 1100), [[1050, THRESH]], 'winkGap answers after the whale shark, as before');
 });
 
 test('a card on screen delays the surprise; it comes at the next question', () => {

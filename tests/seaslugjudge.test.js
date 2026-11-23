@@ -29,6 +29,7 @@ print(json.dumps({
            S('d1g0sl1f5'), S('d1g0sl1w5'), S('d1g0sl1c5'), S('d1g2sl15'), S('d1g3sl15'), S('d1g0slx5'), S('d1d0sl15'),
            S('d1g0bl15')],
   'fish': [F('d1g0sl15'), F('p1g0sl1j5'), F('p1g0bl15')],
+  'typical': [list(cap(c, False, subject='seaslug', typical=True)) for c in ('d0g0sl15', 'd1g0sl1c5', 'h1g0sl15')],
   'codes': [ok('seaslug', 'd1g0sl1jcawf4'), ok('seaslug', 'd1n0sl15'), ok('seaslug', 'd1g0slm5'), ok('seaslug', 'd1g0sl1p5'),
             ok('fish', 'v1g0sl15'), ok('fish', 'p1g0sl1f5'), ok('fish', 'p1n0slm5')],
   'flag': [with_flag('d1g0sl1w4', 'j', 'seaslug'), with_flag('d1g0sl1j4', 'f', 'seaslug'), with_flag('p1g0sl1w4', 'j')]}))`);
@@ -52,12 +53,19 @@ print(json.dumps({
   assert.deepStrictEqual(
     out.fish,
     [
-      [3, 'd1g0sl1'],
+      [4, 'd1g0sl1'],
       [5, 'p1g0sl1j'],
       [2, 'p1g0bl1']
     ],
-    'the fish caps: a top view at most 3, a juvenile nothing (Q435), strong blur at most 2'
+    'the fish caps: a top view at most 4 (Q458 step 1), a juvenile nothing (Q435), strong blur at most 2'
   );
+  // The sea slugs keep partial and head-on at 3 and have no typical-look family (RUBRICS "seaslug": the fish's Q456 and
+  // Q458 came from fish answers only; judging/SEASLUG.md "Caps").
+  assert.deepStrictEqual(out.typical, [
+    [3, 'd0g0sl1'],
+    [3, 'd1g0sl1c'],
+    [3, 'h1g0sl1']
+  ]);
   // No night livery, no legacy count m, no tool flag typed for sea slugs; the fish never take v or f.
   assert.deepStrictEqual(out.codes, [true, false, false, false, false, false, true]);
   assert.deepStrictEqual(out.flag, ['d1g0sl1jw4', 'd1g0sl1jf4', 'p1g0sl1jw4']);

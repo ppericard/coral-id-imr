@@ -35,7 +35,7 @@ function model({P = {}, th = {}, answers = 0, slack = SLACK, closed = () => fals
       bonusList: () => [],
       asked: n => !!((P[n] || {}).ok || (P[n] || {}).ko),
       closed, // model.js: a unit closed by One at a time or answered live before its card
-      answersSoFar: () => answers,
+      answersSoFar: () => (typeof answers === 'function' ? answers() : answers), // a number, or a count that moves
       sDev: n => 'reefid-' + n, // the corals' device keys (app.js sDev)
       store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}
     };
@@ -131,6 +131,23 @@ test('a visit starts after 30 minutes without an answer: the floor of 10 answers
   const L = model({P: player(5, 40 * MIN), answers: 5, closed: () => true});
   assert.strictEqual(L.rustNow(), false);
   assert.ok(!L.noOpen() && L.cb().r === 0);
+});
+
+// The level's answer count follows the log (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md): the floor is
+// kept on the answer clock (model.js tally), so a count gone down neither lengthens it nor ends it.
+test('the floor of a visit counts on the answer clock: a count gone down (rule D9) does not lengthen it', () => {
+  let a = 50;
+  const M = model({P: player(5, 40 * MIN), answers: () => a});
+  assert.strictEqual(M.rustNow(), true);
+  M.comebackStep(1, 0, -1, 2, true); // the comeback ended, the floor on
+  a = 53;
+  assert.strictEqual(M.noOpen(), true, '3 answers into the visit');
+  a = 20; // the log's count replaces one that counted 33 answers twice
+  assert.strictEqual(M.noOpen(), true, 'still 3');
+  a = 20 + M.COMEBACK.FLOOR - 4;
+  assert.strictEqual(M.noOpen(), true, `${M.COMEBACK.FLOOR - 1} answers into the visit`);
+  a = 20 + M.COMEBACK.FLOOR - 3;
+  assert.strictEqual(M.noOpen(), false, `${M.COMEBACK.FLOOR} answers into the visit, as before`);
 });
 
 test('comeback stop rule: a CUSUM that right answers melt and misses keep going; it ends at 0', () => {

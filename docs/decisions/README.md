@@ -69,6 +69,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-22 | [Sea slug species look-alikes: the decided species pairs in play as declared look-alikes](2026-11-22-seaslug-species-pairs-in-play.md) | #1433 |
 | 2026-11-22 | ["Did you know?" tip (f): typed answers, a close spelling counts, for the player who answers "I don't know" every time](2026-11-22-tip-f-typed-answers.md) | #1454 |
 | 2026-11-21 | [A found answer is evidence, not an automatic instruction](2026-11-21-answers-as-evidence.md) | #1361 |
+| 2026-11-21 | [About › Photos reads as a credit and a thank you, not an explanation](2026-11-21-calmer-about-photos.md) | #1409 |
 | 2026-11-21 | [Comeback by genus: a stability multiplier fitted from the logged recall, descriptive, an upper bound](2026-11-21-comeback-by-genus.md) | #1398 |
 | 2026-11-21 | [The two compared photos after a wrong answer: stacked or side by side, whichever shows them larger](2026-11-21-compare-photos-stacked-on-phones.md) | #1351 |
 | 2026-11-21 | [Corals: the bonus genera count on one scale of every game genus, today's % kept as the IMR slate score](2026-11-21-coral-one-scale.md) | #1474 |
