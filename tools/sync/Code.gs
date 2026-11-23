@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 224 (2026-11-23). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 225 (2026-11-24). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -65,7 +65,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 224;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 225;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -5823,7 +5823,7 @@ const CORE_ = (function () { const module = {exports: {}};
         // editor gave with a rewording (contentApply esrc).
         lsrc: treeLookSrc(t),
         qt: t.cues && t.cues.length ? t.cues : null,
-        // The source given with an edit of its tips (contentApply esrc; rule C2), shown with them (app.js tipsList).
+        // The source given with an edit of its tips (contentApply esrc; rule C2), shown with them (idtips.js tipsList).
         ...(t.cues && t.cues.length && t.esrc && t.esrc.cues ? {qsrc: t.esrc.cues} : {}),
         sum: t.why || t.note || '',
         phase: t.phase || [],
@@ -7521,7 +7521,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; docs/FISH_PATH.md): a "no" keeps its units
   // closed, and the player can still open them later. From the subject's quiz settings q and the part's key k. o: met
   // (one of its units already opened on a card), due (its
-  // threshold reached), left (a unit of it not open yet), at (the player's answer count). on: the player said yes, or was
+  // threshold reached), left (a unit of it not open yet), at (the answer clock, model.js tally). on: the player said yes, or was
   // never asked and has one of its units open (it opened by itself before the choice existed: kept on). row: My progress
   // offers to open it. ask: its card is due: never answered, or once more OPEN_AGAIN answers after a first "Not now"
   // (a "no" seen without its count counts as one), then never.
@@ -8959,15 +8959,17 @@ const CORE_ = (function () { const module = {exports: {}};
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The sea slug achievements, modelled on FISH_ACH over the sea slugs' own structure: genera met, genera at each level,
   // families with every genus at Advanced, the taxonomic groups (the nudibranchs first), the first circle, the sea slug %
-  // every 10 points.
+  // every 10 points, the species by their scientific names.
   // Learning milestones only, never time (rule L8), tested on the sea slug snapshot (progress.js achSnap: met, q, learned
   // over its genera; circ, each circle's genera; fam, its families with every genus at Advanced or above; tax, each
-  // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %), in the shared record
+  // taxonomic group of the tree's taxa, its genera met and at Advanced or above; pct, its headline %; setsAdv.ssp, its
+  // species at Advanced or above by their scientific names; top, its stars), in the shared record
   // under ids starting with ss. SEA_NUDI: the nudibranchs' taxonomic groups (seaslug.json taxa groups 1 and 2,
   // Nudibranchia · Doridina and · Cladobranchia; tests/seaslugach.test.js checks it against the file).
   const SEA_NUDI = [1, 2],
     seaTax = (s, f) => ((s && s.tax) || []).filter(f),
-    seaPct = (id, p, name, tier) => [id, name, p + '% sea slug progress', tier, '📈', s => s.pct >= p];
+    seaPct = (id, p, name, tier) => [id, name, p + '% sea slug progress', tier, '📈', s => s.pct >= p],
+    seaSp = (id, k, name, desc, tier) => [id, name, desc, tier, '🏷️', s => ((s.setsAdv || {}).ssp || 0) >= k];
   const SEASLUG_ACH = [
     ['ssmet5', 'Slug spotter', 'Met 5 sea slug genera', 1, '🧭', s => s.met >= 5],
     ['ssmetall', 'Muck stick', 'Met every sea slug genus in the game', 2, '🧭', s => s.total && s.met >= s.total],
@@ -9011,9 +9013,9 @@ const CORE_ = (function () { const module = {exports: {}};
     seaPct('sspct30', 30, 'Colour chart', 2),
     seaPct('sspct40', 40, 'Torch light', 2),
     seaPct('sspct50', 50, 'Half the reef', 3),
-    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slugs
-    // have no species unit yet, so their % is the mean of the genera's bars and 100% needs every genus learned (names
-    // and tiers: docs/decisions/2026-11-18-seaslug-achievements-high.md).
+    // Beyond 50%, every 10 points up to 100%, as the corals' (pct75, pct100) and the fish's (fpct60) climb: the sea slug
+    // % is the mean of the genera's bars (their species are not in it), so 100% needs every genus learned (names and
+    // tiers: docs/decisions/2026-11-18-seaslug-achievements-high.md).
     seaPct('sspct60', 60, 'Gill and frill', 3),
     seaPct('sspct70', 70, 'Muck magnet', 3),
     seaPct('sspct80', 80, 'Slug savant', 3),
@@ -9027,6 +9029,20 @@ const CORE_ = (function () { const module = {exports: {}};
       3,
       '📈',
       s => s.pct >= 100 && s.total > 0 && s.learned >= s.total
+    ],
+    // The species by their scientific names (a genus at Advanced brings its own), each named once its bar reaches
+    // Advanced, as the fish's fspsci1 (decision: docs/decisions/2026-11-24-seaslug-species-achievements.md).
+    seaSp('sssp1', 1, 'Down to species', 'A species at Advanced level (80%+) by its scientific name', 1),
+    seaSp('sssp10', 10, 'Species sleuth', '10 species at Advanced level or above by their scientific names', 2),
+    seaSp('sssp50', 50, 'Fifty shades of slug', '50 species at Advanced level or above by their scientific names', 3),
+    // The stars set (seaslug.json species star; UNITS top): every star at Advanced by its scientific name.
+    [
+      'ssstars',
+      'Star struck',
+      'Every star species (the sea slugs most read and written about online) at Advanced level or above by its scientific name',
+      3,
+      '✨',
+      s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
     ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every

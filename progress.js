@@ -829,8 +829,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The species named at Advanced or above by every kind of name the subject asks (SUBJECTS names: a fish species by
     // its common and its scientific name, Q262), counted once each (their units' sp); 0 for a subject asking one kind.
     both: achBoth(U.sets || [], SUBJ.names || []),
-    // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261), each by its
-    // scientific name: how many, how many at Advanced or above; null for a subject without.
+    // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261; the sea slugs'
+    // stars), each by its scientific name: how many, how many at Advanced or above; null for a subject without.
     top: U.top ? (L => ({total: L.length, adv: at(L, 3)}))(U.top()) : null,
     // The subject's own basics feat (SUBJECTS basics.feat: _basics, _fbasics, _sbasics), read in the subject on screen.
     basics: !!A[(SUBJ.basics || {}).feat || '_basics'],
