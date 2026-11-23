@@ -25,12 +25,19 @@ function setup({checkin = true, log = '17:35 #12 open abc1234 merge=clean\n18:02
   fs.copyFileSync(path.join(ROOT, 'docs/INTEGRATOR.md'), path.join(root, 'docs/INTEGRATOR.md'));
   if (checkin) fs.copyFileSync(path.join(ROOT, 'tools/checkin.md'), path.join(root, 'tools/checkin.md'));
   if (log !== null) fs.writeFileSync(path.join(queue, 'nightq.log'), log);
-  return {root, queue};
+  // A PATH with python3, git and pgrep only: gh is never found, wherever the machine keeps it (CI has it in /usr/bin).
+  const bin = path.join(top, 'bin');
+  fs.mkdirSync(bin);
+  for (const t of ['python3', 'git', 'pgrep']) {
+    const at = spawnSync('which', [t], {encoding: 'utf-8'}).stdout.trim();
+    if (at) fs.symlinkSync(at, path.join(bin, t));
+  }
+  return {root, queue, bin};
 }
 
 // The way a check-in may run it: the script on stdin, the checkout in CLAUDE_PROJECT_DIR, no gh, no network.
 const run = (s, ...a) => {
-  const r = spawnSync('python3', ['-I', '-', '--checkin', ...a], {
+  const r = spawnSync(path.join(s.bin, 'python3'), ['-I', '-', '--checkin', ...a], {
     input: read('tools/brief.py'),
     env: {
       ...process.env,
@@ -39,7 +46,8 @@ const run = (s, ...a) => {
       AGENT_LOG: path.join(s.queue, 'none.jsonl'),
       HTTPS_PROXY: 'http://127.0.0.1:9',
       https_proxy: 'http://127.0.0.1:9',
-      PATH: '/usr/bin:/bin'
+      GH_TOKEN: '',
+      PATH: s.bin
     },
     cwd: '/',
     encoding: 'utf-8',
