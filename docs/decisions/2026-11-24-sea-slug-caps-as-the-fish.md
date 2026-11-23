@@ -26,8 +26,10 @@ on one subject is no reason for a difference, so:
   typical-look today: the declared rule (`typical_look`) reads the fish's teaching entries only, and no list was made
   by hand.
 - Declared differences kept, each with its reason (rule S1): a dorsal view caps nothing (one of the sea slugs'
-  field-guide views); a ventral view `v` stays at most 3 (their own code, no fish equivalent); strong blur `b` caps
-  nothing, left as it was (the fish's blur cap came from Pierre's review of the fish gold set, 2026-11-19).
+  field-guide views); a ventral view `v` stays at most 3 (their own code, no fish equivalent).
+- Strong blur `b` still caps nothing for the sea slugs, as the integrator's brief asked. Its only recorded reason is
+  that Pierre's review of 2026-11-19 was of fish photos, the kind of reason the words above reject, so it is left as it
+  was and not presented as a justified difference.
 
 ## Consequences
 

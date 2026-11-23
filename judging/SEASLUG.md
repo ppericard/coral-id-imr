@@ -83,7 +83,8 @@ characters for identification"). So, until a guide is checked (the first judging
 
 - **dorsal (`d`), lateral (`p`) and dorso-lateral (`o`) are the sea slugs' good views**: any of them can be very easy.
   Unlike the fish, a view from above is a reference view and caps nothing.
-- **head-on (`h`), from behind (`t`) and ventral (`v`)** hide the pattern and the outline: at most 3 (Caps).
+- **head-on (`h`), from behind (`t`) and ventral (`v`)** hide the pattern and the outline: head-on and from behind at
+  most 4, as the fish's head-on and tail views; ventral at most 3 (Caps).
 
 ## Rhinophores and gills
 
@@ -123,13 +124,14 @@ The fish's scale, the same five levels:
 `j`, `w` and `f` cap nothing. These are the fish's caps (judging/FISH.md "Caps"), with the same softened step
 (Q458 step 1: a partial animal and a head-on or rear view one step, not a ceiling), applied to the sea slugs on
 2026-11-24 ([the decision](../docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md); Pierre, 06:35, Linear
-REE-267: «il faut toujours généraliser»). Declared differences, each kept with its reason (rule S1):
+REE-267: «il faut toujours généraliser»). The differences that remain (rule S1):
 
 - **A dorsal view caps nothing**: it is one of the sea slugs' field-guide views ("5 very easy" above: a dorsal,
   lateral or dorso-lateral view), where the fish's is the profile.
 - **A ventral view (`v`) is at most 3**: the sea slugs' own code (the foot), which the fish have no equivalent of.
-- **Strong blur (`b`) caps nothing**: the fish's blur cap came from Pierre's review of the fish gold set (2026-11-19,
-  judging/FISH.md "Strong blur"); left as it was.
+- **Strong blur (`b`) caps nothing**: unchanged here. The fish's blur cap came from Pierre's review of the fish gold set
+  (2026-11-19, judging/FISH.md "Strong blur"), so its only recorded reason is that the review was of fish; it is not a
+  justified difference yet, only one this change leaves as it was.
 
 **The typical look** (Q456) is shared: in a group whose usual look is buried or camouflaged, a partial animal (`0`) and
 camouflage (`c`) cap nothing (`RUBRICS` `typical`). No sea slug genus is declared typical-look today: the declared rule

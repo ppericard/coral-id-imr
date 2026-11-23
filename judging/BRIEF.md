@@ -233,7 +233,8 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
      [the decision](../docs/decisions/2026-11-24-what-a-duplicate-is.md)): `alt`: another zoom, framing, angle or pose
      of the same animal or colony; `dup`: a burst or the same framing, with nothing new to see. **Corals, declared:**
      both are judged within one observation **and view** (rule P2: colony, close-up and corallites are separate views),
-     so a zoom that moves the photo to another view gets that view's `best`, not an `alt`.
+     so a zoom that moves the photo to another view is judged within that view (`best`, `alt` or `dup` there), not as
+     an `alt` of the first.
      - `alt` here: another part of the colony, another angle, the colony shape where the best shows the surface,
        polyps out vs retracted.
      - `dup` here: over the `best` (a few centimetres apart), **or over a photo of the observation that is already
