@@ -111,3 +111,22 @@ live colony that is only pale or bleached is not a skeleton. The photos judged b
 (`tests/skeletons.test.js`).
 *Why:* the features cannot be seen properly on a skeleton.
 *Source:* Pierre, 2026-11-09.
+
+### P7
+
+**No judging or re-judging by agents over more than 100 photos without Pierre's explicit OK on that pass.** The
+request gives: the number of photos (and which subjects, species or families), what is judged or judged again, why
+it is needed, why an agent is needed rather than a script from the recorded codes, and an estimate of its cost. What
+can be scripted is scripted first. The 100 count the whole pass, every batch and PR of it, over the subject's photos
+judged by agents since his last OK. Until he says OK, judging stays on hold and every other decided development work
+goes first.
+*Why:* judging by agents spends a large share of the quota, and part of it can often be scripted; he prefers the
+quota to go to development and to decide himself when, and how much, judging is worth it.
+*Source:* Pierre, 2026-11-23 19:26 Manila: «j'aimerais que tu évites de faire des grosses séries de jugements, de
+rejugements sur des milliers, voire des dizaines de milliers de photos, sans mon accord explicite … ça prend
+énormément de quotas … je préfère presque qu'on mette en stand-by du jugement jusqu'à ce que je dise OK, ou que je
+recentre le jugement … et que par contre on puisse prioriser toutes les autres tâches de développement»; 19:28: «chaque
+série de rejugement ou de jugement que tu envisages pour … plus que 100 photos, ça nécessite une autorisation
+explicite de ma part dans laquelle tu me présentes le nombre de photos, qu'est-ce que tu vas chercher à refaire comme
+jugement, pourquoi est-ce qu'on a besoin de le refaire, et de justifier proprement l'utilisation d'un agent parfois
+coûteux sur des grandes quantités de photos».
