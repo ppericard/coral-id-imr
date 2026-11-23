@@ -182,9 +182,8 @@ test('nightq rechecks that the head is still the one its gates read before the t
   assert.ok(t.indexOf('SKIPPED (head moved') < t.indexOf('python3 tools/train.py'));
 });
 
-test('a changes README is no pending version; an answers conflict that is not append-only aborts (round 4)', () => {
+test('an answers conflict that is not append-only aborts (round 4)', () => {
   const t = read('nightq.sh');
-  assert.match(t, /grep '\^tools\/sync\/changes\/' \| grep -qv '\/README\\\.md\$'/);
   assert.match(t, /\[ "\$codex" = "summary" \]; then\n\s*sm=\$\(\(sm \+ 1\)\)\n\s*\[ \$sm -ge 6 \] && break/);
   for (const f of ['assignver.sh', 'uptodate.sh'])
     assert.match(
@@ -398,11 +397,75 @@ test('nightq trains only on a completed security review read for the very head i
     t,
     /if \[ "\$\(gh api \$R\/pulls\/\$n --jq \.draft\)" != "false" \]; then log "#\$n: draft \(or unreadable\), skipped"; continue; fi/
   );
-  assert.ok(t.indexOf('--jq .draft)" != "false"') < t.indexOf('bash "$Q/uptodate.sh"'));
+  assert.ok(t.indexOf('--jq .draft)" != "false"') < t.indexOf('bash "$Q/wait_ready.sh"'));
   // prstate gives the field, "?" when the comments could not be read
   const p = read('prstate.sh');
   assert.match(p, /\| security@head: \$\{sec:-\? \$sha\} \|/);
   assert.match(p, /sec="\? \$sha"\n\s*if \[ \$iok = 1 \]; then sec=\$\(python3 -I "\$Q\/secreview\.py" "\$sha" "\$d\/issue\.json"/);
+});
+
+// Exercise the queue at the boundary between prstate's review gates and the train. No GitHub or repository writes.
+const runNightq = ({code = "Didn't find any major issues.", security = 'completed ' + SHA, head = SHA, conflict = false} = {}) =>
+  tmp(d => {
+    const log = path.join(d, 'calls');
+    const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
+    shim('sleep', 'exit 0');
+    shim('pgrep', 'exit 1');
+    shim('git', 'echo "git $*" >> "$CALLS"\n[[ "$*" = "pull -q --ff-only" ]]');
+    shim(
+      'gh',
+      'case "$*" in *"--jq .state") echo open ;; *"--jq .draft") echo false ;; *"--jq .head.sha") echo "$HEAD_SHA" ;; *) exit 1 ;; esac'
+    );
+    shim('bash', 'case "$1" in */wait_ready.sh) exit 0 ;; */prstate.sh) echo "$GATES" ;; *) echo "bash $*" >> "$CALLS"; exit 1 ;; esac');
+    shim(
+      'python3',
+      'echo "train $TRAIN_REPO $*" >> "$CALLS"\n' +
+        'if [[ "$CONFLICT" = true && "$*" = *--dry-run* ]]; then echo "conflicts with main"; exit 1; fi'
+    );
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'nightq.sh'), '1'], {
+      encoding: 'utf8',
+      timeout: 15000,
+      env: {
+        ...process.env,
+        PATH: d + path.delimiter + process.env.PATH,
+        REPO_DIR: d,
+        QUEUE_DIR: d,
+        QUEUE_REPO: 'o/r',
+        CALLS: log,
+        HEAD_SHA: head,
+        CONFLICT: String(conflict),
+        GATES:
+          `#1 open ${SHA.slice(0, 7)} merge=behind [] checks: 24 runs, 0 pending,  failed | codex@head: ${code} | ` +
+          `security@head: ${security} | head comments: 0 | open threads: 0 | unanswered@head: 0 | choices: None`
+      }
+    });
+    assert.strictEqual(r.status, 0, r.error || r.stderr);
+    return {out: r.stdout, calls: fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : []};
+  });
+
+test('nightq dry-runs and trains the reviewed SHA of a behind PR without editing its branch', () => {
+  const r = runNightq();
+  assert.deepStrictEqual(r.calls, [
+    'git pull -q --ff-only',
+    `train o/r tools/train.py --dry-run --sha ${SHA} 1`,
+    `train o/r tools/train.py --sha ${SHA} 1`
+  ]);
+  const refused = runNightq({conflict: true});
+  assert.deepStrictEqual(refused.calls, ['git pull -q --ff-only', `train o/r tools/train.py --dry-run --sha ${SHA} 1`]);
+  assert.match(refused.out, /SKIPPED \(train dry run refused\): conflicts with main/);
+});
+
+test('nightq refuses missing code or security approval, the wrong security SHA, and a moved head', () => {
+  for (const [opts, why] of [
+    [{code: 'none'}, /Codex not clean on head/],
+    [{security: 'stale ' + SHA}, /Codex security review not completed/],
+    [{security: 'completed ' + OTHER}, /the security review read is not for head/],
+    [{head: OTHER}, /head moved since the gates were read/]
+  ]) {
+    const r = runNightq(opts);
+    assert.ok(!r.calls.some(s => s.startsWith('train ')), r.calls.join('\n'));
+    assert.match(r.out, why);
+  }
 });
 
 test('ask_security: draft then ready through the CCR routes, a PR left a draft said loudly (REE-232)', () => {
