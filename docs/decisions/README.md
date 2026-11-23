@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-23 | [Pages opened: the visit's summary kept on the device, so a page killed without a hidden event still sends it, once](2026-11-23-pages-kept-copy.md) | #1471 |
 | 2026-11-22 | [core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte](2026-11-22-core-parts.md) | #1452 |
 | 2026-11-22 | [The fish box pass: Sonnet 5.5 medium, measured on 120 photos, the mimicry pairs first](2026-11-22-fish-box-model.md) | #1426 |
 | 2026-11-22 | [Fish species sheets show their sexes or colour phases from the cited phase list, as a declared sheet part](2026-11-22-fish-species-phases-section.md) | #1434 |
