@@ -1,6 +1,6 @@
 # A species short of easy adults may take faved candidates beyond its cap
 
-Date: 2026-11-23. PR: #PRNUM. Rules or docs touched: docs/spec/fish-photos.md "Candidates from iNaturalist",
+Date: 2026-11-23. PR: #1487. Rules or docs touched: docs/spec/fish-photos.md "Candidates from iNaturalist",
 "Automatic refill"; extends [the most-faved-first refill](2026-11-23-easy-refill-faves.md); the cap of Q36 holds for
 every other observation.
 
