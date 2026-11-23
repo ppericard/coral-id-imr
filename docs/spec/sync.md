@@ -313,7 +313,7 @@ cut at its last whole character (`core.js` `nameCut`: a grapheme where the engin
 never inside an emoji), matched case-blind (`toLowerCase`). An account that already has a reserved name signs in,
 loads and saves as any other; the sheet's maps by player have no prototype (`Object.create(null)`).
 
-**Look-alike names** (REE-35, the integrator's call; sheet vNEXT). Two names that look the same can no longer be two
+**Look-alike names** (REE-35, the integrator's call; sheet v224). Two names that look the same can no longer be two
 accounts. A new name (the form; `Code.gs` `doPost_` with no account yet; the admin's archive name) is NFC
 (`core.js` `nameClean`, in the form before it is sent and in the script). It is refused when it holds an invisible
 character (`nameHidden`: Unicode category Cf, such as the zero-width space, joiner and non-joiner and the bidi controls,

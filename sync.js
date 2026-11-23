@@ -2030,7 +2030,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       // REE-35: the sheet is asked about the name as typed first (cut at a whole character, core.js nameCut), so an
       // existing account opens under its own spelling whatever the sheet script's version. A new name is NFC (core.js
       // nameClean), as the sheet makes it: when that differs from the typed one, the sheet is asked about it too (a script
-      // before vNEXT matches names only as they are). A script from vNEXT that finds the account under another Unicode
+      // before v224 matches names only as they are). A script from v224 that finds the account under another Unicode
       // form of the name (Code.gs acct_) names it by its own spelling (j.name), which the device then keeps.
       const typed = nameCut(f.n.value.trim()),
         fresh = nameClean(typed),
@@ -2060,7 +2060,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
             return f.n.focus({preventScroll: true});
           }
           // Nor under a name with an invisible character, or one that looks like a taken name (REE-35): the sheet says
-          // it (taken: Code.gs nameIssue_, from the sheet script vNEXT), the form checks the invisible characters itself
+          // it (taken: Code.gs nameIssue_, from the sheet script v224), the form checks the invisible characters itself
           // (core.js nameHidden) whatever the sheet's version. An existing account that has such a name signs in.
           if (j.taken === 'invisible' || nameHidden(name)) {
             msg('This name holds an invisible character (a zero-width space or a text-direction mark): please type it again.');

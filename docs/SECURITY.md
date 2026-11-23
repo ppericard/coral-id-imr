@@ -148,7 +148,7 @@ The admin's account (v125, the 🌱 after its name) is kept by its code hash in 
 only by a read with the admin's token from the admin page signed in to that account (its code checked), never from what a
 player sends; a delete, a merge (its from) and an archive clear it, and no player can type the seedling or a look-alike
 in a new name (`core.js` `reservedName`).
-**Look-alike names** (sheet vNEXT, REE-35, the integrator's call): no new name (a sign-up or an archive name) may look
+**Look-alike names** (sheet v224, REE-35, the integrator's call): no new name (a sign-up or an archive name) may look
 like an account's name or hold an invisible character, so nobody can open a second account that passes for another
 player's on the leaderboard or in the admin: a new name is NFC, one with a zero-width, bidi control or other invisible
 format character is refused, and one whose skeleton (`core.js` `nameSkeleton`: the Greek and Cyrillic letters Unicode's

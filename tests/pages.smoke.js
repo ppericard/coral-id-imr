@@ -1611,7 +1611,7 @@ const SHEET = () => {
     // A name that looks like Anna's (a Cyrillic A first): a new account under it would be refused (Code.gs nameIssue_).
     if (q.get('name') === '\u{410}nna') return {ok: true, found: false, taken: 'lookalike'};
     // Zoe and its accent, made decomposed (REE-35): found as typed, as any script finds it; under its NFC spelling as a
-    // script from vNEXT finds it (Code.gs acct_), naming the account's own spelling.
+    // script from v224 finds it (Code.gs acct_), naming the account's own spelling.
     const zoe = {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account};
     if (q.get('name').toLowerCase() === 'zoe\u{301}') return q.get('pin') === '1234' ? zoe : {ok: false, error: 'pin'};
     if (q.get('name').toLowerCase() === 'zo\u{E9}')
@@ -1910,7 +1910,7 @@ async function signin(base) {
     }
   );
   // REE-35: an account whose name was made decomposed. Typed so, the sheet is asked about it as typed (any script finds
-  // it; not its NFC form, which a script before vNEXT would take for a new name). Typed in NFC, the sheet names the
+  // it; not its NFC form, which a script before v224 would take for a new name). Typed in NFC, the sheet names the
   // account's own spelling (j.name) and the device keeps it.
   await run(seen, async p => {
     await card(p);
