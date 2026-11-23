@@ -340,7 +340,7 @@ const LIST_BUILD = {
     // No id: this grid is not packed again when the window is resized.
     grid: () => ({id: '', cls: () => `tiplist gpack${listTaxa() ? ' gtaxa' : ''}`}),
     blocks() {
-      // Each entry is one card that opens its sheet (app.js listCard, shared with the corals' ID tips view; Pierre,
+      // Each entry is one card that opens its sheet (idtips.js listCard, shared with the corals' ID tips view; Pierre,
       // 2026-11-20): the photo opens the sheet too, where the photos enlarge with their credits.
       const tip = n => {
         const g = GX(n),
@@ -584,7 +584,7 @@ function viewGenus(name) {
   // The Coral ID Key criteria (the Coral Finder book's text, cited by page): visible for genera the lecture skips,
   // otherwise folded under "More details" with sources and key. The sources the content editor gave with his edits show
   // with their slot (esrcIn, esrcP); the criteria's in place of the Coral Finder pages, which cite the book's own text
-  // only (app.js critRef).
+  // only (idtips.js critRef).
   const cfList = `<h3>Coral ID Key criteria <span class="pg">${critRef(g)}</span></h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
   sheetPage(
