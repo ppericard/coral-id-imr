@@ -8,10 +8,7 @@ of every rule is in [README.md](README.md#the-index).
 ### S1
 
 **Shared and modular by default: one engine, no special case for one unit or one subject.** An exception is allowed
-when it is declared and named in one place, with its reason. **A rule's wording never names which subjects or ranks
-it covers**: it says what holds for any subject, and does nothing where a subject lacks what it acts on, since a
-subject's ranks change (Pierre, 2026-11-23 21:25: the corals «dans un mois, je décide de rajouter les espèces … que ça
-soit pas une règle qui crée des exceptions elle-même par la formulation de la règle»). A test lists every exception, and an undeclared exception
+when it is declared and named in one place, with its reason. A test lists every exception, and an undeclared exception
 makes it fail (`tests/subject-neutral.test.js`). The integrator decides an exception as a choice that is easy to
 correct, and writes it in the PR with its reason. An exception that touches players' progress or the data format goes
 to Pierre. **Anything in beta, a subject or a feature, may open to a group first.** While its

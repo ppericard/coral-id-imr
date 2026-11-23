@@ -1995,4 +1995,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **21:25, a rule never names the subjects it covers.** «c'est même pas tous les sujets à plusieurs rangs, parce qu'en
   fait, tous les sujets sont susceptibles d'avoir plusieurs rangs … les coraux, on peut très bien imaginer que dans
   un mois, je décide de rajouter les espèces … que ça soit pas une règle qui crée des exceptions elle-même par la
-  formulation de la règle.» Applied: rules/subjects.md S1; #1503's wording.
+  formulation de la règle.» Applied: rules/README.md "Writing a rule" (a guide to wording); #1503's wording.
+- **21:31, not an absolute rule.** On the S1 sentence first drafted from 21:25: «J'ai peur que tu crées une règle
+  absolue qui nous gêne plus tard … ça risque d'être interprété de manière trop dure par des agents dans le futur.»
+  Applied: moved out of S1 into "Writing a rule" as a guide, real differences still declared under S1.
+- **21:31, one id scheme for every subject, data rewritten if needed.** «ça montre encore qu'il y a des choses qui
+  sont pas communes … dans les structures de données … je suis d'accord pour réécrire des données à partir du moment
+  où on vise à homogénéiser et à rendre plus simple l'ensemble.» Applied: Linear REE-256 (design first).
+- **21:31, what a duplicate is.** «qu'est-ce qu'on appelle réellement doublon? Si c'est une autre prise de vue plus
+  serrée ou plus large, est-ce que c'est vraiment un doublon? … si au final on se retrouve à écarter toutes les autres
+  photos d'une même observation, c'est un peu gênant.» Applied: Linear REE-257.
