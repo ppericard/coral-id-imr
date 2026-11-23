@@ -66,13 +66,14 @@ his to correct). Every change to the draw, the opening, the formats or the photo
    does (right answers, response time), never declared: slow enough that a complete beginner is never faced with
    what is too hard, even if they advance very slowly; fast enough that an expert meets real challenges within the
    first answers, not a start where everything is easy and the same photos come round. How fast the engine finds a
-   player's zone, in both directions, is a property we measure (REE-250).
+   player's zone, in both directions, is a property we measure (REE-191); the opt-in placement test (REE-112, #1080)
+   is the decided way to start further on.
 2. **A good challenge is hard and identifiable.** A hard photo is worth showing when it separates those who know from
    those who do not: strong players get it right more often than weak ones. A photo that strong players miss as often
    as anyone is noise, not challenge. A Research Grade identification says an expert could name the species (Pierre:
    on iNaturalist and identified, so «identifiable. Probablement»), and our questions ask less than the species; the
    doubt left is the one photo we show alone and on a phone, when the identifier also saw the observation's other
-   photos (REE-250 measures it from the answers). An expert's challenges come from their own weaknesses, which the
+   photos (REE-191 measures it from the answers; REE-194 lists photos other players also miss). An expert's challenges come from their own weaknesses, which the
    engine finds, and from such photos. An absolute expert answers even far, low-detail photos; we accept they can
    hardly be challenged on identification.
 3. **Content is the binding constraint.** Every unit needs a stock at every level: a deep stock of easy photos for the
