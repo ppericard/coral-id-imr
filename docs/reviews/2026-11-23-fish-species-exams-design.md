@@ -52,7 +52,8 @@ ledger). Where this note reads more into it than those lines say, section 8 asks
 One rule for both subjects and both name kinds (rule S1). The exam's group is the species unit's `parent`. One box is
 kept per species unit, so a species learned by both names has two boxes, one in each tree.
 
-**The box** (`bx` on the species unit's record, from the log; section 6):
+**The box** (`bx` on the species unit's record, from the log; section 6). The table is Q395's single right answer.
+Pierre finds that «pas beaucoup» (2026-11-23 19:14), so question (g) of section 8 may require 2 right answers per box:
 
 | State | `bx` | Ticks with |
 | --- | --- | --- |
@@ -95,8 +96,11 @@ kept per species unit, so a species learned by both names has two boxes, one in 
 
 ## 4. The ultimate exam
 
-A subject parameter, `SUBJECTS` `ultimate`, given to the fish only. This is a declared difference (rule S1, listed in
-`tests/subject-neutral.test.js` with Q395 as its reason). The sea slugs and the corals already reach 100% through
+A subject parameter, `SUBJECTS` `ultimate`. Q395 asked it for the fish. On 2026-11-23 at 19:14 Manila, Pierre said it
+«devrait plutôt être une forme d'examen par défaut, sauf pour des matières où éventuellement on n'a pas assez de
+contenu … toutes les matières où on va jusqu'à l'espèce». So it is on by default for every subject that reaches
+species (today the fish and the sea slugs), and a subject without one is a declared exception (rule S1, listed in
+`tests/subject-neutral.test.js` with its reason). The corals stop at the genus, so they keep reaching 100% through
 their units' exams (section 8, question e).
 
 - **Opens** when the subject's % before the cap is 99 or more (`treeScore` `pct`), and no ultimate exam is under way or
@@ -146,8 +150,19 @@ at 99%, since no player is near that. FISH_PATH's count becomes 33 of 33.
 - **The ultimate exam** changes no replay. Its cap is in `treeScore`, which the sheet runs from the embedded `core.js`:
   a changes file, and no rules version (the replayed records do not move). It needs no gate: until the script
   updates, the board could show 100 instead of 99 for a player at 99.5% or more, and there is none.
-- **The reserve does not change.** Species units keep out of `reserveOf`'s unit list (a test checks its output is the
-  same), and their exams draw on the observations their family's or genus's reserve already holds for them.
+- **The reserve does not change.** `core.js` `reserveOf` lists every unit with `!g.noex` and applies its per-unit
+  floor (30 observations left in practice) to each. If step 2 only swapped `noex` for `exam: 'group'`, the species
+  units would join that list. A species with fewer than 30 observations would then block its observations from being
+  reserved through its family or genus. Step 2 therefore keeps the reserve's unit predicate as it is: `reserveOf`
+  skips units with `exam: 'group'`, or reads a dedicated flag such as `nores`, so the reserve no longer depends on
+  whether a unit has an exam. A test compares `reserveOf`'s output for every subject before and after step 2's unit
+  records. The species exams draw on the observations their family's or genus's reserve already holds for them.
+- **If the reserve is rebuilt from the species up first.** Pierre asked at 19:23 on 2026-11-23 (Manila) for a reserve
+  built from the species up: Linear REE-248, design PR #1492 (a 10% share per species, at least 10 observations, no
+  unit floor). If REE-248 ships before step 2, each species unit simply holds its species' share, and the predicate
+  question above disappears. The build steps below assume this note's order: step 2 before REE-248, with the
+  predicate kept. If REE-248 merges first, step 2 drops its reserve part and keeps only the unchanged-output test,
+  run against REE-248's reserve.
 
 ## 7. What players see
 
@@ -164,7 +179,8 @@ at 99%, since no player is near that. FISH_PATH's count becomes 33 of 33.
 
 ## 8. Open questions
 
-**Pierre's** (each reads his Q395 words further than the ledger records, or is costly to undo):
+**Pierre's** (each reads his Q395 words further than the ledger records, follows his words of 2026-11-23 19:14, or is
+costly to undo):
 
 - **(a) When the family exam comes.** Recommended: the rolling set of section 3. A family's species at their entry are
   examined together, and a species that reaches its entry joins. The alternative is to wait until every species of the
@@ -178,10 +194,23 @@ at 99%, since no player is near that. FISH_PATH's count becomes 33 of 33.
   answers, and a 95% pass mark fits a session the player knows about.
 - **(d) Its length.** Recommended: the sequential rule of section 4 (pass at 100 or more questions with 95% right, fail
   past 10 misses, at most 200). The alternative is a fixed number, such as 150.
-- **(e) Which subjects get one.** Recommended: the fish only, as Q395 decided, through the `SUBJECTS` parameter, so
-  another subject takes one line.
+- **(e) Which subjects get one.** Pierre, 2026-11-23 19:14: «devrait plutôt être une forme d'examen par défaut, sauf
+  pour des matières où éventuellement on n'a pas assez de contenu … toutes les matières où on va jusqu'à l'espèce».
+  The question becomes: on by default for every subject that reaches species, with declared exceptions. Recommended:
+  yes. Today that means the fish and the sea slugs, and the corals (genus only) are outside the rule. Each exception
+  is named in `SUBJECTS` with its reason ("not enough content"), and its test. To confirm: whether the sea slugs have
+  enough content today (78 genera; their species units are smaller than the fish's) or start as an exception.
 - **(f) The stored shapes** (formats that other code will follow): `bx` on unit records (-2, -1, 1), `ux` and `um` on
-  the level record, the log suffix `|u`. Recommended as written.
+  the level record, the log suffix `|u`. Recommended as written. `bx` takes whatever shape (g) needs.
+- **(g) What ticks a box.** Pierre, 2026-11-23 19:14, on one right answer per box: «ça me paraît pas beaucoup». The
+  options:
+  - **A**: 2 right answers on never-shown photos per box (and after a miss, 2 in a row as Q395 says).
+  - **B**: right answers on two different days, each on a never-shown photo at Advanced.
+
+  Recommended: B. A second new photo in the same session proves less than a right answer after a night (retention,
+  not short-term memory), and the replay can read the day from each answer's logged time. A ticks sooner, if B feels
+  too slow. Either way, `bx` keeps one more state (A: the count; B: the first day), and the section 3 table changes
+  with it.
 
 **The integrator's calls, easy to correct** (recorded in the build PRs' Decisions):
 
@@ -204,12 +233,14 @@ cited PRs (`tools/effort.py --estimate`).
 1. **The boxes in the replay (engine+sheet M)**: `core/replay.js` (`bx` in `replayProgress`, `REPLAYED`; the shared
    `bxStep`), `core/rules.js` (`FISH_RVS`, `SEASLUG_RVS`), `core.js` (built), `tools/sync/Code.gs` (embedded copy;
    caches), `tools/sync/changes/<branch>.md`, a new `tests/speciesbox.test.js` (each transition of the box, a
-   first-seen right at Advanced, a miss given, an `|x` on a seen photo; bars unchanged by the replay; the reserve's
-   output unchanged), docs/LEARNING.md "Full replay". Check level 0 (the bars do not move), plus a read-only count on
+   first-seen right at Advanced, a miss given, an `|x` on a seen photo; bars unchanged by the replay),
+   docs/LEARNING.md "Full replay". Check level 0 (the bars do not move), plus a read-only count on
    the real log of the boxes it would tick (aggregates, rule L12). Comparable to #1187, #1265, #1346, #1369 and #1433:
    median 43 min (range 24 min to 45 min).
 2. **The species exam in the app (engine L)**: `app.js` (species units: `exam: 'group'` instead of `noex`; the help
-   texts), `model.js` (`examOn` and `examReady` for a group, the next species, `EXAM.min`, `examTyped` with the
+   texts), `core/tree.js` (`reserveOf` skips `exam: 'group'` units, so the reserve's unit predicate is unchanged;
+   section 6; with `core.js` and `Code.gs`, so this step takes the `core.js` lane too), `tests/reserve.test.js`
+   (`reserveOf`'s output for every subject identical with the step's unit records and with `main`'s), `model.js` (`examOn` and `examReady` for a group, the next species, `EXAM.min`, `examTyped` with the
    group's counts, `missing`), `quiz.js` (answer: the box mirror, the group's pass, the toast), `sync.js`
    (`EXAMS_SHEET`), `progress.js` (help), `tools/ratedworld.js` (the same rules), tests (`tests/groups.test.js` and a
    new `tests/speciesexam.test.js`: the set, at least 3 questions, typed, a miss unticking without ending the exam,
@@ -218,9 +249,10 @@ cited PRs (`tools/effort.py --estimate`).
    draw, rule L11): the rated world, fish, 10 seeds, within the 40-minute cap; primary declared first (the answers from
    a species' entry to Learned); then the app world. Comparable to #1267, #1277, #1279, #1301 and #1331: median 6.6 h
    (range 5.0 h to 13.0 h), the check included.
-3. **The ultimate exam in `core.js` (engine+sheet S)**: `core/score.js` (`treeScore`'s cap), `core/subjects.js` (fish
-   `ultimate`), `core/elo.js` (`fmtOf` reads `|u`), `core/merge.js` (`ux`, `um`), `core.js`, `Code.gs`, a changes file,
-   `tests/subject-neutral.test.js` (the declared difference), tests of the cap on the board and in the app. Check level
+3. **The ultimate exam in `core.js` (engine+sheet S)**: `core/score.js` (`treeScore`'s cap), `core/subjects.js`
+   (`ultimate` on by default for a subject that reaches species, per (e)), `core/elo.js` (`fmtOf` reads `|u`),
+   `core/merge.js` (`ux`, `um`), `core.js`, `Code.gs`, a changes file, `tests/subject-neutral.test.js` (any declared
+   exception), tests of the cap on the board and in the app. Check level
    0 (nobody is at 99%). Comparable to #1187, #1227, #1299, #1369 and #1445: median 24 min (range 24 min to 5.4 h).
 4. **The ultimate exam in the app (feature M)**: `progress.js` (its card), `quiz.js` (the session, `|u`, the result),
    `model.js` (its draw and photo band), `app.css`, tests, docs (LEARNING.md, spec/quiz.md, FISH_PATH.md). Check level
@@ -231,5 +263,6 @@ cited PRs (`tools/effort.py --estimate`).
    with the real game (rule L8). Comparable to #1187, #1227, #1299, #1369 and #1445: median 24 min (range 24 min to
    5.4 h).
 
-Step 1 needs (f) answered for `bx`, and nothing else. Step 2 also needs (a) and (b). Steps 3 to 5 need (c) through
-(f).
+Step 1 needs (f) and (g) answered for `bx`, and nothing else. Step 2 also needs (a) and (b). Steps 3 to 5 need (c)
+through (f). The order assumed: steps 1 and 2 before REE-248's reserve from the species up (section 6). If REE-248
+comes first, step 2 loses its reserve part.
