@@ -243,10 +243,15 @@ the version assigned at merge.
    (2,124 over 1,000). Docs: [spec/reserve.md](../spec/reserve.md), LEARNING.md "The reserve in the game", a decision
    record with Pierre's answers, decision record 2026-11-21-rare-few-floor's note on the reserve (a unit of 12 to 19
    observations now loses 1 or 2 for each player: count the units it takes under `RARE.FEW`). Check (rule L11): level 2,
-   as for #1099, since it moves which photos practice shows in every subject. The rated world, every subject, the
-   beginner and the lecture RA, 5 paired seeds at 1,000 answers, today's rule against A, the global score and the units
-   at Open Water as in #1099. Rule L12: a replay of the real log cannot judge a change to which photos are drawn, so say
-   so. Comparable to #1187, #1265, #1346, #1369 and #1433: median 43 min (range 24 min to 45 min), before the check.
+   as for #1099, since it moves which photos practice shows in every subject. Level 2's figures are the minimum
+   ([LEARNING.md "Validating a learning change"](../LEARNING.md)): the rated world, every subject, 10 paired seeds per
+   profile, today's rule against A, at level 2's horizon (3,000 answers; 10,000 for the species subjects, since the quota
+   is set per species), with every guardrail, the 3,000-answer score among them, and the units at Open Water as in
+   #1099; and the app world as level 1 (the subjects' profiles, 5 seeds, 300 questions), since the change alters which
+   photos players see. When that does not fit in the 40-minute budget, the check is split or its worlds narrowed to the
+   ones the change touches, never shortened. Rule L12: a replay of the real log cannot judge a change to which photos
+   are drawn, so say so. Comparable to #1187, #1265, #1346, #1369 and #1433: median 43 min (range 24 min to 45 min),
+   before the check.
 2. **Only if Pierre chooses separate shares**: `reserveSplit` marks each held copy with the unit its observation is dealt
    to, and `model.js` `examSet` leaves another exam's share out of its pools; a test per subject that every exam's share
    is disjoint. The same lane and check as step 1, in the same PR.
