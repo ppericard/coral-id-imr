@@ -7405,7 +7405,7 @@ const PARTS = [
         // A glossary term on a card opens its definition on top of the card.
         const gt = await q2.$('.unlock.intro .gt');
         if (gt) {
-          // Which event hid the definition, if one did (app.js: a click elsewhere, Escape, or a scroll once the term has
+          // Which event hid the definition, if one did (gloss.js: a click elsewhere, Escape, or a scroll once the term has
           // moved, glossMoved), and where the term was when shown (glossAt) and is now: a failure then says why (seen
           // failing under load, cause not established).
           await q2.evaluate(() => {
