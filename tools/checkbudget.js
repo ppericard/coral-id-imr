@@ -64,14 +64,13 @@ const estimate = (jobs, workers, perJobSec) => Math.ceil(jobs / Math.max(1, work
 // through the origin; the hard stop covers the rest).
 const scaled = (sec, N0, N) => (sec * N) / N0;
 
-// The app world's calibration (tools/learnsim.js; REE-262). A fish job's time per answer grows with the run: the app reads
-// the bars and the exam state of every unit in play several times an answer, and units come into play as the levels rise
-// (measured, lecture RA, one job alone after the false-alarm table: 4 s per 100 answers at the start, 8 s at 600, 15 s at
-// 1,200, 30 to 55 s from 1,500 on). A short calibration, in a straight line, read the fast start only: 100 questions,
-// no typed question yet, gave 3.3 minutes for a 3,000-answer job that took 14. So the calibration plays a fifth of the
-// run's length (at least 100 answers, at most 1,000: a fish run's first typed questions come from about answer 100 to
-// 300), the first wave of jobs side by side as the run plays them (the machine's load and the jobs' own contention in
-// the measure), and the time per answer is extrapolated as it grows (grown, below).
+// The app world's calibration (tools/learnsim.js; docs/LEARNING.md "The cap"). A fish job's time per answer grows with
+// the run: the app reads the bars and the exam state of every unit in play several times an answer, and units come into
+// play as the levels rise (one lecture RA job alone: 4 s per 100 answers at the start, 8 s at 600, 15 s at 1,200, 30 to
+// 55 s from 1,500 on). Its first 100 questions, with no typed question yet, read the fast start only. So the calibration
+// plays a fifth of the run's length (at least 100 answers, at most 1,000: a fish run's typed questions come from about
+// answer 100 to 300), the first wave of jobs side by side as the run plays them (the machine's load and the jobs' own
+// contention in the measure), and the time per answer is extrapolated as it grows (grown, below).
 const CALIB = {MIN: 100, MAX: 1000, SHARE: 5};
 const calibLength = N => Math.min(N, Math.max(CALIB.MIN, Math.min(CALIB.MAX, Math.ceil(N / CALIB.SHARE))));
 // A job's seconds at length N from a calibration run: setup, its seconds outside the page's questions (the browser

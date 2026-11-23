@@ -59,7 +59,7 @@ test('the estimate runs in waves of workers, and a calibration scales with the l
   assert.strictEqual(CB.scaled(5, 1000, 1000), 5);
 });
 
-// The app world's calibration (REE-262): a fifth of the run, 100 to 1,000 questions, its time per answer grown.
+// The app world's calibration: a fifth of the run, 100 to 1,000 questions, its time per answer grown.
 test('the calibration plays a fifth of the run, at least 100 questions and at most 1,000', () => {
   assert.deepStrictEqual([50, 100, 300, 600, 1500, 3000, 4000, 10000].map(CB.calibLength), [50, 100, 100, 120, 300, 600, 800, 1000]);
 });
@@ -88,7 +88,7 @@ test('grown: a time per answer that falls never extrapolates below the mean meas
 
 test('grown, on a measured fish run: far nearer than the straight line of the old 100-question calibration', () => {
   // tools/learnsim.js --subject fish --profiles lectureRA --seeds 1 --questions 3000 --ach --beyond yes --choice auto
-  // (REE-262, one job alone on the 4-core machine, the false-alarm table armed): seconds per 100 answers.
+  // (one job alone on the shared 4-core machine, the false-alarm table armed): seconds per 100 answers.
   const per100 = [
       3.85, 3.42, 4.08, 5.64, 7.05, 8.06, 9.08, 9.08, 11.4, 10.48, 13.26, 15.13, 15.41, 23.63, 29.56, 35.1, 42.04, 48.47, 39.95, 46.74,
       55.29, 50.95, 42.74, 31.41, 30.04, 36.11, 41.74, 50.45, 51.24, 49.5

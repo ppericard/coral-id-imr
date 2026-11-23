@@ -642,10 +642,10 @@ function play(cfg) {
   const ask = (pre, i = -1, cur = 'quiz') => {
     // The false-alarm table armed (core.js faArm; docs/LEARNING.md "Long rated runs: the false-alarm table"), as the
     // rated world does: every bar reads faOf, which otherwise scans every record of P for each unit, and the app reads
-    // the bars of every unit in play several times an answer, so a fish run's time per answer grew with the answers
-    // (REE-262: 600 answers in 138 s, the 6th hundred 14 times the 1st, faScan half of it). The table gives the scan's
-    // values to the last bit; scoreAnswer empties it when it writes P, and arming it again each question keeps it on the
-    // P in play (a break's P is a new object). Nothing else in a run writes the records' conf, off, ty or the level's tyk.
+    // the bars of every unit in play several times an answer, so without it a long run's time per answer grows with its
+    // answers (a fish run's most of all). The table gives the scan's values to the last bit; scoreAnswer empties it when
+    // it writes P, and arming it again each question keeps it on the P in play (a break's P is a new object). Nothing
+    // else in a run writes the records' conf, off, ty or the level's tyk.
     if (typeof faArm === 'function') faArm(P);
     // Achievement toasts have gone by the next question (4 s in the app; no time passes in this loop), and the sign-in
     // card is closed: the out-of-game prompts (the bonus genera offer among them) wait for neither (quiz.js promptOk).
@@ -1707,7 +1707,7 @@ function openTable(runs) {
   for (let s = SEED0 + 1; s <= SEED0 + SEEDS; s++) for (const name of NAMES) jobs.push([name, s]);
   const planned = jobs.length,
     runs = [];
-  // The plan: a job's time from --per-job, else from a calibration (tools/checkbudget.js calibLength and grown; REE-262):
+  // The plan: a job's time from --per-job, else from a calibration (tools/checkbudget.js calibLength and grown):
   // the first wave of jobs, side by side as the run plays them, each for a fifth of the run's length (100 to 1,000
   // questions), its time per answer extrapolated as it grows; the slowest job sets the pace of the waves. When the run is
   // already that length the calibration is its first results. Over the budget: refused, with the options that fit.
