@@ -4,6 +4,7 @@ require('./slot.js').testGuard();
 // record P, the slate, the store).
 const test = require('node:test');
 const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
+const clock = require('./clock.js'); // model.js's answer clock (tally)
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -39,12 +40,14 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;
+  ctx.cbSave = () => {}; // the answer clock's record (model.js tally) kept in CB only
   ctx.drops = 0;
   ctx.dropPlans = () => ctx.drops++; // quiz.js: the questions planned ahead, dropped
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {INTRO, introMap, introAdd, introduced, introReady, introLeft, introAll, backOpen, backDue, introBack, introMerge, holdStep, closed, introLive, unlocked};',
+      clock() +
+      '\nthis.M = {INTRO, introMap, introAdd, introduced, introReady, introLeft, introAll, backOpen, backDue, introBack, introMerge, holdStep, closed, introLive, unlocked, tally};',
     ctx
   );
   const M = ctx.M;
@@ -69,6 +72,50 @@ function opened() {
   M.introAll('progress');
   return M;
 }
+
+// The level's answer count follows the log (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md): a card's gap
+// counts on the answer clock (model.js tally), which never goes down; the answers count stays the card's history.
+test('a card gap counts on the answer clock: a count gone down (rule D9) holds no card back', () => {
+  const M = model();
+  M.ctx.n = 100;
+  M.introAdd(['A'], false); // its own card at answer 100
+  M.ctx.n = 101;
+  assert.strictEqual(M.introReady('A'), false);
+  M.ctx.n = 102;
+  assert.strictEqual(M.introReady('A'), true);
+  M.ctx.n = 40; // the log's count replaces one that counted 62 answers twice
+  assert.strictEqual(M.introReady('A'), true, 'ready stays ready');
+  M.introAdd(['B'], false);
+  assert.deepStrictEqual([M.introMap().B[0], M.introMap().B[4]], [40, 102], 'its history, its mark on the clock');
+  M.ctx.n = 41;
+  assert.strictEqual(M.introReady('B'), false);
+  M.ctx.n = 42;
+  assert.strictEqual(M.introReady('B'), true, 'INTRO.GAP answers after its card, as before');
+  assert.strictEqual(M.tally(), 104);
+});
+
+test('the answer clock: starts at the count (an entry of before reads its count as its mark), goes up with it, never down', () => {
+  const M = model();
+  M.ctx.store.set(M.INTRO.KEY, {A: [50, 0, 1, 'c']}); // a card kept before the clock
+  M.ctx.n = 51;
+  assert.strictEqual(M.introReady('A'), false);
+  assert.strictEqual(M.tally(), 51);
+  M.ctx.n = 52;
+  assert.strictEqual(M.introReady('A'), true);
+  M.ctx.n = 30;
+  assert.strictEqual(M.tally(), 52);
+  M.ctx.n = 35; // five answers (or another device's, merged)
+  assert.strictEqual(M.tally(), 57);
+  // Another device's card brings its mark; one from an app of before, its count.
+  M.introMerge(JSON.stringify({B: [33, 0, 2, 'c', 55], C: [34, 0, 3, 'c']}), null);
+  assert.strictEqual(
+    JSON.stringify([M.introMap().B, M.introMap().C]),
+    JSON.stringify([
+      [33, 1, 2, 'c', 55],
+      [34, 1, 3, 'c']
+    ])
+  );
+});
 
 // The card that offered Open all is gone; Open all itself stays, the same on the first cards and
 // in My progress: every genus left opens at once, ready (no card each), recorded with where it came from.

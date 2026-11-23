@@ -34,11 +34,13 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;
+  ctx.cbSave = () => {}; // the answer clock's record (model.js tally) kept in CB only
   ctx.drops = 0;
   ctx.dropPlans = () => ctx.drops++;
   vm.createContext(ctx);
   vm.runInContext(
     block +
+      require('./clock.js')() +
       '\nthis.M = {INTRO, introAdd, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startEase, startRestart, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
     ctx
   );

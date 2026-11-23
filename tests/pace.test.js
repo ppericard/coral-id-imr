@@ -4,6 +4,7 @@ require('./slot.js').testGuard();
 // stubs (the player's record P, the cards, the store), core.js's pure rules directly.
 const test = require('node:test');
 const cut = require('./block.js'); // the block of a browser file a test runs, its markers checked
+const clock = require('./clock.js'); // model.js's answer clock (tally)
 const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
@@ -40,10 +41,12 @@ function model({P = {}} = {}) {
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;
+  [ctx.CB, ctx.cbSave] = [{}, () => {}]; // the answer clock's record (model.js tally) kept in CB only
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {OPEN, INTRO, openRecent, openPace, openDue, askedOpen, introReady, introLive, openChance, shaky, introAdd, introMap, introAll, introBack, holdStep, introHold, holdEase, setHold: h => (HOLDS = h)};',
+      clock() +
+      '\nthis.M = {OPEN, INTRO, openRecent, openPace, openDue, askedOpen, introReady, introLive, openChance, shaky, introAdd, introMap, introAll, introBack, holdStep, introHold, holdEase, setHold: h => (HOLDS = h), tally};',
     ctx
   );
   return Object.assign(ctx.M, {ctx});
@@ -66,6 +69,31 @@ test('opening pace: no new genus while one carded in the window is not asked yet
   assert.strictEqual(M.openPace(), false);
   M.ctx.n = 23 + M.OPEN.WIN;
   assert.strictEqual(M.openPace(), true, 'out of the window');
+});
+
+// The level's answer count follows the log (rule D9; docs/reviews/2026-11-09-level-count-checkpoints.md): the window
+// counts the answers since each card on the answer clock (model.js tally), so a count gone down brings no old card back
+// into it, and one still in it leaves it after as many answers as before.
+test('opening pace: a count gone down (rule D9) neither brings an old card back into the window nor holds one longer', () => {
+  const P = {A: {ok: 5, ko: 0}, B: {}, C: {}};
+  const M = model({P});
+  M.ctx.n = 100;
+  M.introAdd(['B'], false); // a card at answer 100, never asked
+  M.ctx.n = 100 + M.OPEN.WIN;
+  assert.strictEqual(M.openRecent().join(), '', 'out of the window');
+  M.ctx.n = 60; // the log's count replaces one that counted 55 answers twice
+  assert.strictEqual(M.openRecent().join(), '', 'still out of it');
+  assert.strictEqual(M.openPace(), true);
+  M.introAdd(['C'], false); // a card at answer 60, the clock at 115
+  assert.strictEqual(M.introMap().C[0], 60);
+  M.ctx.n = 50; // down again while C is in the window
+  assert.strictEqual(M.openRecent().join(), 'C');
+  assert.strictEqual(M.openRecent(50 + M.OPEN.WIN - 1).join(), 'C', 'a question planned ahead: the same window');
+  M.ctx.n = 50 + M.OPEN.WIN - 1;
+  assert.strictEqual(M.openRecent().join(), 'C', 'OPEN.WIN - 1 answers since its card');
+  M.ctx.n = 50 + M.OPEN.WIN;
+  assert.strictEqual(M.openRecent().join(), '', 'OPEN.WIN answers since its card');
+  assert.strictEqual(M.tally(), 115 + M.OPEN.WIN);
 });
 
 test('opening pace: at most OPEN.MAX genera carded in any OPEN.WIN answers', () => {
