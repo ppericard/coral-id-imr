@@ -1,6 +1,6 @@
 # The level's answer count and the checkpoints that hang on it (2026-11-09)
 
-**Status: decided work, built (2026-11-23, "Step 1 built" and "Step 2 built", below) but for the opt-ins' "Not now".**
+**Status: decided work, built (2026-11-23, "Step 1 built", "Step 2 built" and "The opt-ins' Not now built", below).**
 Written on 2026-11-09 on the branch `claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and
 brought to `main` on 2026-11-17 (rule W6), checked again against `origin/main` at 2c6815ba. The branch also held
 `model.js` `countShift`, a shift this note shows is not enough (below, "The problem"); it is not brought over. Until
@@ -102,6 +102,21 @@ clock instead of one counter per checkpoint.
   `clockMarks`), and after each subject's merge it moves up to the latest mark if it is behind (`clockSync`, from
   `sync.js` `mergeSubject`). A mark of this device's is then due as much sooner; no mark is ever ahead of the clock.
   Tests: `tests/trustlog.test.js` (the clock tests, a new device loading an exam in course), `tests/intro.test.js`.
-- **Left**: the opt-ins' "Not now" (`app.js` `Q[k + 'A']`, read by `core.js` `openState` against the count) is not on
-  the clock yet: a count that goes down delays that offer's second ask by the drop (at most once, `OPEN_AGAIN`
-  answers after a first "Not now"). `app.js` was held by another lane (REE-64); a follow-up.
+
+## The opt-ins' Not now built (2026-11-23)
+
+- **The mark** (`app.js` `openNo`): a "Not now" to a part opened by choice (the fish's circle 3) keeps the answer clock
+  (`tally()`) in `Q[k + 'A']`, and `openOf` gives `core.js` `openState` the clock as `at`, so the offer's one second ask
+  comes `OPEN_AGAIN` (200) answers after the "Not now" whatever the level's count did meanwhile. `core.js` is unchanged:
+  `openState` compares the two values it is given.
+- **Synced like the others**: the mark travels with the choice in the quiz settings (`sync.js` `mergeSubject`, the
+  `S.optin` keys, the latest choice winning), so it is a synced mark of the Lamport clock: `model.js` `clockMarks` reads
+  it (`opensNow`), a clock that starts takes it when it is ahead of the count, and `clockSync` (from `sync.js`
+  `clockSeen`, after the quiz settings are merged) moves a clock behind it up to it.
+- **Marks written before**: on the count, never ahead of the clock (the clock is at least the count), so such a mark
+  brings the second ask no later than before, and sooner by a drop that came before it. An app from before this change
+  reads a clock mark against its count: later by the drop, as before this change.
+- **No rules version** (rule D5): the mark times an offer card; it is not a progress rule, the replay neither reads nor
+  writes the quiz settings, and no bar, ability or count moves.
+- Tests: `tests/livelocked.test.js` (a count that goes down after "Not now"; a mark synced from a device ahead, and a
+  clock that starts at it), `tests/fish.smoke.js` (`SMOKE_ONLY=quiz`: the card's "Not now" marked on the clock).

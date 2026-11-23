@@ -44,8 +44,8 @@ REST), kept when it ran `tools/learnsim.js --subject fish` in the app world; `do
 the app world and the fish. Left out as unaffected: the rated-world-only runs (#787, #789, #855, #998, #1020, #1371;
 the rated legs of #822, #953, #1057, #1067, #1391), the coral-only ones (#852, #1116, #1195, #1357, #1414), the
 tooling PRs whose fish runs only checked for page errors at 60 to 100 questions (#782, #783, #786; #1251 at 50), and
-#685, whose fish figures came from a scratch harness, not learnsim. Open PR #1498 (REE-56) is included: its timing is
-the one that found the bug.
+#685, whose fish figures came from a scratch harness, not learnsim. #1498 (REE-56) is included: its timing is the one
+that found the bug.
 
 **What the bug can change** [guess, from §1]: the learner's own measures (true knowledge, D\*, the right % learnsim
 prints, the photo shares, `near`, the answers per photo) are untouched in their mechanism. The app's side is: a right
@@ -58,7 +58,7 @@ exam, or where the bias swamps the measure (the freezes).
 | # | Date | What (decided) | Fish app-world figure | Era, length | Could the bug change it? | Matters |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 11-07 to 11-09 | Fish achievements' timing, rule L8: #694 (the first list), #734 (the 24 around the global score, Q259-Q264), #769 (8,000 answers); notebook "Fish achievements, simulated" and "around the global score", which `docs/LEARNING.md` cites | beginner and lecture RA, 2 seeds x 2,500 and x 8,000 answers: the spread to about 2,000 answers; "no run passed a fish mastery exam in 8,000 answers", so flearn1-30 and flearncore far goals | bias, long | **Yes, for every learned one**: the exam could not pass in the sim. The levels' timings (fq50, fq80, fpct) too, later than real | **High**: re-run (§3) |
-| 2 | 11-23 | REE-56 design note's timing (#1498, open) | lecture RA and strong RA, 2 x 4,000: no family at Advanced for the lecture RA, no species met, "a floor, not a timing" | freezes, long | **Yes**: 84-92% of those runs sat in frozen loops (#1502) | **High**: re-run (§3) |
+| 2 | 11-23 | REE-56 design note's timing ([#1498](2026-11-23-fish-hunt-achievements-design.md) §7, merged while this ran) | lecture RA and strong RA, 2 x 4,000: no family at Advanced for the lecture RA, no species met; the merged §7 already calls that run void and falls back on the notebook's 8,000-answer run (fq80a at 978-1,230) as "the last valid measure" | freezes; the fallback in the bias era | **Yes**: 84-92% of those runs sat in frozen loops (#1502), and the fallback is row 1's | **High**: re-run (§3) |
 | 3 | 11-20 | Fish welcome values (#1344, [review](2026-11-20-fish-welcome-values-check.md); `docs/LEARNING.md` "The fish values"): keep the shared `CHOICE.opts`, the fish's cards off | 5 profiles x 3 answers x 10 seeds x 300 questions; first 20 answers' surprise, the level at 20, 40, 60 | bias, read in the first 80 answers | Little: typed questions were under 1% of the first 60 answers there. The "true knowledge at 100 and 300" line is the learner's own | Medium (it rests on the decision to keep the shared values): re-run (§3) |
 | 4 | 11-22 | Find the X on the species (#1410, REE-63) | strong RA and expert, 5 seeds x 3,000 questions, main against the branch: "every guardrail held, every difference 0.0 exactly", "the measure cannot tell about the species" | freezes, long | **Yes**: identical arms to the last digit is what two frozen runs give; the "held" says nothing | Low: the change rests on Pierre's format (FISH_PATH, Q321) and already said "cannot tell"; not re-run (20 runs of 3,000 questions an arm do not fit the cap) |
 | 5 | 11-18 | Scientific genera of circles 2 and 3 (#1067) | 3 seeds x 600, then the lecture RA at 20 seeds (true knowledge at 600 held) | bias, mid | Little: paired; true knowledge is the learner's | Low |
@@ -77,7 +77,8 @@ and 9 (Q413, Q421) [read]; `docs/LEARNING.md` carries rows 1 (through the notebo
 Every run below took a machine slot (rule W24) and its own 40-minute budget (rule L11), on `34a430b6` in a sparse
 worktree (no `img` needed: learnsim aborts every request outside the app). Today's main differs from the runs it
 re-checks by more than the fix (211 commits since #1344's base, the draw before Open Water among them: #1376, #1391),
-so a moved figure is not all the bug's.
+so a moved figure is not all the bug's. Main moved on while this was written; of the engine, only `model.js` changed
+(#1511, the opt-ins' "Not now" read on the answer clock), which the runs below did not include.
 
 ### 3.1 The fish welcome values (#1344), re-run in full
 
@@ -161,9 +162,10 @@ At 1,500 answers [sim]: units Learned 5 and 3 (lecture RA), 9 and 9 (strong RA);
   from about 1,500-2,000 to about 1,000-1,350. The spread rule L8 asks for still holds, now a new one every 50 to 250
   answers up to about 1,350 [sim, 2 profiles x 2 seeds]. Engine changes since 2026-11-08 move these too; the bug's
   part is not isolated.
-- **REE-56's timing (#1498, §7) does not stand**: its lecture RA does reach families at Advanced (22.5 by 1,500) and
-  both profiles meet species units by 1,500 (none at Advanced yet). "A floor, not a timing" was right about the floor;
-  the hunts' distance past 1,500 answers is still unmeasured.
+- **REE-56's timing (#1498, §7)**: the merged note already voids its run; its "last valid measure", the notebook's
+  fq80a at 978-1,230, is from the bias era too. Today fq80a comes at about 684 (strong RA) and 819 (lecture RA), the
+  lecture RA has 22.5 families at Advanced by 1,500, and both profiles have species units at Open Water by 1,500 (none
+  at Advanced yet). The hunts' distance past 1,500 answers is still unmeasured, as §7 says.
 - **#1410's "every difference 0.0 exactly"** is two frozen arms, not a held guardrail; its "the measure cannot tell"
   stays.
 

@@ -32,7 +32,7 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   genera) and `beyond` (circle 3, by the player's choice); none for the sea slugs (`[]`). A stored `c2` / `c3` choice
   of the former opt-in circles is not read. In the subject's quiz settings `Q`, for a set `k`: `Q[k]` true is on and
   `Q[k + 'T']` the time it was chosen; for a part of the slate opened by choice, `Q[k + 'N']` its "Not now" count and
-  `Q[k + 'A']` the answer count at the last one; `Q[k + 'O']` turned off on the What I learn card (`app.js` `learnSet`:
+  `Q[k + 'A']` the answer clock at the last one (`model.js` `tally`, `clockMarks`); `Q[k + 'O']` turned off on the What I learn card (`app.js` `learnSet`:
   the units the set brings by itself stop too). `app.js` `UNITS[id].sets` are the sets of units off the slate (a card, a
   ⚙ row), `UNITS[id].opens` the slate units that open once on (a card, a My progress button);
 - `ach`, `achs` and `board`: every subject has its own achievements (`core.js` `ACH`, `FISH_ACH`, `SEASLUG_ACH`, in the

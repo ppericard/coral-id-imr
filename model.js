@@ -1429,7 +1429,7 @@ const cbSave = () => store.set(COMEBACK.KEY, CB);
 // answer log's count replacing one that counted answers twice, rule D9), so a checkpoint kept on the clock counts the
 // answers given since it whatever the count does: a card's mark (introMark), the comeback's floor (CB.f), an exam's
 // last question (quiz.js ex.at), a surprise card (quiz.js winkShow), the prompts' spacing (quiz.js promptMark,
-// pulseAsk). It starts at the count, so a checkpoint kept at the count before it is a clock value too, and it is kept
+// pulseAsk), the "Not now" of a part opened by choice (app.js openNo, openOf). It starts at the count, so a checkpoint kept at the count before it is a clock value too, and it is kept
 // with the comeback's record (c the clock, n the count it last saw): it starts over with the progress (introReset)
 // and at sign-out with it. Thresholds on the count itself (OPEN.STUCK_FROM, CHOICE.ASK, WINK.AT, PULSE.FIRST) read the
 // count, which rule D9 lets move.
@@ -1446,7 +1446,8 @@ function tally() {
   return CB.c;
 }
 // The latest mark another device of the account may have kept on its own clock and synced here: an exam's last question
-// (s.ex.at, in the progress), a card's (introMark), a surprise card shown (quiz.js winkSeen). Once a count has gone down
+// (s.ex.at, in the progress), a card's (introMark), a surprise card shown (quiz.js winkSeen), the last "Not now" to a
+// part opened by choice (Q[k + 'A'], app.js openNo: synced with the choice, sync.js mergeSubject). Once a count has gone down
 // (rule D9) two devices' clocks can differ by the doubles each counted (a new device's starts at the log's count), so a
 // mark from a device ahead would hold a gap back here by the difference (Codex, #1497).
 function clockMarks() {
@@ -1455,6 +1456,7 @@ function clockMarks() {
   Object.keys(typeof P === 'object' && P ? P : {}).forEach(n => n !== LEVEL && P[n] && P[n].ex && up(P[n].ex.at));
   if (typeof introMap === 'function') Object.values(introMap()).forEach(e => Array.isArray(e) && up(introMark(e)));
   if (typeof winkSeen === 'function') Object.values(winkSeen()).forEach(up);
+  if (typeof opensNow === 'function' && typeof Q === 'object' && Q) opensNow().forEach(S => up(Q[S.k + 'A']));
   return m;
 }
 // After a sync brought other devices' marks in (sync.js mergeSubject): the clock moves up to the latest of them when it is
