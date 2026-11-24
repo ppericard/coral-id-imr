@@ -178,23 +178,66 @@ test('the page’s clock is virtual: it stands still between the tool’s ticks,
   assert.match(src, /__tick\(6000\), document\.getElementById\('next'\)/, 'a pause before Next');
 });
 
-test('the boot is started over from a settled page, so the loaded page asks the same questions (REE-281)', () => {
+test('the page boots on a page that draws no question and is at rest before the numbers start from the seed (REE-281)', () => {
   const src = read('tools/answercost.js'),
-    at = src.indexOf('Start over from a settled page'),
+    at = src.indexOf("await p.goto(base + '#about')"),
     boot = src.slice(at, src.indexOf('for (let i = 0; i < o.warm; i++)', at));
-  assert.ok(at > 0, 'the boot comment is gone');
-  // Before the first warm-up answer: settled, numbers from the seed, plans dropped, the quiz drawn again, settled.
+  assert.ok(at > 0, 'the page opens on About, which draws no question: a question drawn by the boot is kept and shown again by the quiz');
+  assert.doesNotMatch(src, /p\.goto\(base \+ '#quiz'\)/, 'never booted on the quiz');
+  // Everything the boot started is awaited (every tier set up, the planned questions' photos, the idle tasks), the page's rest
+  // checked, then from the seed: the plans dropped, the numbers started over, the quiz opened, settled, before the warm-up.
   const order = [
-    boot.indexOf('await settle(p)'),
-    ...['__reseed(0)', 'dropPlans()', 'route()'].map(s => boot.indexOf(s)),
-    boot.lastIndexOf('await settle(p)')
-  ];
+    'window.APP_READY',
+    'loadTier(5)',
+    'HAVE >= 5',
+    'LAB.pending === 0',
+    'prefetched()',
+    'await settle(p)',
+    'the page was not at rest',
+    '__reseed(0)',
+    'dropPlans()',
+    "go('quiz')",
+    'await settle(p)'
+  ].map((s, i, all) => (i === all.length - 1 ? boot.lastIndexOf(s) : boot.indexOf(s)));
   assert.ok(
     order.every((x, i) => x >= 0 && (i === 0 || x > order[i - 1])),
     `the steps of the restart are out of order: ${order}`
   );
+  assert.match(
+    boot,
+    /at\.lab \|\| at\.question \|\| at\.seen/,
+    'a Lab file still loading, a question on screen or in the session window at the restart fails the run'
+  );
+  assert.doesNotMatch(
+    boot,
+    /networkidle/,
+    'the rest is the app’s own state (HAVE, LAB.pending), not a quiet network: waiting for it timed out once, the cause not looked into'
+  );
   assert.match(src, /--throttle N/, 'a CPU throttle to reproduce a loaded machine');
   assert.match(src, /--trace/, 'a trace of where each random number is drawn');
+  assert.match(src, /--repeat N/, 'a repeat check by hand');
+  assert.match(src, /verdict\(every, budget/, 'with --repeat, every run is held to the budget, not only the first');
+  assert.match(src, /writeBudget\([^\n]*\[\.\.\.every,/, 'with --repeat, a ceiling counts the largest of every run');
+});
+
+test('repeatable(): the runs of one seed ask the same units in the same order and count the same calls', () => {
+  const store = {getCalls: 90, getChars: 83000, setCalls: 8, setChars: 56000},
+    run = (asked, namedCalls, extra = {}) => ({state: 'fish:50', seed: 3, asked, namedCalls, store, ...extra}),
+    ok = A.repeatable([run(['f:A', 'g:B'], 100000), run(['f:A', 'g:B'], 100000), run(['f:A', 'g:B'], 100050)]);
+  assert.deepStrictEqual(ok, {ok: true, why: ''}, 'a few calls of a hundred thousand are the idle tasks’');
+  const other = A.repeatable([run(['f:A', 'g:B'], 100000), run(['f:A', 'f:C'], 100000)]);
+  assert.strictEqual(other.ok, false);
+  assert.match(other.why, /run 2 of fish:50 seed 3 asked f:A, f:C where run 1 asked f:A, g:B/, 'the run and the sequences are named');
+  const more = A.repeatable([run(['f:A'], 100000), run(['f:A'], 100000 * (1 + 2 * A.TOL))]);
+  assert.strictEqual(more.ok, false);
+  assert.match(more.why, /counted .* calls an answer where run 1 counted 100000/);
+  const read = A.repeatable([run(['f:A'], 5), run(['f:A'], 5, {store: {...store, getChars: 83000 * 1.03}})]);
+  assert.strictEqual(read.ok, true, 'the storage read moves a few percent on a throttled machine');
+  const more2 = A.repeatable([run(['f:A'], 5), run(['f:A'], 5, {store: {...store, getChars: 83000 * 1.2}})]);
+  assert.strictEqual(more2.ok, false);
+  assert.match(more2.why, /for getChars where run 1 counted 83000/, 'the storage counts are compared too');
+  assert.strictEqual(A.repeatable([run(['f:A'], 5)]).ok, true, 'one run repeats itself');
+  assert.strictEqual(A.repeatable([run([], 5), run([], 5)]).ok, true, 'no unit asked, twice');
 });
 
 test('the page holds the state’s history: the warm-up answers played before the read are counted in', () => {
