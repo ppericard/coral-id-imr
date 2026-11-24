@@ -137,6 +137,109 @@
    "form": "U",
    "keep": "best",
    "note": "Centre of the disc with the mouths"
+  },
+  "sandalolitha-cand-225146355": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "A Fungia disc and another mushroom coral take much of the frame"
+  },
+  "sandalolitha-cand-370734386": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Backscatter, haze"
+  },
+  "sandalolitha-cand-370734350": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "sandalolitha-cand-370734413": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "note": "Another part, soft"
+  },
+  "sandalolitha-cand-70842155": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1000 px"
+  },
+  "sandalolitha-cand-70843432": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1000 px"
+  },
+  "sandalolitha-cand-740684006": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "sandalolitha-cand-740684226": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt",
+   "note": "Closer on the same colony"
+  },
+  "sandalolitha-cand-348241655": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Another mushroom coral at the top left corner"
+  },
+  "sandalolitha-cand-100220956": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Green haze"
+  },
+  "sandalolitha-cand-100220966": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Dark, shallow focus"
+  },
+  "sandalolitha-cand-100220972": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup"
+  },
+  "sandalolitha-cand-609334390": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong blue cast"
+  },
+  "sandalolitha-cand-609334495": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Green cast, soft"
+  },
+  "sandalolitha-cand-609334334": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup"
   }
  }
 }

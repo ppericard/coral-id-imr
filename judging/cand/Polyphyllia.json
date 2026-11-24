@@ -79,6 +79,100 @@
     0.88
    ],
    "note": "Tentacles out"
+  },
+  "polyphyllia-cand-248186413": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Small: about a tenth of the frame, among rubble",
+   "crop": [
+    0.2,
+    0.2,
+    0.95,
+    0.8
+   ]
+  },
+  "polyphyllia-cand-453172715": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1024 px"
+  },
+  "polyphyllia-cand-490000982": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong green cast, soft at 100%"
+  },
+  "polyphyllia-cand-606300462": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler just below the coral; a crop would cut close to it"
+  },
+  "polyphyllia-cand-606300471": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Tentacles close up; a ruler along the bottom edge",
+   "crop": [
+    0,
+    0,
+    1,
+    0.8
+   ]
+  },
+  "polyphyllia-cand-606300473": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Seen tilted; dark sand fills the left half",
+   "crop": [
+    0.3,
+    0,
+    1,
+    0.8
+   ]
+  },
+  "polyphyllia-cand-606300486": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Strong green cast"
+  },
+  "polyphyllia-cand-606300484": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "The tentacles from above"
+  },
+  "polyphyllia-cand-606300493": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler crosses the bottom left of the coral"
+  },
+  "polyphyllia-cand-351712135": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Night, pale colony"
   }
  }
 }

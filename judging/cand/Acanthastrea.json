@@ -1,0 +1,96 @@
+{
+ "genus": "Acanthastrea",
+ "photos": {
+  "acanthastrea-cand-509175274": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A hand holds a ruler at the top left; a crop removing it would cut close to the coral"
+  },
+  "acanthastrea-cand-509175284": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "A ruler along the top edge; soft at 100%",
+   "crop": [
+    0,
+    0.4,
+    1,
+    1
+   ]
+  },
+  "acanthastrea-cand-395117496": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Night; green oral discs"
+  },
+  "acanthastrea-cand-395117593": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "One corallite, green oral disc"
+  },
+  "acanthastrea-cand-238331827": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "1024 px"
+  },
+  "acanthastrea-cand-288793989": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "acanthastrea-cand-288793960": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Plate corals at the left and right edges"
+  },
+  "acanthastrea-cand-258658642": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark fleshy surface; corallite rims not clear"
+  },
+  "acanthastrea-cand-745777076": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "acanthastrea-cand-745777128": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "genus": "exclude",
+   "note": "A finger covers about a third of the frame"
+  },
+  "acanthastrea-cand-745777219": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft at 100%"
+  }
+ }
+}

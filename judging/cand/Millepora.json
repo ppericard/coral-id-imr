@@ -187,6 +187,51 @@
     "multi"
    ],
    "note": "Several pale lobed colonies and Acropora; subject unclear"
+  },
+  "millepora-cand-174517931": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Blades; a massive coral at the bottom left"
+  },
+  "millepora-cand-179640305": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Other corals fill the left and top of the frame"
+  },
+  "millepora-cand-174506160": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus",
+    "multi"
+   ],
+   "note": "A network of thin pale ridges over rock, among other corals"
+  },
+  "millepora-cand-174506191": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Damselfish over the colony"
+  },
+  "millepora-cand-461406963": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "455 px; a brain coral and a second colony"
   }
  }
 }

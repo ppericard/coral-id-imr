@@ -158,6 +158,81 @@
     1.0
    ],
    "note": "Noise at 100%"
+  },
+  "pleuractis-cand-163726813": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "The disc fills the frame; green cast"
+  },
+  "pleuractis-cand-515526785": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "pleuractis-cand-224677807": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong blue cast; partly hidden"
+  },
+  "pleuractis-cand-506009729": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "A small disc seen edge-on between Porites lumps"
+  },
+  "pleuractis-cand-230327690": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "pleuractis-cand-366539463": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Seen from the side, arched"
+  },
+  "pleuractis-cand-500344665": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "note": "Held in a hand"
+  },
+  "pleuractis-cand-269241917": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Round disc with smooth septa: Fungia or Lithophyllon possible"
+  },
+  "pleuractis-cand-596710790": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "pleuractis-cand-352667858": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Small and partly hidden at the top left, among other life"
   }
  }
 }

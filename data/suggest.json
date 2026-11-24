@@ -32,8 +32,8 @@
   "Catalaphyllia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 0
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Ctenactis": {
@@ -214,8 +214,8 @@
   "Leptoseris": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 24
+    "at": "2026-11-24",
+    "n": 8
    }
   },
   "Lithophyllon": {
@@ -249,8 +249,8 @@
   "Millepora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 23
+    "at": "2026-11-24",
+    "n": 6
    }
   },
   "Montipora": {
@@ -319,15 +319,15 @@
   "Plesiastrea": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 1
+    "at": "2026-11-24",
+    "n": 3
    }
   },
   "Pleuractis": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 16
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Pocillopora": {
@@ -340,15 +340,15 @@
   "Podabacia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
+    "at": "2026-11-24",
     "n": 6
    }
   },
   "Polyphyllia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 8
+    "at": "2026-11-24",
+    "n": 17
    }
   },
   "Porites": {
@@ -361,15 +361,15 @@
   "Psammocora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 2
+    "at": "2026-11-24",
+    "n": 11
    }
   },
   "Sandalolitha": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 14
+    "at": "2026-11-24",
+    "n": 17
    }
   },
   "Seriatopora": {
@@ -389,8 +389,8 @@
   "Trachyphyllia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 22
+    "at": "2026-11-24",
+    "n": 20
    }
   },
   "Tubastraea": {
@@ -6958,6 +6958,41 @@
     "at": "2026-11-24",
     "n": 1
    }
+  },
+  "Zoopilus": {
+   "cand": {
+    "by": "claude",
+    "at": "2026-11-24",
+    "n": 8
+   }
+  },
+  "Caulastraea": {
+   "cand": {
+    "by": "claude",
+    "at": "2026-11-24",
+    "n": 17
+   }
+  },
+  "Oulophyllia": {
+   "cand": {
+    "by": "claude",
+    "at": "2026-11-24",
+    "n": 5
+   }
+  },
+  "Leptastrea": {
+   "cand": {
+    "by": "claude",
+    "at": "2026-11-24",
+    "n": 2
+   }
+  },
+  "Acanthastrea": {
+   "cand": {
+    "by": "claude",
+    "at": "2026-11-24",
+    "n": 11
+   }
   }
  },
  "photo": {},
@@ -6966,6 +7001,97 @@
  "dup": [],
  "note": "Suggestions from an outside judging agent, imported by tools/judging_import.py and tools/judging_cand.py. Shown in admin.html; Pierre accepts or dismisses. Never edit by hand.",
  "cand": {
+  "acanthastrea-cand-238331827": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "n": "1024 px"
+  },
+  "acanthastrea-cand-258658642": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "u": [
+    "genus"
+   ],
+   "n": "Dark fleshy surface; corallite rims not clear"
+  },
+  "acanthastrea-cand-288793960": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "E",
+   "u": [
+    "multi"
+   ],
+   "n": "Plate corals at the left and right edges"
+  },
+  "acanthastrea-cand-288793989": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "E"
+  },
+  "acanthastrea-cand-395117496": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "n": "Night; green oral discs"
+  },
+  "acanthastrea-cand-395117593": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "One corallite, green oral disc"
+  },
+  "acanthastrea-cand-509175274": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "E",
+   "u": [
+    "genus"
+   ],
+   "n": "A hand holds a ruler at the top left; a crop removing it would cut close to the coral"
+  },
+  "acanthastrea-cand-509175284": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "n": "A ruler along the top edge; soft at 100%",
+   "c": [
+    0.0,
+    0.2,
+    1.0,
+    1.0
+   ]
+  },
+  "acanthastrea-cand-745777076": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "E"
+  },
+  "acanthastrea-cand-745777128": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "E",
+   "n": "A finger covers about a third of the frame"
+  },
+  "acanthastrea-cand-745777219": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Soft at 100%"
+  },
   "acropora-cand-129392908": {
    "v": "wide",
    "q": 1,
@@ -8066,6 +8192,211 @@
     "quality"
    ],
    "n": "Closer than the live Corallites photo; very soft at 100%"
+  },
+  "catalaphyllia-cand-216999657": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "1200 px; tentacles with pink tips fill the frame; a logo and frame line"
+  },
+  "catalaphyllia-cand-248437092": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "M",
+   "n": "Striped mantle and tentacles"
+  },
+  "catalaphyllia-cand-248437131": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "M",
+   "n": "Another colony part, tentacles out"
+  },
+  "catalaphyllia-cand-248437164": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "The striped oral disc"
+  },
+  "catalaphyllia-cand-256261543": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "u": [
+    "genus",
+    "quality"
+   ],
+   "n": "Looks like a sea anemone on rock rather than a coral on sand"
+  },
+  "catalaphyllia-cand-258781685": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Tentacles hide the colony"
+  },
+  "catalaphyllia-cand-387292641": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "x"
+  },
+  "catalaphyllia-cand-387292664": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Purple-tipped tentacles over green mantle"
+  },
+  "catalaphyllia-cand-759474961": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Murky green water"
+  },
+  "catalaphyllia-cand-99428379": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "A clownfish among the tentacles; a credit line"
+  },
+  "caulastraea-cand-161626454": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "B"
+  },
+  "caulastraea-cand-161626472": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "B"
+  },
+  "caulastraea-cand-161626480": {
+   "v": "medium",
+   "q": 2,
+   "k": "dup",
+   "fm": "B"
+  },
+  "caulastraea-cand-229075472": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "B",
+   "n": "Small, among rock; shallow water"
+  },
+  "caulastraea-cand-229075482": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "B"
+  },
+  "caulastraea-cand-374971513": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "B"
+  },
+  "caulastraea-cand-435989937": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "B",
+   "u": [
+    "genus"
+   ],
+   "n": "Pale cups with tall ridged walls: Lobophyllia or Caulastraea not certain"
+  },
+  "caulastraea-cand-435989954": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "B",
+   "u": [
+    "genus"
+   ],
+   "n": "Pale cups with tall ridged walls; soft at 100%"
+  },
+  "caulastraea-cand-435990042": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "B"
+  },
+  "caulastraea-cand-4481093": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "B",
+   "n": "A colour card along the bottom",
+   "c": [
+    0.0,
+    0.0,
+    1.0,
+    0.71
+   ]
+  },
+  "caulastraea-cand-4481094": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "B",
+   "n": "Pale branching coral over the top half; backscatter"
+  },
+  "caulastraea-cand-598158169": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "m": 1,
+   "fm": "B",
+   "u": [
+    "multi"
+   ],
+   "n": "Another coral's cups mixed in"
+  },
+  "caulastraea-cand-598158185": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "B",
+   "u": [
+    "multi"
+   ],
+   "n": "Another coral's cups mixed in among the corallites"
+  },
+  "caulastraea-cand-90591193": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "B"
+  },
+  "caulastraea-cand-90591226": {
+   "v": "macro",
+   "q": 3,
+   "k": "best",
+   "fm": "x"
+  },
+  "caulastraea-cand-90591244": {
+   "v": "macro",
+   "q": 3,
+   "k": "alt",
+   "fm": "x",
+   "n": "Side view of the corallite walls"
+  },
+  "caulastraea-cand-90591262": {
+   "v": "medium",
+   "q": 3,
+   "k": "alt",
+   "fm": "B",
+   "n": "Wider on the colony"
   },
   "ctenactis-cand-153802900": {
    "v": "wide",
@@ -11983,7 +12314,7 @@
     0.0,
     0.0,
     1.0,
-    0.8
+    0.775
    ]
   },
   "goniastrea-cand-503240113": {
@@ -13959,6 +14290,23 @@
    "fm": "S",
    "n": "Plate corals around"
   },
+  "leptastrea-cand-520008018": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "n": "1200 px; small colony among other life"
+  },
+  "leptastrea-cand-766995632": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "E",
+   "u": [
+    "genus"
+   ],
+   "n": "Evenly spaced round corallites: Cyphastrea or Plesiastrea possible"
+  },
   "leptoria-cand-171877816": {
    "v": "medium",
    "q": 3,
@@ -14366,6 +14714,33 @@
    "k": "best",
    "fm": "F",
    "n": "Dark, soft at 100%"
+  },
+  "leptoseris-cand-488111036": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "n": "The plate edge, another framing than the live photo"
+  },
+  "leptoseris-cand-488111040": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "n": "Spiral plates, another framing than the live Colony photo"
+  },
+  "leptoseris-cand-488111348": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "F"
+  },
+  "leptoseris-cand-488111349": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "F",
+   "n": "With the plate edge, softer"
   },
   "leptoseris-cand-489649926": {
    "v": "wide",
@@ -16075,6 +16450,18 @@
    "fm": "F",
    "n": "Watermark"
   },
+  "millepora-cand-174506160": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "E",
+   "u": [
+    "genus",
+    "multi"
+   ],
+   "n": "A network of thin pale ridges over rock, among other corals"
+  },
   "millepora-cand-174506184": {
    "v": "wide",
    "q": 2,
@@ -16087,6 +16474,31 @@
     0.925,
     0.975
    ]
+  },
+  "millepora-cand-174506191": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "B",
+   "n": "Damselfish over the colony"
+  },
+  "millepora-cand-174517931": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "n": "Blades; a massive coral at the bottom left"
+  },
+  "millepora-cand-179640305": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "B",
+   "u": [
+    "multi"
+   ],
+   "n": "Other corals fill the left and top of the frame"
   },
   "millepora-cand-232103195": {
    "v": "wide",
@@ -16219,6 +16631,14 @@
    "q": 3,
    "k": "best",
    "fm": "B"
+  },
+  "millepora-cand-461406963": {
+   "v": "wide",
+   "q": 1,
+   "k": "best",
+   "m": 1,
+   "fm": "B",
+   "n": "455 px; a brain coral and a second colony"
   },
   "millepora-cand-47823094": {
    "v": "wide",
@@ -17346,6 +17766,59 @@
    "k": "alt",
    "fm": "x",
    "n": "Another part, septa ridges at the right"
+  },
+  "oulophyllia-cand-493721671": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "M",
+   "u": [
+    "genus"
+   ],
+   "n": "A small young colony with wide valleys"
+  },
+  "oulophyllia-cand-595416011": {
+   "v": "medium",
+   "q": 2,
+   "g": "exclude",
+   "fm": "M",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler crosses the bottom right corner over the coral; very soft at 100%"
+  },
+  "oulophyllia-cand-595416016": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "n": "Strong cyan cast; a ruler along the bottom",
+   "c": [
+    0.0,
+    0.0,
+    1.0,
+    0.825
+   ]
+  },
+  "oulophyllia-cand-649983062": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "u": [
+    "genus"
+   ],
+   "n": "Thick-walled valleys around single mouths: Favites possible"
+  },
+  "oulophyllia-cand-649983077": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "u": [
+    "genus"
+   ],
+   "n": "Thick-walled valleys: Favites possible"
   },
   "oxypora-cand-177342980": {
    "v": "wide",
@@ -19544,6 +20017,27 @@
    ],
    "n": "Bumpy small vesicles look unlike Plerogyra; oversharpened"
   },
+  "plesiastrea-cand-137352933": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Polyps half out, white mucus; soft"
+  },
+  "plesiastrea-cand-137353052": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "S",
+   "n": "Brittle stars over the corallites"
+  },
+  "plesiastrea-cand-137353076": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "S",
+   "n": "Brittle stars over the lumps"
+  },
   "plesiastrea-cand-270598438": {
    "v": "medium",
    "q": 2,
@@ -19557,6 +20051,20 @@
     1.0
    ]
   },
+  "pleuractis-cand-163726813": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "The disc fills the frame; green cast"
+  },
+  "pleuractis-cand-224677807": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Strong blue cast; partly hidden"
+  },
   "pleuractis-cand-227053996": {
    "v": "wide",
    "q": 2,
@@ -19568,6 +20076,12 @@
     0.89,
     0.96
    ]
+  },
+  "pleuractis-cand-230327690": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
   },
   "pleuractis-cand-243913658": {
    "v": "wide",
@@ -19633,6 +20147,61 @@
     0.975,
     0.975
    ]
+  },
+  "pleuractis-cand-269241917": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "Round disc with smooth septa: Fungia or Lithophyllon possible"
+  },
+  "pleuractis-cand-352667858": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "u": [
+    "quality"
+   ],
+   "n": "Small and partly hidden at the top left, among other life"
+  },
+  "pleuractis-cand-366539463": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U",
+   "n": "Seen from the side, arched"
+  },
+  "pleuractis-cand-500344665": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "n": "Held in a hand"
+  },
+  "pleuractis-cand-506009729": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "n": "A small disc seen edge-on between Porites lumps"
+  },
+  "pleuractis-cand-515526785": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
+  "pleuractis-cand-596710790": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Soft at 100%"
   },
   "pleuractis-cand-600486419": {
    "v": "wide",
@@ -20143,6 +20712,23 @@
     1.0
    ]
   },
+  "podabacia-cand-306732143": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "u": [
+    "genus"
+   ],
+   "n": "A smooth curled plate on sand; corallites not visible"
+  },
+  "podabacia-cand-349632189": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "n": "Part of the plate; soft at 100%"
+  },
   "podabacia-cand-357894450": {
    "v": "wide",
    "q": 1,
@@ -20204,6 +20790,19 @@
     0.96
    ]
   },
+  "polyphyllia-cand-248186413": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Small: about a tenth of the frame, among rubble",
+   "c": [
+    0.1,
+    0.1,
+    0.975,
+    0.9
+   ]
+  },
   "polyphyllia-cand-262218894": {
    "v": "wide",
    "q": 2,
@@ -20224,6 +20823,13 @@
    "fm": "U",
    "n": "Tentacles out, soft at 100%"
   },
+  "polyphyllia-cand-351712135": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Night, pale colony"
+  },
   "polyphyllia-cand-351978729": {
    "v": "wide",
    "q": 2,
@@ -20236,12 +20842,26 @@
     0.925
    ]
   },
+  "polyphyllia-cand-453172715": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1024 px"
+  },
   "polyphyllia-cand-464587212": {
    "v": "wide",
    "q": 1,
    "k": "best",
    "fm": "U",
    "n": "Strong green-cyan cast, coral soft at 100% while the sand is sharp, tentacles hide it"
+  },
+  "polyphyllia-cand-490000982": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Strong green cast, soft at 100%"
   },
   "polyphyllia-cand-59208748": {
    "v": "wide",
@@ -20255,6 +20875,66 @@
     0.925,
     0.94
    ]
+  },
+  "polyphyllia-cand-606300462": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler just below the coral; a crop would cut close to it"
+  },
+  "polyphyllia-cand-606300471": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Tentacles close up; a ruler along the bottom edge",
+   "c": [
+    0.0,
+    0.0,
+    1.0,
+    0.9
+   ]
+  },
+  "polyphyllia-cand-606300473": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Seen tilted; dark sand fills the left half",
+   "c": [
+    0.15,
+    0.0,
+    1.0,
+    0.9
+   ]
+  },
+  "polyphyllia-cand-606300484": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "The tentacles from above"
+  },
+  "polyphyllia-cand-606300486": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Strong green cast"
+  },
+  "polyphyllia-cand-606300493": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "x",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler crosses the bottom left of the coral"
   },
   "polyphyllia-cand-609615872": {
    "v": "wide",
@@ -20956,6 +21636,85 @@
     1.0
    ]
   },
+  "psammocora-cand-102597249": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Closer, shallow focus"
+  },
+  "psammocora-cand-102597288": {
+   "v": "macro",
+   "q": 3,
+   "k": "alt",
+   "fm": "x",
+   "n": "Another part of the surface"
+  },
+  "psammocora-cand-102597302": {
+   "v": "macro",
+   "q": 3,
+   "k": "best",
+   "fm": "x"
+  },
+  "psammocora-cand-102597956": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "S",
+   "u": [
+    "multi"
+   ],
+   "n": "Lobes in the middle of a reef scene with Pocillopora and Acropora"
+  },
+  "psammocora-cand-102597986": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Wider on the surface"
+  },
+  "psammocora-cand-102598004": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "x",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler over part of the coral, as in its sibling photo"
+  },
+  "psammocora-cand-102598024": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "x",
+   "n": "A steel ruler covers the middle of the frame"
+  },
+  "psammocora-cand-4517521": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "x",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler and colour card over the bottom 40%; a crop at half size would cut the coral"
+  },
+  "psammocora-cand-4517522": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "M",
+   "n": "Hands, a slate and a bag dominate; the coral is small"
+  },
+  "psammocora-cand-4517523": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "M",
+   "n": "Hands, a slate and a bag dominate; the coral is small"
+  },
   "psammocora-cand-596702833": {
    "v": "medium",
    "q": 2,
@@ -20975,6 +21734,34 @@
    "k": "dup",
    "fm": "B",
    "n": "Near-identical to the live wide photo of this colony"
+  },
+  "sandalolitha-cand-100220956": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Green haze"
+  },
+  "sandalolitha-cand-100220966": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Dark, shallow focus"
+  },
+  "sandalolitha-cand-100220972": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "U"
+  },
+  "sandalolitha-cand-225146355": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "n": "A Fungia disc and another mushroom coral take much of the frame"
   },
   "sandalolitha-cand-262212725": {
    "v": "wide",
@@ -21080,6 +21867,34 @@
     1.0
    ]
   },
+  "sandalolitha-cand-348241655": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Another mushroom coral at the top left corner"
+  },
+  "sandalolitha-cand-370734350": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Soft at 100%"
+  },
+  "sandalolitha-cand-370734386": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Backscatter, haze"
+  },
+  "sandalolitha-cand-370734413": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "U",
+   "n": "Another part, soft"
+  },
   "sandalolitha-cand-604391250": {
    "v": "wide",
    "q": 2,
@@ -21092,6 +21907,26 @@
     1.0,
     1.0
    ]
+  },
+  "sandalolitha-cand-609334334": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "U"
+  },
+  "sandalolitha-cand-609334390": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Strong blue cast"
+  },
+  "sandalolitha-cand-609334495": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Green cast, soft"
   },
   "sandalolitha-cand-611197927": {
    "v": "wide",
@@ -21112,6 +21947,33 @@
    "k": "dup",
    "fm": "U",
    "n": "small; same disc farther away, adds nothing"
+  },
+  "sandalolitha-cand-70842155": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1000 px"
+  },
+  "sandalolitha-cand-70843432": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1000 px"
+  },
+  "sandalolitha-cand-740684006": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
+  "sandalolitha-cand-740684226": {
+   "v": "wide",
+   "q": 3,
+   "k": "alt",
+   "fm": "U",
+   "n": "Closer on the same colony"
   },
   "seriatopora-cand-100511784": {
    "v": "medium",
@@ -21875,6 +22737,12 @@
    "k": "best",
    "fm": "M"
   },
+  "trachyphyllia-cand-338981071": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
   "trachyphyllia-cand-460442366": {
    "v": "macro",
    "q": 2,
@@ -21956,6 +22824,25 @@
    ],
    "n": "640 px but clean"
   },
+  "trachyphyllia-cand-515605084": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
+  "trachyphyllia-cand-515608062": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Shallow focus"
+  },
+  "trachyphyllia-cand-59282063": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
   "trachyphyllia-cand-600484570": {
    "v": "wide",
    "q": 2,
@@ -21968,6 +22855,20 @@
     0.925,
     0.94
    ]
+  },
+  "trachyphyllia-cand-700696831": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Fills the frame, slightly soft"
+  },
+  "trachyphyllia-cand-700696858": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "U",
+   "n": "Another angle, soft"
   },
   "tubastraea-cand-163721334": {
    "v": "wide",
@@ -23025,6 +23926,72 @@
    "k": "best",
    "fm": "F",
    "n": "Murky water, backscatter; damselfish"
+  },
+  "zoopilus-cand-231633663": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "u": [
+    "multi"
+   ],
+   "n": "Strong blue cast; leafy corals fill the rest of the frame"
+  },
+  "zoopilus-cand-283504952": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "u": [
+    "form",
+    "genus"
+   ],
+   "n": "A tall upright mound among Acropora: unusual for a free-living colony"
+  },
+  "zoopilus-cand-365311197": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
+  "zoopilus-cand-593546218": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Part of the colony; branching corals in front; watermark"
+  },
+  "zoopilus-cand-639430783": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "A hand and a ruler at the bottom left; a crop of the left third may remove them"
+  },
+  "zoopilus-cand-639430791": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "n": "A hand holds a ruler over the coral"
+  },
+  "zoopilus-cand-639430800": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "n": "A hand holds a ruler over the coral"
+  },
+  "zoopilus-cand-683275866": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1000 px"
   }
  },
  "fish": {
