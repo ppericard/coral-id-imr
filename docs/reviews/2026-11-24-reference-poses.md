@@ -43,19 +43,20 @@ Several sources are from outside the Philippines; they are cited for how a photo
 | Source | What it says |
 | --- | --- |
 | FishTrace WP2 protocol, Kullander & Norén, Swedish Museum of Natural History, version 4, 7 June 2003 ([PDF](https://fishreg.jrc.ec.europa.eu/static/documents/fishtrace/FishTrace_WP2_protocol.pdf)) **[read]** | For specimens: "Photographs must be taken of the left side of the specimen, except certain flatfishes. In flatfishes, the eyed side should be shown, with the gill opening down. Photographs should be taken in lateral aspect, and when relevant of other aspects (flatfishes: right and left side; anglerfishes: dorsal and ventral aspect). Fins should be spread as much as possible using alcohol-soaked cotton swabs and supports when relevant." Its background is "a neutral grey". |
-| Florida Fish and Wildlife Conservation Commission, "Photo Tips for Properly Identifying Your Fish" ([page](https://myfwc.com/fishing/saltwater/outreach/photo-tips/)) **[read]** | "Be sure to clearly show as much of the fish as possible, including all fins." Per group: sharks, "one full side view of the entire shark and one top-down view of the head"; jacks, groupers, snappers, "one full side view of the entire fish"; flounder, "one top-down view of the entire fish"; and "Body shape and depth clearly and accurately displayed. Keep the body of the fish perpendicular to the camera to accomplish this." |
+| Florida Fish and Wildlife Conservation Commission, "Photo Tips for Properly Identifying Your Fish" ([page](https://myfwc.com/fishing/saltwater/outreach/photo-tips/)) **[read]** | "Be sure to clearly show as much of the fish as possible, including all fins." Per group: sharks, "one full side view of the entire shark and one top-down view of the head"; jacks, groupers and snappers, "one full side view of the entire fish and one side view of the head"; mackerels and tunas, "one full side view of the entire fish"; flounder, "one top-down view of the entire fish"; and for groupers and snappers "Body shape and depth clearly and accurately displayed. Keep the body of the fish perpendicular to the camera to accomplish this." |
 | Redmap, "Identifying fishes" ([page](https://www.redmap.org.au/article/identifying-fishes/)) **[read]** | "So try and make sure that all fins are visible – so a side-on photo with all of the fins showing is best." On colour: "Fish can change colour within seconds, appear different when out of the water, with age, with gender, or with time of day". |
 | FishBase manual, "Pictures in FishBase" (Froese, Atanacio & Pauly; [page](https://www.fishbase.se/manual/fishbasethe_pictures_table.htm)) **[read]** | The set it wants per species is not one plate: "one morphological drawing", a dead-fish photo, "one aquarium photo or drawing showing live colors, and one underwater photo showing the fish in its natural environment." |
-| FAO Species Identification Guide, Western Central Pacific, Rhinopteridae (Compagno & Last; [PDF](https://www.fao.org/4/x2401e/x2401e13.pdf)) **[read]** | A ray's characters are read on its disc: "Five small gill openings on underside of front half of pectoral disc, not visible in lateral view"; its key splits species on "Dorsal surface of disc rough" against "Dorsal surface of disc smooth". No photo guideline for rays was read. |
+| FAO species identification guide for the Western Central Pacific, batoid chapters: Dasyatidae, stingrays (Last & Compagno, p. 1479; [PDF](https://www.fao.org/4/x2401e/x2401e09.pdf)) and Rhinopteridae, cownose rays (Compagno & Last, p. 1520; [PDF](https://www.fao.org/4/x2401e/x2401e13.pdf)) **[read]**; the series title is from the chapters' running text, its title page not read | A ray's characters are read on its disc. Stingrays (our Rays entry is Dasyatidae): "Five small gill openings on underside of front half of pectoral disc, not visible in lateral view"; the key splits species on "Upper surface of disc with pronounced pattern of dark spots or reticulations" against "Upper surface mostly plain coloured". The cownose key does the same on "Dorsal surface of disc rough" against "Dorsal surface of disc smooth". These are specimen keys: no photo guideline for rays was read. |
 
 What follows from them:
 
-- **Right:** the whole fish in side view, all fins showing, the body square to the camera. Every fish source read says
-  so, and our profile `p` is that pose.
+- **Right:** the whole fish in side view, all fins showing, the body square to the camera. The three photo guides
+  read (FishTrace, FWC, Redmap) say so, and our profile `p` is that pose. FishBase and FAO give no photo rule.
 - **Right, with sources:** the pose changes with body shape. Flatfish are shown from the eyed side, which is from above
-  in the water (FishTrace, FWC). Anglerfishes are shown from above and below as well (FishTrace, specimens). Sharks
-  add a view of the head from above (FWC). Rays are read on the upper surface of the disc (FAO characters; a
-  photo convention for rays is an inference, **[guess]**).
+  in the water (FishTrace, FWC). Anglerfishes are shown from above and below as well (FishTrace, specimens; probably
+  the flattened monkfishes of European fisheries, **[guess]**, not our frogfishes, which belong to the same order but
+  are not flattened). Sharks add a view of the head from above (FWC). Rays are read on the upper surface of the disc
+  (FAO characters; a photo convention for rays is an inference, **[guess]**).
 - **No source read** for eels or garden eels; our typical-look rule (judging/FISH.md "Caps") already judges them
   against how they are seen.
 - **Wrong or incomplete:**
@@ -94,6 +95,7 @@ What follows:
   - Aeolids: VNPA names cerata and oral tentacles with the side view; no source read says the side is *the* aeolid
     pose, **[guess]**.
   - Sidegill slugs (*Pleurobranchus*): no pose source read.
+  - Sea hares (Aplysiida; none in circle 1, 73 photos in play): no pose source read.
 - "Crawling" is supported only by a caption ("crawling on a flat surface ... allowing all of the key features to be
   included"); our tags do not record it.
 
@@ -110,12 +112,21 @@ What follows:
 
 - **Right:** the identification unit is a pair, the colony and its corallites (FA210's two images; Corals of the
   World's colony-then-corallite description). Our three views (rule P2) already hold both.
-- **To qualify:** the colony view alone does not name a genus. The Coral Finder works "regardless of growth form", and
-  rule C4 says growth form is an entry point only. So the colony's reference photo is the one that shows the form
-  *and* enough surface to start reading the corallites, which is our `medium` close-up's role.
-- **By group:** a mushroom coral (Fungiidae) is one polyp; its reference is the whole polyp from above, mouth and
-  septa visible (an inference from the description, **[guess]**). The day-extended genera (rule C4's list) show
-  their polyps, so a photo with polyps out is normal there (judging/BRIEF.md "Calibration").
+- **To qualify:** the colony view alone does not name a genus. The Coral Finder workshops teach the genus "regardless
+  of growth form", and rule C4 says growth form is an entry point only. From that, **[guess]**: the most useful colony
+  photo shows the form *and* enough surface to start reading the corallites, which is close to our `medium` view's
+  role.
+- **By growth form** (the 7 IMR forms, rule C4). No source read gives a pose per form; the lines below are the
+  integrator-level reading of what each form needs to be read whole, all **[guess]** except the mushroom corals:
+  - Branching: the whole thicket or colony, the branch tips readable (the axial corallites, for *Acropora*).
+  - Tabulate: the table from the side (its stalk and flat top) or from above.
+  - Encrusting: the colony's edge on its substrate; there is little shape beyond the surface.
+  - Foliose/Plating: the plates or whorls, their edges and the corallites facing one way.
+  - Massive and Submassive: the whole colony, its outline and surface.
+  - Mushroom: one polyp; the whole polyp from above, mouth and septa visible, from Corals of the World's "solitary,
+    free-living ... flat, with a central mouth".
+- **Polyps extended:** the day-extended genera (rule C4's list) show their polyps, so a photo with polyps out is
+  normal there (judging/BRIEF.md "Calibration"), though it is never quality 3 Good.
 
 ### 1.4 Common to all
 
@@ -150,12 +161,17 @@ Where they differ:
   For flatfish (our Soles) and rays the sources and Pierre's «oui!» make the view from above the reference pose, so
   today no sole or ray from above can be a 5. In play: 135 of the 141 Soles photos are `d` (96%), 72 of 132 Rays
   (55%), 42 of 81 Seamoths (52%), 45 of 99 Flying gurnards (45%); then Eel-tailed catfishes 34%, Reef sharks 24%,
-  Shrimpfishes 22%.
+  Shrimpfishes 22%. The typical-look rule (Q456) does not help here: it frees partial and camouflage, not the view.
+  Soles and Seamoths are typical-look families already; Rays are not (32%, judging/FISH.md "Caps").
+- **The Soles' 4s are the cap's.** The Soles were judged again this morning in the typical-look re-judge (#1493, Linear
+  REE-246), with the `d` cap at 4 in force: 37 of their 49 reference-look `d` photos are typed 4, 12 at 3. A 4 typed
+  under a cap of 4 says nothing on whether the judge saw a 5.
 - **Sea slugs' three-quarters view** `o` is a 5 in our rubric (541 of the 1,460 sea slug 5s) but is named by no
   source read; it is not wrong, only unsourced.
 - **Sea slug size.** Our 5 asks for a large animal (`l`), the fish's for large or medium. The "macro framing" rule was a
-  **[guess]** in SEASLUG.md; Great Sea Slug Sunday's "as close to the subject as possible" now supports it. It is a
-  per-subject difference, so it needs its declaration (rule S1).
+  **[guess]** in SEASLUG.md. Great Sea Slug Sunday's "as close to the subject as possible" is given for light and
+  depth of field, not as a rule of what an identification photo is, so it does not settle the size; reading it as
+  support is an inference. It is a per-subject difference not declared today (rule S1).
 - **Corals have no 5.** Nothing ranks a coral photo as a field-guide reference beyond quality 3 in its view.
 - **What a 5 does not record.** The fish's 5 also asks "colourful or with its family's shape and pattern plain to
   see", which no tag records. In play, 2,937 fish photos carry every reference-look tag in profile (`p1g0s`, `l` or
@@ -184,7 +200,8 @@ P1: "the answers decide it"). So the reference pose decides what a judge may cal
 - **A 5:** the reference pose for its family, the whole fish with all fins visible, good light, sharp, large or medium,
   one fish or a school of it, its pattern plain; a juvenile, a phase and a watermark keep their current rules.
 - **In the code** (once decided): `tools/fish_judge.py` `cap` stops capping `d` in those families, as `typical` frees
-  partial and camouflage today; `refLevel` and rule P1's "reference look" read the family's pose.
+  partial and camouflage today (a second declared set beside `typical_look`, or the typical-look rule widened to count
+  `d`; the first keeps each rule's meaning); `refLevel` and rule P1's "reference look" read the family's pose.
 
 ### 3.2 Sea slugs
 
@@ -198,9 +215,11 @@ P1: "the answers decide it"). So the reference pose decides what a judge may cal
 
 - **Reference observation:** the pair, one colony seen whole (its form readable) and its corallites sharp, as P2's
   views already hold.
-- **A reference photo per view**, from what is already judged, no new judging: a colony photo of quality 3 whose form
-  is read (not `x`); a corallite photo of quality 3, polyps retracted except in the day-extended genera; options in
-  question (f).
+- **A reference photo per view**, from what is already judged: a colony photo of quality 3 whose form is read (not
+  `x`); a corallite photo of quality 3. The six day-extended genera are never quality 3 with polyps out (BRIEF
+  "Calibration"), so for them the level would take quality 2 with polyps out, or they would have none; options in
+  question (f). How many photos each view would hold was not counted here (the coral photos in play sit in
+  `data.json` and in Pierre's curation, which this note's script does not read).
 
 ### 3.4 What a change would mean for photos already judged
 
@@ -208,10 +227,13 @@ A cap only lowers a typed ease; lifting a cap raises nothing by itself (judging/
 
 - **Fish from above:** lifting the `d` cap in the from-above families raises nothing today. Every `d` photo there with
   the reference-look tags was typed 4 or less: Soles 49 (37 at 4, 12 at 3), Rays 5, Seamoths 9 (rule (a) option 1);
-  Flying gurnards 11 more under option 2. Raising them is a re-judge of 63 to 74 photos.
+  Flying gurnards 11 more under option 2. Raising them is a re-judge of 63 to 74 photos. For the Soles it would be the
+  second pass on the same photos since #1493 (Linear REE-246), whose 4s were typed under the cap.
 - **Tags decide the 5** (question (b), option 2): a script would set 5 on every photo whose tags read the reference
   look: 1,416 fish in profile plus the from-above ones, 341 sea slugs. No agent judging, but it overrides 1,757 typed
-  eases against the judges' eye.
+  eases against the judges' eye. It could never write over the tags and ease Pierre set himself (`curation.json`,
+  rule A1): some of these photos are his adds, which the count does not separate, so the script would leave those as
+  a proposal for him.
 - **Watermark or juvenile out of 5:** a script could lower 195 + 238 watermarked and 119 juvenile 5s; not recommended
   (question (c)).
 - **Sea slug size `m` as the fish's:** 281 photos with every other reference tag were typed 4 at `m`; only a re-judge
@@ -228,14 +250,16 @@ A cap only lowers a typed ease; lifting a cap raises nothing by itself (judging/
 2. The same rule at 40%: adds Flying gurnards (45%).
 3. Only the families a source read names: Soles (flatfish) and Rays.
 
-*Recommendation: 1.* It follows his rule of the typical look (no hand list), takes both sourced groups and moves with
-the photos; a 50% line was already declared once (Q456).
+*Recommendation: 1.* It follows the method of the typical look (a declared rule, no hand list), takes both sourced
+groups and moves with the photos; the typical look's 50% line was declared by the REE-85 study and kept with Q456.
+Seamoths come in on the data alone, with no source read.
 
 **(b) What makes a 5: the judge's eye or the tags?**
 
 1. The judge's eye, as today, with the reference pose per family written into the rubric. The 1,416 + 341
    reference-tagged photos typed 4 stay 4.
-2. The tags decide: every photo whose tags read its group's reference pose is a 5, by script.
+2. The tags decide: every photo whose tags read its group's reference pose is a 5, by script (Pierre's own tags left
+   as a proposal for him, rule A1).
 3. A sample first: Pierre sees about 30 of the reference-tagged photos typed 4 beside some 5s and says whether they
    look like a 5 (under 100 photos, rule P7).
 
@@ -254,12 +278,13 @@ age and sex argues for showing them, not ranking them lower.
 
 **(d) Sea slug size for a 5: large only, or large or medium as the fish?**
 
-1. Large only, declared as a per-subject difference (rule S1) with Great Sea Slug Sunday's "as close to the subject as
-   possible" as its source.
-2. Large or medium, as the fish (Pierre, 2026-11-24 06:45: «par défaut on fasse partout pareil»): 281 photos would
-   wait for a re-judge or a tags rule.
+1. Large only, declared as a per-subject difference (rule S1), its reason the animals' small size; no source read
+   makes it an identification rule.
+2. Large or medium, as the fish (Pierre, 2026-11-24 06:45: «par défaut on fasse partout pareil»): the rubric's text
+   changes; the 281 photos typed 4 at `m` stay 4 until a judged pass (rule P7) or a tags rule raises them.
 
-*Recommendation: 1.* The difference now has a source and a reason (small animals), which rule S1 asks for.
+*Recommendation: 2.* The size tag is already relative to the frame, so a small animal shot in macro is as large in it
+as a fish; no source read gives a reason to differ, and his default is the same rule everywhere.
 
 **(e) Sea slugs: one set of good views, or a preferred pose per group?**
 
@@ -273,8 +298,10 @@ age and sex argues for showing them, not ranking them lower.
 
 1. As today: quality and view, no reference level.
 2. A reference level per view from the existing judgements: colony at quality 3 with its form read; corallites at
-   quality 3 (polyps retracted unless a day-extended genus). Used for covers and first photos, as the fish's.
+   quality 3; for the six day-extended genera, quality 2 with polyps out. Used for covers and first photos, as the
+   fish's.
 3. A reference observation: a colony whose colony and corallite photos both reach that level, shown first as a pair.
 
-*Recommendation: 2*, then 3 once the observation pairs are counted. It needs no judging, follows rule P1 for every
-subject and keeps the pair the sources show.
+*Recommendation: 2*, then 3 once the observation pairs are counted. It reads only existing judgements (how many
+photos it would hold per view and genus is not counted yet: the first step of the PR that builds it), follows rule P1
+for every subject and keeps the pair the sources show.
