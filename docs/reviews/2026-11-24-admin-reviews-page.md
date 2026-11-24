@@ -189,17 +189,18 @@ how many photos were agreed with one press. Whether the thresholds should move f
 All three options store the same record, one per set and photo:
 
 ```
-"review": {"<set id>": {"<photo f>": {"l": {"C1": 0, "C3": 1, "grade": 0}, "all": 1, "g": 3,
+"review": {"<set id>": {"<photo f>": {"l": {"C1": [0, "<t>"], "C3": [1, "<t>"], "grade": [0, "<t>"]}, "all": 1, "g": 3,
                                        "w": {"C1": "il est de profil", "": "a word on the photo"},
-                                       "s": {"decision": "...", "lines": {...}, "marks": 4}, "t": "<base 36 s>"}}}
+                                       "s": {"decision": "...", "lines": {...}, "marks": 4}}}}
 ```
 
-`l` holds every line he answered: 1 agree, 0 disagree; a line not in `l` is unanswered. `all: 1` marks the lines that
+`l` holds every line he answered, each with its own time: 1 agree or 0 disagree, then when he gave that answer (Unix
+seconds in base 36, as the auto log's `@t`); a line not in `l` is unanswered. A later answer on another line writes
+only that line's time, so each comparison keeps its own place in the window (§4.3). `all: 1` marks the lines that
 "Agree with all" filled in (they are in `l` as 1), so the page can count one-press and line-by-line agreement apart
 (§2.6). `g` is his grade, when he disagreed with the grade line. `w` holds his words, per line, `""` for the photo. `s`
 is the snapshot of what the card showed at his first answer, for a weekly set only, written once and never replaced
-(§2.6). `t` is when he answered. Every field is written
-by his click.
+(§2.6). Every field is written by his click.
 
 | | **A. A part of `curation.json`, sent by Publish** | **B. A separate file in the repository, written by Publish** | **C. The sync sheet** |
 |---|---|---|---|
@@ -272,7 +273,7 @@ Auto line are unchanged. Their inputs change:
   - keep: the decision line agreed or not;
   - corals: view, quality and form, only on an add, as today;
   - fish and sea slugs: keep, and the grade line as an `ease` field (a new field, measured and shown, gating nothing);
-  - `ok` is the line's value in `l` (1 true, 0 false); `t` is his answer's time.
+  - `ok` is the line's value in `l` (1 true, 0 false); `t` is that line's own time in `l`.
 - **Corrections** (`how: 'fix'`) are **shown, not counted**. A correction can only be a disagreement, and a sample
   without them is an unbiased draw, so counting them would bias the window down. Today, with no agreements, it would
   switch coral keep off (§1). They stay listed in Details, with the agent's note and the metrics.
@@ -285,12 +286,16 @@ Auto line are unchanged. Their inputs change:
 - **What "off" does**: for the corals, what it does today (nothing applied, or the field left as the dashed guess). For
   the fish and sea slugs, "off" stops nothing players see (§1). It shows in red in Auto and in the integrator's brief,
   and the integrator proposes a re-judge of the field (rule P7 for its size). A gate in the build is question R5.
-- **The way back on**: while a coral field is off, no new decision of that field is applied, so a sample of applied
+- **The way back on**: while a coral field is off, no new value of that field is applied, so a sample of applied
   decisions alone would run dry and the field could never recover. So while a field is off, the week's coral share is
-  drawn from the **sure proposals the run did not apply** (candidates whose judgement is sure today, not decided by him,
-  not logged): the card shows the proposal ("Proposed: add to Colony, Fair"), his answer counts in the window as a
-  Check's did, and nothing more is held back than "off" already holds. Once the field is on again, the draw returns to
-  applied decisions. The same holds for each coral field (keep, view, quality, form).
+  drawn from the **proposals of that field the run did not apply**, and the card shows the proposal ("Proposed: add to
+  Colony, Fair"). His answer counts in the window as a Check's did, and nothing more is held back than "off" already
+  holds. Once the field is on again, the draw returns to applied decisions. Where those proposals are:
+  - keep or view off: `autoRun` applies and logs nothing, so they are candidates whose judgement is sure today, not
+    decided by him and not logged;
+  - quality or form off: `autoRun` still applies and logs the add, with that field left as the dashed guess (`.` in its
+    code, `autoCode`), so they are those logged adds, whose quality or form line shows the pass's value as the
+    proposal.
 
 ## 5. The corals' path
 
