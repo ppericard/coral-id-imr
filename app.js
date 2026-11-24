@@ -151,14 +151,21 @@ function stateNow() {
 // during f leaves the value to be computed again at the next read.
 // VIEW_CHECK.on (the smokes and tools/learnsim.js --facheck: tests/facheck.js): every read of a kept value computes f
 // again and compares, order included; a difference (an input written with no bump, a reader that changed the shared
-// value) throws, and again in a task of its own, so a reader that catches its errors cannot hide it.
+// value) throws, and again in a task of its own, so a reader that catches its errors cannot hide it. Lists, Sets and
+// Maps are compared item by item in order, plain objects key by key in order (the tree's score), down to their leaves.
 const VIEW_CHECK = {on: typeof window !== 'undefined' && window.VIEW_CHECK_ON === true};
-const viewItems = v => (v instanceof Set ? [...v] : v);
+const viewItems = v => (v instanceof Set || v instanceof Map ? [...v] : v);
 const viewSame = (a, b) => {
-  if (a instanceof Set !== b instanceof Set) return false;
+  if (Object.is(a, b)) return true;
+  if (a instanceof Set !== b instanceof Set || a instanceof Map !== b instanceof Map) return false;
   const x = viewItems(a),
     y = viewItems(b);
-  return Array.isArray(x) && Array.isArray(y) ? x.length === y.length && x.every((n, i) => Object.is(n, y[i])) : Object.is(x, y);
+  if (Array.isArray(x) || Array.isArray(y))
+    return Array.isArray(x) && Array.isArray(y) && x.length === y.length && x.every((n, i) => viewSame(n, y[i]));
+  if (!x || !y || typeof x !== 'object' || typeof y !== 'object') return false;
+  const kx = Object.keys(x),
+    ky = Object.keys(y);
+  return kx.length === ky.length && kx.every((k, i) => k === ky[i] && viewSame(x[k], y[k]));
 };
 function stateView(name, f) {
   let at = -1,
@@ -1374,9 +1381,10 @@ const SCI_SP = {
 };
 // The scientific genera in the game now (TREEU.sci, the sci set): every circle's once the sheet replays them (sync.js
 // generaOn, rule D4), circle 1's alone before; every one where sync.js is not loaded (the
-// tools that run the app's units alone).
-const sciNow = () =>
+// tools that run the app's units alone). A view of the state version (stateView): sciNowCalc computes it.
+const sciNowCalc = () =>
   TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];
+const sciNow = stateView('sciNow', sciNowCalc);
 // A coral photo's taxon: its iNaturalist species (t), only within the genus asked n (a photo moved keeps its old name)
 // and when sure: Research Grade (no gid) or Pierre's own (rule S2). The corals have no common names.
 const coralTaxon = (p, n) => {
