@@ -8,7 +8,7 @@ Search [ANSWERS.md](ANSWERS.md) for historical evidence and use git and PRs for 
 
 Last checked: reports and events: 2026-11-23 ~15:55 Manila (Claude integrator; nothing new)
 
-Night report: last sent 2026-11-22 (15:25 Manila, late: a hook's false reminder, fixed in #1464)
+Night report: last sent 2026-11-24 (06:11 Manila)
 
 ## Now
 

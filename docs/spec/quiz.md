@@ -24,6 +24,8 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
   name; the four units of one kind of name), never a scientific genus.
 - **Every format**: its own fitted offset (`core.js` `fmtOf`); no known-mix-ups term on 2 choices (`model.js`
   `confTerm`).
+- **The corallites hint** is a photo seen when answering only if the player opened it: `go` reads that before the
+  feedback reveals it, so a hint left closed is out of the row's `ph`, named in `sc.h`, and not in the feedback montage.
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked
   counts and keeps the unit closed until its card (rule L4; `model.js` `introLive`).
 - **Surprise card** (`wink`): counts nowhere.

@@ -83,7 +83,8 @@ characters for identification"). So, until a guide is checked (the first judging
 
 - **dorsal (`d`), lateral (`p`) and dorso-lateral (`o`) are the sea slugs' good views**: any of them can be very easy.
   Unlike the fish, a view from above is a reference view and caps nothing.
-- **head-on (`h`), from behind (`t`) and ventral (`v`)** hide the pattern and the outline: at most 3 (Caps).
+- **head-on (`h`), from behind (`t`) and ventral (`v`)** hide the pattern and the outline: head-on and from behind at
+  most 4, as the fish's head-on and tail views; ventral at most 3 (Caps).
 
 ## Rhinophores and gills
 
@@ -109,20 +110,37 @@ The fish's scale, the same five levels:
 - **5 very easy**: a dorsal, lateral or dorso-lateral view, whole, good light (a flash on a dark background included),
   sharp, large, one sea slug (or a pair or group of it), no `f`. A field-guide photo.
 - **4 easy**: as 5 with one mild shortfall: the animal medium-sized in the frame, dim light, a slight colour loss, sharp
-  on a part only, a busy background, `f` (rhinophores or gills withdrawn or hidden), another sea slug far from the subject.
-- **3 medium**: two mild shortfalls, or one strong one: a head-on, rear or ventral view, part of the animal cut or hidden,
-  curled up, a strong colour loss, the animal small, camouflage the eye still sees through.
+  on a part only, a busy background, `f` (rhinophores or gills withdrawn or hidden), another sea slug far from the subject,
+  a head-on or rear view, part of the animal cut or hidden (these two since 2026-11-24, "Caps" below).
+- **3 medium**: two mild shortfalls, or one strong one: a ventral view, curled up, a strong colour loss, the animal small,
+  camouflage the eye still sees through.
 - **2 hard**: the shape or the colours are hard to read: several strong shortfalls, murky water, camouflage, a tiny
   animal.
 - **1 very hard**: the animal is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
 **Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): an unclear subject
 (`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong colour loss
-(`2`), a head-on, rear or ventral view (`h`, `t`, `v`) or a partial animal (`0`) is at most 3. The fish's caps, but a
-dorsal view and strong blur (`b`) cap nothing, and `v` is the sea slugs' own. `j`, `w` and `f` cap nothing. Since
-2026-11-23 the fish's partial fish and head-on, tail or top views are at most 4, and their typical-look families free
-partial and camouflage (judging/FISH.md "Caps", Q456 and Q458): both came from fish answers, so the sea slugs keep their
-caps at 3 and have no typical-look family (`RUBRICS` `"seaslug"`).
+(`2`) or a ventral view (`v`) is at most 3; a head-on or rear view (`h`, `t`) or a partial animal (`0`) is at most 4.
+`j`, `w` and `f` cap nothing. These are the fish's caps (judging/FISH.md "Caps"), with the same softened step
+(Q458 step 1: a partial animal and a head-on or rear view one step, not a ceiling), applied to the sea slugs on
+2026-11-24 ([the decision](../docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md); Pierre, 06:35, Linear
+REE-267: «il faut toujours généraliser»). The differences that remain (rule S1):
+
+- **A dorsal view caps nothing**: it is one of the sea slugs' field-guide views ("5 very easy" above: a dorsal,
+  lateral or dorso-lateral view), where the fish's is the profile.
+- **A ventral view (`v`) is at most 3**: the sea slugs' own code (the foot), which the fish have no equivalent of.
+- **Strong blur (`b`) caps nothing**: unchanged here. The fish's blur cap came from Pierre's review of the fish gold set
+  (2026-11-19, judging/FISH.md "Strong blur"), so its only recorded reason is that the review was of fish; it is not a
+  justified difference yet, only one this change leaves as it was.
+
+**The typical look** (Q456) is shared: in a group whose usual look is buried or camouflaged, a partial animal (`0`) and
+camouflage (`c`) cap nothing (`RUBRICS` `typical`). No sea slug genus is declared typical-look today: the declared rule
+(`tools/fish_judge.py` `typical_look`) reads the fish's teaching entries only, and the sea slugs' judging passes no
+entry (`tools/judging_fish.py` `entry`).
+
+A cap only lowers the ease a judge typed, so the softened caps raise no stored ease by themselves: on 2026-11-24, 563
+sea slug photos tagged `0`, `h` or `t` are at ease 3, and 562 of them were typed 3 under the old scale (the other is
+held at 3 by another cap). They keep their 3 until judged again, which is a pass under rule P7 (Linear REE-257).
 
 ## Juveniles
 
@@ -211,7 +229,10 @@ later species level to check; the cues are the sources', never shown to players 
 `judging/seaslug/<taxon id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed:
 
 - `code`: the code of "Tags" above, ease included (`d1g0sl15`). The tool applies the caps.
-- `keep`: `best`, `alt` or `dup`, as the fish's (judging/FISH.md). An observation brings every usable photo
+- `keep`: `best` (exactly one per observation: its most useful photo), `alt` or `dup`, by the definition shared by
+  every subject (Pierre, 2026-11-24, «ok»; [the decision](../docs/decisions/2026-11-24-what-a-duplicate-is.md)):
+  `alt`: another zoom, framing, angle or pose of the same animal or colony; `dup`: a burst or the same framing, with
+  nothing new to see. Another side or other light is an `alt` too. An observation brings every usable photo
   (`tools/fetch_seaslugs.py`): a judgement without `keep` reads `best`, right for an observation with one candidate; an
   observation with several names `keep` on each of them, and exactly one `best` per observation holds (the check fails
   otherwise).
