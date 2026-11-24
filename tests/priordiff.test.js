@@ -29,6 +29,53 @@ test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID and the step
   assert.match(read('model.js'), /gdOff\(n\) \+ \(p\.e \? \(PDIFF\.MID - p\.e\) \* calibOf\(SUBJ\)\.ease : 0\)/);
 });
 
+// The judged ease's weight (docs/decisions/2026-11-23-judged-ease-weight.md): the shared calibration's 0.3 logit a point,
+// which the subjects with a judged ease read today (none sets its own), where the app reads it: model.js photoDiff (a
+// photo nobody answered) and genusDiff (a unit's difficulty: its offset plus its judged photos' mean prior).
+test('the judged ease weighs the shared 0.3 a point in the fish’s and the sea slugs’ priors, as model.js photoDiff and genusDiff read it', () => {
+  assert.strictEqual(C.CALIB.ease, 0.3);
+  const w = C.CALIB.ease;
+  ['fish', 'seaslug'].forEach(id => assert.strictEqual(C.calibOf(C.subjectOf(id)).ease, w, id));
+  const src = read('model.js'),
+    engine = id => {
+      const photos = [{f: 'a', e: 5}, {f: 'b', e: 1}, {f: 'c', e: 4}, {f: 'u'}],
+        ctx = {
+          SUBJ: C.subjectOf(id),
+          calibOf: C.calibOf,
+          PGD: {fam: [0.2, 30]},
+          PSTAT: {},
+          PTM: {},
+          ptimeOff: C.ptimeOff,
+          VIEWS: [['w']],
+          gamePics: () => photos,
+          heldOf: () => [],
+          GX: () => ({})
+        };
+      vm.runInNewContext(
+        [
+          block(src, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}),
+          block(src, 'let GDIFF = {};', '\n};\n', {through: 1, file: 'model.js'}),
+          'this.photoDiff = photoDiff; this.genusDiff = genusDiff;'
+        ].join('\n'),
+        ctx
+      );
+      return ctx;
+    };
+  const F = engine('fish'),
+    S = engine('seaslug'),
+    near = (a, b, m) => assert.ok(Math.abs(a - b) < 1e-9, `${m}: ${a} against ${b}`);
+  [
+    [F, 'fish'],
+    [S, 'sea slugs']
+  ].forEach(([M, s]) => {
+    near(M.photoDiff('fam', {f: 'a', e: 5}), 0.2 - 2 * w, `${s}, ease 5`);
+    near(M.photoDiff('fam', {f: 'b', e: 1}), 0.2 + 2 * w, `${s}, ease 1`);
+    near(M.photoDiff('fam', {f: 'u'}), 0.2, `${s}, no judged ease: the offset`);
+    // the unit: its offset plus the mean prior of its judged photos (ease 5, 1, 4: mean 3 − e = −1/3), rounded to 0.01
+    near(M.genusDiff('fam'), Math.round((0.2 - w / 3) * 100) / 100, `${s} unit`);
+  });
+});
+
 // treePrior and the prior's caption line, run from admin.js.
 const run = code => {
   const src = read('admin.js'),

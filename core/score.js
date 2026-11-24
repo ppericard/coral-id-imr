@@ -296,7 +296,8 @@
   // false-alarm table"). faArm(P) lets the next faOf build one table of every unit's false alarms and chances in a
   // single pass over P, in the scan's own order, and answer later calls from it until scoreAnswer writes P (it disarms
   // the table while it runs and arms it again, empty, after) or faDisarm(P). Opt-in, only while nothing but scoreAnswer
-  // writes the records' conf, off, ty or the level's tyk; the app and the sheet never arm. A P whose conf or off is not
+  // writes the records' conf, off, ty or the level's tyk: the app arms it for each handler that reads the bars (app.js
+  // faHeld), the simulations for each answer; the sheet never arms. A P whose conf or off is not
   // a plain object of numbers, or a unit id that is not a string or that Object.prototype holds, is scanned.
   // FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
   const FA_CHECK = {on: false},

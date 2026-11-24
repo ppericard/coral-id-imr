@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v226 (2026-11-24)
+
+The embedded `core.js` copy only (REE-240, REE-267): the shared calibration `CALIB` sets `ease: 0.3`, the weight of a photo's judged ease in its prior difficulty, instead of 0.5, for every subject whose photos carry a judged ease (the fish and the sea slugs; the corals' photos have none); a subject may set its own only as a declared exception with its reason (rule S1), and none does (Q455, Pierre, 2026-11-23 17:20 Manila, «ok» to about 0.3, range 0.2–0.4; one value for every subject, Pierre, 2026-11-24 06:32–06:35; the REE-85 study `docs/reviews/2026-11-23-fish-ease-vs-answers.md`; `docs/decisions/2026-11-23-judged-ease-weight.md`). The script itself never reads the weight: its photo ratings, unit offsets and full replay are unchanged, and the replay scores past answers with their logged difficulty, so no player's progress moves and no rules version is added
+
 ## v225 (2026-11-24)
 
 The embedded `core.js` copy only (REE-32): `SEASLUG_ACH` gains the sea slugs' species achievements, `sssp1`, `sssp10`, `sssp50` (1, 10 and 50 species at Advanced by their scientific names) and `ssstars` (every star species at Advanced; the stars' achievement of Q369 (c), Pierre, 2026-11-15; names and tiers the integrator's call, easy to correct), and two comments are brought up to date (`openState`'s `at` is the answer clock; `tipsList` is in `idtips.js`). The script reads no achievement list (`achs_` counts every saved id as before), and no replay, progress or rules version moves (rule D5): nothing it does changes
