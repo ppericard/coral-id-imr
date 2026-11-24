@@ -27,6 +27,9 @@
 // --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
 // against the scan, and a difference stops the run; the same --out as without it, slower. Every storage value kept
 // parsed (sync.js KEPT_CHECK) is checked against a fresh read too.
+// --dump DIR [--dump-at 50,500,3000]: the page's saved state (localStorage) at those questions (every checkpoint without
+// --dump-at, which adds its questions to the checkpoints), one file DIR/<subject>-<profile>-<seed>-<question>.json each,
+// the states tools/answercost.js plays on. Written by a run of the full length only (never a budget's calibration run).
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
 // --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js
@@ -187,6 +190,8 @@ const SEEDS = Number(arg('seeds', 5)),
   LIVEOFF = process.argv.includes('--liveoff'),
   ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
   FACHECK = process.argv.includes('--facheck'), // every false-alarm rate read from the table checked against the scan
+  DUMP = arg('dump', null), // --dump DIR: the page's saved state at the checkpoints of --dump-at (all of them without it)
+  DUMPAT = arg('dump-at', '').split(',').filter(Boolean).map(Number),
   BEYOND = arg('beyond', ''),
   // --rows sp:off,sci:off: the What I learn card's names rows, each k:on|off, switched before the first question.
   ROWS = arg('rows', '')
@@ -260,7 +265,7 @@ for (const n of NAMES) {
 }
 const CPS = [
   ...new Set(
-    [50, 100, 200, 300]
+    [50, 100, 200, 300, ...DUMPAT]
       .filter(q => q <= QN)
       .concat(
         Array.from({length: Math.floor(QN / 300)}, (_, i) => 300 * (i + 1)),
@@ -321,7 +326,7 @@ const server = http.createServer((req, res) => {
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
   const clk0 = performance.now(); // the run's clock in the page, for the budget's plan (clock, below)
-  const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg,
+  const {prof, seed, N, cps, dumpAt, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg,
     ACHT = cfg.ach,
     BEYOND = cfg.beyond;
   // The subject's draw calibration overridden (--calib), and the corals' bonus genera only on the corals (--subject).
@@ -1059,6 +1064,7 @@ function play(cfg) {
     // --ach: the answer at which each achievement of the record first shows (progress.js ACHK, the real game's check).
     if (ACHT) Object.keys(store.get(ACHK, {}) || {}).forEach(k => k[0] !== '_' && !(k in achAt) && (achAt[k] = i + 1));
     if (cps.includes(i + 1)) {
+      if (dumpAt.includes(i + 1)) (window.__dumps = window.__dumps || {})[i + 1] = {...localStorage}; // --dump
       const met = SL.filter(introduced),
         th = met.map(g => ability(g) - logit(know[g])),
         en = Object.values(entry),
@@ -1257,6 +1263,7 @@ function play(cfg) {
     alog,
     custom: cust,
     lsPeak: window.__lsPeak, // the most characters localStorage held (tools/memstorage.js)
+    dumps: window.__dumps, // --dump: the saved states (run writes them and drops them from the result)
     clock: {...clock, tail: (performance.now() - clk0) / 1000 - clock.pts[clock.pts.length - 1][1]} // the plan's only (run drops it)
   };
 }
@@ -1313,8 +1320,9 @@ async function run(browser, base, name, seed, n = QN) {
   // Every script tier in (My progress, the Tools) and the network quiet, so each run starts from the same state.
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
-  const {clock, ...r} = await p.evaluate(play, {
+  const {clock, dumps, ...r} = await p.evaluate(play, {
     clockEvery: 50,
+    dumpAt: DUMP && n === QN ? (DUMPAT.length ? DUMPAT : CPS) : [],
     prof: profOf(name, SUBJECT),
     seed,
     N: n,
@@ -1343,6 +1351,10 @@ async function run(browser, base, name, seed, n = QN) {
     liveOff: LIVEOFF
   });
   await ctx.close();
+  if (DUMP && dumps) {
+    fs.mkdirSync(DUMP, {recursive: true});
+    for (const [q, ls] of Object.entries(dumps)) fs.writeFileSync(path.join(DUMP, `${SUBJECT}-${name}-${seed}-${q}.json`), JSON.stringify(ls));
+  }
   // setup: the seconds of the job outside the page's run (the browser context, the page's load, the close), once a job.
   const inPage = clock.pts[clock.pts.length - 1][1] + clock.tail;
   return {profile: name, seed, errs, ...r, [TIMING]: {setup: Math.max(0, (Date.now() - t0) / 1000 - inPage), ...clock}};
