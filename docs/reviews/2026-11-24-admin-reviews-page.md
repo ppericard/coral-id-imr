@@ -153,41 +153,27 @@ the lag. It costs one request per set at load, so it is kept for later if the la
 
 ### 2.6 The weekly sample
 
-About 20 photos a week, drawn from **decisions already applied**, so nothing waits on his answer.
+About 20 photos a week, from decisions already applied, so nothing waits on his answer. **How the photos are drawn is
+an open question for Pierre (R7)**, to be designed with the build; this note does not settle it. What the page needs
+from any draw:
 
-- **Drawn once, by a scheduled job, then frozen.** A seed alone would not freeze the set: the pool changes with every
-  Publish, judging pass and build, so two visits or two devices would draw different photos. So the admin never draws.
-  A weekly GitHub Actions job draws the set. It runs on Monday early, Manila time, the ISO week's first day. It runs
-  `tools/review_sample.js` in Node, which reads the files on `main` (`curation.json`, `fish-game.json`,
-  `seaslug-game.json`, `data/suggest.json`, `data/cand.json`) through the pure functions of `autosort.js`: `autoState`
-  for which coral fields are off, `autoSure`, `treeSure`, and `autoIdx` for the log. One engine for the admin and the
-  job (rule S1).
-  - The job commits `data/reviews/week-2026-48.json` and its line in `data/reviews/index.json`. The file holds the
-    photos, the decision, the lines and their marks, in the set file format of §2.5. It never writes `curation.json`
-    (rule A1). It is a data-file commit like the Candidate photos workflow's.
-  - A file already there is never redrawn: the job stops when the week's file exists. The draw is seeded by the week
-    (FNV-1a, as `autoCheck` today), so a rerun on the same `main` gives the same file.
-  - Every visit and device reads that one file. The set reaches the admin with the next successful Pages deploy (the
-    REE-279 lag, §2.5): a few minutes on a good day.
-- **From where** (while a coral field is off, its share comes from the unapplied sure proposals instead, §4.3): every
-  decision applied on `main` when the job runs and not sampled before, whatever its age. There is no date window: the
-  build's decisions (fish adds, sea slug adds and rejects) carry no date of their own (only the game file's `built`), so
-  "this week's decisions" could not be told for them, and one rule for every subject needs no new data. The corals'
-  log days are not used either. "Not sampled before" is read from the earlier week files in `data/reviews/`.
-  Corals: the auto log's
-  plain `a`, `r`, `x` codes. Fish: the build's `cand` route (`fish-game.json` `auto: 'cand'`) and the log's `r`. Sea
-  slugs: `seaslug-game.json`'s `cand` route and the pass's sure rejects (`data/suggest.json` `seaslug`). Never a photo
-  he decided himself, never one already sampled.
-- **How many of each**: about 7 per subject. Half are in play, half out. Within each half the draw is stratified: one
-  with a crop, one with a phase where the subject has phases, and one near the edge (a sure judgement within one point
-  of the cap that would have turned it). A subject with fewer decisions gives its room to the others.
+- **One set file per week, frozen once written** (`data/reviews/week-<n>.json`, the format of §2.5). It is drawn
+  outside the admin, never by the admin at each visit, so every visit and device sees the same photos. It never
+  writes `curation.json` (rule A1).
+- **Points the build must settle** (raised in review, not solved here):
+  - which decisions make up the pool for each subject. The fish auto-sort's logged adds go into `add`, so they are
+    not marked as the build's `cand` route. The build's fish and sea slug decisions carry no date of their own;
+  - whether the draw is stratified (in and out, crops, phases, cases near the edge), and if so how answers are weighted
+    before they meet a threshold. A balanced draw from an unbalanced pool changes the agreement it measures;
+  - how a coral field that is off gets comparisons again, since "off" stops applying that field (§4.3);
+  - which photos count as "already sampled".
 - **The lines**, from the pass's judgement in force (`data/suggest.json`), written out as `tagText` writes them today:
   - Corals: view, quality, growth form, crop, and the reason for a reject or exclusion.
   - Fish and sea slugs: the rubric's rows (view, whole, light, colour loss, clarity, size, count, the juvenile and
     camouflage flags), the phase, the crop, and the ease as the grade line.
   - If Pierre adopts the nine criteria of «What makes a 5» for an ease of 5 (the reference-poses note's question b),
     the sample shows those for fish and sea slugs instead.
-- **The snapshot is the week's file**: the card shows the lines and marks the job wrote, never a judgement re-run
+- **The snapshot is the week's file**: the card shows the lines and marks written in it, never a judgement re-run
   since. So every line he answers on a photo, then or later, on any device, is about the same values, and every
   comparison is with what he saw. His answers carry no copy of them (§3).
 - **Unanswered weeks** fold away when the next one opens. The lines he answered stay counted. Nothing piles up: there
@@ -195,9 +181,8 @@ About 20 photos a week, drawn from **decisions already applied**, so nothing wai
 
 **Not blind.** Pierre asked for the pre-judgement on screen (14:56). An answer seen beside the agent's tends to agree
 more than a blind one (anchoring). So the agreement the sample gives is a ceiling of the blind one. The thresholds were
-set for blind Checks (keep 0.90, view 0.85, quality 0.73, form 0.80). Two mitigations are planned. First, every line
-needs its own Agree, unless "Agree with all" is pressed, and the page counts both separately. Second, the summary says
-how many photos were agreed with one press. Whether the thresholds should move for a non-blind measure is question R3.
+set for blind Checks (keep 0.90, view 0.85, quality 0.73, form 0.80). The page counts one-press and line-by-line
+agreement apart. Whether the thresholds apply to this measure at all is part of question R7.
 
 ## 3. Where his answers are stored
 
@@ -288,28 +273,21 @@ Auto line are unchanged. Their inputs change:
   - corals: view, quality and form, only on an add, as today;
   - fish and sea slugs: keep, and the grade line as an `ease` field (a new field, measured and shown, gating nothing);
   - `ok` is the line's value in `l` (1 true, 0 false); `t` is that line's own time in `l`.
-- **Corrections** (`how: 'fix'`) are **shown, not counted**. A correction can only be a disagreement, and a sample
-  without them is an unbiased draw, so counting them would bias the window down. Today, with no agreements, it would
-  switch coral keep off (§1). They stay listed in Details, with the agent's note and the metrics.
+- **Corrections** (`how: 'fix'`) are **shown, not counted** (R3 e). A correction can only be a disagreement, so
+  counting them pulls the window down. Today, with no agreements, they would switch coral keep off (§1). They stay
+  listed in Details, with the agent's note and the metrics.
 - **Per subject**: the corals' state from their sample lines, the fish's from theirs (`treeCompare`). The sea slugs get
   a measure too, shown in their Auto details, though nothing in the admin applies their decisions (§1: their build reads
   no agreement).
-- **The window**: `AUTO.n0` = 10 and `AUTO.win` = 40 stay. At about 7 photos per subject a week, a subject reaches 10
-  comparisons on keep in about two weeks and fills its window in about six. Coral view, quality and form count on adds
-  only, about half, so they take twice as long.
+- **The window**: `AUTO.n0` = 10 and `AUTO.win` = 40, unless R7 decides otherwise. At about 7 photos per subject a
+  week, a subject would reach 10 comparisons on keep in about two weeks.
 - **What "off" does**: for the corals, what it does today (nothing applied, or the field left as the dashed guess). For
   the fish and sea slugs, "off" stops nothing players see (§1). It shows in red in Auto and in the integrator's brief,
   and the integrator proposes a re-judge of the field (rule P7 for its size). A gate in the build is question R5.
 - **The way back on**: while a coral field is off, no new value of that field is applied, so a sample of applied
-  decisions alone would run dry and the field could never recover. So while a field is off, the week's coral share is
-  drawn from the **proposals of that field the run did not apply**, and the card shows the proposal ("Proposed: add to
-  Colony, Fair"). His answer counts in the window as a Check's did, and nothing more is held back than "off" already
-  holds. Once the field is on again, the draw returns to applied decisions. Where those proposals are:
-  - keep or view off: `autoRun` applies and logs nothing, so they are candidates whose judgement is sure today, not
-    decided by him and not logged;
-  - quality or form off: `autoRun` still applies and logs the add, with that field left as the dashed guess (`.` in its
-    code, `autoCode`), so they are those logged adds, whose quality or form line shows the pass's value as the
-    proposal.
+  decisions alone would run dry. The draw must then also offer proposals the run did not apply, shown as proposals.
+  With keep or view off, `autoRun` logs nothing. With quality or form off, it logs the add with that field left as the
+  dashed guess (`.`, `autoCode`). How the draw does this is part of R7.
 
 ## 5. The corals' path
 
@@ -347,7 +325,8 @@ Agent time, first commit to green checks, from `tools/effort.py` (merged PRs, me
 - **PR 2, the weekly sample and the agreement** (admin, M): `autoCompare`/`treeCompare` fed from the sample,
   corrections out of the window, the Auto line. Comparable to #1311, #1348, #1408, #1435, #1478: median 2.1 h (range
   28 min-2.2 h).
-- **PR 2b, the weekly job** (tooling, M): `tools/review_sample.js`, its workflow and its test (§2.6). Comparable to
+- **PR 2b, the weekly draw** (tooling, M), after R7's answer: the tool that writes the week's set file, its schedule
+  and its test (§2.6). Comparable to
   #1381, #1470, #1473, #1507, #1514: median 14 min (range 6 min-33 min); measured on smaller tools, so likely more.
 - **PR 3, the Checks retired and released** (admin, M): §4.1-4.2, the tests rewritten, the specs and a decision
   record. Comparable to #1311, #1348, #1408, #1435, #1478: median 2.1 h (range 28 min-2.2 h).
@@ -364,7 +343,7 @@ In all about 8 h of agent time for PRs 1-3 with 2b, Codex rounds included (the s
 |---|---|---|---|
 | 1 | `admin.js`, `admin.css`, `admin.html` (one script tag if the page is its own file, `admin-reviews.js`), `admin-demo.js`, `tools/curplay.py`, `tests/curplay.test.js`, `tests/admin.smoke.js`, a new `tests/reviews.test.js`, `data/reviews/`, `tools/studies/what-makes-a-5/`, `tools/studies/gold-set-2/` (after #1550), `docs/spec/admin.md` | first | none; the gold set converter waits for #1550 |
 | 2 | `autosort.js`, `admin.js`, `admin-fish.js`, `tests/autosort.test.js`, `docs/spec/admin-photos.md`, `docs/spec/fish-photos.md` | after 1 | none |
-| 2b | `tools/review_sample.js`, `.github/workflows/review-sample.yml`, `tests/reviewsample.test.js`, `data/reviews/index.json`, `docs/spec/tools.md` | after 1, beside 2 | `docs/spec/tools.md`: #1540, #1547 (a line each, merge `origin/main`) |
+| 2b | a new tool under `tools/`, a scheduled workflow, its test, `data/reviews/index.json`, `docs/spec/tools.md` | after 1 and R7's answer, beside 2 | `docs/spec/tools.md`: #1540, #1547 (a line each, merge `origin/main`) |
 | 3 | `autosort.js`, `admin.js`, `admin-fish.js`, the tests of §4.2, the specs, `docs/decisions/` | after 2 and after R2's answer | none |
 
 PRs 2 and 3 touch `autosort.js` and `admin.js` in turn, never at once. #1549 touches `tools/sync/Code.gs` and `core.js`,
@@ -385,14 +364,11 @@ undoable in Auto, sent by your next Publish (65 coral and 1,761 fish get the sam
 15 back to the queue; adds still wait when their cell or species has no room);
 (b) leave them as candidates in the queue. Recommended: **(a)**.
 
-**R3. The sample.** About 20 photos a week, from decisions already applied, about 7 per subject, half in play and half
-out, with the criteria and the pre-judgement shown. Options for the agreement: (a) the same thresholds as the blind
-Checks (keep 90%, view 85%, quality 73%, form 80%); (b) higher thresholds, since you see the pre-judgement. Separately:
-(c) once a month one or two photos you already answered come back unmarked, to measure your own consistency, or (d)
-not. And (e) your corrections (a Remove or Undo of an auto decision) leave the agreement count and are listed apart,
-because they can only count as disagreements; for the corals this changes the rule that switches a field off, or (f)
-they keep counting. Recommended: **(a), (c) and (e)**: start from today's thresholds and see how often you disagree;
-the repeat costs you two photos a month; without (e) the coral keep goes off after two more corrections (§1).
+**R3. Your own consistency, and your corrections.** (c) Once a month one or two photos you already answered come back
+unmarked, to measure your own consistency, or (d) not. (e) Your corrections (a Remove or Undo of an auto decision)
+leave the agreement count and are listed apart, because they can only count as disagreements; for the corals this
+changes the rule that switches a field off; or (f) they keep counting. Recommended: **(c) and (e)**: the repeat costs
+you two photos a month; without (e) the coral keep goes off after two more corrections (§1).
 
 **R4. Does a waiting set count in the Inbox?** The Checks were "not to-dos" (2026-11-09). Options: (a) the count
 shows on the Reviews view only; (b) it joins the Inbox count. Recommended: **(a)**, so the sample never nags.
@@ -405,6 +381,21 @@ as a correction would. Recommended: **(a)**, because you asked to check criteria
 **R6. The corals' sure adds through the build, as the fish.** Options: (1) keep them through your Publish (the
 auto-sort's draft), now held back by nothing; (2) a build route, with Python copies of the coral cap, view and metrics
 rules. Recommended: **(1)**: you press Publish anyway, and (2) is costly to undo for no gain you asked for.
+
+**R7. What the weekly sample measures, and how its photos are picked.** About 20 photos a week that you mark agree or
+disagree. Options:
+- (a) **A check only**: photos picked plainly at random among the decisions already made. Your answers are shown to
+  you and to the agents as "you agreed with N of 20". They switch nothing on or off. A field the auto-sort gets wrong
+  leads the agents to propose a fix.
+- (b) **The switch as today**: your answers also turn a coral field off under its threshold (keep 90%, view 85%,
+  quality 73%, form 80%), as the Checks were meant to. The picking must then be fair to the whole of the decisions, and
+  must offer proposals not applied while a field is off.
+- (c) **Picked for what is hard**: more photos near the edge, crops and phases, so each answer teaches more. Then the
+  agreement is not a fair figure for the whole, and it switches nothing.
+
+Recommended: **(a)** to start. It is simple, it is honest about what 20 photos can tell, and you asked to check
+criteria, not to run a gate. (b) can follow once your first answers show how often you disagree. Whichever you
+choose, the build settles the points listed in §2.6.
 
 ## 8. What was checked, and how
 
