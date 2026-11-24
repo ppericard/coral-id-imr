@@ -447,6 +447,54 @@
   "fish-s414-cand-609112212": {
    "code": "p1g0sl1cw5",
    "keep": "best"
+  },
+  "fish-s414-cand-55395061": {
+   "code": "d1g0sl1a3",
+   "keep": "alt"
+  },
+  "fish-s414-cand-55395065": {
+   "code": "d1g0sl1a3",
+   "keep": "alt"
+  },
+  "fish-s414-cand-55395069": {
+   "code": "d1g0sl1a3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Night phone photo, the fish wet and limp on sand, the same obs held in a hand: read out of the water (a); in-water not excluded"
+  },
+  "fish-s414-cand-29041122": {
+   "code": "d1d1mmsc2",
+   "keep": "best"
+  },
+  "fish-s414-cand-29041126": {
+   "code": "d1d1mssc2",
+   "keep": "alt"
+  },
+  "fish-s414-cand-229924256": {
+   "code": "o0g0sl1w4",
+   "keep": "alt"
+  },
+  "fish-s414-cand-229924267": {
+   "code": "d1g0sl1w4",
+   "keep": "best"
+  },
+  "fish-s414-cand-311472119": {
+   "code": "d1g0ml1c3",
+   "keep": "best"
+  },
+  "fish-s414-cand-311472432": {
+   "code": "o0g0sl13",
+   "keep": "alt"
+  },
+  "fish-s414-cand-258855733": {
+   "code": "d1g0sls4",
+   "keep": "best"
+  },
+  "fish-s414-cand-113093479": {
+   "code": "o1g1ml1c3",
+   "keep": "alt"
   }
  }
 }

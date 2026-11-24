@@ -36,10 +36,12 @@ sea-slug decisions:
   below, whoever named it) is usable even when Needs ID, and his photo even without a licence, as fetch_fish.usable_obs
   reads them (this tool calls it). They are asked on their own search (fetch_fish.queries "own": Research Grade and
   Needs ID, any place, abroad kept inside the Indo-West Pacific) and taken first, as fetch_fish.select takes them, so
-  none is left out: within the photo target on a new list, and on a list already full (filled before 2026-11-16) on
-  top of it, up to the ceiling `max` (30), since a candidate already there is never removed. Never boosted: they wait
-  for the judging pass like any candidate, on the same rubric, and play by their judged ease. `own` marks them, `ni`
-  the Needs ID ones (as fetch_fish.record).
+  none is left out (docs/decisions/2026-11-24-own-observations-everywhere.md): every one, with every
+  usable photo, is taken whatever the list's room, its target and the ceiling `max` (30), since a candidate already
+  there is never removed. They count in the room, so a list they fill takes no one else's. The genus-level lists and the
+  lists of a species with no name take his agreed observations the same way. Never boosted: they wait for the judging
+  pass like any candidate, on the same rubric, and play by their judged ease. `own` marks them, `ni` the Needs ID ones
+  (as fetch_fish.record).
 - Licences (rule P1): CC0, CC BY, CC BY-NC only, never share-alike nor ND (Pierre's own photos whatever their licence,
   as the fish's); the licence is the last tie-break (an open one or his own before CC BY-NC), after the variety below.
 - Eggs (Pierre, 2026-11-15; photoTarget.exclude, sources note 1.4), filter 1: an observation annotated with one of
@@ -71,8 +73,8 @@ Network: iNaturalist API v2, read only, through tools/inat.py (rule C7: about on
 retries): fetch_fish.py's searches of Pierre's own, the Philippines and abroad (its `queries`), the small species asked
 together (its `prefetch`), the juvenile searches (its `phase_obs`). Every reply is cached, trimmed, in
 tools/.cache/seaslug_photos.json (git-ignored): a rerun is offline and gives the same file; --refresh asks again,
---offline never asks. --own asks Pierre's own search only (a few requests for every species together) and adds his
-observations, nothing else. --topup completes every list already in the file (species, genus-level and species with no
+--offline never asks. --own asks Pierre's own search only (a few requests for every species together, full or not) and
+adds his observations, nothing else. --topup completes every list already in the file (species, genus-level and species with no
 name; --only takes their keys): its observations are asked again by id, 200 a request (rule C7, at most TOPUP_MAX
 requests: a larger read stops before it asks), and every usable photo of them not taken yet comes, each for EXTRA_W of
 room, never blocking: a list it puts over its target only waits longer for new observations (nothing is removed). It is
@@ -96,11 +98,11 @@ Two more kinds of candidate (Pierre, 2026-11-17, Q389; study docs/reviews/2026-1
   applies to their own genus-level list: the integrator's call of 2026-11-17, the colours vary there as much), the same order, licences, egg and Dead filters,
   every photo of an observation. Keyed by the genus's name ("Goniobranchus"; the species are keyed by taxon id), each record marked
   `gl: 1`: a photo of the genus, never counted for a species (tools/seaslug_game.py puts it in play for its genus unit,
-  sp "g:<genus>"). Pierre's own observations follow the same rule (no own search: the species' Q386 rule is about photos
-  named to the species). The genus ids are read from iNaturalist (one species of each genus, its ancestors, batched).
+  sp "g:<genus>"). Pierre's own agreed observations come in whatever the room, as a species' do (no own search: they are
+  in the genus search). The genus ids are read from iNaturalist (one species of each genus, its ancestors, batched).
 
     python3 tools/fetch_seaslugs.py [--circle 1] [--only "Jorunna parva,119434"] [--own] [--refresh | --offline]
-    python3 tools/fetch_seaslugs.py --informal [--genus-level] [--refresh | --offline]
+    python3 tools/fetch_seaslugs.py --informal [--genus-level] [--own] [--refresh | --offline]
     python3 tools/fetch_seaslugs.py --genus-level [--only "Goniobranchus,Phyllidiella"] [--refresh | --offline]
     python3 tools/fetch_seaslugs.py --topup [--only "601,Goniobranchus"] [--offline]
     (--suggest PATH: the judgements read for the egg masses, default data/suggest.json; --cur PATH: curation.json)
@@ -117,7 +119,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line
 from fetch_fish import (API, DEAD, FIELDS, LICENCES, LOC, PH, STAGE, TAXA, Net, hord, lic_class, lic_ok, obs_cost,  # noqa: E402
-                        obs_url, pages, phase_obs, prefetch, queries, select, state, tier_of, trim, usable_obs)
+                        obs_url, own_prefetch, pages, phase_obs, prefetch, queries, select, state, tier_of, trim, usable_obs)
 import inat  # noqa: E402  the batched counts (rule C7)
 from presence import NEAR_AREA, label_confirmed, near_dauin  # noqa: E402  rule C8 and the label rule beside it
 
@@ -231,20 +233,18 @@ def usable(o, pairs, used=frozenset()):
     return usable_obs({**o, "an": o.get("an") or [], "ph": o.get("ph") or []}, used, ())
 
 
-def pick(items, room, n, used, kept, own_first=True):
-    """Up to `room` of room taken from items, in photos, by the fish's own order (fetch_fish.select with photos=True): Pierre's
-    own first (own_first; a genus-level list, which has no search of his own, takes his like any other), then the least
-    represented observer, then life stage (n: Counter of ("u", login) and ("s", stage) already in the list, updated
-    here), then the licence (open first), then the fixed hash. An observation brings every usable photo it has left, its
-    first for 1 of room and each further one for EXTRA_W (obs_cost), cut to the room left. used (photo ids) and kept
-    (kept_of: the photos each observation already holds) are updated: a photo is taken once. Each item returned carries
-    only its own photos (P) and the room it took (cost)."""
+def pick(items, room, n, used, kept):
+    """Up to `room` of room taken from items, in photos, by the fish's own order (fetch_fish.select with photos=True):
+    Pierre's own first, every one and every usable photo of it whatever the room (rule P1; their cost still comes off
+    it, and a genus-level list or one of a species with no name takes his like any other), then the least represented
+    observer, then life stage (n: Counter of ("u", login) and ("s", stage) already in the list, updated here), then the
+    licence (open first), then the fixed hash. An observation brings every usable photo it has left, its first for 1 of
+    room and each further one for EXTRA_W (obs_cost), cut to the room left. used (photo ids) and kept (kept_of: the photos
+    each observation already holds) are updated: a photo is taken once. Each item returned carries only its own photos
+    (P) and the room it took (cost)."""
     # select cuts the photos (P) of the items it takes: it works on copies, so an item two passes share (a juvenile and
     # the general room) keeps the photos the first pass left.
-    own = {o["id"]: o["own"] for o in items}
-    items = [{**o, "own": o["own"] and own_first} for o in items]
-    got = select({"ph": items}, room, {}, n, claimed=used, photos=True, held=kept)
-    return [{**o, "own": own[o["id"]]} for o in got]
+    return select({"ph": [dict(o) for o in items]}, room, {}, n, claimed=used, photos=True, held=kept)
 
 
 def record(key, o, p):
@@ -344,9 +344,11 @@ def usable_gl(o, pairs, used=frozenset()):
 
 def gl_query(taxa, extra=""):
     """The genus-level search of the iNaturalist genera taxa (ids): their observations in the Philippines identified at
-    the genus, Research Grade or Needs ID, with a photo under one of LICENCES (filtered again by usable_gl), by id."""
+    the genus, Research Grade or Needs ID, with a photo under one of LICENCES (filtered again by usable_gl), by id. His own
+    search (OWN_ONLY) filters no licence: his photo needs none (usable_gl checks each photo)."""
+    lic = "" if OWN_ONLY in extra else f"&photo_license={LICENCES}"
     return (f"taxon_id={','.join(map(str, taxa))}&rank=genus&place_id={PH}&quality_grade=research,needs_id&captive=false"
-            f"&photos=true&photo_license={LICENCES}&order_by=id&per_page=200{extra}")
+            f"&photos=true{lic}&order_by=id&per_page=200{extra}")
 
 
 def gl_obs(net, q, n=GL_PAGES):
@@ -406,33 +408,42 @@ def label_counts(net, gid, field, near=False):
     return (n or {}).get("total", 0), (u or {}).get("total", 0)
 
 
-def label_query(gid, field):
+OWN_ONLY = "&user_login=ppericard"  # gl_query's extra for his observations only (--own, rule P1)
+
+
+def label_query(gid, field, extra=""):
     """The candidate search of a species with no name: gl_query on its genus, the observations carrying its label."""
-    return gl_query([gid], "&field:" + urllib.parse.quote(field["name"]) + "=" + urllib.parse.quote(field["value"]))
+    return gl_query([gid], "&field:" + urllib.parse.quote(field["name"]) + "=" + urllib.parse.quote(field["value"]) + extra)
 
 
-def informal_run(net, src, inf, have, T, pairs, used, taken, report, gone=frozenset(), known=frozenset()):
+def informal_run(net, src, inf, have, T, pairs, used, taken, report, gone=frozenset(), known=frozenset(), own_only=False):
     """--informal: each species of tools/seaslug_informal.json, its presence measured (written into inf) and, when
     present, its candidates added to have under its key. known: observation URLs that bring no other photo (sent elsewhere
-    by Pierre)."""
+    by Pierre). own_only (--own): Pierre's own observations carrying its label only (his search; the presence already
+    written stays as it is), whatever the list's room."""
     gids = genus_ids(net, src, {s["genus"] for s in inf["species"]})
     for s in inf["species"]:
         gid = gids.get(s["genus"])
         if not gid:
             print(f"{s['name']}: genus {s['genus']} not found on iNaturalist under that name; skipped")
             continue
-        n, u = label_counts(net, gid, s["field"])
-        nn, nu = label_counts(net, gid, s["field"], near=True)
-        s["presence"] = {"obs": n, "observers": u, "nearObs": nn, "nearObservers": nu, "near": bool(near_dauin(nu)),
-                         "confirmed": label_confirmed(u)}
-        if not label_confirmed(u):
-            print(f"{s['name']}: {u} observers with its label in the Philippines, below the rule; no candidates")
-            continue
+        if own_only:
+            u, nu = (s.get("presence") or {}).get("observers", 0), (s.get("presence") or {}).get("nearObservers", 0)
+            if not (s.get("presence") or {}).get("confirmed"):
+                continue
+        else:
+            n, u = label_counts(net, gid, s["field"])
+            nn, nu = label_counts(net, gid, s["field"], near=True)
+            s["presence"] = {"obs": n, "observers": u, "nearObs": nn, "nearObservers": nu, "near": bool(near_dauin(nu)),
+                             "confirmed": label_confirmed(u)}
+            if not label_confirmed(u):
+                print(f"{s['name']}: {u} observers with its label in the Philippines, below the rule; no candidates")
+                continue
         L = have.setdefault(s["key"], [])
         cap = target(s, T)[0]
-        items = mine([x for x in (usable_gl(o, pairs, used) for o in gl_obs(net, label_query(gid, s["field"])))
+        items = mine([x for x in (usable_gl(o, pairs, used) for o in gl_obs(net, label_query(gid, s["field"], OWN_ONLY if own_only else "")))
                       if x and obs_url(x["id"]) not in known], taken, s["key"])
-        got = pick(items, max(0, cap - held(L, gone)), stages(L), used, kept_of(L, gone), own_first=False)
+        got = pick(items, max(0, cap - held(L, gone)), stages(L), used, kept_of(L, gone))
         new = add_picks(L, s["key"], got, taken)
         report[s["name"]] = {"n": held(L, gone), "target": cap, "new": len(new), "pool": len(items), **s["presence"]}
         print(f"{s['name']:<30} {held(L, gone):>4} / {cap} (+{len(new)}; {len(items)} usable observations with its label; "
@@ -448,15 +459,16 @@ def gl_target(g, T):
     return int(min(T.get("max", 1e9), T["candidates"]))
 
 
-def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), gone=frozenset(), known=frozenset()):
+def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), gone=frozenset(), known=frozenset(), own_only=False):
     """--genus-level: the genus-level candidates of each genus unit (game_genera; --only: some of them), keyed by genus
-    name, marked gl. known: as informal_run's."""
+    name, marked gl. known: as informal_run's. own_only (--own): Pierre's own agreed observations only, whatever the
+    list's room."""
     names = [g for g in game_genera(src) if not only or g in only]
     gids = genus_ids(net, src, set(names))
     by_id = {i: g for g, i in gids.items()}
     pool = {g: [] for g in names}
     for B in inat.chunks(sorted(by_id), GL_BATCH):
-        for o in gl_obs(net, gl_query(B)):
+        for o in gl_obs(net, gl_query(B, OWN_ONLY if own_only else "")):
             g = by_id.get(o.get("tid"))
             if g:
                 pool[g].append(o)
@@ -464,7 +476,7 @@ def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), gone
         cap = gl_target(g, T)
         L = have.setdefault(g, [])
         items = mine([x for x in (usable_gl(o, pairs, used) for o in pool[g]) if x and obs_url(x["id"]) not in known], taken, g)
-        got = pick(items, max(0, cap - held(L, gone)), stages(L), used, kept_of(L, gone), own_first=False)
+        got = pick(items, max(0, cap - held(L, gone)), stages(L), used, kept_of(L, gone))
         new = add_picks(L, g, got, taken, gl=True)
         report[g] = {"n": held(L, gone), "target": cap, "new": len(new), "pool": len(items), "genus": len(pool[g]),
                      **({"missing": True} if g not in gids else {})}
@@ -610,16 +622,10 @@ def topup_jobs(have, inf, only=()):
     return jobs
 
 
-def own_room(L, T, gone=frozenset()):
-    """The room for Pierre's own observations in a list L: up to the ceiling `max`, so on a list the others already
-    filled to its target his still come (a candidate already there is never removed); his count in the target after.
-    A candidate that frees room does not count (held)."""
-    return max(0, T.get("max", 0) - held(L, gone))
-
-
 def fill(net, s, L, T, pairs, used, own_only=False, gone=frozenset(), known=frozenset(), taken=None):
     """The new candidates of species s (L: its candidates already there), in room as the fish's cap counts it (held): Pierre's
-    own first (his search, every one usable up to own_room: the fish's select takes his first), then the juvenile
+    own first (his search, every one usable and every usable photo of it, whatever the room and the ceiling `max`: rule P1,
+    the fish's select takes his first; they count in the room, so a full list takes no one else's), then the juvenile
     room (Life Stage: Juvenile observations, the Philippines then abroad), then the rest (the Philippines, then abroad
     when their search was read to its end and room is left). An observation among the candidates brings its other photos,
     at their weight. own_only: his only, nothing else asked. gone: the candidates that count against nothing (Gone:
@@ -635,10 +641,8 @@ def fill(net, s, L, T, pairs, used, own_only=False, gone=frozenset(), known=froz
                           taken, str(tid))
     # The room the usable observations of a search would take, counted as pick takes it (obs_cost).
     cost = lambda res: sum(obs_cost(kept.get(obs_url(x["id"]), 0), len(x["P"])) for x in it(res))  # noqa: E731
-    got = []
-    if own_room(L, T, gone):
-        own_obs = pages(net, Q["own"], lambda res: False)
-        got += pick([x for x in it(own_obs["results"]) if x["own"]], own_room(L, T, gone), n, used, kept)
+    own_obs = pages(net, Q["own"], lambda res: False)
+    got = pick([x for x in it(own_obs["results"]) if x["own"]], 0, n, used, kept)
     if own_only:
         return got, {}
     have = held(L, gone) + spent(got)
@@ -730,14 +734,15 @@ def run(args):
             if args.genus_level:
                 # each genus's own target, the very variable genera's 30 included (gl_target)
                 jobs += [(g, have.get(g, []), gl_target(g, T), "gl", g, None) for g in game_genera(src) if not only or g in only]
-            back(jobs)
+            if not own_only:
+                back(jobs)  # not with --own: his search only
             if args.informal:
-                informal_run(net, src, inf, have, T, pairs, used, taken, report, gone, known)
+                informal_run(net, src, inf, have, T, pairs, used, taken, report, gone, known, own_only)
             if args.genus_level:
-                genus_level_run(net, src, have, T, pairs, used, taken, report, only, gone, known)
+                genus_level_run(net, src, have, T, pairs, used, taken, report, only, gone, known, own_only)
         finally:
             net.save()
-        if args.informal:
+        if args.informal and not own_only:
             inf_path.write_text(json.dumps(inf, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         out = {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}
         dump({"v": 1, "cand": out}, str(cand_path))
@@ -751,8 +756,8 @@ def run(args):
         # The egg masses' observations first (their next photo keeps their place; not with --own: his search only).
         back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp",
                                            s.get("genus"), None) for s in S])
-        # The admin's own for every species with room for them (his search, asked together: rule C7), then the general one.
-        prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T, gone)], ["own"])
+        # The admin's own for every species, full or not (his search, asked together: rule C7), then the general one.
+        own_prefetch(net, [s["inat"] for s in S])
         if not own_only:
             prefetch(net, [s["inat"] for s in S if held(have.get(str(s["inat"]), []), gone) < target(s, T)[0]], ["ph"])
         for s in S:
@@ -784,7 +789,9 @@ def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fetch (default 1)")
     a.add_argument("--only", help="comma-separated species names or iNaturalist taxon ids")
-    a.add_argument("--own", action="store_true", help="Pierre's own observations only (his search), nothing else asked")
+    a.add_argument("--own", action="store_true",
+                   help="Pierre's own observations only (his search), whatever the room, nothing else asked; with --informal or "
+                        "--genus-level, his observations of those lists")
     a.add_argument("--informal", action="store_true",
                    help="the species with no name yet (tools/seaslug_informal.json): presence, then candidates (Q389 (2))")
     a.add_argument("--genus-level", action="store_true",

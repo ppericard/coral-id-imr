@@ -39,3 +39,6 @@ do: «D'accord pour que par défaut on fasse partout pareil !».
 - `Gone` replaces the egg-only count in `held`; `fetch_fish.state` takes the subject's part of curation.json and
   data/suggest.json.
 - The judging files need an explicit `keep` for an observation with several candidates (exactly one `best`).
+
+Changed by: [Pierre's own observations come in whatever the room](2026-11-24-own-observations-everywhere.md) (his
+observations on a full list: no ceiling).

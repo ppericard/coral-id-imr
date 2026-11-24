@@ -45,6 +45,7 @@ Conventions that hold across them:
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
 | `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |
+| `issue_guard.py` | The same on Linear's `save_issue`: refuses a new issue whose description has no `Searched:` line |
 | `instr_log.py` | Session hooks log which instruction files reached which agent, and why |
 | `night.py` | The night report: what the agents did from 17:30 to 04:00 Manila (PRs merged with their agent time, trains, PRs left open, the night queue) |
 | `effort.py` | Measures the agent time of merged PRs, so an estimate cites comparable ones; `--check FILE.md` checks a study |
