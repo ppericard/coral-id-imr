@@ -42,24 +42,15 @@ REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/f
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$")
 FLAGS = "jcaw"
 NEW_COUNT = "1sokx"
-# The sea slugs' rubric (judging/SEASLUG.md): the fish's seven positions, flags and ease, so
-# a code reads the same way wherever the fish's is read (core.js refScore, autosort.js), with these differences: a dorsal
-# view (d) is a good view, never capped, and a ventral one (v, the foot) is theirs, capped at 3; light g
-# or d only (no night livery); the count never m; the typed flag f (the rhinophores or the gills shown withdrawn or
-# hidden), which caps nothing; strong blur (clarity b) caps nothing there (blur2: the clarity letters capped at 2, the
-# fish's b since Pierre's review of the gold set, 2026-11-19, judging/FISH.md "Strong blur"; his review was of fish only).
-# A juvenile (j) caps nothing in either rubric (Q435, Pierre, 2026-11-19: the judged ease is the starting point and the
-# players' answers decide; judging/FISH.md "Juveniles").
-# The caps softened by one step (Q458 step 1, Pierre, 2026-11-23 17:20, from the fish answers of the REE-85 study,
-# docs/reviews/2026-11-23-fish-ease-vs-answers.md): a partial animal at most 4 (part4), not 3, and the views4 views
-# (the fish's head-on, tail and top h t d; the sea slugs' head-on and rear h t), for every subject (Pierre, 2026-11-24
-# 06:35, REE-267: «il faut toujours généraliser»; the measure being the fish's is no reason for a difference). The sea
-# slugs' top view is no shortfall (above), and their ventral view v stays at 3 (views3): their own code, which the fish
-# have no equivalent of. Their blur2 stays empty, unchanged (its only recorded reason: the fish review). The typical
-# look (Q456, the same day): in a
-# group whose usual look is buried or camouflaged (typical_look), the tags of `typical` (partial 0 and camouflage c) cap
-# nothing, for every subject; only the fish's teaching entries are read by the declared rule today, so no sea slug group
-# is typical-look (tools/judging_fish.py passes them no entry).
+# The rubrics (judging/FISH.md and judging/SEASLUG.md "Caps"). The sea slugs' code has the fish's seven positions, flags
+# and ease, so a code reads the same way wherever it is read (core.js refScore, autosort.js), with their own letters: the
+# ventral view v (at most 3, views3), light g or d only, no count m, the flag f (capping nothing). Both rubrics cap a
+# partial animal (part4) and the views of views4 at 4, and in a typical-look group (typical_look) the tags of `typical`
+# cap nothing; the sea slugs' dorsal view is a good view, so it is not in their views4
+# (docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md). blur2 is the clarity capped at 2: the fish's b
+# (docs/decisions/2026-11-19-fish-rubric-gold-set.md), none for the sea slugs. A juvenile (j) caps nothing in either
+# rubric (docs/decisions/2026-11-19-fish-juvenile-no-cap.md). No sea slug group is typical-look:
+# tools/judging_fish.py passes them no teaching entry.
 RUBRICS = {
     "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "", "views4": "htd", "part4": True,
              "blur2": "b", "typical": "0c"},

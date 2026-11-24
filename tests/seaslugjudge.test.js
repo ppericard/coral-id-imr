@@ -38,7 +38,7 @@ print(json.dumps({
     [5, 'p1g0sl1'],
     [5, 'o1g0sl1'],
     [3, 'v1g0sl1'], // ventral (the foot)
-    [4, 'h1g0sl1'], // head-on: one step, as the fish's (Q458; Pierre, 2026-11-24, REE-267)
+    [4, 'h1g0sl1'], // head-on: one step, as the fish's (docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md)
     [4, 'd0g0sl1'], // partial: one step, as the fish's
     [5, 'd1g0sl1j'], // a juvenile caps nothing, as the fish's (Q435; one rule for every subject, S1)
     [5, 'd1g0sl1f'], // rhinophores or gills hidden: the ease scale's, not a cap
@@ -59,8 +59,8 @@ print(json.dumps({
     ],
     'the fish caps: a top view at most 4 (Q458 step 1), a juvenile nothing (Q435), strong blur at most 2'
   );
-  // The typical look is shared (Q456; Pierre, 2026-11-24, REE-267): in a typical-look group partial and camouflage cap
-  // nothing, a head-on view keeps its one step. No sea slug group is declared typical-look today (judging/SEASLUG.md "Caps").
+  // The typical look is shared: in a typical-look group partial and camouflage cap nothing, a head-on view keeps its one
+  // step. No sea slug group is typical-look (judging/SEASLUG.md "Caps").
   assert.deepStrictEqual(out.typical, [
     [5, 'd0g0sl1'],
     [5, 'd1g0sl1c'],
