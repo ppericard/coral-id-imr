@@ -8,7 +8,7 @@
 //                          [--rt off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
-//                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
+//                          [--subject coral|fish|seaslug] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--set calibration-set.json|none] [--rows sp:off,sci:off]
 //                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]]
 //                          [--budget MIN] [--per-job SEC] [--pierre-go "Q number or message, date"]
@@ -36,7 +36,8 @@
 // --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js
 // sp), in both worlds: a paired run against a version without them passes it to both arms (an older learnsim ignores it).
 // --subject fish: plays the fish subject; the coral-only measures (Millepora, bonus genera) stay empty. --photos FILE
-// serves FILE as fish-photos.json; --calib merges fields over the subject's draw calibration (core.js SUBJECTS calib):
+// serves FILE as fish-photos.json; --subject seaslug plays the sea slugs through the same fish engine, with each profile's fish
+// part (tools/learnprof.js ENGINE: rule S1); --calib merges fields over the subject's draw calibration (core.js SUBJECTS calib):
 // '{"u":1,"pool":1e9}' puts the whole floor on every observation (model.js CAL.U).
 // --learner field|exemplar, --tau (0 to 1, the field learner's transfer): the learners below; default item.
 // --custom N: plays the Quiz until N genera are unlocked, then --drill questions in the custom quiz on those N (quiz.js
@@ -103,7 +104,7 @@ const ROOT = path.join(__dirname, '..');
 
 // Profiles: tools/learnprof.js, the same list for both subjects and both worlds; also loaded in the page (an init
 // script), where knownUnits reads the app's own units. Default: every profile with a part for the subject.
-const {PROFILES, defaults: DEFAULT_PROFILES, profOf: profOf0, choiceOf} = require('./learnprof.js');
+const {PROFILES, defaults: DEFAULT_PROFILES, profOf: profOf0, partOf, choiceOf} = require('./learnprof.js');
 // --spknow off (above): the profile without its species.
 const SPKNOW = (() => {
   const i = process.argv.indexOf('--spknow'),
@@ -247,7 +248,8 @@ if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, ta
 if (!['truth', 'own', ...(WORLD === 'rated' ? ['sheet'] : [])].includes(APPK)) throw new Error('--app truth or own (sheet: the rated world)');
 if (!(EVERY >= 1 && isFinite(GAPX))) throw new Error('--every 1 or more, --gap a number');
 if (APPK === 'sheet' && SUBJECT !== 'coral') throw new Error('--app sheet: the corals only (tools/ratedworld.js runPop)');
-if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
+if (!['coral', 'fish', 'seaslug'].includes(SUBJECT)) throw new Error('--subject coral, fish or seaslug');
+if (arg('world', 'app') === 'rated' && SUBJECT === 'seaslug') throw new Error('--world rated: the corals and the fish (tools/ratedworld.js unitsOf); the sea slugs play the app world');
 if (arg('world', 'app') === 'rated' ? !['count', 'item'].includes(LEARN) : !['item', 'field', 'exemplar'].includes(LEARN))
   throw new Error(arg('world', 'app') === 'rated' ? '--learner count or item in the rated world' : '--learner item, field or exemplar');
 if (!(TAU >= 0 && TAU <= 1)) throw new Error('--tau between 0 and 1');
@@ -262,7 +264,7 @@ if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or mor
 }
 for (const n of NAMES) {
   if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
-  if (!PROFILES[n][SUBJECT]) throw new Error(`profile ${n} has no ${SUBJECT} part (${DEFAULT_PROFILES(SUBJECT).join(', ')})`);
+  if (!partOf(n, SUBJECT)) throw new Error(`profile ${n} has no ${SUBJECT} part (${DEFAULT_PROFILES(SUBJECT).join(', ')})`);
 }
 const CPS = [
   ...new Set(

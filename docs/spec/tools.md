@@ -143,32 +143,54 @@ The work one answer makes on the device, counted so that a change can be judged 
 [the design study of REE-265](../reviews/2026-11-24-incremental-engine-state.md); the per-answer timings are in
 [the measurement note](../reviews/2026-11-24-per-answer-cost.md)).
 
+The target is the app's, not a subject's (Pierre, 2026-11-24 14:06: «Les optimisations doivent être valables pour tous les
+sujets, pas juste les poissons. On optimise l'app, pas un sujet en particulier», REE-274): every subject is measured at a
+short history, a medium one and a long one (fish, corals and sea slugs at 50, 500 and 3,000 answers), and the heaviest
+subject is a test case, not the definition of the target.
+
 - **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out, in Chromium, and counts how
   many times each named function of the app runs per answer (V8's precise coverage) and the characters
   `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
   fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
   the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
   costs less; `--clock 14400` is the study's condition), which makes a run nearly repeatable, not exactly: the same
-  state and seed differ by up to 15% from run to run. Options: `--states fish:50,fish:3000,coral:3000` (the default, the
-  study's states), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed`, `--clock`, `--out FILE`,
-  `--budget FILE` (exit 1 when a count passes its ceiling, naming it), `--write-budget FILE [--margin 1.25] [--also
-  A.json,B.json]` (the largest counts of this run and of earlier `--out` files, times the margin, as the ceilings), `--regen`.
-  A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1, the fish player answering yes to the card
-  that offers a part of the slate by choice) and kept in `REEFID_ANSWERCOST_CACHE`, by default `reefid-answercost` in the
-  temporary directory: 5 to 14 minutes for 3,000 fish answers (by the machine's load), about 1 minute for 3,000 corals,
-  35 s for 500 fish. The states are those of the study's section 1 (the same records, the same U, V, T and R). It takes
-  the machine slot (rule W24).
+  state and seed differ by up to 15% from run to run. The run fails, naming the state, when the page loaded another
+  subject than the state's, holds a history far from the state's, played under three quarters of its answers or raised a
+  page error. Options: `--states fish:50,coral:500,seaslug:3000` (subject `fish`, `coral` or `seaslug`, then the answers; the
+  default is the nine states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed`,
+  `--clock`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming the state and the count),
+  `--write-budget FILE [--margin 1.25] [--also A.json,B.json]` (the largest counts of this run and of earlier `--out`
+  files, times the margin, as the ceilings of the states measured only), `--regen`, `--par N` (N states made or counted
+  at once, each count in a Chromium of its own; 1 by default, 3 on CI).
+  A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
+  card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
+  `reefid-answercost` in the temporary directory. The missing states of a subject are made by one run to the longest of
+  them, which saves the shorter ones on its way. The sea slugs are played through the same fish engine
+  (`learnsim.js --subject seaslug`: each profile's fish part, `tools/learnprof.js` `ENGINE`, rule S1). It takes the machine
+  slot (rule W24).
 - **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
   the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStepCalc`, `bonusCalc`, `lvlNext`,
   `treeScore`, `achSnap`, `sheetV`; `bonusCalc` is the units in play computed and `lvStepCalc` a unit's level computed,
   once per version of the state: `app.js` `bonusList` and `model.js` `lvTable` are views whose readers V8 cannot name,
-  their reads counted as `stateNow`). Each is the largest count over three seeds and one regeneration of the state, times a stated
-  margin (`margin`), rounded up. A step that lowers a count rewrites its ceilings with `--write-budget` in the same PR.
-- **The routine check** is `tests/answercost.test.js`: the small states (fish 50 and 500 answers) against the budget, in
-  the fast tier (`node tests/run.js`: 26 s with the states cached, 70 s making them) wherever Playwright is installed (CI's
-  unit job has none: it runs the parts that need no browser); the heavy state (fish, 3,000 answers) is the opt-in command
+  their reads counted as `stateNow`). Each is the largest count over three seeds (1 to 3) of the state, times a stated
+  margin (`margin`), rounded up to two significant digits. A step that lowers a count rewrites its ceilings with
+  `--write-budget` in the same PR, for the states it measured.
+- **Where it runs.** Not in the agents' local checks: `tests/answercost.test.js` holds the pure parts only (the states,
+  the ceilings, the verdict, the budget file's coverage, the shape of the CI job), and `node tests/run.js` never starts a
+  browser for it (Pierre, 2026-11-24 14:06: «Une à deux minutes x le nombre de vérifications x le nombre d'agents par
+  jour, ça monte très très vite»). Every count, every subject, runs in the **`answer cost`** job of
+  `.github/workflows/smokes.yml`, beside the smokes (no `needs`, its own runner, Playwright as the smokes have it): a
+  count over its ceiling fails that job and names the state and the count (an `OVER BUDGET` line and an error
+  annotation), and the job's summary holds the table of every state's calls per answer. A pull request that changes only
+  docs skips it with the smokes; a merge train runs it. The job makes the saved players afresh each run (three
+  `learnsim` runs, one a subject, side by side, then the nine counts three at a time) and keeps nothing between runs. If
+  its time ever passes the longest smoke's (the job's time is in each run, and in the PR that added it), the next step is
+  the Actions cache for the players, under a key of `tools/learnprof.js`; a cache made on a branch is read by that branch
+  only, so a merge train would need it made on main.
+- **By hand, for an agent working on speed** (the nine states: about 2 minutes 15 s to make on a quiet machine, once, then
+  about 2 minutes to count, 40 s with `--par 3`; much longer when the machine is loaded or the slot is taken):
   `SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget tools/answercost-budget.json`,
-  not part of any routine check until Pierre decides question (c) of REE-265.
+  or `--states fish:500,seaslug:500` for the states a change touches.
 
 ## The sheet script
 
