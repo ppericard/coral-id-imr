@@ -529,7 +529,7 @@ function varRight(n, L) {
   const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
   s.vl = s.vl.filter(g => !got.has(g));
   if (!s.vl.length) delete s.vl;
-  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
+  if (typeof stateBump === 'function') stateBump('rec'); // the records: an input of the views (app.js)
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
@@ -958,12 +958,21 @@ function openPick(fresh, list = fresh, met = introduced, {first: firstCards = fa
 //   of its class nearest to it (the same parent, then the same grandparent, then any), each drawn as the first cards are.
 // - levelTop(list): a level holding units met but fewer than it needs (a group left half-way, a record from before the
 //   groups) gets the rest of its group at once, as the first cards are completed, with what is ready to open.
-const lvlAll = (k, list) => (typeof rankUnits === 'function' ? rankUnits(k) : list).filter(n => rankKind(n) === k && photoAny(n));
-const lvlNeed = (k, list) => {
+// In the app (app.js rankUnits, dataViewBy) a class's units with a photo are a view of the data version (lvlAllCalc, read
+// by class), and its need a view of the state version (lvlNeedCalc): the planner asks them several times a question.
+// Outside it (the rated world, the tests), computed from list.
+const lvlAllCalc = (k, list) => (typeof rankUnits === 'function' ? rankUnits(k) : list).filter(n => rankKind(n) === k && photoAny(n));
+const lvlNeedCalc = (k, list) => {
   if (!k) return 0;
   const L = lvlAll(k, list);
-  return Math.max(0, Math.min(INTRO.START, L.length) - L.filter(introduced).length);
+  return Math.max(0, Math.min(INTRO.START, L.length) - L.filter(introducedFn()).length);
 };
+const lvlViews =
+  typeof dataViewBy === 'function' && typeof rankUnits === 'function'
+    ? {all: dataViewBy('lvlAll', k => lvlAllCalc(k)), need: stateViewBy('lvlNeed', k => lvlNeedCalc(k))}
+    : null;
+const lvlAll = (k, list) => (lvlViews ? lvlViews.all(k) : lvlAllCalc(k, list));
+const lvlNeed = (k, list) => (lvlViews ? lvlViews.need(k) : lvlNeedCalc(k, list));
 const openFresh = (fresh, list) => {
   const by = new Map();
   fresh.forEach(n => by.set(rankKind(n), [...(by.get(rankKind(n)) || []), n]));
@@ -999,7 +1008,7 @@ const openGroup = (u, fresh, list) => {
     : [u];
 };
 const levelTop = list => {
-  const ks = [...new Set(list.filter(introduced).map(rankKind))].filter(Boolean);
+  const ks = [...new Set(list.filter(introducedFn()).map(rankKind))].filter(Boolean);
   for (const k of ks) {
     const w = lvlNeed(k, list),
       U = w ? list.filter(n => rankKind(n) === k && !introduced(n) && mayOpen(n)) : [];
@@ -1086,7 +1095,23 @@ const introLive = n => {
   m[n] = [answersSoFar(), 0, 0, 'b'];
   store.set(INTRO.KEY, m);
 };
-const introduced = n => !closed(n) && (asked(n) || n in introMap());
+const introducedCalc = n => !closed(n) && (asked(n) || n in introMap());
+// In the app, the units met are a view of the state version (app.js stateView): metCalc names them once per version, from
+// the only units that can be (a record's key or an intro map entry), and a read is one lookup. The same answer as
+// introducedCalc by construction; a name only the prototype of an object holds ('constructor') is computed when read.
+const metCalc = () => {
+  const m = introMap();
+  return new Set([...Object.keys(P), ...Object.keys(m)].filter(introducedCalc));
+};
+const metNow = typeof stateView === 'function' ? stateView('met', metCalc) : null;
+// introducedFn: introduced for a loop over many units with nothing written during it (the sets' units in play, a level's
+// need, the wrong choices): one read of the view for the whole loop (as lvSteps).
+const introducedFn = () => {
+  if (!metNow) return introducedCalc;
+  const S = metNow();
+  return n => (typeof n === 'string' && !(n in Object.prototype) ? S.has(n) : introducedCalc(n));
+};
+const introduced = metNow ? n => (typeof n === 'string' && !(n in Object.prototype) ? metNow().has(n) : introducedCalc(n)) : introducedCalc;
 const introReady = n => {
   if (closed(n)) return false;
   if (askedOpen(n)) return true;
@@ -1506,8 +1531,11 @@ const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(aimOff(4) - Math.log(R));
 // The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
 // A unit closed (a live game's answers before its card, model.js introLive; One at a time) is neither: its answers do not
 // start a comeback, whose floor would hold back the first cards while no unit is open (rule L4).
-const cbPlay = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
-const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
+// In the app, both are views of the state version (app.js stateView): the comeback asks them several times an answer.
+const cbPlayCalc = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
+const cbGeneraCalc = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
+const cbPlay = typeof stateView === 'function' ? stateView('cbPlay', cbPlayCalc) : cbPlayCalc;
+const cbGenera = typeof stateView === 'function' ? stateView('cbGenera', cbGeneraCalc) : cbGeneraCalc;
 // Brings the comeback up to now (when a question is planned or answered): a new visit sets the floor, and the rust of
 // its gap starts a comeback; a gap during a comeback adds to it.
 // Returns true when a new visit starts here (a gap of SESSION.GAP or more since the last answer): questions planned or
@@ -1580,7 +1608,7 @@ function answeredAt(s, good, now = Date.now()) {
     s.dl = d;
   }
   if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
-  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
+  if (typeof stateBump === 'function') stateBump('rec'); // the records: an input of the views (app.js)
 }
 function weighted(list) {
   const w = shareW(list, list.map(weight)); // the rank share (SHARE)
@@ -1620,7 +1648,10 @@ const misses = h => [...h].filter(x => x === '0').length;
 // steps both through core.js scoreAnswer. A genus never answered starts from the global level shrunk towards the
 // first-launch answer's level (startV().p, core.js playerStart); the sheet replays that prior too, so an adopted replay
 // never takes back what the game did live.
-const startP = () => startV().p;
+// In the app, a view of the state version (app.js stateView: the subject and its first-launch record are inputs), read
+// once per unit by ability.
+const startPCalc = () => startV().p;
+const startP = typeof stateView === 'function' ? stateView('startP', startPCalc) : startPCalc;
 // A unit whose record names the unit it starts from (from: a fish species, its family; core.js treeSpUnits) starts from
 // that unit's ability when never answered (core.js abilityOf).
 const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
@@ -1760,7 +1791,7 @@ const mxMarks = () =>
 function mxRecalc(fn, why = 'bkt') {
   const m0 = mxMarks();
   fn();
-  if (typeof stateBump === 'function') stateBump(); // the records recalculated: an input of the views (app.js)
+  if (typeof stateBump === 'function') stateBump('rec'); // the records recalculated: an input of the views (app.js)
   const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
   // Silent for now (MXL.QUIET): no mxLost, so no card and no achievement taken back.
   if (lost.length && !MXL.QUIET)
@@ -1866,23 +1897,26 @@ const examLooks = n => {
   const own = (GX(n) || {}).look || [],
     R = Array.isArray(own) ? lookRev() : null,
     sl = R && slateGenera();
+  const C = R && new Set([...own, ...(R.by.get(n) || [])].filter(x => x !== n));
   if (R && sl.every(x => R.K.has(x) || !GX(x))) {
-    const C = new Set([...own, ...(R.by.get(n) || [])].filter(x => x !== n)),
-      S = new Set(sl);
+    const S = new Set(sl);
     if ([...C].every(x => S.has(x))) return [...S].filter(x => C.has(x));
   }
-  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]);
-  return [...on].filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
+  const on = [...new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])])];
+  // The index holds every record GX reads (a unit with none lists nothing): its look-alikes are C, read in on's order.
+  if (R && on.every(x => R.K.has(x) || !GX(x))) return on.filter(x => C.has(x));
+  return on.filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
 };
 // For examLooks, the units whose record lists a unit as its look-alike, over every record app.js GX reads (DATA.gen,
-// DATA.x.gen, TREEU.gen; K their ids, by: a unit to the ids whose look lists it). Made at most once per task, again
-// when one of those maps is replaced; null outside the app (no TREEU: the rated world, a test's stubs) or when a
-// record's look is not a list, and examLooks then reads every unit in play.
+// DATA.x.gen, TREEU.gen; K their ids, by: a unit to the ids whose look lists it). In the app, a view of the data version
+// (app.js dataView: the data and the tree in force are its inputs): made once per data version. Where there is no data
+// view, made at most once per task, again when one of those maps is replaced. Null outside the app (no TREEU: the
+// rated world, a test's stubs) or when a record's look is not a list, and examLooks then reads every unit in play.
 let LOOKREV = null;
-const lookRev = () => {
+const lookRevCalc = () => {
   if (typeof TREEU === 'undefined' || typeof DATA !== 'object' || !DATA) return null;
   const M = [DATA.gen, (DATA.x || {}).gen, TREEU && TREEU.gen];
-  if (LOOKREV && LOOKREV.M.every((G, i) => G === M[i])) return LOOKREV.R;
+  if (!lookView && LOOKREV && LOOKREV.M.every((G, i) => G === M[i])) return LOOKREV.R;
   const K = new Set(M.flatMap(G => (G && typeof G === 'object' ? Object.keys(G) : []))),
     by = new Map();
   let ok = true;
@@ -1893,20 +1927,24 @@ const lookRev = () => {
     L.forEach(y => (by.has(y) ? by.get(y).push(x) : by.set(y, [x])));
   });
   const R = ok ? {K, by} : null;
-  if (typeof queueMicrotask === 'function') {
+  if (!lookView && typeof queueMicrotask === 'function') {
     LOOKREV = {M, R};
     queueMicrotask(() => (LOOKREV = null));
   }
   return R;
 };
+const lookView = typeof dataView === 'function' ? dataView('lookRev', lookRevCalc) : null;
+const lookRev = lookView || lookRevCalc;
 const lookLeft = n => looksLeft(P, n, examLooks(n));
 // And its confusion group met (docs/LEARNING.md "Confusion groups"): the exam opens once the unit's group partners that
 // can open (matesLeft) are met; an exam already under way (s.ex) goes on. A unit whose record says noex has no mastery
 // exam (a fish species: docs/reviews/2026-11-14-species-step1.md; its bar tops out at 95%).
-const examOn = n => {
+// In the app, a view of the state version per unit (app.js stateViewBy), as the bar.
+const examOnCalc = n => {
   const s = P[n] || {};
   return !s.mx && !(GX(n) || {}).noex && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
 };
+const examOn = typeof stateViewBy === 'function' ? stateViewBy('examOn', examOnCalc) : examOnCalc;
 // The gap since the exam's last question (s.ex.at, quiz.js answer) counts on the answer clock (tally).
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || tally() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
@@ -1938,7 +1976,9 @@ function missing(n) {
 }
 // Progress of a genus, 0 to 1 (core.js scoreOf): the domain score up to 95% (barOf), each exam question passed fills a
 // fifth of what is left, the passed exam makes it 100%.
-const genScore = n => scoreOf(P[n], P, n); // the false-alarm correction reads the whole record (core.js faOf)
+// In the app, a unit's bar is a view of the state version (app.js stateViewBy, per unit): computed once per version.
+const genScoreCalc = n => scoreOf(P[n], P, n); // the false-alarm correction reads the whole record (core.js faOf)
+const genScore = typeof stateViewBy === 'function' ? stateViewBy('genScore', genScoreCalc) : genScoreCalc;
 // Mastery levels (named steps on the way, a diver's ladder every RA knows; docs/ARCHITECTURE.md): the step of a genus
 // from its % (genScore), the same colours on My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%;
 // 3 Advanced from 80%; 4 Divemaster from the mastery exam's entry (examOn: core.js examOpen, DOM.EX, and pair coverage);
@@ -2121,7 +2161,7 @@ const choiceApart = (L, taken = []) => {
 // mimUnit, mimMix and groupsNow, above, read it too (once the file is in).
 const rankKind = n => (typeof kindRank === 'function' ? kindRank(n) : typeof rankOf === 'function' ? rankOf(n) : '');
 // wide: false keeps a ranked target's choices to list (the custom quiz's selection: it names no unit of its rank outside).
-function distractors(t, list, traps = trapsFor(t), known = introduced, wide = true) {
+function distractors(t, list, traps = trapsFor(t), known = introducedFn(), wide = true) {
   // Choices of the target's class only (rankKind: its rank and kind of name): a fish scientific genus among genera, an
   // entry among entries, a species by its scientific name among the scientific names.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
