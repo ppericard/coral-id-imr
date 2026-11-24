@@ -31,6 +31,29 @@ w = []
 P.read_answer("ok sauf 3 (flou) et puis bof 8 (grand)", w.append)
 assert len(w) == 1 and "bof" in w[0], w
 
+w = []
+P.read_answer("ok sauf 3 (flou) bof", w.append)
+assert len(w) == 1 and "after the last" in w[0] and "bof" in w[0], w
+w = []
+P.read_answer("ok sauf 3 (flou) et", w.append)
+assert w == [], "a trailing connector is not text"
+for bad in ["pas encore évalué", "", "   ", "bof"]:
+    try:
+        P.read_answer(bad)
+        raise AssertionError("not an agreement: " + repr(bad))
+    except ValueError:
+        pass
+assert P.read_answer("ok sauf") == {}, "«ok sauf» with nothing after: no exception"
+
+# --page with a relative path, run as the command line does (cwd is the test's folder)
+import subprocess
+ans = HERE / "sample-answer.txt"
+r = subprocess.run([sys.executable, "-B", "-I", str(HERE / "parse.py"), str(ans), "--page", "./revue-photos-2.html", "--long"],
+                   cwd=HERE, capture_output=True, text=True)
+assert r.returncode == 0 and r.stdout.startswith("photo\tfield"), r.stderr
+r = subprocess.run([sys.executable, "-B", "-I", str(HERE / "parse.py"), "-"], input="pas encore évalué", capture_output=True, text=True)
+assert r.returncode != 0 and "not read as agreement" in r.stderr, r.stderr
+
 rows = P.table(page, {4: [("status", "hors jeu : trop flou")], 7: [("?", "")]})
 by = {(r[0], r[1]): r for r in rows}
 assert by[(4, "status")][3:] == ("correction", "hors jeu : trop flou")

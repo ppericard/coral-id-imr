@@ -96,8 +96,12 @@ def fragments(words):
     return out
 
 
+JUNK = r"\b(et|puis|ainsi que|photos?|les|la|le|ok|d'accord)\b|[\s,;.:&+/]"  # between tokens, nothing to read
+
+
 def read_answer(text, warn=lambda m: None):
-    """{number: [(field, words)]}; a cited photo with no words has [("?", "")]."""
+    """{number: [(field, words)]}; a cited photo with no words has [("?", "")]. Raises ValueError for an answer with
+    no «ok» (no «sauf») and no photo number, e.g. «pas encore évalué»: that is not agreement."""
     t = text.strip()
     m = re.search(r"\bsauf\b", t, re.I)
     if m:
@@ -110,8 +114,7 @@ def read_answer(text, warn=lambda m: None):
     for mt in tok.finditer(t):
         gap = t[pos:mt.start()]
         pos = mt.end()
-        junk = re.sub(r"\b(et|puis|ainsi que|photos?|les|la|le|:|&)\b|[\s,;.:&+/]", "", gap, flags=re.I)
-        if junk:
+        if re.sub(JUNK, "", gap, flags=re.I):
             warn("text outside numbers and parentheses, not read: " + gap.strip())
         if mt.group(1) is not None:
             if not pending:
@@ -131,6 +134,11 @@ def read_answer(text, warn=lambda m: None):
                     pending.append(n)
     for n in pending:  # numbers with no parenthesis after them
         cited.setdefault(n, []).append(("?", ""))
+    tail = t[pos:]
+    if re.sub(JUNK, "", tail, flags=re.I):
+        warn("text after the last number or parenthesis, not read: " + tail.strip())
+    if not m and not cited:
+        raise ValueError("no «ok» and no photo number in the answer, not read as agreement: " + text.strip()[:80])
     return cited
 
 
@@ -153,17 +161,24 @@ def table(page, cited):
 
 
 def main(argv):
-    args = [a for a in argv if not a.startswith("--")]
+    argv = list(argv)
     page_path = HERE / "revue-photos-2.html"
     if "--page" in argv:
-        page_path = Path(argv[argv.index("--page") + 1])
-        args = [a for a in args if a != str(page_path)]
+        i = argv.index("--page")
+        if i + 1 >= len(argv):
+            sys.exit("--page needs a path")
+        page_path = Path(argv[i + 1])
+        del argv[i : i + 2]  # the original argument, not its normalised form
+    args = [a for a in argv if not a.startswith("--")]
     if len(args) != 1:
         sys.exit(__doc__)
     text = sys.stdin.read() if args[0] == "-" else Path(args[0]).read_text(encoding="utf-8")
     page = read_page(page_path)
     warns = []
-    cited = read_answer(text, warns.append)
+    try:
+        cited = read_answer(text, warns.append)
+    except ValueError as e:
+        sys.exit("ERROR: " + str(e))
     for n in sorted(cited):
         if n not in page:
             warns.append("photo %d is not on the page (1-%d), not read" % (n, len(page)))
