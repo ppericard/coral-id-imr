@@ -25,7 +25,8 @@ Earlier evidence: the Q351 refit ([2026-11-14-q351-refit.md](2026-11-14-q351-ref
   player and genus, a colony view alone is answered better than several views of a colony by **+0.34 logit (95%
   interval over players +0.07 to +0.61)**, a close-up alone by +0.33 (−0.01 to +0.59), corallites alone by −0.02
   (−0.55 to +0.61). That is about **+4 points** of success for the colony and the close-up. The offset that would have
-  fitted: colony 0.16, close-up 0.17, corallites 0.52, against 0.5 today [measured].
+  fitted: colony 0.16, close-up 0.17, corallites 0.52, against 0.5 today. For strong players alone (ability 1.5 or
+  more on the genus) the comparison cannot tell: they get few several-view questions [measured].
 - **One shared offset or one per view: the log cannot tell them apart.** On a held-out player, per-view offsets
   predict no better than one shared offset (10 of 15 players, mean +0.0002 log-loss per answer, p 0.76). The
   corallites' own value has an interval over a logit wide (303 answers, 9 players with 10 or more) [measured].
@@ -33,16 +34,15 @@ Earlier evidence: the Q351 refit ([2026-11-14-q351-refit.md](2026-11-14-q351-ref
   fitted on the other players beat today's 0.5 for 9 of 15 held-out players (p 0.039, 0.078 after Holm over the three
   tests). The replay of the sheet's photo ratings agrees: 0 beats 0.5 for 14 of 15 players (p 0.0001) and brings
   every kind within 1.6 points of its success rate. So does the Q351 refit [measured; read].
-- **The excess sits in the log's first five days.** Before 2026-11-05 20:05 a colony alone was +0.60 logit (SE
-  0.18); from then on +0.03 (SE 0.22), close-up +0.12 (0.26). The hierarchical photo Elo arrived on 2026-11-04 (#422):
-  genus ratings learned mostly on views shown alone, with +0.5 built in, may now carry the misfit [measured; the cause
-  a guess].
+- **The excess is mostly in the log's first five days** (exploratory). Before 2026-11-05 20:05 a colony alone was
+  +0.60 logit (SE 0.18); from then on +0.03 (SE 0.22), close-up +0.12 (0.26). Over players the difference is not
+  clear either: +0.57 for the colony (−0.00 to +1.22). Nothing in the log explains the split [measured].
 - **Fish and sea slugs:** every question shows one photo, so the offset is a constant there and cannot be measured.
   The fish's judged framing shows no difference from a profile beyond two standard errors (exploratory). Nothing to
   declare under rule S1 [measured; read].
 - **Recommendation (section 6):** no per-view offsets. Keep 0.5 for now, and measure again with the same scripts on
-  about 2,000 new coral answers logged after the REE-254 fix. Lower the one shared offset only if the later answers
-  still show the excess, with a level 2 check.
+  about 2,000 new coral answers logged after the REE-254 fix. Lower the one shared offset only if those answers pass
+  the test declared in section 6, then with a level 2 check.
 
 ## 2. Data and method
 
@@ -56,6 +56,10 @@ REE-252 already examined**: the same extract, a new model. The checks added afte
 - **Rows.** Coral photo-quiz answers with a logged expectation, Find the X left out: 3,958, as in REE-252. Typed
   answers (77) and exam questions (3) are left out of the primary fit: **3,878 answers, 15 players, 45 genera,
   2026-11-01 to 2026-11-22** [measured]. 1,893 of them (12 players, the later part of the log) carry a scoring record.
+- **What the logged expectation held.** The +0.5 for a view alone entered the app's difficulty on 2026-11-01 07:35
+  Manila (#200), before the log's first answer (17:47). The photo memory and the mix-ups term joined the logged
+  expectation on 2026-11-03 (`core.js` `MEM_LOGGED`, `CF_LOGGED`), for every kind of question alike; the format offset
+  never did. So β reads as a correction of the +0.5 over the whole log [read].
 - **The kind of question.** One photo: its view alone (colony, close-up, corallites; the view from `data.json` and
   `curation.json`). Two or more: several views of one colony. A one-view question never has a hint, so the three
   single-view kinds are exact. The several-view rows may hide one-view answers (the hint logged as seen when it stayed
@@ -133,11 +137,14 @@ What it says:
   every value within 0.02.
 - **Within one photo the result holds**: the same photo alone against with its other views, +0.36 and +0.38.
 - **The time split matters most.** The excess is in the first half; the second half and the scoring-record rows
-  (which are the later log) show none for the colony. The game's own format offsets change nothing within those rows
-  (+0.01 against +0.06). [guess] The genus offsets of the hierarchical photo Elo (2026-11-04, #422) are learned mostly
-  on views shown alone, with +0.5 built in, so a new photo of a genus may now start from a rating that already holds
-  the misfit; the first days rated photos from 0. The log cannot separate that from the change of players and levels
-  between the halves.
+  (all from 2026-11-06 14:22 on, so all in the second half) show none for the colony. The game's own format offsets
+  change nothing within those rows (+0.01 against +0.06). Over players (2,000 draws, both halves refitted; 11 players
+  in the first, 12 in the second, 8 in both), the first half less the second is +0.57 for the colony (−0.00 to
+  +1.22), +0.37 for the close-up (−0.25 to +1.09), −0.52 for the corallites (−1.74 to +0.38), +0.41 for one shared
+  offset (−0.16 to +1.02): the split itself is not clear. **Nor is it explained.** The genus offsets
+  of the hierarchical photo Elo (#422, 2026-11-04) are added to a question with one view and with several alike, so
+  they cancel in this contrast. Photo ratings learned only from a photo shown alone could carry it, but most photos
+  have few answers. The players and their levels also differ between the halves.
 - **Strong players** (ability 1.5 or more) see almost only one view at a time, so their comparison rests on 46
   several-view answers: it cannot tell.
 
@@ -224,10 +231,28 @@ run):
 **Recommendation.** **A**, then **B** if the excess persists. Not **C**: per-view offsets predict no better than one
 shared offset, they add two constants and a new rule for the bar (rule L11, the simplest algorithm that works), and
 the corallites' value is the least known. **B** is not proposed now: the declared per-player test does not reach 5%
-after Holm, the excess is in the first days of the log, and B moves every player's bar. The answers logged after the
-REE-254 fix will also give clean several-view rows. [guess] If the next measure still finds a shared excess near
-+0.3 logit in answers after 2026-11-05, B at 0.25 (half way, inside every interval of section 3 and 4) is the
-smallest step to check at level 2.
+after Holm, the excess is mostly in the first days of the log (the later answers show none), and B moves every
+player's bar. The answers logged after the
+REE-254 fix will also give clean several-view rows.
+
+**The measure that would move A to B, declared now** (before those answers exist): on the coral photo-quiz answers
+logged after 2026-11-24 09:44 Manila (the REE-254 fix), once they hold at least 2,000 answers from at least 10
+players, typed and exam questions left out, both of:
+
+1. the residual model of section 2 fitted on those answers alone: `shared` against `today` on held-out players, mean
+   log-loss lower for `shared`, exact one-sided sign-flip over the players at α 0.05;
+2. the replay of section 4 (the ratings learned over the whole log, those answers scored): the best shared value on
+   the declared grid below 0.5, and lower log-loss than 0.5 for a majority of those players.
+
+If both hold, B goes to a level 2 check at 0.25 (half way, inside every interval of sections 3 and 4) [guess on the
+value]; if not, 0.5 stays. Per-view offsets come back only if test 1 run with `per-view` against `shared` passes the
+same way.
+
+**Compute for B's level 2 check** [guess, from LEARNING.md's timings]: the rated world is 4 coral profiles × 10 seeds ×
+2 photo distributions, 80 jobs of 10,000 answers; at the measured 13 s per 3,000 coral answers on a loaded 4-core
+machine, about 45 s a job, so on 4 workers the 80 jobs fit inside each arm's half of the 40-minute cap of a paired check
+on this machine, with some room. The app world (4 profiles × 5 seeds × 300 questions) is short and runs as its own check. A
+longer run or level 3 goes to GitHub runners.
 
 ## 7. What the figures cannot say
 

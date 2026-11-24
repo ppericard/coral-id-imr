@@ -206,6 +206,39 @@ def boot(rows, groups, sds, B, seed=255, **kw):
             for j, i in enumerate(ki)}, A
 
 
+def split_boot(rows, half, sds, B, seed=2552):
+    """Exploratory: β early (before half) less β late, per-view and shared, with percentile intervals over players."""
+    E = [r for r in rows if r['t'] < half]
+    L = [r for r in rows if r['t'] >= half]
+    players = sorted({r['p'] for r in rows})
+    res = {}
+    for name in ('per-view', 'shared'):
+        DE, DL = Design(E, STRUCT[name], None), Design(L, STRUCT[name], None)
+        tE, _, _ = fit(DE, sds)
+        tL, _, _ = fit(DL, sds)
+        kE = [i for i, c in enumerate(DE.cols) if c[0] == 'kind']
+        kL = [i for i, c in enumerate(DL.cols) if c[0] == 'kind']
+        names = [DE.cols[i][1] for i in kE]
+        point = tE[kE] - tL[kL]
+        rng = np.random.default_rng(seed)
+        pE, pL = np.array([r['p'] for r in E]), np.array([r['p'] for r in L])
+        draws = []
+        for _ in range(B):
+            cnt = Counter(rng.choice(players, len(players)))
+            wE = np.array([cnt.get(p, 0) for p in pE], float)
+            wL = np.array([cnt.get(p, 0) for p in pL], float)
+            a, _, _ = fit(DE, sds, w=wE, th0=tE, it=25)
+            b, _, _ = fit(DL, sds, w=wL, th0=tL, it=25)
+            draws.append(a[kE] - b[kL])
+        A = np.array(draws)
+        res[name] = {k: {'diff': round(float(point[j]), 3), 'ci': [round(float(np.percentile(A[:, j], 2.5)), 3),
+                                                                    round(float(np.percentile(A[:, j], 97.5)), 3)]}
+                     for j, k in enumerate(names)}
+    res['players'] = {'early': len({r['p'] for r in E}), 'late': len({r['p'] for r in L}),
+                      'both': len({r['p'] for r in E} & {r['p'] for r in L})}
+    return res
+
+
 def lopo(rows, sds, structs, **kw):
     """Leave one player out: per player, the mean log-loss of each structure on their answers."""
     players = sorted({r['p'] for r in rows})
@@ -371,6 +404,11 @@ def main():
     one('photos with 5 or more earlier answers', [r for r in C if r['pn'] >= 5])
     one('late half with a photo intercept', [r for r in C if r['t'] >= half], sd=dict(sds, photo=psd), rand=('p', 'u', 'photo'))
     out['exploratory'] = sens
+    sc = [r['t'] for r in C if r['has_sc']]
+    out['scoring record rows'] = {'first': min(sc), 'last': max(sc), 'rows before the split': sum(t < half for t in sc)}
+    # the early - late difference over players (each draw: the players resampled, both halves refitted on them)
+    out['early minus late'] = split_boot(C, half, sds, BOOT)
+    print('early - late', out['early minus late'], out['scoring record rows'])
 
     # 5. fish (exploratory): the judged framing in place of the view, profile + whole the reference
     F = [r for r in ALL if r['s'] == 'fish' and r['f'] not in ('typed', 'exam') and r.get('jt')]

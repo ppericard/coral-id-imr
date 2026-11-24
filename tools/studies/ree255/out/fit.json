@@ -551,6 +551,50 @@
    }
   }
  },
+ "scoring record rows": {
+  "first": "2026-11-06 14:22",
+  "last": "2026-11-22 18:36",
+  "rows before the split": 0
+ },
+ "early minus late": {
+  "per-view": {
+   "wide": {
+    "diff": 0.571,
+    "ci": [
+     -0.004,
+     1.22
+    ]
+   },
+   "medium": {
+    "diff": 0.373,
+    "ci": [
+     -0.249,
+     1.094
+    ]
+   },
+   "macro": {
+    "diff": -0.52,
+    "ci": [
+     -1.738,
+     0.383
+    ]
+   }
+  },
+  "shared": {
+   "wide+medium+macro": {
+    "diff": 0.407,
+    "ci": [
+     -0.164,
+     1.017
+    ]
+   }
+  },
+  "players": {
+   "early": 11,
+   "late": 12,
+   "both": 8
+  }
+ },
  "fish_exploratory": {
   "n": 2820,
   "players": 8,

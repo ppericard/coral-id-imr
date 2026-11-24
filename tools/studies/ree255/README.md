@@ -73,7 +73,8 @@ exploratory only, with the same model's kind replaced by the framing tag (fish; 
 ## Added after the fit (exploratory, uncorrected)
 
 - `fit.py`: the per-view model on the answers whose photos had under 5, or 5 or more, earlier answers (`prep.py`
-  `pn`), and the second half with a photo intercept;
+  `pn`), the second half with a photo intercept, and the first half's β less the second's over players (2,000
+  draws, seed 2552, both halves refitted on each draw);
 - `replay.js`: a wider grid (−1 to 0.75) and the second half of the scored answers alone (the declared grid).
 
 ## Files
