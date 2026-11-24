@@ -5786,7 +5786,7 @@
   "50551": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-24",
     "n": 20
    }
   },
@@ -6304,7 +6304,7 @@
   "349044": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-24",
     "n": 20
    }
   },
@@ -6556,7 +6556,7 @@
   "Gymnodoris": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-24",
     "n": 20
    }
   },
@@ -6591,7 +6591,7 @@
   "Asteronotus": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-17",
+    "at": "2026-11-24",
     "n": 1
    }
   },
@@ -6738,7 +6738,7 @@
   "Hypselodoris": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-24",
     "n": 20
    }
   },
@@ -6766,7 +6766,7 @@
   "Goniobranchus": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-24",
     "n": 20
    }
   },
@@ -6794,7 +6794,7 @@
   "Elysia": {
    "seaslug": {
     "by": "claude",
-    "at": "2026-11-20",
+    "at": "2026-11-24",
     "n": 20
    }
   },
@@ -212245,7 +212245,7 @@
   },
   "seaslug-349044-cand-348488309": {
    "jt": "d1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best"
   },
   "seaslug-349044-cand-362793835": {
@@ -223204,7 +223204,7 @@
   },
   "seaslug-50551-cand-415226395": {
    "jt": "d1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best"
   },
   "seaslug-50551-cand-445695684": {
@@ -232330,7 +232330,7 @@
   },
   "seaslug-Asteronotus-cand-181457626": {
    "jt": "d1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best",
    "n": "a blurred purple oval on a yellow coral"
   },
@@ -234085,7 +234085,7 @@
   },
   "seaslug-Elysia-cand-334537890": {
    "jt": "p1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best"
   },
   "seaslug-Elysia-cand-360978980": {
@@ -234520,7 +234520,7 @@
   },
   "seaslug-Goniobranchus-cand-472959502": {
    "jt": "o1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best"
   },
   "seaslug-Goniobranchus-cand-48750717": {
@@ -234717,7 +234717,7 @@
   },
   "seaslug-Gymnodoris-cand-33515113": {
    "jt": "p1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best"
   },
   "seaslug-Gymnodoris-cand-3695259": {
@@ -235112,7 +235112,7 @@
   },
   "seaslug-Hypselodoris-cand-97309077": {
    "jt": "o1g0bl1",
-   "e": 3,
+   "e": 2,
    "k": "best"
   },
   "seaslug-Janolus-cand-182247127": {

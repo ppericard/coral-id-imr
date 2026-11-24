@@ -119,19 +119,19 @@ The fish's scale, the same five levels:
 - **1 very hard**: the animal is hard to find or to see at all: tiny, hidden, very dark, blurred, or the subject unclear.
 
 **Caps** (the tool applies them, so a typed ease can never break them: `tools/fish_judge.py` `cap`): an unclear subject
-(`x`) or a monochrome photo (colour loss `3`) is at most 2; camouflage (`c`), out of water (`a`), a strong colour loss
-(`2`) or a ventral view (`v`) is at most 3; a head-on or rear view (`h`, `t`) or a partial animal (`0`) is at most 4.
-`j`, `w` and `f` cap nothing. These are the fish's caps (judging/FISH.md "Caps"), with the same softened step
-(Q458 step 1: a partial animal and a head-on or rear view one step, not a ceiling), applied to the sea slugs on
-2026-11-24 ([the decision](../docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md); Pierre, 06:35, Linear
-REE-267: «il faut toujours généraliser»). The differences that remain (rule S1):
+(`x`), a monochrome photo (colour loss `3`) or a strongly blurred one (clarity `b`) is at most 2; camouflage (`c`), out
+of water (`a`), a strong colour loss (`2`) or a ventral view (`v`) is at most 3; a head-on or rear view (`h`, `t`) or a
+partial animal (`0`) is at most 4. `j`, `w` and `f` cap nothing. These are the fish's caps (judging/FISH.md "Caps"), with
+the same softened step (Q458 step 1: a partial animal and a head-on or rear view one step, not a ceiling), applied to the
+sea slugs on 2026-11-24 ([the decision](../docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md); Pierre, 06:35, Linear
+REE-267: «il faut toujours généraliser»), strong blur included the same day
+([the decision](../docs/decisions/2026-11-24-sea-slug-blur-cap-as-the-fish.md); Pierre, 06:45: «par défaut on fasse
+partout pareil»). **Strong blur** (the outline or pattern smeared) is `b` and caps the ease at 2; it alone keeps no
+photo out of play, as the fish's (judging/FISH.md "Strong blur"). The differences that remain (rule S1):
 
 - **A dorsal view caps nothing**: it is one of the sea slugs' field-guide views ("5 very easy" above: a dorsal,
   lateral or dorso-lateral view), where the fish's is the profile.
 - **A ventral view (`v`) is at most 3**: the sea slugs' own code (the foot), which the fish have no equivalent of.
-- **Strong blur (`b`) caps nothing**: unchanged here. The fish's blur cap came from Pierre's review of the fish gold set
-  (2026-11-19, judging/FISH.md "Strong blur"), so its only recorded reason is that the review was of fish; it is not a
-  justified difference yet, only one this change leaves as it was.
 
 **The typical look** (Q456) is shared: in a group whose usual look is buried or camouflaged, a partial animal (`0`) and
 camouflage (`c`) cap nothing (`RUBRICS` `typical`). No sea slug genus is declared typical-look today: the declared rule
@@ -140,7 +140,9 @@ entry (`tools/judging_fish.py` `entry`).
 
 A cap only lowers the ease a judge typed, so the softened caps raise no stored ease by themselves: on 2026-11-24, 563
 sea slug photos tagged `0`, `h` or `t` are at ease 3, and 562 of them were typed 3 under the old scale (the other is
-held at 3 by another cap). They keep their 3 until judged again, which is a pass under rule P7 (Linear REE-257).
+held at 3 by another cap). They keep their 3 until judged again, which is a pass under rule P7 (Linear REE-257). The
+blur cap lowers instead: a stored ease above 2 on a `b` photo goes to 2 when the caps are re-applied
+(`python3 tools/judging_fish.py --subject seaslug codes`).
 
 ## Juveniles
 

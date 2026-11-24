@@ -38,3 +38,6 @@ on one subject is no reason for a difference, so:
   scale and keep it until judged again. That re-look is a pass under rule P7, requested in Linear REE-257 with the
   duplicate pass; nothing is judged again here.
 - New sea slug judgements use the softened caps at once. Players see nothing until a pass or new judgements.
+
+Changed by: [2026-11-24-sea-slug-blur-cap-as-the-fish.md](2026-11-24-sea-slug-blur-cap-as-the-fish.md) (strong blur
+now caps at 2 for the sea slugs too).
