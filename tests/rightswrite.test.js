@@ -364,6 +364,42 @@ test('a leave or a revoke saved without its Audit row answers an error; its retr
   );
 });
 
+test('a merge or an archive whose rights row fails changes nothing else; its retry finishes it', () => {
+  const s = loadCodeGs();
+  ['Ben', 'Mia', 'Cy'].forEach(n => save(s, n));
+  const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id,
+    st = make(s, 'Staff', {board: 1}).group.id;
+  ['Ben', 'Cy'].forEach(n => (join(s, n, g), join(s, n, st)));
+  const inStaff = n => rows(s, 'Groups').some(r => r[0] === st && r[1] === n);
+  failAudit(s);
+  assert.ok(!s.post({userMerge: {from: 'Ben', into: 'Mia', data: {}}, token: TOK}).ok);
+  assert.ok(
+    rows(s, 'RAs').some(r => r[0] === 'Ben'),
+    'the merged name is still there'
+  );
+  assert.ok(!inStaff('Mia'), 'the kept name joined none of its groups');
+  assert.ok(!can(s, 'Ben', 'live', AT_FISH) && !can(s, 'Mia', 'live', AT_FISH), 'the right gone, never moved');
+  assert.ok(s.post({userMerge: {from: 'Ben', into: 'Mia', data: {}}, token: TOK}).ok);
+  assert.ok(inStaff('Mia') && !rows(s, 'RAs').some(r => r[0] === 'Ben'));
+  failAudit(s);
+  assert.ok(!s.post({userArchive: {from: 'Cy', into: 'Cy-old'}, token: TOK}).ok);
+  assert.ok(
+    rows(s, 'RAs').some(r => r[0] === 'Cy'),
+    'not archived'
+  );
+  assert.ok(!can(s, 'Cy', 'live', AT_FISH));
+  assert.ok(s.post({userArchive: {from: 'Cy', into: 'Cy-old'}, token: TOK}).ok);
+  assert.deepStrictEqual(
+    audit(s)
+      .filter(x => x[1] === `leave ${g} (account removed)`)
+      .map(x => [x[3], x[4]]),
+    [
+      ['ok', aid(s, 'Ben')],
+      ['ok', aid(s, 'Cy')]
+    ]
+  );
+});
+
 // Every write to a rights store, and whether rightsWrite_ is on its stack: the Roles tab's rows, the Group settings
 // tab's Rights cells, the Groups tab's rows of a group that carries rights and its Code hash cells.
 function trace(s) {

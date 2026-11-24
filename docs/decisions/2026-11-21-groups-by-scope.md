@@ -23,8 +23,11 @@ Integrator's calls, easy to correct, each the narrower reading:
 - A group's rights share one scope: instance wide, or one subject (his "either … or").
 - A subject's scope is `subject:` and the exact id of a subject of `core.js` `SUBJECTS`; anything else is refused, and
   an entry written by hand that the script does not take gives nothing and is a Deploy log line.
-- The instance's `grant` reaches its subjects, so a Manager changes a subject's group; deleting a group that carries
-  rights asks `grant` too (Q408 question 4: only `grant` changes a rights group).
+- A group without rights stores no scope: it is instance wide (staff, a cohort, a beta group).
+- The instance's `grant` reaches its subjects, so a Manager changes a subject's group.
+- Deleting an empty group that carries rights takes its rights away first through the one write, audited, and asks
+  `grant` (the study's §3 gate table said `players` for a delete; the audited rows are needed either way, the gate is
+  a one-line change back).
 - Before and after go in the existing Audit tab (the study's §3 "Audit" names it): a membership or a place on the admin
   list by its verb and Result, a group's rights by a `rights <before> > <after>` row. No column is added.
 

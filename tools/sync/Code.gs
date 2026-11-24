@@ -3715,11 +3715,12 @@ function usersDo_(p, who){
       if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};  // an archive is never merged
       const from = String(a.v[0]), into = String(b.v[0]), cur = readData_(into, String(b.v[7] || ''));
       if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
-      // The merged name's groups without rights join the kept name's (each once); the kept name keeps its own too. Its
-      // rights go first, never to into (rule D7; a right is given, not merged): its groups with rights, and the admin list.
+      // Its rights go first, never to into (rule D7; a right is given, not merged): its groups with rights, and the
+      // admin list; a row that cannot be written stops the merge before anything else changes. The merged name's groups
+      // without rights join the kept name's (each once); the kept name keeps its own too.
       const plan = mergePlan_(from, into);
-      plan.join.forEach(g => groupSet_(ra, [into], g, true));
       rightsGone_(from, who.id);
+      plan.join.forEach(g => groupSet_(ra, [into], g, true));
       adminDrop_(a.v[6]);  // the merged-away account is no longer the admin's (the kept one becomes it at the admin's next read)
       // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
       // account's devices ask for the replay of the whole merged history (replay_).
