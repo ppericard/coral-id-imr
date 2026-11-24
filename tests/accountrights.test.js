@@ -86,9 +86,9 @@ test('a group carries rights: checked, kept in the Rights column in a fixed orde
     assert.strictEqual(edit(s, r.group.id, {rights: x}).error, 'input', JSON.stringify(x));
   });
   assert.deepStrictEqual(copy(list(s).groupDefs.map(d => [d.n, d.rights])), [['Helpers', [R('players'), R('grant')]]]);
-  // A settings group: no right, its Rights cell empty.
+  // A settings group: no right, its Rights cell empty (never written: rightsWrite_ alone writes it).
   assert.deepStrictEqual(copy(make(s, 'Staff', {board: 1}).group.rights), []);
-  assert.strictEqual(s.sheets['Group settings'].rows[2][6], '');
+  assert.strictEqual(s.sheets['Group settings'].rows[2][6] ?? '', '');
 });
 
 // Ana and Ben play; Mia holds the players right only, Gus the grant right only (each through a group); Staff is a
@@ -274,8 +274,9 @@ test("a group's rights change saved without its Audit rows answers an error; its
     ],
     'then nothing more'
   );
-  // A failure part way (Tia's row written, Ana's not): the retry writes Ana's and the group's (Tia's twice).
-  failAudit(s, 1, 1);
+  // A failure part way (the 'rights' row and Tia's row written, Ana's not): the retry writes Ana's and the group's
+  // (Tia's twice).
+  failAudit(s, 1, 2);
   assert.strictEqual(edit(s, tr, {rights: [R('live'), R('content'), R('cohorts')]}).error, 'server');
   assert.ok(edit(s, tr, {rights: [R('live'), R('content'), R('cohorts')]}).ok);
   assert.deepStrictEqual(
@@ -499,8 +500,8 @@ test('the migration tried again after its Audit tab failed part way: nothing mad
   failAudit(s);
   assert.throws(() => run(s, 'ONCE_.rights()'), /its Audit row was not written/);
   assert.ok(!s.props.ONCE_rights, 'not marked done');
-  assert.strictEqual(rows(s, 'Groups').length, 6, 'the memberships written');
-  assert.match(run(s, 'ONCE_.rights()'), /^0 groups made from the roles \(\), 0 memberships added/);
+  assert.strictEqual(rows(s, 'Groups').length, 1, 'the first membership written, then the migration stopped');
+  assert.match(run(s, 'ONCE_.rights()'), /^0 groups made from the roles \(\), 5 memberships added/);
   assert.strictEqual(rows(s, 'Groups').length, 6);
   assert.strictEqual(s.sheets['Group settings'].rows.length, 1 + 4);
   assert.strictEqual(audit(s).filter(x => /\(migration\)$/.test(x[1])).length, 6);

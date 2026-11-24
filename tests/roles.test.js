@@ -401,7 +401,7 @@ test('a seed that fails after a grant is written is finished by its retry: the r
     log.join('\n')
   );
   assert.ok(
-    log.some(l => /^Roles: seed failed, tried again at the next read: grant admin: its Audit row was not written/.test(l)),
+    log.some(l => /^Roles: seed failed, tried again at the next read: grant admin \(self\): its Audit row was not written/.test(l)),
     log.join('\n')
   );
   // The next read: the admin grant held without its row gets its "ok" (never "held"), the memberships are written.

@@ -72,11 +72,11 @@ test('only an account with the trainer role starts a session, checked by the scr
   assert.strictEqual(r.ok, true);
   assert.match(r.code, /^\d{6}$/);
   assert.match(r.tk, /^[a-z0-9]{18}$/);
-  // Audited: the start and the refusal, by anonymous id, never a name.
+  // Audited: the start and the refusal, at the game's subject, by anonymous id, never a name.
   const A = s.sheets.Audit.rows.slice(1).map(x => [x[2], x[3], x[4]]);
   assert.deepStrictEqual(A.slice(-2), [
-    ['live start', IMR, 'denied'],
-    ['live start', IMR, 'ok']
+    ['live start', 'subject:coral', 'denied'],
+    ['live start', 'subject:coral', 'ok']
   ]);
   assert.ok(!JSON.stringify(s.sheets.Audit.rows).includes('Tess'));
   // The right is the Trainers group's only: a Manager or a Curator without it is refused (rights are separate).
