@@ -4,23 +4,28 @@
 // Storage read once (REE-263; docs/reviews/2026-11-24-per-answer-cost.md, fix 5): the keys an answer's work reads many
 // times (sheetV, model.js startV and imrSaid, once for every unit; the answer logs LOG0 and ANONQ, about 600 KB each at
 // their cap, read whole several times an answer by quiz.js) are parsed once and kept, with what is read from them, as
-// long as the key's stored text stays the same. Every read still asks the storage for the text (core.js keyGet, as
-// app.js store.get does: about a microsecond, a log's too, measured in Chromium) and compares it with the text kept; any
-// write (store.set, a removeItem, a sign-out, another tab of the app, a test) changes the text the next read sees, so a
-// kept value is never older than the storage and no storage event is needed. As store.get: d when the storage throws,
-// holds nothing or holds no JSON (d is never kept). A kept value is shared, not a copy: keptGet only for readers that
-// never change it; keptBy keeps a value read from it (f: a function of the stored value alone, one per name).
-// KEPT_CHECK.on (the smokes: tests/facheck.js): every kept value is checked against a fresh store.get, and a difference
-// throws.
+// long as the key's stored text stays the same. The first read of a key in a task asks the storage for the text (core.js
+// keyGet, as app.js store.get does) and compares it with the text kept; the task's later reads trust that comparison
+// (app.js freshSeen: one check per task), unless this tab wrote the key since (app.js storeWrote: every write of this
+// tab, store.set, store.drop, store.raw, keptPush), so a kept value is never older than the storage.
+// Another tab's write is seen by the next task's first read. As store.get: d when the storage throws, holds nothing or
+// holds no JSON (d is never kept). A kept value is shared, not a copy: keptGet only for readers that never change it;
+// keptBy keeps a value read from it (f: a function of the stored value alone, one per name).
+// KEPT_CHECK.on (the smokes: tests/facheck.js): every kept value is checked against a fresh store.get, the reads that
+// trust the task's comparison included, and a difference throws.
+// Without app.js's task marks (the unit tests that run this file alone), every read compares, as before.
 const KEPT = new Map(),
-  KEPT_CHECK = {on: typeof window !== 'undefined' && window.KEPT_CHECK_ON === true};
+  KEPT_CHECK = {on: typeof window !== 'undefined' && window.KEPT_CHECK_ON === true},
+  KEPT_FRESH = typeof freshNow === 'function';
 function keptEntry(k) {
+  if (KEPT_FRESH && freshSeen(k)) return KEPT.get(k) || null;
   let raw;
   try {
     raw = keyGet(localStorage, k);
   } catch (e) {
-    return null;
+    return null; // a blocked storage: no mark, the next read asks again
   }
+  if (KEPT_FRESH) FRESH.set(k, freshNow());
   if (raw === null) return (KEPT.delete(k), null);
   let e = KEPT.get(k);
   if (!e || e.raw !== raw) {
@@ -72,12 +77,14 @@ function keptPush(k, x, cap) {
   let raw;
   try {
     raw = JSON.stringify(v);
+    if (KEPT_FRESH) storeWrote(k);
     localStorage.setItem(k, raw);
   } catch (e) {
     return;
   }
   if (KEPT_CHECK.on && raw !== ref) keptFail(k, 'push');
   KEPT.set(k, {raw, ok: true, v, by: new Map()});
+  if (KEPT_FRESH) FRESH.set(k, freshNow()); // the text just written is the stored text
 }
 // Photo difficulty (the pooled Elo; without it every prior is 0), kept offline with the sheet's version (v): refreshed
 // every 10 minutes while visible (the sheet caches it as long) and on return to a tab left longer.
@@ -1748,7 +1755,7 @@ function pagesRoute(h) {
     const L = store.get(PVLINK, null);
     if (L && L.g === genus && Date.now() - L.t < 30000) from = L.from;
     try {
-      localStorage.removeItem(PVLINK);
+      store.drop(PVLINK);
     } catch (e) {}
   }
   const s = genus && P[genus];
@@ -1836,11 +1843,11 @@ function signIn(name, pin, j) {
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
   if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
-    [LOG0, ANONQ, ANONID].forEach(k => localStorage.removeItem(k));
+    [LOG0, ANONQ, ANONID].forEach(k => store.drop(k));
   } catch (e) {}
   if (!j.found) {
     try {
-      localStorage.removeItem(ANONB);
+      store.drop(ANONB);
     } catch (e) {}
     store.set('reefid-account', SYNC);
     // no reload: the units are made again for the account's reserve at the next page change (app.js resSeen)
@@ -1870,7 +1877,7 @@ function signIn(name, pin, j) {
     M[pk] = S.anonBase ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
   });
   try {
-    localStorage.removeItem(ANONB);
+    store.drop(ANONB);
   } catch (e) {}
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's.
@@ -1884,21 +1891,21 @@ function signIn(name, pin, j) {
   // here) would tell the sheet that the account's log was replayed, and its replay would never come.
   try {
     // and its structure stamps likewise (stKey)
-    [RVK, ...rpSubjects().map(rvKey), ...SUBJECTS.filter(S => S.structure).map(stKey)].forEach(k => localStorage.removeItem(k));
+    [RVK, ...rpSubjects().map(rvKey), ...SUBJECTS.filter(S => S.structure).map(stKey)].forEach(k => store.drop(k));
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (the log, or sent anonymously: SYNC.anon) join the account's log with the
   // first save: no rules version applied, so that save gets the replay of the whole log (none adopted before: SYNC.anon).
   if (anon || SYNC.anon)
     try {
-      localStorage.removeItem(RVK);
+      store.drop(RVK);
     } catch (e) {}
   // Another subject replayed (fish): its answers played here signed out join the account's log with the first save, so
   // the replay of the whole of it is asked for then (every answer of that subject in it once).
   rpSubjects().forEach(S => {
     if (subjEntries(SYNC.log, S.id).length || SYNC.anon)
       try {
-        localStorage.removeItem(rvKey(S));
+        store.drop(rvKey(S));
       } catch (e) {}
   });
   if (ach) achMerge(JSON.stringify(ach));
@@ -1975,7 +1982,7 @@ function signOutClear(all) {
     );
   if (all)
     try {
-      localStorage.removeItem('reefid-report-name');
+      store.drop('reefid-report-name');
     } catch (e) {}
   // The pages summaries still queued are the account's: dropped, never sent under the next player.
   store.set(
@@ -2026,7 +2033,7 @@ function signOutClear(all) {
     .flatMap(k => withOldNames([k]))
     .forEach(k => {
       try {
-        localStorage.removeItem(k);
+        store.drop(k);
       } catch (e) {}
     });
 }

@@ -126,22 +126,68 @@ const STATE_KEYS = new Set([
   'reefid-photo-stats',
   ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)
 ]);
+// Storage freshness, one check per task (docs/spec/storage.md "Keys read many times an answer"). A stored text read
+// many times (sync.js keptEntry, stateNow below) is compared with the text kept at its first read in a task, then
+// trusted until the task's microtasks run (freshEnd, queued then) or this tab writes the key (storeWrote). Within a task
+// only this tab changes what the storage reads: another tab's write reaches this page between its tasks (Chromium
+// applies it to the page's copy from a message, a task of its own; Firefox reads through a snapshot kept until the
+// task's end), so the next task's first read compares and sees it (were it readable mid-task, it would be seen one task
+// late, as if written after the task). No storage event is listened to: it is not sent for every change (the browser's
+// own tools), and the comparison needs none. Every write of this tab calls storeWrote(k):
+// store.set, store.drop, store.raw (the writes that do not go through JSON: sync.js's removals at sign-in and sign-out,
+// progress.js loadData, the settings kept as plain text), and sync.js keptPush. Without queueMicrotask (the unit tests
+// that run parts of these files) every read compares.
+let FRESH_T = 0, // the number of the task in progress, among those that compared a stored text
+  freshQ = false; // its end is queued
+const FRESH = new Map(); // a key -> the task its stored text was last compared in (sync.js keptEntry)
+const freshEnd = () => ((freshQ = false), FRESH_T++);
+// The task's number for a comparison made now, its end queued; -1 when no task can be marked (always compare).
+function freshNow() {
+  if (typeof queueMicrotask !== 'function') return -1;
+  if (!freshQ) ((freshQ = true), queueMicrotask(freshEnd));
+  return FRESH_T;
+}
+// k's stored text was compared in this task, and this tab has not written it since.
+const freshSeen = k => FRESH.get(k) === FRESH_T;
+// A write of k by this tab, whatever wrote it: its text is compared again at the next read, and the text of the key k
+// is an old name of (core.js keyRename: keyGet reads the old name while the new one is absent); an input of the views
+// bumps the state version (STATE_KEYS).
+function storeWrote(k) {
+  for (const n of [k, typeof keyRename === 'function' && keyRename(k)])
+    if (n) {
+      FRESH.delete(n);
+      if (STATE_LIVE.includes(n)) STATE_AT = -1;
+    }
+  if (STATE_KEYS.has(k)) stateBump();
+}
 // Two inputs are read from storage at every use, kept parsed while their text stays the same (sync.js keptBy): the
 // sheet's version (sheetV) and a subject's first-launch record (model.js imrSaid, startV). Their stored text is compared
-// at every read of a view (stateNow), as keptBy compares it, so a write that went round store.set (another tab of the
-// app, a progress file, a test) bumps the version too.
+// at the first read of a view in a task (stateNow), as keptEntry compares it, so a write that went round store.set
+// (another tab of the app, a test) bumps the version too. With VIEW_CHECK on, a read that trusts the task's comparison
+// compares again, and a difference (a write of this tab without storeWrote) throws.
 const STATE_LIVE = ['reefid-sheet-v', ...SUBJECTS.map(S => startKey(S.id))],
   STATE_RAW = STATE_LIVE.map(() => null);
+let STATE_AT = -1; // the task of stateNow's last comparison
+const stateRaw = k => {
+  try {
+    return keyGet(localStorage, k);
+  } catch (e) {
+    return null;
+  }
+};
 function stateNow() {
+  if (STATE_AT === FRESH_T) {
+    if (VIEW_CHECK.on && STATE_LIVE.some((k, i) => stateRaw(k) !== STATE_RAW[i]))
+      viewFail('stateNow: a stored text changed in this task without storeWrote');
+    return STATE_V;
+  }
   let ch = false;
   STATE_LIVE.forEach((k, i) => {
-    let raw = null;
-    try {
-      raw = keyGet(localStorage, k);
-    } catch (e) {}
+    const raw = stateRaw(k);
     if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = true));
   });
   if (ch) stateBump();
+  STATE_AT = freshNow();
   return STATE_V;
 }
 // A view (the units in play: bonusList, pool, sciUp, shareFree): f's value, computed at its first read in a version and
@@ -167,6 +213,14 @@ const viewSame = (a, b) => {
     ky = Object.keys(y);
   return kx.length === ky.length && kx.every((k, i) => k === ky[i] && viewSame(x[k], y[k]));
 };
+// A difference VIEW_CHECK found: thrown, and again in a task of its own.
+const viewFail = m => {
+  const e = new Error(m);
+  setTimeout(() => {
+    throw e;
+  });
+  throw e;
+};
 function stateView(name, f) {
   let at = -1,
     v;
@@ -177,16 +231,13 @@ function stateView(name, f) {
       at = now;
       return v;
     }
-    if (VIEW_CHECK.on && !viewSame(v, f())) {
-      const e = new Error(`state view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
-      setTimeout(() => {
-        throw e;
-      });
-      throw e;
-    }
+    if (VIEW_CHECK.on && !viewSame(v, f()))
+      viewFail(`state view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
     return v;
   };
 }
+// Every write of the storage by this tab calls storeWrote (above): set here; drop for a removal and raw for a text
+// written as it is, where a write went round store.set.
 const store = {
   get(k, d) {
     try {
@@ -200,7 +251,17 @@ const store = {
     try {
       localStorage.setItem(k, JSON.stringify(v));
     } catch (e) {}
-    if (STATE_KEYS.has(k)) stateBump(); // an input of the views
+    storeWrote(k); // an input of the views bumps the version
+  },
+  // localStorage.removeItem(k), which throws as it does (a caller's try decides what follows).
+  drop(k) {
+    storeWrote(k);
+    localStorage.removeItem(k);
+  },
+  // localStorage.setItem(k, text), the same.
+  raw(k, text) {
+    storeWrote(k);
+    localStorage.setItem(k, text);
   }
 };
 const VIEWS = [
@@ -3389,7 +3450,7 @@ document.querySelectorAll('#size button').forEach(
       const p = sizePrefs();
       p[pageKey()] = b.dataset.size;
       try {
-        localStorage.setItem('reefid-sync-size', JSON.stringify(p));
+        store.raw('reefid-sync-size', JSON.stringify(p));
       } catch (e) {}
       applySize();
     })
@@ -3409,7 +3470,7 @@ document.querySelectorAll('#theme button').forEach(
       const t = b.dataset.th;
       document.documentElement.dataset.theme = t;
       try {
-        localStorage.setItem('reefid-sync-theme', t);
+        store.raw('reefid-sync-theme', t);
       } catch (e) {}
       showTheme();
     })
@@ -3427,7 +3488,7 @@ document.querySelectorAll('#palette button').forEach(
       const p = b.dataset.pal;
       document.documentElement.dataset.palette = p;
       try {
-        localStorage.setItem('reefid-sync-palette', p);
+        store.raw('reefid-sync-palette', p);
       } catch (e) {}
       showPal();
     })
@@ -3445,7 +3506,7 @@ document.querySelectorAll('#cvd button').forEach(
       if (on) document.documentElement.dataset.cvd = '1';
       else delete document.documentElement.dataset.cvd;
       try {
-        localStorage.setItem('reefid-sync-cvd', on ? '1' : '0');
+        store.raw('reefid-sync-cvd', on ? '1' : '0');
       } catch (e) {}
       showCvd();
     })
@@ -4097,7 +4158,7 @@ if (HAS_ADMIN_TOKEN) {
     b.onclick = () => {
       if ((b.dataset.view === 'admin') === IS_ADMIN) return;
       try {
-        localStorage.setItem('reefid-admin-view', b.dataset.view);
+        store.raw('reefid-admin-view', b.dataset.view);
       } catch (e) {}
       location.reload();
     };

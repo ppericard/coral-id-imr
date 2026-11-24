@@ -10,7 +10,8 @@ require('./slot.js').testGuard();
 // beside the new one), in the page of a rated-world run (tools/ratedworld.js: model.js whole on the world's units, the
 // records P as the play makes them) of the fish, the corals and the sea slugs, with app.js's state version and views
 // added to that page, VIEW_CHECK off and on. Between the reads, the writers the app has: a scored answer, the settings
-// saved, a card opened, the sheet's version written round store.set (stateNow). Then: a record or a kept value changed
+// saved, a card opened, the sheet's version written by another tab between two of the page's tasks (stateNow compares
+// the stored texts once a task). Then: a record or a kept value changed
 // with no bump is caught by VIEW_CHECK, and a view is computed once per version.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -118,14 +119,18 @@ const NEW = [
 // version is bumped by model.js's own writers from now on (answeredAt, varRight, mxRecalc), and here after each answer.
 // The achievements read what the app's UNITS give (its sets, circles and top species): the world's own here, and a
 // grouping of the slate (shownGroup) by the first letter, the same for both.
+// The page has tasks (app.js freshNow queues a task's end with queueMicrotask; endTask runs it): stateNow compares the
+// stored texts once a task, as in the app.
 function harness(pl, check, U) {
   const ctx = pl.ctx,
     later = [],
+    queued = [],
     X = U.X || {};
   Object.assign(ctx, {
     window: {VIEW_CHECK_ON: check},
     localStorage: memStorage(),
     setTimeout: f => later.push(f),
+    queueMicrotask: f => queued.push(f),
     shownGroup: n => (n.charCodeAt(n.indexOf(':') + 1) % 4) + 1,
     scaleUnits: () => ctx.slateGenera()
   });
@@ -148,6 +153,7 @@ function harness(pl, check, U) {
     ].join('\n'),
     ctx
   );
+  ctx.__endTask = () => queued.splice(0).forEach(f => f());
   return {T: ctx.__T, later};
 }
 
@@ -194,6 +200,7 @@ function reads(T, r, all, st, label) {
 // The writers between two reads, as the app writes them: the settings saved (store.set bumps), a card opened (the intro
 // map saved: store.set bumps), the sheet's version written by another tab (seen by stateNow), nothing at all.
 function write(ctx, M, T, U, r) {
+  if (r() < 0.3) ctx.__endTask(); // a task ends now and then; another tab writes between two
   const x = r();
   if (x < 0.2) {
     const k = pick(r, [U.setK, U.setK + 'H', U.setK + 'O']);
@@ -209,6 +216,7 @@ function write(ctx, M, T, U, r) {
     return 'card';
   }
   if (x < 0.4) {
+    ctx.__endTask();
     ctx.localStorage.setItem('reefid-sheet-v', pick(r, ['150', '1000']));
     return 'sheet';
   }

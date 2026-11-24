@@ -42,7 +42,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = {flagFile,
   };
   const write = L => {
     try {
-      localStorage.setItem(KEY, JSON.stringify(L));
+      store.raw(KEY, JSON.stringify(L));
     } catch (e) {}
   };
   const fileOf = flagFile;

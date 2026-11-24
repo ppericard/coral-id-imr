@@ -467,7 +467,7 @@ const progData = () => {
   }
 };
 // A file or a saved account may carry the names from before the rename to IMR Reef ID (core.js keysIn).
-const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && localStorage.setItem(k, v));
+const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && store.raw(k, v));
 // A progress file says which app wrote it: 'reefid', or the app's old id, still read.
 const PROG_APP = ['reefid', 'imr-coral-id']; // rename-app: keep
 function bindProgFile() {

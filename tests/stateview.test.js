@@ -103,7 +103,10 @@ function pages(W, check) {
       INTRO: {START: W.START},
       window: {VIEW_CHECK_ON: check},
       setTimeout: f => W.later.push(f),
-      UNITS: {fish: {}, seaslug: {}, coral: {}}
+      UNITS: {fish: {}, seaslug: {}, coral: {}},
+      // W.queued: the views' page has tasks (app.js freshNow; endTask ends one), so stateNow and its kept reads compare once
+      // a task; the reference reads the storage at every read
+      ...(W.queued && code === NEW ? {queueMicrotask: f => W.queued.push(f)} : {})
     };
     for (const k of ['SUBJ', 'TREEU', 'Q', 'localStorage'])
       Object.defineProperty(ctx, k, {get: () => W[k], set: v => (W[k] = v), enumerable: true});
@@ -139,9 +142,14 @@ const pick = (r, L) => L[Math.floor(r() * L.length)];
 const SHEETS = [0, 150, 170, 180, 190, 1000];
 
 // The writers between two reads: the settings saved (a set turned on, off, closed on the card, on by hand), the sheet's
-// version or the first-launch record (through store.set, or round it as another tab writes), nothing at all.
+// version or the first-launch record (through store.set, store.raw or store.drop, or round them as another tab writes:
+// between two tasks when the page has tasks), nothing at all. With tasks, a task ends after about a third of the writes.
+const endTask = W => W.queued && W.queued.splice(0).forEach(f => f());
 function write(W, F, r, setK) {
+  if (r() < 0.3) endTask(W);
   const x = r();
+  // another tab, a test: no store method here, between two tasks
+  const round = (k, raw) => (endTask(W), W.localStorage.setItem(k, raw));
   if (x < 0.25) {
     const Q = {...W.Q};
     const y = r();
@@ -158,17 +166,25 @@ function write(W, F, r, setK) {
     return 'settings';
   }
   if (x < 0.4) {
-    const v = pick(r, SHEETS);
-    if (r() < 0.5) F.store.set(SV, v);
-    else W.localStorage.setItem(SV, JSON.stringify(v)); // another tab, a test: no store.set here
+    const v = pick(r, SHEETS),
+      y = r();
+    if (y < 0.4) F.store.set(SV, v);
+    else if (y < 0.55) F.store.raw(SV, JSON.stringify(v));
+    else if (y < 0.65) F.store.drop(SV);
+    else round(SV, JSON.stringify(v));
     return 'sheet';
   }
   if (x < 0.5) {
     const imr = r() < 0.5,
       o = imr ? {c: 'imr', t: 1, h: [['imr', 0, 1, 'card']]} : {c: 'new', t: 1, h: [['new', 0, 1, 'card']]},
-      k = C.startKey(W.SUBJ.id);
-    if (r() < 0.5) F.store.set(k, o);
-    else W.localStorage.setItem(k, JSON.stringify(o));
+      k = C.startKey(W.SUBJ.id),
+      y = r();
+    if (y < 0.4) F.store.set(k, o);
+    else if (y < 0.55)
+      F.store.raw(k, JSON.stringify(o)); // a progress file (progress.js loadData)
+    else if (y < 0.65)
+      F.store.drop(k); // a sign-out (sync.js)
+    else round(k, JSON.stringify(o));
     return 'start';
   }
   return 'none';
@@ -179,7 +195,7 @@ function stats() {
 }
 
 // A rated-world run of subject sub: after each answer (the scorer's caller bumps: quiz.js recordAnswer), some writes
-// and reads; check: VIEW_CHECK on.
+// and reads; check: VIEW_CHECK on. The views' page has tasks (one comparison of the stored texts per task, as the app).
 function played(sub, profile, seed, N, check, st) {
   const U = RW.unitsOf(sub),
     Wd = RW.world(U, seed),
@@ -193,6 +209,7 @@ function played(sub, profile, seed, N, check, st) {
       Q: {},
       localStorage: memStorage(),
       later: [],
+      queued: [],
       START: vm.runInContext('INTRO.START', ctx),
       GX: n => G[n],
       photoAny: n => !!G[n] && VIEWN.some(v => ((U.views(n) || {})[v] || []).length),
@@ -276,6 +293,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
         Q: {},
         localStorage: memStorage(),
         later: [],
+        queued: [],
         START: 4,
         GX: n => W.TREEU.gen[n],
         photoAny: n => !!W.TREEU.gen[n] && VIEWN.some(v => (W.TREEU.gen[n].views[v] || []).length) && !n.endsWith('3'),
@@ -316,7 +334,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
 });
 
 // A small world of made-up units for the checks below: one family, two genera of it in the sci set.
-function tiny(check) {
+function tiny(check, more = {}) {
   const G = {
       f: {views: {wide: [{}]}},
       'g:a': {parent: 'f', views: {wide: [{}]}},
@@ -337,6 +355,7 @@ function tiny(check) {
       slate: () => ['f']
     };
   W.localStorage.setItem(SV, '1000');
+  Object.assign(W, more);
   return {W, ...pages(W, check)};
 }
 
@@ -404,6 +423,50 @@ test('the version: bumped by the inputs’ keys, by their text written round sto
   W.localStorage.setItem(C.startKey('seaslug'), '{"c":"imr"}');
   assert.ok(N.stateNow() > v2, 'a first-launch record written round store.set');
   assert.strictEqual(N.stateNow(), N.stateNow(), 'nothing written: the same version');
+});
+
+test('one comparison per task: stateNow reads the stored texts once a task; this tab’s writes are seen at once, another tab’s at the next task', () => {
+  for (const check of [false, true]) {
+    const {W, N} = tiny(check, {queued: []});
+    let reads = 0;
+    const get = W.localStorage.getItem;
+    W.localStorage.getItem = k => (reads++, get(k));
+    endTask(W);
+    N.bonusList();
+    const r0 = reads;
+    for (let i = 0; i < 20; i++) (N.bonusList(), N.shareFree(), N.stateNow());
+    if (!check) assert.strictEqual(reads, r0, 'forty more reads of a view in the task: no storage read');
+    endTask(W);
+    const v0 = N.stateNow();
+    if (!check) assert.ok(reads > r0, 'the next task compares');
+    // This tab: store.set, store.raw (a progress file) and store.drop (a sign-out) of an input's key, in the task.
+    for (const [w, why] of [
+      [() => N.store.set(SV, 170), 'store.set'],
+      [() => N.store.raw(C.startKey('fish'), '{"c":"imr"}'), 'store.raw'],
+      [() => N.store.drop(C.startKey('fish')), 'store.drop']
+    ]) {
+      const v = N.stateNow();
+      w();
+      assert.ok(N.stateNow() > v, `${why} in the task: a new version`);
+    }
+    assert.ok(N.stateNow() > v0);
+    // Another tab, between two tasks: the next task's first read sees it.
+    endTask(W);
+    N.stateNow();
+    const v1 = N.stateNow();
+    endTask(W);
+    W.localStorage.setItem(SV, '180');
+    assert.ok(N.stateNow() > v1, 'another tab’s write: seen by the next task');
+    // A write of this tab round the store methods (no storeWrote), read in the same task: VIEW_CHECK throws.
+    const v2 = N.stateNow();
+    W.localStorage.setItem(SV, '190');
+    if (check) {
+      assert.throws(() => N.stateNow(), /stateNow: a stored text changed in this task without storeWrote/);
+      W.later.length = 0;
+    } else assert.strictEqual(N.stateNow(), v2, 'unchecked: not seen in the task (so every writer calls storeWrote)');
+    endTask(W);
+    assert.ok(N.stateNow() > v2, 'seen by the next task');
+  }
 });
 
 test('the declared names: sync.js SHEETV and model.js OWN_STATS are the keys app.js lists', () => {

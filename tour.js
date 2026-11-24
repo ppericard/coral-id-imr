@@ -529,7 +529,7 @@
   window.tour = function (at = 0) {
     if (root || typeof DATA === 'undefined' || !DATA) return;
     try {
-      localStorage.setItem(KEY, '1');
+      store.raw(KEY, '1');
     } catch (e) {}
     // What the tour starts with (plan): read back when it comes back after a sign-in's reload (at > 0), else now.
     OPEN = null;

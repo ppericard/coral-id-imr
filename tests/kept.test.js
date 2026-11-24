@@ -4,9 +4,14 @@ require('./slot.js').testGuard();
 // the keys an answer reads many times are parsed once and kept while their stored text stays the same. A speed-up only:
 // here, over thousands of random storage states and writes (store.set, another tab's raw write, a removal, a key under
 // its old name, no JSON, "null", a blocked or full storage), every kept read equals a fresh store.get, every kept push
-// writes the text the old store.set wrote, and sheetV, imrSaid and startV give what the code before them gave.
+// writes the text the old store.set wrote, and sheetV, imrSaid and startV give what the code before them gave. With the
+// page's tasks (one comparison of a stored text per task, app.js freshSeen, REE-265), the same, this tab's writes in a
+// task included (store.drop, store.raw: a sign-out, a progress file); and every write of the app page goes through
+// app.js storeWrote.
 const test = require('node:test'),
   assert = require('node:assert'),
+  fs = require('fs'),
+  path = require('path'),
   vm = require('vm');
 const C = require('../core.js'),
   block = require('./block.js'),
@@ -100,10 +105,14 @@ function readers(pg) {
   );
   return pg.ctx.R;
 }
-// Each step: one change to the storage of both pages, the same; a: kept, b: as before (store alone).
+// Each step: one change to the storage of both pages, the same; a: kept, b: as before (store alone). With a's tasks on
+// (one comparison per task), another tab's write, and a storage that becomes blocked or full, come between two of a's tasks (a.endTask
+// first); this tab's writes (store.set, store.drop, store.raw: a sign-out's removal, a progress file) come at any time,
+// inside a task too; and a task ends after about a third of the steps, so most reads trust their task's comparison.
 function step(r, a, b, n) {
   const k = pick(r, KEYS),
     x = r(),
+    between = () => a.endTask(),
     both = f =>
       [a, b].map(p => {
         try {
@@ -112,23 +121,35 @@ function step(r, a, b, n) {
           return {e: e.message};
         }
       });
-  if (x < 0.25) {
+  if (r() < 0.3) between();
+  if (x < 0.2) {
     const v = valueOf(r, k);
     return both(p => p.store.set(k, v));
   }
+  // this tab removes it (a sign-out, a sign-in), or its old name (a sign-out removes both: core.js withOldNames)
+  if (x < 0.25) {
+    const o = r() < 0.3;
+    return both(p => p.store.drop(o ? C.keyBefore(k) : k));
+  }
+  if (x < 0.3) {
+    // this tab writes a text as it is (a progress file: progress.js loadData), under the key's old name too
+    const raw = rawOf(r, k),
+      o = r() < 0.3;
+    return both(p => p.store.raw(o ? C.keyBefore(k) : k, raw));
+  }
   if (x < 0.4) {
     const raw = rawOf(r, k); // another tab's write (the storage area is shared)
-    return both(p => p.ls.raw.set(k, raw));
+    return (between(), both(p => p.ls.raw.set(k, raw)));
   }
-  if (x < 0.47) return both(p => p.ls.raw.delete(k));
+  if (x < 0.47) return (between(), both(p => p.ls.raw.delete(k)));
   if (x < 0.53) {
     const raw = rawOf(r, k); // a key still under its old name (a migration that could not write it)
-    return both(p => (p.ls.raw.delete(k), p.ls.raw.set(C.keyBefore(k), raw)));
+    return (between(), both(p => (p.ls.raw.delete(k), p.ls.raw.set(C.keyBefore(k), raw))));
   }
   if (x < 0.58) {
     const f = r() < 0.5 ? 'fail' : 'full',
       on = r() < 0.5;
-    return both(p => (p.ls[f] = on));
+    return (between(), both(p => (p.ls[f] = on)));
   }
   if (x < 0.62) {
     const S = C.subjectOf(pick(r, ['coral', 'fish', 'seaslug']));
@@ -175,24 +196,26 @@ function same(a, b, A, B, where) {
     assert.strictEqual(A[n](), B[f](), `${where}: ${n}`);
 }
 
-for (const check of [false, true])
-  test(`random storage histories: every kept read is a fresh store.get, every push the old write${check ? ' (KEPT_CHECK on)' : ''}`, () => {
-    let steps = 0;
-    for (let seed = 1; seed <= 40; seed++) {
-      const r = rng(seed * 7919 + (check ? 1 : 0)),
-        a = keptPage({check}),
-        b = keptPage(),
-        A = readers(a),
-        B = readers(b);
-      for (let n = 0; n < 150; n++) {
-        step(r, a, b, n);
-        same(a, b, A, B, `seed ${seed} step ${n}`);
-        steps++;
+for (const tasks of [false, true])
+  for (const check of [false, true])
+    test(`random storage histories: every kept read is a fresh store.get, every push the old write${tasks ? ', one comparison per task' : ''}${check ? ' (KEPT_CHECK on)' : ''}`, () => {
+      let steps = 0;
+      for (let seed = 1; seed <= 40; seed++) {
+        const r = rng(seed * 7919 + (check ? 1 : 0) + (tasks ? 2 : 0)),
+          a = keptPage({check, tasks}),
+          b = keptPage(),
+          A = readers(a),
+          B = readers(b);
+        assert.strictEqual(a.KEPT_FRESH, true);
+        for (let n = 0; n < 150; n++) {
+          step(r, a, b, n);
+          same(a, b, A, B, `seed ${seed} step ${n}${tasks ? '' : ' (no tasks)'}`);
+          steps++;
+        }
+        assert.deepStrictEqual([...a.ls.raw], [...b.ls.raw], `seed ${seed}: the same storage at the end`);
       }
-      assert.deepStrictEqual([...a.ls.raw], [...b.ls.raw], `seed ${seed}: the same storage at the end`);
-    }
-    assert.strictEqual(steps, 6000);
-  });
+      assert.strictEqual(steps, 6000);
+    });
 
 test('read once: a kept log is parsed once, its push parses nothing, another tab’s write is read at once', () => {
   const pg = keptPage();
@@ -224,6 +247,94 @@ test('read once: a kept log is parsed once, its push parses nothing, another tab
   pg.ls.full = false;
   pg.keptPush(LOG, 2, 10);
   eqJ(pg.keptGet(LOG, []), [1, 2]);
+});
+
+test('one comparison per task: the first read of a key in a task reads the storage, the others trust it until this tab writes the key', () => {
+  const pg = keptPage({tasks: true}),
+    L = Array.from({length: 500}, (_, i) => ({id: 'x' + i, s: 'coral', ok: 1}));
+  pg.store.set(LOG, L);
+  pg.endTask();
+  const r0 = pg.reads(LOG);
+  for (let i = 0; i < 6; i++) assert.strictEqual(pg.keptGet(LOG, []).length, 500);
+  assert.strictEqual(pg.reads(LOG) - r0, 1, 'six reads in one task, one storage read');
+  pg.endTask();
+  pg.keptGet(LOG, []);
+  pg.keptGet(LOG, []);
+  assert.strictEqual(pg.reads(LOG) - r0, 2, 'the next task: one more');
+  // This tab's writes: the push knows the text it wrote (nothing read); store.set, store.drop and store.raw are read again.
+  pg.keptPush(LOG, {id: 'y'}, 2000);
+  assert.strictEqual(pg.keptGet(LOG, []).length, 501);
+  assert.strictEqual(pg.reads(LOG) - r0, 2, 'after a push: nothing read');
+  pg.store.set(LOG, [{id: 'set'}]);
+  eqJ(pg.keptGet(LOG, []), [{id: 'set'}], 'store.set in the task: read again');
+  pg.store.drop(LOG);
+  assert.deepStrictEqual(pg.keptGet(LOG, ['d']), ['d'], 'store.drop in the task (a sign-out): the default');
+  assert.deepStrictEqual(pg.keptGet(LOG, ['d']), ['d'], 'a key gone: trusted as gone in the task');
+  pg.store.raw(STC, '{"c":"imr"}');
+  eqJ(pg.keptGet(STC, null), {c: 'imr'}, 'store.raw in the task (a progress file): read again');
+  assert.strictEqual(pg.reads(LOG) - r0, 4);
+  // Another tab's write lands between two tasks (the browser applies it in a task of its own): the next task sees it.
+  pg.endTask();
+  pg.ls.raw.set(LOG, JSON.stringify([{id: 'other'}]));
+  eqJ(pg.keptGet(LOG, []), [{id: 'other'}], 'the other tab’s list, read by the next task');
+  // A blocked storage: no mark, every read asks again.
+  pg.endTask();
+  pg.ls.fail = true;
+  assert.deepStrictEqual(pg.keptGet(LOG, ['d']), ['d']);
+  const r1 = pg.reads(LOG);
+  assert.deepStrictEqual(pg.keptGet(LOG, ['d']), ['d']);
+  assert.strictEqual(pg.reads(LOG), r1 + 1, 'blocked: read again');
+});
+
+test('KEPT_CHECK: a write of this tab that skipped storeWrote, read in the same task, throws (what every writer is routed for)', () => {
+  for (const check of [false, true]) {
+    const pg = keptPage({tasks: true, check});
+    pg.store.set(STF, {c: 'new'});
+    pg.endTask();
+    eqJ(pg.keptGet(STF, null), {c: 'new'});
+    pg.ls.setItem(STF, '{"c":"imr"}'); // round the store methods, as a writer that forgot storeWrote would
+    if (check) assert.throws(() => pg.keptGet(STF, null), /kept storage read: reefid-sync-fish-start value differs/);
+    else eqJ(pg.keptGet(STF, null), {c: 'new'}, 'unchecked: the task’s text, stale (so every writer calls storeWrote)');
+    pg.storeWrote(STF);
+    eqJ(pg.keptGet(STF, null), {c: 'imr'}, 'told: read again');
+  }
+});
+
+// Every write of the app page's storage tells app.js storeWrote (one check per task trusts it): store.set, store.drop,
+// store.raw, and keptPush, which writes its text itself. core.js's key moves (migrateKeys, migrateRoutes) run first of
+// all, before any read (app.js's first lines).
+test('every write of the storage on the app page goes through storeWrote', () => {
+  // The page's scripts (index.html's loader: link tags, every tier), the Lab's own files (proto/) too.
+  const files = [
+    ...new Set([
+      ...[...read('index.html').matchAll(/href="((?:proto\/)?[a-z-]+\.js)\?v=\d+"/g)].map(m => m[1]),
+      ...fs
+        .readdirSync(path.join(__dirname, '..', 'proto'))
+        .filter(f => f.endsWith('.js'))
+        .map(f => 'proto/' + f)
+    ])
+  ].filter(f => f !== 'core.js');
+  assert.ok(files.length > 15 && ['sync.js', 'progress.js', 'flag.js', 'proto/lab.js'].every(f => files.includes(f)), files.join(' '));
+  const raw = /localStorage\s*\.\s*(setItem|removeItem|clear)\s*\(|localStorage\s*\[/;
+  const found = files.flatMap(f =>
+    read(f)
+      .split('\n')
+      .map((l, i) => [f, i + 1, l])
+      .filter(([, , l]) => raw.test(l) && !/^\s*\/\//.test(l))
+  );
+  const where = found.map(([f, , l]) => `${f}: ${l.trim()}`);
+  assert.deepStrictEqual(where, [
+    'app.js: localStorage.setItem(k, JSON.stringify(v));',
+    'app.js: localStorage.removeItem(k);',
+    'app.js: localStorage.setItem(k, text);',
+    'sync.js: localStorage.setItem(k, raw);'
+  ]);
+  const app = read('app.js'),
+    store = block(app, 'const store = {', '\n};\n', {through: 1, file: 'app.js'});
+  assert.strictEqual((store.match(/storeWrote\(k\)/g) || []).length, 3, 'set, drop and raw tell storeWrote');
+  assert.match(read('sync.js'), /if \(KEPT_FRESH\) storeWrote\(k\);\n {4}localStorage\.setItem\(k, raw\);/);
+  assert.match(app, /^migrateStorage\(\);\nmigrateRoutes\(\);/m);
+  assert.ok(app.indexOf('migrateRoutes();') < app.indexOf('const store = {'), 'the key moves run before the store exists');
 });
 
 test('keptBy: a value read from the key kept under its name, again only when the text changes', () => {

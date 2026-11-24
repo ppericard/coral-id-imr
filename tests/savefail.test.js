@@ -130,7 +130,7 @@ function app({fail = () => undefined} = {}) {
   vm.createContext(ctx);
   const prog = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8');
   vm.runInContext(
-    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
+    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }, drop(k) { localStorage.removeItem(k); }, raw(k, t) { localStorage.setItem(k, t); }};
      const save = () => store.set('reefid-sync-coral-progress', P);\n` +
       /const loadData = [\s\S]*?;\n/.exec(prog)[0] +
       /const progData = [\s\S]*?\n};\n/.exec(prog)[0] +

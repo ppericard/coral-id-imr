@@ -71,10 +71,20 @@ The service worker's messages to the pages follow the same names (`reefid-ver?`)
 **Keys read many times an answer** (REE-263): `sync.js` `keptGet`, `keptBy` and `keptPush` keep a key's parsed value,
 and what is read from it, while its stored text stays the same: `reefid-sheet-v` (`sheetV`), the subject's
 `-start` record (`model.js` `startV`, `imrSaid`), and the answer queues `reefid-log0` and `reefid-anonq` (`quiz.js`
-`logAnswer` and the readers of LOG0 in `quiz.js` and `model.js`, `sync.js` `sendAnon`). Each read still asks the storage
-for the text (`keyGet`) and compares it, so any write, another tab's included, is read at once; the values are those of
-`store.get`. A kept value is shared: only readers that never change it read through `keptGet`. In the smokes,
-`KEPT_CHECK` (`tests/facheck.js`) checks every kept value against a fresh `store.get`.
+`logAnswer` and the readers of LOG0 in `quiz.js` and `model.js`, `sync.js` `sendAnon`). The first read of a key in a
+task asks the storage for the text (`keyGet`) and compares it; the task's later reads trust that comparison (`app.js`
+`freshSeen`, `freshNow`: the mark ends with the task's microtasks), unless this tab wrote the key since. Every write of
+the app page calls `app.js` `storeWrote`: `store.set`, `store.drop` (a removal), `store.raw` (a text written as it is:
+`progress.js` `loadData`, the settings kept as plain text) and `sync.js` `keptPush`; `tests/kept.test.js` fails on a
+`localStorage` write in the page's scripts that goes round them. The key moves of `core.js` (`migrateStorage`,
+`migrateRoutes`) run first, before any read. Another tab's write is seen by the next task's first read: within a task
+the page's storage changes only by its own writes (Chromium applies another tab's change from a message, a task of its
+own; Firefox reads through a snapshot kept until the task's end; Safari is not checked). Were another tab's write ever
+readable mid-task, a kept read would see it one task late, as if it had landed after the task. No `storage` event is
+listened to. The values are
+those of `store.get`. A kept value is shared: only readers that never change it read through `keptGet`. In the smokes,
+`KEPT_CHECK` (`tests/facheck.js`) checks every kept value against a fresh `store.get`, the reads that trust their
+task's comparison included.
 
 ## Moving data written under older names
 
