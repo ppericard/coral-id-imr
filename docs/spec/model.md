@@ -81,8 +81,8 @@ version: it reads only the data inputs, so the player's answers do not make it a
   record's key or an intro map entry), so a read is one lookup; a loop with nothing written during it reads the view
   once (`introducedFn`: the sets' units in play, a level's need, the wrong choices);
 - each unit's bar and exam entry (`model.js` `genScore`, `genScoreCalc`; `examOn`, `examOnCalc`), per unit;
-- the comeback's units (`model.js` `cbPlay`, `cbGenera`) and the start's level (`startP`, read once per unit by
-  `ability`);
+- the comeback's units (`model.js` `cbPlay`, `cbGenera`), the start's level (`startP`, read once per unit by
+  `ability`) and whether the player said they are at IMR (`imrSaid`, read once per name shown);
 - a level's need (`model.js` `lvlNeed`, `lvlNeedCalc`, per class): how many units it still needs before its questions
   stand among units opened;
 - the tree's score (`model.js` `headScore`, `headScoreCalc`): the header pill, My progress, the circle-3 gate
@@ -110,7 +110,7 @@ comparison compares the stored texts again; a difference throws, and again in a 
 them over rated-world runs and made-up states, and checks that every declared writer bumps the right versions;
 `tests/levelview.test.js` compares the tree's score and the levels with the code before them over rated-world runs of
 the fish, the corals and the sea slugs; `tests/modelviews.test.js` compares the units met, the bars, the exam entries,
-the comeback's units, the start's level, a class's units and its need over the same runs, and fails a version bump made
+the comeback's units, the start's level, the IMR answer, a class's units and its need over the same runs, and fails a version bump made
 to move nothing or to forget the state version on an answer (mutation checks); `tests/examlooks.test.js` compares
 `examLooks` with the filter of every unit in play.
 

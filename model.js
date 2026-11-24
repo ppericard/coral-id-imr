@@ -778,10 +778,13 @@ function openRight(at = answersSoFar()) {
 const imrOf = o =>
   startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
   Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr');
-const imrSaid = () => {
+const imrSaidCalc = () => {
   const k = startKey(SUBJ.id);
   return typeof keptBy === 'function' ? keptBy(k, null, 'imrSaid', imrOf) : imrOf(store.get(k, null));
 };
+// In the app, a view of the state version (app.js stateView: the subject and its first-launch record are inputs): the
+// names shown read it once per unit.
+const imrSaid = typeof stateView === 'function' ? stateView('imrSaid', imrSaidCalc) : imrSaidCalc;
 // Families met first: while a unit of the slate in play is still to open (in fresh: those not met that may open now),
 // the units of a set that opens after the slate (app.js setLater: the fish scientific genera once accepted) wait. After
 // Open all (openedAll: a unit opened by it and not closed again) nothing waits.

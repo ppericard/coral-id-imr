@@ -40,6 +40,10 @@ const examOn0 = n => {
 const cbPlay0 = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
 const cbGenera0 = () => cbPlay0().filter(n => (P[n] || {}).ok > 0);
 const startP0 = () => startV().p;
+const imrSaid0 = () => {
+  const k = startKey(SUBJ.id);
+  return typeof keptBy === 'function' ? keptBy(k, null, 'imrSaid', imrOf) : imrOf(store.get(k, null));
+};
 const lvlAll0 = (k, list) => (typeof rankUnits === 'function' ? rankUnits(k) : list).filter(n => rankKind(n) === k && photoAny(n));
 const lvlNeed0 = (k, list) => {
   if (!k) return 0;
@@ -60,6 +64,8 @@ const NEW = [
   ren(block(MODEL, 'const cbGenera = ', ';\n', {through: 1, file: 'model.js'}), ['cbGeneraCalc', 'cbGenera']),
   ren(block(MODEL, 'const startPCalc = ', 'const startP = ', {file: 'model.js'}), ['startPCalc']),
   ren(block(MODEL, 'const startP = typeof', ';\n', {through: 1, file: 'model.js'}), ['startPCalc', 'startP']),
+  ren(block(MODEL, 'const imrSaidCalc = ', '\n};\n', {through: 1, file: 'model.js'}), ['imrSaidCalc']),
+  ren(block(MODEL, 'const imrSaid = typeof', ';\n', {through: 1, file: 'model.js'}), ['imrSaidCalc', 'imrSaid']),
   ren(block(MODEL, 'const lvlAllCalc = ', 'const openFresh = ', {file: 'model.js'}), [
     'lvlAllCalc',
     'lvlNeedCalc',
@@ -68,7 +74,7 @@ const NEW = [
     'lvlNeed'
   ])
 ].join('\n');
-const NAMES = ['introduced', 'genScore', 'examOn', 'cbPlay', 'cbGenera', 'startP', 'lvlAll', 'lvlNeed'];
+const NAMES = ['introduced', 'genScore', 'examOn', 'cbPlay', 'cbGenera', 'startP', 'imrSaid', 'lvlAll', 'lvlNeed'];
 
 // app.js's versions and views, then the views and the reference, in the page of a rated-world player pl. The page's
 // store is the rated world's (no storeWrote): the harness bumps after each write, as the app's store.set does. The
@@ -133,6 +139,8 @@ function reads(T, ctx, r, all, ks, st, label) {
       assert.deepStrictEqual(arr(T.cbPlay()), arr(T.cbPlay0()), `${label}: cbPlay`);
       assert.deepStrictEqual(arr(T.cbGenera()), arr(T.cbGenera0()), `${label}: cbGenera`);
       assert.strictEqual(T.startP(), T.startP0(), `${label}: startP`);
+      assert.strictEqual(T.imrSaid(), T.imrSaid0(), `${label}: imrSaid`);
+      if (T.imrSaid0()) st.imr++;
     } else
       for (const kk of ks) {
         assert.deepStrictEqual(arr(T.lvlAll(kk, ctx.pool())), arr(T.lvlAll0(kk, ctx.pool())), `${label}: lvlAll ${kk}`);
@@ -208,10 +216,10 @@ function played(U, profile, seed, N, check, st, opts = {}) {
   return {pl, T};
 }
 
-const stats = () => ({reads: 0, kept: 0, units: 0, met1: 0, exam: 0, need: 0, data: 0, ops: {}});
+const stats = () => ({reads: 0, kept: 0, units: 0, met1: 0, exam: 0, need: 0, data: 0, imr: 0, ops: {}});
 const say = (t, check, st) =>
   t.diagnostic(
-    `${check ? 'VIEW_CHECK on' : 'VIEW_CHECK off'}: ${st.reads} reads, ${st.kept} of a kept value; up to ${st.units} units with a record, ${st.met1} reads of a unit met, ${st.exam} of an exam entry, ${st.need} of a level's need above 0; data versions in a run up to ${st.data}; writes ${JSON.stringify(st.ops)}`
+    `${check ? 'VIEW_CHECK on' : 'VIEW_CHECK off'}: ${st.reads} reads, ${st.kept} of a kept value; up to ${st.units} units with a record, ${st.met1} reads of a unit met, ${st.exam} of an exam entry, ${st.need} of a level's need above 0, ${st.imr} of an IMR player; data versions in a run up to ${st.data}; writes ${JSON.stringify(st.ops)}`
   );
 
 test('rated-world fish and coral runs: the units met, bars, exam entries, comeback lists, start level and level needs are the code before', t => {
@@ -229,6 +237,7 @@ test('rated-world fish and coral runs: the units met, bars, exam entries, comeba
     assert.ok(st.exam > 5, 'exam entries compared');
     assert.ok(st.need > 5, 'a level short of its group compared');
     assert.ok(st.units > 60, 'the fish units with a record');
+    assert.ok(st.imr > 0, 'a first-launch record at IMR read');
   }
 });
 

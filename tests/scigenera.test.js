@@ -146,7 +146,10 @@ test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q
   const said = rec => {
     const run = c => {
       vm.createContext(c);
-      vm.runInContext(block(src('model.js'), 'const imrOf = o =>', '\n};\n', {through: 1, file: 'model.js'}) + '\nthis.r = imrSaid();', c);
+      vm.runInContext(
+        block(src('model.js'), 'const imrOf = o =>', '// Families met first', {file: 'model.js'}) + '\nthis.r = imrSaid();',
+        c
+      );
       return c.r;
     };
     const base = {SUBJ: {id: 'fish'}, startKey: C.startKey, startEventsOf: C.startEventsOf},

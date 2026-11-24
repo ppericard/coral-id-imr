@@ -242,7 +242,9 @@ function verView(kind, name, f, now) {
     return v;
   };
 }
-const stateView = (name, f) => verView('state', name, f, stateNow);
+function stateView(name, f) {
+  return verView('state', name, f, stateNow);
+}
 // The data version now: the stored texts compared first (stateNow), as for a state view.
 const dataNow = () => (stateNow(), DATA_V);
 // A view of one argument k (a rank class, a unit), f(k) kept per k and per version: the values of a version are dropped
