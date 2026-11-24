@@ -252,6 +252,60 @@
    "form": "F",
    "keep": "best",
    "note": "Blue cast, soft at 100%"
+  },
+  "pachyseris-cand-711360178": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Night; vertical fronds"
+  },
+  "pachyseris-cand-711360179": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Closer on the frond tips"
+  },
+  "pachyseris-cand-270586301": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Night; one plate"
+  },
+  "pachyseris-cand-488111218": {
+   "view": "macro",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pachyseris-cand-488111221": {
+   "view": "macro",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Closer on the edge; softer"
+  },
+  "pachyseris-cand-745204773": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Close to the live Closer photos of this plate"
+  },
+  "pachyseris-cand-767079762": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Ridges meander rather than run parallel: Pavona or Merulina possible"
   }
  }
 }

@@ -331,6 +331,44 @@
    "quality": 2,
    "form": "M",
    "keep": "dup"
+  },
+  "goniopora-cand-467757102": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "polyps": true,
+   "keep": "best"
+  },
+  "goniopora-cand-467757143": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "polyps": true,
+   "keep": "alt",
+   "note": "Closer on the same colony"
+  },
+  "goniopora-cand-467757096": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "polyps": true,
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "goniopora-cand-453566014": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Polyp crowns, shallow focus"
+  },
+  "goniopora-cand-453566000": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "polyps": true,
+   "keep": "best",
+   "note": "Small colony with long polyps"
   }
  }
 }

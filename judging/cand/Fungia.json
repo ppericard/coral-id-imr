@@ -166,6 +166,142 @@
    "form": "U",
    "keep": "best",
    "note": "Disc half hidden, murky water and particles"
+  },
+  "fungia-cand-605666233": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Tentacles half out"
+  },
+  "fungia-cand-605666237": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Closer on the mouth; 1155 px high"
+  },
+  "fungia-cand-38715323": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Side view of the disc"
+  },
+  "fungia-cand-283712293": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "A field of mushroom corals: which one is asked?"
+  },
+  "fungia-cand-283715628": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "multi": true,
+   "note": "The same field of mushroom corals"
+  },
+  "fungia-cand-242142445": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Another mushroom coral fills the right third"
+  },
+  "fungia-cand-242142419": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Farther, with its neighbour"
+  },
+  "fungia-cand-242142545": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Another angle, with its neighbour"
+  },
+  "fungia-cand-184568548": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Tentacular lobes, oversharpened"
+  },
+  "fungia-cand-45611899": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Among Acropora branches; oversaturated"
+  },
+  "fungia-cand-507701760": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Mouth and septa, tentacles"
+  },
+  "fungia-cand-507706783": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "fungia-cand-746238064": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "fungia-cand-453530554": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Oval disc, pink rim"
+  },
+  "fungia-cand-629067776": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Acropora and other corals around a half-hidden disc"
+  },
+  "fungia-cand-629068109": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "Disc partly hidden behind branching corals"
+  },
+  "fungia-cand-733605082": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "On sand; murky"
   }
  }
 }

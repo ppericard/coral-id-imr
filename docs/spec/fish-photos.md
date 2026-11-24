@@ -44,7 +44,9 @@ the circle-1 entries (`--circle` for the other circles).
   observation's coordinates (`in_iwp`), Pierre's own included.
 - **Order** (`select`): Pierre's own observations first for every species, whatever their licence (asked for every
   species, not only those `fish.json` `present.own` counted at its last build, so a species he identified since gets
-  them too); then, for a species confirmed near Dauin (`present.near`), photos from anywhere in the Philippines and the
+  them too, and for a species with no room left: `own_prefetch`, `run --own`, which the refill runs first). Every one is
+  taken with every usable photo, whatever the room and the cap ([record](../decisions/2026-11-24-own-observations-everywhere.md));
+  their cost still comes off the species' room, so a full species takes no other observer's photo; then, for a species confirmed near Dauin (`present.near`), photos from anywhere in the Philippines and the
   Indo-West Pacific, not by distance; for any other species, the Philippines first, nearest first (within 40 km of
   Dauin, within 250 km, the rest of the country), and abroad only for a species confirmed in the Philippines
   (`present.ph`, rule C8) once the Philippines are exhausted.
@@ -169,13 +171,20 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   rejected, excluded or marked Not this); each general search is asked afresh (no stale cache) and read on (`pages`,
   `id_below`, up to `GEN_PAGES` = 5 pages of 200) while it brings fewer usable photos than the room; then FishBase
   (`fetch_fishbase.py`, offline) fills what iNaturalist left and `--rep` tags the covers, for the refilled species only.
-- **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts, cap}}): a part of the room
-  ("free", the general searches; `juvenile`, `male`, `female`, the phase searches; never the room beyond the cap) still open after the run whose
-  searches were read to their end (`ends`), or which got nothing, is searched to the end that day, under the cap the
-  species had then (`cap`); the species is skipped while every open part of its room is in a record less than
-  `RECHECK_DAYS` (30) old made under a cap at least its cap now (`pick_short`; a record without `cap` reads as the cap
-  of Q36 alone, so a family floor raised since opens it). A part opened since, a juvenile room for instance, is
-  searched; a species filled loses its record.
+- **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, room: {part: room left}, cap}}): a
+  part of the room ("free", the general searches; `juvenile`, `male`, `female`, the phase searches; never the room
+  beyond the cap) is searched to the end that day when its searches were read to their end (`ends`) and the room it
+  has left still fits a new observation (`fits`: 1, the first photo's weight), so the run took every usable
+  observation they held. The record keeps that room and the cap the species had then (`cap`). A part that got nothing
+  from searches cut short (`GEN_PAGES`, `PHASE_PAGES`), or that has less room than a new observation, is not searched
+  to the end: what lies past the pages read, or what did not fit, may still be usable. Only a part a new observation
+  fits is open: half a photo of room is left as it is. The species is skipped while every open part of its room is in
+  a record less than `RECHECK_DAYS` (30) old, with at least the room the part has now, made under a cap at least its
+  cap now (`pick_short`; a record without `cap` reads as the cap of Q36 alone, so a family floor raised since opens
+  it). So a part opened since (a juvenile room), room grown since (the judging pass or Pierre setting photos aside),
+  or a cap raised since makes the species eligible again, and new supply on iNaturalist after `RECHECK_DAYS`. A record
+  without `room` holds nothing (`load_mem`: it cannot say whether the room grew, nor whether its parts were read to
+  their end; REE-278). A species filled loses its record.
 - **Judging**: nothing is judged in the workflow (the pass is visual): the new candidates wait in `data/fish-cand.json` for
   the judging pass (`python3 tools/judging_fish.py todo`; the full `tools/brief.py` prints how many wait), whose sure
   decisions the admin's fish auto-sort applies at the next load, then Pierre's Publish (rule A1).
@@ -561,7 +570,7 @@ full list).
 - The 5-very-easy minimum is Pierre's for circle 1 (`tools/fish_judge.py` `WANT`): every circle-1 entry meets it on R2;
   the entries of circle 3 below it (`python3 tools/fish_game.py --plan` lists them) play on their curated photos alone.
 - `tools/fish_photos.py` writes the sheet-only photos only (below). Pierre's own photos reach play as candidates
-  (`tools/fetch_fish.py` `select` takes his observations first, within the species' room): this route applies rule P1.
+  (`tools/fetch_fish.py` `select` takes his observations first, whatever the species' room): this route applies rule P1.
 - `tests/subjects.test.js` checks that `fish-photos.json` holds no remote photo (but a sheet-only photo just found,
   waiting for the next run) and that its first photos are `fish-game.json`'s records; `tests/fish.smoke.js`
   (`coldHome`) that a cold first launch on fish, `fish-game.json` held back, draws Home from them and asks nothing of

@@ -114,7 +114,10 @@ now", 🐌, `app.js` `CARD_KINDS` `'sea slug'`) says what comes next, once per r
 else: the genera still without a game photo, else the mastery exams (`UNITS.seaslug` `done`, `slugNextOf`; tests:
 `tests/allmet.test.js`, `tests/seaslug.smoke.js`).
 
-**Their photos** are read from iNaturalist (`r: 1`) until the R2 step (`tools/seaslug_game.py --r2`) puts them on R2;
+**Their photos in play** are every candidate judged sure, with no game cap, as the fish's (Pierre, 2026-11-24 14:47,
+«oui», REE-272; [the decision](../decisions/2026-11-24-seaslug-no-game-cap.md)); a species with fewer than `photoTarget.start`
+(6) of them has none in play yet, and a species with a documented juvenile form plays at most `photoTarget.perJuvenileForm`
+(5) juveniles. **Their photos** are read from iNaturalist (`r: 1`) until the R2 step (`tools/seaslug_game.py --r2`) puts them on R2;
 that step is on in the Candidate photos workflow (`SEASLUG_R2`), so the photos in play that R2 lacks are uploaded with
 the fish's ([fish-photos.md](fish-photos.md)).
 
@@ -122,7 +125,7 @@ the fish's ([fish-photos.md](fish-photos.md)).
 `tools/seaslug_game.py` cuts the square tiles with the fish's code (`tools/fish_game.py` `tile_crop`, `tile_write`,
 `tile_only`, nothing copied) for a record that carries the animal's box (`bb`: a judgement's, read as
 `fish_game.py` `box_of` reads it) and whose tags pass the sea slugs' tile rule (`seaslug_game.py` `tile_tags`: the fish's `tile_tags` plus the dorsal view,
-the sea slugs' commonest good one; integrator's call, easy to correct; 2,132 of the 3,014 photos pass). The boxes come from a bulk box pass
+the sea slugs' commonest good one; integrator's call, easy to correct; 2,132 of the 3,014 photos then in play passed). The boxes come from a bulk box pass
 (2026-11-20: 2,064 of the 2,132 photos that pass the rule carry one, in 265 species, 232 with four or more; the others
 are no box: cut by the frame, two animals, hidden, or a square that would show another slug) judged on
 `judging/SEASLUG.md` "The animal's box" and imported as `bb` in the judging files (checked by `tools/judging_fish.py

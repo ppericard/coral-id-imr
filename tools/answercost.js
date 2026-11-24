@@ -4,38 +4,50 @@
 // machine's load, so a ceiling on them can fail a check. Offline: reads and serves the repository's files, sends nothing
 // (rule D1), the player is signed out, no photo is served.
 //
-//   node tools/answercost.js                                  the study's states: fish 50 and 3,000 answers, corals 3,000
-//   node tools/answercost.js --states fish:50,fish:500        other states (subject:answers, subject fish|coral)
+//   node tools/answercost.js                                  every subject at three histories: fish, corals and sea slugs at
+//                                                             50, 500 and 3,000 answers (STATES; CI's "answer cost" job runs this)
+//   node tools/answercost.js --states fish:50,fish:500        other states (subject:answers, subject fish|coral|seaslug)
 //   node tools/answercost.js --dump A.json,B.json             saved states made earlier (tools/learnsim.js --dump)
 //   node tools/answercost.js --budget tools/answercost-budget.json   fail (exit 1) when a count passes its ceiling
 //   node tools/answercost.js --write-budget FILE [--margin 1.25] [--also A.json,B.json]   write the measured counts (the
 //                                                             largest, with the --out files of other runs), times the
 //                                                             margin, as the ceilings of FILE (the states measured replace theirs)
-//   [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off] [--out counts.json] [--cache DIR] [--regen]
+//   [--n 8] [--warm 2] [--seed 1|1,2,3|off] [--clock 30|SECONDS|off] [--out counts.json] [--cache DIR] [--regen]
+//   [--par N]   N states made or counted at once (N browsers; default 1, 3 on CI, where the run is the whole machine's)
+//   [--data-now]   the data (.json files) of the tree under test, not of the pinned tree (to see what a refill changes)
 //
-// A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the fish or coral subject, the page's own
-// answers) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in the temporary directory, shared by
-// every worktree); a state of 3,000 fish answers takes 5 to 14 minutes to make (by the machine's load), 3,000 corals about 1 minute 20. The
-// page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
+// A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the page's own answers; the sea slugs play the
+// fish part of the profile, the same engine) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in
+// the temporary directory, shared by every worktree). The missing states of a subject are made by one run to the longest
+// of them, which saves each of the others on its way: the nine states of STATES take about 2 minutes 15 s on a quiet 4-core
+// machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting them 40 s
+// at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
 // formats), each through the tap, the feedback, the deferred planning, Next and its top-up. V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
 // Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
-// seed (fish 3,000 answers: 1.8 to 2.6 M calls over seeds 1 to 3); with the seed fixed the same state still differs by up
-// to 15% from run to run (what the page schedules for idle time), so a ceiling carries a margin. The page's clock starts --clock seconds (30) after the state's last answer, so the
-// player is in the middle of a session whenever the file is played: a gap of several hours since the last answer starts
-// a comeback (model.js rustNow), which draws from fewer units and costs less (fish 50 answers: 0.36 M calls an answer after
-// a gap of hours, 0.51 M inside a session). --clock off: the machine's clock, so the file's age decides.
+// seed (fish 3,000 answers: 0.3 to 0.4 M calls over seeds 1 to 3), and a ceiling is the largest over three seeds times a
+// margin. With the seed fixed a count is repeatable (REE-281): the page's clock is virtual (Date and performance.now stand
+// still between the tool's ticks, 4 s of thinking and 6 s of pause an answer), the random numbers start over from the seed
+// at each tick, every photo is the same 1 x 1 picture served at once, and the data (.json) is the pinned tree's, so
+// neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
+// (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
+// seconds (30) after the state's last answer, so the player is in the middle of a session whenever the file is played: a
+// gap of several hours since the last answer starts a comeback (model.js rustNow), which draws from fewer units and costs
+// less (fish 50 answers: 0.36 M calls an answer after a gap of hours, 0.51 M inside a session). --clock off: the machine's
+// clock, so the file's age decides (and the run is not repeatable).
 //
-// Heavy (rule W24): it takes the machine slot before it starts Chromium. A state of 3,000 fish answers is not part of
-// any routine check (REE-265 question c is open); tests/answercost.test.js runs the small states only.
+// Heavy (rule W24): it takes the machine slot before it starts Chromium. No routine local check runs it (Pierre,
+// 2026-11-24 14:06: a minute or two a check, times the checks, times the agents, climbs very fast): the unit tests
+// (tests/answercost.test.js) hold only its pure parts, and every count against the budget runs in CI's "answer cost" job
+// (.github/workflows/smokes.yml), in parallel with the smokes. By hand, for an agent working on speed:
 //   SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget tools/answercost-budget.json
 'use strict';
 const fs = require('fs'),
   os = require('os'),
   path = require('path'),
   http = require('http'),
-  {spawnSync} = require('child_process');
+  {spawn, spawnSync} = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 // The files whose functions are counted (the app's scripts).
@@ -55,9 +67,13 @@ const WATCH = [
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',
   'rtMedian', 'domUpdate', 'domScore', 'shownAll', 'varLeft', 'distractors', 'trapsFor', 'confOf', 'pairConf', 'confusable', 'answersSoFar', 'tally'
 ];
-// The study's states (section 1.2), and what a budget holds by default (--write-budget): the total, the storage and the
-// functions whose count grew with the state in the study.
-const STUDY = 'fish:50,fish:3000,coral:3000';
+// The states the budget holds: every subject at a short history, a medium one and a long one (REE-274: the app's
+// optimisations are for every subject, so every subject is measured; the fish alone are the heaviest, not the target). And what a
+// budget holds by default (--write-budget): the total, the storage and the functions whose count grew with the state in
+// the study.
+const SUBJECTS = ['fish', 'coral', 'seaslug'];
+const HISTORIES = [50, 500, 3000];
+const STATES = SUBJECTS.flatMap(s => HISTORIES.map(n => `${s}:${n}`)).join(',');
 const BUDGETED = ['namedCalls', 'getCalls', 'getChars', 'setChars'];
 const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV'];
 // A ceiling never below this many calls, so a function the state does not call today may call a few.
@@ -74,8 +90,8 @@ function parseStates(spec) {
     .split(',')
     .filter(Boolean)
     .map(s => {
-      const m = /^(fish|coral):(\d+)$/.exec(s.trim());
-      if (!m || Number(m[2]) < 1) throw new Error(`bad state ${s} (fish:50, coral:3000: subject fish or coral, then the answers)`);
+      const m = new RegExp(`^(${SUBJECTS.join('|')}):(\\d+)$`).exec(s.trim());
+      if (!m || Number(m[2]) < 1) throw new Error(`bad state ${s} (fish:50, coral:3000: subject ${SUBJECTS.join(', ')}, then the answers)`);
       return {name: `${m[1]}:${m[2]}`, subject: m[1], answers: Number(m[2])};
     });
 }
@@ -123,17 +139,39 @@ function over(row, budget) {
     .map(([k, ceil]) => ({state: row.state, metric: k, value: m[k], ceiling: ceil}));
 }
 
+// Whether the page's history (H, read after the warm-up answers it played) is far from the state's: more than 5% (at least
+// 10 answers) off the state's answers plus the warm-up.
+const historyOff = (H, answers, warm) => !(Math.abs(H - warm - answers) <= Math.max(10, 0.05 * answers));
+
 const fmt = x => (x === undefined || x === null ? '-' : Math.round(x).toLocaleString('en-US'));
+
+// What a run says against a budget file: {lines, bad, annotations}. Each count over its ceiling is named (state, count,
+// value, ceiling) and fails the run; annotations are the same as GitHub's error lines, which CI shows on the job.
+function verdict(rows, budget, file) {
+  const bad = rows.flatMap(r => over(r, budget)),
+    none = rows.filter(r => !(budget.states || {})[r.state]).map(r => r.state),
+    lines = [],
+    annotations = [];
+  if (none.length) lines.push(`\nNo ceiling for ${none.join(', ')} in ${file}: not checked.`);
+  for (const b of bad) {
+    lines.push(`OVER BUDGET ${b.state}: ${b.metric} ${fmt(b.value)} per answer, ceiling ${fmt(b.ceiling)}`);
+    annotations.push(`::error title=Answer cost over budget::${b.state}: ${b.metric} ${fmt(b.value)} per answer, ceiling ${fmt(b.ceiling)} (${file})`);
+  }
+  if (bad.length) lines.push(`\n${bad.length} count${bad.length > 1 ? 's' : ''} over the budget of ${file}: an answer now does more work than it did.`);
+  else lines.push(`\nWithin budget (${file}): ${rows.filter(r => (budget.states || {})[r.state]).map(r => r.state).join(', ') || 'no state'}.`);
+  return {lines, bad, annotations};
+}
 const mil = x => (x >= 1e5 ? (x / 1e6).toFixed(2) + ' M' : fmt(x));
 
 // The study's table (section 1.2), one line a state, from the rows.
 function table(rows) {
   const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
+    multi = new Set(rows.map(r => r.seed)).size > 1, // several seeds: the seed beside the state
     line = r => {
       const m = metrics(r),
         s = r.size;
       return [
-        r.state,
+        multi ? `${r.state} (seed ${r.seed})` : r.state,
         fmt(s.records),
         fmt(s.play),
         fmt(s.tree),
@@ -164,49 +202,132 @@ function writeBudget(file, rows, margin) {
 // ---------------------------------------------------------------------------------------------------------------
 // States: made by tools/learnsim.js, kept in the cache.
 
-// The cache holds one folder per way the states are made (GEN), so a change of the way never reuses an older state.
+// The players are made on a PINNED version of the app, not on the one being counted (REE-274): a player's saved state is
+// what the app of its day made of the same simulated person, and a change of the draw or of the rules changes the player
+// the app makes (the sea slugs' 500 answers: 82 units met on one commit, 68 after the ease weight changed, and twice the
+// `scoreOf` calls), which would move the counts of a change that did not touch the code counted. The pin is a commit of
+// main; the app of that commit is read with `git archive` (fetched when this clone lacks it) and served to learnsim
+// (--root); the tools, the profiles and the answering are the current ones. The states are what an older save is: the
+// version counted must read them. The same pin holds the DATA the count loads (every .json file the page asks for:
+// data.json, fish-game.json, seaslug-game.json, curation.json, ...): the code counted is the tree under test, its data is
+// the pinned tree's, so a bot's refill of the photos (a Candidate photos commit changes seaslug-game.json and data/cand.json
+// on main, with no change of code) never moves a count, and the players' units are the data's they were made on.
+// A change that needs newer data (a new field the code reads) moves the pin, as below. Moving the pin means making the
+// players again and setting every ceiling again (--write-budget with the three seeds), in a PR of its own;
+// tests/answercost.test.js reads this line.
+const PLAYERS_AT = 'f848c3d4fa92eec4d6777871431f067ff1f48b74';
+// The cache holds one folder per way the states are made (GEN) and per pin, so neither a change of the way nor of the pin
+// ever reuses an older state.
 const GEN = 'beyond';
-const cacheDir = o => path.join(o || process.env.REEFID_ANSWERCOST_CACHE || path.join(os.tmpdir(), 'reefid-answercost'), GEN);
+const cacheDir = o => path.join(o || process.env.REEFID_ANSWERCOST_CACHE || path.join(os.tmpdir(), 'reefid-answercost'), `${GEN}-${PLAYERS_AT.slice(0, 7)}`);
+
+// The pinned app as files, in DIR/app (made once).
+function ensureApp(dir) {
+  const app = path.join(dir, 'app');
+  if (fs.existsSync(path.join(app, '.pinned'))) return app;
+  const git = (a, o) => spawnSync('git', a, {cwd: ROOT, maxBuffer: 1 << 29, ...o});
+  if (git(['cat-file', '-e', `${PLAYERS_AT}^{commit}`]).status !== 0) {
+    const f = git(['fetch', '--quiet', '--depth=1', 'origin', PLAYERS_AT], {encoding: 'utf8'});
+    if (f.status !== 0) throw new Error(`the pinned version of the app (${PLAYERS_AT.slice(0, 7)}) is not in this clone and git fetch could not get it: ${String(f.stderr).slice(-300)}`);
+  }
+  const tmp = fs.mkdtempSync(path.join(dir, '.app-')),
+    ar = git(['archive', PLAYERS_AT]),
+    tar = ar.status === 0 ? spawnSync('tar', ['-x', '-C', tmp], {input: ar.stdout, maxBuffer: 1 << 24}) : ar;
+  if (ar.status !== 0 || tar.status !== 0) {
+    fs.rmSync(tmp, {recursive: true, force: true});
+    throw new Error(`the pinned version of the app (${PLAYERS_AT.slice(0, 7)}) could not be read with git archive: ${String(ar.stderr || tar.stderr).slice(-300)}`);
+  }
+  fs.writeFileSync(path.join(tmp, '.pinned'), PLAYERS_AT + '\n');
+  fs.rmSync(app, {recursive: true, force: true});
+  fs.renameSync(tmp, app);
+  return app;
+}
 const stateFile = (dir, st) => path.join(dir, `${st.subject}-${PLAYER.profile}-${PLAYER.seed}-${st.answers}.json`);
 
-// The file of a state, made when the cache has none (or --regen).
-function ensureState(st, dir, regen) {
-  const f = stateFile(dir, st);
-  if (!regen && fs.existsSync(f)) return f;
-  fs.mkdirSync(dir, {recursive: true});
-  const tmp = fs.mkdtempSync(path.join(dir, '.new-'));
-  const t0 = Date.now();
-  console.error(`answercost: making ${st.name} with tools/learnsim.js (${PLAYER.profile}, seed ${PLAYER.seed})…`);
-  const r = spawnSync(
-    process.execPath,
-    [
-      path.join(__dirname, 'learnsim.js'),
-      // --seeds 1 plays seed 1 (learnsim: seeds 1 to N); the fish player says yes to the card that offers a part of the slate by
-      // choice, as the study's did (the coral player meets no such card).
-      ...['--subject', st.subject, '--profiles', PLAYER.profile, '--seeds', String(PLAYER.seed), '--questions', String(st.answers)],
-      ...['--choice', 'auto', ...(st.subject === 'fish' ? ['--beyond', 'yes'] : []), '--workers', '1', '--dump', tmp, '--dump-at', String(st.answers)]
-    ],
-    {encoding: 'utf8', maxBuffer: 1 << 26}
+// Runs fn on each item, at most par at once; the results in the items' order.
+async function pool(items, par, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({length: Math.max(1, Math.min(par, items.length))}, async () => {
+      for (let i = next++; i < items.length; i = next++) out[i] = await fn(items[i], i);
+    })
   );
-  const made = path.join(tmp, path.basename(f));
-  if (r.status !== 0 || !fs.existsSync(made)) {
-    fs.rmSync(tmp, {recursive: true, force: true});
-    throw new Error(`learnsim did not make ${st.name} (exit ${r.status}): ${(r.stderr || r.stdout || '').slice(-600)}`);
-  }
-  fs.renameSync(made, f);
-  fs.rmSync(tmp, {recursive: true, force: true});
-  console.error(`answercost: ${st.name} made in ${Math.round((Date.now() - t0) / 1000)} s.`);
-  return f;
+  return out;
+}
+
+// One run of learnsim for a subject, to its longest missing state, saving each missing state of that subject on the
+// way (--dump-at): the player and the seed are the same whatever the length, so the state at 500 answers of a run to 3,000
+// is the state at 500 answers of a run to 500. The card that offers a part of the slate by choice is answered yes on the
+// subjects that have it (the fish and the sea slugs, their circle 3), as the study's was; the corals meet none.
+function makeSubject(subject, answers, dir, app) {
+  const tmp = fs.mkdtempSync(path.join(dir, '.new-')),
+    t0 = Date.now(),
+    last = Math.max(...answers);
+  console.error(`answercost: making ${subject}:${answers.join(',')} with tools/learnsim.js (${PLAYER.profile}, seed ${PLAYER.seed})…`);
+  const args = [
+    path.join(__dirname, 'learnsim.js'),
+    // --seeds 1 plays seed 1 (learnsim: seeds 1 to N)
+    ...['--subject', subject, '--profiles', PLAYER.profile, '--seeds', String(PLAYER.seed), '--questions', String(last)],
+    ...['--choice', 'auto', ...(subject === 'coral' ? [] : ['--beyond', 'yes']), '--workers', '1', '--dump', tmp, '--dump-at', answers.join(',')],
+    ...['--root', app]
+  ];
+  return new Promise((ok, fail) => {
+    let err = '';
+    const ch = spawn(process.execPath, args, {stdio: ['ignore', 'pipe', 'pipe']});
+    ch.stdout.on('data', d => (err = (err + d).slice(-2000)));
+    ch.stderr.on('data', d => (err = (err + d).slice(-2000)));
+    ch.on('error', fail);
+    ch.on('close', code => {
+      try {
+        const made = answers.map(n => [path.join(tmp, `${subject}-${PLAYER.profile}-${PLAYER.seed}-${n}.json`), stateFile(dir, {subject, answers: n})]);
+        if (code !== 0 || made.some(([f]) => !fs.existsSync(f))) throw new Error(`learnsim did not make ${subject}:${answers.join(',')} (exit ${code}): ${err.slice(-600)}`);
+        for (const [from, to] of made) fs.renameSync(from, to);
+        console.error(`answercost: ${subject}:${answers.join(',')} made in ${Math.round((Date.now() - t0) / 1000)} s.`);
+        ok();
+      } catch (e) {
+        fail(e);
+      } finally {
+        fs.rmSync(tmp, {recursive: true, force: true});
+      }
+    });
+  });
+}
+
+// The files of the states, made when the cache has none (or --regen): one run a subject, par at once.
+async function ensureStates(states, dir, regen, par) {
+  const need = {};
+  for (const s of states)
+    if (!s.file && (regen || !fs.existsSync(stateFile(dir, s)))) (need[s.subject] = need[s.subject] || new Set()).add(s.answers);
+  if (!Object.keys(need).length) return states.map(s => s.file || stateFile(dir, s));
+  fs.mkdirSync(dir, {recursive: true});
+  const app = ensureApp(dir);
+  await pool(Object.entries(need), par, ([subject, answers]) => makeSubject(subject, [...answers].sort((a, b) => a - b), dir, app));
+  return states.map(s => s.file || stateFile(dir, s));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 // The count, in Chromium.
 
+// The picture every photo is (a 1 x 1 PNG).
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2'};
-const serve = (req, res) => {
-  const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
-    f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
-  if (!f.startsWith(ROOT)) return res.writeHead(403), res.end();
+// The file a request is served from: the code (and everything else) from ROOT, the tree under test; a .json file from
+// DATAROOT, the pinned tree, when it holds one (a .json it lacks, a file added since the pin, comes from ROOT); null when
+// the path leaves the tree.
+function pick(root, dataRoot, u) {
+  const rel = u.endsWith('/') ? u + 'index.html' : u,
+    f = path.join(root, rel);
+  if (!f.startsWith(root)) return null;
+  if (dataRoot && path.extname(f) === '.json') {
+    const d = path.join(dataRoot, rel);
+    if (d.startsWith(dataRoot) && fs.existsSync(d)) return d;
+  }
+  return f;
+}
+const serveFrom = dataRoot => (req, res) => {
+  const f = pick(ROOT, dataRoot, decodeURIComponent(new URL(req.url, 'http://x').pathname));
+  if (!f) return res.writeHead(403), res.end();
   fs.readFile(f, (e, b) => {
     if (e) return res.writeHead(404), res.end();
     res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
@@ -226,6 +347,9 @@ async function prep(p) {
       if (b) return (b.click(), 'card');
       window.smokeTiles && smokeTiles();
       if (document.querySelector('#view .q:not(.done) :is([data-c], [data-w], .tyform input):not([disabled])')) return 'ready';
+      // A question whose photo did not load (the tool serves none) closes its answers: the page's own "Another question".
+      const fb = document.querySelector('#qfail button');
+      if (fb) return (fb.click(), 'another');
       const nx = document.querySelector('#view .q.done') && document.getElementById('next');
       if (nx) return (nx.click(), 'next');
       return 'wait';
@@ -241,17 +365,31 @@ const settle = p =>
     () => new Promise(ok => setTimeout(() => requestIdleCallback(() => setTimeout(() => requestIdleCallback(ok, {timeout: 20000}), 120), {timeout: 20000}), 120))
   );
 // One answer through the page's own controls, then Next; its format, or null when no question came.
-async function oneAnswer(p, i) {
-  if (!(await prep(p))) return null;
-  await settle(p);
-  let fmt;
-  try {
-    fmt = (await p.evaluate(pick => smokeAnswer(pick), i % 4 !== 3)).fmt; // three right, one wrong
-  } catch (e) {
+// why: where the reason of a missing answer is left (what stood between the player and the question).
+async function oneAnswer(p, i, why) {
+  if (!(await prep(p))) {
+    why.push(
+      'no question: ' +
+        (await p.evaluate(
+          () =>
+            `${location.hash} | cards: ${[...document.querySelectorAll('.unlock')].map(x => x.className + ' "' + x.innerText.slice(0, 60).replace(/\s+/g, ' ') + '"').join('; ')} | view: ${((document.getElementById('view') || {}).innerText || '').slice(0, 100).replace(/\s+/g, ' ')}`
+        ))
+    );
     return null;
   }
   await settle(p);
-  await p.evaluate(() => document.getElementById('next') && document.getElementById('next').click());
+  let fmt;
+  try {
+    // 4 s to read and answer; the virtual clock (count) stands still otherwise
+    const r = await p.evaluate(pick => (window.__tick && __tick(4000), smokeAnswer(pick)), i % 4 !== 3); // three right, one wrong
+    fmt = r.fmt;
+    (why.asked = why.asked || []).push(r.t); // the units asked (the row's `asked`: what a count is of)
+  } catch (e) {
+    why.push('smokeAnswer: ' + String(e.message).slice(0, 200));
+    return null;
+  }
+  await settle(p);
+  await p.evaluate(() => (window.__tick && __tick(6000), document.getElementById('next') && document.getElementById('next').click()));
   await settle(p);
   return fmt;
 }
@@ -267,34 +405,54 @@ function lastAnswerMs(ls, file) {
 }
 
 // The row of one saved state: its sizes, the calls per answer, the storage traffic per answer.
-async function count(browser, base, file, name, o) {
+// expect ({subject, answers}, for a state made here): what the page must have loaded, or the run fails naming the state.
+async function count(browser, base, file, name, o, expect) {
   const PAGE = require(path.join(ROOT, 'tests', 'answer.js')).PAGE,
     ls = JSON.parse(fs.readFileSync(file, 'utf8')),
     ctx = await browser.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
-  // Nothing outside the repository, no photo: the page asks nothing of the network and the count does not depend on what
-  // the checkout holds.
+  // Nothing outside the repository: the page asks nothing of the network and the count does not depend on what the
+  // checkout holds. Every photo is the same 1 x 1 picture, served at once: photos that fail, each when its error event
+  // comes, change which photos the draw may pick (gamePhotoOk) while the page runs, and the same seed then counted two
+  // different sequences of questions (REE-281); loaded at once they cannot.
   await ctx.route(
-    u => !u.href.startsWith(base) || /\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(u.href).pathname),
-    r => r.abort()
+    u => /\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(u.href).pathname),
+    r => r.fulfill({status: 200, contentType: 'image/png', body: PIXEL})
+  );
+  await ctx.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(r.request().url()).pathname) ? r.fallback() : r.abort())
   );
   await ctx.addInitScript(
     ({ls, seed, ref}) => {
       if (ref !== null) {
-        // The page's clock runs from the state's own time: the rust since the last answer, the comeback, the time since the
-        // first launch read the same whenever the state is played.
+        // The page's clock is a VIRTUAL one, from the state's own time: the rust since the last answer, the comeback, the time
+        // since the first launch read the same whenever the state is played, and it stands still between the tool's ticks
+        // (window.__tick, once a thinking time and once a pause an answer: the page's Date and performance.now). A clock that ran
+        // with the machine's moved every weight a little, and the draw, with the same seed, flipped to another genus now and then:
+        // the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time (REE-281).
         const D = Date,
-          off = ref - D.now();
+          V = (window.__vclock = {t: ref, p: performance.now()});
         window.Date = class extends D {
           constructor(...a) {
-            super(...(a.length ? a : [D.now() + off]));
+            super(...(a.length ? a : [V.t]));
           }
           static now() {
-            return D.now() + off;
+            return V.t;
           }
+        };
+        performance.now = () => V.p;
+        // Each tick also starts the random numbers over from the seed and the tick's number: what an idle task drew between two
+        // answers (how many numbers, in which order) cannot change the draw of the question that follows.
+        let ticks = 0;
+        window.__tick = ms => {
+          V.t += ms;
+          V.p += ms;
+          if (seed !== null) window.__reseed(++ticks);
         };
       }
       if (seed !== null) {
         let a = seed >>> 0; // mulberry32
+        window.__reseed = n => (a = (seed + Math.imul(n, 0x9e3779b1)) >>> 0);
         Math.random = () => {
           a = (a + 0x6d2b79f5) >>> 0;
           let t = Math.imul(a ^ (a >>> 15), 1 | a);
@@ -319,7 +477,7 @@ async function count(browser, base, file, name, o) {
   await p.waitForLoadState('networkidle');
   if (!/quiz/.test(await p.evaluate(() => location.hash))) await p.evaluate(() => (typeof go === 'function' ? go('quiz') : (location.hash = '#quiz')));
   await p.waitForTimeout(800);
-  for (let i = 0; i < o.warm; i++) await oneAnswer(p, i);
+  for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
   const size = await p.evaluate(() => {
     const units = Object.keys(P).filter(n => n !== LEVEL),
@@ -341,6 +499,11 @@ async function count(browser, base, file, name, o) {
       Pchars: JSON.stringify(P).length
     };
   });
+  // The page is on the state's subject, with the state's history: a state that loaded as another subject, or with its
+  // history lost, would be counted as another player's work and read as a cheap one.
+  if (expect && expect.subject && size.subj !== expect.subject) throw new Error(`${name}: the page loaded the subject ${size.subj}, not ${expect.subject}`);
+  if (expect && expect.answers && historyOff(size.H, expect.answers, o.warm))
+    throw new Error(`${name}: the page holds ${size.H} answers (after ${o.warm} of warm-up) of the state's ${expect.answers}`);
   // The storage's own boundary (localStorage getItem and setItem, whoever calls them: store.get and store.set, the kept
   // queues' direct writes): calls and characters read and written per answer.
   await p.evaluate(() => {
@@ -368,11 +531,14 @@ async function count(browser, base, file, name, o) {
   await cdp.send('Profiler.enable');
   await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
   const fmts = [];
-  for (let i = o.warm; i < o.warm + o.n; i++) fmts.push(await oneAnswer(p, i));
+  const why = [];
+  for (let i = o.warm; i < o.warm + o.n; i++) fmts.push(await oneAnswer(p, i, why));
   const {result} = await cdp.send('Profiler.takePreciseCoverage');
   await cdp.send('Profiler.stopPreciseCoverage');
   const n = fmts.filter(Boolean).length;
-  if (!n) throw new Error(`${name}: no answer was played (${errs.join('; ') || 'no page error'})`);
+  // Most of the answers played, and no page error: a count over a broken page is no count.
+  if (n < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${n} of ${o.n} answers were played (${errs.join('; ') || 'no page error'}; ${why[0] || 'no reason seen'})`);
+  if (errs.length) throw new Error(`${name}: page errors: ${errs.join('; ')}`);
   const by = new Map();
   let total = 0;
   for (const s of result) {
@@ -395,6 +561,7 @@ async function count(browser, base, file, name, o) {
     size,
     answers: n,
     fmts: fmts.join(','),
+    asked: why.asked || [],
     errs,
     namedCalls: per(total),
     store: {
@@ -415,8 +582,8 @@ async function count(browser, base, file, name, o) {
 // ---------------------------------------------------------------------------------------------------------------
 
 const USAGE =
-  'usage: node tools/answercost.js [--states fish:50,fish:3000,coral:3000 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
-  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen]';
+  'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
+  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now]';
 
 async function main() {
   const argv = process.argv.slice(2),
@@ -425,49 +592,71 @@ async function main() {
       return i >= 0 && argv[i + 1] !== undefined && !argv[i + 1].startsWith('--') ? argv[i + 1] : d;
     };
   if (argv.includes('--help') || argv.includes('-h')) return console.log(USAGE);
-  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen']);
+  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now']);
   for (const a of argv.filter(a => a.startsWith('--')))
     if (!known.has(a.slice(2))) return (console.error(`unknown option ${a}\n${USAGE}`), process.exit(2));
   let states;
   try {
     const dumps = arg('dump', '').split(',').filter(Boolean);
     if (dumps.length && arg('states', '')) throw new Error('--states or --dump, not both');
-    states = dumps.length ? dumps.map(f => ({name: path.basename(f, '.json'), file: path.resolve(f)})) : parseStates(arg('states', STUDY));
+    states = dumps.length ? dumps.map(f => ({name: path.basename(f, '.json'), file: path.resolve(f)})) : parseStates(arg('states', STATES));
   } catch (e) {
     return (console.error(`${e.message}\n${USAGE}`), process.exit(2));
   }
   const o = {
       n: Number(arg('n', 8)),
       warm: Number(arg('warm', 2)),
-      seed: arg('seed', '1') === 'off' ? null : Number(arg('seed', 1)),
+      // --seed 1,2,3: each state counted once a seed (rows of one state, which --write-budget takes the largest of)
+      seeds: arg('seed', '1') === 'off' ? [null] : arg('seed', '1').split(',').map(Number),
       clock: arg('clock', '30') === 'off' ? null : Number(arg('clock', 30))
     },
     margin = Number(arg('margin', 1.25)),
+    par = Number(arg('par', process.env.CI ? 3 : 1)),
     budgetFile = arg('budget', null),
     budget = budgetFile ? JSON.parse(fs.readFileSync(path.resolve(budgetFile), 'utf8')) : null;
-  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1)) return (console.error(USAGE), process.exit(2));
+  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1 && o.seeds.every(s => s === null || Number.isInteger(s)))) return (console.error(USAGE), process.exit(2));
 
-  // From here on the run is heavy: the machine slot first (rule W24), for the states to make and the count.
+  // From here on the run is heavy: the machine slot first (rule W24, a no-op on CI), for the states to make and the count.
   await require('../tests/slot.js')('tools/answercost.js');
-  const dir = cacheDir(arg('cache', null)),
-    files = states.map(s => s.file || ensureState(s, dir, argv.includes('--regen')));
+  const t0 = Date.now(),
+    dir = cacheDir(arg('cache', null)),
+    files = await ensureStates(states, dir, argv.includes('--regen'), par);
   const {chromium} = require('playwright');
-  const server = http.createServer(serve);
+  // The page's data is the pinned tree's, its code the tree under test's (--data-now: the tree's own data, to see what a
+  // refill changes).
+  fs.mkdirSync(dir, {recursive: true});
+  const server = http.createServer(serveFrom(argv.includes('--data-now') ? null : ensureApp(dir)));
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
-  const base = `http://127.0.0.1:${server.address().port}/`,
-    browser = await chromium.launch(),
-    rows = [];
+  const base = `http://127.0.0.1:${server.address().port}/`;
+  let rows;
   try {
-    for (let i = 0; i < states.length; i++) {
-      const t0 = Date.now();
-      rows.push(await count(browser, base, files[i], states[i].name, o));
-      console.error(`answercost: ${states[i].name} counted in ${Math.round((Date.now() - t0) / 1000)} s.`);
-    }
+    // The longest states first, so the last to finish is a short one; each worker has a Chromium of its own.
+    const jobs = states.flatMap((s, i) => o.seeds.map(seed => ({i, seed}))),
+      queue = jobs.map((j, k) => k).sort((a, b) => (states[jobs[b].i].answers || 0) - (states[jobs[a].i].answers || 0));
+    rows = new Array(jobs.length);
+    await Promise.all(
+      Array.from({length: Math.min(par, jobs.length)}, async () => {
+        const browser = await chromium.launch();
+        try {
+          for (let k = queue.shift(); k !== undefined; k = queue.shift()) {
+            const {i, seed} = jobs[k],
+              t1 = Date.now();
+            rows[k] = {...(await count(browser, base, files[i], states[i].name, {...o, seed}, states[i].subject ? states[i] : null)), seed};
+            console.error(`answercost: ${states[i].name}${o.seeds.length > 1 ? ` seed ${seed}` : ''} counted in ${Math.round((Date.now() - t1) / 1000)} s.`);
+          }
+        } finally {
+          await browser.close();
+        }
+      })
+    );
   } finally {
-    await browser.close();
     server.close();
   }
+  console.error(`answercost: ${states.length} states${o.seeds.length > 1 ? `, seeds ${o.seeds.join(',')}` : ''}, ${Math.round((Date.now() - t0) / 1000)} s in all.`);
   console.log(table(rows));
+  // CI shows the table on the job's page.
+  if (process.env.GITHUB_STEP_SUMMARY)
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Work of one answer, per state\n\n${table(rows)}\n\n`);
   if (arg('out', null)) fs.writeFileSync(path.resolve(arg('out', null)), JSON.stringify(rows, null, 1));
   if (arg('write-budget', null)) {
     // --also A.json,B.json: rows of earlier runs (--out), their largest counts counting with this run's.
@@ -479,18 +668,14 @@ async function main() {
     console.log(`\nCeilings written to ${arg('write-budget', null)} (margin x${margin}, two significant digits up, at least ${FLOOR} calls).`);
   }
   if (budget) {
-    const bad = rows.flatMap(r => over(r, budget)),
-      none = rows.filter(r => !(budget.states || {})[r.state]).map(r => r.state);
-    if (none.length) console.log(`\nNo ceiling for ${none.join(', ')} in ${budgetFile}: not checked.`);
-    for (const b of bad) console.log(`OVER BUDGET ${b.state}: ${b.metric} ${fmt(b.value)} per answer, ceiling ${fmt(b.ceiling)}`);
-    if (bad.length) {
-      console.log(`\n${bad.length} count${bad.length > 1 ? 's' : ''} over the budget of ${budgetFile}: an answer now does more work than it did.`);
-      process.exitCode = 1;
-    } else console.log(`\nWithin budget (${budgetFile}): ${rows.filter(r => (budget.states || {})[r.state]).map(r => r.state).join(', ') || 'no state'}.`);
+    const v = verdict(rows, budget, budgetFile);
+    for (const l of v.lines) console.log(l);
+    if (process.env.GITHUB_ACTIONS) for (const a of v.annotations) console.log(a);
+    if (v.bad.length) process.exitCode = 1;
   }
 }
 
-module.exports = {parseStates, metrics, roundUp, ceilings, over, table, writeBudget, stateFile, STUDY, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);

@@ -358,6 +358,38 @@
     1.0
    ],
    "note": "Noisy at 100%"
+  },
+  "dipsastraea-cand-761575955": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "dipsastraea-cand-761575956": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Oversharpened"
+  },
+  "dipsastraea-cand-765978167": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "dipsastraea-cand-765978171": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "dipsastraea-cand-767079780": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Other corals at the bottom"
   }
  }
 }

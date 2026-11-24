@@ -60,6 +60,116 @@
    "quality": 2,
    "form": "U",
    "keep": "dup"
+  },
+  "danafungia-cand-595432175": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler lies over the disc; a crop may not remove it"
+  },
+  "danafungia-cand-576424251": {
+   "view": "macro",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "danafungia-cand-576424211": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "danafungia-cand-624456481": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Dark surroundings"
+  },
+  "danafungia-cand-624456469": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "note": "Farther, another angle, blue cast"
+  },
+  "danafungia-cand-685099993": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "danafungia-cand-738673702": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Oversharpened"
+  },
+  "danafungia-cand-484777746": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "danafungia-cand-746237947": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Very close on the septal teeth, shallow focus"
+  },
+  "danafungia-cand-746237887": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "danafungia-cand-746236626": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup"
+  },
+  "danafungia-cand-543419480": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Small, camouflaged among rubble"
+  },
+  "danafungia-cand-352667783": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "A branching coral dominates; the disc is small"
+  },
+  "danafungia-cand-342666511": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1200 px"
+  },
+  "danafungia-cand-632674818": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "danafungia-cand-697670603": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Seen from the side, dark"
   }
  }
 }

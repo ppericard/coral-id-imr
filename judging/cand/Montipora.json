@@ -685,6 +685,101 @@
    "form": "F",
    "keep": "dup",
    "note": "Same colony, same framing"
+  },
+  "montipora-cand-488111149": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Strong cast; plates in tiers"
+  },
+  "montipora-cand-488111158": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Papillae on the plate"
+  },
+  "montipora-cand-488111182": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "The plate edge, ridged surface"
+  },
+  "montipora-cand-488111185": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Closer, shallow focus"
+  },
+  "montipora-cand-596085916": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Plates among upright columns of another coral"
+  },
+  "montipora-cand-596085928": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "multi": true,
+   "note": "Farther; several corals on the bommie"
+  },
+  "montipora-cand-596085927": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Upright columns of another coral fill the middle"
+  },
+  "montipora-cand-588679606": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "montipora-cand-588679720": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup"
+  },
+  "montipora-cand-588679727": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "From above; a massive coral sits in the middle"
+  },
+  "montipora-cand-745674851": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup"
+  },
+  "montipora-cand-745674844": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup"
+  },
+  "montipora-cand-767079681": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
   }
  }
 }

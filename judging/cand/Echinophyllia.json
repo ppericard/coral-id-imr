@@ -193,6 +193,16 @@
    "quality": 2,
    "form": "E",
    "keep": "dup"
+  },
+  "echinophyllia-cand-270760797": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Night plate; corallites hard to read: Oxypora or Mycedium possible"
   }
  }
 }

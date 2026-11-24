@@ -226,6 +226,51 @@
    "form": "E",
    "keep": "best",
    "note": "Strong cyan cast; features readable"
+  },
+  "favites-cand-746235479": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "favites-cand-746235376": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Polyps half out"
+  },
+  "favites-cand-746235390": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Closer, polyps out"
+  },
+  "favites-cand-746235315": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Another part, polyps out, shallow focus"
+  },
+  "favites-cand-746237841": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "favites-cand-746237797": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "favites-cand-746237746": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
   }
  }
 }

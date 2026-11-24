@@ -2120,7 +2120,8 @@ docs/reviews/2026-11-05-stats-methods-study.md. The same tool runs the rated wor
 learning change".
 
 - **Run**: `node tools/learnsim.js` with the options its header lists: `--seeds` (5), `--questions` (300), `--profiles`
-  (the subject's default list), `--workers` (up to 4), `--subject coral|fish`, `--out` (every run and the summary as
+  (the subject's default list), `--workers` (up to 4), `--subject coral|fish|seaslug` (the sea slugs play the app world
+  through the fish engine, with each profile's fish part; not the rated world), `--out` (every run and the summary as
   JSON) and those below. Each run (profile × seed) gets a fresh browser context; seeds are 1..N (`--seed0` shifts them,
   for fresh seeds), and the app's `Math.random` and the learner's own generator are both seeded from the seed, so a run
   repeats and two versions of the app compare on paired seeds. The fish's surprise questions are left out of the path.

@@ -20,7 +20,7 @@ SECRET_GH, SECRET_ADMIN = 'ghs_SECRETTOKEN0001', 'ADMINTOKEN-SECRET-0002'
 SYNC = 'https://script.google.com/macros/s/FAKE/exec'
 NOW = datetime(2026, 11, 18, 5, 0, 0, tzinfo=timezone.utc)
 INDEX = (
-    '<html><link rel="preload" href="data.json?v=0123abcdef" as="fetch">'
+    '<html><meta name="build" content="1490"><link rel="preload" href="data.json?v=0123abcdef" as="fetch">'
     '<script src="app.js?v=89abcdef01"></script><link href="style.css?v=1122334455" rel="stylesheet"></html>'
 )
 TREE = {
@@ -49,6 +49,39 @@ def root(r2_at='2026-11-15', r2_bytes=6_300_000_000, version=176):
     return d
 
 
+API = 'https://api.github.com/repos/%s/' % health.REPO
+RUNS = API + 'actions/workflows/pages.yml/runs?branch=main&status=success&per_page=100&page=%d'
+STARTED = '2026-11-18T04:50:00Z'  # Deploy Pages run 1490, the live build of the healthy day (NOW is 05:00)
+
+
+def run_row(number, started=STARTED):
+    return {'id': 9000 + number, 'run_number': number, 'run_started_at': started, 'created_at': started, 'conclusion': 'success'}
+
+
+PUB = 'a' * 40  # the commit the live run archived, when it recorded it (the `published-source` notice of its job)
+
+
+def published(sha=PUB, ahead=(), run=1490, note_title='published-source'):
+    """The three reads of a run that recorded its commit: its job, the job's annotations, `compare` of that commit to main."""
+    return {
+        API + 'actions/runs/%d/jobs?per_page=1' % (9000 + run): (200, json.dumps({'jobs': [{'id': 777}]}).encode()),
+        API + 'check-runs/777/annotations': (200, json.dumps([{'title': 'other', 'message': 'x'}, {'title': note_title, 'message': sha}]).encode()),
+        API + 'compare/%s...main?per_page=100' % PUB: (200, json.dumps({'ahead_by': len(ahead), 'commits': list(ahead)}).encode()),
+    }
+
+
+def commit_row(sha, date, subject):
+    return {'sha': sha, 'commit': {'committer': {'date': date}, 'message': subject + '\n\nbody'}}
+
+
+def deploy(commits=None, runs=None, started=STARTED):
+    """The two GitHub reads of the live-build check: the successful Deploy Pages runs, and main's commits since the live run."""
+    return {
+        RUNS % 1: (200, json.dumps({'workflow_runs': runs if runs is not None else [run_row(1490, started), run_row(1489, '2026-11-18T03:40:00Z')]}).encode()),
+        API + 'commits?sha=main&since=%s&per_page=100' % started: (200, json.dumps(commits or []).encode()),
+    }
+
+
 def routes(**over):
     """The answers of a healthy day; a key replaced by a (status, body) or a callable."""
     r = {
@@ -57,6 +90,7 @@ def routes(**over):
         SYNC + '?stats=1&av=health': (200, b'{"ok": true, "v": 176}'),
         'https://api.github.com/repos/%s/git/trees/main?recursive=1' % health.REPO: (200, json.dumps(TREE).encode()),
     }
+    r.update(deploy())
     r.update(over)
     return r
 
@@ -133,9 +167,39 @@ def main():
     stuck = dict(old)
     stuck[SYNC + '?stats=1&av=health'] = (200, b'{"ok": true, "v": 175, "vers": 190}')
     S['vers_stuck'] = go(stuck)
+    # The live build against main (REE-279). Healthy: nothing on main after the live run (NOW is 05:00, the run began 04:50).
+    # A commit is not live when its committer date is after the run's start; the oldest one waiting past 45 minutes fails.
+    new = lambda sha, date, subj: commit_row(sha, date, subj)  # noqa: E731
+    S['deploy_ahead_recent'] = go(routes(**deploy([new('aaaaaaa1111111', '2026-11-18T04:55:00Z', 'Fish judging: 86 candidates (#1536)')])))
+    S['deploy_edge'] = go(routes(**deploy([new('bbbbbbb2222222', '2026-11-18T04:50:00Z', 'dated at the run start: live')])))
+    waiting = [
+        new('ccccccc3333333', '2026-11-18T04:30:00Z', 'Candidate photos: refill the short fish species'),
+        new('ddddddd4444444', '2026-11-18T04:10:00Z', 'Photo curation: tile photos'),
+        new('eeeeeee5555555', '2026-11-18T03:30:00Z', 'dated before the live run: live'),
+    ]
+    # The live run started at 03:40: the first two commits above came after it (the oldest, 04:10, waited 50 minutes).
+    S['deploy_stale'] = go(routes(**deploy(waiting, started='2026-11-18T03:40:00Z')))
+    early = '2026-11-18T04:00:00Z'
+    S['deploy_ahead_exactly_45'] = go(routes(**deploy([new('fffffff6666666', '2026-11-18T04:15:00Z', 'x')], started=early)))
+    many = [new('%07d' % i, '2026-11-18T04:%02d:00Z' % (10 + i), 'commit %d' % i) for i in range(7)]
+    S['deploy_many'] = go(routes(**deploy(many, started=early)))
+    S['deploy_runs_403'] = go(routes(**{RUNS % 1: (403, b'')}))
+    S['deploy_runs_down'] = go(routes(**{RUNS % 1: (0, b'URLError')}))
+    S['deploy_run_missing'] = go(routes(**deploy(runs=[run_row(1480, '2026-11-18T01:00:00Z')])))
+    S['deploy_commits_500'] = go(routes(**{API + 'commits?sha=main&since=%s&per_page=100' % STARTED: (500, b'')}))
+    S['deploy_no_build'] = go(routes(**{health.SITE + 'index.html': (200, INDEX.replace('<meta name="build" content="1490">', '').encode())}))
+    S['deploy_page2'] = go(routes(**{RUNS % 1: (200, json.dumps({'workflow_runs': [run_row(1700 + i) for i in range(100)]}).encode()), RUNS % 2: (200, json.dumps({'workflow_runs': [run_row(1490)]}).encode())}))
+    # A run that recorded the commit it archived (Codex, PR #1547): main as it stood at its checkout, which can be later than the
+    # run's start. A commit dated after the start but held by the deploy is live; the commits `compare` lists are not.
+    late = new('1111111aaaaaaa', '2026-11-18T04:52:00Z', 'landed between the job start and its checkout')
+    S['deploy_pub_late_live'] = go(routes(**{**deploy([late]), **published()}))
+    S['deploy_pub_stale'] = go(routes(**published(ahead=[new('2222222', '2026-11-18T04:10:00Z', 'Photo curation: tile photos'), new('3333333', '2026-11-18T04:30:00Z', 'Candidate photos: x')])))
+    S['deploy_pub_compare_404'] = go(routes(**{**published(), API + 'compare/%s...main?per_page=100' % PUB: (404, b'')}))
+    S['deploy_pub_bad_note'] = go(routes(**published(sha='not-a-sha')))
+    S['deploy_pub_no_note'] = go(routes(**published(note_title='something-else')))
     S['tree_truncated'] = go(routes(**{'https://api.github.com/repos/%s/git/trees/main?recursive=1' % health.REPO: (200, b'{"truncated": true, "tree": []}')}))
-    S['r2_warn'] = go(routes(), rt=root(r2_bytes=7_500_000_000))
-    S['r2_exactly_70'] = go(routes(), rt=root(r2_bytes=7_000_000_000))
+    S['r2_warn'] = go(routes(), rt=root(r2_bytes=36_000_000_000))
+    S['r2_exactly_70'] = go(routes(), rt=root(r2_bytes=35_000_000_000))
     S['r2_stale'] = go(routes(), rt=root(r2_at='2026-10-01'))
     S['token_ok'] = go(routes(), env={'GITHUB_TOKEN': SECRET_GH, 'INFRA_TOKEN': SECRET_ADMIN}, post_table=with_token(infra_reply()))
     S['token_cells_warn'] = go(routes(), env={'INFRA_TOKEN': SECRET_ADMIN}, post_table=with_token(infra_reply(total=7_400_000)))
@@ -153,8 +217,10 @@ def main():
         'failed': line(S['sheet_down']['snap'], '0m'),
         'unread': line({'ok': True, 'items': []}),
         'exactly_70': line(S['r2_exactly_70']['snap']),
+        'stale': line(S['deploy_stale']['snap'], '0m'),
+        'ahead_recent': line(S['deploy_ahead_recent']['snap'], '0m'),
         'truncated': line(S['tree_truncated']['snap']),
-        'no_r2': line({'ok': True, 'items': [{'k': 'r2', 'label': 'R2 storage', 'unit': 'bytes', 'limit': 10**10, 'used': None}]}),
+        'no_r2': line({'ok': True, 'items': [{'k': 'r2', 'label': 'R2 storage', 'unit': 'bytes', 'limit': 5 * 10**10, 'used': None}]}),
     }
 
     # infra_read: the latest completed run, its first job, the annotation titled infra.

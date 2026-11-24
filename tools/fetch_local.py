@@ -10,6 +10,11 @@
 # Licences: CC0, CC BY, CC BY-NC, never share-alike (it would block a later commercial reuse), checked photo by photo.
 # drop_share_alike takes the waiting share-alike candidates out of data/cand.json at each run (never one curation.json names);
 # the share-alike photos already on the site are the admin's to keep or remove (admin To do › Share-alike), never here.
+# Pierre's own observations are no part of those caps (rule P1, docs/decisions/2026-11-24-own-observations-everywhere.md):
+# one read of his observations of every genus (own_pool), every one taken with every usable photo before the caps, the
+# Key-only need and PER_OBS apply, on the fish's and the sea slugs' criteria for his own (own_take: identified at the
+# genus or below, Research Grade or Needs ID; his photo even without a licence); they count as waiting, so a genus they
+# fill takes no other observer's. --own: his only.
 # Caps, so the pile to sort stays small: at most DAUIN_CAP Dauin observations waiting per genus, Philippines ones only
 # while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings all its photos
 # (PER_OBS guards against an odd one with dozens; a game question shows the views of one colony); sorting by view,
@@ -26,7 +31,7 @@
 # --tidy: offline, refills nothing: only puts back the photos the admin restored, drops the excluded photos and the waiting
 # share-alike candidates, and re-splits data.json / data/cand.json (tidy(), which every refill ends with), so the lists follow
 # a Publish without asking iNaturalist.
-import json, re, sys, urllib.request
+import json, math, re, sys, urllib.request
 import inat  # the one paced, retried iNaturalist client (rule C7)
 from collections import Counter
 from datajson import load_all, dump_all, curated  # data.json + data/cand.json (candidates waiting live in data/cand.json)
@@ -67,6 +72,69 @@ POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philip
 
 def get(u):
     return inat.get(u)
+
+
+OWN = 'ppericard'  # Pierre's iNaturalist login: his observations come in whatever the room (rule P1)
+DAUIN_LL, DAUIN_KM = (9.19, 123.26), 40  # DAUIN, as the fish's tier_of reads it
+DEAD = (17, 19)  # iNaturalist's annotation Alive or Dead: Dead (the fish's DEAD)
+
+
+def own_pool(get, tids):
+    """Every observation of Pierre's in the genus taxa `tids`, one search read to its end (a few hundred in all, 200 a
+    request; rule C7): Research Grade or Needs ID, never captive, with a photo (its licence is checked photo by photo in
+    own_take: his photo needs none). Each genus then takes its own from this one read, whatever its room: no per-genus
+    search of his."""
+    ids = ','.join(map(str, sorted(set(tids))))
+    q = f'https://api.inaturalist.org/v1/observations?taxon_id={ids}&user_login={OWN}&quality_grade=research,needs_id&captive=false&photos=true&order_by=id&order=desc&per_page=200'
+    out, below = [], None
+    while ids:
+        r = get(q + (f'&id_below={below}' if below else ''))['results']
+        out += r
+        if len(r) < 200: break
+        below = min(o['id'] for o in r)
+    return out
+
+
+def own_place(o):
+    """Where an observation was made: 'dauin' (within DAUIN_KM of Dauin), 'ph' (the Philippines) or 'world'."""
+    try:
+        la, lo = (float(x) for x in (o.get('location') or '').split(','))
+    except ValueError:
+        la = lo = None
+    if la is not None:
+        a, b = math.radians(DAUIN_LL[0]), math.radians(la)
+        h = math.sin((b - a) / 2) ** 2 + math.cos(a) * math.cos(b) * math.sin(math.radians(lo - DAUIN_LL[1]) / 2) ** 2
+        if 6371 * 2 * math.asin(math.sqrt(h)) <= DAUIN_KM: return 'dauin'
+    return 'ph' if 6873 in (o.get('place_ids') or []) else 'world'
+
+
+def own_take(pool, tid, usedp, confirmed=lambda: (), skip=lambda pid: False):
+    """Pierre's own observations of the genus tid in `pool` (own_pool), as [(observation, its photos, loc)], whatever the
+    genus's room, caps and waiting count (rule P1, docs/decisions/2026-11-24-own-observations-everywhere.md), as the
+    fish's and the sea slugs' (fetch_fish.usable_obs): identified at the genus or below, Research Grade or Needs ID,
+    whoever named it, in the Philippines; abroad (the one difference, rules P1 and C8) Research Grade of a species
+    confirmed in the Philippines (confirmed() gives their taxon ids). EVERY photo with an accepted licence or none (his
+    own: never share-alike nor ND) not taken yet (usedp, updated here: photo ids; skip(id): an excluded photo), never cut
+    to PER_OBS. The caller records them; they count as waiting, so they take room from others."""
+    out = []
+    for o in pool:
+        if (o.get('user') or {}).get('login') != OWN or not in_genus(o.get('taxon'), tid):
+            continue
+        if any((a.get('controlled_attribute_id'), a.get('controlled_value_id')) == DEAD and (a.get('vote_score') or 0) >= 0 for a in o.get('annotations') or []):
+            continue  # annotated Dead (Alive or Dead: Dead), as the fish's usable_obs; a down-voted annotation does not count
+        loc = own_place(o)
+        if loc == 'world' and not (accepted(o, tid, loc) and {(o.get('taxon') or {}).get('id'), *((o.get('taxon') or {}).get('ancestor_ids') or [])} & set(confirmed())):
+            continue
+        P = [ph for ph in o['photos'] if (photo_ok(ph) or not ph.get('license_code')) and str(ph['id']) not in usedp and not skip(ph['id'])]
+        if P:
+            usedp.update(str(ph['id']) for ph in P)
+            out.append((o, P, loc))
+    return out
+
+
+def cand_record(g, o, ph, loc):
+    """The candidate of genus g for photo ph of observation o, found in `loc` (data.json "cand"'s fields)."""
+    return dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'] or 'own', o=f'https://www.inaturalist.org/observations/{o["id"]}', t=o['taxon']['name'], own=o['user']['login'] == OWN, loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1}))
 
 
 def tie_key(o, P, rank):
@@ -139,7 +207,11 @@ def ph_ok(o, tid):
 
 def accepted(o, tid, loc):
     """The identification a tier accepts for genus tid: the Philippines tiers (dauin, ph) take what ph_ok takes; abroad
-    (loc world) takes Research Grade only. main uses it, and tools/photo_recheck.py asks it again of a photo in play."""
+    (loc world) takes Research Grade only. Pierre's own observation in the Philippines tiers is accepted whatever its
+    grade and agreement (the fish's and the sea slugs' rule for him; the caller checks the genus: in_genus). main and
+    own_take use it, and tools/photo_recheck.py asks it again of a photo in play."""
+    if loc != 'world' and (o.get('user') or {}).get('login') == OWN:
+        return True
     return o.get('quality_grade') == 'research' if loc == 'world' else ph_ok(o, tid)
 
 
@@ -297,12 +369,25 @@ def main():
         drop = Counter(g for g, L in cand.items() for p in L if p['f'] not in keep and not p.get('restored') and share_alike(p))
         print(json.dumps({g: {'keyonly': g in KEY_ONLY, 'need': need(g), **{k: max(0, r) for k, r in (room_for(g, w) for w in (DAUIN, PHILIPPINES))}, **({'drop': drop[g]} if drop[g] else {})} for g in GEN if not ONLY or g in ONLY}))
         return
+    # Pierre's own observations of every genus, one read (own_pool), taken whatever the genus's room, caps and Key-only need
+    # (rule P1: every one that meets the usual criteria, with every usable photo; they count as waiting for the room of
+    # the others). --own: his alone, no other search.
+    TIDS = {g: inat_taxon(g, 'coral') for g in GEN if not ONLY or g in ONLY}
+    POOL = own_pool(get, [t for t in TIDS.values() if t])
     for g in GEN:
         if ONLY and g not in ONLY: continue
+        tid = TIDS[g]
+        if not tid: print(g, 'has no active iNaturalist taxon in tools/taxonomy.json (run python3 tools/taxonomy.py): skipped'); continue
+        def confirmed(tid=tid, memo={}):  # the species of the genus confirmed in the Philippines: asked once, only for an observation abroad
+            if 'sp' not in memo: memo['sp'] = list(confirmed_species(get, tid, 'coral', '&captive=false'))
+            return memo['sp']
+        mine_ = own_take(POOL, tid, usedp, confirmed, lambda i: excluded(photo_id=i))
+        for o, P, loc in mine_:
+            for ph in P: cand.setdefault(g, []).append(cand_record(g, o, ph, loc))
+        if mine_: print(g, "Pierre's own:", len(mine_), 'observations,', sum(len(P) for _, P, _ in mine_), 'photos')
+        if '--own' in sys.argv: continue
         if need(g) == 0:
             print(g, 'enough for a Key-only genus, not refilled'); continue
-        tid = inat_taxon(g, 'coral')
-        if not tid: print(g, 'has no active iNaturalist taxon in tools/taxonomy.json (run python3 tools/taxonomy.py): skipped'); continue
         # The region around Dauin fills the Philippines room first; the whole country only takes what room is left.
         ph_room = 0
         for where in (DAUIN, REGION, PHILIPPINES, 'world'):
@@ -342,7 +427,7 @@ def main():
                 if url not in W: W.add(url); r -= 1
                 for ph in P:
                     usedp.add(str(ph['id']))
-                    out.append(dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
+                    out.append(cand_record(g, o, ph, loc))
             # Room the whole country could not fill, from ALL its observations: when the one page read is not all of them,
             # later pages may still hold some, so nothing from abroad.
             if where == PHILIPPINES: ph_room = 0 if more else r

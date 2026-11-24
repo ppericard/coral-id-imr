@@ -176,7 +176,8 @@ fish and sea slugs: the game files (`fish-game.json`, `seaslug-game.json`), not 
 and any photo with no observation are not asked (the report counts them).
 
 **Judged by the fetcher's own predicate**, called, never copied: corals `fetch_local.accepted` (the Philippines tiers:
-Research Grade, a genus-level community ID or the trusted identifier's; abroad: Research Grade only) and `in_genus`; fish
+Research Grade, a genus-level community ID or the trusted identifier's, or any grade for Pierre's own observation; abroad:
+Research Grade only) and `in_genus`; fish
 candidates `fetch_fish.usable_obs`; fish reference photos `fish_refs.passes`; sea slugs `fetch_seaslugs.usable` (a species),
 `usable_gl` (a genus-level photo) and the label (a species with no name). What a fetcher leaves to its search query is asked
 beside the predicate: the species or genus (`taxon_id`), casual and captive. A genus-level sea-slug photo whose observation was
@@ -195,8 +196,9 @@ passes whatever it finds; it fails only when it cannot be trusted (iNaturalist u
 missing). No admin Inbox point is written: the Points route is `data/points.json`, which agents write in a PR, so a
 workflow writing it would write data; the integrator turns the report's rows into points when it reads the artifact.
 
-**What the report cannot say.** Pierre's own coral photos in the curated views never came through the fetch rule (it has no
-rule for them), so those whose genus rests on his identification alone, or on one other identifier beside his coarser one,
+**What the report cannot say.** Pierre's own coral photos in the curated views did not all come through the fetch rule
+(his observations take the same identification rule as everyone's, `fetch_local.py` `own_take`; only the room is lifted),
+so those whose genus rests on his identification alone, or on one other identifier beside his coarser one,
 list as `id_lost`, marked as his own, every week; whether they stay is his call (the review, §4). The coral rule is also
 stricter than "another identifier agrees at the genus": it needs iNaturalist's genus-level community ID (or the trusted
 identifier's), so a Needs ID photo whose genus rests on one other identifier and a coarser or withdrawn identification of
@@ -248,6 +250,13 @@ commit, so no Publish is lost), then:
    - Each observation brings all its photos (up to 12, a guard only): Pierre takes at least the colony, a closer view and
      a macro, a game question shows the views of one colony, and the order of an observation's photos says nothing about
      their zoom, so sorting by view, quality and near-duplicates is the judging pass's job.
+   - **Pierre's own observations come in whatever the room** (`own_pool`, `own_take`; [record](../decisions/2026-11-24-own-observations-everywhere.md)):
+     one read of his observations of every genus (a few hundred, 200 a request), taken before the caps, the Key-only need
+     and the votes order, on the criteria the fish and the sea slugs have for him (identified at the genus or below,
+     Research Grade or Needs ID, whoever named it; his photo even without a licence, never share-alike nor ND), and
+     every usable photo, never cut to 12. One named difference: abroad, Research Grade of a species confirmed in the
+     Philippines (rules P1 and C8). They count as waiting, so a genus they fill takes no other observer's observation;
+     judged like any candidate.
 3. `tools/fetch_local.py --tidy` runs last (below), then the workflow commits `data.json` and `data/cand.json` (and `img/`,
    only for a missing smaller size of a photo git keeps) (`tests/coralcand.test.js`).
 
@@ -260,7 +269,8 @@ stop.** After each Publish the "Candidate photos" workflow refills the lists: co
 (`tools/fetch_local.py`), and the short fish species (`tools/fetch_fish.py --refill`: under the cap of Q36 net of what
 Pierre rejected, excluded or sent elsewhere, or short of easy photos; a few dozen a run, the shortest first). "No more
 candidates is no more candidates": a fish species whose search found nothing more is noted with the day
-(`tools/fish_refill.json`) and searched again only a month later; for corals, `python3 tools/cand_gaps.py` lists the
+(`tools/fish_refill.json`) and searched again a month later, or sooner when its room grows ([fish photos
+spec](fish-photos.md#automatic-refill)); for corals, `python3 tools/cand_gaps.py` lists the
 game genera with fewer than 5 candidate photos waiting only when iNaturalist still has something the search would take,
 never one with nothing better. Each search keeps its subject's area and rules (ARCHITECTURE "Photos", "Fish
 candidates"): abroad only for species confirmed in the Philippines (rule C8), never what Pierre rejected or excluded.

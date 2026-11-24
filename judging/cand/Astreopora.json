@@ -174,6 +174,45 @@
     1.0
    ],
    "note": "Half the colony overgrown by algae"
+  },
+  "astreopora-cand-605674088": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-605674098": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-745206428": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Closer than the live Corallites photo; very soft at 100%"
+  },
+  "astreopora-cand-605698862": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Algae and seagrass around"
+  },
+  "astreopora-cand-515625292": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tiered plates on a slope; genus not clear at this distance"
   }
  }
 }

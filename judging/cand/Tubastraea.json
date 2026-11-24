@@ -330,6 +330,57 @@
     0.8
    ],
    "note": "small; pink cups in a dark cluttered frame"
+  },
+  "tubastraea-cand-254863344": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0,
+    1,
+    1
+   ]
+  },
+  "tubastraea-cand-163721334": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "1280 px; soft; a small pufferfish"
+  },
+  "tubastraea-cand-270591273": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Night; crinoids among the branches"
+  },
+  "tubastraea-cand-270591462": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "note": "Another part, branches across the frame"
+  },
+  "tubastraea-cand-270591489": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "note": "Vertical branches, crinoids"
+  },
+  "tubastraea-cand-270591499": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Pink cup corals and a massive coral at the left edge"
   }
  }
 }

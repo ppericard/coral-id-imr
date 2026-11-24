@@ -25,15 +25,15 @@ test('the thresholds: a warning past 70% of a limit, never at 70%, and the same 
   assert.strictEqual(F.consts.health_warn, 0.7);
   assert.strictEqual(F.consts.brief_warn, 0.7, "the brief's");
   assert.match(read('admin.js'), /const INFRA = \{WARN: 0\.7, /, "the admin card's");
-  assert.deepStrictEqual(F.consts.limits, {cells: 10e6, pages: 1e9, r2: 10e9, slow: 5000});
+  assert.deepStrictEqual(F.consts.limits, {cells: 10e6, pages: 1e9, r2: 50e9, slow: 5000});
   // The same limits as the script (Code.gs INFRA.CELLS, TIM.SLOW) and the card (admin.js).
   assert.match(read('tools/sync/Code.gs'), /const INFRA = \{CELLS: 10000000, /);
   assert.match(read('tools/sync/Code.gs'), /SLOW: 5000, /);
   assert.match(read('admin.js'), /\{WARN: 0\.7, SLOW: 5000, BACKUP_DAYS: 8\}/);
   assert.match(read('tools/health.py'), /BACKUP_DAYS = 8/);
-  assert.strictEqual(S.ok.items.r2.warn, false, '63%');
+  assert.strictEqual(S.ok.items.r2.warn, false, '13%');
   assert.strictEqual(S.r2_exactly_70.items.r2.warn, false, 'exactly 70% is not past it');
-  assert.strictEqual(S.r2_warn.items.r2.warn, true, '75%');
+  assert.strictEqual(S.r2_warn.items.r2.warn, true, '72%');
   assert.strictEqual(S.r2_warn.ok, true, 'a warning never fails the job');
   assert.strictEqual(S.token_ok.items.cells.warn, true, '81% of the cells');
   assert.strictEqual(S.token_cells_warn.items.cells.pct, 0.74);
@@ -48,6 +48,102 @@ test('the site check: stamps, data.json, one retry, and what fails', () => {
   assert.strictEqual(level('index_down', 'site: index.html'), 'fail');
   assert.strictEqual(S.index_down.calls.filter(c => c.url.endsWith('index.html')).length, 2, 'asked twice before failing');
   assert.strictEqual(level('data_bad', 'site: data.json'), 'fail');
+});
+
+// ---- the live build against main (REE-279, option 3) ------------------------------------------------------------------------------
+const LIVE = 'site: live build vs main';
+// Whether a scenario asked GitHub for exactly this path (an equality, not a substring test of a URL).
+const asked = (sc, p) => S[sc].calls.some(c => c.url === 'https://api.github.com/repos/ppericard/coral-id-imr/' + p);
+test('the live build against main: the build number is a Deploy Pages run, a commit dated after its start is not live', () => {
+  assert.strictEqual(level('ok', LIVE), 'ok');
+  assert.match(note('ok', LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main \(by run start\)$/);
+  assert.ok(
+    asked('ok', 'actions/workflows/pages.yml/runs?branch=main&status=success&per_page=100&page=1'),
+    'the successful Deploy Pages runs of main'
+  );
+  assert.ok(asked('ok', 'commits?sha=main&since=2026-11-18T04:50:00Z&per_page=100'), "main's commits since the live run started");
+  assert.strictEqual(level('deploy_edge', LIVE), 'ok', 'dated exactly at the run start: it was there');
+  assert.strictEqual(level('deploy_page2', LIVE), 'ok', 'a run past the first 100: the next page is read');
+  assert.strictEqual(S.deploy_page2.calls.filter(c => c.url.includes('/pages.yml/runs')).length, 2);
+});
+
+test('the live build: waiting past 45 minutes fails and names the commits; inside it is a note; the snapshot keeps them', () => {
+  assert.strictEqual(level('deploy_ahead_recent', LIVE), 'notice');
+  assert.strictEqual(S.deploy_ahead_recent.ok, true, 'a deploy under way is not a failure');
+  assert.match(note('deploy_ahead_recent', LIVE), /^1 commit\(s\) on main since the live build 1490 .*5 min ago.*aaaaaaa Fish judging/);
+  assert.strictEqual(level('deploy_ahead_exactly_45', LIVE), 'notice', 'exactly 45 minutes is not past it');
+  assert.strictEqual(level('deploy_stale', LIVE), 'fail');
+  assert.strictEqual(S.deploy_stale.ok, false, 'the job fails: GitHub e-mails it and the workflow opens the health issue');
+  assert.match(
+    note('deploy_stale', LIVE),
+    /^main is 2 commit\(s\) ahead of the live build 1490 \(run started 03:40Z, by run start\); the oldest has waited 50 min \(limit 45\)/
+  );
+  assert.match(
+    note('deploy_stale', LIVE),
+    /ddddddd Photo curation: tile photos; ccccccc Candidate photos/,
+    'the commits not live, oldest first'
+  );
+  assert.doesNotMatch(note('deploy_stale', LIVE), /eeeeeee/, 'a commit dated before the live run started is live');
+  assert.match(note('deploy_many', LIVE), /7 commit\(s\) ahead.*commit 4 \(and 2 more\)$/, 'five named, the rest counted');
+  assert.deepStrictEqual(
+    S.deploy_stale.md.match(/\| site: live build vs main \| FAILED: [^|]*\|/)?.length,
+    1,
+    'the report the issue is opened from'
+  );
+  assert.strictEqual(S.ok.md.match(/live build vs main \| ok:/).length, 1);
+});
+
+test('the live build: a run that recorded the commit it archived is read by that commit, not by its start time (Codex, #1547)', () => {
+  // A commit dated 04:52, after the run's start (04:50) but held by the deploy (its checkout came later): live.
+  const k = 'deploy_pub_late_live';
+  assert.strictEqual(level(k, LIVE), 'ok');
+  assert.match(note(k, LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main \(by commit aaaaaaa\)$/);
+  assert.ok(asked(k, 'actions/runs/10490/jobs?per_page=1'), "the run's job");
+  assert.ok(asked(k, 'check-runs/777/annotations'), 'its annotations');
+  assert.ok(asked(k, `compare/${'a'.repeat(40)}...main?per_page=100`), 'compare');
+  assert.ok(!asked(k, 'commits?sha=main&since=2026-11-18T04:50:00Z&per_page=100'), 'the dates are not asked when the commit is known');
+  assert.strictEqual(S.deploy_pub_late_live.ok, true);
+  // The same commit, two commits of main after it, the oldest 50 minutes old: stale, those two named.
+  assert.strictEqual(level('deploy_pub_stale', LIVE), 'fail');
+  assert.match(note('deploy_pub_stale', LIVE), /\(run started 04:50Z, by commit aaaaaaa\); the oldest has waited 50 min/);
+  assert.match(note('deploy_pub_stale', LIVE), /Not live: 2222222 Photo curation: tile photos; 3333333 Candidate photos: x$/);
+  // No recorded commit (an older run, a note that is no SHA, a compare that fails): the dates, said.
+  for (const f of ['deploy_pub_compare_404', 'deploy_pub_bad_note', 'deploy_pub_no_note']) {
+    assert.strictEqual(level(f, LIVE), 'ok', f);
+    assert.match(note(f, LIVE), /\(by run start\)$/, f);
+  }
+  const wf = read('.github/workflows/pages.yml');
+  assert.match(wf, /echo "::notice title=published-source::\$\(git rev-parse HEAD\)"/, 'the deploy records what it archived');
+  assert.ok(wf.indexOf('title=published-source') < wf.indexOf('git archive HEAD') + 400, 'in the staging step');
+});
+
+test("the live build: every gap on GitHub's side is a note naming the status, never a failure", () => {
+  for (const k of ['deploy_runs_403', 'deploy_runs_down', 'deploy_run_missing', 'deploy_commits_500', 'deploy_no_build']) {
+    assert.strictEqual(level(k, LIVE), 'notice', k);
+    assert.strictEqual(S[k].ok, true, k + ': no failure for what the check cannot see');
+    assert.match(note(k, LIVE), /^not read: /, k);
+  }
+  assert.match(note('deploy_runs_403', LIVE), /HTTP 403.*actions: read/, "the token's missing permission is named");
+  assert.match(note('deploy_runs_down', LIVE), /no answer/);
+  assert.match(note('deploy_run_missing', LIVE), /build 1490 is not among the latest successful Deploy Pages runs/);
+  assert.match(note('deploy_commits_500', LIVE), /HTTP 500/);
+  assert.match(note('deploy_no_build', LIVE), /index\.html names no build number/);
+  assert.strictEqual(S.deploy_no_build.calls.filter(c => c.url.includes('/pages.yml/')).length, 0, 'no build number: no run is asked');
+});
+
+test('the live build: the snapshot carries a small `deploy` entry the brief names the commits from; healthy leaves the line as it was', () => {
+  assert.strictEqual(F.B.stale[1], true, 'a look is asked');
+  assert.match(
+    F.B.stale[0],
+    /Health check FAILED .* · Site STALE: 2 commit\(s\) of main not live, the oldest 50 min, live build 1490 \(ddddddd Photo curation: tile photos; ccccccc Candidate photos/
+  );
+  assert.ok(!F.B.stale[0].includes('\n'), 'one line');
+  assert.doesNotMatch(F.B.ahead_recent[0], /STALE/, 'inside the window: nothing in the brief');
+  assert.strictEqual(F.B.ahead_recent[1], false);
+  assert.doesNotMatch(F.B.healthy[0], /STALE|build/);
+  const src = read('tools/health.py');
+  assert.match(src, /STALE_MIN = 45/);
+  assert.match(src, /DEPLOY_PAGES = 'pages\.yml'/);
 });
 
 test('the sheet script check: the public read-only request, its version, behind main', () => {
@@ -116,7 +212,7 @@ test('Pages size, R2 by hand, and the numbers only with the token', () => {
   assert.deepStrictEqual(Object.keys(S.ok.items), ['pages', 'r2'], 'no sheet numbers without the admin token');
   assert.deepStrictEqual(Object.keys(S.token_ok.items), ['cells', 'slow', 'pages', 'r2']);
   assert.strictEqual(S.token_ok.items.slow.note, 'read Answers');
-  assert.match(S.ok.md, /\| R2 storage \| 6\.30 GB \| 10\.00 GB \| 63 % \| by hand 2026-11-15 \|/);
+  assert.match(S.ok.md, /\| R2 storage \| 6\.30 GB \| 50\.00 GB \| 13 % \| by hand 2026-11-15 \|/);
 });
 
 test('no secret in anything it prints, and the issue text holds statuses only', () => {
@@ -126,11 +222,11 @@ test('no secret in anything it prints, and the issue text holds statuses only', 
 
 test("the brief's line: one compact line, a warning past 70%, the failed check said, the sheet numbers pointed to", () => {
   assert.deepStrictEqual(F.B.healthy, [
-    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 6.30 GB/10.00 GB 63% (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
+    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 6.30 GB/50.00 GB 13% (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
     false
   ]);
   assert.deepStrictEqual(F.B.warn, [
-    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 7.50 GB/10.00 GB 75% WARN (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
+    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 36.00 GB/50.00 GB 72% WARN (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
     true
   ]);
   assert.match(F.B.token[0], /Sheet cells 7\.40 M\/10\.00 M 74% WARN · Slowest p90 4\.0 s\/5\.0 s 80% WARN \(read Answers\)/);
@@ -292,15 +388,15 @@ test("the admin card's rows: the same 70% rule, the backup flagged past 8 days",
   const rr = (p, h) => JSON.parse(JSON.stringify(ctx.rr(p, h, NOW).map(r => [r.label, r.text, r.share, r.warn])));
   assert.deepStrictEqual(rr(300001000, {r2: {bytes: 6.3e9, at: '2026-11-15'}}), [
     ['Pages site', '0.30 GB of 1.00 GB', 0.300001, false],
-    ['R2 storage', '6.30 GB of 10.00 GB · by hand 2026-11-15', 0.63, false]
+    ['R2 storage', '6.30 GB of 50.00 GB · by hand 2026-11-15', 0.126, false]
   ]);
   assert.strictEqual(rr(null, null)[0][1], 'not read');
   assert.strictEqual(rr(null, null)[1][1], 'to measure by hand (tools/infra.json)');
   assert.strictEqual(rr(8e8, {r2: {bytes: 7.5e9, at: '2026-10-01'}})[0][3], true, '80% of Pages');
   assert.deepStrictEqual(rr(0, {r2: {bytes: 7.5e9, at: '2026-10-01'}})[1].slice(1), [
-    '7.50 GB of 10.00 GB · by hand 2026-10-01, 48 days old: measure again',
-    0.75,
-    true
+    '7.50 GB of 50.00 GB · by hand 2026-10-01, 48 days old: measure again',
+    0.15,
+    false
   ]);
   const N = vm.runInContext('INFRA_SHEET', ctx); // main's VERSION + 1 (tools/check_versions.py checks it, rule D3)
   assert.strictEqual(ctx.on({v: N}), true);

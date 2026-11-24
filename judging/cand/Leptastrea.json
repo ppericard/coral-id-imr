@@ -1,0 +1,22 @@
+{
+ "genus": "Leptastrea",
+ "photos": {
+  "leptastrea-cand-520008018": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "1200 px; small colony among other life"
+  },
+  "leptastrea-cand-766995632": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Evenly spaced round corallites: Cyphastrea or Plesiastrea possible"
+  }
+ }
+}
