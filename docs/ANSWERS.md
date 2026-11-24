@@ -2084,3 +2084,20 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   déjà commencé à faire évoluer une partie de nos solutions techniques?». A question to answer. Applied: pending.
 - **13:50, two warnings on unjustified subject differences.** «Warning: mécanisme non commun non justifié», «Warning:
   exception non justifiée» (the sea slug `dup` room and the sea slug blur cap). Applied: #1525 and #1532.
+- **14:06, the expert sentence in LEARNING.md aim 2.** Pierre rejected the 13:52 wording (governance text does not
+  quote his chat answer; REE-273). On the old sentence «we accept they can hardly be challenged»: «C'était un autre
+  temps XD». On the digested sentence proposed instead: «ça me parait mieux». The roles (Curator, Trainer), «no job»
+  and the calibration use stay in the 13:50 entry above. Applied: LEARNING.md "The players we design for" (#1500).
+- **14:06, one draw at every level (REE-245).** On the direction: «Beaucoup mieux comme direction». Applied: pending
+  (Linear REE-245).
+- **14:06, reference poses.** «A vérifier dans les sources, voire faire une étude supplémentaire si besoin»; on a pose
+  that depends on body shape (flatfish and rays seen from above): «oui!». Amends the 13:50 reference photos entry.
+  Applied: pending.
+- **14:06, REE-265's questions.** (a) the answer queue in blocks, last and alone: «ok». (b) the speed target: «Les
+  optimisations doivent être valables pour tous les sujets, pas juste les poissons. On optimise l'app, pas un sujet en
+  particulier». (c) the heavy state in routine checks: «Attention à ne pas vouloir impacter les cycles de
+  développement. Une à deux minutes x le nombre de vérifications x le nombre d'agents par jour, ça monte très très
+  vite». (d) real-phone timings, anonymous: «ok». (e) the sheet's save path with Q352: «ok». Applied: pending (Linear
+  REE-265).
+- **14:06, the fish-only speed target.** «Pourquoi on n'optimise que les poissons??? Warning: exception non
+  justifiée». Applied: pending (Linear REE-265).
