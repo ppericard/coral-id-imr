@@ -13,12 +13,12 @@ const {loadCodeGs} = require('./gas.js');
 
 const TOK = 'ghp_write000000000000000000',
   IMR = 'instance:imr',
-  FISH = 'subject:fish',
-  CORAL = 'subject:coral',
-  SLUG = 'subject:seaslug',
+  AT_FISH = 'subject:fish',
+  AT_CORAL = 'subject:coral',
+  AT_SLUG = 'subject:seaslug',
   R = (r, at = IMR) => r + '@' + at;
 const RIGHTS = ['platform', 'grant', 'players', 'settings', 'content', 'live', 'cohorts'],
-  SCOPES = ['platform', IMR, CORAL, FISH, SLUG];
+  SCOPES = ['platform', IMR, AT_CORAL, AT_FISH, AT_SLUG];
 const save = (s, name, pin = '1234') => assert.ok(s.post({name, pin, data: {}, summary: {}, answers: []}).ok);
 const run = (s, js) => vm.runInContext(js, s.ctx);
 const copy = o => JSON.parse(JSON.stringify(o));
@@ -55,13 +55,13 @@ test('a scope is the instance or one of its subjects, by its exact id; anything 
   const s = loadCodeGs();
   const parse = e => copy(run(s, `rightParse_(${JSON.stringify(e)})`));
   assert.deepStrictEqual(parse(R('players')), ['players', IMR]);
-  assert.deepStrictEqual(parse(R('content', FISH)), ['content', FISH]);
-  assert.deepStrictEqual(parse(R('live', SLUG)), ['live', SLUG]);
-  assert.deepStrictEqual(parse(R('cohorts', CORAL)), ['cohorts', CORAL]);
+  assert.deepStrictEqual(parse(R('content', AT_FISH)), ['content', AT_FISH]);
+  assert.deepStrictEqual(parse(R('live', AT_SLUG)), ['live', AT_SLUG]);
+  assert.deepStrictEqual(parse(R('cohorts', AT_CORAL)), ['cohorts', AT_CORAL]);
   [
     'content',
     'content@',
-    '@' + FISH,
+    '@' + AT_FISH,
     'content@subject:',
     'content@subject:whales',
     'content@subject:Fish',
@@ -74,22 +74,22 @@ test('a scope is the instance or one of its subjects, by its exact id; anything 
     'content@platform',
     'content@group:g:12345678',
     'content@fish',
-    'Content@' + FISH,
+    'Content@' + AT_FISH,
     // Only the Curators' and the Trainers' rights take a subject: never the players, the settings nor the grant.
-    R('players', FISH),
-    R('settings', FISH),
-    R('grant', FISH),
-    R('platform', FISH),
+    R('players', AT_FISH),
+    R('settings', AT_FISH),
+    R('grant', AT_FISH),
+    R('platform', AT_FISH),
     'platform@platform'
   ].forEach(e => assert.strictEqual(parse(e), null, e));
   // The cell's order: RIGHTS', the instance's scope first; an entry it does not take is named by rightsBad_.
   assert.deepStrictEqual(copy(run(s, `rightsOf_('live@subject:fish, content@subject:fish, live@subject:fish, x@y')`)), [
-    R('content', FISH),
-    R('live', FISH)
+    R('content', AT_FISH),
+    R('live', AT_FISH)
   ]);
-  assert.deepStrictEqual(copy(run(s, `rightsBad_('live@subject:fish, x@y, players@subject:fish')`)), ['x@y', R('players', FISH)]);
+  assert.deepStrictEqual(copy(run(s, `rightsBad_('live@subject:fish, x@y, players@subject:fish')`)), ['x@y', R('players', AT_FISH)]);
   assert.strictEqual(run(s, `groupScope_([])`), '');
-  assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'live@subject:fish'])`), FISH);
+  assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'live@subject:fish'])`), AT_FISH);
   assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'live@instance:imr'])`), null);
   assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'content@subject:coral'])`), null);
 });
@@ -97,30 +97,30 @@ test('a scope is the instance or one of its subjects, by its exact id; anything 
 test('a request with an unknown or malformed scope is refused (input), one that mixes scopes too (scope); nothing is written', () => {
   const s = loadCodeGs();
   save(s, 'Ana');
-  const g = make(s, 'Curators, fish', {rights: [R('content', FISH)]}).group.id;
+  const g = make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]}).group.id;
   const cells = () => JSON.stringify(s.sheets['Group settings'].rows);
   const was = cells();
   [
     ['content@subject:whales'],
     ['content@subject:Fish'],
-    [R('players', FISH)],
-    [R('grant', CORAL)],
-    ['content@' + FISH + ',' + R('live', FISH)],
-    [R('content', FISH) + ' ']
+    [R('players', AT_FISH)],
+    [R('grant', AT_CORAL)],
+    ['content@' + AT_FISH + ',' + R('live', AT_FISH)],
+    [R('content', AT_FISH) + ' ']
   ].forEach(x => {
     assert.strictEqual(make(s, 'X', {rights: x}).error, 'input', JSON.stringify(x));
     assert.strictEqual(edit(s, g, {rights: x}).error, 'input', JSON.stringify(x));
   });
   [
-    [R('content', FISH), R('live')],
-    [R('content', FISH), R('content', CORAL)],
-    [R('live', SLUG), R('players')]
+    [R('content', AT_FISH), R('live')],
+    [R('content', AT_FISH), R('content', AT_CORAL)],
+    [R('live', AT_SLUG), R('players')]
   ].forEach(x => {
     assert.strictEqual(make(s, 'X', {rights: x}).error, 'scope', JSON.stringify(x));
     assert.strictEqual(edit(s, g, {rights: x}).error, 'scope', JSON.stringify(x));
   });
   assert.strictEqual(cells(), was, 'nothing written');
-  assert.deepStrictEqual(copy(defs(s).map(d => [d.n, d.rights])), [['Curators, fish', [R('content', FISH)]]]);
+  assert.deepStrictEqual(copy(defs(s).map(d => [d.n, d.rights])), [['Curators, fish', [R('content', AT_FISH)]]]);
   // Every refusal is audited as the request it was (capped refusals aside), by id only.
   assert.ok(audit(s).filter(x => x[1] === 'groupEdit' && x[3] === 'scope').length === 3);
 });
@@ -128,17 +128,17 @@ test('a request with an unknown or malformed scope is refused (input), one that 
 test('a right held at a subject holds there only: never at the instance, another subject, nor any other right', () => {
   const s = loadCodeGs();
   ['Ana', 'Ben', 'Cy', 'Dee'].forEach(n => save(s, n));
-  const cur = make(s, 'Curators, fish', {rights: [R('content', FISH)]}).group.id,
-    tr = make(s, 'Trainers, sea slugs', {rights: [R('live', SLUG), R('cohorts', SLUG)]}).group.id,
+  const cur = make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]}).group.id,
+    tr = make(s, 'Trainers, sea slugs', {rights: [R('live', AT_SLUG), R('cohorts', AT_SLUG)]}).group.id,
     all = make(s, 'Curators', {rights: [R('content')]}).group.id;
   join(s, 'Ana', cur);
   join(s, 'Ben', tr);
   join(s, 'Cy', all);
   const want = {
-    Ana: [R('content', FISH)],
-    Ben: [R('live', SLUG), R('cohorts', SLUG)],
+    Ana: [R('content', AT_FISH)],
+    Ben: [R('live', AT_SLUG), R('cohorts', AT_SLUG)],
     // The instance's right holds at each of its subjects.
-    Cy: [R('content'), R('content', CORAL), R('content', FISH), R('content', SLUG)],
+    Cy: [R('content'), R('content', AT_CORAL), R('content', AT_FISH), R('content', AT_SLUG)],
     Dee: []
   };
   for (const n of Object.keys(want))
@@ -148,14 +148,18 @@ test('a right held at a subject holds there only: never at the instance, another
     assert.ok(!can(s, 'Cy', 'content', sc), sc)
   );
   // The groups' rights as the admin reads them.
-  assert.deepStrictEqual(copy(defs(s).map(d => d.rights)), [[R('content', FISH)], [R('live', SLUG), R('cohorts', SLUG)], [R('content')]]);
+  assert.deepStrictEqual(copy(defs(s).map(d => d.rights)), [
+    [R('content', AT_FISH)],
+    [R('live', AT_SLUG), R('cohorts', AT_SLUG)],
+    [R('content')]
+  ]);
 });
 
 test('every privileged endpoint refuses a holder of a subject-scoped right; changing a subject group asks the grant right', () => {
   const s = loadCodeGs();
   ['Ana', 'Ben', 'Gus', 'Mia'].forEach(n => save(s, n));
-  const cur = make(s, 'Curators, fish', {rights: [R('content', FISH)]}).group.id,
-    tr = make(s, 'Trainers, fish', {rights: [R('live', FISH)]}).group.id,
+  const cur = make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]}).group.id,
+    tr = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id,
     gr = make(s, 'Granters', {rights: [R('grant')]}).group.id,
     pl = make(s, 'Helpers', {rights: [R('players')]}).group.id;
   join(s, 'Ana', cur);
@@ -177,8 +181,8 @@ test('every privileged endpoint refuses a holder of a subject-scoped right; chan
     {analysesGet: 1},
     {roles: 1},
     {roleGrant: {account: 'Ana', role: 'admin', scope: 'platform'}},
-    {groupMake: {n: 'Mine', rights: [R('content', FISH)]}},
-    {groupEdit: cur, rights: [R('content', FISH), R('live', FISH)]},
+    {groupMake: {n: 'Mine', rights: [R('content', AT_FISH)]}},
+    {groupEdit: cur, rights: [R('content', AT_FISH), R('live', AT_FISH)]},
     {groupEdit: cur, n: 'Ours'},
     {groupDrop: tr},
     {userGroup: 'Ben', group: cur, on: true},
@@ -188,12 +192,12 @@ test('every privileged endpoint refuses a holder of a subject-scoped right; chan
   ].forEach(b => assert.strictEqual(s.post({...b, token: ana}).error, 'token', JSON.stringify(b)));
   // The players right alone: no subject group's members nor rights.
   assert.strictEqual(join(s, 'Ben', cur, true, 'acct:Mia').error, 'token');
-  assert.strictEqual(edit(s, cur, {rights: [R('content', FISH), R('live', FISH)]}, 'acct:Mia').error, 'token');
+  assert.strictEqual(edit(s, cur, {rights: [R('content', AT_FISH), R('live', AT_FISH)]}, 'acct:Mia').error, 'token');
   // The instance's grant reaches its subjects.
   assert.strictEqual(join(s, 'Ben', cur, true, 'acct:Gus').n, 1);
-  assert.ok(can(s, 'Ben', 'content', FISH));
-  assert.ok(edit(s, cur, {rights: [R('content', FISH), R('live', FISH)]}, 'acct:Gus').ok);
-  assert.ok(can(s, 'Ana', 'live', FISH) && !can(s, 'Ana', 'live', CORAL));
+  assert.ok(can(s, 'Ben', 'content', AT_FISH));
+  assert.ok(edit(s, cur, {rights: [R('content', AT_FISH), R('live', AT_FISH)]}, 'acct:Gus').ok);
+  assert.ok(can(s, 'Ana', 'live', AT_FISH) && !can(s, 'Ana', 'live', AT_CORAL));
   // A group that carries rights is deleted with the grant right only, its rights taken away first, audited.
   assert.strictEqual(join(s, 'Ben', tr, false, 'acct:Gus').n, 1);
   assert.strictEqual(s.post({groupDrop: tr, token: 'acct:Mia'}).error, 'token', 'the players right alone');
@@ -203,10 +207,10 @@ test('every privileged endpoint refuses a holder of a subject-scoped right; chan
       .filter(x => x[4] === tr && /^(rights|right[+-]) /.test(x[1]))
       .map(x => x.slice(1, 4)),
     [
-      [`rights - > ${R('live', FISH)}`, FISH, 'ok'],
-      [`right+ ${R('live', FISH)}`, FISH, 'ok'],
-      [`rights ${R('live', FISH)} > -`, FISH, 'ok'],
-      [`right- ${R('live', FISH)}`, FISH, 'ok']
+      [`rights - > ${R('live', AT_FISH)}`, AT_FISH, 'ok'],
+      [`right+ ${R('live', AT_FISH)}`, AT_FISH, 'ok'],
+      [`rights ${R('live', AT_FISH)} > -`, AT_FISH, 'ok'],
+      [`right- ${R('live', AT_FISH)}`, AT_FISH, 'ok']
     ]
   );
 });
@@ -214,7 +218,7 @@ test('every privileged endpoint refuses a holder of a subject-scoped right; chan
 test("a live game is hosted with live at the game's subject: a fish trainer hosts fish, never the corals", () => {
   const s = loadCodeGs();
   ['Tess', 'Ina'].forEach(n => save(s, n));
-  join(s, 'Tess', make(s, 'Trainers, fish', {rights: [R('live', FISH)]}).group.id);
+  join(s, 'Tess', make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id);
   join(s, 'Ina', make(s, 'Trainers', {rights: [R('live')]}).group.id);
   const start = (n, sid) => copy(s.post({lv: 'start', lname: n, lpin: '1234', s: sid, t: 'Group 1', n: 3, lim: 20}));
   assert.strictEqual(start('Tess', 'fish').ok, true);
@@ -227,11 +231,11 @@ test("a live game is hosted with live at the game's subject: a fish trainer host
       .filter(x => x[1] === 'live start')
       .map(x => [x[0] === aid(s, 'Tess') ? 'Tess' : 'Ina', x[2], x[3]]),
     [
-      ['Tess', FISH, 'ok'],
-      ['Tess', CORAL, 'denied'],
+      ['Tess', AT_FISH, 'ok'],
+      ['Tess', AT_CORAL, 'denied'],
       ['Tess', IMR, 'denied'],
-      ['Ina', FISH, 'ok'],
-      ['Ina', CORAL, 'ok']
+      ['Ina', AT_FISH, 'ok'],
+      ['Ina', AT_CORAL, 'ok']
     ]
   );
 });
@@ -239,18 +243,18 @@ test("a live game is hosted with live at the game's subject: a fish trainer host
 test('a Rights cell written by hand: an entry the script does not take gives nothing and is logged; a rename keeps the cell', () => {
   const s = loadCodeGs();
   ['Ana', 'Ben'].forEach(n => save(s, n));
-  const g = make(s, 'Curators, fish', {rights: [R('content', FISH)]}).group.id,
-    h = make(s, 'Mixed', {rights: [R('live', FISH)]}).group.id;
+  const g = make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]}).group.id,
+    h = make(s, 'Mixed', {rights: [R('live', AT_FISH)]}).group.id;
   join(s, 'Ana', g);
   join(s, 'Ben', h);
   const sh = s.sheets['Group settings'];
   sh.rows[1][6] = 'content@subject:fish, players@subject:fish, grant@instance:other, platform@platform';
   sh.rows[2][6] = 'live@subject:fish, content@instance:imr';
   for (const sc of SCOPES) for (const r of ['players', 'grant', 'platform', 'settings']) assert.ok(!can(s, 'Ana', r, sc), `${r} ${sc}`);
-  assert.ok(can(s, 'Ana', 'content', FISH) && !can(s, 'Ana', 'content', IMR));
+  assert.ok(can(s, 'Ana', 'content', AT_FISH) && !can(s, 'Ana', 'content', IMR));
   // A cell mixing scopes: each entry at its own scope, never more.
-  assert.ok(can(s, 'Ben', 'live', FISH) && !can(s, 'Ben', 'live', IMR) && !can(s, 'Ben', 'live', CORAL));
-  assert.ok(can(s, 'Ben', 'content', CORAL));
+  assert.ok(can(s, 'Ben', 'live', AT_FISH) && !can(s, 'Ben', 'live', IMR) && !can(s, 'Ben', 'live', AT_CORAL));
+  assert.ok(can(s, 'Ben', 'content', AT_CORAL));
   const log = deployLog(s);
   assert.ok(
     log.some(l =>
@@ -268,7 +272,7 @@ test('a Rights cell written by hand: an entry the script does not take gives not
   assert.ok(edit(s, g, {n: 'Fish curators', board: 1}).ok);
   assert.strictEqual(sh.rows[1][6], 'content@subject:fish, players@subject:fish, grant@instance:other, platform@platform');
   // A rights edit writes the list it takes; the entries that gave nothing are dropped, logged.
-  assert.ok(edit(s, g, {rights: [R('content', FISH), R('live', FISH)]}).ok);
+  assert.ok(edit(s, g, {rights: [R('content', AT_FISH), R('live', AT_FISH)]}).ok);
   assert.strictEqual(sh.rows[1][6], 'content@subject:fish, live@subject:fish');
   assert.ok(deployLog(s).some(l => l.startsWith(`Roles: rights ${g}: entries that gave nothing dropped from its Rights cell`)));
 });
@@ -276,10 +280,10 @@ test('a Rights cell written by hand: an entry the script does not take gives not
 test('the Audit rows say who, what, when, at which scope, about whom, and before and after', () => {
   const s = loadCodeGs();
   ['Ana', 'Ben'].forEach(n => save(s, n));
-  const g = make(s, 'Trainers, fish', {rights: [R('live', FISH)]}).group.id;
+  const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id;
   join(s, 'Ana', g);
   join(s, 'Ben', g);
-  assert.ok(edit(s, g, {rights: [R('live', FISH), R('cohorts', FISH)]}).ok);
+  assert.ok(edit(s, g, {rights: [R('live', AT_FISH), R('cohorts', AT_FISH)]}).ok);
   assert.ok(edit(s, g, {rights: [R('live'), R('cohorts')]}).ok, 'a group with members moves to the instance: grant');
   join(s, 'Ben', g, false);
   const [A, B] = [aid(s, 'Ana'), aid(s, 'Ben')];
@@ -293,27 +297,27 @@ test('the Audit rows say who, what, when, at which scope, about whom, and before
   assert.deepStrictEqual(
     audit(s).filter(x => !/^group|^user/.test(x[1])),
     [
-      [by, `rights - > ${R('live', FISH)}`, FISH, 'ok', g],
-      [by, `right+ ${R('live', FISH)}`, FISH, 'ok', g],
-      [by, `join ${g}`, FISH, 'ok', A],
-      [by, `join ${g}`, FISH, 'ok', B],
-      [by, `rights ${R('live', FISH)} > ${R('live', FISH)},${R('cohorts', FISH)}`, FISH, 'ok', g],
-      [by, `grant cohorts (via ${g})`, FISH, 'ok', A],
-      [by, `grant cohorts (via ${g})`, FISH, 'ok', B],
-      [by, `right+ ${R('cohorts', FISH)}`, FISH, 'ok', g],
-      [by, `rights ${R('live', FISH)},${R('cohorts', FISH)} > ${R('live')},${R('cohorts')}`, IMR, 'ok', g],
+      [by, `rights - > ${R('live', AT_FISH)}`, AT_FISH, 'ok', g],
+      [by, `right+ ${R('live', AT_FISH)}`, AT_FISH, 'ok', g],
+      [by, `join ${g}`, AT_FISH, 'ok', A],
+      [by, `join ${g}`, AT_FISH, 'ok', B],
+      [by, `rights ${R('live', AT_FISH)} > ${R('live', AT_FISH)},${R('cohorts', AT_FISH)}`, AT_FISH, 'ok', g],
+      [by, `grant cohorts (via ${g})`, AT_FISH, 'ok', A],
+      [by, `grant cohorts (via ${g})`, AT_FISH, 'ok', B],
+      [by, `right+ ${R('cohorts', AT_FISH)}`, AT_FISH, 'ok', g],
+      [by, `rights ${R('live', AT_FISH)},${R('cohorts', AT_FISH)} > ${R('live')},${R('cohorts')}`, IMR, 'ok', g],
       [by, `grant live (via ${g})`, IMR, 'ok', A],
       [by, `grant live (via ${g})`, IMR, 'ok', B],
       [by, `right+ ${R('live')}`, IMR, 'ok', g],
       [by, `grant cohorts (via ${g})`, IMR, 'ok', A],
       [by, `grant cohorts (via ${g})`, IMR, 'ok', B],
       [by, `right+ ${R('cohorts')}`, IMR, 'ok', g],
-      [by, `revoke live (via ${g})`, FISH, 'ok', A],
-      [by, `revoke live (via ${g})`, FISH, 'ok', B],
-      [by, `right- ${R('live', FISH)}`, FISH, 'ok', g],
-      [by, `revoke cohorts (via ${g})`, FISH, 'ok', A],
-      [by, `revoke cohorts (via ${g})`, FISH, 'ok', B],
-      [by, `right- ${R('cohorts', FISH)}`, FISH, 'ok', g],
+      [by, `revoke live (via ${g})`, AT_FISH, 'ok', A],
+      [by, `revoke live (via ${g})`, AT_FISH, 'ok', B],
+      [by, `right- ${R('live', AT_FISH)}`, AT_FISH, 'ok', g],
+      [by, `revoke cohorts (via ${g})`, AT_FISH, 'ok', A],
+      [by, `revoke cohorts (via ${g})`, AT_FISH, 'ok', B],
+      [by, `right- ${R('cohorts', AT_FISH)}`, AT_FISH, 'ok', g],
       [by, `leave ${g}`, IMR, 'ok', B]
     ]
   );
@@ -323,11 +327,11 @@ test('the Audit rows say who, what, when, at which scope, about whom, and before
 test('a leave or a revoke saved without its Audit row answers an error; its retry writes that row', () => {
   const s = loadCodeGs();
   ['Ana', 'Pat'].forEach(n => save(s, n));
-  const g = make(s, 'Trainers, fish', {rights: [R('live', FISH)]}).group.id;
+  const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id;
   join(s, 'Ana', g);
   failAudit(s);
   assert.strictEqual(join(s, 'Ana', g, false).error, 'server');
-  assert.ok(!can(s, 'Ana', 'live', FISH), 'the right is gone at once');
+  assert.ok(!can(s, 'Ana', 'live', AT_FISH), 'the right is gone at once');
   assert.strictEqual(join(s, 'Ana', g, false).n, 1, 'its retry: ok');
   assert.strictEqual(join(s, 'Ana', g, false).n, 0, 'then none');
   assert.deepStrictEqual(
@@ -350,7 +354,7 @@ test('a leave or a revoke saved without its Audit row answers an error; its retr
     rows(s, 'RAs').some(r => r[0] === 'Ana'),
     'the account is still there'
   );
-  assert.ok(!can(s, 'Ana', 'live', FISH), 'its right gone');
+  assert.ok(!can(s, 'Ana', 'live', AT_FISH), 'its right gone');
   assert.ok(s.post({userDelete: 'Ana', token: TOK}).ok);
   assert.deepStrictEqual(
     audit(s)
@@ -474,11 +478,11 @@ test('no rights change bypasses the one write: every request, every write traced
   asAccounts(s);
   steps(s, [
     ['seed', () => ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}))],
-    ['make fish curators', () => (g.cur = ok(make(s, 'Curators, fish', {rights: [R('content', FISH)]})).group)],
-    ['make fish trainers', () => (g.tr = ok(make(s, 'Trainers, fish', {rights: [R('live', FISH)]})).group)],
+    ['make fish curators', () => (g.cur = ok(make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]})).group)],
+    ['make fish trainers', () => (g.tr = ok(make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]})).group)],
     ['make granters', () => (g.gr = ok(make(s, 'Granters', {rights: [R('grant')]})).group)],
     ['make staff', () => (g.st = ok(make(s, 'Staff', {board: 1})).group)],
-    ['make solo', () => (g.solo = ok(make(s, 'Solo', {rights: [R('content', CORAL)]})).group)],
+    ['make solo', () => (g.solo = ok(make(s, 'Solo', {rights: [R('content', AT_CORAL)]})).group)],
     ['join Ana', () => ok(join(s, 'Ana', g.cur.id))],
     ['join Ben', () => ok(join(s, 'Ben', g.tr.id))],
     ['join Cy', () => ok(join(s, 'Cy', g.tr.id))],
@@ -487,11 +491,11 @@ test('no rights change bypasses the one write: every request, every write traced
     ['Gus joins Dee', () => ok(join(s, 'Dee', g.cur.id, true, 'acct:Gus'))],
     ['Gus joins himself', () => ok(join(s, 'Gus', g.tr.id, true, 'acct:Gus'))],
     ['refused: a list', () => assert.strictEqual(join(s, ['Mia'], g.cur.id).error, 'input')],
-    ['refused: mixed', () => assert.strictEqual(edit(s, g.tr.id, {rights: [R('live', FISH), R('cohorts')]}).error, 'scope')],
+    ['refused: mixed', () => assert.strictEqual(edit(s, g.tr.id, {rights: [R('live', AT_FISH), R('cohorts')]}).error, 'scope')],
     ['refused: no grant', () => assert.strictEqual(join(s, 'Mia', g.cur.id, true, 'acct:Ana').error, 'token')],
-    ['add a right', () => ok(edit(s, g.tr.id, {rights: [R('live', FISH), R('cohorts', FISH)]}))],
+    ['add a right', () => ok(edit(s, g.tr.id, {rights: [R('live', AT_FISH), R('cohorts', AT_FISH)]}))],
     ['to the instance', () => ok(edit(s, g.tr.id, {rights: [R('live')]}, 'acct:Gus'))],
-    ['back to fish', () => ok(edit(s, g.tr.id, {rights: [R('live', FISH)]}))],
+    ['back to fish', () => ok(edit(s, g.tr.id, {rights: [R('live', AT_FISH)]}))],
     ['rename', () => ok(edit(s, g.cur.id, {n: 'Fish curators', board: 1}))],
     ['leave', () => ok(join(s, 'Cy', g.tr.id, false))],
     ['drop a rights group', () => ok(s.post({groupDrop: g.solo.id, token: TOK}))],
@@ -534,7 +538,7 @@ test('the migration from the roles writes through the one write too', () => {
     out.filter(x => !x[2]),
     []
   );
-  assert.ok(can(s, 'Eda', 'content') && can(s, 'Ben', 'live', FISH));
+  assert.ok(can(s, 'Eda', 'content') && can(s, 'Ben', 'live', AT_FISH));
 });
 
 test('only rightsWrite_ writes the Roles tab or reaches the Groups tab for a write (the source, a tripwire)', () => {
@@ -560,7 +564,7 @@ test('only rightsWrite_ writes the Roles tab or reaches the Groups tab for a wri
 test('groupSet_ refuses a group that carries rights, whoever calls it', () => {
   const s = loadCodeGs();
   save(s, 'Ana');
-  const g = make(s, 'Trainers, fish', {rights: [R('live', FISH)]}).group.id;
+  const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id;
   assert.throws(() => run(s, `groupSet_(sheet_('RAs', HEAD), ['Ana'], '${g}', true)`), /a group that carries rights/);
-  assert.ok(!can(s, 'Ana', 'live', FISH));
+  assert.ok(!can(s, 'Ana', 'live', AT_FISH));
 });

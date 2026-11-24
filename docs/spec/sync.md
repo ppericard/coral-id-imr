@@ -865,8 +865,12 @@ See also SECURITY.md "Rights and the Audit tab", ROADMAP "Roles, instances and c
 [the decision](../decisions/2026-11-19-groups-carry-rights.md). An account's rights are the union of two sources:
 
 - **Its groups** (below, "Player groups"): a group carries an instance's rights (`Code.gs` `RIGHTS`: `players`,
-  `settings`, `grant`, `content`, `live`, `cohorts`, each at `instance:imr`), and a member holds them while the
-  membership's code hash is the account's.
+  `settings`, `grant`, `content`, `live`, `cohorts`), and a member holds them while the membership's code hash is the
+  account's. A group is instance wide or subject specific ([the decision](../decisions/2026-11-21-groups-by-scope.md)):
+  its rights share one scope, `instance:imr` or, for `content`, `live` and `cohorts` (`RIGHTS_SUBJ`), `subject:<id>`, a
+  subject of `core.js` `SUBJECTS` by its exact id (`scopeOf_`, `rightParse_`). `can_` reads a right held at a subject
+  at that subject only, a right held at the instance at the instance and each of its subjects; a scope it does not
+  know gives nothing.
 - **The admin list**: the `admin` rows of the `Roles` tab (Account, Role, Scope, Since, Code hash; `admin` at
   `platform`), kept apart from the groups. An admin holds `platform` and `grant` at every scope, never an instance's
   players or content without a group that carries them. `POST {roles: 1, token}` lists it,
@@ -875,11 +879,17 @@ See also SECURITY.md "Rights and the Audit tab", ROADMAP "Roles, instances and c
 
 The `Audit` tab (Time, Admin id, Action, Scope, Result, Target id; `AUDIT`) gets one row per change and capped refusals,
 ids only, never a name. Every privileged endpoint calls `gate_`, then `can_(caller, right, scope)`: the admin token
-(`caller_`, the only caller today but a live game's start) passes every right. Pierre's rights are given once to the
+(`caller_`, the only caller today but a live game's start, which asks `live` at the game's subject) passes every right.
+Every rights change goes through one write, `rightsWrite_`, the only code that writes the admin list, a group's Rights
+cell and the memberships of the groups that carry rights, each change with its Audit rows: who, what, when, its scope,
+about whom, and before and after (a membership or a place on the admin list by its verb and Result, `ok`, `held` or
+`none`; a group's rights by a `rights <before> > <after>` row, `-` for none). A row that cannot be written answers an
+error, the change saved, and its retry writes it. Pierre's rights are given once to the
 admin's account (`rolesSeed_`): the admin list, and the Managers and Curators groups. A delete, merge (its from) or
-archive drops the account's rights, never moves them (`rightsDrop_`, `rolesDrop_`, rule D7). The Roles tab's other rows
+archive drops the account's rights first, never moves them (`rightsGone_`, rule D7). The Roles tab's other rows
 (`owner`, `editor`, `trainer`) are the record of the roles before the groups carried them, read by nothing since the
-rights migration (below). `tests/roles.test.js`, `tests/accountrights.test.js`.
+rights migration (below). `tests/roles.test.js`, `tests/accountrights.test.js`, `tests/rightswrite.test.js` (every
+write to a rights store traced through `rightsWrite_`, every change of anyone's rights audited, the scopes).
 
 ## Live games
 
@@ -915,7 +925,8 @@ betas and rights.
 - A **group** (`Code.gs` `groupState_`) is a row of the **Group settings** tab (Group: its id, Name, Board, Apart, Beta,
   Added, Rights): Board, it has its own leaderboard; Apart, unused and written 0; Beta, `''` or the subject in beta that
   it opens to its members (`core.js` `subjGroup`); Rights, the instance's rights its members hold, `right@scope` entries
-  separated by commas (`RIGHTS` at `instance:imr`; `rightsOf_`). The **Groups** tab keeps one row a membership (Group:
+  separated by commas, all at one scope (`RIGHTS` at `instance:imr`, `RIGHTS_SUBJ` at `subject:<id>`; `rightsOf_`;
+  "Rights and the Audit tab" above), written by `rightsWrite_` alone. The **Groups** tab keeps one row a membership (Group:
   the group's id, Name: the player's, Added, Code hash: the account's when it joined a group that carries rights, blank
   for the others). Ids are `g:` and 8 random characters; a group a migration made keeps its old Group cell (a subject's
   id, `cohort:<name>`, `staff`) or `r:` and its role (`r:owner`, `r:editor`, `r:trainer`).
@@ -930,19 +941,23 @@ betas and rights.
 - **The admin** (`users_`, audited): `{userGroup: name | [names], group: id, on}`;
   `{groupMake: {n, board, apart, beta, rights}}`, `{groupEdit: id, n?, board?, apart?, beta?, rights?}`,
   `{groupDrop: id}` (an empty group only; `groupDo_`); a name is 1 to 40 characters, unique case aside; `rights` is the
-  whole list, `["right@scope"]`. The player list carries each player's `gids` and `roff` (their groups with rights
+  whole list, `["right@scope"]`, at one scope (an entry `rightParse_` refuses: `input`; scopes mixed: `scope`). The player list carries each player's `gids` and `roff` (their groups with rights
   whose membership's code hash is not the account's: rights off until they are added again; never a hash) and every
   group (`groupDefs`, with its `rights`).
 - **Who changes what** (checked again under the script lock): a group's name, board or beta, the members of a group
-  without rights, and a delete need `players`; a group's rights and the members of a group that carries rights need
-  `grant`. A group that carries rights takes one name a call (a list: `input`), a live account (`user`, `archived`),
-  and its membership is written with the account's code hash (`joinPut_`; added again, it is bound to the code now). A
+  without rights, and the delete of a group without rights need `players`; a group's rights, the members of a group
+  that carries rights and its delete (its rights taken away first, audited) need `grant` at each scope changed (the
+  instance's reaches its subjects). A group that carries rights takes one name a call (a list: `input`), a live account
+  (`user`, `archived`), and its membership is written with the account's code hash (`rightsWrite_`; added again, it is
+  bound to the code now; `groupSet_` refuses such a group). A
   group's first right is refused while it has members (`members`: their memberships hold no code hash). A player's own
   act never joins a group that carries rights.
-- **Audit rows** of the rights: `join <group id>` and `leave <group id>` (target the member's id; `(self)` for the
-  caller's own account, `(account removed)` for rule D7, `(migration)`); one `grant <right> (via <group id>)` or
-  `revoke …` row per member, then `right+ <right>@<scope>` or `right- …` (target the group's id). A membership written
-  without its `ok` row answers an error, and its retry writes that row (`joinAudited_`); so does a group's rights
+- **Audit rows** of the rights (`rightsWrite_`; the Scope column the right's, or the group's for a membership):
+  `join <group id>` and `leave <group id>` (target the member's id; `(self)` for the caller's own account,
+  `(account removed)` for rule D7, `(migration)`); for a group's rights, one `rights <before> > <after>` row (`-` for
+  none; target the group's id), then for each right one `grant <right> (via <group id>)` or `revoke …` row per member
+  and `right+ <right>@<scope>` or `right- …` (target the group's id). A membership written or removed
+  without its `ok` row answers an error, and its retry writes that row (`joinsAudited_`); so does a group's rights
   change: the request that carries the rights compares them with the group's audited rights (`rightsAudited_`: per
   right, its last `ok` `right+` / `right-` row, a role group's `r:` rights from the migration counted without one), so
   its retry writes the rows of the change saved without them (a member's row may then be written twice). A failed

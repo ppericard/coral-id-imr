@@ -11243,7 +11243,7 @@ const groupNames = u =>
         .map(d => d.n)
     : [...(u.groups || []).map(g => subjectOf(g).name), u.cohort].filter(Boolean);
 // Groups that carry rights (sheet RIGHTSADM_SHEET: a group's rights, each player's roff, the merge plan, the admin
-// list and the server answer of a rights change; Code.gs groupDo_, joinPut_, mergePlan_, roles_). A rights group shows
+// list and the server answer of a rights change; Code.gs groupDo_, rightsWrite_, mergePlan_, roles_). A rights group shows
 // its rights as chips in words, a key beside its name, and comes first; it takes one player at a time, after one
 // confirm naming its rights (no Add all, no Remove all); a member whose code changed since they were added holds none of
 // its rights ("rights off"). Below the version, the page as before. Decision: docs/decisions/2026-11-19-groups-carry-rights.md.

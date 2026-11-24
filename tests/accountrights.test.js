@@ -1,6 +1,6 @@
 require('./slot.js').testGuard();
 // Groups that carry an instance's rights (docs/decisions/2026-11-19-groups-carry-rights.md; Code.gs can_, groupDo_,
-// usersDo_ userGroup, joinPut_, rightsDrop_, mergePlan_, the rights migration): a group carries rights at the instance,
+// usersDo_ userGroup, rightsWrite_, rightsGone_, mergePlan_, the rights migration): a group carries rights at the instance,
 // a player's rights are the union of their groups', under the membership's code hash; only the grant right changes a
 // group's rights or the members of a group that carries rights, one player a call, each change audited; a merge moves
 // the groups without rights and drops the others; the one-shot migration turns the Roles tab's instance roles into

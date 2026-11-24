@@ -186,6 +186,10 @@ beta group's Add / Remove and the Cohort select. Its help: `HELP.groups`. What a
 - **Merge into** reads `{mergePlan}` first and its confirm lists the groups the kept name joins, the rights groups
   dropped with their rights, and leaving the admin list; not read, no merge.
 - **Admins (outside the groups)**: a read-only line from `{roles: 1}` (Q408 answer 6).
+- A right at a subject's scope (sheet `vNEXT`; [groups by scope](../decisions/2026-11-21-groups-by-scope.md)) shows
+  with its scope, as `rightWord` shows any scope but the instance's ("Content (subject:fish)"); **+ Add a right** offers
+  the instance's rights only, which the sheet refuses (`scope`, shown as "Not done (scope)") on a group whose rights are
+  a subject's. Choosing a subject's scope on this page is a later step.
 - A rights change's errors in words (`rightsErr`: `token`, `members`, `input`, `server`); for `server` ("Saved in part:
   its Audit record failed. Try again to finish it.") **Try again** sends the same request again. After any answer the
   players are read again, so no change is sent from a list the sheet no longer has.

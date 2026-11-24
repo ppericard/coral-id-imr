@@ -1477,7 +1477,7 @@
     if (V >= GROUPADM_SHEET && (p.userGroup || p.groupMake || p.groupEdit || p.groupDrop)) {
       const gd = id => S.gdefs.find(d => d.id === id),
         mem = id => Object.values(S.users).filter(u => (u.gids || []).includes(id)),
-        // RIGHTSADM_SHEET: a group that carries rights (Code.gs groupDo_, joinPut_, leavePut_)
+        // RIGHTSADM_SHEET: a group that carries rights (Code.gs groupDo_, rightsWrite_)
         rg = d => V >= RIGHTSADM_SHEET && d && d.rights && d.rights.length > 0,
         // window.DEMO_FAIL = 'server' (tests/admin.smoke.js): the next rights change is saved and its Audit row fails,
         // as Code.gs answers then; its retry finishes it.
