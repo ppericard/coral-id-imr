@@ -188,6 +188,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 
 - **Before any question to Pierre**: run `python3 tools/asked.py <terms>` (open PRs' ledgers included). Use the
   evidence as described in AGENTS.md. Its last line ("searched: … — N hits") goes under the question.
+- **Before opening a Linear issue**: search Linear (Backlog, Done and Duplicate included), `docs/ANSWERS.md`, ROADMAP,
+  `docs/reviews/` and, for a study, the Drive folder; fold into an existing issue that covers the topic. A new issue's
+  description holds a line `Searched: <what> — <what was found>`; `tools/issue_guard.py` (a PreToolUse hook) refuses one
+  without it (REE-251).
 - **What gets a number** (Pierre, 2026-11-08): the answer commits the future and will be cited. This includes the
   players' learning or game, the engine's model, data or privacy, rights, a rule's substance, an irreversible
   action or a big cost. Ask facts, confirmations and wording for a rule already decided plainly. Add his wording
