@@ -11,8 +11,8 @@
   "Alveopora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 19
+    "at": "2026-11-24",
+    "n": 7
    }
   },
   "Anacropora": {
@@ -39,8 +39,8 @@
   "Ctenactis": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 26
+    "at": "2026-11-24",
+    "n": 11
    }
   },
   "Cycloseris": {
@@ -60,36 +60,36 @@
   "Cyphastrea": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 24
+    "at": "2026-11-24",
+    "n": 6
    }
   },
   "Danafungia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 9
+    "at": "2026-11-24",
+    "n": 17
    }
   },
   "Diploastrea": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 45
+    "at": "2026-11-24",
+    "n": 9
    }
   },
   "Dipsastraea": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 48
+    "at": "2026-11-24",
+    "n": 12
    }
   },
   "Duncanopsammia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 36
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Echinophyllia": {
@@ -116,8 +116,8 @@
   "Favites": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 29
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Fimbriaphyllia": {
@@ -130,8 +130,8 @@
   "Fungia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 22
+    "at": "2026-11-24",
+    "n": 19
    }
   },
   "Galaxea": {
@@ -151,29 +151,29 @@
   "Goniastrea": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 10
+    "at": "2026-11-24",
+    "n": 17
    }
   },
   "Goniopora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 41
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Halomitra": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 31
+    "at": "2026-11-24",
+    "n": 3
    }
   },
   "Heliofungia": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 40
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Heliopora": {
@@ -186,22 +186,22 @@
   "Herpolitha": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 20
+    "at": "2026-11-24",
+    "n": 9
    }
   },
   "Hydnophora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 32
+    "at": "2026-11-24",
+    "n": 10
    }
   },
   "Isopora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 30
+    "at": "2026-11-24",
+    "n": 13
    }
   },
   "Leptoria": {
@@ -221,15 +221,15 @@
   "Lithophyllon": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 23
+    "at": "2026-11-24",
+    "n": 8
    }
   },
   "Lobactis": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 3
+    "at": "2026-11-24",
+    "n": 12
    }
   },
   "Lobophyllia": {
@@ -242,8 +242,8 @@
   "Merulina": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 37
+    "at": "2026-11-24",
+    "n": 6
    }
   },
   "Millepora": {
@@ -256,8 +256,8 @@
   "Montipora": {
    "cand": {
     "by": "claude",
-    "at": "2026-11-03",
-    "n": 72
+    "at": "2026-11-24",
+    "n": 29
    }
   },
   "Mycedium": {
@@ -7684,6 +7684,23 @@
     0.975
    ]
   },
+  "alveopora-cand-246801672": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "xp",
+   "u": [
+    "genus"
+   ],
+   "n": "Cyan cast; tentacles not countable: Goniopora possible"
+  },
+  "alveopora-cand-247049529": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Mp",
+   "n": "12 tentacles per polyp"
+  },
   "alveopora-cand-254862456": {
    "v": "wide",
    "q": 2,
@@ -7722,6 +7739,16 @@
     "genus"
    ],
    "n": "Polyps retracted; tiny buds, not clearly Alveopora"
+  },
+  "alveopora-cand-270754390": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Mp",
+   "u": [
+    "genus"
+   ],
+   "n": "Night; tiny polyps over lumps, tentacles not countable"
   },
   "alveopora-cand-270769424": {
    "v": "wide",
@@ -7780,6 +7807,19 @@
    "k": "dup",
    "fm": "x",
    "n": "Same polyps and framing as the live photo"
+  },
+  "alveopora-cand-726168635": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "xp"
+  },
+  "alveopora-cand-726168664": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Mp",
+   "n": "A crinoid over the middle"
   },
   "alveopora-cand-98861198": {
    "v": "wide",
@@ -8077,6 +8117,23 @@
    ],
    "n": "Small round red polyp with white tentacle tips; not clearly Ctenactis"
   },
+  "ctenactis-cand-243899251": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "Short oval disc, axial furrow not clear: Fungia or Lobactis possible"
+  },
+  "ctenactis-cand-245788405": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Strong blue cast, tentacles out"
+  },
   "ctenactis-cand-262214861": {
    "v": "wide",
    "q": 2,
@@ -8095,6 +8152,13 @@
    "k": "best",
    "fm": "U"
   },
+  "ctenactis-cand-269392275": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U",
+   "n": "Night; a Fungia disc at the left edge"
+  },
   "ctenactis-cand-269473804": {
    "v": "wide",
    "q": 2,
@@ -8106,6 +8170,27 @@
    "q": 2,
    "k": "best",
    "fm": "U"
+  },
+  "ctenactis-cand-270772335": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "u": [
+    "multi"
+   ],
+   "n": "Two Fungia discs at the top left"
+  },
+  "ctenactis-cand-311283190": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "Long tentacles hide the disc: Heliofungia possible"
   },
   "ctenactis-cand-337141165": {
    "v": "wide",
@@ -8168,6 +8253,20 @@
    "fm": "U",
    "n": "Strong cyan cast over everything; date stamp"
   },
+  "ctenactis-cand-605666216": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1153 px high"
+  },
+  "ctenactis-cand-605666226": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Another part than the live Close-up photo"
+  },
   "ctenactis-cand-605666229": {
    "v": "macro",
    "q": 2,
@@ -8181,6 +8280,13 @@
    "k": "best",
    "fm": "U"
   },
+  "ctenactis-cand-636981271": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Side view, shallow focus"
+  },
   "ctenactis-cand-682474709": {
    "v": "wide",
    "q": 2,
@@ -8193,6 +8299,13 @@
     0.875,
     0.925
    ]
+  },
+  "ctenactis-cand-691350418": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "754 px wide, noisy"
   },
   "ctenactis-cand-693783226": {
    "v": "wide",
@@ -8502,6 +8615,20 @@
    "k": "best",
    "fm": "M"
   },
+  "cyphastrea-cand-260325316": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "M",
+   "n": "Night"
+  },
+  "cyphastrea-cand-260332596": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "n": "Night"
+  },
   "cyphastrea-cand-260362796": {
    "v": "medium",
    "q": 2,
@@ -8526,6 +8653,24 @@
    "k": "best",
    "fm": "S",
    "n": "A feather star in the middle"
+  },
+  "cyphastrea-cand-270589278": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "m": 1,
+   "fm": "E",
+   "u": [
+    "multi"
+   ],
+   "n": "Another coral with large cups at the right"
+  },
+  "cyphastrea-cand-270758001": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Night"
   },
   "cyphastrea-cand-270771703": {
    "v": "wide",
@@ -8718,6 +8863,116 @@
    "q": 2,
    "k": "dup",
    "fm": "U"
+  },
+  "danafungia-cand-342666511": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1200 px"
+  },
+  "danafungia-cand-352667783": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "n": "A branching coral dominates; the disc is small"
+  },
+  "danafungia-cand-484777746": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U"
+  },
+  "danafungia-cand-543419480": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Small, camouflaged among rubble"
+  },
+  "danafungia-cand-576424211": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Blue cast"
+  },
+  "danafungia-cand-576424251": {
+   "v": "macro",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
+  "danafungia-cand-595432175": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler lies over the disc; a crop may not remove it"
+  },
+  "danafungia-cand-624456469": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "U",
+   "n": "Farther, another angle, blue cast"
+  },
+  "danafungia-cand-624456481": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Dark surroundings"
+  },
+  "danafungia-cand-632674818": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U"
+  },
+  "danafungia-cand-685099993": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U"
+  },
+  "danafungia-cand-697670603": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Seen from the side, dark"
+  },
+  "danafungia-cand-738673702": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Oversharpened"
+  },
+  "danafungia-cand-746236626": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "U"
+  },
+  "danafungia-cand-746237887": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "x"
+  },
+  "danafungia-cand-746237947": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Very close on the septal teeth, shallow focus"
   },
   "diploastrea-cand-174506272": {
    "v": "medium",
@@ -8998,6 +9253,25 @@
    "n": "Colony edge over the reef"
   },
   "diploastrea-cand-713115591": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "M"
+  },
+  "diploastrea-cand-746238117": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "x"
+  },
+  "diploastrea-cand-746238153": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Oblique, shallow focus"
+  },
+  "diploastrea-cand-746238197": {
    "v": "medium",
    "q": 3,
    "k": "best",
@@ -9367,6 +9641,38 @@
     0.925
    ]
   },
+  "dipsastraea-cand-761575955": {
+   "v": "macro",
+   "q": 3,
+   "k": "best",
+   "fm": "x"
+  },
+  "dipsastraea-cand-761575956": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "n": "Oversharpened"
+  },
+  "dipsastraea-cand-765978167": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x"
+  },
+  "dipsastraea-cand-765978171": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "M"
+  },
+  "dipsastraea-cand-767079780": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "n": "Other corals at the bottom"
+  },
   "duncanopsammia-cand-227577462": {
    "v": "wide",
    "q": 2,
@@ -9387,12 +9693,39 @@
     1.0
    ]
   },
+  "duncanopsammia-cand-245793226": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Fp",
+   "n": "Blue cast; plate with polyps out"
+  },
+  "duncanopsammia-cand-245793252": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Polyps out over the corallites"
+  },
   "duncanopsammia-cand-260323430": {
    "v": "wide",
    "q": 2,
    "k": "best",
    "fm": "F",
    "n": "A nudibranch on the plate edge; the coral fills the frame"
+  },
+  "duncanopsammia-cand-372490894": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "Fp",
+   "n": "Wider, the plate edge"
+  },
+  "duncanopsammia-cand-372490915": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "Fp"
   },
   "duncanopsammia-cand-41558845": {
    "v": "wide",
@@ -9508,6 +9841,16 @@
    "q": 2,
    "k": "best",
    "fm": "xp"
+  },
+  "duncanopsammia-cand-609866148": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Sp",
+   "u": [
+    "genus"
+   ],
+   "n": "Columns rather than plates; Tubastraea or Turbinaria possible"
   },
   "duncanopsammia-cand-611581793": {
    "v": "wide",
@@ -10597,6 +10940,51 @@
    "k": "best",
    "fm": "M"
   },
+  "favites-cand-746235315": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Another part, polyps out, shallow focus"
+  },
+  "favites-cand-746235376": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Polyps half out"
+  },
+  "favites-cand-746235390": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Closer, polyps out"
+  },
+  "favites-cand-746235479": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "M"
+  },
+  "favites-cand-746237746": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "x"
+  },
+  "favites-cand-746237797": {
+   "v": "medium",
+   "q": 2,
+   "k": "dup",
+   "fm": "M"
+  },
+  "favites-cand-746237841": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "M"
+  },
   "fimbriaphyllia-cand-110600255": {
    "v": "wide",
    "q": 2,
@@ -10783,11 +11171,51 @@
    ],
    "n": "Soft over the whole frame, tentacles out"
   },
+  "fungia-cand-184568548": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Tentacular lobes, oversharpened"
+  },
   "fungia-cand-191091402": {
    "v": "wide",
    "q": 2,
    "k": "best",
    "fm": "U"
+  },
+  "fungia-cand-242142419": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "m": 1,
+   "fm": "U",
+   "u": [
+    "multi"
+   ],
+   "n": "Farther, with its neighbour"
+  },
+  "fungia-cand-242142445": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "u": [
+    "multi"
+   ],
+   "n": "Another mushroom coral fills the right third"
+  },
+  "fungia-cand-242142545": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "m": 1,
+   "fm": "U",
+   "u": [
+    "multi"
+   ],
+   "n": "Another angle, with its neighbour"
   },
   "fungia-cand-246530574": {
    "v": "wide",
@@ -10816,12 +11244,35 @@
    "k": "best",
    "fm": "U"
   },
+  "fungia-cand-283712293": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "n": "A field of mushroom corals: which one is asked?"
+  },
+  "fungia-cand-283715628": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "m": 1,
+   "fm": "U",
+   "n": "The same field of mushroom corals"
+  },
   "fungia-cand-337151886": {
    "v": "wide",
    "q": 1,
    "k": "best",
    "fm": "U",
    "n": "Soft and murky over the whole frame"
+  },
+  "fungia-cand-38715323": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Side view of the disc"
   },
   "fungia-cand-445309848": {
    "v": "wide",
@@ -10854,6 +11305,20 @@
    ],
    "n": "Two mushroom corals of similar size"
   },
+  "fungia-cand-453530554": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Oval disc, pink rim"
+  },
+  "fungia-cand-45611899": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Among Acropora branches; oversaturated"
+  },
   "fungia-cand-460641851": {
    "v": "wide",
    "q": 2,
@@ -10867,6 +11332,19 @@
    "k": "best",
    "fm": "U",
    "n": "Disc half hidden, murky water and particles"
+  },
+  "fungia-cand-507701760": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Mouth and septa, tentacles"
+  },
+  "fungia-cand-507706783": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
   },
   "fungia-cand-576268809": {
    "v": "wide",
@@ -10887,11 +11365,44 @@
     0.875
    ]
   },
+  "fungia-cand-605666233": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Tentacles half out"
+  },
+  "fungia-cand-605666237": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Closer on the mouth; 1155 px high"
+  },
   "fungia-cand-613378897": {
    "v": "wide",
    "q": 3,
    "k": "best",
    "fm": "U"
+  },
+  "fungia-cand-629067776": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "u": [
+    "multi"
+   ],
+   "n": "Acropora and other corals around a half-hidden disc"
+  },
+  "fungia-cand-629068109": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "U",
+   "n": "Disc partly hidden behind branching corals"
   },
   "fungia-cand-629914325": {
    "v": "wide",
@@ -10946,6 +11457,19 @@
   "fungia-cand-696290010": {
    "v": "wide",
    "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
+  "fungia-cand-733605082": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "On sand; murky"
+  },
+  "fungia-cand-746238064": {
+   "v": "wide",
+   "q": 2,
    "k": "best",
    "fm": "U"
   },
@@ -11361,6 +11885,16 @@
    "fm": "x",
    "n": "Shallow focus; sharp on the walls only; watermark"
   },
+  "goniastrea-cand-178876582": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "u": [
+    "genus"
+   ],
+   "n": "Round separate corallites on columns: Favites or Dipsastraea possible"
+  },
   "goniastrea-cand-245792470": {
    "v": "wide",
    "q": 2,
@@ -11381,6 +11915,13 @@
    "fm": "M",
    "n": "A small shrimp and algae near the top"
   },
+  "goniastrea-cand-304616819": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "n": "1500 px"
+  },
   "goniastrea-cand-357893806": {
    "v": "wide",
    "q": 2,
@@ -11399,12 +11940,102 @@
    "fm": "x",
    "n": "Sea squirts and red algae take the centre; the corals are behind"
   },
+  "goniastrea-cand-39200658": {
+   "v": "wide",
+   "q": 2,
+   "g": "exclude",
+   "fm": "S",
+   "u": [
+    "genus"
+   ],
+   "n": "A swarm of anthias over the colony takes the eye"
+  },
+  "goniastrea-cand-455061503": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "M",
+   "n": "Oversharpened"
+  },
+  "goniastrea-cand-503239967": {
+   "v": "macro",
+   "q": 1,
+   "k": "best",
+   "fm": "x",
+   "u": [
+    "quality"
+   ],
+   "n": "Blurred over the whole frame"
+  },
+  "goniastrea-cand-503239977": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "E"
+  },
+  "goniastrea-cand-503240078": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "n": "A scale pencil at the bottom",
+   "c": [
+    0.0,
+    0.0,
+    1.0,
+    0.8
+   ]
+  },
+  "goniastrea-cand-503240113": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "E",
+   "n": "Another part, greenish"
+  },
+  "goniastrea-cand-503240120": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Wider, polyps half out; soft"
+  },
+  "goniastrea-cand-503240168": {
+   "v": "macro",
+   "q": 1,
+   "k": "dup",
+   "fm": "x"
+  },
   "goniastrea-cand-593380437": {
    "v": "wide",
    "q": 1,
    "k": "best",
    "fm": "M",
    "n": "1133 px, strong cyan cast, soft"
+  },
+  "goniastrea-cand-639002465": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "E",
+   "n": "Blue cast, soft at 100%; anthias around"
+  },
+  "goniastrea-cand-639002488": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "x",
+   "u": [
+    "genus"
+   ],
+   "n": "A ruler over the bottom right; a crop may remove it"
+  },
+  "goniastrea-cand-639002489": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "E",
+   "n": "Closer on the same colony"
   },
   "goniastrea-cand-661983655": {
    "v": "wide",
@@ -11445,6 +12076,23 @@
     "genus"
    ],
    "n": "Murky yellow veil, soft at 100%"
+  },
+  "goniastrea-cand-92262496": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Acropora at the top left and other corals around"
+  },
+  "goniastrea-cand-92262505": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "u": [
+    "genus"
+   ],
+   "n": "Polyps out, walls hidden: Favites possible"
   },
   "goniopora-cand-100632392": {
    "v": "wide",
@@ -11651,6 +12299,20 @@
     0.975
    ]
   },
+  "goniopora-cand-453566000": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Mp",
+   "n": "Small colony with long polyps"
+  },
+  "goniopora-cand-453566014": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Polyp crowns, shallow focus"
+  },
   "goniopora-cand-454066558": {
    "v": "wide",
    "q": 2,
@@ -11670,6 +12332,26 @@
    "k": "best",
    "fm": "x",
    "n": "Polyp discs and tentacle tips; watermark at the corner"
+  },
+  "goniopora-cand-467757096": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "xp",
+   "n": "Soft at 100%"
+  },
+  "goniopora-cand-467757102": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "Mp"
+  },
+  "goniopora-cand-467757143": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "Mp",
+   "n": "Closer on the same colony"
   },
   "goniopora-cand-48750732": {
    "v": "medium",
@@ -11960,6 +12642,19 @@
    "q": 2,
    "k": "best",
    "fm": "U"
+  },
+  "halomitra-cand-746237580": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "U"
+  },
+  "halomitra-cand-746237611": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Other corals at the edges"
   },
   "heliofungia-cand-238276672": {
    "v": "wide",
@@ -12256,6 +12951,47 @@
    "k": "best",
    "fm": "Up"
   },
+  "heliofungia-cand-746237077": {
+   "v": "macro",
+   "q": 2,
+   "k": "dup",
+   "fm": "x"
+  },
+  "heliofungia-cand-746237085": {
+   "v": "macro",
+   "q": 2,
+   "k": "alt",
+   "fm": "x",
+   "n": "Closer, shallow focus"
+  },
+  "heliofungia-cand-746237133": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Septa and tentacles with pink tips"
+  },
+  "heliofungia-cand-746237195": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Disc with a few tentacles out"
+  },
+  "heliofungia-cand-765978509": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "xp",
+   "n": "Tentacles with white tips fill the frame"
+  },
+  "heliofungia-cand-765978525": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "xp",
+   "n": "Closer on the tentacles"
+  },
   "heliopora-cand-131166710": {
    "v": "wide",
    "q": 2,
@@ -12478,6 +13214,27 @@
    ],
    "n": "Short oval with one long groove; Ctenactis or Polyphyllia possible"
   },
+  "herpolitha-cand-262212078": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Night, on sand"
+  },
+  "herpolitha-cand-262212467": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U",
+   "n": "Night"
+  },
+  "herpolitha-cand-262212510": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "U",
+   "n": "Another angle, along the furrow"
+  },
   "herpolitha-cand-262212977": {
    "v": "wide",
    "q": 3,
@@ -12503,6 +13260,13 @@
    "k": "best",
    "fm": "U",
    "n": "Tentacles partly out"
+  },
+  "herpolitha-cand-270755032": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Y-shaped colony"
   },
   "herpolitha-cand-337139898": {
    "v": "wide",
@@ -12545,6 +13309,25 @@
    "k": "best",
    "fm": "U",
    "n": "Same photo as in another observation (watermark)"
+  },
+  "herpolitha-cand-550847761": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "U"
+  },
+  "herpolitha-cand-550847771": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "U"
+  },
+  "herpolitha-cand-550847773": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Green cast; Turbinaria plates around"
   },
   "herpolitha-cand-57893731": {
    "v": "wide",
@@ -12856,6 +13639,25 @@
    ],
    "n": "Murky orange cast, soft; genus not readable"
   },
+  "hydnophora-cand-745205811": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "B",
+   "n": "Closer on one branch, monticules"
+  },
+  "hydnophora-cand-745205822": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "B"
+  },
+  "hydnophora-cand-745676381": {
+   "v": "medium",
+   "q": 2,
+   "k": "dup",
+   "fm": "B"
+  },
   "isopora-cand-177343107": {
    "v": "wide",
    "q": 1,
@@ -12891,6 +13693,13 @@
     1.0
    ]
   },
+  "isopora-cand-260158370": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Green cast"
+  },
   "isopora-cand-260174194": {
    "v": "wide",
    "q": 2,
@@ -12916,6 +13725,20 @@
    "q": 2,
    "k": "dup",
    "fm": "B"
+  },
+  "isopora-cand-260209006": {
+   "v": "medium",
+   "q": 3,
+   "k": "best",
+   "fm": "S",
+   "n": "Night"
+  },
+  "isopora-cand-260209397": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "S",
+   "n": "Another part of the colony"
   },
   "isopora-cand-265444993": {
    "v": "wide",
@@ -12990,12 +13813,26 @@
    "k": "best",
    "fm": "B"
   },
+  "isopora-cand-580850828": {
+   "v": "wide",
+   "q": 1,
+   "k": "best",
+   "fm": "S",
+   "n": "Milky cyan veil over the whole frame; a date stamp"
+  },
   "isopora-cand-580865538": {
    "v": "wide",
    "q": 2,
    "k": "best",
    "fm": "B",
    "n": "Cyan cast; date stamp"
+  },
+  "isopora-cand-587303710": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Other corals around the colony"
   },
   "isopora-cand-605690215": {
    "v": "wide",
@@ -13009,6 +13846,41 @@
    "q": 2,
    "k": "best",
    "fm": "B"
+  },
+  "isopora-cand-608897746": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Blue water"
+  },
+  "isopora-cand-633452587": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Soft at 100%"
+  },
+  "isopora-cand-633452598": {
+   "v": "macro",
+   "q": 2,
+   "k": "best",
+   "fm": "x",
+   "n": "Soft at 100%"
+  },
+  "isopora-cand-633452599": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Blue cast; Seriatopora-like branches around"
+  },
+  "isopora-cand-633452634": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "S",
+   "n": "Another lobe, soft"
   },
   "isopora-cand-66646230": {
    "v": "wide",
@@ -13079,6 +13951,13 @@
    "k": "best",
    "fm": "B",
    "n": "A pointer at the bottom left, inside the subject; top view"
+  },
+  "isopora-cand-767079782": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "n": "Plate corals around"
   },
   "leptoria-cand-171877816": {
    "v": "medium",
@@ -13612,6 +14491,13 @@
    ],
    "n": "Two discs side by side, tentacles out"
   },
+  "lithophyllon-cand-225147856": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Strong blue cast; septa still readable"
+  },
   "lithophyllon-cand-239672518": {
    "v": "wide",
    "q": 3,
@@ -13691,6 +14577,13 @@
    "fm": "U",
    "n": "Same disc, same framing as the best"
   },
+  "lithophyllon-cand-270764701": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Night, tentacles half out"
+  },
   "lithophyllon-cand-270770473": {
    "v": "wide",
    "q": 3,
@@ -13736,6 +14629,16 @@
     "multi"
    ],
    "n": "Several similar mushroom discs fill the frame; green cast"
+  },
+  "lithophyllon-cand-420729198": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "Night; small domed disc with large septa: Fungia or Danafungia possible"
   },
   "lithophyllon-cand-445317217": {
    "v": "wide",
@@ -13792,6 +14695,59 @@
     0.975
    ]
   },
+  "lithophyllon-cand-746237727": {
+   "v": "macro",
+   "q": 3,
+   "k": "best",
+   "fm": "U",
+   "n": "Farther than the live Close-up photo"
+  },
+  "lobactis-cand-151366084": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "U"
+  },
+  "lobactis-cand-151366086": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Dark"
+  },
+  "lobactis-cand-151366105": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "Pale smooth surface, maybe the disc's underside or held: tentacular lobes not shown"
+  },
+  "lobactis-cand-151366124": {
+   "v": "macro",
+   "q": 2,
+   "g": "exclude",
+   "fm": "U",
+   "u": [
+    "genus"
+   ],
+   "n": "Pale smooth surface, maybe the disc's underside or held: tentacular lobes not shown"
+  },
+  "lobactis-cand-21994047": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1024 px"
+  },
+  "lobactis-cand-234354740": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "U"
+  },
   "lobactis-cand-262215945": {
    "v": "wide",
    "q": 2,
@@ -13825,6 +14781,46 @@
     0.075,
     0.985,
     0.975
+   ]
+  },
+  "lobactis-cand-313323627": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Under a ledge, dark; partly hidden"
+  },
+  "lobactis-cand-317418998": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "1000 px"
+  },
+  "lobactis-cand-357894626": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Small: the disc fills about a twentieth of the frame",
+   "c": [
+    0.125,
+    0.125,
+    0.875,
+    0.875
+   ]
+  },
+  "lobactis-cand-580511554": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "U",
+   "n": "Blue cast, soft at 100%",
+   "c": [
+    0.175,
+    0.1,
+    0.975,
+    0.95
    ]
   },
   "lobophyllia-cand-129404321": {
@@ -14928,6 +15924,16 @@
    "fm": "x",
    "n": "Soft at 100%"
   },
+  "merulina-cand-488111247": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "S",
+   "u": [
+    "genus"
+   ],
+   "n": "A column with fanned ridges: Hydnophora or Pectinia possible"
+  },
   "merulina-cand-588015497": {
    "v": "medium",
    "q": 3,
@@ -15054,6 +16060,13 @@
     "genus"
    ],
    "n": "Soft over the whole frame, algae-covered; genus hard to confirm"
+  },
+  "merulina-cand-745205927": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "B",
+   "n": "Algae and other life among the branches"
   },
   "merulina-cand-91232487": {
    "v": "medium",
@@ -15720,6 +16733,34 @@
    "fm": "S",
    "n": "Corallites between papillae readable but soft at 100%"
   },
+  "montipora-cand-488111149": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "n": "Strong cast; plates in tiers"
+  },
+  "montipora-cand-488111158": {
+   "v": "medium",
+   "q": 2,
+   "k": "best",
+   "fm": "F",
+   "n": "Papillae on the plate"
+  },
+  "montipora-cand-488111182": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "F",
+   "n": "The plate edge, ridged surface"
+  },
+  "montipora-cand-488111185": {
+   "v": "medium",
+   "q": 2,
+   "k": "alt",
+   "fm": "F",
+   "n": "Closer, shallow focus"
+  },
   "montipora-cand-493416551": {
    "v": "wide",
    "q": 1,
@@ -15804,6 +16845,55 @@
     0.975,
     0.975
    ]
+  },
+  "montipora-cand-588679606": {
+   "v": "wide",
+   "q": 3,
+   "k": "best",
+   "fm": "F"
+  },
+  "montipora-cand-588679720": {
+   "v": "wide",
+   "q": 2,
+   "k": "dup",
+   "fm": "F"
+  },
+  "montipora-cand-588679727": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "fm": "F",
+   "n": "From above; a massive coral sits in the middle"
+  },
+  "montipora-cand-596085916": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "m": 1,
+   "fm": "F",
+   "u": [
+    "multi"
+   ],
+   "n": "Plates among upright columns of another coral"
+  },
+  "montipora-cand-596085927": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "m": 1,
+   "fm": "F",
+   "u": [
+    "multi"
+   ],
+   "n": "Upright columns of another coral fill the middle"
+  },
+  "montipora-cand-596085928": {
+   "v": "wide",
+   "q": 2,
+   "k": "alt",
+   "m": 1,
+   "fm": "F",
+   "n": "Farther; several corals on the bommie"
   },
   "montipora-cand-596512561": {
    "v": "wide",
@@ -15933,6 +17023,24 @@
    "k": "dup",
    "fm": "F",
    "n": "Similar to the other medium photos, softer"
+  },
+  "montipora-cand-745674844": {
+   "v": "medium",
+   "q": 2,
+   "k": "dup",
+   "fm": "F"
+  },
+  "montipora-cand-745674851": {
+   "v": "medium",
+   "q": 2,
+   "k": "dup",
+   "fm": "F"
+  },
+  "montipora-cand-767079681": {
+   "v": "wide",
+   "q": 2,
+   "k": "best",
+   "fm": "F"
   },
   "mycedium-cand-224931995": {
    "v": "medium",

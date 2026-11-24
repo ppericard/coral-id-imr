@@ -252,6 +252,25 @@
    "form": "E",
    "keep": "best",
    "note": "Monticules clear; a fan worm at the left"
+  },
+  "hydnophora-cand-745676381": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "hydnophora-cand-745205822": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "hydnophora-cand-745205811": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "note": "Closer on one branch, monticules"
   }
  }
 }

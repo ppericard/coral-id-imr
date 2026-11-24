@@ -200,6 +200,79 @@
     "genus"
    ],
    "note": "Lobed outline; Herpolitha or Polyphyllia possible"
+  },
+  "ctenactis-cand-269392275": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Night; a Fungia disc at the left edge"
+  },
+  "ctenactis-cand-245788405": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong blue cast, tentacles out"
+  },
+  "ctenactis-cand-605666216": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1153 px high"
+  },
+  "ctenactis-cand-605666226": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Another part than the live Close-up photo"
+  },
+  "ctenactis-cand-270772335": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Two Fungia discs at the top left"
+  },
+  "ctenactis-cand-311283190": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Long tentacles hide the disc: Heliofungia possible"
+  },
+  "ctenactis-cand-691350418": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "754 px wide, noisy"
+  },
+  "ctenactis-cand-636981271": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Side view, shallow focus"
+  },
+  "ctenactis-cand-243899251": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Short oval disc, axial furrow not clear: Fungia or Lobactis possible"
   }
  }
 }

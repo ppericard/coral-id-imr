@@ -344,6 +344,23 @@
     "genus"
    ],
    "note": "A pipefish lies across the middle and a crinoid at left take the eye"
+  },
+  "merulina-cand-488111247": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A column with fanned ridges: Hydnophora or Pectinia possible"
+  },
+  "merulina-cand-745205927": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Algae and other life among the branches"
   }
  }
 }

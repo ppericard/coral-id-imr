@@ -290,6 +290,25 @@
    "form": "M",
    "keep": "best",
    "note": "Cyan cast"
+  },
+  "diploastrea-cand-746238197": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "diploastrea-cand-746238153": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Oblique, shallow focus"
+  },
+  "diploastrea-cand-746238117": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
   }
  }
 }

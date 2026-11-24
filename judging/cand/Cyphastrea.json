@@ -182,6 +182,38 @@
    "quality": 2,
    "form": "E",
    "keep": "best"
+  },
+  "cyphastrea-cand-270758001": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Night"
+  },
+  "cyphastrea-cand-270589278": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Another coral with large cups at the right"
+  },
+  "cyphastrea-cand-260325316": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Night"
+  },
+  "cyphastrea-cand-260332596": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Night"
   }
  }
 }

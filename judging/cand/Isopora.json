@@ -224,6 +224,83 @@
    "keep": "best",
    "multi": true,
    "note": "Soft; other corals around and in front"
+  },
+  "isopora-cand-580850828": {
+   "view": "wide",
+   "quality": 1,
+   "form": "S",
+   "keep": "best",
+   "note": "Milky cyan veil over the whole frame; a date stamp"
+  },
+  "isopora-cand-260158370": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Green cast"
+  },
+  "isopora-cand-260209006": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "note": "Night"
+  },
+  "isopora-cand-260209397": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "note": "Another part of the colony"
+  },
+  "isopora-cand-608897746": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Blue water"
+  },
+  "isopora-cand-633452587": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "isopora-cand-633452598": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "isopora-cand-633452599": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Blue cast; Seriatopora-like branches around"
+  },
+  "isopora-cand-633452634": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "note": "Another lobe, soft"
+  },
+  "isopora-cand-587303710": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Other corals around the colony"
+  },
+  "isopora-cand-767079782": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Plate corals around"
   }
  }
 }
