@@ -2114,3 +2114,22 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   nudibranches dans le jeu : le supprimer, comme pour les poissons ?»: «oui». Lifts the game cap of 12 a species of Q377
   (2026-11-15, 16:08), which stays for the rest (circles, start 6, 20 candidates). Applied: #1544,
   docs/decisions/2026-11-24-seaslug-no-game-cap.md.
+
+## 2026-11-25
+
+- **06:24, the night's narrow work (REE-244).** «Ok, donc en fait, t'as pas vraiment beaucoup travaillé cette nuit.
+  Qu'est-ce qui fait que tu t'es arrêté et que tu as fortement limité ton travail […] il y a un problème à nouveau dans
+  notre manière de travailler, à aller chercher dans le backlog des trucs que tu pouvais faire? Parce que là, tu aurais
+  eu plein de boulot à faire.» On the diagnosis: «Oui, le diagnostic me paraît bien, mais effectivement, là, ça mérite
+  un une vraie issue, parce que, en fait, c'est un problème qui revient […] sauf s'il y a une issue existante qui existe
+  déjà, et dans ce cas-là, on vient rajouter le contexte de cette nuit à cette issue.» Applied: Linear REE-244 comment
+  (2026-11-25).
+- **06:30-06:35, Linear organised for the agents.** «Mais sauf que là, on n'est pas dans une équipe humaine […] Moi, je
+  lis quasiment pas le linéaire. Et en fait, c'est les agents qui lisent le linéaire et qui l'utilisent pour
+  s'organiser. Donc, tu dis le to-do, c'est l'engagement. Mais en fait, les agents devraient s'engager à juste tout
+  faire.» «Mon interface principale c'est l'app […] et puis c'est les agents avec qui je discute, donc typiquement toi,
+  l'intégrateur.» On a regular pass: «il faut qu'il y ait une action relativement régulière, peut-être, je sais pas,
+  toutes les 2 heures ou toutes les 1h30 […] qui permettent de vérifier et de basculer des issues en prêtes à être
+  lancées, parce que justement les développements récents ont permis de débloquer.» To «par défaut, toute issue
+  ouverte est à faire […] quatre raisons» and the sweep wording: «oui pour les deux»; to the wording shown: «ok».
+  Applied: docs/INTEGRATOR.md "Linear", tools/checkin.md steps 3-4.
