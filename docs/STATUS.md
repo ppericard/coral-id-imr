@@ -27,7 +27,11 @@ Night report: last sent 2026-11-24 (06:11 Manila)
 - **The Checks were never answered** (REE-252): the Reviews page, a weekly sample instead, is designed in #1551.
   Linear is on a paid plan.
 - **Judging is on hold** (rule P7): no judging or re-judging by agents over 100 photos without Pierre's explicit OK.
-- **Running:** REE-265's next step, one storage check per task.
+- **Night of 11-24 to 11-25:** #1557 (the count's boot race) and #1556 (one storage check per task, REE-265) merged.
+  The count is still not repeatable at fish:50 seeds 2 and 3 (REE-281 comment, 23:55).
+- **Running:** the count's leftover boot race (REE-281, tools only); REE-265's next step, the fish's calls per answer,
+  still over the 100k target at every history (app.js, model.js, progress.js, quiz.js, sync.js; core.js and Code.gs
+  wait for #1554).
 
 ## Active discussion
 
@@ -57,7 +61,8 @@ not this file (REE-258). Open items by issue; the question text lives in Linear:
 - REE-245: Q1.
 - REE-275: (a), (d), (e), (f).
 - REE-8 and REE-275: the two review sets waiting for his answers.
-- Rule P7: the count of new fish candidates from the fixed refill (to be counted).
+- Rule P7, counted 2026-11-24 23:40 (`tools/judging_fish.py todo`): fish 228 candidates not judged in 32 species (55
+  from the fixed refill in 9 species, 173 older); sea slugs 2,579 in 261 species. Both over 100: his OK first.
 
 Last question number: Q458
 
@@ -71,7 +76,7 @@ The questions above.
 
 ## Last stop
 
-2026-11-24 evening, end-of-day handoff; the night report goes with Pierre's first message after 04:00.
+2026-11-25 01:00 Manila, night check-in; the night report goes with Pierre's first message after 04:00.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
 [now]: https://linear.app/reef-id/view/0be7e66e-2e7b-4832-9386-1bf6e4f76a59
