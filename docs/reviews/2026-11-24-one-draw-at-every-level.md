@@ -23,9 +23,10 @@ expected success for this player matches the success the engine aims for. A begi
 the ones they can succeed on, not because of a rule "before Open Water".
 
 **In one paragraph.** The engine already has that mechanism. Every photo is weighed by how close its difficulty is to
-the target of the difficulty controller, at every level. `RARE` was added on top of it for one reason: two parts of the
-draw lift photos whatever their difficulty, the floor and the variety lift. Before a unit reaches Open Water, those lifts
-sent a beginner photos far too hard for them. This note proposes:
+the target of the difficulty controller, at every level. `RARE` sits on top of it and carries Pierre's rule of
+2026-11-06. The ablation of section 2 shows what it compensates for (my reading): two parts of the draw lift photos
+whatever their difficulty, the floor and the variety lift, and each photo weighs on its own, so a unit's many hard
+photos outweigh its few easy ones. This note proposes:
 
 - removing `RARE` and the Open Water switch;
 - removing the two lifts that ignore difficulty;
@@ -33,9 +34,15 @@ sent a beginner photos far too hard for them. This note proposes:
   how often that difficulty comes.
 
 Variety then comes only from the photo memory, the last two observations and the session window. No constant is added.
-Six are removed. A feasibility run (section 6, exploratory) supports this: a beginner gets fewer very hard photos than
-today, an expert gets real challenges from a unit's first questions, and the share of hard photos rises smoothly with
-the player, with no step anywhere.
+Six are removed. A feasibility run (section 6, exploratory) shows what to expect, against today's draw:
+
+- **The step at Open Water is gone.** The share of hard photos rises smoothly with the player, before and after 0.5.
+- **An expert gets real challenges from a unit's first questions**, where today's cap holds them at 9% under ease 4.
+- **A beginner gets more photos at ease 3 than today on units rich in easy photos**: 17% under ease 4 against 9% in a
+  stationary draw with 12 easy adults, and 27% against 10% over a 15-question session.
+- **A beginner gets about as many ease 1-2 photos as today**: 1-2% against 2-4%, within the run's noise.
+- **Against the same draw with `RARE` simply removed** (#1494's "none"), the beginner's ease 1-2 share falls from
+  7-16% to 1-2%.
 
 ## 1. What the draw does today, at every stage
 
@@ -112,9 +119,8 @@ the global level, 85% to 75%, with no step. Nothing in the draw aims at a succes
 ## 2. Why the targeting alone was not enough: the diagnosis
 
 #1494 measured an arm "none": `RARE` removed, nothing in its place. A beginner (ability 0.5, bar 0.05) then drew 72%
-under ease 4 on a family with one easy adult, and 43% on a big family. That is why the rule existed. But the targeting
-is the very mechanism Pierre asks for, so the question is which part sends a beginner photos the targeting does not
-want. The code allows three causes:
+under ease 4 on a family with one easy adult, and 43% on a big family. The targeting is the very mechanism Pierre asks
+for, so the question is which part sends a beginner photos the targeting does not want. The code allows three causes:
 
 1. **Counts.** Each observation weighs on its own, so 240 hard photos at a small weight each can outweigh 12 easy ones
    at a large weight. The draw then follows the pool's make-up, not the player.
@@ -185,7 +191,10 @@ first, by the targeting alone, and then which observation at that difficulty.
 - The last two observations × 0.15 (`s.ro`).
 - The online calibration (`calBonus`, `setBonus`).
 - The variants' ramp.
-- The session window, which still makes a recent observation wait while another can be drawn (question 2).
+- The session window, which still makes a recent observation wait while another can be drawn.
+
+Where a photo is read as new (the targeting) and where the memory acts (a factor) is today's split, kept here.
+Question 2 asks about the other way.
 
 The photo within the observation is drawn on the same photo weight, as today.
 
@@ -222,9 +231,11 @@ draw in big pools" keeps `calib.u` and loses `calib.pool`.
 
 **Ease levels left after this design:**
 
-- `refLevel` keys on ease 4-5. That is the reference look of Pierre's card order ("Fish: easy, reference-like photos
-  first"), and his 13:50 answer on reference photos may redefine it. It is not a draw threshold, and the simulation
-  checks it as an arm (section 6.2).
+- **`refLevel` keys on ease 4 or more, and it stays in the draw**: a reference-level photo never seen weighs
+  `calib.ref` (3) times more, in M(k). It is the one ease threshold this design leaves in the draw. It carries the
+  reference look of Pierre's card order ("Fish: easy, reference-like photos first"), and his 13:50 answer on reference
+  photos («une note de 5 … doit être donné pour les photos qui cochent toutes les cases») may redefine it. The
+  mechanics study checks it as an arm (section 7.2), and question 5 asks about it.
 - `EASY_NEED` (3) is the refill's count of easy photos (`tools/fetch_fish.py`), in the content pipeline, not the draw.
 - The guardrail `hard` (share under ease 4 before Open Water, margin half of `RARE.SHARE`) loses its basis
   (question 3).
@@ -267,13 +278,22 @@ draw in big pools" keeps `calib.u` and loses `calib.pool`.
 The aims are read from PR #1500, still open at the time of writing (branch `players-goals`, LEARNING.md "The players
 we design for"; the digest «ok», Pierre, 2026-11-24 13:50).
 
-1. **A complete beginner is never faced with what is too hard.**
-   - In the feasibility run, the beginner's ease 1-2 share falls from 2-4% (main) to 1-2%.
-   - The model's own mean expected success on their questions rises from 0.78-0.80 to 0.80-0.82, nearer the 85% aim.
-   - Families with many easy photos give a bit more ease 3: 17% under ease 4 with 12 easy adults, against 9%. At the
-     model's estimates a beginner of ability 0.5 succeeds on ease 3 at about 0.72.
-   - On a big family the share under ease 4 rises from 9% to 22%.
-   - Today's cap held these at 10% whatever the player. The one draw lets the player's level decide.
+1. **A complete beginner is never faced with what is too hard.** This is where the one draw costs something against
+   today, and the simulation must weigh it.
+   - Ease 1-2, the photos far too hard: 1-2% against 2-4% on main in a stationary draw, within the run's noise. Against
+     "none", 7-16%. Not measured over a session.
+   - Ease 3, harder but within reach (the model expects a beginner of ability 0.5 to get about 72% right): more than
+     today on units rich in easy photos. Under ease 4, stationary: 17% against 9% with 12 easy adults, 23% against 19%
+     with 6, and 22% against 9% on a big family. Over a 15-question session: 27% against 10% with 12 easy adults, 43%
+     against 33% with 6.
+   - On thin families (1 to 3 easy adults) it is about the same as today: 28-31% against 26-55% stationary, 60-77%
+     against 57-80% over a session.
+   - The model's own mean expected success on a beginner's stationary draws is 0.80-0.82 against 0.78-0.80 on main,
+     against an aim of 0.85. This is the engine's estimate, not a measure of the player.
+   - What raises the session share is the photo memory, not the window (table 5): once the easy photos are seen, the
+     never-seen bonus makes a new harder photo outweigh a seen easy one. Question 2.
+   - Today's cap held these at 10% whatever the player. The one draw lets the player's level and what they have seen
+     decide.
 2. **An expert meets real challenges early.**
    - Today `RARE` holds an expert on a new unit, before its bar reaches Open Water, at 9% under ease 4 on a big family
      or a family with 12 easy adults.
@@ -294,8 +314,8 @@ we design for"; the digest «ok», Pierre, 2026-11-24 13:50).
 
 **The thin fish families.** A family with 1 to 3 easy adults has nothing near a beginner's target but those adults.
 
-- The one draw shows them most of the time. Once they are in the session window, it takes the nearest harder ones,
-  mostly ease 3, rarely ease 1-2.
+- The one draw shows them most of the time. Once they are seen (the memory) or recent (`s.ro`, the window), it takes
+  the nearest harder ones, mostly ease 3.
 - Over 15 questions in the run, a beginner saw 60-77% of their photos under ease 4 on such families, against 57-80% on
   main. That share is set by the content and the window, not by the rule.
 - The fix is content: more easy photos (Pierre, 13:50: «on traine des pieds pour ajouter des photos»; REE-243, the
@@ -307,8 +327,8 @@ we design for"; the digest «ok», Pierre, 2026-11-24 13:50).
 **What it is.** The harness of `tests/rareease.js` through `tools/studies/ree245/sim.js` (`model.js` `photoSet` in a
 vm, the game stubbed, seeded draws), with `model.js`'s text patched in memory per arm. The script is not in the
 repository, because this PR is docs only. Its arms are described exactly so it can be redone. The numbers are not
-reproducible from the repository alone. It ran once, on the shared machine through `tests/slot.js` with
-`SMOKE_SLOTS=1`, in about five minutes once the slot was free.
+reproducible from the repository alone. It ran on the shared machine through `tests/slot.js` with `SMOKE_SLOTS=1`, in
+two runs (tables 1-4, then table 5).
 
 **Arms** (each with `RARE` off, `rare = false` at `model.js:290`, except main):
 
@@ -397,14 +417,33 @@ answers.
 | Big family, effective observations: main | 11.2 | 12.9 | 13.9 | 14.4 | 14.1 | 13.4 | **155.7** | 164.7 |
 | **one draw** | 12.4 | 20.4 | 44.8 | 77.0 | 115.2 | 146.2 | 146.7 | 151.3 |
 
+### Table 5. What raises a beginner's session share (a second, smaller run)
+
+The same sequence (15 questions, 100 runs, the beginner), one draw with parts of the variety switched off. "No memory"
+sets both the never-seen bonus (`model.js:240`) and the memory factor (`model.js:241`) to 1. "No window" keeps every
+observation of the window (`model.js:317`). Each cell is under ease 4 / distinct observations in 15 / most shows of one
+observation in the worst run.
+
+| Easy adults | 1 | 3 | 6 | 12 |
+| --- | ---: | ---: | ---: | ---: |
+| main | 80% / 12.0 / 5 | 57% / 11.0 / 4 | 33% / 10.5 / 4 | 10% / 11.7 / 4 |
+| one draw | 77% / 11.6 / 5 | 60% / 11.4 / 5 | 43% / 11.7 / 4 | 27% / 12.5 / 4 |
+| one draw, no window | 76% / 11.5 / 6 | 59% / 11.2 / 5 | 43% / 11.6 / 4 | 26% / 12.4 / 4 |
+| one draw, no memory | 70% / 9.7 / 5 | 47% / 9.1 / 5 | 33% / 9.8 / 5 | 22% / 10.8 / 5 |
+| one draw, neither | 60% / 8.6 / 9 | 44% / 8.6 / 8 | 31% / 9.3 / 7 | 21% / 10.5 / 6 |
+
+In this harness the unit comes every fourth question, so the window covers only the last two or three questions on it,
+which `s.ro` already holds back: the window changes nothing here. The memory and the never-seen bonus add 5 to 13 points
+under ease 4 and about 2 distinct observations. The rest (21% with 12 easy adults) is the targeting's own width.
+
 **Reading.**
 
 - The step at Open Water is gone: the share rises with the player, the same way before and after 0.5.
-- The floor and the lift are the whole of a beginner's ease 1-2 share.
+- The floor and the lift make nearly all of a beginner's ease 1-2 share in "none".
 - ρ removes most of the count effect for a beginner on a big family (37% → 22%) and on thin families (52% → 31% with
   one easy adult).
-- The cost is concentration in the stationary draw for a beginner on a thin family. In a session it is close to
-  main's.
+- Against main, a beginner gets more ease 3 on units rich in easy photos, from the targeting's width and from the
+  memory. The concentration in a stationary draw on a thin family is higher, and in a session it is close to main's.
 
 What this run cannot say: whether a beginner learns better on ease 3 than on the same easy photo again; whether ease
 predicts real difficulty well enough (REE-85 measured −0.19 logit a point within a family, against the 0.5 the prior
@@ -437,8 +476,8 @@ Arms, each against main:
 - **one draw**;
 - one draw without ρ;
 - one draw keeping the floor;
-- one draw with `calib.ref` at 1 (the ease-keyed reference bonus off);
-- one draw with the window as a soft factor (question 2).
+- one draw with `calib.ref` at 1 (the ease-keyed reference bonus off, question 5);
+- one draw whose targeting reads a photo with the player's memory of it, the memory factor gone (question 2, option b).
 
 Measures as in section 6, plus `calib.ease` 0.3 (#1519) and the sea slugs' pools. They choose the arm the level-2
 check runs. They decide nothing on their own.
@@ -455,13 +494,23 @@ check runs. They decide nothing on their own.
   - It is phase-free: it reads how far each question's true success sits from the aim, at every level.
   - It counts too hard and too easy alike, and it weighs a question too hard more, because success falls faster on
     that side of an 85% aim.
+  - Its limit: the rated world's beginner starts every unit at a know of 0.02, so its true success sits near the guess
+    rate whatever the photo until it has learned a little. The beginner's share of the primary then comes from its
+    later answers, and the other profiles carry the start.
+- **A positive control first:** main against "none" (`RARE` removed, nothing in its place), a known harm for a
+  beginner. `zone` and `tooHard` must see it, or they cannot judge the change. Three seeds per profile, reported as
+  exploratory.
 - **The sensitivity check:** the same pair in the weak-ease world (`--easenoise 0.6`), reported beside the primary.
   It is a second check, declared now, with its own cap.
 - **The guardrails** (LEARNING.md's table, the one-sided 90% bound of the paired difference):
   - `know`, `over`, `score`, `firstOW`, `unitsOW`, `plateau`, `met` and `famAdv` at their margins;
-  - **new:** `tooHard` over answers 1-300, per profile, margin **+0.02**;
-  - **new:** `near` (repeats in a few questions), margin **+0.03**;
-  - **new:** answers per photo shown (`perPhoto`), as exposure, margin **+0.05**;
+  - three new ones, proposed under question 3 (margins are LEARNING.md's, set once there, each with its why):
+    - `tooHard` over answers 1-300, per profile, margin **+0.02**: two questions in 100 a player more likely gets
+      wrong than right, the scale of `know`'s margin;
+    - `near` (repeats in a few questions), margin **+0.03**: three questions in 100 showing a recent observation
+      again, a little over one a session;
+    - answers per photo shown (`perPhoto`), as exposure, margin **+5%**: a twentieth more answers on the photos
+      already shown;
   - in the population run: `rateErr` and `rateCorr`, the photo ratings against the truth. Removing the floor must not
     leave hard photos unrated; `rareOn`'s comment records that capping them held their ratings back.
 - **The costs declared:**
@@ -474,8 +523,8 @@ check runs. They decide nothing on their own.
   - Each arm runs with `--budget 20`, so a paired check stays within rule L11's cap.
   - LEARNING.md's measured rated fish job is 56 seconds per 3,000 answers on a loaded 4-core machine. Fifty jobs per
     arm fit.
-  - The corals, the weak-ease pair and the app world are three more checks, each within its own cap, one at a time on
-    the machine slot (rule W24).
+  - The heavy-tailed fish photos, the corals, the weak-ease pair, the app world and the positive control are five
+    more checks, each within its own cap, one at a time on the machine slot (rule W24).
 
 ### 7.4 The real log (rule L12)
 
@@ -525,31 +574,36 @@ statistical unit):
    - remove the floor and the variety lift, which send photos whatever their difficulty;
    - draw a difficulty first, then a photo.
 
-   Expected:
-   - fewer very hard photos (ease 1-2) for a beginner;
-   - a little more ease 3 on families rich in easy photos;
-   - real challenges for an expert from a unit's first questions;
-   - no change at Open Water.
+   Expected, from the small exploratory run of section 6:
+   - no change at Open Water: the share of hard photos rises with the player, the same way before and after it;
+   - real challenges for an expert from a unit's first questions (today 9% under ease 4 until Open Water);
+   - for a beginner, about as many very hard photos (ease 1-2) as today, 1-2% against 2-4%;
+   - for a beginner, more photos at ease 3 on families rich in easy photos: over a 15-question session, 27% under ease
+     4 against 10% with 12 easy adults, 43% against 33% with 6; about the same on thin families. The model expects a
+     beginner to get about 72% of ease-3 photos right.
 
    Options: (a) yes, subject to the simulation of section 7; (b) the same but keeping the floor, for exposure; (c)
    keep today's rule until the content is richer. **Recommendation: (a).** The floor is kept as an arm of the study
    (section 7.2) and comes back only if the photo ratings need it.
-2. **On a unit with too few photos at the player's level, which comes first: a photo seen in the last 10 questions, or
-   a harder one never seen?** Today the session window (your «ok», 2026-11-19, Q426) makes the recent one wait. Before
-   Open Water, the cap kept a recent easy one rather than a hard one, and that exception goes with `RARE`. Options:
-   - (a) keep the window as it is: the harder photo, mostly ease 3, which a beginner gets right about 72% of the time
-     at the model's estimates;
-   - (b) a soft window: a recent photo weighs much less but can still come, so a beginner on a thin family may see an
-     easy photo again within 10 questions (your aim 3 accepts a repeat for a beginner), at the cost of one more
-     constant.
+2. **Once a beginner has seen the easy photos of a unit, which comes next: one of them again, or a new harder one?**
+   Today the targeting reads every photo as new, and the photo memory lowers the weight of a photo already shown (with
+   a bonus for one never seen), so the new harder one wins. Before Open Water the cap hid that. With the cap gone, it
+   is most of the beginner's extra ease 3 in a session (table 5: 43% against 33% with 6 easy adults). Options:
+   - (a) keep today's split: the targeting reads a photo as new, the memory spreads the photos. A beginner sees more
+     new photos, more of them at ease 3.
+   - (b) the targeting reads a photo with the player's memory of it, which is literally its expected success for this
+     player, and the memory factor goes. A seen easy photo is then easier still: close to a beginner's low target, so
+     it comes back; far from an expert's, so it does not. A beginner sees more repeats of easy photos (your aim 3
+     accepts a repeat for a beginner), and no constant is added.
 
-   **Recommendation: (a)**, then measure how often the window sends a beginner off the target (section 7.2), and
-   come back with (b) only if that is frequent.
+   **Recommendation: (a) for this change**, with (b) as an arm of the mechanics study (section 7.2). It comes back to
+   you if it holds the primary and the repeats guardrail.
 3. **The guardrail on hard photos.** `hard` (the share under ease 4 before Open Water, margin half of `RARE.SHARE`)
    loses its basis. Options:
    - (a) replace it by `tooHard`, the share of questions a player more likely gets wrong than right, at every level,
-     margin +0.02;
-   - (b) keep `hard` as a description only.
+     margin +0.02, and add `near` (+0.03) and answers per photo shown (+5%) as guardrails (section 7.3 gives each
+     margin's why);
+   - (b) keep `hard` as a description only, and no new guardrail.
 
    **Recommendation: (a)**, with `hard` still reported.
 4. **The other rules keyed on a unit's level.** Juveniles and phases from Open Water to Advanced (late juveniles at
@@ -557,6 +611,16 @@ statistical unit):
    from Open Water. They decide which content comes, not how hard the photo is, and each was decided by you. Should
    they get the same review later? Options: (a) not now, a separate inventory issue; (b) in this change. **Recommendation:
    (a)**, so the draw is measured on its own.
+5. **The reference bonus, the one ease threshold left in the draw.** A fish photo judged 4 or 5 with the reference look,
+   never seen, weighs 3 times more (`calib.ref`, `refLevel`), for every player. It puts the card's kind of photo first
+   for a beginner, and it also pulls easy photos into an expert's draw. Options:
+   - (a) keep it for now, and check it as an arm of the mechanics study (section 7.2);
+   - (b) remove it with `RARE`, so nothing in the draw keys on an ease level;
+   - (c) redefine it after your 13:50 answer on reference photos (a 5 for photos that tick every box of an ID book's
+     reference pose, per subject), then decide.
+
+   **Recommendation: (a)**, then (c) when the reference poses are defined. It is a separate rule from `RARE` (the card
+   order), and removing it on its own would move what a beginner sees first.
 
 The constants of section 3.3 stay as they are: the integrator's call, under rule L11 (nothing recalibrated before the
 simulation).
