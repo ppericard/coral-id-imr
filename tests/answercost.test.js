@@ -132,6 +132,52 @@ test('the players are made on a pinned commit of the app, in a folder of their o
   assert.match(read('tools/answercost.js'), /\.\.\.\['--root', app\]/);
 });
 
+test('the page gets its code from the tree under test and its data from the pinned tree (REE-281)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'answercost-pick-')),
+    now = path.join(dir, 'now'),
+    pin = path.join(dir, 'pin');
+  try {
+    for (const [root, tag] of [
+      [now, 'now'],
+      [pin, 'pin']
+    ]) {
+      fs.mkdirSync(path.join(root, 'data'), {recursive: true});
+      for (const f of ['app.js', 'fish-game.json', 'data/cand.json']) fs.writeFileSync(path.join(root, f), tag);
+    }
+    fs.writeFileSync(path.join(now, 'seaslug-new.json'), 'now'); // a data file added since the pin
+    const at = u => {
+      const f = A.pick(now, pin, u);
+      return f && path.relative(dir, f);
+    };
+    assert.strictEqual(at('/app.js'), path.join('now', 'app.js'), 'code: the tree under test');
+    assert.strictEqual(at('/fish-game.json'), path.join('pin', 'fish-game.json'), 'data: the pinned tree, whatever a refill did since');
+    assert.strictEqual(at('/data/cand.json'), path.join('pin', 'data', 'cand.json'));
+    assert.strictEqual(at('/seaslug-new.json'), path.join('now', 'seaslug-new.json'), 'a data file the pin lacks: the tree under test');
+    assert.strictEqual(at('/../../etc/passwd'), null, 'never outside the tree');
+    assert.strictEqual(at('/../pin/fish-game.json'), null);
+    assert.strictEqual(
+      path.relative(dir, A.pick(now, null, '/fish-game.json')),
+      path.join('now', 'fish-game.json'),
+      '--data-now: the tree’s own'
+    );
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+  assert.match(
+    read('tools/answercost.js'),
+    /serveFrom\(argv\.includes\('--data-now'\) \? null : ensureApp\(dir\)\)/,
+    'the count serves the pinned data'
+  );
+});
+
+test('the page’s clock is virtual: it stands still between the tool’s ticks, so the same seed counts the same (REE-281)', () => {
+  const src = read('tools/answercost.js');
+  assert.match(src, /performance\.now = \(\) => V\.p/);
+  assert.match(src, /window\.__tick = ms =>/);
+  assert.match(src, /__tick\(4000\), smokeAnswer\(pick\)/, 'a thinking time before the answer');
+  assert.match(src, /__tick\(6000\), document\.getElementById\('next'\)/, 'a pause before Next');
+});
+
 test('the page holds the state’s history: the warm-up answers played before the read are counted in', () => {
   assert.ok(!A.historyOff(52, 50, 2), 'the default warm-up');
   assert.ok(!A.historyOff(70, 50, 20), 'a longer warm-up (--warm 20) is no reason to reject a state loaded right');

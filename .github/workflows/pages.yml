@@ -21,13 +21,16 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      # Only to list this run's artifacts in the wait step before deploy-pages (REE-279).
+      actions: read
     # Job-level so an off-main dispatch cannot cancel production before its if.
     concurrency:
       group: pages
       cancel-in-progress: true
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      # From whichever attempt deployed (the first one's output is empty when it failed).
+      url: ${{ steps.deployment_second.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - name: Require the single Actions publishing source
         env:
@@ -62,6 +65,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pages"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/pages"
           echo "Published source: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          # The same commit as an annotation of the job, which Health reads (tools/health.py check_deploy, REE-279) to say
+          # which commits of main this deploy did not hold: the checkout is main as it stands when the job starts.
+          echo "::notice title=published-source::$(git rev-parse HEAD)"
       # The build tools, in a temporary folder (nothing added to the repo, no package.json): terser for tools/minify.js
       # (pinned there too), Playwright for the staged copy's smoke. The Chromium download is kept between runs, as in
       # smokes.yml.
@@ -96,10 +102,90 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ runner.temp }}/pages
+      # REE-279: deploy-pages has failed with "Found 0 artifact(s)" (first seen 2026-11-15, bursts on 11-20/21 and from
+      # 2026-11-23 20:43Z, about half the runs since), about 0.5 s after the upload finalised an artifact that the run lists a
+      # moment later. This step waits, bounded, until the run lists its `github-pages` artifact through the REST listing, and
+      # prints every attempt with when its call was sent and answered (milliseconds from the start of this step, which follows
+      # the upload step at once), so the lag is counted, not hidden. It is a MEASUREMENT: it does not retry the deploy (the
+      # second attempt below does) and it never fails the job. If the artifact never shows in this listing within the bound it
+      # only warns (`::warning title=pages-artifact-lag`) and the deploy attempts go on, because that listing has itself
+      # misbehaved here (artifacts of passing runs answer 404 by id) and only the second deploy attempt decides the job's
+      # outcome. Caveat:
+      # deploy-pages v5 reads the run's artifacts from the Actions results service (Twirp ListArtifacts, the runtime token),
+      # not from this REST listing (actions/deploy-pages src/internal/api-client.js at 368f825), so a listing here is evidence
+      # about a neighbour of what the action reads: "listed at attempt 1, deploy still found 0" means this wait watches the
+      # wrong listing (docs/PAGES.md "The artifact wait").
+      - name: Wait until the run lists its Pages artifact (bounded, logged)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          start=$(date +%s%3N)
+          limit=60000
+          attempt=0
+          answered=0
+          failure=
+          while :; do
+            attempt=$((attempt + 1))
+            asked=$(( $(date +%s%3N) - start ))
+            # Each call is cut at the time left of the 60 s (at most 10 s, at least 1 s): a stalled request cannot outlast the bound.
+            secs=$(( (limit - asked) / 1000 ))
+            [ "$secs" -gt "${PAGES_WAIT_REQUEST_S:-10}" ] && secs=${PAGES_WAIT_REQUEST_S:-10}
+            [ "$secs" -lt 1 ] && secs=1
+            if reply=$(timeout "$secs" gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq '.total_count' 2>&1); then
+              count=$reply
+              answered=$((answered + 1))
+            else
+              status=$?
+              count=0
+              failure=$(echo "$reply" | head -c 200)
+              [ "$status" = 124 ] && failure="no answer in ${secs} s"
+              echo "attempt $attempt: the listing call failed: $failure"
+            fi
+            lag=$(( $(date +%s%3N) - start ))
+            echo "attempt $attempt, sent at +${asked} ms, answered at +${lag} ms after the upload step: $count artifact(s) named github-pages listed"
+            if [ "$count" -ge 1 ] 2>/dev/null; then
+              echo "::notice title=pages-artifact-lag::listed at attempt $attempt (call sent at +${asked} ms, answered at +${lag} ms)"
+              echo "Artifact listed at attempt $attempt (call sent at +${asked} ms, answered at +${lag} ms after the upload step)." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$lag" -ge "$limit" ]; then
+              break
+            fi
+            sleep 2
+          done
+          # A warning, not a failure: the deploy attempts below go on, and the second one decides the job's outcome.
+          if [ "$answered" = 0 ]; then
+            msg="the artifact listing never answered in $((limit / 1000)) s (${attempt} attempts; last error: $failure)"
+          else
+            msg="the run's REST listing showed no github-pages artifact $((limit / 1000)) s after the upload step (${attempt} attempts, ${answered} answered)"
+          fi
+          echo "::warning title=pages-artifact-lag::$msg. Going on to the deploy attempts; see docs/PAGES.md."
+          echo "Artifact wait: $msg. The deploy attempts went on." >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      # REE-279, the integrator's call: deploy-pages v5 asks the results service for the artifact once, and has failed with
+      # "Found 0 artifact(s)" (about half the runs since 2026-11-23 20:43Z), which the wait above cannot watch. So the first attempt
+      # may fail without failing the job (continue-on-error), and ONE second attempt follows, after a logged pause, only if the
+      # first one failed. This is one bounded attempt inside this run, not a re-run of a job; the second has no
+      # continue-on-error, so a second failure fails the job. Both are the same action and inputs. A failed first attempt that
+      # created a Pages deployment would leave a lock the second could not pass (docs/PAGES.md "Manual recovery"): the failure
+      # seen is before any deployment is created, and the second attempt would then fail loudly, not hide it.
       - name: Deploy to GitHub Pages
         id: deployment
+        continue-on-error: true
         uses: actions/deploy-pages@v5
         with:
           # Leave time for the action to cancel a timed-out Pages deployment
           # before the outer job timeout. Cancellation also has a signal handler.
+          timeout: 600000
+      - name: First deploy attempt failed, second attempt after a pause (logged)
+        if: steps.deployment.outcome == 'failure'
+        run: |
+          echo "::warning title=pages-deploy-second-attempt::The first deploy-pages attempt failed (outcome: ${{ steps.deployment.outcome }}; the known cause is 'Found 0 artifact(s)', REE-279, see that step's log). Pausing 20 s, then one second attempt; if it fails too the job fails."
+          echo "First deploy-pages attempt failed; second attempt after 20 s (REE-279)." >> "$GITHUB_STEP_SUMMARY"
+          sleep 20
+      - name: Deploy to GitHub Pages (second attempt)
+        id: deployment_second
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+        with:
           timeout: 600000

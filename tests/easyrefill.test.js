@@ -270,7 +270,7 @@ s, t = {'id': 's1'}, {'id': 't1', 'species': ['s1']}
 L = [{'f': f'fish-s1-cand-{i}', 'o': f'o{i}'} for i in range(5)]
 row = lambda bonus: shortness(s, t, L, lambda f: False, {}, {}, cap=5, bonus=bonus)
 d = datetime.date(2026, 11, 23)
-free = {'s1': {'at': '2026-11-21', 'cap': 5, 'parts': ['free']}}
+free = {'s1': {'at': '2026-11-21', 'cap': 5, 'room': {'free': 2}}}
 r2 = {**row(True), 'room': 2, 'parts': {'free': 2}}
 print(json.dumps([[row(b)[k] for b in (False, True) for k in ('room', 'beyond', 'parts')],
     pick_short({'s1': row(False)}, {}, d), pick_short({'s1': row(True)}, {}, d), pick_short({'s1': row(True)}, free, d),

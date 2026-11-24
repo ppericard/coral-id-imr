@@ -5092,52 +5092,76 @@
     }
     return op > 0 ? Math.min(1, fa / op) : 0;
   }
-  // The false-alarm table (speed only, every value the same to the last bit; docs/LEARNING.md "Long rated runs: the
-  // false-alarm table"). faArm(P) lets the next faOf build one table of every unit's false alarms and chances in a
-  // single pass over P, in the scan's own order, and answer later calls from it until scoreAnswer writes P (it disarms
-  // the table while it runs and arms it again, empty, after) or faDisarm(P). Opt-in, only while nothing but scoreAnswer
-  // writes the records' conf, off, ty or the level's tyk: the app arms it for each handler that reads the bars (app.js
-  // faHeld), the simulations for each answer; the sheet never arms. A P whose conf or off is not
-  // a plain object of numbers, or a unit id that is not a string or that Object.prototype holds, is scanned.
-  // FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
+  // The false-alarm counters (speed only, every value the scan's to the last bit; docs/LEARNING.md "Long runs: the
+  // false-alarm counters"): for each P, every unit's false alarms (the other records' conf for it) and offers (their off), the
+  // scan's two sums, kept beside P in memory, never on it (nothing more is saved, sent or merged). Made in one pass over
+  // the records at P's first read (faTable), then kept by the scorer, which adds 1 to a count where it adds 1 to a
+  // record's conf or off (faAdd): a read is O(1) whatever the history, an answer O(k). The typed chances are read at each
+  // read, as faTyped counts them, with the unit's rank kept in its entry (no call a read). Counts add up exactly as
+  // integers only: a P whose conf or off is not a
+  // plain object of safe integers, a unit id that is not a string or that Object.prototype holds, or typed chances that
+  // are not an integer, are scanned. Whoever writes the records' conf or off in place other than through scoreAnswer
+  // (sync.js refilling P with a replay or a merge) drops them (faDrop): rebuilt at the next read. A P replaced by another
+  // object has none until its first read. FA_CHECK.on (the tests, every smoke): every read is checked against the scan,
+  // and a difference throws.
   const FA_CHECK = {on: false},
-    FAT = new WeakMap(),
-    faArm = P => void (P && typeof P === 'object' && FAT.set(P, null)),
-    faDisarm = P => void (P && typeof P === 'object' && FAT.delete(P)),
+    FAK = new WeakMap(), // P -> Map(unit -> [false alarms, offers, its rankKey]), or false: scanned
+    faDrop = P => void (P && typeof P === 'object' && FAK.delete(P)),
+    // Unit k's entry in K, made empty with its rank.
+    faEntry = (K, k) => K.get(k) || K.set(k, [0, 0, rankKey(k)]).get(k),
     faPlain = c => {
       if (typeof c !== 'object' || Array.isArray(c)) return false;
       const p = Object.getPrototypeOf(c);
       return p === null || Object.getPrototypeOf(p) === null; // a plain object, of this realm or of a vm's
-    };
+    },
+    // A count the counters add up exactly: none (the scan's || 0) or a safe integer.
+    faInt = v => !v || Number.isSafeInteger(v);
+  // The pass over the records, in the scan's own order: false when a count cannot be added up exactly.
   function faTable(P) {
     const u = new Map(),
-      // Record t's conf or off (c) added to every other unit's false alarms or chances (key); false when c is not a plain
-      // object of numbers. A unit's chances start at its typed questions, as the scan's do.
-      add = (c, t, key) => {
+      // Record t's conf or off (c) added to every other unit's false alarms (i 0) or offers (i 1).
+      add = (c, t, i) => {
         if (!c) return true;
         if (!faPlain(c)) return false;
         for (const k of Object.keys(c)) {
           const v = c[k];
-          if (v && typeof v !== 'number') return false;
-          if (k === t) continue;
-          if (!u.has(k)) u.set(k, {fa: 0, op: faTyped(P, k)});
-          u.get(k)[key] += v || 0;
+          if (!faInt(v)) return false;
+          if (k === t || !v) continue;
+          const x = faEntry(u, k);
+          if (!Number.isSafeInteger((x[i] += v))) return false;
         }
         return true;
       };
-    for (const t in P) if (t !== LEVEL && P[t] && !(add(P[t].conf, t, 'fa') && add(P[t].off, t, 'op'))) return {ok: false};
-    return {ok: true, u};
+    for (const t in P) if (t !== LEVEL && P[t] && !(add(P[t].conf, t, 0) && add(P[t].off, t, 1))) return false;
+    return u;
+  }
+  // The scorer about to add 1 to record t's conf (i 0) or off (i 1) for x, c that map as it is (or none yet): 1 more
+  // to x's count, none for t's own key or the level's record, as the scan skips them. A write the counters cannot follow
+  // exactly (an id Object.prototype holds, a map that is not plain, a count that is not a safe integer) drops them.
+  function faAdd(P, t, c, x, i) {
+    const K = FAK.get(P);
+    if (!K) return; // none yet, or scanned
+    const k = String(x),
+      r = String(t);
+    if (k === r || r === LEVEL) return;
+    const v = c ? c[k] : undefined;
+    if (k in Object.prototype || (c && !faPlain(c)) || !faInt(v) || !Number.isSafeInteger((v || 0) + 1)) return void FAK.delete(P);
+    if (!Number.isSafeInteger(++faEntry(K, k)[i])) FAK.delete(P);
   }
   function faOf(P, n) {
     if (!P || !n) return 0;
-    if (!FAT.has(P) || typeof n !== 'string' || n in Object.prototype) return faScan(P, n);
-    let T = FAT.get(P);
-    if (!T) FAT.set(P, (T = faTable(P)));
-    if (!T.ok) return faScan(P, n);
-    // A unit no other record names nor offers: no false alarm, 0 as the scan gives it.
-    const x = T.u.get(n),
-      v = x ? (x.op > 0 ? Math.min(1, x.fa / x.op) : 0) : 0;
-    if (FA_CHECK.on && !Object.is(v, faScan(P, n))) throw new Error(`faOf: the table gives ${v} for ${n}, the scan ${faScan(P, n)}`);
+    if (typeof P !== 'object' || typeof n !== 'string' || n in Object.prototype) return faScan(P, n);
+    let K = FAK.get(P);
+    if (K === undefined) FAK.set(P, (K = faTable(P)));
+    if (!K) return faScan(P, n);
+    // n's entry, made at its first read when no other record names nor offers it (its typed chances only, as the scan
+    // counts them); its offers plus faTyped's expression on the rank kept in it, so a read makes no call.
+    const x = K.get(n) || K.set(n, [0, 0, rankKey(n)]).get(n),
+      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[x[2]] || 0) - ((P[n] || {}).ty || 0)) + x[1];
+    if (!Number.isSafeInteger(op)) return faScan(P, n);
+    const v = op > 0 ? Math.min(1, x[0] / op) : 0;
+    if (FA_CHECK.on && !Object.is(v, faScan(P, n)))
+      throw new Error(`faOf: the counters give ${v} for ${n}, the scan ${faScan(P, n)} (a record of P written in place with no faDrop?)`);
     return v;
   }
   // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.
@@ -5887,16 +5911,14 @@
   // the global level (the bar's likelihood, the moving average, the Elo); its counts and recent results take a miss.
   const PART = {cn: 0.5, g: 0.25};
   const partOf = q => (q && !q.ok && typeof q.z === 'string' && Object.prototype.hasOwnProperty.call(PART, q.z) ? PART[q.z] : 1);
-  // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
-  // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty
-  // after it.
+  // An answer scored on P (scoreStep, below). It keeps P's false-alarm counters (faAdd) at each write of a record's conf
+  // or off; a step that throws drops them, so the next read counts the records as the throw left them.
   function scoreAnswer(P, q) {
-    if (!FAT.has(P)) return scoreStep(P, q);
-    FAT.delete(P);
     try {
       return scoreStep(P, q);
-    } finally {
-      FAT.set(P, null);
+    } catch (e) {
+      faDrop(P);
+      throw e;
     }
   }
   function scoreStep(P, q) {
@@ -5913,10 +5935,11 @@
       },
       s = rec(t);
     // The choices offered beside it and the genus given instead, before the weights (the player's own mix-up rate).
-    chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
+    // Each count also kept in P's false-alarm counters (faAdd: by the unit offered or given, as faOf reads them).
+    chs.forEach(x => x !== t && (faAdd(P, t, s.off, x, 1), ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1)));
     s[ok ? 'ok' : 'ko']++;
     s.streak = ok ? (s.streak || 0) + 1 : 0;
-    if (!ok && q.c) (s.conf = s.conf || {})[q.c] = (s.conf[q.c] || 0) + 1;
+    if (!ok && q.c) (faAdd(P, t, s.conf, q.c, 0), ((s.conf = s.conf || {})[q.c] = (s.conf[q.c] || 0) + 1));
     const scored = typeof q.d0 === 'number' && isFinite(q.d0),
       d0 = scored ? q.d0 : 0,
       fam = Number(q.fam) || 0,
@@ -7497,8 +7520,7 @@
     domFromCounts,
     faOf,
     FA_CHECK,
-    faArm,
-    faDisarm,
+    faDrop,
     looksLeft,
     afterBkt,
     TARGET_P,

@@ -203,21 +203,14 @@ function played(sub, profile, seed, N, check, st) {
   W.localStorage.setItem(SV, '1000');
   const {N: Fn, O: Fo} = pages(W, check);
   st.ver = Fn.ver;
-  C.faArm(ctx.P);
-  try {
-    for (let i = 0; i < N; i++) {
-      C.faDisarm(ctx.P);
-      pl.step(i);
-      C.faArm(ctx.P);
-      Fn.stateBump(); // the scorer's caller (quiz.js recordAnswer) and the progress saved
-      for (let j = 0; j < 1 + Math.floor(r() * 3); j++) {
-        const op = write(W, Fn, r, U.setK);
-        st.ops[op] = (st.ops[op] || 0) + 1;
-        same(Fn, Fo, r, st, `${sub} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`);
-      }
+  for (let i = 0; i < N; i++) {
+    pl.step(i);
+    Fn.stateBump(); // the scorer's caller (quiz.js recordAnswer) and the progress saved
+    for (let j = 0; j < 1 + Math.floor(r() * 3); j++) {
+      const op = write(W, Fn, r, U.setK);
+      st.ops[op] = (st.ops[op] || 0) + 1;
+      same(Fn, Fo, r, st, `${sub} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`);
     }
-  } finally {
-    C.faDisarm(ctx.P);
   }
   assert.deepStrictEqual(W.later, [], 'no VIEW_CHECK difference thrown later');
   return pl;

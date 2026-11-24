@@ -23,7 +23,7 @@ headroom, room for about 10,500 photos. It holds almost only photos in play. Wha
 
 | Subject | What binds today | Evidence | Storage if lifted |
 | --- | --- | --- | --- |
-| Fish | **Supply under the source rules**, then judging (rule P7). Mostly not the caps: 421 species still have general room under their cap and their general searches found nothing more within the last month (`RECHECK_DAYS`), so a higher cap adds nothing for them. For 221 others (91 whose open room is only a phase's, 130 not short) the supply past the cap is not measured. | Section 3.1 | About +0.3 GB (faved beyond the cap) to +0.9 GB (the `dup` extras that are another zoom or angle, findable from the codes) |
+| Fish | **Supply under the source rules**, then judging (rule P7). Mostly not the caps: 421 species still have general room under their cap and their general searches found nothing more within the last month (`RECHECK_DAYS`), so a higher cap adds nothing for them. **Correction (REE-278):** for 216 of them iNaturalist holds enough to fill that room; the refill's records were wrong ([fish supply study](2026-11-24-fish-supply-past-cap.md), PR #1541, §5). For 221 others (91 whose open room is only a phase's, 130 not short) the supply past the cap is not measured. | Section 3.1 | About +0.3 GB (faved beyond the cap) to +0.9 GB (the `dup` extras that are another zoom or angle, findable from the codes) |
 | Sea slugs | **The game cap of 12 photos a species** (Q377), then judging the 2,563 new extras (rule P7). 239 of the 271 units sit exactly at 12, and 2,074 judged photos wait behind the cap. | Section 3.2 | +0.42 GB at a cap of 20, +0.48 GB with no game cap |
 | Corals | **The sorting in the admin and judging** (rule P7): candidates enter play only through Pierre's admin and Publish, and 445 of the 1,244 waiting are not judged yet. Then supply for the thin genera (Anacropora, Astrea). | Section 3.3 | At most +0.45 GB if every waiting candidate entered |
 
@@ -134,6 +134,11 @@ By file kind, all subjects: the 1600 px files are **4.49 GB (61.6%)**, 960 px 1.
   and a raised cap voids the record):
   - **421 have general room left** (1,771 room units in all) and the general searches found nothing more: their supply
     under the source rules is exhausted below their cap. 65 of them are short of easy adults.
+    **Correction (REE-278):** "found nothing more" overstates it. The [fish supply study](2026-11-24-fish-supply-past-cap.md)
+    (PR #1541, §5) measured enough usable observations on iNaturalist to fill the open room of 216 of the 268 species
+    whose room fits a new observation (the other 153 hold half a unit); only 52 are exhausted. The cause, checked on
+    *Amphiprion clarkii*: the refill took a part that got nothing (half a unit of room, which no new observation fits)
+    for one searched to the end, and kept the record when the judging pass and Pierre's rejections freed room since.
   - **91 have only a phase's room open** (82 juvenile, 11 female, 10 male: some have more than one): their general
     room is full, so how much iNaturalist holds past their cap is not known. 8 of them are short of easy adults.
   With `--beyond-cap`, 88 species short of easy adults get 627 room units for faved observations, 40 species a run.
