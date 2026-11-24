@@ -327,6 +327,11 @@ print(json.dumps({'lics': {p['f']: p['lic'] for p in C if p.get('own') and p['o'
   'new': sorted(p['f'] for p in C if p.get('own')), 'others': sum(1 for p in C if not p.get('own') and p['f'] not in {x['f'] for x in FULL}),
   'locs': {str(p['o'].rsplit('/', 1)[1]): p['loc'] for p in C if p.get('own')}, 'gid': sorted({p['o'].rsplit('/', 1)[1] for p in C if p.get('gid')}),
   'again': len(fl.own_take(MINE, 10, usedp, lambda: [12])),
+  'accepted': [fl.accepted(MINE[2], 10, 'ph'), fl.accepted(MINE[2], 10, 'dauin'), fl.accepted(MINE[2], 10, 'world'),
+               fl.accepted({**MINE[2], 'user': {'login': 'other'}}, 10, 'ph')],
+  'recheck': (lambda pr, X, o: [pr.check_coral({'f': 'a-cand-5030', 'loc': 'ph', 'g': 'A'}, o, X)[0],
+                                pr.check_coral({'f': 'a-cand-5030', 'loc': 'ph', 'g': 'A'}, {**o, 'user': {'login': 'other'}}, X)[0]])(
+      __import__('photo_recheck'), type('X', (), {'coral_taxa': lambda s, r: [10]})(), {**MINE[2], 'taxon': {**MINE[2]['taxon'], 'rank': 'species'}}),
   'asked': [u for u in URLS if 'user_login=ppericard' in u]}))`);
   assert.deepStrictEqual(R.obs, [501, 502, 503, 505, 506, 509], 'never 508, annotated Dead');
   assert.strictEqual(
@@ -343,6 +348,13 @@ print(json.dumps({'lics': {p['f']: p['lic'] for p in C if p.get('own') and p['o'
     {'a-cand-6000': 'own'},
     'his photo without a licence is taken, recorded as his own; the ND and share-alike ones of that observation are not'
   );
+  assert.deepStrictEqual(
+    R.accepted,
+    [true, true, false, false],
+    'his Needs ID observation passes the shared predicate in the Philippines, not abroad, and not another observer’s'
+  );
+  assert.ok(!R.recheck[0].includes('id_lost'), 'the photo recheck does not report his accepted observation as id_lost');
+  assert.ok(R.recheck[1].includes('id_lost'), 'and still does for another observer’s with the same identifications');
   assert.strictEqual(R.again, 0, 'a photo is taken once');
   assert.strictEqual(R.asked.length, 1, 'one read of his observations for every genus');
   assert.ok(!/photo_license/.test(R.asked[0]), 'his search does not filter on the licence: his own photo needs none');

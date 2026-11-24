@@ -207,7 +207,11 @@ def ph_ok(o, tid):
 
 def accepted(o, tid, loc):
     """The identification a tier accepts for genus tid: the Philippines tiers (dauin, ph) take what ph_ok takes; abroad
-    (loc world) takes Research Grade only. main uses it, and tools/photo_recheck.py asks it again of a photo in play."""
+    (loc world) takes Research Grade only. Pierre's own observation in the Philippines tiers is accepted whatever its
+    grade and agreement (the fish's and the sea slugs' rule for him; the caller checks the genus: in_genus). main and
+    own_take use it, and tools/photo_recheck.py asks it again of a photo in play."""
+    if loc != 'world' and (o.get('user') or {}).get('login') == OWN:
+        return True
     return o.get('quality_grade') == 'research' if loc == 'world' else ph_ok(o, tid)
 
 

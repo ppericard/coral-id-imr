@@ -17,7 +17,8 @@ FishBase photos and the photos with no observation are counted as not checked):
 How each photo is judged. The fetchers' own predicates are called, never restated (a test patches one and sees the verdict
 change); what a fetcher leaves to its search query (the taxon, casual, captive) is asked beside them:
   - corals: tools/fetch_local.py accepted (the Philippines tiers: ph_ok, Research Grade, a genus-level community ID or the
-    trusted identifier's; abroad: Research Grade only) for the genus of the unit, and in_genus;
+    trusted identifier's, or any grade for Pierre's own observation; abroad: Research Grade only) for the genus of the
+    unit, and in_genus;
   - fish candidates (fish-<species>-cand-<photo>): tools/fetch_fish.py usable_obs on the observation as fetch_fish.trim reads
     it, and the observation's taxon is the species' photo taxon (the search's taxon_id);
   - fish reference photos (fi<photo>, from the iNaturalist taxon pages): tools/fish_refs.py passes, with the species'

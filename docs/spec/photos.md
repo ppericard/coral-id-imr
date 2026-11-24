@@ -176,7 +176,8 @@ fish and sea slugs: the game files (`fish-game.json`, `seaslug-game.json`), not 
 and any photo with no observation are not asked (the report counts them).
 
 **Judged by the fetcher's own predicate**, called, never copied: corals `fetch_local.accepted` (the Philippines tiers:
-Research Grade, a genus-level community ID or the trusted identifier's; abroad: Research Grade only) and `in_genus`; fish
+Research Grade, a genus-level community ID or the trusted identifier's, or any grade for Pierre's own observation; abroad:
+Research Grade only) and `in_genus`; fish
 candidates `fetch_fish.usable_obs`; fish reference photos `fish_refs.passes`; sea slugs `fetch_seaslugs.usable` (a species),
 `usable_gl` (a genus-level photo) and the label (a species with no name). What a fetcher leaves to its search query is asked
 beside the predicate: the species or genus (`taxon_id`), casual and captive. A genus-level sea-slug photo whose observation was
