@@ -36,6 +36,29 @@ test('with the IMR edition, the pages already say what ORG says: nothing to writ
   }
 });
 
+test('a new value that contains the earlier one stays put on a second run, and an escaped earlier name is replaced', () => {
+  const dir = copy("{short: 'IMR-UK', name: 'Institute for Marine Research UK', app: 'IMR-UK Reef ID', appShort: 'Reef ID'}");
+  try {
+    const old = ['--from', 'IMR Reef ID', '--from-short', 'IMR', '--from-name', 'Institute for Marine Research'];
+    run(dir, ...old);
+    const once = PAGES.map(f => read(dir, f));
+    assert.match(once[1], /the Institute for Marine Research UK \(IMR-UK\), Dauin/);
+    assert.match(once[0], /from the IMR-UK survey lists/);
+    assert.match(run(dir, '--check'), /nothing left/);
+    assert.match(run(dir, ...old), /nothing to do/);
+    assert.deepStrictEqual(
+      PAGES.map(f => read(dir, f)),
+      once
+    );
+    // the page holds "Acme &amp; Co": the documented --from-name "Acme & Co" finds it
+    fs.writeFileSync(path.join(dir, 'privacy.html'), once[1].replace('Institute for Marine Research UK', 'Acme &amp; Co'));
+    run(dir, '--from-name', 'Acme & Co');
+    assert.match(read(dir, 'privacy.html'), /the Institute for Marine Research UK \(IMR-UK\), Dauin/);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 test('a fork changes ORG once and the pages follow, whole words only, then a second run changes nothing', () => {
   const dir = copy("{short: 'ABC', name: 'Acme & Co', app: 'ABC Reef ID', appShort: 'Reef ID'}");
   try {

@@ -117,14 +117,22 @@ def rename_token(m, table):
 
 def org_words(line, shorts, full_names, o):
     """The organisation's name and short form, as whole words, written from ORG (HTML-escaped: the files are pages)."""
-    name, short = html.escape(o['name']), html.escape(o['short'])
+    forms = lambda v: sorted({html.escape(v), v}, key=len, reverse=True)  # a page holds the escaped form
+    hold = ['\0name\0', '\0short\0']
+    # The current values are held out of every replacement (and written as placeholders), so a new value that
+    # contains an earlier one ("IMR" inside "IMR-UK") is never written twice: a second run changes nothing.
+    for ph, v in zip(hold, (o['name'], o['short'])):
+        for f in forms(v):
+            line = line.replace(f, ph)
     for n in full_names:
         if n != o['name']:
-            line = line.replace(n, name)
+            for f in forms(n):
+                line = line.replace(f, hold[0])
     for s in shorts:
         if s != o['short']:
-            line = re.sub(r'(?<!\w)' + re.escape(s) + r'(?!\w)', lambda m: short, line)
-    return line
+            for f in forms(s):
+                line = re.sub(r'(?<!\w)' + re.escape(f) + r'(?!\w)', lambda m: hold[1], line)
+    return line.replace(hold[0], html.escape(o['name'])).replace(hold[1], html.escape(o['short']))
 
 
 def rename_text(text, names, app, table, words=None):
