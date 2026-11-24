@@ -228,7 +228,9 @@ const viewFail = m => {
 const viewDiff = (kind, name) =>
   viewFail(`${kind} view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
 // f's value kept while now() (the version) stays the same.
-function verView(kind, name, f, now) {
+// point: its readers check each value they read instead (the units met, model.js introduced: a record written by hand
+// for another key, a smoke's P[LEVEL], changes no value read), so VIEW_CHECK does not compare the whole value.
+function verView(kind, name, f, now, point = false) {
   let at = -1,
     v;
   return () => {
@@ -238,12 +240,12 @@ function verView(kind, name, f, now) {
       at = t;
       return v;
     }
-    if (VIEW_CHECK.on && !viewSame(v, f())) viewDiff(kind, name);
+    if (VIEW_CHECK.on && !point && !viewSame(v, f())) viewDiff(kind, name);
     return v;
   };
 }
-function stateView(name, f) {
-  return verView('state', name, f, stateNow);
+function stateView(name, f, point = false) {
+  return verView('state', name, f, stateNow, point);
 }
 // The data version now: the stored texts compared first (stateNow), as for a state view.
 const dataNow = () => (stateNow(), DATA_V);

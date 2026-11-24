@@ -105,7 +105,10 @@ The first read of a view in a task compares the stored text of the sheet's versi
 rated world, a unit test: no `stateView`), each value is computed where it is read, by the same code. With `VIEW_CHECK` on (every smoke page and `tools/learnsim.js --facheck`,
 through `tests/facheck.js`), every read of a kept view computes it again and compares, order included (a list, a Set
 or a Map item by item, a plain object key by key down to its leaves), and a `stateNow` that trusts its task's
-comparison compares the stored texts again; a difference throws, and again in a task of its own.
+comparison compares the stored texts again; a difference throws, and again in a task of its own. The units met are
+checked value by value: each `introduced` read against `introducedCalc` (`model.js` `metCheck`), so a record a smoke
+writes by hand for a key no read asks about is no difference. A smoke that writes `P` or the intro map by hand
+bumps after it (`stateBump('rec')`), as the app's writers do.
 `tests/stateview.test.js` compares the units in play, the rank classes, each unit's set and class with the code before
 them over rated-world runs and made-up states, and checks that every declared writer bumps the right versions;
 `tests/levelview.test.js` compares the tree's score and the levels with the code before them over rated-world runs of

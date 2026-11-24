@@ -1106,15 +1106,23 @@ const metCalc = () => {
   const m = introMap();
   return new Set([...Object.keys(P), ...Object.keys(m)].filter(introducedCalc));
 };
-const metNow = typeof stateView === 'function' ? stateView('met', metCalc) : null;
+// With VIEW_CHECK on, each read is compared with introducedCalc (metCheck): the value read, not the whole Set.
+const metNow = typeof stateView === 'function' ? stateView('met', metCalc, true) : null;
+const metCheck = (S, n) => {
+  const v = S.has(n);
+  if (v !== introducedCalc(n)) viewDiff('state', 'met');
+  return v;
+};
 // introducedFn: introduced for a loop over many units with nothing written during it (the sets' units in play, a level's
 // need, the wrong choices): one read of the view for the whole loop (as lvSteps).
 const introducedFn = () => {
   if (!metNow) return introducedCalc;
   const S = metNow();
-  return n => (typeof n === 'string' && !(n in Object.prototype) ? S.has(n) : introducedCalc(n));
+  return n => (typeof n !== 'string' || n in Object.prototype ? introducedCalc(n) : VIEW_CHECK.on ? metCheck(S, n) : S.has(n));
 };
-const introduced = metNow ? n => (typeof n === 'string' && !(n in Object.prototype) ? metNow().has(n) : introducedCalc(n)) : introducedCalc;
+const introduced = metNow
+  ? n => (typeof n !== 'string' || n in Object.prototype ? introducedCalc(n) : VIEW_CHECK.on ? metCheck(metNow(), n) : metNow().has(n))
+  : introducedCalc;
 const introReady = n => {
   if (closed(n)) return false;
   if (askedOpen(n)) return true;

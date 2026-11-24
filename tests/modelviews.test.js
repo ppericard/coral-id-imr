@@ -53,9 +53,24 @@ const lvlNeed0 = (k, list) => {
 // The views (model.js now), renamed (…N) beside the page's own model.js, which made its bindings with no stateView.
 const ren = (s, names) => s.replace(new RegExp(`\\b(${names.join('|')})\\b`, 'g'), '$1N');
 const NEW = [
-  ren(block(MODEL, 'const introducedCalc = ', 'const introducedFn = ', {file: 'model.js'}), ['introducedCalc', 'metCalc', 'metNow']),
-  ren(block(MODEL, 'const introducedFn = ', 'const introduced = ', {file: 'model.js'}), ['introducedCalc', 'introducedFn', 'metNow']),
-  ren(block(MODEL, 'const introduced = metNow', ';\n', {through: 1, file: 'model.js'}), ['introducedCalc', 'introduced', 'metNow']),
+  ren(block(MODEL, 'const introducedCalc = ', 'const introducedFn = ', {file: 'model.js'}), [
+    'introducedCalc',
+    'metCalc',
+    'metNow',
+    'metCheck'
+  ]),
+  ren(block(MODEL, 'const introducedFn = ', 'const introduced = ', {file: 'model.js'}), [
+    'introducedCalc',
+    'introducedFn',
+    'metNow',
+    'metCheck'
+  ]),
+  ren(block(MODEL, 'const introduced = metNow', ';\n', {through: 1, file: 'model.js'}), [
+    'introducedCalc',
+    'introduced',
+    'metNow',
+    'metCheck'
+  ]),
   ren(block(MODEL, 'const genScoreCalc = ', 'const genScore = ', {file: 'model.js'}), ['genScoreCalc']),
   ren(block(MODEL, 'const genScore = typeof', ';\n', {through: 1, file: 'model.js'}), ['genScoreCalc', 'genScore']),
   ren(block(MODEL, 'const examOnCalc = ', 'const examOn = ', {file: 'model.js'}), ['examOnCalc']),

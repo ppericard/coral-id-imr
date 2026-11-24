@@ -107,6 +107,7 @@ const server = http.createServer((req, res) => {
     // Player levels on every genus: new, beginner, middle, strong (ability th on the photo-difficulty scale).
     for (const th of [null, 0, 1, 2.5]) {
       P = th === null ? {} : Object.fromEntries(genera.map(n => [n, {ok: 5, ko: 2, h: '1101101', th, pg: 0.4}]));
+      stateBump('rec');
       for (const n of genera) {
         const g = GX(n);
         for (let i = 0; i < RUNS; i++) {
@@ -155,9 +156,13 @@ const server = http.createServer((req, res) => {
     });
     const t = Object.keys(DATA.gen)[0];
     P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, pg: 0.4}]));
+    stateBump('rec');
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85};
+    stateBump('rec');
     faDrop(P);
+    stateBump('rec');
     P[LEVEL] = {ok: 200, ko: 30, th: 1};
+    stateBump('rec');
     const at = [],
       qx = question,
       logged = () => {
@@ -200,7 +205,9 @@ const server = http.createServer((req, res) => {
     {
       const s0 = P[t];
       P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 4, v: ['wide'], at: -99}};
+      stateBump('rec');
       faDrop(P);
+      stateBump('rec');
       const L = [];
       for (let i = 0; i < 3 && !P[t].mx; i++) {
         const ty = examTyped(t);
@@ -211,7 +218,9 @@ const server = http.createServer((req, res) => {
       }
       if (L.join('') !== 'tt' || !P[t].mx || P[t].ex) fails.push(`exam begun before typed questions: ${L.join('')}, mastered ${!!P[t].mx}`);
       P[t] = s0;
+      stateBump('rec');
       faDrop(P);
+      stateBump('rec');
     }
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
@@ -222,15 +231,20 @@ const server = http.createServer((req, res) => {
       const keep = {...P},
         [a, b, c] = genera.filter(n => DATA.gen[n] && n !== t);
       P[a] = {ok: 0, ko: 0};
+      stateBump('rec');
       P[b] = {ok: 40, ko: 4, h: '1111111111', th: 2.5};
+      stateBump('rec');
       P[c] = {ok: 6, ko: 6, h: '0101010101', th: -1.4};
+      stateBump('rec');
       faDrop(P);
+      stateBump('rec');
       const w = [a, b, c].map(drawW);
       if (!(w[0] === 1 && w[1] < w[2] && w[2] < 1)) fails.push(`draw weights: never asked ${w[0]}, known ${w[1]}, shaky ${w[2]}`);
       if (level(c)[0] !== 'weak' || level(b)[0] === 'weak' || shaky(b) || !shaky(c)) fails.push('Review is not shaky');
       Object.keys(P).forEach(k => delete P[k]);
       Object.assign(P, keep);
       faDrop(P);
+      stateBump('rec');
     }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
     // beginner's genus (24%) never; a typed answer is logged quiz|t (an exam's quiz|t|x, quiz|h|t|x on a photo of the
@@ -246,6 +260,7 @@ const server = http.createServer((req, res) => {
         ...lo.map(n => [n, {ok: 4, ko: 3, h: '1010110', th: 0, pg: 0.2}])
       ]);
       P[LEVEL] = {ok: 300, ko: 60, th: 1};
+      stateBump('rec');
       const n = {hi: 0, hiT: 0, lo: 0, loT: 0};
       for (let i = 0; i < 300; i++) {
         NEXTQ = null;
@@ -425,7 +440,9 @@ const server = http.createServer((req, res) => {
     }
     // A miss on the genus ends an exam in course.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
+    stateBump('rec');
     faDrop(P);
+    stateBump('rec');
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
     if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
     // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
@@ -436,14 +453,18 @@ const server = http.createServer((req, res) => {
         .sort((a, b) => photoDiff(t, a) - photoDiff(t, b));
     // One miss keeps a learned genus (mxKept), a second one before it is back up takes it away.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: PROG.M, mx: 1};
+    stateBump('rec');
     faDrop(P);
+    stateBump('rec');
     answer('quiz', wrong, t, pics.slice(0, 2), false, null);
     if (!P[t].mx) fails.push(`${t}: one miss took a learned genus away (progress ${pgOf(P[t])})`);
     answer('quiz', wrong, t, pics.slice(0, 2), false, null);
     if (P[t].mx) fails.push(`${t}: still mastered after two misses (progress ${pgOf(P[t])})`);
     // A miss never raises the progress, even on its hardest photo shown alone, and takes it down visibly (core.js PROG).
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.75};
+    stateBump('rec');
     faDrop(P);
+    stateBump('rec');
     const b0 = genScore(t);
     answer('quiz', wrong, t, pics.slice(-1), false, null);
     if (genScore(t) > b0 - 0.1) fails.push(`${t}: a miss at ${Math.round(100 * b0)}% only took it to ${Math.round(100 * genScore(t))}%`);
@@ -452,7 +473,9 @@ const server = http.createServer((req, res) => {
     // the genus offset it was scored with (sc m). The records above, saved with s.pg, keep the former rule.
     {
       delete P[t];
+      stateBump('rec');
       faDrop(P);
+      stateBump('rec');
       answer('quiz', t, t, pics.slice(-1), false, null);
       const d1 = P[t].ds,
         lg = (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {};
@@ -475,7 +498,9 @@ const server = http.createServer((req, res) => {
         log = () => (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {},
         one = known => {
           P[t] = {ok: 10, ko: 2, h: '1101101', th: 1, pg: 0.4, pm: 1, ps: known ? {[ph[0].f]: [2, 2]} : {}};
+          stateBump('rec');
           faDrop(P);
+          stateBump('rec');
           answer('quiz', t, t, ph, false, null);
           return {pg: P[t].pg, th: P[t].th, e: log().e};
         },
@@ -495,7 +520,9 @@ const server = http.createServer((req, res) => {
       const f0 = pics[0].f,
         f1 = (pics[1] || pics[0]).f;
       P[t] = {ok: 20, ko: 4, h: '1111011111', th: 1, pg: 0.7, ps: {[f0]: [4, 3], [f1]: [3, 0]}};
+      stateBump('rec');
       faDrop(P);
+      stateBump('rec');
       const ch1 = memRecalcAll(),
         pg1 = P[t].pg,
         kept = (store.get('reefid-sync-coral-progress', {})[t] || {}).pg,
@@ -528,7 +555,9 @@ const server = http.createServer((req, res) => {
           let hit = 0;
           for (let i = 0; i < 1000; i++) {
             P[n] = {ok: 20, ko: 4, h: '1101101', th: 0.5, pg: 0.5, ps};
+            stateBump('rec');
             faDrop(P);
+            stateBump('rec');
             if (photoSet(n).shown.some(x => key(x) === c0)) hit++;
           }
           return hit / 1000;
@@ -579,7 +608,9 @@ const server = http.createServer((req, res) => {
           let hit = 0;
           for (let i = 0; i < N; i++) {
             P[n] = {ok: 20, ko: 2, h: '1111111111', th: 1.2, pg: 0.6, ps: JSON.parse(JSON.stringify(ps))};
+            stateBump('rec');
             faDrop(P);
+            stateBump('rec');
             if (photoSet(n).shown.some(x => key(x) === c)) hit++;
           }
           return hit / N;
@@ -598,7 +629,9 @@ const server = http.createServer((req, res) => {
     [SEENQ, NEXTQ] = win;
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};
+    stateBump('rec');
     faDrop(P);
+    stateBump('rec');
     const v0 = examSet(t).shown[0];
     P[t].ps[v0.f] = [1, 0];
     for (let i = 0; i < 20; i++)
@@ -608,6 +641,7 @@ const server = http.createServer((req, res) => {
     // a few answers played through the quiz.
     for (let r = 0; r < 20; r++) {
       P = {};
+      stateBump('rec');
       slateGenera().forEach((n, i) => {
         const x = (i * 7 + r * 13) % 10;
         if (x === 0) return;
@@ -638,7 +672,9 @@ const server = http.createServer((req, res) => {
     // INTRO.GAP answers between two cards (the pace waits for each card's question, INTRO.GAP answers on at the soonest); with enough genera met, the choices are all genera met.
     {
       P = {};
+      stateBump('rec');
       INTROS = {};
+      stateBump('rec');
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = []; // no "Again" left over from the section before
@@ -695,7 +731,9 @@ const server = http.createServer((req, res) => {
       // The same over many first questions (one draw each above would rarely catch it).
       for (let i = 0, same = 0; i < 60; i++) {
         P = {};
+        stateBump('rec');
         INTROS = {};
+        stateBump('rec');
         HOLDS = 0; // a fresh player: no opening hold, no comeback
         CB = {r: 0, t: 0, ok: 0, f: 0};
         rematch = []; // no "Again" left over from the section before
@@ -714,7 +752,9 @@ const server = http.createServer((req, res) => {
         if (!star.length) fails.push('no starred genus with a reference in the data');
         for (let i = 0; i < 200; i++) {
           P = {};
+          stateBump('rec');
           INTROS = {};
+          stateBump('rec');
           const L = introStart(pool());
           L.forEach((n, k) =>
             starRefs(DATA, n).forEach(r => {
@@ -723,10 +763,13 @@ const server = http.createServer((req, res) => {
           );
         }
         P = {};
+        stateBump('rec');
         INTROS = {};
+        stateBump('rec');
         slateGenera()
           .filter(n => !star.includes(n) && !refs.includes(n))
           .forEach(n => (INTROS[n] = [0, 1, 0, 's']));
+        stateBump('rec');
         const seen = new Set(),
           openFrom = L =>
             openPick(
@@ -747,13 +790,16 @@ const server = http.createServer((req, res) => {
               const n = openFrom(L);
               if (!star.includes(n)) fails.push(`opening draw (${why}): ${n} drawn, not a ★ genus`);
               INTROS[n] = [0, 1, 0, 'c'];
+              stateBump('rec');
             }
             const never = star.filter(n => L.includes(n) && !introduced(n));
             if (never.length) fails.push(`opening draw (${why}): ★ ${never.join(', ')} never drawn`);
             INTROS = {...was};
+            stateBump('rec');
           }
         };
         refs.forEach(r => (INTROS[r] = [0, 1, 0, 's']));
+        stateBump('rec');
         openAllOf(pool(), 'references met');
         refs.forEach(r => delete INTROS[r]);
         openAllOf(
@@ -761,7 +807,9 @@ const server = http.createServer((req, res) => {
           'references out of the list'
         );
         P = {};
+        stateBump('rec');
         INTROS = {};
+        stateBump('rec');
       }
       cardsAt.forEach(([a, k], i) => {
         if (i && a - cardsAt[i - 1][0] < INTRO.GAP) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
@@ -771,7 +819,9 @@ const server = http.createServer((req, res) => {
       // Mostly right (an RA after the lecture): no card offers to open all genera,
       // however well the player does; Open all from My progress opens every genus left.
       P = {};
+      stateBump('rec');
       INTROS = {};
+      stateBump('rec');
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = []; // no "Again" left over from the section before
@@ -842,12 +892,15 @@ const server = http.createServer((req, res) => {
         {
           const P0 = JSON.stringify(P);
           allSet.forEach(n => (P[n] = {...(P[n] || {}), ok: Math.max(1, (P[n] || {}).ok || 0), ko: 3, th: -1.5}));
+          stateBump('rec');
           faDrop(P);
+          stateBump('rec');
           const stuck = allSet.filter(shaky).length;
           if (stuck >= OPEN.K && !(openChance(pool()) > 0))
             fails.push(`One at a time: ${stuck} closed genera, badly known, keep the opening chance at ${openChance(pool())}`);
           if (stuck < OPEN.K) fails.push(`One at a time: only ${stuck} closed genera made shaky for the check`);
           P = JSON.parse(P0);
+          stateBump('rec');
         }
         // The question on screen was chosen again among the genera still open.
         if (!introReady(SHOWNQ[1]) || !choices().every(introduced))
@@ -878,7 +931,9 @@ const server = http.createServer((req, res) => {
           );
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         P = JSON.parse(keep.P);
+        stateBump('rec');
         INTROS = JSON.parse(keep.I);
+        stateBump('rec');
         store.set(INTRO.KEY, INTROS);
         store.set(INTRO.OFFER.KEY, keep.o);
         HOLDS = keep.HOLDS;
@@ -891,6 +946,7 @@ const server = http.createServer((req, res) => {
       // another device join this one's (introMerge), ready; a progress reset starts them over.
       {
         INTROS = {};
+        stateBump('rec');
         HOLDS = 0; // a fresh player: no opening hold, no comeback
         CB = {r: 0, t: 0, ok: 0, f: 0};
         rematch = []; // no "Again" left over from the section before
@@ -1025,13 +1081,17 @@ const server = http.createServer((req, res) => {
           m = {};
         Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
         faDrop(P);
+        stateBump('rec');
         old.forEach(n => {
           P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+          stateBump('rec');
           faDrop(P);
+          stateBump('rec');
           m[n] = [0, 1, Date.now(), 's'];
         });
         store.set(INTRO.KEY, m);
         INTROS = null;
+        stateBump('rec');
         const cards = [],
           fromCard = {};
         for (let i = 0; i < 60; i++) {
@@ -1057,8 +1117,10 @@ const server = http.createServer((req, res) => {
         Object.keys(P).forEach(n => delete P[n]);
         Object.assign(P, JSON.parse(keepP));
         faDrop(P);
+        stateBump('rec');
         store.set(INTRO.KEY, JSON.parse(keepI));
         INTROS = null;
+        stateBump('rec');
         rematch = [];
         dropPlans();
         NEXTQ = null;
@@ -1083,16 +1145,20 @@ const server = http.createServer((req, res) => {
           const m = {};
           Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
           faDrop(P);
+          stateBump('rec');
           pool()
             .filter(n => !isBonus(n))
             .slice(0, 12)
             .forEach(n => {
               P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+              stateBump('rec');
               faDrop(P);
+              stateBump('rec');
               m[n] = [0, 1, Date.now(), 's'];
             });
           store.set(INTRO.KEY, m);
           INTROS = null;
+          stateBump('rec');
           if (P[LEVEL]) P[LEVEL].h = '1';
         };
         setup();
@@ -1130,6 +1196,7 @@ const server = http.createServer((req, res) => {
         else {
           NEXTQ = {k: planKey('quiz'), args: x, snap: planState(), stop: true, urls: [], held: [], next: null};
           P[LEVEL].h = (P[LEVEL].h || '') + '0';
+          stateBump('rec');
           quizPhoto();
           if (SHOWNQ.intro) fails.push('only after a right answer: a card planned before a miss shown after it');
           document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
@@ -1141,8 +1208,10 @@ const server = http.createServer((req, res) => {
         Object.keys(P).forEach(n => delete P[n]);
         Object.assign(P, JSON.parse(keepP));
         faDrop(P);
+        stateBump('rec');
         store.set(INTRO.KEY, JSON.parse(keepI));
         INTROS = null;
+        stateBump('rec');
         reset();
       }
       // Nothing is planned past a question that changes what comes next while it is on screen (an
@@ -1274,7 +1343,9 @@ const server = http.createServer((req, res) => {
         // scale only to a script from SCALE_SHEET (it widens the tab first), the slate's to an older one (rule D4).
         const pb = {...P};
         B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
+        stateBump('rec');
         faDrop(P);
+        stateBump('rec');
         const scaleOk = () => {
           const S = slateGenera(),
             all = scaleUnits(),
@@ -1297,18 +1368,24 @@ const server = http.createServer((req, res) => {
         showProg();
         scaleOk();
         P = pb;
+        stateBump('rec');
         bonusSet(false);
         if (pool().some(isBonus) || !B.some(n => P[n])) fails.push('bonus genera off: still in the pool, or their progress lost');
         P = {...pb};
+        stateBump('rec');
         B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
+        stateBump('rec');
         faDrop(P);
+        stateBump('rec');
         showProg();
         scaleOk();
         P = pb;
+        stateBump('rec');
         showProg();
       }
       question = q0;
       INTROS = {};
+      stateBump('rec');
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = []; // no "Again" left over from the section before
@@ -1438,9 +1515,11 @@ const server = http.createServer((req, res) => {
       for (const strong of [false, true])
         for (const sel of [sel4, sel2]) {
           P = strong ? Object.fromEntries(genera.map(n => [n, {ok: 20, ko: 2, h: '1111011111', th: 2, pg: 0.7}])) : {};
+          stateBump('rec');
           if (strong) P[LEVEL] = {ok: 400, ko: 40, th: 2};
           store.set(INTRO.KEY, strong ? {} : Object.fromEntries(sel.map(n => [n, [0, 1, Date.now(), 's']])));
           INTROS = null;
+          stateBump('rec');
           rematch = [];
           NEXTQ = null;
           store.set(CUSTOM.KEY, {g: sel, t: Date.now()});
@@ -1475,7 +1554,9 @@ const server = http.createServer((req, res) => {
         const far = pick4((x, n) => !confusable(x, n) && !confusable(n, x) && !imrFormsOf(x).some(f => imrFormsOf(n).includes(f))),
           apart = far.length === 4 ? far : pick4((x, n) => !confusable(x, n) && !confusable(n, x));
         P = Object.fromEntries(genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85}]));
+        stateBump('rec');
         P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        stateBump('rec');
         rematch = [];
         NEXTQ = null;
         store.set(CUSTOM.KEY, {g: apart, t: Date.now()});
@@ -1500,6 +1581,7 @@ const server = http.createServer((req, res) => {
           genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.9, ex: {k: EXAM.n - 1, t: TYPED.exam, v: ['wide'], at: -99}}])
         );
         P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        stateBump('rec');
         NEXTQ = null;
         let shown = 0;
         for (let i = 0; i < 30; i++) {
@@ -1515,6 +1597,7 @@ const server = http.createServer((req, res) => {
       store.set(CUSTOM.KEY, null);
       store.set(INTRO.KEY, {});
       INTROS = null;
+      stateBump('rec');
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
@@ -1595,7 +1678,9 @@ const server = http.createServer((req, res) => {
     const u = await p.evaluate(() => {
       const u = slateGenera()[5];
       P[u] = {ok: 12, ko: 0, h: '1111111111', L: 0.999, mx: 1, pm: 1};
+      stateBump('rec');
       faDrop(P);
+      stateBump('rec');
       memRecalcAll();
       return u;
     });
