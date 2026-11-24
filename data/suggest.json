@@ -130638,7 +130638,11 @@
   "fish-s414-cand-55395069": {
    "jt": "d1g0sl1a",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Night phone photo, the fish wet and limp on sand, the same obs held in a hand: read out of the water (a); in-water not excluded"
   },
   "fish-s414-cand-559717397": {
    "jt": "p1g1sm1c",
@@ -131965,7 +131969,13 @@
   "fish-s416-cand-61510187": {
    "jt": "o1g0sl1",
    "e": 3,
-   "k": "alt"
+   "k": "alt",
+   "bb": [
+    0.25,
+    0.0,
+    0.85,
+    0.9
+   ]
   },
   "fish-s416-cand-61510195": {
    "jt": "d1g0sl1",
@@ -153531,7 +153541,7 @@
    "bb": [
     0.1,
     0.35,
-    0.8,
+    0.85,
     0.6
    ]
   },
@@ -153542,7 +153552,7 @@
    "bb": [
     0.1,
     0.35,
-    0.8,
+    0.85,
     0.6
    ]
   },
