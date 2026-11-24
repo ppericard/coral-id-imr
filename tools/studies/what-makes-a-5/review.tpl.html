@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Makes a 5</title>
+<style>
+:root{--bg:#f6f7f8;--card:#fff;--ink:#1b1f23;--mute:#5b6570;--line:#dde1e5;--ok:#1f7a3a;--okbg:#e6f4ea;--no:#b3261e;--nobg:#fbe9e7;--q:#8a6d00;--qbg:#fff4cc;--acc:#0b5cad;--accbg:#e3eefb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121416;--card:#1c1f22;--ink:#e8eaed;--mute:#a0a8b0;--line:#30353a;--ok:#6fcf8a;--okbg:#17321f;--no:#f28b82;--nobg:#3a1a18;--q:#f0c75e;--qbg:#3a3010;--acc:#8ab4f8;--accbg:#172a44}}
+:root[data-theme="dark"]{--bg:#121416;--card:#1c1f22;--ink:#e8eaed;--mute:#a0a8b0;--line:#30353a;--ok:#6fcf8a;--okbg:#17321f;--no:#f28b82;--nobg:#3a1a18;--q:#f0c75e;--qbg:#3a3010;--acc:#8ab4f8;--accbg:#172a44}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:0 16px 96px}
+main{max-width:720px;margin:0 auto}
+h1{font-size:20px;margin:16px 0 4px}
+h2{font-size:16px;margin:24px 0 8px;padding-top:8px;border-top:2px solid var(--line)}
+p,li{color:var(--ink)}
+.mute{color:var(--mute);font-size:13px}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0}
+summary{font-weight:600;cursor:pointer}
+ol.crit{padding-left:20px;margin:8px 0}
+ol.crit li{margin:4px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:14px 0;overflow:hidden}
+.card img{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain;background:#000}
+.hd{padding:8px 12px 0;display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hd b{font-size:16px}
+.grades{padding:6px 12px;display:flex;gap:8px;flex-wrap:wrap;font-size:14px}
+.pill{border-radius:999px;padding:2px 10px;background:var(--accbg);color:var(--acc);font-weight:600}
+.pill.diff{background:var(--qbg);color:var(--q)}
+table{width:100%;border-collapse:collapse}
+td{border-top:1px solid var(--line);padding:6px 4px;vertical-align:top;font-size:14px}
+td.m{width:26px;text-align:center;font-weight:700;padding-left:10px}
+td.m.ok{color:var(--ok)}td.m.no{color:var(--no)}td.m.q{color:var(--q)}
+.src{font-size:11px;color:var(--mute);text-transform:uppercase;margin-left:4px}
+td.b{width:92px;white-space:nowrap;padding-right:10px;text-align:right}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 9px;min-height:36px;cursor:pointer}
+button.on.y{background:var(--okbg);color:var(--ok);border-color:var(--ok)}
+button.on.n{background:var(--nobg);color:var(--no);border-color:var(--no)}
+input[type=text]{font:inherit;width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-top:4px}
+.foot{padding:8px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.note{padding:4px 12px;font-size:13px;color:var(--mute)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.bar button{background:var(--acc);color:#fff;border-color:var(--acc)}
+textarea{width:100%;min-height:160px;font:12px/1.4 ui-monospace,monospace;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+code{font-size:13px}
+</style>
+</head>
+<body>
+<main>
+<h1>What makes a 5</h1>
+<p class="mute">REE-275 question (b) and REE-8. 46 photos in play whose recorded tags all read the reference look: 31 the judge typed 4, 15 it typed 5. Fish and sea slugs; corals have no ease, so none here.</p>
+<p>For each photo: the criteria below, each marked <b style="color:var(--ok)">✓</b> or <b style="color:var(--no)">✗</b> with a few words, the grade the marks give (5 with no ✗, one step less per ✗) and the grade the judge typed. Say whether you agree, line by line or for the whole photo. Nothing to type unless you disagree. Where the two grades differ (yellow), your answer is the point.</p>
+<details open><summary>The criteria of a 5 (the same for every photo)</summary><ol class="crit" id="crit"></ol>
+<p class="mute">Marked from the recorded tags (<span class="src">tag</span>) or by an agent looking at the photo (<span class="src">eye</span>); C3 and C8 are not in the tags, so they are always by eye. Not criteria (settled): juvenile, sex or colour phase, watermark (Q373, Q435, rubric 3).</p></details>
+<details><summary>How to answer</summary>
+<p>Tap <b>All marks right → N</b> when every line is right and the photo deserves the grade the marks give (N), whatever the judge typed. Otherwise tap <b>✗</b> on a line you disagree with and add one word; give your own grade if it differs. Then <b>Copy answers</b> (bottom) and paste them in the chat. Your taps are kept in this browser.</p>
+<p>Or dictate by number: <code>12 ok</code> · <code>12 C1 non, il est de profil</code> · <code>12 note 5, fond</code>.</p></details>
+<details><summary>Gold set 2 (REE-8, 42 photos)</summary><p>Not in this page: its file and key were in an earlier integrator scratchpad that no longer exists. Its format (one judge's view per photo, agree or correct) fits this page; the integrator decides whether to rebuild it here.</p></details>
+<div id="list"></div>
+<h2>Answers</h2>
+<p class="mute">One line per photo you touched: <code>n;photo id;marks;typed;A</code> (every mark right, the grade is the marks') or <code>n;photo id;marks;typed;D=C1:word|C8:word;G=your grade;N=note</code>.</p>
+<textarea id="out" readonly></textarea>
+</main>
+<div class="bar"><span id="prog" class="mute"></span><button id="copy">Copy answers</button></div>
+<script>
+const D=/*DATA*/null;
+const KEY='what-makes-a-5-v1';
+let A={};
+try{A=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){A={}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(A))}catch(e){}render()};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('crit').innerHTML=D.crit.map(([k,n,d])=>`<li><b>${k} ${esc(n)}</b>. ${esc(d)}</li>`).join('');
+const sym={ok:'✓',no:'✗','?':'?'};
+let html='';
+D.rows.forEach((r,i)=>{
+  if(i%10===0){const a=i+1,b=Math.min(i+10,D.rows.length);html+=`<h2>Block ${i/10+1} · photos ${a}–${b}</h2>`}
+  html+=`<div class="card" id="p${r.n}"><a href="${esc(r.big)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(r.url)}" alt="Photo ${r.n}"></a>
+  <div class="hd"><b>${r.n} · ${r.subject==='fish'?'Fish':'Sea slug'} · ${esc(r.unit)}</b><span class="mute"><i>${esc(r.sp||'')}</i></span></div>
+  <div class="grades"><span class="pill${r.marks!==r.typed?' diff':''}">Marks give ${r.marks}</span><span class="pill">Judge typed ${r.typed}</span></div>
+  ${r.note?`<div class="note">${esc(r.note)}</div>`:''}
+  <table>${r.crit.map(([k,m,w,s])=>`<tr><td class="m ${m==='?'?'q':m}">${sym[m]}</td><td><b>${k}</b> ${esc(w)}<span class="src">${s}</span><div class="w" data-n="${r.n}" data-k="${k}"></div></td><td class="b"><button data-n="${r.n}" data-k="${k}" data-v="n" class="n">✗ no</button></td></tr>`).join('')}</table>
+  <div class="foot"><div class="row"><button data-n="${r.n}" data-all="1" class="y">All marks right → ${r.marks}</button><span class="mute">Your grade:</span>${[5,4,3,2,1].map(g=>`<button data-n="${r.n}" data-g="${g}">${g}</button>`).join('')}</div>
+  <input type="text" data-n="${r.n}" data-note="1" placeholder="Note (optional)"></div></div>`;
+});
+document.getElementById('list').innerHTML=html;
+const get=n=>A[n]||(A[n]={d:{}});
+document.body.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||!b.dataset.n)return;const a=get(b.dataset.n);
+  if(b.dataset.all){a.all=!a.all;if(a.all){a.d={};delete a.g}}
+  else if(b.dataset.k){if(a.d[b.dataset.k]!==undefined)delete a.d[b.dataset.k];else{a.d[b.dataset.k]='';a.all=false}}
+  else if(b.dataset.g){const g=+b.dataset.g;a.g=a.g===g?undefined:g;if(a.g)a.all=false}
+  save();
+});
+document.body.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset.n)return;const a=get(t.dataset.n);
+  if(t.dataset.note)a.note=t.value;else if(t.dataset.k)a.d[t.dataset.k]=t.value;
+  try{localStorage.setItem(KEY,JSON.stringify(A))}catch(e){}out();
+});
+function out(){
+  const L=[];let done=0;
+  D.rows.forEach(r=>{const a=A[r.n];if(!a)return;const ks=Object.keys(a.d||{});
+    if(!a.all&&!ks.length&&!a.g&&!a.note)return;done++;
+    const clean=s=>String(s||'').replace(/[;|\n]/g,',').trim();
+    let s=`${r.n};${r.id};${r.marks};${r.typed};`;
+    if(a.all&&!ks.length)s+='A';else s+='D='+ks.map(k=>k+':'+clean(a.d[k])).join('|');
+    if(a.g)s+=';G='+a.g;if(a.note)s+=';N='+clean(a.note);L.push(s)});
+  document.getElementById('out').value=L.join('\n');
+  document.getElementById('prog').textContent=`${done} / ${D.rows.length} answered`;
+}
+function render(){
+  D.rows.forEach(r=>{const a=A[r.n]||{d:{}};const c=document.getElementById('p'+r.n);
+    c.querySelectorAll('button[data-k]').forEach(b=>b.classList.toggle('on',a.d&&a.d[b.dataset.k]!==undefined));
+    c.querySelectorAll('div.w').forEach(w=>{const k=w.dataset.k,on=a.d&&a.d[k]!==undefined;
+      if(on&&!w.firstChild){w.innerHTML=`<input type="text" data-n="${r.n}" data-k="${k}" placeholder="One word: why">`;w.firstChild.value=a.d[k]||''}
+      if(!on)w.innerHTML=''});
+    c.querySelector('button[data-all]').classList.toggle('on',!!a.all);
+    c.querySelectorAll('button[data-g]').forEach(b=>b.classList.toggle('on',a.g===+b.dataset.g));
+    c.querySelectorAll('button[data-g]').forEach(b=>b.classList.toggle('n',a.g===+b.dataset.g));
+    const ni=c.querySelector('input[data-note]');if(document.activeElement!==ni)ni.value=a.note||'';
+  });
+  out();
+}
+document.getElementById('copy').onclick=()=>{const t=document.getElementById('out');
+  (navigator.clipboard?navigator.clipboard.writeText(t.value):Promise.reject()).catch(()=>{t.select();document.execCommand('copy')});
+  document.getElementById('copy').textContent='Copied';setTimeout(()=>document.getElementById('copy').textContent='Copy answers',1500)};
+render();
+</script>
+</body>
+</html>
