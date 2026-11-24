@@ -1,0 +1,66 @@
+{
+ "about": "REE-265 step 0: the ceilings of the work one answer may make, per state (tools/answercost.js, tests/answercost.test.js), for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. Each is the largest count measured on main after #1522 over the page's seeds 1 to 3 and one regeneration of the state (the same state and seed give counts that differ by up to 15% from run to run, the seeds by up to 50% on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --write-budget tools/answercost-budget.json --margin 1.1 --also <the --out files of other seeds>.",
+ "margin": 1.25,
+ "states": {
+  "coral:3000": {
+   "namedCalls": 37000,
+   "getCalls": 280,
+   "getChars": 5700000,
+   "setChars": 1700000,
+   "fn:introduced": 770,
+   "fn:scoreOf": 400,
+   "fn:faOf": 200,
+   "fn:lvStep": 100,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 100,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 100
+  },
+  "fish:50": {
+   "namedCalls": 600000,
+   "getCalls": 19000,
+   "getChars": 520000,
+   "setChars": 72000,
+   "fn:introduced": 35000,
+   "fn:scoreOf": 22000,
+   "fn:faOf": 5300,
+   "fn:lvStep": 5900,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 100,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 19000
+  },
+  "fish:500": {
+   "namedCalls": 1300000,
+   "getCalls": 29000,
+   "getChars": 2900000,
+   "setChars": 570000,
+   "fn:introduced": 75000,
+   "fn:scoreOf": 92000,
+   "fn:faOf": 40000,
+   "fn:lvStep": 5900,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 110,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 28000
+  },
+  "fish:3000": {
+   "namedCalls": 3400000,
+   "getCalls": 89000,
+   "getChars": 8700000,
+   "setChars": 2200000,
+   "fn:introduced": 150000,
+   "fn:scoreOf": 360000,
+   "fn:faOf": 74000,
+   "fn:lvStep": 5900,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 3000,
+   "fn:treeScore": 200,
+   "fn:achSnap": 100,
+   "fn:sheetV": 87000
+  }
+ }
+}

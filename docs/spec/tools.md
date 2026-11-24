@@ -137,6 +137,37 @@ written with `tools/datajson.py`.
   `brief.py` shows the numbers as one `Infra:` line, read from the run's annotation; the admin's To do › Alerts card reads
   the sheet live (`Code.gs` `readInfra_`).
 
+## Per-answer cost
+
+The work one answer makes on the device, counted so that a change can be judged on it (section 1 of
+[the design study of REE-265](../reviews/2026-11-24-incremental-engine-state.md); the per-answer timings are in
+[the measurement note](../reviews/2026-11-24-per-answer-cost.md)).
+
+- **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out, in Chromium, and counts how
+  many times each named function of the app runs per answer (V8's precise coverage) and the characters
+  `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
+  fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
+  the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
+  costs less; `--clock 14400` is the study's condition), which makes a run nearly repeatable, not exactly: the same
+  state and seed differ by up to 15% from run to run. Options: `--states fish:50,fish:3000,coral:3000` (the default, the
+  study's states), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed`, `--clock`, `--out FILE`,
+  `--budget FILE` (exit 1 when a count passes its ceiling, naming it), `--write-budget FILE [--margin 1.25] [--also
+  A.json,B.json]` (the largest counts of this run and of earlier `--out` files, times the margin, as the ceilings), `--regen`.
+  A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1, the fish player answering yes to the card
+  that offers a part of the slate by choice) and kept in `REEFID_ANSWERCOST_CACHE`, by default `reefid-answercost` in the
+  temporary directory: 5 to 14 minutes for 3,000 fish answers (by the machine's load), about 1 minute for 3,000 corals,
+  35 s for 500 fish. The states are those of the study's section 1 (the same records, the same U, V, T and R). It takes
+  the machine slot (rule W24).
+- **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
+  the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStep`, `bonusList`, `lvlNext`, `treeScore`,
+  `achSnap`, `sheetV`). Each is the largest count over three seeds and one regeneration of the state, times a stated
+  margin (`margin`), rounded up. A step that lowers a count rewrites its ceilings with `--write-budget` in the same PR.
+- **The routine check** is `tests/answercost.test.js`: the small states (fish 50 and 500 answers) against the budget, in
+  the fast tier (`node tests/run.js`: 26 s with the states cached, 70 s making them) wherever Playwright is installed (CI's
+  unit job has none: it runs the parts that need no browser); the heavy state (fish, 3,000 answers) is the opt-in command
+  `SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget tools/answercost-budget.json`,
+  not part of any routine check until Pierre decides question (c) of REE-265.
+
 ## The sheet script
 
 - **`timings.js`**: the sheet's `Timings` tab summed up ([sync.md › The Timings tab](sync.md#the-timings-tab)): read the
