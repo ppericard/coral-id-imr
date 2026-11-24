@@ -39,7 +39,8 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    tools/fish_judge.py RUBRICS "seaslug"): judging/seaslug/<taxon id>.json,
                                                    imported into data/suggest.json "seaslug"; ids = iNaturalist taxon ids (the
                                                    keys of data/seaslug-cand.json) or scientific names; no phase, the animal's box bb as the fish's, keep
-                                                   optional (one photo per observation: read as best), and the egg rule
+                                                   optional (read as best: right for an observation with one candidate;
+                                                   exactly one best per observation holds), and the egg rule
                                                    (#970's filter 2): {"egg": true} and no code excludes an egg-mass photo
 
 judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, bb, unsure, note}}}; data/suggest.json "fish"
@@ -73,8 +74,8 @@ def load(p, d=None):
 
 # The subjects this pass judges (use() switches; fish by default). Each: its candidates, its judging files, its rubric
 # (tools/fish_judge.py RUBRICS), the fields a judgement may hold, its phases, the keep a judgement without one reads
-# (None: keep is required), and flag, its phase flag p by species (the fish's tools/fish_judge.py phase_flag; None: none). Sea slugs (Pierre, 2026-11-15, Q369, Q377): one photo per observation (tools/fetch_seaslugs.py),
-# so keep reads best; no phase (rule C2: no presentation names one); the animal's box bb as the fish's, for the Find the X
+# (None: keep is required), and flag, its phase flag p by species (the fish's tools/fish_judge.py phase_flag; None: none). Sea slugs (Pierre, 2026-11-15, Q369, Q377): a judgement without keep
+# reads best (right for an observation with one candidate; the check still wants exactly one best per observation); no phase (rule C2: no presentation names one); the animal's box bb as the fish's, for the Find the X
 # tile (Pierre, 2026-11-19, Q437: judging/SEASLUG.md "The animal's box"); egg, #970's filter 2 (judging/SEASLUG.md "Egg masses").
 SUBJECTS = {
     "fish": {"dir": os.path.join("judging", "fish"), "cand": "data/fish-cand.json", "doc": "judging/FISH.md", "eg": "p1g0sm14",
