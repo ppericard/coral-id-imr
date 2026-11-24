@@ -62,11 +62,24 @@ too.
 A view (`stateView`) is a function of the inputs alone, computed at its first read in a version and read as it is until
 the next; a list keeps its order, so every draw that reads it draws the same, and it is shared, never changed by its
 readers. Nothing a view keeps is stored or synced: the records stay the only source, and a replay or a merge that
-refills them bumps the version. The views now are the units in play: `bonusList`, `pool`, `sciUp` and `shareFree`
-(their computations `bonusCalc`, `poolCalc`, `sciUpCalc`, `shareFreeCalc`). With `VIEW_CHECK` on (every smoke page and
-`tools/learnsim.js --facheck`, through `tests/facheck.js`), every read of a kept view computes it again and compares,
-order included; a difference throws, and again in a task of its own. `tests/stateview.test.js` compares the views with
-the code before them over rated-world runs and made-up states, and checks that every declared writer bumps.
+refills them bumps the version. The views now are:
+
+- the units in play: `bonusList`, `pool`, `sciUp` and `shareFree` (their computations `bonusCalc`, `poolCalc`,
+  `sciUpCalc`, `shareFreeCalc`), and the scientific genera in the game (`app.js` `sciNow`, `sciNowCalc`);
+- the tree's score (`model.js` `headScore`, `headScoreCalc`): the header pill, My progress, the circle-3 gate
+  (`app.js` `treeC3`) and the achievements read one computation per version;
+- the levels (`model.js` `lvTable`): the level of every unit with a record (`lvStepCalc`, so its bar and its exam
+  entry), a unit with no record at 0. A loop over units reads one table (`lvSteps`: the achievements' `achSnap`, My
+  progress), `lvStep` one unit.
+
+A read of a view compares the stored text of the sheet's version and the first-launch records (`stateNow`: four storage
+reads or more), so a value read unit by unit across the draw (`genScore`, `examOn`) is computed where it is read: a view
+there would add those reads to each. With `VIEW_CHECK` on (every smoke page and `tools/learnsim.js --facheck`,
+through `tests/facheck.js`), every read of a kept view computes it again and compares, order included (a list, a Set
+or a Map item by item, a plain object key by key down to its leaves); a difference throws, and again in a task of its
+own. `tests/stateview.test.js` compares the units in play with the code before them over rated-world runs and made-up
+states, and checks that every declared writer bumps; `tests/levelview.test.js` compares the tree's score and the levels
+with the code before them over rated-world runs of the fish, the corals and the sea slugs.
 
 ## Which unit next
 

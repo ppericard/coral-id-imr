@@ -199,7 +199,8 @@ print(json.dumps([[list(k), v] for k, v in G.names_of(N_).items()]))
 const APP = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 const ctx = {
   esc: s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]),
-  safeUrl: u => u
+  safeUrl: u => u,
+  stateView: (name, f) => f // app.js's views (the block holds sciNow, which these tests never read): plain computations
 };
 vm.createContext(ctx);
 vm.runInContext(

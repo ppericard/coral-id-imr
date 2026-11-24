@@ -1949,6 +1949,62 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   qu'est-ce que tu vas chercher à refaire comme jugement, pourquoi est-ce qu'on a besoin de le refaire, et de
   justifier proprement l'utilisation d'un agent parfois coûteux sur des grandes quantités de photos». Applied:
   rules/photos.md P7.
+- **20:40, the engine's guiding aims (on the REE-245 design).** «le moteur il doit pouvoir fonctionner aussi bien pour
+  un débutant complet et arriver à le faire progresser à sa vitesse sans le faire confronter à des choses qui sont trop
+  difficiles … il faut qu'on ait un stock de photos faciles qui soit relativement important»; «faire jouer des gens qui
+  sont très bons, des experts, sans que ils se retrouvent frustrés au début … assez rapidement ils puissent retrouver
+  des vrais challenges»: their weaknesses worked on, and photos «objectivement très difficiles mais identifiables»;
+  between them, «une balance entre facilité, challenge, apporter de la diversité, apporter des modes de jeu
+  différents»; the modes that can be «dans le jeu principal le soient dans le jeu principal». Applied: LEARNING.md
+  "The players we design for".
+- **20:49, easy questions cannot reveal an expert.** A beginner «qui a une bonne reconnaissance des patterns» answers
+  the first easy families right and fast, even ten families open; it shows only on many units in play, the hard
+  families and the lower ranks: «si on n'a pas de test spécifiquement fait pour déterminer le niveau de quelqu'un,
+  y compris avec des questions qui sont parfois très difficiles ou des questions taxonomiques plus basses, en fait,
+  non, on n'arrive pas à savoir rapidement si la personne est un expert ou pas». Applied: LEARNING.md "The players
+  we design for"; Linear REE-191, REE-112.
+- **20:54, speed as the expert's challenge.** «J'aime bien ton idée de défi sur la vitesse, notamment pour les experts.
+  Je pense que ça fait partie des choses que j'ai pas forcément explorées jusqu'à présent … à noter ou à remonter si
+  c'est déjà noté quelque part.» Not a decision: an idea brought back. Applied: Linear REE-147 (timed classification,
+  declined for IMR and casual learners on 2026-11-03) with the new angle; REE-191.
+- **21:05, every photo of an observation, views and zoom.** «je pense qu'il faut justement toutes les prendre … et
+  justement voir dans quelle mesure c'est possible de faire une identification sur différents niveaux de zoom d'une
+  photo»; against preferring an observation's first photo; wide photos: «une identification au genre, je pense que
+  dans beaucoup de cas, ça peut se faire … de loin, avec une photo en wide», the species of a coral needing the
+  corallites. A small photo is a fair challenge: «être capable d'identifier l'organisme sur une petite photo
+  justement … ça montre une vraie expertise», enlarged with a tap. Applied: Linear REE-252; LEARNING.md "The
+  players we design for".
+- **21:05, questions that do not count.** «injecter des questions qui ne vont pas vraiment compter, ou en tout cas
+  qui ne vont pas compter si le joueur la rate, mais qui permettent de tester des choses sur son niveau, sur ce qu'il
+  a appris, sur ses faiblesses»; «il ne faut jamais que ça fasse chuter notre taux de réussite local à un stade où en
+  fait on finit par nous décourager». Not settled: to reconcile with Q385 (2026-11-18, no practice probe from the
+  reserve). Applied: Linear REE-191.
+- **21:22, the placement test: several tries on one photo, and a card to offer it again.** Typed first with an «je
+  ne sais pas» button, then the same photo with an easier question (4 families): «quelqu'un pourrait très bien ne pas
+  connaître l'espèce exacte … tout en étant capable de le retrouver si on lui fait des propositions»; for a player
+  who did not take it, a card offering it again when conditions to define are met (success well above the aim, a
+  pulse answer «je m'ennuie», «pas assez dur» or «c'est trop dur»). Applied: Linear REE-112.
+- **21:22, one rule, never a subject's exception.** On «finer ranks sooner in fish»: «tu es en train de faire une
+  exception pour un groupe, une matière. Donc, ça ne me va pas. La règle doit être générale» (rule S1). Applied:
+  #1503's wording; Linear REE-191. Questions that do not count kept as a concept: «garder l'idée du concept».
+  Applied: Linear REE-253.
+- **21:22, the simulator bug: general or an exception?** «soit c'est réellement un bug qui existe à l'échelle de
+  l'ensemble des matières, soit … il y a une exception dans le code … il y a du code qui a besoin d'être généralisé»;
+  «est-ce que tu es sûr que ce bug, il est arrivé en pratique sur les simulations précédentes?» Applied: Linear
+  REE-249 (general in the sim, hidden by the corals' bare ids; freezes only since #1375), REE-28.
+- **21:25, a rule never names the subjects it covers.** «c'est même pas tous les sujets à plusieurs rangs, parce qu'en
+  fait, tous les sujets sont susceptibles d'avoir plusieurs rangs … les coraux, on peut très bien imaginer que dans
+  un mois, je décide de rajouter les espèces … que ça soit pas une règle qui crée des exceptions elle-même par la
+  formulation de la règle.» Applied: rules/README.md "Writing a rule" (a guide to wording); #1503's wording.
+- **21:31, not an absolute rule.** On the S1 sentence first drafted from 21:25: «J'ai peur que tu crées une règle
+  absolue qui nous gêne plus tard … ça risque d'être interprété de manière trop dure par des agents dans le futur.»
+  Applied: moved out of S1 into "Writing a rule" as a guide, real differences still declared under S1.
+- **21:31, one id scheme for every subject, data rewritten if needed.** «ça montre encore qu'il y a des choses qui
+  sont pas communes … dans les structures de données … je suis d'accord pour réécrire des données à partir du moment
+  où on vise à homogénéiser et à rendre plus simple l'ensemble.» Applied: Linear REE-256 (design first).
+- **21:31, what a duplicate is.** «qu'est-ce qu'on appelle réellement doublon? Si c'est une autre prise de vue plus
+  serrée ou plus large, est-ce que c'est vraiment un doublon? … si au final on se retrouve à écarter toutes les autres
+  photos d'une même observation, c'est un peu gênant.» Applied: Linear REE-257.
 - **20:51, a rule not followed gets an issue.** «la règle, ça devrait presque être qu'à chaque fois que tu dis « j'ai
   pas suivi la règle », il faut que ça crée il faut que tu crées une issue automatiquement pour dire bah, « j'ai pas
   suivi la règle, voilà ce qui s'est passé, voilà le contexte » … Et comme ça, ça permet de digérer cette information
@@ -2003,3 +2059,51 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   intégré à l'app et aux jeux, même si on dépasse les seuils.» For every subject; no ceiling, the sea slugs' `max`
   included; judged like anyone's (Q386). Applied: #1534 (docs/decisions/2026-11-24-own-observations-everywhere.md,
   rules/photos.md P1).
+- **13:50, the digest of the engine's aims (3A-1).** «ok». Applied: LEARNING.md "The players we design for" (#1500).
+- **13:50, the absolute expert (3A-2).** «Le rôle existe déjà en parti. C'est le niveau qui est attendu d'un Curator
+  et/ou d'un Trainer. Mais on pourrait effectivement aussi avoir des experts externes qui jouent. Je ne suis pas
+  forcément très chaud pour leur proposer un "job" pour notre app, donc je préfèrerais qu'on les identifie grace à leur
+  données, et que le moteur fasse son boulot de proposer des challenges. C'est finalement un joueur comme un autre, mais
+  qui est super utile pour notre calibrage». Replaces the aims' sentence on the absolute expert. Applied: LEARNING.md
+  "The players we design for" (#1500).
+- **13:50, the rule of 2026-11-06 on photos under ease 4 before Open Water (3B).** «A mon avis, la règle est trop dure,
+  et appelle des seuils en dur. Comme partout on veut un moteur dynamique et adaptatif, qui s'adapte au joueur et à la
+  base de donnée». On the continuous draw (3B-1): «ok». On where the effect ends, at Open Water or at Advanced (3B-2):
+  «A nouveau ça me gène. Ca veut dire qu'on a une mécanique qui ne s'applique que pour une partie de la progression au
+  lieu d'un mécanisme continue géré par le moteur quelque soit le niveau dans la progression du joueur. Est-ce qu'on
+  peut faire mieux?». Applied: pending (a mechanism continuous over the whole progression, to design).
+- **13:50, #1519 (the ease weight 0.3 and its simulation cost).** «Donc ça va dans le bon sens» and «ok». Applied:
+  pending (#1519).
+- **13:50, judging the 86 older unjudged fish candidates of the REE-243 species.** «ok». Applied: pending (Linear
+  REE-243).
+- **13:50, his own photos.** «Oui. La seule exception que j'ai demandé pour mes photos c'est qu'elles soient
+  systématiquement intégrées à la base de données, et puis jugées comme les autres. Mais ça veut effectivement dire que
+  l'ensemble de mes photos qui remplissent les critères doivent être intégré à l'app et aux jeux, même si on dépasse les
+  seuils. Et puis en pratique peut-être que les seuils eux-même ont besoin d'être relevés vu nos discussions
+  récentes???». Applied: pending.
+- **13:50, reference photos.** «Globalement je pense qu'une note de 5 (qui reste un apriori susceptible d'être faux)
+  doit être donné pour les photos qui cochent toutes les cases de photos d'identifications sur les livres d'ID ou les
+  sites de référence. Ca peut vouloir dire des poses de références différentes selon les sujets. Du coup la ou les poses
+  de références doivent être définies par sujet.». Applied: pending.
+- **13:50, adding photos.** «J'ai l'impression qu'on traine des pieds pour ajouter des photos alors qu'on a
+  effectivement constaté qu'on en manquait. Est-ce que c'est parce qu'on est limité par le stockage en pratique? Faut-il
+  déjà commencé à faire évoluer une partie de nos solutions techniques?». A question to answer. Applied: pending.
+- **13:50, two warnings on unjustified subject differences.** «Warning: mécanisme non commun non justifié», «Warning:
+  exception non justifiée» (the sea slug `dup` room and the sea slug blur cap). Applied: #1525 and #1532.
+- **14:06, the expert sentence in LEARNING.md aim 2.** Pierre rejected the 13:52 wording (governance text does not
+  quote his chat answer; REE-273). On the old sentence «we accept they can hardly be challenged»: «C'était un autre
+  temps XD». On the digested sentence proposed instead: «ça me parait mieux». The roles (Curator, Trainer), «no job»
+  and the calibration use stay in the 13:50 entry above. Applied: LEARNING.md "The players we design for" (#1500).
+- **14:06, one draw at every level (REE-245).** On the direction: «Beaucoup mieux comme direction». Applied: pending
+  (Linear REE-245).
+- **14:06, reference poses.** «A vérifier dans les sources, voire faire une étude supplémentaire si besoin»; on a pose
+  that depends on body shape (flatfish and rays seen from above): «oui!». Amends the 13:50 reference photos entry.
+  Applied: pending.
+- **14:06, REE-265's questions.** (a) the answer queue in blocks, last and alone: «ok». (b) the speed target: «Les
+  optimisations doivent être valables pour tous les sujets, pas juste les poissons. On optimise l'app, pas un sujet en
+  particulier». (c) the heavy state in routine checks: «Attention à ne pas vouloir impacter les cycles de
+  développement. Une à deux minutes x le nombre de vérifications x le nombre d'agents par jour, ça monte très très
+  vite». (d) real-phone timings, anonymous: «ok». (e) the sheet's save path with Q352: «ok». Applied: pending (Linear
+  REE-265).
+- **14:06, the fish-only speed target.** «Pourquoi on n'optimise que les poissons??? Warning: exception non
+  justifiée». Applied: pending (Linear REE-265).
