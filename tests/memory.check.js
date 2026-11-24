@@ -53,7 +53,9 @@ module.exports = async function memoryCheck(p, w, fails, tag = '', games = 2) {
     const D = await p.evaluate(() => {
       const names = new Map(unlocked().map(n => [unameT(n), n])),
         find = (n, src) => {
-          const L = (gamePics(n, 'wide') || []).filter(x => src.includes(x.f));
+          // by its file on R2, or, still read from iNaturalist (r: 1), by its photo id
+          const id = (/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/(\d+)\//.exec(src) || [])[1],
+            L = (gamePics(n, 'wide') || []).filter(x => src.includes(x.f) || (id && String(x.src || '').includes('/photos/' + id + '/')));
           return L.sort((a, b) => b.f.length - a.f.length)[0] || null;
         },
         cards = [...document.querySelectorAll('#view .pcard')].map((e, i) => {

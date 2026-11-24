@@ -2101,3 +2101,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   REE-265).
 - **14:06, the fish-only speed target.** «Pourquoi on n'optimise que les poissons??? Warning: exception non
   justifiée». Applied: pending (Linear REE-265).
+- **14:47, the sea slugs' game cap (Q-a of the photo capacity study, REE-272, #1535).** On «Le plafond de 12 des
+  nudibranches dans le jeu : le supprimer, comme pour les poissons ?»: «oui». Lifts the game cap of 12 a species of Q377
+  (2026-11-15, 16:08), which stays for the rest (circles, start 6, 20 candidates). Applied: #1540,
+  docs/decisions/2026-11-24-seaslug-no-game-cap.md.

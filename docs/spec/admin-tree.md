@@ -283,8 +283,8 @@ photo tools on their own part of `curation.json`:
   their families sit under their taxonomic groups
   (`seaslug.json` `taxa`, each family's `tgroup`). All | IMR shows only for a tree the IMR course names; a species with no
   common name shows by its scientific name alone.
-- Photos › Candidates: the fish's swiper on `data/seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, the
-  game's cap) on each species and each genus-level list (`autosort.js` `treeSpeciesOf(J, tgt)`, `treeTarget`,
+- Photos › Candidates: the fish's swiper on `data/seaslug-cand.json`, with their own target (`SUBJECTS` `admin.target`, 12: the
+  queue's own, as the fish's `TREET`; the game has no cap, every photo judged sure plays) on each species and each genus-level list (`autosort.js` `treeSpeciesOf(J, tgt)`, `treeTarget`,
   `admin-fish.js` `candSpecies`); no auto-sort, so the queue has no Checks switch; an egg-mass judgement (`{egg: 1}`) is
   set aside (`autosort.js` `treeSure`).
 - Their rubric's tag rows on a photo's Tags and in words, and the view buttons of Photo review (`SUBJECTS` `admin.tags`,
