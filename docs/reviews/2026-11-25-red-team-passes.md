@@ -7,8 +7,9 @@ launched by him. Is that overkill, and how do others do it?
 
 This note is about method only. It does not restate the missions' theses or any business finding: the repository is
 public and the charter keeps strategy out of it. **It was written by a Claude model** (Opus 5.5), the family of one of the
-two proposed passes; read its judgement on cross-family review with that in mind. Every source was read on 2026-11-25
-(Manila) with public query terms only (rules C2, C7). What is measured, what a vendor says and what is my judgement are
+two proposed passes; read its judgement on cross-family review with that in mind. Every source was looked up on
+2026-11-25 (Manila) with public query terms only (rules C2, C7); the list at the end says which were read in full, by
+their abstract, or only through a search summary. What is measured, what a vendor says and what is my judgement are
 labelled (rule W11).
 
 ## 1. The answer
@@ -17,7 +18,9 @@ labelled (rule W11).
 needed where a mission rests mostly on this repository's own data, which a check by the other family can re-derive.**
 What would waste the second pass is not the count but the way it is run: two passes that read each other, or are merged
 by a debate between the models, buy little over one. Run blind, recorded side by side and reconciled by tests, a
-second family is the cheapest independent reviewer available here. The evidence, in short:
+second family is the cheapest independent reviewer available here. It also costs the integrator nothing extra: Fable
+runs five full passes in every design (section 5). What the second family costs is Pierre's Astra runs, the syntheses
+and his reading. The evidence, in short:
 
 - Errors are correlated **even across providers**: in a study of over 350 models, "models agree 60% of the time when
   both models err", and the more accurate models are the more correlated ([Kim et al. 2025][kim]). So Fable and Astra
@@ -25,10 +28,12 @@ second family is the cheapest independent reviewer available here. The evidence,
 - Yet panels of **different families** judge better and with less self-bias than one large model ([Verga et al.
   2024][poll]), and diversity of models drives the gains in multi-model reasoning ([Chen et al. 2024][reconcile]). A
   model rates its own text higher, in step with how well it recognises it ([Panickssery et al. 2024][selfpref]).
-- A second pass of the **same** model, or a debate between models, does not reliably fix shared mistakes ([Huang et al.
-  2024][selfcorrect]; [Smit et al. 2024][mad]).
-- Human practice reserves two competing full teams (Team A / Team B) for critical, far-reaching questions because it is
-  costly, and uses one challenger (devil's advocacy) otherwise ([CIA 2009][cia]).
+- A model asked to re-check its own answer without new information "struggle[s] to self-correct" ([Huang et al.
+  2024][selfcorrect]), and debate between models does not reliably beat sampling one model several times
+  ([Smit et al. 2024][mad]). Resampling one model reduces its noise, not its family's blind spots (section 3).
+- Human practice challenges a single dominant view with one challenger (devil's advocacy) and sets two full teams on
+  competing hypotheses only for critical questions, because that is costly ([CIA 2009][cia]). Two passes on one brief are
+  two replications, not Team A / Team B; that technique is borrowed here only for how disagreements are shown.
 
 ## 2. How organisations run challenge reviews
 
@@ -40,7 +45,7 @@ second family is the cheapest independent reviewer available here. The evidence,
   the plan because it has apparently been tested, when in reality it has not" (6.10).
 - **One team or two.** The CIA primer separates devil's advocacy, "to challenge a single dominant mindset", from Team A /
   Team B, which "requires a significant commitment of analytic time and resources" and suits "a critical decision that
-  has far-reaching implications" ([CIA 2009][cia], pp. 17-20). Its debate phase puts the two cases before "an independent
+  has far-reaching implications" ([CIA 2009][cia], pp. 17-21). Its debate phase puts the two cases before "an independent
   'jury of peers'", and it notes that "senior officials can learn more by weighing well-argued conflicting views than
   from reading an assessment that masks substantive differences".
 - **Independence is not slant.** The members of the 1976 Team B on Soviet objectives "were deliberately selected" among
@@ -97,6 +102,18 @@ What a second family does **not** buy, or buys only with care:
   leaned towards that judge ([model and effort study][effort-study], #1211, #1218). A closed task and one family, but it
   shows what matters most here: the brief, and keeping each judge from seeing the other's answer.
 
+**Second family, second pass of the same model, or a better brief?** No head-to-head comparison of the three on an
+open-ended review was found. Separately:
+
+- **A second family** brings less self-preference and different answers (the table above), but its errors still
+  overlap the first family's, and Kim et al. name a shared provider among the main causes of that overlap.
+- **A second pass of the same model** is not a copy: the two fresh Claude judges above disagreed on 10-17% of the
+  calls, and resampling is a strong baseline ([Smit et al. 2024][mad]). It shares the family's blind spots, though, and
+  asking the model to review its own answer adds nothing without new information ([Huang et al. 2024][selfcorrect]).
+- **A better brief** was the largest effect in the only measure made here: the rubric, not the model, was the
+  bottleneck (#1211). The MOD handbook's first principle is the same: "Set a clear objective" (7.13). The Red Team
+  briefs are already detailed; what they lack for two passes is the blinding and the shared reporting table of section 6.
+
 **Limits of this evidence.** The model studies use 2023-2025 models on tasks with right answers. None covers open-ended
 strategic review, Fable or Astra. The answer in section 1 is a judgement built on them, not a measurement.
 
@@ -104,20 +121,23 @@ strategic review, Fable or Astra. The answer in section 1 is a judgement built o
 
 - **The curve.** If each pass found a share p of the decision-relevant risks independently, two passes would find
   1 − (1 − p)^2: with p = 0.5, 75% instead of 50%, and a third pass 87.5%. Correlated misses make the second pass add less,
-  and dependent sources are worth "a smaller number of independent sources" ([Clemen and Winkler 1985][clemen]). The
+  and positively dependent sources carry the information of fewer independent ones ([Clemen and Winkler 1985][clemen]). The
   second pass is where most of the remaining gain is; a third rarely pays unless the first two barely overlap
   (illustration, not a measurement).
 - **What a pass costs here.** No Red Team pass has run yet, and REE-244 and REE-121 hold no agent token figures (REE-121
   measures CI minutes; mission reports go to the private workspace, not to pull requests, so that CI cost does not apply).
   The nearest measured agent times are this repository's study PRs: median 24 min, range 14 min to 54 min, first commit to
   green checks, reading and research excluded (#1503, #1508, #1523, #1537, #1553). A mission is broader than any of
-  them; estimate 1-3 h of agent time per full pass, against the longest study so far, 2.7 h (#1503, #1553).
+  them; estimate 1-3 h of agent time per full pass, against the longest of those five, 2.7 h (#1503, #1553). A check
+  or a synthesis: about a third of that, 20-60 min (my estimate, scaled from #1503, #1553).
 - **Tokens (estimate).** Anthropic lists Fable 5.2 at $8 / $40 per million input / output tokens and reports $4.82 per
   task for Fable 5.2 `high` on DeepResearch Bench II ([model and effort study][effort-study], quoting Anthropic's pages).
   A mission is several such tasks plus reading the repository and Linear: order of $20-60 at list price per Fable pass, an
   estimate. On Pierre's subscriptions it is quota, not cash. Astra's cost is unknown from here.
-- **The scarce costs are Pierre's.** He launches every Astra pass himself, files its report, and reads what comes back.
-  Two full passes per mission mean ten reports; only the synthesis keeps his reading at five.
+- **The scarce costs are Pierre's.** He launches every Astra run himself, files its report, and reads what comes back.
+  Any design with a second family on every mission costs him five Astra runs; the designs differ in how long each run
+  is and in how much there is to read. Two full passes per mission mean ten reports; only the synthesis keeps his
+  reading at five tables.
 
 ## 5. Three designs
 
@@ -125,15 +145,23 @@ In every design: **one brief per mission** (the Linear issue), the passes named 
 inquiry" label), each pass launched without access to the other's report, the model and version recorded, and the top
 claims' sources checked.
 
-| Design | What it buys | Rough cost (estimates) | Risk |
-| --- | --- | --- | --- |
-| **A. Two full passes on all five** (Pierre's proposal) | The widest coverage; per mission, the overlap between the two passes estimates what both missed; no family judges its own kind alone | Ten full passes: five Fable at 1-3 h each (#1503, #1553), five Astra launched and filed by Pierre; five syntheses; ten reports exist | Pierre's time; agreement read as proof; the two missions that rest on the repository's data recount the same counts twice |
-| **B. One full pass + a cross-family check** | The other family receives the report without its author's name and (1) re-derives the 5-8 top-ranked risks, (2) checks every source they cite, (3) argues the strongest counter-evidence, (4) names up to three risks it thinks are missing. Catches wrong facts, bad citations and overstated risks; some omissions | Five full passes plus five checks, a check about a third of a pass (my estimate). Alternating which family does the full pass spreads both families' bias | The check sees the first report's framing (anchoring); whole blind spots survive |
-| **C. Staggered by mission** | Two full blind passes where a family has a stake or the decision is stop-or-continue: AI substitution (REE-288), commercial viability (REE-290), technical and agent-led sustainability (REE-292). Design B for pedagogy (REE-289) and content (REE-291), whose evidence is mostly the repository's code and counts. A stop rule after the first two double missions | Eight full passes (six on the three double missions, one each on the other two) and two checks: a fifth less than A before the stop rule. With Fable doing the single passes, Pierre launches three full Astra passes and two checks | The split is my judgement; on REE-292 neither family is independent, since Claude and Codex (OpenAI) both build this repository |
+The integrator's side is about the same in all three designs, if Fable does every full pass (estimates from section 4):
 
-**The stop rule (C).** After the first two double-pass missions, count the decision-relevant findings seen by both
-passes, by one only, and contradicted. If the second pass found little the first did not, run the remaining missions as
-B; if it found much, extend A to the rest.
+- five full Fable passes: 5-15 h of agent time and about $100-300 at list price (#1503, #1553);
+- five syntheses or reconciliations: 2-5 h and about $35-100 (#1503, #1553).
+
+The designs differ on Astra's side and in what Pierre reads.
+
+| Design | What it buys | Astra's side and Pierre's (estimates) | Risk |
+| --- | --- | --- | --- |
+| **A. Two full passes on all five** (Pierre's proposal) | The widest coverage; per mission, the overlap between the two passes estimates what both missed; no family judges its own kind alone | Five full Astra passes; ten reports, five synthesis tables to read | Agreement read as proof; on the two missions that rest on the repository's data, the second pass recounts the same counts |
+| **B. One full pass + a cross-family check** | The other family receives the report without its author's name and (1) re-derives the 5-8 top-ranked risks, (2) checks every source they cite, (3) argues the strongest counter-evidence, (4) names up to three risks it thinks are missing. Catches wrong facts, bad citations and overstated risks; some omissions | Five Astra checks, each about a third of a full pass; five reports plus five short check notes. Alternating which family does the full pass would spread both families' bias, at the cost of Astra full passes | The check sees the first report's framing (anchoring); whole blind spots survive |
+| **C. A, staged** | Stage 1: two full blind passes on AI substitution (REE-288) and commercial viability (REE-290), where a family has a stake or the decision is stop-or-continue. Stage 2, decided on stage 1's measured overlap: technical and agent-led sustainability (REE-292) doubled by default; pedagogy (REE-289) and content (REE-291), whose evidence is mostly the repository's code and counts, as B, or doubled if stage 1 says doubling paid | Three full Astra passes and two checks by default; five full if stage 1 says so. Still five Astra runs: C saves Astra's length and Pierre's reading on two missions, not launches | The split is my judgement; on REE-292 neither family is independent, since Claude and Codex (OpenAI) both build this repository |
+
+**The stop rule (C).** After stage 1, count the decision-relevant findings seen by both passes, by one only, and
+contradicted. If the second family found risks the first missed and that would change a decision, double the rest
+(design A). If it found little, run REE-289 and REE-291 as B. The same count, kept for every mission, tells later
+re-runs whether a second family is still worth its runs.
 
 The two market studies (REE-285, REE-286) and the two architecture studies (REE-283, REE-284) gather evidence rather
 than attack it, and Red Teams 3 and 5 already challenge them: one pass each with design B's check is enough (my
@@ -141,10 +169,10 @@ judgement).
 
 ## 6. Recommendation and the synthesis
 
-**Design C**, with B as the default for any later mission or re-run, and the stop rule deciding whether to widen or
-narrow. It keeps Pierre's two families where the second one matters most and replaces two full passes by checks where
-a cheaper check gets most of the value. The saving is modest at first; the stop rule is what can make it larger, on
-evidence from this programme rather than from benchmarks.
+**Design C: Pierre's proposal, staged.** Two families on the two missions where the second matters most, then the
+rest decided on this programme's own overlap count rather than on benchmarks; B as the default for later re-runs. The
+saving against A is modest (two Astra checks instead of two full passes, and less to read); what C mainly buys is
+evidence, after two missions, on whether the second family pays here.
 
 **The synthesis, per mission:**
 
@@ -169,21 +197,21 @@ evidence from this programme rather than from benchmarks.
 Human practice:
 
 - UK Ministry of Defence, DCDC, [*Red Teaming Handbook*, 3rd edition][mod] [June 2021], paragraphs 1.8, 1.9, 6.10, 7.4-7.6.
-- CIA Center for the Study of Intelligence, [*A Tradecraft Primer: Structured Analytic Techniques*][cia] [March 2009], pp. 17-20.
+- CIA Center for the Study of Intelligence, [*A Tradecraft Primer: Structured Analytic Techniques*][cia] [March 2009], pp. 17-21 (read in full, like the MOD handbook's sections cited).
 - [Intelligence report of Team "B"][teamb-cia], *Foreign Relations of the United States 1969-1976*, vol. XXXV, document 171 [December 1976].
 - US Senate Select Committee on Intelligence, [*The National Intelligence Estimates A-B Team Episode*][teamb-senate] [February 1978] (a scan; read through its indexed text).
-- Nemeth, Brown and Rogers, ["Devil's advocate versus authentic dissent"][nemeth], *European Journal of Social Psychology* [2001] (abstract read).
-- Klein, ["Performing a project premortem"][premortem], *Harvard Business Review* [September 2007] (summary read).
-- Kahneman, Lovallo and Sibony, ["Before you make that big decision"][checklist], *Harvard Business Review* [June 2011] (abstract read).
-- Mellers, Hertwig and Kahneman, ["Do frequency representations eliminate conjunction effects?"][advcollab], *Psychological Science* [2001] (abstract read).
+- Nemeth, Brown and Rogers, ["Devil's advocate versus authentic dissent"][nemeth], *European Journal of Social Psychology* [2001] (search summary of its abstract).
+- Klein, ["Performing a project premortem"][premortem], *Harvard Business Review* [September 2007] (search summary; the page's title and date checked).
+- Kahneman, Lovallo and Sibony, ["Before you make that big decision"][checklist], *Harvard Business Review* [June 2011] (search summary).
+- Mellers, Hertwig and Kahneman, ["Do frequency representations eliminate conjunction effects?"][advcollab], *Psychological Science* [2001] (search summary).
 
 Reviewers and discovery:
 
-- Rigby and Bird, ["Convergent contemporary software peer review practices"][rigby], ESEC/FSE [2013] (summary read).
-- Nielsen and Landauer, ["A mathematical model of the finding of usability problems"][nielsen], INTERCHI [1993].
-- Schmettow, ["Sample size in usability studies"][schmettow], *Communications of the ACM* 55(4) [April 2012] (abstract read).
-- Briand, El Emam, Freimut and Laitenberger, ["A comprehensive evaluation of capture-recapture models for estimating software defect content"][briand], *IEEE Transactions on Software Engineering* [2000] (abstract read).
-- Clemen and Winkler, ["Limits for the precision and value of information from dependent sources"][clemen], *Operations Research* 33(2) [1985] (abstract read).
+- Rigby and Bird, ["Convergent contemporary software peer review practices"][rigby], ESEC/FSE [2013] (search summary).
+- Nielsen and Landauer, ["A mathematical model of the finding of usability problems"][nielsen], INTERCHI [1993] (search summary).
+- Schmettow, ["Sample size in usability studies"][schmettow], *Communications of the ACM* 55(4) [April 2012] (search summary; the page refused the fetch).
+- Briand, El Emam, Freimut and Laitenberger, ["A comprehensive evaluation of capture-recapture models for estimating software defect content"][briand], *IEEE Transactions on Software Engineering* [2000] (search summary).
+- Clemen and Winkler, ["Limits for the precision and value of information from dependent sources"][clemen], *Operations Research* 33(2) [1985] (search summary).
 
 Language models:
 
@@ -192,10 +220,10 @@ Language models:
 - Panickssery, Bowman and Feng, ["LLM evaluators recognize and favor their own generations"][selfpref], NeurIPS [2024] (abstract read).
 - Verga et al., ["Replacing judges with juries"][poll], arXiv [2024-04-29], Cohere's research (abstract read).
 - Chen, Saha and Bansal, ["ReConcile"][reconcile], ACL [2024] (abstract read).
-- Hegazy, ["Diversity of thought elicits stronger reasoning capabilities in multi-agent debate frameworks"][hegazy], arXiv preprint [October 2024] (abstract read).
+- Hegazy, ["Diversity of thought elicits stronger reasoning capabilities in multi-agent debate frameworks"][hegazy], arXiv preprint [October 2024] (search summary).
 - Smit et al., ["Should we be going MAD?"][mad], ICML [2024] (abstract read).
 - Huang et al., ["Large language models cannot self-correct reasoning yet"][selfcorrect], ICLR [2024] (abstract read).
-- Cohen, Hamri, Geva and Globerson, ["LM vs LM: detecting factual errors via cross examination"][lmvslm], EMNLP [2023] (abstract read).
+- Cohen, Hamri, Geva and Globerson, ["LM vs LM: detecting factual errors via cross examination"][lmvslm], EMNLP [2023] (search summary).
 - Venkit et al., ["DeepTRACE: auditing deep research AI systems"][deeptrace], arXiv [2025-09-02] (abstract read).
 - Anthropic, ["How we built our multi-agent research system"][anthropic-ma] [2025-06-13] (vendor).
 - This repository: [the model and effort study][effort-study] [2026-11-19] (#1211, #1218).
