@@ -98,7 +98,9 @@ def main():
         latest[row["run_id"]] = row  # appended in fetch order: the last record of a run is its freshest
     n = 0
     with open(os.path.join(d, "jobs.jsonl"), "w") as f:
-        for row in latest.values():
+        for rid, row in latest.items():
+            if rid not in attempt:  # cached from an earlier, different runs.jsonl: not in this input
+                continue
             for j in row["jobs"]:
                 f.write(json.dumps(j) + "\n")
                 n += 1

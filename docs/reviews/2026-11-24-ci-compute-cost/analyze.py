@@ -75,7 +75,9 @@ def main():
             secs = (e - s).total_seconds()
         # A job skipped by its `if` has started == completed and no runner: GitHub bills nothing for it.
         billed = 0 if secs == 0 or not j.get("runner_name") else math.ceil(secs / 60)
-        r = runs.get(j["run_id"], {})
+        r = runs.get(j["run_id"])
+        if r is None:  # a job whose run is not in runs.jsonl: not part of this input
+            continue
         rows.append(dict(j=j, r=r, secs=secs, billed=billed))
     tot_b = sum(x["billed"] for x in rows)
     tot_raw = sum(x["secs"] for x in rows) / 60
