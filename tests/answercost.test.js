@@ -124,6 +124,14 @@ test('the verdict fails on one count over its ceiling and names the state and th
   assert.match(A.verdict([row('fish:7')], budget, 'b.json').lines.join('\n'), /No ceiling for fish:7 in b\.json: not checked/);
 });
 
+test('the players are made on a pinned commit of the app, in a folder of their own', () => {
+  assert.match(A.PLAYERS_AT, /^[0-9a-f]{40}$/, 'a full commit');
+  assert.ok(A.cacheDir('/x').endsWith(`${A.GEN}-${A.PLAYERS_AT.slice(0, 7)}`), 'a pin never reuses the players of another');
+  // learnsim serves the app from the pinned tree, and answercost hands it that tree.
+  assert.match(read('tools/learnsim.js'), /path\.resolve\(process\.argv\[i \+ 1\]\) : ROOT/);
+  assert.match(read('tools/answercost.js'), /\.\.\.\['--root', app\]/);
+});
+
 test('the page holds the state’s history: the warm-up answers played before the read are counted in', () => {
   assert.ok(!A.historyOff(52, 50, 2), 'the default warm-up');
   assert.ok(!A.historyOff(70, 50, 20), 'a longer warm-up (--warm 20) is no reason to reject a state loaded right');
@@ -139,6 +147,21 @@ test("the table is the study's, one line a state", () => {
   assert.strictEqual(t.length, 3);
   assert.match(t[0], /^\| State \| U \| V \| T \| R \| Calls per answer/);
   assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
+});
+
+test('several seeds: one row a state and seed, the seed named in the table, the ceiling the largest count', () => {
+  const rows = [1, 2, 3].map(seed => ({...row('seaslug:500', {namedCalls: 1000 * seed}), seed})),
+    t = A.table(rows).split('\n');
+  assert.strictEqual(t.length, 5);
+  assert.match(t[2], /^\| seaslug:500 \(seed 1\) \|/);
+  assert.match(t[4], /^\| seaslug:500 \(seed 3\) \|/);
+  assert.strictEqual(A.ceilings(rows, 1.25).namedCalls, 3800, 'seed 3: 3,000 x 1.25 = 3,750, up to two digits');
+  assert.match(A.table([{...row('fish:50'), seed: 1}]), /^\| State[^\n]*\n[^\n]*\n\| fish:50 \| 11/, 'one seed: the state alone');
+  assert.deepStrictEqual(
+    A.verdict(rows, {states: {'seaslug:500': {namedCalls: 2500}}}, 'b').bad.map(b => [b.state, b.value]),
+    [['seaslug:500', 3000]],
+    'a count of any seed over the ceiling fails'
+  );
 });
 
 test('--write-budget writes the ceilings of the states measured and keeps the others', () => {

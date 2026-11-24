@@ -12,7 +12,7 @@
 //   node tools/answercost.js --write-budget FILE [--margin 1.25] [--also A.json,B.json]   write the measured counts (the
 //                                                             largest, with the --out files of other runs), times the
 //                                                             margin, as the ceilings of FILE (the states measured replace theirs)
-//   [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off] [--out counts.json] [--cache DIR] [--regen]
+//   [--n 8] [--warm 2] [--seed 1|1,2,3|off] [--clock 30|SECONDS|off] [--out counts.json] [--cache DIR] [--regen]
 //   [--par N]   N states made or counted at once (N browsers; default 1, 3 on CI, where the run is the whole machine's)
 //
 // A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the page's own answers; the sea slugs play the
@@ -41,7 +41,7 @@ const fs = require('fs'),
   os = require('os'),
   path = require('path'),
   http = require('http'),
-  {spawn} = require('child_process');
+  {spawn, spawnSync} = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 // The files whose functions are counted (the app's scripts).
@@ -160,11 +160,12 @@ const mil = x => (x >= 1e5 ? (x / 1e6).toFixed(2) + ' M' : fmt(x));
 // The study's table (section 1.2), one line a state, from the rows.
 function table(rows) {
   const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
+    multi = new Set(rows.map(r => r.seed)).size > 1, // several seeds: the seed beside the state
     line = r => {
       const m = metrics(r),
         s = r.size;
       return [
-        r.state,
+        multi ? `${r.state} (seed ${r.seed})` : r.state,
         fmt(s.records),
         fmt(s.play),
         fmt(s.tree),
@@ -195,9 +196,41 @@ function writeBudget(file, rows, margin) {
 // ---------------------------------------------------------------------------------------------------------------
 // States: made by tools/learnsim.js, kept in the cache.
 
-// The cache holds one folder per way the states are made (GEN), so a change of the way never reuses an older state.
+// The players are made on a PINNED version of the app, not on the one being counted (REE-274): a player's saved state is
+// what the app of its day made of the same simulated person, and a change of the draw or of the rules changes the player
+// the app makes (the sea slugs' 500 answers: 82 units met on one commit, 68 after the ease weight changed, and twice the
+// `scoreOf` calls), which would move the counts of a change that did not touch the code counted. The pin is a commit of
+// main; the app of that commit is read with `git archive` (fetched when this clone lacks it) and served to learnsim
+// (--root); the tools, the profiles and the answering are the current ones. The states are what an older save is: the
+// version counted must read them. Moving the pin means making the players again and setting every ceiling again
+// (--write-budget with the three seeds), in a PR of its own; tests/answercost.test.js reads this line.
+const PLAYERS_AT = 'f848c3d4fa92eec4d6777871431f067ff1f48b74';
+// The cache holds one folder per way the states are made (GEN) and per pin, so neither a change of the way nor of the pin
+// ever reuses an older state.
 const GEN = 'beyond';
-const cacheDir = o => path.join(o || process.env.REEFID_ANSWERCOST_CACHE || path.join(os.tmpdir(), 'reefid-answercost'), GEN);
+const cacheDir = o => path.join(o || process.env.REEFID_ANSWERCOST_CACHE || path.join(os.tmpdir(), 'reefid-answercost'), `${GEN}-${PLAYERS_AT.slice(0, 7)}`);
+
+// The pinned app as files, in DIR/app (made once).
+function ensureApp(dir) {
+  const app = path.join(dir, 'app');
+  if (fs.existsSync(path.join(app, '.pinned'))) return app;
+  const git = (a, o) => spawnSync('git', a, {cwd: ROOT, maxBuffer: 1 << 29, ...o});
+  if (git(['cat-file', '-e', `${PLAYERS_AT}^{commit}`]).status !== 0) {
+    const f = git(['fetch', '--quiet', '--depth=1', 'origin', PLAYERS_AT], {encoding: 'utf8'});
+    if (f.status !== 0) throw new Error(`the pinned version of the app (${PLAYERS_AT.slice(0, 7)}) is not in this clone and git fetch could not get it: ${String(f.stderr).slice(-300)}`);
+  }
+  const tmp = fs.mkdtempSync(path.join(dir, '.app-')),
+    ar = git(['archive', PLAYERS_AT]),
+    tar = ar.status === 0 ? spawnSync('tar', ['-x', '-C', tmp], {input: ar.stdout, maxBuffer: 1 << 24}) : ar;
+  if (ar.status !== 0 || tar.status !== 0) {
+    fs.rmSync(tmp, {recursive: true, force: true});
+    throw new Error(`the pinned version of the app (${PLAYERS_AT.slice(0, 7)}) could not be read with git archive: ${String(ar.stderr || tar.stderr).slice(-300)}`);
+  }
+  fs.writeFileSync(path.join(tmp, '.pinned'), PLAYERS_AT + '\n');
+  fs.rmSync(app, {recursive: true, force: true});
+  fs.renameSync(tmp, app);
+  return app;
+}
 const stateFile = (dir, st) => path.join(dir, `${st.subject}-${PLAYER.profile}-${PLAYER.seed}-${st.answers}.json`);
 
 // Runs fn on each item, at most par at once; the results in the items' order.
@@ -216,7 +249,7 @@ async function pool(items, par, fn) {
 // way (--dump-at): the player and the seed are the same whatever the length, so the state at 500 answers of a run to 3,000
 // is the state at 500 answers of a run to 500. The card that offers a part of the slate by choice is answered yes on the
 // subjects that have it (the fish and the sea slugs, their circle 3), as the study's was; the corals meet none.
-function makeSubject(subject, answers, dir) {
+function makeSubject(subject, answers, dir, app) {
   const tmp = fs.mkdtempSync(path.join(dir, '.new-')),
     t0 = Date.now(),
     last = Math.max(...answers);
@@ -225,7 +258,8 @@ function makeSubject(subject, answers, dir) {
     path.join(__dirname, 'learnsim.js'),
     // --seeds 1 plays seed 1 (learnsim: seeds 1 to N)
     ...['--subject', subject, '--profiles', PLAYER.profile, '--seeds', String(PLAYER.seed), '--questions', String(last)],
-    ...['--choice', 'auto', ...(subject === 'coral' ? [] : ['--beyond', 'yes']), '--workers', '1', '--dump', tmp, '--dump-at', answers.join(',')]
+    ...['--choice', 'auto', ...(subject === 'coral' ? [] : ['--beyond', 'yes']), '--workers', '1', '--dump', tmp, '--dump-at', answers.join(',')],
+    ...['--root', app]
   ];
   return new Promise((ok, fail) => {
     let err = '';
@@ -254,8 +288,10 @@ async function ensureStates(states, dir, regen, par) {
   const need = {};
   for (const s of states)
     if (!s.file && (regen || !fs.existsSync(stateFile(dir, s)))) (need[s.subject] = need[s.subject] || new Set()).add(s.answers);
-  if (Object.keys(need).length) fs.mkdirSync(dir, {recursive: true});
-  await pool(Object.entries(need), par, ([subject, answers]) => makeSubject(subject, [...answers].sort((a, b) => a - b), dir));
+  if (!Object.keys(need).length) return states.map(s => s.file || stateFile(dir, s));
+  fs.mkdirSync(dir, {recursive: true});
+  const app = ensureApp(dir);
+  await pool(Object.entries(need), par, ([subject, answers]) => makeSubject(subject, [...answers].sort((a, b) => a - b), dir, app));
   return states.map(s => s.file || stateFile(dir, s));
 }
 
@@ -286,6 +322,9 @@ async function prep(p) {
       if (b) return (b.click(), 'card');
       window.smokeTiles && smokeTiles();
       if (document.querySelector('#view .q:not(.done) :is([data-c], [data-w], .tyform input):not([disabled])')) return 'ready';
+      // A question whose photo did not load (the tool serves none) closes its answers: the page's own "Another question".
+      const fb = document.querySelector('#qfail button');
+      if (fb) return (fb.click(), 'another');
       const nx = document.querySelector('#view .q.done') && document.getElementById('next');
       if (nx) return (nx.click(), 'next');
       return 'wait';
@@ -301,13 +340,24 @@ const settle = p =>
     () => new Promise(ok => setTimeout(() => requestIdleCallback(() => setTimeout(() => requestIdleCallback(ok, {timeout: 20000}), 120), {timeout: 20000}), 120))
   );
 // One answer through the page's own controls, then Next; its format, or null when no question came.
-async function oneAnswer(p, i) {
-  if (!(await prep(p))) return null;
+// why: where the reason of a missing answer is left (what stood between the player and the question).
+async function oneAnswer(p, i, why) {
+  if (!(await prep(p))) {
+    why.push(
+      'no question: ' +
+        (await p.evaluate(
+          () =>
+            `${location.hash} | cards: ${[...document.querySelectorAll('.unlock')].map(x => x.className + ' "' + x.innerText.slice(0, 60).replace(/\s+/g, ' ') + '"').join('; ')} | view: ${((document.getElementById('view') || {}).innerText || '').slice(0, 100).replace(/\s+/g, ' ')}`
+        ))
+    );
+    return null;
+  }
   await settle(p);
   let fmt;
   try {
     fmt = (await p.evaluate(pick => smokeAnswer(pick), i % 4 !== 3)).fmt; // three right, one wrong
   } catch (e) {
+    why.push('smokeAnswer: ' + String(e.message).slice(0, 200));
     return null;
   }
   await settle(p);
@@ -380,7 +430,7 @@ async function count(browser, base, file, name, o, expect) {
   await p.waitForLoadState('networkidle');
   if (!/quiz/.test(await p.evaluate(() => location.hash))) await p.evaluate(() => (typeof go === 'function' ? go('quiz') : (location.hash = '#quiz')));
   await p.waitForTimeout(800);
-  for (let i = 0; i < o.warm; i++) await oneAnswer(p, i);
+  for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
   const size = await p.evaluate(() => {
     const units = Object.keys(P).filter(n => n !== LEVEL),
@@ -434,12 +484,13 @@ async function count(browser, base, file, name, o, expect) {
   await cdp.send('Profiler.enable');
   await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
   const fmts = [];
-  for (let i = o.warm; i < o.warm + o.n; i++) fmts.push(await oneAnswer(p, i));
+  const why = [];
+  for (let i = o.warm; i < o.warm + o.n; i++) fmts.push(await oneAnswer(p, i, why));
   const {result} = await cdp.send('Profiler.takePreciseCoverage');
   await cdp.send('Profiler.stopPreciseCoverage');
   const n = fmts.filter(Boolean).length;
   // Most of the answers played, and no page error: a count over a broken page is no count.
-  if (n < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${n} of ${o.n} answers were played (${errs.join('; ') || 'no page error'})`);
+  if (n < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${n} of ${o.n} answers were played (${errs.join('; ') || 'no page error'}; ${why[0] || 'no reason seen'})`);
   if (errs.length) throw new Error(`${name}: page errors: ${errs.join('; ')}`);
   const by = new Map();
   let total = 0;
@@ -507,14 +558,15 @@ async function main() {
   const o = {
       n: Number(arg('n', 8)),
       warm: Number(arg('warm', 2)),
-      seed: arg('seed', '1') === 'off' ? null : Number(arg('seed', 1)),
+      // --seed 1,2,3: each state counted once a seed (rows of one state, which --write-budget takes the largest of)
+      seeds: arg('seed', '1') === 'off' ? [null] : arg('seed', '1').split(',').map(Number),
       clock: arg('clock', '30') === 'off' ? null : Number(arg('clock', 30))
     },
     margin = Number(arg('margin', 1.25)),
     par = Number(arg('par', process.env.CI ? 3 : 1)),
     budgetFile = arg('budget', null),
     budget = budgetFile ? JSON.parse(fs.readFileSync(path.resolve(budgetFile), 'utf8')) : null;
-  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1)) return (console.error(USAGE), process.exit(2));
+  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1 && o.seeds.every(s => s === null || Number.isInteger(s)))) return (console.error(USAGE), process.exit(2));
 
   // From here on the run is heavy: the machine slot first (rule W24, a no-op on CI), for the states to make and the count.
   await require('../tests/slot.js')('tools/answercost.js');
@@ -528,17 +580,18 @@ async function main() {
   let rows;
   try {
     // The longest states first, so the last to finish is a short one; each worker has a Chromium of its own.
-    const order = states.map((s, i) => i).sort((a, b) => (states[b].answers || 0) - (states[a].answers || 0)),
-      queue = [...order];
-    rows = new Array(states.length);
+    const jobs = states.flatMap((s, i) => o.seeds.map(seed => ({i, seed}))),
+      queue = jobs.map((j, k) => k).sort((a, b) => (states[jobs[b].i].answers || 0) - (states[jobs[a].i].answers || 0));
+    rows = new Array(jobs.length);
     await Promise.all(
-      Array.from({length: Math.min(par, states.length)}, async () => {
+      Array.from({length: Math.min(par, jobs.length)}, async () => {
         const browser = await chromium.launch();
         try {
-          for (let i = queue.shift(); i !== undefined; i = queue.shift()) {
-            const t1 = Date.now();
-            rows[i] = await count(browser, base, files[i], states[i].name, o, states[i].subject ? states[i] : null);
-            console.error(`answercost: ${states[i].name} counted in ${Math.round((Date.now() - t1) / 1000)} s.`);
+          for (let k = queue.shift(); k !== undefined; k = queue.shift()) {
+            const {i, seed} = jobs[k],
+              t1 = Date.now();
+            rows[k] = {...(await count(browser, base, files[i], states[i].name, {...o, seed}, states[i].subject ? states[i] : null)), seed};
+            console.error(`answercost: ${states[i].name}${o.seeds.length > 1 ? ` seed ${seed}` : ''} counted in ${Math.round((Date.now() - t1) / 1000)} s.`);
           }
         } finally {
           await browser.close();
@@ -548,7 +601,7 @@ async function main() {
   } finally {
     server.close();
   }
-  console.error(`answercost: ${states.length} states, ${Math.round((Date.now() - t0) / 1000)} s in all.`);
+  console.error(`answercost: ${states.length} states${o.seeds.length > 1 ? `, seeds ${o.seeds.join(',')}` : ''}, ${Math.round((Date.now() - t0) / 1000)} s in all.`);
   console.log(table(rows));
   // CI shows the table on the job's page.
   if (process.env.GITHUB_STEP_SUMMARY)
@@ -571,7 +624,7 @@ async function main() {
   }
 }
 
-module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, GEN, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);

@@ -157,15 +157,21 @@ subject is a test case, not the definition of the target.
   state and seed differ by up to 15% from run to run. The run fails, naming the state, when the page loaded another
   subject than the state's, holds a history far from the state's, played under three quarters of its answers or raised a
   page error. Options: `--states fish:50,coral:500,seaslug:3000` (subject `fish`, `coral` or `seaslug`, then the answers; the
-  default is the nine states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed`,
-  `--clock`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming the state and the count),
+  default is the nine states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed 1,2,3` (each state
+  counted once a seed), `--clock`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming the state and the count),
   `--write-budget FILE [--margin 1.25] [--also A.json,B.json]` (the largest counts of this run and of earlier `--out`
   files, times the margin, as the ceilings of the states measured only), `--regen`, `--par N` (N states made or counted
   at once, each count in a Chromium of its own; 1 by default, 3 on CI).
   A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
   card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
   `reefid-answercost` in the temporary directory. The missing states of a subject are made by one run to the longest of
-  them, which saves the shorter ones on its way. The sea slugs are played through the same fish engine
+  them, which saves the shorter ones on its way. **The players are made on a pinned version of the app**
+  (`PLAYERS_AT`, a commit of main, read with `git archive` and served to `learnsim --root`; the tools, the profiles and
+  the answering are the current ones), not on the version being counted: a change of the draw changes the player the app
+  makes of the same simulated person (the sea slugs at 500 answers: 82 units met on one commit and 68 on the next, after
+  the ease weight changed, and twice the `scoreOf` calls), which would move the counts of a change that did not touch the
+  code counted. A player is what an older save is; the version counted must read it. Moving the pin means making the
+  players again and setting every ceiling again, in a PR of its own. The sea slugs are played through the same fish engine
   (`learnsim.js --subject seaslug`: each profile's fish part, `tools/learnprof.js` `ENGINE`, rule S1). It takes the machine
   slot (rule W24).
 - **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
@@ -182,11 +188,11 @@ subject is a test case, not the definition of the target.
   `.github/workflows/smokes.yml`, beside the smokes (no `needs`, its own runner, Playwright as the smokes have it): a
   count over its ceiling fails that job and names the state and the count (an `OVER BUDGET` line and an error
   annotation), and the job's summary holds the table of every state's calls per answer. A pull request that changes only
-  docs skips it with the smokes; a merge train runs it. The job makes the saved players afresh each run (three
-  `learnsim` runs, one a subject, side by side, then the nine counts three at a time) and keeps nothing between runs. If
-  its time ever passes the longest smoke's (the job's time is in each run, and in the PR that added it), the next step is
-  the Actions cache for the players, under a key of `tools/learnprof.js`; a cache made on a branch is read by that branch
-  only, so a merge train would need it made on main.
+  docs skips it with the smokes; a merge train runs it. The job makes the saved players afresh each run, on the
+  pinned version of the app (three `learnsim` runs, one a subject, side by side, then the nine counts three at a time),
+  and keeps nothing between runs. If its time ever passes the longest smoke's (the job's time is in each run, and in the
+  PR that added it), the next step is the Actions cache for the players, under a key of the pin and
+  `tools/learnprof.js`; a cache made on a branch is read by that branch only, so a merge train would need it made on main.
 - **By hand, for an agent working on speed** (the nine states: about 2 minutes 15 s to make on a quiet machine, once, then
   about 2 minutes to count, 40 s with `--par 3`; much longer when the machine is loaded or the slot is taken):
   `SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget tools/answercost-budget.json`,

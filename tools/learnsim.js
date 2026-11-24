@@ -10,7 +10,7 @@
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish|seaslug] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--set calibration-set.json|none] [--rows sp:off,sci:off]
-//                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]]
+//                          [--beyond yes|no] [--spknow on|off] [--live 20 [--liveoff]] [--root DIR]
 //                          [--budget MIN] [--per-job SEC] [--pierre-go "Q number or message, date"]
 // --budget MIN (rule L11, tools/checkbudget.js): minutes of compute, 40 at most and by default, in either world: the run
 // plans its jobs, estimates their time from a calibration (here: the first wave of jobs side by side for a fifth of the
@@ -31,6 +31,8 @@
 // --dump DIR [--dump-at 50,500,3000]: the page's saved state (localStorage) at those questions (every checkpoint without
 // --dump-at, which adds its questions to the checkpoints), one file DIR/<subject>-<profile>-<seed>-<question>.json each,
 // the states tools/answercost.js plays on. Written by a run of the full length only (never a budget's calibration run).
+// --root DIR: serves the app from DIR (a checkout or `git archive` of another version of it); the tools, the profiles and
+// the answering stay these. tools/answercost.js makes its players this way, on a pinned version of the app.
 // --beyond yes|no: the answer to the card that offers a part of the slate by choice (quiz.js openOfferShow); without
 // it the card is left unanswered.
 // --spknow off: every fish species starts at the profile's low value, as before the profiles' species (tools/learnprof.js
@@ -101,6 +103,12 @@ const {chromium} = require('playwright');
 const {memStorage} = require('./memstorage.js');
 const CB = require('./checkbudget.js'); // the 40-minute cap and level 3's gate (rule L11)
 const ROOT = path.join(__dirname, '..');
+// --root DIR: the app is served from DIR, a checkout of another version of it (tools/answercost.js makes its players on a
+// pinned version of the app, so a later change of the draw does not change them); the tools stay these.
+const APPROOT = (() => {
+  const i = process.argv.indexOf('--root');
+  return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? path.resolve(process.argv[i + 1]) : ROOT;
+})();
 
 // Profiles: tools/learnprof.js, the same list for both subjects and both worlds; also loaded in the page (an init
 // script), where knownUnits reads the app's own units. Default: every profile with a part for the subject.
@@ -311,8 +319,8 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {'Content-Type': TYPES['.json']});
     return res.end('{}');
   }
-  const f = own ? path.resolve(PHOTOS) : cset ? path.resolve(CSETF) : path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
-  if (!own && !cset && !f.startsWith(ROOT)) {
+  const f = own ? path.resolve(PHOTOS) : cset ? path.resolve(CSETF) : path.join(APPROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (!own && !cset && !f.startsWith(APPROOT)) {
     res.writeHead(403);
     return res.end();
   }
