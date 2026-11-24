@@ -272,6 +272,47 @@
     "genus"
    ],
    "note": "Strong blue cast; plating colony, Turbinaria possible"
+  },
+  "duncanopsammia-cand-245793226": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "polyps": true,
+   "keep": "best",
+   "note": "Blue cast; plate with polyps out"
+  },
+  "duncanopsammia-cand-245793252": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Polyps out over the corallites"
+  },
+  "duncanopsammia-cand-372490915": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "polyps": true,
+   "keep": "best"
+  },
+  "duncanopsammia-cand-372490894": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "polyps": true,
+   "keep": "alt",
+   "note": "Wider, the plate edge"
+  },
+  "duncanopsammia-cand-609866148": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "polyps": true,
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Columns rather than plates; Tubastraea or Turbinaria possible"
   }
  }
 }

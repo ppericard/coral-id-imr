@@ -401,6 +401,33 @@
    "keep": "best",
    "multi": true,
    "note": "Hazy, soft at 100%; other corals around"
+  },
+  "pocillopora-cand-269469068": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Dark water; a massive coral at the bottom left edge"
+  },
+  "pocillopora-cand-745206212": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small young colony",
+   "crop": [
+    0.1,
+    0.2,
+    0.75,
+    0.95
+   ]
+  },
+  "pocillopora-cand-585933865": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Oversharpened"
   }
  }
 }

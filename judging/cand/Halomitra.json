@@ -210,6 +210,19 @@
    "quality": 2,
    "form": "U",
    "keep": "dup"
+  },
+  "halomitra-cand-746237611": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Other corals at the edges"
+  },
+  "halomitra-cand-746237580": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
   }
  }
 }

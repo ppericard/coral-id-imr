@@ -722,6 +722,175 @@
     "genus"
    ],
    "note": "Cyan cast, soft at 100%; thin closed meanders may point to Platygyra"
+  },
+  "lobophyllia-cand-586851902": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Flat fleshy colony, tentacle tips out; meanders not readable"
+  },
+  "lobophyllia-cand-606685463": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blue ascidians and sponges cover the middle of the coral"
+  },
+  "lobophyllia-cand-745205642": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-745205632": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Closer on the valleys; oversharpened"
+  },
+  "lobophyllia-cand-745205612": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-745205587": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-745205564": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-756242005": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Tentacles out"
+  },
+  "lobophyllia-cand-745204954": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Tentacles out"
+  },
+  "lobophyllia-cand-745204976": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Another part, tubeworms"
+  },
+  "lobophyllia-cand-745204979": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Large colony, a diver small at the top right"
+  },
+  "lobophyllia-cand-745204951": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Closer, tentacles out"
+  },
+  "lobophyllia-cand-745204941": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Tentacles out"
+  },
+  "lobophyllia-cand-745204931": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Closer on the tentacles"
+  },
+  "lobophyllia-cand-745204924": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Another part"
+  },
+  "lobophyllia-cand-269395940": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Another brain coral fills the top left quarter"
+  },
+  "lobophyllia-cand-606685428": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "A massive coral at the bottom right"
+  },
+  "lobophyllia-cand-606685445": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-579364323": {
+   "view": "wide",
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Small and dark; a lionfish fills the bottom right"
+  },
+  "lobophyllia-cand-596085987": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "note": "Several brain corals side by side on a bommie"
+  },
+  "lobophyllia-cand-467756447": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-467756467": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "alt",
+   "note": "Closer on the same colony"
+  },
+  "lobophyllia-cand-467756462": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
   }
  }
 }

@@ -210,6 +210,37 @@
    "form": "U",
    "genus": "exclude",
    "note": "A sea urchin, a sponge and tentacles cover most of the frame; the disc is small"
+  },
+  "lithophyllon-cand-225147856": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong blue cast; septa still readable"
+  },
+  "lithophyllon-cand-746237727": {
+   "view": "macro",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Farther than the live Close-up photo"
+  },
+  "lithophyllon-cand-420729198": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Night; small domed disc with large septa: Fungia or Danafungia possible"
+  },
+  "lithophyllon-cand-270764701": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Night, tentacles half out"
   }
  }
 }

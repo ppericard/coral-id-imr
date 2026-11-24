@@ -331,6 +331,27 @@
    "form": "M",
    "keep": "dup",
    "note": "Same surface, same framing"
+  },
+  "platygyra-cand-745206057": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Small young colony"
+  },
+  "platygyra-cand-745206047": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Shallow focus"
+  },
+  "platygyra-cand-745206034": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Very soft at 100%, shallow focus"
   }
  }
 }

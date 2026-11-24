@@ -168,6 +168,51 @@
     0.95
    ],
    "note": "Cyan cast"
+  },
+  "alveopora-cand-270754390": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "polyps": true,
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Night; tiny polyps over lumps, tentacles not countable"
+  },
+  "alveopora-cand-726168635": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "polyps": true,
+   "keep": "best"
+  },
+  "alveopora-cand-726168664": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "polyps": true,
+   "keep": "best",
+   "note": "A crinoid over the middle"
+  },
+  "alveopora-cand-246801672": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "polyps": true,
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Cyan cast; tentacles not countable: Goniopora possible"
+  },
+  "alveopora-cand-247049529": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "polyps": true,
+   "keep": "best",
+   "note": "12 tentacles per polyp"
   }
  }
 }
