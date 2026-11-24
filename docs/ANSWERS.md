@@ -1954,3 +1954,10 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   suivi la règle, voilà ce qui s'est passé, voilà le contexte » … Et comme ça, ça permet de digérer cette information
   sans pour autant créer de manière automatique et de suite une nouvelle règle que tu n'arriveras pas à suivre non
   plus d'ailleurs.» Applied: INTEGRATOR.md "Questions and corrections"; Linear label "Rule not followed"; REE-251.
+
+## 2026-11-24
+
+- **06:45, the sea slugs take every photo of an observation (REE-252).** On the sea slug fetcher taking only each
+  observation's first photo: «ça c'est une exception forte qui n'a pas lieu d'être». On doing as the fish do: «D'accord
+  pour que par défaut on fasse partout pareil !». His 2026-11-23 21:05 «il faut justement toutes les prendre» pointed
+  the same way. Applied: #1525 (docs/decisions/2026-11-24-seaslug-every-photo.md).
