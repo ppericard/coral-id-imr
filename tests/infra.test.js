@@ -25,15 +25,15 @@ test('the thresholds: a warning past 70% of a limit, never at 70%, and the same 
   assert.strictEqual(F.consts.health_warn, 0.7);
   assert.strictEqual(F.consts.brief_warn, 0.7, "the brief's");
   assert.match(read('admin.js'), /const INFRA = \{WARN: 0\.7, /, "the admin card's");
-  assert.deepStrictEqual(F.consts.limits, {cells: 10e6, pages: 1e9, r2: 10e9, slow: 5000});
+  assert.deepStrictEqual(F.consts.limits, {cells: 10e6, pages: 1e9, r2: 50e9, slow: 5000});
   // The same limits as the script (Code.gs INFRA.CELLS, TIM.SLOW) and the card (admin.js).
   assert.match(read('tools/sync/Code.gs'), /const INFRA = \{CELLS: 10000000, /);
   assert.match(read('tools/sync/Code.gs'), /SLOW: 5000, /);
   assert.match(read('admin.js'), /\{WARN: 0\.7, SLOW: 5000, BACKUP_DAYS: 8\}/);
   assert.match(read('tools/health.py'), /BACKUP_DAYS = 8/);
-  assert.strictEqual(S.ok.items.r2.warn, false, '63%');
+  assert.strictEqual(S.ok.items.r2.warn, false, '13%');
   assert.strictEqual(S.r2_exactly_70.items.r2.warn, false, 'exactly 70% is not past it');
-  assert.strictEqual(S.r2_warn.items.r2.warn, true, '75%');
+  assert.strictEqual(S.r2_warn.items.r2.warn, true, '72%');
   assert.strictEqual(S.r2_warn.ok, true, 'a warning never fails the job');
   assert.strictEqual(S.token_ok.items.cells.warn, true, '81% of the cells');
   assert.strictEqual(S.token_cells_warn.items.cells.pct, 0.74);
@@ -116,7 +116,7 @@ test('Pages size, R2 by hand, and the numbers only with the token', () => {
   assert.deepStrictEqual(Object.keys(S.ok.items), ['pages', 'r2'], 'no sheet numbers without the admin token');
   assert.deepStrictEqual(Object.keys(S.token_ok.items), ['cells', 'slow', 'pages', 'r2']);
   assert.strictEqual(S.token_ok.items.slow.note, 'read Answers');
-  assert.match(S.ok.md, /\| R2 storage \| 6\.30 GB \| 10\.00 GB \| 63 % \| by hand 2026-11-15 \|/);
+  assert.match(S.ok.md, /\| R2 storage \| 6\.30 GB \| 50\.00 GB \| 13 % \| by hand 2026-11-15 \|/);
 });
 
 test('no secret in anything it prints, and the issue text holds statuses only', () => {
@@ -126,11 +126,11 @@ test('no secret in anything it prints, and the issue text holds statuses only', 
 
 test("the brief's line: one compact line, a warning past 70%, the failed check said, the sheet numbers pointed to", () => {
   assert.deepStrictEqual(F.B.healthy, [
-    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 6.30 GB/10.00 GB 63% (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
+    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 6.30 GB/50.00 GB 13% (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
     false
   ]);
   assert.deepStrictEqual(F.B.warn, [
-    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 7.50 GB/10.00 GB 75% WARN (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
+    'Infra (Health run 1h ago): Pages site 0.30 GB/1.00 GB 30% · R2 storage 36.00 GB/50.00 GB 72% WARN (by hand 2026-11-15) · sheet cells and timings: admin To do > Alerts',
     true
   ]);
   assert.match(F.B.token[0], /Sheet cells 7\.40 M\/10\.00 M 74% WARN · Slowest p90 4\.0 s\/5\.0 s 80% WARN \(read Answers\)/);
@@ -292,15 +292,15 @@ test("the admin card's rows: the same 70% rule, the backup flagged past 8 days",
   const rr = (p, h) => JSON.parse(JSON.stringify(ctx.rr(p, h, NOW).map(r => [r.label, r.text, r.share, r.warn])));
   assert.deepStrictEqual(rr(300001000, {r2: {bytes: 6.3e9, at: '2026-11-15'}}), [
     ['Pages site', '0.30 GB of 1.00 GB', 0.300001, false],
-    ['R2 storage', '6.30 GB of 10.00 GB · by hand 2026-11-15', 0.63, false]
+    ['R2 storage', '6.30 GB of 50.00 GB · by hand 2026-11-15', 0.126, false]
   ]);
   assert.strictEqual(rr(null, null)[0][1], 'not read');
   assert.strictEqual(rr(null, null)[1][1], 'to measure by hand (tools/infra.json)');
   assert.strictEqual(rr(8e8, {r2: {bytes: 7.5e9, at: '2026-10-01'}})[0][3], true, '80% of Pages');
   assert.deepStrictEqual(rr(0, {r2: {bytes: 7.5e9, at: '2026-10-01'}})[1].slice(1), [
-    '7.50 GB of 10.00 GB · by hand 2026-10-01, 48 days old: measure again',
-    0.75,
-    true
+    '7.50 GB of 50.00 GB · by hand 2026-10-01, 48 days old: measure again',
+    0.15,
+    false
   ]);
   const N = vm.runInContext('INFRA_SHEET', ctx); // main's VERSION + 1 (tools/check_versions.py checks it, rule D3)
   assert.strictEqual(ctx.on({v: N}), true);
