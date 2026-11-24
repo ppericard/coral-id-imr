@@ -1601,6 +1601,8 @@ async function quizAndProgress(b, base, errs) {
     ok(FA_CHECK.on === true, 'FA_CHECK on in the page (tests/facheck.js)');
     // And every storage read kept parsed (sync.js keptGet, keptBy, keptPush) checked against a fresh store.get.
     ok(KEPT_CHECK.on === true, 'KEPT_CHECK on in the page (tests/facheck.js)');
+    // And every view of the state version read again (app.js stateView: the units in play) computed again and compared.
+    ok(VIEW_CHECK.on === true, 'VIEW_CHECK on in the page (tests/facheck.js)');
     ok(
       TREEU.c1.length === 28 &&
         TREEU.c2.length > 0 &&
