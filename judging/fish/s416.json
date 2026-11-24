@@ -647,6 +647,22 @@
     0.95,
     0.65
    ]
+  },
+  "fish-s416-cand-61510187": {
+   "code": "o1g0sl13",
+   "keep": "alt"
+  },
+  "fish-s416-cand-61510195": {
+   "code": "d1g0sl14",
+   "keep": "best"
+  },
+  "fish-s416-cand-61510203": {
+   "code": "d1g0sl14",
+   "keep": "alt"
+  },
+  "fish-s416-cand-686405240": {
+   "code": "p1d1ml1w3",
+   "keep": "dup"
   }
  }
 }

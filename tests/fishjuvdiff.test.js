@@ -182,7 +182,9 @@ test('the gate on every photo in play: a card only where its source says so, alw
   // schools, 3 by the observer's stage and 40 read on the photo; FishBase: the juveniles differ), each beside an adult.
   // REE-243's pass on the faved candidates beyond the cap: 2 more Pholidichthys leucotaenia juveniles in play with a card
   // (a school and a young one swimming with others, read on the photo), each beside an adult.
-  assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1211, juvOff: 1981, subOn: 15, subOff: 0, noAdult: 0});
+  // REE-243's pass on the older candidates of the same species: 5 more juveniles in play with no card (4 striped catfish
+  // balls, read on the photo; 1 Echeneis naucrates, the observer's stage), on species with no source saying the young differ.
+  assert.deepStrictEqual({juvOn, juvOff, subOn, subOff, noAdult}, {juvOn: 1211, juvOff: 1986, subOn: 15, subOff: 0, noAdult: 0});
   // the 15 sub-adults in play (14 Diagramma pictum and the Diagramma melanacrum sweetlips; their young sourced as
   // different), under the same rule
   const c = card('fish-s596-cand-552119382');
