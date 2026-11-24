@@ -14,6 +14,7 @@
 //                                                             margin, as the ceilings of FILE (the states measured replace theirs)
 //   [--n 8] [--warm 2] [--seed 1|1,2,3|off] [--clock 30|SECONDS|off] [--out counts.json] [--cache DIR] [--regen]
 //   [--par N]   N states made or counted at once (N browsers; default 1, 3 on CI, where the run is the whole machine's)
+//   [--data-now]   the data (.json files) of the tree under test, not of the pinned tree (to see what a refill changes)
 //
 // A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the page's own answers; the sea slugs play the
 // fish part of the profile, the same engine) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in
@@ -25,11 +26,16 @@
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
 // Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
-// seed (fish 3,000 answers: 1.8 to 2.6 M calls over seeds 1 to 3); with the seed fixed the same state still differs by up
-// to 15% from run to run (what the page schedules for idle time), so a ceiling carries a margin. The page's clock starts --clock seconds (30) after the state's last answer, so the
-// player is in the middle of a session whenever the file is played: a gap of several hours since the last answer starts
-// a comeback (model.js rustNow), which draws from fewer units and costs less (fish 50 answers: 0.36 M calls an answer after
-// a gap of hours, 0.51 M inside a session). --clock off: the machine's clock, so the file's age decides.
+// seed (fish 3,000 answers: 0.3 to 0.4 M calls over seeds 1 to 3), and a ceiling is the largest over three seeds times a
+// margin. With the seed fixed a count is repeatable (REE-281): the page's clock is virtual (Date and performance.now stand
+// still between the tool's ticks, 4 s of thinking and 6 s of pause an answer), the random numbers start over from the seed
+// at each tick, every photo is the same 1 x 1 picture served at once, and the data (.json) is the pinned tree's, so
+// neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
+// (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
+// seconds (30) after the state's last answer, so the player is in the middle of a session whenever the file is played: a
+// gap of several hours since the last answer starts a comeback (model.js rustNow), which draws from fewer units and costs
+// less (fish 50 answers: 0.36 M calls an answer after a gap of hours, 0.51 M inside a session). --clock off: the machine's
+// clock, so the file's age decides (and the run is not repeatable).
 //
 // Heavy (rule W24): it takes the machine slot before it starts Chromium. No routine local check runs it (Pierre,
 // 2026-11-24 14:06: a minute or two a check, times the checks, times the agents, climbs very fast): the unit tests
@@ -202,8 +208,13 @@ function writeBudget(file, rows, margin) {
 // `scoreOf` calls), which would move the counts of a change that did not touch the code counted. The pin is a commit of
 // main; the app of that commit is read with `git archive` (fetched when this clone lacks it) and served to learnsim
 // (--root); the tools, the profiles and the answering are the current ones. The states are what an older save is: the
-// version counted must read them. Moving the pin means making the players again and setting every ceiling again
-// (--write-budget with the three seeds), in a PR of its own; tests/answercost.test.js reads this line.
+// version counted must read them. The same pin holds the DATA the count loads (every .json file the page asks for:
+// data.json, fish-game.json, seaslug-game.json, curation.json, ...): the code counted is the tree under test, its data is
+// the pinned tree's, so a bot's refill of the photos (a Candidate photos commit changes seaslug-game.json and data/cand.json
+// on main, with no change of code) never moves a count, and the players' units are the data's they were made on.
+// A change that needs newer data (a new field the code reads) moves the pin, as below. Moving the pin means making the
+// players again and setting every ceiling again (--write-budget with the three seeds), in a PR of its own;
+// tests/answercost.test.js reads this line.
 const PLAYERS_AT = 'f848c3d4fa92eec4d6777871431f067ff1f48b74';
 // The cache holds one folder per way the states are made (GEN) and per pin, so neither a change of the way nor of the pin
 // ever reuses an older state.
@@ -298,11 +309,25 @@ async function ensureStates(states, dir, regen, par) {
 // ---------------------------------------------------------------------------------------------------------------
 // The count, in Chromium.
 
+// The picture every photo is (a 1 x 1 PNG).
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2'};
-const serve = (req, res) => {
-  const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
-    f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
-  if (!f.startsWith(ROOT)) return res.writeHead(403), res.end();
+// The file a request is served from: the code (and everything else) from ROOT, the tree under test; a .json file from
+// DATAROOT, the pinned tree, when it holds one (a .json it lacks, a file added since the pin, comes from ROOT); null when
+// the path leaves the tree.
+function pick(root, dataRoot, u) {
+  const rel = u.endsWith('/') ? u + 'index.html' : u,
+    f = path.join(root, rel);
+  if (!f.startsWith(root)) return null;
+  if (dataRoot && path.extname(f) === '.json') {
+    const d = path.join(dataRoot, rel);
+    if (d.startsWith(dataRoot) && fs.existsSync(d)) return d;
+  }
+  return f;
+}
+const serveFrom = dataRoot => (req, res) => {
+  const f = pick(ROOT, dataRoot, decodeURIComponent(new URL(req.url, 'http://x').pathname));
+  if (!f) return res.writeHead(403), res.end();
   fs.readFile(f, (e, b) => {
     if (e) return res.writeHead(404), res.end();
     res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
@@ -355,13 +380,16 @@ async function oneAnswer(p, i, why) {
   await settle(p);
   let fmt;
   try {
-    fmt = (await p.evaluate(pick => smokeAnswer(pick), i % 4 !== 3)).fmt; // three right, one wrong
+    // 4 s to read and answer; the virtual clock (count) stands still otherwise
+    const r = await p.evaluate(pick => (window.__tick && __tick(4000), smokeAnswer(pick)), i % 4 !== 3); // three right, one wrong
+    fmt = r.fmt;
+    (why.asked = why.asked || []).push(r.t); // the units asked (the row's `asked`: what a count is of)
   } catch (e) {
     why.push('smokeAnswer: ' + String(e.message).slice(0, 200));
     return null;
   }
   await settle(p);
-  await p.evaluate(() => document.getElementById('next') && document.getElementById('next').click());
+  await p.evaluate(() => (window.__tick && __tick(6000), document.getElementById('next') && document.getElementById('next').click()));
   await settle(p);
   return fmt;
 }
@@ -382,30 +410,49 @@ async function count(browser, base, file, name, o, expect) {
   const PAGE = require(path.join(ROOT, 'tests', 'answer.js')).PAGE,
     ls = JSON.parse(fs.readFileSync(file, 'utf8')),
     ctx = await browser.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
-  // Nothing outside the repository, no photo: the page asks nothing of the network and the count does not depend on what
-  // the checkout holds.
+  // Nothing outside the repository: the page asks nothing of the network and the count does not depend on what the
+  // checkout holds. Every photo is the same 1 x 1 picture, served at once: photos that fail, each when its error event
+  // comes, change which photos the draw may pick (gamePhotoOk) while the page runs, and the same seed then counted two
+  // different sequences of questions (REE-281); loaded at once they cannot.
   await ctx.route(
-    u => !u.href.startsWith(base) || /\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(u.href).pathname),
-    r => r.abort()
+    u => /\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(u.href).pathname),
+    r => r.fulfill({status: 200, contentType: 'image/png', body: PIXEL})
+  );
+  await ctx.route(
+    u => !u.href.startsWith(base),
+    r => (/\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(r.request().url()).pathname) ? r.fallback() : r.abort())
   );
   await ctx.addInitScript(
     ({ls, seed, ref}) => {
       if (ref !== null) {
-        // The page's clock runs from the state's own time: the rust since the last answer, the comeback, the time since the
-        // first launch read the same whenever the state is played.
+        // The page's clock is a VIRTUAL one, from the state's own time: the rust since the last answer, the comeback, the time
+        // since the first launch read the same whenever the state is played, and it stands still between the tool's ticks
+        // (window.__tick, once a thinking time and once a pause an answer: the page's Date and performance.now). A clock that ran
+        // with the machine's moved every weight a little, and the draw, with the same seed, flipped to another genus now and then:
+        // the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time (REE-281).
         const D = Date,
-          off = ref - D.now();
+          V = (window.__vclock = {t: ref, p: performance.now()});
         window.Date = class extends D {
           constructor(...a) {
-            super(...(a.length ? a : [D.now() + off]));
+            super(...(a.length ? a : [V.t]));
           }
           static now() {
-            return D.now() + off;
+            return V.t;
           }
+        };
+        performance.now = () => V.p;
+        // Each tick also starts the random numbers over from the seed and the tick's number: what an idle task drew between two
+        // answers (how many numbers, in which order) cannot change the draw of the question that follows.
+        let ticks = 0;
+        window.__tick = ms => {
+          V.t += ms;
+          V.p += ms;
+          if (seed !== null) window.__reseed(++ticks);
         };
       }
       if (seed !== null) {
         let a = seed >>> 0; // mulberry32
+        window.__reseed = n => (a = (seed + Math.imul(n, 0x9e3779b1)) >>> 0);
         Math.random = () => {
           a = (a + 0x6d2b79f5) >>> 0;
           let t = Math.imul(a ^ (a >>> 15), 1 | a);
@@ -514,6 +561,7 @@ async function count(browser, base, file, name, o, expect) {
     size,
     answers: n,
     fmts: fmts.join(','),
+    asked: why.asked || [],
     errs,
     namedCalls: per(total),
     store: {
@@ -535,7 +583,7 @@ async function count(browser, base, file, name, o, expect) {
 
 const USAGE =
   'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
-  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N]';
+  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now]';
 
 async function main() {
   const argv = process.argv.slice(2),
@@ -544,7 +592,7 @@ async function main() {
       return i >= 0 && argv[i + 1] !== undefined && !argv[i + 1].startsWith('--') ? argv[i + 1] : d;
     };
   if (argv.includes('--help') || argv.includes('-h')) return console.log(USAGE);
-  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par']);
+  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now']);
   for (const a of argv.filter(a => a.startsWith('--')))
     if (!known.has(a.slice(2))) return (console.error(`unknown option ${a}\n${USAGE}`), process.exit(2));
   let states;
@@ -574,7 +622,10 @@ async function main() {
     dir = cacheDir(arg('cache', null)),
     files = await ensureStates(states, dir, argv.includes('--regen'), par);
   const {chromium} = require('playwright');
-  const server = http.createServer(serve);
+  // The page's data is the pinned tree's, its code the tree under test's (--data-now: the tree's own data, to see what a
+  // refill changes).
+  fs.mkdirSync(dir, {recursive: true});
+  const server = http.createServer(serveFrom(argv.includes('--data-now') ? null : ensureApp(dir)));
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
   let rows;
@@ -624,7 +675,7 @@ async function main() {
   }
 }
 
-module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);
