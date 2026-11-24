@@ -159,9 +159,10 @@ The work one answer makes on the device, counted so that a change can be judged 
   35 s for 500 fish. The states are those of the study's section 1 (the same records, the same U, V, T and R). It takes
   the machine slot (rule W24).
 - **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
-  the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStep`, `bonusCalc`, `lvlNext`, `treeScore`,
-  `achSnap`, `sheetV`; `bonusCalc` is the units in play computed, once per version of the state: `app.js` `bonusList` is
-  a view whose reader V8 cannot name, its reads counted as `stateNow`). Each is the largest count over three seeds and one regeneration of the state, times a stated
+  the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStepCalc`, `bonusCalc`, `lvlNext`,
+  `treeScore`, `achSnap`, `sheetV`; `bonusCalc` is the units in play computed and `lvStepCalc` a unit's level computed,
+  once per version of the state: `app.js` `bonusList` and `model.js` `lvTable` are views whose readers V8 cannot name,
+  their reads counted as `stateNow`). Each is the largest count over three seeds and one regeneration of the state, times a stated
   margin (`margin`), rounded up. A step that lowers a count rewrites its ceilings with `--write-budget` in the same PR.
 - **The routine check** is `tests/answercost.test.js`: the small states (fish 50 and 500 answers) against the budget, in
   the fast tier (`node tests/run.js`: 26 s with the states cached, 70 s making them) wherever Playwright is installed (CI's

@@ -85,8 +85,8 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
 - **Settings** (⚙), **Depth default**, **Bonus genera On / Off**:
   [front-end.md › Settings](spec/front-end.md#settings--indexhtml-and-appjs).
 - **Learning model** (`model.js`): [model.md](spec/model.md).
-  - **The state version and its views** (`app.js` `STATE_V`, `stateView`, `VIEW_CHECK`: the units in play computed once
-    per version of the state): [model.md](spec/model.md#the-state-version-and-its-views).
+  - **The state version and its views** (`app.js` `STATE_V`, `stateView`, `VIEW_CHECK`: the units in play, the tree's
+    score and the levels computed once per version of the state): [model.md](spec/model.md#the-state-version-and-its-views).
   - **Comeback after a break**: [model.md](spec/model.md#comeback-after-a-break).
   - **First-meeting cards, Open all genera and back to one at a time**: [model.md › Which unit next](spec/model.md#which-unit-next).
   - **Learned**, the **silent mastery exam**, **No time between sessions anywhere**, **Progress scale**, the **mastery

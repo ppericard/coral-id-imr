@@ -1,16 +1,16 @@
 {
- "about": "REE-265 step 0: the ceilings of the work one answer may make, per state (tools/answercost.js, tests/answercost.test.js), for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. Each is the largest count measured over the page's seeds 1 to 3 (the same state and seed give counts that differ by up to 15% from run to run, the seeds by up to 50% on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls: first on main after #1522 (with one regeneration of the state), then after the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc, the units in play computed, in place of fn:bonusList); a ceiling a step does not lower and its runs would raise by noise alone keeps its value (fish:500 setChars). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --write-budget tools/answercost-budget.json --margin 1.25 --also <the --out files of the other seeds>.",
+ "about": "REE-265 step 0: the ceilings of the work one answer may make, per state (tools/answercost.js, tests/answercost.test.js), for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. Each is the largest count measured over the page's seeds 1 to 3 (the same state and seed give counts that differ by up to 15% from run to run, the seeds by up to 50% on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls: first on main after #1522 (with one regeneration of the state), then after the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc, the units in play computed, in place of fn:bonusList), and after the tree's score and the levels became views (REE-265 step 4: fn:lvStepCalc, a unit's level computed, in place of fn:lvStep; the storage read rises where views are read unit by unit, each read comparing the stored first-launch record: getChars on fish:50 and fish:3000, the corals' getCalls; fish:50 fn:introduced rises as the levels table computes every unit with a record); a ceiling a step does not lower and its runs would raise by noise alone keeps its value (fish:500 setChars). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --write-budget tools/answercost-budget.json --margin 1.25 --also <the --out files of the other seeds>.",
  "margin": 1.25,
  "states": {
   "coral:3000": {
    "namedCalls": 35000,
-   "getCalls": 420,
+   "getCalls": 460,
    "getChars": 5700000,
    "setChars": 1700000,
    "fn:introduced": 770,
    "fn:scoreOf": 400,
-   "fn:faOf": 200,
-   "fn:lvStep": 100,
+   "fn:faOf": 180,
+   "fn:lvStepCalc": 100,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 100,
    "fn:treeScore": 100,
@@ -18,49 +18,49 @@
    "fn:sheetV": 100
   },
   "fish:50": {
-   "namedCalls": 310000,
-   "getCalls": 15000,
-   "getChars": 490000,
+   "namedCalls": 190000,
+   "getCalls": 1900,
+   "getChars": 570000,
    "setChars": 72000,
-   "fn:introduced": 4600,
-   "fn:scoreOf": 12000,
-   "fn:faOf": 940,
-   "fn:lvStep": 5900,
+   "fn:introduced": 5300,
+   "fn:scoreOf": 3500,
+   "fn:faOf": 750,
+   "fn:lvStepCalc": 100,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 100,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 15000
+   "fn:sheetV": 350
   },
   "fish:500": {
-   "namedCalls": 520000,
-   "getCalls": 19000,
+   "namedCalls": 280000,
+   "getCalls": 2500,
    "getChars": 2700000,
    "setChars": 570000,
    "fn:introduced": 8200,
-   "fn:scoreOf": 53000,
-   "fn:faOf": 7800,
-   "fn:lvStep": 5900,
+   "fn:scoreOf": 3900,
+   "fn:faOf": 3500,
+   "fn:lvStepCalc": 100,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 100,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 18000
+   "fn:sheetV": 290
   },
   "fish:3000": {
-   "namedCalls": 2100000,
-   "getCalls": 72000,
-   "getChars": 8400000,
+   "namedCalls": 620000,
+   "getCalls": 7600,
+   "getChars": 8700000,
    "setChars": 2200000,
    "fn:introduced": 16000,
-   "fn:scoreOf": 290000,
-   "fn:faOf": 41000,
-   "fn:lvStep": 5900,
+   "fn:scoreOf": 4100,
+   "fn:faOf": 2600,
+   "fn:lvStepCalc": 170,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 150,
-   "fn:treeScore": 180,
+   "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 70000
+   "fn:sheetV": 320
   }
  }
 }
