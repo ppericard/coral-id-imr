@@ -7808,7 +7808,9 @@ async function lazyPart(b, base, fails) {
               add.push(
                 Object.assign(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''), {
                   15: i % 3 ? 'Chromis' : 'Pomacentruspomacentruspomacentruspomacen',
-                  16: null
+                  16: null,
+                  // the texts refused before it (23, sheet vNEXT): the Refused texts card, most frequent first
+                  23: i % 3 ? null : i ? ['Damselfish'] : ['damselfish ', 'xyz' + 'z'.repeat(37)]
                 })
               );
             // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
@@ -7860,6 +7862,13 @@ async function lazyPart(b, base, fails) {
               tt: [...V.querySelectorAll('.adm-scard')]
                 .filter(x => /^Typed text/.test(x.textContent))
                 .flatMap(x => [...x.querySelectorAll('td .adm-cut')].map(e => e.title)),
+              // the Refused texts card: each text with its count, and the KPI of the typed answers that came after one
+              rf: [...V.querySelectorAll('.adm-scard')]
+                .filter(x => /^Refused texts/.test(x.textContent))
+                .flatMap(x => [...x.querySelectorAll('tr')].slice(1).map(tr => `${tr.cells[0].textContent}=${tr.cells[1].textContent}`)),
+              rfk: [...V.querySelectorAll('.adm-kpis div')]
+                .filter(x => /Typed after refused/.test(x.textContent))
+                .map(x => x.textContent.replace(/\s+/g, ' ').trim()),
               wide: document.documentElement.scrollWidth - innerWidth
             };
           });
@@ -7897,8 +7906,12 @@ async function lazyPart(b, base, fails) {
         }
         if (
           // Typed text: the typed mix-ups above as typed (admin.js typedText), the long one cut in its cell
-          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text' ||
+          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text | Refused texts' ||
           pr.tt.join() !== 'pomacentruspomacentruspomacentruspomacen' ||
+          // Refused texts: as typed (lower case, trimmed), most frequent first; the KPI of the typed answers after one
+          // (the fixture above is added for two players: twice each)
+          pr.rf.join() !== `damselfish=4,xyz${'z'.repeat(37)}=2` ||
+          pr.rfk.join() !== '4/8Typed after refused texts' ||
           pr.pair.join() !== 'Look-alike' ||
           pr.key.join() !== 'Key group' ||
           !pr.zo ||
