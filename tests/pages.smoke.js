@@ -1071,8 +1071,13 @@ async function overlays(b, base) {
     await c.close();
   }
   // The answer log's photos are those seen when answering: a corallites hint left closed is not logged in ph (the hint
-  // revealed after the answer is sc.h), one opened first is.
-  for (const opened of [false, true]) {
+  // revealed after the answer is sc.h, and the montage of a wrong answer does not show it), one opened first is.
+  for (const [opened, ok] of [
+    [false, true],
+    [true, true],
+    [false, false]
+  ]) {
+    const at = `Hint log, hint ${opened ? 'opened' : 'left closed'}, ${ok ? 'right' : 'wrong'} answer`;
     const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
@@ -1084,25 +1089,34 @@ async function overlays(b, base) {
     let r = null;
     for (let i = 0; i < 60 && !r; i++) {
       await qa.ready(p);
-      r = await p.evaluate(opened => {
-        document.querySelectorAll('.unlock').forEach(x => x.remove());
-        const hb = document.getElementById('hintb'),
-          files = () => [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f);
-        if (!hb) return smokeAnswer() && null;
-        if (opened) hb.click();
-        const before = files();
-        smokeAnswer();
-        const after = files(),
-          row = store.get(LOG0, []).pop() || {};
-        return {opened, before, hint: after.filter(f => !before.includes(f)).pop() || after.pop(), ph: row.ph, h: (row.sc || {}).h};
-      }, opened);
-      if (!r) await p.click('#next');
+      r = await p.evaluate(
+        ([opened, ok]) => {
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          const hb = document.getElementById('hintb'),
+            files = () => [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f);
+          if (!hb) return smokeAnswer() && null;
+          if (opened) hb.click();
+          const before = files(),
+            {t} = smokeAnswer(ok),
+            after = files(),
+            row = store.get(LOG0, []).pop() || {},
+            hint = (row.sc || {}).h || after.filter(f => !before.includes(f)).pop() || after.pop(),
+            montage = [...document.querySelectorAll('#view .qstage.qvs img')].map(i => i.currentSrc || i.src);
+          return {t, g: row.g, before, hint, ph: row.ph || '', h: (row.sc || {}).h, montage};
+        },
+        [opened, ok]
+      );
+      if (r) r.i = i;
+      else await p.click('#next');
     }
-    if (!r) fails.push(`Hint log, hint ${opened ? 'opened' : 'left closed'}: no question with a hint in 60`);
+    if (!r) fails.push(`${at}: no question with a hint in 60`);
+    else if (r.g !== r.t) fails.push(`${at}: the last log row is not this question's ${JSON.stringify(r)}`);
     else if (
-      opened ? !r.ph.split(' ').includes(r.hint) || r.h : r.ph !== r.before.join(' ') || r.ph.split(' ').includes(r.hint) || r.h !== r.hint
+      opened
+        ? !r.ph.split(' ').includes(r.hint) || r.h
+        : r.ph !== r.before.join(' ') || r.ph.split(' ').includes(r.hint) || r.h !== r.hint || r.montage.some(s => s.includes(r.hint))
     )
-      fails.push(`Hint log, hint ${opened ? 'opened' : 'left closed'}: ${JSON.stringify(r)}`);
+      fails.push(`${at}: ${JSON.stringify(r)}`);
     await c.close();
   }
   // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
