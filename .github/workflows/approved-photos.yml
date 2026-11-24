@@ -209,7 +209,7 @@ jobs:
   # (under their cap of Q36 net of what Pierre rejected, excluded or sent elsewhere, or short of easy photos), at most 40
   # a run, the shortest first, with tools/fetch_fish.py's rules (Research Grade, the licences, the Philippines first,
   # abroad the Indo-West Pacific only); a species searched to the end is noted in tools/fish_refill.json and asked again a
-  # month later; FishBase (offline) fills what iNaturalist left. About one request a second, batched (rule C7). After the
+  # month later, or sooner when its room grows; FishBase (offline) fills what iNaturalist left. About one request a second, batched (rule C7). After the
   # photos push, from today's main (its commit, if any, is on it), even if the photos jobs failed: the two touch
   # different files. Nothing is downloaded (candidates stay remote) and curation.json is never written (rule A1): the
   # new candidates wait for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's

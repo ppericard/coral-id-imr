@@ -391,7 +391,7 @@ print(json.dumps([costs, a, b, c, [R['have'], R['room'], R['obs']], e]))`);
   ]);
   assert.deepStrictEqual(out[2], [[1, 3, 2]]);
   assert.deepStrictEqual(out[3], [[[1, 6, 3]], {'https://www.inaturalist.org/observations/1': 10}, 0, 1]);
-  assert.deepStrictEqual(out[5], ['free'], 'searched to the end with room left: remembered');
+  assert.deepStrictEqual(out[5], {free: 2}, 'searched to the end with room left: remembered, with the room left');
   assert.deepStrictEqual(out[4], [
     6,
     4,
@@ -1057,7 +1057,7 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   const cur = {
     fish: {add: {'fish-s1-cand-3': 's1'}, ease: {'fish-s1-cand-3': 5}, seen: {'fish-s3-cand-1': 1}, out: {'fish-s3-cand-2': 'x'}}
   };
-  const mem = {end: {s5: {at: '2026-11-01', parts: ['free']}, s6: {at: '2026-10-01', parts: ['free']}}};
+  const mem = {end: {s5: {at: '2026-11-01', room: {free: 2}}, s6: {at: '2026-10-01', room: {free: 2}}}};
   const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
   w('fish.json', fish);
   w('data/fish-cand.json', C);
@@ -1088,8 +1088,13 @@ test('refill (Q171): short = room under the cap or too few easy observations; on
   assert.deepStrictEqual(P.pick, ['s7', 's3', 's6', 's4']);
   assert.deepStrictEqual(plan('--max', '2').pick, ['s7', 's3'], 'at most --max species a run (rule C7)');
   assert.deepStrictEqual(plan('--today', '2026-12-01').skip, [], 'a month later every species is searched again');
-  // A part of the room not searched to the end (a juvenile room opened since) is searched, whatever the memory says.
-  w('mem.json', {end: {s5: {at: '2026-11-01', parts: ['juvenile']}}});
+  // A part of the room not searched to the end (a juvenile room opened since) is searched, whatever the memory says;
+  // so is one whose room grew since its record, and a record without its room (tests/fishrefill.test.js).
+  w('mem.json', {end: {s5: {at: '2026-11-01', room: {juvenile: 2}}}});
+  assert.deepStrictEqual(plan().skip, []);
+  w('mem.json', {end: {s5: {at: '2026-11-01', room: {free: 1}}}});
+  assert.deepStrictEqual(plan().skip, []);
+  w('mem.json', {end: {s5: {at: '2026-11-01', parts: ['free']}}});
   assert.deepStrictEqual(plan().skip, []);
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')), C, '--plan writes nothing');
   // python sure_add is exactly autosort.js treeSure's adds.
@@ -1176,7 +1181,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   // s1 is still short (room 1) and its searches were read to the end: searched to the end today; s2 is full.
   const M = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8'));
   // The record keeps the cap it was made under: a cap raised later (family_cap) opens it again.
-  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', parts: ['free'], cap: 5}});
+  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', room: {free: 1}, cap: 5}});
   assert.ok(M._doc);
   const P = JSON.parse(run('--plan'));
   assert.deepStrictEqual([P.pick, P.skip], [[], ['s1']], 'no iNaturalist request for it until the re-check');
@@ -1184,15 +1189,15 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   // A rerun asks nothing more: nothing short but s1, which is skipped.
   run('--offline');
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'data/fish-cand.json'), 'utf8')).cand, got);
-  // Per part of the room: a phase still open whose searches were read to the end, or which got nothing, is searched to
-  // the end; one still filling (its searches had more) is not; a part filled is not either.
+  // Per part of the room: a phase still open whose searches were read to the end is searched to the end, with its room
+  // left; one still filling (its searches had more) is not, even when it got nothing; a part filled is not either.
   const ex = (end, padd) =>
     `exhausted({'free': 0, 'rooms': {'juvenile': 4, 'intermediate': 2}, 'add': {'ph': 2 + ${padd}}, 'phase_add': {'juvenile': ${padd}}, 'end': ${end}})`;
   assert.deepStrictEqual(
     J(
       `print(json.dumps([${ex("{'free': False, 'juvenile': True}", 3)}, ${ex("{'free': False, 'juvenile': False}", 3)}, ${ex("{'free': False, 'juvenile': False}", 0)}, ${ex("{'free': True, 'juvenile': True}", 4)}]))`
     ),
-    [['juvenile'], [], ['juvenile'], []]
+    [{juvenile: 1}, {}, {}, {}]
   );
   fs.rmSync(dir, {recursive: true, force: true});
 });
