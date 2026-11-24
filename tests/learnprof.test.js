@@ -113,6 +113,22 @@ test('fish: the RAs know circle 1, the casual diver the families carrying half o
   assert.ok(!P.genKnown(P.profOf('beginner', 'fish'), new Set(fish.SL), 'f:A', 1));
 });
 
+test('the sea slugs play the fish part of every profile: one engine, no part of their own to keep in step (rule S1, REE-274)', () => {
+  assert.deepStrictEqual(P.defaults('seaslug'), P.defaults('fish'));
+  for (const n of P.defaults('fish')) {
+    assert.deepStrictEqual(P.profOf(n, 'seaslug'), P.profOf(n, 'fish'), n);
+    assert.strictEqual(P.partOf(n, 'seaslug'), P.PROFILES[n].fish, n);
+  }
+  assert.strictEqual(P.profOf('strongBack', 'seaslug'), null, 'a profile with no fish part has none for the sea slugs');
+  assert.notStrictEqual(P.partOf('lectureRA', 'seaslug'), P.PROFILES.lectureRA.coral, 'not the corals’ part');
+  assert.deepStrictEqual(P.defaults('coral'), ['beginner', 'lectureRA', 'strongRA', 'expert'], 'the corals’ own are as before');
+  // learnsim plays the subject through the page's own engine, the same code path as the fish.
+  const src = require('fs').readFileSync(path.join(__dirname, '..', 'tools', 'learnsim.js'), 'utf8');
+  assert.match(src, /\['coral', 'fish', 'seaslug'\]\.includes\(SUBJECT\)/);
+  assert.match(src, /partOf\(n, SUBJECT\)/);
+  assert.match(src, /--world rated: the corals and the fish/, 'the rated world has no sea slug units (it would play them as corals)');
+});
+
 test('learnsim loads the rules in the page before the app', () => {
   const src = require('fs').readFileSync(path.join(__dirname, '..', 'tools', 'learnsim.js'), 'utf8');
   assert.match(src, /addInitScript\(\{path: path\.join\(__dirname, 'learnprof\.js'\)\}\)/);
