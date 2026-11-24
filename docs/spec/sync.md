@@ -96,10 +96,12 @@ was kept.
   when it is replayed, LEARNING.md "The player's time net of the photo's"); read by its
   name (`SC_COL`, column W); `readAnswers` index 22, an object, and the same index in the replay's rows (`rowOf_`,
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
-- **Rejected tries**: the texts a typed answer refused before it, a JSON list. Logged only.
+- **Rejected tries**: the texts a typed answer refused before it, a JSON list (at most 10, each cut to 40 characters).
+  Served by `readAnswers` (and the admin's light read) as index 23: a list of strings, null when none, absent from a
+  script before v228, which the admin reads as none (`admin.js` `typedText`; no gate, rule D4). Nothing else reads it.
 - **Device**: the anonymous id of the device that sent the answer (`sync.js` `devId`, the Device of its Events and Pages
   rows): one `dev` per save or anonymous send, written in each of its rows by `logAnswers_` (`dev_`: 8 to 16 lower-case
-  letters and digits, else blank), signed in or not. Served by no reader (`readAnswers` stops at index 22). Kept
+  letters and digits, else blank), signed in or not. Served by no reader (`readAnswers` stops at index 23). Kept
   through a claim at sign-in, a rename and a merge; blanked when a delete keeps the answers as `~deleted <id>`
   (`devBlank_`, rule D7); gone with them on a delete of everything. `tests/devanswers.test.js`, `tests/adopt.test.js`.
 - **Photo answered**: the file stem of the photo a Find the X answer tapped (`pa`, right answers included), so a view
