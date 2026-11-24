@@ -2,7 +2,8 @@
 require('./slot.js').testGuard();
 // @slow: the units in play as views checked against the code before them on rated-world simulation runs
 // The engine's state version and its first views (app.js STATE_V, stateBump, stateNow, stateView;
-// docs/reviews/2026-11-24-incremental-engine-state.md, step 3): the units in play (bonusList, pool, sciUp, shareFree) are
+// docs/reviews/2026-11-24-incremental-engine-state.md, step 3): the units in play (bonusList, pool, sciUp, shareFree) and
+// the scientific genera in the game (sciNow) are
 // computed once per version of the state and read as they are until the next. A speed-up only: they must give exactly
 // what the code before them gave, in the same order, at every read. The reference is a copy of that code, kept here as
 // it was (only its names changed, so it runs beside the new one), over the app's own sets (app.js UNITS sets, sciOpen,
@@ -33,7 +34,10 @@ const REF = `const bonusList0 = () => [...new Set(SETS().flatMap(S => [...(Q[S.k
 const shareFree0 = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
 const pool0 = () => [...slateGenera(), ...bonusList0()].filter(photoAny);
 const sciUp0 = () =>
-  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);`;
+  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
+const sciNow = () =>
+  TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];`;
+// The scientific genera in the game now (app.js sciNow) are a view too; the sets read them by that name.
 
 const SV = 'reefid-sheet-v',
   VIEWN = ['wide', 'medium', 'macro'],
@@ -58,7 +62,6 @@ const SHARED = [
   block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'function sciOpen(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'const SCI_SP = {', '\n};\n', {through: 1, file: 'app.js'}),
-  line(APP, 'const sciNow = ', 'app.js'),
   line(APP, 'const autoOf = ', 'app.js'),
   'const SETS_OF = {coral: [{' +
     block(APP, "        k: 'bon',", '\n      }\n    ]', {file: 'app.js'}) +
@@ -77,9 +80,11 @@ const NEW = [
   line(APP, 'const shareFree = stateView(', 'app.js'),
   line(APP, 'const poolCalc = ', 'app.js'),
   line(APP, 'const pool = stateView(', 'app.js'),
-  'this.F = {bonusList, pool, sciUp, shareFree, store, stateBump, stateNow, VIEW_CHECK, STATE_KEYS, ver: () => STATE_V};'
+  line(APP, 'const sciNowCalc = ', 'app.js'),
+  line(APP, 'const sciNow = stateView(', 'app.js'),
+  'this.F = {bonusList, pool, sciUp, shareFree, sciNow, store, stateBump, stateNow, VIEW_CHECK, STATE_KEYS, ver: () => STATE_V};'
 ].join('\n');
-const OLD = REF + '\nconst sciUp = sciUp0;\nthis.F = {bonusList: bonusList0, pool: pool0, sciUp: sciUp0, shareFree: shareFree0};';
+const OLD = REF + '\nconst sciUp = sciUp0;\nthis.F = {bonusList: bonusList0, pool: pool0, sciUp: sciUp0, shareFree: shareFree0, sciNow};';
 
 // Two pages over one world W (its subject, tree, settings Q, records' readers and storage): the views and the code
 // before them. W's members are read at every use (getters), so a switch or a new Q is seen by both.
@@ -117,7 +122,7 @@ function pages(W, check) {
 const items = v => (v instanceof Set || (v && v.constructor && v.constructor.name === 'Set') ? [...v] : [...v]);
 // Every view against the reference, in a random order, a few times over (the reads after the first are the kept value).
 function same(N, O, r, st, label) {
-  const names = ['bonusList', 'pool', 'sciUp', 'shareFree'];
+  const names = ['bonusList', 'pool', 'sciUp', 'shareFree', 'sciNow'];
   for (let k = 0; k < 2 + Math.floor(r() * 3); k++) {
     const nm = names[Math.floor(r() * names.length)],
       v0 = st.ver(),

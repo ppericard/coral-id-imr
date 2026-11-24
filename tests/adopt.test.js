@@ -977,7 +977,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     block = cut(src, 'const ACHK = ', 'function achCheck(');
   const saved = {},
-    // Levels (lvStep): corals 12 genera met, 6 at Open Water; fish 30 families met, 8 at Advanced, 2 learned.
+    // Levels (lvSteps): corals 12 genera met, 6 at Open Water; fish 30 families met, 8 at Advanced, 2 learned.
     lv = {
       coral: Object.fromEntries(Array.from({length: 40}, (_, i) => ['G' + i, i < 6 ? 2 : i < 12 ? 1 : 0])),
       fish: Object.fromEntries(Array.from({length: 67}, (_, i) => ['f' + i, i < 2 ? 5 : i < 8 ? 3 : i < 30 ? 1 : 0])),
@@ -1005,13 +1005,13 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
   Object.assign(ctx, {
     slateGenera: () => ids(ctx.cur),
     scaleUnits: () => ids(ctx.cur),
-    lvStep: n => lv[ctx.cur][n] || 0,
+    lvSteps: () => n => lv[ctx.cur][n] || 0,
     shownGroup: () => '',
     bonusList: () => [],
     introduced: () => false,
     eloScore: () => 0,
-    headPct: () => (ctx.cur === 'seaslug' ? 0 : coralPct),
-    treeScore: () => ({pct: fishPct}),
+    // the headline %: the fish's global score once their tree is in (model.js headScore), else the plain mean
+    headPct: () => (ctx.cur === 'seaslug' ? 0 : ctx.cur === 'fish' && ctx.treePhotoIn ? fishPct : coralPct),
     UNITS: {
       coral: {},
       fish: {
