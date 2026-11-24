@@ -121,7 +121,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   };
   vm.createContext(ctx);
   vm.runInContext(
-    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
+    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }, drop(k) { localStorage.removeItem(k); }, raw(k, t) { localStorage.setItem(k, t); }};
      const save = () => store.set('reefid-sync-coral-progress', P);\n` +
       loadData +
       progData +

@@ -1153,8 +1153,12 @@ function play(cfg) {
         rematch: JSON.stringify(rematch)
       };
     breaks.forEach(([name, ms], bi) => {
+      // The storage restored, every key told to the app as its own writes are (app.js storeWrote: a kept text is compared
+      // again at its next read, not trusted for the rest of the task).
+      const had = Object.keys({...localStorage});
       localStorage.clear();
       Object.entries(ls).forEach(([k, v]) => localStorage.setItem(k, v));
+      if (typeof storeWrote === 'function') new Set([...had, ...Object.keys(ls)]).forEach(k => storeWrote(k));
       P = JSON.parse(snap.P);
       Object.keys(Q).forEach(k => delete Q[k]);
       Object.assign(Q, JSON.parse(snap.Q));
