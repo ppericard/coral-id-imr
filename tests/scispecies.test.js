@@ -53,6 +53,7 @@ function appOf(subj, X0, Fx, {sheet = 1000, bar = {}, met = new Set()} = {}) {
       block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const kidsCalc = ', '// The species units in play', {file: 'app.js'}),
       block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const kindOf = n =>', '// The scientific genera in play', {file: 'app.js'}),
       block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
@@ -471,7 +472,9 @@ test('the achievements: fspsci1, fboth25, fdauin20 on the scientific bars at Adv
     c = {GX: n => rec[n], lvStep: n => step[n] || 0};
   vm.createContext(c);
   vm.runInContext(
-    block(src('progress.js'), 'const achBoth = ', '\n};\n', {through: 1, file: 'progress.js'}) + '\nthis.achBoth = achBoth;',
+    block(src('progress.js'), 'const achNamedCalc = ', 'const achBoth = ', {file: 'progress.js'}) +
+      block(src('progress.js'), 'const achBoth = ', '\n};\n', {through: 1, file: 'progress.js'}) +
+      '\nthis.achBoth = achBoth;',
     c
   );
   const sets = [{all: () => ['s:a', 's:b']}, {all: () => ['sci:a', 'sci:b', 'sci:c']}];

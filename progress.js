@@ -765,17 +765,28 @@ const achList = () => slateGenera();
 // The species at Advanced or above (lvStep 3) by every kind of name in names (achSnap both), from the units of the sets
 // sets (each unit's kind and species: app.js treeGenera kind, sp); 0 unless names holds two kinds or more. Pure on its
 // inputs and the levels lv (model.js lvStep, or achSnap's one read of them).
-const achBoth = (sets, names, lv = lvStep) => {
-  if (names.length < 2) return 0;
-  const by = new Map();
+// The units of the sets with a kind of name and a species ([unit, species, kind], in the sets' order) are data: a view of
+// the data version per list of sets (achNamed; computed where a part of this file runs alone), where each snapshot read
+// every unit's record.
+const achNamedCalc = sets => {
+  const out = [];
   sets
     .flatMap(S => (S.all ? S.all() : S.units()))
     .forEach(n => {
       const g = (typeof GX === 'function' && GX(n)) || {};
-      if (!g.kind || !g.sp || lv(n) < 3) return;
-      if (!by.has(g.sp)) by.set(g.sp, new Set());
-      by.get(g.sp).add(g.kind);
+      if (g.kind && g.sp) out.push([n, g.sp, g.kind]);
     });
+  return out;
+};
+const achNamed = typeof dataViewBy === 'function' ? dataViewBy('achNamed', achNamedCalc) : achNamedCalc;
+const achBoth = (sets, names, lv = lvStep) => {
+  if (names.length < 2) return 0;
+  const by = new Map();
+  achNamed(sets).forEach(([n, sp, kind]) => {
+    if (lv(n) < 3) return;
+    if (!by.has(sp)) by.set(sp, new Set());
+    by.get(sp).add(kind);
+  });
   return [...by.values()].filter(K => names.every(k => K.has(k))).length;
 };
 // The subject's core units (UNITS core: the IMR course's fish families), its circles (UNITS circles: the fish families of

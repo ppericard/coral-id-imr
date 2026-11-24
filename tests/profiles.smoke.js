@@ -195,6 +195,7 @@ const server = http.createServer((req, res) => {
       PSTAT = fake;
       PGD = {[ga]: [-1.5, 80], [gb]: [1.5, 80]};
       GDIFF = {};
+      stateBump(); // the photo statistics written by hand: the data views (app.js) are made again
       const byD = G.slice().sort((a, b) => genusDiff(a) - genusDiff(b)),
         easy = byD[0],
         hard = byD[byD.length - 1],
@@ -209,6 +210,7 @@ const server = http.createServer((req, res) => {
       PSTAT = {};
       PGD = {};
       GDIFF = {};
+      stateBump();
       const cms = [GX(easy).cm, GX(hard).cm];
       GX(easy).cm = GX(hard).cm;
       const m = {[easy]: 0, [hard]: 0};
@@ -221,6 +223,7 @@ const server = http.createServer((req, res) => {
       PSTAT = keep;
       PGD = keepGd;
       GDIFF = {};
+      stateBump();
     }
     // Bonus genera (opt-in, with no weight cap or share of their own): once on, they are the genera
     // not met yet, which only the opening draws (openPick, when a question opens one: model.js openChance); the genus
@@ -263,17 +266,20 @@ const server = http.createServer((req, res) => {
         keepCal = {...CAL},
         shown = on => {
           Object.assign(CAL, on ? keepCal : {B: 0, RATE: 0, U: 0});
+          stateBump(); // the calibration's constants: the draw's data view (model.js drawPhotos) is made again
           let k = 0;
           for (let i = 0; i < 3000; i++) if (photoSet(g).shown.some(x => x.f === f0)) k++;
           return k;
         };
       PSTAT = Object.fromEntries(L.filter(x => x.f !== f0).map(x => [x.f, [photoDiff(g, x), 40, 30, 40]]));
+      stateBump();
       // Calibration questions come on a genus the player already holds (met, not shaky).
       P[g] = {ok: 20, ko: 2, h: '1111111111', th: 1.5, L: 0.9};
       faDrop(P);
       stateBump();
       out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
       PSTAT = keep;
+      stateBump();
     }
     // Focus over several players (rule L11): the beginner's first 100 questions again with 7 more seeds, the
     // app's randomness and the player's both, after every other check so their draws stay as they were.
