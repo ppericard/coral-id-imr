@@ -16,10 +16,12 @@ const ROOT = path.join(__dirname, '..'),
   SS = C.SUBJECTS.find(s => s.id === 'seaslug'),
   FI = C.SUBJECTS.find(s => s.id === 'fish');
 
-test('the sea slugs: Candidates, Health and the Tree among their admin pages, their target the game cap', () => {
+test('the sea slugs: Candidates, Health and the Tree among their admin pages, a target of their own for the Candidates', () => {
   ['photos/candidates', 'inbox/todo/health', 'photos/tree/key'].forEach(p => assert.ok(SS.admin.pages.includes(p), p));
-  // tools/seaslug_game.py puts the sure photos in play up to photoTarget.gameCap: the Candidates fill up to the same
-  assert.strictEqual(SS.admin.target, rd('tools/seaslugs.json').photoTarget.gameCap);
+  // tools/seaslug_game.py has no game cap since Pierre's «oui» of 2026-11-24 14:47 (REE-272): every sure photo plays. The
+  // Candidates' target stays 12, the queue's own (as the fish's TREET), no longer tied to photoTarget.gameCap, which is gone.
+  assert.ok(!('gameCap' in rd('tools/seaslugs.json').photoTarget));
+  assert.strictEqual(SS.admin.target, 12);
   assert.ok(!FI.admin.target, 'the fish keep their own targets (autosort.js TREET)');
 });
 
