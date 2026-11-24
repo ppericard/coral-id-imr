@@ -457,6 +457,10 @@ def infra_line(snap, ago=None):
         alert = alert or warn
         note = ' (%s)' % i['note'] if i.get('note') and i.get('k') in ('r2', 'slow') else ''
         parts.append('%s %s/%s %.0f%%%s%s' % (i.get('label', '?'), infra_fmt(i['unit'], used), infra_fmt(i['unit'], limit), share * 100, ' WARN' if warn else '', note))
+    d = (snap or {}).get('deploy') or {}
+    if d.get('stale'):  # REE-279: the live site is behind main (tools/health.py check_deploy)
+        alert = True
+        parts.insert(0, 'Site STALE: %s commit(s) of main not live, the oldest %s min, live build %s (%s)' % (d.get('ahead', '?'), d.get('min', '?'), d.get('build', '?'), '; '.join(str(c) for c in (d.get('commits') or [])[:3])))
     if not (snap or {}).get('ok', True):
         alert = True
         parts.insert(0, 'Health check FAILED (the last run, and its issue, on GitHub)')

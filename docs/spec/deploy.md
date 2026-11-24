@@ -19,6 +19,20 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
 - `.github/workflows/pages.yml` publishes the current `main` as a static artifact, in one `pages` concurrency group with
   `cancel-in-progress: true`. Settings > Pages must use **GitHub Actions**; the workflow fails early while the legacy
   branch source is selected.
+- **The artifact wait** (REE-279): before `deploy-pages`, a step polls the run's REST artifact listing every 2 s, for at most
+  60 s, logs each attempt and the lag (`::notice title=pages-artifact-lag`, and the run's summary), and only warns
+  (`::warning title=pages-artifact-lag`) if `github-pages` is never listed: it never fails the job, the deploy attempts go on
+  and the second one decides. It needs the job permission `actions: read` and only measures. `deploy-pages` reads the artifact from the results service, not this listing, so the wait is a proxy
+  ([PAGES.md › The artifact wait](../PAGES.md#the-artifact-wait-ree-279-2026-11-24)); `tests/pageswait.test.js` runs the
+  step's script on a fake clock.
+- **The second deploy attempt** (REE-279): the first `deploy-pages` step has `continue-on-error: true`; when it fails, a
+  step logs `::warning title=pages-deploy-second-attempt`, pauses 20 s, and one second `deploy-pages` step (no
+  `continue-on-error`) deploys, or fails the job. One bounded attempt in the same run, not a re-run; the page URL comes from
+  whichever attempt deployed ([PAGES.md › The second attempt](../PAGES.md#the-artifact-wait-ree-279-2026-11-24)).
+- **The live site is checked against `main`** every hour: Health reads the live build number (`<meta name="build">`, a
+  Deploy Pages run number), finds that run, and fails when a commit of `main` dated after the run's start has waited more
+  than 45 minutes, naming the commits (the job's e-mail and issue; the brief's `Infra:` line). Gaps on GitHub's side are
+  notes, never failures ([PAGES.md › Infrastructure health](../PAGES.md#infrastructure-health); `tests/infra.test.js`).
 - **The admin's Publish** pushes `curation.json` to `main`, which starts both Deploy Pages and Candidate photos (which
   also runs on a push changing `data/suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json`, `tools/fish_game.py` or
   `fish-photos.json`). Candidate photos commits `data.json`, `data/cand.json`, `data/excluded.json`, `fish-game.json`,
