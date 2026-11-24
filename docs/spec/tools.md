@@ -144,8 +144,8 @@ The work one answer makes on the device, counted so that a change can be judged 
 [the measurement note](../reviews/2026-11-24-per-answer-cost.md)).
 
 - **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out, in Chromium, and counts how
-  many times each named function of the app runs per answer (V8's precise coverage) and the characters `store.get` and
-  `store.set` read, parse and write. Work counts, not timings: they do not move with the machine's load, so a ceiling can
+  many times each named function of the app runs per answer (V8's precise coverage) and the characters
+  `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
   fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
   the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
   costs less; `--clock 14400` is the study's condition), which makes a run nearly repeatable, not exactly: the same

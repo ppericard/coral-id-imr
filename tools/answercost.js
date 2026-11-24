@@ -1,5 +1,5 @@
 // The work of one answer, counted: how many times each named function of the app runs per answer, and how much the
-// device's storage is read, parsed and written, on a simulated player's saved state (REE-265 step 0; the study is
+// device's storage is read and written, on a simulated player's saved state (REE-265 step 0; the study is
 // docs/reviews/2026-11-24-incremental-engine-state.md, section 1). Work counts, not timings: they do not move with the
 // machine's load, so a ceiling on them can fail a check. Offline: reads and serves the repository's files, sends nothing
 // (rule D1), the player is signed out, no photo is served.
@@ -19,7 +19,7 @@
 // page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
 // formats), each through the tap, the feedback, the deferred planning, Next and its top-up. V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
-// higher), divided by the answers counted; store.get and store.set are wrapped to count calls and characters. The page's
+// higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
 // Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
 // seed (fish 3,000 answers: 1.8 to 2.6 M calls over seeds 1 to 3); with the seed fixed the same state still differs by up
 // to 15% from run to run (what the page schedules for idle time), so a ceiling carries a margin. The page's clock starts --clock seconds (30) after the state's last answer, so the
@@ -124,7 +124,7 @@ const mil = x => (x >= 1e5 ? (x / 1e6).toFixed(2) + ' M' : fmt(x));
 
 // The study's table (section 1.2), one line a state, from the rows.
 function table(rows) {
-  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', '`introduced`', '`scoreOf`', '`store.get` calls (chars parsed)', 'Chars written'],
+  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
     line = r => {
       const m = metrics(r),
         s = r.size;
@@ -337,23 +337,26 @@ async function count(browser, base, file, name, o) {
       Pchars: JSON.stringify(P).length
     };
   });
-  // store.get / store.set: calls and characters per answer.
+  // The storage's own boundary (localStorage getItem and setItem, whoever calls them: store.get and store.set, the kept
+  // queues' direct writes): calls and characters read and written per answer.
   await p.evaluate(() => {
     const C = (window.__st = {get: {calls: 0, chars: 0}, set: {calls: 0, chars: 0}, keys: {}});
-    for (const op of ['get', 'set']) {
-      const f0 = store[op];
-      store[op] = function (k, v) {
-        let n = 0;
-        try {
-          n = op === 'get' ? (localStorage.getItem(k) || '').length : JSON.stringify(v).length;
-        } catch (e) {}
+    const proto = Storage.prototype,
+      once = {get: proto.getItem, set: proto.setItem};
+    for (const [op, name] of [
+      ['get', 'getItem'],
+      ['set', 'setItem']
+    ]) {
+      proto[name] = function (k, v) {
+        const r = once[op].apply(this, arguments),
+          n = String(op === 'get' ? r || '' : v).length;
         C[op].calls++;
         C[op].chars += n;
         const kk = op + ' ' + k,
           c = (C.keys[kk] = C.keys[kk] || {calls: 0, chars: 0});
         c.calls++;
         c.chars += n;
-        return f0.apply(this, arguments);
+        return r;
       };
     }
   });
