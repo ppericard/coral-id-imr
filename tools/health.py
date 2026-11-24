@@ -20,8 +20,9 @@ Checks, each read-only and with no name, code or secret in anything it prints (a
 
 4. the live build against main (REE-279, option 3: Deploy Pages failed about every second run from 2026-11-23, 'Found 0
    artifact(s)', leaving the site on an older build with nobody looking): the `<meta name="build">` of the live index.html is
-   a Deploy Pages run number; that run's start time says which commits of main it could hold (a deploy publishes main as it
-   stands when its job starts), and a commit of main dated after it is not live. The oldest not-live commit waiting more than
+   a Deploy Pages run number; the commit that run archived (its `published-source` notice) says which commits of main it held,
+   and the commits after it are not live (a run from before the notice is read by its start time and the commits' dates). The
+   oldest not-live commit waiting more than
    STALE_MIN (45) minutes fails the check (the job fails, its issue and e-mail follow) and names the commits; fewer minutes is a
    note. A gap on GitHub's side (no build number, the API refusing, the run out of the last 300 successes) is a note naming
    the HTTP status, never a failure. The snapshot keeps a small `deploy` entry for `tools/brief.py`'s Infra line.
@@ -197,13 +198,33 @@ def deploy_run(get, build, token):
     return None, 'build %d is not among the latest successful Deploy Pages runs on main' % build
 
 
+def published_sha(get, run_id, token):
+    """The commit a Deploy Pages run archived: the `published-source` notice its job wrote (pages.yml, "Stage the static site"),
+    read like tools/brief.py reads the Health run's annotation (the run's job, then its check-run annotations). None when the
+    run recorded none (a run from before REE-279) or a read failed: the caller falls back to dates."""
+    if not isinstance(run_id, int):
+        return None
+    j = api(get, 'repos/%s/actions/runs/%d/jobs?per_page=1' % (REPO, run_id), token)
+    jobs = j.get('jobs') if isinstance(j, dict) else None
+    if not jobs or not isinstance(jobs[0], dict) or not isinstance(jobs[0].get('id'), int):
+        return None
+    notes = api(get, 'repos/%s/check-runs/%d/annotations' % (REPO, jobs[0]['id']), token)
+    for a in notes if isinstance(notes, list) else []:
+        if isinstance(a, dict) and a.get('title') == 'published-source':
+            m = str(a.get('message') or '').strip()
+            return m if re.fullmatch(r'[0-9a-f]{40}', m) else None
+    return None
+
+
 def check_deploy(get, build, token, now, stale_min=STALE_MIN):
     """(result, what the snapshot keeps or None): is main's tip live, and if not, for how long has it waited?
 
     The live site is the Deploy Pages run whose number is the stamped build. A deploy publishes main as it stands when its
-    job starts (pages.yml checks out `main`; docs/PAGES.md), so a commit is **live** when its committer date is not after that
-    run's `run_started_at`, and **not live** when it is after: for a squash merge (the API's date is the merge), the bot
-    commits and the admin's Publish, the date is when the commit reached main. The oldest commit not live decides: waiting
+    job starts (pages.yml checks out `main`), so what it held is the commit it recorded (the `published-source` notice of its
+    job): the commits of main after it, by `compare`, are **not live**. A run that recorded none (from before REE-279) is read
+    by dates: a commit is live when its committer date is not after the run's `run_started_at` (for a squash merge, the bot
+    commits and the admin's Publish, the date is when it reached main; this misjudges a commit that landed between the job's
+    start and its checkout, which is why the recorded commit is preferred). The oldest commit not live decides: waiting
     more than `stale_min` minutes fails (REE-279 option 3: Health's issue and e-mail), inside it is a note. Every gap on
     GitHub's side (no build number, the API down or refusing, a run out of the list) is a "not read" note naming the
     status, never a failure: this check must not fail for what it cannot see."""
@@ -220,27 +241,45 @@ def check_deploy(get, build, token, now, stale_min=STALE_MIN):
     started = when(run.get('run_started_at') or run.get('created_at'))
     if started is None:
         return unread('not read: Deploy Pages run %d has no start time' % build)
-    s, j = api_status(get, 'repos/%s/commits?sha=main&since=%s&per_page=100' % (REPO, started.strftime('%Y-%m-%dT%H:%M:%SZ')), token)
-    if not isinstance(j, list):
-        return unread("not read: main's commits: %s" % ('HTTP %s' % s if s else 'no answer'))
+    # The commit this deploy archived, when it recorded it (an annotation of its job since REE-279: the checkout is main as it
+    # stands when the job starts, which can be later than the run's start): the commits of main after it are the ones not live,
+    # by ancestry. A run from before the annotation, or one whose read failed, falls back to the committer dates.
+    sha = published_sha(get, run.get('id'), token)
+    j = None
+    if sha:
+        s, j = api_status(get, 'repos/%s/compare/%s...main?per_page=100' % (REPO, sha), token)
+        if isinstance(j, dict) and isinstance(j.get('commits'), list):
+            commits = [c for c in j['commits'] if isinstance(c, dict)]
+            total = j.get('ahead_by') if isinstance(j.get('ahead_by'), int) else len(commits)
+            more = total > len(commits)
+            basis = 'commit %s' % sha[:7]
+        else:
+            sha = None
+    if not sha:
+        s, j = api_status(get, 'repos/%s/commits?sha=main&since=%s&per_page=100' % (REPO, started.strftime('%Y-%m-%dT%H:%M:%SZ')), token)
+        if not isinstance(j, list):
+            return unread("not read: main's commits: %s" % ('HTTP %s' % s if s else 'no answer'))
+        commits = [c for c in j if isinstance(c, dict) and (when(((c.get('commit') or {}).get('committer') or {}).get('date')) or started) > started]
+        more = len(j) >= 100
+        basis = 'run start'
     ahead = []
-    for c in j:
+    for c in commits:
         d = when(((c.get('commit') or {}).get('committer') or {}).get('date'))
-        if d and d > started:
+        if d:
             subject = ((c.get('commit') or {}).get('message') or '').split('\n')[0].strip()
             ahead.append((d, '%s %s' % (str(c.get('sha', ''))[:7], subject[:60])))
     at = started.strftime('%H:%MZ')
     if not ahead:
-        return res(name, True, 'build %d (run started %s) has every commit on main' % (build, at)), {'build': build, 'ahead': 0}
+        return res(name, True, 'build %d (run started %s) has every commit on main (by %s)' % (build, at, basis)), {'build': build, 'ahead': 0}
     ahead.sort()
     waited = max(0, int((now - ahead[0][0]).total_seconds() // 60))
-    n = '%d%s' % (len(ahead), '+' if len(j) >= 100 else '')
+    n = '%d%s' % (len(ahead), '+' if more else '')
     shown = [t for _, t in ahead[:5]]
     names = '; '.join(shown) + (' (and %d more)' % (len(ahead) - 5) if len(ahead) > 5 else '')
     snap = {'build': build, 'ahead': len(ahead), 'min': waited, 'stale': waited > stale_min, 'commits': shown}
     if waited > stale_min:
-        return res(name, False, 'main is %s commit(s) ahead of the live build %d (run started %s); the oldest has waited %d min (limit %d). Not live: %s' % (n, build, at, waited, stale_min, names)), snap
-    return res(name, True, '%s commit(s) on main since the live build %d (run started %s), the oldest %d min ago: a deploy is expected. Not live: %s' % (n, build, at, waited, names), 'notice'), snap
+        return res(name, False, 'main is %s commit(s) ahead of the live build %d (run started %s, by %s); the oldest has waited %d min (limit %d). Not live: %s' % (n, build, at, basis, waited, stale_min, names)), snap
+    return res(name, True, '%s commit(s) on main since the live build %d (run started %s, by %s), the oldest %d min ago: a deploy is expected. Not live: %s' % (n, build, at, basis, waited, names), 'notice'), snap
 
 
 # --- 2. the sheet script -------------------------------------------------------------------------------------------------

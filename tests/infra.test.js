@@ -54,7 +54,7 @@ test('the site check: stamps, data.json, one retry, and what fails', () => {
 const LIVE = 'site: live build vs main';
 test('the live build against main: the build number is a Deploy Pages run, a commit dated after its start is not live', () => {
   assert.strictEqual(level('ok', LIVE), 'ok');
-  assert.match(note('ok', LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main$/);
+  assert.match(note('ok', LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main \(by run start\)$/);
   const asked = S.ok.calls.map(c => c.url);
   assert.ok(
     asked.includes(
@@ -80,7 +80,7 @@ test('the live build: waiting past 45 minutes fails and names the commits; insid
   assert.strictEqual(S.deploy_stale.ok, false, 'the job fails: GitHub e-mails it and the workflow opens the health issue');
   assert.match(
     note('deploy_stale', LIVE),
-    /^main is 2 commit\(s\) ahead of the live build 1490 \(run started 03:40Z\); the oldest has waited 50 min \(limit 45\)/
+    /^main is 2 commit\(s\) ahead of the live build 1490 \(run started 03:40Z, by run start\); the oldest has waited 50 min \(limit 45\)/
   );
   assert.match(
     note('deploy_stale', LIVE),
@@ -95,6 +95,31 @@ test('the live build: waiting past 45 minutes fails and names the commits; insid
     'the report the issue is opened from'
   );
   assert.strictEqual(S.ok.md.match(/live build vs main \| ok:/).length, 1);
+});
+
+test('the live build: a run that recorded the commit it archived is read by that commit, not by its start time (Codex, #1547)', () => {
+  // A commit dated 04:52, after the run's start (04:50) but held by the deploy (its checkout came later): live.
+  const k = 'deploy_pub_late_live';
+  assert.strictEqual(level(k, LIVE), 'ok');
+  assert.match(note(k, LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main \(by commit aaaaaaa\)$/);
+  const urls = S[k].calls.map(c => c.url);
+  assert.ok(urls.includes('https://api.github.com/repos/ppericard/coral-id-imr/actions/runs/10490/jobs?per_page=1'), "the run's job");
+  assert.ok(urls.includes('https://api.github.com/repos/ppericard/coral-id-imr/check-runs/777/annotations'), 'its annotations');
+  assert.ok(urls.includes(`https://api.github.com/repos/ppericard/coral-id-imr/compare/${'a'.repeat(40)}...main?per_page=100`), 'compare');
+  assert.ok(!urls.some(u => u.includes('commits?sha=main')), 'the dates are not asked when the commit is known');
+  assert.strictEqual(S.deploy_pub_late_live.ok, true);
+  // The same commit, two commits of main after it, the oldest 50 minutes old: stale, those two named.
+  assert.strictEqual(level('deploy_pub_stale', LIVE), 'fail');
+  assert.match(note('deploy_pub_stale', LIVE), /\(run started 04:50Z, by commit aaaaaaa\); the oldest has waited 50 min/);
+  assert.match(note('deploy_pub_stale', LIVE), /Not live: 2222222 Photo curation: tile photos; 3333333 Candidate photos: x$/);
+  // No recorded commit (an older run, a note that is no SHA, a compare that fails): the dates, said.
+  for (const f of ['deploy_pub_compare_404', 'deploy_pub_bad_note', 'deploy_pub_no_note']) {
+    assert.strictEqual(level(f, LIVE), 'ok', f);
+    assert.match(note(f, LIVE), /\(by run start\)$/, f);
+  }
+  const wf = read('.github/workflows/pages.yml');
+  assert.match(wf, /echo "::notice title=published-source::\$\(git rev-parse HEAD\)"/, 'the deploy records what it archived');
+  assert.ok(wf.indexOf('title=published-source') < wf.indexOf('git archive HEAD') + 400, 'in the staging step');
 });
 
 test("the live build: every gap on GitHub's side is a note naming the status, never a failure", () => {

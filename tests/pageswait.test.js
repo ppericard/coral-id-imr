@@ -46,7 +46,9 @@ function run(replies) {
     'gh',
     `echo "$*" >> "${d}/calls"\nn=$(wc -l < "${d}/calls")\nr=$(sed -n "\${n}p" "${d}/replies")\n` +
       `[ -z "$r" ] && r=$(tail -n 1 "${d}/replies")\n` +
-      `if [ "$r" = fail ]; then echo "HTTP 502: Bad Gateway" >&2; exit 1; fi\necho "$r"\n`
+      `if [ "$r" = fail ]; then echo "HTTP 502: Bad Gateway" >&2; exit 1; fi\n` +
+      // A request that stalls: 20 s of the fake clock go by, and it blocks for real until `timeout` cuts it.
+      `if [ "$r" = hang ]; then echo $(( $(cat "${d}/clock") + 20000 )) > "${d}/clock"; exec /bin/sleep 30; fi\necho "$r"\n`
   );
   const summary = path.join(d, 'summary');
   const r = spawnSync('bash', ['-e', '-c', script()], {
@@ -55,7 +57,8 @@ function run(replies) {
       GH_TOKEN: 'ghs_FAKE',
       GITHUB_REPOSITORY: 'o/r',
       GITHUB_RUN_ID: '42',
-      GITHUB_STEP_SUMMARY: summary
+      GITHUB_STEP_SUMMARY: summary,
+      PAGES_WAIT_REQUEST_S: '1' // the cut of one request, 10 s in the workflow: kept short so a stalled call is cut in a second
     },
     encoding: 'utf8',
     timeout: 30000
@@ -134,4 +137,19 @@ test('the wait: listed at once, listed late, never listed, and a failing call is
     'a dead listing is not reported as an artifact that was not listed'
   );
   assert.doesNotMatch(down.out, /the run listed no github-pages artifact/);
+
+  // Codex, PR #1547: a request that stalls must not outlast the 60 s. Each call is cut by `timeout`, the attempt is counted,
+  // and the loop reaches its deadline check (the stalled calls take 20 s of the fake clock each).
+  const stall = run(['hang']);
+  assert.strictEqual(stall.status, 1);
+  assert.strictEqual(stall.calls.length, 3, '0, 22, 44 s: then the next check is past the bound');
+  assert.match(stall.out, /attempt 1: the listing call failed: no answer in 1 s/);
+  assert.match(
+    stall.out,
+    /::error title=pages-artifact-lag::the artifact listing never answered in 60 s \(3 attempts; last error: no answer in 1 s\)/
+  );
+  const slow = run(['hang', 1]);
+  assert.strictEqual(slow.status, 0, 'a stalled call is one attempt, the next one lists the artifact');
+  assert.match(slow.out, /listed at attempt 2 \(call sent at \+22000 ms/);
+  assert.match(script(), /timeout "\$secs" gh api/, 'every call is cut');
 });

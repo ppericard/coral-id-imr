@@ -55,7 +55,19 @@ STARTED = '2026-11-18T04:50:00Z'  # Deploy Pages run 1490, the live build of the
 
 
 def run_row(number, started=STARTED):
-    return {'run_number': number, 'run_started_at': started, 'created_at': started, 'conclusion': 'success'}
+    return {'id': 9000 + number, 'run_number': number, 'run_started_at': started, 'created_at': started, 'conclusion': 'success'}
+
+
+PUB = 'a' * 40  # the commit the live run archived, when it recorded it (the `published-source` notice of its job)
+
+
+def published(sha=PUB, ahead=(), run=1490, note_title='published-source'):
+    """The three reads of a run that recorded its commit: its job, the job's annotations, `compare` of that commit to main."""
+    return {
+        API + 'actions/runs/%d/jobs?per_page=1' % (9000 + run): (200, json.dumps({'jobs': [{'id': 777}]}).encode()),
+        API + 'check-runs/777/annotations': (200, json.dumps([{'title': 'other', 'message': 'x'}, {'title': note_title, 'message': sha}]).encode()),
+        API + 'compare/%s...main?per_page=100' % PUB: (200, json.dumps({'ahead_by': len(ahead), 'commits': list(ahead)}).encode()),
+    }
 
 
 def commit_row(sha, date, subject):
@@ -177,6 +189,14 @@ def main():
     S['deploy_commits_500'] = go(routes(**{API + 'commits?sha=main&since=%s&per_page=100' % STARTED: (500, b'')}))
     S['deploy_no_build'] = go(routes(**{health.SITE + 'index.html': (200, INDEX.replace('<meta name="build" content="1490">', '').encode())}))
     S['deploy_page2'] = go(routes(**{RUNS % 1: (200, json.dumps({'workflow_runs': [run_row(1700 + i) for i in range(100)]}).encode()), RUNS % 2: (200, json.dumps({'workflow_runs': [run_row(1490)]}).encode())}))
+    # A run that recorded the commit it archived (Codex, PR #1547): main as it stood at its checkout, which can be later than the
+    # run's start. A commit dated after the start but held by the deploy is live; the commits `compare` lists are not.
+    late = new('1111111aaaaaaa', '2026-11-18T04:52:00Z', 'landed between the job start and its checkout')
+    S['deploy_pub_late_live'] = go(routes(**{**deploy([late]), **published()}))
+    S['deploy_pub_stale'] = go(routes(**published(ahead=[new('2222222', '2026-11-18T04:10:00Z', 'Photo curation: tile photos'), new('3333333', '2026-11-18T04:30:00Z', 'Candidate photos: x')])))
+    S['deploy_pub_compare_404'] = go(routes(**{**published(), API + 'compare/%s...main?per_page=100' % PUB: (404, b'')}))
+    S['deploy_pub_bad_note'] = go(routes(**published(sha='not-a-sha')))
+    S['deploy_pub_no_note'] = go(routes(**published(note_title='something-else')))
     S['tree_truncated'] = go(routes(**{'https://api.github.com/repos/%s/git/trees/main?recursive=1' % health.REPO: (200, b'{"truncated": true, "tree": []}')}))
     S['r2_warn'] = go(routes(), rt=root(r2_bytes=7_500_000_000))
     S['r2_exactly_70'] = go(routes(), rt=root(r2_bytes=7_000_000_000))

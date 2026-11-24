@@ -123,7 +123,8 @@ the upload step directly). Listed: a `::notice title=pages-artifact-lag` ("liste
 at +B ms)") and a line in the run's summary, so the lag is counted across runs rather than hidden. Never listed:
 `::error title=pages-artifact-lag` and the job fails there; if no listing call was ever answered, the error says the
 listing never answered, with its last error, instead of claiming the artifact was not listed. A listing call that itself
-fails (HTTP error) is one more attempt, not a crash. It needs the job permission `actions: read` (added to the job only;
+fails (HTTP error) or stalls is one more attempt, not a crash: each call is cut by `timeout` at the time left of the 60 s
+(10 s at most), so a stalled request cannot outlast the bound. It needs the job permission `actions: read` (added to the job only;
 the workflow's own stays `contents: read`), and it never re-runs or retries the deploy itself. Only a push to `main` runs
 the job, so a pull request's CI cannot exercise the step: `tests/pageswait.test.js` runs its script on a fake clock, and the
 first Deploy Pages run after the merge is its first real run.
@@ -159,16 +160,20 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
 - **the live build against `main`** (REE-279; the integrator's call, easy to correct): the live `index.html`'s
   `<meta name="build">` is the run number of a Deploy Pages run (`tools/stamp_versions.py`, `--build "${{ github.run_number }}"`),
   found among the latest 300 successful runs of `pages.yml` on `main`. A deploy publishes `main` as it stands when its job
-  starts, so a commit whose committer date is after that run's `run_started_at` is **not live**. The date is when the commit
+  checks out, which can be later than the run's start, so since REE-279 the job records the commit it archived (`::notice
+  title=published-source::<sha>`, "Stage the static site") and Health reads it back (the run's job, its annotations: the three
+  calls `tools/brief.py` makes for its own annotation); the commits of `main` after it, by `compare`, are **not live**. A run
+  from before that (build 1490 was live when this was written) or one whose reads fail is read by dates, and the note says
+  `by run start`: a commit whose committer date is after the run's `run_started_at` is not live. The date is when the commit
   reached `main` for a squash merge through the API, a bot commit and the admin's Publish, so the clock starts there. The
   oldest commit not live waiting **more than 45 minutes** (`STALE_MIN`; the 30 latest successful deploys took 46 to 82 s, measured
   2026-11-24, and a bot commit is published about 6 minutes after it, so 45 minutes allows several failed runs) fails the check, which
   fails the job (e-mail, and the `health` issue below), naming up to five of the commits (short SHA and subject); fewer
   minutes is a note ("a deploy is expected"). A gap on GitHub's side (no build number, the API refusing, a run out of the
-  list) is a note naming the HTTP status, never a failure. An approximation: dates stand for ancestry, so a commit that
-  reached `main` between the job's start and its checkout counts as not live even if that run published it (a newer run normally replaces it
-  within minutes, and a false alarm needs 45), and a commit that reached `main` with an older date (a fast-forward, which the project does not use) would count as
-  live. **Where it shows**: the run's report and issue, the failed job's e-mail, and
+  list) is a note naming the HTTP status, never a failure. The date reading is an approximation (dates stand for
+  ancestry): a commit that reached `main` between the job's start and its checkout counts as not live although that run
+  published it, and a commit that reached `main` with an older date (a fast-forward, which the project does not use) would
+  count as live; the recorded commit avoids both. **Where it shows**: the run's report and issue, the failed job's e-mail, and
   the brief's `Infra:` line (`Site STALE: N commit(s) of main not live, the oldest M min, live build B (…)`, also in the short
   brief). Not in the admin: its To do › Alerts card reads the sheet and GitHub live with the admin's own token, never the
   Health run, so a stale site does not reach it from here. It is read with the job's `GITHUB_TOKEN` (`contents: read`); if the

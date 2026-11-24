@@ -64,6 +64,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pages"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/pages"
           echo "Published source: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          # The same commit as an annotation of the job, which Health reads (tools/health.py check_deploy, REE-279) to say
+          # which commits of main this deploy did not hold: the checkout is main as it stands when the job starts.
+          echo "::notice title=published-source::$(git rev-parse HEAD)"
       # The build tools, in a temporary folder (nothing added to the repo, no package.json): terser for tools/minify.js
       # (pinned there too), Playwright for the staged copy's smoke. The Chromium download is kept between runs, as in
       # smokes.yml.
@@ -119,12 +122,18 @@ jobs:
           while :; do
             attempt=$((attempt + 1))
             asked=$(( $(date +%s%3N) - start ))
-            if reply=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq '.total_count' 2>&1); then
+            # Each call is cut at the time left of the 60 s (at most 10 s, at least 1 s): a stalled request cannot outlast the bound.
+            secs=$(( (limit - asked) / 1000 ))
+            [ "$secs" -gt "${PAGES_WAIT_REQUEST_S:-10}" ] && secs=${PAGES_WAIT_REQUEST_S:-10}
+            [ "$secs" -lt 1 ] && secs=1
+            if reply=$(timeout "$secs" gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq '.total_count' 2>&1); then
               count=$reply
               answered=$((answered + 1))
             else
+              status=$?
               count=0
               failure=$(echo "$reply" | head -c 200)
+              [ "$status" = 124 ] && failure="no answer in ${secs} s"
               echo "attempt $attempt: the listing call failed: $failure"
             fi
             lag=$(( $(date +%s%3N) - start ))
