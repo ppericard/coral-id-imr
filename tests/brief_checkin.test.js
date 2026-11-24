@@ -115,7 +115,8 @@ test('the queue processes: the scripts themselves, never a shell whose command m
 test('the check-in text names its source of work and the one-line prompt; INTEGRATOR "Habits" uses that line', () => {
   const t = read('tools/checkin.md');
   assert.ok(t.includes('Check-in: run `python3 tools/brief.py --checkin` and follow it'), 'the one-line prompt');
-  assert.match(t, /Next view/);
+  assert.match(t, /every open issue, whatever its column/);
+  assert.match(t, /Sweep, about every 90 minutes/);
   assert.match(t, /INTEGRATOR "Linear"\]\(\.\.\/docs\/INTEGRATOR\.md#linear\)/);
   assert.match(t, /nightq\.sh/);
   assert.match(t, /REE-230/);
