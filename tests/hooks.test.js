@@ -11,7 +11,8 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   HOOKS = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude', 'settings.json'), 'utf-8')).hooks,
   FIX = 'git fetch origin +refs/heads/main:refs/remotes/origin/main',
-  TOOLS = ['brief.py', 'guard_bash.py', 'agent_guard.py', 'instr_log.py'];
+  TOOLS = ['brief.py', 'guard_bash.py', 'agent_guard.py', 'issue_guard.py', 'instr_log.py'],
+  ISSUE = '^mcp__.*[Ll]inear.*__save_issue$';
 
 // The command of an event's hook (with a matcher, PreToolUse) that runs `tool`.
 const command = (ev, tool, matcher) => {
@@ -28,7 +29,8 @@ const C = {
   subagent: command('SubagentStart', 'instr_log.py'),
   prompt: command('UserPromptSubmit', 'brief.py'),
   bash: command('PreToolUse', 'guard_bash.py', 'Bash'),
-  agent: command('PreToolUse', 'agent_guard.py', 'Agent')
+  agent: command('PreToolUse', 'agent_guard.py', 'Agent'),
+  issue: command('PreToolUse', 'issue_guard.py', ISSUE)
 };
 
 const gitEnv = {
@@ -95,6 +97,7 @@ const lines = f => (fs.existsSync(f) ? fs.readFileSync(f, 'utf-8').trim().split(
 
 const bashEv = command => JSON.stringify({tool_name: 'Bash', tool_input: {command}});
 const agentEv = JSON.stringify({tool_name: 'Agent', tool_input: {description: 'x', prompt: 'y'}});
+const issueEv = JSON.stringify({tool_name: 'mcp__Linear__save_issue', tool_input: {team: 'REE', title: 'x', description: 'y'}});
 const loadEv = (sid, file) =>
   JSON.stringify({hook_event_name: 'InstructionsLoaded', session_id: sid, file_path: file, load_reason: 'session_start'});
 const startEv = (s, source = 'startup') => JSON.stringify({hook_event_name: 'SessionStart', session_id: 's1', cwd: s.clone, source});
@@ -114,6 +117,8 @@ test('no origin/main ref, origin reachable: the startup hooks and guards fetch m
   fresh();
   assert.strictEqual(deny(run(s, C.agent, agentEv)), 'deny', 'the agent guard refuses a launch with no model nor effort');
   assert.strictEqual(lines(s.launches).length, 1, 'and logs it');
+  fresh();
+  assert.strictEqual(deny(run(s, C.issue, issueEv)), 'deny', 'the issue guard refuses a new issue with no Searched: line');
 
   fresh();
   let r = run(s, C.loaded, loadEv('s1', path.join(s.clone, 'CLAUDE.md')));
@@ -259,7 +264,7 @@ test('no origin/main ref, origin unreachable: the guards refuse, the brief and l
   const allowed = JSON.stringify({tool_name: 'Agent', tool_input: {description: 'x', prompt: 'y', model: 'opus', effort: 'high'}});
   // Codex, #1220: the fix elsewhere in the event (a description) lets nothing through, nor a malformed event.
   const inDesc = JSON.stringify({tool_name: 'Bash', tool_input: {command: "python3 -c 'print(1)'", description: FIX}});
-  const [sh, bash, fix, more, desc, bad, agent, ...rest] = await Promise.all([
+  const [sh, bash, fix, more, desc, bad, agent, issue, ...rest] = await Promise.all([
     runAsync(s, C.bash, bashEv('ls'), 'sh'),
     runAsync(s, C.bash, bashEv('ls'), 'bash'),
     runAsync(s, C.bash, bashEv(FIX)),
@@ -267,6 +272,7 @@ test('no origin/main ref, origin unreachable: the guards refuse, the brief and l
     runAsync(s, C.bash, inDesc),
     runAsync(s, C.bash, '"' + FIX + '"'),
     runAsync(s, C.agent, allowed),
+    runAsync(s, C.issue, JSON.stringify({tool_name: 'mcp__Linear__save_issue', tool_input: {id: 'REE-1', state: 'Done'}})),
     ...[C.loaded, C.subagent, C.start, C.prompt].map(c => runAsync(s, c, loadEv('s1', 'x')))
   ]);
   for (const [shell, r] of [
@@ -284,6 +290,8 @@ test('no origin/main ref, origin unreachable: the guards refuse, the brief and l
   assert.strictEqual(bad.status, 2, 'a malformed event refuses');
   assert.strictEqual(agent.status, 2, 'the agent guard refuses even a launch it would allow');
   assert.ok(agent.stderr.includes(FIX));
+  assert.strictEqual(issue.status, 2, 'the issue guard refuses even an update it would allow');
+  assert.ok(issue.stderr.includes(FIX));
 
   for (const r of rest.slice(0, 2)) {
     assert.strictEqual(r.status, 1, 'the log fails visibly');
@@ -347,7 +355,7 @@ test('the startup hooks select a revision before opening a tool and the guards f
   }
   assert.match(C.prompt, /git show refs\/remotes\/origin\/main:tools\/brief\.py/);
   assert.doesNotMatch(C.prompt, /fetch|--night-due/);
-  for (const m of ['Bash', 'Agent']) {
+  for (const m of ['Bash', 'Agent', ISSUE]) {
     const h = HOOKS.PreToolUse.find(x => x.matcher === m).hooks[0];
     assert.strictEqual(h.onFailure, 'block', m + ': a guard that fails or times out blocks');
     assert.match(h.command, /python3 -I -c "\$S"/, m + ': the code with -c, the event on stdin');
