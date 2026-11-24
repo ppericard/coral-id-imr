@@ -48,11 +48,15 @@ fifoq() {
   local n
   [ $# -gt 0 ] || { echo "usage: bash fifoq.sh N [N...]" >&2; return 2; }
   for n in "$@"; do case "$n" in '' | *[!0-9]*) echo "not a PR number: $n" >&2; return 2;; esac; done
+  command -v flock >/dev/null || { echo "fifoq: flock not found (util-linux)" >&2; return 1; }
   cd "$REPO_DIR" || return 1
   TICKET=$(ticket_new) || { log "fifoq: cannot write $TICKETS"; return 1; }
   trap 'rm -f "$TICKET"' EXIT
   log "--- fifo wave queued $*: ticket ${TICKET##*/}"
-  until its_turn "$TICKET"; do sleep "$TURN_POLL"; done
+  # The tickets give the order; the lock (fd 9, kept until nightq.sh ends) makes admission exclusive, so two waiters
+  # that both pass its_turn, one of them with a ticket published late, can never run waves together.
+  exec 9> "$QUEUE_DIR/fifoq.lock"
+  until its_turn "$TICKET" && flock -n 9; do sleep "$TURN_POLL"; done
   log "--- fifo wave $*: its turn"
   bash "$Q/nightq.sh" "$@"
 }

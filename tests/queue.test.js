@@ -516,13 +516,13 @@ test("nightq reads the security field first on the line, so the PR's own text ca
 
 // ---- fifoq.sh: the waiters in arrival order, then nightq.sh (REE-220). Shims for pgrep, sleep and bash: no GitHub. ----
 const sourcedFifoq = (d, script) => {
-  // the case's lines go in a file the shell sources: no command line built from values
+  // the case is a script file that sources fifoq.sh (named by the environment): no command line built from values
   const file = path.join(d, 'case.sh');
-  fs.writeFileSync(file, script);
-  const r = spawnSync('/bin/bash', ['-c', '. "$1"\n. "$2"', '_', path.join(DIR, 'fifoq.sh'), file], {
+  fs.writeFileSync(file, '. "$FIFOQ"\n' + script);
+  const r = spawnSync('/bin/bash', [file], {
     encoding: 'utf8',
     timeout: 15000,
-    env: {...process.env, REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r'}
+    env: {...process.env, FIFOQ: path.join(DIR, 'fifoq.sh'), REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r'}
   });
   assert.ok(!r.error, r.error);
   return r;
@@ -645,6 +645,36 @@ test('fifoq waits behind an earlier live ticket until its queue leaves (REE-220)
   assert.strictEqual(r.status, 0, r.out);
   assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'nightq 1 2']);
   assert.deepStrictEqual(r.tickets, []);
+});
+
+test('fifoq admission is exclusive: a wave lock held by another process keeps it waiting (REE-220, Codex review)', () => {
+  let holder = null;
+  try {
+    const r = runFifoq({
+      setup: d => {
+        // another wave holds the lock (flock runs sleep under it, in its own process group)
+        const lock = path.join(d, 'fifoq.lock');
+        holder = require('child_process').spawn('flock', [lock, 'sleep', '60'], {detached: true, stdio: 'ignore'});
+        const end = Date.now() + 5000;
+        while (spawnSync('flock', ['-n', lock, 'true']).status === 0 && Date.now() < end);
+        // the second sleep ends that wave: the lock is free for the third check
+        fs.writeFileSync(
+          path.join(d, 'sleep'),
+          `#!/bin/bash\necho sleep >> "$CALLS"\n[ "$(grep -c sleep "$CALLS")" -lt 2 ] && exit 0\nkill -TERM -- -${holder.pid}\nfor i in $(seq 1 100); do flock -n "${lock}" true && exit 0; /bin/sleep 0.05; done\n`,
+          {mode: 0o755}
+        );
+      }
+    });
+    assert.strictEqual(r.status, 0, r.out);
+    assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'nightq 1 2']);
+  } finally {
+    if (holder) {
+      try {
+        process.kill(-holder.pid, 'SIGKILL');
+      } catch (e) {}
+    }
+  }
+  assert.match(read('fifoq.sh'), /until its_turn "\$TICKET" && flock -n 9; do sleep "\$TURN_POLL"; done/);
 });
 
 test('fifoq takes only PR numbers, and says how to use it (REE-220)', () => {
