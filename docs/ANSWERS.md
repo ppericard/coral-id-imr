@@ -1917,7 +1917,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pas maintenant», once the IMR lecture photos are out. Applied: Linear REE-51.
 - **17:20, Q455 (REE-85, the ease weight).** «ok» to the integrator's revised recommendations of 16:49 (his word is
   «ok», the wording is the integrator's, REE-85's comment of 17:21): the ease weight to about 0.3 (0.2–0.4), no
-  urgency; response time is the better signal for a photo's difficulty (REE-16). Applied: Linear REE-240.
+  urgency; response time is the better signal for a photo's difficulty (REE-16). Applied: `core.js` `CALIB.ease` 0.3
+  for every subject with a judged ease (2026-11-24 06:32 to 06:35 below), decisions/2026-11-23-judged-ease-weight.md
+  (REE-240).
 - **17:20, Q456 (REE-85, the typical look).** «ok», the same answer: in a family whose usual look is buried or
   camouflaged, partial `0` and camouflage `c` no longer cap the ease; the families set by a declared rule, at least
   half of the family's photos in play tagged `0` or `c`. Applied: judging/FISH.md "Caps"; tools/fish_judge.py
@@ -2027,7 +2029,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   "Questions and corrections" not changed here).
 - **06:32, the ease weight kept at 0.5 for the sea slugs (#1519).** «Et bien c'est un mauvais choix. C'est quoi nos
   règles globales de développement? ça mérite une issue de non respect à la règle ça». Applied: Linear REE-267; #1519
-  (one ease weight for every subject with a judged ease).
+  (`core.js` `CALIB.ease` 0.3, one ease weight for every subject with a judged ease, a subject's own only as a
+  declared exception with its reason; decisions/2026-11-23-judged-ease-weight.md).
 - **06:33 and 06:35, rule S1 (REE-267).** 06:33: «idem pour les coraux ou tout autre sujet à venir». 06:35, on the
   cause (the issue and the brief worded per subject): «C'est possible que les exemples viennent de sujet en particulier,
   mais il faut toujours généraliser.» 06:35, when the integrator made the weight an engine constant with no per-subject

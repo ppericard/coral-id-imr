@@ -65,6 +65,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-24 | [What a duplicate photo is: a burst or the same framing; another zoom, framing, angle or pose is an `alt`, every subject](2026-11-24-what-a-duplicate-is.md) | #1524 |
 | 2026-11-23 | [The refill takes the most-faved observations first for a species short of easy adults](2026-11-23-easy-refill-faves.md) | #1476 |
 | 2026-11-23 | [A species short of easy adults may take faved candidates beyond its cap](2026-11-23-faved-beyond-cap.md) | #1487 |
+| 2026-11-23 | [Judged ease weight: one shared value, 0.3 logit a point, for every subject whose photos carry a judged ease](2026-11-23-judged-ease-weight.md) | #1519 |
 | 2026-11-23 | [Pages opened: pagehide also queues the summary; keeping it across a killed page left for its own issue](2026-11-23-pages-kept-copy.md) | #1471 |
 | 2026-11-23 | [A rule not followed gets a Linear issue, not an automatic new rule](2026-11-23-rule-not-followed-issue.md) | #1501 |
 | 2026-11-22 | [core.js split into parts: core/*.js joined by tools/sync_core.py into the core.js the pages load, byte for byte](2026-11-22-core-parts.md) | #1452 |
