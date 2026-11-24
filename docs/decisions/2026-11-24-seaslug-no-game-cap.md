@@ -1,6 +1,6 @@
 # The sea slugs have no game cap: every photo judged sure plays, as the fish's
 
-Date: 2026-11-24. PR: #1540. Rules or docs touched: S1 (cited, unchanged); docs/spec/seaslugs.md, docs/spec/admin-tree.md,
+Date: 2026-11-24. PR: #1544. Rules or docs touched: S1 (cited, unchanged); docs/spec/seaslugs.md, docs/spec/admin-tree.md,
 judging/SEASLUG.md; lifts the game cap of [Q377](../ANSWERS.md) (Pierre, 2026-11-15); follows
 [the sea slugs' every photo](2026-11-24-seaslug-every-photo.md).
 
