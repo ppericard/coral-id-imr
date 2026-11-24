@@ -516,7 +516,10 @@ test("nightq reads the security field first on the line, so the PR's own text ca
 
 // ---- fifoq.sh: the waiters in arrival order, then nightq.sh (REE-220). Shims for pgrep, sleep and bash: no GitHub. ----
 const sourcedFifoq = (d, script) => {
-  const r = spawnSync('/bin/bash', ['-c', `. "$1"\n${script}`, '_', path.join(DIR, 'fifoq.sh')], {
+  // the case's lines go in a file the shell sources: no command line built from values
+  const file = path.join(d, 'case.sh');
+  fs.writeFileSync(file, script);
+  const r = spawnSync('/bin/bash', ['-c', '. "$1"\n. "$2"', '_', path.join(DIR, 'fifoq.sh'), file], {
     encoding: 'utf8',
     timeout: 15000,
     env: {...process.env, REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r'}
@@ -548,9 +551,11 @@ test('fifoq tickets: arrival order; a dead queue, or a pid that wrapped, never h
       'echo "Mon Jan  1 00:00:00 2001" > "$T/060.$other"',
       'ticket_older "$mine"; echo "wrapped: $?"; [ -e "$T/060.$other" ]; echo "wrapped kept: $?"',
       // ticket_new names this process, by its true start
-      'n=$(ticket_new); echo "new: ${n##*.} $$"; [ "$(cat "$n")" = "$(start_of $$)" ]; echo "new start: $?"'
+      'n=$(ticket_new); echo "new: ${n##*.} $$"; [ "$(cat "$n")" = "$(start_of $$)" ]; echo "new start: $?"',
+      // published by one rename: no hidden half-written file stays behind
+      'ls -A "$T" | grep -c "^[.]"'
     ].join('\n');
-    const r = sourcedFifoq(d, `TICKETS=${d}/tickets\n${script}`);
+    const r = sourcedFifoq(d, script);
     const pid = r.stdout.match(/new: (\d+) /)[1];
     assert.strictEqual(
       r.stdout.trim(),
@@ -562,7 +567,8 @@ test('fifoq tickets: arrival order; a dead queue, or a pid that wrapped, never h
         'wrapped: 1',
         'wrapped kept: 1',
         `new: ${pid} ${pid}`,
-        'new start: 0'
+        'new start: 0',
+        '0'
       ].join('\n')
     );
   }));

@@ -13,12 +13,15 @@ log() { echo "$(TZ=Asia/Manila date +%H:%M) $*" | tee -a "$LOG"; }
 # start_of PID: that process's start time ("" when it does not run). A ticket names a pid and its start, so a pid that
 # wrapped to another process never keeps a dead queue's place.
 start_of() { ps -o lstart= -p "$1" 2>/dev/null | tr -s ' '; }
-# ticket_new: this queue's place, named by arrival (epoch nanoseconds, then pid)
+# ticket_new: this queue's place, named by arrival (epoch nanoseconds, then pid). The ticket is written whole to a hidden
+# file and published by one rename, named at that moment: another waiter never sees it empty (and drops it as dead).
 ticket_new() {
-  local t
+  local tmp t
   mkdir -p "$TICKETS" || return 1
+  tmp=$TICKETS/.new.$$
+  start_of $$ > "$tmp" && [ -s "$tmp" ] || { rm -f "$tmp"; return 1; }
   t=$TICKETS/$(date +%s%N).$$
-  start_of $$ > "$t" && echo "$t"
+  mv "$tmp" "$t" && echo "$t"
 }
 # ticket_alive FILE: does the process the ticket names still run, started when the ticket says?
 ticket_alive() {
