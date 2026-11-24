@@ -1,11 +1,11 @@
 {
- "about": "REE-265 step 0, every subject since REE-274: the ceilings of the work one answer may make, per state (tools/answercost.js; CI's \"answer cost\" job counts every state, tests/answercost.test.js holds the pure parts): fish, corals and sea slugs, each at 50, 500 and 3,000 answers, for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. The players AND the data the page loads (every .json file) are the pinned tree's (answercost.js PLAYERS_AT, a commit of main), the code counted is the tree under test's, so neither a change of the draw nor a bot's refill of the photos moves a count; and a count is repeatable (REE-281: virtual clock, random numbers started over at each tick, every photo a 1 x 1 picture served at once: the same state and seed give the same count to a few calls). Each ceiling is the largest count measured over the page's seeds 1 to 3 (the seeds change the questions drawn, by up to 2x on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. History: fish and corals at 3,000 were set on main after #1522, tightened when the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc in place of fn:bonusList) and when the tree's score and the levels did (step 4: fn:lvStepCalc in place of fn:lvStep); all nine states were set again on the pinned players when REE-274 added the sea slugs and the corals at 50 and 500 and moved the counts to CI, and again, with the pinned data and the repeatable count, for REE-281. A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --seed 1,2,3 --write-budget tools/answercost-budget.json --margin 1.25 (--states for the states it touches).",
+ "about": "REE-265 step 0, every subject since REE-274: the ceilings of the work one answer may make, per state (tools/answercost.js; CI's \"answer cost\" job counts every state, tests/answercost.test.js holds the pure parts): fish, corals and sea slugs, each at 50, 500 and 3,000 answers, for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. The players AND the data the page loads (every .json file) are the pinned tree's (answercost.js PLAYERS_AT, a commit of main), the code counted is the tree under test's, so neither a change of the draw nor a bot's refill of the photos moves a count; and a count is repeatable (REE-281: virtual clock, random numbers started over at each tick, every photo a 1 x 1 picture served at once: the same state and seed give the same count to a few calls). Each ceiling is the largest count measured over the page's seeds 1 to 3 (the seeds change the questions drawn, by up to 2x on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. History: fish and corals at 3,000 were set on main after #1522, tightened when the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc in place of fn:bonusList) and when the tree's score and the levels did (step 4: fn:lvStepCalc in place of fn:lvStep); all nine states were set again on the pinned players when REE-274 added the sea slugs and the corals at 50 and 500 and moved the counts to CI, and again, with the pinned data and the repeatable count, for REE-281; every state's storage reads (getCalls, getChars) and the calls that fell were tightened when the stored texts came to be compared once per task (REE-265: app.js freshSeen), no ceiling raised (fish:50's namedCalls and fn:faOf stay: that state still counts about 0.11 M or 0.16 M from run to run at seed 1, the same code). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --seed 1,2,3 --write-budget tools/answercost-budget.json --margin 1.25 (--states for the states it touches).",
  "margin": 1.25,
  "states": {
   "coral:50": {
-   "namedCalls": 21000,
-   "getCalls": 300,
-   "getChars": 280000,
+   "namedCalls": 20000,
+   "getCalls": 110,
+   "getChars": 83000,
    "setChars": 58000,
    "fn:introduced": 540,
    "fn:scoreOf": 400,
@@ -18,9 +18,9 @@
    "fn:sheetV": 100
   },
   "coral:500": {
-   "namedCalls": 38000,
-   "getCalls": 640,
-   "getChars": 1900000,
+   "namedCalls": 36000,
+   "getCalls": 100,
+   "getChars": 630000,
    "setChars": 460000,
    "fn:introduced": 750,
    "fn:scoreOf": 450,
@@ -33,9 +33,9 @@
    "fn:sheetV": 100
   },
   "coral:3000": {
-   "namedCalls": 31000,
-   "getCalls": 340,
-   "getChars": 5600000,
+   "namedCalls": 30000,
+   "getCalls": 100,
+   "getChars": 2400000,
    "setChars": 1700000,
    "fn:introduced": 750,
    "fn:scoreOf": 390,
@@ -49,8 +49,8 @@
   },
   "fish:50": {
    "namedCalls": 150000,
-   "getCalls": 1400,
-   "getChars": 460000,
+   "getCalls": 120,
+   "getChars": 110000,
    "setChars": 71000,
    "fn:introduced": 4500,
    "fn:scoreOf": 3100,
@@ -64,8 +64,8 @@
   },
   "fish:500": {
    "namedCalls": 280000,
-   "getCalls": 2800,
-   "getChars": 2900000,
+   "getCalls": 110,
+   "getChars": 800000,
    "setChars": 580000,
    "fn:introduced": 9300,
    "fn:scoreOf": 3900,
@@ -78,9 +78,9 @@
    "fn:sheetV": 320
   },
   "fish:3000": {
-   "namedCalls": 450000,
-   "getCalls": 6900,
-   "getChars": 8900000,
+   "namedCalls": 440000,
+   "getCalls": 110,
+   "getChars": 3100000,
    "setChars": 2300000,
    "fn:introduced": 16000,
    "fn:scoreOf": 4000,
@@ -93,9 +93,9 @@
    "fn:sheetV": 290
   },
   "seaslug:50": {
-   "namedCalls": 48000,
-   "getCalls": 760,
-   "getChars": 370000,
+   "namedCalls": 47000,
+   "getCalls": 110,
+   "getChars": 110000,
    "setChars": 72000,
    "fn:introduced": 1500,
    "fn:scoreOf": 2000,
@@ -108,9 +108,9 @@
    "fn:sheetV": 110
   },
   "seaslug:500": {
-   "namedCalls": 82000,
-   "getCalls": 1200,
-   "getChars": 2300000,
+   "namedCalls": 80000,
+   "getCalls": 100,
+   "getChars": 790000,
    "setChars": 590000,
    "fn:introduced": 2000,
    "fn:scoreOf": 1500,
@@ -124,8 +124,8 @@
   },
   "seaslug:3000": {
    "namedCalls": 130000,
-   "getCalls": 1400,
-   "getChars": 7100000,
+   "getCalls": 100,
+   "getChars": 3100000,
    "setChars": 2300000,
    "fn:introduced": 3400,
    "fn:scoreOf": 1100,
