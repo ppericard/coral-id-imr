@@ -2001,4 +2001,5 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pour mes photos c'est qu'elles soient systématiquement intégrées à la base de données, et puis jugées comme les
   autres. Mais ça veut effectivement dire que l'ensemble de mes photos qui remplissent les critères doivent être
   intégré à l'app et aux jeux, même si on dépasse les seuils.» For every subject; no ceiling, the sea slugs' `max`
-  included; judged like anyone's (Q386). Applied: docs/decisions/2026-11-24-own-observations-everywhere.md, rules/photos.md P1.
+  included; judged like anyone's (Q386). Applied: #1534 (docs/decisions/2026-11-24-own-observations-everywhere.md,
+  rules/photos.md P1).

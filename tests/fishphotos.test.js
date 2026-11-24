@@ -1296,6 +1296,63 @@ test('fetch_fish.py game_photos: the photos in play and the sheet photos, each o
   assert.ok(!('ph' in got.s1[0]) && got.s1[0].jt === g.jt);
 });
 
+test("fetch_fish.py --refill offline: a full species is not refilled but takes Pierre's own observations (REE-252); a rerun adds nothing", () => {
+  const dir = mkTmp('fishrefillown-');
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
+      {id: 's2', name: 'Fishus vulgaris', inat: 502, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  const rec = (sid, i) => ({
+    f: `fish-${sid}-cand-${i * 10}`,
+    a: '(c) u',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: 'Fishus fishii',
+    own: false,
+    loc: 'dauin',
+    src: 'x',
+    r: 1
+  });
+  // Both species hold 5 candidates, their cap (5): no room, so the refill picks neither.
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('data/fish-cand.json', {v: 1, cand: {s1: [1, 2, 3, 4, 5].map(i => rec('s1', i)), s2: [6, 7, 8, 9, 10].map(i => rec('s2', i))}});
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+# His: two photos on s1 and a Needs ID one (no licence) on s2; no general search is cached: a full species asks none.
+put(queries(501)['own'], [ob(91, u='ppericard', n=2)])
+put(queries(502)['own'], [ob(92, u='ppericard', g='needs_id', lic=None)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const at = x => path.join(dir, x);
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
+  const files = ['fish.json', 'data/fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json', 'mem.json'];
+  const argv = flags.flatMap((f, i) => [f, at(files[i])]);
+  const run = () =>
+    execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--refill', '--cap', '5', '--today', '2026-11-06', '--offline'], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    });
+  const log = run();
+  const got = JSON.parse(fs.readFileSync(at('data/fish-cand.json'), 'utf8')).cand;
+  const ids = L => L.map(p => +p.o.split('/').pop());
+  assert.deepStrictEqual(ids(got.s1).slice(5), [91, 91], 'his two photos, on a full species');
+  assert.deepStrictEqual(ids(got.s2).slice(5), [92], 'his Needs ID one, with no licence');
+  assert.strictEqual(got.s2[5].ni, 1);
+  assert.match(log, /refill: 2 short species .* 0 refilled now/, 'no room, so neither is refilled (both are short of easy adults only)');
+  const before = fs.readFileSync(at('data/fish-cand.json'), 'utf8');
+  run();
+  assert.strictEqual(fs.readFileSync(at('data/fish-cand.json'), 'utf8'), before, 'a rerun adds nothing');
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 test("select: Pierre's own observations come in whatever the room, every photo, their cost off the room; nobody else's then (REE-252)", () => {
   const out = J(`${OBS}
 it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())

@@ -1,7 +1,8 @@
 # Pierre's own observations come in whatever the room, for every subject
 
 Date: 2026-11-24. PR: #1534. Rules or docs touched: P1, S1; docs/spec/tools.md, docs/spec/photos.md,
-docs/spec/fish-photos.md; follows [Q386 and the fish's own photos](2026-11-24-seaslug-every-photo.md) (REE-252).
+docs/spec/fish-photos.md; follows [the sea slugs' every photo](2026-11-24-seaslug-every-photo.md) (REE-252), which left
+his own observations open, and Q386 (his photos judged like anyone's).
 
 ## Context
 

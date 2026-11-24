@@ -562,6 +562,118 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
+test("Pierre's own agreed observations of the genus-level and no-name lists come in whatever the room; --own --informal --genus-level asks his search only (REE-252)", () => {
+  const dir = mkTmp('sluggl-own-');
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(
+    at('src.json'),
+    JSON.stringify({
+      photoTarget: {...T, candidates: 2, max: 30, perJuvenileForm: 0, juvenile: {}},
+      species: [
+        {name: 'Slugus slugii', genus: 'Slugus', inat: 601, circle: 1},
+        {name: 'Limax limacis', genus: 'Limax', inat: 701, circle: 3}
+      ]
+    })
+  );
+  const pres = {obs: 4, observers: 3, nearObs: 1, nearObservers: 1, near: false, confirmed: true};
+  const inf = {
+    species: [
+      {
+        key: 'slugus-sp1',
+        name: 'Slugus sp. 1',
+        genus: 'Slugus',
+        src: 'A 2020',
+        cite: 'A',
+        field: {id: 5, name: 'Slugus sp. 1?', value: 'Yes'},
+        presence: pres
+      }
+    ]
+  };
+  fs.writeFileSync(at('inf.json'), JSON.stringify(inf));
+  // The lists 'Slugus' and 'slugus-sp1' are full (2 = their target), held by others' observations 10, 11 and 20, 21.
+  const old = (key, i, gl) => ({
+    f: `seaslug-${key}-cand-${i * 10}`,
+    a: '(c) x',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: key,
+    own: false,
+    loc: 'ph',
+    src: 'x',
+    r: 1,
+    ...(gl ? {gl: 1} : {})
+  });
+  fs.writeFileSync(
+    at('data/cand.json'),
+    JSON.stringify({
+      v: 1,
+      cand: {Slugus: [10, 11].map(i => old('Slugus', i, true)), 'slugus-sp1': [20, 21].map(i => old('slugus-sp1', i, false))}
+    })
+  );
+  py(
+    `${OBS}
+from fetch_fish import API, TAXA
+d = sys.argv[1]
+INF = json.load(open(d + '/inf.json'))['species']
+P = 'ppericard'
+c = {}
+def gl(i, ag=2, dg=0, g='needs_id', tid=60, **k):
+    o = ob(i, g=g, rk='genus', **k)
+    o.update({'t': {60: 'Slugus', 70: 'Limax'}[tid], 'tid': tid, 'ag': ag, 'dg': dg})
+    return o
+def put(url, results): c[url] = {'total': len(results), 'results': results}
+anc = lambda gid, name: [[1, 'Animalia', 'kingdom'], [gid, name, 'genus']]
+c[TAXA + '701,601?fields=id,ancestors.id,ancestors.name,ancestors.rank'] = {'results': [{'id': 601, 'anc': anc(60, 'Slugus')}, {'id': 701, 'anc': anc(70, 'Limax')}]}
+c[TAXA + '601?fields=id,ancestors.id,ancestors.name,ancestors.rank'] = {'results': [{'id': 601, 'anc': anc(60, 'Slugus')}]}
+# His: 41 (two photos, Needs ID agreed by 2), 42 (not agreed: left out), 43 (Research Grade at the genus), 40 (carries the label).
+mine = [gl(41, u=P, n=2), gl(42, u=P, tid=70, ag=1), gl(43, u=P, tid=70, g='research', ag=1)]
+put(API + gl_query([60, 70], OWN_ONLY) + '&fields=' + GL_FIELDS, mine)
+put(API + label_query(60, INF[0]['field'], OWN_ONLY) + '&fields=' + GL_FIELDS, [gl(40, u=P)])
+# The general genus-level search, for the normal run only: his 41 among others; Slugus is full, Limax has room for one.
+put(API + gl_query([60, 70]) + '&fields=' + GL_FIELDS, [gl(50), gl(41, u=P, n=2), gl(51), gl(60, tid=70)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const run = (...more) =>
+    execFileSync(
+      'python3',
+      [
+        'tools/fetch_seaslugs.py',
+        '--offline',
+        '--src',
+        at('src.json'),
+        '--informal-src',
+        at('inf.json'),
+        '--cand',
+        at('data/cand.json'),
+        '--cache',
+        at('cache.json'),
+        ...more
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    );
+  const ids = L => L.map(p => +p.o.split('/').pop());
+  const cand = () => JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
+  // 1. A normal genus-level run: the full 'Slugus' list takes his 41 (both photos) and neither 50 nor 51; Limax takes 60 for its room.
+  run('--genus-level');
+  let C = cand();
+  assert.deepStrictEqual(ids(C.Slugus).slice(2).sort(), [41, 41], 'his, whole, on a full list; no one else’s');
+  assert.deepStrictEqual(ids(C.Limax), [60]);
+  // 2. --own --informal --genus-level: his search only (the general search is not asked again), the presence kept as it is.
+  const infBefore = fs.readFileSync(at('inf.json'), 'utf8');
+  run('--own', '--informal', '--genus-level');
+  C = cand();
+  assert.deepStrictEqual(ids(C['slugus-sp1']).slice(2), [40], 'his observation carrying the label, on a full list');
+  assert.deepStrictEqual(ids(C.Slugus).slice(2).sort(), [41, 41], '41 is not taken twice');
+  assert.deepStrictEqual(ids(C.Limax).sort(), [43, 60], 'his Research Grade genus-level observation; 42 (not agreed) stays out');
+  assert.strictEqual(fs.readFileSync(at('inf.json'), 'utf8'), infBefore, 'the presence is not measured again');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
+  run('--own', '--informal', '--genus-level');
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before, 'a rerun adds nothing');
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 // The ceiling of 30 for the very variable genera (photoTarget.maxGenera: Chromodoris, Phyllidia), a photo target per
 // species (docs/reviews/2026-11-15-seaslug-list.md 5.3): their species have the ceiling as their target, never above it.
 test('the photo target: 30 for a species of a very variable genus (maxGenera), 20 for the others, never above max', () => {
