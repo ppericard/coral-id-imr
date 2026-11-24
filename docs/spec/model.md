@@ -98,7 +98,21 @@ The data views:
   class (`kindRank`, `kindRankCalc`) and set (`setOf`, `setMapCalc`);
 - a class's units with a photo (`model.js` `lvlAll`, `lvlAllCalc`);
 - the look-alike index (`model.js` `lookRev`, `lookRevCalc`): `examLooks` reads a unit's look-alikes from it in the
-  order of the units in play, where it filtered every unit in play by its record.
+  order of the units in play, where it filtered every unit in play by its record;
+- the photo draw's data per unit (`model.js` `drawPhotos`, `drawPhotosCalc`): the photos each view of the unit may
+  show, and each photo's difficulty (`photoDiff`), its targeting's width (`calSd`), its calibration factors (`calBonus`,
+  `setBonus`), whether it is a reference-level photo (`refLevel`), its variant kind and its mimicry entry. `photoSet`
+  reads it once per draw and `varOf` takes its kinds; the player's part of a weight (the target, the memory, the
+  variants' ramps, the window of recent photos) is computed at each draw. The inputs include the subject's calibration
+  and the calibration set (`app.js` `build` bumps after it is read);
+- the units of a level's list by parent (`app.js` `kidsOf`, `kidsCalc`) and, for `sciPlay`, each parent's units in
+  its species order (`sciKids`, `sciKidsCalc`): `spPlay` and `sciPlay` read them;
+- the sets' units with a kind of name and a species (`progress.js` `achNamed`, `achNamedCalc`), which `achBoth`
+  counts at Advanced.
+
+A tool or a smoke that writes one of these inputs by hand (the photo statistics, the calibration's constants, the
+subject's calibration) bumps after it with no argument (`stateBump()`): `tools/learnsim.js` (`--calib`, the made-up
+photo difficulties), `tools/fish_draw_sim.js`, `tests/profiles.smoke.js`.
 
 The first read of a view in a task compares the stored text of the sheet's version and the first-launch records
 (`stateNow`: four storage reads); the task's other reads compare nothing. Where a part of these files runs alone (the
@@ -115,7 +129,11 @@ them over rated-world runs and made-up states, and checks that every declared wr
 the fish, the corals and the sea slugs; `tests/modelviews.test.js` compares the units met, the bars, the exam entries,
 the comeback's units, the start's level, the IMR answer, a class's units and its need over the same runs, and fails a version bump made
 to move nothing or to forget the state version on an answer (mutation checks); `tests/examlooks.test.js` compares
-`examLooks` with the filter of every unit in play.
+`examLooks` with the filter of every unit in play. `tests/drawview.test.js` compares `photoSet` and `varOf` with the
+code before the draw's data view, draw by draw from the same random numbers, on made-up units of every shape with the
+player's records, the photo statistics, the calibration set and the subject's calibration written between draws, and
+fails the statistics written with the player's bump alone; `tests/lvlnext.test.js` compares `spPlay` and `sciPlay`,
+and `tests/levelview.test.js` the achievements' counts, with the code before them.
 
 ## Which unit next
 

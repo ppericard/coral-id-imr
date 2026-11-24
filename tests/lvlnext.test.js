@@ -65,6 +65,7 @@ function pair(GX, photoAny) {
     [
       block(APP, 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const kidsCalc = ', '// The species units in play', {file: 'app.js'}),
       block(APP, 'function spPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       REF,
