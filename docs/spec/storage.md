@@ -68,6 +68,14 @@ subject, group and tab, `-nav-subj`, `-nav-group`, `-nav-tab`). The admin demo p
 
 The service worker's messages to the pages follow the same names (`reefid-ver?`).
 
+**Keys read many times an answer** (REE-263): `sync.js` `keptGet`, `keptBy` and `keptPush` keep a key's parsed value,
+and what is read from it, while its stored text stays the same: `reefid-sheet-v` (`sheetV`), the subject's
+`-start` record (`model.js` `startV`, `imrSaid`), and the answer queues `reefid-log0` and `reefid-anonq` (`quiz.js`
+`logAnswer` and the readers of LOG0 in `quiz.js` and `model.js`, `sync.js` `sendAnon`). Each read still asks the storage
+for the text (`keyGet`) and compares it, so any write, another tab's included, is read at once; the values are those of
+`store.get`. A kept value is shared: only readers that never change it read through `keptGet`. In the smokes,
+`KEPT_CHECK` (`tests/facheck.js`) checks every kept value against a fresh `store.get`.
+
 ## Moving data written under older names
 
 **On a device** (`core.js` `LEGACY_KEYS`, one table read by both `tools/rename_app.py` and the devices):

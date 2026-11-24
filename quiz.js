@@ -913,7 +913,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
     // was played since, not progress an older sign-out left on the device. Only the subject with that baseline (SUBJECTS
     // anonBase) and its own first answer: a fish answer waiting in LOG0 is not a coral one.
-    if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
+    if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(keptGet(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
     // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
     // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
     // against it as a wrong pick does, and the mix-up is counted.
@@ -1327,12 +1327,13 @@ const cvField = () => {
 };
 // An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
 // twice or lost offline; not signed in, it waits on this device (LOG0) and also goes to the sheet anonymously
-// (sync.js sendAnon).
+// (sync.js sendAnon). Both queues written as store.set would, their text kept parsed for the next read (sync.js keptPush).
+// LOG0's readers in this file only read it (keptGet: one parsed copy, not one per reader).
 function logAnswer(ans) {
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
-    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
-    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
+    keptPush(LOG0, ans, 2000);
+    keptPush(ANONQ, ans, 2000);
     anonSoon();
   }
 }
@@ -1792,7 +1793,7 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null), run = true) => {
   let seed = [];
   if (!raw)
     try {
-      seed = ((SYNC && SYNC.log) || store.get(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
+      seed = ((SYNC && SYNC.log) || keptGet(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
     } catch (e) {}
   const st = tipsInit(raw, seed);
   // The log does not say which answers were the Custom quiz's: a saved selection shows it was used before c was counted.
@@ -1801,7 +1802,7 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null), run = true) => {
   let dueled = !!c.u.d;
   if (!dueled)
     try {
-      dueled = ((SYNC && SYNC.log) || store.get(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
+      dueled = ((SYNC && SYNC.log) || keptGet(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
     } catch (e) {}
   const d = dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
   // The view the Custom quiz kept (CQ.VIEW) is the last one the player chose: My mix-ups shows it was seen before m was counted.
@@ -1817,7 +1818,7 @@ const tipRun = st => {
   let k = 0;
   if (st.u.k < TIPR.IDK)
     try {
-      k = tipIdkRun((SYNC && SYNC.log) || store.get(LOG0, []));
+      k = tipIdkRun((SYNC && SYNC.log) || keptGet(LOG0, []));
     } catch (e) {}
   return k > st.u.k ? {...st, u: {...st.u, k}} : st;
 };
