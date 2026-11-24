@@ -23,8 +23,8 @@ test('exhausted: only the parts read to the end with room a new observation fits
   const out =
     J(`P = lambda free, rooms, add, padd, spent, end: {'free': free, 'rooms': rooms, 'add': add, 'phase_add': padd, 'spent': spent, 'end': end}
 print(json.dumps([
-  # Amphiprion clarkii on 2026-11-08: half a photo of free room (nothing new fits), one more photo of a juvenile observation
-  # it held (0.5); its searches not read to the end.
+  # Half a photo of free room (nothing new fits), one more photo of a juvenile observation it held (0.5), the general
+  # searches not read to the end (Amphiprion clarkii's case, REE-278).
   exhausted(P(0.5, {'juvenile': 1}, {'world': 1}, {'juvenile': 1}, {'free': 0, 'juvenile': 0.5}, {'free': False, 'juvenile': True})),
   exhausted(P(3, {}, {}, {}, {'free': 0}, {'free': False})),  # got nothing, the search cut short (GEN_PAGES)
   exhausted(P(4, {}, {'ph': 1}, {}, {'free': 1}, {'free': True})),  # read to the end, 3 left
@@ -42,7 +42,7 @@ row = lambda **parts: {'cap': 40, 'base': 40, 'room': sum(parts.values()), 'part
 rows = {'a': row(free=4.5, juvenile=1), 'b': row(free=4.5), 'c': row(free=3), 'd': row(free=0.5), 'e': row(free=0.5, juvenile=2),
         'f': row(free=2, juvenile=1)}
 rec = lambda **room: {'at': '2026-11-20', 'cap': 40, 'room': room}
-mem = {'a': {'at': '2026-11-08', 'parts': ['free', 'juvenile']},  # Amphiprion clarkii's record, written by the old rule
+mem = {'a': {'at': '2026-11-08', 'parts': ['free', 'juvenile']},  # a record without its room
        'b': rec(free=1), 'c': rec(free=3), 'e': rec(juvenile=2), 'f': rec(free=2)}
 print(json.dumps(pick_short(rows, mem, day)))`);
   // a: a record without its room holds nothing; b: room grown from 1 to 4.5; f: the juvenile room never searched to the
@@ -66,7 +66,7 @@ test('refill offline: a search cut short or a half photo of room is not searched
   w('fish.json', fish);
   w('data/fish-cand.json', C);
   w('cur.json', {});
-  // s3 holds a record of the old rule (a part that got nothing was "searched to the end"), a day old.
+  // s3 holds a record without its room, a day old.
   w('mem.json', {end: {s3: {at: '2026-11-23', parts: ['free']}}});
   execFileSync(
     'python3',

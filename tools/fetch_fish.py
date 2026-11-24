@@ -1270,8 +1270,7 @@ def exhausted(P):
 
 def load_mem(path):
     """The exhaustion records of tools/fish_refill.json. A record without the room its parts had left ("room") holds
-    nothing: it cannot say whether the room grew since, and the rule that wrote it took a part that got nothing for
-    one searched to the end (REE-278)."""
+    nothing: it cannot say whether the room grew since, nor whether its parts were read to their end (REE-278)."""
     try:
         end = json.loads(Path(path).read_text(encoding="utf-8")).get("end") or {}
     except (OSError, ValueError):

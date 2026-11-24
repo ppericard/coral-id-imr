@@ -181,8 +181,8 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   cap now (`pick_short`; a record without `cap` reads as the cap of Q36 alone, so a family floor raised since opens
   it). So a part opened since (a juvenile room), room grown since (the judging pass or Pierre setting photos aside),
   or a cap raised since makes the species eligible again, and new supply on iNaturalist after `RECHECK_DAYS`. A record
-  without `room` holds nothing (`load_mem`; the rule before REE-278 took a part that got nothing for one searched to the
-  end). A species filled loses its record.
+  without `room` holds nothing (`load_mem`: it cannot say whether the room grew, nor whether its parts were read to
+  their end; REE-278). A species filled loses its record.
 - **Judging**: nothing is judged in the workflow (the pass is visual): the new candidates wait in `data/fish-cand.json` for
   the judging pass (`python3 tools/judging_fish.py todo`; the full `tools/brief.py` prints how many wait), whose sure
   decisions the admin's fish auto-sort applies at the next load, then Pierre's Publish (rule A1).
