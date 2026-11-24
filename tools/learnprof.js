@@ -59,10 +59,17 @@
   };
   const EXTRA = ['strongBack', 'spotty'];
   // The default profiles of a subject: those with a part for it, the special ones left out (run them by name).
-  const defaults = subj => Object.keys(PROFILES).filter(n => PROFILES[n][subj] && !EXTRA.includes(n));
+  const defaults = subj => Object.keys(PROFILES).filter(n => partOf(n, subj) && !EXTRA.includes(n));
+  // The part of a profile that plays a subject: its own, else the part of the engine that subject runs on (the sea slugs
+  // are a tree subject on the fish engine, core.js SUBJECTS seaslug: they take the fish part, rule S1: one engine, no
+  // part of their own to keep in step; the fish's families and circles are the slugs' too).
+  const ENGINE = {seaslug: 'fish'};
+  const partOf = (n, subj) => (PROFILES[n] ? PROFILES[n][subj] || PROFILES[n][ENGINE[subj]] || null : null);
   // A profile as a run plays it on a subject: its part, the rate, the names; null if it has no part for the subject.
-  const profOf = (n, subj) =>
-    PROFILES[n] && PROFILES[n][subj] ? {rate: PROFILES[n].rate, names: PROFILES[n].names || 'both', gen: 'lo', ...PROFILES[n][subj]} : null;
+  const profOf = (n, subj) => {
+    const part = partOf(n, subj);
+    return part ? {rate: PROFILES[n].rate, names: PROFILES[n].names || 'both', gen: 'lo', ...part} : null;
+  };
   // A profile's first-launch answer (learnsim --choice auto, the rated world); undefined for the profiles run by name.
   const choiceOf = n => (PROFILES[n] || {}).choice;
   // The slate units a profile (profOf) knows. U: SL the slate in order; group(g) its lecture group (0 for none);
@@ -116,7 +123,7 @@
   }
   // A species unit's know at the start (sp.hi when it knows it, else lo).
   const spKnow = (prof, known, id) => (prof.sp && known.has(id) ? prof.sp.hi : prof.lo);
-  const X = {PROFILES, defaults, profOf, choiceOf, knownUnits, genKnown, knownSpecies, spKnow};
+  const X = {PROFILES, defaults, profOf, partOf, choiceOf, knownUnits, genKnown, knownSpecies, spKnow};
   if (typeof module === 'object' && module.exports) module.exports = X;
   else root.LEARNPROF = X;
 })(this);
