@@ -189,14 +189,15 @@ agreement apart. Whether the thresholds apply to this measure at all is part of 
 All three options store the same record, one per set and photo:
 
 ```
-"review": {"<set id>": {"<photo f>": {"l": {"C1": [0, "<t>"], "C3": [1, "<t>"], "grade": [0, "<t>"]}, "all": 1, "g": 3,
+"review": {"<set id>": {"<photo f>": {"l": {"C1": [0, "<t>"], "C3": [1, "<t>"], "C8": [1, "<t>", "all"], "grade": [0, "<t>"]}, "g": 3,
                                        "w": {"C1": "il est de profil", "": "a word on the photo"}}}}
 ```
 
 `l` holds every line he answered, each with its own time: 1 agree or 0 disagree, then when he gave that answer (Unix
 seconds in base 36, as the auto log's `@t`); a line not in `l` is unanswered. A later answer on another line writes
-only that line's time, so each comparison keeps its own place in the window (§4.3). `all: 1` marks the lines that
-"Agree with all" filled in (they are in `l` as 1), so the page can count one-press and line-by-line agreement apart
+only that line's time, so each comparison keeps its own place in the window (§4.3). A line that
+"Agree with all" filled in carries a third element, `"all"`; a line answered on its own has none, and answering it on
+its own later rewrites it without the mark. So the page can count one-press and line-by-line agreement apart, per line
 (§2.6). `g` is his grade, when he disagreed with the grade line. `w` holds his words, per line, `""` for the photo. What
 the card showed is in the set's file (`data/reviews/<set id>.json`, frozen once written: §2.5, §2.6), so an answer
 needs no copy of it. Every field is written by his click.
