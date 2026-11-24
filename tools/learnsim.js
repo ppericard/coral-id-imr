@@ -24,7 +24,7 @@
 // --live N: N live-game answers on units the path has not opened, before the first question (rule L4: they count and
 // open nothing); --liveoff records them nowhere (the live mode's version 1), the learner taught the same: the two arms of
 // a paired comparison (tools/learncmp.js).
-// --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
+// --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the counters is checked
 // against the scan, and a difference stops the run; the same --out as without it, slower. Every storage value kept
 // parsed (sync.js KEPT_CHECK) is checked against a fresh read too, and every view of the state version read again
 // (app.js VIEW_CHECK: the units in play) against a computation now.
@@ -649,14 +649,9 @@ function play(cfg) {
     prevGood = null;
   const mill = {met: null, asked: null},
     bon = {offer: null, n: 0, q: 0};
-  // The false-alarm table held over one question and the run's reads after it (core.js faArm; docs/LEARNING.md "Long
-  // rated runs: the false-alarm table"), as the rated world does: every bar reads faOf, which otherwise scans every
-  // record of P for each unit, and the app and this loop read the bars of every unit in play several times an answer, so
-  // without it a long run's time per answer grows with its answers (a fish run's most of all). The app's own handler
-  // hold (app.js faHeld) is used, so the app's handlers inside keep this table rather than dropping it when they end;
-  // it is taken on the P in play at each question (a break's P is a new object). The table gives the scan's values to
-  // the last bit; scoreAnswer empties it when it writes P, and nothing else in a run writes the records' conf, off, ty
-  // or the level's tyk. An app without faHeld: armed at each question, as before.
+  // Every bar the app and this loop read takes the page's false-alarm counters (core.js faOf, kept by scoreAnswer;
+  // docs/LEARNING.md "Long runs: the false-alarm counters"): a read is O(1) whatever the run's length, with nothing to
+  // hold. An app from before them held a table over each question (its faHeld, or its faArm), used when the page has it.
   const held = fn => (typeof faHeld === 'function' ? faHeld(fn) : (typeof faArm === 'function' && faArm(P), fn()));
   // One question, as the player sees it (pre: called once it shows, for the breaks).
   const ask = (pre, i = -1, cur = 'quiz') => held(() => {

@@ -140,18 +140,13 @@ function played(profile, seed, N, every, st) {
   for (let i = 0; i < N; i++) {
     pl.step(i);
     if ((i + 1) % every && !few()) continue;
-    C.faArm(ctx.P);
-    try {
-      const up = new Set([...ctx.slateGenera(), ...ctx.bonusList()]),
-        part = new Set([...up].filter(() => r() < 0.5)),
-        base = {score: ctx.genScore, met: ctx.introduced, sp: U.sp, ssp: U.ssp},
-        label = `fish ${profile} ${seed} after ${i + 1}`;
-      same(F, st, {...base, up}, label);
-      same(F, st, {...base, up: part}, label + ', part of the genera in play');
-      same(F, st, {...base, up, on: false}, label + ', off');
-    } finally {
-      C.faDisarm(ctx.P);
-    }
+    const up = new Set([...ctx.slateGenera(), ...ctx.bonusList()]),
+      part = new Set([...up].filter(() => r() < 0.5)),
+      base = {score: ctx.genScore, met: ctx.introduced, sp: U.sp, ssp: U.ssp},
+      label = `fish ${profile} ${seed} after ${i + 1}`;
+    same(F, st, {...base, up}, label);
+    same(F, st, {...base, up: part}, label + ', part of the genera in play');
+    same(F, st, {...base, up, on: false}, label + ', off');
   }
   return pl;
 }

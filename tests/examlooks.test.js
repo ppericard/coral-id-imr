@@ -69,15 +69,8 @@ const sample = (U, G, r, k = Infinity) => {
     pick = k >= others.length ? others : others.filter(() => r() < k / others.length);
   return [...U.slate, ...pick, ...U.slate.slice(0, 3).map(n => n + 'x'), 'g:none', 's:s999', ''];
 };
-// The checks on one state with the false-alarm table armed (core.js faArm: the same values, faster; nothing written).
-function checkAll(A, P, L, label) {
-  C.faArm(P);
-  try {
-    return L.reduce((t, n) => t + (same(A, n, label) ? 0 : 1), 0);
-  } finally {
-    C.faDisarm(P);
-  }
-}
+// The checks on one state (its bars read P's false-alarm counters, core.js faOf; nothing written).
+const checkAll = (A, P, L, label) => L.reduce((t, n) => t + (same(A, n, label) ? 0 : 1), 0);
 
 // A rated-world run of N answers: examLooks checked at every call the play makes (through core.js looksLeft, model.js
 // lookLeft), and on a sample of the units every `every` answers.

@@ -1613,7 +1613,7 @@ async function quizAndProgress(b, base, errs) {
       ok = (c, m) => c || fails.push(m);
     const closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
-    // The answers below read the bars from the false-alarm table (app.js faHeld), each read checked against the scan.
+    // The answers below read the bars from the false-alarm counters (core.js faOf), each read checked against the scan.
     ok(FA_CHECK.on === true, 'FA_CHECK on in the page (tests/facheck.js)');
     // And every storage read kept parsed (sync.js keptGet, keptBy, keptPush) checked against a fresh store.get.
     ok(KEPT_CHECK.on === true, 'KEPT_CHECK on in the page (tests/facheck.js)');

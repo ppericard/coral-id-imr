@@ -520,6 +520,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       () => {
         Object.keys(P).forEach(g => delete P[g]);
         Object.assign(P, M);
+        faDrop(P); // refilled in place: its false-alarm counters made again at the next read (core.js faOf)
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
@@ -724,6 +725,7 @@ function mergeSubject(j, d, S, mine) {
       clockTick(); // before the merge moves the level's count (another device's adoption may have lowered it)
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
+      faDrop(P); // refilled in place: its false-alarm counters made again at the next read (core.js faOf)
       if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
       clockTick(); // and right after: the merged count the clock's baseline
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.

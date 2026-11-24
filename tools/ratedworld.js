@@ -508,18 +508,9 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   const P = () => ctx.P,
     tick = () => (ctx.CLOCK.t += 10000), // each question, quiz or live, 10 s after the one before (engine CLOCK)
     shown = () => (U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score).pct : M.progPct(slate));
-  // One answer with the false-alarm table armed (core.js faArm: the same values, read from one pass over the records
-  // instead of a scan per unit): within it only scoreAnswer writes the records' offers, mix-ups and typed counts.
+  // One answer. Its bars read P's false-alarm counters (core.js faOf: the scan's values, kept by scoreAnswer, so a
+  // read is O(1) whatever the run's length).
   const step = i => {
-    const P0 = ctx.P;
-    C.faArm(P0);
-    try {
-      return play(i);
-    } finally {
-      C.faDisarm(P0);
-    }
-  };
-  const play = i => {
     tick();
     const at = M.answersSoFar(),
       list = ctx.pool();
@@ -744,13 +735,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
           ...(G[t].from ? {from: G[t].from} : {}),
           ...(!ok && G[c] && G[c].from ? {cfrom: G[c].from} : {})
         });
-        C.faArm(P());
-        try {
-          const res = C.scoreAnswer(P(), q);
-          if (M.LIVE_PACE && typeof res.e === 'number') M.holdStep(res.e, ok);
-        } finally {
-          C.faDisarm(P());
-        }
+        const res = C.scoreAnswer(P(), q);
+        if (M.LIVE_PACE && typeof res.e === 'number') M.holdStep(res.e, ok);
         noteRecent(P()[t], ph);
         P()[t].at = ctx.CLOCK.t; // quiz.js answeredAt
         if (!ok) delete P()[t].ex;
