@@ -194,6 +194,7 @@ async function findTheX(b, base, errs) {
       .forEach(n => {
         introAdd([n], false);
         Object.assign(st(n), {ok: 4, ko: 0, h: '1111', th: 1});
+        stateBump();
       });
     closeCards();
     FIND.P = 1;
@@ -358,6 +359,7 @@ async function findTheXSpecies(b, base, errs) {
       closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
     store.set(SHEETV, Math.max(SPECIES_SHEET, SCI_SHEET));
     Q.sci = true;
+    stateBump();
     // every family at Advanced and met: their genera and species come into play, as the scientific names and the
     // species levels open (a unit's bar set through the former moving average, as the other parts of this smoke do)
     [...TREEU.c1, ...TREEU.c2, ...TREEU.c3].forEach(n => {
@@ -367,6 +369,7 @@ async function findTheXSpecies(b, base, errs) {
       delete s.dp;
       delete s.ds;
       s.pg = 0.9;
+      stateBump();
     });
     closeCards();
     dropPlans();
@@ -375,6 +378,7 @@ async function findTheXSpecies(b, base, errs) {
       const L = pool().filter(n => rankOf(n) === 'species');
       introAdd(L, false);
       L.forEach(n => Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1}));
+      stateBump();
       closeCards();
       return L;
     };
@@ -382,6 +386,7 @@ async function findTheXSpecies(b, base, errs) {
     pool()
       .filter(n => rankOf(n) === 'genus')
       .forEach(n => (introAdd([n], false), Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1}), (st(n).pg = 0.9)));
+    stateBump();
     let L = meet();
     L = [...L, ...meet()];
     const by = k => L.filter(n => kindOf(n) === k && UNITS.fish.tiles(n).length),
@@ -941,6 +946,7 @@ async function downTree(b, base, errs) {
   const n = await q.evaluate(() => {
     store.set(SHEETV, SCI_SHEET);
     Q.sci = true;
+    stateBump();
     const F = pool().filter(n => !rankOf(n) && isOpenFam(n)),
       G = sciNow().filter(g => F.includes(GX(g).parent) && photoAny(g)),
       S = sciSpAll().filter(u => G.includes(GX(u).parent) && photoAny(u));
@@ -1278,6 +1284,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
           delete st(n).dp;
           delete st(n).ds;
           st(n).pg = x;
+          stateBump();
         };
       pgAt(0);
       // Before Open Water: the harder photos drawn less often than their share of the entry's photos (the prior and the
@@ -1293,10 +1300,12 @@ async function freshSeed(b, base, errs, seed, fresh) {
       // ability): the harder photos come in.
       pgAt(0.6);
       Object.assign(st(n), {ok: 10, ko: 2, th: 0.5});
+      stateBump();
       let low = 0;
       for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
       ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
       P[n] = s0;
+      stateBump();
     });
     // Juveniles and colour phases on their unit's mastery (docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"): at an entry's start (its bar at 0) no variant photo but its
     // early-class juveniles (model.js varKind, core.js VAR_AT), which do come; past Advanced they all come (no wall),
@@ -1307,6 +1316,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
         s0 = JSON.parse(JSON.stringify(st(n)));
       if (!L.some(p => phaseOf(p))) return;
       P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
+      stateBump();
       let early = 0;
       for (let k = 0; k < 60; k++)
         photoSet(n).shown.forEach(x => {
@@ -1317,11 +1327,13 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(!early, `${n}: ${early} variant photos other than early-class juveniles drawn in its first answers`);
       if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
         P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
+        stateBump();
         let late = 0;
         for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
         ok(late > 0, `${n}: no phase photo past Advanced (a wall)`);
       }
       P[n] = s0;
+      stateBump();
     });
     ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
     // Their card (quiz.js phaseCardFor, phaseShow): a juvenile of a species whose young are sourced as different
@@ -1377,8 +1389,10 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(mimUnit(nM, pM) === m1.fb, `the juvenile's trap: ${mimUnit(nM, pM)}`);
       ok(!adult || mimUnit(nM, adult) === null, 'an adult of the species sets none');
       P[nM] = {ok: 0, ko: 0, th: 0, pg: 0.3};
+      stateBump();
       ok(!duels().length, 'no duel before Open Water: its juveniles held back');
       P[nM] = {ok: 12, ko: 2, th: 1, pg: 0.7};
+      stateBump();
       const pr = duels().find(p => p.mim === 'M1');
       ok(!!pr, 'the pair duels from Open Water once its card was shown');
       if (pr) {
@@ -1414,7 +1428,9 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(/Australian Museum|FishBase|IMR/.test(mix.line), `with their sources (${mix.line})`);
       ok(!other || !mk.some(t => other.line.includes(t)), `another family: no mark of the pair (${other && other.line})`);
       Object.entries(keep).forEach(([n, x]) => (x ? (P[n] = x) : delete P[n]));
+      stateBump();
       P[nM] = s0;
+      stateBump();
     }
     return {fails, gated};
   }, 15);
@@ -1827,6 +1843,7 @@ async function quizAndProgress(b, base, errs) {
       delete s.dp;
       delete s.ds;
       s.pg = x;
+      stateBump(); // a record written here: the views made again (app.js stateBump), as the app's writers do
     };
     ok(
       TREEU.c1.some(n => !asked(n)),
@@ -1838,6 +1855,7 @@ async function quizAndProgress(b, base, errs) {
       'the opening draws circle 1 only'
     );
     TREEU.c1.forEach(n => (st(n).ok = st(n).ok || 1));
+    stateBump();
     ok(TREEU.c2.every(mayOpen) && !TREEU.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
     // The global score, which the sheet ranks by (below the gate floor core.js SHEET_FLOOR), also before any reply.
     ok(headScore() && headPct() === headScore().pct, 'the global score');
@@ -1851,7 +1869,7 @@ async function quizAndProgress(b, base, errs) {
     const cb0 = {...CB},
       pa0 = store.get(PROMPT.KEY, null),
       am = [],
-      amAsk = L => L.forEach(n => asked(n) || (am.push([n, P[n] && {...P[n]}]), (st(n).ok = 1))),
+      amAsk = L => (L.forEach(n => asked(n) || (am.push([n, P[n] && {...P[n]}]), (st(n).ok = 1))), stateBump()),
       amKey = k => subjDev(SUBJ.id, ALLMET.KEY + k);
     CB.r = 0;
     CB.f = 0;
@@ -1908,7 +1926,9 @@ async function quizAndProgress(b, base, errs) {
       );
       localStorage.removeItem(amKey('c3'));
       Object.keys(P).forEach(n => delete P[n]);
+      stateBump();
       Object.assign(P, JSON.parse(Pj));
+      stateBump();
       store.set(PROMPT.KEY, null);
       cb();
     }
@@ -1979,9 +1999,11 @@ async function quizAndProgress(b, base, errs) {
     ok(!picks().some(n => TREEU.c3.includes(n)), 'the opening never draws circle 3 after Not now');
     ok(!openOfferDue(), 'not asked again at once');
     Q.beyondA = tally() - OPEN_AGAIN;
+    stateBump();
     ok(openOfferDue() && openOfferDue().k === 'beyond', 'asked once more OPEN_AGAIN answers later');
     openNo('beyond');
     Q.beyondA = tally() - 10 * OPEN_AGAIN;
+    stateBump();
     ok(Q.beyondN === 2 && !openOfferDue(), 'then never');
     {
       // Its offer will not come back: the card points to My progress.
@@ -1995,6 +2017,7 @@ async function quizAndProgress(b, base, errs) {
       );
     }
     sq === undefined ? delete Q.sci : (Q.sci = sq);
+    stateBump();
     // My progress: the button opens it, as "Open them".
     quizBoard();
     const ob = document.querySelector('#view [data-opens="beyond"]');
@@ -2025,9 +2048,11 @@ async function quizAndProgress(b, base, errs) {
         'all met: every family met, the next step ' + JSON.stringify(ra)
       );
       sq === undefined ? delete Q.sci : (Q.sci = sq);
+      stateBump();
     }
     // Back as it was: the answers, the floor, the prompt spacing, the cards seen.
     am.forEach(([n, s]) => (s ? (P[n] = s) : delete P[n]));
+    stateBump();
     Object.assign(CB, cb0);
     store.set(PROMPT.KEY, pa0);
     ['c3', 'beyond', 'all'].forEach(k => localStorage.removeItem(amKey(k)));
@@ -2040,6 +2065,7 @@ async function quizAndProgress(b, base, errs) {
     ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the families mean');
     ok(headScore().raw > hp && headScore().by[3].entries > 0, 'circle 3 counts in the global score');
     delete P[c3n];
+    stateBump();
     // "I'm at IMR" (the fish welcome answer imr): the IMR-tagged families first within circle 1: the
     // Soapfishes (taught by IMR with the Groupers, no IMR name of their own) wait for them.
     const sk = startKey('fish'),
@@ -2111,18 +2137,21 @@ async function quizAndProgress(b, base, errs) {
       ok(sr && rowState(sr) === 'part', "sci: I'm at IMR, the card's Scientific names row: the IMR genera alone");
       // After a "Not now", a tap on the card's On turns every family's genera on (the offer never comes back).
       Q.sci = false;
+      stateBump();
       quizBoard();
       const on = document.querySelector('#view #wil [data-wil="sci"][data-on="1"]');
       ok(on && on.getAttribute('aria-pressed') === 'false', "sci: I'm at IMR after Not now, On not pressed");
       if (on) on.click();
       ok(Q.sci === true && !Q.sciH && rowState(sr) === 'on', "sci: I'm at IMR, On from the card: the set on, no sciH");
       ['', 'T', 'V', 'H', 'O'].forEach(x => delete Q['sci' + x]);
+      stateBump();
       route();
       learnSet('sci', false);
       ok(!rowOn(sr) && !pool().some(n => GX(n).rank) && !sciUp().has('g:Heniochus'), "sci: I'm at IMR, off on the card: Heniochus out too");
       learnSet('sci', true);
       ok(rowOn(sr) && pool().includes('g:Heniochus'), "sci: I'm at IMR, back on: Heniochus back");
       ['', 'T', 'V', 'H', 'O'].forEach(x => delete Q['sci' + x]);
+      stateBump();
       // EventMeasure is named to an IMR player only: the others read what the names are.
       ok(/EventMeasure/.test(sci.body), 'sci: the offer names EventMeasure for an IMR player');
       pgAt('f:Surgeonfishes', 0.6);
@@ -2165,8 +2194,10 @@ async function quizAndProgress(b, base, errs) {
         'sci: no genus card while a family is not met: ' + gx
       );
       Q.sciH = true;
+      stateBump();
       ok(!setLater(gx), 'sci: on by hand early, nothing waits');
       delete Q.sciH;
+      stateBump();
     }
     // The global score (core.js treeScore) counts a genus: half its bar as its species' scientific credit.
     const hs = headScore(),
@@ -2176,6 +2207,7 @@ async function quizAndProgress(b, base, errs) {
     ok(headScore().raw > hs.raw && headScore().genera > 0 && headScore().S > 0, 'sci: a genus moves the global score');
     if (gs0) P[gb] = gs0;
     else delete P[gb];
+    stateBump();
     ok(headPct() === headScore().pct, 'the headline % is the global score');
     const g0 = pool().find(n => GX(n).rank),
       e0 = 'f:Butterflyfishes';
@@ -2239,6 +2271,7 @@ async function quizAndProgress(b, base, errs) {
     // for now" turns them off, and either answer is never asked again.
     ok(!bonusBackDue(), 'sci: no back card for a choice made now');
     delete Q.sciV;
+    stateBump();
     ok(bonusBackDue() && bonusBackDue().k === 'sci', 'sci: the back card for a choice made before');
     closeCards();
     // Over a question on a genus about to close: the question is replaced once they are closed.
@@ -2272,6 +2305,7 @@ async function quizAndProgress(b, base, errs) {
     learnSet('sci', false);
     ok(Q.sci === false && Q.sciO === true && !pool().some(n => GX(n).rank), 'sci: off from the card, out of the draw');
     delete Q.sciO;
+    stateBump();
     bonusSet(false, 'sci');
     route();
     // The species level, step 1 (docs/reviews/2026-11-14-species-step1.md):
@@ -2325,6 +2359,7 @@ async function quizAndProgress(b, base, errs) {
       learnSet('sp', true);
       ok(rowOn(cr()) && pool().includes(t), 'species: Common names back on, its species back');
       ['', 'T', 'O'].forEach(x => delete Q['sp' + x]);
+      stateBump();
       const ch = distractors(t, pool(), 3);
       ok(ch.length === 3 && ch.every(n => rankOf(n) === 'species'), 'species: its wrong choices are species: ' + ch);
       ok(new Set([t, ...ch].map(choiceKey)).size === 4, 'species: four labels');
@@ -2368,6 +2403,7 @@ async function quizAndProgress(b, base, errs) {
       // the scientific names on and the Spadefishes at Advanced: their genera in play
       const q0 = Q.sci;
       Q.sci = true;
+      stateBump();
       pgAt('f:Spadefishes', 0.9);
       const S2 = SETS().find(S => S.k === 'ssp'),
         v0 = store.get(SHEETV, 0),
@@ -2419,6 +2455,7 @@ async function quizAndProgress(b, base, errs) {
         ok(treeSheets(TREEF).go(t) === 's:' + GX(t).name, 'sci species: its unit opens its species sheet');
       }
       Q.sci = q0;
+      stateBump();
       store.set(SHEETV, v0);
       dropPlans();
       route();
@@ -3284,14 +3321,17 @@ async function uiAndAccess(b, base, errs) {
         x.pg = n === 'f:Butterflyfishes' ? 0.85 : 0.6; // Open Water; the Butterflyfishes at Advanced
       });
       Q.sci = false;
+      stateBump();
       out.inPlay = bonusList().filter(n => GX(n).rank === 'genus').length; // the IMR genera, in play while the set is off
       quizBoard();
       say('off');
       const g = bonusList().find(n => GX(n).rank === 'genus');
       st(g).ok = 1; // one met: its progress shows, in the section
+      stateBump();
       quizBoard();
       say('offMet');
       Q.sci = true;
+      stateBump();
       out.units = SETS()
         .find(S => S.k === 'sci')
         .units().length; // the Butterflyfishes' genera, at Advanced
@@ -3299,10 +3339,13 @@ async function uiAndAccess(b, base, errs) {
       say('on');
       if (q0 === undefined) delete Q.sci;
       else Q.sci = q0;
+      stateBump();
       if (s0 === null) localStorage.removeItem(sk);
       else localStorage.setItem(sk, s0);
       Object.keys(P).forEach(k => delete P[k]);
+      stateBump();
       Object.assign(P, JSON.parse(p0));
+      stateBump();
       quizBoard();
       return out;
     });
@@ -4200,10 +4243,12 @@ async function mainScenarios(b, base, errs) {
         WINK.AT.splice(0, 2, 0, 0);
         const L0 = P['~level'];
         P['~level'] = {...(L0 || {}), ok: 1000};
+        stateBump();
         const w = winkDue();
         WINK.AT.splice(0, 2, ...W0);
         if (L0) P['~level'] = L0;
         else delete P['~level'];
+        stateBump();
         return w && w.n;
       })()
     }));

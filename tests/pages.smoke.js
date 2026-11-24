@@ -1740,6 +1740,7 @@ async function signin(base) {
         // The Scientific names offer answered too: it may come inside these 20 answers (a family at Advanced),
         // and an offer card holds the sign-in card the same way.
         Q.sci = false;
+        stateBump();
         saveQ();
         // The juvenile and colour-phase cards already seen: the first such photo (an angelfish juvenile, early class, can come
         // at any answer) arms its card for the break at Next and that answer gives the sign-in card its turn (quiz.js answer,
@@ -2922,6 +2923,7 @@ async function startSmoke(b, base) {
     await p.evaluate(
       ([n, th]) => {
         P['~level'] = {ok: n - 10, ko: 10, th, at: Date.now()};
+        stateBump();
         location.hash = 'practice/quiz';
       },
       [n, th]
@@ -3539,6 +3541,7 @@ async function tipsCheck(b, base) {
           [L[2], L[3]]
         ].slice(0, n))
           P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        stateBump();
         return L.length;
       }, n);
     {
@@ -4210,6 +4213,7 @@ async function duelReliefCheck(b, base) {
       const aim = await p.evaluate(() => {
         const P0 = JSON.stringify(P);
         ['Pocillopora', 'Stylophora'].forEach(n => (P[n] = {...(P[n] || {}), ok: 10, ko: 2, h: '1101101111', th: 1, pg: 0.5}));
+        stateBump();
         const d = h => {
           HOLDS = h;
           let s = 0;
@@ -4223,6 +4227,7 @@ async function duelReliefCheck(b, base) {
         const r = {off: d(0), on: d(INTRO.HOLD + 3)};
         HOLDS = 0;
         P = JSON.parse(P0);
+        stateBump();
         return r;
       });
       if (!(aim.on < aim.off - 0.05)) fails.push(`${W} the duel's photo not aimed lower with the hold on: ${JSON.stringify(aim)}`);
