@@ -529,6 +529,7 @@ function varRight(n, L) {
   const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
   s.vl = s.vl.filter(g => !got.has(g));
   if (!s.vl.length) delete s.vl;
+  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
@@ -1579,6 +1580,7 @@ function answeredAt(s, good, now = Date.now()) {
     s.dl = d;
   }
   if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
+  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
 }
 function weighted(list) {
   const w = shareW(list, list.map(weight)); // the rank share (SHARE)
@@ -1703,6 +1705,7 @@ function statsJoin(base = PBASE) {
   PGD = join(gdOf(PBASE), 'gd');
   PTM = Object.assign(ptmOf(PBASE.photos, PBASE.v), ...own.map(o => ptmOf(o.photos, o.v)));
   GDIFF = {}; // genus difficulties follow the new photo stats and confusions
+  if (typeof stateBump === 'function') stateBump(); // the photo statistics: an input of the views (app.js)
 }
 statsJoin();
 // The domain-score bar for a subject the sheet does not replay (SUBJECTS replay false: fish; docs/LEARNING.md "The
@@ -1757,6 +1760,7 @@ const mxMarks = () =>
 function mxRecalc(fn, why = 'bkt') {
   const m0 = mxMarks();
   fn();
+  if (typeof stateBump === 'function') stateBump(); // the records recalculated: an input of the views (app.js)
   const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
   // Silent for now (MXL.QUIET): no mxLost, so no card and no achievement taken back.
   if (lost.length && !MXL.QUIET)
@@ -2348,6 +2352,7 @@ domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     INTROS = null;
+    if (typeof stateBump === 'function') stateBump(); // the intro map read again: an input of the views (app.js)
     HOLDS = Number(store.get(HOLDK(), 0)) || 0;
     CB = cbLoad();
     GDIFF = {};
@@ -2357,3 +2362,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     memRecalcAll();
     domRecalcAll();
   });
+// The functions the views read (genScore, introduced, photoAny, imrSaid) are here now: a view made before this file came
+// (app.js stateView) is made again.
+if (typeof stateBump === 'function') stateBump();

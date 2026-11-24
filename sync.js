@@ -523,6 +523,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
+    if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
     clockTick(); // and right after: the log's count the clock's baseline before another answer is counted
     store.set(rvKey(S), rp.rv);
     if (stamp !== null) store.set(stKey(S), stamp); // the structure it was replayed under ('' for the base's)
@@ -678,6 +679,7 @@ function mergeSubject(j, d, S, mine) {
     introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
     P = R;
+    if (typeof stateBump === 'function') stateBump(); // another object: an input of the views (app.js)
     SYNC[BK] = copy(R);
     store.set('reefid-account', SYNC);
     store.set(sKey('reset'), rr);
@@ -722,6 +724,7 @@ function mergeSubject(j, d, S, mine) {
       clockTick(); // before the merge moves the level's count (another device's adoption may have lowered it)
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
+      if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
       clockTick(); // and right after: the merged count the clock's baseline
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
@@ -2302,3 +2305,6 @@ function viewDeleteAccount(h) {
   };
   step1();
 }
+// The functions the views read (speciesOn, generaOn, sciOn, keptBy) are here now: a view made before this file came
+// (app.js stateView) is made again.
+if (typeof stateBump === 'function') stateBump();

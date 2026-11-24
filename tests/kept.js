@@ -36,7 +36,8 @@ function memStorage() {
 
 // A page: {ctx, ls, store, keptGet, keptBy, keptPush, KEPT, KEPT_CHECK}; check: KEPT_CHECK on.
 function keptPage({check = false, ls = memStorage(), extra = {}} = {}) {
-  const ctx = {localStorage: ls, keyGet: C.keyGet, setTimeout: () => 0, ...extra};
+  // store.set bumps the state version for an input's key (app.js STATE_KEYS, stateBump): no input here.
+  const ctx = {localStorage: ls, keyGet: C.keyGet, setTimeout: () => 0, STATE_KEYS: new Set(), stateBump: () => {}, ...extra};
   vm.createContext(ctx);
   vm.runInContext(
     block(read('app.js'), 'const store = {', '\n};\n', {through: 1, file: 'app.js'}) +

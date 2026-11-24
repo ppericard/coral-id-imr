@@ -71,7 +71,8 @@ function run({imr = false, q = {}, sp = true} = {}) {
       block(APP, 'const rowOn = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const rowState = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'function learnSet(k, on) {', '\n}\n', {through: 1, file: 'app.js'}),
-      block(APP, 'const bonusList = ', '\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const bonusCalc = ', '\n', {through: 1, file: 'app.js'}),
+      'const bonusList = bonusCalc;', // the view of the state version (app.js stateView): its computation here
       'this.autoOf = autoOf; this.learnRows = learnRows; this.rowOn = rowOn; this.rowState = rowState; this.learnSet = learnSet; this.bonusList = bonusList;'
     ].join('\n'),
     ctx

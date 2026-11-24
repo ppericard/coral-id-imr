@@ -74,6 +74,7 @@ const server = http.createServer((req, res) => {
         const row = {n, name: GX(n).name, photos: L.length, under: L.filter(x => (x.e || 3) < 4).length, at: []};
         STAGES.forEach(([, st]) => {
           P[n] = JSON.parse(JSON.stringify(st));
+          if (typeof stateBump === 'function') stateBump(); // a record written here: the views made again (app.js)
           let u = 0,
             k = 0;
           const seen = new Set();
@@ -86,6 +87,7 @@ const server = http.createServer((req, res) => {
           row.at.push([u / Math.max(1, k), seen.size]);
         });
         P[n] = keep;
+        if (typeof stateBump === 'function') stateBump();
         rows.push(row);
       });
       return {calib: SUBJ.calib, rows};

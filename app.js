@@ -106,6 +106,80 @@ const IS_ADMIN =
       return true;
     }
   })();
+// The engine's state version (docs/ARCHITECTURE.md "The state version and its views"): one counter, STATE_V, bumped by
+// every write of an input of the views and only by those (stateBump). The inputs: the records P, the quiz settings Q, the
+// intro map and its offer, the first-launch records, the sheet's version, the photo statistics, the data in force (DATA,
+// the tree TREEU, the curation) and the subject. Their writers bump it: store.set of an input's key (STATE_KEYS), the
+// scorer's caller and its writes to the record (quiz.js recordAnswer, model.js answeredAt, varRight), every
+// recalculation (model.js mxRecalc), sync.js's refills of P, a subject switch or visit (subjectLoad, inSubject), a data
+// or tree build (build, treeBuild, treePull, rankPhotos), the statistics joined (model.js statsJoin), a record made (st),
+// a reset, and the files whose functions the views read, as they load (model.js, sync.js). The other keys an answer
+// writes (its queue, the comeback, the pending question, the achievements) are no input and bump nothing. The writers
+// outside this block call it guarded (typeof), as in model.js, quiz.js and sync.js: the unit tests run parts of these
+// files without it.
+let STATE_V = 0;
+const stateBump = () => void STATE_V++;
+// sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names).
+const STATE_KEYS = new Set([
+  ...SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k))),
+  'reefid-sheet-v',
+  'reefid-photo-stats',
+  ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)
+]);
+// Two inputs are read from storage at every use, kept parsed while their text stays the same (sync.js keptBy): the
+// sheet's version (sheetV) and a subject's first-launch record (model.js imrSaid, startV). Their stored text is compared
+// at every read of a view (stateNow), as keptBy compares it, so a write that went round store.set (another tab of the
+// app, a progress file, a test) bumps the version too.
+const STATE_LIVE = ['reefid-sheet-v', ...SUBJECTS.map(S => startKey(S.id))],
+  STATE_RAW = STATE_LIVE.map(() => null);
+function stateNow() {
+  let ch = false;
+  STATE_LIVE.forEach((k, i) => {
+    let raw = null;
+    try {
+      raw = keyGet(localStorage, k);
+    } catch (e) {}
+    if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = true));
+  });
+  if (ch) stateBump();
+  return STATE_V;
+}
+// A view (the units in play: bonusList, pool, sciUp, shareFree): f's value, computed at its first read in a version and
+// read again as it is until the next. f is a function of the inputs alone (no clock, no random number, no planner's
+// memory), so the value kept is the one f would give now; a list keeps its order, so every draw that reads it draws the
+// same. A value is shared, not a copy: its readers never change it. The version is taken before f runs, so a write
+// during f leaves the value to be computed again at the next read.
+// VIEW_CHECK.on (the smokes and tools/learnsim.js --facheck: tests/facheck.js): every read of a kept value computes f
+// again and compares, order included; a difference (an input written with no bump, a reader that changed the shared
+// value) throws, and again in a task of its own, so a reader that catches its errors cannot hide it.
+const VIEW_CHECK = {on: typeof window !== 'undefined' && window.VIEW_CHECK_ON === true};
+const viewItems = v => (v instanceof Set ? [...v] : v);
+const viewSame = (a, b) => {
+  if (a instanceof Set !== b instanceof Set) return false;
+  const x = viewItems(a),
+    y = viewItems(b);
+  return Array.isArray(x) && Array.isArray(y) ? x.length === y.length && x.every((n, i) => Object.is(n, y[i])) : Object.is(x, y);
+};
+function stateView(name, f) {
+  let at = -1,
+    v;
+  return () => {
+    const now = stateNow();
+    if (at !== now) {
+      v = f();
+      at = now;
+      return v;
+    }
+    if (VIEW_CHECK.on && !viewSame(v, f())) {
+      const e = new Error(`state view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
+      setTimeout(() => {
+        throw e;
+      });
+      throw e;
+    }
+    return v;
+  };
+}
 const store = {
   get(k, d) {
     try {
@@ -119,6 +193,7 @@ const store = {
     try {
       localStorage.setItem(k, JSON.stringify(v));
     } catch (e) {}
+    if (STATE_KEYS.has(k)) stateBump(); // an input of the views
   }
 };
 const VIEWS = [
@@ -677,6 +752,7 @@ function build() {
   // the data made (not enumerable: nothing that reads or copies DATA meets it).
   Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
   DATA = d;
+  if (typeof stateBump === 'function') stateBump(); // the data in force: an input of the views
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
 // The content version of subject S's answers (core.js contentVersion) from what its units were made from (cvIn: DATA's,
@@ -1270,8 +1346,9 @@ const sciTop = (L, n) =>
 // The stars among L (sciSpAll): the species whose record carries star (seaslug.json: the stars set, Q369 (c)).
 const sciStars = L => L.filter(u => !!((TREEU && TREEU.sps && TREEU.sps[GX(u).sp]) || {}).star);
 // The units in play a species by its scientific name may hang from (sciPlay up): the slate and the units the other
-// sets have in play (the fish's scientific genera; a sea slug genus is on the slate).
-const sciUp = () =>
+// sets have in play (the fish's scientific genera; a sea slug genus is on the slate). A view of the state version
+// (sciUp, with bonusList below): sciUpCalc computes it.
+const sciUpCalc = () =>
   new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
 // The species by their scientific names, for every subject that asks them (SUBJECTS names 'sci'; UNITS sets: the
 // fish's, the sea slugs'): no offer and no switch of its own (the fish's come with their scientific genera, Q404 A's
@@ -1348,6 +1425,7 @@ const treeBuild = () => {
     configurable: true
   });
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
+  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
   return TREEU;
 };
 // This player's reserve (core.js reserveOf, reserveSplit; docs/LEARNING.md "The reserve in the game"): a few
@@ -1407,6 +1485,7 @@ const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, TREEU: null, TREEP: null, TREEH: null, TREERAW: null, TREEF: null, TREEST: '', TREEON: false});
 function treePull() {
   if (TREE_AT) ({TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON} = treeOf(TREE_AT));
+  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
 }
 function treePush() {
   if (TREE_AT) Object.assign(treeOf(TREE_AT), {TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON});
@@ -1598,6 +1677,7 @@ function rankPhotos() {
     // (seenCover; licences break ties).
     if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, treeSeen, p => photoDiff(n, p), treeSpPick)).f;
   });
+  if (typeof stateBump === 'function') stateBump(); // the tree's photo lists: an input of the views
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
 // questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
@@ -1609,7 +1689,10 @@ function subjectLoad(S, keep) {
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
+  // the subject, its records and settings: inputs of the views (and again after the hooks' own state)
+  if (typeof stateBump === 'function') stateBump();
   SUBJ_HOOKS.forEach(f => f(keep));
+  if (typeof stateBump === 'function') stateBump();
 }
 // fn() run as if S were the current subject, then back (the sync's summary and merge, sign-in, sign-out). Synchronous.
 // SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
@@ -1625,10 +1708,13 @@ function inSubject(id, fn) {
   } finally {
     SUBJ_VISIT--;
     SUBJ = was.S;
+    // the subject on screen back: an input of the views, as its records and settings below
+    if (typeof stateBump === 'function') stateBump();
     if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
+    if (typeof stateBump === 'function') stateBump();
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
@@ -2056,7 +2142,8 @@ const save = () => {
 // The header progress pill (showProg, progress.js): that file comes in tier 4 (index.html), after the quiz on a first
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
-const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
+// A unit's record, made empty at its first use (a record made: an input of the views, stateBump).
+const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump(), P[n]);
 // The false-alarm table (core.js faArm; docs/LEARNING.md "Long rated runs: the false-alarm table") held on P for one
 // synchronous handler that reads the bars (quiz.js answer, quizPhoto, planNext; progress.js achCheck): every bar reads
 // faOf, which otherwise scans every record of P for each unit, so the work of an answer grew with the history. The table
@@ -3054,8 +3141,11 @@ const namesOptsHtml = cur =>
         `<button type="button" class="startopt" data-names="${o.id}" aria-pressed="${o.id === cur}"><b>${esc(o.name)}</b><small>${esc(o.line)}</small></button>`
     )
     .join('')}</div>`;
-// The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once.
-const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
+// The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once. A view of
+// the state version (stateView), computed once per version instead of by each of its readers: bonusCalc computes it.
+const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
+const bonusList = stateView('bonusList', bonusCalc);
+const sciUp = stateView('sciUp', sciUpCalc);
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
 // waits while a slate unit in play is still to open (model.js openPick), unless its set brings it by itself (auto: an
 // IMR player's IMR genera) or the player turned the set on by hand before it was due (Q[k + 'H']). Open all is
@@ -3067,8 +3157,9 @@ const setLater = n => {
 // The units the rank share leaves alone (model.js SHARE): those of a set that opens after the slate (its after) that
 // come in the slate's phase: the ones it brings by itself (auto: an IMR player's IMR genera from their family's Open
 // Water) and all of them once the player turned it on by hand before it was due (Q[k + 'H']). Read once per answer
-// (model.js sharesNow).
-const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+// (model.js sharesNow). A view of the state version (stateView): shareFreeCalc computes it.
+const shareFreeCalc = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+const shareFree = stateView('shareFree', shareFreeCalc);
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
 // answered in a live game before the path opened it, model.js introLive) opens nothing (rule L4). A unit of a part that
@@ -3130,8 +3221,10 @@ const BENTHIC_NOTE =
   "Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate and very common at Dauin, including in ReefCloud photos.";
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
-// (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.)
-const pool = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+// (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.) A view of
+// the state version (stateView): poolCalc computes it.
+const poolCalc = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+const pool = stateView('pool', poolCalc);
 // The plain sentence: one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py), clear for
 // everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before the ID
 // tips and lecture notes, in body text with no label (a muted labelled line above the photo gets skipped). It adds to the
@@ -3940,6 +4033,7 @@ document.getElementById('signb').onclick = e => {
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due, the What I learn rows back
         // to their defaults
         SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
+        if (typeof stateBump === 'function') stateBump(); // the records and settings emptied: inputs of the views
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();

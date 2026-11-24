@@ -258,15 +258,19 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         s.ok = s.ok || 1;
         s.at = t + 1000;
       });
+      stateBump();
       const r = allMetDue(),
         offer = !!openOfferDue(),
         d = r && allMetShow(r),
         out = {r, offer, c3: treeC3(), card: d ? d.textContent : '', kind: d ? d.className : ''};
       if (d) d.ulClose(); // left unseen: not marked
       Object.keys(P).forEach(n => delete P[n]);
+      stateBump();
       Object.assign(P, JSON.parse(keep[0]));
+      stateBump();
       store.set(INTRO.KEY, JSON.parse(keep[1]));
       INTROS = null;
+      stateBump();
       Object.assign(CB, JSON.parse(keep[2]));
       return out;
     });
@@ -1178,6 +1182,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       pool().forEach(n => {
         introAdd([n], false);
         Object.assign(st(n), {ok: 4, ko: 0, streak: 4, h: '1111', th: 1});
+        stateBump();
       });
       closeCards();
       dropPlans();
