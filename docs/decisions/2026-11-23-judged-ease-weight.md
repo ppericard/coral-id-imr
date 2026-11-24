@@ -20,13 +20,16 @@ time"). On held-out players 0.2–0.3 predicted best and 0.5 no better than no p
   (REE-16). 0.3 is the centre of his range.
 - Pierre, 2026-11-24 06:32 Manila, on the sea slugs kept at 0.5: «Et bien c'est un mauvais choix. C'est quoi nos
   règles globales de développement? ça mérite une issue de non respect à la règle ça» (REE-267); 06:33, relayed by the
-  integrator: «idem pour les coraux ou tout autre sujet à venir»; 06:35, relayed: «Tu sur-interprète la règle
-  maintenant! La règle c'est qu'on peut faire des exceptions, des ajustements et des paramétrages par sujet si ils sont
-  justifiés. Ce que je te reproche c'est de ne pas avoir généralisé, et juste décidé de ne traiter les poissons que
-  parce que c'était l'exemple de départ.»
+  integrator: «idem pour les coraux ou tout autre sujet à venir»; 06:35, relayed: «Non !!!! Tu sur-interprète la
+  règle maintenant! La règle c'est qu'on peut faire des exceptions, des ajustements et des paramétrages par sujet si
+  ils sont justifiés. Ce que je te reproche c'est de ne pas avoir généralisé, et juste décidé de ne traiter les
+  poissons que parce que c'était l'exemple de départ.» (docs/ANSWERS.md 2026-11-24).
 - So the weight is one shared default, 0.3, which every subject with a judged ease reads, today's and future ones. A
   subject may still set its own in its `SUBJECTS` `calib`, only as a declared exception with its reason (rule S1);
   none has one today. Measured on one subject's answers is no reason for another subject to differ.
+- Pierre, 2026-11-24 13:50 Manila, relayed by the integrator: «ok» to merging with the simulation's cost not declared
+  before running, and on the bar's early under-claim shrinking (the guardrail E breached in the rated world): «Donc ça
+  va dans le bon sens».
 
 ## Consequences
 
