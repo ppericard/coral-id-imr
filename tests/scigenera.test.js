@@ -272,7 +272,10 @@ test('the gate: the genera of circles 2 and 3 from the sheet that replays them (
   const now = on => {
     const c = {TREEU: X, GX: n => X.gen[n], ...(on === undefined ? {} : {generaOn: () => on})};
     vm.createContext(c);
-    vm.runInContext(block(APP, 'const sciNow = ', ': [];\n', {through: 1, file: 'app.js'}).replace('const sciNow', 'this.sciNow'), c);
+    vm.runInContext(
+      block(APP, 'const sciNowCalc = ', ': [];\n', {through: 1, file: 'app.js'}).replace('const sciNowCalc', 'this.sciNow'),
+      c
+    );
     return plain(c.sciNow());
   };
   assert.deepStrictEqual(now(true), plain(X.sci));

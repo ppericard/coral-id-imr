@@ -210,7 +210,7 @@ test('Fish basics: achSnap reads the subject’s own feat, so fbasics comes with
         GX: () => ({}),
         slateGenera: () => [],
         scaleUnits: () => [],
-        lvStep: () => 0,
+        lvSteps: () => () => 0,
         shownGroup: () => '',
         bonusList: () => [],
         introduced: () => false,

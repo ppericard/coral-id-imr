@@ -20,7 +20,10 @@ const ROOT = path.join(__dirname, '..'),
   CAND = read('data/cand.json').cand,
   R = Object.fromEntries(F.species.map(s => [s.id, s]));
 
-const ctx = {esc: s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c])};
+const ctx = {
+  esc: s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]),
+  stateView: (name, f) => f // app.js's views (the block holds sciNow, which these tests never read): plain computations
+};
 vm.createContext(ctx);
 vm.runInContext(
   block(app, 'const cnList = s =>', '\n};\n', {file: 'app.js', through: 1}) +

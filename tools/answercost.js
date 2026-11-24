@@ -46,9 +46,10 @@ const WATCH = [
   'faOf', 'faScan', 'faTable', 'scoreOf', 'barOf', 'examOpen', 'genScore', 'lvStep', 'level', 'shaky', 'ability', 'abilityOf', 'drawW', 'weight', 'weighted',
   'examOn', 'examReady', 'examLooks', 'lookRev', 'lookLeft', 'looksLeft', 'matesLeft', 'groupsNow', 'groupsOfRank',
   'bonusList', 'pool', 'cbPlay', 'sciUp', 'autoOf',
-  // the units in play are views of the state version (app.js stateView): their readers are closures V8 cannot name, so
-  // the computations are counted (bonusCalc…) and the reads (stateNow, once per read of a view)
-  'bonusCalc', 'poolCalc', 'sciUpCalc', 'shareFreeCalc', 'stateNow', 'spPlay', 'sciPlay', 'sciOpen', 'sciNow', 'lvlNext', 'shareFree', 'sharesNow', 'unlocked',
+  // the units in play, the tree's score and the levels are views of the state version (app.js stateView): their readers
+  // are closures V8 cannot name, so the computations are counted (bonusCalc, headScoreCalc, lvStepCalc…) and the reads
+  // (stateNow, once per read of a view)
+  'bonusCalc', 'poolCalc', 'sciUpCalc', 'shareFreeCalc', 'sciNowCalc', 'headScoreCalc', 'lvTableCalc', 'lvStepCalc', 'lvSteps', 'stateNow', 'spPlay', 'sciPlay', 'sciOpen', 'sciNow', 'lvlNext', 'shareFree', 'sharesNow', 'unlocked',
   'introduced', 'closed', 'asked', 'askedOpen', 'introReady', 'introMap', 'mayOpen', 'treeGate', 'treeC3', 'photoAny', 'GX',
   'headScore', 'headPct', 'progPct', 'treeScore', 'pctOf', 'rustNow', 'recallAt', 'stability', 'genusDiff', 'photoDiff', 'photoSet',
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',
@@ -58,7 +59,7 @@ const WATCH = [
 // functions whose count grew with the state in the study.
 const STUDY = 'fish:50,fish:3000,coral:3000';
 const BUDGETED = ['namedCalls', 'getCalls', 'getChars', 'setChars'];
-const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStep', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV'];
+const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV'];
 // A ceiling never below this many calls, so a function the state does not call today may call a few.
 const FLOOR = 100;
 // The simulated player of the states, as the study's (docs/reviews/2026-11-24-per-answer-cost.md).

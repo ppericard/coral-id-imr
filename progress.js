@@ -159,7 +159,8 @@ function quizBoard() {
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
   // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
-  const st = Object.fromEntries(shown.map(n => [n, lvStep(n)])),
+  const lvAt = lvSteps(), // one read of the levels for the board (model.js lvTable)
+    st = Object.fromEntries(shown.map(n => [n, lvAt(n)])),
     nst = k => list.filter(n => st[n] === k).length;
   let deg = 0;
   const ring = [5, 4, 3, 2, 1, 0]
@@ -372,7 +373,7 @@ function quizBoard() {
 // The two highest levels reached, with their counts, for the card ("3 Divemaster · 12 Open Water"), so early progress
 // shows before anything is learned. From Open Water up; '' before any unit reaches Open Water.
 function lvSummary(list = slateGenera(), icons = true) {
-  const st = list.map(lvStep);
+  const st = list.map(lvSteps());
   return [5, 4, 3, 2]
     .map(k => [k, st.filter(x => x === k).length])
     .filter(([, c]) => c)
@@ -763,15 +764,15 @@ function achRecheck() {
 const achList = () => slateGenera();
 // The species at Advanced or above (lvStep 3) by every kind of name in names (achSnap both), from the units of the sets
 // sets (each unit's kind and species: app.js treeGenera kind, sp); 0 unless names holds two kinds or more. Pure on its
-// inputs and lvStep.
-const achBoth = (sets, names) => {
+// inputs and the levels lv (model.js lvStep, or achSnap's one read of them).
+const achBoth = (sets, names, lv = lvStep) => {
   if (names.length < 2) return 0;
   const by = new Map();
   sets
     .flatMap(S => (S.all ? S.all() : S.units()))
     .forEach(n => {
       const g = (typeof GX === 'function' && GX(n)) || {};
-      if (!g.kind || !g.sp || lvStep(n) < 3) return;
+      if (!g.kind || !g.sp || lv(n) < 3) return;
       if (!by.has(g.sp)) by.set(g.sp, new Set());
       by.get(g.sp).add(g.kind);
     });
@@ -780,17 +781,17 @@ const achBoth = (sets, names) => {
 // The subject's core units (UNITS core: the IMR course's fish families), its circles (UNITS circles: the fish families of
 // circles 1, 2 and 3) and its opt-in sets (UNITS sets: the scientific genera), for the achievements that read them
 // (core.js FISH_ACH): met, at Advanced or above and learned in the core; at Advanced or above in each circle; units at
-// Open Water or above (sets) and at Advanced or above (setsAdv) in each set. pct: the subject's global score when it has
-// one (core.js SUBJECTS score, treeScore over UNITS tree), from the device's progress whatever the sheet's version, else
-// the headline % (over app.js scaleUnits: the corals' 45 genera, rule L6).
+// Open Water or above (sets) and at Advanced or above (setsAdv) in each set. pct: the headline % (model.js headPct): the
+// subject's global score when it has one (core.js SUBJECTS score, treeScore over UNITS tree: model.js headScore), from
+// the device's progress whatever the sheet's version, else the mean over app.js scaleUnits (the corals' 45 genera, rule L6).
 function achSnap(A = store.get(ACHK, {}) || {}) {
-  const L = achList(),
-    st = L.map(lvStep),
+  const lv = lvSteps(), // the levels, one read (model.js lvTable)
+    L = achList(),
+    st = L.map(lv),
     G = P[LEVEL],
     U = UNITS[SUBJ.id],
     C = U.core ? U.core() : [],
-    T = SUBJ.score && U.tree ? U.tree() : null,
-    at = (list, k) => list.filter(n => lvStep(n) >= k).length;
+    at = (list, k) => list.filter(n => lv(n) >= k).length;
   const groups = {},
     byUp = {},
     byTax = {},
@@ -804,20 +805,20 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     met: st.filter(x => x >= 1).length,
     q: [2, 3, 4].map(k => st.filter(x => x >= k).length),
     learned: st.filter(x => x >= 5).length,
-    pct: T ? treeScore(P, T, SUBJ.score).pct : headPct(scaleUnits()),
+    pct: headPct(scaleUnits()), // the global score (model.js headScore: treeScore over T) when the subject has one
     streak: A._best || 0,
     duel: L.some(n => (P[n] || {}).du),
     cor: !!A._cor,
     hard: !!A._hard,
     // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
-    group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
+    group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lv(n) >= 5)),
     bonus: bonusList().filter(introduced).length,
     core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
     circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
     // Its units grouped by the unit above them (GX parent: a sea slug genus's family), those with every unit at Advanced
     // or above (core.js SEASLUG_ACH); 0 for a subject whose units have none (the corals, the fish families).
-    fam: Object.values(byUp).filter(g => g.every(n => lvStep(n) >= 3)).length,
+    fam: Object.values(byUp).filter(g => g.every(n => lv(n) >= 3)).length,
     // Each taxonomic group of the subject's tree (GX tg of a unit's parent, or its own: the sea slugs' taxa), in its
     // number's order: {n, total, met, adv}; [] for a subject without.
     tax: Object.keys(byTax)
@@ -828,7 +829,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     setsAdv: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 3)])),
     // The species named at Advanced or above by every kind of name the subject asks (SUBJECTS names: a fish species by
     // its common and its scientific name, Q262), counted once each (their units' sp); 0 for a subject asking one kind.
-    both: achBoth(U.sets || [], SUBJ.names || []),
+    both: achBoth(U.sets || [], SUBJ.names || [], lv),
     // The subject's top species (UNITS top: the fish's 20 circle-1 species most seen near Dauin, Q261; the sea slugs'
     // stars), each by its scientific name: how many, how many at Advanced or above; null for a subject without.
     top: U.top ? (L => ({total: L.length, adv: at(L, 3)}))(U.top()) : null,
