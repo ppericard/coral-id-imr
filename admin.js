@@ -12510,7 +12510,7 @@ function typedText(R) {
   const tr = trustOf(R),
     out = {n: 0, step: [0, 0], near: [], rej: [0, 0], refused: []},
     N = {},
-    X = {};
+    X = Object.create(null); // keyed by what players typed: constructor, __proto__ (no inherited entry)
   R.forEach(r => {
     if (!r[2] || r[11] === 2 || !tr[r[0]] || fmtOf(r[5], 0) !== 'typed') return;
     out.n++;

@@ -226,6 +226,13 @@ test('typedText: the refused texts (Rejected tries, row 23), trusted typed answe
     ['brain coral', 2],
     ['acro', 1]
   ]);
+  // a text that is a name of Object.prototype counts as any other (what players type is a key)
+  const P = typedText([...R.slice(0, 12), ty('a', ['constructor', '__proto__']), ty('a', ['Constructor', 'toString'])]);
+  assert.deepStrictEqual(P.refused, [
+    ['constructor', 2],
+    ['__proto__', 1],
+    ['tostring', 1]
+  ]);
   const old = typedText(R.map(r => r.slice(0, 23)));
   assert.deepStrictEqual([old.rej, old.refused], [[0, 0], []], 'an older script serves none: nothing shows');
 });
