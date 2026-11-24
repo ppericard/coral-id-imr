@@ -3609,6 +3609,7 @@ async function tipsCheck(b, base) {
           [L[2], L[3]]
         ].slice(0, n))
           P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        faDrop(P);
         stateBump();
         return L.length;
       }, n);
@@ -4281,6 +4282,7 @@ async function duelReliefCheck(b, base) {
       const aim = await p.evaluate(() => {
         const P0 = JSON.stringify(P);
         ['Pocillopora', 'Stylophora'].forEach(n => (P[n] = {...(P[n] || {}), ok: 10, ko: 2, h: '1101101111', th: 1, pg: 0.5}));
+        faDrop(P);
         stateBump();
         const d = h => {
           HOLDS = h;

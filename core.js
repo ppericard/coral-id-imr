@@ -5156,7 +5156,8 @@
     if (!K || !Number.isSafeInteger(op)) return faScan(P, n);
     // A unit no other record names nor offers: its typed chances only, as the scan counts them.
     const v = op > 0 ? Math.min(1, (x ? x[0] : 0) / op) : 0;
-    if (FA_CHECK.on && !Object.is(v, faScan(P, n))) throw new Error(`faOf: the counters give ${v} for ${n}, the scan ${faScan(P, n)}`);
+    if (FA_CHECK.on && !Object.is(v, faScan(P, n)))
+      throw new Error(`faOf: the counters give ${v} for ${n}, the scan ${faScan(P, n)} (a record of P written in place with no faDrop?)`);
     return v;
   }
   // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.

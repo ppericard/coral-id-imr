@@ -265,8 +265,10 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         out = {r, offer, c3: treeC3(), card: d ? d.textContent : '', kind: d ? d.className : ''};
       if (d) d.ulClose(); // left unseen: not marked
       Object.keys(P).forEach(n => delete P[n]);
+      faDrop(P);
       stateBump();
       Object.assign(P, JSON.parse(keep[0]));
+      faDrop(P);
       stateBump();
       store.set(INTRO.KEY, JSON.parse(keep[1]));
       INTROS = null;

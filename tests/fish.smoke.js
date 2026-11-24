@@ -1305,6 +1305,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
       for (let k = 0; k < 400; k++) photoSet(n).shown.forEach(x => (low += (ph(n, x.f).e || 3) < cut ? 1 : 0));
       ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
       P[n] = s0;
+      faDrop(P);
       stateBump();
     });
     // Juveniles and colour phases on their unit's mastery (docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"): at an entry's start (its bar at 0) no variant photo but its
@@ -1316,6 +1317,7 @@ async function freshSeed(b, base, errs, seed, fresh) {
         s0 = JSON.parse(JSON.stringify(st(n)));
       if (!L.some(p => phaseOf(p))) return;
       P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
+      faDrop(P);
       stateBump();
       let early = 0;
       for (let k = 0; k < 60; k++)
@@ -1327,12 +1329,14 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(!early, `${n}: ${early} variant photos other than early-class juveniles drawn in its first answers`);
       if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
         P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
+        faDrop(P);
         stateBump();
         let late = 0;
         for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
         ok(late > 0, `${n}: no phase photo past Advanced (a wall)`);
       }
       P[n] = s0;
+      faDrop(P);
       stateBump();
     });
     ok(easyJ > 0, 'the early-class juveniles come from an entry’s first questions');
@@ -1389,9 +1393,11 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(mimUnit(nM, pM) === m1.fb, `the juvenile's trap: ${mimUnit(nM, pM)}`);
       ok(!adult || mimUnit(nM, adult) === null, 'an adult of the species sets none');
       P[nM] = {ok: 0, ko: 0, th: 0, pg: 0.3};
+      faDrop(P);
       stateBump();
       ok(!duels().length, 'no duel before Open Water: its juveniles held back');
       P[nM] = {ok: 12, ko: 2, th: 1, pg: 0.7};
+      faDrop(P);
       stateBump();
       const pr = duels().find(p => p.mim === 'M1');
       ok(!!pr, 'the pair duels from Open Water once its card was shown');
@@ -1428,8 +1434,10 @@ async function freshSeed(b, base, errs, seed, fresh) {
       ok(/Australian Museum|FishBase|IMR/.test(mix.line), `with their sources (${mix.line})`);
       ok(!other || !mk.some(t => other.line.includes(t)), `another family: no mark of the pair (${other && other.line})`);
       Object.entries(keep).forEach(([n, x]) => (x ? (P[n] = x) : delete P[n]));
+      faDrop(P);
       stateBump();
       P[nM] = s0;
+      faDrop(P);
       stateBump();
     }
     return {fails, gated};
@@ -1926,8 +1934,10 @@ async function quizAndProgress(b, base, errs) {
       );
       localStorage.removeItem(amKey('c3'));
       Object.keys(P).forEach(n => delete P[n]);
+      faDrop(P);
       stateBump();
       Object.assign(P, JSON.parse(Pj));
+      faDrop(P);
       stateBump();
       store.set(PROMPT.KEY, null);
       cb();
@@ -2052,6 +2062,7 @@ async function quizAndProgress(b, base, errs) {
     }
     // Back as it was: the answers, the floor, the prompt spacing, the cards seen.
     am.forEach(([n, s]) => (s ? (P[n] = s) : delete P[n]));
+    faDrop(P);
     stateBump();
     Object.assign(CB, cb0);
     store.set(PROMPT.KEY, pa0);
@@ -2065,6 +2076,7 @@ async function quizAndProgress(b, base, errs) {
     ok(progPct() > pct && progPct() === progPct(slateGenera()), 'circle 3 counts in the families mean');
     ok(headScore().raw > hp && headScore().by[3].entries > 0, 'circle 3 counts in the global score');
     delete P[c3n];
+    faDrop(P);
     stateBump();
     // "I'm at IMR" (the fish welcome answer imr): the IMR-tagged families first within circle 1: the
     // Soapfishes (taught by IMR with the Groupers, no IMR name of their own) wait for them.
@@ -2207,6 +2219,7 @@ async function quizAndProgress(b, base, errs) {
     ok(headScore().raw > hs.raw && headScore().genera > 0 && headScore().S > 0, 'sci: a genus moves the global score');
     if (gs0) P[gb] = gs0;
     else delete P[gb];
+    faDrop(P);
     stateBump();
     ok(headPct() === headScore().pct, 'the headline % is the global score');
     const g0 = pool().find(n => GX(n).rank),
@@ -3343,8 +3356,10 @@ async function uiAndAccess(b, base, errs) {
       if (s0 === null) localStorage.removeItem(sk);
       else localStorage.setItem(sk, s0);
       Object.keys(P).forEach(k => delete P[k]);
+      faDrop(P);
       stateBump();
       Object.assign(P, JSON.parse(p0));
+      faDrop(P);
       stateBump();
       quizBoard();
       return out;
