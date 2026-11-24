@@ -47,15 +47,15 @@ NEW_COUNT = "1sokx"
 # ventral view v (at most 3, views3), light g or d only, no count m, the flag f (capping nothing). Both rubrics cap a
 # partial animal (part4) and the views of views4 at 4, and in a typical-look group (typical_look) the tags of `typical`
 # cap nothing; the sea slugs' dorsal view is a good view, so it is not in their views4
-# (docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md). blur2 is the clarity capped at 2: the fish's b
-# (docs/decisions/2026-11-19-fish-rubric-gold-set.md), none for the sea slugs. A juvenile (j) caps nothing in either
-# rubric (docs/decisions/2026-11-19-fish-juvenile-no-cap.md). No sea slug group is typical-look:
+# (docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md). blur2 is the clarity capped at 2, b (strong blur) in both
+# rubrics (docs/decisions/2026-11-19-fish-rubric-gold-set.md, docs/decisions/2026-11-24-sea-slug-blur-cap-as-the-fish.md).
+# A juvenile (j) caps nothing in either rubric (docs/decisions/2026-11-19-fish-juvenile-no-cap.md). No sea slug group is typical-look:
 # tools/judging_fish.py passes them no teaching entry.
 RUBRICS = {
     "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "", "views4": "htd", "part4": True,
              "blur2": "b", "typical": "0c"},
     "seaslug": {"code": re.compile(r"^([pohtdv])([01])([gd])([0-3])([smb])([lms])([1sokx])([jcawf]*)([1-5])$"),
-                "flags": "jcawf", "count": NEW_COUNT, "views3": "v", "views4": "ht", "part4": True, "blur2": "",
+                "flags": "jcawf", "count": NEW_COUNT, "views3": "v", "views4": "ht", "part4": True, "blur2": "b",
                 "typical": "0c"},
 }
 
@@ -117,8 +117,8 @@ def cap(code, phase, rep=None, subject="fish", typical=False):
     A juvenile (flag j) caps nothing (Q435). rep: the photo's `rep` (a reference source shows it for the species:
     FishBase's main picture, iNaturalist's taxon photo), which adds the flag r and never changes the ease (one judgement
     per photo, whatever its route in).
-    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": a dorsal view caps nothing, strong blur
-    neither (blur2), a ventral view at most 3, a partial animal and a head-on or rear view at most 4 as the fish's.
+    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": a dorsal view caps nothing, a ventral view at
+    most 3, strong blur at most 2, a partial animal and a head-on or rear view at most 4 as the fish's.
     typical: the photo's family has the typical look (typical_look: buried or camouflaged is how it is seen), so the
     rubric's `typical` tags (the fish's partial 0 and camouflage c) cap nothing (Q456, Pierre, 2026-11-23)."""
     R = RUBRICS[subject]

@@ -19,7 +19,7 @@ const J = code =>
     })
   );
 
-test('the sea slug rubric: the fish code shape; a dorsal view caps nothing, a ventral one 3, head-on and partial 4; juveniles, f and w cap nothing', () => {
+test('the sea slug rubric: the fish code shape; a dorsal view caps nothing, strong blur 2, a ventral one 3, head-on and partial 4; juveniles, f and w cap nothing', () => {
   const out = J(`from fish_judge import cap, with_flag, RUBRICS
 S = lambda c: list(cap(c, False, subject='seaslug'))
 F = lambda c: list(cap(c, False))
@@ -48,7 +48,7 @@ print(json.dumps({
     [2, 'd1g3sl1'],
     [2, 'd1g0slx'],
     [5, 'd1d0sl1'], // dim light: a mild shortfall the judge reads, no cap
-    [5, 'd1g0bl1'] // strong blur: the fish's cap only (judging/FISH.md "Strong blur"; Pierre reviewed fish)
+    [2, 'd1g0bl1'] // strong blur: at most 2, as the fish's (docs/decisions/2026-11-24-sea-slug-blur-cap-as-the-fish.md)
   ]);
   assert.deepStrictEqual(
     out.fish,
