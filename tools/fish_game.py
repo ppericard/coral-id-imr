@@ -107,9 +107,9 @@ FB_TRIES, FB_PAUSE = 4, 5.0  # FishBase answers 500 at times: up to 4 tries, 5 s
 # The minimum of very easy photos per circle-1 entry (at least MIN photos of ease EASY or more; tools/fish_judge.py WANT
 # and EARLY), for --plan's count of the entries short of them.
 MIN, EASY = 5, 4
-# The average size of one photo's four files on R2 (a sample of 24 iNaturalist photos: 226 + 93 + 32 + 10 KB), for
-# --plan's volume estimate.
-KB_PER_PHOTO = 361
+# The average size of one fish photo's four files on R2, measured over the bucket's listing (237 kB;
+# docs/reviews/2026-11-24-photo-capacity.md), for --plan's volume estimate.
+KB_PER_PHOTO = 237
 # The tile: a TILE px square WebP at TILE_Q, the box plus MARGIN of its longer side on each side; kept when the box's
 # longer side fills at least FILL of the square and the box is at least RES px wide in the original. TILE_KB: the size
 # of one tile file, for --plan (a mean of 15.2 KB over 76 tiles).
