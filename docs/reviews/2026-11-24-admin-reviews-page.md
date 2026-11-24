@@ -171,9 +171,10 @@ About 20 photos a week, drawn from **decisions already applied**, so nothing wai
     camouflage flags), the phase, the crop, and the ease as the grade line.
   - If Pierre adopts the nine criteria of «What makes a 5» for an ease of 5 (the reference-poses note's question b),
     the sample shows those for fish and sea slugs instead.
-- **The snapshot**: when he answers a photo of a weekly set, the same click writes what the card showed (the decision,
-  the lines and their marks) into that photo's answer (§3). An answer is then compared with what he saw, not with a
-  judgement re-run since, and nothing is written without a click of his.
+- **The snapshot**: his first answer on a photo of a weekly set writes what the card showed (the decision, the lines
+  and their marks) into that photo's answer (§3), and it never changes after that. From then on the card shows the
+  snapshot, not a judgement re-run since, so every line he answers on that photo, then or later, is about the same
+  values, and every comparison is with what he saw. Nothing is written without a click of his.
 - **Unanswered weeks** fold away when the next one opens. The lines he answered stay counted. Nothing piles up: there
   is never more than one open sample.
 
@@ -196,7 +197,8 @@ All three options store the same record, one per set and photo:
 `l` holds every line he answered: 1 agree, 0 disagree; a line not in `l` is unanswered. `all: 1` marks the lines that
 "Agree with all" filled in (they are in `l` as 1), so the page can count one-press and line-by-line agreement apart
 (§2.6). `g` is his grade, when he disagreed with the grade line. `w` holds his words, per line, `""` for the photo. `s`
-is the snapshot of what the card showed, for a weekly set only (§2.6). `t` is when he answered. Every field is written
+is the snapshot of what the card showed at his first answer, for a weekly set only, written once and never replaced
+(§2.6). `t` is when he answered. Every field is written
 by his click.
 
 | | **A. A part of `curation.json`, sent by Publish** | **B. A separate file in the repository, written by Publish** | **C. The sync sheet** |
