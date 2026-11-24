@@ -66,6 +66,7 @@ const server = http.createServer((req, res) => {
   const out = await p.evaluate(
     ({ENTRIES, STAGES, DRAWS, CALIB}) => {
       Object.assign((SUBJ.calib = {...(SUBJ.calib || {})}), CALIB);
+      if (typeof stateBump === 'function') stateBump(); // the subject's calibration: an input of the data views (app.js)
       const rows = [];
       ENTRIES.forEach(n => {
         if (!GX(n)) return;

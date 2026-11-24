@@ -69,6 +69,11 @@ const WATCH = [
   // are closures V8 cannot name, so the computations are counted (bonusCalc, headScoreCalc, lvStepCalc…) and the reads
   // (stateNow, once per read of a view)
   'bonusCalc', 'poolCalc', 'sciUpCalc', 'shareFreeCalc', 'sciNowCalc', 'headScoreCalc', 'lvTableCalc', 'lvStepCalc', 'lvSteps', 'stateNow', 'spPlay', 'sciPlay', 'sciOpen', 'sciNow', 'lvlNext', 'shareFree', 'sharesNow', 'unlocked',
+  // the views of the units met, the bars, the exam entries, the comeback, the start, a level's units and need, the rank
+  // classes, the look-alike index (stateView, stateViewBy, dataView, dataViewBy: their reads go through stateNow, and
+  // dataNow for a data view), and the photo draw's data, the parents' lists and the named species (data views)
+  'dataNow', 'metCalc', 'introducedCalc', 'genScoreCalc', 'examOnCalc', 'cbPlayCalc', 'cbGeneraCalc', 'startPCalc', 'imrSaidCalc', 'lvlAllCalc', 'lvlNeedCalc',
+  'lookRevCalc', 'rankClassesCalc', 'kindRankCalc', 'setMapCalc', 'drawPhotosCalc', 'kidsCalc', 'sciKidsCalc', 'achNamedCalc', 'achBoth', 'varOf', 'calSd', 'calBonus', 'setBonus', 'nAnswers', 'refLevel', 'varKindOf',
   'introduced', 'closed', 'asked', 'askedOpen', 'introReady', 'introMap', 'mayOpen', 'treeGate', 'treeC3', 'photoAny', 'GX',
   'headScore', 'headPct', 'progPct', 'treeScore', 'pctOf', 'rustNow', 'recallAt', 'stability', 'genusDiff', 'photoDiff', 'photoSet',
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',
@@ -82,7 +87,9 @@ const SUBJECTS = ['fish', 'coral', 'seaslug'];
 const HISTORIES = [50, 500, 3000];
 const STATES = SUBJECTS.flatMap(s => HISTORIES.map(n => `${s}:${n}`)).join(',');
 const BUDGETED = ['namedCalls', 'getCalls', 'getChars', 'setChars'];
-const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV'];
+// The computations of the views whose count grows with the state when a version is lost (metCalc, genScoreCalc,
+// examOnCalc, lvlNeedCalc: once a version, per unit or class; drawPhotosCalc: once a data version per unit drawn).
+const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV', 'metCalc', 'genScoreCalc', 'examOnCalc', 'lvlNeedCalc', 'drawPhotosCalc'];
 // A ceiling never below this many calls, so a function the state does not call today may call a few.
 const FLOOR = 100;
 // The simulated player of the states, as the study's (docs/reviews/2026-11-24-per-answer-cost.md).

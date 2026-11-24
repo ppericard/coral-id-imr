@@ -1183,19 +1183,34 @@ const metCount = (L, met) => {
   let m = -1;
   return () => (m < 0 ? (m = L.filter(met).length) : m);
 };
-// The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
-// met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
-// often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
-function spPlay(L, score, met, on) {
-  if (!on) return [];
+// The units of a level's list L by their parent (spPlay, sciPlay): [parent, its units in L's order], the parents in the
+// order of their first unit. A view of the data version per list (the tree's TREEU.spl, TREEU.ssl; computed where a part
+// of this file runs alone): each call went through the whole list. Its readers never change a list.
+const kidsCalc = L => {
   const by = new Map();
   L.forEach(n => {
     const p = GX(n).parent;
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
+  return [...by];
+};
+const kidsOf = typeof dataViewBy === 'function' ? dataViewBy('kidsOf', kidsCalc) : kidsCalc;
+// sciPlay's lists: each parent's units of L (kidsOf) in its species order (its record's species), a view of the data
+// version per list as kidsOf.
+const sciKidsCalc = L =>
+  kidsOf(L).map(([p, U]) => {
+    const ord = (GX(p) || {}).species || [];
+    return [p, [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp))];
+  });
+const sciKids = typeof dataViewBy === 'function' ? dataViewBy('sciKids', sciKidsCalc) : sciKidsCalc;
+// The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
+// met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
+// often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
+function spPlay(L, score, met, on) {
+  if (!on) return [];
   const m = metCount(L, met);
-  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
+  return kidsOf(L).flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
 }
 // The species by their scientific names in play (the ssp set; docs/reviews/2026-11-18-species-step2-plan.md §2.3): from L
 // (TREEU.ssl), for each parent (their genus) in play now (up: the slate and the other sets' units in play) and at its
@@ -1207,18 +1222,10 @@ function spPlay(L, score, met, on) {
 // (sciSpOn, rule D4); off, none.
 function sciPlay(L, score, met, up, on) {
   if (!on) return [];
-  const by = new Map();
-  L.forEach(n => {
-    const p = GX(n).parent;
-    if (!by.has(p)) by.set(p, []);
-    by.get(p).push(n);
-  });
   const m = metCount(L, met);
-  return [...by].flatMap(([p, U]) => {
+  return sciKids(L).flatMap(([p, O]) => {
     if (!up.has(p)) return [];
-    const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1],
-      ord = GX(p).species || [],
-      O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp));
+    const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1];
     return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, m(), met) : [])];
   });
 }

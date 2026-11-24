@@ -341,7 +341,10 @@ function play(cfg) {
     ACHT = cfg.ach,
     BEYOND = cfg.beyond;
   // The subject's draw calibration overridden (--calib), and the corals' bonus genera only on the corals (--subject).
-  if (cfg.calib && Object.keys(cfg.calib).length) SUBJ.calib = {...(SUBJ.calib || {}), ...cfg.calib};
+  if (cfg.calib && Object.keys(cfg.calib).length) {
+    SUBJ.calib = {...(SUBJ.calib || {}), ...cfg.calib};
+    if (typeof stateBump === 'function') stateBump(); // the subject's calibration: an input of the data views (app.js)
+  }
   const BON = SUBJ.id === 'coral' && typeof BONUS !== 'undefined' ? BONUS : [];
   // The fish surprise questions (quiz.js winkDue, from answer 300) count in nothing: left out of the measured path.
   if (typeof winkDue === 'function') winkDue = () => null;
@@ -394,6 +397,7 @@ function play(cfg) {
       })
     );
     PSTAT = ps;
+    if (typeof stateBump === 'function') stateBump(); // the photo statistics: an input of the data views (app.js)
   }
   const trueD = (t, p) =>
     tg ? GEN_D[p.f] ?? muOf(t) : truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p);

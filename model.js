@@ -173,6 +173,44 @@ function leastRecent(L, photosOf, ages = seenAges()) {
   const m = Math.max(...ag);
   return L.filter((x, i) => ag[i] === m);
 }
+// The draw's data of unit n (photoSet), what depends on the data alone: the photos each view it needs may show, and each
+// photo's values. The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up.
+// Except for a genus with a single IMR growth form: the form is no question there, so the photo still works as a colony.
+// Bonus genera: Research Grade only (gamePhotoOk). A two-level genus's close-ups may still sit in "medium" (extra genera
+// from tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is
+// reachable. Each photo's values (d, by the photo object): its difficulty (d: photoDiff), its targeting's width (sd:
+// calSd), the calibration's factors (cb: calBonus; sb: setBonus), whether it is a reference-level photo (ref: refLevel),
+// its variant kind (k: varKindOf on its home's juvenile classes) and its mimicry entry (m: mimIn, varOf). A view of the
+// data version per unit (drawPhotos; computed where a part of this file runs alone): every draw on the unit weighed each
+// photo again, several times a draw. The player's part (the target, the memory, the ramps) stays in photoSet.
+const drawPhotosCalc = n => {
+  const g = GX(n),
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
+    oneForm = imrFormsOf(n).length === 1,
+    calu = calU(),
+    home = GX(varHome(n)) || {},
+    pics = {},
+    d = new Map();
+  for (const v of need) {
+    pics[v] = [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])].filter(
+      p => (v !== 'wide' || p.form !== 'x' || oneForm) && gamePhotoOk(n, p)
+    );
+    for (const p of pics[v])
+      if (!d.has(p))
+        d.set(p, {
+          d: photoDiff(n, p),
+          sd: calSd(p, calu),
+          cb: calBonus(p),
+          sb: setBonus(p),
+          ref: refLevel(p),
+          k: varKindOf(p, home.juv),
+          m: home.mim ? mimIn(home.mim, p) : null
+        });
+  }
+  return {pics, d};
+};
+const drawPhotos = typeof dataViewBy === 'function' ? dataViewBy('drawPhotos', drawPhotosCalc) : drawPhotosCalc;
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
@@ -183,19 +221,10 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
-  // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up. Except for a
-  // genus with a single IMR growth form: the form is no question there, so the photo still works as a colony.
-  const oneForm = imrFormsOf(n).length === 1,
-    ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
-  // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
-  // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
-  const gameOk = p => gamePhotoOk(n, p);
+  // The unit's photos by view and each photo's data values (drawPhotos), read once for the whole draw.
+  const {pics: base, d: D} = drawPhotos(n);
   // all: every photo the unit may show, before keep (the variants' count of observations at full weight, below).
-  const pics = (v, all = false) =>
-    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
-      .filter(ok(v))
-      .filter(gameOk)
-      .filter(p => p.f !== skip && (all || !keep || keep(p)));
+  const pics = (v, all = false) => base[v].filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   // The calibration set's factor (setBonus, in w below) holds to the same condition, and to a photo within one width of
@@ -208,7 +237,6 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     ro = s.ro || [],
     // The subject's calibration, read once for the whole draw (calibOf builds a new object; w reads it per photo).
     cal = calibOf(SUBJ),
-    calu = cal.u ?? CAL.U,
     // The start's lean (SUBJECTS calib early): the target sits `early` logits lower on a unit with few answers, so the
     // easy photos come first, fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals.
     lean = cal.early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
@@ -220,7 +248,8 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   // with fewer than PICKD.VARIETY observations at full weight among all its photos (keep aside).
   const V = varOf(
     n,
-    need.flatMap(v => pics(v, true))
+    need.flatMap(v => pics(v, true)),
+    D
   );
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
@@ -229,15 +258,16 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     hard = () => 0;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
-    const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
+    const e = D.get(p),
+      x = (e.d + off - tgt) / e.sd,
       k = mem[p.o || p.f];
-    let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
+    let r = Math.exp((-x * x) / 2) * e.cb * (held && Math.abs(x) <= 1 ? e.sb : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
     // come first. A reference-level photo never seen (core.js refLevel: judged ease 4 or 5 with the reference look,
     // whatever its source) weighs the subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1 for the
     // corals), whoever took it: no photo weighs more for its source (rule P1).
-    if (!k) r *= (1 + 1.5 * hot) * (refLevel(p) ? cal.ref : 1);
+    if (!k) r *= (1 + 1.5 * hot) * (e.ref ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     if (V.on) r *= V.f(p);
     return hardF < 1 ? r * (1 - hard(p) * (1 - hardF)) : r;
@@ -341,7 +371,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const has = need.filter(v => (o[v] || []).length);
   if (single || has.length === 1) {
     // A calibration question shows the view whose photo the players have answered least.
-    const v = !has.length ? null : calQ ? wpick(has, x => Math.max(...o[x].map(p => w(p) * calBonus(p) ** 2))) : pick(has);
+    const v = !has.length ? null : calQ ? wpick(has, x => Math.max(...o[x].map(p => w(p) * D.get(p).cb ** 2))) : pick(has);
     if (v) {
       const p = one(v);
       return {shown: [{...p, view: lab(v)}], hint: null, reveal: has.filter(x => x !== v).map(x => ({...pick(o[x]), view: lab(x)}))};
@@ -404,25 +434,29 @@ const mimAt = (m, n) => (m.m.some(id => id !== n && id !== varHome(n) && GX(id) 
 // The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
 // kind's ramp on the unit's bar (genScore), a photo of the mimicry class its own ramp (mimOf, mimAt), 1 for a photo with
 // no variant; on, whether anything is held back: false when nothing is, or when fewer than PICKD.VARIETY observations of L
-// are at full weight (the fallback: nothing held back, f then 1 everywhere).
-function varOf(n, L) {
+// are at full weight (the fallback: nothing held back, f then 1 everywhere). D: the draw's data of n (drawPhotos d),
+// whose kind and mimicry entry a photo of it takes from there; any other photo computes them.
+function varOf(n, L, D = null) {
   const juv = (GX(varHome(n)) || {}).juv,
     F = {},
     ML = (GX(varHome(n)) || {}).mim,
     MF = new Map(),
     kind = p => varKindOf(p, juv),
     f0 = p => {
-      const m = ML ? mimIn(ML, p) : null;
+      const e = D && D.get(p),
+        m = e ? e.m : ML ? mimIn(ML, p) : null;
       if (m && !m.m.includes(n)) {
         if (!MF.has(m)) MF.set(m, varRamp(genScore(n), mimAt(m, n)));
         return MF.get(m);
       }
-      const v = kind(p);
+      const v = e ? e.k : kind(p);
       if (!v) return 1;
       if (!(v in F)) F[v] = varRamp(genScore(n), varAtOf(n, v));
       return F[v];
     };
-  const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
+  // Each photo's factor computed once: some held back, and enough observations at full weight.
+  const fs = L.map(f0),
+    on = fs.some(x => x < 1) && new Set(L.filter((p, i) => fs[i] >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
   return {on, kind, f: on ? f0 : () => 1};
 }
 // The mimicry class drilled (docs/LEARNING.md "The mimicry class"). mimUnit: on a question about unit t, the unit at t's
