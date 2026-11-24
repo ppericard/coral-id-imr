@@ -217,7 +217,7 @@ put(queries(601)['world'], [ob(20, lic='cc0', ll=(27.9, 34.3), inph=False), ob(2
 put(queries(602)['ph'], [ob(30), ob(31, an=[(1, 8)]), ob(32), ob(33), ob(34), ob(35, an=[(1, 8), (1, 7)])])
 put(phase_query('juvenile', [602], 'ph'), [ob(31, an=[(1, 8)], tx=[602, 60])], FIELDS + ',taxon.ancestor_ids')
 put(phase_query('juvenile', [602], 'world'), [], FIELDS + ',taxon.ancestor_ids')
-# Pierre's own search, asked for every species with room for his: none here (his own: the next test).
+# Pierre's own search, asked for every species, full or not: none of his here (his own: the next tests).
 put(queries(601)['own'], [])
 put(queries(602)['own'], [])
 json.dump(c, open(d + '/cache.json', 'w'))`,
@@ -268,7 +268,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, on top of a full list up to max, in the target on a new one; --own asks nothing else", () => {
+test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, on top of a full list, in the target on a new one; --own asks nothing else", () => {
   const dir = mkTmp('slugown-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
@@ -344,6 +344,88 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run('cache2.json');
   assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test("Pierre's own come in whatever the room and the ceiling max, every photo (REE-252): a full list takes all of his and no one else's; pick takes his at room 0", () => {
+  const out = J(`${OBS}
+from collections import Counter
+P = 'ppericard'
+mk = lambda: [usable(o, EGG) for o in (ob(1), ob(2, u=P, n=3), ob(3, u=P, g='needs_id', n=2), ob(4, u=P, lic=[None]), ob(5))]
+r = lambda room: [[o['id'], len(o['P']), o['cost']] for o in pick(mk(), room, Counter(), set(), Counter())]
+print(json.dumps([r(0), r(1), sorted(r(4))]))`);
+  const his = [
+    [2, 3, 2],
+    [3, 2, 1.5],
+    [4, 1, 1]
+  ];
+  const mine = L => L.filter(([id]) => [2, 3, 4].includes(id)).sort((a, b) => a[0] - b[0]);
+  assert.deepStrictEqual(mine(out[0]), his, 'room 0: all three of his observations, every photo');
+  assert.strictEqual(out[0].length, 3, 'and no one else’s');
+  assert.deepStrictEqual(mine(out[1]), his);
+  assert.strictEqual(out[1].length, 3);
+  assert.deepStrictEqual(mine(out[2]), his);
+  assert.strictEqual(out[2].length, 3, 'room 4 is spent by his 4.5: nothing left');
+
+  const dir = mkTmp('slugown2-');
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(
+    at('src.json'),
+    JSON.stringify({
+      photoTarget: {...T, candidates: 2, max: 3, perJuvenileForm: 0, juvenile: {}},
+      species: [{name: 'Slugus fullus', inat: 701, circle: 1}]
+    })
+  );
+  const old = i => ({
+    f: `seaslug-701-cand-${i * 10}`,
+    a: '(c) x',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: 'Slugus fullus',
+    own: false,
+    loc: 'ph',
+    src: 'x',
+    r: 1
+  });
+  // The list is full (2 = its target) and past nothing: his 4 observations (9 photos, 6 of room) go over max (3) all the same.
+  fs.writeFileSync(at('data/cand.json'), JSON.stringify({v: 1, cand: {701: [801, 802].map(old)}}));
+  py(
+    `${OBS}
+from fetch_fish import API, FIELDS, queries
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+P = 'ppericard'
+Q = queries(701)
+put(Q['own'], [ob(901, u=P, n=4), ob(902, u=P, n=3), ob(903, u=P, g='needs_id'), ob(904, u=P)])
+# Others: not asked at all on a full list (offline would stop on it), and never taken.
+put(Q['ph'], [ob(911), ob(912)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const run = () =>
+    execFileSync(
+      'python3',
+      ['tools/fetch_seaslugs.py', '--offline', '--src', at('src.json'), '--cand', at('data/cand.json'), '--cache', at('cache.json')],
+      {
+        cwd: ROOT,
+        encoding: 'utf8'
+      }
+    );
+  run();
+  const C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand['701'];
+  const ids = C.map(p => +p.o.split('/').pop());
+  assert.deepStrictEqual(ids.slice(0, 2), [801, 802], 'nothing removed');
+  assert.deepStrictEqual(
+    ids.slice(2).sort(),
+    [901, 901, 901, 901, 902, 902, 902, 903, 904],
+    'every photo of every observation of his, over max (3)'
+  );
+  assert.ok(!ids.includes(911) && !ids.includes(912), 'no one else’s on a full list');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
+  run();
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before, 'a rerun adds nothing');
   fs.rmSync(dir, {recursive: true, force: true});
 });
 

@@ -19,13 +19,15 @@ question, in any mode; the answers decide it, never an a priori view rule.
   when they are themselves the easiest (`core.js` `easyRank`). IMR photos are never auto-rated Poor and never
   auto-excluded: they are always evaluated for entry. **A default cover** (a family's or a genus's, any node with leaves,
   when he has picked none) is a photo of its leaf **most seen around the instance's centre by distinct observers**, that
-  leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `treeCoverOf`). **One exception for his own photos:** every photo of his that is
-  compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
-  included in the fish photo pool. Never left out, never boosted (the candidates: `tools/fetch_fish.py` `select` takes his
-  observations first, within the species' room, then the judging puts them in play; the stopgap's `tools/fish_photos.py`
-  `his_ok` until 2026-11-15).
-- **Sea slugs: the fish's rule**, his own photos included (Pierre, 2026-11-16, Q386; `tools/fetch_seaslugs.py`
-  `--own`, then the judging rubric like any candidate).
+  leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `treeCoverOf`). **One exception for his own photos, every subject:** every observation of his that
+  meets the subject's usual criteria (licence, Research Grade or the subject's equivalent, egg and Dead filters, a taxon
+  we show) is taken in as candidates with every usable photo, whatever the list's room, target or cap, with no ceiling,
+  then judged on the rubric like any candidate. Never boosted, never left out: they count in the list's room, so a full
+  list takes no other observer's photo (`tools/fetch_fish.py` `select` takes his observations first, free of room, for
+  the fish and the sea slugs; `tools/fetch_local.py` `own_take` for the corals; the stopgap's `tools/fish_photos.py`
+  `his_ok` until 2026-11-15; [record](../decisions/2026-11-24-own-observations-everywhere.md)).
+- **Sea slugs: the same rule**, his own photos included (Pierre, 2026-11-16, Q386; `tools/fetch_seaslugs.py` `--own`,
+  then the judging rubric like any candidate; no `max` ceiling for him, 2026-11-24).
 - **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
   judged sure on the rubric and the reference photos judged sure on the same rubric, whatever their reference level, enter
   the same way (`tools/fish_game.py`,
@@ -64,7 +66,8 @@ source priority for fish, and every compatible photo of his in the fish pool, 20
 level, 2026-11-08 (Q212); licence as the last tie-break, 2026-11-08 (Q270, Q283), the fish fetch's too, 2026-11-08 (Q284); a default cover from the
 leaf most seen around the instance's centre, 2026-11-13 (Q339); his own photos through the candidates once the stopgap
 was retired, 2026-11-15 (#931); no source priority for any subject, reference-route photos first, and a photo strong
-players cannot identify alone never used alone, 2026-11-18.
+players cannot identify alone never used alone, 2026-11-18; his observations in for every subject whatever the room,
+2026-11-24 13:50 (REE-252).
 
 ### P2
 

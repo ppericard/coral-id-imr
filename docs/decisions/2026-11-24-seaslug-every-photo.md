@@ -1,5 +1,8 @@
 # The sea slugs take every photo of an observation, as the fish do
 
+Changed by: [Pierre's own observations come in whatever the room](2026-11-24-own-observations-everywhere.md) (his
+observations on a full list).
+
 Date: 2026-11-24. PR: #1525. Rules or docs touched: S1, P4 (cited, unchanged), P7; docs/spec/tools.md (the sea slug
 fetcher), judging/SEASLUG.md; follows [the fish's every photo](2026-11-18-decisions-from-comments-tests-2.md) (Q226).
 

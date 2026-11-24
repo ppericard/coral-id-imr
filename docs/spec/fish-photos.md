@@ -44,7 +44,9 @@ the circle-1 entries (`--circle` for the other circles).
   observation's coordinates (`in_iwp`), Pierre's own included.
 - **Order** (`select`): Pierre's own observations first for every species, whatever their licence (asked for every
   species, not only those `fish.json` `present.own` counted at its last build, so a species he identified since gets
-  them too); then, for a species confirmed near Dauin (`present.near`), photos from anywhere in the Philippines and the
+  them too, and for a species with no room left: `own_prefetch`, `run --own`, which the refill runs first). Every one is
+  taken with every usable photo, whatever the room and the cap ([record](../decisions/2026-11-24-own-observations-everywhere.md));
+  their cost still comes off the species' room, so a full species takes no other observer's photo; then, for a species confirmed near Dauin (`present.near`), photos from anywhere in the Philippines and the
   Indo-West Pacific, not by distance; for any other species, the Philippines first, nearest first (within 40 km of
   Dauin, within 250 km, the rest of the country), and abroad only for a species confirmed in the Philippines
   (`present.ph`, rule C8) once the Philippines are exhausted.
@@ -561,7 +563,7 @@ full list).
 - The 5-very-easy minimum is Pierre's for circle 1 (`tools/fish_judge.py` `WANT`): every circle-1 entry meets it on R2;
   the entries of circle 3 below it (`python3 tools/fish_game.py --plan` lists them) play on their curated photos alone.
 - `tools/fish_photos.py` writes the sheet-only photos only (below). Pierre's own photos reach play as candidates
-  (`tools/fetch_fish.py` `select` takes his observations first, within the species' room): this route applies rule P1.
+  (`tools/fetch_fish.py` `select` takes his observations first, whatever the species' room): this route applies rule P1.
 - `tests/subjects.test.js` checks that `fish-photos.json` holds no remote photo (but a sheet-only photo just found,
   waiting for the next run) and that its first photos are `fish-game.json`'s records; `tests/fish.smoke.js`
   (`coldHome`) that a cold first launch on fish, `fish-game.json` held back, draws Home from them and asks nothing of

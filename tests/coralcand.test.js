@@ -293,6 +293,47 @@ print(json.dumps({'obs': sorted({int(p['o'].rsplit('/', 1)[1]) for p in C}), 'ph
   });
 });
 
+test("fetch_local: Pierre's own observations come in whatever the room (REE-252): a full genus takes all of his, every photo, and no one else's; his abroad only when confirmed", () => {
+  // Genus A already holds 15 Dauin candidates waiting: no room in any tier. Others' observations (OBS) must add nothing.
+  const code = RUN.replace(
+    'URLS, SAVED = [], {}',
+    `def mine(i, grade='research', photos=None, loc='9.2,123.3', places=(6873,), taxon=SP, ids=(), ct=None, agree=None):
+    return {'id': i, 'quality_grade': grade, 'taxon': {**taxon, 'name': 'A'}, 'user': {'login': 'ppericard'}, 'identifications': list(ids),
+            'community_taxon_id': ct, 'identifications_most_agree': agree, 'photos': photos or [ph(i * 100)], 'location': loc, 'place_ids': list(places)}
+MINE = [
+  mine(501, photos=[ph(5000 + k) for k in range(13)] + [ph(5013, 'cc-by-sa')]),                  # 13 usable photos: never cut to PER_OBS (12)
+  mine(502, 'needs_id', loc='14.6,121.0', ids=[ident('thamnasteroid', SP)]),                      # the trusted identifier's, far from Dauin
+  mine(503, 'needs_id', ids=[ident('someone', SP)]),                                              # one other identifier: refused, as for anyone
+  mine(504, loc='-8.5,115.2', places=()),                                                          # abroad, species not confirmed: refused
+  mine(505, loc='-8.5,115.2', places=(), taxon=SP2),                                               # abroad, species confirmed in the Philippines
+]
+FULL = [{'f': f'a-cand-{i}', 'o': f'https://www.inaturalist.org/observations/{9000 + i}', 'loc': 'dauin', 'lic': 'cc-by', 'a': 'x', 't': 'A b'} for i in range(15)]
+URLS, SAVED = [], {}`
+  )
+    .replace(
+      '    URLS.append(u)\n',
+      "    URLS.append(u)\n    if 'user_login=ppericard' in u: return {'results': [] if 'id_below' in u else MINE, 'total_results': len(MINE)}\n"
+    )
+    .replace("'cand': {}}", "'cand': {'A': FULL}}")
+    .replace('fl.confirmed_species = lambda *a, **k: []', 'fl.confirmed_species = lambda *a, **k: {12: ("A c", [])}');
+  const R = py(`${code}
+usedp = {str(p['id']) for o in MINE for p in o['photos']}
+print(json.dumps({'obs': sorted({int(p['o'].rsplit('/', 1)[1]) for p in C if p['o'].rsplit('/', 1)[1].isdigit() and int(p['o'].rsplit('/', 1)[1]) < 9000}),
+  'new': sorted(p['f'] for p in C if p.get('own')), 'others': sum(1 for p in C if not p.get('own') and p['f'] not in {x['f'] for x in FULL}),
+  'locs': {str(p['o'].rsplit('/', 1)[1]): p['loc'] for p in C if p.get('own')}, 'gid': sorted({p['o'].rsplit('/', 1)[1] for p in C if p.get('gid')}),
+  'again': len(fl.own_take(MINE, 10, usedp, lambda: [12])),
+  'asked': [u for u in URLS if 'user_login=ppericard' in u]}))`);
+  assert.deepStrictEqual(R.obs, [501, 502, 505]);
+  assert.strictEqual(R.new.length, 13 + 1 + 1, 'every usable photo of 501 (13, the share-alike one left out), one each for 502 and 505');
+  assert.strictEqual(R.others, 0, 'the genus is full: no other observer’s observation');
+  assert.deepStrictEqual(R.locs['501'], 'dauin');
+  assert.deepStrictEqual([R.locs['502'], R.locs['505']], ['ph', 'world']);
+  assert.deepStrictEqual(R.gid, ['502'], 'his Needs ID observation keeps the gid mark');
+  assert.strictEqual(R.again, 0, 'a photo is taken once');
+  assert.strictEqual(R.asked.length, 1, 'one read of his observations for every genus');
+  assert.match(R.asked[0], /photo_license=cc-by,cc-by-nc,cc0&/);
+});
+
 test('expert_ok / ph_ok: the rule itself; abroad stays Research Grade only', () => {
   const R = py(`${RUN}
 print(json.dumps({'expert': [fl.expert_ok(o, 10) for o in OBS], 'ph': [fl.ph_ok(o, 10) for o in OBS],

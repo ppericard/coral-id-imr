@@ -1997,3 +1997,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   observation's first photo: «ça c'est une exception forte qui n'a pas lieu d'être». On doing as the fish do: «D'accord
   pour que par défaut on fasse partout pareil !». His 2026-11-23 21:05 «il faut justement toutes les prendre» pointed
   the same way. Applied: #1525 (docs/decisions/2026-11-24-seaslug-every-photo.md).
+- **13:50, his own observations (REE-252, room for his own observations).** «Oui. La seule exception que j'ai demandé
+  pour mes photos c'est qu'elles soient systématiquement intégrées à la base de données, et puis jugées comme les
+  autres. Mais ça veut effectivement dire que l'ensemble de mes photos qui remplissent les critères doivent être
+  intégré à l'app et aux jeux, même si on dépasse les seuils.» For every subject; no ceiling, the sea slugs' `max`
+  included; judged like anyone's (Q386). Applied: docs/decisions/2026-11-24-own-observations-everywhere.md, rules/photos.md P1.

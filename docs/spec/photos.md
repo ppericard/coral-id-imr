@@ -195,8 +195,9 @@ passes whatever it finds; it fails only when it cannot be trusted (iNaturalist u
 missing). No admin Inbox point is written: the Points route is `data/points.json`, which agents write in a PR, so a
 workflow writing it would write data; the integrator turns the report's rows into points when it reads the artifact.
 
-**What the report cannot say.** Pierre's own coral photos in the curated views never came through the fetch rule (it has no
-rule for them), so those whose genus rests on his identification alone, or on one other identifier beside his coarser one,
+**What the report cannot say.** Pierre's own coral photos in the curated views did not all come through the fetch rule
+(his observations take the same identification rule as everyone's, `fetch_local.py` `own_take`; only the room is lifted),
+so those whose genus rests on his identification alone, or on one other identifier beside his coarser one,
 list as `id_lost`, marked as his own, every week; whether they stay is his call (the review, §4). The coral rule is also
 stricter than "another identifier agrees at the genus": it needs iNaturalist's genus-level community ID (or the trusted
 identifier's), so a Needs ID photo whose genus rests on one other identifier and a coarser or withdrawn identification of
@@ -248,6 +249,12 @@ commit, so no Publish is lost), then:
    - Each observation brings all its photos (up to 12, a guard only): Pierre takes at least the colony, a closer view and
      a macro, a game question shows the views of one colony, and the order of an observation's photos says nothing about
      their zoom, so sorting by view, quality and near-duplicates is the judging pass's job.
+   - **Pierre's own observations come in whatever the room** (`own_pool`, `own_take`; [record](../decisions/2026-11-24-own-observations-everywhere.md)):
+     one read of his observations of every genus (a few hundred, 200 a request), taken before the caps, the Key-only need
+     and the votes order, with the same identification and licence rules as the tiers (Research Grade, a genus-level
+     community ID or the trusted identifier's in the Philippines; abroad Research Grade of a species confirmed there)
+     and every usable photo, never cut to 12. They count as waiting, so a genus they fill takes no other observer's
+     observation; judged like any candidate.
 3. `tools/fetch_local.py --tidy` runs last (below), then the workflow commits `data.json` and `data/cand.json` (and `img/`,
    only for a missing smaller size of a photo git keeps) (`tests/coralcand.test.js`).
 
