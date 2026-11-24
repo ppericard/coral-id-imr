@@ -710,6 +710,7 @@ const DOC_MARKS = {
   'tools/queue/README.md': [3, 300],
   'tools/queue/codex.md': [1, 80],
   'tools/studies/q316/README.md': [15, 170], // new, 2026-11-20: the Q316 tool's model, declared rules and figures
+  'tools/studies/gold-set-2/README.md': [3, 900], // new, 2026-11-24: gold set 2's page, the lost key, the reader of his answers (REE-277)
   'tools/studies/what-makes-a-5/README.md': [4, 300], // new, 2026-11-24: the "what makes a 5" session page and its data (REE-275)
   'tools/sync/changes/README.md': [2, 130]
 };
