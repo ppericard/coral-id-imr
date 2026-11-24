@@ -1070,6 +1070,41 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // The answer log's photos are those seen when answering: a corallites hint left closed is not logged in ph (the hint
+  // revealed after the answer is sc.h), one opened first is.
+  for (const opened of [false, true]) {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    let r = null;
+    for (let i = 0; i < 60 && !r; i++) {
+      await qa.ready(p);
+      r = await p.evaluate(opened => {
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        const hb = document.getElementById('hintb'),
+          files = () => [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f);
+        if (!hb) return smokeAnswer() && null;
+        if (opened) hb.click();
+        const before = files();
+        smokeAnswer();
+        const after = files(),
+          row = store.get(LOG0, []).pop() || {};
+        return {opened, before, hint: after.filter(f => !before.includes(f)).pop() || after.pop(), ph: row.ph, h: (row.sc || {}).h};
+      }, opened);
+      if (!r) await p.click('#next');
+    }
+    if (!r) fails.push(`Hint log, hint ${opened ? 'opened' : 'left closed'}: no question with a hint in 60`);
+    else if (
+      opened ? !r.ph.split(' ').includes(r.hint) || r.h : r.ph !== r.before.join(' ') || r.ph.split(' ').includes(r.hint) || r.h !== r.hint
+    )
+      fails.push(`Hint log, hint ${opened ? 'opened' : 'left closed'}: ${JSON.stringify(r)}`);
+    await c.close();
+  }
   // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
   // own id, its own kind and note).
   {
