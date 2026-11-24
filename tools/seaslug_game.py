@@ -8,7 +8,7 @@ Inputs, all in the repository (no network but --r2's downloads):
     1, the 21 stars and the 24 most common other species; circles 2 and 3, the next 60 and 100 by commonness), their
     WoRMS names, commonness, presence and the photo target (photoTarget: start 6, game cap 12, +5 for a documented
     juvenile form; Pierre, 2026-11-15, Q377);
-  - data/seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos, one per observation, by iNaturalist taxon id;
+  - data/seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos (every usable photo of an observation), by iNaturalist taxon id;
   - data/suggest.json "seaslug" (tools/judging_fish.py --subject seaslug, from judging/seaslug/*.json): the judgements on
     judging/SEASLUG.md's rubric, the caps applied;
   - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
