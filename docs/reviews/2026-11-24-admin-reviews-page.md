@@ -133,8 +133,8 @@ the demo (`?demo`) gets a made-up set so agents can test the page.
 Both are converted once, by a small script in their study folder, into one **set file** each, committed by PR (rule A1
 keeps them out of `curation.json`: an agent never writes it).
 
-**A set file**, `data/reviews/<set id>.json`, the format every set follows (agents' sets and the weekly sample's
-snapshot alike):
+**A set file**, `data/reviews/<set id>.json`, the format every set follows (agents' sets and the weekly samples alike;
+a set file, once committed, is never rewritten):
 
 ```
 {"id": "what-makes-a-5", "name": "What makes a 5", "issue": "REE-275", "at": "2026-11-24",
@@ -155,8 +155,20 @@ the lag. It costs one request per set at load, so it is kept for later if the la
 
 About 20 photos a week, drawn from **decisions already applied**, so nothing waits on his answer.
 
-- **Which week**: the ISO week in Manila time. The set id is `week-2026-48`. The draw is seeded by the week, so every
-  device draws the same set (FNV-1a, as `autoCheck` today).
+- **Drawn once, by a scheduled job, then frozen.** A seed alone would not freeze the set: the pool changes with every
+  Publish, judging pass and build, so two visits or two devices would draw different photos. So the admin never draws.
+  A weekly GitHub Actions job draws the set. It runs on Monday early, Manila time, the ISO week's first day. It runs
+  `tools/review_sample.js` in Node, which reads the files on `main` (`curation.json`, `fish-game.json`,
+  `seaslug-game.json`, `data/suggest.json`, `data/cand.json`) through the pure functions of `autosort.js`: `autoState`
+  for which coral fields are off, `autoSure`, `treeSure`, and `autoIdx` for the log. One engine for the admin and the
+  job (rule S1).
+  - The job commits `data/reviews/week-2026-48.json` and its line in `data/reviews/index.json`. The file holds the
+    photos, the decision, the lines and their marks, in the set file format of §2.5. It never writes `curation.json`
+    (rule A1). It is a data-file commit like the Candidate photos workflow's.
+  - A file already there is never redrawn: the job stops when the week's file exists. The draw is seeded by the week
+    (FNV-1a, as `autoCheck` today), so a rerun on the same `main` gives the same file.
+  - Every visit and device reads that one file. The set reaches the admin with the next successful Pages deploy (the
+    REE-279 lag, §2.5): a few minutes on a good day.
 - **From where** (while a coral field is off, its share comes from the unapplied sure proposals instead, §4.3): the
   decisions of the last week, or of the last four weeks when a week holds too few. Corals: the auto log's
   plain `a`, `r`, `x` codes. Fish: the build's `cand` route (`fish-game.json` `auto: 'cand'`) and the log's `r`. Sea
@@ -171,10 +183,9 @@ About 20 photos a week, drawn from **decisions already applied**, so nothing wai
     camouflage flags), the phase, the crop, and the ease as the grade line.
   - If Pierre adopts the nine criteria of «What makes a 5» for an ease of 5 (the reference-poses note's question b),
     the sample shows those for fish and sea slugs instead.
-- **The snapshot**: his first answer on a photo of a weekly set writes what the card showed (the decision, the lines
-  and their marks) into that photo's answer (§3), and it never changes after that. From then on the card shows the
-  snapshot, not a judgement re-run since, so every line he answers on that photo, then or later, is about the same
-  values, and every comparison is with what he saw. Nothing is written without a click of his.
+- **The snapshot is the week's file**: the card shows the lines and marks the job wrote, never a judgement re-run
+  since. So every line he answers on a photo, then or later, on any device, is about the same values, and every
+  comparison is with what he saw. His answers carry no copy of them (§3).
 - **Unanswered weeks** fold away when the next one opens. The lines he answered stay counted. Nothing piles up: there
   is never more than one open sample.
 
@@ -190,17 +201,16 @@ All three options store the same record, one per set and photo:
 
 ```
 "review": {"<set id>": {"<photo f>": {"l": {"C1": [0, "<t>"], "C3": [1, "<t>"], "grade": [0, "<t>"]}, "all": 1, "g": 3,
-                                       "w": {"C1": "il est de profil", "": "a word on the photo"},
-                                       "s": {"decision": "...", "lines": {...}, "marks": 4}}}}
+                                       "w": {"C1": "il est de profil", "": "a word on the photo"}}}}
 ```
 
 `l` holds every line he answered, each with its own time: 1 agree or 0 disagree, then when he gave that answer (Unix
 seconds in base 36, as the auto log's `@t`); a line not in `l` is unanswered. A later answer on another line writes
 only that line's time, so each comparison keeps its own place in the window (§4.3). `all: 1` marks the lines that
 "Agree with all" filled in (they are in `l` as 1), so the page can count one-press and line-by-line agreement apart
-(§2.6). `g` is his grade, when he disagreed with the grade line. `w` holds his words, per line, `""` for the photo. `s`
-is the snapshot of what the card showed at his first answer, for a weekly set only, written once and never replaced
-(§2.6). Every field is written by his click.
+(§2.6). `g` is his grade, when he disagreed with the grade line. `w` holds his words, per line, `""` for the photo. What
+the card showed is in the set's file (`data/reviews/<set id>.json`, frozen once written: §2.5, §2.6), so an answer
+needs no copy of it. Every field is written by his click.
 
 | | **A. A part of `curation.json`, sent by Publish** | **B. A separate file in the repository, written by Publish** | **C. The sync sheet** |
 |---|---|---|---|
@@ -214,7 +224,7 @@ is the snapshot of what the card showed at his first answer, for a weekly set on
 | Durability | In git, with history and every Publish | In git | Out of git: the sheet's own version history only |
 | How agents read it back | `git show origin/main:curation.json`: any agent, offline, in a test | The same, from its own file | The integrator alone, through the connector (read-only), then hands it to subagents |
 | A format other code follows? | Yes: the agreement code (§4), `answers.py`, the gold set reader, `tools/curplay.py` (`review` added to `DROP`, so players never download it) | Yes, and a second writer in `admin.js` and `admin-draft.js` | Yes, and `Code.gs` |
-| Size | About 300 bytes an answered photo with its snapshot: 20 a week is about 300 KB a year, on a 2.7 MB file the admin already reads raw. A study set's answers carry no snapshot (the set file holds it) | Same, apart | |
+| Size | About 150 bytes an answered photo (what it showed is in the set file): 20 a week is about 150 KB a year, on a 2.7 MB file the admin already reads raw | Same, apart | |
 
 **Recommended: A**, a `review` key at the top level of `curation.json`, written only by the admin, sent by Publish. It
 is the path his answers to points already take, so no new writer, no new rule and no sheet change are needed. Players
@@ -330,16 +340,18 @@ Agent time, first commit to green checks, from `tools/effort.py` (merged PRs, me
 - **PR 1, the Reviews page and the set files** (admin, L): the view, the card, the `review` key in the draft and
   Publish, `curplay.py` `DROP`, the demo set, the smoke at 390 and 1280 px, the help; the two converters in their study
   folders. Comparable to #1270, #1330, #1336, #1393, #1435: median 3.6 h (range 3.2 h-12.4 h).
-- **PR 2, the weekly sample and the agreement** (admin, M): the draw, the snapshot, `autoCompare`/`treeCompare` fed
-  from the sample, corrections out of the window, the Auto line. Comparable to #1311, #1348, #1408, #1435, #1478: median
-  2.1 h (range 28 min-2.2 h).
+- **PR 2, the weekly sample and the agreement** (admin, M): `autoCompare`/`treeCompare` fed from the sample,
+  corrections out of the window, the Auto line. Comparable to #1311, #1348, #1408, #1435, #1478: median 2.1 h (range
+  28 min-2.2 h).
+- **PR 2b, the weekly job** (tooling, M): `tools/review_sample.js`, its workflow and its test (§2.6). Comparable to
+  #1381, #1470, #1473, #1507, #1514: median 14 min (range 6 min-33 min); measured on smaller tools, so likely more.
 - **PR 3, the Checks retired and released** (admin, M): §4.1-4.2, the tests rewritten, the specs and a decision
   record. Comparable to #1311, #1348, #1408, #1435, #1478: median 2.1 h (range 28 min-2.2 h).
 - **Option 2 of §5, if chosen** (tooling, L): comparable to #1274, #1315, #1367, #1373, #1494: median 2.2 h (range 77
   min-2.5 h), plus its parity tests.
 
-In all about 8 h of agent time for PRs 1-3, Codex rounds included (the sum of the three medians cited above: #1270,
-#1311 and their groups); more if the admin smoke needs new phone fixtures.
+In all about 8 h of agent time for PRs 1-3 with 2b, Codex rounds included (the sum of the medians cited above: #1270,
+#1311, #1381 and their groups); more if the admin smoke needs new phone fixtures.
 
 **Lanes (W27).** None of these files is on the sensitive list (`Code.gs`, `core.js` and `core/*.js`, `sync.js`,
 `model.js`); option A needs no `core.js` or `Code.gs` change.
@@ -348,6 +360,7 @@ In all about 8 h of agent time for PRs 1-3, Codex rounds included (the sum of th
 |---|---|---|---|
 | 1 | `admin.js`, `admin.css`, `admin.html` (one script tag if the page is its own file, `admin-reviews.js`), `admin-demo.js`, `tools/curplay.py`, `tests/curplay.test.js`, `tests/admin.smoke.js`, a new `tests/reviews.test.js`, `data/reviews/`, `tools/studies/what-makes-a-5/`, `tools/studies/gold-set-2/` (after #1550), `docs/spec/admin.md` | first | none; the gold set converter waits for #1550 |
 | 2 | `autosort.js`, `admin.js`, `admin-fish.js`, `tests/autosort.test.js`, `docs/spec/admin-photos.md`, `docs/spec/fish-photos.md` | after 1 | none |
+| 2b | `tools/review_sample.js`, `.github/workflows/review-sample.yml`, `tests/reviewsample.test.js`, `data/reviews/index.json`, `docs/spec/tools.md` | after 1, beside 2 | `docs/spec/tools.md`: #1540, #1547 (a line each, merge `origin/main`) |
 | 3 | `autosort.js`, `admin.js`, `admin-fish.js`, the tests of §4.2, the specs, `docs/decisions/` | after 2 and after R2's answer | none |
 
 PRs 2 and 3 touch `autosort.js` and `admin.js` in turn, never at once. #1549 touches `tools/sync/Code.gs` and `core.js`,
