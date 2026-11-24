@@ -1,5 +1,6 @@
 # The hourly health check (docs/PAGES.md "Infrastructure health"): the live
-# site answers (index.html and data.json with their stamps), the sync sheet script answers its public read-only request
+# site answers (index.html and data.json with their stamps), the live build holds main's commits (a commit of main not live
+# after 45 minutes fails the check, REE-279; read with this token's contents: read, a 403 is then only a note), the sync sheet script answers its public read-only request
 # and reports its VERSION, and the infrastructure numbers are measured (tools/health.py). A failed check fails the job, which
 # GitHub e-mails (to the account that last changed this schedule); the job then opens an issue labelled `health` unless
 # one is already open. The script takes a few seconds against the live site; with the runner's

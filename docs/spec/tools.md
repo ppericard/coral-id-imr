@@ -134,7 +134,8 @@ written with `tools/datajson.py`.
 - **`decisions_index.py`** (`--fix`, `--check`): the decisions index from the records, by date then file name.
 - **`health.py`, `infra.json`**: the hourly Health workflow's script (`.github/workflows/health.yml`;
   [PAGES.md › Infrastructure health](../PAGES.md#infrastructure-health)): the live site (`index.html` and `data.json` with
-  their stamps), the sheet script's public read-only request and its `v`, the weekly backup's age (only with the admin
+  their stamps), the live build against `main` (the Deploy Pages run its `<meta name="build">` names, and the commits of `main`
+  not live after 45 minutes: REE-279), the sheet script's public read-only request and its `v`, the weekly backup's age (only with the admin
   token), and the infrastructure numbers against their free-tier limits (Pages 1 GB from `main`'s tree, R2 50 GB (the free tier is 10 GB) from
   `infra.json`, measured by hand; the sheet's cells and slowest operation through `readInfra` with the token), a
   warning past 70%. Standard library only, every request injectable; `tests/infra.test.js` on `tests/infra.fixtures.py`.
