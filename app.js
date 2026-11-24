@@ -252,10 +252,20 @@ const dataNow = () => (stateNow(), DATA_V);
 // A view of one argument k (a rank class, a unit), f(k) kept per k and per version: the values of a version are dropped
 // at the next (now: stateNow or dataNow). The same rules and the same check as stateView, value by value. k is a string,
 // a number or an object (a Map's key: the same value or the same object, the same entry).
+// view.fn(): the view for a loop with nothing written during it (as model.js introducedFn): the version is read once,
+// then a value kept in it is a lookup; any other read (a value not kept yet, VIEW_CHECK on, a newer version read since)
+// goes through the view. The reads stay anonymous closures, as every view's (the answer cost counts named calls).
+const withFn = (read, fn) => ((read.fn = fn), read);
 function keyView(kind, name, f, now) {
-  let at = -1;
+  let at = -1,
+    read = null;
   const M = new Map();
-  return k => {
+  const fn = () => {
+    const t = now();
+    if (at !== t) ((at = t), M.clear());
+    return k => (at === t && !VIEW_CHECK.on && M.has(k) ? M.get(k) : read(k));
+  };
+  return (read = withFn(k => {
     const t = now();
     if (at !== t) ((at = t), M.clear());
     if (!M.has(k)) {
@@ -266,7 +276,7 @@ function keyView(kind, name, f, now) {
     const v = M.get(k);
     if (VIEW_CHECK.on && !viewSame(v, f(k))) viewDiff(kind, name);
     return v;
-  };
+  }, fn));
 }
 const stateViewBy = (name, f) => keyView('state', name, f, stateNow);
 // A view of the data version (the rank classes, the units of a class with a photo, the look-alike index): computed once

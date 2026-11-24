@@ -294,6 +294,7 @@ function model(PCONF) {
   vm.createContext(c);
   vm.runInContext(
     block(M, 'const isLook = (t, n) =>', '\nfunction confOf') +
+      '\n' +
       block(M, 'const isDataLook = (a, b) =>', "// A choice's label", {file: 'model.js'}) +
       '\nthis.M = {isDataLook, dataLooks, pooledConf, dataSeed};',
     c
