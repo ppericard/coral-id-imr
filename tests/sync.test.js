@@ -2741,7 +2741,7 @@ test('v55 delete keeping answers: answers and reports anonymised (Verified 0), f
   assert.strictEqual(del.length, 1, 'the kept answer is flagged 2');
   assert.ok(a.filter(x => x[11] !== 2).every(x => x[11] === 0));
   s.post({anon: 'devanon777', anonAnswers: [ans('z1')], av: '190'});
-  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 23, 'a device never signed in stays 1');
+  assert.strictEqual(s.post({readAnswers: 1, token: TOK}).rows.find(x => x[11] === 1).length, 24, 'a device never signed in stays 1');
   const st = s.post({readStats: 1, token: TOK});
   assert.ok(!(del[0][0] in st.ras), 'no ability for the deleted id');
   assert.ok(Object.keys(st.photos).length > 0, 'its answer still rates the photos');
@@ -3429,7 +3429,7 @@ test('v60 Answers: Subject, Rank, Taxon shown, Taxon answered, Species shown; re
   assert.deepStrictEqual(R[4].slice(17, 20), ['coral', 'genus', '']);
   assert.strictEqual(R[4][21], '');
   const rows = s.post({readAnswers: 1, token: T}).rows;
-  assert.ok(rows.every(r => r.length === 23));
+  assert.ok(rows.every(r => r.length === 24));
   assert.deepStrictEqual(
     [rows[0].slice(15, 17), rows[1].slice(15, 17)],
     [
@@ -3524,7 +3524,7 @@ test('v170 Answers: Species shown keeps a species with no name yet (Goniobranchu
   const rows = s.post({readAnswers: 1, token: T}).rows,
     srv = id => rows[R.indexOf(row(id))];
   assert.strictEqual(rows.length, R.length);
-  assert.ok(rows.every(r => r.length === 23));
+  assert.ok(rows.every(r => r.length === 24));
   assert.deepStrictEqual(srv('n1').slice(17, 22), ['seaslug', 'genus', 'Goniobranchus', 'Goniobranchus', 'Goniobranchus sp. 5']);
   assert.deepStrictEqual(
     [srv('n1')[2], srv('n1')[3], srv('n1')[6]],
