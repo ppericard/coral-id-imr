@@ -794,14 +794,86 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 - **The starter core**: the families whose record says `first` (fish.json `start`: the Butterflyfishes, Angelfishes,
   Damselfishes and Surgeonfishes) open before any other (`model.js` `openPick`).
 - **Fish photos judged**: every fish photo carries a judged ease from 1 (hard) to 5 (very easy) (judging/FISH.md). It is
-  the photo's prior before any answer: its genus offset + (`PDIFF.MID` − ease) × the subject's `calib.ease`
-  (`core.js` `CALIB`, ease 0.5: one standard deviation of a photo's own difficulty around its unit), fading as answers
-  come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The same prior gives each unit its
-  difficulty, so judged units open easiest first from the first card, and no photo is ever walled off.
+  the photo's prior before any answer: its genus offset + (`PDIFF.MID` − ease) × the subject's `calib.ease`, fading as
+  answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The weight is **one
+  shared value, 0.3 logit an ease point** (`core.js` `CALIB.ease`; "The judged ease weight, measured" below), read by
+  every subject whose photos carry a judged ease: today the fish and the sea slugs. A subject may set its own in its
+  `SUBJECTS` `calib` only with a declared reason (rule S1); none does. The corals' photos carry no judged ease, so their
+  prior has no ease term. The same prior gives each unit its difficulty, so judged units open easiest first from the
+  first card, and no photo is ever walled off.
 - **The first questions on a unit** lean towards its easy photos: the target sits `calib.early` logits lower, fading as
-  `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's and the sea slugs' `calib` =
-  {ref: 3, early: 1.5, u: 0.25, pool: 30} (pool 20 for the sea slugs); the corals keep `core.js`
-  `CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity}`.
+  `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's `calib` = {ref: 3, early: 1.5, u:
+  0.25, pool: 30}; the sea slugs' the same with pool 20; the corals keep the shared `core.js`
+  `CALIB = {ease: 0.3, ref: 1, early: 0, pool: Infinity}`.
+
+### The judged ease weight, measured
+
+The weight 0.3 is the centre of the range the fish answers support (0.2–0.4; the REE-85 study,
+`docs/reviews/2026-11-23-fish-ease-vs-answers.md`, "Experts and response time"; the decision:
+`docs/decisions/2026-11-23-judged-ease-weight.md`). It is shared by every subject with a judged ease: the sea slugs'
+answers have not measured it (below), and nothing gives them a reason to differ. On held-out players (the study's model with the format offsets and
+the ability's scale refitted, 9 players), the next-answer log-loss against no photo prior was +0.0007 a nat at 0.5 (4
+players of 9 better) and −0.0008 at 0.3 (6 of 9).
+
+**The real log replayed** (rule L12; the Answers tab read-only, 3,513 fish quiz answers of 9 players, 2026-11-06 to
+2026-11-22): each answer's logged expectation re-scored with the ease's part of its difficulty at 0.3 instead of 0.5
+(the part as the game used it then, fading with the photo's answers after the served ratings). Paired log-loss
+0.3 − 0.5, players the unit (mean of the players' means, 95% t interval, exact sign-flip p). The first row was the
+declared replay; the two below it were added after seeing it (exploratory). The sea slugs: 168 answers from 2
+players (165 of them one player's, within one hour of 2026-11-20), too few to judge with players as the unit: not
+measured.
+
+| Replay | All answers | Players better | p | Ease 1-2 | Ease 4-5 |
+| --- | --- | --- | --- | --- | --- |
+| Ability as logged | +0.0049 [+0.0017, +0.0081] | 1 of 9 | 0.01 | −0.0266 (9 of 9) | +0.0111 (0 of 9) |
+| Ability following the difficulties it met | −0.0043 [−0.0066, −0.0020] | 8 of 9 | 0.01 | −0.0426 (9 of 9) | +0.0021 (1 of 9) |
+| Each arm's level per player refitted | −0.0018 [−0.0032, −0.0004] | 8 of 9 | 0.01 | −0.0229 (7 of 9) | −0.0006 (7 of 9) |
+
+Calibration, observed right against expected (z per answer), each arm's level per player refitted:
+
+| Ease | Answers | Observed | Expected 0.5 | z | Expected 0.3 | z |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1-2 | 588 | 0.920 | 0.876 | +3.39 | 0.904 | +1.34 |
+| 3 | 575 | 0.894 | 0.889 | +0.41 | 0.898 | −0.32 |
+| 4-5 | 2,350 | 0.865 | 0.874 | −1.30 | 0.865 | +0.05 |
+
+- **As logged, the app under-predicts every fish answer** (expected 0.819, right 0.879): a level error, the same at
+  every ease. Holding that ability fixed, 0.3 lowers the expected success of the ease 4-5 photos (two answers in three)
+  and so scores worse; 0.5's steeper slope partly hid the level error there. As logged, the gap observed − expected
+  runs from +0.13 at ease 1 to +0.02 at ease 5 with 0.5, and stays at +0.07 to +0.11 at every ease with 0.3: the ease
+  part of the error is gone, the level part remains.
+- **Once the ability follows the scale it is stepped against** (its shift the mean change of the difficulties the
+  player met before on the unit: a first-order stand-in for replaying the Elo) or each arm's level is refitted, 0.3
+  predicts better for 8 players of 9, and the hard photos' excess (ease 1-2) shrinks. Both are approximations of what
+  the app would have done; neither replays the draw, which would have asked other photos.
+
+**The simulation** (rule L11, level 2, on GitHub runners; 0.5 against 0.3 on the same seeds; the fish only:
+`tools/learnsim.js` has no sea slug subject in either world). The rated world with
+`--app own` (the judged-ease prior alone; under `--app truth` the weight has no effect), normal photos, 10 seeds per
+profile × 3,000 answers, one profile per check (the five-profile check was cut at 16 pairs):
+
+- **Primary, declared before running: answers on photos under ease 4 in answers 1-1,000, up**: clear in the cut
+  five-profile check (16 pairs, 13 up, stratified sign-flip p 0.002): beginner 111 → 156, lecture RA 271 → 301.
+- **Held**: true knowledge (up early: beginner +0.025 at 300), the global score (+0.9 to +1.8 points at 1,000 for the
+  beginner, the casual diver and the lecture RA), units met, units at Open Water and families at Advanced (up to +3 at
+  1,000), the share under ease 4 before Open Water (+0.03 at most, the margin +0.05), and the expert in every
+  guardrail.
+- **Breached: the bar's under-claim shrinks early** (E = bar − D\*, margin +0.03): beginner −0.53 → −0.48 at 300 and
+  −0.46 → −0.39 at 1,000, casual diver +0.05 at both, lecture RA −0.29 → −0.23 at 1,000; E stays well below 0 and
+  is the same by 3,000. Likely (not measured): a miss weighs less on a photo rated above the player's level
+  (`core.js` `pgMissW`), and the very easy photos, where a beginner's misses fall, are now rated less easy.
+  **Unclear**: the longest plateau (casual diver, strong RA), the first unit at Open Water (lecture RA +2, strong RA
+  +6.5 answers), the strong RA's score at 3,000 (−0.6).
+- **The heavy-tailed photos** (`--dist tail`, cut at 15 pairs: "the measure cannot tell"): the same pattern, E up at
+  1,000 for the three weaker profiles, nothing else breached.
+- **The app world** (5 seeds × 300 questions): its learner reads a photo's true difficulty from the app's own estimate,
+  so the change changes that world too. As run, breached: the beginner and the casual diver reach their first unit
+  at Open Water 28 and 20 answers later, the lecture RA has 3.8 units fewer at Open Water at 300 and a plateau 9
+  answers longer. With the true difficulty held fixed for both arms (exploratory, run after seeing that): in a world
+  where an ease point is worth 0.5, 0.3 is slower to the first Open Water (beginner +16, casual diver +10), E rises
+  for the casual diver and the strong RA and the beginner's plateau is 16 answers longer; in a world where it is worth
+  0.3, 0.3 is faster (−16, −63) and only E rises (casual diver). The direction follows whichever world is true; the
+  real log points to about 0.3 within a family.
 
 ### Fish: easy, reference-like photos first, whoever took them
 
@@ -813,8 +885,8 @@ reference-level photo never seen weighs `calib.ref` (3) times more.
 
 ### The fish draw in big pools
 
-A fish family may have hundreds of photos. A photo nobody has answered is trusted to one ease step's spread
-(`calib.u` 0.25 instead of `CAL.U`), so the judged ease leads the targeting while answers are few, and the draw's floor is
+A fish family may have hundreds of photos. A photo nobody has answered is trusted to 0.5 logit, the photos' own spread
+around their unit (`calib.u` 0.25 instead of `CAL.U`), so the judged ease leads the targeting while answers are few, and the draw's floor is
 shared over `calib.pool` (30) observations (`model.js` `drawFloor`), so a pool of 1,000 photos favours its easy ones as a
 pool of 30 does.
 

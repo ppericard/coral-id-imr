@@ -95,6 +95,10 @@ written with `tools/datajson.py`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
   keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
+- **`issue_guard.py`**: the same on Linear's `save_issue` (matcher `^mcp__.*[Ll]inear.*__save_issue$`, any server name
+  holding "linear"): refuses a new issue (no `id`; an update passes) whose description has no line
+  `Searched: <what> — <what was found>`, and says where to search and to fold into an existing issue instead.
+  `--check JSON`; `tests/issue_guard.test.js`.
 - **`instr_log.py`**: the core trial's log (#1200 §3), `claude-instructions.jsonl` in the git common dir: InstructionsLoaded,
   SessionStart and SubagentStart hooks note which file loaded for which agent and why (with its hash and core line);
   SubagentStart gives the Manila time and main's core line. Missing tools and recording failures are surfaced.

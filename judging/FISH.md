@@ -400,10 +400,11 @@ crop, `fill`). Pierre checks the first tiles on one contact sheet (Q321 D4); aft
 
 ## What the app does with it (docs/LEARNING.md "Fish photos judged")
 
-- **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x the subject's `calib.ease` (0.5
-  logit an ease point: one standard deviation of a photo's own difficulty around its genus, the hierarchical photo Elo
-  study's measure), so ease 5 starts at −1, ease 1 at +1, on top of its unit's offset; it fades as real answers come
-  (`PDIFF.W`, as every prior). A photo nobody judged starts at 0, as before.
+- **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x the subject's `calib.ease`
+  (0.3 logit an ease point, the one weight every subject with a judged ease reads:
+  [docs/decisions/2026-11-23-judged-ease-weight.md](../docs/decisions/2026-11-23-judged-ease-weight.md)), so a photo at
+  ease 5 starts at −0.6, ease 1 at +0.6, on top of its unit's offset; it fades as
+  real answers come (`PDIFF.W`, as every prior). A photo nobody judged starts at 0.
 - **The first questions on an entry**: no wall (Pierre, 2026-11-06 14:17). Every photo can be drawn from the first
   question; the prior above, the draw's aim at the player's level and the start's lean (fish `SUBJECTS` `calib.early`:
   the aim 1.5 logits lower on an entry with no answer, fading with its answers) make the easy ones far likelier at the
