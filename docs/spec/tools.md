@@ -160,7 +160,11 @@ subject is a test case, not the definition of the target.
   the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
   costs less; `--clock 14400` is the study's condition). **A count is repeatable** (REE-281): the clock is virtual
   (`Date` and `performance.now` stand still between the tool's ticks: 4 s of thinking and 6 s of pause an answer), the random
-  numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, and the data (every
+  numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, the **boot is started
+  over from a settled page** (the plans dropped, the numbers from the seed, the quiz drawn again: the script tiers come in
+  as they load, a `route()` of theirs renders Home, whose shuffle draws random numbers, or the quiz first, and the
+  questions planned ahead come from whatever was drawn before; under load the same seed then asked another sequence from
+  the third question on, 0.11 M or 0.16 M calls an answer on `fish:50`), and the data (every
   `.json` file the page asks for) is the pinned tree's, as the players are, while the code is the tree under test's. So
   neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the photos
   (a Candidate photos commit changes `seaslug-game.json` and `data/cand.json` on main with no change of code) moves a
@@ -173,7 +177,11 @@ subject is a test case, not the definition of the target.
   counted once a seed), `--clock`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming the state and the count),
   `--write-budget FILE [--margin 1.25] [--also A.json,B.json]` (the largest counts of this run and of earlier `--out`
   files, times the margin, as the ceilings of the states measured only), `--regen`, `--par N` (N states made or counted
-  at once, each count in a Chromium of its own; 1 by default, 3 on CI).
+  at once, each count in a Chromium of its own; 1 by default, 3 on CI), `--throttle N` (the page's CPU N times slower),
+  `--trace` (each row keeps where every random number was drawn, `rtrace`, to find what a draw depends on when two runs
+  part), `--data-now` (the tree's own data, to see what a refill changes). To check a change to the tool: run the same
+  seed ten times (`--seed 1,1,1,1,1,1,1,1,1,1 --par 3`), unloaded and with a few CPU-bound processes beside it; the rows must
+  ask the same questions (`asked`) and count the same to a few calls.
   A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
   card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
   `reefid-answercost` in the temporary directory. The missing states of a subject are made by one run to the longest of
