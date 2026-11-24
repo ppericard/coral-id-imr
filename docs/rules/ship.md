@@ -399,7 +399,13 @@ back leaves the PR.** The integrator holds to these, each checked before it laun
   agents (simulations, smoke runs, long test suites) share the machine through `tests/slot.js` (rule W24). Branches:
   rule W22.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js` and its parts `core/*.js`, `sync.js`,
-  `model.js`): the second waits until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
+  `model.js`): the second waits until the first is merged, then starts from `main`. Before launching, the integrator
+  checks the files of the open PRs that do not wait for Pierre.
+- **A PR that waits only for Pierre does not hold its files** (Pierre, 2026-11-25, REE-244). While it carries
+  `needs-pierre`, the other PRs on the same sensitive files go ahead, one at a time as above. When he answers, it
+  merges `main` (never a rebase), resolves its conflicts, takes its sheet VERSION at its own merge, and passes the
+  checks and Codex again. A real dependency, a PR built on its code, still waits for it, through a blocked-by
+  relation in Linear.
 - **Codex findings are fixed while they are new and small; a part whose findings keep coming back leaves the PR.** When
   findings keep coming back on the same part (say twice in a row), the integrator cuts the PR's scope (that part moves
   to a branch of its own) and tells Pierre; there is no fixed number of rounds. Findings that keep coming on the same part point to a structural problem: that part restarts from a short
