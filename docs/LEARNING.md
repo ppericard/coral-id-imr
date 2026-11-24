@@ -59,6 +59,36 @@ exceptions**:
 We are closer to Duolingo (bring people who know nothing to knowledge, bringing items back until they are mastered)
 than to an exam on people who already know (Pierre). A new player is a beginner, not an average player.
 
+**The engine's guiding aims** (the integrator's reading of Pierre's words of 2026-11-23 20:40, in docs/ANSWERS.md;
+his to correct). Every change to the draw, the opening, the formats or the photos is read against them:
+
+1. **Each player in their own zone, reached at their own speed.** One rule for everyone, inferred from what the player
+   does (right answers, response time), never declared: slow enough that a complete beginner is never faced with
+   what is too hard, even if they advance very slowly; fast enough that an expert meets real challenges within the
+   first answers, not a start where everything is easy and the same photos come round. How fast the engine finds a
+   player's zone, in both directions, is a property we measure (REE-191). **Easy questions cannot reveal an expert:**
+   a beginner with a good eye answers the first easy families right and fast too (Pierre, 2026-11-23 20:49: «on
+   n'arrive pas à savoir rapidement si la personne est un expert ou pas. On arrive juste à savoir que la personne
+   elle n'est pas complètement débile»). Only hard photos, look-alikes and lower ranks tell them apart, which is why
+   the opt-in placement test (REE-112, #1080) asks such questions; fast right answers on easy ones only say it is
+   worth asking.
+2. **A good challenge is hard and identifiable.** A hard photo is worth showing when it separates those who know from
+   those who do not: strong players get it right more often than weak ones. A photo that strong players miss as often
+   as anyone is noise, not challenge. A Research Grade identification says an expert could name the species (Pierre:
+   on iNaturalist and identified, so «identifiable. Probablement»), and our questions ask less than the species; the
+   doubt left is the one photo we show when the identifier also saw the observation's other photos (REE-252 measures
+   it; REE-194 lists photos other players also miss). A small photo is a fair challenge, not a defect: identifying from
+   it is a real skill, and a tap enlarges it (Pierre, 21:05). An expert's challenges come from their own weaknesses,
+   which the engine finds, and from such photos. The strongest players are not a category apart: the engine looks for
+   challenges for them as for everyone, and it is their answers that tell which hard photos are identifiable.
+3. **Content is the binding constraint.** Every unit needs a stock at every level: a deep stock of easy photos for the
+   beginner, a stock of hard and identifiable photos for the expert. Seeing a photo again is acceptable for a
+   beginner; what counts is that what they learn holds on photos they have never seen (the exams and the reserve
+   check it). iNaturalist limits what we can find.
+4. **Variety multiplies scarce content.** The same photo asked another way (choices that get harder, look-alikes,
+   juveniles and phases, typed answers, the species) is a new challenge without a new photo. Formats that can live in
+   the main quiz go there; bonus games stay apart.
+
 ## Research we rely on
 
 - **Elo rating in education** (Pelánek 2016, *Computers & Education*): a student's answer is a match between student
