@@ -134,7 +134,7 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
 | Number | Limit | Where it is read |
 |---|---|---|
 | Pages site size | 1 GB published | `health.py` and the admin card: the blobs of `main`'s tree the deploy keeps (`.gitattributes` export-ignore), before minifying, one API call |
-| R2 storage | 10 GB free tier | **By hand**: `tools/infra.json` (`bytes`, `at`); said stale after 30 days |
+| R2 storage | 50 GB alert limit (the free tier is 10 GB; Pierre accepts paid storage past it, see below) | **By hand**: `tools/infra.json` (`bytes`, `at`); said stale after 30 days |
 | Sheet cells | 10 million | Admin To do › Alerts, `readInfra_`: every tab's allocated grid (rows × columns) |
 | Answers tab | the same 10 million | the same: its rows, columns and grid |
 | Sheet response times | 5 s (`Code.gs` `TIM.SLOW`, our own budget, not a quota) | the same: the Timings tab's last 7 days, per operation, weighted p50, p90 and max |
@@ -142,7 +142,12 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
 - **R2 is measured by hand**: no read-only token exists in CI (the R2 keys the workflows hold upload photos, and their scope is
   still unchecked: docs/STATUS.md "Pierre's hands"), and a key that can write is not given to an hourly job. To measure: the
   Cloudflare dashboard, R2, the photo bucket, Metrics (storage); then change `tools/infra.json` (`bytes` and `at` together).
-  Last figure: 7.5 GB on 2026-11-24 (Pierre's dashboard reading; the photo capacity study, `docs/reviews/2026-11-24-photo-capacity.md` §2), 75%.
+  Last figure: 7.5 GB on 2026-11-24 (Pierre's dashboard reading; the photo capacity study, `docs/reviews/2026-11-24-photo-capacity.md` §2), 15% of the 50 GB limit.
+  **The limit is 50 GB, not the free tier's 10 GB** (`LIMITS` in `tools/health.py`, the admin card in `admin.js`): Cloudflare
+  R2's free tier is 10 GB and storage past it costs $0.015 per GB-month, billed on the GB-months past 10 (the study's
+  quote, section 5: about $0.08 a month at 15 GB, $0.30 at 30 GB). Pierre, 2026-11-24 14:47 Manila, asked whether to accept
+  paying a few cents a month rather than hold photos back: «oui, avec un nouveau seuil à 50Go»; at 14:50, on the payment
+  method: «J'ai du le faire à l'inscription».
 - **In `python3 tools/brief.py`** one `Infra:` line, read from the latest Health run's `infra` annotation (three REST calls,
   inside the brief's 5 s); in the short brief only when a number warns or the check failed.
 - **In the admin** the card above To do › Alerts' list (`readInfra_`, the `players` right, never public; from sheet v180, rule D4),

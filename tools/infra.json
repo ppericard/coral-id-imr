@@ -2,6 +2,6 @@
   "r2": {
     "bytes": 7500000000,
     "at": "2026-11-24",
-    "how": "Cloudflare dashboard, R2, the photo bucket, Metrics (Storage); or rclone size on the bucket with a key that can read it. Last figure: 7.5 GB, read from the dashboard by Pierre on 2026-11-24 at 14:14 Manila (docs/reviews/2026-11-24-photo-capacity.md section 2). Change bytes and at together; tools/health.py and tools/brief.py warn once it is past 70 % of 10 GB and say when it is a month old."
+    "how": "Cloudflare dashboard, R2, the photo bucket, Metrics (Storage); or rclone size on the bucket with a key that can read it. Last figure: 7.5 GB, read from the dashboard by Pierre on 2026-11-24 at 14:14 Manila (docs/reviews/2026-11-24-photo-capacity.md section 2). Change bytes and at together; tools/health.py and tools/brief.py warn once it is past 70 % of the 50 GB limit (the free tier is 10 GB; Pierre accepts paid storage up to 50 GB: docs/PAGES.md Infrastructure health) and say when it is a month old."
   }
 }
