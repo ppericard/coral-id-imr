@@ -134,9 +134,7 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
     tileSrc: () => '',
     ownPhoto: () => false,
     AWAY: false,
-    Image: function () {},
-    // planNext holds the false-alarm table while it plans (app.js faHeld): no bar is read here.
-    faHeld: fn => fn()
+    Image: function () {}
   };
   vm.createContext(ctx);
   vm.runInContext(

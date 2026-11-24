@@ -909,224 +909,221 @@ function recordAnswer({
 }
 // tap: a Find the X's photo tapped (question), logged as pa; null for any other question.
 function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
-  // The bars read from one false-alarm table while it runs (app.js faHeld).
-  return faHeld(() => {
-    // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
-    // a comeback question takes its genus's recall as it is now.
-    if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
-    // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
-    // was played since, not progress an older sign-out left on the device. Only the subject with that baseline (SUBJECTS
-    // anonBase) and its own first answer: a fish answer waiting in LOG0 is not a coral one.
-    if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(keptGet(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
-    // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
-    // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
-    // against it as a wrong pick does, and the mix-up is counted.
-    const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null,
-      sci = SCIQ && SCIQ.t === target ? SCIQ : null; // its display, for the mode (|sc, |so)
-    TYPEDQ = null;
-    SCIQ = null;
-    const good = c === target,
-      s = st(target),
-      chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
-    // The plausible choices k (what a right answer proves, the guess rate). A typed answer: no guess rate (TYPED.k,
-    // Infinity: the expected success has no 1/k floor).
-    const nc = $v.querySelectorAll('[data-c]').length || 4,
-      k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
-    session.n++;
-    session.h = [...session.h, good].slice(-10);
-    pulseNote();
-    if (good) session.ok++;
-    // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
-    // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
-    // the opening hold is the one the question really had.
-    const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
-      seenPh = ph.filter(p => p !== unseen),
-      // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
-      // given instead, the mix-up its Again drills on the pair's species (rematchAdd). In a Find the X, the decoy tile of
-      // the class (planFind mimDecoys): the unit whose tile is a photo of the class resembling the name asked, with its photo.
-      fd =
-        photoQuiz(cur) && FINDX && SHOWNQ && SHOWNQ[4] && SHOWNQ[4].find
-          ? SHOWNQ[4].find.find(x => x.n !== target && mimUnit(x.n, x.p) === target) || null
-          : null,
-      mu = mimUnit(target, seenPh[0]) || (fd ? fd.n : null);
-    // No exam question in the custom quiz.
-    const exq = EXAMQ === target && cur !== CUSTOM_H;
-    // The mode's suffixes (docs/spec/sync.md "Mode"), the sheet reading |kN at the end:
-    // |x: a mastery exam question (never |kN: an exam has every trap);
-    // |kN: a photo-quiz question with fewer than 4 choices ("Again: A or B?"), rated as N choices;
-    // |d: a duel slipped into the photo quiz (CONTRAST);
-    // |f: a Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): ph its own photo only, ch the four
-    //   photos' units, a and pa the unit and the photo tapped;
-    // |c: a comeback question (model.js comebackOf), in the hold with its own e (|w: the old gentle restart, old rows);
-    // |s: the custom quiz, right after quiz: rated as the photo quiz, told apart by the admin.
-    const mq =
-      modeBase(cur) +
-      (photoQuiz(cur) && AUTOD ? '|d' : '') +
-      // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
-      (photoQuiz(cur) && FINDX ? '|f' : '') +
-      (warm ? '|c' : '') +
-      // |h: a photo of this player's reserve shown (core.js reserveOf: only the mastery exam asks them, so …|h|x), so the
-      // transfer can be measured at the exam from the log, which keeps which answers were on reserved photos whatever the
-      // photos in play later; before |kN, which the sheet reads at the end. Counted like any answer.
-      (ph.some(p => p && p.ho) ? '|h' : '') +
-      // |sc, |so: a species asked by its scientific name with choices, shown with its common name underneath (sc) or alone
-      // (so) (SCIQ, app.js sciShow); information only, before |kN.
-      (sci ? '|' + sci.v : '') +
-      (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
-      // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_). Its
-      // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
-      (tq ? '|t' : '') +
-      (exq ? '|x' : '');
-    // Scored, kept and logged as every counted answer is (recordAnswer, live.js liveLog too).
-    const {h0} = recordAnswer({
-      cur,
-      mq,
-      target,
-      c,
-      k,
-      chs,
-      ph,
-      unseen,
-      cor,
-      exq,
-      tq,
-      warm,
-      R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
-      Rc: warm && !good && GX(c) ? recallAt(c) : 1,
-      mu,
-      tm,
-      tap
-    });
-    // (exq, above: never from the custom quiz.)
-    EXAMQ = null;
-    // The Duel tab's relief card (reliefShow): this answer took the hold's sum across INTRO.HOLD, from below.
-    if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
-    $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
-    // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
-    // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
-    // as a duel in the photo quiz a couple of questions later.
-    let again = false;
-    if (!good && GX(c)) {
-      // Only photos the player saw during the question: a corallites hint left closed is not "the photo shown".
-      const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')),
-        G = GX(c),
-        V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => gamePhotoOk(c, p))]));
-      // Find the X keeps its four tiles: they say which photo is which once answered (question).
-      const tp = !(photoQuiz(cur) && FINDX) && order.find(p => (V[p.view] || []).length);
-      if (tp) {
-        const [, cp] = photoPair([tp], V[tp.view], tp),
-          st0 = $v.querySelector('.qstage'),
-          lab = SUBJ.views.length > 1 ? VIEW_LABEL[tp.view] || '' : '';
-        // The ✓ / ✗ name chips say which photo is which, with no note under them (the short feedback sheet:
-        // docs/decisions/2026-11-18-feedback-sheet.md).
-        const fig = (p, n, cls) =>
-          `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''}${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption>${photoSrc(p)}</figure>`;
-        st0.classList.add('qvs');
-        st0.innerHTML = fig(tp, target, 'qok') + fig(cp, c, 'qko');
-        st0.querySelectorAll('[data-vs]').forEach(
-          z =>
-            (z.onclick = e => {
-              e.stopPropagation();
-              tipZoomed();
-              zoom(
-                [
-                  {...tp, genus: target},
-                  {...cp, genus: c}
-                ],
-                z.dataset.vs === 'qok' ? 0 : 1
-              );
-            })
-        );
-        fitStage();
-      }
-      // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
-      if (photoQuiz(cur))
-        again = rematchAdd(
-          [target, c],
-          answersSoFar() - 1,
-          mu && mu === c ? (mimUnit(target, seenPh[0]) ? mimOf(target, seenPh[0]) : mimOf(fd.n, fd.p)).pair.id : ''
-        );
-    }
-    // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
-    // popping, ~400 ms, none with prefers-reduced-motion): the reward is on the action, not in a pop-up. It never holds the
-    // player: Next is there and focused at once.
-    $v.querySelectorAll('[data-c]').forEach(b => {
-      b.disabled = true;
-      if (b.dataset.c === target) b.classList.add('ok', ...(good ? ['cheer'] : []));
-      else if (b.dataset.c === c) b.classList.add('ko');
-    });
-    // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
-    const tyIn = tq && $v.querySelector('#tyin');
-    // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
-    // A name read but no unit given (a name several units share, or of part of the unit and not of this photo: typeUnit)
-    // is a wrong answer, not "I don't know".
-    // A smaller fault (tq.z, Q394) is a wrong answer too, said for what it is (partRead).
-    const shw = !!(tq && (tq.m || tq.z) && !c);
-    if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c || shw ? 'ko' : 'idk');
-    const idk = !!tq && !c && !shw,
-      read = tq ? (tq.z ? partRead(tq.z, tq.text) : typeRead(tq.m, tq.text, tq.sp, target, tq.ps)) : '',
-      step = tq && good ? typeStep(tq.m, tq.text, tq.sp, target) : null;
-    // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
-    // apart, the sub-entries and phases), chosen by what the record holds (fbBody). A mix-up between the two species of a
-    // mimicry pair (model.js mimMix) gives the pair's marks: the photo shown taken for the other species' unit, or in a Find
-    // the X the photo tapped (of unit c) taken for the name asked. The feedback only: nothing logged or drawn reads it.
-    const mx = good ? null : tap ? mimMix(c, tap, target) : mimMix(target, seenPh[0], c);
-    document.getElementById('after').innerHTML = fbBody(
-      target,
-      c,
-      good,
-      idk,
-      again,
-      ph,
-      read,
-      step,
-      photoTaxon(seenPh, target),
-      chs,
-      repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)}),
-      mx
-    );
-    // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
-    const qq = $v.querySelector('.q');
-    if (qq) qq.classList.add('done');
-    fbShown();
-    fbMoreBind();
-    if (isStacked()) {
-      window.scrollTo(0, 0);
-      fitStage();
-      document.querySelectorAll('#after details').forEach(d => (d.ontoggle = fitStage));
-    }
-    // Tablet and desktop: the feedback always sits in the answer column, whatever the stage shows (3 views, one view,
-    // a mix-up montage or a duel), so it is in the same place after every answer. Phones: bottom sheet.
-    bindGo(document.getElementById('after'));
-    const nb = document.getElementById('next');
-    nb.focus({preventScroll: true});
-    nb.onclick = route;
-    // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#practice/duels/A/B) is cheap anyway.
-    setTimeout(() => hashNow() === cur && planNext(cur), 50);
-    // The out-of-game prompts take turns (promptOk), never with a card or an achievement toast, nor with the mastery toast
-    // due in a moment.
-    // In the Duel tab, the relief card after the hold has just set in comes first (reliefArm); the others wait. In the
-    // custom quiz, its once-ever reminder of the units waiting in the Quiz likewise (leftNote counts, leftArm).
-    leftNote(cur);
-    // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
-    // A Find the X showed four tiles, each of its own unit.
-    const fxs = photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find,
-      phx =
-        mimArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx) ||
-        phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
-    if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
-      if (nudgeDue()) (promptMark(), signinNudge());
-      else if (pulseDue()) pulseArm(nb);
-    }
-    // Every unit in play met and none may open now: its card takes the break at Next before a tip (allMetArm); the photo
-    // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
-    allMetArm(nb, cur, exq && s.mx);
-    // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
-    // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run.
-    tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '');
-    // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
-    if (typeof helpedArm === 'function') helpedArm(nb);
+  // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
+  // a comeback question takes its genus's recall as it is now.
+  if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
+  // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
+  // was played since, not progress an older sign-out left on the device. Only the subject with that baseline (SUBJECTS
+  // anonBase) and its own first answer: a fish answer waiting in LOG0 is not a coral one.
+  if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(keptGet(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
+  // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
+  // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
+  // against it as a wrong pick does, and the mix-up is counted.
+  const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null,
+    sci = SCIQ && SCIQ.t === target ? SCIQ : null; // its display, for the mode (|sc, |so)
+  TYPEDQ = null;
+  SCIQ = null;
+  const good = c === target,
+    s = st(target),
+    chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  // The plausible choices k (what a right answer proves, the guess rate). A typed answer: no guess rate (TYPED.k,
+  // Infinity: the expected success has no 1/k floor).
+  const nc = $v.querySelectorAll('[data-c]').length || 4,
+    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
+  session.n++;
+  session.h = [...session.h, good].slice(-10);
+  pulseNote();
+  if (good) session.ok++;
+  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
+  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
+  // the opening hold is the one the question really had.
+  const warm = !!(photoQuiz(cur) && SHOWNQ && SHOWNQ.warm),
+    seenPh = ph.filter(p => p !== unseen),
+    // The unit the photo of the mimicry class resembles (model.js mimUnit): a look-alike among the choices (pgLook), and
+    // given instead, the mix-up its Again drills on the pair's species (rematchAdd). In a Find the X, the decoy tile of
+    // the class (planFind mimDecoys): the unit whose tile is a photo of the class resembling the name asked, with its photo.
+    fd =
+      photoQuiz(cur) && FINDX && SHOWNQ && SHOWNQ[4] && SHOWNQ[4].find
+        ? SHOWNQ[4].find.find(x => x.n !== target && mimUnit(x.n, x.p) === target) || null
+        : null,
+    mu = mimUnit(target, seenPh[0]) || (fd ? fd.n : null);
+  // No exam question in the custom quiz.
+  const exq = EXAMQ === target && cur !== CUSTOM_H;
+  // The mode's suffixes (docs/spec/sync.md "Mode"), the sheet reading |kN at the end:
+  // |x: a mastery exam question (never |kN: an exam has every trap);
+  // |kN: a photo-quiz question with fewer than 4 choices ("Again: A or B?"), rated as N choices;
+  // |d: a duel slipped into the photo quiz (CONTRAST);
+  // |f: a Find the X (docs/LEARNING.md "Find the X slipped into the fish quiz"): ph its own photo only, ch the four
+  //   photos' units, a and pa the unit and the photo tapped;
+  // |c: a comeback question (model.js comebackOf), in the hold with its own e (|w: the old gentle restart, old rows);
+  // |s: the custom quiz, right after quiz: rated as the photo quiz, told apart by the admin.
+  const mq =
+    modeBase(cur) +
+    (photoQuiz(cur) && AUTOD ? '|d' : '') +
+    // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
+    (photoQuiz(cur) && FINDX ? '|f' : '') +
+    (warm ? '|c' : '') +
+    // |h: a photo of this player's reserve shown (core.js reserveOf: only the mastery exam asks them, so …|h|x), so the
+    // transfer can be measured at the exam from the log, which keeps which answers were on reserved photos whatever the
+    // photos in play later; before |kN, which the sheet reads at the end. Counted like any answer.
+    (ph.some(p => p && p.ho) ? '|h' : '') +
+    // |sc, |so: a species asked by its scientific name with choices, shown with its common name underneath (sc) or alone
+    // (so) (SCIQ, app.js sciShow); information only, before |kN.
+    (sci ? '|' + sci.v : '') +
+    (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
+    // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_). Its
+    // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
+    (tq ? '|t' : '') +
+    (exq ? '|x' : '');
+  // Scored, kept and logged as every counted answer is (recordAnswer, live.js liveLog too).
+  const {h0} = recordAnswer({
+    cur,
+    mq,
+    target,
+    c,
+    k,
+    chs,
+    ph,
+    unseen,
+    cor,
+    exq,
+    tq,
+    warm,
+    R: warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
+    Rc: warm && !good && GX(c) ? recallAt(c) : 1,
+    mu,
+    tm,
+    tap
   });
+  // (exq, above: never from the custom quiz.)
+  EXAMQ = null;
+  // The Duel tab's relief card (reliefShow): this answer took the hold's sum across INTRO.HOLD, from below.
+  if (cur.startsWith('quiz-duel')) DUELRUN = reliefNote(DUELRUN, h0, HOLDS);
+  $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
+  // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
+  // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
+  // as a duel in the photo quiz a couple of questions later.
+  let again = false;
+  if (!good && GX(c)) {
+    // Only photos the player saw during the question: a corallites hint left closed is not "the photo shown".
+    const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')),
+      G = GX(c),
+      V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => gamePhotoOk(c, p))]));
+    // Find the X keeps its four tiles: they say which photo is which once answered (question).
+    const tp = !(photoQuiz(cur) && FINDX) && order.find(p => (V[p.view] || []).length);
+    if (tp) {
+      const [, cp] = photoPair([tp], V[tp.view], tp),
+        st0 = $v.querySelector('.qstage'),
+        lab = SUBJ.views.length > 1 ? VIEW_LABEL[tp.view] || '' : '';
+      // The ✓ / ✗ name chips say which photo is which, with no note under them (the short feedback sheet:
+      // docs/decisions/2026-11-18-feedback-sheet.md).
+      const fig = (p, n, cls) =>
+        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''}${p.imr ? ' data-imr' : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption>${photoSrc(p)}</figure>`;
+      st0.classList.add('qvs');
+      st0.innerHTML = fig(tp, target, 'qok') + fig(cp, c, 'qko');
+      st0.querySelectorAll('[data-vs]').forEach(
+        z =>
+          (z.onclick = e => {
+            e.stopPropagation();
+            tipZoomed();
+            zoom(
+              [
+                {...tp, genus: target},
+                {...cp, genus: c}
+              ],
+              z.dataset.vs === 'qok' ? 0 : 1
+            );
+          })
+      );
+      fitStage();
+    }
+    // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
+    if (photoQuiz(cur))
+      again = rematchAdd(
+        [target, c],
+        answersSoFar() - 1,
+        mu && mu === c ? (mimUnit(target, seenPh[0]) ? mimOf(target, seenPh[0]) : mimOf(fd.n, fd.p)).pair.id : ''
+      );
+  }
+  // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
+  // popping, ~400 ms, none with prefers-reduced-motion): the reward is on the action, not in a pop-up. It never holds the
+  // player: Next is there and focused at once.
+  $v.querySelectorAll('[data-c]').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.c === target) b.classList.add('ok', ...(good ? ['cheer'] : []));
+    else if (b.dataset.c === c) b.classList.add('ko');
+  });
+  // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
+  const tyIn = tq && $v.querySelector('#tyin');
+  // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
+  // A name read but no unit given (a name several units share, or of part of the unit and not of this photo: typeUnit)
+  // is a wrong answer, not "I don't know".
+  // A smaller fault (tq.z, Q394) is a wrong answer too, said for what it is (partRead).
+  const shw = !!(tq && (tq.m || tq.z) && !c);
+  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c || shw ? 'ko' : 'idk');
+  const idk = !!tq && !c && !shw,
+    read = tq ? (tq.z ? partRead(tq.z, tq.text) : typeRead(tq.m, tq.text, tq.sp, target, tq.ps)) : '',
+    step = tq && good ? typeStep(tq.m, tq.text, tq.sp, target) : null;
+  // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
+  // apart, the sub-entries and phases), chosen by what the record holds (fbBody). A mix-up between the two species of a
+  // mimicry pair (model.js mimMix) gives the pair's marks: the photo shown taken for the other species' unit, or in a Find
+  // the X the photo tapped (of unit c) taken for the name asked. The feedback only: nothing logged or drawn reads it.
+  const mx = good ? null : tap ? mimMix(c, tap, target) : mimMix(target, seenPh[0], c);
+  document.getElementById('after').innerHTML = fbBody(
+    target,
+    c,
+    good,
+    idk,
+    again,
+    ph,
+    read,
+    step,
+    photoTaxon(seenPh, target),
+    chs,
+    repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)}),
+    mx
+  );
+  // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
+  const qq = $v.querySelector('.q');
+  if (qq) qq.classList.add('done');
+  fbShown();
+  fbMoreBind();
+  if (isStacked()) {
+    window.scrollTo(0, 0);
+    fitStage();
+    document.querySelectorAll('#after details').forEach(d => (d.ontoggle = fitStage));
+  }
+  // Tablet and desktop: the feedback always sits in the answer column, whatever the stage shows (3 views, one view,
+  // a mix-up montage or a duel), so it is in the same place after every answer. Phones: bottom sheet.
+  bindGo(document.getElementById('after'));
+  const nb = document.getElementById('next');
+  nb.focus({preventScroll: true});
+  nb.onclick = route;
+  // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#practice/duels/A/B) is cheap anyway.
+  setTimeout(() => hashNow() === cur && planNext(cur), 50);
+  // The out-of-game prompts take turns (promptOk), never with a card or an achievement toast, nor with the mastery toast
+  // due in a moment.
+  // In the Duel tab, the relief card after the hold has just set in comes first (reliefArm); the others wait. In the
+  // custom quiz, its once-ever reminder of the units waiting in the Quiz likewise (leftNote counts, leftArm).
+  leftNote(cur);
+  // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
+  // A Find the X showed four tiles, each of its own unit.
+  const fxs = photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find,
+    phx =
+      mimArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx) ||
+      phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
+  if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
+    if (nudgeDue()) (promptMark(), signinNudge());
+    else if (pulseDue()) pulseArm(nb);
+  }
+  // Every unit in play met and none may open now: its card takes the break at Next before a tip (allMetArm); the photo
+  // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
+  allMetArm(nb, cur, exq && s.mx);
+  // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
+  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run.
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '');
+  // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
+  if (typeof helpedArm === 'function') helpedArm(nb);
 }
 // The answer's feedback: the verdict (step: the typed spelling step, typeStep), the photo's taxon line (tx: app.js
 // photoTaxon, taxonLine), the decisive line (fbLine), the report button (rep: always in view, under the decisive line;
@@ -2436,35 +2433,32 @@ const prefetched = () => new Promise(ok => (pfWait.push(ok), pump()));
 // Tops the queue up to AHEAD (questions after the one on screen if it is not answered yet). Not while the cards of
 // the genera met are open: they are recorded as they show, and a plan made meanwhile would deal them again.
 function planNext(cur) {
-  // The bars read from one false-alarm table while it runs (app.js faHeld).
-  return faHeld(() => {
-    if ((!photoQuiz(cur) && cur !== 'quiz-duel') || document.querySelector('.unlock.intro')) return;
-    // The custom quiz needs its selection (a link to it without one opens the selection screen).
-    if (cur === CUSTOM_H && !customSel()) return;
-    const o = $v.querySelector('.q:not(.done)') ? 1 : 0;
-    // A question on screen that changes what comes next (an exam question, a duel slipped in, an "Again", cards) is answered
-    // before anything is planned past it: its answer moves the exam's spacing and the photos seen.
-    if (o && photoQuiz(cur) && SHOWNQ && !plain(SHOWNQ)) return;
-    const pk = planPool(cur),
-      key = i => `${cur}|${answersSoFar() + o + i}|${pk}`;
-    if (NEXTQ && NEXTQ.k !== key(0)) dropPlans();
-    let n = 0,
-      end = null;
-    for (let x = NEXTQ; x; x = x.next) (n++, (end = x));
-    while (n < (photoQuiz(cur) ? AHEAD : 1) && !(end && end.stop)) {
-      const snap = planState(),
-        // planPhoto gets the answers count at which the question will show (its place in the queue): the contrast
-        // questions' spacing is counted on it.
-        args = photoQuiz(cur) ? planPhoto(cur, answersSoFar() + o + n) : planDuel();
-      if (!args) break; // the Duel tab with no look-alike pair unlocked
-      const x = {k: key(n++), args, snap, stop: !plain(args), urls: pfUrls(args), held: [], next: null};
-      if (end) end.next = x;
-      else NEXTQ = x;
-      end = x;
-      PF.push(x);
-    }
-    pump();
-  });
+  if ((!photoQuiz(cur) && cur !== 'quiz-duel') || document.querySelector('.unlock.intro')) return;
+  // The custom quiz needs its selection (a link to it without one opens the selection screen).
+  if (cur === CUSTOM_H && !customSel()) return;
+  const o = $v.querySelector('.q:not(.done)') ? 1 : 0;
+  // A question on screen that changes what comes next (an exam question, a duel slipped in, an "Again", cards) is answered
+  // before anything is planned past it: its answer moves the exam's spacing and the photos seen.
+  if (o && photoQuiz(cur) && SHOWNQ && !plain(SHOWNQ)) return;
+  const pk = planPool(cur),
+    key = i => `${cur}|${answersSoFar() + o + i}|${pk}`;
+  if (NEXTQ && NEXTQ.k !== key(0)) dropPlans();
+  let n = 0,
+    end = null;
+  for (let x = NEXTQ; x; x = x.next) (n++, (end = x));
+  while (n < (photoQuiz(cur) ? AHEAD : 1) && !(end && end.stop)) {
+    const snap = planState(),
+      // planPhoto gets the answers count at which the question will show (its place in the queue): the contrast
+      // questions' spacing is counted on it.
+      args = photoQuiz(cur) ? planPhoto(cur, answersSoFar() + o + n) : planDuel();
+    if (!args) break; // the Duel tab with no look-alike pair unlocked
+    const x = {k: key(n++), args, snap, stop: !plain(args), urls: pfUrls(args), held: [], next: null};
+    if (end) end.next = x;
+    else NEXTQ = x;
+    end = x;
+    PF.push(x);
+  }
+  pump();
 }
 const topUp = () => setTimeout(() => planNext(hashNow()), 50);
 const takePlan = cur => {
@@ -2476,63 +2470,60 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto(cur = 'quiz') {
-  // The bars read from one false-alarm table while it runs (app.js faHeld).
-  return faHeld(() => {
-    // The first-launch question first (model.js startOf): a player with no answer to it (tour skipped, or an existing
-    // player) is asked on a card before the next quiz question; from CHOICE.ASK answers on it is inferred, silently.
-    // A question shown and not answered (the player went to Learn and came back, or reloaded) comes back as it was, before
-    // anything else is decided: pendTake. A new one only once it is answered, or when its photo or genus left the draw.
-    const kept = pendTake(cur);
-    if (!kept && cur === 'quiz' && startGate()) return startAskShow(cur);
-    // Now and then a wink instead (winkShow): not a question of the game. Decided before any question is taken or chosen,
-    // so the planned ones and the Again / duel spacing wait for the next. The photo quiz only.
-    const wk = !kept && cur === 'quiz' && winkDue();
-    if (wk) return winkShow(wk);
-    let q = kept ? kept.q : takePlan(cur) || planPhoto(cur);
-    // Chosen again: every planned question after a new break (rustNow: the app may stay open across it), a comeback
-    // question once the rust melted, and a card of the path that would now wait (noOpen, introHold, model.js openRight:
-    // an opening only after a right answer; a level's group, lvl, as a card of the path). The custom quiz's cards are the
-    // player's choice: they never wait. A kept question stays whatever happened meanwhile (its player has not answered it
-    // yet): only the questions planned behind it are chosen again after a break.
-    const brk = rustNow();
-    if (kept) {
-      if (brk) dropPlans();
-      // After a reload no question remembers it was asked: the draw's repeat window starts with it.
-      if (!lastQs.includes(q[1])) ((last = q[1]), (lastQs = [...lastQs, q[1]].slice(-4)));
-      pendSeen(q);
-    } else if (
-      brk ||
-      (q.intro && !q.custom && (noOpen() || ((!q.start || q.lvl) && (introHold() || !openRight())))) ||
-      !!q.warm !== cbIn(cur)
-    ) {
-      dropPlans();
-      q = planPhoto(cur);
-    }
-    SHOWNQ = q;
-    AUTOD = !!q.auto;
-    FINDX = !!q.findx;
-    PENDSCI = q.sv || null;
-    question(...q);
-    pendShow(cur, q, kept);
-    // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
-    // The first cards' "Had the IMR lecture? Open all" box: not for a player who answered "I'm new to corals" (My progress
-    // keeps the button for them), nor on a level's group (introShow).
-    if (q.intro)
-      q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start, undefined, q.start && (startOf() || {}).c !== 'new');
-    // The offers about which genera are in play (back to one at a time, bonus genera) belong to the photo quiz. Open all
-    // is on the first cards and in My progress, never offered here. None over a kept question: it was shown with them.
-    else if (cur !== 'quiz' || kept) {
-    } else if (!noOpen() && promptOk() && startDue())
-      (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
-    else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
-    else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
-    else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
-    // The back card is said once: signed in, only once the visit's first sync brought the choice made on another device
-    // (sync.js noticesReady).
-    else if (!noOpen() && promptOk() && noticesReady() && bonusBackDue()) (promptMark(), bonusBackShow());
-    zoomHint(); // once per device, never over a card or offer shown just above
-    topUp(); // the questions after this one, chosen while it is played (planNext)
-  });
+  // The first-launch question first (model.js startOf): a player with no answer to it (tour skipped, or an existing
+  // player) is asked on a card before the next quiz question; from CHOICE.ASK answers on it is inferred, silently.
+  // A question shown and not answered (the player went to Learn and came back, or reloaded) comes back as it was, before
+  // anything else is decided: pendTake. A new one only once it is answered, or when its photo or genus left the draw.
+  const kept = pendTake(cur);
+  if (!kept && cur === 'quiz' && startGate()) return startAskShow(cur);
+  // Now and then a wink instead (winkShow): not a question of the game. Decided before any question is taken or chosen,
+  // so the planned ones and the Again / duel spacing wait for the next. The photo quiz only.
+  const wk = !kept && cur === 'quiz' && winkDue();
+  if (wk) return winkShow(wk);
+  let q = kept ? kept.q : takePlan(cur) || planPhoto(cur);
+  // Chosen again: every planned question after a new break (rustNow: the app may stay open across it), a comeback
+  // question once the rust melted, and a card of the path that would now wait (noOpen, introHold, model.js openRight:
+  // an opening only after a right answer; a level's group, lvl, as a card of the path). The custom quiz's cards are the
+  // player's choice: they never wait. A kept question stays whatever happened meanwhile (its player has not answered it
+  // yet): only the questions planned behind it are chosen again after a break.
+  const brk = rustNow();
+  if (kept) {
+    if (brk) dropPlans();
+    // After a reload no question remembers it was asked: the draw's repeat window starts with it.
+    if (!lastQs.includes(q[1])) ((last = q[1]), (lastQs = [...lastQs, q[1]].slice(-4)));
+    pendSeen(q);
+  } else if (
+    brk ||
+    (q.intro && !q.custom && (noOpen() || ((!q.start || q.lvl) && (introHold() || !openRight())))) ||
+    !!q.warm !== cbIn(cur)
+  ) {
+    dropPlans();
+    q = planPhoto(cur);
+  }
+  SHOWNQ = q;
+  AUTOD = !!q.auto;
+  FINDX = !!q.findx;
+  PENDSCI = q.sv || null;
+  question(...q);
+  pendShow(cur, q, kept);
+  // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
+  // The first cards' "Had the IMR lecture? Open all" box: not for a player who answered "I'm new to corals" (My progress
+  // keeps the button for them), nor on a level's group (introShow).
+  if (q.intro)
+    q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start, undefined, q.start && (startOf() || {}).c !== 'new');
+  // The offers about which genera are in play (back to one at a time, bonus genera) belong to the photo quiz. Open all
+  // is on the first cards and in My progress, never offered here. None over a kept question: it was shown with them.
+  else if (cur !== 'quiz' || kept) {
+  } else if (!noOpen() && promptOk() && startDue())
+    (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
+  else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
+  else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
+  else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
+  // The back card is said once: signed in, only once the visit's first sync brought the choice made on another device
+  // (sync.js noticesReady).
+  else if (!noOpen() && promptOk() && noticesReady() && bonusBackDue()) (promptMark(), bonusBackShow());
+  zoomHint(); // once per device, never over a card or offer shown just above
+  topUp(); // the questions after this one, chosen while it is played (planNext)
 }
 // The first-launch question's cards (core.js CHOICE; docs/ARCHITECTURE.md "First-launch question"): asked on a card when
 // the quiz opens with no answer yet (the tour asks it first); from CHOICE.ASK answers on, inferred (startInfer), never asked.

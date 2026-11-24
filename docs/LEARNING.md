@@ -1866,24 +1866,24 @@ lower (its learner has no photo memory, the world adds the units' μ and the pla
 the choices). So the rated world compares two arms within itself, as the protocol pairs them; its levels and right
 rates are never read against the app world's. The figures are in the notebook.
 
-**Long rated runs: the false-alarm table.** Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which scans
-every record of the player's progress, and the planner reads the bars of every unit in play several times an answer, so
-the cost of a long run grows with the units met times the units read (the scan took most of a 10,000-answer fish run's
-time). The rated world arms a table for each answer
-(`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds every unit's false alarms and chances in one
-pass over the records, in the scan's own order, so each value is the scan's to the last bit, and `scoreAnswer` empties
-it. The sheet never arms it and scans as before. In the rated world the same seeds give byte-identical `--out` files (the date,
-commit and run time aside) and reports, and every read of a run can be checked against the scan (`FA_CHECK`,
-`tests/faof.test.js`). The app world holds it too, in the page, over each question and the run's reads after it
-(`tools/learnsim.js` `held`, through the app's own `faHeld` below, so the app's handlers inside keep that table):
-without it the scan is most of a fish run's time (600 answers: 138 s, the sixth hundred fourteen times the first; 36 s
-with the table). With every read checked against the scan (`--facheck`: `FA_CHECK.on` in the page), a fish run
-of 600 answers gives the same `--out` file with the table as without it (the date, commit and run time aside). The app
-arms it for each handler that reads the bars (`app.js` `faHeld`: `quiz.js` `answer`, `quizPhoto`, `planNext`,
-`progress.js` `achCheck`) and drops it when the handler ends, a throw included, so no table outlives one synchronous
-task: inside a handler only `scoreAnswer` writes the fields the table reads, and a sync reply, a reset or another
-device's progress writes the player's progress in a task of its own. Every smoke turns `FA_CHECK` on in its pages
-(`tests/facheck.js`), so a read that differs from the scan fails it.
+**Long runs: the false-alarm counters.** Every unit's bar reads its false-alarm rate (`core.js` `faOf`): the times the
+unit was given for another unit's photo (the other records' `conf` for it) over its chances (their `off` for it, plus
+the typed questions of its rank). Scanning every record for each read made the cost of an answer grow with the units
+met times the units read (the scan took most of a 10,000-answer fish run's time, and two thirds of a fish answer's in
+the app). So the two sums are kept per unit, as integers, beside each progress object in memory, never on it: made in
+one pass over the records at the object's first read (`faTable`), then kept by `scoreAnswer`, which adds 1 to a count
+where it adds 1 to a record's `conf` or `off` (`faAdd`). A read is O(1) and an answer O(k), whatever the history, in
+the app, the simulations and the sheet's replays and leaderboard alike. The typed chances are read at each read. Each
+value is the scan's to the last bit: integer sums do not depend on their order, and a progress whose counts are not
+plain maps of safe integers is scanned. Nothing is saved, sent or merged (rule D9): a progress loaded, reset or replaced
+is another object, counted at its first read, and whatever writes the records in place other than the scorer drops its
+counters (`core.js` `faDrop`): in the app, `sync.js` after an adopted replay or a merge; in the tests, every record a
+smoke seeds or restores by hand. `FA_CHECK` checks every read against the scan, and
+a difference throws: in every smoke's pages (`tests/facheck.js`), in `tools/learnsim.js --facheck`, and in
+`tests/faof.test.js` (after every answer of made-up logs cut by loads, refills and resets, and of rated-world runs of
+the fish, the corals and the sea slugs) and `tests/falife.test.js` (when the counters are made, kept and dropped). The
+same simulator seed gives byte-identical `--out` files with the counters as with the scan (the date, commit and run time
+aside).
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `treeGen`, `treePhotos`, `app.js` `treeGenera`

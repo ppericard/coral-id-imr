@@ -197,16 +197,14 @@
   // the global level (the bar's likelihood, the moving average, the Elo); its counts and recent results take a miss.
   const PART = {cn: 0.5, g: 0.25};
   const partOf = q => (q && !q.ok && typeof q.z === 'string' && Object.prototype.hasOwnProperty.call(PART, q.z) ? PART[q.z] : 1);
-  // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
-  // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty
-  // after it.
+  // An answer scored on P (scoreStep, below). It keeps P's false-alarm counters (faAdd) at each write of a record's conf
+  // or off; a step that throws drops them, so the next read counts the records as the throw left them.
   function scoreAnswer(P, q) {
-    if (!FAT.has(P)) return scoreStep(P, q);
-    FAT.delete(P);
     try {
       return scoreStep(P, q);
-    } finally {
-      FAT.set(P, null);
+    } catch (e) {
+      faDrop(P);
+      throw e;
     }
   }
   function scoreStep(P, q) {
@@ -223,10 +221,11 @@
       },
       s = rec(t);
     // The choices offered beside it and the genus given instead, before the weights (the player's own mix-up rate).
-    chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
+    // Each count also kept in P's false-alarm counters (faAdd: by the unit offered or given, as faOf reads them).
+    chs.forEach(x => x !== t && (faAdd(P, t, s.off, x, 1), ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1)));
     s[ok ? 'ok' : 'ko']++;
     s.streak = ok ? (s.streak || 0) + 1 : 0;
-    if (!ok && q.c) (s.conf = s.conf || {})[q.c] = (s.conf[q.c] || 0) + 1;
+    if (!ok && q.c) (faAdd(P, t, s.conf, q.c, 0), ((s.conf = s.conf || {})[q.c] = (s.conf[q.c] || 0) + 1));
     const scored = typeof q.d0 === 'number' && isFinite(q.d0),
       d0 = scored ? q.d0 : 0,
       fam = Number(q.fam) || 0,

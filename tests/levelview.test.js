@@ -24,7 +24,6 @@ const C = require('../core.js'),
   {memStorage} = require('./kept.js');
 const ROOT = path.join(__dirname, '..'),
   src = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
-  json = f => JSON.parse(src(f)),
   APP = src('app.js'),
   MODEL = src('model.js'),
   PROG = src('progress.js');
@@ -217,7 +216,7 @@ function write(ctx, M, T, U, r) {
 }
 
 // A rated-world run of U, N answers: after each one, the scorer's caller bumps (quiz.js recordAnswer), then writes and
-// reads; the false-alarm table held around the reads as the app's handlers hold it (app.js faHeld).
+// reads; the bars read P's false-alarm counters (core.js faOf), as the app's do.
 function played(U, profile, seed, N, check, st, opts = {}) {
   const W = RW.world(U, seed),
     pl = RW.playerOf(U, W, {profile, seed, N, cps: [N], ...opts}),
@@ -228,75 +227,22 @@ function played(U, profile, seed, N, check, st, opts = {}) {
     r = rng(seed * 7919 + (check ? 1 : 0));
   st.met = () => Object.keys(ctx.P).filter(n => all.includes(n));
   st.last = T.ver();
-  C.faArm(ctx.P);
-  try {
-    for (let i = 0; i < N; i++) {
-      C.faDisarm(ctx.P);
-      pl.step(i);
-      C.faArm(ctx.P);
-      T.stateBump();
-      for (let j = 0; j < 1 + Math.floor(r() * 3); j++) {
-        const op = write(ctx, M, T, U, r);
-        st.ops[op] = (st.ops[op] || 0) + 1;
-        reads(T, r, all, st, `${U.subject} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`);
-      }
+  for (let i = 0; i < N; i++) {
+    pl.step(i);
+    T.stateBump();
+    for (let j = 0; j < 1 + Math.floor(r() * 3); j++) {
+      const op = write(ctx, M, T, U, r);
+      st.ops[op] = (st.ops[op] || 0) + 1;
+      reads(T, r, all, st, `${U.subject} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`);
     }
-  } finally {
-    C.faDisarm(ctx.P);
   }
   assert.deepStrictEqual(later, [], 'no VIEW_CHECK difference thrown later');
   st.units = Math.max(st.units, st.met().length);
   return {pl, T};
 }
 
-// The sea slug units (app.js treeGenera on seaslug.json, as tests/stateview.test.js builds them), in the shape of the
-// rated world's units (tools/ratedworld.js unitsOf): the genera on the slate, their species by their scientific names.
-function seaslugU() {
-  const SEA = C.subjectOf('seaslug'),
-    SF = json('seaslug.json'),
-    SG = C.treeGameRead(json('seaslug-game.json')),
-    CUR = json('curation.json'),
-    c = vm.createContext({
-      DOM: {EX: C.DOM.EX},
-      LV_AT: [0.5, 0.8, C.DOM.EX],
-      INTRO: {START: 4},
-      easyCover: C.easyCover,
-      treeScoreTree: C.treeScoreTree,
-      treeSpUnits: C.treeSpUnits,
-      treeGenSets: C.treeGenSets,
-      rankWeights: C.rankWeights,
-      unitRankOf: C.unitRankOf,
-      typeNormAll: C.typeNormAll,
-      SUBJ: SEA,
-      UNITS: {seaslug: {norm: C.typeNormAll}},
-      sciOn: () => true,
-      Math: Object.create(Math)
-    });
-  const treeGenera = vm.runInContext('(' + block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + ')', c),
-    X = treeGenera(
-      Object.assign(C.treeGen(SF, C.treePhotos(undefined, SG.photos, CUR.seaslug), undefined, C.unitRankOf(SEA)), {kinds: SEA.names}),
-      SF
-    ),
-    slate = [...X.c1, ...X.c2, ...X.c3].filter(n => ((X.gen[n].views || {}).wide || []).length);
-  return {
-    subject: 'seaslug',
-    X,
-    DATA: {gen: {}},
-    slate,
-    extra: [],
-    sp: [],
-    ssp: (X.ssl || []).filter(n => slate.includes(X.gen[n].parent)),
-    setK: 'ssp',
-    rec: n => X.gen[n],
-    views: n => ({wide: (X.gen[n].views || {}).wide || []}),
-    covers: X.picks || {},
-    core: X.c1,
-    c3: X.c3,
-    tree: null,
-    kind: n => X.gen[n].rank || 'genus',
-    imrFormsOf: n => X.gen[n].forms || ['a']
-  };
-}
+// The sea slug units in the shape of the rated world's (tests/seaslugunits.js).
+const seaslugU = require('./seaslugunits.js');
 
 const stats = () => ({reads: 0, kept: 0, units: 0, top: 0, scored: 0, ach: 0, ops: {}});
 const say = (t, check, st) =>
