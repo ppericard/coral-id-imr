@@ -1876,8 +1876,9 @@ where it adds 1 to a record's `conf` or `off` (`faAdd`). A read is O(1) and an a
 the app, the simulations and the sheet's replays and leaderboard alike. The typed chances are read at each read. Each
 value is the scan's to the last bit: integer sums do not depend on their order, and a progress whose counts are not
 plain maps of safe integers is scanned. Nothing is saved, sent or merged (rule D9): a progress loaded, reset or replaced
-is another object, counted at its first read, and the one writer that refills the object in place, `sync.js` after an
-adopted replay or a merge, drops its counters (`core.js` `faDrop`). `FA_CHECK` checks every read against the scan, and
+is another object, counted at its first read, and whatever writes the records in place other than the scorer drops its
+counters (`core.js` `faDrop`): in the app, `sync.js` after an adopted replay or a merge; in the tests, every record a
+smoke seeds or restores by hand. `FA_CHECK` checks every read against the scan, and
 a difference throws: in every smoke's pages (`tests/facheck.js`), in `tools/learnsim.js --facheck`, and in
 `tests/faof.test.js` (after every answer of made-up logs cut by loads, refills and resets, and of rated-world runs of
 the fish, the corals and the sea slugs) and `tests/falife.test.js` (when the counters are made, kept and dropped). The
