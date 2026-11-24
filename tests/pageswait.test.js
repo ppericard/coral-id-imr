@@ -89,8 +89,49 @@ test('the wait step sits between the upload and deploy-pages, with the one permi
   assert.match(s, /actions\/runs\/\$GITHUB_RUN_ID\/artifacts\?name=github-pages/);
   assert.match(s, /limit=60000/, 'at most 60 s');
   const code = YML.replace(/^\s*#.*$/gm, '');
-  assert.ok(!/continue-on-error/.test(code), 'a failed wait fails the job');
+  assert.strictEqual(code.match(/continue-on-error/g).length, 1, 'only the first deploy attempt may fail without failing the job');
   assert.ok(!/gh run rerun|run rerun|workflow run|retry/i.test(s), 'the wait never re-runs or retries the deploy');
+});
+
+// REE-279, the integrator's call: deploy-pages v5 reads the results service once and failed on about half the runs; one
+// bounded second attempt inside the same run, after a logged pause, only when the first failed.
+test('the deploy: a first attempt that may fail, one logged second attempt, the job and the page URL from whichever worked', () => {
+  const code = YML.replace(/^\s*#.*$/gm, ''),
+    steps = code.split(/\n {6}- /).map(s => '- ' + s),
+    byName = n => steps.find(s => s.startsWith('- name: ' + n) || s.startsWith('- uses: ' + n));
+  const first = byName('Deploy to GitHub Pages\n'),
+    pause = byName('First deploy attempt failed'),
+    second = byName('Deploy to GitHub Pages (second attempt)'),
+    stage = byName('Stage the static site');
+  assert.ok(first && pause && second && stage, 'the four steps exist');
+  const order = [stage, first, pause, second].map(s => code.indexOf(s.slice(0, 40)));
+  assert.deepStrictEqual(
+    order,
+    [...order].sort((a, b) => a - b),
+    'staging, first attempt, pause, second attempt, in that order'
+  );
+  assert.ok(at('- name: ' + NAME) < at('- name: Deploy to GitHub Pages\n'), 'the wait stays before the first attempt (the measurement)');
+  assert.match(first, /id: deployment\n/);
+  assert.match(first, /continue-on-error: true/);
+  assert.match(first, /uses: actions\/deploy-pages@v5/);
+  const FAILED = "if: steps.deployment.outcome == 'failure'";
+  assert.ok(pause.includes(FAILED) && second.includes(FAILED), 'both only when the first attempt failed');
+  assert.match(pause, /::warning title=pages-deploy-second-attempt::The first deploy-pages attempt failed .*Found 0 artifact\(s\)/);
+  assert.match(pause, /\n {10}sleep 20\n?$/, 'a pause of 20 s after the warning');
+  assert.ok(pause.indexOf('::warning') < pause.indexOf('sleep 20'), 'said before it waits');
+  assert.match(second, /id: deployment_second\n/);
+  assert.match(second, /uses: actions\/deploy-pages@v5/, 'the same action as the first attempt');
+  assert.ok(!/continue-on-error/.test(second), 'a second failure fails the job');
+  assert.strictEqual(first.match(/timeout: \d+/)[0], second.match(/timeout: \d+/)[0], 'the same inputs');
+  assert.match(
+    code,
+    /url: \$\{\{ steps\.deployment_second\.outputs\.page_url \|\| steps\.deployment\.outputs\.page_url \}\}/,
+    'the page URL of whichever attempt deployed'
+  );
+  assert.strictEqual(code.match(/uses: actions\/deploy-pages@/g).length, 2, 'two attempts, no more');
+  assert.ok(code.lastIndexOf('uses: actions/deploy-pages@') > code.indexOf('id: deployment_second'), 'nothing deploys after the second');
+  // Health's reading of what the deploy archived is unchanged: recorded at staging, before either attempt.
+  assert.match(stage, /echo "::notice title=published-source::\$\(git rev-parse HEAD\)"/);
 });
 
 test('the wait: listed at once, listed late, never listed, and a failing call is an attempt not a crash', () => {

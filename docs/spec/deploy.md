@@ -21,10 +21,14 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
   branch source is selected.
 - **The artifact wait** (REE-279): before `deploy-pages`, a step polls the run's REST artifact listing every 2 s, for at most
   60 s, logs each attempt and the lag (`::notice title=pages-artifact-lag`, and the run's summary), and fails the job with
-  `::error title=pages-artifact-lag` if `github-pages` is never listed. It needs the job permission `actions: read` and never
-  re-runs or retries the deploy. `deploy-pages` reads the artifact from the results service, not this listing, so the wait is
-  a proxy ([PAGES.md › The artifact wait](../PAGES.md#the-artifact-wait-ree-279-2026-11-24)); `tests/pageswait.test.js`
-  runs the step's script on a fake clock.
+  `::error title=pages-artifact-lag` if `github-pages` is never listed. It needs the job permission `actions: read` and only
+  measures. `deploy-pages` reads the artifact from the results service, not this listing, so the wait is a proxy
+  ([PAGES.md › The artifact wait](../PAGES.md#the-artifact-wait-ree-279-2026-11-24)); `tests/pageswait.test.js` runs the
+  step's script on a fake clock.
+- **The second deploy attempt** (REE-279): the first `deploy-pages` step has `continue-on-error: true`; when it fails, a
+  step logs `::warning title=pages-deploy-second-attempt`, pauses 20 s, and one second `deploy-pages` step (no
+  `continue-on-error`) deploys, or fails the job. One bounded attempt in the same run, not a re-run; the page URL comes from
+  whichever attempt deployed ([PAGES.md › The second attempt](../PAGES.md#the-artifact-wait-ree-279-2026-11-24)).
 - **The live site is checked against `main`** every hour: Health reads the live build number (`<meta name="build">`, a
   Deploy Pages run number), finds that run, and fails when a commit of `main` dated after the run's start has waited more
   than 45 minutes, naming the commits (the job's e-mail and issue; the brief's `Infra:` line). Gaps on GitHub's side are

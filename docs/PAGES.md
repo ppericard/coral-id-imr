@@ -125,7 +125,7 @@ at +B ms)") and a line in the run's summary, so the lag is counted across runs r
 listing never answered, with its last error, instead of claiming the artifact was not listed. A listing call that itself
 fails (HTTP error) or stalls is one more attempt, not a crash: each call is cut by `timeout` at the time left of the 60 s
 (10 s at most), so a stalled request cannot outlast the bound. It needs the job permission `actions: read` (added to the job only;
-the workflow's own stays `contents: read`), and it never re-runs or retries the deploy itself. Only a push to `main` runs
+the workflow's own stays `contents: read`); it only measures and never retries anything (the second attempt below does). Only a push to `main` runs
 the job, so a pull request's CI cannot exercise the step: `tests/pageswait.test.js` runs its script on a fake clock, and the
 first Deploy Pages run after the merge is its first real run.
 
@@ -146,6 +146,31 @@ reads a few hundred ms on a real runner):
   the listing never answered (the error says which).
 If failures continue with attempt 1 every time, the wait has done what it can: a fresh dispatch of Deploy Pages on `main`
 catches the site up ("Manual recovery"; the Health check below says when it is behind), and the cause is GitHub's to fix.
+
+**The second attempt** (REE-279, the integrator's call, easy to correct; added after runs 1493 to 1495 failed the same way
+before the wait was merged, the site staying on build 1490). The wait cannot watch the listing `deploy-pages`
+reads, so the workflow gives the action a second chance inside the same run: the first "Deploy to GitHub Pages" step has
+`continue-on-error: true`; if its outcome is `failure`, the step "First deploy attempt failed, second attempt after a pause"
+prints `::warning title=pages-deploy-second-attempt` (the first attempt failed, the known cause "Found 0 artifact(s)", where to
+look) and a line in the run's summary, pauses 20 s, and "Deploy to GitHub Pages (second attempt)" runs the same action with
+the same inputs. The second has no `continue-on-error`: a second failure fails the job, loudly. It is one bounded attempt in
+one run, not a re-run of a job, and it runs only after a failure, so a passing first attempt costs nothing. The job's page URL
+(`environment.url`) comes from whichever attempt deployed, and Health's `published-source` notice is written at staging,
+before either attempt, so what Health reads does not depend on which attempt deployed. A first attempt that had created a
+Pages deployment before failing would leave the lock described under "Manual recovery" and the second would fail on it,
+visibly; the failure seen so far ends before any deployment exists.
+
+**Reading the two annotations in a run** (Annotations of the Deploy Pages run):
+- no `pages-deploy-second-attempt` warning: the first attempt deployed; read `pages-artifact-lag` as above;
+- the warning, and the job green: the first attempt failed and the second deployed. The pair `pages-artifact-lag` (attempt N)
+  and the warning says how often the wait's listing was already there when the deploy still found nothing: with `listed at
+  attempt 1` each time, the REST listing is not the one that lags, and the second attempt is what keeps the site current;
+- the warning and a red job: both attempts failed. Read the second attempt's log: the same "Found 0 artifact(s)" 20 s later
+  would say the artifact is not there at all (look at the upload step); another error is a different failure (the lock above, a
+  Pages setting);
+- `pages-artifact-lag` as an error: the wait itself failed, and neither deploy step ran.
+The count of runs with the warning is the rate of the GitHub-side failure that the second attempt now absorbs; once it is
+steadily zero, or GitHub has said it fixed the lag, the second attempt and this paragraph can go.
 
 ## Infrastructure health
 
