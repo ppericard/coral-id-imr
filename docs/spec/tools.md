@@ -160,11 +160,17 @@ subject is a test case, not the definition of the target.
   the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
   costs less; `--clock 14400` is the study's condition). **A count is repeatable** (REE-281): the clock is virtual
   (`Date` and `performance.now` stand still between the tool's ticks: 4 s of thinking and 6 s of pause an answer), the random
-  numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, the **boot is started
-  over from a settled page** (the plans dropped, the numbers from the seed, the quiz drawn again: the script tiers come in
-  as they load, a `route()` of theirs renders Home, whose shuffle draws random numbers, or the quiz first, and the
-  questions planned ahead come from whatever was drawn before; under load the same seed then asked another sequence from
-  the third question on, 0.11 M or 0.16 M calls an answer on `fish:50`), and the data (every
+  numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, the **page boots on About
+  and is at rest before the quiz opens** (the script tiers come in as they load, and a `route()` of theirs
+  (`proto/lab.js` `labLoad`: the last Lab file in redraws Home or a Lab page) renders Home before the quiz in some loads
+  and not in others; the question a boot draws is kept by the quiz
+  (`quiz.js` `pendShow`, `pendTake`) and shown again by any later `route()`, with the photos it joined to the session's
+  window (`model.js` `SEENQ`) and the planner's memory of it (`last`, `lastQs`), so no restart of the plans or the numbers
+  could undo it: `fish:50` at seed 3 asked another sequence in one run of five, 0.113 M or 0.118 M calls an answer. About
+  draws no question; the tool waits for every tier set up (`HAVE`), the Lab files loaded (`LAB.pending`), the planned
+  questions' photos and the idle tasks, fails
+  naming the page's state when a question, a window of photos or a bar is still there, then drops the plans, starts the
+  numbers from the seed and opens the quiz), and the data (every
   `.json` file the page asks for) is the pinned tree's, as the players are, while the code is the tree under test's. So
   neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the photos
   (a Candidate photos commit changes `seaslug-game.json` and `data/cand.json` on main with no change of code) moves a
@@ -179,9 +185,11 @@ subject is a test case, not the definition of the target.
   files, times the margin, as the ceilings of the states measured only), `--regen`, `--par N` (N states made or counted
   at once, each count in a Chromium of its own; 1 by default, 3 on CI), `--throttle N` (the page's CPU N times slower),
   `--trace` (each row keeps where every random number was drawn, `rtrace`, to find what a draw depends on when two runs
-  part), `--data-now` (the tree's own data, to see what a refill changes). To check a change to the tool: run the same
-  seed ten times (`--seed 1,1,1,1,1,1,1,1,1,1 --par 3`), unloaded and with a few CPU-bound processes beside it; the rows must
-  ask the same questions (`asked`) and count the same to a few calls.
+  part; it also writes the page's state at the restart), `--data-now` (the tree's own data, to see what a refill changes),
+  `--repeat N` (each state and seed counted N times; exit 1, naming the run, when the questions asked (`asked`) differ or
+  the calls an answer differ by more than 0.1% or the storage counts by more than 5%; `--out` keeps every run and
+  `--write-budget` takes the largest). To check a change to the tool or to how the page is started: `--repeat 5`
+  on the nine states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.
   A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
   card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
   `reefid-answercost` in the temporary directory. The missing states of a subject are made by one run to the longest of
