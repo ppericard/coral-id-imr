@@ -9500,16 +9500,19 @@ const CORE_ = (function () { const module = {exports: {}};
   // false-alarm counters"): for each P, every unit's false alarms (the other records' conf for it) and offers (their off), the
   // scan's two sums, kept beside P in memory, never on it (nothing more is saved, sent or merged). Made in one pass over
   // the records at P's first read (faTable), then kept by the scorer, which adds 1 to a count where it adds 1 to a
-  // record's conf or off (faAdd): a read is O(1) whatever the history, an answer O(k). The typed chances (faTyped) are
-  // read at each read, as the scan reads them. Counts add up exactly as integers only: a P whose conf or off is not a
+  // record's conf or off (faAdd): a read is O(1) whatever the history, an answer O(k). The typed chances are read at each
+  // read, as faTyped counts them, with the unit's rank kept in its entry (no call a read). Counts add up exactly as
+  // integers only: a P whose conf or off is not a
   // plain object of safe integers, a unit id that is not a string or that Object.prototype holds, or typed chances that
   // are not an integer, are scanned. Whoever writes the records' conf or off in place other than through scoreAnswer
   // (sync.js refilling P with a replay or a merge) drops them (faDrop): rebuilt at the next read. A P replaced by another
   // object has none until its first read. FA_CHECK.on (the tests, every smoke): every read is checked against the scan,
   // and a difference throws.
   const FA_CHECK = {on: false},
-    FAK = new WeakMap(), // P -> Map(unit -> [false alarms, offers]), or false: scanned
+    FAK = new WeakMap(), // P -> Map(unit -> [false alarms, offers, its rankKey]), or false: scanned
     faDrop = P => void (P && typeof P === 'object' && FAK.delete(P)),
+    // Unit k's entry in K, made empty with its rank.
+    faEntry = (K, k) => K.get(k) || K.set(k, [0, 0, rankKey(k)]).get(k),
     faPlain = c => {
       if (typeof c !== 'object' || Array.isArray(c)) return false;
       const p = Object.getPrototypeOf(c);
@@ -9528,7 +9531,7 @@ const CORE_ = (function () { const module = {exports: {}};
           const v = c[k];
           if (!faInt(v)) return false;
           if (k === t || !v) continue;
-          const x = u.get(k) || u.set(k, [0, 0]).get(k);
+          const x = faEntry(u, k);
           if (!Number.isSafeInteger((x[i] += v))) return false;
         }
         return true;
@@ -9547,19 +9550,20 @@ const CORE_ = (function () { const module = {exports: {}};
     if (k === r || r === LEVEL) return;
     const v = c ? c[k] : undefined;
     if (k in Object.prototype || (c && !faPlain(c)) || !faInt(v) || !Number.isSafeInteger((v || 0) + 1)) return void FAK.delete(P);
-    const y = K.get(k) || K.set(k, [0, 0]).get(k);
-    if (!Number.isSafeInteger(++y[i])) FAK.delete(P);
+    if (!Number.isSafeInteger(++faEntry(K, k)[i])) FAK.delete(P);
   }
   function faOf(P, n) {
     if (!P || !n) return 0;
     if (typeof P !== 'object' || typeof n !== 'string' || n in Object.prototype) return faScan(P, n);
     let K = FAK.get(P);
     if (K === undefined) FAK.set(P, (K = faTable(P)));
-    const x = K && K.get(n),
-      op = faTyped(P, n) + (x ? x[1] : 0);
-    if (!K || !Number.isSafeInteger(op)) return faScan(P, n);
-    // A unit no other record names nor offers: its typed chances only, as the scan counts them.
-    const v = op > 0 ? Math.min(1, (x ? x[0] : 0) / op) : 0;
+    if (!K) return faScan(P, n);
+    // n's entry, made at its first read when no other record names nor offers it (its typed chances only, as the scan
+    // counts them); its offers plus faTyped's expression on the rank kept in it, so a read makes no call.
+    const x = K.get(n) || K.set(n, [0, 0, rankKey(n)]).get(n),
+      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[x[2]] || 0) - ((P[n] || {}).ty || 0)) + x[1];
+    if (!Number.isSafeInteger(op)) return faScan(P, n);
+    const v = op > 0 ? Math.min(1, x[0] / op) : 0;
     if (FA_CHECK.on && !Object.is(v, faScan(P, n)))
       throw new Error(`faOf: the counters give ${v} for ${n}, the scan ${faScan(P, n)} (a record of P written in place with no faDrop?)`);
     return v;
