@@ -73,33 +73,42 @@ const sample = (U, G, r, k = Infinity) => {
 const checkAll = (A, P, L, label) => L.reduce((t, n) => t + (same(A, n, label) ? 0 : 1), 0);
 
 // A rated-world run of N answers: examLooks checked at every call the play makes (through core.js looksLeft, model.js
-// lookLeft), and on a sample of the units every `every` answers.
-function played(subject, profile, seed, N, every) {
+// lookLeft), and on a sample of the units every `every` answers. With calls, the run goes on past N, `every` answers at a
+// time, until the play has read the exam's look-alikes, and at most to cap answers (st.n: the answers played; st.first:
+// the answer of the first call).
+function played(subject, profile, seed, N, every, {calls = false, cap = 2 * N} = {}) {
   const U = RW.unitsOf(subject),
     W = RW.world(U, seed),
     pl = RW.playerOf(U, W, {profile, seed, N, cps: [N]}),
     A = appLike(pl.ctx, pl.G, U),
     ll = pl.ctx.looksLeft,
     r = rng(seed * 104729),
-    st = {calls: 0, fast: 0, checked: 0};
+    st = {calls: 0, fast: 0, checked: 0, n: 0, first: 0};
   pl.ctx.looksLeft = (P, n, looks) => {
-    st.calls++;
+    if (!st.calls++) st.first = st.n + 1;
     assert.deepStrictEqual([...looks], [...A.ref(n)], `${subject} ${profile} ${seed}: examLooks(${n}) in play`);
     return ll(P, n, looks);
   };
-  for (let i = 0; i < N; i++) {
-    pl.step(i);
-    if ((i + 1) % every) continue;
-    const L = sample(U, pl.G, r, 60);
-    st.checked += L.length;
-    st.fast += checkAll(A, pl.ctx.P, L, `${subject} ${profile} ${seed} after ${i + 1}`);
-  }
+  const run = to => {
+    for (; st.n < to; st.n++) {
+      pl.step(st.n);
+      if ((st.n + 1) % every) continue;
+      const L = sample(U, pl.G, r, 60);
+      st.checked += L.length;
+      st.fast += checkAll(A, pl.ctx.P, L, `${subject} ${profile} ${seed} after ${st.n + 1}`);
+    }
+  };
+  run(N);
+  while (calls && !st.calls && st.n < cap) run(Math.min(cap, st.n + every));
   pl.ctx.looksLeft = ll;
   return {st, pl, U};
 }
 
-// The lecture RA's runs go past the first exam entries (the play reads the exam's look-alikes from about 1,340 answers
-// on the fish, 2,000 on the corals, seed 1); the others stay short.
+// The lecture RA's runs go past the first exam entries; the others stay short. When the play first reads the exam's
+// look-alikes depends on the world, and the world's photo draws on every photo in the game data (tools/ratedworld.js
+// world: one stream over the sorted files), so a refill of the candidate photos moves it (seed 1: from 1,250 to 1,450
+// answers on the fish, about 2,000 on the corals). The lecture RA's runs therefore play on past N until that first
+// call, to twice N at most.
 test('rated-world runs, fish and corals: every examLooks call in play and the units every 200 answers, as before', t => {
   for (const [subject, profile, seed, N, calls] of [
     ['fish', 'lectureRA', 1, 1400, true],
@@ -107,9 +116,11 @@ test('rated-world runs, fish and corals: every examLooks call in play and the un
     ['coral', 'lectureRA', 1, 2200, true],
     ['coral', 'strongRA', 3, 600, false]
   ]) {
-    const {st, U, pl} = played(subject, profile, seed, N, 200);
-    if (calls) assert.ok(st.calls > 0, `${subject}: the play reads the exam's look-alikes`);
-    t.diagnostic(`${subject} ${profile} ${N}: ${st.calls} calls in play; ${st.fast} of ${st.checked} checked without the units in play`);
+    const {st, U, pl} = played(subject, profile, seed, N, 200, {calls});
+    if (calls) assert.ok(st.calls > 0, `${subject}: the play reads the exam's look-alikes (none in ${st.n} answers)`);
+    t.diagnostic(
+      `${subject} ${profile} ${st.n} answers: ${st.calls} calls in play${st.calls ? ` from answer ${st.first}` : ''}; ${st.fast} of ${st.checked} checked without the units in play`
+    );
     assert.ok(st.fast > 0 && st.fast < st.checked, `${subject}: both ways taken (${st.fast} of ${st.checked} without the units in play)`);
     assert.ok(Object.keys(pl.ctx.P).length > U.slate.length / 4, `${subject}: a history`);
   }
