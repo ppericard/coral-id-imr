@@ -43,7 +43,7 @@ test('pick_short: an exhaustion record made under a smaller cap does not hold; o
 day = datetime.date(2026, 11, 21)
 row = lambda cap, base: {'cap': cap, 'base': base, 'room': 10, 'parts': {'free': 10}, 'easy': 0, 'unjudged': 0}
 rows = {'a': row(90, 30), 'b': row(30, 30), 'c': row(90, 30), 'd': row(90, 30)}
-mem = {k: {'at': '2026-11-20', 'parts': ['free']} for k in rows}
+mem = {k: {'at': '2026-11-20', 'room': {'free': 10}} for k in rows}
 mem['c']['cap'] = 90  # searched to the end under the raised cap: holds
 mem['d']['cap'] = 40  # under a smaller one: does not
 print(json.dumps(ff.pick_short(rows, mem, day)))`);
