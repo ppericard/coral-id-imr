@@ -124,6 +124,16 @@ test('the verdict fails on one count over its ceiling and names the state and th
   assert.match(A.verdict([row('fish:7')], budget, 'b.json').lines.join('\n'), /No ceiling for fish:7 in b\.json: not checked/);
 });
 
+test('the page holds the state’s history: the warm-up answers played before the read are counted in', () => {
+  assert.ok(!A.historyOff(52, 50, 2), 'the default warm-up');
+  assert.ok(!A.historyOff(70, 50, 20), 'a longer warm-up (--warm 20) is no reason to reject a state loaded right');
+  assert.ok(!A.historyOff(3020, 3000, 2), '5% of a long history is tolerated');
+  assert.ok(A.historyOff(5, 50, 2), 'a history lost');
+  assert.ok(A.historyOff(70, 50, 2), 'the warm-up is not a history of 20 more');
+  assert.ok(A.historyOff(NaN, 50, 2), 'no history read');
+  assert.ok(A.historyOff(3400, 3000, 2));
+});
+
 test("the table is the study's, one line a state", () => {
   const t = A.table([row('fish:50', {namedCalls: 319464})]).split('\n');
   assert.strictEqual(t.length, 3);

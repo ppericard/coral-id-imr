@@ -133,6 +133,10 @@ function over(row, budget) {
     .map(([k, ceil]) => ({state: row.state, metric: k, value: m[k], ceiling: ceil}));
 }
 
+// Whether the page's history (H, read after the warm-up answers it played) is far from the state's: more than 5% (at least
+// 10 answers) off the state's answers plus the warm-up.
+const historyOff = (H, answers, warm) => !(Math.abs(H - warm - answers) <= Math.max(10, 0.05 * answers));
+
 const fmt = x => (x === undefined || x === null ? '-' : Math.round(x).toLocaleString('en-US'));
 
 // What a run says against a budget file: {lines, bad, annotations}. Each count over its ceiling is named (state, count,
@@ -401,8 +405,8 @@ async function count(browser, base, file, name, o, expect) {
   // The page is on the state's subject, with the state's history: a state that loaded as another subject, or with its
   // history lost, would be counted as another player's work and read as a cheap one.
   if (expect && expect.subject && size.subj !== expect.subject) throw new Error(`${name}: the page loaded the subject ${size.subj}, not ${expect.subject}`);
-  if (expect && expect.answers && Math.abs(size.H - expect.answers) > Math.max(10, 0.05 * expect.answers))
-    throw new Error(`${name}: the page holds ${size.H} answers of the state's ${expect.answers}`);
+  if (expect && expect.answers && historyOff(size.H, expect.answers, o.warm))
+    throw new Error(`${name}: the page holds ${size.H} answers (after ${o.warm} of warm-up) of the state's ${expect.answers}`);
   // The storage's own boundary (localStorage getItem and setItem, whoever calls them: store.get and store.set, the kept
   // queues' direct writes): calls and characters read and written per answer.
   await p.evaluate(() => {
@@ -567,7 +571,7 @@ async function main() {
   }
 }
 
-module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, table, writeBudget, stateFile, pool, ensureStates, GEN, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, GEN, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);
