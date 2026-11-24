@@ -720,13 +720,15 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries', (
 // draw bonus, the measured ease spread), fish favour reference-level photos in the draw.
 test('calibOf: the corals keep the defaults, fish set their own', () => {
   assert.deepStrictEqual(C.calibOf(C.subjectOf('coral')), C.CALIB);
-  assert.deepStrictEqual(C.CALIB, {ease: 0.5, ref: 1, early: 0, pool: Infinity});
+  assert.deepStrictEqual(C.CALIB, {ease: 0.3, ref: 1, early: 0, pool: Infinity});
   // The fish draw in big pools (tests/drawcalib.test.js).
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).u, 0.25);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).pool, 30);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).ref, 3);
   assert.strictEqual(C.calibOf(C.subjectOf('fish')).early, 1.5);
-  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, 0.5);
+  // The judged ease's weight: the shared calibration's (tests/priordiff.test.js).
+  assert.strictEqual(C.calibOf(C.subjectOf('fish')).ease, C.CALIB.ease);
+  assert.strictEqual(C.calibOf(C.subjectOf('seaslug')).ease, C.CALIB.ease);
   assert.ok(!C.refLevel({f: 'x'}) && !C.refLevel({f: 'x', q: 3}), 'a photo with no judged ease is never reference level');
   assert.ok(!C.refLevel({f: 'x', e: 5, jt: 'p1g0slm', rep: 'inaturalist'}), 'never one with other kinds of fish (rule P3)');
   // Read from the photo's ease (4 or 5) and look alone, never from its route in.
