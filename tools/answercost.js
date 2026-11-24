@@ -29,7 +29,9 @@
 // seed (fish 3,000 answers: 0.3 to 0.4 M calls over seeds 1 to 3), and a ceiling is the largest over three seeds times a
 // margin. With the seed fixed a count is repeatable (REE-281): the page's clock is virtual (Date and performance.now stand
 // still between the tool's ticks, 4 s of thinking and 6 s of pause an answer), the random numbers start over from the seed
-// at each tick, every photo is the same 1 x 1 picture served at once, and the data (.json) is the pinned tree's, so
+// at each tick, every photo is the same 1 x 1 picture served at once, the boot is started over from a settled page (plans
+// dropped, numbers from the seed, the quiz drawn again: the boot's own route() order moved the draws under load), and the
+// data (.json) is the pinned tree's, so
 // neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
 // (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
 // seconds (30) after the state's last answer, so the player is in the middle of a session whenever the file is played: a
@@ -423,7 +425,7 @@ async function count(browser, base, file, name, o, expect) {
     r => (/\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(r.request().url()).pathname) ? r.fallback() : r.abort())
   );
   await ctx.addInitScript(
-    ({ls, seed, ref}) => {
+    ({ls, seed, ref, trace}) => {
       if (ref !== null) {
         // The page's clock is a VIRTUAL one, from the state's own time: the rust since the last answer, the comeback, the time
         // since the first launch read the same whenever the state is played, and it stands still between the tool's ticks
@@ -447,6 +449,7 @@ async function count(browser, base, file, name, o, expect) {
         window.__tick = ms => {
           V.t += ms;
           V.p += ms;
+          window.__ticksN = ticks + 1;
           if (seed !== null) window.__reseed(++ticks);
         };
       }
@@ -454,6 +457,8 @@ async function count(browser, base, file, name, o, expect) {
         let a = seed >>> 0; // mulberry32
         window.__reseed = n => (a = (seed + Math.imul(n, 0x9e3779b1)) >>> 0);
         Math.random = () => {
+          // --trace: where each number is drawn (the tick it follows, the callers), to find what the draws depend on
+          if (trace) (window.__rt = window.__rt || []).push(`${window.__ticksN || 0} ${new Error().stack.split('\n').slice(2, 6).map(l => (/at (\S+)/.exec(l) || [])[1]).join('<')}`);
           a = (a + 0x6d2b79f5) >>> 0;
           let t = Math.imul(a ^ (a >>> 15), 1 | a);
           t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
@@ -465,18 +470,33 @@ async function count(browser, base, file, name, o, expect) {
       localStorage.clear();
       for (const [k, v] of Object.entries(ls)) localStorage.setItem(k, v);
     },
-    {ls, seed: o.seed, ref: o.clock === null ? null : lastAnswerMs(ls, file) + o.clock * 1000}
+    {ls, seed: o.seed, ref: o.clock === null ? null : lastAnswerMs(ls, file) + o.clock * 1000, trace: !!o.trace}
   );
   await ctx.addInitScript(PAGE);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
+  const cdp = await ctx.newCDPSession(p);
+  // --throttle N: the page's CPU N times slower (a phone's, or a loaded machine's): a count must not move with it.
+  if (o.throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', {rate: o.throttle});
   await p.goto(base + '#quiz');
   await p.waitForFunction(() => window.APP_READY, null, {timeout: 120000});
   await p.evaluate(() => window.loadTier && window.loadTier(5)); // every script tier in, as a player who has opened My progress
   await p.waitForLoadState('networkidle');
   if (!/quiz/.test(await p.evaluate(() => location.hash))) await p.evaluate(() => (typeof go === 'function' ? go('quiz') : (location.hash = '#quiz')));
   await p.waitForTimeout(800);
+  // The boot is not repeatable (REE-281): the script tiers come in as they load, a route() of theirs renders Home (its shuffle
+  // draws random numbers) or the quiz first, and the questions planned ahead are drawn from whatever numbers came before,
+  // so under load the same seed asked another sequence from the third question on (fish:50: 0.11 M or 0.16 M calls an
+  // answer). Start over from a settled page: the plans dropped (the planner's state put back), the numbers from the seed,
+  // the quiz drawn again.
+  await settle(p);
+  await p.evaluate(() => {
+    if (window.__reseed) __reseed(0);
+    if (typeof dropPlans === 'function') dropPlans();
+    route();
+  });
+  await settle(p);
   for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
   const size = await p.evaluate(() => {
@@ -527,7 +547,6 @@ async function count(browser, base, file, name, o, expect) {
       };
     }
   });
-  const cdp = await ctx.newCDPSession(p);
   await cdp.send('Profiler.enable');
   await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
   const fmts = [];
@@ -554,7 +573,8 @@ async function count(browser, base, file, name, o, expect) {
   const per = x => Math.round((10 * x) / n) / 10,
     watch = {};
   for (const [k, c] of by) if (WATCH.includes(k.split('@')[0])) watch[k] = per(c);
-  const st = await p.evaluate(() => window.__st);
+  const st = await p.evaluate(() => window.__st),
+    rtrace = o.trace ? await p.evaluate(() => window.__rt || []) : undefined;
   await ctx.close();
   return {
     state: name,
@@ -562,6 +582,7 @@ async function count(browser, base, file, name, o, expect) {
     answers: n,
     fmts: fmts.join(','),
     asked: why.asked || [],
+    rtrace,
     errs,
     namedCalls: per(total),
     store: {
@@ -583,7 +604,7 @@ async function count(browser, base, file, name, o, expect) {
 
 const USAGE =
   'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
-  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now]';
+  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now] [--throttle N]';
 
 async function main() {
   const argv = process.argv.slice(2),
@@ -592,7 +613,7 @@ async function main() {
       return i >= 0 && argv[i + 1] !== undefined && !argv[i + 1].startsWith('--') ? argv[i + 1] : d;
     };
   if (argv.includes('--help') || argv.includes('-h')) return console.log(USAGE);
-  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now']);
+  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now', 'throttle', 'trace']);
   for (const a of argv.filter(a => a.startsWith('--')))
     if (!known.has(a.slice(2))) return (console.error(`unknown option ${a}\n${USAGE}`), process.exit(2));
   let states;
@@ -608,7 +629,9 @@ async function main() {
       warm: Number(arg('warm', 2)),
       // --seed 1,2,3: each state counted once a seed (rows of one state, which --write-budget takes the largest of)
       seeds: arg('seed', '1') === 'off' ? [null] : arg('seed', '1').split(',').map(Number),
-      clock: arg('clock', '30') === 'off' ? null : Number(arg('clock', 30))
+      clock: arg('clock', '30') === 'off' ? null : Number(arg('clock', 30)),
+      throttle: Number(arg('throttle', 1)),
+      trace: argv.includes('--trace')
     },
     margin = Number(arg('margin', 1.25)),
     par = Number(arg('par', process.env.CI ? 3 : 1)),

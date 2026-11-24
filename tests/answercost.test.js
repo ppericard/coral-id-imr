@@ -178,6 +178,25 @@ test('the page’s clock is virtual: it stands still between the tool’s ticks,
   assert.match(src, /__tick\(6000\), document\.getElementById\('next'\)/, 'a pause before Next');
 });
 
+test('the boot is started over from a settled page, so the loaded page asks the same questions (REE-281)', () => {
+  const src = read('tools/answercost.js'),
+    at = src.indexOf('Start over from a settled page'),
+    boot = src.slice(at, src.indexOf('for (let i = 0; i < o.warm; i++)', at));
+  assert.ok(at > 0, 'the boot comment is gone');
+  // Before the first warm-up answer: settled, numbers from the seed, plans dropped, the quiz drawn again, settled.
+  const order = [
+    boot.indexOf('await settle(p)'),
+    ...['__reseed(0)', 'dropPlans()', 'route()'].map(s => boot.indexOf(s)),
+    boot.lastIndexOf('await settle(p)')
+  ];
+  assert.ok(
+    order.every((x, i) => x >= 0 && (i === 0 || x > order[i - 1])),
+    `the steps of the restart are out of order: ${order}`
+  );
+  assert.match(src, /--throttle N/, 'a CPU throttle to reproduce a loaded machine');
+  assert.match(src, /--trace/, 'a trace of where each random number is drawn');
+});
+
 test('the page holds the state’s history: the warm-up answers played before the read are counted in', () => {
   assert.ok(!A.historyOff(52, 50, 2), 'the default warm-up');
   assert.ok(!A.historyOff(70, 50, 20), 'a longer warm-up (--warm 20) is no reason to reject a state loaded right');
