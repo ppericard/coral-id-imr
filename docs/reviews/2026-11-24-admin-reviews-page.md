@@ -169,8 +169,12 @@ About 20 photos a week, drawn from **decisions already applied**, so nothing wai
     (FNV-1a, as `autoCheck` today), so a rerun on the same `main` gives the same file.
   - Every visit and device reads that one file. The set reaches the admin with the next successful Pages deploy (the
     REE-279 lag, §2.5): a few minutes on a good day.
-- **From where** (while a coral field is off, its share comes from the unapplied sure proposals instead, §4.3): the
-  decisions of the last week, or of the last four weeks when a week holds too few. Corals: the auto log's
+- **From where** (while a coral field is off, its share comes from the unapplied sure proposals instead, §4.3): every
+  decision applied on `main` when the job runs and not sampled before, whatever its age. There is no date window: the
+  build's decisions (fish adds, sea slug adds and rejects) carry no date of their own (only the game file's `built`), so
+  "this week's decisions" could not be told for them, and one rule for every subject needs no new data. The corals'
+  log days are not used either. "Not sampled before" is read from the earlier week files in `data/reviews/`.
+  Corals: the auto log's
   plain `a`, `r`, `x` codes. Fish: the build's `cand` route (`fish-game.json` `auto: 'cand'`) and the log's `r`. Sea
   slugs: `seaslug-game.json`'s `cand` route and the pass's sure rejects (`data/suggest.json` `seaslug`). Never a photo
   he decided himself, never one already sampled.
