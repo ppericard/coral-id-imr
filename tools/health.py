@@ -21,7 +21,7 @@ Checks, each read-only and with no name, code or secret in anything it prints (a
 The infrastructure numbers (what to watch before the platform outgrows its free tiers), in the run's summary and, as one
 `::notice title=infra::{json}` annotation, for `tools/brief.py` to read: the published site's size against GitHub Pages' 1 GB
 (the tracked files of `main` the deploy does not leave out: `.gitattributes` export-ignore; before minifying), R2's storage
-against its 10 GB free tier (no token that can read it exists in CI: the figure is `tools/infra.json`, measured by hand), and,
+against its 50 GB alert limit (the free tier is 10 GB; no token that can read it exists in CI: the figure is `tools/infra.json`, measured by hand), and,
 with INFRA_TOKEN only, the spreadsheet's cells against Google's 10 million and the slowest 90th percentile of the Timings tab
 against 5 s. A number past WARN (70 %) of its limit is a warning, never a failure.
 
@@ -43,11 +43,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = 'ppericard/coral-id-imr'
 SITE = 'https://ppericard.github.io/coral-id-imr/'
 WARN = 0.70  # a warning past 70 % of a limit (the same in tools/brief.py and admin.js)
-# The limits: GitHub Pages' published site 1 GB, Cloudflare R2's free tier 10 GB (both taken as 10^9 bytes a GB, the less
-# generous reading), Google Sheets' 10 million cells a spreadsheet (the figure of the infrastructure request; docs/SECURITY.md
+# The limits: GitHub Pages' published site 1 GB, Cloudflare R2's 50 GB (the free tier is 10 GB; Pierre accepts paid storage
+# up to 50 GB; both taken as 10^9 bytes a GB, the less generous reading), Google Sheets' 10 million cells a spreadsheet (the figure of the infrastructure request; docs/SECURITY.md
 # also gives 20 million: to confirm against Google's current limits page), and the Timings tab's 5 s (Code.gs
 # TIM.SLOW: an operation the script keeps whole whenever it is that slow; our own budget, not a platform quota).
-LIMITS = {'cells': 10_000_000, 'pages': 10**9, 'r2': 10 * 10**9, 'slow': 5000}
+LIMITS = {'cells': 10_000_000, 'pages': 10**9, 'r2': 50 * 10**9, 'slow': 5000}
 BACKUP_DAYS = 8  # the backup is weekly (Sundays about 02:00 Manila)
 BEHIND_MIN = 60  # the script updates itself every 15 minutes: an hour behind main is stuck
 VERSIONS_MAX = 200  # Apps Script keeps 200 versions a project (Code.gs SELF_VERSIONS.MAX): at 200 the self-update stops

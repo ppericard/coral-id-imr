@@ -131,7 +131,7 @@ written with `tools/datajson.py`.
 - **`health.py`, `infra.json`**: the hourly Health workflow's script (`.github/workflows/health.yml`;
   [PAGES.md › Infrastructure health](../PAGES.md#infrastructure-health)): the live site (`index.html` and `data.json` with
   their stamps), the sheet script's public read-only request and its `v`, the weekly backup's age (only with the admin
-  token), and the infrastructure numbers against their free-tier limits (Pages 1 GB from `main`'s tree, R2 10 GB from
+  token), and the infrastructure numbers against their free-tier limits (Pages 1 GB from `main`'s tree, R2 50 GB (the free tier is 10 GB) from
   `infra.json`, measured by hand; the sheet's cells and slowest operation through `readInfra` with the token), a
   warning past 70%. Standard library only, every request injectable; `tests/infra.test.js` on `tests/infra.fixtures.py`.
   `brief.py` shows the numbers as one `Infra:` line, read from the run's annotation; the admin's To do › Alerts card reads
