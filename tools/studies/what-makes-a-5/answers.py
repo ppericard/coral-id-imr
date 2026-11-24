@@ -22,9 +22,11 @@ for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
     if len(p) < 5 or p[0] not in rows:
         continue
     n, f, marks, typed = p[:4]
-    d, g, note = {}, "", ""
+    d, g, note, agreed = {}, "", "", False
     for x in p[4:]:
-        if x.startswith("D="):
+        if x == "A":
+            agreed = True  # every mark right, the photo deserves the marks' grade
+        elif x.startswith("D="):
             for kv in x[2:].split("|"):
                 k, _, w = kv.partition(":")
                 if k:
@@ -33,8 +35,12 @@ for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
             g = x[2:]
         elif x.startswith("N="):
             note = x[2:]
-    his = g or (marks if not d else "")
-    seen[typed] += 1
+    # His grade only from an explicit answer: G=, or A (the marks' grade). A line with only a note says neither, so it
+    # stays out of the tallies; a line with ✗ taps counts, its untapped lines agreed (the page asks for taps only on
+    # disagreement).
+    his = g or (marks if agreed else "")
+    if agreed or d or g:
+        seen[typed] += 1
     for k in d:
         dis[(k, typed)] += 1
     print(f"{n}\t{f}\t{marks}\t{typed}\t{his}\t{','.join(d)}\t{'; '.join(f'{k}:{w}' for k, w in d.items())}{(' | ' + note) if note else ''}")
