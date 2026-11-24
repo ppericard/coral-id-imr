@@ -121,6 +121,7 @@ def org_words(line, shorts, full_names, o):
     # short form is a whole word). A match that is a current value stays; an earlier one becomes the current one. So a
     # new value that contains an earlier one ("IMR" in "IMR-UK") is not written twice, and one contained in an earlier
     # one ("Marine Research" in "Institute for Marine Research") does not hide it: a second run changes nothing.
+    # The app's name is a current value too ("IMR Reef ID" is not an "IMR" to rewrite).
     what = {}  # matched text -> its replacement
     for kind, olds, cur in (('name', full_names, o['name']), ('short', shorts, o['short'])):
         for old in olds:
@@ -128,6 +129,8 @@ def org_words(line, shorts, full_names, o):
                 what[(kind, f)] = html.escape(cur)
         for f in {html.escape(cur), cur}:
             what[(kind, f)] = f
+    for f in {html.escape(o['app']), o['app']}:  # ORG.app is its own field: never rewritten from the organisation's
+        what[('app', f)] = f
     parts = sorted(what, key=lambda k: -len(k[1]))
     pat = re.compile('|'.join(('(?<!\\w)%s(?!\\w)' if kind == 'short' else '%s') % re.escape(f) for kind, f in parts))
     # a text of a name and of a short form can match the same way only if they are equal: the first listed wins

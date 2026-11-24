@@ -78,6 +78,21 @@ test('a new value contained in the earlier one (a shorter branding) still replac
   }
 });
 
+test('an app name that holds an earlier organisation word is ORG.app, not rewritten from the organisation', () => {
+  const dir = copy("{short: 'MR', name: 'Marine Research', app: 'IMR Reef ID', appShort: 'Reef ID'}");
+  try {
+    run(dir, '--from-short', 'IMR', '--from-name', 'Institute for Marine Research');
+    const index = read(dir, 'index.html');
+    assert.match(index, /<title>IMR Reef ID<\/title>/);
+    assert.match(index, /<span>IMR Reef ID<\/span>/);
+    assert.match(index, /from the MR survey lists/);
+    assert.match(read(dir, 'privacy.html'), /the Marine Research \(MR\), Dauin/);
+    assert.match(run(dir, '--check'), /nothing left/);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 test('a fork changes ORG once and the pages follow, whole words only, then a second run changes nothing', () => {
   const dir = copy("{short: 'ABC', name: 'Acme & Co', app: 'ABC Reef ID', appShort: 'Reef ID'}");
   try {
