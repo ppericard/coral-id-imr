@@ -52,20 +52,16 @@ test('the site check: stamps, data.json, one retry, and what fails', () => {
 
 // ---- the live build against main (REE-279, option 3) ------------------------------------------------------------------------------
 const LIVE = 'site: live build vs main';
+// Whether a scenario asked GitHub for exactly this path (an equality, not a substring test of a URL).
+const asked = (sc, p) => S[sc].calls.some(c => c.url === 'https://api.github.com/repos/ppericard/coral-id-imr/' + p);
 test('the live build against main: the build number is a Deploy Pages run, a commit dated after its start is not live', () => {
   assert.strictEqual(level('ok', LIVE), 'ok');
   assert.match(note('ok', LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main \(by run start\)$/);
-  const asked = S.ok.calls.map(c => c.url);
   assert.ok(
-    asked.includes(
-      'https://api.github.com/repos/ppericard/coral-id-imr/actions/workflows/pages.yml/runs?branch=main&status=success&per_page=100&page=1'
-    ),
+    asked('ok', 'actions/workflows/pages.yml/runs?branch=main&status=success&per_page=100&page=1'),
     'the successful Deploy Pages runs of main'
   );
-  assert.ok(
-    asked.includes('https://api.github.com/repos/ppericard/coral-id-imr/commits?sha=main&since=2026-11-18T04:50:00Z&per_page=100'),
-    "main's commits since the live run started"
-  );
+  assert.ok(asked('ok', 'commits?sha=main&since=2026-11-18T04:50:00Z&per_page=100'), "main's commits since the live run started");
   assert.strictEqual(level('deploy_edge', LIVE), 'ok', 'dated exactly at the run start: it was there');
   assert.strictEqual(level('deploy_page2', LIVE), 'ok', 'a run past the first 100: the next page is read');
   assert.strictEqual(S.deploy_page2.calls.filter(c => c.url.includes('/pages.yml/runs')).length, 2);
@@ -102,11 +98,10 @@ test('the live build: a run that recorded the commit it archived is read by that
   const k = 'deploy_pub_late_live';
   assert.strictEqual(level(k, LIVE), 'ok');
   assert.match(note(k, LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main \(by commit aaaaaaa\)$/);
-  const urls = S[k].calls.map(c => c.url);
-  assert.ok(urls.includes('https://api.github.com/repos/ppericard/coral-id-imr/actions/runs/10490/jobs?per_page=1'), "the run's job");
-  assert.ok(urls.includes('https://api.github.com/repos/ppericard/coral-id-imr/check-runs/777/annotations'), 'its annotations');
-  assert.ok(urls.includes(`https://api.github.com/repos/ppericard/coral-id-imr/compare/${'a'.repeat(40)}...main?per_page=100`), 'compare');
-  assert.ok(!urls.some(u => u.includes('commits?sha=main')), 'the dates are not asked when the commit is known');
+  assert.ok(asked(k, 'actions/runs/10490/jobs?per_page=1'), "the run's job");
+  assert.ok(asked(k, 'check-runs/777/annotations'), 'its annotations');
+  assert.ok(asked(k, `compare/${'a'.repeat(40)}...main?per_page=100`), 'compare');
+  assert.ok(!asked(k, 'commits?sha=main&since=2026-11-18T04:50:00Z&per_page=100'), 'the dates are not asked when the commit is known');
   assert.strictEqual(S.deploy_pub_late_live.ok, true);
   // The same commit, two commits of main after it, the oldest 50 minutes old: stale, those two named.
   assert.strictEqual(level('deploy_pub_stale', LIVE), 'fail');
