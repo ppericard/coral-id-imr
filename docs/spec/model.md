@@ -131,9 +131,11 @@ the comeback's units, the start's level, the IMR answer, a class's units and its
 to move nothing or to forget the state version on an answer (mutation checks); `tests/examlooks.test.js` compares
 `examLooks` with the filter of every unit in play. `tests/drawview.test.js` compares `photoSet` and `varOf` with the
 code before the draw's data view, draw by draw from the same random numbers, on made-up units of every shape with the
-player's records, the photo statistics, the calibration set and the subject's calibration written between draws, and
-fails the statistics written with the player's bump alone; `tests/lvlnext.test.js` compares `spPlay` and `sciPlay`,
-and `tests/levelview.test.js` the achievements' counts, with the code before them.
+player's records, the photo statistics, the calibration set and the subject's calibration written between draws, checks
+each kept entry against the functions it keeps after every write, and fails the statistics written with the player's
+bump alone; it also checks `kidsOf`, `sciKids` and `achNamed` against the code before them and fails a change of their
+data under the player's bump alone; `tests/lvlnext.test.js` compares `spPlay` and `sciPlay`, and
+`tests/levelview.test.js` the achievements' counts, with the code before them over many states.
 
 ## Which unit next
 

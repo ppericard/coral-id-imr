@@ -9,8 +9,10 @@ require('./slot.js').testGuard();
 // shape (three views or two levels, growth form "x" in the colony slot, refused photos, rated and unrated photos,
 // reference-level photos, juveniles of the three classes and colour phases, mimicry entries on a family the genus hangs
 // from, a calibration set). Between draws, the writers: the player's records (stateBump('rec')), the units met, the
-// photo statistics, the calibration set and the subject's calibration (stateBump()). VIEW_CHECK off and on. Then the
-// mutation: a data write bumped as the player's own is caught, by VIEW_CHECK and by the reference.
+// photo statistics, the calibration set and the subject's calibration (stateBump()). VIEW_CHECK off and on. After each
+// write, every unit's kept data is compared entry by entry with the functions it keeps, called now. Then the mutation: a
+// data write bumped as the player's own is caught, by VIEW_CHECK and by the reference. Last, the other data views of the
+// same step (app.js kidsOf, sciKids; progress.js achNamed): their version rule and the same mutation.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -309,12 +311,13 @@ function page(subject, seed, check, mutate = s => s) {
     make = vm.runInContext(
       `(function (${names.join(', ')}) {\n${app}\n${MODEL_CODE}\n${REF}\n` +
         `const set = (k, v) => k === 'PSTAT' ? (PSTAT = v) : k === 'PGD' ? (PGD = v) : k === 'PTM' ? (PTM = v) : k === 'CALSET' ? (CALSET = v) : null;\n` +
-        `return {photoSet, photoSet0, varOf, varOf0, drawPhotos, stateBump, seenAdd, set, P, ver: () => STATE_V, dver: () => DATA_V};\n})`,
+        `return {photoSet, photoSet0, varOf, varOf0, drawPhotos, stateBump, seenAdd, set, P, ver: () => STATE_V, dver: () => DATA_V,\n` +
+        `  photoDiff, calSd, calBonus, setBonus, varHome, mimIn};\n})`,
       ctx
     );
   const T = make(...names.map(k => stubs[k]));
   P0 = n => T.P[n];
-  return {T, U, MET, box, later, seed: v => (s = v), rnd: () => s, r};
+  return {T, U, MET, box, later, st: stubs, seed: v => (s = v), rnd: () => s, r};
 }
 
 // The writers between two draws, as the app has them.
@@ -436,6 +439,40 @@ function draws(pg, r, n, label) {
   return calls;
 }
 
+// The view's value of unit n, entry by entry, against the functions it keeps called now: each view's photos as the code
+// before filtered them (the same objects, in the same order), and each photo's values, to the bit.
+function values(pg, n, label) {
+  const {T, U, st} = pg,
+    g = U[n],
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
+    oneForm = st.imrFormsOf(n).length === 1,
+    home = U[T.varHome(n)] || {},
+    {pics, d} = T.drawPhotos(n);
+  assert.deepStrictEqual(Object.keys(pics), need, `${label}: ${n}'s views`);
+  const all = new Set();
+  for (const v of need) {
+    const want = [...st.gamePics(n, v), ...(two && v === 'macro' ? st.gamePics(n, 'medium') : [])]
+      .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
+      .filter(p => st.gamePhotoOk(n, p));
+    assert.ok(pics[v].length === want.length && pics[v].every((p, i) => p === want[i]), `${label}: ${n}'s ${v} photos`);
+    want.forEach(p => all.add(p));
+  }
+  assert.strictEqual(d.size, all.size, `${label}: ${n}: one entry a photo`);
+  for (const p of all) {
+    const e = d.get(p),
+      at = `${label}: ${n} ${p.f}`;
+    assert.strictEqual(e.d, T.photoDiff(n, p), `${at} photoDiff`);
+    assert.strictEqual(e.sd, T.calSd(p), `${at} calSd`);
+    assert.strictEqual(e.cb, T.calBonus(p), `${at} calBonus`);
+    assert.strictEqual(e.sb, T.setBonus(p), `${at} setBonus`);
+    assert.strictEqual(e.ref, C.refLevel(p), `${at} refLevel`);
+    assert.strictEqual(e.k, C.varKindOf(p, home.juv), `${at} kind`);
+    assert.strictEqual(e.m, home.mim ? T.mimIn(home.mim, p) : null, `${at} mimicry entry`);
+  }
+  return all.size;
+}
+
 function run(subject, seed, check, N) {
   const pg = page(subject, seed, check);
   pg.subject = subject;
@@ -443,17 +480,21 @@ function run(subject, seed, check, N) {
     ops = {},
     units = Object.keys(pg.U);
   let calls = 0,
-    on = 0;
+    on = 0,
+    photos = 0;
   const v0 = pg.T.dver();
   for (let i = 0; i < N; i++) {
-    const op = write(pg, r);
+    const op = write(pg, r),
+      label = `${subject} ${seed} step ${i} after ${op}${check ? ', VIEW_CHECK' : ''}`;
     ops[op] = (ops[op] || 0) + 1;
+    // every unit's kept data against the functions now, after each write
+    for (const u of units) photos += values(pg, u, label);
     const n = pickOf(r, units);
-    calls += draws(pg, r, n, `${subject} ${seed} step ${i} after ${op}${check ? ', VIEW_CHECK' : ''}`);
+    calls += draws(pg, r, n, label);
     if (pg.T.varOf(n, [...pg.T.drawPhotos(n).d.keys()], pg.T.drawPhotos(n).d).on) on++;
   }
   assert.deepStrictEqual(pg.later, [], 'no VIEW_CHECK difference thrown later');
-  return {calls, ops, on, data: pg.T.dver() - v0};
+  return {calls, ops, on, photos, data: pg.T.dver() - v0};
 }
 
 test('photoSet and varOf with the draw’s data view give the draws of the code before, VIEW_CHECK off and on', t => {
@@ -466,7 +507,7 @@ test('photoSet and varOf with the draw’s data view give the draws of the code 
     ]) {
       const st = run(subject, seed, check, 120);
       t.diagnostic(
-        `${subject} seed ${seed}${check ? ' VIEW_CHECK' : ''}: ${st.calls} draws, variants held back on ${st.on} units drawn, ${st.data} data versions, writes ${JSON.stringify(st.ops)}`
+        `${subject} seed ${seed}${check ? ' VIEW_CHECK' : ''}: ${st.calls} draws, ${st.photos} photo entries compared, variants held back on ${st.on} units drawn, ${st.data} data versions, writes ${JSON.stringify(st.ops)}`
       );
       assert.ok(st.ops.stats > 3 && st.ops.calset > 3 && st.ops.record > 20, 'every writer ran');
       assert.ok(st.on > 0, 'some draws held a variant back');
@@ -514,5 +555,150 @@ test('mutation: the photo statistics written with the player’s bump alone are 
     pg.later.length = 0;
     assert.ok(caught, `caught${check ? ', VIEW_CHECK' : ''}`);
     if (check) assert.match(caught, /data view drawPhotos/, 'VIEW_CHECK throws');
+  }
+});
+
+// The parents' lists of spPlay and sciPlay (app.js kidsOf, sciKids) and the named species achBoth counts (progress.js
+// achNamed), data views too: the same values as the code before them (verbatim but for the names), kept across the
+// player's bumps, made again by a data bump; a data change bumped as the player's own is caught, by VIEW_CHECK and by
+// the reference. lvlnext.test.js and levelview.test.js compare them over many states; here, each view's version rule.
+const PROG = src('progress.js');
+const KIDS_REF = `function spPlay0(L, score, met, on) {
+  if (!on) return [];
+  const by = new Map();
+  L.forEach(n => {
+    const p = GX(n).parent;
+    if (!by.has(p)) by.set(p, []);
+    by.get(p).push(n);
+  });
+  const m = metCount(L, met);
+  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
+}
+function sciPlay0(L, score, met, up, on) {
+  if (!on) return [];
+  const by = new Map();
+  L.forEach(n => {
+    const p = GX(n).parent;
+    if (!by.has(p)) by.set(p, []);
+    by.get(p).push(n);
+  });
+  const m = metCount(L, met);
+  return [...by].flatMap(([p, U]) => {
+    if (!up.has(p)) return [];
+    const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1],
+      ord = GX(p).species || [],
+      O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp));
+    return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, m(), met) : [])];
+  });
+}
+const achBoth0 = (sets, names, lv = lvStep) => {
+  if (names.length < 2) return 0;
+  const by = new Map();
+  sets
+    .flatMap(S => (S.all ? S.all() : S.units()))
+    .forEach(n => {
+      const g = (typeof GX === 'function' && GX(n)) || {};
+      if (!g.kind || !g.sp || lv(n) < 3) return;
+      if (!by.has(g.sp)) by.set(g.sp, new Set());
+      by.get(g.sp).add(g.kind);
+    });
+  return [...by.values()].filter(K => names.every(k => K.has(k))).length;
+};`;
+// Six families of four species each, by their common and their scientific names (s:<sp>, x:<sp>), each family with its
+// species order; met: every other species; the families at Advanced but the last.
+function kidsPage(check) {
+  const REC = {},
+    later = [],
+    L = [],
+    X = [];
+  for (let f = 0; f < 6; f++) {
+    const F = 'F' + f,
+      sps = [0, 1, 2, 3].map(i => `sp${f}${i}`);
+    REC[F] = {species: [...sps].reverse(), ...(f === 2 ? {shareAt: 0.3} : {})};
+    sps.forEach(sp => {
+      REC['s:' + sp] = {parent: F, sp, kind: 'cn'};
+      REC['x:' + sp] = {parent: F, sp, kind: 'sci'};
+      L.push('s:' + sp);
+      X.push('x:' + sp);
+    });
+  }
+  const ctx = vm.createContext({
+    window: {VIEW_CHECK_ON: check},
+    localStorage: memStorage(),
+    setTimeout: f => later.push(f),
+    SUBJECTS: C.SUBJECTS,
+    subjKey: C.subjKey,
+    startKey: C.startKey,
+    keyGet: C.keyGet,
+    keyRename: C.keyRename,
+    GX: n => REC[n],
+    LV_AT: [0.5, 0.8, 0.95],
+    INTRO: {START: 4},
+    photoAny: () => true,
+    lvStep: () => 0
+  });
+  vm.runInContext(
+    [
+      cut(APP, 'let STATE_V = 0;', 'const store = {', {file: 'app.js'}),
+      cut(APP, 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
+      cut(APP, 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
+      cut(APP, 'const kidsCalc = ', '// The species units in play', {file: 'app.js'}),
+      cut(APP, 'function spPlay(', '\n}\n', {through: 1, file: 'app.js'}),
+      cut(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
+      cut(PROG, 'const achNamedCalc = ', 'const achBoth = ', {file: 'progress.js'}),
+      cut(PROG, 'const achBoth = ', '\n};\n', {through: 1, file: 'progress.js'}),
+      KIDS_REF,
+      'this.K = {spPlay, sciPlay, achBoth, spPlay0, sciPlay0, achBoth0, stateBump};'
+    ].join('\n'),
+    ctx
+  );
+  const met = n => Number(n.slice(-1)) % 2 === 0,
+    score = p => (p === 'F5' ? 0.4 : 0.9),
+    up = new Set(['F0', 'F1', 'F2', 'F3', 'F4']),
+    lv = n => (Number(n.slice(-1)) < 3 ? 3 : 1),
+    sets = [{all: () => L}, {all: () => X}],
+    names = ['cn', 'sci'];
+  const K = ctx.K,
+    now = () => ({
+      sp: [K.spPlay(L, score, met, true), K.spPlay0(L, score, met, true)],
+      sci: [K.sciPlay(X, score, met, up, true), K.sciPlay0(X, score, met, up, true)],
+      both: [K.achBoth(sets, names, lv), K.achBoth0(sets, names, lv)]
+    });
+  return {K, REC, L, X, later, now};
+}
+
+test('the parents’ lists and the named species: the code before, kept across the player’s bumps, made again by a data bump', () => {
+  const pg = kidsPage(false),
+    {K, REC} = pg,
+    same = (v, label) => {
+      for (const k of ['sp', 'sci', 'both']) assert.deepStrictEqual(v[k][0], v[k][1], `${label}: ${k}`);
+    };
+  const v = pg.now();
+  same(v, 'first read');
+  assert.ok(v.sp[0].length > 10 && v.sci[0].length > 10 && v.both[0] > 3, 'lists and a count to compare');
+  // the data change: a species moves family, a family's order turns round, a species loses its kind of name
+  REC['s:sp00'].parent = 'F1';
+  REC['x:sp01'].parent = 'F1';
+  REC.F3.species.reverse();
+  REC['x:sp11'].kind = '';
+  K.stateBump('rec'); // bumped as the player's own: the data views keep their values
+  const k = pg.now();
+  for (const x of ['sp', 'sci', 'both']) assert.notDeepStrictEqual(k[x][0], k[x][1], `${x}: the view kept, the reference reads the change`);
+  K.stateBump(); // the data version too
+  same(pg.now(), 'after a data bump');
+});
+
+test('mutation: the parents’ lists and the named species changed under the player’s bump alone: VIEW_CHECK throws', () => {
+  for (const [what, change, view] of [
+    ['a species moved', R => (R['s:sp00'].parent = 'F1'), /data view kidsOf/],
+    ['a family’s order', R => R.F3.species.reverse(), /data view sciKids/],
+    ['a kind of name', R => (R['x:sp11'].kind = ''), /data view achNamed/]
+  ]) {
+    const pg = kidsPage(true);
+    pg.now();
+    change(pg.REC);
+    pg.K.stateBump('rec');
+    assert.throws(() => pg.now(), view, what);
+    pg.later.length = 0;
   }
 });
