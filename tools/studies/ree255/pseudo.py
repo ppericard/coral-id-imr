@@ -1,4 +1,4 @@
-"""Pseudonymise the Answers tab extract (Sheets connector JSON, Answers!A1:W) for REE-252:
+"""Pseudonymise the Answers tab extract (Sheets connector JSON, Answers!A1:W) for REE-252 and REE-255:
 [row index, player label P1.., then the tab's columns from Time on]. Labels by first appearance; no name is written.
 usage: python3 -I pseudo.py <get_values.json> <out.json>"""
 import json

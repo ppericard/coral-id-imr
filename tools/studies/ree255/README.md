@@ -70,6 +70,12 @@ by the photo and unit ratings and cannot be measured (q351's refit found the sam
 oblique, from above, part of the fish) is a photo feature, not a view shown alone or with others: reported as
 exploratory only, with the same model's kind replaced by the framing tag (fish; the sea slugs have 2 players).
 
+## Added after the fit (exploratory, uncorrected)
+
+- `fit.py`: the per-view model on the answers whose photos had under 5, or 5 or more, earlier answers (`prep.py`
+  `pn`), and the second half with a photo intercept;
+- `replay.js`: a wider grid (−1 to 0.75) and the second half of the scored answers alone (the declared grid).
+
 ## Files
 
 | File | What it does |

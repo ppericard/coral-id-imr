@@ -113,6 +113,16 @@ def num(x):
 
 
 rows, skip = [], Counter()
+# How many earlier answers (every player, any game) each photo of the subject had: the photo ratings learn from them
+# (exploratory, after the declared fit: whether an excess sits on photos with few answers). Tab order between equal times.
+seen, PN = Counter(), {}
+for r in sorted(A, key=lambda r: (str(r[2]), r[0])):
+    s = (r[18] if len(r) > 18 else '') or 'coral'
+    fs = str(r[7]).split()
+    if fs:
+        PN[r[0]] = sum(seen[(s, f)] for f in fs) / len(fs)
+        for f in fs:
+            seen[(s, f)] += 1
 for r in A:
     r = list(r) + [''] * (24 - len(r))
     subj = r[18] or 'coral'
@@ -130,22 +140,25 @@ for r in A:
         continue
     ch = str(r[12] or '')
     g = guess_of(m, ch)
-    q = min(0.99, max(0.01, (e - g) / (1 - g) if g < 1 else 0.5))
     sc = {}
     if r[23]:
         try:
             sc = json.loads(r[23])
         except ValueError:
             sc = {}
-    row = {'p': r[1], 't': r[2], 's': subj, 'u': r[3], 'y': 1 if str(r[5]) in ('1', 'TRUE', 'true') else 0, 'm': m,
-           'f': fmt_of(m, len(ch.split())), 'g': round(g, 4), 'e': e, 'x': round(math.log(q / (1 - q)), 4),
-           'o': num(sc.get('o')) or 0.0, 'has_sc': 1 if sc else 0, 'ab': num(r[10]), 'n': len(fs)}
+    R = num(sc.get('r'))
+    R = R if R and 0 < R <= 1 else 1.0  # the comeback recall: e = g + (1 - g) R sig(x)
+    q = min(0.99, max(0.01, (e - g) / ((1 - g) * R) if g < 1 else 0.5))
+    row = {'i': r[0], 'p': r[1], 't': r[2], 's': subj, 'u': r[3], 'y': 1 if str(r[5]) in ('1', 'TRUE', 'true') else 0, 'm': m,
+           'f': fmt_of(m, len(ch.split())), 'g': round(g, 4), 'R': R, 'e': e, 'x': round(math.log(q / (1 - q)), 4),
+           'o': num(sc.get('o')) or 0.0, 'has_sc': 1 if sc else 0, 'ab': num(r[10]), 'n': len(fs), 'fs': fs, 'pn': PN.get(r[0], 0)}
     if subj == 'coral':
         vs = [view_of(f) for f in fs]
         if None in vs:
             skip['coral photo with no known view'] += 1
             continue
         row['views'] = '+'.join(sorted(vs))
+        row['vs'] = vs
         row['k'] = vs[0] if len(fs) == 1 else 'multi'
     else:
         tg = JT.get((subj, fs[0]))

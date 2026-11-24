@@ -1,0 +1,592 @@
+{
+ "note": "aggregates only, no player label (rule D2); method: README.md",
+ "rows": {
+  "coral answers": 3878,
+  "players": 15,
+  "genera": 45,
+  "left out (typed, exam)": 80,
+  "with a scoring record": 1893,
+  "first, last": [
+   "2026-11-01 17:47",
+   "2026-11-22 18:36"
+  ]
+ },
+ "describe": [
+  {
+   "kind": "colony alone",
+   "n": 1914,
+   "players": 15,
+   "players10": 14,
+   "right": 82.2,
+   "expected": 74.7,
+   "obs_minus_exp": 7.5,
+   "formats": {
+    "k4": 1005,
+    "k2": 387,
+    "again": 282,
+    "duel": 98,
+    "qduel": 77,
+    "k3": 65
+   },
+   "bands": {
+    "under 0.5": 716,
+    "0.5 to 1.5": 712,
+    "1.5 and over": 486
+   }
+  },
+  {
+   "kind": "close-up alone",
+   "n": 748,
+   "players": 15,
+   "players10": 11,
+   "right": 82.6,
+   "expected": 75.6,
+   "obs_minus_exp": 7.0,
+   "formats": {
+    "k4": 389,
+    "k2": 177,
+    "again": 106,
+    "duel": 33,
+    "qduel": 26,
+    "k3": 17
+   },
+   "bands": {
+    "0.5 to 1.5": 291,
+    "under 0.5": 284,
+    "1.5 and over": 173
+   }
+  },
+  {
+   "kind": "corallites alone",
+   "n": 303,
+   "players": 15,
+   "players10": 9,
+   "right": 83.2,
+   "expected": 80.8,
+   "obs_minus_exp": 2.3,
+   "formats": {
+    "k4": 180,
+    "k2": 43,
+    "again": 42,
+    "duel": 19,
+    "qduel": 11,
+    "k3": 8
+   },
+   "bands": {
+    "0.5 to 1.5": 120,
+    "1.5 and over": 103,
+    "under 0.5": 80
+   }
+  },
+  {
+   "kind": "several views",
+   "n": 913,
+   "players": 14,
+   "players10": 13,
+   "right": 80.7,
+   "expected": 76.6,
+   "obs_minus_exp": 4.1,
+   "formats": {
+    "k4": 338,
+    "k2": 301,
+    "again": 160,
+    "duel": 64,
+    "k3": 27,
+    "qduel": 23
+   },
+   "bands": {
+    "under 0.5": 573,
+    "0.5 to 1.5": 294,
+    "1.5 and over": 46
+   }
+  }
+ ],
+ "sds": {
+  "p": 0.5,
+  "u": 0.3
+ },
+ "whole": {
+  "today": {
+   "laplace_loglik": -1791.05,
+   "kinds": {},
+   "formats": {
+    "again": 0.149,
+    "duel": 0.092,
+    "k2": 0.975,
+    "k3": 1.246,
+    "qduel": 0.046
+   },
+   "bands": {
+    "under 0.5": 0.445,
+    "0.5 to 1.5": 0.162,
+    "1.5 and over": 0.04
+   },
+   "points": {}
+  },
+  "shared": {
+   "laplace_loglik": -1792.85,
+   "kinds": {
+    "wide+medium+macro": {
+     "b": 0.306,
+     "se": 0.132
+    }
+   },
+   "formats": {
+    "again": 0.145,
+    "duel": 0.106,
+    "k2": 0.964,
+    "k3": 1.22,
+    "qduel": 0.029
+   },
+   "bands": {
+    "under 0.5": 0.255,
+    "0.5 to 1.5": -0.071,
+    "1.5 and over": -0.24
+   },
+   "points": {
+    "wide+medium+macro": 3.7
+   }
+  },
+  "two": {
+   "laplace_loglik": -1795.31,
+   "kinds": {
+    "wide+medium": {
+     "b": 0.336,
+     "se": 0.133
+    },
+    "macro": {
+     "b": -0.02,
+     "se": 0.231
+    }
+   },
+   "formats": {
+    "again": 0.144,
+    "duel": 0.12,
+    "k2": 0.963,
+    "k3": 1.211,
+    "qduel": 0.029
+   },
+   "bands": {
+    "under 0.5": 0.254,
+    "0.5 to 1.5": -0.066,
+    "1.5 and over": -0.219
+   },
+   "points": {
+    "wide+medium": 4.1,
+    "macro": -0.2
+   }
+  },
+  "per-view": {
+   "laplace_loglik": -1799.53,
+   "kinds": {
+    "wide": {
+     "b": 0.337,
+     "se": 0.139
+    },
+    "medium": {
+     "b": 0.334,
+     "se": 0.169
+    },
+    "macro": {
+     "b": -0.02,
+     "se": 0.231
+    }
+   },
+   "formats": {
+    "again": 0.144,
+    "duel": 0.12,
+    "k2": 0.963,
+    "k3": 1.211,
+    "qduel": 0.029
+   },
+   "bands": {
+    "under 0.5": 0.254,
+    "0.5 to 1.5": -0.066,
+    "1.5 and over": -0.219
+   },
+   "points": {
+    "wide": 4.1,
+    "medium": 4.0,
+    "macro": -0.2
+   }
+  }
+ },
+ "lopo": {
+  "per structure, mean over players": {
+   "today": 0.42889,
+   "shared": 0.42722,
+   "two": 0.42721,
+   "per-view": 0.42742
+  },
+  "tests": [
+   {
+    "a": "per-view",
+    "b": "shared",
+    "mean_diff": 0.0002,
+    "players_a_lower": 10,
+    "players": 15,
+    "p": 0.764,
+    "holm": 0.764
+   },
+   {
+    "a": "shared",
+    "b": "today",
+    "mean_diff": -0.00167,
+    "players_a_lower": 9,
+    "players": 15,
+    "p": 0.0392,
+    "holm": 0.0785
+   },
+   {
+    "a": "two",
+    "b": "per-view",
+    "mean_diff": -0.0002,
+    "players_a_lower": 14,
+    "players": 15,
+    "p": 0.0001,
+    "holm": 0.0004
+   }
+  ]
+ },
+ "boot": {
+  "shared": {
+   "wide+medium+macro": [
+    0.039,
+    0.561
+   ]
+  },
+  "two": {
+   "wide+medium": [
+    0.063,
+    0.582
+   ],
+   "macro": [
+    -0.551,
+    0.602
+   ]
+  },
+  "per-view": {
+   "wide": [
+    0.068,
+    0.609
+   ],
+   "medium": [
+    -0.009,
+    0.589
+   ],
+   "macro": [
+    -0.548,
+    0.608
+   ]
+  },
+  "per-view differences": {
+   "wide - macro": [
+    -0.228,
+    0.812
+   ],
+   "medium - macro": [
+    -0.227,
+    0.797
+   ],
+   "wide - medium": [
+    -0.225,
+    0.272
+   ]
+  }
+ },
+ "photo_sd": 0.6,
+ "sensitivities": {
+  "hint 1: several views without close-up + corallites": {
+   "n": 3794,
+   "players": 15,
+   "kinds": {
+    "wide": {
+     "b": 0.349,
+     "se": 0.144
+    },
+    "medium": {
+     "b": 0.349,
+     "se": 0.173
+    },
+    "macro": {
+     "b": -0.006,
+     "se": 0.233
+    }
+   }
+  },
+  "hint 2: several views without any corallites photo": {
+   "n": 3271,
+   "players": 15,
+   "kinds": {
+    "wide": {
+     "b": 0.344,
+     "se": 0.205
+    },
+    "medium": {
+     "b": 0.35,
+     "se": 0.226
+    },
+    "macro": {
+     "b": 0.008,
+     "se": 0.277
+    }
+   }
+  },
+  "the game's format offset (rows with a scoring record, x + o)": {
+   "n": 1893,
+   "players": 12,
+   "kinds": {
+    "wide": {
+     "b": 0.013,
+     "se": 0.222
+    },
+    "medium": {
+     "b": 0.173,
+     "se": 0.264
+    },
+    "macro": {
+     "b": 0.45,
+     "se": 0.417
+    }
+   }
+  },
+  "the rows with a scoring record, x alone": {
+   "n": 1893,
+   "players": 12,
+   "kinds": {
+    "wide": {
+     "b": 0.057,
+     "se": 0.221
+    },
+    "medium": {
+     "b": 0.22,
+     "se": 0.263
+    },
+    "macro": {
+     "b": 0.484,
+     "se": 0.417
+    }
+   }
+  },
+  "a photo intercept beside the genus's (SD 0.6)": {
+   "n": 3878,
+   "players": 15,
+   "kinds": {
+    "wide": {
+     "b": 0.364,
+     "se": 0.146
+    },
+    "medium": {
+     "b": 0.376,
+     "se": 0.179
+    },
+    "macro": {
+     "b": -0.007,
+     "se": 0.242
+    }
+   }
+  },
+  "early half (before 2026-11-05 20:05)": {
+   "n": 1932,
+   "players": 11,
+   "kinds": {
+    "wide": {
+     "b": 0.599,
+     "se": 0.183
+    },
+    "medium": {
+     "b": 0.489,
+     "se": 0.227
+    },
+    "macro": {
+     "b": -0.219,
+     "se": 0.284
+    }
+   }
+  },
+  "late half (from 2026-11-05 20:05)": {
+   "n": 1946,
+   "players": 12,
+   "kinds": {
+    "wide": {
+     "b": 0.028,
+     "se": 0.218
+    },
+    "medium": {
+     "b": 0.116,
+     "se": 0.258
+    },
+    "macro": {
+     "b": 0.301,
+     "se": 0.398
+    }
+   }
+  },
+  "band under 0.5": {
+   "n": 1653,
+   "players": 14,
+   "kinds": {
+    "wide": {
+     "b": 0.354,
+     "se": 0.202
+    },
+    "medium": {
+     "b": 0.253,
+     "se": 0.262
+    },
+    "macro": {
+     "b": -0.11,
+     "se": 0.434
+    }
+   }
+  },
+  "band 0.5 to 1.5": {
+   "n": 1417,
+   "players": 14,
+   "kinds": {
+    "wide": {
+     "b": 0.518,
+     "se": 0.208
+    },
+    "medium": {
+     "b": 0.422,
+     "se": 0.248
+    },
+    "macro": {
+     "b": -0.028,
+     "se": 0.328
+    }
+   }
+  },
+  "band 1.5 and over": {
+   "n": 808,
+   "players": 10,
+   "kinds": {
+    "wide": {
+     "b": -0.931,
+     "se": 0.777
+    },
+    "medium": {
+     "b": -0.567,
+     "se": 0.816
+    },
+    "macro": {
+     "b": -0.902,
+     "se": 0.843
+    }
+   }
+  },
+  "typed answers kept": {
+   "n": 3955,
+   "players": 15,
+   "kinds": {
+    "wide": {
+     "b": 0.35,
+     "se": 0.138
+    },
+    "medium": {
+     "b": 0.356,
+     "se": 0.168
+    },
+    "macro": {
+     "b": -0.032,
+     "se": 0.226
+    }
+   }
+  }
+ },
+ "exploratory": {
+  "photos with under 5 earlier answers (mean over the photos shown)": {
+   "n": 3443,
+   "players": 15,
+   "kinds": {
+    "wide": {
+     "b": 0.444,
+     "se": 0.152
+    },
+    "medium": {
+     "b": 0.415,
+     "se": 0.184
+    },
+    "macro": {
+     "b": 0.032,
+     "se": 0.242
+    }
+   }
+  },
+  "photos with 5 or more earlier answers": {
+   "n": 435,
+   "players": 12,
+   "kinds": {
+    "wide": {
+     "b": -0.116,
+     "se": 0.41
+    },
+    "medium": {
+     "b": 0.15,
+     "se": 0.474
+    },
+    "macro": {
+     "b": 0.184,
+     "se": 0.933
+    }
+   }
+  },
+  "late half with a photo intercept": {
+   "n": 1946,
+   "players": 12,
+   "kinds": {
+    "wide": {
+     "b": 0.059,
+     "se": 0.224
+    },
+    "medium": {
+     "b": 0.161,
+     "se": 0.267
+    },
+    "macro": {
+     "b": 0.297,
+     "se": 0.41
+    }
+   }
+  }
+ },
+ "fish_exploratory": {
+  "n": 2820,
+  "players": 8,
+  "sds": {
+   "p": 0.6,
+   "u": 0.8
+  },
+  "framing counts": {
+   "profile": 2149,
+   "oblique": 438,
+   "part of the fish": 105,
+   "from above": 104,
+   "head-on or tail": 24
+  },
+  "framing vs profile (logits)": {
+   "oblique": {
+    "b": 0.008,
+    "se": 0.21
+   },
+   "from above": {
+    "b": 0.247,
+    "se": 0.46
+   },
+   "part of the fish": {
+    "b": 0.879,
+    "se": 0.529
+   },
+   "head-on or tail": {
+    "b": 0.223,
+    "se": 0.764
+   }
+  },
+  "no tag (photo no longer in the game file)": 597
+ },
+ "seaslug": {
+  "n": 163,
+  "players": 2
+ }
+}
