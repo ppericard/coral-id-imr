@@ -98,7 +98,7 @@ was kept.
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
 - **Rejected tries**: the texts a typed answer refused before it, a JSON list (at most 10, each cut to 40 characters).
   Served by `readAnswers` (and the admin's light read) as index 23: a list of strings, null when none, absent from a
-  script before vNEXT, which the admin reads as none (`admin.js` `typedText`; no gate, rule D4). Nothing else reads it.
+  script before v228, which the admin reads as none (`admin.js` `typedText`; no gate, rule D4). Nothing else reads it.
 - **Device**: the anonymous id of the device that sent the answer (`sync.js` `devId`, the Device of its Events and Pages
   rows): one `dev` per save or anonymous send, written in each of its rows by `logAnswers_` (`dev_`: 8 to 16 lower-case
   letters and digits, else blank), signed in or not. Served by no reader (`readAnswers` stops at index 23). Kept

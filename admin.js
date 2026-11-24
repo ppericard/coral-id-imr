@@ -13352,7 +13352,7 @@ function statsConf() {
         )
         .join('')}</tbody></table></section>`
     : '';
-  // The texts the typed form refused before the answer (typedText, Rejected tries: sheet vNEXT), as typed, live only.
+  // The texts the typed form refused before the answer (typedText, Rejected tries: sheet v228), as typed, live only.
   const rfCard = TT.refused.length
     ? `<section class="adm-scard"><h3>Refused texts</h3><table class="adm-tbl"><thead><tr><th>Typed</th><th>n</th></tr></thead><tbody>${TT.refused
         .slice(0, 15)

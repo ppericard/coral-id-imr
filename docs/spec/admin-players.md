@@ -478,7 +478,7 @@ plays with; A→B and B→A count the choices only). The "Typed text" card lists
 (`admin.js` `typedText`, `readAnswers`' Typed and Retyped right): a typo of the unit shown with its spelling step (✓
 retyped exactly, ✗ not) or another unit's name, with a KPI of the spelling steps retyped exactly; trusted players only,
 a removed account's answers never; the raw text shows live only, never in a stored report. The "Refused texts" card
-lists the texts the typed form refused before the answer (`readAnswers`' Rejected tries, index 23, sheet vNEXT), most
+lists the texts the typed form refused before the answer (`readAnswers`' Rejected tries, index 23, sheet v228), most
 frequent first, with a KPI of the typed answers that came after one or more refused texts; it shows nothing from a script
 that does not serve them yet.
 

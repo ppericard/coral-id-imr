@@ -7809,7 +7809,7 @@ async function lazyPart(b, base, fails) {
                 Object.assign(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''), {
                   15: i % 3 ? 'Chromis' : 'Pomacentruspomacentruspomacentruspomacen',
                   16: null,
-                  // the texts refused before it (23, sheet vNEXT): the Refused texts card, most frequent first
+                  // the texts refused before it (23, sheet v228): the Refused texts card, most frequent first
                   23: i % 3 ? null : i ? ['Damselfish'] : ['damselfish ', 'xyz' + 'z'.repeat(37)]
                 })
               );

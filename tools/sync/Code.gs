@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 227 (2026-11-24). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 228 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 227;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 228;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -1035,7 +1035,7 @@ const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w
 //   without one), the rank asked (the subject's rank when the row has none), the names at that rank and the species
 //   shown ('' when none); a reader of one subject keeps its rows (core.js subjRows), so a fish answer never counts in a
 //   coral result; the scoring record (22, core.js LOG_SC: scoreRec, an object, null without); the texts a typed answer
-//   refused before it (23, rejectedOut_: a list of strings, null when none, absent from a script before vNEXT). In the oldest rows
+//   refused before it (23, rejectedOut_: a list of strings, null when none, absent from a script before v228). In the oldest rows
 //   expected, ability and new photos are null, choices (the genera offered, space-separated) '', seconds and enlarged
 //   null; the UTC offset (minutes east of UTC on the player's device) is null only when an app sent none.
 function answers_(q){
