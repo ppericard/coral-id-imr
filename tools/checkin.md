@@ -8,7 +8,8 @@ live signals.
 1. **Agents.** Count the running agents and their state. Resume or finish one that was cut off
    ([Merge mechanics](../docs/INTEGRATOR.md#the-merge-mechanics-what-bites): a crowded machine).
 2. **Queue.** Read the queue log (`~/.cache/reefid-queue/nightq.log`, its last line above). Merge only through
-   `tools/queue/nightq.sh` ([tools/queue](queue/README.md)). Restart whatever stopped.
+   `tools/queue/nightq.sh` ([tools/queue](queue/README.md)); start several waves with `tools/queue/fifoq.sh`, which
+   runs them one at a time through `nightq.sh`. Restart whatever stopped.
 3. **Work comes from Linear, never from this prompt.** Open the Next view (link above) and apply
    [INTEGRATOR "Linear"](../docs/INTEGRATOR.md#linear), "Drain the Todo column until he says stop": every decided Todo
    issue not assigned to Pierre gets an agent, High first, as far as the machine slots allow (rule W24). Sensitive
