@@ -12,7 +12,8 @@
 # the share-alike photos already on the site are the admin's to keep or remove (admin To do › Share-alike), never here.
 # Pierre's own observations are no part of those caps (rule P1, docs/decisions/2026-11-24-own-observations-everywhere.md):
 # one read of his observations of every genus (own_pool), every one taken with every usable photo before the caps, the
-# Key-only need and PER_OBS apply, under the tiers' identification rule (own_take); they count as waiting, so a genus they
+# Key-only need and PER_OBS apply, on the fish's and the sea slugs' criteria for his own (own_take: identified at the
+# genus or below, Research Grade or Needs ID; his photo even without a licence); they count as waiting, so a genus they
 # fill takes no other observer's. --own: his only.
 # Caps, so the pile to sort stays small: at most DAUIN_CAP Dauin observations waiting per genus, Philippines ones only
 # while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings all its photos
@@ -79,10 +80,11 @@ DAUIN_LL, DAUIN_KM = (9.19, 123.26), 40  # DAUIN, as the fish's tier_of reads it
 
 def own_pool(get, tids):
     """Every observation of Pierre's in the genus taxa `tids`, one search read to its end (a few hundred in all, 200 a
-    request; rule C7): Research Grade or Needs ID, never captive, with a photo of an accepted licence. Each genus then
-    takes its own from this one read (own_take), whatever its room: no per-genus search of his."""
+    request; rule C7): Research Grade or Needs ID, never captive, with a photo (its licence is checked photo by photo in
+    own_take: his photo needs none). Each genus then takes its own from this one read, whatever its room: no per-genus
+    search of his."""
     ids = ','.join(map(str, sorted(set(tids))))
-    q = f'https://api.inaturalist.org/v1/observations?taxon_id={ids}&user_login={OWN}&quality_grade=research,needs_id&captive=false&photos=true&photo_license={LIC}&order_by=id&order=desc&per_page=200'
+    q = f'https://api.inaturalist.org/v1/observations?taxon_id={ids}&user_login={OWN}&quality_grade=research,needs_id&captive=false&photos=true&order_by=id&order=desc&per_page=200'
     out, below = [], None
     while ids:
         r = get(q + (f'&id_below={below}' if below else ''))['results']
@@ -107,21 +109,20 @@ def own_place(o):
 
 def own_take(pool, tid, usedp, confirmed=lambda: (), skip=lambda pid: False):
     """Pierre's own observations of the genus tid in `pool` (own_pool), as [(observation, its photos, loc)], whatever the
-    genus's room, caps and waiting count (rule P1, docs/decisions/2026-11-24-own-observations-everywhere.md): the
-    identification the tiers accept (accepted: Research Grade, a genus-level community ID or an expert's in the
-    Philippines; abroad Research Grade of a species confirmed in the Philippines: confirmed() gives their taxon ids), and
-    EVERY photo with an accepted licence not taken yet (usedp, updated here: photo ids; skip(id): an excluded photo),
-    never cut to PER_OBS. The caller records them; they count as waiting, so they take room from others."""
+    genus's room, caps and waiting count (rule P1, docs/decisions/2026-11-24-own-observations-everywhere.md), as the
+    fish's and the sea slugs' (fetch_fish.usable_obs): identified at the genus or below, Research Grade or Needs ID,
+    whoever named it, in the Philippines; abroad (the one difference, rules P1 and C8) Research Grade of a species
+    confirmed in the Philippines (confirmed() gives their taxon ids). EVERY photo with an accepted licence or none (his
+    own: never share-alike nor ND) not taken yet (usedp, updated here: photo ids; skip(id): an excluded photo), never cut
+    to PER_OBS. The caller records them; they count as waiting, so they take room from others."""
     out = []
     for o in pool:
         if (o.get('user') or {}).get('login') != OWN or not in_genus(o.get('taxon'), tid):
             continue
         loc = own_place(o)
-        if not accepted(o, tid, loc):
+        if loc == 'world' and not (accepted(o, tid, loc) and {(o.get('taxon') or {}).get('id'), *((o.get('taxon') or {}).get('ancestor_ids') or [])} & set(confirmed())):
             continue
-        if loc == 'world' and not ({(o.get('taxon') or {}).get('id'), *((o.get('taxon') or {}).get('ancestor_ids') or [])} & set(confirmed())):
-            continue
-        P = [ph for ph in o['photos'] if photo_ok(ph) and str(ph['id']) not in usedp and not skip(ph['id'])]
+        P = [ph for ph in o['photos'] if (photo_ok(ph) or not ph.get('license_code')) and str(ph['id']) not in usedp and not skip(ph['id'])]
         if P:
             usedp.update(str(ph['id']) for ph in P)
             out.append((o, P, loc))
@@ -130,7 +131,7 @@ def own_take(pool, tid, usedp, confirmed=lambda: (), skip=lambda pid: False):
 
 def cand_record(g, o, ph, loc):
     """The candidate of genus g for photo ph of observation o, found in `loc` (data.json "cand"'s fields)."""
-    return dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=f'https://www.inaturalist.org/observations/{o["id"]}', t=o['taxon']['name'], own=o['user']['login'] == OWN, loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1}))
+    return dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'] or 'own', o=f'https://www.inaturalist.org/observations/{o["id"]}', t=o['taxon']['name'], own=o['user']['login'] == OWN, loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1}))
 
 
 def tie_key(o, P, rank):

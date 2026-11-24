@@ -251,10 +251,11 @@ commit, so no Publish is lost), then:
      their zoom, so sorting by view, quality and near-duplicates is the judging pass's job.
    - **Pierre's own observations come in whatever the room** (`own_pool`, `own_take`; [record](../decisions/2026-11-24-own-observations-everywhere.md)):
      one read of his observations of every genus (a few hundred, 200 a request), taken before the caps, the Key-only need
-     and the votes order, with the same identification and licence rules as the tiers (Research Grade, a genus-level
-     community ID or the trusted identifier's in the Philippines; abroad Research Grade of a species confirmed there)
-     and every usable photo, never cut to 12. They count as waiting, so a genus they fill takes no other observer's
-     observation; judged like any candidate.
+     and the votes order, on the criteria the fish and the sea slugs have for him (identified at the genus or below,
+     Research Grade or Needs ID, whoever named it; his photo even without a licence, never share-alike nor ND), and
+     every usable photo, never cut to 12. One named difference: abroad, Research Grade of a species confirmed in the
+     Philippines (rules P1 and C8). They count as waiting, so a genus they fill takes no other observer's observation;
+     judged like any candidate.
 3. `tools/fetch_local.py --tidy` runs last (below), then the workflow commits `data.json` and `data/cand.json` (and `img/`,
    only for a missing smaller size of a photo git keeps) (`tests/coralcand.test.js`).
 

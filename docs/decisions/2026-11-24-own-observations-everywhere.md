@@ -18,15 +18,22 @@ systématiquement intégrées à la base de données, et puis jugées comme les 
 l'ensemble de mes photos qui remplissent les critères doivent être intégré à l'app et aux jeux, même si on dépasse les
 seuils.»
 
-- For every subject, every observation of his that meets the subject's usual criteria (licence, Research Grade or the
-  subject's equivalent, egg and Dead filters, a taxon we show) is taken in as candidates with every usable photo, whatever
+- For every subject, every observation of his that meets the criteria below (a taxon we show, Research Grade or Needs
+  ID, the licence rule, the egg and Dead filters) is taken in as candidates with every usable photo, whatever
   the list's room, target or cap, with no ceiling: the sea slugs' `max` (30) does not limit him either.
 - They are candidates like any other: unjudged and out of play until judged, then judged on the rubric like anyone's
   (Q386), never boosted.
 - They count in the list's room, so a full list takes no other observer's photo.
-- The criteria stay each subject's own (the fish and sea slugs take his photo without a licence, the corals only a
-  licensed one; the corals' identification rule, Research Grade, a genus-level community ID or the trusted identifier's).
-  Only the room is lifted.
+- His criteria are the same for every subject (rule S1): his observation identified at the species (corals: the genus)
+  or below, Research Grade or Needs ID, whoever named it; his photo even without a licence, never share-alike nor ND.
+  The fish and sea slugs already read it so (`fetch_fish.usable_obs`, rule S2, Q386). The corals' rule for others (Research
+  Grade, a genus-level community ID or the trusted identifier's; a licensed photo only) had no written reason for him:
+  `tools/licences.py` already keeps his unlicensed coral photo (`own and not code`), and rule S2's reason (he names a
+  taxon only when nearly sure) is his, not the fish's. The integrator aligned the corals on the fish and the sea slugs
+  for his own observations (`fetch_local.own_take`); the other observers' rule is unchanged.
+- One named difference stays, with its source: abroad, his coral observation must be Research Grade of a species
+  confirmed in the Philippines (rule P1, "abroad stays Research Grade and the presence rule C8"; the fish take his
+  observation abroad inside the Indo-West Pacific box). None of his qualifies today.
 
 ## Consequences
 

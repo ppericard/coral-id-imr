@@ -20,8 +20,9 @@ question, in any mode; the answers decide it, never an a priori view rule.
   auto-excluded: they are always evaluated for entry. **A default cover** (a family's or a genus's, any node with leaves,
   when he has picked none) is a photo of its leaf **most seen around the instance's centre by distinct observers**, that
   leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `treeCoverOf`). **One exception for his own photos, every subject:** every observation of his that
-  meets the subject's usual criteria (licence, Research Grade or the subject's equivalent, egg and Dead filters, a taxon
-  we show) is taken in as candidates with every usable photo, whatever the list's room, target or cap, with no ceiling,
+  meets the same criteria for every subject (identified to a taxon we show, Research Grade or Needs ID; his photo even
+  without a licence, never share-alike nor ND; the egg and Dead filters; abroad, for the corals only, Research Grade of a
+  species confirmed in the Philippines, rule C8) is taken in as candidates with every usable photo, whatever the list's room, target or cap, with no ceiling,
   then judged on the rubric like any candidate. Never boosted, never left out: they count in the list's room, so a full
   list takes no other observer's photo (`tools/fetch_fish.py` `select` takes his observations first, free of room, for
   the fish and the sea slugs; `tools/fetch_local.py` `own_take` for the corals; the stopgap's `tools/fish_photos.py`
