@@ -15,6 +15,9 @@
 //   [--n 8] [--warm 2] [--seed 1|1,2,3|off] [--clock 30|SECONDS|off] [--out counts.json] [--cache DIR] [--regen]
 //   [--par N]   N states made or counted at once (N browsers; default 1, 3 on CI, where the run is the whole machine's)
 //   [--data-now]   the data (.json files) of the tree under test, not of the pinned tree (to see what a refill changes)
+//   [--repeat N]   each state and seed counted N times and the runs compared (exit 1 when the questions asked or the calls an
+//                  answer differ): the check that a count repeats; by hand, after a change to how the page is started
+//   [--trace]      where each random number is drawn (the tick, the callers, the value) and the page's state at the restart, in --out
 //
 // A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the page's own answers; the sea slugs play the
 // fish part of the profile, the same engine) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in
@@ -29,8 +32,10 @@
 // seed (fish 3,000 answers: 0.3 to 0.4 M calls over seeds 1 to 3), and a ceiling is the largest over three seeds times a
 // margin. With the seed fixed a count is repeatable (REE-281): the page's clock is virtual (Date and performance.now stand
 // still between the tool's ticks, 4 s of thinking and 6 s of pause an answer), the random numbers start over from the seed
-// at each tick, every photo is the same 1 x 1 picture served at once, the boot is started over from a settled page (plans
-// dropped, numbers from the seed, the quiz drawn again: the boot's own route() order moved the draws under load), and the
+// at each tick, every photo is the same 1 x 1 picture served at once, the page boots on About, which draws no question (a
+// question the boot draws is kept and shown again by the quiz, with the photos and the planner's memory it left, and which
+// one the boot draws depends on the order the script tiers load in), is at rest (every tier set up, the photos planned ahead
+// in, the idle tasks run) before the plans are dropped, the numbers start from the seed and the quiz opens, and the
 // data (.json) is the pinned tree's, so
 // neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
 // (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
@@ -144,6 +149,26 @@ function over(row, budget) {
 // Whether the page's history (H, read after the warm-up answers it played) is far from the state's: more than 5% (at least
 // 10 answers) off the state's answers plus the warm-up.
 const historyOff = (H, answers, warm) => !(Math.abs(H - warm - answers) <= Math.max(10, 0.05 * answers));
+
+// Whether the runs of one state at one seed (rows of the same state and seed, --repeat) agree: the same units asked, in the
+// same order, the same calls an answer (within TOL: the coverage of an idle callback that ran or not moves a count by a few
+// calls of a hundred thousand) and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
+// loaded machine the device's log was read twice more, 3% of the characters read, with the same questions asked; the cause is
+// not known, a timer of the page on the wall clock is a guess).
+// {ok, why}: why names the first run that parts from the first, and how.
+const TOL = 0.001,
+  STORE_TOL = 0.05;
+function repeatable(rows, tol = TOL, storeTol = STORE_TOL) {
+  const [a, ...rest] = rows;
+  for (const [k, r] of rest.entries()) {
+    const at = `run ${k + 2} of ${r.state}${r.seed === null || r.seed === undefined ? '' : ` seed ${r.seed}`}`;
+    if (a.asked.join() !== r.asked.join()) return {ok: false, why: `${at} asked ${r.asked.join(', ')} where run 1 asked ${a.asked.join(', ')}`};
+    if (Math.abs(r.namedCalls - a.namedCalls) > tol * a.namedCalls) return {ok: false, why: `${at} counted ${r.namedCalls} calls an answer where run 1 counted ${a.namedCalls}`};
+    for (const f of ['getCalls', 'getChars', 'setChars'])
+      if (Math.abs(r.store[f] - a.store[f]) > storeTol * a.store[f]) return {ok: false, why: `${at} counted ${r.store[f]} for ${f} where run 1 counted ${a.store[f]}`};
+  }
+  return {ok: true, why: ''};
+}
 
 const fmt = x => (x === undefined || x === null ? '-' : Math.round(x).toLocaleString('en-US'));
 
@@ -457,12 +482,13 @@ async function count(browser, base, file, name, o, expect) {
         let a = seed >>> 0; // mulberry32
         window.__reseed = n => (a = (seed + Math.imul(n, 0x9e3779b1)) >>> 0);
         Math.random = () => {
-          // --trace: where each number is drawn (the tick it follows, the callers), to find what the draws depend on
-          if (trace) (window.__rt = window.__rt || []).push(`${window.__ticksN || 0} ${new Error().stack.split('\n').slice(2, 6).map(l => (/at (\S+)/.exec(l) || [])[1]).join('<')}`);
           a = (a + 0x6d2b79f5) >>> 0;
           let t = Math.imul(a ^ (a >>> 15), 1 | a);
           t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          const x = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          // --trace: where each number is drawn (the tick it follows, the callers) and its value, to find what the draws depend on
+          if (trace) (window.__rt = window.__rt || []).push(`${window.__ticksN || 0} ${new Error().stack.split('\n').slice(2, 9).map(l => (/at (\S+)/.exec(l) || [])[1]).join('<')} = ${x.toFixed(6)}`);
+          return x;
         };
       }
       if (sessionStorage.getItem('answercost')) return;
@@ -479,24 +505,59 @@ async function count(browser, base, file, name, o, expect) {
   const cdp = await ctx.newCDPSession(p);
   // --throttle N: the page's CPU N times slower (a phone's, or a loaded machine's): a count must not move with it.
   if (o.throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', {rate: o.throttle});
-  await p.goto(base + '#quiz');
-  await p.waitForFunction(() => window.APP_READY, null, {timeout: 120000});
-  await p.evaluate(() => window.loadTier && window.loadTier(5)); // every script tier in, as a player who has opened My progress
-  await p.waitForLoadState('networkidle');
-  if (!/quiz/.test(await p.evaluate(() => location.hash))) await p.evaluate(() => (typeof go === 'function' ? go('quiz') : (location.hash = '#quiz')));
-  await p.waitForTimeout(800);
   // The boot is not repeatable (REE-281): the script tiers come in as they load, a route() of theirs renders Home (its shuffle
-  // draws random numbers) or the quiz first, and the questions planned ahead are drawn from whatever numbers came before,
-  // so under load the same seed asked another sequence from the third question on (fish:50: 0.11 M or 0.16 M calls an
-  // answer). Start over from a settled page: the plans dropped (the planner's state put back), the numbers from the seed,
-  // the quiz drawn again.
+  // draws random numbers) or the quiz first, and the question the boot draws is KEPT (quiz.js pendShow: stored, shown again by
+  // route() as it was, pendTake) with the photos it joined to the session's window (model.js SEENQ) and the planner's
+  // memory of it (last, lastQs). A page that opens on the quiz thus carries whichever question its boot order drew into
+  // every later draw, whatever is reseeded or dropped afterwards. So the page opens on a page that draws no question
+  // (About: tier 1), every tier is brought in and everything the boot started is awaited (the app's own chain: its tiers, the
+  // planned questions' photos), nothing has been asked, and then, from the seed: the questions planned at the boot dropped
+  // (the planner's state put back), the numbers from the seed, the quiz opened.
+  await p.goto(base + '#about');
+  await p.waitForFunction(() => window.APP_READY, null, {timeout: 120000});
+  await p.evaluate(() => window.loadTier && window.loadTier(5)); // every script tier in (the promise is awaited), as a player who has opened My progress
+  // The Lab's own files (proto/lab.js) load after it, and the last one in redraws Home or a Lab page: LAB.pending is 0 once they are.
+  await p.waitForFunction(
+    () => typeof HAVE === 'number' && HAVE >= 5 && !document.querySelector('.boot') && (typeof LAB === 'undefined' || LAB.pending === 0),
+    null,
+    {timeout: 120000}
+  );
+  await p.evaluate(() => typeof prefetched === 'function' && prefetched()); // the photos planned ahead are in
   await settle(p);
+  // --trace: the page as the restart finds it, written into the trace as a line of its own
+  const probe = async tag => {
+    const s = await p.evaluate(tag => {
+      const q = document.querySelector('#view .q'),
+        st = {
+          hash: location.hash,
+          HAVE: typeof HAVE === 'number' ? HAVE : null,
+          ready: !!window.APP_READY,
+          boot: !!document.querySelector('.boot'),
+          lab: typeof LAB === 'undefined' ? 0 : LAB.pending,
+          question: !!q,
+          seen: typeof SEENQ === 'object' ? SEENQ.length : null,
+          kept: Object.keys(localStorage)
+            .filter(k => /pending$/.test(k))
+            .map(k => localStorage.getItem(k))
+            .join('')
+        };
+      if (window.__rt) __rt.push(`== ${tag}: ${JSON.stringify(st)} last ${typeof last !== 'undefined' ? last : '?'} lastQs ${typeof lastQs !== 'undefined' ? lastQs : '?'}`);
+      return st;
+    }, tag);
+    return s;
+  };
+  const at = await probe('before the restart');
+  // A count over a page that was not at rest is no count (and says why).
+  if (at.HAVE < 5 || at.boot || at.lab || at.question || at.seen)
+    throw new Error(`${name}: the page was not at rest for the restart (${JSON.stringify(at)}): a question drawn by the boot would carry its draw into the count`);
   await p.evaluate(() => {
     if (window.__reseed) __reseed(0);
     if (typeof dropPlans === 'function') dropPlans();
-    route();
+    typeof go === 'function' ? go('quiz') : (location.hash = '#quiz');
   });
+  await p.waitForFunction(() => /quiz/.test(location.hash), null, {timeout: 30000});
   await settle(p);
+  if (o.trace) await probe('after the restart');
   for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
   const size = await p.evaluate(() => {
@@ -604,7 +665,7 @@ async function count(browser, base, file, name, o, expect) {
 
 const USAGE =
   'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
-  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now] [--throttle N]';
+  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now] [--throttle N] [--repeat N] [--trace]';
 
 async function main() {
   const argv = process.argv.slice(2),
@@ -613,7 +674,7 @@ async function main() {
       return i >= 0 && argv[i + 1] !== undefined && !argv[i + 1].startsWith('--') ? argv[i + 1] : d;
     };
   if (argv.includes('--help') || argv.includes('-h')) return console.log(USAGE);
-  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now', 'throttle', 'trace']);
+  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now', 'throttle', 'trace', 'repeat']);
   for (const a of argv.filter(a => a.startsWith('--')))
     if (!known.has(a.slice(2))) return (console.error(`unknown option ${a}\n${USAGE}`), process.exit(2));
   let states;
@@ -631,13 +692,14 @@ async function main() {
       seeds: arg('seed', '1') === 'off' ? [null] : arg('seed', '1').split(',').map(Number),
       clock: arg('clock', '30') === 'off' ? null : Number(arg('clock', 30)),
       throttle: Number(arg('throttle', 1)),
-      trace: argv.includes('--trace')
+      trace: argv.includes('--trace'),
+      repeat: Number(arg('repeat', 1))
     },
     margin = Number(arg('margin', 1.25)),
     par = Number(arg('par', process.env.CI ? 3 : 1)),
     budgetFile = arg('budget', null),
     budget = budgetFile ? JSON.parse(fs.readFileSync(path.resolve(budgetFile), 'utf8')) : null;
-  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1 && o.seeds.every(s => s === null || Number.isInteger(s)))) return (console.error(USAGE), process.exit(2));
+  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1 && Number.isInteger(o.repeat) && o.repeat >= 1 && o.seeds.every(s => s === null || Number.isInteger(s)))) return (console.error(USAGE), process.exit(2));
 
   // From here on the run is heavy: the machine slot first (rule W24, a no-op on CI), for the states to make and the count.
   await require('../tests/slot.js')('tools/answercost.js');
@@ -654,7 +716,8 @@ async function main() {
   let rows;
   try {
     // The longest states first, so the last to finish is a short one; each worker has a Chromium of its own.
-    const jobs = states.flatMap((s, i) => o.seeds.map(seed => ({i, seed}))),
+    // --repeat N: each state and seed counted N times, the runs compared (repeatable); the first run is the row.
+    const jobs = states.flatMap((s, i) => o.seeds.flatMap(seed => Array.from({length: o.repeat}, () => ({i, seed})))),
       queue = jobs.map((j, k) => k).sort((a, b) => (states[jobs[b].i].answers || 0) - (states[jobs[a].i].answers || 0));
     rows = new Array(jobs.length);
     await Promise.all(
@@ -675,19 +738,29 @@ async function main() {
   } finally {
     server.close();
   }
+  const every = rows; // every run: --out keeps them all, and a ceiling counts the largest
+  if (o.repeat > 1) {
+    const by = new Map();
+    for (const r of rows) by.set(`${r.state}|${r.seed}`, [...(by.get(`${r.state}|${r.seed}`) || []), r]);
+    const bad = [...by.values()].map(g => repeatable(g)).filter(v => !v.ok);
+    for (const v of bad) console.log(`NOT REPEATABLE: ${v.why}`);
+    console.log(bad.length ? `${bad.length} of ${by.size} counts differ between runs of the same seed.` : `Repeatable: ${by.size} counts, ${o.repeat} runs each, the same questions and the same calls.`);
+    if (bad.length) process.exitCode = 1;
+    rows = [...by.values()].map(g => g[0]);
+  }
   console.error(`answercost: ${states.length} states${o.seeds.length > 1 ? `, seeds ${o.seeds.join(',')}` : ''}, ${Math.round((Date.now() - t0) / 1000)} s in all.`);
   console.log(table(rows));
   // CI shows the table on the job's page.
   if (process.env.GITHUB_STEP_SUMMARY)
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Work of one answer, per state\n\n${table(rows)}\n\n`);
-  if (arg('out', null)) fs.writeFileSync(path.resolve(arg('out', null)), JSON.stringify(rows, null, 1));
+  if (arg('out', null)) fs.writeFileSync(path.resolve(arg('out', null)), JSON.stringify(every, null, 1));
   if (arg('write-budget', null)) {
     // --also A.json,B.json: rows of earlier runs (--out), their largest counts counting with this run's.
     const also = arg('also', '')
       .split(',')
       .filter(Boolean)
       .flatMap(f => JSON.parse(fs.readFileSync(path.resolve(f), 'utf8')));
-    writeBudget(path.resolve(arg('write-budget', null)), [...rows, ...also], margin);
+    writeBudget(path.resolve(arg('write-budget', null)), [...every, ...also], margin);
     console.log(`\nCeilings written to ${arg('write-budget', null)} (margin x${margin}, two significant digits up, at least ${FLOOR} calls).`);
   }
   if (budget) {
@@ -698,7 +771,7 @@ async function main() {
   }
 }
 
-module.exports = {parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {repeatable, TOL, parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);
