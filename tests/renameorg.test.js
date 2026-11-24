@@ -59,6 +59,25 @@ test('a new value that contains the earlier one stays put on a second run, and a
   }
 });
 
+test('a new value contained in the earlier one (a shorter branding) still replaces it, and a second run changes nothing', () => {
+  const dir = copy("{short: 'MR', name: 'Marine Research', app: 'MR Reef ID', appShort: 'Reef ID'}");
+  try {
+    const old = ['--from', 'IMR Reef ID', '--from-short', 'IMR', '--from-name', 'Institute for Marine Research'];
+    run(dir, ...old);
+    const once = PAGES.map(f => read(dir, f));
+    assert.match(once[1], /at the Marine Research \(MR\), Dauin/);
+    assert.match(once[0], /from the MR survey lists/);
+    assert.match(run(dir, '--check'), /nothing left/);
+    assert.match(run(dir, ...old), /nothing to do/);
+    assert.deepStrictEqual(
+      PAGES.map(f => read(dir, f)),
+      once
+    );
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 test('a fork changes ORG once and the pages follow, whole words only, then a second run changes nothing', () => {
   const dir = copy("{short: 'ABC', name: 'Acme & Co', app: 'ABC Reef ID', appShort: 'Reef ID'}");
   try {

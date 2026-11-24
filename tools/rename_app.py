@@ -117,22 +117,24 @@ def rename_token(m, table):
 
 def org_words(line, shorts, full_names, o):
     """The organisation's name and short form, as whole words, written from ORG (HTML-escaped: the files are pages)."""
-    forms = lambda v: sorted({html.escape(v), v}, key=len, reverse=True)  # a page holds the escaped form
-    hold = ['\0name\0', '\0short\0']
-    # The current values are held out of every replacement (and written as placeholders), so a new value that
-    # contains an earlier one ("IMR" inside "IMR-UK") is never written twice: a second run changes nothing.
-    for ph, v in zip(hold, (o['name'], o['short'])):
-        for f in forms(v):
-            line = line.replace(f, ph)
-    for n in full_names:
-        if n != o['name']:
-            for f in forms(n):
-                line = line.replace(f, hold[0])
-    for s in shorts:
-        if s != o['short']:
-            for f in forms(s):
-                line = re.sub(r'(?<!\w)' + re.escape(f) + r'(?!\w)', lambda m: hold[1], line)
-    return line.replace(hold[0], html.escape(o['name'])).replace(hold[1], html.escape(o['short']))
+    # One left-to-right pass over every earlier and current value, longest first (a page holds the escaped form, a
+    # short form is a whole word). A match that is a current value stays; an earlier one becomes the current one. So a
+    # new value that contains an earlier one ("IMR" in "IMR-UK") is not written twice, and one contained in an earlier
+    # one ("Marine Research" in "Institute for Marine Research") does not hide it: a second run changes nothing.
+    what = {}  # matched text -> its replacement
+    for kind, olds, cur in (('name', full_names, o['name']), ('short', shorts, o['short'])):
+        for old in olds:
+            for f in {html.escape(old), old}:
+                what[(kind, f)] = html.escape(cur)
+        for f in {html.escape(cur), cur}:
+            what[(kind, f)] = f
+    parts = sorted(what, key=lambda k: -len(k[1]))
+    pat = re.compile('|'.join(('(?<!\\w)%s(?!\\w)' if kind == 'short' else '%s') % re.escape(f) for kind, f in parts))
+    # a text of a name and of a short form can match the same way only if they are equal: the first listed wins
+    look = {}
+    for (kind, f), rep in what.items():
+        look.setdefault(f, rep)
+    return pat.sub(lambda m: look[m.group(0)], line)
 
 
 def rename_text(text, names, app, table, words=None):
