@@ -212,8 +212,18 @@ test('told the truth, the app reads every photo and unit as the world has them; 
     p = G[n].views.wide[0];
   assert.ok(Math.abs(ctx.photoDiff(n, p) - (W.mu[n] + W.eps[p.f])) < 1e-12);
   assert.ok(Math.abs(M.genusDiff(n) - W.mu[n]) < 0.006, `${M.genusDiff(n)} ${W.mu[n]}`);
-  const own = RW.engine(X, W, {app: 'own'});
-  assert.ok(Math.abs(own.ctx.photoDiff(n, p) - (3 - p.e) * 0.5) < 1e-9);
+  // On its own: a photo nobody answered at its prior, the judged ease at the shared weight (core.js calibOf ease, whose
+  // value tests/priordiff.test.js pins); over the unit's wide photos, at least one off the middle ease so that the
+  // weight is read (a photo at PDIFF.MID alone passes whatever the weight).
+  const own = RW.engine(X, W, {app: 'own'}),
+    w = own.ctx.calibOf(own.ctx.SUBJ).ease,
+    mid = own.M.PDIFF.MID,
+    wide = own.G[n].views.wide;
+  assert.ok(
+    wide.some(q => q.e && q.e !== mid),
+    `${n}: a wide photo off the middle ease`
+  );
+  wide.forEach(q => assert.ok(Math.abs(own.ctx.photoDiff(n, q) - (q.e ? (mid - q.e) * w : 0)) < 1e-9, `${n} ${q.f} ease ${q.e}`));
 });
 
 test('a run: the same seed gives the same run, and learncmp reads every measure from it', () => {
