@@ -163,9 +163,9 @@ learning change" (rule L11).
 
 | Tool | What it does |
 |---|---|
-| `learnsim.js` | Simulates players in the real app; the base of every learning check. `memstorage.js` is its in-memory storage; `--dump DIR` saves the page's state at chosen questions |
-| `answercost.js`, `answercost-budget.json` | The work of one answer, counted (calls of each named function, storage read and written) on a simulated player's saved state, against a budget; `tests/answercost.test.js` runs the small states in the fast tier, the heavy fish state is an opt-in command ([docs/spec/tools.md](../docs/spec/tools.md#per-answer-cost)) |
-| `learnprof.js` | The simulated players' profiles |
+| `learnsim.js` | Simulates players in the real app (`--subject coral`, `fish` or `seaslug`); the base of every learning check. `memstorage.js` is its in-memory storage; `--dump DIR` saves the page's state at chosen questions |
+| `answercost.js`, `answercost-budget.json` | The work of one answer, counted (calls of each named function, storage read and written) on a simulated player's saved state, for every subject (fish, corals, sea slugs) at 50, 500 and 3,000 answers, against a budget. Not in the agents' fast tier: CI's `answer cost` job runs every count, and an agent working on speed runs it by hand ([docs/spec/tools.md](../docs/spec/tools.md#per-answer-cost)); `tests/answercost.test.js` holds the pure parts |
+| `learnprof.js` | The simulated players' profiles (the sea slugs play each profile's fish part) |
 | `ratedworld.js` | The rated synthetic world the app's engine also runs on |
 | `checkbudget.js` | The checks' 40-minute budget (plan, refuse over it, stop and mark a cut run; `--budget`, `--per-job`) and level 3's gate (`--pierre-go`, GitHub runner only), shared by `learnsim.js` in both worlds (rule L11) |
 | `learncmp.js` | Compares two `learnsim.js` runs: the guardrails and the declared primary measure. The Learning check workflow (`.github/workflows/learncheck.yml`: one 40-minute deadline for the whole check, the level-3 go checked first) runs it; it says so when a file was cut by the budget, and reads no primary from an arm cut before any run finished |

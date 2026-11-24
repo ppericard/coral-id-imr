@@ -280,6 +280,71 @@
     1.0
    ],
    "note": "Blue cast, soft at 100%"
+  },
+  "pectinia-cand-596085943": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Small: about a tenth of the frame, blue cast",
+   "crop": [
+    0.2,
+    0.3,
+    0.8,
+    0.9
+   ]
+  },
+  "pectinia-cand-745205164": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Branching corals at the top left edge"
+  },
+  "pectinia-cand-745205140": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "pectinia-cand-745205097": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Shallow focus"
+  },
+  "pectinia-cand-745205772": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Closer than the live Colony photo; a branching coral at the left"
+  },
+  "pectinia-cand-745205760": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-745206008": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Part of the colony in the live Colony photo"
+  },
+  "pectinia-cand-745205977": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "pectinia-cand-745205982": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
   }
  }
 }

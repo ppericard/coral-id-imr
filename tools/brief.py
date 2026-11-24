@@ -411,7 +411,7 @@ def stack_line(c, why):
 
 
 # --- Infrastructure (tools/health.py: the hourly Health run, .github/workflows/health.yml) --------------------------------
-# What to watch before the platform outgrows its free tiers: Pages' 1 GB, R2's 10 GB (by hand: tools/infra.json), and, when
+# What to watch before the platform outgrows its free tiers: Pages' 1 GB, R2's 50 GB (by hand: tools/infra.json), and, when
 # the Health run was given the admin token, the sheet's cells (Google's 10 million) and its slowest operation. The run puts
 # them in one `infra` annotation of its job; the brief reads it with three REST calls and never computes them itself. A
 # warning past INFRA_WARN of a limit (the same 70 % as tools/health.py and admin.js; tests/infra.test.js checks the three).

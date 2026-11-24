@@ -252,6 +252,51 @@
     "multi"
    ],
    "note": "Hazy and soft; massive corals and seagrass around a small colony"
+  },
+  "seriatopora-cand-60884063": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0,
+    0.15,
+    0.9,
+    1
+   ]
+  },
+  "seriatopora-cand-227054098": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thick blunt branches: Stylophora or Pocillopora damicornis possible; two damselfish"
+  },
+  "seriatopora-cand-58850938": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Neat rows of corallites, but a butterflyfish and a damselfish take the eye"
+  },
+  "seriatopora-cand-767079990": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Other corals around",
+   "crop": [
+    0.2,
+    0.15,
+    0.85,
+    0.95
+   ]
   }
  }
 }

@@ -214,6 +214,45 @@
     0.85,
     1.0
    ]
+  },
+  "trachyphyllia-cand-338981071": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-700696831": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Fills the frame, slightly soft"
+  },
+  "trachyphyllia-cand-700696858": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "note": "Another angle, soft"
+  },
+  "trachyphyllia-cand-515605084": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-515608062": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Shallow focus"
+  },
+  "trachyphyllia-cand-59282063": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
   }
  }
 }

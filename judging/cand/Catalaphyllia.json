@@ -1,4 +1,81 @@
 {
  "genus": "Catalaphyllia",
- "photos": {}
+ "photos": {
+  "catalaphyllia-cand-216999657": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "1200 px; tentacles with pink tips fill the frame; a logo and frame line"
+  },
+  "catalaphyllia-cand-248437092": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Striped mantle and tentacles"
+  },
+  "catalaphyllia-cand-248437131": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Another colony part, tentacles out"
+  },
+  "catalaphyllia-cand-248437164": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "The striped oral disc"
+  },
+  "catalaphyllia-cand-99428379": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "A clownfish among the tentacles; a credit line"
+  },
+  "catalaphyllia-cand-256261543": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "quality"
+   ],
+   "note": "Looks like a sea anemone on rock rather than a coral on sand"
+  },
+  "catalaphyllia-cand-258781685": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Tentacles hide the colony"
+  },
+  "catalaphyllia-cand-387292664": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Purple-tipped tentacles over green mantle"
+  },
+  "catalaphyllia-cand-387292641": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "catalaphyllia-cand-759474961": {
+   "view": "wide",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Murky green veil over the whole frame, soft at 100%"
+  }
+ }
 }

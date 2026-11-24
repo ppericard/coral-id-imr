@@ -328,6 +328,49 @@
    "keep": "best",
    "polyps": true,
    "note": "1200 px, milky green veil, soft"
+  },
+  "heliofungia-cand-746237195": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Disc with a few tentacles out"
+  },
+  "heliofungia-cand-746237133": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Septa and tentacles with pink tips"
+  },
+  "heliofungia-cand-746237077": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "heliofungia-cand-746237085": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Closer, shallow focus"
+  },
+  "heliofungia-cand-765978509": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "polyps": true,
+   "keep": "best",
+   "note": "Tentacles with white tips fill the frame"
+  },
+  "heliofungia-cand-765978525": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "polyps": true,
+   "keep": "alt",
+   "note": "Closer on the tentacles"
   }
  }
 }

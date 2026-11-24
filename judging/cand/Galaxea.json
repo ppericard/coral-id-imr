@@ -322,6 +322,13 @@
    "form": "E",
    "keep": "best",
    "note": "Blurred over the whole frame"
+  },
+  "galaxea-cand-745206111": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Tentacles out over the septa"
   }
  }
 }

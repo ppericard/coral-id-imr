@@ -193,6 +193,33 @@
    "form": "F",
    "keep": "best",
    "note": "Dark, soft at 100%"
+  },
+  "leptoseris-cand-488111040": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Spiral plates, another framing than the live Colony photo"
+  },
+  "leptoseris-cand-488111036": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "The plate edge, another framing than the live photo"
+  },
+  "leptoseris-cand-488111348": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-488111349": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "With the plate edge, softer"
   }
  }
 }

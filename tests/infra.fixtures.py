@@ -198,8 +198,8 @@ def main():
     S['deploy_pub_bad_note'] = go(routes(**published(sha='not-a-sha')))
     S['deploy_pub_no_note'] = go(routes(**published(note_title='something-else')))
     S['tree_truncated'] = go(routes(**{'https://api.github.com/repos/%s/git/trees/main?recursive=1' % health.REPO: (200, b'{"truncated": true, "tree": []}')}))
-    S['r2_warn'] = go(routes(), rt=root(r2_bytes=7_500_000_000))
-    S['r2_exactly_70'] = go(routes(), rt=root(r2_bytes=7_000_000_000))
+    S['r2_warn'] = go(routes(), rt=root(r2_bytes=36_000_000_000))
+    S['r2_exactly_70'] = go(routes(), rt=root(r2_bytes=35_000_000_000))
     S['r2_stale'] = go(routes(), rt=root(r2_at='2026-10-01'))
     S['token_ok'] = go(routes(), env={'GITHUB_TOKEN': SECRET_GH, 'INFRA_TOKEN': SECRET_ADMIN}, post_table=with_token(infra_reply()))
     S['token_cells_warn'] = go(routes(), env={'INFRA_TOKEN': SECRET_ADMIN}, post_table=with_token(infra_reply(total=7_400_000)))
@@ -220,7 +220,7 @@ def main():
         'stale': line(S['deploy_stale']['snap'], '0m'),
         'ahead_recent': line(S['deploy_ahead_recent']['snap'], '0m'),
         'truncated': line(S['tree_truncated']['snap']),
-        'no_r2': line({'ok': True, 'items': [{'k': 'r2', 'label': 'R2 storage', 'unit': 'bytes', 'limit': 10**10, 'used': None}]}),
+        'no_r2': line({'ok': True, 'items': [{'k': 'r2', 'label': 'R2 storage', 'unit': 'bytes', 'limit': 5 * 10**10, 'used': None}]}),
     }
 
     # infra_read: the latest completed run, its first job, the annotation titled infra.

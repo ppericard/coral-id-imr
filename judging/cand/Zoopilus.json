@@ -1,0 +1,71 @@
+{
+ "genus": "Zoopilus",
+ "photos": {
+  "zoopilus-cand-231633663": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Strong blue cast; leafy corals fill the rest of the frame"
+  },
+  "zoopilus-cand-683275866": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1000 px"
+  },
+  "zoopilus-cand-639430783": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A hand and a ruler at the bottom left; a crop of the left third may remove them"
+  },
+  "zoopilus-cand-639430791": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "note": "A hand holds a ruler over the coral"
+  },
+  "zoopilus-cand-639430800": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "note": "A hand holds a ruler over the coral"
+  },
+  "zoopilus-cand-593546218": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Part of the colony; branching corals in front; watermark"
+  },
+  "zoopilus-cand-283504952": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "A tall upright mound among Acropora: unusual for a free-living colony"
+  },
+  "zoopilus-cand-365311197": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  }
+ }
+}

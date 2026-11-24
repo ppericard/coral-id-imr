@@ -582,6 +582,37 @@
     0.95
    ],
    "note": "Magenta-blue colour cast, soft at 100%"
+  },
+  "turbinaria-cand-488111553": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Night; one plate"
+  },
+  "turbinaria-cand-488111532": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Oblique; sharp on a strip"
+  },
+  "turbinaria-cand-488111558": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt",
+   "note": "Top-down on the surface"
+  },
+  "turbinaria-cand-767078772": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Murky veil and backscatter over the whole frame; damselfish"
   }
  }
 }
