@@ -764,7 +764,7 @@ async function main() {
     console.log(`\nCeilings written to ${arg('write-budget', null)} (margin x${margin}, two significant digits up, at least ${FLOOR} calls).`);
   }
   if (budget) {
-    const v = verdict(rows, budget, budgetFile);
+    const v = verdict(every, budget, budgetFile); // every run of --repeat, not only the first
     for (const l of v.lines) console.log(l);
     if (process.env.GITHUB_ACTIONS) for (const a of v.annotations) console.log(a);
     if (v.bad.length) process.exitCode = 1;

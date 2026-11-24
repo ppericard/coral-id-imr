@@ -216,6 +216,8 @@ test('the page boots on a page that draws no question and is at rest before the 
   assert.match(src, /--throttle N/, 'a CPU throttle to reproduce a loaded machine');
   assert.match(src, /--trace/, 'a trace of where each random number is drawn');
   assert.match(src, /--repeat N/, 'a repeat check by hand');
+  assert.match(src, /verdict\(every, budget/, 'with --repeat, every run is held to the budget, not only the first');
+  assert.match(src, /writeBudget\([^\n]*\[\.\.\.every,/, 'with --repeat, a ceiling counts the largest of every run');
 });
 
 test('repeatable(): the runs of one seed ask the same units in the same order and count the same calls', () => {
