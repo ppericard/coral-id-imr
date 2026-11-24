@@ -177,7 +177,8 @@ Where they differ:
   see", which no tag records. In play, 2,937 fish photos carry every reference-look tag in profile (`p1g0s`, `l` or
   `m`, `1` or `s`, no `j`, `c`, `a`): 1,366 are at 5, but **1,416 were typed 4** (and 155 at 3 or 2). The judges saw a
   shortfall the tags do not hold (a busy background, a slight turn within `p`, a pattern not plain). The same holds for
-  the sea slugs: 341 photos with every reference tag in a good view at size `l`, no `f`, were typed 4.
+  the sea slugs: 342 photos with every reference tag in a good view at size `l`, no `f`, are below 5 (341 typed 4, 1
+  at 3).
 
 What the proposal's common criteria would change against settled answers:
 
@@ -230,15 +231,16 @@ A cap only lowers a typed ease; lifting a cap raises nothing by itself (judging/
   Flying gurnards 11 more under option 2. Raising them is a re-judge of 63 to 74 photos. For the Soles it would be the
   second pass on the same photos since #1493 (Linear REE-246), whose 4s were typed under the cap.
 - **Tags decide the 5** (question (b), option 2): a script would set 5 on every photo whose tags read the reference
-  look: 1,416 fish in profile plus the from-above ones, 341 sea slugs. No agent judging, but it overrides 1,757 typed
-  eases against the judges' eye. It could never write over the tags and ease Pierre set himself (`curation.json`,
+  look: 1,571 fish in profile (1,416 typed 4, 155 at 3 or 2) plus the from-above ones, and 342 sea slugs (341 typed 4,
+  1 at 3). No agent judging, but it overrides at least 1,913 typed eases against the judges' eye, some of them by two
+  or three points. It could never write over the tags and ease Pierre set himself (`curation.json`,
   rule A1): some of these photos are his adds, which the count does not separate, so the script would leave those as
   a proposal for him.
 - **Watermark or juvenile out of 5:** a script could lower 195 + 238 watermarked and 119 juvenile 5s; not recommended
   (question (c)).
 - **Sea slug size `m` as the fish's:** 281 photos with every other reference tag were typed 4 at `m`; only a re-judge
   or a tags rule would raise them.
-- **Rule P7:** any re-judge here (63 to 74 fish, 281 or 341 sea slugs, or a sample) counts toward the 100 photos of a
+- **Rule P7:** any re-judge here (63 to 74 fish, 281 or 342 sea slugs, or a sample) counts toward the 100 photos of a
   pass and waits for his explicit OK, with the count, the reason and why an agent rather than a script.
 
 ## 4. Questions for Pierre
@@ -256,8 +258,8 @@ Seamoths come in on the data alone, with no source read.
 
 **(b) What makes a 5: the judge's eye or the tags?**
 
-1. The judge's eye, as today, with the reference pose per family written into the rubric. The 1,416 + 341
-   reference-tagged photos typed 4 stay 4.
+1. The judge's eye, as today, with the reference pose per family written into the rubric. The 1,571 fish and 342 sea
+   slug reference-tagged photos below 5 (1,416 and 341 of them typed 4) keep their ease.
 2. The tags decide: every photo whose tags read its group's reference pose is a 5, by script (Pierre's own tags left
    as a proposal for him, rule A1).
 3. A sample first: Pierre sees about 30 of the reference-tagged photos typed 4 beside some 5s and says whether they
