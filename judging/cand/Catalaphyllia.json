@@ -69,10 +69,13 @@
   },
   "catalaphyllia-cand-759474961": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "x",
    "keep": "best",
-   "note": "Murky green water"
+   "unsure": [
+    "quality"
+   ],
+   "note": "Murky green veil over the whole frame, soft at 100%"
   }
  }
 }

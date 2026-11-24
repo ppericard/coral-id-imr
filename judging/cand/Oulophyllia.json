@@ -3,10 +3,13 @@
  "photos": {
   "oulophyllia-cand-595416016": {
    "view": "medium",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Strong cyan cast; a ruler along the bottom",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Strong cyan cast over the whole frame, soft at 100%; a ruler along the bottom",
    "crop": [
     0,
     0,

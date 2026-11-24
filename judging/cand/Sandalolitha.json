@@ -226,7 +226,10 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Strong blue cast"
+   "unsure": [
+    "quality"
+   ],
+   "note": "Strong blue cast over the whole frame; septa still readable"
   },
   "sandalolitha-cand-609334495": {
    "view": "macro",

@@ -8254,10 +8254,13 @@
   },
   "catalaphyllia-cand-759474961": {
    "v": "wide",
-   "q": 2,
+   "q": 1,
    "k": "best",
    "fm": "x",
-   "n": "Murky green water"
+   "u": [
+    "quality"
+   ],
+   "n": "Murky green veil over the whole frame, soft at 100%"
   },
   "catalaphyllia-cand-99428379": {
    "v": "medium",
@@ -17789,10 +17792,13 @@
   },
   "oulophyllia-cand-595416016": {
    "v": "medium",
-   "q": 2,
+   "q": 1,
    "k": "best",
    "fm": "M",
-   "n": "Strong cyan cast; a ruler along the bottom",
+   "u": [
+    "quality"
+   ],
+   "n": "Strong cyan cast over the whole frame, soft at 100%; a ruler along the bottom",
    "c": [
     0.0,
     0.0,
@@ -20858,10 +20864,13 @@
   },
   "polyphyllia-cand-490000982": {
    "v": "wide",
-   "q": 2,
+   "q": 1,
    "k": "best",
    "fm": "U",
-   "n": "Strong green cast, soft at 100%"
+   "u": [
+    "quality"
+   ],
+   "n": "Strong green cast: sand and coral the same tint; soft at 100%"
   },
   "polyphyllia-cand-59208748": {
    "v": "wide",
@@ -21919,7 +21928,10 @@
    "q": 2,
    "k": "best",
    "fm": "U",
-   "n": "Strong blue cast"
+   "u": [
+    "quality"
+   ],
+   "n": "Strong blue cast over the whole frame; septa still readable"
   },
   "sandalolitha-cand-609334495": {
    "v": "macro",
@@ -23922,10 +23934,13 @@
   },
   "turbinaria-cand-767078772": {
    "v": "wide",
-   "q": 2,
+   "q": 1,
    "k": "best",
    "fm": "F",
-   "n": "Murky water, backscatter; damselfish"
+   "u": [
+    "quality"
+   ],
+   "n": "Murky veil and backscatter over the whole frame; damselfish"
   },
   "zoopilus-cand-231633663": {
    "v": "wide",

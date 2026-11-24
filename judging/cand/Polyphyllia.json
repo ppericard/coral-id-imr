@@ -102,10 +102,13 @@
   },
   "polyphyllia-cand-490000982": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Strong green cast, soft at 100%"
+   "unsure": [
+    "quality"
+   ],
+   "note": "Strong green cast: sand and coral the same tint; soft at 100%"
   },
   "polyphyllia-cand-606300462": {
    "view": "wide",

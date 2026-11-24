@@ -606,10 +606,13 @@
   },
   "turbinaria-cand-767078772": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
-   "note": "Murky water, backscatter; damselfish"
+   "unsure": [
+    "quality"
+   ],
+   "note": "Murky veil and backscatter over the whole frame; damselfish"
   }
  }
 }
