@@ -54,13 +54,24 @@ def main():
     d = sys.argv[1]
     runs = [json.loads(l) for l in open(os.path.join(d, "runs.jsonl"))]
     part = os.path.join(d, "jobs_by_run.jsonl")
-    done = set()
+    # A cached record counts as done only when every job in it had finished and it holds the run's latest attempt;
+    # a run still queued or running, or retried since, is fetched again (the last record of a run wins below).
+    latest = {}
     if os.path.exists(part):
         for l in open(part):
             try:
-                done.add(json.loads(l)["run_id"])
+                row = json.loads(l)
             except ValueError:
-                pass
+                continue
+            latest[row["run_id"]] = row
+    attempt = {r["id"]: r.get("run_attempt") or 1 for r in runs}
+
+    def complete(row):
+        jobs = row["jobs"]
+        return (not row.get("missing") and all(j.get("status") == "completed" for j in jobs)
+                and max((j.get("run_attempt") or 1 for j in jobs), default=attempt[row["run_id"]]) >= attempt[row["run_id"]])
+
+    done = {rid for rid, row in latest.items() if rid in attempt and complete(row)}
     todo = [r["id"] for r in runs if r["id"] not in done]
     print(f"{len(done)} done, {len(todo)} to fetch", file=sys.stderr, flush=True)
     count = [0]
@@ -78,14 +89,16 @@ def main():
 
     with ThreadPoolExecutor(max_workers=8) as ex:
         list(ex.map(one, todo))
+    latest = {}
+    for l in open(part):
+        try:
+            row = json.loads(l)
+        except ValueError:
+            continue
+        latest[row["run_id"]] = row  # appended in fetch order: the last record of a run is its freshest
     n = 0
     with open(os.path.join(d, "jobs.jsonl"), "w") as f:
-        seen = set()
-        for l in open(part):
-            row = json.loads(l)
-            if row["run_id"] in seen:
-                continue
-            seen.add(row["run_id"])
+        for row in latest.values():
             for j in row["jobs"]:
                 f.write(json.dumps(j) + "\n")
                 n += 1

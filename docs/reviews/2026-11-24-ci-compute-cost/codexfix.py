@@ -24,13 +24,21 @@ CODEX = "chatgpt-codex-connector[bot]"
 
 def gh_all(path):
     out = subprocess.run(["gh", "api", path, "--paginate", "-q", ".[] | @json"], capture_output=True, text=True)
+    if out.returncode != 0:  # a partial or failed listing would hide findings: stop rather than undercount
+        raise SystemExit(f"{path}: gh exited {out.returncode}: {out.stderr.strip()}")
     return [json.loads(l) for l in out.stdout.splitlines() if l.strip()]
 
 
 d, mirror, first, last = sys.argv[1:5]
 g = Git(mirror)
+# Every PR run is read for the heads' order (a head before the window still precedes one inside it); only heads with a
+# run inside the window are counted.
 runs = [r for r in load(os.path.join(d, "runs.jsonl"))
-        if first <= r["created_at"][:10] <= last and r["event"] == "pull_request" and r["name"] in ("Checks", "Smokes")]
+        if r["event"] == "pull_request" and r["name"] in ("Checks", "Smokes")]
+
+
+def win(r):
+    return first <= r["created_at"][:10] <= last
 billed = collections.Counter()
 ids = {r["id"] for r in runs}
 for l in open(os.path.join(d, "jobs.jsonl")):
@@ -54,7 +62,8 @@ for n, rs in sorted(bypr.items()):
     for r in sorted(rs, key=lambda r: r["created_at"]):
         if r["head_sha"] not in order:
             order.append(r["head_sha"])
-    if len(order) < 2:
+    inwin = {r["head_sha"] for r in rs if win(r)}
+    if len(order) < 2 or not inwin.intersection(order[1:]):
         continue
     codex = set()
     for c in gh_all(f"repos/{REPO}/pulls/{n}/comments?per_page=100"):
@@ -63,6 +72,8 @@ for n, rs in sorted(bypr.items()):
             codex.add(c.get("original_commit_id"))
     red = {r["head_sha"] for r in rs if r["conclusion"] == "failure"}
     for prev, sha in zip(order, order[1:]):
+        if sha not in inwin:
+            continue
         if g.have(sha):
             ps = g.parents(sha)
             if len(ps) >= 2 and any(g.anc(p, "refs/heads/main") for p in ps[1:]):
@@ -70,6 +81,6 @@ for n, rs in sorted(bypr.items()):
         k = ("codex" if prev in codex else "") + ("+red" if prev in red else "")
         k = k.strip("+") or "neither"
         cnt[k] += 1
-        mins[k] += sum(billed[r["id"]] for r in rs if r["head_sha"] == sha)
+        mins[k] += sum(billed[r["id"]] for r in rs if r["head_sha"] == sha and win(r))
 for k in sorted(cnt):
     print(f"{k}: {cnt[k]} heads, {mins[k]} runner-min")

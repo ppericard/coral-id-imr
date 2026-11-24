@@ -21,16 +21,16 @@ Read on `origin/main` at `9045624a`. The scripts and the way to re-run them are 
 - **Today's rate is far above the month's average.** The last 7 full days (17 to 23 November) used 99,676 runner-min, which is
   **427,000 runner-min, or $2,563, per 30-day month** at the same price.
   - The window is almost all before #1470 (merged on 23 November at 08:12 UTC), which stopped the queue's catch-up
-    merges. Up to $565 of that figure may already be gone (section 4).
+    merges. Up to $566 of that figure may already be gone (section 4).
   - One code PR push now costs about 64 runner-min: Smokes 49 and Checks 11 on today's layout (30 recent runs), plus
     CodeQL 4. A train costs about 60.
 - **What is paid twice** (the 7-day window, scaled to a 30-day month):
-  - New heads on PRs, $1,180. Catch-up merges of `main` cost $565, and fixes or other pushes cost $615.
-  - Of the fix heads, 30% came right after a Codex inline finding ($175) and 14% after red CI only ($94). The other
-    57% followed neither ($346).
-  - Catch-up merges were 57% of later heads on 20 to 22 November and 28% on 24 November, once #1470 kept the reviewed
+  - New heads on PRs, $1,184. Catch-up merges of `main` cost $566, and fixes or other pushes cost $618.
+  - Of the fix heads, 29% came right after a Codex inline finding ($175) and 14% after red CI only ($94). The other
+    57% followed neither ($349).
+  - Catch-up merges were 57% of later heads on 20 to 22 November and 30% on 24 November, once #1470 kept the reviewed
     head. That is one partial day.
-  - 265 single-PR trains tested a tree that the PR's own last CI had already tested. Their repeat is $251, after
+  - 266 single-PR trains tested a tree that the PR's own last CI had already tested. Their repeat is $252, after
     leaving out the smokes of docs-only PRs, which only the train runs.
   - Smokes on docs-only trains, $117. The PR side already skips them, and 0 smoke minutes were measured there.
   - CodeQL on docs-only or data-only commits, $82.
@@ -47,8 +47,8 @@ Read on `origin/main` at `9045624a`. The scripts and the way to re-run them are 
   - CodeQL would also need a GitHub Team plan and GitHub Code Security, at $30 per active committer a month.
   - With what today's rules allow (section 5: G1, E and H, the integrator's calls): **about $2,475** at 2-core prices.
   - With package R, which adds A, D and F (no test dropped, but each changes a rule's wording and needs Pierre's yes):
-    **about $2,045**.
-  - With smokes run once per train instead of on every PR push: **about $1,100**. That one changes what an agent learns
+    **about $2,035**.
+  - With smokes run once per train instead of on every PR push: **about $1,095**. That one changes what an agent learns
     before the train, and it is question (d).
 
 ## 2. Method and reconciliation
@@ -166,9 +166,9 @@ where they say something else.
 
 | What | Month to date | 7-day window | Per 30-day month | $ per 30-day |
 | --- | ---: | ---: | ---: | ---: |
-| PR CI on catch-up heads (a merge of `main` into the PR) | 26,073 (685 heads) | 21,983 (548 heads) | 94,213 | 565 |
-| PR CI on the other later heads (fixes and other pushes) | 52,807 (2,054 heads) | 23,927 (647 heads) | 102,544 | 615 |
-| Trains whose tree the PR's last CI had tested (repeat, not counting docs-only Smokes) | 15,945 (374 trains; docs-only Smokes not taken out) | 9,776 | 41,897 | 251 |
+| PR CI on catch-up heads (a merge of `main` into the PR) | 26,073 (685 heads) | 22,018 (549 heads) | 94,363 | 566 |
+| PR CI on the other later heads (fixes and other pushes) | 52,807 (2,054 heads) | 24,041 (650 heads) | 103,033 | 618 |
+| Trains whose tree the PR's last CI had tested (repeat, not counting docs-only Smokes) | 15,945 (374 trains; docs-only Smokes not taken out) | 9,813 | 42,056 | 252 |
 | Smokes on docs-only trains | 5,539 (143 trains) | 4,566 (113 trains) | 19,569 | 117 |
 | Smokes on docs-only PR heads | 0 | 0 | 0 | 0 |
 | CodeQL on docs-only or data-only commits (PR and `main`) | not split | 3,182 | 13,637 | 82 |
@@ -185,7 +185,7 @@ where they say something else.
 - **Counts.**
   - This month: 743 train commits and 678 single-PR trains. 374 of them had an unmoved `main`, for 15,945 train
     minutes.
-  - Last 7-day window: 499 trains and 459 single-PR trains. 265 had an unmoved `main`, for 12,317 runner minutes. 2,541 of those
+  - Last 7-day window: 499 trains and 459 single-PR trains. 266 had an unmoved `main`, for 12,354 runner minutes. 2,541 of those
     minutes were the Smokes of docs-only PRs, which the PR had skipped, so that run was not a repeat.
   - Red trains this month: 32, with 1,338 runner minutes.
 - **Multi-PR trains.** 65 of 743 trains held more than one PR, so W26's grouping is rare. A train always holds a tree
@@ -195,25 +195,25 @@ where they say something else.
 - **Heads per PR.** 1,295 PRs had CI this month, across 4,034 heads with CI. 392 PRs had one head. One PR had 24.
 - **What each later head was.** A later head counts as a catch-up merge when it is a merge commit whose other parent is
   on `main`. Otherwise it counts as a fix or other push.
-- **Codex findings** (`codexfix.py`, the 7-day window, 647 fix heads). A fix head counts as "after a Codex finding"
+- **Codex findings** (`codexfix.py`, the 7-day window, 650 fix heads). A fix head counts as "after a Codex finding"
   when the head before it carries an inline comment from `chatgpt-codex-connector[bot]`, and "after red CI" when the
   head before it had a failed Checks or Smokes run.
   - After a Codex finding: 158 heads, 5,430 runner-min.
   - After both a Codex finding and red CI: 33 heads, 1,375.
   - After red CI only: 89 heads, 3,659.
-  - After neither: 367 heads, 13,463. These are the author's follow-ups: answers to findings, handoff notes,
+  - After neither: 370 heads, 13,577. These are the author's follow-ups: answers to findings, handoff notes,
     findings of the security review, which has no inline comment, and further work.
   - Per 30-day month, the heads after a Codex finding cost about 29,200 runner-min ($175). A finding counted here
     can be a false alarm answered by a later push: the inline comment alone does not say.
 - **Catch-up merges after #1470.** #1470 (merged 2026-11-23 16:12 Manila) stopped `nightq.sh` from merging `main` into
   ready PRs.
-  - 20 to 22 November: 249 of the 437 later heads were catch-up merges (57%). Their CI cost 11,005 runner-min, more
+  - 20 to 22 November: 253 of the 445 later heads were catch-up merges (57%). Their CI cost 11,005 runner-min, more
     than the 6,430 of the first heads.
-  - 24 November up to 09:56 UTC: 7 of the 25 later heads (28%).
+  - 24 November up to 09:56 UTC: 9 of the 30 later heads (30%).
   - That is one partial day, and agents still merge `main` by hand for real conflicts (W18). REE-121's integrator
     comment of 23 November already plans to measure it on the next PRs.
-  - If catch-up heads fell to that share, about half of the $565 would go.
-- **Completed runs on superseded heads.** Runs that completed on heads later replaced, 32,709 runner-min in the 7-day window, are not
+  - If catch-up heads fell to that share, about half of the $566 would go.
+- **Completed runs on superseded heads.** Runs that completed on heads later replaced, 32,951 runner-min in the 7-day window, are not
   waste. They gave the agent its result before the next push.
 
 **Smokes run for docs-only changes.**
@@ -265,7 +265,7 @@ slowdown of the private runners.
 | A2 | Docs-only PRs run only `checks` and `tests/docs.test.js`, not every unit test | about 7,400 | about 45 | Docs PR CI about 1:00 instead of 4:00 to 6:00 | W12 says "`checks` still runs on it, `tests/docs.test.js` included". It does not say every unit test. Reading the rule that narrowly would need Pierre's yes: question (b) |
 | B | **`concurrency` with cancel-in-progress on PR branches, not on `main` or trains** | 0 for Checks and Smokes | 0 | none | Already in place: grouped by PR number, so a train ref is never cancelled. The 20,507 runner-min of cancelled runs are minutes used before the cancel, which no setting recovers. The default CodeQL setup has no such setting, so option F covers it |
 | C | **Smokes once per train instead of on every PR push**, on demand on a PR (a label or a dispatch) | 218,721 gross; about 197,800 net of extra red trains | 1,312 gross; about 1,187 net | A PR's CI drops to Checks (4:00 to 6:00). Failures move to the train: up to 106 a week, against 10 red trains now. Each red train stops the queue (one train at a time, W27) for a rebuild | Changes W12, W14 and W26. Agents still run their smoke part locally before each push (W14). Smoke regressions would reach the train after a Codex review, then need a new head, a new review and a new train. Estimate: 106 PR Smokes failures in 7-day window, each a red train of about 46 runner-min. Pierre: question (d) |
-| D | **A single-PR train whose tree the PR's CI already tested reuses that result** | 41,897 | 251 | A same-tree train merges at once (5:00 to 6:00 sooner) | No test lost: the same tree passed the same workflows on the PR's merge ref. One step differs: Checks runs `check_versions.py --sheet-base HEAD^1` on a PR and `--main` on a train. `tools/train.py` already runs main's `sheet_version.py --check --main` on the composed tree whenever it builds a train, dry run included, so the sheet rule stays checked. Needs `tools/train.py` to compare the trees and read the checks of that exact merge commit. Changes W26's "Checks and Smokes run once on it". Pierre: question (a). The queue work (REE-220, Codex) is in `tools/queue/`; this is in `tools/train.py`, so coordinate |
+| D | **A single-PR train whose tree the PR's CI already tested reuses that result** | 42,056 | 252 | A same-tree train merges at once (5:00 to 6:00 sooner) | No test lost: the same tree passed the same workflows on the PR's merge ref. One step differs: Checks runs `check_versions.py --sheet-base HEAD^1` on a PR and `--main` on a train. `tools/train.py` already runs main's `sheet_version.py --check --main` on the composed tree whenever it builds a train, dry run included, so the sheet rule stays checked. Needs `tools/train.py` to compare the trees and read the checks of that exact merge commit. Changes W26's "Checks and Smokes run once on it". Pierre: question (a). The queue work (REE-220, Codex) is in `tools/queue/`; this is in `tools/train.py`, so coordinate |
 | E | **Caches** | about 1,900 (pip cache in the two unit shards) | about 11 | about 8 s per shard | Chromium is already cached in Smokes. The rest of a smoke job's setup is about 15 s, mostly not cacheable. Integrator's call. Small |
 | F | **CodeQL: an advanced setup with `paths-ignore` for docs and data, and cancel-in-progress on PRs** | 13,637 for path filters, plus an unmeasured part for cancels | 82 or more | none | Same queries and languages. A commit that changes only JSON, images or docs is not scanned, but CodeQL scans none of them. It is Pierre's security setting: he turned CodeQL on (ANSWERS.md, 2026-11-08, a paraphrase), so question (c). The workflow file becomes one more to maintain |
 | G1 | **A smaller matrix: the four short smokes on one runner** (draw, profiles, live, staged) | 11,300 | 68 | 0 s on the critical job (median 294 s both ways, 441 runs replayed) | Each smoke still reports: the job must run all four and fail if one fails. `tests/smokeparts.test.js` would read the new layout. Integrator's call |
@@ -282,14 +282,14 @@ slowdown of the private runners.
 **What today's rules allow** (G1, E and H, the integrator's calls) saves about 14,800 runner-min (3.5%): 412,300
 runner-min, **$2,474**.
 
-**Package R** combines A, D, F, G1 and H. No test is dropped, but A, D and F change rules (W12, W26) or Pierre's
+**Package R** combines A, D, F, G1, E and H. No test is dropped, but A, D and F change rules (W12, W26) or Pierre's
 CodeQL setting, so each needs his yes.
-- It saves about **86,400 runner-min a month (20%)**: 340,800 runner-min, **$2,045**.
+- It saves about **88,100 runner-min a month (21%)**: 339,100 runner-min, **$2,035**.
 - The savings are combined, not added. A and D are disjoint: same-tree docs-only trains count in A. G1 applies to the
   smokes left after A and D.
 
-**Package R plus C** saves about **243,100 runner-min (57%)**: 184,100 runner-min, **$1,105**.
-- With C, the train becomes the only smoke run, so D keeps only its Checks part: 7,543 runner-min.
+**Package R plus C** saves about **244,600 runner-min (57%)**: 182,600 runner-min, **$1,095**.
+- With C, the train becomes the only smoke run, so D keeps only its Checks part: 7,560 runner-min.
 - It counts the extra red trains (+20,900) and G1 on the train smokes only.
 
 ## 6. If this repository were private
@@ -299,10 +299,10 @@ CodeQL setting, so each needs his yes.
 | Month to date (1 to 24 November), as run | 167,504 | $1,005 | $1,206 to $1,608 | $2,010 |
 | Today's rate | 427,183 | $2,563 | $3,076 to $4,101 | $5,126 |
 | With today's rules (G1, E, H) | 412,300 | $2,474 | $2,969 to $3,958 | $4,948 |
-| With package R | 340,800 | $2,045 | $2,454 to $3,272 | $4,090 |
-| With package R plus C | 184,100 | $1,105 | $1,326 to $1,768 | $2,209 |
+| With package R | 339,100 | $2,035 | $2,442 to $3,255 | $4,069 |
+| With package R plus C | 182,600 | $1,095 | $1,315 to $1,753 | $2,191 |
 
-- **The 30-day rows predate #1470.** The week they scale had the queue's catch-up merges, $565 a month of PR CI.
+- **The 30-day rows predate #1470.** The week they scale had the queue's catch-up merges, $566 a month of PR CI.
   If #1470 holds them at the share of 24 November, about half of that goes from every row.
 - **Included usage.** Private repositories get $12 of included usage on GitHub Free and $18 on Pro and Team
   ([Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)). At these volumes that
@@ -329,7 +329,7 @@ CodeQL setting, so each needs his yes.
 Each answer is recorded in [ANSWERS.md](../ANSWERS.md) and the rule it changes. The figures are per 30-day month at private
 2-core prices.
 
-**(a) Same-tree trains: reuse the PR's CI?** About $251.
+**(a) Same-tree trains: reuse the PR's CI?** About $252.
 - **The case.** When a train holds one PR and `main` has not moved since that PR's last CI, the train tests the same
   tree again.
 - **Options.**

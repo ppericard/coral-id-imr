@@ -78,9 +78,13 @@ def docs_only(files):
 def main():
     d, mirror = sys.argv[1], sys.argv[2]
     g = Git(mirror)
-    runs = {r["id"]: r for r in load(os.path.join(d, "runs.jsonl"))}
-    if len(sys.argv) > 4:  # optional window of UTC days, inclusive
-        runs = {k: r for k, r in runs.items() if sys.argv[3] <= r["created_at"][:10] <= sys.argv[4]}
+    allruns = {r["id"]: r for r in load(os.path.join(d, "runs.jsonl"))}
+    first, last = (sys.argv[3], sys.argv[4]) if len(sys.argv) > 4 else ("0000", "9999")
+
+    def win(r):  # the optional window of UTC days, inclusive: what is counted (a PR's history is read whole)
+        return first <= r["created_at"][:10] <= last
+
+    runs = {k: r for k, r in allruns.items() if win(r)}
     billed = collections.Counter()
     for j in load(os.path.join(d, "jobs.jsonl")):
         s, e = ts(j["started_at"]), ts(j["completed_at"])
@@ -90,7 +94,7 @@ def main():
 
     # ---- PR pushes: heads per PR, what each new head was ----
     ci = ("Checks", "Smokes")
-    prruns = [r for r in runs.values() if r["event"] == "pull_request" and r["name"] in ci]
+    prruns = [r for r in allruns.values() if r["event"] == "pull_request" and r["name"] in ci]
     # pull_requests is empty once a PR is merged, and one session branch carried many PRs in turn: a run belongs to
     # the PR of its branch that was open when the run was created (pulls.jsonl: number, ref, created, closed).
     pulls = collections.defaultdict(list)
@@ -113,14 +117,21 @@ def main():
     sup = collections.Counter()  # superseded heads: cancelled vs completed minutes
     docs_pr_smokes = [0, 0]
     head_counts = []
-    for key, rs in bypr.items():
+    counted = set()
+    for key, allrs in bypr.items():
         order = []
-        for r in sorted(rs, key=lambda r: r["created_at"]):
+        for r in sorted(allrs, key=lambda r: r["created_at"]):
             if r["head_sha"] not in order:
                 order.append(r["head_sha"])
-        head_counts.append(len(order))
+        rs = [r for r in allrs if win(r)]
+        if not rs:
+            continue
+        counted.add(key)
+        head_counts.append(len({r["head_sha"] for r in rs}))
         final = order[-1]
         for i, sha in enumerate(order):
+            if not any(r["head_sha"] == sha for r in rs):
+                continue
             mins = sum(billed[r["id"]] for r in rs if r["head_sha"] == sha)
             if i == 0:
                 kind = "first head"
@@ -144,7 +155,7 @@ def main():
                 if rc == 0 and docs_only(g.files(base, r["head_sha"])):
                     docs_pr_smokes[0] += 1
                     docs_pr_smokes[1] += billed[r["id"]]
-    out["prs"] = len(bypr)
+    out["prs"] = len(counted)
     out["heads per PR"] = collections.Counter(head_counts)
     out["PR CI minutes by head kind"] = dict(cat)
     out["heads by kind"] = dict(heads_kind)
