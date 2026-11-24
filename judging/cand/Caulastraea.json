@@ -1,0 +1,137 @@
+{
+ "genus": "Caulastraea",
+ "photos": {
+  "caulastraea-cand-161626454": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "caulastraea-cand-161626472": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "caulastraea-cand-161626480": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "caulastraea-cand-90591226": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "caulastraea-cand-90591193": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "caulastraea-cand-90591244": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt",
+   "note": "Side view of the corallite walls"
+  },
+  "caulastraea-cand-90591262": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt",
+   "note": "Wider on the colony"
+  },
+  "caulastraea-cand-4481093": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "A colour card along the bottom",
+   "crop": [
+    0,
+    0,
+    1,
+    0.42
+   ]
+  },
+  "caulastraea-cand-4481094": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Pale branching coral over the top half; backscatter"
+  },
+  "caulastraea-cand-598158185": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Another coral's cups mixed in among the corallites"
+  },
+  "caulastraea-cand-598158169": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Another coral's cups mixed in"
+  },
+  "caulastraea-cand-435989937": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pale cups with tall ridged walls: Lobophyllia or Caulastraea not certain"
+  },
+  "caulastraea-cand-435989954": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pale cups with tall ridged walls; soft at 100%"
+  },
+  "caulastraea-cand-435990042": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "caulastraea-cand-229075472": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small, among rock; shallow water"
+  },
+  "caulastraea-cand-229075482": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "caulastraea-cand-374971513": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  }
+ }
+}

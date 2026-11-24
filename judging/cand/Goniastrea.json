@@ -85,6 +85,130 @@
    "form": "M",
    "keep": "best",
    "note": "Soft corals around the colony"
+  },
+  "goniastrea-cand-178876582": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Round separate corallites on columns: Favites or Dipsastraea possible"
+  },
+  "goniastrea-cand-639002465": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Blue cast, soft at 100%; anthias around"
+  },
+  "goniastrea-cand-639002489": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "note": "Closer on the same colony"
+  },
+  "goniastrea-cand-639002488": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler over the bottom right; a crop may remove it"
+  },
+  "goniastrea-cand-92262505": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Polyps out, walls hidden: Favites possible"
+  },
+  "goniastrea-cand-92262496": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Acropora at the top left and other corals around"
+  },
+  "goniastrea-cand-503239977": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best"
+  },
+  "goniastrea-cand-503239967": {
+   "view": "macro",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Blurred over the whole frame"
+  },
+  "goniastrea-cand-503240078": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "A scale pencil at the bottom",
+   "crop": [
+    0,
+    0,
+    1,
+    0.55
+   ]
+  },
+  "goniastrea-cand-503240113": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "note": "Another part, greenish"
+  },
+  "goniastrea-cand-503240120": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Wider, polyps half out; soft"
+  },
+  "goniastrea-cand-503240168": {
+   "view": "macro",
+   "quality": 1,
+   "form": "x",
+   "keep": "dup"
+  },
+  "goniastrea-cand-39200658": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A swarm of anthias over the colony takes the eye"
+  },
+  "goniastrea-cand-455061503": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Oversharpened"
+  },
+  "goniastrea-cand-304616819": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "1500 px"
   }
  }
 }

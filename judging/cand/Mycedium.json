@@ -265,6 +265,46 @@
    "quality": 3,
    "form": "F",
    "keep": "best"
+  },
+  "mycedium-cand-745204657": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Another part than the live Closer photo"
+  },
+  "mycedium-cand-745204618": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "mycedium-cand-453592798": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "1024 px; blue cast"
+  },
+  "mycedium-cand-745676492": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "mycedium-cand-745676466": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "mycedium-cand-745676543": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Another part, septa ridges at the right"
   }
  }
 }

@@ -61,6 +61,23 @@
     "quality"
    ],
    "note": "Milky veil over the frame, septa still readable at 100%"
+  },
+  "podabacia-cand-349632189": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Part of the plate; soft at 100%"
+  },
+  "podabacia-cand-306732143": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A smooth curled plate on sand; corallites not visible"
   }
  }
 }

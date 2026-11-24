@@ -35,6 +35,92 @@
     0.95
    ],
    "note": "Other side of the same disc"
+  },
+  "lobactis-cand-21994047": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1024 px"
+  },
+  "lobactis-cand-234354740": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "lobactis-cand-580511554": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Blue cast, soft at 100%",
+   "crop": [
+    0.35,
+    0.2,
+    0.95,
+    0.9
+   ]
+  },
+  "lobactis-cand-151366086": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Dark"
+  },
+  "lobactis-cand-151366084": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup"
+  },
+  "lobactis-cand-151366105": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pale smooth surface, maybe the disc's underside or held: tentacular lobes not shown"
+  },
+  "lobactis-cand-151366124": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pale smooth surface, maybe the disc's underside or held: tentacular lobes not shown"
+  },
+  "lobactis-cand-313323627": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Under a ledge, dark; partly hidden"
+  },
+  "lobactis-cand-317418998": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "1000 px"
+  },
+  "lobactis-cand-357894626": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Small: the disc fills about a twentieth of the frame",
+   "crop": [
+    0.25,
+    0.25,
+    0.75,
+    0.75
+   ]
   }
  }
 }

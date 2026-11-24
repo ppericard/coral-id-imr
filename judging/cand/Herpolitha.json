@@ -143,6 +143,53 @@
    "form": "U",
    "keep": "best",
    "note": "Soft at 100%"
+  },
+  "herpolitha-cand-270755032": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Y-shaped colony"
+  },
+  "herpolitha-cand-262212078": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Night, on sand"
+  },
+  "herpolitha-cand-262212467": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Night"
+  },
+  "herpolitha-cand-262212510": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "note": "Another angle, along the furrow"
+  },
+  "herpolitha-cand-550847773": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Green cast; Turbinaria plates around"
+  },
+  "herpolitha-cand-550847771": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup"
+  },
+  "herpolitha-cand-550847761": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup"
   }
  }
 }

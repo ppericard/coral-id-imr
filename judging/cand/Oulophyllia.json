@@ -1,0 +1,61 @@
+{
+ "genus": "Oulophyllia",
+ "photos": {
+  "oulophyllia-cand-595416016": {
+   "view": "medium",
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Strong cyan cast over the whole frame, soft at 100%; a ruler along the bottom",
+   "crop": [
+    0,
+    0,
+    1,
+    0.65
+   ]
+  },
+  "oulophyllia-cand-595416011": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler crosses the bottom right corner over the coral; very soft at 100%"
+  },
+  "oulophyllia-cand-649983062": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thick-walled valleys around single mouths: Favites possible"
+  },
+  "oulophyllia-cand-649983077": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thick-walled valleys: Favites possible"
+  },
+  "oulophyllia-cand-493721671": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A small young colony with wide valleys"
+  }
+ }
+}

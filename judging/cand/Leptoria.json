@@ -153,6 +153,162 @@
     "multi"
    ],
    "note": "Many other corals around the meandering colony"
+  },
+  "leptoria-cand-171877837": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Colony on black sand, looks out of the water at low tide"
+  },
+  "leptoria-cand-171877825": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony, looks out of the water at low tide"
+  },
+  "leptoria-cand-171877816": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony, looks out of the water at low tide"
+  },
+  "leptoria-cand-174331157": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Cyan valleys"
+  },
+  "leptoria-cand-330246902": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "1600 px"
+  },
+  "leptoria-cand-330246882": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "1600 px, soft"
+  },
+  "leptoria-cand-92262029": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Wide valleys with exsert septa: Platygyra or Goniastrea possible"
+  },
+  "leptoria-cand-92262027": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Valleys wider than Leptoria's"
+  },
+  "leptoria-cand-483292121": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Acropora in front at the right"
+  },
+  "leptoria-cand-267599197": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "leptoria-cand-267603493": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Fish over the colony"
+  },
+  "leptoria-cand-745205356": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "leptoria-cand-745205376": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Another angle than the live Colony photo"
+  },
+  "leptoria-cand-745205335": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "note": "Closer on one lobe"
+  },
+  "leptoria-cand-745204494": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Other corals at the left and top"
+  },
+  "leptoria-cand-745204504": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Farther, several colonies"
+  },
+  "leptoria-cand-745204422": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "dup"
+  },
+  "leptoria-cand-745204425": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "leptoria-cand-745204369": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Closer, very shallow focus"
   }
  }
 }

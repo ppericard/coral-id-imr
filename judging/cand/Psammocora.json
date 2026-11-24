@@ -20,6 +20,85 @@
    "form": "B",
    "keep": "dup",
    "note": "Near-identical to the live wide photo of this colony"
+  },
+  "psammocora-cand-4517521": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler and colour card over the bottom 40%; a crop at half size would cut the coral"
+  },
+  "psammocora-cand-4517522": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "note": "Hands, a slate and a bag dominate; the coral is small"
+  },
+  "psammocora-cand-4517523": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "note": "Hands, a slate and a bag dominate; the coral is small"
+  },
+  "psammocora-cand-102597302": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "psammocora-cand-102597249": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Closer, shallow focus"
+  },
+  "psammocora-cand-102597288": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt",
+   "note": "Another part of the surface"
+  },
+  "psammocora-cand-102598024": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "note": "A steel ruler covers the middle of the frame"
+  },
+  "psammocora-cand-102597986": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Wider on the surface"
+  },
+  "psammocora-cand-102598004": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A ruler over part of the coral, as in its sibling photo"
+  },
+  "psammocora-cand-102597956": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Lobes in the middle of a reef scene with Pocillopora and Acropora"
   }
  }
 }
