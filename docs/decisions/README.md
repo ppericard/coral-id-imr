@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-24 | [The sea slugs take the fish's strong-blur cap: a strongly blurred photo is at most 2](2026-11-24-sea-slug-blur-cap-as-the-fish.md) | #1532 |
 | 2026-11-24 | [The sea slugs take the fish's softened caps: a partial animal and a head-on or rear view at most 4, the typical look shared](2026-11-24-sea-slug-caps-as-the-fish.md) | #1524 |
 | 2026-11-24 | [The sea slugs take every photo of an observation, as the fish do](2026-11-24-seaslug-every-photo.md) | #1525 |
 | 2026-11-24 | [The sea slugs' species achievements: 1, 10 and 50 species at Advanced by their scientific names, and every star](2026-11-24-seaslug-species-achievements.md) | #1515 |
