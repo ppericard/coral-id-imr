@@ -1,0 +1,66 @@
+{
+ "about": "REE-265 step 0: the ceilings of the work one answer may make, per state (tools/answercost.js, tests/answercost.test.js). Each is the count measured on main (the states of tools/answercost.js, signed out, seed 1) times the margin, rounded up to two significant digits, at least 100 calls: a step that lowers a count tightens its ceilings in the same PR (node tools/answercost.js --write-budget tools/answercost-budget.json --margin 1.1).",
+ "margin": 1.25,
+ "states": {
+  "coral:3000": {
+   "namedCalls": 35000,
+   "getCalls": 260,
+   "getChars": 5700000,
+   "setChars": 1700000,
+   "fn:introduced": 580,
+   "fn:scoreOf": 400,
+   "fn:faOf": 200,
+   "fn:lvStep": 100,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 100,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 100
+  },
+  "fish:50": {
+   "namedCalls": 640000,
+   "getCalls": 23000,
+   "getChars": 560000,
+   "setChars": 72000,
+   "fn:introduced": 39000,
+   "fn:scoreOf": 23000,
+   "fn:faOf": 5800,
+   "fn:lvStep": 5900,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 100,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 22000
+  },
+  "fish:500": {
+   "namedCalls": 1300000,
+   "getCalls": 22000,
+   "getChars": 2400000,
+   "setChars": 560000,
+   "fn:introduced": 64000,
+   "fn:scoreOf": 150000,
+   "fn:faOf": 28000,
+   "fn:lvStep": 5900,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 100,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 22000
+  },
+  "fish:3000": {
+   "namedCalls": 6400000,
+   "getCalls": 64000,
+   "getChars": 9800000,
+   "setChars": 2300000,
+   "fn:introduced": 1100000,
+   "fn:scoreOf": 30000,
+   "fn:faOf": 11000,
+   "fn:lvStep": 5900,
+   "fn:bonusList": 100,
+   "fn:lvlNext": 1500,
+   "fn:treeScore": 100,
+   "fn:achSnap": 100,
+   "fn:sheetV": 61000
+  }
+ }
+}

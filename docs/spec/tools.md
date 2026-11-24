@@ -137,6 +137,30 @@ written with `tools/datajson.py`.
   `brief.py` shows the numbers as one `Infra:` line, read from the run's annotation; the admin's To do › Alerts card reads
   the sheet live (`Code.gs` `readInfra_`).
 
+## Per-answer cost
+
+The work one answer makes on the device, counted so that a change can be judged on it (the design study of Linear
+REE-265, PR #1523, section 1; the per-answer timings are in [the measurement note](../reviews/2026-11-24-per-answer-cost.md)).
+
+- **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out, in Chromium, and counts how
+  many times each named function of the app runs per answer (V8's precise coverage) and the characters `store.get` and
+  `store.set` read, parse and write. Work counts, not timings: they do not move with the machine's load, so a ceiling can
+  fail a check. The page's `Math.random` is seeded, so a state gives the same counts at each run. Options: `--states
+  fish:50,fish:3000,coral:3000` (the default, the study's states), `--dump A.json,B.json` (states made earlier),
+  `--n`, `--warm`, `--seed`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming it),
+  `--write-budget FILE [--margin 1.25]` (writes today's counts times the margin as the ceilings), `--regen`.
+  A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1) and kept in `REEFID_ANSWERCOST_CACHE`, by
+  default `reefid-answercost` in the temporary directory: about 14 minutes for 3,000 fish answers, 1 to 2 minutes for 3,000
+  corals. It takes the machine slot (rule W24).
+- **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
+  the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStep`, `bonusList`, `lvlNext`, `treeScore`,
+  `achSnap`, `sheetV`). Each is the count measured when the file was written times a stated margin (`margin`), rounded
+  up. A step that lowers a count rewrites its ceilings with `--write-budget` in the same PR.
+- **The routine check** is `tests/answercost.test.js`: the small states (fish 50 and 500 answers) against the budget, in
+  the fast tier (`node tests/run.js`) wherever Playwright is installed; the heavy state (fish, 3,000 answers) is the
+  opt-in command `SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget
+  tools/answercost-budget.json`, not part of any routine check until Pierre decides question (c) of REE-265.
+
 ## The sheet script
 
 - **`timings.js`**: the sheet's `Timings` tab summed up ([sync.md › The Timings tab](sync.md#the-timings-tab)): read the
