@@ -46,7 +46,9 @@ corals have no build route (§5).
 
 **A cliff in the agreement window.** With no answered Check, the window holds only corrections, and a correction is
 always a disagreement. Coral keep has 8 of them. Two more corrections (a Remove or Undo of an auto add) take it to the
-`AUTO.n0` = 10 floor at 0% and turn coral keep off: the coral auto-sort would apply nothing, until 10 agreements come.
+`AUTO.n0` = 10 floor at 0% and turn coral keep off: the coral auto-sort would apply nothing until the rate over the last
+`AUTO.win` = 40 is back at 90%, which takes 36 agreements in a row after those 10 disagreements (arithmetic on
+`autoState`'s rule).
 Checks are the only source of agreements, and nobody answers them. The weekly sample (§4) removes this cliff.
 
 **Where the fish and sea slug gate really is.** A fish or sea slug field "off" (`autoState`) stops the admin's
@@ -168,8 +170,9 @@ About 20 photos a week, drawn from **decisions already applied**, so nothing wai
     camouflage flags), the phase, the crop, and the ease as the grade line.
   - If Pierre adopts the nine criteria of «What makes a 5» for an ease of 5 (the reference-poses note's question b),
     the sample shows those for fish and sea slugs instead.
-- **The snapshot**: when the week's set is first drawn, the admin writes what it showed (the lines and marks) into the
-  answers' record (§3). An answer is then compared with what he saw, not with a judgement re-run since.
+- **The snapshot**: when he answers a photo of a weekly set, the same click writes what the card showed (the decision,
+  the lines and their marks) into that photo's answer (§3). An answer is then compared with what he saw, not with a
+  judgement re-run since, and nothing is written without a click of his.
 - **Unanswered weeks** fold away when the next one opens. The lines he answered stay counted. Nothing piles up: there
   is never more than one open sample.
 
@@ -184,13 +187,16 @@ how many photos were agreed with one press. Whether the thresholds should move f
 All three options store the same record, one per set and photo:
 
 ```
-"review": {"<set id>": {"<photo f>": {"a": 1 | 0, "d": {"C1": "il est de profil", "view": ""}, "g": 3, "w": "...", "t": "<base 36 s>"}},
-           "<week set id>": {"_shown": {"<photo f>": {lines, marks, decision}}, ...}}
+"review": {"<set id>": {"<photo f>": {"l": {"C1": 0, "C3": 1, "grade": 0}, "all": 1, "g": 3,
+                                       "w": {"C1": "il est de profil", "": "a word on the photo"},
+                                       "s": {"decision": "...", "lines": {...}, "marks": 4}, "t": "<base 36 s>"}}}
 ```
 
-`a` agrees with the whole photo (1) or not (0). `d` holds the lines he disagreed with, and his word if any. `g` is his
-grade, when he gave one. `w` is a word on the photo. `t` is when he answered. A line not in `d` under `a: 0` is one he
-left unanswered. The weekly set's `_shown` is the snapshot of §2.6.
+`l` holds every line he answered: 1 agree, 0 disagree; a line not in `l` is unanswered. `all: 1` marks the lines that
+"Agree with all" filled in (they are in `l` as 1), so the page can count one-press and line-by-line agreement apart
+(§2.6). `g` is his grade, when he disagreed with the grade line. `w` holds his words, per line, `""` for the photo. `s`
+is the snapshot of what the card showed, for a weekly set only (§2.6). `t` is when he answered. Every field is written
+by his click.
 
 | | **A. A part of `curation.json`, sent by Publish** | **B. A separate file in the repository, written by Publish** | **C. The sync sheet** |
 |---|---|---|---|
@@ -204,7 +210,7 @@ left unanswered. The weekly set's `_shown` is the snapshot of §2.6.
 | Durability | In git, with history and every Publish | In git | Out of git: the sheet's own version history only |
 | How agents read it back | `git show origin/main:curation.json`: any agent, offline, in a test | The same, from its own file | The integrator alone, through the connector (read-only), then hands it to subagents |
 | A format other code follows? | Yes: the agreement code (§4), `answers.py`, the gold set reader, `tools/curplay.py` (`review` added to `DROP`, so players never download it) | Yes, and a second writer in `admin.js` and `admin-draft.js` | Yes, and `Code.gs` |
-| Size | About 100 bytes an answer: 20 a week is about 100 KB a year, on a 2.7 MB file the admin already reads raw | Same, apart | |
+| Size | About 300 bytes an answered photo with its snapshot: 20 a week is about 300 KB a year, on a 2.7 MB file the admin already reads raw. A study set's answers carry no snapshot (the set file holds it) | Same, apart | |
 
 **Recommended: A**, a `review` key at the top level of `curation.json`, written only by the admin, sent by Publish. It
 is the path his answers to points already take, so no new writer, no new rule and no sheet change are needed. Players
@@ -226,8 +232,10 @@ candidate. Only the run does this, in the draft, sent by his Publish (rule A1: n
 - A sure decision that fits is written as any applied decision (`a…`, `r`, `x`, logged today). One that waits for room,
   or is no longer sure, is left with no log entry: an ordinary candidate. Emptied day maps stay `{}`, so the Publish
   merge removes the entries.
-- On main's files that means 65 coral photos re-decided as before (42 adds within the cells' caps, 20 rejects, 3
-  exclusions) and 13 back to the queue. For the fish, 1,761 as before, 17 the other way and 2 back to the queue. The 5
+- On main's files, today's judgements give 65 coral photos the same sure verdict (42 adds, 20 rejects, 3 exclusions)
+  and leave 13 no longer sure; the fish, 1,761 the same, 17 the other way, 2 no longer sure. These are verdicts only:
+  how many adds find room under the coral cells' caps or the fish species' targets was not counted (it depends on the
+  draft at that load). The no-longer-sure ones go back to the queue. The 5
   fish `?r` the build already plays become plain adds; converting the codes in place would have taken them out of play.
 - It is one run, so one Undo step (or laid onto his steps when it lands after his clicks, `saveRun`/`layRun`), and each
   decision can still be undone one by one in Auto. The Publish summary counts them as auto-sort decisions.
@@ -256,11 +264,12 @@ week's set unmarked, and the page compares his two answers. Question R3 asks whe
 `autoCompare` and `treeCompare` keep their output shape (`{f, day, field, a, p, ok, how, t}`), so `autoState` and the
 Auto line are unchanged. Their inputs change:
 
-- **The sample** (`how: 'sample'`): each answered photo of a weekly set gives one comparison per field it shows.
+- **The sample** (`how: 'sample'`): each answered photo of a weekly set gives one comparison per field it shows and
+  he answered (a line in `l`; an unanswered line gives none).
   - keep: the decision line agreed or not;
   - corals: view, quality and form, only on an add, as today;
   - fish and sea slugs: keep, and the grade line as an `ease` field (a new field, measured and shown, gating nothing);
-  - `ok` is false for a field whose line he disagreed with, true otherwise; `t` is his answer's time.
+  - `ok` is the line's value in `l` (1 true, 0 false); `t` is his answer's time.
 - **Corrections** (`how: 'fix'`) are **shown, not counted**. A correction can only be a disagreement, and a sample
   without them is an unbiased draw, so counting them would bias the window down. Today, with no agreements, it would
   switch coral keep off (§1). They stay listed in Details, with the agent's note and the metrics.
@@ -334,20 +343,25 @@ which this plan does not.
 
 **R1. Where your answers are kept.** Options: (A) a `review` part of `curation.json`, sent by your Publish like
 everything else; (B) a separate file written by Publish; (C) the sync sheet. Recommended: **A**, the path your answers
-to points already take: one Publish, in git, readable by every agent, never downloaded by players.
+to points already take: one Publish, in git, readable by every agent, never downloaded by players. Note: like the rest
+of `curation.json`, the words you type there are public in the repository and on the site; a player's or colleague's
+name typed in a word would break rule D2.
 
 **R2. Release the held-back decisions.** 78 coral and 1,780 fish photos the auto-sort held back as Checks, which nobody
 answered (none since 2026-11-04). For the fish, 1,168 are already in the game by the build; for the corals, 49 adds are
 not. Options: (a) the next admin load re-decides them with today's judgements as ordinary auto decisions, each
-undoable in Auto, sent by your next Publish (65 coral and 1,761 fish as before, 17 fish changed, 15 back to the queue);
+undoable in Auto, sent by your next Publish (65 coral and 1,761 fish get the same sure verdict, 17 fish the other way,
+15 back to the queue; adds still wait when their cell or species has no room);
 (b) leave them as candidates in the queue. Recommended: **(a)**.
 
 **R3. The sample.** About 20 photos a week, from decisions already applied, about 7 per subject, half in play and half
 out, with the criteria and the pre-judgement shown. Options for the agreement: (a) the same thresholds as the blind
 Checks (keep 90%, view 85%, quality 73%, form 80%); (b) higher thresholds, since you see the pre-judgement. Separately:
 (c) once a month one or two photos you already answered come back unmarked, to measure your own consistency, or (d)
-not. Recommended: **(a) and (c)**: start from today's thresholds and see how often you disagree; the repeat costs you
-two photos a month.
+not. And (e) your corrections (a Remove or Undo of an auto decision) leave the agreement count and are listed apart,
+because they can only count as disagreements; for the corals this changes the rule that switches a field off, or (f)
+they keep counting. Recommended: **(a), (c) and (e)**: start from today's thresholds and see how often you disagree;
+the repeat costs you two photos a month; without (e) the coral keep goes off after two more corrections (§1).
 
 **R4. Does a waiting set count in the Inbox?** The Checks were "not to-dos" (2026-11-09). Options: (a) the count
 shows on the Reviews view only; (b) it joins the Inbox count. Recommended: **(a)**, so the sample never nags.
