@@ -577,6 +577,67 @@ test('the migration from the roles writes through the one write too', () => {
   assert.ok(can(s, 'Eda', 'content') && can(s, 'Ben', 'live', AT_FISH));
 });
 
+// The next write of a tab's range that pred(row, col) picks throws once, as a Sheets service error does.
+const failWrite = (s, tab, pred) => {
+  const sh = s.sheets[tab],
+    gr = sh.getRange;
+  let n = 1;
+  sh.getRange = (r, c, nr, nc) => {
+    const g = gr(r, c, nr, nc),
+      set = g.setValues;
+    g.setValues = vals => {
+      if (pred(r, c) && n-- > 0) throw new Error('Service Spreadsheets timed out while accessing document');
+      return set(vals);
+    };
+    return g;
+  };
+};
+
+test("a role group whose Rights cell could not be written is given its rights at the retry (the migration, Pierre's seed)", () => {
+  const s = loadCodeGs();
+  ['Pat', 'Eda'].forEach(n => save(s, n));
+  run(
+    s,
+    "(ra => sheet_(ROLES.TAB, ROLES.HEAD).appendRow(['Eda', 'editor', 'instance:imr', new Date('2026-11-10T00:00:00Z'), String(ra.getRange(find_(ra, 'Eda'), 7).getValue())]))(sheet_('RAs', HEAD))"
+  );
+  s.props.ONCE_groups = '1';
+  run(s, 'gdefTab_()');
+  failWrite(s, 'Group settings', (r, c) => c === 7);
+  assert.throws(() => run(s, 'ONCE_.rights()'), /timed out/);
+  assert.ok(!s.props.ONCE_rights);
+  assert.match(run(s, 'ONCE_.rights()'), /^0 groups made from the roles \(\), 1 membership added/);
+  assert.ok(can(s, 'Eda', 'content'));
+  // The seed: its Managers group made, its Rights cell not written; the next read finishes it.
+  failWrite(s, 'Group settings', (r, c) => c === 7);
+  s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'});
+  assert.ok(!s.props.ROLES_SEED, 'not marked done');
+  assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok);
+  assert.ok(s.props.ROLES_SEED);
+  assert.ok(can(s, 'Pat', 'players') && can(s, 'Pat', 'content'));
+});
+
+test("a merge whose groups' copy fails keeps the merged name's groups for its retry", () => {
+  const s = loadCodeGs();
+  ['Ben', 'Mia'].forEach(n => save(s, n));
+  const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id,
+    st = make(s, 'Staff', {board: 1}).group.id;
+  join(s, 'Ben', g);
+  join(s, 'Ben', st);
+  failWrite(s, 'Groups', (r, c) => c === 1);
+  assert.ok(!s.post({userMerge: {from: 'Ben', into: 'Mia', data: {}}, token: TOK}).ok);
+  assert.ok(!can(s, 'Ben', 'live', AT_FISH), 'its rights gone first');
+  assert.ok(
+    rows(s, 'Groups').some(r => r[0] === st && r[1] === 'Ben'),
+    'its groups without rights kept'
+  );
+  assert.ok(s.post({userMerge: {from: 'Ben', into: 'Mia', data: {}}, token: TOK}).ok);
+  assert.ok(
+    rows(s, 'Groups').some(r => r[0] === st && r[1] === 'Mia'),
+    'the kept name joined them'
+  );
+  assert.ok(!can(s, 'Mia', 'live', AT_FISH), 'never its rights');
+});
+
 test('only rightsWrite_ writes the Roles tab or reaches the Groups tab for a write (the source, a tripwire)', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
   // Each top-level function's name and body.

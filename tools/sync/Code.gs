@@ -1987,13 +1987,14 @@ const selfOf_ = (who, row) => !!row && (who.token ? row[6] === adminAcct_() : lc
 // The group of an instance role (ROLES.GROUP), found or made with the role's rights (rightsWrite_, by: the caller's id).
 // Under the script lock.
 function rightsGroup_(role, by){
-  const gs = groupState_(), id = 'r:' + role;
-  if (gs.defs.some(d => d.id === id)) return id;
-  const d = rightsDef_(gs.defs, role, Date.now()), sh = gdefTab_();
-  gdefPut_(sh, sh.getLastRow() + 1, d);
-  rightsWrite_(by, {rights: id, to: d.rights});
+  const gs = groupState_(), id = 'r:' + role, cur = gs.defs.find(d => d.id === id);
+  if (!cur) { const sh = gdefTab_(); gdefPut_(sh, sh.getLastRow() + 1, rightsDef_(gs.defs, role, Date.now())); }
+  if (!cur || !cur.rights.length) rightsFill_(id, by);
   return id;
 }
+// A role group's rights count as audited without a row (rightsAudited_): one just made, or made by a try that failed
+// before its Rights cell was written, is given them now; one whose rights were taken away (its right- rows) stays so.
+const rightsFill_ = (id, by) => rightsWrite_(by, {rights: id, to: rightsAudited_(id)});
 // The group an instance role becomes: its id 'r:' and the role, its name ROLES.GROUP's (followed by " (rights)" when a
 // group of that name exists), no board, no beta, the role's rights at the instance.
 function rightsDef_(defs, role, at){
@@ -3348,11 +3349,14 @@ function rightsMigrate_(){
   // Each group and membership through rightsWrite_ (by "script"): a role group's rights count as audited without a row
   // (rightsAudited_); each membership of these groups the migration made (now or in a try that failed part way) has its
   // Audit row.
-  const made = st.defs.filter(d => !have[d.id]);
-  made.forEach(d => { gdefPut_(sh, sh.getLastRow() + 1, d); rightsWrite_('script', {rights: d.id, to: d.rights}); });
+  const made = st.defs.filter(d => !have[d.id]), R = RMIG_.map(x => 'r:' + x);
+  st.defs.filter(d => R.indexOf(d.id) >= 0).forEach(d => {
+    if (!have[d.id]) gdefPut_(sh, sh.getLastRow() + 1, d);
+    if (!have[d.id] || !d.rights.length) rightsFill_(d.id, 'script');  // a try that failed before its Rights cell too
+  });
   const add = st.rows.filter(r => !had[r[0] + '|' + lc_(r[1])]);
   const live = Object.create(null); liveRows_().forEach(r => (live[lc_(r[0])] = String(r[6])));
-  const R = RMIG_.map(x => 'r:' + x), mem = st.rows.filter(r => R.indexOf(r[0]) >= 0);
+  const mem = st.rows.filter(r => R.indexOf(r[0]) >= 0);
   mem.forEach(r => rightsWrite_('script', {join: r[0], name: r[1], h: r[2], at: r[3], why: 'migration'}));
   PropertiesService.getScriptProperties().setProperty('ONCE_rights', String(Date.now()));
   const off = mem.filter(r => live[lc_(r[1])] !== r[2]).length;
@@ -3373,8 +3377,10 @@ function rightsNow_(){
 // holds no player data). Under the script lock, after rightsNow_ (the caller holds and runs them).
 function rightsGone_(name, by){
   rightsWrite_(by, {removed: name});
-  dropRows_(GROUPS.TAB, name, 2);
+  groupsLeave_(name);
 }
+// Out of every group without rights (the caller ran rightsWrite_ removed first).
+const groupsLeave_ = name => dropRows_(GROUPS.TAB, name, 2);
 // What a merge of from into into changes to the groups and the rights (the admin's warning before it, and its reply):
 // join, the groups without rights of from that into joins (their boards and betas); drop, the groups with rights of from,
 // whose rights go with it, never to into; admin, 1 when from is on the admin list, which it leaves.
@@ -3719,8 +3725,9 @@ function usersDo_(p, who){
       // admin list; a row that cannot be written stops the merge before anything else changes. The merged name's groups
       // without rights join the kept name's (each once); the kept name keeps its own too.
       const plan = mergePlan_(from, into);
-      rightsGone_(from, who.id);
+      rightsWrite_(who.id, {removed: from});
       plan.join.forEach(g => groupSet_(ra, [into], g, true));
+      groupsLeave_(from);  // only once the kept name joined them, so a retry after a failure finds them
       adminDrop_(a.v[6]);  // the merged-away account is no longer the admin's (the kept one becomes it at the admin's next read)
       // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
       // account's devices ask for the replay of the whole merged history (replay_).
