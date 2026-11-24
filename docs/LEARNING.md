@@ -879,6 +879,76 @@ profile × 3,000 answers, one profile per check (the five-profile check was cut 
   0.3, 0.3 is faster (−16, −63) and only E rises (casual diver). The direction follows whichever world is true; the
   real log points to about 0.3 within a family.
 
+### The judged ease, within a family
+
+A judged photo's prior is centred on the mean judged ease of its family, not on the scale's middle (`model.js`
+`easeMid`, `easeTop`; the decision: `docs/decisions/2026-11-23-judged-ease-within-family.md`). Within a family the ease
+ranks photos (the REE-85 study: −0.22 logit a point with a term per family); between families it predicts nothing
+(−0.03 [−0.15, +0.04]; families judged harder were, if anything, answered better). So a family's difficulty is its
+offset alone (`genusDiff`), and the ease orders only the units below a family (its genera and species, by how far
+their photos sit from the family's mean). One rule for every subject with a judged ease: a unit's family is the top of
+its parents (a fish family itself; a fish genus or species, a sea slug genus or species, their family record), checked
+on every record of both trees (1,625 fish and 317 sea slug families, genera and species, each centred on its family
+record).
+
+**What players see** (the exact opening order of a fresh player, `openPick` drawn on the units not met, a circle after
+the one before it, 500 to 2,000 sequences; `tools/studies/ree241/openorder.js`, `ordercmp.py`). The starter core opens
+first either way. With the sheet's offsets as served:
+
+| Subject | Units | Moving 2 places or more | Largest move | Rank against mean ease, circle 1: main → change | Circle 3 |
+| --- | --- | --- | --- | --- | --- |
+| Fish | 65 families | 15 | 6.9 | +0.01 → +0.07 | −0.40 → +0.12 |
+| Sea slugs | 78 genera | 12 | 5.6 | −0.30 → −0.13 | −0.63 → −0.18 |
+
+- Fish, circle 1: little moves, since the offsets dominate (Fusiliers among the first 16 openings 0.48 → 0.63;
+  Anthias 0.92 → 0.81, Cardinalfishes and Soldierfishes about 0.17 → 0.12). Circle 3 moves most: Needlefishes,
+  Convict Blennies, Tunas, Stingrays, Jawfishes, Cornetfishes and Garden Eels 2 to 4 places earlier; Bigeyes,
+  Stargazers, Triplefins and Hawkfishes 3 to 7 later. Without offsets (a unit nobody has answered) the ease was the
+  only order: circle 1's rank against ease −0.40 → +0.07.
+- Sea slugs, circle 1: Melibe and Costasiella among the first 16 openings 0.48 → 0.74 and 0.53 → 0.76; Reticulidia
+  0.96 → 0.89.
+- **The level moves too.** A unit's mean prior was (3 − its mean ease) × 0.3; centred it is 0, its offset alone. The
+  sea slugs' photos average ease 3.58, so their units are rated about 0.17 logit harder on average than before
+  (the fish: 2.89, 0.03 easier). For a unit the sheet has rated, the offset is what the answers say, and the old prior
+  sat on top of it.
+
+**The real log** (rule L12; the fish answers of 2026-11-06 to 2026-11-22 as REE-240 prepared them, 3,349 family
+questions of 9 players; `tools/studies/ree241/replay.py`): each answer's logged expectation with the ease's part at 0.3
+centred on the scale's middle (unc) or on today's family mean (cen); players the unit. These are the answers the
+REE-85 study found the between-family null on, so this is a consistency check, not an independent test.
+
+| Replay | cen − unc, all answers | Players better | p | Families judged hardest | Families judged easiest |
+| --- | --- | --- | --- | --- | --- |
+| Ability as logged | −0.0022 [−0.0034, −0.0009] | 7 of 9 | 0.02 | −0.0088 (9 of 9) | +0.0032 (0 of 9) |
+| Ability following the difficulties it met | −0.0007 [−0.0011, −0.0002] | 8 of 9 | 0.01 | −0.0018 (7 of 9) | −0.0004 (5 of 9) |
+| Each arm's level per player refitted | −0.0012 [−0.0022, −0.0002] | 7 of 9 | 0.04 | −0.0021 (7 of 9) | −0.0017 (7 of 9) |
+
+With each arm's level refitted, the families judged hardest (mean ease under 2.77) were answered right 92.3% against
+90.6% expected uncentred and 91.2% centred; those judged easiest (3.01 and over) 85.0% against 86.6% and 85.8%. The sea
+slugs: too few answers (168, 2 players), not measured.
+
+**The simulation** (rule L11, level 2; declared before running: primary units at Open Water at 300 questions up, app
+world, fish, the truth where Q457 holds; costs declared for the sea slugs, units met and E up). App world: the sheet's
+ratings served (`--stats`), the learner's truth fixed for both arms and built two ways (`tools/studies/ree241/truth.py`):
+cen, the offset plus 0.3 × (family mean − ease); unc, the offset plus 0.3 × (3 − ease). 5 seeds × 300, then 10 seeds
+(looks 2) on cen.
+
+- **Primary: not clear** (fish, cen, 10 seeds: 16 of 50 pairs up, p 0.38).
+- **Held** in every cell: true knowledge, units met at 300, the share under ease 4 before Open Water, families at
+  Advanced.
+- **Breached, not declared** (fish, cen): the expert's units at Open Water at 300 (27.7 → 25.3, at 5 and 10 seeds,
+  spread over families of every mean ease); the casual diver's longest plateau (52 → 64 at 10 seeds). At 5 seeds the
+  beginner's E rose (−0.356 → −0.323, the under-claim shrinking), unclear at 10.
+- **Breached** (sea slugs, cen, 10 seeds): the first unit at Open Water, beginner 56 → 78 and casual diver 54 → 77
+  answers (both shorter at 5 seeds: a heavy-tailed measure), lectureRA's plateau 47 → 59; units at Open Water down 1 to
+  2 for every profile (unclear). E moved down (more under-claim), not up as declared.
+- **The sea slugs' level, apart** (exploratory, added after seeing the breaches: a third arm with the change's ranking
+  and main's overall level, 5 seeds): the lectureRA's later first Open Water (+13) and the strong RA's units at Open
+  Water (−2.6) come with the level; the ranking alone breached the strong RA's units met at 300 (−2.6) and plateau
+  in one world and held or was unclear elsewhere.
+- **Truth unc** (5 seeds, reported, not a verdict): the fish casual diver's plateau +10 breached; the sea slug
+  lectureRA's units at Open Water and plateau breached.
+
 ### Fish: easy, reference-like photos first, whoever took them
 
 The order a unit's photos are met in, where an order matters (the card's photo, the lists, the sheets: `core.js`
