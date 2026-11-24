@@ -1,6 +1,6 @@
 # Groups by scope, in the Rights column; one audited write for every rights change
 
-Date: 2026-11-21. PR: #0000. Rules or docs touched: docs/SECURITY.md "Rights and the Audit tab"; docs/spec/sync.md
+Date: 2026-11-21. PR: #1554. Rules or docs touched: docs/SECURITY.md "Rights and the Audit tab"; docs/spec/sync.md
 "Rights and the Audit tab", "Player groups".
 
 ## Context
