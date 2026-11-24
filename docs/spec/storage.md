@@ -79,7 +79,9 @@ the app page calls `app.js` `storeWrote`: `store.set`, `store.drop` (a removal),
 `localStorage` write in the page's scripts that goes round them. The key moves of `core.js` (`migrateStorage`,
 `migrateRoutes`) run first, before any read. Another tab's write is seen by the next task's first read: within a task
 the page's storage changes only by its own writes (Chromium applies another tab's change from a message, a task of its
-own; Firefox reads through a snapshot kept until the task's end). No `storage` event is listened to. The values are
+own; Firefox reads through a snapshot kept until the task's end; Safari is not checked). Were another tab's write ever
+readable mid-task, a kept read would see it one task late, as if it had landed after the task. No `storage` event is
+listened to. The values are
 those of `store.get`. A kept value is shared: only readers that never change it read through `keptGet`. In the smokes,
 `KEPT_CHECK` (`tests/facheck.js`) checks every kept value against a fresh `store.get`, the reads that trust their
 task's comparison included.

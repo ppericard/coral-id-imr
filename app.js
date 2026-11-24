@@ -131,8 +131,9 @@ const STATE_KEYS = new Set([
 // trusted until the task's microtasks run (freshEnd, queued then) or this tab writes the key (storeWrote). Within a task
 // only this tab changes what the storage reads: another tab's write reaches this page between its tasks (Chromium
 // applies it to the page's copy from a message, a task of its own; Firefox reads through a snapshot kept until the
-// task's end), so the next task's first read compares and sees it. No storage event is listened to: it is not sent for
-// every change (the browser's own tools), and the comparison needs none. Every write of this tab calls storeWrote(k):
+// task's end), so the next task's first read compares and sees it (were it readable mid-task, it would be seen one task
+// late, as if written after the task). No storage event is listened to: it is not sent for every change (the browser's
+// own tools), and the comparison needs none. Every write of this tab calls storeWrote(k):
 // store.set, store.drop, store.raw (the writes that do not go through JSON: sync.js's removals at sign-in and sign-out,
 // progress.js loadData, the settings kept as plain text), and sync.js keptPush. Without queueMicrotask (the unit tests
 // that run parts of these files) every read compares.
