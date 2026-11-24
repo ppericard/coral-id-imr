@@ -94,7 +94,10 @@ test('bonusList: a set’s auto units play whatever the set’s state, each once
     const c = {Q, SETS: () => sets};
     vm.createContext(c);
     vm.runInContext(
-      block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}) +
+      // a set's auto and units, views of the state version (app.js setAuto, setUnits): their computations here
+      block(APP, 'const setAuto = ', '\n', {through: 1, file: 'app.js'}) +
+        block(APP, 'const setUnits = ', '\n', {through: 1, file: 'app.js'}) +
+        block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}) +
         block(APP, 'const bonusCalc = ', '\n', {through: 1, file: 'app.js'}) +
         '\nthis.r = bonusCalc();', // the view of the state version (app.js stateView, bonusList): its computation
       c
