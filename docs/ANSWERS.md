@@ -1957,6 +1957,42 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 
 ## 2026-11-24
 
+- **06:22, the per-answer cost (REE-263's measure, #1516).** «ça c'est juste pas possible. On doit trouver un autre
+  moyen de faire ces calculs sans devoir ré-interroger l'historique entier à chaque réponse. C'est un vrai gros
+  problème de conception … Il faut envisager de vrais changements structurels si besoin … comment font les autres apps
+  qui font des choses similaires? Il faut vraiment creuser pour trouver la/les causes originales, et penser comme un
+  scientifique en développement logiciel / algorithmicien pour trouver des solutions propres, simples et efficaces.»
+  A design study of the engine's state kept per answer, structural changes allowed. Applied: Linear REE-265.
+- **06:23, who does that study.** «A mon avis ça mérite une étude par Fable.» Applied: Linear REE-265 (relaunched on
+  Fable; REE-266).
+- **06:30, question cards.** «N'utilise les cartes que pour des petites questions hyper faciles. Sinon il faut que tu
+  me représentes proprement le contexte comme si j'avais tout oublié». A working-method request on how the integrator
+  asks, not a numbered question. Applied: no doc change yet (the integrator's way of asking; INTEGRATOR.md
+  "Questions and corrections" not changed here).
+- **06:32, the ease weight kept at 0.5 for the sea slugs (#1519).** «Et bien c'est un mauvais choix. C'est quoi nos
+  règles globales de développement? ça mérite une issue de non respect à la règle ça». Applied: Linear REE-267; #1519
+  (one ease weight for every subject with a judged ease).
+- **06:33 and 06:35, rule S1 (REE-267).** 06:33: «idem pour les coraux ou tout autre sujet à venir». 06:35, on the
+  cause (the issue and the brief worded per subject): «C'est possible que les exemples viennent de sujet en particulier,
+  mais il faut toujours généraliser.» 06:35, when the integrator made the weight an engine constant with no per-subject
+  setting: «Non !!!! Tu sur-interprète la règle maintenant! La règle c'est qu'on peut faire des exceptions, des
+  ajustements et des paramétrages par sujet si ils sont justifiés. Ce que je te reproche c'est de ne pas avoir
+  généralisé, et juste décidé de ne traiter les poissons que parce que c'était l'exemple de départ.» Read by the
+  integrator (REE-267's comment): a decision found on one subject applies to every subject by default; a per-subject
+  value or exception is allowed when justified and declared. Applied: Linear REE-267, REE-268; #1519; the sea slugs'
+  caps as the fish's, judging/SEASLUG.md "Caps", decisions/2026-11-24-sea-slug-caps-as-the-fish.md (#1524).
+- **06:38, the objection left unanswered (REE-268).** «Je ne suis pas d'accord pour que tu passes sous silence ce
+  problème.» Applied: Linear REE-268.
+- **06:45, questions session, group 2: #1493.** «ok» to #1493 (the saved ease re-judge drafts for five typical-look
+  families, held for his OK under rule P7). Applied: #1493.
+- **06:45, group 2: judging the 134 faved candidates (REE-243).** «ok» to that judging pass of 134 photos under rule P7;
+  for that pass only. Applied: Linear REE-243.
+- **06:45, group 2: the sea slugs' one photo per observation (REE-252 question (b)).** «une exception forte qui n'a pas
+  lieu d'être» and «D'accord pour que par défaut on fasse partout pareil !» Applied: Linear REE-252.
+- **06:45, group 2c: what a duplicate is (REE-252 question (a), REE-257).** «ok» to the definition, for every subject:
+  `dup`, a burst or the same framing, with nothing new to see; `alt`, another zoom, framing, angle or pose of the same
+  animal or colony (his word is «ok», the wording is the integrator's). Nothing judged again. Applied: judging/FISH.md,
+  judging/SEASLUG.md, judging/BRIEF.md `keep`; decisions/2026-11-24-what-a-duplicate-is.md (#1524).
 - **06:45, the sea slugs take every photo of an observation (REE-252).** On the sea slug fetcher taking only each
   observation's first photo: «ça c'est une exception forte qui n'a pas lieu d'être». On doing as the fish do: «D'accord
   pour que par défaut on fasse partout pareil !». His 2026-11-23 21:05 «il faut justement toutes les prendre» pointed
