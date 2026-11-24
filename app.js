@@ -986,14 +986,21 @@ function treeGenera(X, F) {
   return X;
 }
 // The next units of a parent's list O (in its order) a level brings into play: those not met with a photo, the first one,
-// or, while the level (L, every unit of it) holds fewer than INTRO.START units met, up to INTRO.START of them, so it can
-// open close units together (model.js openFresh, openGroup: a level opens in a group).
-function lvlNext(O, L, met) {
-  const k = L.filter(met).length < INTRO.START ? INTRO.START : 1,
+// or, while the level holds fewer than INTRO.START units met (m: how many of every unit of it, metCount), up to
+// INTRO.START of them, so it can open close units together (model.js openFresh, openGroup: a level opens in a group).
+function lvlNext(O, m, met) {
+  const k = m < INTRO.START ? INTRO.START : 1,
     out = [];
   for (const n of O) if (out.length < k && !met(n) && photoAny(n)) out.push(n);
   return out;
 }
+// How many units of a level's list L are met (lvlNext's m): counted at the first parent that asks, then kept for the
+// other parents of one spPlay or sciPlay call, since nothing the call reads is written during it. Counting it for every
+// parent made each call's work grow with the units times the parents.
+const metCount = (L, met) => {
+  let m = -1;
+  return () => (m < 0 ? (m = L.filter(met).length) : m);
+};
 // The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
 // met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
 // often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
@@ -1005,7 +1012,8 @@ function spPlay(L, score, met, on) {
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
-  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, L, met) : [])]);
+  const m = metCount(L, met);
+  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
 }
 // The species by their scientific names in play (the ssp set; docs/reviews/2026-11-18-species-step2-plan.md §2.3): from L
 // (TREEU.ssl), for each parent (their genus) in play now (up: the slate and the other sets' units in play) and at its
@@ -1023,12 +1031,13 @@ function sciPlay(L, score, met, up, on) {
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
+  const m = metCount(L, met);
   return [...by].flatMap(([p, U]) => {
     if (!up.has(p)) return [];
     const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1],
       ord = GX(p).species || [],
       O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp));
-    return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, L, met) : [])];
+    return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, m(), met) : [])];
   });
 }
 // A unit's kind of name (its record's kind: cn a species asked by its common name, sci by its scientific name; '' for a

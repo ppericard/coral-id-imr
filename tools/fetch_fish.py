@@ -869,15 +869,16 @@ def sure_add(j):
     return bool(FISH_TAGS.match(jt)) and jt[6] in "1so" and j.get("e") in (1, 2, 3, 4, 5)
 
 
-def state(cur, sug):
+def state(cur, sug, key="fish"):
     """(gone(f), excluded photo ids): gone = rejected, excluded, sent elsewhere by Pierre, set aside by the pre-sort, or an
     add of his held out for other species one could take for its subject (tools/fish_game.py other_out: his tag, his
-    legacy m refined by the pass's o or k; Q323, Codex review #839): such a photo is not in play, so it frees room."""
+    legacy m refined by the pass's o or k; Q323, Codex review #839): such a photo is not in play, so it frees room.
+    key: the subject's part of curation.json and data/suggest.json (the fish's; the sea slugs' tools/fetch_seaslugs.py)."""
     from fish_game import other_out  # here, not at the top: tools/fish_game.py imports this module
-    F = (cur or {}).get("fish") or {}
+    F = (cur or {}).get(key) or {}
     ex = set(F.get("exclude") or {}) | set((cur or {}).get("exclude") or {})
     excl = {pid(f) for f in ex} - {None}
-    S = (sug or {}).get("fish") or {}
+    S = (sug or {}).get(key) or {}
     add, tags = F.get("add") or {}, F.get("tags") or {}
     gone = lambda f: (f in (F.get("seen") or {}) or f in ex or f in (F.get("out") or {})
                       or (f not in add and sure_out(S.get(f)))

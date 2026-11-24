@@ -440,14 +440,24 @@ The subject in the app: [seaslugs.md](seaslugs.md).
 - **`fetch_seaslugs.py`** → `data/seaslug-cand.json`: the sea slugs' candidate photos, data only (nothing downloaded, judged
   or uploaded here):
   - per species of `tools/seaslugs.json` circles 1, 2 and 3 (`--circle`), the photo target's 20 candidates (+5 Life
-    Stage: Juvenile places for a documented juvenile form, `photoTarget.juvenile`: *Hexabranchus lacer*), one photo per
-    observation (rule P4), Research Grade, CC0 / CC BY / CC BY-NC (rule P1), observations annotated Egg dropped
-    (`photoTarget.exclude`), the Philippines as one pool, then the fish's Indo-West Pacific box when short;
+    Stage: Juvenile places for a documented juvenile form, `photoTarget.juvenile`: *Hexabranchus lacer*), **every usable
+    photo of an observation** as the fish's (`fetch_fish.py`: the first photo 1 of the target, each further one 0.5,
+    `obs_cost`; the fish's `select` picks them), Research Grade, CC0 / CC BY / CC BY-NC (rule P1), observations annotated
+    Egg dropped (`photoTarget.exclude`), the Philippines as one pool, then the fish's Indo-West Pacific box when short.
+    Rule P4 is about what a question shows, not about what is fetched: the game draws one observation a question, and the
+    judging marks the other photos of an observation `alt` or `dup`
+    ([decision](../decisions/2026-11-24-seaslug-every-photo.md));
+  - **`--topup`** completes every list already in the file (species, genus-level, species with no name; `--only` takes
+    their keys): each observation among the candidates is asked again by id (200 a request, rule C7; more than
+    `TOPUP_MAX` (40) requests stops it before the first) and every usable photo of it not taken yet comes, each for 0.5
+    of room, never blocking (a list it puts over its target only waits longer for new observations; nothing is removed),
+    unless the observation is no longer that taxon or usable, or one of its photos is in curation.json `seaslug` `out`.
+    The new candidates wait unjudged and out of play for the judging pass (rule P7);
   - **Pierre's own observations: the fish's rule** (rule P1's fish exception, rule S2): identified to the species
     they are usable even when Needs ID (`ni`), his photos whatever their licence, read by `fetch_fish.usable_obs`
     itself; asked on his own search (`--own`: that search only, every species together) and taken first, so none is left
-    out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the rubric
-    like any candidate;
+    out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the
+    rubric like any candidate;
   - it reuses `fetch_fish.py`'s searches, cache and pacing (~1 request/s, cached in
     `tools/.cache/seaslug_photos.json`). The file has `data/fish-cand.json`'s shape and record fields, keyed by the species'
     iNaturalist taxon id, `f` = `seaslug-<taxon id>-cand-<photo id>` (the docstring lists the differences);
@@ -460,16 +470,18 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     at that genus and **agreed** (`agreed`: Research Grade at the genus, or 2 current identifications at the genus or
     below it and none off its line; a coarser one on its line does not disagree), 20 a genus (the photo target's
     `candidates`, never above `max`), keyed by the genus's name, each record `gl: 1` (a photo of the genus, never a
-    species'); eggs, Dead, share-alike and ND out, one photo per observation, never an observation twice (`--informal`
-    first). The genus ids come from one species of each genus (`v2/taxa`, its ancestors, 30 a request); the genus-level
+    species'); eggs, Dead, share-alike and ND out, every usable photo of an observation, never an observation in two
+    lists (`--informal` first). The genus ids come from one species of each genus (`v2/taxa`, its ancestors, 30 a request); the genus-level
     searches are batched, 30 genera a search read to its end (`id_below`). Both wait in
     `tools/judging_fish.py --subject seaslug todo` (by key and by genus name);
   - **The very variable genera's ceiling**: a species of a genus in `photoTarget.maxGenera` (*Chromodoris*, *Phyllidia*)
     has `max` (30) as its target (`target`), never above it; a very variable genus's genus-level list takes the 30 too,
     any other keeps 20;
-  - **Egg masses and rule P4**: the target counts the candidates still usable, as the fish's cap does: one judged an egg
-    mass (`data/suggest.json` `"seaslug"` `{egg: 1}`, the egg rule's filter 2) counts nothing (`held`), and an observation
-    whose every candidate is one brings its next usable photo first (`eggs_back`: asked again by id, every observation
+  - **What frees room, and egg masses**: the target counts the candidates still usable, by the fish's own rule
+    (`fetch_fish.state`, `sure_out`, through `Gone`): one Pierre rejected, excluded or sent elsewhere, one the judging set
+    aside for sure (`dup`, a subject not obvious, other species in view) and one judged an egg mass (`data/suggest.json`
+    `"seaslug"` `{egg: 1}`, the egg rule's filter 2) count nothing (`held`), and an observation
+    whose every candidate is one brings its next usable photos first (`eggs_back`: asked again by id, every observation
     with an egg-mass candidate in the run's lists in one request, under a new candidate's rules; for a species with no
     name, still its label, its observation fields read), the egg-mass record kept beside it (its judgement keeps it out
     of play); `--suggest` names the judgements read.

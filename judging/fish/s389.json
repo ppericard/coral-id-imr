@@ -37,7 +37,7 @@
    "keep": "dup"
   },
   "fish-s389-cand-463479569": {
-   "code": "p1g1sm1c2",
+   "code": "p1g1sm1c3",
    "keep": "best"
   },
   "fish-s389-cand-716523481": {
@@ -89,7 +89,7 @@
    "keep": "best"
   },
   "fish-s389-cand-280625265": {
-   "code": "o1g1sm1c2",
+   "code": "o1g1sm1c3",
    "keep": "best"
   },
   "fish-s389-cand-280626391": {
@@ -117,7 +117,7 @@
    "keep": "dup"
   },
   "fish-s389-cand-290975384": {
-   "code": "p1g0sm1c2",
+   "code": "p1g0sm1cw4",
    "keep": "best"
   },
   "fish-s389-cand-645805357": {
@@ -133,7 +133,7 @@
    "keep": "best"
   },
   "fish-s389-cand-50877547": {
-   "code": "p1g0sl1c2",
+   "code": "p1g0sl1cw2",
    "keep": "best"
   },
   "fish-s389-cand-2172260": {
@@ -173,7 +173,7 @@
    "keep": "dup"
   },
   "fish-s389-cand-741536867": {
-   "code": "d1g0smsc3",
+   "code": "d1g0smsc4",
    "keep": "alt"
   },
   "fish-s389-cand-741536904": {
@@ -185,11 +185,11 @@
    "keep": "dup"
   },
   "fish-s389-cand-741536771": {
-   "code": "o1g0sl1c3",
+   "code": "o1g0sl1c4",
    "keep": "best"
   },
   "fish-s389-cand-741536772": {
-   "code": "p1g0smsc3",
+   "code": "p1g0smsc4",
    "keep": "alt"
   },
   "fish-s389-cand-741536659": {
