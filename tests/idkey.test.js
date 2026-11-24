@@ -19,7 +19,11 @@ test('no identifier of the tool keeps the old name (routes, files, keys, classes
   // a .fd* class of the tool, fcov) is not.
   const code = tracked().filter(
     f =>
-      /\.(js|css|html|py|gs|yml|sh|webmanifest)$/.test(f) && !/^(img|tools\/archive|judging|docs)\//.test(f) && f !== 'tests/idkey.test.js'
+      /\.(js|css|html|py|gs|yml|sh|webmanifest)$/.test(f) &&
+      !/^(img|tools\/archive|judging|docs)\//.test(f) &&
+      f !== 'tests/idkey.test.js' &&
+      // One archived page kept byte for byte (gold set 2, REE-277): its CSS colours (#fdf3d8) read as a "fd" class.
+      f !== 'tools/studies/gold-set-2/revue-photos-2.html'
   );
   assert.ok(code.includes('proto/idkey.js') && !tracked().includes('proto/finder.js'), 'proto/finder.js is proto/idkey.js');
   const bad = [];
