@@ -185,7 +185,8 @@ file `{"note": ..., "scope": "forms", "photos": {...}}` (the pass of 2026-11-05:
 
 ### `duplicates`
 
-Near-identical or redundant photos: same colony and similar framing, or a sequence that adds nothing. Give the one
+Near-identical photos of one colony, by the shared definition ("Candidate pass" `keep`): a burst or the same framing,
+with nothing new to see; another zoom, framing, angle or pose is not a duplicate. Give the one
 to keep and the ones to drop. Keep order: IMR photo first, then Pierre's, then the better quality. Never drop an
 IMR photo in favour of a non-IMR one. Pierre hides the drops himself, one by one.
 
@@ -228,13 +229,19 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
    `note`; `form` required, `x` when not visible) plus **`keep`**:
    - `best`: the most useful photo of its observation for this view (sharpest, the features of the view clearest).
      **Exactly one per observation and view**, among the photos that show this genus.
-   - `alt`: same observation and view, but it adds something: another part of the colony, another angle, the
-     colony shape where the best shows the surface, polyps out vs retracted.
-   - `dup`: adds nothing over the `best` (same framing, a few centimetres apart, a burst), **or over a photo of the
-     observation that is already live or added** (tiles marked "live" on the sheet, after the numbered candidates;
-     Pierre, 2026-11-03: not only near-duplicates of another candidate). When every candidate of an observation and
-     view is a `dup` of a live photo, that view has no `best`; otherwise give `best` to the best candidate as usual,
-     even when a live photo already covers the view.
+   - `alt` or `dup`, by the definition shared by every subject (Pierre, 2026-11-24, «ok»;
+     [the decision](../docs/decisions/2026-11-24-what-a-duplicate-is.md)): `alt`: another zoom, framing, angle or pose
+     of the same animal or colony; `dup`: a burst or the same framing, with nothing new to see. **Corals, declared:**
+     both are judged within one observation **and view** (rule P2: colony, close-up and corallites are separate views),
+     so a zoom that moves the photo to another view is judged within that view (`best`, `alt` or `dup` there), not as
+     an `alt` of the first.
+     - `alt` here: another part of the colony, another angle, the colony shape where the best shows the surface,
+       polyps out vs retracted.
+     - `dup` here: over the `best` (a few centimetres apart), **or over a photo of the observation that is already
+       live or added** (tiles marked "live" on the sheet, after the numbered candidates; Pierre, 2026-11-03: not only
+       near-duplicates of another candidate). When every candidate of an observation and view is a `dup` of a live
+       photo, that view has no `best`; otherwise give `best` to the best candidate as usual, even when a live photo
+       already covers the view.
    - Omit `keep` when `genus` is set (another genus, `cmp` or `exclude`).
    For a `best` or `alt` photo, **`crop`**: `[left, top, right, bottom]` as fractions of the photo, read off the grid
    of its detail sheet. Trim only what distracts from the subject: another coral, sand, dark water, a diver, a blurred
