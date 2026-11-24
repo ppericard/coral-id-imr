@@ -117,15 +117,18 @@ const IS_ADMIN =
 // writes (its queue, the comeback, the pending question, the achievements) are no input and bump nothing. The writers
 // outside this block call it guarded (typeof), as in model.js, quiz.js and sync.js: the unit tests run parts of these
 // files without it.
+// The data version, DATA_V, counts the writes of the inputs that do not move with the player's own play: every bump but
+// those of the player's records and settings (stateBump('rec'): the records P, the quiz settings Q, the intro map and
+// its offer, the first-launch record, a record made, a reset, sync.js's refills of P). The data views (dataView) read
+// only the other inputs: the data and the tree in force, the subject, the sheet's version, the photo statistics, the
+// files loaded. A bump with no argument moves both versions, so a writer not sorted makes the data views again too.
 let STATE_V = 0;
-const stateBump = () => void STATE_V++;
-// sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names).
-const STATE_KEYS = new Set([
-  ...SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k))),
-  'reefid-sheet-v',
-  'reefid-photo-stats',
-  ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)
-]);
+let DATA_V = 0;
+const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);
+// sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names). REC_KEYS: those of the
+// player's records and settings (stateBump('rec')).
+const REC_KEYS = new Set(SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)))),
+  STATE_KEYS = new Set([...REC_KEYS, 'reefid-sheet-v', 'reefid-photo-stats', ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)]);
 // Storage freshness, one check per task (docs/spec/storage.md "Keys read many times an answer"). A stored text read
 // many times (sync.js keptEntry, stateNow below) is compared with the text kept at its first read in a task, then
 // trusted until the task's microtasks run (freshEnd, queued then) or this tab writes the key (storeWrote). Within a task
@@ -158,7 +161,7 @@ function storeWrote(k) {
       FRESH.delete(n);
       if (STATE_LIVE.includes(n)) STATE_AT = -1;
     }
-  if (STATE_KEYS.has(k)) stateBump();
+  if (STATE_KEYS.has(k)) stateBump(REC_KEYS.has(k) ? 'rec' : undefined);
 }
 // Two inputs are read from storage at every use, kept parsed while their text stays the same (sync.js keptBy): the
 // sheet's version (sheetV) and a subject's first-launch record (model.js imrSaid, startV). Their stored text is compared
@@ -181,12 +184,13 @@ function stateNow() {
       viewFail('stateNow: a stored text changed in this task without storeWrote');
     return STATE_V;
   }
-  let ch = false;
+  // A first-launch record is the player's own (stateBump('rec')); the sheet's version (the first key) is data.
+  let ch = '';
   STATE_LIVE.forEach((k, i) => {
     const raw = stateRaw(k);
-    if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = true));
+    if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = i && ch !== 'all' ? 'rec' : 'all'));
   });
-  if (ch) stateBump();
+  if (ch) stateBump(ch === 'rec' ? 'rec' : undefined);
   STATE_AT = freshNow();
   return STATE_V;
 }
@@ -221,21 +225,55 @@ const viewFail = m => {
   });
   throw e;
 };
-function stateView(name, f) {
+const viewDiff = (kind, name) =>
+  viewFail(`${kind} view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
+// f's value kept while now() (the version) stays the same.
+// point: its readers check each value they read instead (the units met, model.js introduced: a record written by hand
+// for another key, a smoke's P[LEVEL], changes no value read), so VIEW_CHECK does not compare the whole value.
+function verView(kind, name, f, now, point = false) {
   let at = -1,
     v;
   return () => {
-    const now = stateNow();
-    if (at !== now) {
+    const t = now();
+    if (at !== t) {
       v = f();
-      at = now;
+      at = t;
       return v;
     }
-    if (VIEW_CHECK.on && !viewSame(v, f()))
-      viewFail(`state view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
+    if (VIEW_CHECK.on && !point && !viewSame(v, f())) viewDiff(kind, name);
     return v;
   };
 }
+function stateView(name, f, point = false) {
+  return verView('state', name, f, stateNow, point);
+}
+// The data version now: the stored texts compared first (stateNow), as for a state view.
+const dataNow = () => (stateNow(), DATA_V);
+// A view of one argument k (a rank class, a unit), f(k) kept per k and per version: the values of a version are dropped
+// at the next (now: stateNow or dataNow). The same rules and the same check as stateView, value by value. k is a string,
+// a number or an object (a Map's key: the same value or the same object, the same entry).
+function keyView(kind, name, f, now) {
+  let at = -1;
+  const M = new Map();
+  return k => {
+    const t = now();
+    if (at !== t) ((at = t), M.clear());
+    if (!M.has(k)) {
+      const v = f(k);
+      if (at === t) M.set(k, v);
+      return v;
+    }
+    const v = M.get(k);
+    if (VIEW_CHECK.on && !viewSame(v, f(k))) viewDiff(kind, name);
+    return v;
+  };
+}
+const stateViewBy = (name, f) => keyView('state', name, f, stateNow);
+// A view of the data version (the rank classes, the units of a class with a photo, the look-alike index): computed once
+// per data version, so the player's answers, which move the state version only, do not make it again. f reads the data
+// inputs alone (DATA_V's), never the records or the settings; VIEW_CHECK checks it as a state view.
+const dataView = (name, f) => verView('data', name, f, dataNow);
+const dataViewBy = (name, f) => keyView('data', name, f, dataNow);
 // Every write of the storage by this tab calls storeWrote (above): set here; drop for a removal and raw for a text
 // written as it is, where a write went round store.set.
 const store = {
@@ -1188,8 +1226,11 @@ function sciPlay(L, score, met, up, on) {
 // unit with none), and the class its questions stay in (kindRank): its rank inside the subject (rankOf) and its kind.
 // A question's choices, its typed names, its groups and its mimicry traps stay in one class, so a scientific question
 // never shows a common-name label, nor the reverse; the rank logged and the share's levels read rankOf alone.
+// kindRank is read for many units a question: a view of the data version per unit (dataViewBy; computed where a part of
+// this file runs alone, as in the unit tests), kindRankCalc computes it.
 const kindOf = n => (GX(n) || {}).kind || '';
-const kindRank = n => rankOf(n) + (kindOf(n) ? ':' + kindOf(n) : '');
+const kindRankCalc = n => rankOf(n) + (kindOf(n) ? ':' + kindOf(n) : '');
+const kindRank = typeof dataViewBy === 'function' ? dataViewBy('kindRank', kindRankCalc) : kindRankCalc;
 // The scientific genera in play (the sci set), from L (TREEU.sci), a genus met staying in: units, offered to everyone,
 // from its family's Advanced (LV_AT[1]; Open Water with hand: turned on by hand before, Q.sciH); auto, for an IMR player
 // (imr), the IMR genera (imrg) from Open Water without the offer, never in units.
@@ -1417,7 +1458,7 @@ const sciStars = L => L.filter(u => !!((TREEU && TREEU.sps && TREEU.sps[GX(u).sp
 // sets have in play (the fish's scientific genera; a sea slug genus is on the slate). A view of the state version
 // (sciUp, with bonusList below): sciUpCalc computes it.
 const sciUpCalc = () =>
-  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
+  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? setUnits(S) : []), ...autoOf(S)]))]);
 // The species by their scientific names, for every subject that asks them (SUBJECTS names 'sci'; UNITS sets: the
 // fish's, the sea slugs'): no offer and no switch of its own (the fish's come with their scientific genera, Q404 A's
 // names row; every sea slug player's); auto: sciPlay, once the level is on (sciSpOn, rule D4); all: every such unit
@@ -1426,7 +1467,8 @@ const SCI_SP = {
   k: 'ssp',
   all: () => sciSpAll(),
   units: () => [],
-  auto: () => (TREEU && sciSpOn() && typeof genScore === 'function' ? sciPlay(TREEU.ssl || [], genScore, introduced, sciUp(), true) : []),
+  auto: () =>
+    TREEU && sciSpOn() && typeof genScore === 'function' ? sciPlay(TREEU.ssl || [], genScore, introducedFn(), sciUp(), true) : [],
   due: () => false,
   page: false, // not on the families page
   kick: 'Scientific names',
@@ -1442,10 +1484,11 @@ const SCI_SP = {
 };
 // The scientific genera in the game now (TREEU.sci, the sci set): every circle's once the sheet replays them (sync.js
 // generaOn, rule D4), circle 1's alone before; every one where sync.js is not loaded (the
-// tools that run the app's units alone). A view of the state version (stateView): sciNowCalc computes it.
+// tools that run the app's units alone). A view of the data version (dataView: the tree and the sheet's version are its
+// inputs): sciNowCalc computes it.
 const sciNowCalc = () =>
   TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];
-const sciNow = stateView('sciNow', sciNowCalc);
+const sciNow = dataView('sciNow', sciNowCalc);
 // A coral photo's taxon: its iNaturalist species (t), only within the genus asked n (a photo moved keeps its old name)
 // and when sure: Research Grade (no gid) or Pierre's own (rule S2). The corals have no common names.
 const coralTaxon = (p, n) => {
@@ -1455,7 +1498,18 @@ const coralTaxon = (p, n) => {
 };
 // Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
 // (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
-const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => kindRank(n) === rk);
+// The sets' units are grouped by class once per data version (a view: rankClassesCalc), each class in the sets' order,
+// so a read is one lookup where each read went through every unit of the tree's sets; its readers never change a list.
+const rankClassesCalc = () => {
+  const M = new Map();
+  new Set(SETS().flatMap(S => (S.all ? S.all() : S.units()))).forEach(n => {
+    const rk = kindRank(n);
+    M.has(rk) ? M.get(rk).push(n) : M.set(rk, [n]);
+  });
+  return M;
+};
+const rankClasses = dataView('rankClasses', rankClassesCalc);
+const rankUnits = rk => rankClasses().get(rk) || [];
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (TREEU, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (TREEU ? TREEU.gen[n] : undefined);
@@ -2212,7 +2266,7 @@ const save = () => {
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
 // A unit's record, made empty at its first use (a record made: an input of the views, stateBump).
-const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump(), P[n]);
+const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump('rec'), P[n]);
 const qLoad = () => {
   const q = Object.assign({view: 'any', level: 'auto'}, store.get(sKey('quiz'), {}), {stars: true}); // starred genera are always asked
   if (q.lvv !== 3) {
@@ -2829,8 +2883,9 @@ const UNITS = {
       {
         k: 'sci',
         all: () => sciNow(),
-        units: () => (TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introduced, imrSaid(), !!Q.sciH).units : []),
-        auto: () => (TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introduced, imrSaid()).auto : []),
+        units: () =>
+          TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introducedFn(), imrSaid(), !!Q.sciH).units : [],
+        auto: () => (TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introducedFn(), imrSaid()).auto : []),
         // Families met first: no genus card while a family in play is still not met (setLater, model.js openPick); its
         // auto units, the set turned on by hand early and Open all are exempt.
         after: 1,
@@ -2870,7 +2925,7 @@ const UNITS = {
         k: 'sp',
         all: () => (TREEU ? TREEU.spl || [] : []),
         units: () => [],
-        auto: () => (TREEU && typeof genScore === 'function' ? spPlay(TREEU.spl || [], genScore, introduced, spOn()) : []),
+        auto: () => (TREEU && typeof genScore === 'function' ? spPlay(TREEU.spl || [], genScore, introducedFn(), spOn()) : []),
         due: () => false,
         page: false, // not on the families page
         kick: 'Species',
@@ -3130,7 +3185,14 @@ const slateGenera = () => UNITS[SUBJ.id].slate();
 // genera, rule L6), the slate where the subject has no scale of its own.
 const scaleUnits = () => (UNITS[SUBJ.id].scale || UNITS[SUBJ.id].slate)();
 // The opt-in set a unit belongs to (the coral bonus genera, the fish scientific genera), or null.
-const setOf = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;
+// Each unit's set, the first that lists it, once per data version (a view: setMapCalc; the sets' lists are data).
+const setMapCalc = () => {
+  const M = new Map();
+  SETS().forEach(S => (S.all || S.units)().forEach(n => M.has(n) || M.set(n, S)));
+  return M;
+};
+const setMap = dataView('setMap', setMapCalc);
+const setOf = n => setMap().get(n) || null;
 const isBonus = n => !!setOf(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
 // on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.
@@ -3141,7 +3203,12 @@ if (Q.bon === undefined && Q.bu > 1) {
 // The units a set brings without asking (its auto: an IMR player's IMR genera, the species), none once its What I learn
 // row is turned off (Q[k + 'O']: that level stops being asked, Q404 A; its units keep their bars, Q402 A). A "Not now" or
 // "Close them for now" card (Q[k] false alone) keeps them, as before the card. Every reader of a set's auto goes through it.
-const autoOf = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? S.auto() : []);
+// A set's auto and its units (S.auto, S.units: sciOpen, spPlay, sciPlay over the tree) are views of the state version per
+// set (setAuto, setUnits; computed where a part of this file runs alone): the units in play (bonusList, sciUp, shareFree)
+// each read them.
+const setAuto = typeof stateViewBy === 'function' ? stateViewBy('setAuto', S => S.auto()) : S => S.auto();
+const setUnits = typeof stateViewBy === 'function' ? stateViewBy('setUnits', S => S.units()) : S => S.units();
+const autoOf = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? setAuto(S) : []);
 // The What I learn card (progress.js learnCard; docs/FISH_PATH.md "Which names a player learns"): the subject's names rows
 // (UNITS learn: {k, name, line, part, when, self}), those whose level is on now (when: rule D4, the sheet replays it). A
 // row is on while not turned off on the card (Q[k + 'O']) and either turned on (Q[k] true) or bringing its units by
@@ -3191,7 +3258,7 @@ const namesOptsHtml = cur =>
     .join('')}</div>`;
 // The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once. A view of
 // the state version (stateView), computed once per version instead of by each of its readers: bonusCalc computes it.
-const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
+const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? setUnits(S) : []), ...autoOf(S)]))];
 const bonusList = stateView('bonusList', bonusCalc);
 const sciUp = stateView('sciUp', sciUpCalc);
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
@@ -3206,7 +3273,7 @@ const setLater = n => {
 // come in the slate's phase: the ones it brings by itself (auto: an IMR player's IMR genera from their family's Open
 // Water) and all of them once the player turned it on by hand before it was due (Q[k + 'H']). Read once per answer
 // (model.js sharesNow). A view of the state version (stateView): shareFreeCalc computes it.
-const shareFreeCalc = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+const shareFreeCalc = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? setUnits(S) : []), ...autoOf(S)] : []));
 const shareFree = stateView('shareFree', shareFreeCalc);
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
@@ -4081,7 +4148,7 @@ document.getElementById('signb').onclick = e => {
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due, the What I learn rows back
         // to their defaults
         SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
-        if (typeof stateBump === 'function') stateBump(); // the records and settings emptied: inputs of the views
+        if (typeof stateBump === 'function') stateBump('rec'); // the records and settings emptied: inputs of the views
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();

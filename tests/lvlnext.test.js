@@ -170,7 +170,7 @@ test('rated-world fish runs: spPlay and sciPlay every 50 answers and around each
 test('the corals: no species level, so neither spPlay nor sciPlay reaches them', () => {
   assert.ok(!C.subjectOf('coral').names, 'no species units for the corals');
   assert.match(APP, /auto: \(\) => \(TREEU && typeof genScore === 'function' \? spPlay\(/, 'the sp set needs the tree (TREEU)');
-  assert.match(APP, /auto: \(\) => \(TREEU && sciSpOn\(\) && typeof genScore === 'function' \? sciPlay\(/, 'the ssp set needs the tree');
+  assert.match(APP, /auto: \(\) =>\s*\(?TREEU && sciSpOn\(\) && typeof genScore === 'function' \? sciPlay\(/, 'the ssp set needs the tree');
 });
 
 // The fish units (the rated world's, as app.js treeGenera builds them) and the sea slugs' (app.js treeGenera on

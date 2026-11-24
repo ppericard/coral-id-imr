@@ -788,8 +788,8 @@ function recordAnswer({
   });
   const res = scoreAnswer(P, q),
     {th0, dm} = res;
-  // The records the scorer wrote, and those written below: inputs of the views (app.js stateBump).
-  if (typeof stateBump === 'function') stateBump();
+  // The records the scorer wrote, and those written below: inputs of the views (app.js stateBump), the player's own.
+  if (typeof stateBump === 'function') stateBump('rec');
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   // A look-alike contrast won (the duel achievement): the Duel tab, a duel slipped into the quiz or an Again (core.js
@@ -830,7 +830,7 @@ function recordAnswer({
   // back, for the genus shown and for the one answered (mxKept). Only at a miss, as the full replay's lm (a mark the
   // replay kept with its bar under DOM.KEEP must not go at a right answer).
   if (!good) [target, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
-  if (typeof stateBump === 'function') stateBump();
+  if (typeof stateBump === 'function') stateBump('rec');
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed.

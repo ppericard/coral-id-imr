@@ -54,6 +54,13 @@ Their writers bump it:
   `rankPhotos`), the statistics joined (`statsJoin`), a record made (`st`) and a reset;
 - `model.js` and `sync.js` once loaded, since the views read their functions.
 
+A second counter, `DATA_V` (the data version), counts the writes of the inputs that do not move with the player's own
+play. The writers of the player's records and settings bump the state version alone (`stateBump('rec')`): the scorer's
+caller and its writes, the recalculations, `sync.js`'s refills of `P`, a record made, a reset, `store.set` of a
+subject's `progress`, `quiz`, `intro`, `intro-offer` and `start` (`REC_KEYS`), and a first-launch record another tab
+wrote. Every other bump moves both: the data and the tree in force, the subject, the sheet's version, the photo
+statistics, a file loaded. A bump with no argument moves both, so a writer not sorted makes the data views again too.
+
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
 is compared at the first read of a view in a task (`stateNow`), so another tab's write bumps the version at the next
@@ -63,25 +70,52 @@ task. This tab's writes of them (`store.set`, `store.drop`, `store.raw`) mark th
 A view (`stateView`) is a function of the inputs alone, computed at its first read in a version and read as it is until
 the next; a list keeps its order, so every draw that reads it draws the same, and it is shared, never changed by its
 readers. Nothing a view keeps is stored or synced: the records stay the only source, and a replay or a merge that
-refills them bumps the version. The views now are:
+refills them bumps the version. A view of one argument (`stateViewBy`, `dataViewBy`) keeps one value per argument
+(a unit, a class, a set) for the version. A data view (`dataView`, `dataViewBy`) is read the same way, kept for the data
+version: it reads only the data inputs, so the player's answers do not make it again. The views now are:
 
 - the units in play: `bonusList`, `pool`, `sciUp` and `shareFree` (their computations `bonusCalc`, `poolCalc`,
-  `sciUpCalc`, `shareFreeCalc`), and the scientific genera in the game (`app.js` `sciNow`, `sciNowCalc`);
+  `sciUpCalc`, `shareFreeCalc`), each set's own units and the units it brings by itself (`app.js` `setUnits`,
+  `setAuto`, per set: `sciOpen`, `spPlay`, `sciPlay` once a version for the three views that read them);
+- the units met (`model.js` `introduced`, `metCalc`): one Set a version, made from the only units that can be met (a
+  record's key or an intro map entry), so a read is one lookup; a loop with nothing written during it reads the view
+  once (`introducedFn`: the sets' units in play, a level's need, the wrong choices);
+- each unit's bar and exam entry (`model.js` `genScore`, `genScoreCalc`; `examOn`, `examOnCalc`), per unit;
+- the comeback's units (`model.js` `cbPlay`, `cbGenera`), the start's level (`startP`, read once per unit by
+  `ability`) and whether the player said they are at IMR (`imrSaid`, read once per name shown);
+- a level's need (`model.js` `lvlNeed`, `lvlNeedCalc`, per class): how many units it still needs before its questions
+  stand among units opened;
 - the tree's score (`model.js` `headScore`, `headScoreCalc`): the header pill, My progress, the circle-3 gate
   (`app.js` `treeC3`) and the achievements read one computation per version;
 - the levels (`model.js` `lvTable`): the level of every unit with a record (`lvStepCalc`, so its bar and its exam
   entry), a unit with no record at 0. A loop over units reads one table (`lvSteps`: the achievements' `achSnap`, My
   progress), `lvStep` one unit.
 
+The data views:
+
+- the scientific genera in the game (`app.js` `sciNow`, `sciNowCalc`);
+- the sets' units grouped by class (`app.js` `rankClasses`, `rankClassesCalc`: `rankUnits` is one lookup), each unit's
+  class (`kindRank`, `kindRankCalc`) and set (`setOf`, `setMapCalc`);
+- a class's units with a photo (`model.js` `lvlAll`, `lvlAllCalc`);
+- the look-alike index (`model.js` `lookRev`, `lookRevCalc`): `examLooks` reads a unit's look-alikes from it in the
+  order of the units in play, where it filtered every unit in play by its record.
+
 The first read of a view in a task compares the stored text of the sheet's version and the first-launch records
-(`stateNow`: four storage reads); the task's other reads compare nothing. A value read unit by unit across the draw
-(`genScore`, `examOn`) is still computed where it is read. With `VIEW_CHECK` on (every smoke page and `tools/learnsim.js --facheck`,
+(`stateNow`: four storage reads); the task's other reads compare nothing. Where a part of these files runs alone (the
+rated world, a unit test: no `stateView`), each value is computed where it is read, by the same code. With `VIEW_CHECK` on (every smoke page and `tools/learnsim.js --facheck`,
 through `tests/facheck.js`), every read of a kept view computes it again and compares, order included (a list, a Set
 or a Map item by item, a plain object key by key down to its leaves), and a `stateNow` that trusts its task's
-comparison compares the stored texts again; a difference throws, and again in a task of its own.
-`tests/stateview.test.js` compares the units in play with the code before them over rated-world runs and made-up
-states, and checks that every declared writer bumps; `tests/levelview.test.js` compares the tree's score and the levels
-with the code before them over rated-world runs of the fish, the corals and the sea slugs.
+comparison compares the stored texts again; a difference throws, and again in a task of its own. The units met are
+checked value by value: each `introduced` read against `introducedCalc` (`model.js` `metCheck`), so a record a smoke
+writes by hand for a key no read asks about is no difference. A smoke that writes `P` or the intro map by hand
+bumps after it (`stateBump('rec')`), as the app's writers do.
+`tests/stateview.test.js` compares the units in play, the rank classes, each unit's set and class with the code before
+them over rated-world runs and made-up states, and checks that every declared writer bumps the right versions;
+`tests/levelview.test.js` compares the tree's score and the levels with the code before them over rated-world runs of
+the fish, the corals and the sea slugs; `tests/modelviews.test.js` compares the units met, the bars, the exam entries,
+the comeback's units, the start's level, the IMR answer, a class's units and its need over the same runs, and fails a version bump made
+to move nothing or to forget the state version on an answer (mutation checks); `tests/examlooks.test.js` compares
+`examLooks` with the filter of every unit in play.
 
 ## Which unit next
 
